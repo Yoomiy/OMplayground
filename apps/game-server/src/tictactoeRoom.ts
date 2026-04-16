@@ -1,0 +1,112 @@
+import {
+  applyTicTacToeIntent,
+  initialTicTacToeState,
+  type Player,
+  type TicTacToeState
+} from "@playground/game-logic";
+
+export interface RoomPlayer {
+  userId: string;
+  displayName: string;
+  symbol: Player;
+}
+
+export interface TicTacToeRoom {
+  sessionId: string;
+  gameId: string;
+  gender: "boy" | "girl";
+  /** Authoritative host for disconnect transfer (from game_sessions.host_id). */
+  hostId: string;
+  state: TicTacToeState;
+  players: Map<string, RoomPlayer>;
+}
+
+const rooms = new Map<string, TicTacToeRoom>();
+
+export function getOrCreateRoom(
+  sessionId: string,
+  meta: { gameId: string; gender: "boy" | "girl"; hostId: string }
+): TicTacToeRoom {
+  let r = rooms.get(sessionId);
+  if (!r) {
+    r = {
+      sessionId,
+      gameId: meta.gameId,
+      gender: meta.gender,
+      hostId: meta.hostId,
+      state: initialTicTacToeState(),
+      players: new Map()
+    };
+    rooms.set(sessionId, r);
+  }
+  return r;
+}
+
+export function getRoom(sessionId: string): TicTacToeRoom | undefined {
+  return rooms.get(sessionId);
+}
+
+/**
+ * Removes a socket/player. If the host disconnects, transfers host to another remaining player.
+ */
+export function removePlayerFromRoom(
+  sessionId: string,
+  userId: string
+): { newHostId?: string; roomEmpty: boolean } {
+  const r = rooms.get(sessionId);
+  if (!r) return { roomEmpty: true };
+  const wasHost = r.hostId === userId;
+  r.players.delete(userId);
+  if (r.players.size === 0) {
+    rooms.delete(sessionId);
+    return { roomEmpty: true };
+  }
+  if (wasHost) {
+    const nextHost = r.players.keys().next().value as string;
+    r.hostId = nextHost;
+    return { newHostId: nextHost, roomEmpty: false };
+  }
+  return { roomEmpty: false };
+}
+
+export function assignPlayer(
+  room: TicTacToeRoom,
+  userId: string,
+  displayName: string
+): { player: RoomPlayer } | { error: { code: string; message: string } } {
+  if (room.players.has(userId)) {
+    return { player: room.players.get(userId)! };
+  }
+  if (room.players.size >= 2) {
+    return {
+      error: { code: "ROOM_FULL", message: "Session already has two players" }
+    };
+  }
+  const symbol: Player = room.players.size === 0 ? "X" : "O";
+  const player: RoomPlayer = { userId, displayName, symbol };
+  room.players.set(userId, player);
+  return { player };
+}
+
+export function applyMove(
+  room: TicTacToeRoom,
+  userId: string,
+  cellIndex: number
+):
+  | { state: TicTacToeState }
+  | { error: { code: string; message: string } } {
+  const p = room.players.get(userId);
+  if (!p) {
+    return { error: { code: "NOT_IN_ROOM", message: "Player not in session" } };
+  }
+  const res = applyTicTacToeIntent(room.state, {
+    type: "MOVE",
+    cellIndex,
+    player: p.symbol
+  });
+  if (res.error) {
+    return { error: res.error };
+  }
+  room.state = res.state;
+  return { state: res.state };
+}
