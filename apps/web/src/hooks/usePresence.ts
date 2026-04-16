@@ -17,15 +17,15 @@ export function usePresence(userId: string | undefined) {
       config: { presence: { key: userId } }
     });
 
+    channel.on("presence", { event: "sync" }, () => {
+      const state = channel.presenceState();
+      setOnlineCount(Object.keys(state).length);
+    });
+
     channel.subscribe(async (status) => {
       if (status === "SUBSCRIBED") {
         await channel.track({ userId, online_at: new Date().toISOString() });
       }
-    });
-
-    channel.on("presence", { event: "sync" }, () => {
-      const state = channel.presenceState();
-      setOnlineCount(Object.keys(state).length);
     });
 
     return () => {
