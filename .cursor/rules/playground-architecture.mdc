@@ -1,0 +1,26 @@
+---
+description: Separation of concerns, authoritative server, Supabase Auth email hack, RLS-first
+alwaysApply: true
+---
+
+# The Playground — Architecture & Supabase
+
+## UI vs network
+
+- **Components stay dumb:** Pages/components must not embed fetch/WebSocket logic inline. Use hooks or thin data modules the UI imports.
+- **Games are pure:** e.g. `TicTacToe` accepts props like `gameState` and `onMove` (or `onIntent`). The **parent container** connects to the WebSocket server and maps server state → props.
+
+## Authoritative server
+
+- **Never trust the client** for game truth. Clients send **intents** (e.g. `ACTION_MOVE`, column index). The Node server validates, updates authoritative state, broadcasts snapshots/events.
+- Do not let clients PATCH arbitrary `game_state` blobs without server validation if the rule is “authoritative” for that game.
+
+## Supabase Auth (username login)
+
+- Map usernames to synthetic emails: `[username]@playground.school.local` **only** for Supabase Auth API calls.
+- **Never** show or persist this dummy email in the UI; display real usernames from profile tables.
+
+## RLS first
+
+- Prefer **Row Level Security** so the database enforces tenant/user scope. Avoid duplicating the same filters only in application code when a policy can guarantee it.
+- Service-role or backend-only operations must still be minimal and documented; default paths use the authenticated Supabase client + RLS.
