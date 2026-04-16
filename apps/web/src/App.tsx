@@ -11,7 +11,14 @@ import { TeacherPage } from "@/pages/TeacherPage";
 import { AdminPage } from "@/pages/AdminPage";
 
 function Protected({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-400">
+        טוען…
+      </div>
+    );
+  }
   if (!user) {
     return <Navigate to="/login" replace />;
   }
