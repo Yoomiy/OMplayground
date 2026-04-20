@@ -1,3 +1,8 @@
+import path from "path";
+import dotenv from "dotenv";
+
+dotenv.config({ path: path.join(__dirname, "..", ".env") });
+
 import http from "http";
 import cors from "cors";
 import express from "express";
@@ -6,7 +11,6 @@ import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import { Server } from "socket.io";
 import { createClient } from "@supabase/supabase-js";
-import { verifySupabaseJwt } from "./auth/verifySupabaseJwt";
 import { isWithinRecess } from "./recess";
 import {
   assignPlayer,
@@ -17,10 +21,34 @@ import {
 } from "./tictactoeRoom";
 
 const PORT = Number(process.env.PORT ?? 8080);
-const CORS_ORIGIN = process.env.CORS_ORIGIN ?? "http://localhost:5173";
+/** localhost vs 127.0.0.1 are different origins — allow both for local Vite */
+const CORS_ORIGIN =
+  process.env.CORS_ORIGIN ??
+  "http://localhost:5173,http://127.0.0.1:5173";
 const SUPABASE_URL = process.env.SUPABASE_URL ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
-const SUPABASE_JWT_SECRET = process.env.SUPABASE_JWT_SECRET ?? "";
+
+function exitIfInvalidSupabaseUrlForClient(): void {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return;
+  const u = SUPABASE_URL.trim();
+  if (!/^https?:\/\//i.test(u)) {
+    console.error(
+      "[game-server] SUPABASE_URL must include the scheme, e.g. https://YOUR_PROJECT.supabase.co\n" +
+        `  Got: ${JSON.stringify(u)} (check apps/game-server/.env)`
+    );
+    process.exit(1);
+  }
+  try {
+    new URL(u);
+  } catch {
+    console.error(
+      "[game-server] SUPABASE_URL is not a valid URL. Fix apps/game-server/.env"
+    );
+    process.exit(1);
+  }
+}
+
+exitIfInvalidSupabaseUrlForClient();
 
 const app = express();
 app.set("trust proxy", 1);
@@ -47,7 +75,7 @@ app.get("/health", (_req, res) => {
 });
 
 app.get("/ready", (_req, res) => {
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !SUPABASE_JWT_SECRET) {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     res.status(503).json({ ok: false, reason: "missing_env" });
     return;
   }
@@ -102,19 +130,20 @@ io.use(async (socket, next) => {
       next(new Error("UNAUTHORIZED"));
       return;
     }
-    if (!SUPABASE_JWT_SECRET) {
+    if (!supabaseAdmin) {
       next(new Error("SERVER_CONFIG"));
       return;
     }
-    const user = verifySupabaseJwt(token, SUPABASE_JWT_SECRET);
-    if (!supabaseAdmin) {
-      next(new Error("SERVER_CONFIG"));
+    const { data: authData, error: authErr } =
+      await supabaseAdmin.auth.getUser(token);
+    if (authErr || !authData?.user?.id) {
+      next(new Error("UNAUTHORIZED"));
       return;
     }
     const { data: profile, error } = await supabaseAdmin
       .from("kid_profiles")
       .select("id, role, gender, full_name, is_active")
-      .eq("id", user.sub)
+      .eq("id", authData.user.id)
       .maybeSingle();
     if (error || !profile || !profile.is_active) {
       next(new Error("FORBIDDEN"));

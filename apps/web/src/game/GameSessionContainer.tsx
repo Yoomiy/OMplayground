@@ -4,8 +4,34 @@ import type { TicTacToeState } from "@playground/game-logic";
 import { supabase } from "@/lib/supabase";
 import { TicTacToeBoard } from "@/games/TicTacToeBoard";
 
-const GAME_SERVER_URL =
-  import.meta.env.VITE_GAME_SERVER_URL ?? "http://localhost:8080";
+/** In dev, prefer same-origin + Vite proxy so the browser does not hit :8080 directly (avoids wrong URL / CORS). */
+function gameServerUrl(): string {
+  const fromEnv = import.meta.env.VITE_GAME_SERVER_URL?.trim();
+  if (fromEnv) return fromEnv;
+  if (import.meta.env.DEV && typeof window !== "undefined") {
+    return window.location.origin;
+  }
+  return "http://localhost:8080";
+}
+
+function connectErrorLabel(err: Error): string {
+  const raw = err.message;
+  if (raw === "xhr poll error" || raw === "websocket error") {
+    return "לא ניתן להתחבר לשרת המשחק — הפעל אותו מקומית (npm run dev:server, פורט 8080) או הגדר VITE_GAME_SERVER_URL.";
+  }
+  switch (raw) {
+    case "UNAUTHORIZED":
+      return "לא מאומת — נסה להתחבר מחדש.";
+    case "FORBIDDEN":
+      return "אין הרשאה לשחק (פרופיל לא נמצא או לא פעיל).";
+    case "RECESS_DENIED":
+      return "מחוץ לזמן ההפסקה — לא ניתן לשחק כרגע.";
+    case "SERVER_CONFIG":
+      return "שרת המשחק לא מוגדר (בדוק משתני Supabase בשרת).";
+    default:
+      return `שגיאת חיבור לשרת המשחק: ${raw}`;
+  }
+}
 
 export interface GameSessionContainerProps {
   sessionId: string;
@@ -33,9 +59,10 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
       }
       if (cancelled) return;
 
-      const s = io(GAME_SERVER_URL, {
-        transports: ["websocket"],
-        auth: { token }
+      const s = io(gameServerUrl(), {
+        auth: { token },
+        reconnectionAttempts: 2,
+        reconnectionDelay: 1500
       });
       socketRef.current = s;
 
@@ -80,8 +107,8 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         }
       );
 
-      s.on("connect_error", () => {
-        setStatus("שגיאת חיבור לשרת המשחק");
+      s.on("connect_error", (err: Error) => {
+        setStatus(connectErrorLabel(err));
       });
     })();
 
