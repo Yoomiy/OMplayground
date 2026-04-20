@@ -17,6 +17,8 @@ export interface TicTacToeRoom {
   gender: "boy" | "girl";
   /** Authoritative host for disconnect transfer (from game_sessions.host_id). */
   hostId: string;
+  /** Minimum players required before the session transitions out of "waiting". */
+  minPlayers: number;
   state: TicTacToeState;
   players: Map<string, RoomPlayer>;
 }
@@ -25,7 +27,12 @@ const rooms = new Map<string, TicTacToeRoom>();
 
 export function getOrCreateRoom(
   sessionId: string,
-  meta: { gameId: string; gender: "boy" | "girl"; hostId: string }
+  meta: {
+    gameId: string;
+    gender: "boy" | "girl";
+    hostId: string;
+    minPlayers?: number;
+  }
 ): TicTacToeRoom {
   let r = rooms.get(sessionId);
   if (!r) {
@@ -34,12 +41,21 @@ export function getOrCreateRoom(
       gameId: meta.gameId,
       gender: meta.gender,
       hostId: meta.hostId,
+      minPlayers: meta.minPlayers ?? 2,
       state: initialTicTacToeState(),
       players: new Map()
     };
     rooms.set(sessionId, r);
   }
   return r;
+}
+
+/**
+ * Room is "idle" (session not yet truly playing) while fewer than `minPlayers`
+ * have joined. Generalizes over 2p, 4p, etc. games.
+ */
+export function isRoomIdle(room: TicTacToeRoom): boolean {
+  return room.players.size < room.minPlayers;
 }
 
 export function getRoom(sessionId: string): TicTacToeRoom | undefined {

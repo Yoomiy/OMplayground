@@ -16,6 +16,7 @@ import {
   assignPlayer,
   applyMove,
   getOrCreateRoom,
+  isRoomIdle,
   getRoom,
   removePlayerFromRoom
 } from "./tictactoeRoom";
@@ -234,7 +235,7 @@ io.on("connection", (socket) => {
         },
         userId,
         displayName,
-        roomStatusIsIdle: room.state.status === "idle"
+        roomStatusIsIdle: isRoomIdle(room)
       });
       io.to(`session:${sessionId}`).emit("ROOM_SNAPSHOT", {
         sessionId,
