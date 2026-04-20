@@ -24,6 +24,11 @@ export interface Room<State = unknown> {
   players: Map<string, RoomPlayer>;
   /** Teachers observing the same-gender session (not in player_ids / DB join list). */
   spectators: Map<string, RoomPlayer>;
+  /**
+   * After the room has ever had `minPlayers` seated, do not re-run `initialState`
+   * when `players` dips below `minPlayers` (e.g. one kid refreshes).
+   */
+  hasBeenActive: boolean;
 }
 
 const rooms = new Map<string, Room<unknown>>();
@@ -51,7 +56,8 @@ export function getOrCreateRoom<State>(
     module: meta.module,
     state: meta.module.initialState([]),
     players: new Map(),
-    spectators: new Map()
+    spectators: new Map(),
+    hasBeenActive: false
   };
   rooms.set(sessionId, created as Room<unknown>);
   return created;
@@ -153,12 +159,15 @@ export function assignPlayer<S>(
   const wasIdle = isRoomIdle(room);
   const player: RoomPlayer = { userId, displayName };
   room.players.set(userId, player);
-  if (wasIdle) {
+  if (wasIdle && !room.hasBeenActive) {
     const seats: GameSeat[] = Array.from(room.players.values()).map((p) => ({
       userId: p.userId,
       displayName: p.displayName
     }));
     room.state = room.module.initialState(seats);
+  }
+  if (!isRoomIdle(room)) {
+    room.hasBeenActive = true;
   }
   return { player };
 }

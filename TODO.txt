@@ -6,7 +6,7 @@
 6. paused -> completed after game ends
 7. import the rest of the games.
 8. improve ui.
-9. game reset for all if 1 player refreshes.
+9. ~~game reset for all if 1 player refreshes.~~ — addressed: `room.hasBeenActive` (no `initialState` re-seed after session once reached min players).
 10. grade isn't saved on game_session(?) — addressed: `host_grade` column + insert + host transfer (see migration 20260423000000).
 11. chat deletion by teacher doen not affect the live chat. — addressed: kid/teacher chat UI uses Supabase+Realtime only (no socket-only feed).
 12. filter for actually active games for teachers
