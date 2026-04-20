@@ -2,11 +2,13 @@
 2. add functionality to teacher interface
 3. audio messages
 4. avatars
-5. [DONE milestone A] handle recess end / schedule change
-6. [DONE milestone B] add pop-up for friend request
-7. [DONE milestone A] handle game end
-8. [DONE milestone A] handle game stop
-9. fix tsc error in apps/web/src/game/GameSessionContainer.tsx CHAT_MESSAGE handler: payload.message narrowing lost inside setChatLines callback (TS2345, string | undefined vs string)
-10. add a way to list resume paused games.
-11. paused -> competed after game ends
-12. 
+5. add a way to list and resume paused games.
+6. paused -> completed after game ends
+7. import the rest of the games.
+8. improve ui.
+9. game reset for all if 1 player refreshes.
+10. grade isn't saved on game_session(?) — addressed: `host_grade` column + insert + host transfer (see migration 20260423000000).
+11. chat deletion by teacher doen not affect the live chat. — addressed: kid/teacher chat UI uses Supabase+Realtime only (no socket-only feed).
+12. filter for actually active games for teachers
+13. allow kids to add comments to message report
+

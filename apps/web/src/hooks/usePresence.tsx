@@ -9,6 +9,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 /**
  * Global Realtime presence — one channel keyed on the kid's gender so
@@ -28,15 +29,21 @@ const PresenceContext = createContext<PresenceContextValue>({
 export function PresenceProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const { profile } = useProfile(user);
+  const { isAdmin } = useIsAdmin(user);
   const userId = user?.id;
   const gender = profile?.gender;
+  /** Only same-gender kids count as "online" for the playground presence channel. */
+  const shouldTrackPresence =
+    Boolean(userId && gender) &&
+    profile?.role === "kid" &&
+    !isAdmin;
 
   const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(
     () => new Set<string>()
   );
 
   useEffect(() => {
-    if (!userId || !gender) {
+    if (!shouldTrackPresence || !userId || !gender) {
       setOnlineUserIds(new Set());
       return;
     }
@@ -72,7 +79,7 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [userId, gender]);
+  }, [userId, gender, shouldTrackPresence]);
 
   const value = useMemo<PresenceContextValue>(
     () => ({

@@ -32,6 +32,17 @@ export function LoginPage() {
       setLoading(false);
       return;
     }
+    const { data: adminRow } = await supabase
+      .from("admin_profiles")
+      .select("id")
+      .eq("id", uid)
+      .maybeSingle();
+    if (adminRow) {
+      setLoading(false);
+      navigate("/admin", { replace: true });
+      return;
+    }
+
     const { data: profile } = await supabase
       .from("kid_profiles")
       .select("role")
@@ -57,6 +68,10 @@ export function LoginPage() {
       }
     }
     setLoading(false);
+    if (role === "teacher") {
+      navigate("/teacher", { replace: true });
+      return;
+    }
     navigate("/home", { replace: true });
   }
 

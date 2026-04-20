@@ -97,7 +97,8 @@ function roomWithState(sessionId: string): Room<unknown> {
     hostId: "host-user",
     minPlayers: 2,
     state: initialTicTacToeState(),
-    players: new Map()
+    players: new Map(),
+    spectators: new Map()
   };
 }
 

@@ -1,0 +1,5 @@
+# Local / deploy reference — align project_id with `supabase link`.
+# Edge Functions: deploy with `supabase functions deploy import-bulk-kids`
+
+[functions.import-bulk-kids]
+verify_jwt = true

@@ -69,10 +69,16 @@ export async function persistPlayerLeave(
 ): Promise<void> {
   const { supabase, sessionId, result } = args;
   if (result.newHostId) {
+    const { data: kp } = await supabase
+      .from("kid_profiles")
+      .select("grade")
+      .eq("id", result.newHostId)
+      .maybeSingle();
     await supabase
       .from("game_sessions")
       .update({
         host_id: result.newHostId,
+        host_grade: kp?.grade ?? null,
         last_activity: new Date().toISOString()
       })
       .eq("id", sessionId);

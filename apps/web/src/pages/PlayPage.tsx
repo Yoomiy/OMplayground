@@ -1,18 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { GameSessionContainer } from "@/game/GameSessionContainer";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
-export function PlayPage() {
+function PlayPage() {
   const { sessionId } = useParams();
+  const { user } = useAuth();
+  const { profile } = useProfile(user);
+  const { isAdmin } = useIsAdmin(user);
   const [gameName, setGameName] = useState<string>("");
 
-  /**
-   * Fetch the Hebrew game name once per session so the header stops
-   * hardcoding a single game's title. `games!inner` is keyed off the
-   * FK `game_sessions.game_id -> games.id` already defined in schema.
-   */
   useEffect(() => {
     if (!sessionId) return;
     let cancelled = false;
@@ -33,6 +34,16 @@ export function PlayPage() {
     };
   }, [sessionId]);
 
+  const { backHref, backLabel } = useMemo(() => {
+    if (isAdmin) {
+      return { backHref: "/admin", backLabel: "ניהול" };
+    }
+    if (profile?.role === "teacher") {
+      return { backHref: "/teacher", backLabel: "לוח מורה" };
+    }
+    return { backHref: "/home", backLabel: "בית" };
+  }, [isAdmin, profile?.role]);
+
   if (!sessionId) {
     return <p className="p-6 text-sm text-amber-300">חסר מזהה מפגש</p>;
   }
@@ -42,10 +53,13 @@ export function PlayPage() {
       <header className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">{gameName || "משחק"}</h1>
         <Button variant="outline" asChild>
-          <Link to="/home">בית</Link>
+          <Link to={backHref}>{backLabel}</Link>
         </Button>
       </header>
       <GameSessionContainer sessionId={sessionId} />
     </div>
   );
 }
+
+export default PlayPage;
+export { PlayPage };

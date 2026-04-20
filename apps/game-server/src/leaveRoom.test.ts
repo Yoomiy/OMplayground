@@ -14,16 +14,29 @@ import {
  */
 describe("LEAVE_ROOM persistence (mirrors disconnect)", () => {
   function makeMockSupabase() {
-    const eq = jest.fn().mockResolvedValue({ data: null, error: null });
-    const update = jest.fn().mockReturnValue({ eq });
-    const from = jest.fn().mockReturnValue({ update });
+    const eqGs = jest.fn().mockResolvedValue({ data: null, error: null });
+    const updateGs = jest.fn().mockReturnValue({ eq: eqGs });
+    const maybeSingleKp = jest
+      .fn()
+      .mockResolvedValue({ data: { grade: 4 }, error: null });
+    const eqKp = jest.fn().mockReturnValue({ maybeSingle: maybeSingleKp });
+    const selectKp = jest.fn().mockReturnValue({ eq: eqKp });
+    const from = jest.fn((table: string) => {
+      if (table === "kid_profiles") {
+        return { select: selectKp };
+      }
+      return { update: updateGs };
+    });
     return {
       supabase: { from } as unknown as Parameters<
         typeof persistPlayerLeave
       >[0]["supabase"],
       from,
-      update,
-      eq
+      updateGs,
+      eqGs,
+      selectKp,
+      eqKp,
+      maybeSingleKp
     };
   }
 
@@ -46,11 +59,17 @@ describe("LEAVE_ROOM persistence (mirrors disconnect)", () => {
     const m = makeMockSupabase();
     await persistPlayerLeave({ supabase: m.supabase, sessionId, result });
 
+    expect(m.from).toHaveBeenCalledWith("kid_profiles");
+    expect(m.selectKp).toHaveBeenCalledWith("grade");
     expect(m.from).toHaveBeenCalledWith("game_sessions");
-    expect(m.update).toHaveBeenCalledTimes(1);
-    const payload = m.update.mock.calls[0][0] as { host_id: string };
+    expect(m.updateGs).toHaveBeenCalledTimes(1);
+    const payload = m.updateGs.mock.calls[0][0] as {
+      host_id: string;
+      host_grade: number;
+    };
     expect(payload.host_id).toBe("guest-user");
-    expect(m.eq).toHaveBeenCalledWith("id", sessionId);
+    expect(payload.host_grade).toBe(4);
+    expect(m.eqGs).toHaveBeenCalledWith("id", sessionId);
   });
 
   it("writes status='paused' when the last player leaves", async () => {
@@ -69,8 +88,8 @@ describe("LEAVE_ROOM persistence (mirrors disconnect)", () => {
     const m = makeMockSupabase();
     await persistPlayerLeave({ supabase: m.supabase, sessionId, result });
 
-    expect(m.update).toHaveBeenCalledTimes(1);
-    const payload = m.update.mock.calls[0][0] as { status: string };
+    expect(m.updateGs).toHaveBeenCalledTimes(1);
+    const payload = m.updateGs.mock.calls[0][0] as { status: string };
     expect(payload.status).toBe("paused");
   });
 });

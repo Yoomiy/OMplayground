@@ -22,6 +22,8 @@ export interface Room<State = unknown> {
   module: GameModule<State, unknown>;
   state: State;
   players: Map<string, RoomPlayer>;
+  /** Teachers observing the same-gender session (not in player_ids / DB join list). */
+  spectators: Map<string, RoomPlayer>;
 }
 
 const rooms = new Map<string, Room<unknown>>();
@@ -48,7 +50,8 @@ export function getOrCreateRoom<State>(
     minPlayers: meta.minPlayers ?? meta.module.minPlayers,
     module: meta.module,
     state: meta.module.initialState([]),
-    players: new Map()
+    players: new Map(),
+    spectators: new Map()
   };
   rooms.set(sessionId, created as Room<unknown>);
   return created;
@@ -88,7 +91,9 @@ export function removePlayerFromRoom(
   const wasHost = r.hostId === userId;
   r.players.delete(userId);
   if (r.players.size === 0) {
-    rooms.delete(sessionId);
+    if (r.spectators.size === 0) {
+      rooms.delete(sessionId);
+    }
     return { roomEmpty: true };
   }
   if (wasHost) {
@@ -97,6 +102,32 @@ export function removePlayerFromRoom(
     return { newHostId: nextHost, roomEmpty: false };
   }
   return { roomEmpty: false };
+}
+
+/**
+ * Teacher / observer: not counted as a player, does not touch DB player_ids.
+ */
+export function attachSpectator<S>(
+  room: Room<S>,
+  userId: string,
+  displayName: string
+): { spectator: RoomPlayer } {
+  const existing = room.spectators.get(userId);
+  if (existing) {
+    return { spectator: existing };
+  }
+  const spectator: RoomPlayer = { userId, displayName };
+  room.spectators.set(userId, spectator);
+  return { spectator };
+}
+
+export function removeSpectatorFromRoom(sessionId: string, userId: string): void {
+  const r = rooms.get(sessionId);
+  if (!r) return;
+  r.spectators.delete(userId);
+  if (r.players.size === 0 && r.spectators.size === 0) {
+    rooms.delete(sessionId);
+  }
 }
 
 /**

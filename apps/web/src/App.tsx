@@ -9,7 +9,7 @@ import { RegisterPage } from "@/pages/RegisterPage";
 import { HomePage } from "@/pages/HomePage";
 import { FriendsPage } from "@/pages/FriendsPage";
 import { InboxPage } from "@/pages/InboxPage";
-import { PlayPage } from "@/pages/PlayPage";
+import PlayPage from "@/pages/PlayPage";
 import { TeacherPage } from "@/pages/TeacherPage";
 import { AdminPage } from "@/pages/AdminPage";
 import { JoinByCodePage } from "@/pages/JoinByCodePage";

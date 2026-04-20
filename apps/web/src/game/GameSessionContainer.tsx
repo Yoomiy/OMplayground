@@ -3,6 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { io, type Socket } from "socket.io-client";
 import type { ConnectFourState, TicTacToeState } from "@playground/game-logic";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+import { usePersistedSessionChat } from "@/hooks/usePersistedSessionChat";
+import { useTeacherSessionChat } from "@/hooks/useTeacherSessionChat";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { ConnectFourBoard } from "@/games/ConnectFourBoard";
 import { TicTacToeBoard } from "@/games/TicTacToeBoard";
 
@@ -22,8 +27,14 @@ type EndOverlay =
 
 function endOverlayHeadline(
   overlay: EndOverlay,
-  mySymbol: string | null
+  mySymbol: string | null,
+  isTeacherObserver: boolean
 ): string {
+  if (isTeacherObserver) {
+    if (overlay.kind === "draw") return "תיקו!";
+    if (overlay.kind === "stopped") return "המשחק נעצר";
+    return "המשחק הסתיים";
+  }
   if (overlay.kind === "draw") return "תיקו!";
   if (overlay.kind === "stopped") return "המארח עצר את המשחק";
   if (mySymbol && overlay.winner === mySymbol) return "ניצחת!";
@@ -101,6 +112,16 @@ export interface GameSessionContainerProps {
 
 export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { profile } = useProfile(user);
+  const { isAdmin } = useIsAdmin(user);
+  const isTeacherObserver = profile?.role === "teacher";
+  const teacherChat = useTeacherSessionChat(
+    isTeacherObserver ? sessionId : undefined
+  );
+  const kidChat = usePersistedSessionChat(
+    !isTeacherObserver ? sessionId : undefined
+  );
   const socketRef = useRef<Socket | null>(null);
   const recessEndedRef = useRef(false);
   const [gameKey, setGameKey] = useState<string | null>(null);
@@ -111,9 +132,6 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
   const [endOverlay, setEndOverlay] = useState<EndOverlay | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [chatDraft, setChatDraft] = useState("");
-  const [chatLines, setChatLines] = useState<
-    { senderName: string; message: string }[]
-  >([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -191,21 +209,6 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         }
       });
 
-      s.on(
-        "CHAT_MESSAGE",
-        (payload: { senderName?: string; message?: string }) => {
-          const message = payload?.message;
-          if (!message) return;
-          setChatLines((prev) => [
-            ...prev,
-            {
-              senderName: payload.senderName ?? "?",
-              message
-            }
-          ]);
-        }
-      );
-
       s.on("connect_error", (err: Error) => {
         setStatus(connectErrorLabel(err));
       });
@@ -251,6 +254,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
 
   const onIntent = useCallback(
     (intent: unknown) => {
+      if (isTeacherObserver) return;
       const s = socketRef.current;
       if (!s?.connected) {
         setStatus("אין חיבור פעיל");
@@ -266,7 +270,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         }
       );
     },
-    [sessionId]
+    [sessionId, isTeacherObserver]
   );
 
   /** Derived from authoritative state so clients never diverge on seat order. */
@@ -284,7 +288,11 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
   const boardEntry = BOARD_REGISTRY[gameKey];
   const Board = boardEntry?.component;
   const isFullscreen = boardEntry?.fullscreen === true;
-  const iAmHost = myUserId != null && hostId != null && myUserId === hostId;
+  const iAmHost =
+    !isTeacherObserver &&
+    myUserId != null &&
+    hostId != null &&
+    myUserId === hostId;
 
   return (
     <div
@@ -294,7 +302,10 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
           : "space-y-4"
       }
     >
-      <p className="text-sm text-slate-400">{status}</p>
+      <p className="text-sm text-slate-400">
+        {isTeacherObserver ? "צפייה בלבד (מורה) · " : ""}
+        {status}
+      </p>
       {toast && (
         <div
           role="status"
@@ -304,7 +315,11 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         </div>
       )}
       {Board ? (
-        <Board gameState={gameState} mySymbol={mySymbol} onIntent={onIntent} />
+        <div
+          className={isTeacherObserver ? "pointer-events-none opacity-95" : undefined}
+        >
+          <Board gameState={gameState} mySymbol={mySymbol} onIntent={onIntent} />
+        </div>
       ) : (
         <p className="text-sm text-amber-300">
           משחק לא נתמך בלקוח: {gameKey}
@@ -326,26 +341,94 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
           className="rounded-lg border border-slate-600 bg-slate-900 p-4 text-center"
         >
           <p className="text-lg font-bold text-slate-100">
-            {endOverlayHeadline(endOverlay, mySymbol)}
+            {endOverlayHeadline(endOverlay, mySymbol, isTeacherObserver)}
           </p>
           <div className="mt-3 flex justify-center gap-2">
             <button
               type="button"
               className="rounded bg-indigo-600 px-3 py-1 text-sm text-white hover:bg-indigo-500"
-              onClick={() => navigate("/home")}
+              onClick={() =>
+                navigate(
+                  isAdmin
+                    ? "/admin"
+                    : isTeacherObserver
+                      ? "/teacher"
+                      : "/home"
+                )
+              }
             >
-              חזרה הביתה
+              {isAdmin
+                ? "חזרה לניהול"
+                : isTeacherObserver
+                  ? "חזרה ללוח המורה"
+                  : "חזרה הביתה"}
             </button>
           </div>
         </div>
       )}
-      {!isFullscreen && (
+      {!isFullscreen && isTeacherObserver ? (
+        <section className="space-y-2 rounded-lg border border-slate-700 bg-slate-900/50 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-sm font-medium text-slate-300">
+              צ׳אט (ניהול מורה)
+            </h2>
+            <button
+              type="button"
+              className="rounded border border-amber-600 px-2 py-1 text-xs text-amber-100 hover:bg-amber-950/80"
+              onClick={() => {
+                if (
+                  !window.confirm("למחוק את כל ההודעות במפגש זה?")
+                ) {
+                  return;
+                }
+                void teacherChat.clearSession().catch((e: Error) =>
+                  setStatus(e.message)
+                );
+              }}
+            >
+              ניקוי צ׳אט
+            </button>
+          </div>
+          {teacherChat.error ? (
+            <p className="text-xs text-amber-300">{teacherChat.error}</p>
+          ) : null}
+          <ul className="max-h-48 space-y-2 overflow-y-auto text-sm text-slate-200">
+            {teacherChat.lines.map((l) => (
+              <li
+                key={l.id}
+                className="flex items-start justify-between gap-2 border-b border-slate-800 pb-1"
+              >
+                <span>
+                  <span className="text-slate-500">{l.sender_name}:</span>{" "}
+                  {l.message}
+                </span>
+                {!l.is_system ? (
+                  <button
+                    type="button"
+                    className="shrink-0 text-xs text-rose-400 underline"
+                    onClick={() =>
+                      void teacherChat.softDelete(l.id).catch((e: Error) =>
+                        setStatus(e.message)
+                      )
+                    }
+                  >
+                    מחק
+                  </button>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : !isFullscreen ? (
         <section className="space-y-2 rounded-lg border border-slate-700 bg-slate-900/50 p-3">
           <h2 className="text-sm font-medium text-slate-300">צ׳אט במשחק</h2>
+          {kidChat.error ? (
+            <p className="text-xs text-amber-300">{kidChat.error}</p>
+          ) : null}
           <ul className="max-h-40 space-y-1 overflow-y-auto text-sm text-slate-200">
-            {chatLines.map((l, i) => (
-              <li key={`${l.senderName}-${i}`}>
-                <span className="text-slate-500">{l.senderName}:</span>{" "}
+            {kidChat.lines.map((l) => (
+              <li key={l.id}>
+                <span className="text-slate-500">{l.sender_name}:</span>{" "}
                 {l.message}
               </li>
             ))}
@@ -367,7 +450,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
             </button>
           </div>
         </section>
-      )}
+      ) : null}
     </div>
   );
 }

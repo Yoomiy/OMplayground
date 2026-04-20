@@ -16,12 +16,14 @@ import { getGameModule } from "@playground/game-logic";
 import {
   applyIntent,
   assignPlayer,
+  attachSpectator,
   canStopGame,
   deleteRoom,
   getOrCreateRoom,
   isRoomIdle,
   getRoom,
-  removePlayerFromRoom
+  removePlayerFromRoom,
+  removeSpectatorFromRoom
 } from "./room";
 import {
   persistPlayerJoin,
@@ -237,11 +239,28 @@ io.on("connection", (socket) => {
         hostId: session.host_id as string,
         minPlayers: gameRow?.min_players ?? gameModule.minPlayers
       });
+      const role = socket.data.role as string;
+      if (role === "teacher") {
+        attachSpectator(room, userId, displayName);
+        await socket.join(`session:${sessionId}`);
+        socket.data.sessionId = sessionId;
+        socket.data.isSpectator = true;
+        io.to(`session:${sessionId}`).emit("ROOM_SNAPSHOT", {
+          sessionId,
+          gameKey: room.gameKey,
+          hostId: room.hostId,
+          gameState: room.state,
+          players: Array.from(room.players.values())
+        });
+        ack?.({ ok: true, spectator: true });
+        return;
+      }
       const assigned = assignPlayer(room, userId, displayName);
       if ("error" in assigned) {
         ack?.({ ok: false, error: assigned.error });
         return;
       }
+      socket.data.isSpectator = false;
       await socket.join(`session:${sessionId}`);
       socket.data.sessionId = sessionId;
       void persistPlayerJoin({
@@ -282,6 +301,13 @@ io.on("connection", (socket) => {
         ack?.({
           ok: false,
           error: { code: "BAD_REQUEST", message: "sessionId and intent required" }
+        });
+        return;
+      }
+      if (socket.data.role === "teacher") {
+        ack?.({
+          ok: false,
+          error: { code: "READ_ONLY", message: "Observers cannot send moves" }
         });
         return;
       }
@@ -381,6 +407,13 @@ io.on("connection", (socket) => {
         });
         return;
       }
+      if (socket.data.role === "teacher") {
+        ack?.({
+          ok: false,
+          error: { code: "READ_ONLY", message: "Observers cannot chat here" }
+        });
+        return;
+      }
       const text = message.trim().slice(0, 500);
       if (!text) {
         ack?.({ ok: false, error: { code: "BAD_REQUEST", message: "empty" } });
@@ -404,19 +437,30 @@ io.on("connection", (socket) => {
         ack?.({ ok: false, error: { code: "PERSIST_FAILED", message: insErr.message } });
         return;
       }
-      io.to(`session:${sessionId}`).emit("CHAT_MESSAGE", {
-        sessionId,
-        senderId: userId,
-        senderName: displayName,
-        message: text,
-        timestamp: new Date().toISOString()
-      });
+      // Chat UI uses Supabase + Realtime only (stays in sync with teacher moderation).
       ack?.({ ok: true });
     }
   );
 
   async function handleLeave(sessionId: string) {
     if (!userId) return;
+    if (socket.data.isSpectator) {
+      removeSpectatorFromRoom(sessionId, userId);
+      const room = getRoom(sessionId);
+      io.to(`session:${sessionId}`).emit("ROOM_SNAPSHOT", {
+        sessionId,
+        gameKey: room?.gameKey,
+        hostId: room?.hostId,
+        gameState: room?.state,
+        players: room ? Array.from(room.players.values()) : []
+      });
+      await socket.leave(`session:${sessionId}`);
+      if (socket.data.sessionId === sessionId) {
+        socket.data.sessionId = undefined;
+      }
+      socket.data.isSpectator = false;
+      return;
+    }
     const result = removePlayerFromRoom(sessionId, userId);
     if (supabaseAdmin) {
       void persistPlayerLeave({ supabase: supabaseAdmin, sessionId, result });

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useOnlinePresence } from "@/hooks/usePresence";
 import { useOpenGames } from "@/hooks/useOpenGames";
 import { useInbox } from "@/hooks/useInbox";
@@ -18,6 +19,7 @@ export function HomePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { profile } = useProfile(user);
+  const { isAdmin, loading: adminLoading } = useIsAdmin(user);
   const { onlineUserIds } = useOnlinePresence();
   const { rows: openGames } = useOpenGames(user?.id);
   const { unreadTotal } = useInbox(user?.id);
@@ -47,6 +49,40 @@ export function HomePage() {
     };
   }, [profile]);
 
+  useEffect(() => {
+    if (isAdmin) {
+      navigate("/admin", { replace: true });
+    }
+  }, [isAdmin, navigate]);
+
+  useEffect(() => {
+    if (profile?.role === "teacher") {
+      navigate("/teacher", { replace: true });
+    }
+  }, [profile?.role, navigate]);
+
+  if (adminLoading) {
+    return (
+      <div className="mx-auto max-w-lg p-6 text-sm text-slate-400">טוען…</div>
+    );
+  }
+
+  if (isAdmin) {
+    return (
+      <div className="mx-auto max-w-lg p-6 text-sm text-slate-400">
+        מעביר לניהול…
+      </div>
+    );
+  }
+
+  if (profile?.role === "teacher") {
+    return (
+      <div className="mx-auto max-w-lg p-6 text-sm text-slate-400">
+        מעביר ללוח המורה…
+      </div>
+    );
+  }
+
   async function createOpenSession(gameId: string) {
     if (!user || !profile) return;
     setBusyGameId(gameId);
@@ -63,7 +99,8 @@ export function HomePage() {
         status: "waiting",
         is_open: true,
         invitation_code: code,
-        gender: profile.gender
+        gender: profile.gender,
+        host_grade: profile.grade
       })
       .select("id")
       .maybeSingle();
@@ -160,14 +197,11 @@ export function HomePage() {
         <Link className="underline" to="/inbox">
           הודעות{unreadTotal > 0 ? ` (${unreadTotal})` : ""}
         </Link>
-        {profile?.role === "teacher" ? (
-          <Link className="underline" to="/teacher">
-            מורה
+        {isAdmin ? (
+          <Link className="underline" to="/admin">
+            ניהול
           </Link>
         ) : null}
-        <Link className="underline" to="/admin">
-          ניהול (שלד)
-        </Link>
       </nav>
     </div>
   );
