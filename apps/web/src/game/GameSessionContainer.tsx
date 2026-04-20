@@ -39,14 +39,21 @@ interface BoardProps {
   onIntent: (intent: unknown) => void;
 }
 
-const BOARD_REGISTRY: Record<string, (props: BoardProps) => JSX.Element> = {
-  tictactoe: ({ gameState, mySymbol, onIntent }) => (
-    <TicTacToeBoard
-      gameState={gameState as TicTacToeState}
-      mySymbol={mySymbol === "X" || mySymbol === "O" ? mySymbol : null}
-      onCellPress={(i) => onIntent({ cellIndex: i })}
-    />
-  )
+interface BoardRegistryEntry {
+  component: (props: BoardProps) => JSX.Element;
+  fullscreen?: boolean;
+}
+
+const BOARD_REGISTRY: Record<string, BoardRegistryEntry> = {
+  tictactoe: {
+    component: ({ gameState, mySymbol, onIntent }) => (
+      <TicTacToeBoard
+        gameState={gameState as TicTacToeState}
+        mySymbol={mySymbol === "X" || mySymbol === "O" ? mySymbol : null}
+        onCellPress={(i) => onIntent({ cellIndex: i })}
+      />
+    )
+  }
 };
 
 /** In dev, prefer same-origin + Vite proxy so the browser does not hit :8080 directly (avoids wrong URL / CORS). */
@@ -264,11 +271,19 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
     return <p className="text-sm text-slate-400">{status}</p>;
   }
 
-  const Board = BOARD_REGISTRY[gameKey];
+  const boardEntry = BOARD_REGISTRY[gameKey];
+  const Board = boardEntry?.component;
+  const isFullscreen = boardEntry?.fullscreen === true;
   const iAmHost = myUserId != null && hostId != null && myUserId === hostId;
 
   return (
-    <div className="space-y-4">
+    <div
+      className={
+        isFullscreen
+          ? "fixed inset-0 z-40 space-y-4 overflow-auto bg-slate-950 p-4"
+          : "space-y-4"
+      }
+    >
       <p className="text-sm text-slate-400">{status}</p>
       {toast && (
         <div
@@ -314,33 +329,35 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
           </div>
         </div>
       )}
-      <section className="space-y-2 rounded-lg border border-slate-700 bg-slate-900/50 p-3">
-        <h2 className="text-sm font-medium text-slate-300">צ׳אט במשחק</h2>
-        <ul className="max-h-40 space-y-1 overflow-y-auto text-sm text-slate-200">
-          {chatLines.map((l, i) => (
-            <li key={`${l.senderName}-${i}`}>
-              <span className="text-slate-500">{l.senderName}:</span>{" "}
-              {l.message}
-            </li>
-          ))}
-        </ul>
-        <div className="flex gap-2">
-          <input
-            className="flex-1 rounded border border-slate-600 bg-slate-950 px-2 py-1 text-sm"
-            value={chatDraft}
-            onChange={(e) => setChatDraft(e.target.value)}
-            placeholder="הודעה…"
-            maxLength={500}
-          />
-          <button
-            type="button"
-            className="rounded bg-indigo-600 px-3 py-1 text-sm text-white hover:bg-indigo-500"
-            onClick={() => sendChat()}
-          >
-            שלח
-          </button>
-        </div>
-      </section>
+      {!isFullscreen && (
+        <section className="space-y-2 rounded-lg border border-slate-700 bg-slate-900/50 p-3">
+          <h2 className="text-sm font-medium text-slate-300">צ׳אט במשחק</h2>
+          <ul className="max-h-40 space-y-1 overflow-y-auto text-sm text-slate-200">
+            {chatLines.map((l, i) => (
+              <li key={`${l.senderName}-${i}`}>
+                <span className="text-slate-500">{l.senderName}:</span>{" "}
+                {l.message}
+              </li>
+            ))}
+          </ul>
+          <div className="flex gap-2">
+            <input
+              className="flex-1 rounded border border-slate-600 bg-slate-950 px-2 py-1 text-sm"
+              value={chatDraft}
+              onChange={(e) => setChatDraft(e.target.value)}
+              placeholder="הודעה…"
+              maxLength={500}
+            />
+            <button
+              type="button"
+              className="rounded bg-indigo-600 px-3 py-1 text-sm text-white hover:bg-indigo-500"
+              onClick={() => sendChat()}
+            >
+              שלח
+            </button>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
