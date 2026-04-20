@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { io, type Socket } from "socket.io-client";
-import type { TicTacToeState } from "@playground/game-logic";
+import type { ConnectFourState, TicTacToeState } from "@playground/game-logic";
 import { supabase } from "@/lib/supabase";
+import { ConnectFourBoard } from "@/games/ConnectFourBoard";
 import { TicTacToeBoard } from "@/games/TicTacToeBoard";
 
 type RoomEvent =
@@ -51,6 +52,15 @@ const BOARD_REGISTRY: Record<string, BoardRegistryEntry> = {
         gameState={gameState as TicTacToeState}
         mySymbol={mySymbol === "X" || mySymbol === "O" ? mySymbol : null}
         onCellPress={(i) => onIntent({ cellIndex: i })}
+      />
+    )
+  },
+  connectfour: {
+    component: ({ gameState, mySymbol, onIntent }) => (
+      <ConnectFourBoard
+        gameState={gameState as ConnectFourState}
+        mySeat={mySymbol === "R" || mySymbol === "Y" ? mySymbol : null}
+        onIntent={(intent) => onIntent(intent)}
       />
     )
   }
