@@ -12,16 +12,17 @@ import rateLimit from "express-rate-limit";
 import { Server } from "socket.io";
 import { createClient } from "@supabase/supabase-js";
 import { isWithinRecess } from "./recess";
+import { getGameModule } from "@playground/game-logic";
 import {
+  applyIntent,
   assignPlayer,
-  applyMove,
   canStopGame,
   deleteRoom,
   getOrCreateRoom,
   isRoomIdle,
   getRoom,
   removePlayerFromRoom
-} from "./tictactoeRoom";
+} from "./room";
 import {
   persistPlayerJoin,
   persistPlayerLeave
@@ -202,7 +203,7 @@ io.on("connection", (socket) => {
       const { data: session, error } = await supabaseAdmin
         .from("game_sessions")
         .select(
-          "id, game_id, gender, player_ids, player_names, host_id, status"
+          "id, game_id, gender, player_ids, player_names, host_id, status, games ( game_url, min_players )"
         )
         .eq("id", sessionId)
         .maybeSingle();
@@ -217,10 +218,24 @@ io.on("connection", (socket) => {
         });
         return;
       }
+      const gameRow = (session as { games?: { game_url?: string; min_players?: number } | null })
+        .games;
+      const gameKey = gameRow?.game_url ?? "";
+      const gameModule = getGameModule(gameKey);
+      if (!gameModule) {
+        ack?.({
+          ok: false,
+          error: { code: "GAME_UNSUPPORTED", message: `No module for game '${gameKey}'` }
+        });
+        return;
+      }
       const room = getOrCreateRoom(sessionId, {
         gameId: session.game_id as string,
+        gameKey,
+        module: gameModule,
         gender,
-        hostId: session.host_id as string
+        hostId: session.host_id as string,
+        minPlayers: gameRow?.min_players ?? gameModule.minPlayers
       });
       const assigned = assignPlayer(room, userId, displayName);
       if ("error" in assigned) {
@@ -247,7 +262,7 @@ io.on("connection", (socket) => {
       });
       io.to(`session:${sessionId}`).emit("ROOM_SNAPSHOT", {
         sessionId,
-        gameKey: "tictactoe",
+        gameKey: room.gameKey,
         hostId: room.hostId,
         gameState: room.state,
         players: Array.from(room.players.values())
@@ -258,10 +273,16 @@ io.on("connection", (socket) => {
 
   socket.on(
     "INTENT_GAME",
-    (payload: { sessionId: string; cellIndex: number }, ack?: (r: unknown) => void) => {
+    (
+      payload: { sessionId?: string; intent?: unknown },
+      ack?: (r: unknown) => void
+    ) => {
       const sessionId = payload?.sessionId;
-      if (sessionId === undefined || payload.cellIndex === undefined) {
-        ack?.({ ok: false, error: { code: "BAD_REQUEST", message: "sessionId and cellIndex required" } });
+      if (!sessionId || payload?.intent === undefined) {
+        ack?.({
+          ok: false,
+          error: { code: "BAD_REQUEST", message: "sessionId and intent required" }
+        });
         return;
       }
       const room = getRoom(sessionId);
@@ -269,27 +290,23 @@ io.on("connection", (socket) => {
         ack?.({ ok: false, error: { code: "NOT_FOUND", message: "Room not loaded" } });
         return;
       }
-      const res = applyMove(room, userId, payload.cellIndex);
-      if ("error" in res) {
+      const res = applyIntent(room, userId, payload.intent);
+      if (!res.ok) {
         ack?.({ ok: false, error: res.error });
         return;
       }
       io.to(`session:${sessionId}`).emit("ROOM_SNAPSHOT", {
         sessionId,
-        gameKey: "tictactoe",
+        gameKey: room.gameKey,
         hostId: room.hostId,
         gameState: res.state,
         players: Array.from(room.players.values())
       });
-      if (res.state.status === "won" || res.state.status === "draw") {
-        const outcome =
-          res.state.status === "won"
-            ? { kind: "won" as const, winner: res.state.winner }
-            : { kind: "draw" as const };
+      if (res.outcome) {
         io.to(`session:${sessionId}`).emit("ROOM_EVENT", {
           sessionId,
           kind: "GAME_ENDED",
-          outcome
+          outcome: res.outcome
         });
         if (supabaseAdmin) {
           void persistGameEnded({
@@ -414,7 +431,7 @@ io.on("connection", (socket) => {
     }
     io.to(`session:${sessionId}`).emit("ROOM_SNAPSHOT", {
       sessionId,
-      gameKey: "tictactoe",
+      gameKey: room?.gameKey,
       hostId: room?.hostId,
       gameState: room?.state,
       players: room ? Array.from(room.players.values()) : []

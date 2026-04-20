@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isWithinRecess, type RecessWindowRow } from "./recess";
 import { persistRecessPause } from "./lifecycle";
-import { deleteRoom, listRooms, type TicTacToeRoom } from "./tictactoeRoom";
+import { deleteRoom, listRooms, type Room } from "./room";
 
 /**
  * Shape of the Socket.io surface we depend on. Kept narrow so tests can
@@ -23,7 +23,7 @@ export interface RecessEndSweepDeps {
   loadSchedules: () => Promise<RecessWindowRow[]>;
   io: RecessIoShape;
   now?: () => Date;
-  rooms?: () => TicTacToeRoom[];
+  rooms?: () => Room<unknown>[];
   remove?: (sessionId: string) => void;
 }
 

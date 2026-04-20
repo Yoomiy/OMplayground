@@ -3,8 +3,8 @@ import {
   recessEndSweep,
   type RecessIoShape
 } from "./recessSweep";
-import type { TicTacToeRoom } from "./tictactoeRoom";
-import { initialTicTacToeState } from "@playground/game-logic";
+import type { Room } from "./room";
+import { initialTicTacToeState, tictactoeModule } from "@playground/game-logic";
 
 /**
  * Milestone A — recess-end eviction.
@@ -87,10 +87,12 @@ function buildMockSupabase() {
   return { supabase, from, update, eq };
 }
 
-function roomWithState(sessionId: string): TicTacToeRoom {
+function roomWithState(sessionId: string): Room<unknown> {
   return {
     sessionId,
     gameId: "g1",
+    gameKey: tictactoeModule.key,
+    module: tictactoeModule as unknown as Room<unknown>["module"],
     gender: "boy",
     hostId: "host-user",
     minPlayers: 2,

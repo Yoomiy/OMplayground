@@ -1,3 +1,5 @@
+import type { GameModule, GameOutcome, GameSeat } from "./registry";
+
 export type Player = "X" | "O";
 export type Cell = Player | null;
 
@@ -7,6 +9,8 @@ export interface TicTacToeState {
   status: "playing" | "draw" | "won";
   winner: Player | null;
   winningLine: number[] | null;
+  /** userId → symbol, populated by the module when seating players. */
+  seats?: Record<string, Player>;
 }
 
 export type TicTacToeIntent =
@@ -109,6 +113,7 @@ export function applyTicTacToeIntent(
   if (win) {
     return {
       state: {
+        ...state,
         board,
         next: player,
         status: "won",
@@ -122,6 +127,7 @@ export function applyTicTacToeIntent(
   if (isDraw) {
     return {
       state: {
+        ...state,
         board,
         next: player,
         status: "draw",
@@ -133,6 +139,7 @@ export function applyTicTacToeIntent(
 
   return {
     state: {
+      ...state,
       board,
       next: player === "X" ? "O" : "X",
       status: "playing",
@@ -141,3 +148,61 @@ export function applyTicTacToeIntent(
     }
   };
 }
+
+export interface TicTacToeIntentPayload {
+  cellIndex: number;
+}
+
+/**
+ * Wraps the pure reducer in the generic GameModule contract. Seat→symbol
+ * assignment happens in `initialState`; `applyIntent` looks up the symbol
+ * from `state.seats` rather than trusting the client.
+ */
+export const tictactoeModule: GameModule<TicTacToeState, TicTacToeIntentPayload> =
+  {
+    key: "tictactoe",
+    minPlayers: 2,
+    maxPlayers: 2,
+    initialState(players: GameSeat[]) {
+      const seats: Record<string, Player> = {};
+      players.forEach((p, i) => {
+        seats[p.userId] = i === 0 ? "X" : "O";
+      });
+      return { ...initialTicTacToeState(), seats };
+    },
+    applyIntent(state, playerId, intent) {
+      const cellIndex = (intent as { cellIndex?: unknown } | null | undefined)
+        ?.cellIndex;
+      if (typeof cellIndex !== "number") {
+        return {
+          ok: false,
+          error: { code: "BAD_INTENT", message: "cellIndex required" }
+        };
+      }
+      const symbol = state.seats?.[playerId];
+      if (!symbol) {
+        return {
+          ok: false,
+          error: { code: "NOT_IN_ROOM", message: "Player not in session" }
+        };
+      }
+      const res = applyTicTacToeIntent(state, {
+        type: "MOVE",
+        cellIndex,
+        player: symbol
+      });
+      if (res.error) {
+        return { ok: false, error: res.error };
+      }
+      let outcome: GameOutcome | undefined;
+      if (res.state.status === "won" && res.state.winner) {
+        outcome = { kind: "won", winner: res.state.winner };
+      } else if (res.state.status === "draw") {
+        outcome = { kind: "draw" };
+      }
+      return { ok: true, state: res.state, outcome };
+    },
+    isTerminal(state) {
+      return state.status === "won" || state.status === "draw";
+    }
+  };

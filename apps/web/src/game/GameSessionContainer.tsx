@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { io, type Socket } from "socket.io-client";
 import type { TicTacToeState } from "@playground/game-logic";
@@ -6,25 +6,48 @@ import { supabase } from "@/lib/supabase";
 import { TicTacToeBoard } from "@/games/TicTacToeBoard";
 
 type RoomEvent =
-  | { kind: "GAME_ENDED"; outcome: { kind: "won"; winner: "X" | "O" } | { kind: "draw" } }
+  | {
+      kind: "GAME_ENDED";
+      outcome: { kind: "won"; winner: string } | { kind: "draw" };
+    }
   | { kind: "GAME_STOPPED"; stoppedBy?: string }
   | { kind: "HOST_LEFT"; newHostId?: string }
   | { kind: "RECESS_ENDED" };
 
 type EndOverlay =
-  | { kind: "won"; winner: "X" | "O" }
+  | { kind: "won"; winner: string }
   | { kind: "draw" }
   | { kind: "stopped" };
 
 function endOverlayHeadline(
   overlay: EndOverlay,
-  mySymbol: "X" | "O" | null
+  mySymbol: string | null
 ): string {
   if (overlay.kind === "draw") return "תיקו!";
   if (overlay.kind === "stopped") return "המארח עצר את המשחק";
   if (mySymbol && overlay.winner === mySymbol) return "ניצחת!";
   return "הפסדת";
 }
+
+/**
+ * Map of `gameKey` (matches `games.game_url`) → client board renderer.
+ * The container stays game-agnostic; new games just register here.
+ */
+interface BoardProps {
+  gameState: unknown;
+  mySymbol: string | null;
+  onIntent: (intent: unknown) => void;
+}
+
+const BOARD_REGISTRY: Record<string, (props: BoardProps) => JSX.Element> = {
+  tictactoe: ({ gameState, mySymbol, onIntent }) => (
+    <TicTacToeBoard
+      gameState={gameState as TicTacToeState}
+      mySymbol={mySymbol === "X" || mySymbol === "O" ? mySymbol : null}
+      onCellPress={(i) => onIntent({ cellIndex: i })}
+    />
+  )
+};
 
 /** In dev, prefer same-origin + Vite proxy so the browser does not hit :8080 directly (avoids wrong URL / CORS). */
 function gameServerUrl(): string {
@@ -63,8 +86,8 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
   const navigate = useNavigate();
   const socketRef = useRef<Socket | null>(null);
   const recessEndedRef = useRef(false);
-  const [gameState, setGameState] = useState<TicTacToeState | null>(null);
-  const [mySymbol, setMySymbol] = useState<"X" | "O" | null>(null);
+  const [gameKey, setGameKey] = useState<string | null>(null);
+  const [gameState, setGameState] = useState<unknown>(null);
   const [status, setStatus] = useState<string>("מתחבר…");
   const [hostId, setHostId] = useState<string | null>(null);
   const [myUserId, setMyUserId] = useState<string | null>(null);
@@ -100,17 +123,9 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         s.emit(
           "JOIN_ROOM",
           { sessionId },
-          (ack: {
-            ok?: boolean;
-            error?: { message?: string };
-            player?: { symbol: "X" | "O" };
-          }) => {
+          (ack: { ok?: boolean; error?: { message?: string } }) => {
             if (!ack?.ok) {
               setStatus(ack?.error?.message ?? "הצטרפות לחדר נכשלה");
-              return;
-            }
-            if (ack.player?.symbol) {
-              setMySymbol(ack.player.symbol);
             }
           }
         );
@@ -118,8 +133,15 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
 
       s.on(
         "ROOM_SNAPSHOT",
-        (payload: { gameState?: TicTacToeState; hostId?: string }) => {
-          if (payload?.gameState) {
+        (payload: {
+          gameKey?: string;
+          gameState?: unknown;
+          hostId?: string;
+        }) => {
+          if (payload?.gameKey) {
+            setGameKey(payload.gameKey);
+          }
+          if (payload?.gameState !== undefined) {
             setGameState(payload.gameState);
           }
           if (payload?.hostId) {
@@ -209,8 +231,8 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
     );
   }, [chatDraft, sessionId]);
 
-  const onCellPress = useCallback(
-    (index: number) => {
+  const onIntent = useCallback(
+    (intent: unknown) => {
       const s = socketRef.current;
       if (!s?.connected) {
         setStatus("אין חיבור פעיל");
@@ -218,7 +240,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
       }
       s.emit(
         "INTENT_GAME",
-        { sessionId, cellIndex: index },
+        { sessionId, intent },
         (ack: { ok?: boolean; error?: { message?: string } }) => {
           if (!ack?.ok) {
             setStatus(ack?.error?.message ?? "מהלך לא חוקי");
@@ -229,10 +251,19 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
     [sessionId]
   );
 
-  if (!gameState) {
+  /** Derived from authoritative state so clients never diverge on seat order. */
+  const mySymbol = useMemo<string | null>(() => {
+    const seats = (gameState as { seats?: Record<string, string> } | null)
+      ?.seats;
+    if (!seats || !myUserId) return null;
+    return seats[myUserId] ?? null;
+  }, [gameState, myUserId]);
+
+  if (!gameState || !gameKey) {
     return <p className="text-sm text-slate-400">{status}</p>;
   }
 
+  const Board = BOARD_REGISTRY[gameKey];
   const iAmHost = myUserId != null && hostId != null && myUserId === hostId;
 
   return (
@@ -246,11 +277,13 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
           {toast}
         </div>
       )}
-      <TicTacToeBoard
-        gameState={gameState}
-        mySymbol={mySymbol}
-        onCellPress={onCellPress}
-      />
+      {Board ? (
+        <Board gameState={gameState} mySymbol={mySymbol} onIntent={onIntent} />
+      ) : (
+        <p className="text-sm text-amber-300">
+          משחק לא נתמך בלקוח: {gameKey}
+        </p>
+      )}
       {iAmHost && !endOverlay && (
         <button
           type="button"

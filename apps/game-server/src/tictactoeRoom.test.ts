@@ -1,13 +1,16 @@
+import { tictactoeModule } from "@playground/game-logic";
 import {
   assignPlayer,
   getOrCreateRoom,
   removePlayerFromRoom
-} from "./tictactoeRoom";
+} from "./room";
 
-describe("TicTacToe room / host transfer", () => {
+describe("Room / host transfer", () => {
   it("transfers host to the remaining player when host disconnects", () => {
     const room = getOrCreateRoom("sess-1", {
       gameId: "g1",
+      gameKey: tictactoeModule.key,
+      module: tictactoeModule,
       gender: "boy",
       hostId: "host-user"
     });

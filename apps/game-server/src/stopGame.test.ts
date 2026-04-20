@@ -1,9 +1,10 @@
+import { tictactoeModule } from "@playground/game-logic";
 import { persistGameStopped } from "./lifecycle";
 import {
   assignPlayer,
   canStopGame,
   getOrCreateRoom
-} from "./tictactoeRoom";
+} from "./room";
 
 /**
  * Milestone A — STOP_GAME intent.
@@ -17,6 +18,8 @@ describe("STOP_GAME / canStopGame guard", () => {
   it("allows the host to stop the game", () => {
     const room = getOrCreateRoom("sess-stop-1", {
       gameId: "g1",
+      gameKey: tictactoeModule.key,
+      module: tictactoeModule,
       gender: "boy",
       hostId: "host-user"
     });
@@ -30,6 +33,8 @@ describe("STOP_GAME / canStopGame guard", () => {
   it("rejects a non-host with NOT_HOST", () => {
     const room = getOrCreateRoom("sess-stop-2", {
       gameId: "g1",
+      gameKey: tictactoeModule.key,
+      module: tictactoeModule,
       gender: "boy",
       hostId: "host-user"
     });
@@ -46,6 +51,8 @@ describe("STOP_GAME / canStopGame guard", () => {
   it("rejects a caller that is not in the room with NOT_IN_ROOM", () => {
     const room = getOrCreateRoom("sess-stop-3", {
       gameId: "g1",
+      gameKey: tictactoeModule.key,
+      module: tictactoeModule,
       gender: "boy",
       hostId: "host-user"
     });

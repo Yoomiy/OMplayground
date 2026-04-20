@@ -1,9 +1,10 @@
+import { tictactoeModule } from "@playground/game-logic";
 import { persistPlayerLeave } from "./sessionPersistence";
 import {
   assignPlayer,
   getOrCreateRoom,
   removePlayerFromRoom
-} from "./tictactoeRoom";
+} from "./room";
 
 /**
  * Layer 2 — LEAVE_ROOM intent must trigger the same persistence + host
@@ -30,6 +31,8 @@ describe("LEAVE_ROOM persistence (mirrors disconnect)", () => {
     const sessionId = "sess-leave-1";
     const room = getOrCreateRoom(sessionId, {
       gameId: "g1",
+      gameKey: tictactoeModule.key,
+      module: tictactoeModule,
       gender: "boy",
       hostId: "host-user"
     });
@@ -54,6 +57,8 @@ describe("LEAVE_ROOM persistence (mirrors disconnect)", () => {
     const sessionId = "sess-leave-2";
     const room = getOrCreateRoom(sessionId, {
       gameId: "g1",
+      gameKey: tictactoeModule.key,
+      module: tictactoeModule,
       gender: "girl",
       hostId: "solo-user"
     });
