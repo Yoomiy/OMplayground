@@ -1,8 +1,30 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { io, type Socket } from "socket.io-client";
 import type { TicTacToeState } from "@playground/game-logic";
 import { supabase } from "@/lib/supabase";
 import { TicTacToeBoard } from "@/games/TicTacToeBoard";
+
+type RoomEvent =
+  | { kind: "GAME_ENDED"; outcome: { kind: "won"; winner: "X" | "O" } | { kind: "draw" } }
+  | { kind: "GAME_STOPPED"; stoppedBy?: string }
+  | { kind: "HOST_LEFT"; newHostId?: string }
+  | { kind: "RECESS_ENDED" };
+
+type EndOverlay =
+  | { kind: "won"; winner: "X" | "O" }
+  | { kind: "draw" }
+  | { kind: "stopped" };
+
+function endOverlayHeadline(
+  overlay: EndOverlay,
+  mySymbol: "X" | "O" | null
+): string {
+  if (overlay.kind === "draw") return "תיקו!";
+  if (overlay.kind === "stopped") return "המארח עצר את המשחק";
+  if (mySymbol && overlay.winner === mySymbol) return "ניצחת!";
+  return "הפסדת";
+}
 
 /** In dev, prefer same-origin + Vite proxy so the browser does not hit :8080 directly (avoids wrong URL / CORS). */
 function gameServerUrl(): string {
@@ -38,10 +60,16 @@ export interface GameSessionContainerProps {
 }
 
 export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
+  const navigate = useNavigate();
   const socketRef = useRef<Socket | null>(null);
+  const recessEndedRef = useRef(false);
   const [gameState, setGameState] = useState<TicTacToeState | null>(null);
   const [mySymbol, setMySymbol] = useState<"X" | "O" | null>(null);
   const [status, setStatus] = useState<string>("מתחבר…");
+  const [hostId, setHostId] = useState<string | null>(null);
+  const [myUserId, setMyUserId] = useState<string | null>(null);
+  const [endOverlay, setEndOverlay] = useState<EndOverlay | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
   const [chatDraft, setChatDraft] = useState("");
   const [chatLines, setChatLines] = useState<
     { senderName: string; message: string }[]
@@ -58,6 +86,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         return;
       }
       if (cancelled) return;
+      setMyUserId(data.session?.user.id ?? null);
 
       const s = io(gameServerUrl(), {
         auth: { token },
@@ -87,9 +116,39 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         );
       });
 
-      s.on("ROOM_SNAPSHOT", (payload: { gameState?: TicTacToeState }) => {
-        if (payload?.gameState) {
-          setGameState(payload.gameState);
+      s.on(
+        "ROOM_SNAPSHOT",
+        (payload: { gameState?: TicTacToeState; hostId?: string }) => {
+          if (payload?.gameState) {
+            setGameState(payload.gameState);
+          }
+          if (payload?.hostId) {
+            setHostId(payload.hostId);
+          }
+        }
+      );
+
+      s.on("ROOM_EVENT", (ev: RoomEvent) => {
+        switch (ev.kind) {
+          case "GAME_ENDED":
+            setEndOverlay(ev.outcome);
+            return;
+          case "GAME_STOPPED":
+            setEndOverlay({ kind: "stopped" });
+            return;
+          case "HOST_LEFT":
+            setToast("המארח עזב — הקברניט הוחלף");
+            return;
+          case "RECESS_ENDED":
+            recessEndedRef.current = true;
+            setToast("ההפסקה הסתיימה");
+            return;
+        }
+      });
+
+      s.on("disconnect", () => {
+        if (recessEndedRef.current) {
+          navigate("/login", { replace: true });
         }
       });
 
@@ -117,6 +176,20 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
       socketRef.current?.disconnect();
       socketRef.current = null;
     };
+  }, [sessionId]);
+
+  const stopGame = useCallback(() => {
+    const s = socketRef.current;
+    if (!s?.connected) return;
+    s.emit(
+      "STOP_GAME",
+      { sessionId },
+      (ack: { ok?: boolean; error?: { message?: string } }) => {
+        if (!ack?.ok) {
+          setStatus(ack?.error?.message ?? "עצירה נכשלה");
+        }
+      }
+    );
   }, [sessionId]);
 
   const sendChat = useCallback(() => {
@@ -160,14 +233,53 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
     return <p className="text-sm text-slate-400">{status}</p>;
   }
 
+  const iAmHost = myUserId != null && hostId != null && myUserId === hostId;
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-slate-400">{status}</p>
+      {toast && (
+        <div
+          role="status"
+          className="rounded border border-amber-500 bg-amber-950/60 px-3 py-2 text-sm text-amber-100"
+        >
+          {toast}
+        </div>
+      )}
       <TicTacToeBoard
         gameState={gameState}
         mySymbol={mySymbol}
         onCellPress={onCellPress}
       />
+      {iAmHost && !endOverlay && (
+        <button
+          type="button"
+          className="rounded bg-rose-700 px-3 py-1 text-sm text-white hover:bg-rose-600"
+          onClick={() => stopGame()}
+        >
+          עצור משחק
+        </button>
+      )}
+      {endOverlay && (
+        <div
+          role="alertdialog"
+          aria-label="המשחק הסתיים"
+          className="rounded-lg border border-slate-600 bg-slate-900 p-4 text-center"
+        >
+          <p className="text-lg font-bold text-slate-100">
+            {endOverlayHeadline(endOverlay, mySymbol)}
+          </p>
+          <div className="mt-3 flex justify-center gap-2">
+            <button
+              type="button"
+              className="rounded bg-indigo-600 px-3 py-1 text-sm text-white hover:bg-indigo-500"
+              onClick={() => navigate("/home")}
+            >
+              חזרה הביתה
+            </button>
+          </div>
+        </div>
+      )}
       <section className="space-y-2 rounded-lg border border-slate-700 bg-slate-900/50 p-3">
         <h2 className="text-sm font-medium text-slate-300">צ׳אט במשחק</h2>
         <ul className="max-h-40 space-y-1 overflow-y-auto text-sm text-slate-200">

@@ -62,6 +62,15 @@ export function getRoom(sessionId: string): TicTacToeRoom | undefined {
   return rooms.get(sessionId);
 }
 
+/** Snapshot of live rooms for room-wide sweeps (recess end, cleanup). */
+export function listRooms(): TicTacToeRoom[] {
+  return Array.from(rooms.values());
+}
+
+export function deleteRoom(sessionId: string): void {
+  rooms.delete(sessionId);
+}
+
 /**
  * Removes a socket/player. If the host disconnects, transfers host to another remaining player.
  */
@@ -102,6 +111,29 @@ export function assignPlayer(
   const player: RoomPlayer = { userId, displayName, symbol };
   room.players.set(userId, player);
   return { player };
+}
+
+/**
+ * Host-only guard for the STOP_GAME intent. Returns ok when the caller is
+ * the room's current host; otherwise a structured error.
+ */
+export function canStopGame(
+  room: TicTacToeRoom,
+  userId: string
+): { ok: true } | { ok: false; error: { code: string; message: string } } {
+  if (!room.players.has(userId)) {
+    return {
+      ok: false,
+      error: { code: "NOT_IN_ROOM", message: "Player not in session" }
+    };
+  }
+  if (room.hostId !== userId) {
+    return {
+      ok: false,
+      error: { code: "NOT_HOST", message: "Only the host can stop the game" }
+    };
+  }
+  return { ok: true };
 }
 
 export function applyMove(

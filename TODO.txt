@@ -1,0 +1,12 @@
+1. Create admin interface
+2. add functionality to teacher interface
+3. audio messages
+4. avatars
+5. [DONE milestone A] handle recess end / schedule change
+6. [DONE milestone B] add pop-up for friend request
+7. [DONE milestone A] handle game end
+8. [DONE milestone A] handle game stop
+9. fix tsc error in apps/web/src/game/GameSessionContainer.tsx CHAT_MESSAGE handler: payload.message narrowing lost inside setChatLines callback (TS2345, string | undefined vs string)
+10. add a way to list resume paused games.
+11. paused -> competed after game ends
+12. 

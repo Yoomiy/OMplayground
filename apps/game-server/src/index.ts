@@ -15,6 +15,8 @@ import { isWithinRecess } from "./recess";
 import {
   assignPlayer,
   applyMove,
+  canStopGame,
+  deleteRoom,
   getOrCreateRoom,
   isRoomIdle,
   getRoom,
@@ -24,6 +26,12 @@ import {
   persistPlayerJoin,
   persistPlayerLeave
 } from "./sessionPersistence";
+import {
+  cleanupStalePausedSessions,
+  persistGameEnded,
+  persistGameStopped
+} from "./lifecycle";
+import { createRecessSweepState, recessEndSweep } from "./recessSweep";
 
 const PORT = Number(process.env.PORT ?? 8080);
 /** localhost vs 127.0.0.1 are different origins — allow both for local Vite */
@@ -266,19 +274,6 @@ io.on("connection", (socket) => {
         ack?.({ ok: false, error: res.error });
         return;
       }
-      if (
-        supabaseAdmin &&
-        (res.state.status === "won" || res.state.status === "draw")
-      ) {
-        void supabaseAdmin
-          .from("game_sessions")
-          .update({
-            status: "completed",
-            game_state: res.state as unknown as Record<string, unknown>,
-            last_activity: new Date().toISOString()
-          })
-          .eq("id", sessionId);
-      }
       io.to(`session:${sessionId}`).emit("ROOM_SNAPSHOT", {
         sessionId,
         gameKey: "tictactoe",
@@ -286,7 +281,71 @@ io.on("connection", (socket) => {
         gameState: res.state,
         players: Array.from(room.players.values())
       });
+      if (res.state.status === "won" || res.state.status === "draw") {
+        const outcome =
+          res.state.status === "won"
+            ? { kind: "won" as const, winner: res.state.winner }
+            : { kind: "draw" as const };
+        io.to(`session:${sessionId}`).emit("ROOM_EVENT", {
+          sessionId,
+          kind: "GAME_ENDED",
+          outcome
+        });
+        if (supabaseAdmin) {
+          void persistGameEnded({
+            supabase: supabaseAdmin,
+            sessionId,
+            gameState: res.state
+          });
+        }
+      }
       ack?.({ ok: true, gameState: res.state });
+    }
+  );
+
+  socket.on(
+    "STOP_GAME",
+    async (
+      payload: { sessionId?: string } | undefined,
+      ack?: (r: unknown) => void
+    ) => {
+      const sessionId =
+        payload?.sessionId ?? (socket.data.sessionId as string | undefined);
+      if (!sessionId) {
+        ack?.({
+          ok: false,
+          error: { code: "BAD_REQUEST", message: "sessionId required" }
+        });
+        return;
+      }
+      const room = getRoom(sessionId);
+      if (!room) {
+        ack?.({
+          ok: false,
+          error: { code: "NOT_FOUND", message: "Room not loaded" }
+        });
+        return;
+      }
+      const guard = canStopGame(room, userId);
+      if (!guard.ok) {
+        ack?.({ ok: false, error: guard.error });
+        return;
+      }
+      io.to(`session:${sessionId}`).emit("ROOM_EVENT", {
+        sessionId,
+        kind: "GAME_STOPPED",
+        stoppedBy: userId
+      });
+      if (supabaseAdmin) {
+        void persistGameStopped({
+          supabase: supabaseAdmin,
+          sessionId,
+          stoppedBy: userId,
+          gameState: room.state
+        });
+      }
+      deleteRoom(sessionId);
+      ack?.({ ok: true });
     }
   );
 
@@ -346,6 +405,13 @@ io.on("connection", (socket) => {
       void persistPlayerLeave({ supabase: supabaseAdmin, sessionId, result });
     }
     const room = getRoom(sessionId);
+    if (result.newHostId) {
+      io.to(`session:${sessionId}`).emit("ROOM_EVENT", {
+        sessionId,
+        kind: "HOST_LEFT",
+        newHostId: result.newHostId
+      });
+    }
     io.to(`session:${sessionId}`).emit("ROOM_SNAPSHOT", {
       sessionId,
       gameKey: "tictactoe",
@@ -386,6 +452,34 @@ io.on("connection", (socket) => {
     }
   });
 });
+
+/**
+ * Recess-end sweep runs every 30s. The logic lives in recessSweep.ts so
+ * it is unit-testable; here we only inject runtime dependencies and wire
+ * the timer.
+ */
+const RECESS_TICK_MS = 30_000;
+const recessSweepState = createRecessSweepState();
+const recessTimer = setInterval(() => {
+  void recessEndSweep(recessSweepState, {
+    supabase: supabaseAdmin,
+    loadSchedules: loadRecessSchedules,
+    io
+  });
+}, RECESS_TICK_MS);
+recessTimer.unref?.();
+
+/** Stale-pause cleanup: pause → completed for rooms untouched for >24h. */
+const STALE_PAUSE_MS = 24 * 60 * 60 * 1000;
+const CLEANUP_TICK_MS = 60 * 60 * 1000;
+const cleanupTimer = setInterval(() => {
+  if (!supabaseAdmin) return;
+  void cleanupStalePausedSessions({
+    supabase: supabaseAdmin,
+    olderThanMs: STALE_PAUSE_MS
+  });
+}, CLEANUP_TICK_MS);
+cleanupTimer.unref?.();
 
 server.listen(PORT, () => {
   console.log(`game-server listening on ${PORT}`);
