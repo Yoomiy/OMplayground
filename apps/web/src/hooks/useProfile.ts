@@ -13,7 +13,6 @@ export interface KidProfileRow {
   avatar_color: string;
   avatar_preset_id: string | null;
   avatar_url: string | null;
-  pending_challenge: unknown;
   unread_message_count: number;
 }
 
@@ -34,7 +33,7 @@ export function useProfile(user: User | null) {
       const { data, error: qErr } = await supabase
         .from("kid_profiles")
         .select(
-          "id, username, full_name, gender, grade, role, is_active, avatar_color, avatar_preset_id, avatar_url, pending_challenge, unread_message_count"
+          "id, username, full_name, gender, grade, role, is_active, avatar_color, avatar_preset_id, avatar_url, unread_message_count"
         )
         .eq("id", user.id)
         .maybeSingle();

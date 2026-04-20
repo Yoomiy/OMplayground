@@ -1,0 +1,71 @@
+import { persistPlayerLeave } from "./sessionPersistence";
+import {
+  assignPlayer,
+  getOrCreateRoom,
+  removePlayerFromRoom
+} from "./tictactoeRoom";
+
+/**
+ * Layer 2 — LEAVE_ROOM intent must trigger the same persistence + host
+ * transfer as a raw disconnect. We cover both legs:
+ *   - host leaves with another player still connected -> write host_id
+ *   - last player leaves -> write status='paused'
+ */
+describe("LEAVE_ROOM persistence (mirrors disconnect)", () => {
+  function makeMockSupabase() {
+    const eq = jest.fn().mockResolvedValue({ data: null, error: null });
+    const update = jest.fn().mockReturnValue({ eq });
+    const from = jest.fn().mockReturnValue({ update });
+    return {
+      supabase: { from } as unknown as Parameters<
+        typeof persistPlayerLeave
+      >[0]["supabase"],
+      from,
+      update,
+      eq
+    };
+  }
+
+  it("writes the new host_id when the host leaves with others remaining", async () => {
+    const sessionId = "sess-leave-1";
+    const room = getOrCreateRoom(sessionId, {
+      gameId: "g1",
+      gender: "boy",
+      hostId: "host-user"
+    });
+    assignPlayer(room, "host-user", "Host");
+    assignPlayer(room, "guest-user", "Guest");
+
+    const result = removePlayerFromRoom(sessionId, "host-user");
+    expect(result.newHostId).toBe("guest-user");
+    expect(result.roomEmpty).toBe(false);
+
+    const m = makeMockSupabase();
+    await persistPlayerLeave({ supabase: m.supabase, sessionId, result });
+
+    expect(m.from).toHaveBeenCalledWith("game_sessions");
+    expect(m.update).toHaveBeenCalledTimes(1);
+    const payload = m.update.mock.calls[0][0] as { host_id: string };
+    expect(payload.host_id).toBe("guest-user");
+    expect(m.eq).toHaveBeenCalledWith("id", sessionId);
+  });
+
+  it("writes status='paused' when the last player leaves", async () => {
+    const sessionId = "sess-leave-2";
+    const room = getOrCreateRoom(sessionId, {
+      gameId: "g1",
+      gender: "girl",
+      hostId: "solo-user"
+    });
+    assignPlayer(room, "solo-user", "Solo");
+    const result = removePlayerFromRoom(sessionId, "solo-user");
+    expect(result.roomEmpty).toBe(true);
+
+    const m = makeMockSupabase();
+    await persistPlayerLeave({ supabase: m.supabase, sessionId, result });
+
+    expect(m.update).toHaveBeenCalledTimes(1);
+    const payload = m.update.mock.calls[0][0] as { status: string };
+    expect(payload.status).toBe("paused");
+  });
+});

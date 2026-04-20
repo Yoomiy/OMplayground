@@ -19,6 +19,10 @@ import {
   getRoom,
   removePlayerFromRoom
 } from "./tictactoeRoom";
+import {
+  persistPlayerJoin,
+  persistPlayerLeave
+} from "./sessionPersistence";
 
 const PORT = Number(process.env.PORT ?? 8080);
 /** localhost vs 127.0.0.1 are different origins — allow both for local Vite */
@@ -188,7 +192,9 @@ io.on("connection", (socket) => {
       }
       const { data: session, error } = await supabaseAdmin
         .from("game_sessions")
-        .select("id, game_id, gender, player_ids, host_id")
+        .select(
+          "id, game_id, gender, player_ids, player_names, host_id, status"
+        )
         .eq("id", sessionId)
         .maybeSingle();
       if (error || !session) {
@@ -214,6 +220,22 @@ io.on("connection", (socket) => {
       }
       await socket.join(`session:${sessionId}`);
       socket.data.sessionId = sessionId;
+      void persistPlayerJoin({
+        supabase: supabaseAdmin,
+        sessionId,
+        session: {
+          player_ids: (session.player_ids as string[]) ?? [],
+          player_names: (session.player_names as string[]) ?? [],
+          status: session.status as
+            | "waiting"
+            | "playing"
+            | "paused"
+            | "completed"
+        },
+        userId,
+        displayName,
+        roomStatusIsIdle: room.state.status === "idle"
+      });
       io.to(`session:${sessionId}`).emit("ROOM_SNAPSHOT", {
         sessionId,
         gameKey: "tictactoe",
@@ -316,36 +338,50 @@ io.on("connection", (socket) => {
     }
   );
 
+  async function handleLeave(sessionId: string) {
+    if (!userId) return;
+    const result = removePlayerFromRoom(sessionId, userId);
+    if (supabaseAdmin) {
+      void persistPlayerLeave({ supabase: supabaseAdmin, sessionId, result });
+    }
+    const room = getRoom(sessionId);
+    io.to(`session:${sessionId}`).emit("ROOM_SNAPSHOT", {
+      sessionId,
+      gameKey: "tictactoe",
+      hostId: room?.hostId,
+      gameState: room?.state,
+      players: room ? Array.from(room.players.values()) : []
+    });
+    await socket.leave(`session:${sessionId}`);
+    if (socket.data.sessionId === sessionId) {
+      socket.data.sessionId = undefined;
+    }
+  }
+
+  socket.on(
+    "LEAVE_ROOM",
+    async (
+      payload: { sessionId?: string } | undefined,
+      ack?: (r: unknown) => void
+    ) => {
+      const sessionId =
+        payload?.sessionId ?? (socket.data.sessionId as string | undefined);
+      if (!sessionId) {
+        ack?.({
+          ok: false,
+          error: { code: "BAD_REQUEST", message: "sessionId required" }
+        });
+        return;
+      }
+      await handleLeave(sessionId);
+      ack?.({ ok: true });
+    }
+  );
+
   socket.on("disconnect", () => {
     const sessionId = socket.data.sessionId as string | undefined;
     if (sessionId && userId) {
-      const result = removePlayerFromRoom(sessionId, userId);
-      if (result.newHostId && supabaseAdmin) {
-        void supabaseAdmin
-          .from("game_sessions")
-          .update({
-            host_id: result.newHostId,
-            last_activity: new Date().toISOString()
-          })
-          .eq("id", sessionId);
-      }
-      if (result.roomEmpty && supabaseAdmin) {
-        void supabaseAdmin
-          .from("game_sessions")
-          .update({
-            status: "paused",
-            last_activity: new Date().toISOString()
-          })
-          .eq("id", sessionId);
-      }
-      const room = getRoom(sessionId);
-      io.to(`session:${sessionId}`).emit("ROOM_SNAPSHOT", {
-        sessionId,
-        gameKey: "tictactoe",
-        hostId: room?.hostId,
-        gameState: room?.state,
-        players: room ? Array.from(room.players.values()) : []
-      });
+      void handleLeave(sessionId);
     }
   });
 });

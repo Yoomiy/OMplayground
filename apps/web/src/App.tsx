@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { PresenceProvider } from "@/hooks/usePresence";
+import { PendingChallengeBanner } from "@/components/PendingChallengeBanner";
 import { LoginPage } from "@/pages/LoginPage";
 import { RegisterPage } from "@/pages/RegisterPage";
 import { HomePage } from "@/pages/HomePage";
@@ -9,6 +11,7 @@ import { InboxPage } from "@/pages/InboxPage";
 import { PlayPage } from "@/pages/PlayPage";
 import { TeacherPage } from "@/pages/TeacherPage";
 import { AdminPage } from "@/pages/AdminPage";
+import { JoinByCodePage } from "@/pages/JoinByCodePage";
 
 function Protected({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
@@ -28,59 +31,70 @@ function Protected({ children }: { children: ReactNode }) {
 export default function App() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route
-          path="/home"
-          element={
-            <Protected>
-              <HomePage />
-            </Protected>
-          }
-        />
-        <Route
-          path="/friends"
-          element={
-            <Protected>
-              <FriendsPage />
-            </Protected>
-          }
-        />
-        <Route
-          path="/inbox"
-          element={
-            <Protected>
-              <InboxPage />
-            </Protected>
-          }
-        />
-        <Route
-          path="/teacher"
-          element={
-            <Protected>
-              <TeacherPage />
-            </Protected>
-          }
-        />
-        <Route
-          path="/admin"
-          element={
-            <Protected>
-              <AdminPage />
-            </Protected>
-          }
-        />
-        <Route
-          path="/play/:sessionId"
-          element={
-            <Protected>
-              <PlayPage />
-            </Protected>
-          }
-        />
-        <Route path="/" element={<Navigate to="/home" replace />} />
-      </Routes>
+      <PresenceProvider>
+        <PendingChallengeBanner />
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route
+            path="/home"
+            element={
+              <Protected>
+                <HomePage />
+              </Protected>
+            }
+          />
+          <Route
+            path="/friends"
+            element={
+              <Protected>
+                <FriendsPage />
+              </Protected>
+            }
+          />
+          <Route
+            path="/inbox"
+            element={
+              <Protected>
+                <InboxPage />
+              </Protected>
+            }
+          />
+          <Route
+            path="/teacher"
+            element={
+              <Protected>
+                <TeacherPage />
+              </Protected>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <Protected>
+                <AdminPage />
+              </Protected>
+            }
+          />
+          <Route
+            path="/play/:sessionId"
+            element={
+              <Protected>
+                <PlayPage />
+              </Protected>
+            }
+          />
+          <Route
+            path="/join/:code"
+            element={
+              <Protected>
+                <JoinByCodePage />
+              </Protected>
+            }
+          />
+          <Route path="/" element={<Navigate to="/home" replace />} />
+        </Routes>
+      </PresenceProvider>
     </div>
   );
 }
