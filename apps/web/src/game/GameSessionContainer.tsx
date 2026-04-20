@@ -178,6 +178,10 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
           }
           if (payload?.gameState !== undefined) {
             setGameState(payload.gameState);
+            const st = payload.gameState as { status?: string };
+            if (st?.status === "playing") {
+              setEndOverlay(null);
+            }
           }
           if (payload?.hostId) {
             setHostId(payload.hostId);
@@ -230,6 +234,23 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
       (ack: { ok?: boolean; error?: { message?: string } }) => {
         if (!ack?.ok) {
           setStatus(ack?.error?.message ?? "עצירה נכשלה");
+        }
+      }
+    );
+  }, [sessionId]);
+
+  const requestRematch = useCallback(() => {
+    const s = socketRef.current;
+    if (!s?.connected) return;
+    s.emit(
+      "REMATCH",
+      { sessionId },
+      (ack: {
+        ok?: boolean;
+        error?: { code?: string; message?: string };
+      }) => {
+        if (!ack?.ok) {
+          setToast(ack?.error?.message ?? "משחק חוזר נכשל");
         }
       }
     );
@@ -343,7 +364,16 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
           <p className="text-lg font-bold text-slate-100">
             {endOverlayHeadline(endOverlay, mySymbol, isTeacherObserver)}
           </p>
-          <div className="mt-3 flex justify-center gap-2">
+          <div className="mt-3 flex flex-wrap justify-center gap-2">
+            {iAmHost && (
+              <button
+                type="button"
+                className="rounded bg-emerald-600 px-3 py-1 text-sm text-white hover:bg-emerald-500"
+                onClick={() => requestRematch()}
+              >
+                משחק חוזר
+              </button>
+            )}
             <button
               type="button"
               className="rounded bg-indigo-600 px-3 py-1 text-sm text-white hover:bg-indigo-500"

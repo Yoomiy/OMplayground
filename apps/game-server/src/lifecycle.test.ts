@@ -1,6 +1,7 @@
 import {
   cleanupStalePausedSessions,
   persistGameEnded,
+  persistGameRematch,
   persistGameStopped,
   persistRecessPause
 } from "./lifecycle";
@@ -61,6 +62,40 @@ describe("persistGameEnded", () => {
     expect(payload.ended_at).toBe("2026-04-21T10:00:00.000Z");
     expect(payload.last_activity).toBe("2026-04-21T10:00:00.000Z");
     expect(m.eq).toHaveBeenCalledWith("id", "sess-end");
+  });
+});
+
+describe("persistGameRematch", () => {
+  it("sets status='playing', clears ended_at and stopped_by, writes fresh game_state", async () => {
+    const m = makeMockSupabase();
+    const fresh = {
+      board: Array(9).fill(null),
+      next: "X",
+      status: "playing",
+      winner: null,
+      winningLine: null,
+      seats: {}
+    };
+    await persistGameRematch({
+      supabase: m.supabase,
+      sessionId: "sess-rematch",
+      gameState: fresh,
+      now: "2026-04-21T14:00:00.000Z"
+    });
+
+    const payload = m.update.mock.calls[0][0] as {
+      status: string;
+      game_state: typeof fresh;
+      ended_at: null;
+      stopped_by: null;
+      last_activity: string;
+    };
+    expect(payload.status).toBe("playing");
+    expect(payload.ended_at).toBeNull();
+    expect(payload.stopped_by).toBeNull();
+    expect(payload.game_state).toEqual(fresh);
+    expect(payload.last_activity).toBe("2026-04-21T14:00:00.000Z");
+    expect(m.eq).toHaveBeenCalledWith("id", "sess-rematch");
   });
 });
 

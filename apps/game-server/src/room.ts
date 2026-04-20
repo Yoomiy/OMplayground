@@ -42,7 +42,7 @@ export function getOrCreateRoom<State>(
     gender: "boy" | "girl";
     hostId: string;
     minPlayers?: number;
-    /** DB snapshot for `status='paused'` rows — skip idle `initialState` re-seeding. */
+    /** DB snapshot for `status='paused'|'completed'` rows — skip idle `initialState` re-seeding. */
     resumedState?: unknown;
   }
 ): Room<State> {

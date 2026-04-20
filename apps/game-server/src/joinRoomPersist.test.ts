@@ -125,4 +125,41 @@ describe("persistPlayerJoin", () => {
     const payload = m.update.mock.calls[0][0] as { status: string };
     expect(payload.status).toBe("playing");
   });
+
+  it("keeps status 'completed' when a new kid joins after a finished game (room not idle)", async () => {
+    const m = makeMockSupabase();
+    await persistPlayerJoin({
+      supabase: m.supabase,
+      sessionId: "sess-completed",
+      session: {
+        player_ids: ["host-1"],
+        player_names: ["Host"],
+        status: "completed"
+      },
+      userId: "guest-1",
+      displayName: "Guest",
+      roomStatusIsIdle: false
+    });
+    const payload = m.update.mock.calls[0][0] as { status: string };
+    expect(payload.status).toBe("completed");
+  });
+
+  it("does not issue an update when a kid reconnects to a completed session", async () => {
+    const m = makeMockSupabase();
+    const wrote = await persistPlayerJoin({
+      supabase: m.supabase,
+      sessionId: "sess-completed-2",
+      session: {
+        player_ids: ["host-1", "guest-1"],
+        player_names: ["Host", "Guest"],
+        status: "completed"
+      },
+      userId: "guest-1",
+      displayName: "Guest",
+      roomStatusIsIdle: false
+    });
+    expect(wrote).toBe(false);
+    expect(m.from).not.toHaveBeenCalled();
+    expect(m.update).not.toHaveBeenCalled();
+  });
 });

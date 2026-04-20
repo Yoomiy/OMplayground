@@ -14,7 +14,8 @@ import {
  */
 describe("LEAVE_ROOM persistence (mirrors disconnect)", () => {
   function makeMockSupabase() {
-    const eqGs = jest.fn().mockResolvedValue({ data: null, error: null });
+    const inGs = jest.fn().mockResolvedValue({ data: null, error: null });
+    const eqGs = jest.fn().mockReturnValue({ in: inGs });
     const updateGs = jest.fn().mockReturnValue({ eq: eqGs });
     const maybeSingleKp = jest
       .fn()
@@ -34,6 +35,7 @@ describe("LEAVE_ROOM persistence (mirrors disconnect)", () => {
       from,
       updateGs,
       eqGs,
+      inGs,
       selectKp,
       eqKp,
       maybeSingleKp
@@ -57,6 +59,7 @@ describe("LEAVE_ROOM persistence (mirrors disconnect)", () => {
     expect(result.roomEmpty).toBe(false);
 
     const m = makeMockSupabase();
+    m.eqGs.mockResolvedValue({ data: null, error: null } as never);
     await persistPlayerLeave({ supabase: m.supabase, sessionId, result });
 
     expect(m.from).toHaveBeenCalledWith("kid_profiles");
@@ -72,7 +75,7 @@ describe("LEAVE_ROOM persistence (mirrors disconnect)", () => {
     expect(m.eqGs).toHaveBeenCalledWith("id", sessionId);
   });
 
-  it("writes status='paused' when the last player leaves", async () => {
+  it("writes status='paused' when the last player leaves (only waiting/playing rows)", async () => {
     const sessionId = "sess-leave-2";
     const room = getOrCreateRoom(sessionId, {
       gameId: "g1",
@@ -91,5 +94,19 @@ describe("LEAVE_ROOM persistence (mirrors disconnect)", () => {
     expect(m.updateGs).toHaveBeenCalledTimes(1);
     const payload = m.updateGs.mock.calls[0][0] as { status: string };
     expect(payload.status).toBe("paused");
+    expect(m.inGs).toHaveBeenCalledWith("status", ["waiting", "playing"]);
+  });
+
+  it("does not downgrade completed rows when the last player leaves (filter only waiting/playing)", async () => {
+    const sessionId = "sess-leave-completed";
+    const m = makeMockSupabase();
+    await persistPlayerLeave({
+      supabase: m.supabase,
+      sessionId,
+      result: { roomEmpty: true }
+    });
+
+    expect(m.updateGs).toHaveBeenCalledTimes(1);
+    expect(m.inGs).toHaveBeenCalledWith("status", ["waiting", "playing"]);
   });
 });

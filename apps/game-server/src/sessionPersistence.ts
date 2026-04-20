@@ -47,12 +47,18 @@ export async function persistPlayerJoin(
   }
   const nextPlayerIds = Array.from(new Set([...session.player_ids, userId]));
   const nextPlayerNames = [...session.player_names, displayName];
+  const nextStatus =
+    session.status === "completed"
+      ? "completed"
+      : roomStatusIsIdle
+        ? session.status
+        : "playing";
   await supabase
     .from("game_sessions")
     .update({
       player_ids: nextPlayerIds,
       player_names: nextPlayerNames,
-      status: roomStatusIsIdle ? session.status : "playing",
+      status: nextStatus,
       last_activity: new Date().toISOString()
     })
     .eq("id", sessionId);
@@ -100,6 +106,7 @@ export async function persistPlayerLeave(
         status: "paused",
         last_activity: new Date().toISOString()
       })
-      .eq("id", sessionId);
+      .eq("id", sessionId)
+      .in("status", ["waiting", "playing"]);
   }
 }

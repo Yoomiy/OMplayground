@@ -52,6 +52,29 @@ export async function persistGameStopped(
     .eq("id", args.sessionId);
 }
 
+export interface PersistGameRematchArgs {
+  supabase: SupabaseClient;
+  sessionId: string;
+  gameState: unknown;
+  now?: string;
+}
+
+export async function persistGameRematch(
+  args: PersistGameRematchArgs
+): Promise<void> {
+  const now = args.now ?? new Date().toISOString();
+  await args.supabase
+    .from("game_sessions")
+    .update({
+      status: "playing",
+      game_state: args.gameState as Record<string, unknown>,
+      ended_at: null,
+      stopped_by: null,
+      last_activity: now
+    })
+    .eq("id", args.sessionId);
+}
+
 export interface PersistRecessPauseArgs {
   supabase: SupabaseClient;
   sessionId: string;

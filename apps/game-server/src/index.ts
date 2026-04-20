@@ -32,6 +32,7 @@ import {
 import {
   cleanupStalePausedSessions,
   persistGameEnded,
+  persistGameRematch,
   persistGameStopped
 } from "./lifecycle";
 import { createRecessSweepState, recessEndSweep } from "./recessSweep";
@@ -233,7 +234,8 @@ io.on("connection", (socket) => {
       }
       const sess = session as { status?: string; game_state?: unknown };
       const resumedState =
-        sess.status === "paused" && sess.game_state != null
+        (sess.status === "paused" || sess.status === "completed") &&
+        sess.game_state != null
           ? sess.game_state
           : undefined;
       const room = getOrCreateRoom(sessionId, {
@@ -394,6 +396,74 @@ io.on("connection", (socket) => {
         });
       }
       deleteRoom(sessionId);
+      ack?.({ ok: true });
+    }
+  );
+
+  socket.on(
+    "REMATCH",
+    (
+      payload: { sessionId?: string } | undefined,
+      ack?: (r: unknown) => void
+    ) => {
+      const sessionId =
+        payload?.sessionId ?? (socket.data.sessionId as string | undefined);
+      if (!sessionId) {
+        ack?.({
+          ok: false,
+          error: { code: "BAD_REQUEST", message: "sessionId required" }
+        });
+        return;
+      }
+      if (socket.data.role === "teacher") {
+        ack?.({
+          ok: false,
+          error: { code: "READ_ONLY", message: "Observers cannot rematch" }
+        });
+        return;
+      }
+      const room = getRoom(sessionId);
+      if (!room) {
+        ack?.({
+          ok: false,
+          error: { code: "NOT_FOUND", message: "Room not loaded" }
+        });
+        return;
+      }
+      const guard = canStopGame(room, userId);
+      if (!guard.ok) {
+        ack?.({ ok: false, error: guard.error });
+        return;
+      }
+      if (!room.module.isTerminal(room.state)) {
+        ack?.({
+          ok: false,
+          error: {
+            code: "NOT_TERMINAL",
+            message: "Rematch is only available after the game ends"
+          }
+        });
+        return;
+      }
+      const seats = Array.from(room.players.values()).map((p) => ({
+        userId: p.userId,
+        displayName: p.displayName
+      }));
+      room.state = room.module.initialState(seats);
+      if (supabaseAdmin) {
+        void persistGameRematch({
+          supabase: supabaseAdmin,
+          sessionId,
+          gameState: room.state
+        });
+      }
+      io.to(`session:${sessionId}`).emit("ROOM_SNAPSHOT", {
+        sessionId,
+        gameKey: room.gameKey,
+        hostId: room.hostId,
+        gameState: room.state,
+        players: Array.from(room.players.values())
+      });
       ack?.({ ok: true });
     }
   );
