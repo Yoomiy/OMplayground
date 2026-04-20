@@ -177,12 +177,13 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
       s.on(
         "CHAT_MESSAGE",
         (payload: { senderName?: string; message?: string }) => {
-          if (!payload?.message) return;
+          const message = payload?.message;
+          if (!message) return;
           setChatLines((prev) => [
             ...prev,
             {
               senderName: payload.senderName ?? "?",
-              message: payload.message
+              message
             }
           ]);
         }
