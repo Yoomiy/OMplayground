@@ -42,10 +42,13 @@ export function getOrCreateRoom<State>(
     gender: "boy" | "girl";
     hostId: string;
     minPlayers?: number;
+    /** DB snapshot for `status='paused'` rows — skip idle `initialState` re-seeding. */
+    resumedState?: unknown;
   }
 ): Room<State> {
   const existing = rooms.get(sessionId) as Room<State> | undefined;
   if (existing) return existing;
+  const resumed = meta.resumedState != null;
   const created: Room<State> = {
     sessionId,
     gameId: meta.gameId,
@@ -54,10 +57,12 @@ export function getOrCreateRoom<State>(
     hostId: meta.hostId,
     minPlayers: meta.minPlayers ?? meta.module.minPlayers,
     module: meta.module,
-    state: meta.module.initialState([]),
+    state: resumed
+      ? (meta.resumedState as State)
+      : meta.module.initialState([]),
     players: new Map(),
     spectators: new Map(),
-    hasBeenActive: false
+    hasBeenActive: resumed
   };
   rooms.set(sessionId, created as Room<unknown>);
   return created;

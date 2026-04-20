@@ -1,4 +1,4 @@
-import { tictactoeModule } from "@playground/game-logic";
+import { tictactoeModule, type TicTacToeState } from "@playground/game-logic";
 import {
   applyIntent,
   assignPlayer,
@@ -45,5 +45,27 @@ describe("Room / host transfer", () => {
     assignPlayer(room, "b-user", "B");
 
     expect(room.state).toEqual(stateAfterMove);
+  });
+
+  it("does not re-seed when creating a room from a paused DB snapshot", () => {
+    const saved: TicTacToeState = {
+      board: ["X", null, null, null, null, null, null, null, null],
+      next: "O",
+      status: "playing",
+      winner: null,
+      winningLine: null,
+      seats: { "a-user": "X", "b-user": "O" }
+    };
+    const room = getOrCreateRoom("sess-resume", {
+      gameId: "g1",
+      gameKey: tictactoeModule.key,
+      module: tictactoeModule,
+      gender: "boy",
+      hostId: "a-user",
+      resumedState: saved
+    });
+    assignPlayer(room, "a-user", "A");
+    assignPlayer(room, "b-user", "B");
+    expect(room.state).toEqual(saved);
   });
 });

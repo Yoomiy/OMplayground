@@ -205,7 +205,7 @@ io.on("connection", (socket) => {
       const { data: session, error } = await supabaseAdmin
         .from("game_sessions")
         .select(
-          "id, game_id, gender, player_ids, player_names, host_id, status, games ( game_url, min_players )"
+          "id, game_id, gender, player_ids, player_names, host_id, status, game_state, games ( game_url, min_players )"
         )
         .eq("id", sessionId)
         .maybeSingle();
@@ -231,13 +231,19 @@ io.on("connection", (socket) => {
         });
         return;
       }
+      const sess = session as { status?: string; game_state?: unknown };
+      const resumedState =
+        sess.status === "paused" && sess.game_state != null
+          ? sess.game_state
+          : undefined;
       const room = getOrCreateRoom(sessionId, {
         gameId: session.game_id as string,
         gameKey,
         module: gameModule,
         gender,
         hostId: session.host_id as string,
-        minPlayers: gameRow?.min_players ?? gameModule.minPlayers
+        minPlayers: gameRow?.min_players ?? gameModule.minPlayers,
+        resumedState
       });
       const role = socket.data.role as string;
       if (role === "teacher") {

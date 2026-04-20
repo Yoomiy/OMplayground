@@ -6,6 +6,11 @@ import { useProfile } from "@/hooks/useProfile";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useOnlinePresence } from "@/hooks/usePresence";
 import { useOpenGames } from "@/hooks/useOpenGames";
+import { useMyPausedGames } from "@/hooks/useMyPausedGames";
+import {
+  discardMySoloWaitingSessions,
+  leavePausedGameSession
+} from "@/lib/pausedSessionActions";
 import { useInbox } from "@/hooks/useInbox";
 import { OnlineKids } from "@/components/OnlineKids";
 import { Button } from "@/components/ui/button";
@@ -22,9 +27,14 @@ export function HomePage() {
   const { isAdmin, loading: adminLoading } = useIsAdmin(user);
   const { onlineUserIds } = useOnlinePresence();
   const { rows: openGames } = useOpenGames(user?.id);
+  const { rows: myPausedGames, loading: pausedLoading, refetch: refetchPaused } =
+    useMyPausedGames(user?.id);
   const { unreadTotal } = useInbox(user?.id);
   const [catalog, setCatalog] = useState<GameCatalogRow[]>([]);
   const [busyGameId, setBusyGameId] = useState<string | null>(null);
+  const [dismissingPausedId, setDismissingPausedId] = useState<string | null>(
+    null
+  );
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -114,8 +124,24 @@ export function HomePage() {
   }
 
   async function logout() {
+    const { error: discardErr } = await discardMySoloWaitingSessions();
+    if (discardErr) {
+      console.error(discardErr);
+    }
     await supabase.auth.signOut();
     navigate("/login", { replace: true });
+  }
+
+  async function dismissPausedSession(sessionId: string) {
+    setDismissingPausedId(sessionId);
+    setErr(null);
+    const { error } = await leavePausedGameSession(sessionId);
+    setDismissingPausedId(null);
+    if (error) {
+      setErr(error.message);
+      return;
+    }
+    await refetchPaused();
   }
 
   return (
@@ -181,6 +207,44 @@ export function HomePage() {
                   >
                     הצטרף
                   </Button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        {!pausedLoading && myPausedGames.length > 0 ? (
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium text-slate-300">
+              משחקים מושהים — המשך
+            </h3>
+            <ul className="space-y-2">
+              {myPausedGames.map((g) => (
+                <li
+                  key={g.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded border border-amber-900/60 bg-amber-950/20 px-3 py-2 text-sm"
+                >
+                  <span>
+                    {g.games?.name_he ?? "משחק"} · מארח: {g.host_name}
+                  </span>
+                  <span className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      type="button"
+                      onClick={() => navigate(`/play/${g.id}`)}
+                    >
+                      המשך
+                    </Button>
+                    <Button
+                      size="sm"
+                      type="button"
+                      variant="outline"
+                      disabled={dismissingPausedId !== null}
+                      onClick={() => void dismissPausedSession(g.id)}
+                    >
+                      {dismissingPausedId === g.id ? "מסיר…" : "הסר מהרשימה"}
+                    </Button>
+                  </span>
                 </li>
               ))}
             </ul>

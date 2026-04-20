@@ -4,7 +4,7 @@ import { persistPlayerJoin } from "./sessionPersistence";
  * Layer 2 — verifies game_sessions row persistence on JOIN_ROOM.
  * The hot path in index.ts calls `persistPlayerJoin`, and we assert it:
  *   - issues an update when a new kid joins
- *   - short-circuits (no update) when an existing kid reconnects
+ *   - short-circuits when an existing kid reconnects (unless resuming `paused`)
  */
 describe("persistPlayerJoin", () => {
   function makeMockSupabase() {
@@ -85,5 +85,44 @@ describe("persistPlayerJoin", () => {
     expect(wrote).toBe(false);
     expect(m.from).not.toHaveBeenCalled();
     expect(m.update).not.toHaveBeenCalled();
+  });
+
+  it("resumes from paused: listed kid rejoins idle room -> status waiting", async () => {
+    const m = makeMockSupabase();
+    const wrote = await persistPlayerJoin({
+      supabase: m.supabase,
+      sessionId: "sess-paused",
+      session: {
+        player_ids: ["kid-1"],
+        player_names: ["Kid"],
+        status: "paused"
+      },
+      userId: "kid-1",
+      displayName: "Kid",
+      roomStatusIsIdle: true
+    });
+    expect(wrote).toBe(false);
+    expect(m.from).toHaveBeenCalledWith("game_sessions");
+    expect(m.update).toHaveBeenCalledTimes(1);
+    const payload = m.update.mock.calls[0][0] as { status: string };
+    expect(payload.status).toBe("waiting");
+  });
+
+  it("resumes from paused: listed kid rejoins active room -> status playing", async () => {
+    const m = makeMockSupabase();
+    await persistPlayerJoin({
+      supabase: m.supabase,
+      sessionId: "sess-paused-2",
+      session: {
+        player_ids: ["a", "b"],
+        player_names: ["A", "B"],
+        status: "paused"
+      },
+      userId: "a",
+      displayName: "A",
+      roomStatusIsIdle: false
+    });
+    const payload = m.update.mock.calls[0][0] as { status: string };
+    expect(payload.status).toBe("playing");
   });
 });

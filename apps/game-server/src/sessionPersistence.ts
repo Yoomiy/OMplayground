@@ -33,6 +33,16 @@ export async function persistPlayerJoin(
   const { supabase, sessionId, session, userId, displayName, roomStatusIsIdle } =
     args;
   if (session.player_ids.includes(userId)) {
+    if (session.status === "paused") {
+      const nextStatus = roomStatusIsIdle ? "waiting" : "playing";
+      await supabase
+        .from("game_sessions")
+        .update({
+          status: nextStatus,
+          last_activity: new Date().toISOString()
+        })
+        .eq("id", sessionId);
+    }
     return false;
   }
   const nextPlayerIds = Array.from(new Set([...session.player_ids, userId]));

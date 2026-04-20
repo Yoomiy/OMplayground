@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -35,6 +35,7 @@ interface ReportRow {
  * Platform admin only (`admin_profiles`). CRUD uses RLS; bulk kid import uses Edge Function + service role.
  */
 export function AdminPage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { isAdmin, loading: adminLoading } = useIsAdmin(user);
   const [games, setGames] = useState<GameRow[]>([]);
@@ -96,6 +97,11 @@ export function AdminPage() {
       void supabase.removeChannel(ch);
     };
   }, [user, isAdmin, reload]);
+
+  async function logout() {
+    await supabase.auth.signOut();
+    navigate("/login", { replace: true });
+  }
 
   async function toggleGameActive(game: GameRow) {
     setErr(null);
@@ -214,11 +220,16 @@ export function AdminPage() {
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-8 p-6">
-      <header className="flex items-center justify-between">
+      <header className="flex items-center justify-between gap-2">
         <h1 className="text-2xl font-semibold">ניהול</h1>
-        <Button variant="outline" asChild>
-          <Link to="/home">בית</Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link to="/home">בית</Link>
+          </Button>
+          <Button variant="outline" type="button" onClick={() => void logout()}>
+            התנתק
+          </Button>
+        </div>
       </header>
 
       {err ? (

@@ -105,6 +105,18 @@ function TeacherSessionList({
     useState<TeacherSessionStatusFilter>("playing");
   const [gameIdFilter, setGameIdFilter] = useState<string>("");
   const [gradeFilter, setGradeFilter] = useState<string>("");
+  const [copyNotice, setCopyNotice] = useState<string | null>(null);
+
+  async function copyResumeLink(sessionId: string) {
+    const url = `${window.location.origin}/play/${sessionId}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopyNotice("הקישור הועתק — ניתן לשלוח לילדים");
+      window.setTimeout(() => setCopyNotice(null), 2500);
+    } catch {
+      window.prompt("העתק קישור להמשך המשחק:", url);
+    }
+  }
 
   const load = useCallback(async () => {
     const { data, error } = await supabase
@@ -183,6 +195,11 @@ function TeacherSessionList({
 
   return (
     <div className="space-y-4">
+      {copyNotice ? (
+        <p className="text-sm text-emerald-400" role="status">
+          {copyNotice}
+        </p>
+      ) : null}
       <div className="flex flex-wrap items-end gap-3 text-sm">
         <label className="flex flex-col gap-1">
           סטטוס
@@ -242,6 +259,7 @@ function TeacherSessionList({
               <th className="p-2">כיתה</th>
               <th className="p-2">פעילות אחרונה</th>
               <th className="p-2">צפייה</th>
+              <th className="p-2">המשך</th>
             </tr>
           </thead>
           <tbody>
@@ -263,6 +281,21 @@ function TeacherSessionList({
                   >
                     צפה
                   </Link>
+                </td>
+                <td className="p-2">
+                  {r.status === "paused" ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      type="button"
+                      className="text-xs"
+                      onClick={() => void copyResumeLink(r.id)}
+                    >
+                      העתק קישור לילדים
+                    </Button>
+                  ) : (
+                    "—"
+                  )}
                 </td>
               </tr>
             ))}
