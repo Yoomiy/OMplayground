@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ComposeMessage } from "@/components/ComposeMessage";
@@ -6,9 +6,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { sendChallenge } from "@/lib/challengeApi";
 import { sendFriendRequest, blockKid } from "@/lib/friendsApi";
+import { supabase } from "@/lib/supabase";
 import type { PublicKidProfile } from "@/hooks/useOnlineKids";
 
-const TICTACTOE_GAME_ID = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11";
+interface GameCatalogRow {
+  id: string;
+  name_he: string;
+}
 
 export interface KidActionSheetProps {
   kid: PublicKidProfile | null;
@@ -23,12 +27,35 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
   const [err, setErr] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [composing, setComposing] = useState(false);
+  const [catalog, setCatalog] = useState<GameCatalogRow[]>([]);
+
+  useEffect(() => {
+    if (!profile || !kid) return;
+    let cancelled = false;
+    void (async () => {
+      const { data, error } = await supabase
+        .from("games")
+        .select("id, name_he")
+        .eq("is_active", true)
+        .in("for_gender", ["both", profile.gender])
+        .order("name_he", { ascending: true });
+      if (cancelled) return;
+      if (error) {
+        setErr(error.message);
+        return;
+      }
+      setCatalog((data ?? []) as GameCatalogRow[]);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [profile, kid]);
 
   if (!kid || !user || !profile) return null;
 
-  async function challenge() {
+  async function challenge(gameId: string) {
     if (!user || !profile || !kid) return;
-    setBusy("challenge");
+    setBusy(`challenge:${gameId}`);
     setErr(null);
     setInfo(null);
     try {
@@ -37,7 +64,7 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
         meDisplayName: profile.full_name,
         meGender: profile.gender,
         toId: kid.id,
-        gameId: TICTACTOE_GAME_ID
+        gameId
       });
       onClose();
       navigate(`/play/${sessionId}`);
@@ -105,13 +132,22 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
             <p className="mb-2 text-xs text-emerald-300">{info}</p>
           ) : null}
           <div className="flex flex-col gap-2">
-            <Button
-              type="button"
-              disabled={busy !== null}
-              onClick={() => void challenge()}
-            >
-              {busy === "challenge" ? "שולח אתגר…" : "אתגר למשחק"}
-            </Button>
+            {catalog.length === 0 ? (
+              <p className="text-xs text-slate-400">אין משחקים זמינים לאתגר</p>
+            ) : (
+              catalog.map((g) => (
+                <Button
+                  key={g.id}
+                  type="button"
+                  disabled={busy !== null}
+                  onClick={() => void challenge(g.id)}
+                >
+                  {busy === `challenge:${g.id}`
+                    ? `שולח אתגר (${g.name_he})…`
+                    : `אתגר ל${g.name_he}`}
+                </Button>
+              ))
+            )}
             <Button
               variant="outline"
               type="button"

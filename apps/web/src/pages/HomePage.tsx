@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,7 +9,10 @@ import { useInbox } from "@/hooks/useInbox";
 import { OnlineKids } from "@/components/OnlineKids";
 import { Button } from "@/components/ui/button";
 
-const TICTACTOE_GAME_ID = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11";
+interface GameCatalogRow {
+  id: string;
+  name_he: string;
+}
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -18,18 +21,41 @@ export function HomePage() {
   const { onlineUserIds } = useOnlinePresence();
   const { rows: openGames } = useOpenGames(user?.id);
   const { unreadTotal } = useInbox(user?.id);
-  const [busy, setBusy] = useState(false);
+  const [catalog, setCatalog] = useState<GameCatalogRow[]>([]);
+  const [busyGameId, setBusyGameId] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-  async function createOpenSession() {
+  useEffect(() => {
+    if (!profile) return;
+    let cancelled = false;
+    void (async () => {
+      const { data, error } = await supabase
+        .from("games")
+        .select("id, name_he")
+        .eq("is_active", true)
+        .in("for_gender", ["both", profile.gender])
+        .order("name_he", { ascending: true });
+      if (cancelled) return;
+      if (error) {
+        setErr(error.message);
+        return;
+      }
+      setCatalog((data ?? []) as GameCatalogRow[]);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [profile]);
+
+  async function createOpenSession(gameId: string) {
     if (!user || !profile) return;
-    setBusy(true);
+    setBusyGameId(gameId);
     setErr(null);
     const code = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
     const { data, error } = await supabase
       .from("game_sessions")
       .insert({
-        game_id: TICTACTOE_GAME_ID,
+        game_id: gameId,
         host_id: user.id,
         host_name: profile.full_name,
         player_ids: [user.id],
@@ -43,10 +69,10 @@ export function HomePage() {
       .maybeSingle();
     if (error || !data?.id) {
       setErr(error?.message ?? "יצירת מפגש נכשלה");
-      setBusy(false);
+      setBusyGameId(null);
       return;
     }
-    setBusy(false);
+    setBusyGameId(null);
     navigate(`/play/${data.id}`);
   }
 
@@ -80,13 +106,22 @@ export function HomePage() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-medium">משחקים</h2>
-        <Button
-          type="button"
-          disabled={busy}
-          onClick={() => void createOpenSession()}
-        >
-          {busy ? "יוצר…" : "צור מפגש פתוח (איקס-עיגול)"}
-        </Button>
+        {catalog.length === 0 ? (
+          <p className="text-sm text-slate-400">אין משחקים זמינים</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {catalog.map((g) => (
+              <Button
+                key={g.id}
+                type="button"
+                disabled={busyGameId !== null}
+                onClick={() => void createOpenSession(g.id)}
+              >
+                {busyGameId === g.id ? "יוצר…" : `צור מפגש פתוח (${g.name_he})`}
+              </Button>
+            ))}
+          </div>
+        )}
 
         {openGames.length > 0 ? (
           <div className="space-y-2">
