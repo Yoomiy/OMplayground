@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { PresenceProvider } from "@/hooks/usePresence";
 import { PendingChallengeBanner } from "@/components/PendingChallengeBanner";
+import { FriendRequestPopup } from "@/components/FriendRequestPopup";
 import { LoginPage } from "@/pages/LoginPage";
 import { RegisterPage } from "@/pages/RegisterPage";
 import { HomePage } from "@/pages/HomePage";
@@ -33,6 +34,7 @@ export default function App() {
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <PresenceProvider>
         <PendingChallengeBanner />
+        <FriendRequestPopup />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
