@@ -5,6 +5,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
+import {
+  matchesTeacherStatusFilter,
+  type TeacherSessionStatusFilter
+} from "@/lib/teacherSessionFilter";
 
 interface SessionRow {
   id: string;
@@ -16,8 +20,6 @@ interface SessionRow {
   last_activity: string | null;
   games: { name_he: string } | null;
 }
-
-type StatusFilter = "active" | "all";
 
 export function TeacherPage() {
   const navigate = useNavigate();
@@ -58,6 +60,11 @@ export function TeacherPage() {
     );
   }
 
+  async function logout() {
+    await supabase.auth.signOut();
+    navigate("/login", { replace: true });
+  }
+
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6 p-6">
       <header className="flex flex-wrap items-center justify-between gap-2">
@@ -70,6 +77,9 @@ export function TeacherPage() {
           ) : null}
           <Button variant="outline" asChild>
             <Link to="/home">בית</Link>
+          </Button>
+          <Button variant="outline" type="button" onClick={() => void logout()}>
+            התנתק
           </Button>
         </div>
       </header>
@@ -91,7 +101,8 @@ function TeacherSessionList({
 }) {
   const [rows, setRows] = useState<SessionRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("active");
+  const [statusFilter, setStatusFilter] =
+    useState<TeacherSessionStatusFilter>("playing");
   const [gameIdFilter, setGameIdFilter] = useState<string>("");
   const [gradeFilter, setGradeFilter] = useState<string>("");
 
@@ -155,7 +166,7 @@ function TeacherSessionList({
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
-      if (statusFilter === "active" && r.status === "completed") {
+      if (!matchesTeacherStatusFilter(r.status, statusFilter)) {
         return false;
       }
       const gid = r.game_id;
@@ -179,11 +190,14 @@ function TeacherSessionList({
             className="rounded border border-slate-600 bg-slate-900 px-2 py-1"
             value={statusFilter}
             onChange={(e) =>
-              setStatusFilter(e.target.value as StatusFilter)
+              setStatusFilter(e.target.value as TeacherSessionStatusFilter)
             }
           >
-            <option value="active">פעיל (לא הושלם)</option>
             <option value="all">הכל</option>
+            <option value="waiting">ממתין (waiting)</option>
+            <option value="playing">במשחק (playing)</option>
+            <option value="paused">מושהה (paused)</option>
+            <option value="completed">הושלם (completed)</option>
           </select>
         </label>
         <label className="flex flex-col gap-1">
