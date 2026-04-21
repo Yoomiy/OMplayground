@@ -1,14 +1,7 @@
-1. Create admin interface
-2. add functionality to teacher interface
-3. audio messages
-4. avatars
-5. add a way to list and resume paused games.
-6. paused -> completed after game ends
-7. import the rest of the games.
-8. improve ui.
-9. ~~game reset for all if 1 player refreshes.~~ — addressed: `room.hasBeenActive` (no `initialState` re-seed after session once reached min players).
-10. grade isn't saved on game_session(?) — addressed: `host_grade` column + insert + host transfer (see migration 20260423000000).
-11. chat deletion by teacher doen not affect the live chat. — addressed: kid/teacher chat UI uses Supabase+Realtime only (no socket-only feed).
-12. filter for actually active games for teachers
-13. allow kids to add comments to message report
+1. min_players need to agree to a remach.
+4. audio messages
+5. avatars
+6. import the rest of the games.
+7. improve ui.
+8. allow kids to add comments to message report
 
