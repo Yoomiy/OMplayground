@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { io, type Socket } from "socket.io-client";
-import type { ConnectFourState, TicTacToeState } from "@playground/game-logic";
+import type {
+  ConnectFourState,
+  DrawingState,
+  MemoryState,
+  TicTacToeState
+} from "@playground/game-logic";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -9,6 +14,8 @@ import { usePersistedSessionChat } from "@/hooks/usePersistedSessionChat";
 import { useTeacherSessionChat } from "@/hooks/useTeacherSessionChat";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { ConnectFourBoard } from "@/games/ConnectFourBoard";
+import { DrawingBoard } from "@/games/DrawingBoard";
+import { MemoryBoard } from "@/games/MemoryBoard";
 import { TicTacToeBoard } from "@/games/TicTacToeBoard";
 
 type RoomEvent =
@@ -48,6 +55,7 @@ function endOverlayHeadline(
 interface BoardProps {
   gameState: unknown;
   mySymbol: string | null;
+  myUserId: string | null;
   onIntent: (intent: unknown) => void;
 }
 
@@ -71,6 +79,24 @@ const BOARD_REGISTRY: Record<string, BoardRegistryEntry> = {
       <ConnectFourBoard
         gameState={gameState as ConnectFourState}
         mySeat={mySymbol === "R" || mySymbol === "Y" ? mySymbol : null}
+        onIntent={(intent) => onIntent(intent)}
+      />
+    )
+  },
+  memory: {
+    component: ({ gameState, myUserId, onIntent }) => (
+      <MemoryBoard
+        gameState={gameState as MemoryState}
+        myUserId={myUserId}
+        onIntent={(intent) => onIntent(intent)}
+      />
+    )
+  },
+  drawing: {
+    component: ({ gameState, mySymbol, onIntent }) => (
+      <DrawingBoard
+        gameState={gameState as DrawingState}
+        mySeat={mySymbol}
         onIntent={(intent) => onIntent(intent)}
       />
     )
@@ -339,7 +365,12 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         <div
           className={isTeacherObserver ? "pointer-events-none opacity-95" : undefined}
         >
-          <Board gameState={gameState} mySymbol={mySymbol} onIntent={onIntent} />
+          <Board
+            gameState={gameState}
+            mySymbol={mySymbol}
+            myUserId={myUserId}
+            onIntent={onIntent}
+          />
         </div>
       ) : (
         <p className="text-sm text-amber-300">

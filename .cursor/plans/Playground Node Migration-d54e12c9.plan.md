@@ -9,22 +9,22 @@ isProject: false
 todos:
   - id: "spec-appendix"
     content: "ARCHITECTURE.md: diagram, Supabase vs Railway split, intents, RLS, event matrix, CORS/token notes"
-    status: pending
+    status: completed
   - id: "repo-layout"
     content: "Monorepo: apps/web (Vercel), apps/game-server (Railway), packages/game-logic (pure rules; shared by server + Jest)"
-    status: pending
+    status: completed
   - id: "ws-stack-decision"
     content: "Decision record: Colyseus vs Socket.io before Phase 3 — document choice and room model"
-    status: pending
+    status: completed
   - id: "phase1-supabase-auth"
     content: "Supabase schema + RLS; synthetic email auth; recess (Asia/Jerusalem); minimal login UI on Vercel for E2E smoke"
-    status: pending
+    status: completed
   - id: "phase2-social"
     content: "Social: friends, presence, messaging, challenges (pending_challenge + Realtime); UI under RLS; no DB polling for live UX"
-    status: pending
+    status: completed
   - id: "phase3-game-server"
     content: "Railway: rooms, lifecycle, authoritative intents; in-game chat relay + persist; gender/host-disconnect rules"
-    status: pending
+    status: completed
   - id: "phase4-frontend-games"
     content: "Vercel: port remaining pages; dumb games + containers; teacher/admin UIs per milestones doc"
     status: pending
@@ -36,7 +36,7 @@ todos:
     status: pending
   - id: "backend-qa-tests"
     content: "Jest layers per playground-backend-qa; packages/game-logic unit tests; tests-only unless user approves prod fix"
-    status: pending
+    status: completed
 isProject: false
 ---
 # Playground rebuild — implementation plan (aligned with `.cursor/rules`)

@@ -37,6 +37,7 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
         .from("games")
         .select("id, name_he")
         .eq("is_active", true)
+        .eq("is_multiplayer", true)
         .in("for_gender", ["both", profile.gender])
         .order("name_he", { ascending: true });
       if (cancelled) return;

@@ -13,6 +13,7 @@ import PlayPage from "@/pages/PlayPage";
 import { TeacherPage } from "@/pages/TeacherPage";
 import { AdminPage } from "@/pages/AdminPage";
 import { JoinByCodePage } from "@/pages/JoinByCodePage";
+import SoloGameContainer from "@/game/SoloGameContainer";
 
 function Protected({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
@@ -83,6 +84,14 @@ export default function App() {
             element={
               <Protected>
                 <PlayPage />
+              </Protected>
+            }
+          />
+          <Route
+            path="/solo/:gameKey"
+            element={
+              <Protected>
+                <SoloGameContainer />
               </Protected>
             }
           />

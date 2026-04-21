@@ -18,6 +18,8 @@ import { Button } from "@/components/ui/button";
 interface GameCatalogRow {
   id: string;
   name_he: string;
+  game_url: string;
+  is_multiplayer: boolean;
 }
 
 export function HomePage() {
@@ -43,7 +45,7 @@ export function HomePage() {
     void (async () => {
       const { data, error } = await supabase
         .from("games")
-        .select("id, name_he")
+        .select("id, name_he, game_url, is_multiplayer")
         .eq("is_active", true)
         .in("for_gender", ["both", profile.gender])
         .order("name_he", { ascending: true });
@@ -172,18 +174,49 @@ export function HomePage() {
         {catalog.length === 0 ? (
           <p className="text-sm text-slate-400">אין משחקים זמינים</p>
         ) : (
-          <div className="flex flex-col gap-2">
-            {catalog.map((g) => (
-              <Button
-                key={g.id}
-                type="button"
-                disabled={busyGameId !== null}
-                onClick={() => void createOpenSession(g.id)}
-              >
-                {busyGameId === g.id ? "יוצר…" : `צור מפגש פתוח (${g.name_he})`}
-              </Button>
-            ))}
-          </div>
+          <>
+            {catalog.some((g) => g.is_multiplayer) ? (
+              <div className="flex flex-col gap-2">
+                <h3 className="text-sm font-medium text-slate-300">
+                  משחקים משותפים
+                </h3>
+                {catalog
+                  .filter((g) => g.is_multiplayer)
+                  .map((g) => (
+                    <Button
+                      key={g.id}
+                      type="button"
+                      disabled={busyGameId !== null}
+                      onClick={() => void createOpenSession(g.id)}
+                    >
+                      {busyGameId === g.id
+                        ? "יוצר…"
+                        : `צור מפגש פתוח (${g.name_he})`}
+                    </Button>
+                  ))}
+              </div>
+            ) : null}
+
+            {catalog.some((g) => !g.is_multiplayer) ? (
+              <div className="flex flex-col gap-2">
+                <h3 className="text-sm font-medium text-slate-300">
+                  משחקי יחיד
+                </h3>
+                {catalog
+                  .filter((g) => !g.is_multiplayer)
+                  .map((g) => (
+                    <Button
+                      key={g.id}
+                      type="button"
+                      variant="outline"
+                      onClick={() => navigate(`/solo/${g.game_url}`)}
+                    >
+                      שחק · {g.name_he}
+                    </Button>
+                  ))}
+              </div>
+            ) : null}
+          </>
         )}
 
         {openGames.length > 0 ? (
