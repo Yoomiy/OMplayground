@@ -1,5 +1,5 @@
 import type { GameSeat } from "./registry";
-import { memoryModule, type MemoryCard, type MemoryState } from "./memory";
+import { memoryModule, type MemoryState } from "./memory";
 
 const P1: GameSeat = { userId: "u1", displayName: "A" };
 const P2: GameSeat = { userId: "u2", displayName: "B" };
@@ -33,7 +33,7 @@ function findMismatch(s: MemoryState): [number, number] {
 }
 
 describe("Memory rules", () => {
-  it("builds a 16-card deck with 8 pairs and stable seed", () => {
+  it("builds a 16-card deck with 8 pairs and a seed captured in state", () => {
     const { state: s } = init();
     expect(s.cards.length).toBe(16);
     const byEmoji = new Map<string, number>();
@@ -41,11 +41,17 @@ describe("Memory rules", () => {
       byEmoji.set(c.emoji, (byEmoji.get(c.emoji) ?? 0) + 1);
     }
     for (const count of byEmoji.values()) expect(count).toBe(2);
+    expect(typeof s.seed).toBe("number");
+    expect(s.seed).toBeGreaterThan(0);
+  });
 
-    const { state: again } = init();
-    expect(again.cards.map((c: MemoryCard) => c.emoji)).toEqual(
-      s.cards.map((c: MemoryCard) => c.emoji)
-    );
+  it("varies the deck across games (fresh seed per initialState)", () => {
+    const seeds = new Set<number>();
+    for (let i = 0; i < 20; i += 1) {
+      seeds.add(init().state.seed);
+    }
+    // Extremely unlikely to collide 20 times with a 32-bit seed space.
+    expect(seeds.size).toBeGreaterThan(1);
   });
 
   it("match keeps the turn, increments scorer, mismatch swaps turn", () => {

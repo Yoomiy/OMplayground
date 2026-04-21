@@ -56,18 +56,9 @@ export const memoryModule: GameModule<MemoryState, MemoryIntent> = {
       scores[p.userId] = 0;
     });
     const firstPlayerId = players[0]?.userId ?? null;
-    // Seed from first player's userId so the deck is stable from the moment
-    // player 1 joins, regardless of when player 2 arrives.
-    const seed = firstPlayerId
-      ? ((s) => {
-          let h = 2166136261 >>> 0;
-          for (let i = 0; i < s.length; i += 1) {
-            h ^= s.charCodeAt(i);
-            h = Math.imul(h, 16777619);
-          }
-          return h >>> 0;
-        })(firstPlayerId)
-      : 1;
+    // Fresh seed per initialState call so every new game shuffles differently.
+    // applyIntent stays pure because it only reads state.cards / state.seed.
+    const seed = (Math.floor(Math.random() * 0xffffffff) >>> 0) || 1;
     return {
       cards: buildCards(seed),
       seed,
