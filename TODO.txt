@@ -4,4 +4,6 @@
 6. import the rest of the games.
 7. improve ui.
 8. allow kids to add comments to message report
+9. add ingame buttons (eg copy link, go public, see players)
+10. add profile pages
 
