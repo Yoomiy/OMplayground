@@ -8,4 +8,4 @@
 10. add profile pages
 11. show game name at open games
 12. add a way to resume stoped soloGames
-
+13. add fullscreen option to the racing game

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { BalloonPopSolo } from "@/games-solo/BalloonPopSolo";
 import { AlgesEscapadeSolo } from "@/games-solo/AlgesEscapadeSolo";
 import { DrawingSolo } from "@/games-solo/DrawingSolo";
+import { HexGLSolo } from "@/games-solo/HexGLSolo";
 import { SimonSolo } from "@/games-solo/SimonSolo";
 import { SnakeSolo } from "@/games-solo/SnakeSolo";
 import { WhackAMoleSolo } from "@/games-solo/WhackAMoleSolo";
@@ -22,7 +23,8 @@ const SOLO_REGISTRY: Record<string, () => ReactNode> = {
   simon: () => <SimonSolo />,
   whackamole: () => <WhackAMoleSolo />,
   balloonpop: () => <BalloonPopSolo />,
-  "alges-escapade": () => <AlgesEscapadeSolo />
+  "alges-escapade": () => <AlgesEscapadeSolo />,
+  hexgl: () => <HexGLSolo />
 };
 
 export default function SoloGameContainer() {
