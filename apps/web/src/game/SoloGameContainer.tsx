@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BalloonPopSolo } from "@/games-solo/BalloonPopSolo";
+import { AlgesEscapadeSolo } from "@/games-solo/AlgesEscapadeSolo";
 import { DrawingSolo } from "@/games-solo/DrawingSolo";
 import { SimonSolo } from "@/games-solo/SimonSolo";
 import { SnakeSolo } from "@/games-solo/SnakeSolo";
@@ -20,7 +21,8 @@ const SOLO_REGISTRY: Record<string, () => ReactNode> = {
   snake: () => <SnakeSolo />,
   simon: () => <SimonSolo />,
   whackamole: () => <WhackAMoleSolo />,
-  balloonpop: () => <BalloonPopSolo />
+  balloonpop: () => <BalloonPopSolo />,
+  "alges-escapade": () => <AlgesEscapadeSolo />
 };
 
 export default function SoloGameContainer() {
