@@ -7,4 +7,5 @@
 9. add ingame buttons (eg copy link, go public, see players)
 10. add profile pages
 11. show game name at open games
+12. add a way to resume stoped soloGames
 
