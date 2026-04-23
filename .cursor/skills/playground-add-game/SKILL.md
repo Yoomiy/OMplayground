@@ -7,6 +7,15 @@ description: Add a new game (or port a legacy old_project game) to The Playgroun
 
 The game server is **already generic**. A new game is almost entirely pure logic + a dumb React board + one registry entry on each side + one row in the `games` catalog. You should rarely need to touch `apps/game-server/src/index.ts` or `room.ts`.
 
+## Choose mode first (important)
+
+Before implementing, decide whether the new game is **multiplayer** or **solo**:
+
+- **Multiplayer game** (challenge/open-session): follow the full `GameModule` + `BOARD_REGISTRY` workflow in this skill.
+- **Solo game** (single-player local gameplay): do **not** add a `GameModule`; build a pure client component under `apps/web/src/games-solo`, register it in `apps/web/src/game/SoloGameContainer.tsx`, and route via `/solo/:gameKey`.
+
+Catalog (`public.games`) must set `is_multiplayer` correctly because Home/Challenge flows depend on it.
+
 ## The contract (read this first)
 
 Every game implements `GameModule<State, Intent>` from `@playground/game-logic` (defined in [registry.ts](../../../packages/game-logic/src/registry.ts)):
@@ -49,12 +58,20 @@ Known gap: **resume from paused is not yet wired.** `getOrCreateRoom` always sta
 
 ## Files you will touch for every new game
 
+For **multiplayer games**:
+
 1. `packages/game-logic/src/<gameKey>.ts` — pure rules + exported `<gameKey>Module`.
 2. `packages/game-logic/src/index.ts` — one line in `registry`.
 3. `packages/game-logic/src/<gameKey>.test.ts` — pure unit tests (see `playground-backend-qa` skill).
 4. `apps/web/src/games/<GameKey>Board.tsx` — dumb React component: props = `{ gameState, mySymbol, onCellPress/onIntent }`, no sockets, no fetch.
 5. `apps/web/src/game/GameSessionContainer.tsx` — one entry in `BOARD_REGISTRY`.
 6. **Tell the user** the SQL to insert a `games` row. Do not run it for them.
+
+For **solo games**:
+
+1. `apps/web/src/games-solo/<GameKey>Solo.tsx` — pure local React state, no socket/supabase calls.
+2. `apps/web/src/game/SoloGameContainer.tsx` — add one `SOLO_REGISTRY` entry.
+3. **Tell the user** the SQL to insert/update a `games` row with `is_multiplayer=false`. Do not run it for them.
 
 Do not touch: `apps/game-server/src/index.ts`, `room.ts`, `lifecycle.ts`, `sessionPersistence.ts`, `recessSweep.ts`.
 
@@ -164,14 +181,15 @@ Per the coding protocol, **do not run SQL**. Tell the user to execute, e.g.:
 
 ```sql
 INSERT INTO public.games (
-  id, name_he, description_he, type, game_url, min_players, max_players, is_active, for_gender
+  id, name_he, description_he, type, game_url, min_players, max_players, is_active, is_multiplayer, for_gender
 ) VALUES (
-  gen_random_uuid(), 'שם בעברית', 'תיאור קצר', 'custom', 'mygame', 2, 2, true, 'both'
+  gen_random_uuid(), 'שם בעברית', 'תיאור קצר', 'custom', 'mygame', 2, 2, true, true, 'both'
 )
 ON CONFLICT (game_url) DO NOTHING;
 ```
 
 `game_url` **must equal** `myGameModule.key`. `min_players` / `max_players` on the row override the module's defaults at `JOIN_ROOM` time.
+Set `is_multiplayer=true` for multiplayer games and `is_multiplayer=false` for solo games.
 
 ## Complexity guide — simple vs complex games
 
@@ -206,6 +224,7 @@ If the user asks to port a game from `old_project/`, read the legacy file first 
 Always tell the user clearly when any of these apply:
 
 - They must run the `INSERT INTO public.games ...` SQL in Supabase.
+- They must set `is_multiplayer` correctly (`true` for challenge/open-session games, `false` for `/solo/:gameKey` games).
 - The game requires **resume from paused** (currently not wired — server starts fresh on rejoin).
 - The game has **hidden information** (current server broadcasts full state to all seats).
 - The game needs a **server tick** loop (current server is event-driven only).
