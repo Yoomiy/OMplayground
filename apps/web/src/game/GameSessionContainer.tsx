@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { io, type Socket } from "socket.io-client";
 import type {
+  ChessState,
   ConnectFourState,
   DrawingState,
   MemoryState,
@@ -14,6 +15,7 @@ import { usePersistedSessionChat } from "@/hooks/usePersistedSessionChat";
 import { useTeacherSessionChat } from "@/hooks/useTeacherSessionChat";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { ConnectFourBoard } from "@/games/ConnectFourBoard";
+import { ChessBoard } from "@/games/ChessBoard";
 import { DrawingBoard } from "@/games/DrawingBoard";
 import { MemoryBoard } from "@/games/MemoryBoard";
 import { TicTacToeBoard } from "@/games/TicTacToeBoard";
@@ -65,6 +67,15 @@ interface BoardRegistryEntry {
 }
 
 const BOARD_REGISTRY: Record<string, BoardRegistryEntry> = {
+  chess: {
+    component: ({ gameState, mySymbol, onIntent }) => (
+      <ChessBoard
+        gameState={gameState as ChessState}
+        mySeat={mySymbol === "w" || mySymbol === "b" ? mySymbol : null}
+        onIntent={(intent) => onIntent(intent)}
+      />
+    )
+  },
   tictactoe: {
     component: ({ gameState, mySymbol, onIntent }) => (
       <TicTacToeBoard
