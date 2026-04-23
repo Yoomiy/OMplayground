@@ -31,7 +31,7 @@ export default function SoloGameContainer() {
   const entry = gameKey ? SOLO_REGISTRY[gameKey] : undefined;
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-3xl flex-col gap-4 p-4">
+    <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-4 p-4">
       <header className="flex items-center justify-between">
         <Button
           type="button"
