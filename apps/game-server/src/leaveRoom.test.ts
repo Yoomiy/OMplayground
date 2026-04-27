@@ -94,10 +94,10 @@ describe("LEAVE_ROOM persistence (mirrors disconnect)", () => {
     expect(m.updateGs).toHaveBeenCalledTimes(1);
     const payload = m.updateGs.mock.calls[0][0] as { status: string };
     expect(payload.status).toBe("paused");
-    expect(m.inGs).toHaveBeenCalledWith("status", ["waiting", "playing"]);
+    expect(m.inGs).toHaveBeenCalledWith("status", ["waiting", "playing", "paused"]);
   });
 
-  it("does not downgrade completed rows when the last player leaves (filter only waiting/playing)", async () => {
+  it("does not downgrade completed rows when the last player leaves (filter excludes completed)", async () => {
     const sessionId = "sess-leave-completed";
     const m = makeMockSupabase();
     await persistPlayerLeave({
@@ -107,6 +107,6 @@ describe("LEAVE_ROOM persistence (mirrors disconnect)", () => {
     });
 
     expect(m.updateGs).toHaveBeenCalledTimes(1);
-    expect(m.inGs).toHaveBeenCalledWith("status", ["waiting", "playing"]);
+    expect(m.inGs).toHaveBeenCalledWith("status", ["waiting", "playing", "paused"]);
   });
 });

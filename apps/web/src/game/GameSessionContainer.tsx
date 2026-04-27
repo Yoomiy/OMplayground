@@ -26,8 +26,26 @@ type RoomEvent =
       outcome: { kind: "won"; winner: string } | { kind: "draw" };
     }
   | { kind: "GAME_STOPPED"; stoppedBy?: string }
+  | { kind: "GAME_PAUSED" }
+  | { kind: "GAME_RESUMED" }
   | { kind: "HOST_LEFT"; newHostId?: string }
-  | { kind: "RECESS_ENDED" };
+  | { kind: "RECESS_ENDED" }
+  | { kind: "PLAYER_JOINED"; player?: RoomPlayer }
+  | { kind: "PLAYER_LEFT"; player?: RoomPlayer }
+  | { kind: "REMATCH_REQUESTED"; requestedBy: string }
+  | { kind: "REMATCH_CANCELLED" }
+  | { kind: "REMATCH_STARTED" };
+
+interface RoomPlayer {
+  userId: string;
+  displayName: string;
+}
+
+interface RematchState {
+  requestedBy: string;
+  accepted: string[];
+  refused: string[];
+}
 
 type EndOverlay =
   | { kind: "won"; winner: string }
@@ -166,6 +184,12 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
   const [status, setStatus] = useState<string>("מתחבר…");
   const [hostId, setHostId] = useState<string | null>(null);
   const [myUserId, setMyUserId] = useState<string | null>(null);
+  const [players, setPlayers] = useState<RoomPlayer[]>([]);
+  const [roster, setRoster] = useState<RoomPlayer[]>([]);
+  const [missingPlayers, setMissingPlayers] = useState<RoomPlayer[]>([]);
+  const [paused, setPaused] = useState(false);
+  const [canResume, setCanResume] = useState(false);
+  const [rematch, setRematch] = useState<RematchState | null>(null);
   const [endOverlay, setEndOverlay] = useState<EndOverlay | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [chatDraft, setChatDraft] = useState("");
@@ -209,6 +233,12 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
           gameKey?: string;
           gameState?: unknown;
           hostId?: string;
+          players?: RoomPlayer[];
+          roster?: RoomPlayer[];
+          missingPlayers?: RoomPlayer[];
+          paused?: boolean;
+          canResume?: boolean;
+          rematch?: RematchState | null;
         }) => {
           if (payload?.gameKey) {
             setGameKey(payload.gameKey);
@@ -223,6 +253,24 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
           if (payload?.hostId) {
             setHostId(payload.hostId);
           }
+          if (payload?.players) {
+            setPlayers(payload.players);
+          }
+          if (payload?.roster) {
+            setRoster(payload.roster);
+          }
+          if (payload?.missingPlayers) {
+            setMissingPlayers(payload.missingPlayers);
+          }
+          if (typeof payload?.paused === "boolean") {
+            setPaused(payload.paused);
+          }
+          if (typeof payload?.canResume === "boolean") {
+            setCanResume(payload.canResume);
+          }
+          if ("rematch" in payload) {
+            setRematch(payload.rematch ?? null);
+          }
         }
       );
 
@@ -234,12 +282,34 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
           case "GAME_STOPPED":
             setEndOverlay({ kind: "stopped" });
             return;
+          case "GAME_PAUSED":
+            setToast("המשחק הושהה");
+            return;
+          case "GAME_RESUMED":
+            setToast("המשחק חודש");
+            return;
           case "HOST_LEFT":
             setToast("המארח עזב — הקברניט הוחלף");
             return;
           case "RECESS_ENDED":
             recessEndedRef.current = true;
             setToast("ההפסקה הסתיימה");
+            return;
+          case "PLAYER_JOINED":
+            setToast(`${ev.player?.displayName ?? "שחקן"} הצטרף לחדר`);
+            return;
+          case "PLAYER_LEFT":
+            setToast(`${ev.player?.displayName ?? "שחקן"} עזב את החדר`);
+            return;
+          case "REMATCH_REQUESTED":
+            setToast("המארח ביקש משחק חוזר");
+            return;
+          case "REMATCH_CANCELLED":
+            setToast("המשחק החוזר בוטל");
+            return;
+          case "REMATCH_STARTED":
+            setEndOverlay(null);
+            setToast("משחק חוזר התחיל");
             return;
         }
       });
@@ -276,6 +346,34 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
     );
   }, [sessionId]);
 
+  const pauseGame = useCallback(() => {
+    const s = socketRef.current;
+    if (!s?.connected) return;
+    s.emit(
+      "PAUSE_GAME",
+      { sessionId },
+      (ack: { ok?: boolean; error?: { message?: string } }) => {
+        if (!ack?.ok) {
+          setStatus(ack?.error?.message ?? "השהיית המשחק נכשלה");
+        }
+      }
+    );
+  }, [sessionId]);
+
+  const resumeGame = useCallback(() => {
+    const s = socketRef.current;
+    if (!s?.connected) return;
+    s.emit(
+      "RESUME_GAME",
+      { sessionId },
+      (ack: { ok?: boolean; error?: { message?: string } }) => {
+        if (!ack?.ok) {
+          setToast(ack?.error?.message ?? "חידוש המשחק נכשל");
+        }
+      }
+    );
+  }, [sessionId]);
+
   const requestRematch = useCallback(() => {
     const s = socketRef.current;
     if (!s?.connected) return;
@@ -292,6 +390,23 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
       }
     );
   }, [sessionId]);
+
+  const respondToRematch = useCallback(
+    (accept: boolean) => {
+      const s = socketRef.current;
+      if (!s?.connected) return;
+      s.emit(
+        "REMATCH_RESPONSE",
+        { sessionId, accept },
+        (ack: { ok?: boolean; error?: { message?: string } }) => {
+          if (!ack?.ok) {
+            setToast(ack?.error?.message ?? "תגובה למשחק חוזר נכשלה");
+          }
+        }
+      );
+    },
+    [sessionId]
+  );
 
   const sendChat = useCallback(() => {
     const s = socketRef.current;
@@ -313,6 +428,10 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
   const onIntent = useCallback(
     (intent: unknown) => {
       if (isTeacherObserver) return;
+      if (paused) {
+        setStatus("המשחק מושהה");
+        return;
+      }
       const s = socketRef.current;
       if (!s?.connected) {
         setStatus("אין חיבור פעיל");
@@ -328,7 +447,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         }
       );
     },
-    [sessionId, isTeacherObserver]
+    [sessionId, isTeacherObserver, paused]
   );
 
   /** Derived from authoritative state so clients never diverge on seat order. */
@@ -351,6 +470,16 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
     myUserId != null &&
     hostId != null &&
     myUserId === hostId;
+  const connectedIds = new Set(players.map((p) => p.userId));
+  const acceptedRematch = myUserId ? rematch?.accepted.includes(myUserId) : false;
+  const refusedRematch = myUserId ? rematch?.refused.includes(myUserId) : false;
+  const canVoteRematch =
+    !isTeacherObserver &&
+    !!endOverlay &&
+    endOverlay.kind !== "stopped" &&
+    !!rematch &&
+    !!myUserId &&
+    roster.some((p) => p.userId === myUserId);
 
   return (
     <div
@@ -372,9 +501,52 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
           {toast}
         </div>
       )}
+      <section className="rounded border border-slate-700 bg-slate-900/50 p-3 text-sm">
+        <h2 className="font-medium text-slate-200">שחקנים בחדר</h2>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {(roster.length > 0 ? roster : players).map((p) => (
+            <span
+              key={p.userId}
+              className={
+                connectedIds.has(p.userId)
+                  ? "rounded bg-emerald-950 px-2 py-1 text-emerald-100"
+                  : "rounded bg-slate-800 px-2 py-1 text-slate-400"
+              }
+            >
+              {p.displayName}
+              {connectedIds.has(p.userId) ? " · מחובר" : " · חסר"}
+            </span>
+          ))}
+        </div>
+      </section>
+      {paused ? (
+        <section className="rounded border border-amber-600 bg-amber-950/30 p-3 text-sm text-amber-100">
+          <p className="font-medium">המשחק מושהה ונשמר להמשך.</p>
+          {missingPlayers.length > 0 ? (
+            <p className="mt-1">
+              ממתינים להצטרפות:{" "}
+              {missingPlayers.map((p) => p.displayName).join(", ")}
+            </p>
+          ) : (
+            <p className="mt-1">כל השחקנים חזרו לחדר.</p>
+          )}
+          {iAmHost ? (
+            <button
+              type="button"
+              className="mt-3 rounded bg-emerald-600 px-3 py-1 text-sm text-white hover:bg-emerald-500 disabled:opacity-50"
+              disabled={!canResume}
+              onClick={() => resumeGame()}
+            >
+              המשך משחק
+            </button>
+          ) : null}
+        </section>
+      ) : null}
       {Board ? (
         <div
-          className={isTeacherObserver ? "pointer-events-none opacity-95" : undefined}
+          className={
+            isTeacherObserver || paused ? "pointer-events-none opacity-60" : undefined
+          }
         >
           <Board
             gameState={gameState}
@@ -389,13 +561,23 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         </p>
       )}
       {iAmHost && !endOverlay && (
-        <button
-          type="button"
-          className="rounded bg-rose-700 px-3 py-1 text-sm text-white hover:bg-rose-600"
-          onClick={() => stopGame()}
-        >
-          עצור משחק
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="rounded bg-amber-600 px-3 py-1 text-sm text-white hover:bg-amber-500 disabled:opacity-50"
+            disabled={paused}
+            onClick={() => pauseGame()}
+          >
+            השהה משחק
+          </button>
+          <button
+            type="button"
+            className="rounded bg-rose-700 px-3 py-1 text-sm text-white hover:bg-rose-600"
+            onClick={() => stopGame()}
+          >
+            סיים משחק
+          </button>
+        </div>
       )}
       {endOverlay && (
         <div
@@ -406,16 +588,44 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
           <p className="text-lg font-bold text-slate-100">
             {endOverlayHeadline(endOverlay, mySymbol, isTeacherObserver)}
           </p>
+          {rematch && endOverlay.kind !== "stopped" ? (
+            <p className="mt-2 text-sm text-slate-300">
+              משחק חוזר: {rematch.accepted.length} אישרו
+              {rematch.refused.length > 0
+                ? ` · ${rematch.refused.length} סירבו`
+                : ""}
+            </p>
+          ) : null}
           <div className="mt-3 flex flex-wrap justify-center gap-2">
-            {iAmHost && (
+            {iAmHost && endOverlay.kind !== "stopped" && !rematch ? (
               <button
                 type="button"
                 className="rounded bg-emerald-600 px-3 py-1 text-sm text-white hover:bg-emerald-500"
                 onClick={() => requestRematch()}
               >
-                משחק חוזר
+                בקש משחק חוזר
               </button>
-            )}
+            ) : null}
+            {canVoteRematch ? (
+              <>
+                <button
+                  type="button"
+                  className="rounded bg-emerald-600 px-3 py-1 text-sm text-white hover:bg-emerald-500 disabled:opacity-50"
+                  disabled={acceptedRematch}
+                  onClick={() => respondToRematch(true)}
+                >
+                  {acceptedRematch ? "אישרת משחק חוזר" : "אני רוצה משחק חוזר"}
+                </button>
+                <button
+                  type="button"
+                  className="rounded border border-slate-600 px-3 py-1 text-sm text-slate-100 hover:bg-slate-800 disabled:opacity-50"
+                  disabled={refusedRematch}
+                  onClick={() => respondToRematch(false)}
+                >
+                  {refusedRematch ? "סירבת" : "לא עכשיו"}
+                </button>
+              </>
+            ) : null}
             <button
               type="button"
               className="rounded bg-indigo-600 px-3 py-1 text-sm text-white hover:bg-indigo-500"

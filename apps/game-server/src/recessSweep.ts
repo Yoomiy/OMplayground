@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isWithinRecess, type RecessWindowRow } from "./recess";
 import { persistRecessPause } from "./lifecycle";
-import { deleteRoom, listRooms, type Room } from "./room";
+import { connectedPlayers, deleteRoom, listRooms, type Room } from "./room";
 
 /**
  * Shape of the Socket.io surface we depend on. Kept narrow so tests can
@@ -62,10 +62,13 @@ export async function recessEndSweep(
   const evicted: string[] = [];
   for (const room of rooms) {
     const sessionId = room.sessionId;
+    const connected = connectedPlayers(room);
     await persistRecessPause({
       supabase: deps.supabase,
       sessionId,
       gameState: room.state,
+      connectedPlayerIds: connected.map((p) => p.userId),
+      connectedPlayerNames: connected.map((p) => p.displayName),
       now: iso
     });
     deps.io.to(`session:${sessionId}`).emit("ROOM_EVENT", {

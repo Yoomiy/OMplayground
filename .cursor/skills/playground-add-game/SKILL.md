@@ -49,12 +49,13 @@ Do not re-implement any of these:
 |---|---|---|
 | `JOIN_ROOM` / seat assignment | [index.ts](../../../apps/game-server/src/index.ts) + [room.ts](../../../apps/game-server/src/room.ts) `assignPlayer` | While `room.players.size < minPlayers`, the server re-calls `module.initialState(seats)` on every join so seats repopulate. Once full, state is frozen. |
 | `INTENT_GAME` dispatch | `index.ts` → `applyIntent(room, userId, payload.intent)` | Broadcasts `ROOM_SNAPSHOT`, fires `GAME_ENDED` + `persistGameEnded` when `outcome` returned. |
-| `STOP_GAME` (host-only) | `canStopGame` in `room.ts`, `persistGameStopped` in `lifecycle.ts` | Nothing to do per game. |
+| Host end / pause / resume | `PAUSE_GAME`, `RESUME_GAME`, `STOP_GAME` in `index.ts`; lifecycle helpers in `lifecycle.ts` | Nothing to do per game. End is final; pause snapshots state; resume is automatic once all roster players reconnect. |
 | Host disconnect / transfer | `removePlayerFromRoom` | New host picked from remaining players; no per-game hook. |
 | Recess end → pause snapshot | `recessSweep.ts` + `persistRecessPause` | Persists your `State` blob verbatim. |
 | Stale-pause cleanup (24h) | `cleanupStalePausedSessions` in `lifecycle.ts` | |
+| Consent rematch | `REMATCH` + `REMATCH_RESPONSE` in `index.ts` | Available only after terminal outcomes; refusing cancels only if fewer than `minPlayers` connected players remain willing to rematch. |
 
-Known gap: **resume from paused is not yet wired.** `getOrCreateRoom` always starts from `module.initialState([])`; the persisted `game_sessions.game_state` is not yet rehydrated on rejoin. If the user asks you to make a game resumable, flag this — it is a cross-cutting change in `room.ts`, not a per-game change.
+Paused multiplayer sessions are rehydrated from `game_sessions.game_state`. While paused, only the original `player_ids` roster may rejoin, the room lists connected/missing players, and play resumes automatically once all remaining roster players are connected. If a player removes a paused game from Home, the roster shrinks; the session completes if the roster drops below `games.min_players`.
 
 ## Files you will touch for every new game
 
@@ -216,7 +217,7 @@ If the user asks to port a game from `old_project/`, read the legacy file first 
 - [ ] Module registered in `packages/game-logic/src/index.ts`.
 - [ ] Board registered in `BOARD_REGISTRY` in `GameSessionContainer.tsx`.
 - [ ] Pure unit tests added (`<gameKey>.test.ts`) covering: valid win, draw/no-winner, invalid-shape intent, wrong-player, post-terminal rejection.
-- [ ] No changes to `apps/game-server/src/index.ts`, `room.ts`, `lifecycle.ts`, `sessionPersistence.ts`, or `recessSweep.ts` (unless the user explicitly asked for a cross-cutting change like resume, per-seat snapshots, or ticks).
+- [ ] No changes to `apps/game-server/src/index.ts`, `room.ts`, `lifecycle.ts`, `sessionPersistence.ts`, or `recessSweep.ts` (unless the user explicitly asked for a cross-cutting lifecycle change, per-seat snapshots, or ticks).
 - [ ] Told the user the exact SQL to insert into `public.games`. Did not run it.
 
 ## What to flag to the user (per coding protocol)
@@ -225,7 +226,7 @@ Always tell the user clearly when any of these apply:
 
 - They must run the `INSERT INTO public.games ...` SQL in Supabase.
 - They must set `is_multiplayer` correctly (`true` for challenge/open-session games, `false` for `/solo/:gameKey` games).
-- The game requires **resume from paused** (currently not wired — server starts fresh on rejoin).
+- The game relies on pause/resume/rematch lifecycle (already generic); no per-game socket code should be added for it.
 - The game has **hidden information** (current server broadcasts full state to all seats).
 - The game needs a **server tick** loop (current server is event-driven only).
 - `minPlayers` / `maxPlayers` differ from the module defaults and need to match the `games` row.

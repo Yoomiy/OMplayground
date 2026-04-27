@@ -257,8 +257,15 @@ export function HomePage() {
                   key={g.id}
                   className="flex flex-wrap items-center justify-between gap-2 rounded border border-amber-900/60 bg-amber-950/20 px-3 py-2 text-sm"
                 >
-                  <span>
-                    {g.games?.name_he ?? "משחק"} · מארח: {g.host_name}
+                  <span className="flex flex-col gap-1">
+                    <span>
+                      {g.games?.name_he ?? "משחק"} · מארח: {g.host_name}
+                    </span>
+                    <span className="text-xs text-amber-100/80">
+                      {g.connected_player_names.length > 0
+                        ? `מחכים בפנים: ${g.connected_player_names.join(", ")}`
+                        : "אף שחקן לא מחכה בפנים כרגע"}
+                    </span>
                   </span>
                   <span className="flex flex-wrap gap-2">
                     <Button

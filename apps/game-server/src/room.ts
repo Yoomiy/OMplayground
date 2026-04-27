@@ -21,6 +21,8 @@ export interface Room<State = unknown> {
   minPlayers: number;
   module: GameModule<State, unknown>;
   state: State;
+  /** Persisted participant roster for resumed/paused games. */
+  roster: RoomPlayer[];
   players: Map<string, RoomPlayer>;
   /** Teachers observing the same-gender session (not in player_ids / DB join list). */
   spectators: Map<string, RoomPlayer>;
@@ -29,6 +31,12 @@ export interface Room<State = unknown> {
    * when `players` dips below `minPlayers` (e.g. one kid refreshes).
    */
   hasBeenActive: boolean;
+  paused: boolean;
+  rematch?: {
+    requestedBy: string;
+    accepted: Set<string>;
+    refused: Set<string>;
+  };
 }
 
 const rooms = new Map<string, Room<unknown>>();
@@ -42,12 +50,20 @@ export function getOrCreateRoom<State>(
     gender: "boy" | "girl";
     hostId: string;
     minPlayers?: number;
-    /** DB snapshot for `status='paused'|'completed'` rows — skip idle `initialState` re-seeding. */
+    roster?: RoomPlayer[];
+    paused?: boolean;
+    /** DB snapshot for `status='paused'` rows — skip idle `initialState` re-seeding. */
     resumedState?: unknown;
   }
 ): Room<State> {
   const existing = rooms.get(sessionId) as Room<State> | undefined;
-  if (existing) return existing;
+  if (existing) {
+    existing.paused = existing.paused || meta.paused === true;
+    if (meta.roster) {
+      existing.roster = meta.roster;
+    }
+    return existing;
+  }
   const resumed = meta.resumedState != null;
   const created: Room<State> = {
     sessionId,
@@ -60,9 +76,11 @@ export function getOrCreateRoom<State>(
     state: resumed
       ? (meta.resumedState as State)
       : meta.module.initialState([]),
+    roster: meta.roster ?? [],
     players: new Map(),
     spectators: new Map(),
-    hasBeenActive: resumed
+    hasBeenActive: resumed,
+    paused: meta.paused === true
   };
   rooms.set(sessionId, created as Room<unknown>);
   return created;
@@ -87,6 +105,21 @@ export function listRooms(): Room<unknown>[] {
 
 export function deleteRoom(sessionId: string): void {
   rooms.delete(sessionId);
+}
+
+export function roomRoster<S>(room: Room<S>): RoomPlayer[] {
+  const merged = new Map<string, RoomPlayer>();
+  for (const p of room.roster) merged.set(p.userId, p);
+  for (const p of room.players.values()) merged.set(p.userId, p);
+  return Array.from(merged.values());
+}
+
+export function missingPlayers<S>(room: Room<S>): RoomPlayer[] {
+  return roomRoster(room).filter((p) => !room.players.has(p.userId));
+}
+
+export function connectedPlayers<S>(room: Room<S>): RoomPlayer[] {
+  return Array.from(room.players.values());
 }
 
 /**
@@ -164,6 +197,9 @@ export function assignPlayer<S>(
   const wasIdle = isRoomIdle(room);
   const player: RoomPlayer = { userId, displayName };
   room.players.set(userId, player);
+  if (!room.roster.some((p) => p.userId === userId)) {
+    room.roster.push(player);
+  }
   if (wasIdle && !room.hasBeenActive) {
     const seats: GameSeat[] = Array.from(room.players.values()).map((p) => ({
       userId: p.userId,
@@ -188,13 +224,13 @@ export function canStopGame<S>(
   if (!room.players.has(userId)) {
     return {
       ok: false,
-      error: { code: "NOT_IN_ROOM", message: "Player not in session" }
+      error: { code: "NOT_IN_ROOM", message: "השחקן לא נמצא בחדר" }
     };
   }
   if (room.hostId !== userId) {
     return {
       ok: false,
-      error: { code: "NOT_HOST", message: "Only the host can stop the game" }
+      error: { code: "NOT_HOST", message: "רק המארח יכול לבצע את הפעולה" }
     };
   }
   return { ok: true };
@@ -224,7 +260,7 @@ export function applyIntent<S>(
   if (!room.players.has(userId)) {
     return {
       ok: false,
-      error: { code: "NOT_IN_ROOM", message: "Player not in session" }
+      error: { code: "NOT_IN_ROOM", message: "השחקן לא נמצא בחדר" }
     };
   }
   const res = room.module.applyIntent(room.state, userId, intent);

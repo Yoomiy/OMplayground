@@ -18,12 +18,16 @@ import {
   assignPlayer,
   attachSpectator,
   canStopGame,
+  connectedPlayers,
   deleteRoom,
   getOrCreateRoom,
   isRoomIdle,
   getRoom,
+  missingPlayers,
   removePlayerFromRoom,
-  removeSpectatorFromRoom
+  removeSpectatorFromRoom,
+  roomRoster,
+  type Room
 } from "./room";
 import {
   persistPlayerJoin,
@@ -32,7 +36,9 @@ import {
 import {
   cleanupStalePausedSessions,
   persistGameEnded,
+  persistGamePaused,
   persistGameRematch,
+  persistGameResumed,
   persistGameStopped
 } from "./lifecycle";
 import { createRecessSweepState, recessEndSweep } from "./recessSweep";
@@ -188,6 +194,68 @@ io.on("connection", (socket) => {
   const displayName = socket.data.displayName as string;
   const gender = socket.data.gender as "boy" | "girl";
 
+  function roomSnapshot(room: Room<unknown>) {
+    const players = connectedPlayers(room);
+    const roster = roomRoster(room);
+    return {
+      sessionId: room.sessionId,
+      gameKey: room.gameKey,
+      hostId: room.hostId,
+      gameState: room.state,
+      players,
+      roster,
+      missingPlayers: missingPlayers(room),
+      paused: room.paused,
+      canResume: room.paused && roster.length > 0 && roster.length === players.length,
+      rematch: room.rematch
+        ? {
+            requestedBy: room.rematch.requestedBy,
+            accepted: Array.from(room.rematch.accepted),
+            refused: Array.from(room.rematch.refused)
+          }
+        : null
+    };
+  }
+
+  function emitSnapshot(room: Room<unknown>) {
+    io.to(`session:${room.sessionId}`).emit("ROOM_SNAPSHOT", roomSnapshot(room));
+  }
+
+  function connectedPayload(room: Room<unknown>) {
+    const players = connectedPlayers(room);
+    return {
+      connectedPlayerIds: players.map((p) => p.userId),
+      connectedPlayerNames: players.map((p) => p.displayName)
+    };
+  }
+
+  function resetForRematch(room: Room<unknown>, rematchPlayers = connectedPlayers(room)) {
+    const seats = rematchPlayers.map((p) => ({
+      userId: p.userId,
+      displayName: p.displayName
+    }));
+    room.state = room.module.initialState(seats);
+    room.players = new Map(rematchPlayers.map((p) => [p.userId, p]));
+    room.roster = rematchPlayers;
+    room.paused = false;
+    room.rematch = undefined;
+  }
+
+  function resumeRoom(room: Room<unknown>) {
+    room.paused = false;
+    if (supabaseAdmin) {
+      void persistGameResumed({
+        supabase: supabaseAdmin,
+        sessionId: room.sessionId,
+        ...connectedPayload(room)
+      });
+    }
+    io.to(`session:${room.sessionId}`).emit("ROOM_EVENT", {
+      sessionId: room.sessionId,
+      kind: "GAME_RESUMED"
+    });
+  }
+
   socket.on(
     "JOIN_ROOM",
     async (
@@ -233,11 +301,31 @@ io.on("connection", (socket) => {
         return;
       }
       const sess = session as { status?: string; game_state?: unknown };
+      const existingRoom = getRoom(sessionId);
+      const playerIds = ((session.player_ids as string[]) ?? []).map(String);
+      const playerNames = ((session.player_names as string[]) ?? []).map(String);
+      if (sess.status === "paused" && !playerIds.includes(userId)) {
+        ack?.({
+          ok: false,
+          error: {
+            code: "NOT_IN_ROSTER",
+            message: "רק שחקני המשחק המקורי יכולים להמשיך משחק מושהה"
+          }
+        });
+        return;
+      }
+      if (sess.status === "completed" && !existingRoom) {
+        ack?.({
+          ok: false,
+          error: {
+            code: "SESSION_COMPLETED",
+            message: "המשחק כבר הסתיים"
+          }
+        });
+        return;
+      }
       const resumedState =
-        (sess.status === "paused" || sess.status === "completed") &&
-        sess.game_state != null
-          ? sess.game_state
-          : undefined;
+        sess.status === "paused" && sess.game_state != null ? sess.game_state : undefined;
       const room = getOrCreateRoom(sessionId, {
         gameId: session.game_id as string,
         gameKey,
@@ -245,6 +333,11 @@ io.on("connection", (socket) => {
         gender,
         hostId: session.host_id as string,
         minPlayers: gameRow?.min_players ?? gameModule.minPlayers,
+        roster: playerIds.map((id, i) => ({
+          userId: id,
+          displayName: playerNames[i] ?? "שחקן"
+        })),
+        paused: sess.status === "paused",
         resumedState
       });
       const role = socket.data.role as string;
@@ -253,13 +346,7 @@ io.on("connection", (socket) => {
         await socket.join(`session:${sessionId}`);
         socket.data.sessionId = sessionId;
         socket.data.isSpectator = true;
-        io.to(`session:${sessionId}`).emit("ROOM_SNAPSHOT", {
-          sessionId,
-          gameKey: room.gameKey,
-          hostId: room.hostId,
-          gameState: room.state,
-          players: Array.from(room.players.values())
-        });
+        emitSnapshot(room);
         ack?.({ ok: true, spectator: true });
         return;
       }
@@ -285,15 +372,18 @@ io.on("connection", (socket) => {
         },
         userId,
         displayName,
+        ...connectedPayload(room),
         roomStatusIsIdle: isRoomIdle(room)
       });
-      io.to(`session:${sessionId}`).emit("ROOM_SNAPSHOT", {
+      io.to(`session:${sessionId}`).emit("ROOM_EVENT", {
         sessionId,
-        gameKey: room.gameKey,
-        hostId: room.hostId,
-        gameState: room.state,
-        players: Array.from(room.players.values())
+        kind: "PLAYER_JOINED",
+        player: assigned.player
       });
+      if (room.paused && missingPlayers(room).length === 0) {
+        resumeRoom(room);
+      }
+      emitSnapshot(room);
       ack?.({ ok: true, player: assigned.player });
     }
   );
@@ -324,18 +414,19 @@ io.on("connection", (socket) => {
         ack?.({ ok: false, error: { code: "NOT_FOUND", message: "Room not loaded" } });
         return;
       }
+      if (room.paused) {
+        ack?.({
+          ok: false,
+          error: { code: "GAME_PAUSED", message: "המשחק מושהה" }
+        });
+        return;
+      }
       const res = applyIntent(room, userId, payload.intent);
       if (!res.ok) {
         ack?.({ ok: false, error: res.error });
         return;
       }
-      io.to(`session:${sessionId}`).emit("ROOM_SNAPSHOT", {
-        sessionId,
-        gameKey: room.gameKey,
-        hostId: room.hostId,
-        gameState: res.state,
-        players: Array.from(room.players.values())
-      });
+      emitSnapshot(room);
       if (res.outcome) {
         io.to(`session:${sessionId}`).emit("ROOM_EVENT", {
           sessionId,
@@ -346,7 +437,8 @@ io.on("connection", (socket) => {
           void persistGameEnded({
             supabase: supabaseAdmin,
             sessionId,
-            gameState: res.state
+            gameState: res.state,
+            ...connectedPayload(room)
           });
         }
       }
@@ -401,6 +493,98 @@ io.on("connection", (socket) => {
   );
 
   socket.on(
+    "PAUSE_GAME",
+    async (
+      payload: { sessionId?: string } | undefined,
+      ack?: (r: unknown) => void
+    ) => {
+      const sessionId =
+        payload?.sessionId ?? (socket.data.sessionId as string | undefined);
+      if (!sessionId) {
+        ack?.({
+          ok: false,
+          error: { code: "BAD_REQUEST", message: "sessionId required" }
+        });
+        return;
+      }
+      const room = getRoom(sessionId);
+      if (!room) {
+        ack?.({
+          ok: false,
+          error: { code: "NOT_FOUND", message: "Room not loaded" }
+        });
+        return;
+      }
+      const guard = canStopGame(room, userId);
+      if (!guard.ok) {
+        ack?.({ ok: false, error: guard.error });
+        return;
+      }
+      room.paused = true;
+      room.rematch = undefined;
+      if (supabaseAdmin) {
+        void persistGamePaused({
+          supabase: supabaseAdmin,
+          sessionId,
+          gameState: room.state,
+          ...connectedPayload(room)
+        });
+      }
+      io.to(`session:${sessionId}`).emit("ROOM_EVENT", {
+        sessionId,
+        kind: "GAME_PAUSED"
+      });
+      emitSnapshot(room);
+      ack?.({ ok: true });
+    }
+  );
+
+  socket.on(
+    "RESUME_GAME",
+    async (
+      payload: { sessionId?: string } | undefined,
+      ack?: (r: unknown) => void
+    ) => {
+      const sessionId =
+        payload?.sessionId ?? (socket.data.sessionId as string | undefined);
+      if (!sessionId) {
+        ack?.({
+          ok: false,
+          error: { code: "BAD_REQUEST", message: "sessionId required" }
+        });
+        return;
+      }
+      const room = getRoom(sessionId);
+      if (!room) {
+        ack?.({
+          ok: false,
+          error: { code: "NOT_FOUND", message: "Room not loaded" }
+        });
+        return;
+      }
+      const guard = canStopGame(room, userId);
+      if (!guard.ok) {
+        ack?.({ ok: false, error: guard.error });
+        return;
+      }
+      const missing = missingPlayers(room);
+      if (missing.length > 0) {
+        ack?.({
+          ok: false,
+          error: {
+            code: "PLAYERS_MISSING",
+            message: `ממתינים ל־${missing.map((p) => p.displayName).join(", ")}`
+          }
+        });
+        return;
+      }
+      resumeRoom(room);
+      emitSnapshot(room);
+      ack?.({ ok: true });
+    }
+  );
+
+  socket.on(
     "REMATCH",
     (
       payload: { sessionId?: string } | undefined,
@@ -418,7 +602,7 @@ io.on("connection", (socket) => {
       if (socket.data.role === "teacher") {
         ack?.({
           ok: false,
-          error: { code: "READ_ONLY", message: "Observers cannot rematch" }
+          error: { code: "READ_ONLY", message: "צופים לא יכולים לבקש משחק חוזר" }
         });
         return;
       }
@@ -440,30 +624,120 @@ io.on("connection", (socket) => {
           ok: false,
           error: {
             code: "NOT_TERMINAL",
-            message: "Rematch is only available after the game ends"
+            message: "אפשר לבקש משחק חוזר רק אחרי שהמשחק מסתיים"
           }
         });
         return;
       }
-      const seats = Array.from(room.players.values()).map((p) => ({
-        userId: p.userId,
-        displayName: p.displayName
-      }));
-      room.state = room.module.initialState(seats);
-      if (supabaseAdmin) {
-        void persistGameRematch({
-          supabase: supabaseAdmin,
+      room.rematch = {
+        requestedBy: userId,
+        accepted: new Set([userId]),
+        refused: new Set()
+      };
+      io.to(`session:${sessionId}`).emit("ROOM_EVENT", {
+        sessionId,
+        kind: "REMATCH_REQUESTED",
+        requestedBy: userId
+      });
+      emitSnapshot(room);
+      ack?.({ ok: true });
+    }
+  );
+
+  socket.on(
+    "REMATCH_RESPONSE",
+    (
+      payload: { sessionId?: string; accept?: boolean } | undefined,
+      ack?: (r: unknown) => void
+    ) => {
+      const sessionId =
+        payload?.sessionId ?? (socket.data.sessionId as string | undefined);
+      if (!sessionId || typeof payload?.accept !== "boolean") {
+        ack?.({
+          ok: false,
+          error: { code: "BAD_REQUEST", message: "חסרים פרטי תגובה למשחק חוזר" }
+        });
+        return;
+      }
+      if (socket.data.role === "teacher") {
+        ack?.({
+          ok: false,
+          error: { code: "READ_ONLY", message: "צופים לא יכולים להשתתף במשחק חוזר" }
+        });
+        return;
+      }
+      const room = getRoom(sessionId);
+      if (!room) {
+        ack?.({
+          ok: false,
+          error: { code: "NOT_FOUND", message: "Room not loaded" }
+        });
+        return;
+      }
+      if (!room.rematch || !room.module.isTerminal(room.state)) {
+        ack?.({
+          ok: false,
+          error: { code: "NO_REMATCH", message: "אין בקשת משחק חוזר פעילה" }
+        });
+        return;
+      }
+      if (!roomRoster(room).some((p) => p.userId === userId)) {
+        ack?.({
+          ok: false,
+          error: { code: "NOT_IN_ROOM", message: "השחקן לא נמצא בחדר" }
+        });
+        return;
+      }
+
+      if (payload.accept) {
+        room.rematch.refused.delete(userId);
+        room.rematch.accepted.add(userId);
+      } else {
+        room.rematch.accepted.delete(userId);
+        room.rematch.refused.add(userId);
+      }
+
+      const possiblePlayers = roomRoster(room).filter(
+        (p) => !room.rematch?.refused.has(p.userId) && room.players.has(p.userId)
+      );
+      if (possiblePlayers.length < room.minPlayers) {
+        room.rematch = undefined;
+        io.to(`session:${sessionId}`).emit("ROOM_EVENT", {
           sessionId,
-          gameState: room.state
+          kind: "REMATCH_CANCELLED"
+        });
+        emitSnapshot(room);
+        ack?.({ ok: true });
+        return;
+      }
+
+      const acceptedConnected = connectedPlayers(room).filter((p) =>
+        room.rematch?.accepted.has(p.userId)
+      );
+      const connectedVoters = connectedPlayers(room);
+      const everyoneAnswered = connectedVoters.every(
+        (p) =>
+          room.rematch?.accepted.has(p.userId) ||
+          room.rematch?.refused.has(p.userId)
+      );
+      if (everyoneAnswered && acceptedConnected.length >= room.minPlayers) {
+        resetForRematch(room, acceptedConnected);
+        if (supabaseAdmin) {
+          void persistGameRematch({
+            supabase: supabaseAdmin,
+            sessionId,
+            gameState: room.state,
+            playerIds: acceptedConnected.map((p) => p.userId),
+            playerNames: acceptedConnected.map((p) => p.displayName),
+            ...connectedPayload(room)
+          });
+        }
+        io.to(`session:${sessionId}`).emit("ROOM_EVENT", {
+          sessionId,
+          kind: "REMATCH_STARTED"
         });
       }
-      io.to(`session:${sessionId}`).emit("ROOM_SNAPSHOT", {
-        sessionId,
-        gameKey: room.gameKey,
-        hostId: room.hostId,
-        gameState: room.state,
-        players: Array.from(room.players.values())
-      });
+      emitSnapshot(room);
       ack?.({ ok: true });
     }
   );
@@ -523,13 +797,7 @@ io.on("connection", (socket) => {
     if (socket.data.isSpectator) {
       removeSpectatorFromRoom(sessionId, userId);
       const room = getRoom(sessionId);
-      io.to(`session:${sessionId}`).emit("ROOM_SNAPSHOT", {
-        sessionId,
-        gameKey: room?.gameKey,
-        hostId: room?.hostId,
-        gameState: room?.state,
-        players: room ? Array.from(room.players.values()) : []
-      });
+      if (room) emitSnapshot(room);
       await socket.leave(`session:${sessionId}`);
       if (socket.data.sessionId === sessionId) {
         socket.data.sessionId = undefined;
@@ -537,11 +805,21 @@ io.on("connection", (socket) => {
       socket.data.isSpectator = false;
       return;
     }
+    const before = getRoom(sessionId);
     const result = removePlayerFromRoom(sessionId, userId);
-    if (supabaseAdmin) {
-      void persistPlayerLeave({ supabase: supabaseAdmin, sessionId, result });
-    }
     const room = getRoom(sessionId);
+    if (supabaseAdmin) {
+      const connected = room
+        ? connectedPayload(room)
+        : { connectedPlayerIds: [], connectedPlayerNames: [] };
+      void persistPlayerLeave({
+        supabase: supabaseAdmin,
+        sessionId,
+        result,
+        ...connected,
+        gameState: before?.state
+      });
+    }
     if (result.newHostId) {
       io.to(`session:${sessionId}`).emit("ROOM_EVENT", {
         sessionId,
@@ -549,13 +827,12 @@ io.on("connection", (socket) => {
         newHostId: result.newHostId
       });
     }
-    io.to(`session:${sessionId}`).emit("ROOM_SNAPSHOT", {
+    io.to(`session:${sessionId}`).emit("ROOM_EVENT", {
       sessionId,
-      gameKey: room?.gameKey,
-      hostId: room?.hostId,
-      gameState: room?.state,
-      players: room ? Array.from(room.players.values()) : []
+      kind: "PLAYER_LEFT",
+      player: { userId, displayName }
     });
+    if (room) emitSnapshot(room);
     await socket.leave(`session:${sessionId}`);
     if (socket.data.sessionId === sessionId) {
       socket.data.sessionId = undefined;

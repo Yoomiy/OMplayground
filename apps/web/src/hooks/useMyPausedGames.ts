@@ -6,6 +6,8 @@ export interface MyPausedGameRow {
   host_name: string;
   game_id: string;
   last_activity: string | null;
+  connected_player_ids: string[];
+  connected_player_names: string[];
   games: { name_he: string } | null;
 }
 
@@ -25,7 +27,9 @@ export function useMyPausedGames(userId: string | undefined) {
     }
     const { data, error } = await supabase
       .from("game_sessions")
-      .select("id, host_name, game_id, last_activity, games ( name_he )")
+      .select(
+        "id, host_name, game_id, last_activity, connected_player_ids, connected_player_names, games ( name_he )"
+      )
       .eq("status", "paused")
       .contains("player_ids", [userId])
       .order("last_activity", { ascending: false })

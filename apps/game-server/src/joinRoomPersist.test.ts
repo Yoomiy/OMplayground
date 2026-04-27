@@ -68,7 +68,7 @@ describe("persistPlayerJoin", () => {
     expect(payload.status).toBe("playing");
   });
 
-  it("does not issue an update when an existing kid reconnects", async () => {
+  it("updates presence when an existing kid reconnects", async () => {
     const m = makeMockSupabase();
     const wrote = await persistPlayerJoin({
       supabase: m.supabase,
@@ -80,14 +80,21 @@ describe("persistPlayerJoin", () => {
       },
       userId: "guest-1",
       displayName: "Guest",
+      connectedPlayerIds: ["host-1", "guest-1"],
+      connectedPlayerNames: ["Host", "Guest"],
       roomStatusIsIdle: false
     });
     expect(wrote).toBe(false);
-    expect(m.from).not.toHaveBeenCalled();
-    expect(m.update).not.toHaveBeenCalled();
+    expect(m.from).toHaveBeenCalledWith("game_sessions");
+    const payload = m.update.mock.calls[0][0] as {
+      connected_player_ids: string[];
+      connected_player_names: string[];
+    };
+    expect(payload.connected_player_ids).toEqual(["host-1", "guest-1"]);
+    expect(payload.connected_player_names).toEqual(["Host", "Guest"]);
   });
 
-  it("resumes from paused: listed kid rejoins idle room -> status waiting", async () => {
+  it("keeps paused status while a listed kid rejoins an idle paused room", async () => {
     const m = makeMockSupabase();
     const wrote = await persistPlayerJoin({
       supabase: m.supabase,
@@ -99,16 +106,22 @@ describe("persistPlayerJoin", () => {
       },
       userId: "kid-1",
       displayName: "Kid",
+      connectedPlayerIds: ["kid-1"],
+      connectedPlayerNames: ["Kid"],
       roomStatusIsIdle: true
     });
     expect(wrote).toBe(false);
     expect(m.from).toHaveBeenCalledWith("game_sessions");
     expect(m.update).toHaveBeenCalledTimes(1);
-    const payload = m.update.mock.calls[0][0] as { status: string };
-    expect(payload.status).toBe("waiting");
+    const payload = m.update.mock.calls[0][0] as {
+      status?: string;
+      connected_player_ids: string[];
+    };
+    expect(payload.status).toBeUndefined();
+    expect(payload.connected_player_ids).toEqual(["kid-1"]);
   });
 
-  it("resumes from paused: listed kid rejoins active room -> status playing", async () => {
+  it("keeps paused status while a listed kid rejoins an active paused room", async () => {
     const m = makeMockSupabase();
     await persistPlayerJoin({
       supabase: m.supabase,
@@ -120,10 +133,16 @@ describe("persistPlayerJoin", () => {
       },
       userId: "a",
       displayName: "A",
+      connectedPlayerIds: ["a"],
+      connectedPlayerNames: ["A"],
       roomStatusIsIdle: false
     });
-    const payload = m.update.mock.calls[0][0] as { status: string };
-    expect(payload.status).toBe("playing");
+    const payload = m.update.mock.calls[0][0] as {
+      status?: string;
+      connected_player_ids: string[];
+    };
+    expect(payload.status).toBeUndefined();
+    expect(payload.connected_player_ids).toEqual(["a"]);
   });
 
   it("keeps status 'completed' when a new kid joins after a finished game (room not idle)", async () => {
@@ -144,7 +163,7 @@ describe("persistPlayerJoin", () => {
     expect(payload.status).toBe("completed");
   });
 
-  it("does not issue an update when a kid reconnects to a completed session", async () => {
+  it("updates presence when a kid reconnects to a completed live session", async () => {
     const m = makeMockSupabase();
     const wrote = await persistPlayerJoin({
       supabase: m.supabase,
@@ -156,10 +175,15 @@ describe("persistPlayerJoin", () => {
       },
       userId: "guest-1",
       displayName: "Guest",
+      connectedPlayerIds: ["host-1", "guest-1"],
+      connectedPlayerNames: ["Host", "Guest"],
       roomStatusIsIdle: false
     });
     expect(wrote).toBe(false);
-    expect(m.from).not.toHaveBeenCalled();
-    expect(m.update).not.toHaveBeenCalled();
+    expect(m.from).toHaveBeenCalledWith("game_sessions");
+    const payload = m.update.mock.calls[0][0] as {
+      connected_player_ids: string[];
+    };
+    expect(payload.connected_player_ids).toEqual(["host-1", "guest-1"]);
   });
 });

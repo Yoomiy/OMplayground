@@ -19,6 +19,8 @@ export interface PersistJoinArgs {
   session: MinimalSession;
   userId: string;
   displayName: string;
+  connectedPlayerIds?: string[];
+  connectedPlayerNames?: string[];
   /** Room's in-memory game status; when the ruleset is still idle we leave session.status alone. */
   roomStatusIsIdle: boolean;
 }
@@ -30,19 +32,25 @@ export interface PersistJoinArgs {
 export async function persistPlayerJoin(
   args: PersistJoinArgs
 ): Promise<boolean> {
-  const { supabase, sessionId, session, userId, displayName, roomStatusIsIdle } =
-    args;
+  const {
+    supabase,
+    sessionId,
+    session,
+    userId,
+    displayName,
+      connectedPlayerIds = [],
+      connectedPlayerNames = [],
+    roomStatusIsIdle
+  } = args;
   if (session.player_ids.includes(userId)) {
-    if (session.status === "paused") {
-      const nextStatus = roomStatusIsIdle ? "waiting" : "playing";
-      await supabase
-        .from("game_sessions")
-        .update({
-          status: nextStatus,
-          last_activity: new Date().toISOString()
-        })
-        .eq("id", sessionId);
-    }
+    await supabase
+      .from("game_sessions")
+      .update({
+        connected_player_ids: connectedPlayerIds,
+        connected_player_names: connectedPlayerNames,
+        last_activity: new Date().toISOString()
+      })
+      .eq("id", sessionId);
     return false;
   }
   const nextPlayerIds = Array.from(new Set([...session.player_ids, userId]));
@@ -58,6 +66,8 @@ export async function persistPlayerJoin(
     .update({
       player_ids: nextPlayerIds,
       player_names: nextPlayerNames,
+      connected_player_ids: connectedPlayerIds,
+      connected_player_names: connectedPlayerNames,
       status: nextStatus,
       last_activity: new Date().toISOString()
     })
@@ -74,6 +84,9 @@ export interface PersistLeaveArgs {
   supabase: SupabaseClient;
   sessionId: string;
   result: LeaveResult;
+  connectedPlayerIds?: string[];
+  connectedPlayerNames?: string[];
+  gameState?: unknown;
 }
 
 /**
@@ -83,7 +96,14 @@ export interface PersistLeaveArgs {
 export async function persistPlayerLeave(
   args: PersistLeaveArgs
 ): Promise<void> {
-  const { supabase, sessionId, result } = args;
+  const {
+    supabase,
+    sessionId,
+    result,
+    connectedPlayerIds = [],
+    connectedPlayerNames = [],
+    gameState
+  } = args;
   if (result.newHostId) {
     const { data: kp } = await supabase
       .from("kid_profiles")
@@ -95,18 +115,41 @@ export async function persistPlayerLeave(
       .update({
         host_id: result.newHostId,
         host_grade: kp?.grade ?? null,
+        connected_player_ids: connectedPlayerIds,
+        connected_player_names: connectedPlayerNames,
         last_activity: new Date().toISOString()
       })
       .eq("id", sessionId);
   }
   if (result.roomEmpty) {
+    const payload: {
+      status: "paused";
+      game_state?: Record<string, unknown>;
+      connected_player_ids: string[];
+      connected_player_names: string[];
+      last_activity: string;
+    } = {
+      status: "paused",
+      connected_player_ids: connectedPlayerIds,
+      connected_player_names: connectedPlayerNames,
+      last_activity: new Date().toISOString()
+    };
+    if (gameState !== undefined) {
+      payload.game_state = gameState as Record<string, unknown>;
+    }
+    await supabase
+      .from("game_sessions")
+      .update(payload)
+      .eq("id", sessionId)
+      .in("status", ["waiting", "playing", "paused"]);
+  } else if (!result.newHostId) {
     await supabase
       .from("game_sessions")
       .update({
-        status: "paused",
+        connected_player_ids: connectedPlayerIds,
+        connected_player_names: connectedPlayerNames,
         last_activity: new Date().toISOString()
       })
-      .eq("id", sessionId)
-      .in("status", ["waiting", "playing"]);
+      .eq("id", sessionId);
   }
 }

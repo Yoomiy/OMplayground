@@ -10,6 +10,8 @@ export interface PersistGameEndedArgs {
   supabase: SupabaseClient;
   sessionId: string;
   gameState: unknown;
+  connectedPlayerIds?: string[];
+  connectedPlayerNames?: string[];
   endedAt?: string;
 }
 
@@ -22,6 +24,8 @@ export async function persistGameEnded(
     .update({
       status: "completed",
       game_state: args.gameState as Record<string, unknown>,
+      connected_player_ids: args.connectedPlayerIds ?? [],
+      connected_player_names: args.connectedPlayerNames ?? [],
       ended_at: endedAt,
       last_activity: endedAt
     })
@@ -46,6 +50,9 @@ export async function persistGameStopped(
       status: "completed",
       stopped_by: args.stoppedBy,
       game_state: args.gameState as Record<string, unknown>,
+      connected_player_ids: [],
+      connected_player_names: [],
+      is_open: false,
       ended_at: endedAt,
       last_activity: endedAt
     })
@@ -56,6 +63,10 @@ export interface PersistGameRematchArgs {
   supabase: SupabaseClient;
   sessionId: string;
   gameState: unknown;
+  playerIds?: string[];
+  playerNames?: string[];
+  connectedPlayerIds?: string[];
+  connectedPlayerNames?: string[];
   now?: string;
 }
 
@@ -68,6 +79,10 @@ export async function persistGameRematch(
     .update({
       status: "playing",
       game_state: args.gameState as Record<string, unknown>,
+      ...(args.playerIds ? { player_ids: args.playerIds } : {}),
+      ...(args.playerNames ? { player_names: args.playerNames } : {}),
+      connected_player_ids: args.connectedPlayerIds ?? [],
+      connected_player_names: args.connectedPlayerNames ?? [],
       ended_at: null,
       stopped_by: null,
       last_activity: now
@@ -79,6 +94,8 @@ export interface PersistRecessPauseArgs {
   supabase: SupabaseClient;
   sessionId: string;
   gameState: unknown;
+  connectedPlayerIds?: string[];
+  connectedPlayerNames?: string[];
   now?: string;
 }
 
@@ -95,6 +112,33 @@ export async function persistRecessPause(
     .update({
       status: "paused",
       game_state: args.gameState as Record<string, unknown>,
+      connected_player_ids: args.connectedPlayerIds ?? [],
+      connected_player_names: args.connectedPlayerNames ?? [],
+      last_activity: now
+    })
+    .eq("id", args.sessionId);
+}
+
+export const persistGamePaused = persistRecessPause;
+
+export interface PersistGameResumedArgs {
+  supabase: SupabaseClient;
+  sessionId: string;
+  connectedPlayerIds: string[];
+  connectedPlayerNames: string[];
+  now?: string;
+}
+
+export async function persistGameResumed(
+  args: PersistGameResumedArgs
+): Promise<void> {
+  const now = args.now ?? new Date().toISOString();
+  await args.supabase
+    .from("game_sessions")
+    .update({
+      status: "playing",
+      connected_player_ids: args.connectedPlayerIds,
+      connected_player_names: args.connectedPlayerNames,
       last_activity: now
     })
     .eq("id", args.sessionId);
