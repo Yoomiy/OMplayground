@@ -1,4 +1,9 @@
-import { tictactoeModule, type TicTacToeState } from "@playground/game-logic";
+import {
+  drawingModule,
+  tictactoeModule,
+  type DrawingState,
+  type TicTacToeState
+} from "@playground/game-logic";
 import {
   applyIntent,
   assignPlayer,
@@ -68,6 +73,35 @@ describe("Room / host transfer", () => {
     assignPlayer(room, "a-user", "A");
     assignPlayer(room, "b-user", "B");
     expect(room.state).toEqual(saved);
+  });
+
+  it("adds late joiners into drawing seats when minPlayers is 1", () => {
+    const room = getOrCreateRoom("sess-drawing-late-join", {
+      gameId: "g-drawing",
+      gameKey: drawingModule.key,
+      module: drawingModule,
+      gender: "boy",
+      hostId: "a-user"
+    });
+    assignPlayer(room, "a-user", "A");
+    assignPlayer(room, "b-user", "B");
+
+    const state = room.state as DrawingState;
+    expect(state.seats?.["a-user"]).toBe("p1");
+    expect(state.seats?.["b-user"]).toBe("p2");
+
+    const move = applyIntent(room, "b-user", {
+      type: "ADD_STROKE",
+      stroke: {
+        color: "#ffffff",
+        width: 2,
+        points: [
+          { x: 0, y: 0 },
+          { x: 10, y: 10 }
+        ]
+      }
+    });
+    expect(move.ok).toBe(true);
   });
 });
 

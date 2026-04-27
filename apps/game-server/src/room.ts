@@ -41,6 +41,19 @@ export interface Room<State = unknown> {
 
 const rooms = new Map<string, Room<unknown>>();
 
+function assignLateJoinSeatIfSequential<S>(room: Room<S>, userId: string): void {
+  const state = room.state as { seats?: Record<string, unknown> } | null;
+  const seats = state?.seats;
+  if (!seats || seats[userId]) return;
+  const values = Object.values(seats);
+  if (
+    values.length > 0 &&
+    values.every((v) => typeof v === "string" && /^p\d+$/.test(v))
+  ) {
+    (seats as Record<string, string>)[userId] = `p${values.length + 1}`;
+  }
+}
+
 export function getOrCreateRoom<State>(
   sessionId: string,
   meta: {
@@ -200,6 +213,7 @@ export function assignPlayer<S>(
   if (!room.roster.some((p) => p.userId === userId)) {
     room.roster.push(player);
   }
+  assignLateJoinSeatIfSequential(room, userId);
   if (wasIdle && !room.hasBeenActive) {
     const seats: GameSeat[] = Array.from(room.players.values()).map((p) => ({
       userId: p.userId,
