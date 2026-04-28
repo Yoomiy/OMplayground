@@ -75,8 +75,8 @@ export function WhackAMoleSolo() {
   };
 
   return (
-    <div className="mx-auto flex max-w-md flex-col items-center gap-4">
-      <div className="flex w-full items-center justify-between text-sm text-slate-300">
+    <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-3xl border border-amber-100 bg-white/95 p-4 shadow-play">
+      <div className="flex w-full items-center justify-between text-sm font-medium text-slate-700">
         <span>ניקוד: {state.score}</span>
         <span>זמן: {(state.timeLeftMs / 1000).toFixed(1)}s</span>
       </div>
@@ -89,7 +89,7 @@ export function WhackAMoleSolo() {
               type="button"
               aria-label={`תא ${i}${isActive ? " — חפרפרת" : ""}`}
               disabled={state.status !== "playing"}
-              className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-stone-600 bg-stone-900 text-3xl hover:bg-stone-800 disabled:opacity-50"
+              className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-amber-200 bg-gradient-to-b from-amber-100 to-orange-100 text-3xl shadow-inner hover:from-amber-200 hover:to-orange-200 disabled:opacity-50"
               onClick={() => whack(i)}
             >
               {isActive ? "🐹" : ""}
@@ -99,7 +99,7 @@ export function WhackAMoleSolo() {
       </div>
       {state.status === "done" ? (
         <div className="flex flex-col items-center gap-2">
-          <p className="text-lg font-bold text-slate-100">
+          <p className="text-lg font-bold text-slate-900">
             המשחק הסתיים · {state.score} נק'
           </p>
           <Button type="button" onClick={reset}>

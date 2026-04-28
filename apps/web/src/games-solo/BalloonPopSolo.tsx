@@ -137,14 +137,14 @@ export function BalloonPopSolo() {
     const state = stateRef.current;
 
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col gap-3">
-      <div className="flex w-full items-center justify-between text-sm text-slate-300">
+    <div className="mx-auto flex w-full max-w-xl flex-col gap-3 rounded-3xl border border-sky-100 bg-white/95 p-3 shadow-play">
+      <div className="flex w-full items-center justify-between text-sm font-medium text-slate-700">
         <span>ניקוד: {state.score}</span>
         <span>חיים: {"❤️".repeat(Math.max(0, state.lives))}</span>
       </div>
       <div
         ref={fieldRef}
-        className="relative h-[70vh] w-full overflow-hidden rounded-xl border border-sky-700 bg-gradient-to-b from-sky-700 via-sky-900 to-slate-950"
+        className="relative h-[70vh] w-full overflow-hidden rounded-3xl border border-sky-200 bg-gradient-to-b from-sky-100 via-cyan-50 to-emerald-50 shadow-inner"
       >
         {state.balloons.map((b) => (
           <button
@@ -165,9 +165,9 @@ export function BalloonPopSolo() {
           </button>
         ))}
         {state.status === "gameover" ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-slate-950/70">
-            <div className="flex flex-col items-center gap-3 rounded-lg border border-slate-600 bg-slate-900 p-4">
-              <p className="text-lg font-bold text-slate-100">
+          <div className="absolute inset-0 flex items-center justify-center bg-white/75 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-3 rounded-2xl border border-sky-100 bg-white p-4 shadow-play">
+              <p className="text-lg font-bold text-slate-900">
                 המשחק הסתיים · {state.score} נק'
               </p>
               <Button type="button" onClick={reset}>

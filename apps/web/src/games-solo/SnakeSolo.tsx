@@ -135,15 +135,18 @@ export function SnakeSolo() {
   }, [setDir]);
 
   return (
-    <div className="mx-auto flex max-w-md flex-col items-center gap-4" dir="ltr">
-      <div className="flex w-full items-center justify-between text-sm">
-        <span className="text-slate-300">ניקוד: {state.score}</span>
+    <div
+      className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-3xl border border-emerald-100 bg-white/95 p-4 shadow-play"
+      dir="ltr"
+    >
+      <div className="flex w-full items-center justify-between text-sm font-medium">
+        <span className="text-slate-700">ניקוד: {state.score}</span>
         {state.status === "gameover" ? (
-          <span className="text-rose-300">המשחק הסתיים</span>
+          <span className="text-rose-600">המשחק הסתיים</span>
         ) : null}
       </div>
       <div
-        className="grid gap-px rounded bg-slate-700 p-1"
+        className="grid gap-px rounded-2xl bg-emerald-100 p-1 shadow-inner"
         style={{
           gridTemplateColumns: `repeat(${GRID}, 1rem)`,
           gridTemplateRows: `repeat(${GRID}, 1rem)`
@@ -161,12 +164,12 @@ export function SnakeSolo() {
               key={i}
               className={
                 isHead
-                  ? "h-4 w-4 rounded-sm bg-emerald-300"
+                  ? "h-4 w-4 rounded-sm bg-emerald-500"
                   : isBody
-                    ? "h-4 w-4 rounded-sm bg-emerald-600"
+                    ? "h-4 w-4 rounded-sm bg-emerald-400"
                     : isFood
                       ? "h-4 w-4 rounded-sm bg-rose-500"
-                      : "h-4 w-4 bg-slate-900"
+                      : "h-4 w-4 bg-white"
               }
             />
           );
@@ -176,7 +179,7 @@ export function SnakeSolo() {
         <button
           type="button"
           aria-label="למעלה"
-          className="col-start-2 rounded border border-slate-600 bg-slate-800 py-2 text-slate-200"
+          className="col-start-2 rounded-xl border border-emerald-200 bg-emerald-50 py-2 font-bold text-emerald-900 shadow-sm hover:bg-emerald-100"
           onClick={() => setDir(0, -1)}
         >
           ↑
@@ -184,7 +187,7 @@ export function SnakeSolo() {
         <button
           type="button"
           aria-label="שמאלה"
-          className="col-start-1 row-start-2 rounded border border-slate-600 bg-slate-800 py-2 text-slate-200"
+          className="col-start-1 row-start-2 rounded-xl border border-emerald-200 bg-emerald-50 py-2 font-bold text-emerald-900 shadow-sm hover:bg-emerald-100"
           onClick={() => setDir(-1, 0)}
         >
           ←
@@ -192,7 +195,7 @@ export function SnakeSolo() {
         <button
           type="button"
           aria-label="למטה"
-          className="col-start-2 row-start-2 rounded border border-slate-600 bg-slate-800 py-2 text-slate-200"
+          className="col-start-2 row-start-2 rounded-xl border border-emerald-200 bg-emerald-50 py-2 font-bold text-emerald-900 shadow-sm hover:bg-emerald-100"
           onClick={() => setDir(0, 1)}
         >
           ↓
@@ -200,7 +203,7 @@ export function SnakeSolo() {
         <button
           type="button"
           aria-label="ימינה"
-          className="col-start-3 row-start-2 rounded border border-slate-600 bg-slate-800 py-2 text-slate-200"
+          className="col-start-3 row-start-2 rounded-xl border border-emerald-200 bg-emerald-50 py-2 font-bold text-emerald-900 shadow-sm hover:bg-emerald-100"
           onClick={() => setDir(1, 0)}
         >
           →

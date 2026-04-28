@@ -150,8 +150,8 @@ export function SimonSolo() {
         : null;
 
   return (
-    <div className="mx-auto flex max-w-md flex-col items-center gap-4">
-      <div className="flex w-full items-center justify-between text-sm text-slate-300">
+    <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-3xl border border-indigo-100 bg-white/95 p-4 shadow-play">
+      <div className="flex w-full items-center justify-between text-sm font-medium text-slate-700">
         <span>ניקוד: {state.score}</span>
         <span>
           אורך רצף: {state.sequence.length}
@@ -173,7 +173,7 @@ export function SimonSolo() {
               type="button"
               aria-label={`צבע ${c.key}`}
               disabled={state.phase !== "input"}
-              className={`h-28 w-28 rounded-xl border-2 border-slate-800 transition-colors disabled:opacity-70 ${
+              className={`h-28 w-28 rounded-3xl border-4 border-white shadow-play transition-transform hover:scale-[1.02] disabled:opacity-70 ${
                 isLit ? c.litBg : c.bg
               }`}
               onClick={() => {
