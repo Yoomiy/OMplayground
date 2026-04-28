@@ -19,7 +19,7 @@ describe("LEAVE_ROOM persistence (mirrors disconnect)", () => {
     const updateGs = jest.fn().mockReturnValue({ eq: eqGs });
     const maybeSingleKp = jest
       .fn()
-      .mockResolvedValue({ data: { grade: 4 }, error: null });
+      .mockResolvedValue({ data: { grade: 4, full_name: "Guest" }, error: null });
     const eqKp = jest.fn().mockReturnValue({ maybeSingle: maybeSingleKp });
     const selectKp = jest.fn().mockReturnValue({ eq: eqKp });
     const from = jest.fn((table: string) => {
@@ -63,14 +63,16 @@ describe("LEAVE_ROOM persistence (mirrors disconnect)", () => {
     await persistPlayerLeave({ supabase: m.supabase, sessionId, result });
 
     expect(m.from).toHaveBeenCalledWith("kid_profiles");
-    expect(m.selectKp).toHaveBeenCalledWith("grade");
+    expect(m.selectKp).toHaveBeenCalledWith("grade, full_name");
     expect(m.from).toHaveBeenCalledWith("game_sessions");
     expect(m.updateGs).toHaveBeenCalledTimes(1);
     const payload = m.updateGs.mock.calls[0][0] as {
       host_id: string;
+      host_name: string;
       host_grade: number;
     };
     expect(payload.host_id).toBe("guest-user");
+    expect(payload.host_name).toBe("Guest");
     expect(payload.host_grade).toBe(4);
     expect(m.eqGs).toHaveBeenCalledWith("id", sessionId);
   });

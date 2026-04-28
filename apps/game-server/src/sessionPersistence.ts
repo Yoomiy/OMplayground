@@ -107,13 +107,14 @@ export async function persistPlayerLeave(
   if (result.newHostId) {
     const { data: kp } = await supabase
       .from("kid_profiles")
-      .select("grade")
+      .select("grade, full_name")
       .eq("id", result.newHostId)
       .maybeSingle();
     await supabase
       .from("game_sessions")
       .update({
         host_id: result.newHostId,
+        host_name: kp?.full_name ?? connectedPlayerNames[0] ?? "שחקן",
         host_grade: kp?.grade ?? null,
         connected_player_ids: connectedPlayerIds,
         connected_player_names: connectedPlayerNames,

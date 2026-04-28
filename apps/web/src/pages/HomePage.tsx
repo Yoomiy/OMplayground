@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -7,6 +7,7 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useOnlinePresence } from "@/hooks/usePresence";
 import { useOpenGames } from "@/hooks/useOpenGames";
 import { useMyPausedGames } from "@/hooks/useMyPausedGames";
+import { useFriendships } from "@/hooks/useFriendships";
 import {
   discardMySoloWaitingSessions,
   leavePausedGameSession
@@ -15,6 +16,7 @@ import { useInbox } from "@/hooks/useInbox";
 import { OnlineKids } from "@/components/OnlineKids";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
+import { fieldInputClass } from "@/lib/fieldStyles";
 
 interface GameCatalogRow {
   id: string;
@@ -22,6 +24,8 @@ interface GameCatalogRow {
   game_url: string;
   is_multiplayer: boolean;
 }
+
+type OpenGameScopeFilter = "all" | "class" | "friends";
 
 function panelClass(className?: string) {
   return cn(
@@ -47,6 +51,7 @@ export function HomePage() {
   const { rows: openGames } = useOpenGames(user?.id);
   const { rows: myPausedGames, loading: pausedLoading, refetch: refetchPaused } =
     useMyPausedGames(user?.id);
+  const { friends } = useFriendships(user?.id);
   const { unreadTotal } = useInbox(user?.id);
   const [catalog, setCatalog] = useState<GameCatalogRow[]>([]);
   const [busyGameId, setBusyGameId] = useState<string | null>(null);
@@ -55,6 +60,9 @@ export function HomePage() {
   );
   const [err, setErr] = useState<string | null>(null);
   const [pendingGame, setPendingGame] = useState<GameCatalogRow | null>(null);
+  const [openGameScope, setOpenGameScope] =
+    useState<OpenGameScopeFilter>("all");
+  const [openGameIdFilter, setOpenGameIdFilter] = useState("");
 
   useEffect(() => {
     if (!profile) return;
@@ -89,6 +97,32 @@ export function HomePage() {
       navigate("/teacher", { replace: true });
     }
   }, [profile?.role, navigate]);
+
+  const friendIds = useMemo(
+    () => new Set(friends.map((f) => f.partner.id)),
+    [friends]
+  );
+  const openGameOptions = useMemo(() => {
+    const options = new Map<string, string>();
+    for (const g of openGames) {
+      options.set(g.game_id, g.games?.name_he ?? "משחק");
+    }
+    return Array.from(options.entries()).sort((a, b) =>
+      a[1].localeCompare(b[1], "he")
+    );
+  }, [openGames]);
+  const filteredOpenGames = useMemo(() => {
+    return openGames.filter((g) => {
+      if (openGameIdFilter && g.game_id !== openGameIdFilter) return false;
+      if (openGameScope === "class" && g.host_grade !== profile?.grade) {
+        return false;
+      }
+      if (openGameScope === "friends" && !friendIds.has(g.host_id)) {
+        return false;
+      }
+      return true;
+    });
+  }, [friendIds, openGameIdFilter, openGames, openGameScope, profile?.grade]);
 
   if (adminLoading) {
     return (
@@ -360,17 +394,55 @@ export function HomePage() {
           <p className="text-sm text-slate-600">
             חדרים פתוחים שאפשר להצטרף אליהם עכשיו
           </p>
+          <div className="flex flex-wrap items-end gap-3 text-sm">
+            <label className="flex min-w-[160px] flex-1 flex-col gap-1 font-medium text-slate-700">
+              מי יצר את החדר
+              <select
+                className={cn(fieldInputClass, "py-2 text-sm")}
+                value={openGameScope}
+                onChange={(e) =>
+                  setOpenGameScope(e.target.value as OpenGameScopeFilter)
+                }
+              >
+                <option value="all">כולם</option>
+                <option value="class">הכיתה שלי</option>
+                <option value="friends">חברים שלי</option>
+              </select>
+            </label>
+            <label className="flex min-w-[160px] flex-1 flex-col gap-1 font-medium text-slate-700">
+              משחק
+              <select
+                className={cn(fieldInputClass, "py-2 text-sm")}
+                value={openGameIdFilter}
+                onChange={(e) => setOpenGameIdFilter(e.target.value)}
+              >
+                <option value="">כל המשחקים</option>
+                {openGameOptions.map(([id, name]) => (
+                  <option key={id} value={id}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
           <ul className="space-y-3">
-            {openGames.map((g) => (
+            {filteredOpenGames.map((g) => (
               <li
                 key={g.id}
                 className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm"
               >
-                <span className="font-medium text-slate-800">
-                  {g.host_name}
-                  <span className="text-slate-500">
-                    {" "}
-                    · {g.status === "waiting" ? "ממתין" : "פעיל"}
+                <span className="flex min-w-0 flex-col gap-1">
+                  <span className="font-semibold text-slate-800">
+                    {g.games?.name_he ?? "משחק"} · מארח: {g.host_name}
+                    <span className="font-medium text-slate-500">
+                      {" "}
+                      · {g.status === "waiting" ? "ממתין" : "פעיל"}
+                    </span>
+                  </span>
+                  <span className="text-xs text-slate-600">
+                    {g.connected_player_names.length > 0
+                      ? `שחקנים בחדר: ${g.connected_player_names.join(", ")}`
+                      : "אין שחקנים בחדר כרגע"}
                   </span>
                 </span>
                 <Button
@@ -383,6 +455,11 @@ export function HomePage() {
               </li>
             ))}
           </ul>
+          {filteredOpenGames.length === 0 ? (
+            <p className="text-sm text-slate-500">
+              אין חדרים פתוחים לפי המסננים.
+            </p>
+          ) : null}
         </section>
       ) : null}
 

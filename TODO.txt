@@ -1,9 +1,7 @@
 1. min_players need to agree to a remach.
 4. audio messages
 8. allow kids to add comments to message report
-11. show game name at open games
 12. add a way to resume stoped soloGames
 13. add fullscreen option to the racing game
 14. send message with Enter in ingame chat 
 15. you don't see open games that you left
-16. we need to show who is in the room in open games too
