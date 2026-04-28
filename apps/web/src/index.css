@@ -1,3 +1,32 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --play-bg: 255 252 246;
+    --play-bg-end: 240 253 244;
+    --play-card: 255 255 255;
+    --play-border: 226 232 240;
+    --play-border-strong: 203 213 225;
+    --play-text: 30 41 59;
+    --play-muted: 100 116 139;
+    --play-primary: 79 70 229;
+    --play-primary-hover: 67 56 202;
+    --play-accent: 14 165 233;
+  }
+
+  html {
+    @apply antialiased;
+  }
+
+  body {
+    @apply min-h-screen text-[rgb(var(--play-text)/1)];
+    background-color: rgb(var(--play-bg));
+    background-image: linear-gradient(
+      165deg,
+      rgb(var(--play-bg)),
+      rgb(var(--play-bg-end))
+    );
+  }
+}

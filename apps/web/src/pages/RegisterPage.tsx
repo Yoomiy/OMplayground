@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { usernameToSyntheticEmail } from "@/lib/username";
 import { Button } from "@/components/ui/button";
+import { fieldInputClass, fieldLabelClass } from "@/lib/fieldStyles";
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -57,71 +58,95 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-md flex-col gap-6 p-6">
-      <h1 className="text-2xl font-semibold">הרשמה</h1>
-      <form className="flex flex-col gap-4" onSubmit={(e) => void onSubmit(e)}>
-        <label className="flex flex-col gap-1 text-sm">
-          שם משתמש (ללא דוא״ל מדומה בממשק)
-          <input
-            className="rounded border border-slate-600 bg-slate-900 px-3 py-2"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          שם תצוגה
-          <input
-            className="rounded border border-slate-600 bg-slate-900 px-3 py-2"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            required
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          מגדר
-          <select
-            className="rounded border border-slate-600 bg-slate-900 px-3 py-2"
-            value={gender}
-            onChange={(e) => setGender(e.target.value as "boy" | "girl")}
-          >
-            <option value="boy">בן</option>
-            <option value="girl">בת</option>
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          כיתה
-          <input
-            type="number"
-            min={1}
-            max={7}
-            className="rounded border border-slate-600 bg-slate-900 px-3 py-2"
-            value={grade}
-            onChange={(e) => setGrade(Number(e.target.value))}
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          סיסמה
-          <input
-            type="password"
-            className="rounded border border-slate-600 bg-slate-900 px-3 py-2"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </label>
-        {error ? (
-          <p className="text-sm text-amber-300" role="alert">
-            {error}
+    <div className="mx-auto flex max-w-md flex-col gap-6 px-4 py-10 sm:px-6">
+      <div className="rounded-3xl border border-slate-200/90 bg-white/95 p-6 shadow-play sm:p-8">
+        <div className="mb-8 text-center">
+          <span className="text-5xl leading-none" aria-hidden>
+            ✨
+          </span>
+          <h1 className="mt-4 text-3xl font-bold text-slate-900">
+            הצטרפו למגרש
+          </h1>
+          <p className="mt-2 text-sm text-slate-600">
+            כמה פרטים ואפשר להתחיל לשחק
           </p>
-        ) : null}
-        <Button type="submit" disabled={loading}>
-          {loading ? "נרשם…" : "הרשם"}
-        </Button>
-      </form>
-      <p className="text-sm text-slate-400">
+        </div>
+        <form
+          className="flex flex-col gap-5"
+          onSubmit={(e) => void onSubmit(e)}
+        >
+          <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
+            שם משתמש
+            <input
+              className={fieldInputClass}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+            <span className="text-xs font-normal text-slate-500">
+              ללא דוא״ל מדומה בממשק
+            </span>
+          </label>
+          <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
+            שם תצוגה
+            <input
+              className={fieldInputClass}
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+            />
+          </label>
+          <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
+            מגדר
+            <select
+              className={fieldInputClass}
+              value={gender}
+              onChange={(e) => setGender(e.target.value as "boy" | "girl")}
+            >
+              <option value="boy">בן</option>
+              <option value="girl">בת</option>
+            </select>
+          </label>
+          <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
+            כיתה
+            <input
+              type="number"
+              min={1}
+              max={7}
+              className={fieldInputClass}
+              value={grade}
+              onChange={(e) => setGrade(Number(e.target.value))}
+            />
+          </label>
+          <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
+            סיסמה
+            <input
+              type="password"
+              className={fieldInputClass}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </label>
+          {error ? (
+            <p
+              className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900"
+              role="alert"
+            >
+              {error}
+            </p>
+          ) : null}
+          <Button className="w-full" type="submit" size="lg" disabled={loading}>
+            {loading ? "נרשם…" : "הרשם"}
+          </Button>
+        </form>
+      </div>
+      <p className="text-center text-sm text-slate-600">
         כבר רשום?{" "}
-        <Link className="text-indigo-400 underline" to="/login">
+        <Link
+          className="font-bold text-indigo-600 underline decoration-2 underline-offset-2 hover:text-indigo-700"
+          to="/login"
+        >
           התחברות
         </Link>
       </p>

@@ -45,13 +45,15 @@ function PlayPage() {
   }, [isAdmin, profile?.role]);
 
   if (!sessionId) {
-    return <p className="p-6 text-sm text-amber-300">חסר מזהה מפגש</p>;
+    return <p className="p-6 text-sm font-medium text-amber-900">חסר מזהה מפגש</p>;
   }
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-6 p-6">
-      <header className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">{gameName || "משחק"}</h1>
+    <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-6 sm:px-6">
+      <header className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-slate-200/90 bg-white/95 p-4 shadow-play">
+        <h1 className="text-xl font-bold text-slate-900">
+          {gameName || "משחק"}
+        </h1>
         <Button variant="outline" asChild>
           <Link to={backHref}>{backLabel}</Link>
         </Button>

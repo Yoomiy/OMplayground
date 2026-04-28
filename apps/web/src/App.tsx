@@ -19,7 +19,7 @@ function Protected({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-400">
+      <div className="flex min-h-screen items-center justify-center text-play-muted">
         טוען…
       </div>
     );
@@ -32,7 +32,7 @@ function Protected({ children }: { children: ReactNode }) {
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="min-h-screen text-slate-800">
       <PresenceProvider>
         <PendingChallengeBanner />
         <FriendRequestPopup />

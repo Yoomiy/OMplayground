@@ -5,6 +5,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
+import { fieldInputClass } from "@/lib/fieldStyles";
+import { cn } from "@/lib/cn";
 import {
   matchesTeacherStatusFilter,
   type TeacherSessionStatusFilter
@@ -34,25 +36,27 @@ export function TeacherPage() {
   }, [isAdmin, navigate]);
 
   if (adminLoading) {
-    return <p className="p-6 text-sm text-slate-400">טוען…</p>;
+    return <p className="p-6 text-sm text-slate-500">טוען…</p>;
   }
 
   if (isAdmin) {
     return (
-      <div className="mx-auto max-w-lg p-6 text-sm text-slate-400">
+      <div className="mx-auto max-w-lg p-6 text-sm text-slate-500">
         מעביר לניהול…
       </div>
     );
   }
 
   if (loading) {
-    return <p className="p-6 text-sm text-slate-400">טוען…</p>;
+    return <p className="p-6 text-sm text-slate-500">טוען…</p>;
   }
 
   if (profile && profile.role !== "teacher") {
     return (
       <div className="p-6">
-        <p className="text-amber-300">דף זה מיועד למורים בלבד.</p>
+        <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 font-medium text-amber-900">
+          דף זה מיועד למורים בלבד.
+        </p>
         <Button variant="outline" className="mt-4" asChild>
           <Link to="/home">בית</Link>
         </Button>
@@ -83,7 +87,7 @@ export function TeacherPage() {
           </Button>
         </div>
       </header>
-      <p className="text-sm text-slate-400">
+      <p className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm text-slate-600 shadow-sm">
         מוצגים מפגשים באותו מגדר כמו פרופיל המורה (מדיניות RLS). דירוג כיתה
         לפי כיתת המארח.
       </p>
@@ -190,13 +194,13 @@ function TeacherSessionList({
   }, [rows, statusFilter, gameIdFilter, gradeFilter]);
 
   if (loading) {
-    return <p className="text-sm text-slate-400">טוען…</p>;
+    return <p className="text-sm text-slate-500">טוען…</p>;
   }
 
   return (
     <div className="space-y-4">
       {copyNotice ? (
-        <p className="text-sm text-emerald-400" role="status">
+        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-900" role="status">
           {copyNotice}
         </p>
       ) : null}
@@ -204,7 +208,7 @@ function TeacherSessionList({
         <label className="flex flex-col gap-1">
           סטטוס
           <select
-            className="rounded border border-slate-600 bg-slate-900 px-2 py-1"
+            className={cn(fieldInputClass, "py-2 text-sm")}
             value={statusFilter}
             onChange={(e) =>
               setStatusFilter(e.target.value as TeacherSessionStatusFilter)
@@ -220,7 +224,7 @@ function TeacherSessionList({
         <label className="flex flex-col gap-1">
           משחק
           <select
-            className="rounded border border-slate-600 bg-slate-900 px-2 py-1"
+            className={cn(fieldInputClass, "py-2 text-sm")}
             value={gameIdFilter}
             onChange={(e) => setGameIdFilter(e.target.value)}
           >
@@ -235,7 +239,7 @@ function TeacherSessionList({
         <label className="flex flex-col gap-1">
           כיתת מארח
           <select
-            className="rounded border border-slate-600 bg-slate-900 px-2 py-1"
+            className={cn(fieldInputClass, "py-2 text-sm")}
             value={gradeFilter}
             onChange={(e) => setGradeFilter(e.target.value)}
           >
@@ -249,9 +253,9 @@ function TeacherSessionList({
         </label>
       </div>
 
-      <div className="overflow-x-auto rounded border border-slate-700">
+      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
         <table className="w-full text-right text-sm">
-          <thead className="border-b border-slate-700 bg-slate-900/80">
+          <thead className="border-b border-slate-200 bg-slate-100">
             <tr>
               <th className="p-2">משחק</th>
               <th className="p-2">סטטוס</th>
@@ -264,19 +268,19 @@ function TeacherSessionList({
           </thead>
           <tbody>
             {filtered.map((r) => (
-              <tr key={r.id} className="border-b border-slate-800">
+              <tr key={r.id} className="border-b border-slate-100 hover:bg-slate-50/80">
                 <td className="p-2">{r.games?.name_he ?? "—"}</td>
                 <td className="p-2">{r.status}</td>
                 <td className="p-2">{r.host_name}</td>
                 <td className="p-2">{r.host_grade ?? "—"}</td>
-                <td className="p-2 font-mono text-xs text-slate-400">
+                <td className="p-2 font-mono text-xs text-slate-500">
                   {r.last_activity
                     ? new Date(r.last_activity).toLocaleString("he-IL")
                     : "—"}
                 </td>
                 <td className="p-2">
                   <Link
-                    className="text-indigo-400 underline"
+                    className="font-semibold text-indigo-600 underline decoration-2 underline-offset-2 hover:text-indigo-800"
                     to={`/play/${r.id}?observe=1`}
                   >
                     צפה

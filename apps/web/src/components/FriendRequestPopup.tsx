@@ -55,28 +55,44 @@ export function FriendRequestPopup() {
   }
 
   return (
-    <div className="fixed inset-x-0 bottom-4 z-40 mx-auto w-full max-w-lg px-4">
-      <div className="rounded-lg border border-sky-500/40 bg-slate-900/95 p-4 shadow-lg backdrop-blur">
-        <p className="text-sm font-medium text-sky-100">
-          {fromName ?? "מישהו"} שלח/ה לך בקשת חברות
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <div
+        className="pointer-events-auto w-full max-w-md rounded-3xl border-2 border-sky-200 bg-white p-5 shadow-2xl"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="friend-req-title"
+      >
+        <div className="mb-1 text-2xl" aria-hidden>
+          🤝
+        </div>
+        <p
+          id="friend-req-title"
+          className="text-base font-bold leading-snug text-slate-900"
+        >
+          {fromName ?? "מישהו"} רוצה להיות חבר/ה שלך
         </p>
-        <div className="mt-3 flex gap-2">
+        <p className="mt-2 text-sm text-slate-600">
+          רוצה לאשר את הבקשה?
+        </p>
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row-reverse sm:justify-stretch">
           <Button
-            size="sm"
+            className="flex-1"
             type="button"
+            size="lg"
             disabled={busy}
             onClick={() => void onAccept()}
           >
-            אשר
+            כן, בואו נהיה חברים
           </Button>
           <Button
-            size="sm"
+            className="flex-1"
             variant="outline"
             type="button"
+            size="lg"
             disabled={busy}
             onClick={() => void onDecline()}
           >
-            דחה
+            לא עכשיו
           </Button>
         </div>
       </div>

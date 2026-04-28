@@ -60,28 +60,41 @@ export function PendingChallengeBanner() {
   }
 
   return (
-    <div className="sticky top-0 z-30 w-full border-b border-amber-500/40 bg-amber-500/15 backdrop-blur">
-      <div className="mx-auto flex max-w-lg flex-wrap items-center justify-between gap-3 p-3 text-sm">
-        <p className="font-medium text-amber-100">
-          {fromName ?? "מישהו"} שלח/ה לך אתגר משחק
-        </p>
-        <div className="flex gap-2">
+    <div className="sticky top-0 z-30 w-full border-b border-amber-200 bg-gradient-to-l from-amber-100 to-orange-50 shadow-md">
+      <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6">
+        <div className="flex min-w-0 items-start gap-3">
+          <span
+            className="mt-0.5 flex size-11 shrink-0 items-center justify-center rounded-2xl bg-amber-400 text-2xl shadow-inner"
+            aria-hidden
+          >
+            🎮
+          </span>
+          <div>
+            <p className="text-base font-bold text-amber-950">
+              אתגר מ-{fromName ?? "חבר"}
+            </p>
+            <p className="text-sm text-amber-900/90">
+              מישהו מזמין אותך למשחק — רוצה להצטרף?
+            </p>
+          </div>
+        </div>
+        <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row">
           <Button
-            size="sm"
             type="button"
+            size="lg"
             disabled={busy}
             onClick={() => void onAccept()}
           >
-            קבל
+            בואו נשחק!
           </Button>
           <Button
-            size="sm"
             variant="outline"
             type="button"
+            size="lg"
             disabled={busy}
             onClick={() => void onDecline()}
           >
-            דחה
+            אולי אחר כך
           </Button>
         </div>
       </div>

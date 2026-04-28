@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { usernameToSyntheticEmail } from "@/lib/username";
 import { isWithinRecess, type RecessWindowRow } from "@/lib/recess";
 import { Button } from "@/components/ui/button";
+import { fieldInputClass, fieldLabelClass } from "@/lib/fieldStyles";
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -55,10 +56,7 @@ export function LoginPage() {
         .select("day_of_week, start_time, end_time, is_active")
         .eq("is_active", true);
       const rows = (schedules ?? []) as RecessWindowRow[];
-      if (
-        rows.length > 0 &&
-        !isWithinRecess(new Date(), rows)
-      ) {
+      if (rows.length > 0 && !isWithinRecess(new Date(), rows)) {
         await supabase.auth.signOut();
         setError(
           "כרגע אין הפסקה פעילה — לא ניתן להתחבר (מורים יכולים להתחבר בכל עת)."
@@ -76,42 +74,61 @@ export function LoginPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-md flex-col gap-6 p-6">
-      <h1 className="text-2xl font-semibold">התחברות</h1>
-      <form className="flex flex-col gap-4" onSubmit={(e) => void onSubmit(e)}>
-        <label className="flex flex-col gap-1 text-sm">
-          שם משתמש
-          <input
-            className="rounded border border-slate-600 bg-slate-900 px-3 py-2"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            autoComplete="username"
-            required
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          סיסמה
-          <input
-            type="password"
-            className="rounded border border-slate-600 bg-slate-900 px-3 py-2"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-            required
-          />
-        </label>
-        {error ? (
-          <p className="text-sm text-amber-300" role="alert">
-            {error}
+    <div className="mx-auto flex max-w-md flex-col gap-6 px-4 py-10 sm:px-6">
+      <div className="rounded-3xl border border-slate-200/90 bg-white/95 p-6 shadow-play sm:p-8">
+        <div className="mb-8 text-center">
+          <span className="text-5xl leading-none" aria-hidden>
+            🛝
+          </span>
+          <h1 className="mt-4 text-3xl font-bold text-slate-900">ברוכים הבאים</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            התחברו כדי להמשיך למשחק
           </p>
-        ) : null}
-        <Button type="submit" disabled={loading}>
-          {loading ? "מתחבר…" : "התחבר"}
-        </Button>
-      </form>
-      <p className="text-sm text-slate-400">
+        </div>
+        <form
+          className="flex flex-col gap-5"
+          onSubmit={(e) => void onSubmit(e)}
+        >
+          <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
+            שם משתמש
+            <input
+              className={fieldInputClass}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              autoComplete="username"
+              required
+            />
+          </label>
+          <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
+            סיסמה
+            <input
+              type="password"
+              className={fieldInputClass}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              required
+            />
+          </label>
+          {error ? (
+            <p
+              className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900"
+              role="alert"
+            >
+              {error}
+            </p>
+          ) : null}
+          <Button className="w-full" type="submit" size="lg" disabled={loading}>
+            {loading ? "מתחבר…" : "התחבר"}
+          </Button>
+        </form>
+      </div>
+      <p className="text-center text-sm text-slate-600">
         אין חשבון?{" "}
-        <Link className="text-indigo-400 underline" to="/register">
+        <Link
+          className="font-bold text-indigo-600 underline decoration-2 underline-offset-2 hover:text-indigo-700"
+          to="/register"
+        >
           הרשמה
         </Link>
       </p>

@@ -33,11 +33,11 @@ export function JoinByCodePage() {
   }, [code, navigate]);
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-4 p-6">
-      <h1 className="text-xl font-semibold">מצטרפים…</h1>
+    <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-10 sm:px-6">
+      <h1 className="text-2xl font-bold text-slate-900">מצטרפים…</h1>
       {err ? (
         <>
-          <p className="text-sm text-amber-300" role="alert">
+          <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900" role="alert">
             {err}
           </p>
           <Button variant="outline" asChild>
@@ -45,7 +45,7 @@ export function JoinByCodePage() {
           </Button>
         </>
       ) : (
-        <p className="text-sm text-slate-400">טוען מפגש…</p>
+        <p className="text-sm text-slate-600">טוען מפגש…</p>
       )}
     </div>
   );

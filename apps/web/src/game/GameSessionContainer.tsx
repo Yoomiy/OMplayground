@@ -459,7 +459,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
   }, [gameState, myUserId]);
 
   if (!gameState || !gameKey) {
-    return <p className="text-sm text-slate-400">{status}</p>;
+    return <p className="text-sm text-slate-600">{status}</p>;
   }
 
   const boardEntry = BOARD_REGISTRY[gameKey];
@@ -485,32 +485,32 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
     <div
       className={
         isFullscreen
-          ? "fixed inset-0 z-40 space-y-4 overflow-auto bg-slate-950 p-4"
+          ? "fixed inset-0 z-40 space-y-4 overflow-auto bg-[rgb(var(--play-bg))] p-4"
           : "space-y-4"
       }
     >
-      <p className="text-sm text-slate-400">
+      <p className="text-sm text-slate-600">
         {isTeacherObserver ? "צפייה בלבד (מורה) · " : ""}
         {status}
       </p>
       {toast && (
         <div
           role="status"
-          className="rounded border border-amber-500 bg-amber-950/60 px-3 py-2 text-sm text-amber-100"
+          className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-950 shadow-sm"
         >
           {toast}
         </div>
       )}
-      <section className="rounded border border-slate-700 bg-slate-900/50 p-3 text-sm">
-        <h2 className="font-medium text-slate-200">שחקנים בחדר</h2>
+      <section className="rounded-2xl border border-slate-200 bg-white/95 p-3 text-sm shadow-sm">
+        <h2 className="font-bold text-slate-800">שחקנים בחדר</h2>
         <div className="mt-2 flex flex-wrap gap-2">
           {(roster.length > 0 ? roster : players).map((p) => (
             <span
               key={p.userId}
               className={
                 connectedIds.has(p.userId)
-                  ? "rounded bg-emerald-950 px-2 py-1 text-emerald-100"
-                  : "rounded bg-slate-800 px-2 py-1 text-slate-400"
+                  ? "rounded-lg bg-emerald-100 px-2 py-1 font-medium text-emerald-900"
+                  : "rounded-lg bg-slate-200 px-2 py-1 text-slate-600"
               }
             >
               {p.displayName}
@@ -520,7 +520,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         </div>
       </section>
       {paused ? (
-        <section className="rounded border border-amber-600 bg-amber-950/30 p-3 text-sm text-amber-100">
+        <section className="rounded-2xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 shadow-sm">
           <p className="font-medium">המשחק מושהה ונשמר להמשך.</p>
           {missingPlayers.length > 0 ? (
             <p className="mt-1">
@@ -556,7 +556,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
           />
         </div>
       ) : (
-        <p className="text-sm text-amber-300">
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900">
           משחק לא נתמך בלקוח: {gameKey}
         </p>
       )}
@@ -583,13 +583,13 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         <div
           role="alertdialog"
           aria-label="המשחק הסתיים"
-          className="rounded-lg border border-slate-600 bg-slate-900 p-4 text-center"
+          className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-play"
         >
-          <p className="text-lg font-bold text-slate-100">
+          <p className="text-lg font-bold text-slate-900">
             {endOverlayHeadline(endOverlay, mySymbol, isTeacherObserver)}
           </p>
           {rematch && endOverlay.kind !== "stopped" ? (
-            <p className="mt-2 text-sm text-slate-300">
+            <p className="mt-2 text-sm text-slate-600">
               משחק חוזר: {rematch.accepted.length} אישרו
               {rematch.refused.length > 0
                 ? ` · ${rematch.refused.length} סירבו`
@@ -618,7 +618,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
                 </button>
                 <button
                   type="button"
-                  className="rounded border border-slate-600 px-3 py-1 text-sm text-slate-100 hover:bg-slate-800 disabled:opacity-50"
+                  className="rounded-xl border-2 border-slate-300 bg-white px-3 py-1 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-50"
                   disabled={refusedRematch}
                   onClick={() => respondToRematch(false)}
                 >
@@ -649,14 +649,14 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         </div>
       )}
       {!isFullscreen && isTeacherObserver ? (
-        <section className="space-y-2 rounded-lg border border-slate-700 bg-slate-900/50 p-3">
+        <section className="space-y-2 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-sm font-medium text-slate-300">
+            <h2 className="text-sm font-bold text-slate-800">
               צ׳אט (ניהול מורה)
             </h2>
             <button
               type="button"
-              className="rounded border border-amber-600 px-2 py-1 text-xs text-amber-100 hover:bg-amber-950/80"
+              className="rounded-lg border border-amber-400 bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-900 hover:bg-amber-100"
               onClick={() => {
                 if (
                   !window.confirm("למחוק את כל ההודעות במפגש זה?")
@@ -672,13 +672,13 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
             </button>
           </div>
           {teacherChat.error ? (
-            <p className="text-xs text-amber-300">{teacherChat.error}</p>
+            <p className="text-xs font-medium text-amber-800">{teacherChat.error}</p>
           ) : null}
-          <ul className="max-h-48 space-y-2 overflow-y-auto text-sm text-slate-200">
+          <ul className="max-h-48 space-y-2 overflow-y-auto text-sm text-slate-800">
             {teacherChat.lines.map((l) => (
               <li
                 key={l.id}
-                className="flex items-start justify-between gap-2 border-b border-slate-800 pb-1"
+                className="flex items-start justify-between gap-2 border-b border-slate-100 pb-1"
               >
                 <span>
                   <span className="text-slate-500">{l.sender_name}:</span>{" "}
@@ -702,12 +702,12 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
           </ul>
         </section>
       ) : !isFullscreen ? (
-        <section className="space-y-2 rounded-lg border border-slate-700 bg-slate-900/50 p-3">
-          <h2 className="text-sm font-medium text-slate-300">צ׳אט במשחק</h2>
+        <section className="space-y-2 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-sm">
+          <h2 className="text-sm font-bold text-slate-800">צ׳אט במשחק</h2>
           {kidChat.error ? (
-            <p className="text-xs text-amber-300">{kidChat.error}</p>
+            <p className="text-xs font-medium text-amber-800">{kidChat.error}</p>
           ) : null}
-          <ul className="max-h-40 space-y-1 overflow-y-auto text-sm text-slate-200">
+          <ul className="max-h-40 space-y-1 overflow-y-auto text-sm text-slate-800">
             {kidChat.lines.map((l) => (
               <li key={l.id}>
                 <span className="text-slate-500">{l.sender_name}:</span>{" "}
@@ -717,7 +717,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
           </ul>
           <div className="flex gap-2">
             <input
-              className="flex-1 rounded border border-slate-600 bg-slate-950 px-2 py-1 text-sm"
+              className="min-h-10 flex-1 rounded-xl border-2 border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200"
               value={chatDraft}
               onChange={(e) => setChatDraft(e.target.value)}
               placeholder="הודעה…"

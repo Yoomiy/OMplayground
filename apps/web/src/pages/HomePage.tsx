@@ -14,6 +14,7 @@ import {
 import { useInbox } from "@/hooks/useInbox";
 import { OnlineKids } from "@/components/OnlineKids";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/cn";
 
 interface GameCatalogRow {
   id: string;
@@ -21,6 +22,21 @@ interface GameCatalogRow {
   game_url: string;
   is_multiplayer: boolean;
 }
+
+function panelClass(className?: string) {
+  return cn(
+    "rounded-3xl border border-slate-200/90 bg-white/95 p-5 shadow-play backdrop-blur-sm",
+    className
+  );
+}
+
+const SOLO_GRADIENTS = [
+  "from-sky-100 to-cyan-50 border-sky-200/80",
+  "from-violet-100 to-fuchsia-50 border-violet-200/80",
+  "from-amber-100 to-orange-50 border-amber-200/80",
+  "from-emerald-100 to-teal-50 border-emerald-200/80",
+  "from-rose-100 to-pink-50 border-rose-200/80"
+];
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -75,13 +91,13 @@ export function HomePage() {
 
   if (adminLoading) {
     return (
-      <div className="mx-auto max-w-lg p-6 text-sm text-slate-400">טוען…</div>
+      <div className="mx-auto max-w-2xl p-6 text-sm text-slate-500">טוען…</div>
     );
   }
 
   if (isAdmin) {
     return (
-      <div className="mx-auto max-w-lg p-6 text-sm text-slate-400">
+      <div className="mx-auto max-w-2xl p-6 text-sm text-slate-500">
         מעביר לניהול…
       </div>
     );
@@ -89,7 +105,7 @@ export function HomePage() {
 
   if (profile?.role === "teacher") {
     return (
-      <div className="mx-auto max-w-lg p-6 text-sm text-slate-400">
+      <div className="mx-auto max-w-2xl p-6 text-sm text-slate-500">
         מעביר ללוח המורה…
       </div>
     );
@@ -146,167 +162,215 @@ export function HomePage() {
     await refetchPaused();
   }
 
+  const soloGames = catalog.filter((g) => !g.is_multiplayer);
+  const mpGames = catalog.filter((g) => g.is_multiplayer);
+
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-6 p-6">
-      <header className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">שלום, {profile?.full_name}</h1>
-          <p className="text-sm text-slate-400">
-            <span className="text-emerald-400">מחובר</span>
-            <span className="mr-2 text-slate-500">
-              · נוכחות: {onlineUserIds.size}
+    <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 pb-10 pt-4 sm:px-6">
+      <header
+        className={panelClass(
+          "flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+        )}
+      >
+        <div className="space-y-1">
+          <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600/90">
+            היי!
+          </p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            שלום, {profile?.full_name}
+          </h1>
+          <p className="text-sm text-slate-600">
+            <span className="inline-flex items-center gap-1 font-medium text-emerald-600">
+              <span
+                className="inline-block size-2 rounded-full bg-emerald-500"
+                aria-hidden
+              />
+              מחובר
             </span>
+            <span className="mx-2 text-slate-400">·</span>
+            <span>{onlineUserIds.size} מחוברים עכשיו</span>
           </p>
         </div>
-        <Button variant="outline" type="button" onClick={() => void logout()}>
-          התנתק
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" type="button" asChild>
+            <Link to="/friends">חברים</Link>
+          </Button>
+          <Button variant="outline" type="button" asChild>
+            <Link to="/inbox">
+              הודעות
+              {unreadTotal > 0 ? (
+                <span className="rounded-full bg-indigo-600 px-2 py-0.5 text-[11px] text-white">
+                  {unreadTotal}
+                </span>
+              ) : null}
+            </Link>
+          </Button>
+          <Button variant="muted" type="button" onClick={() => void logout()}>
+            התנתק
+          </Button>
+        </div>
       </header>
 
       {err ? (
-        <p className="text-sm text-amber-300" role="alert">
+        <p
+          className="rounded-2xl border border-amber-300/80 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900"
+          role="alert"
+        >
           {err}
         </p>
       ) : null}
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">משחקים</h2>
+      <section className={panelClass("space-y-5")}>
+        <div className="flex flex-wrap items-end justify-between gap-2 border-b border-slate-100 pb-3">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">ספריית משחקים</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              בחר משחק יחיד או צור חדר לחברים
+            </p>
+          </div>
+        </div>
+
         {catalog.length === 0 ? (
-          <p className="text-sm text-slate-400">אין משחקים זמינים</p>
+          <p className="text-center text-sm text-slate-500">אין משחקים זמינים</p>
         ) : (
           <>
-            {catalog.some((g) => g.is_multiplayer) ? (
-              <div className="flex flex-col gap-2">
-                <h3 className="text-sm font-medium text-slate-300">
-                  משחקים משותפים
+            {soloGames.length > 0 ? (
+              <div className="space-y-3">
+                <h3 className="text-sm font-bold text-slate-800">
+                  משחקים לבד
                 </h3>
-                {catalog
-                  .filter((g) => g.is_multiplayer)
-                  .map((g) => (
-                    <Button
-                      key={g.id}
-                      type="button"
-                      disabled={busyGameId !== null}
-                      onClick={() => void createOpenSession(g.id)}
-                    >
-                      {busyGameId === g.id
-                        ? "יוצר…"
-                        : `צור מפגש פתוח (${g.name_he})`}
-                    </Button>
+                <ul className="grid gap-3 sm:grid-cols-2">
+                  {soloGames.map((g, i) => (
+                    <li key={g.id}>
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/solo/${g.game_url}`)}
+                        className={cn(
+                          "flex w-full flex-col gap-2 rounded-2xl border-2 bg-gradient-to-br p-4 text-right shadow-sm transition hover:brightness-[1.02] active:scale-[0.99]",
+                          SOLO_GRADIENTS[i % SOLO_GRADIENTS.length]
+                        )}
+                      >
+                        <span className="text-lg font-bold text-slate-900">
+                          {g.name_he}
+                        </span>
+                        <span className="text-xs font-medium text-slate-600">
+                          שחק עכשיו
+                        </span>
+                      </button>
+                    </li>
                   ))}
+                </ul>
               </div>
             ) : null}
 
-            {catalog.some((g) => !g.is_multiplayer) ? (
-              <div className="flex flex-col gap-2">
-                <h3 className="text-sm font-medium text-slate-300">
-                  משחקי יחיד
+            {mpGames.length > 0 ? (
+              <div className="space-y-3">
+                <h3 className="text-sm font-bold text-slate-800">
+                  משחק עם חברים
                 </h3>
-                {catalog
-                  .filter((g) => !g.is_multiplayer)
-                  .map((g) => (
-                    <Button
-                      key={g.id}
-                      type="button"
-                      variant="outline"
-                      onClick={() => navigate(`/solo/${g.game_url}`)}
-                    >
-                      שחק · {g.name_he}
-                    </Button>
+                <ul className="flex flex-col gap-3">
+                  {mpGames.map((g) => (
+                    <li key={g.id}>
+                      <Button
+                        className="w-full justify-between text-base"
+                        type="button"
+                        size="lg"
+                        disabled={busyGameId !== null}
+                        onClick={() => void createOpenSession(g.id)}
+                      >
+                        <span className="font-bold">{g.name_he}</span>
+                        <span className="text-sm font-semibold opacity-90">
+                          {busyGameId === g.id ? "יוצר חדר…" : "צור חדר פתוח"}
+                        </span>
+                      </Button>
+                    </li>
                   ))}
+                </ul>
               </div>
             ) : null}
           </>
         )}
+      </section>
 
-        {openGames.length > 0 ? (
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium text-slate-300">
-              משחקים פתוחים להצטרפות
-            </h3>
-            <ul className="space-y-2">
-              {openGames.map((g) => (
-                <li
-                  key={g.id}
-                  className="flex items-center justify-between rounded border border-slate-700 bg-slate-900/60 px-3 py-2 text-sm"
-                >
-                  <span>
-                    {g.host_name} · {g.status === "waiting" ? "ממתין" : "פעיל"}
+      {!pausedLoading && myPausedGames.length > 0 ? (
+        <section className={panelClass("space-y-3 border-amber-200/90 bg-amber-50/80")}>
+          <h2 className="text-lg font-bold text-amber-950">המשך משחק</h2>
+          <p className="text-sm text-amber-900/80">
+            המשחקים האלה מחכים שתחזור
+          </p>
+          <ul className="space-y-3">
+            {myPausedGames.map((g) => (
+              <li
+                key={g.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200/80 bg-white/90 px-4 py-3 text-sm text-slate-800 shadow-sm"
+              >
+                <span className="flex min-w-0 flex-col gap-1">
+                  <span className="font-semibold">
+                    {g.games?.name_he ?? "משחק"} · מארח: {g.host_name}
                   </span>
+                  <span className="text-xs text-slate-600">
+                    {g.connected_player_names.length > 0
+                      ? `מחכים בפנים: ${g.connected_player_names.join(", ")}`
+                      : "אף שחקן לא מחכה בפנים כרגע"}
+                  </span>
+                </span>
+                <span className="flex flex-wrap gap-2">
                   <Button
                     size="sm"
                     type="button"
                     onClick={() => navigate(`/play/${g.id}`)}
                   >
-                    הצטרף
+                    המשך
                   </Button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
+                  <Button
+                    size="sm"
+                    type="button"
+                    variant="outline"
+                    disabled={dismissingPausedId !== null}
+                    onClick={() => void dismissPausedSession(g.id)}
+                  >
+                    {dismissingPausedId === g.id ? "מסיר…" : "הסר מהרשימה"}
+                  </Button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
-        {!pausedLoading && myPausedGames.length > 0 ? (
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium text-slate-300">
-              משחקים מושהים — המשך
-            </h3>
-            <ul className="space-y-2">
-              {myPausedGames.map((g) => (
-                <li
-                  key={g.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded border border-amber-900/60 bg-amber-950/20 px-3 py-2 text-sm"
+      {openGames.length > 0 ? (
+        <section className={panelClass("space-y-3")}>
+          <h2 className="text-lg font-bold text-slate-900">הצטרף למשחק</h2>
+          <p className="text-sm text-slate-600">
+            חדרים פתוחים שאפשר להצטרף אליהם עכשיו
+          </p>
+          <ul className="space-y-3">
+            {openGames.map((g) => (
+              <li
+                key={g.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm"
+              >
+                <span className="font-medium text-slate-800">
+                  {g.host_name}
+                  <span className="text-slate-500">
+                    {" "}
+                    · {g.status === "waiting" ? "ממתין" : "פעיל"}
+                  </span>
+                </span>
+                <Button
+                  size="sm"
+                  type="button"
+                  onClick={() => navigate(`/play/${g.id}`)}
                 >
-                  <span className="flex flex-col gap-1">
-                    <span>
-                      {g.games?.name_he ?? "משחק"} · מארח: {g.host_name}
-                    </span>
-                    <span className="text-xs text-amber-100/80">
-                      {g.connected_player_names.length > 0
-                        ? `מחכים בפנים: ${g.connected_player_names.join(", ")}`
-                        : "אף שחקן לא מחכה בפנים כרגע"}
-                    </span>
-                  </span>
-                  <span className="flex flex-wrap gap-2">
-                    <Button
-                      size="sm"
-                      type="button"
-                      onClick={() => navigate(`/play/${g.id}`)}
-                    >
-                      המשך
-                    </Button>
-                    <Button
-                      size="sm"
-                      type="button"
-                      variant="outline"
-                      disabled={dismissingPausedId !== null}
-                      onClick={() => void dismissPausedSession(g.id)}
-                    >
-                      {dismissingPausedId === g.id ? "מסיר…" : "הסר מהרשימה"}
-                    </Button>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-      </section>
+                  הצטרף
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <OnlineKids />
-
-      <nav className="flex flex-wrap gap-4 text-sm text-indigo-400">
-        <Link className="underline" to="/friends">
-          חברים
-        </Link>
-        <Link className="underline" to="/inbox">
-          הודעות{unreadTotal > 0 ? ` (${unreadTotal})` : ""}
-        </Link>
-        {isAdmin ? (
-          <Link className="underline" to="/admin">
-            ניהול
-          </Link>
-        ) : null}
-      </nav>
     </div>
   );
 }
