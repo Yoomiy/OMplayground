@@ -5,7 +5,7 @@ import type {
   DrawingStroke
 } from "@playground/game-logic";
 
-const PALETTE = ["#ffffff", "#f87171", "#fbbf24", "#34d399", "#60a5fa", "#a78bfa"];
+const PALETTE = ["#0f172a", "#f87171", "#fbbf24", "#34d399", "#60a5fa", "#a78bfa"];
 const WIDTHS = [2, 4, 8];
 
 export interface DrawingBoardProps {
@@ -70,7 +70,7 @@ export function DrawingBoard({ gameState, mySeat, onIntent }: DrawingBoardProps)
   const isHost = mySeat === "p1";
 
   return (
-    <div className="mx-auto max-w-2xl space-y-3">
+    <div className="mx-auto max-w-2xl space-y-3 rounded-3xl border border-indigo-100 bg-white/95 p-3 shadow-play">
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex gap-1" role="radiogroup" aria-label="צבע">
           {PALETTE.map((c) => (
@@ -82,8 +82,8 @@ export function DrawingBoard({ gameState, mySeat, onIntent }: DrawingBoardProps)
               aria-label={`צבע ${c}`}
               className={
                 color === c
-                  ? "h-7 w-7 rounded-full border-2 border-white"
-                  : "h-7 w-7 rounded-full border border-slate-600"
+                  ? "h-7 w-7 rounded-full border-2 border-indigo-500 shadow-sm"
+                  : "h-7 w-7 rounded-full border border-slate-300 shadow-sm"
               }
               style={{ backgroundColor: c }}
               onClick={() => setColor(c)}
@@ -100,8 +100,8 @@ export function DrawingBoard({ gameState, mySeat, onIntent }: DrawingBoardProps)
               aria-label={`עובי ${w}`}
               className={
                 width === w
-                  ? "h-7 rounded border border-white bg-slate-800 px-3 text-xs text-white"
-                  : "h-7 rounded border border-slate-600 px-3 text-xs text-slate-300"
+                  ? "h-7 rounded-xl border border-indigo-300 bg-indigo-50 px-3 text-xs font-bold text-indigo-900"
+                  : "h-7 rounded-xl border border-slate-300 bg-white px-3 text-xs font-medium text-slate-600"
               }
               onClick={() => setWidth(w)}
             >
@@ -112,7 +112,7 @@ export function DrawingBoard({ gameState, mySeat, onIntent }: DrawingBoardProps)
         {isHost ? (
           <button
             type="button"
-            className="ml-auto rounded border border-rose-500 px-3 py-1 text-xs text-rose-200 hover:bg-rose-950/40"
+            className="ml-auto rounded-xl border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-bold text-rose-700 hover:bg-rose-100"
             onClick={() => {
               if (window.confirm("לנקות את הציור עבור כולם?")) {
                 onIntent({ type: "CLEAR" });
@@ -125,7 +125,7 @@ export function DrawingBoard({ gameState, mySeat, onIntent }: DrawingBoardProps)
       </div>
       <svg
         ref={svgRef}
-        className="h-80 w-full touch-none rounded-lg border border-slate-600 bg-slate-900"
+        className="h-80 w-full touch-none rounded-2xl border border-slate-200 bg-white shadow-inner"
         onPointerDown={handleDown}
         onPointerMove={handleMove}
         onPointerUp={handleUp}
@@ -153,7 +153,7 @@ export function DrawingBoard({ gameState, mySeat, onIntent }: DrawingBoardProps)
           />
         ) : null}
       </svg>
-      <p className="text-xs text-slate-500">
+      <p className="text-xs font-medium text-slate-500">
         קווים שמורים: {gameState.drawings.length}
       </p>
     </div>

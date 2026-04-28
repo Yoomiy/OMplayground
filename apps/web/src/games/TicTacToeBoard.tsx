@@ -12,7 +12,7 @@ export function TicTacToeBoard({
   onCellPress
 }: TicTacToeBoardProps) {
   return (
-    <div className="grid max-w-sm grid-cols-3 gap-2">
+    <div className="mx-auto grid w-full max-w-sm grid-cols-3 gap-3 rounded-3xl border border-indigo-100 bg-white/95 p-3 shadow-play">
       {gameState.board.map((cell, i) => (
         <button
           key={i}
@@ -23,7 +23,7 @@ export function TicTacToeBoard({
             mySymbol === null ||
             gameState.next !== mySymbol
           }
-          className="flex h-24 items-center justify-center rounded-lg border border-slate-600 bg-slate-900 text-3xl font-bold text-slate-100 hover:bg-slate-800 disabled:opacity-40"
+          className="flex aspect-square items-center justify-center rounded-2xl border-2 border-indigo-100 bg-gradient-to-br from-white to-indigo-50 text-4xl font-black text-indigo-700 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:from-indigo-50 hover:to-sky-50 disabled:cursor-not-allowed disabled:opacity-50"
           onClick={() => onCellPress(i)}
         >
           {cell ?? ""}

@@ -83,22 +83,22 @@ export function ChessBoard({ gameState, mySeat, onIntent }: ChessBoardProps) {
     const styles: Record<string, CSSProperties> = {};
     const lm = gameState.lastMove;
     if (lm) {
-      styles[lm.from] = { backgroundColor: "rgba(99, 102, 241, 0.35)" };
-      styles[lm.to] = { backgroundColor: "rgba(99, 102, 241, 0.38)" };
+      styles[lm.from] = { backgroundColor: "rgba(14, 165, 233, 0.36)" };
+      styles[lm.to] = { backgroundColor: "rgba(14, 165, 233, 0.4)" };
     }
     if (selectedSquare) {
-      styles[selectedSquare] = { backgroundColor: "rgba(34, 197, 94, 0.42)" };
+      styles[selectedSquare] = { backgroundColor: "rgba(16, 185, 129, 0.42)" };
       for (const t of legalTargets) {
         styles[t] = {
-          backgroundColor: "rgba(34, 197, 94, 0.2)",
-          boxShadow: "inset 0 0 0 2px rgba(34, 197, 94, 0.35)"
+          backgroundColor: "rgba(16, 185, 129, 0.22)",
+          boxShadow: "inset 0 0 0 2px rgba(16, 185, 129, 0.38)"
         };
       }
     }
     if (checkSquare) {
       styles[checkSquare] = {
-        backgroundColor: "rgba(220, 38, 38, 0.5)",
-        boxShadow: "inset 0 0 0 2px rgba(252, 165, 165, 0.9)"
+        backgroundColor: "rgba(244, 63, 94, 0.48)",
+        boxShadow: "inset 0 0 0 2px rgba(251, 113, 133, 0.9)"
       };
     }
     return styles;
@@ -123,8 +123,8 @@ export function ChessBoard({ gameState, mySeat, onIntent }: ChessBoardProps) {
   }
 
   return (
-    <div className="space-y-3">
-      <p className="text-sm text-slate-300">
+    <div className="space-y-3 rounded-3xl border border-indigo-100 bg-white/95 p-3 shadow-play">
+      <p className="text-sm font-medium text-slate-700">
         {gameState.status === "playing"
           ? gameState.next === "w"
             ? "תור לבן"
@@ -139,13 +139,13 @@ export function ChessBoard({ gameState, mySeat, onIntent }: ChessBoardProps) {
       {/* LTR: keeps files a..h and capture trays matching the board; avoids RTL mirroring the grid */}
       <div dir="ltr" className="space-y-3">
         {inActiveGame && drawOfferFrom === mySeat && (
-          <p className="text-end text-sm text-amber-200/90" dir="rtl">
+          <p className="text-end text-sm font-medium text-amber-800" dir="rtl">
             הצעת תיקו ממתינה לתגובה
           </p>
         )}
 
         {inActiveGame && drawOfferFrom && drawOfferFrom !== mySeat && (
-          <p className="text-end text-sm text-amber-200/90" dir="rtl">
+          <p className="text-end text-sm font-medium text-amber-800" dir="rtl">
             היריב הציע תיקו
           </p>
         )}
@@ -153,14 +153,14 @@ export function ChessBoard({ gameState, mySeat, onIntent }: ChessBoardProps) {
         <div className="flex min-h-[2.75rem] flex-col justify-center">
           {pendingPromotion && (
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm text-slate-400" dir="rtl">
+              <span className="text-sm font-medium text-slate-600" dir="rtl">
                 הפיכה — בחר כלי:
               </span>
               {PROMOTIONS.map((p) => (
                 <button
                   key={p}
                   type="button"
-                  className="flex h-9 w-9 items-center justify-center rounded border border-slate-600 bg-slate-800 hover:bg-slate-700"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-indigo-100 bg-indigo-50 shadow-sm hover:bg-indigo-100"
                   onClick={() => {
                     sendMove(pendingPromotion.from, pendingPromotion.to, p);
                     setPendingPromotion(null);
@@ -176,7 +176,7 @@ export function ChessBoard({ gameState, mySeat, onIntent }: ChessBoardProps) {
               ))}
               <button
                 type="button"
-                className="text-sm text-slate-500 underline"
+                className="text-sm font-medium text-slate-500 underline"
                 dir="rtl"
                 onClick={() => setPendingPromotion(null)}
               >
@@ -197,13 +197,16 @@ export function ChessBoard({ gameState, mySeat, onIntent }: ChessBoardProps) {
             })}
           </div>
 
-          <div className="order-2 min-w-0 flex-1">
+          <div className="order-2 min-w-0 flex-1 overflow-hidden rounded-3xl border border-slate-200 shadow-play">
             <Chessboard
               position={fen}
               boardOrientation={orientation}
               animationDuration={orientation === "black" ? 0 : 300}
               arePiecesDraggable={canPlay}
               customPieces={cburnettCustomPieces}
+              customBoardStyle={{ borderRadius: "1.5rem" }}
+              customDarkSquareStyle={{ backgroundColor: "#93c5fd" }}
+              customLightSquareStyle={{ backgroundColor: "#eff6ff" }}
               isDraggablePiece={({ piece }) =>
                 canPlay && piece[0] === (mySeat === "w" ? "w" : "b")
               }
@@ -277,7 +280,7 @@ export function ChessBoard({ gameState, mySeat, onIntent }: ChessBoardProps) {
                 </button>
                 <button
                   type="button"
-                  className="rounded border border-slate-500 px-3 py-1.5 text-sm text-slate-200 hover:bg-slate-800"
+                  className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                   onClick={() => onIntent({ type: "decline_draw" })}
                 >
                   דחה
@@ -288,7 +291,7 @@ export function ChessBoard({ gameState, mySeat, onIntent }: ChessBoardProps) {
               <button
                 type="button"
                 disabled={!!(drawOfferFrom && drawOfferFrom === mySeat)}
-                className="rounded bg-slate-700 px-3 py-1.5 text-sm text-white hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-xl bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={() => onIntent({ type: "offer_draw" })}
               >
                 {drawOfferFrom === mySeat ? "הצעה נשלחה" : "הצע תיקו"}

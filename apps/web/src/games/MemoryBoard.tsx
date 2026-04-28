@@ -35,21 +35,21 @@ export function MemoryBoard({ gameState, myUserId, onIntent }: MemoryBoardProps)
     scoreEntries.find(([id]) => id !== myUserId)?.[1] ?? 0;
 
   return (
-    <div className="mx-auto max-w-md space-y-3">
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-slate-300">
-          אני: <strong className="text-slate-100">{meScore}</strong>
+    <div className="mx-auto max-w-md space-y-3 rounded-3xl border border-indigo-100 bg-white/95 p-3 shadow-play">
+      <div className="flex items-center justify-between text-sm font-medium">
+        <span className="text-slate-600">
+          אני: <strong className="text-slate-900">{meScore}</strong>
         </span>
-        <span className="text-slate-300">
-          יריב: <strong className="text-slate-100">{opponentScore}</strong>
+        <span className="text-slate-600">
+          יריב: <strong className="text-slate-900">{opponentScore}</strong>
         </span>
         <span
           className={
             isMyTurn
-              ? "text-emerald-300"
+              ? "text-emerald-700"
               : gameState.status !== "playing"
                 ? "text-slate-500"
-                : "text-amber-300"
+                : "text-amber-700"
           }
         >
           {gameState.status === "playing"
@@ -74,8 +74,8 @@ export function MemoryBoard({ gameState, myUserId, onIntent }: MemoryBoardProps)
               aria-label={shown ? `קלף ${card.emoji}` : "קלף הפוך"}
               className={
                 shown
-                  ? "flex aspect-square items-center justify-center rounded-lg border border-emerald-700 bg-emerald-950/40 text-3xl"
-                  : "flex aspect-square items-center justify-center rounded-lg border border-slate-600 bg-slate-900 text-2xl text-slate-500 hover:bg-slate-800 disabled:opacity-40"
+                  ? "flex aspect-square items-center justify-center rounded-2xl border-2 border-emerald-200 bg-emerald-50 text-3xl shadow-sm"
+                  : "flex aspect-square items-center justify-center rounded-2xl border-2 border-indigo-100 bg-gradient-to-br from-indigo-50 to-sky-50 text-2xl font-black text-indigo-400 shadow-sm transition hover:border-indigo-300 hover:from-indigo-100 hover:to-sky-100 disabled:cursor-not-allowed disabled:opacity-40"
               }
               onClick={() => onIntent({ cardIndex: index })}
             >

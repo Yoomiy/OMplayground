@@ -17,14 +17,14 @@ export function ConnectFourBoard({
     gameState.status === "playing" && mySeat !== null && gameState.next === mySeat;
 
   return (
-    <div className="space-y-3">
+    <div className="mx-auto w-full max-w-md space-y-3">
       <div className="grid grid-cols-7 gap-2">
         {COLUMNS.map((column) => (
           <button
             key={column}
             type="button"
             disabled={!canPlay || gameState.board[0][column] !== null}
-            className="rounded bg-indigo-700 px-2 py-1 text-sm text-white hover:bg-indigo-600 disabled:opacity-40"
+            className="rounded-xl bg-indigo-600 px-2 py-1.5 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
             onClick={() => onIntent({ column })}
           >
             {column + 1}
@@ -32,20 +32,20 @@ export function ConnectFourBoard({
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-2 rounded-lg bg-slate-900 p-2">
+      <div className="grid grid-cols-7 gap-2 rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-sky-50 p-3 shadow-play">
         {gameState.board.map((row, rowIndex) =>
           row.map((cell, colIndex) => (
             <div
               key={`${rowIndex}-${colIndex}`}
-              className="flex h-12 w-12 items-center justify-center rounded bg-slate-800"
+              className="flex aspect-square w-full items-center justify-center rounded-full bg-white/90 shadow-inner ring-1 ring-indigo-100"
             >
               <span
                 className={
                   cell === "R"
-                    ? "h-9 w-9 rounded-full bg-rose-500"
+                    ? "h-4/5 w-4/5 rounded-full bg-rose-500 shadow-sm"
                     : cell === "Y"
-                      ? "h-9 w-9 rounded-full bg-amber-400"
-                      : "h-9 w-9 rounded-full bg-slate-700"
+                      ? "h-4/5 w-4/5 rounded-full bg-amber-400 shadow-sm"
+                      : "h-4/5 w-4/5 rounded-full bg-slate-100"
                 }
               />
             </div>
