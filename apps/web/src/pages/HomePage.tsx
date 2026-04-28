@@ -54,6 +54,7 @@ export function HomePage() {
     null
   );
   const [err, setErr] = useState<string | null>(null);
+  const [pendingGame, setPendingGame] = useState<GameCatalogRow | null>(null);
 
   useEffect(() => {
     if (!profile) return;
@@ -111,7 +112,7 @@ export function HomePage() {
     );
   }
 
-  async function createOpenSession(gameId: string) {
+  async function createSession(gameId: string, isOpen: boolean) {
     if (!user || !profile) return;
     setBusyGameId(gameId);
     setErr(null);
@@ -125,7 +126,7 @@ export function HomePage() {
         player_ids: [user.id],
         player_names: [profile.full_name],
         status: "waiting",
-        is_open: true,
+        is_open: isOpen,
         invitation_code: code,
         gender: profile.gender,
         host_grade: profile.grade
@@ -136,6 +137,14 @@ export function HomePage() {
       setErr(error?.message ?? "יצירת מפגש נכשלה");
       setBusyGameId(null);
       return;
+    }
+    if (!isOpen) {
+      const inviteUrl = `${window.location.origin}/join/${code}`;
+      try {
+        await navigator.clipboard.writeText(inviteUrl);
+      } catch {
+        setErr(`לא הצלחנו להעתיק. קישור הזמנה: ${inviteUrl}`);
+      }
     }
     setBusyGameId(null);
     navigate(`/play/${data.id}`);
@@ -271,21 +280,25 @@ export function HomePage() {
                 <h3 className="text-sm font-bold text-slate-800">
                   משחק עם חברים
                 </h3>
-                <ul className="flex flex-col gap-3">
-                  {mpGames.map((g) => (
+                <ul className="grid gap-3 sm:grid-cols-2">
+                  {mpGames.map((g, i) => (
                     <li key={g.id}>
-                      <Button
-                        className="w-full justify-between text-base"
+                      <button
                         type="button"
-                        size="lg"
                         disabled={busyGameId !== null}
-                        onClick={() => void createOpenSession(g.id)}
+                        onClick={() => setPendingGame(g)}
+                        className={cn(
+                          "flex w-full flex-col gap-2 rounded-2xl border-2 bg-gradient-to-br p-4 text-right shadow-sm transition hover:brightness-[1.02] active:scale-[0.99] disabled:opacity-60",
+                          SOLO_GRADIENTS[i % SOLO_GRADIENTS.length]
+                        )}
                       >
-                        <span className="font-bold">{g.name_he}</span>
-                        <span className="text-sm font-semibold opacity-90">
-                          {busyGameId === g.id ? "יוצר חדר…" : "צור חדר פתוח"}
+                        <span className="text-lg font-bold text-slate-900">
+                          {g.name_he}
                         </span>
-                      </Button>
+                        <span className="text-xs font-medium text-slate-600">
+                          {busyGameId === g.id ? "יוצר חדר…" : "צור חדר"}
+                        </span>
+                      </button>
                     </li>
                   ))}
                 </ul>
@@ -371,6 +384,56 @@ export function HomePage() {
             ))}
           </ul>
         </section>
+      ) : null}
+
+      {pendingGame ? (
+        <div
+          className="fixed inset-0 z-40 flex items-end justify-center bg-slate-900/40 p-4 backdrop-blur-[2px] sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          aria-label="בחירת סוג חדר"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setPendingGame(null);
+          }}
+        >
+          <div
+            className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold text-slate-900">{pendingGame.name_he}</h3>
+            <p className="mt-1 text-sm text-slate-600">איך ליצור את החדר?</p>
+            <div className="mt-4 flex flex-col gap-2">
+              <Button
+                type="button"
+                disabled={busyGameId !== null}
+                onClick={() => {
+                  void createSession(pendingGame.id, true);
+                  setPendingGame(null);
+                }}
+              >
+                חדר פתוח
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={busyGameId !== null}
+                onClick={() => {
+                  void createSession(pendingGame.id, false);
+                  setPendingGame(null);
+                }}
+              >
+                חדר פרטי
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setPendingGame(null)}
+              >
+                ביטול
+              </Button>
+            </div>
+          </div>
+        </div>
       ) : null}
 
       <OnlineKids />

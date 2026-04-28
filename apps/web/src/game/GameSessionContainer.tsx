@@ -193,6 +193,10 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
   const [endOverlay, setEndOverlay] = useState<EndOverlay | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [chatDraft, setChatDraft] = useState("");
+  const [roomIsOpen, setRoomIsOpen] = useState<boolean | null>(null);
+  const [invitationCode, setInvitationCode] = useState<string | null>(null);
+  const [updatingVisibility, setUpdatingVisibility] = useState(false);
+  const [inviteFallbackLink, setInviteFallbackLink] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -332,6 +336,50 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
     };
   }, [sessionId]);
 
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const { data, error } = await supabase
+        .from("game_sessions")
+        .select("is_open, invitation_code")
+        .eq("id", sessionId)
+        .maybeSingle();
+      if (cancelled || error || !data) return;
+      setRoomIsOpen(data.is_open);
+      setInvitationCode(data.invitation_code);
+    })();
+
+    const channel = supabase
+      .channel(`session-privacy:${sessionId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "game_sessions",
+          filter: `id=eq.${sessionId}`
+        },
+        (payload) => {
+          const next = payload.new as {
+            is_open?: boolean;
+            invitation_code?: string;
+          };
+          if (typeof next.is_open === "boolean") {
+            setRoomIsOpen(next.is_open);
+          }
+          if (typeof next.invitation_code === "string") {
+            setInvitationCode(next.invitation_code);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      void supabase.removeChannel(channel);
+    };
+  }, [sessionId]);
+
   const stopGame = useCallback(() => {
     const s = socketRef.current;
     if (!s?.connected) return;
@@ -424,6 +472,39 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
       }
     );
   }, [chatDraft, sessionId]);
+
+  const toggleRoomVisibility = useCallback(async () => {
+    if (!myUserId || !hostId || myUserId !== hostId || roomIsOpen === null) return;
+    setUpdatingVisibility(true);
+    setInviteFallbackLink(null);
+    const { data, error } = await supabase
+      .from("game_sessions")
+      .update({ is_open: !roomIsOpen })
+      .eq("id", sessionId)
+      .eq("host_id", myUserId)
+      .select("is_open")
+      .maybeSingle();
+    setUpdatingVisibility(false);
+    if (error || !data) {
+      setStatus(error?.message ?? "עדכון פרטיות נכשל");
+      return;
+    }
+    setRoomIsOpen(data.is_open);
+    setToast(data.is_open ? "החדר פתוח להצטרפות" : "החדר פרטי עכשיו");
+  }, [hostId, myUserId, roomIsOpen, sessionId]);
+
+  const copyInviteLink = useCallback(async () => {
+    if (!invitationCode) return;
+    const inviteUrl = `${window.location.origin}/join/${invitationCode}`;
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      setInviteFallbackLink(null);
+      setToast("קישור ההזמנה הועתק");
+    } catch {
+      setInviteFallbackLink(inviteUrl);
+      setToast("אי אפשר להעתיק אוטומטית בדפדפן הזה");
+    }
+  }, [invitationCode]);
 
   const onIntent = useCallback(
     (intent: unknown) => {
@@ -561,22 +642,58 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         </p>
       )}
       {iAmHost && !endOverlay && (
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="rounded bg-amber-600 px-3 py-1 text-sm text-white hover:bg-amber-500 disabled:opacity-50"
-            disabled={paused}
-            onClick={() => pauseGame()}
-          >
-            השהה משחק
-          </button>
-          <button
-            type="button"
-            className="rounded bg-rose-700 px-3 py-1 text-sm text-white hover:bg-rose-600"
-            onClick={() => stopGame()}
-          >
-            סיים משחק
-          </button>
+        <div className="space-y-2">
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              className="rounded bg-amber-600 px-3 py-1 text-sm text-white hover:bg-amber-500 disabled:opacity-50"
+              disabled={paused}
+              onClick={() => pauseGame()}
+            >
+              השהה משחק
+            </button>
+            <button
+              type="button"
+              className="rounded bg-rose-700 px-3 py-1 text-sm text-white hover:bg-rose-600"
+              onClick={() => stopGame()}
+            >
+              סיים משחק
+            </button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-2">
+            <span className="text-sm font-medium text-slate-700">
+              {roomIsOpen === null
+                ? "טוען פרטיות…"
+                : roomIsOpen
+                  ? "חדר פתוח"
+                  : "חדר פרטי"}
+            </span>
+            <button
+              type="button"
+              className="rounded border border-slate-300 bg-white px-3 py-1 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-50"
+              disabled={updatingVisibility || roomIsOpen === null}
+              onClick={() => void toggleRoomVisibility()}
+            >
+              {updatingVisibility
+                ? "מעדכן…"
+                : roomIsOpen
+                  ? "הפוך לפרטי"
+                  : "הפוך לפתוח"}
+            </button>
+            <button
+              type="button"
+              className="rounded border border-indigo-300 bg-indigo-50 px-3 py-1 text-sm font-semibold text-indigo-900 hover:bg-indigo-100 disabled:opacity-50"
+              disabled={!invitationCode}
+              onClick={() => void copyInviteLink()}
+            >
+              העתק קישור הזמנה
+            </button>
+          </div>
+          {inviteFallbackLink ? (
+            <p className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs text-indigo-900 break-all">
+              {inviteFallbackLink}
+            </p>
+          ) : null}
         </div>
       )}
       {endOverlay && (
