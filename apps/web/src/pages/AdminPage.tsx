@@ -3,7 +3,15 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import {
+  adminUpdateKidProfile,
+  fetchAvatarPresets,
+  type AdminProfileUpdates,
+  type AvatarPreset
+} from "@/lib/profileApi";
+import { KidAvatar } from "@/components/KidAvatar";
 import { Button } from "@/components/ui/button";
+import { fieldInputClass, fieldLabelClass } from "@/lib/fieldStyles";
 
 interface GameRow {
   id: string;
@@ -16,9 +24,18 @@ interface KidRow {
   id: string;
   username: string;
   full_name: string;
-  role: string;
+  gender: "boy" | "girl";
+  role: "kid" | "teacher";
   grade: number;
   is_active: boolean;
+  avatar_color: string;
+  avatar_preset_id: string | null;
+  avatar_url: string | null;
+  best_scores: Record<string, number>;
+  unread_message_count: number;
+  last_seen: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 interface ReportRow {
@@ -40,6 +57,7 @@ export function AdminPage() {
   const { isAdmin, loading: adminLoading } = useIsAdmin(user);
   const [games, setGames] = useState<GameRow[]>([]);
   const [kids, setKids] = useState<KidRow[]>([]);
+  const [avatarPresets, setAvatarPresets] = useState<AvatarPreset[]>([]);
   const [reports, setReports] = useState<ReportRow[]>([]);
   const [audit, setAudit] = useState<
     { id: string; action: string; created_at: string; metadata: unknown }[]
@@ -48,6 +66,20 @@ export function AdminPage() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [editingKid, setEditingKid] = useState<KidRow | null>(null);
+  const [editForm, setEditForm] = useState({
+    username: "",
+    full_name: "",
+    gender: "boy" as "boy" | "girl",
+    role: "kid" as "kid" | "teacher",
+    grade: 1,
+    is_active: true,
+    avatar_color: "#3B82F6",
+    avatar_preset_id: "",
+    avatar_url: "",
+    best_scores: "{}",
+    unread_message_count: 0
+  });
 
   const reload = useCallback(async () => {
     if (!user || !isAdmin) return;
@@ -55,7 +87,9 @@ export function AdminPage() {
       supabase.from("games").select("id, name_he, is_active, game_url").order("name_he"),
       supabase
         .from("kid_profiles")
-        .select("id, username, full_name, role, grade, is_active")
+        .select(
+          "id, username, full_name, gender, role, grade, is_active, avatar_color, avatar_preset_id, avatar_url, best_scores, unread_message_count, last_seen, created_at, updated_at"
+        )
         .order("username")
         .limit(80),
       supabase
@@ -80,6 +114,24 @@ export function AdminPage() {
   useEffect(() => {
     void reload();
   }, [reload]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const rows = await fetchAvatarPresets(true);
+        if (!cancelled) setAvatarPresets(rows);
+      } catch (e) {
+        if (!cancelled) {
+          setErr(e instanceof Error ? e.message : "טעינת אווטארים נכשלה");
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmin]);
 
   useEffect(() => {
     if (!user || !isAdmin) return;
@@ -115,12 +167,66 @@ export function AdminPage() {
 
   async function toggleKidActive(kid: KidRow) {
     setErr(null);
-    const { error } = await supabase
-      .from("kid_profiles")
-      .update({ is_active: !kid.is_active })
-      .eq("id", kid.id);
-    if (error) setErr(error.message);
+    try {
+      await adminUpdateKidProfile(kid.id, { is_active: !kid.is_active });
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "עדכון משתמש נכשל");
+    }
     void reload();
+  }
+
+  function startEditKid(kid: KidRow) {
+    setEditingKid(kid);
+    setEditForm({
+      username: kid.username,
+      full_name: kid.full_name,
+      gender: kid.gender,
+      role: kid.role,
+      grade: kid.grade,
+      is_active: kid.is_active,
+      avatar_color: kid.avatar_color,
+      avatar_preset_id: kid.avatar_preset_id ?? "",
+      avatar_url: kid.avatar_url ?? "",
+      best_scores: JSON.stringify(kid.best_scores ?? {}, null, 2),
+      unread_message_count: kid.unread_message_count
+    });
+  }
+
+  async function saveKidProfile() {
+    if (!editingKid) return;
+    setErr(null);
+    setMsg(null);
+    let bestScores: Record<string, number>;
+    try {
+      bestScores = JSON.parse(editForm.best_scores) as Record<string, number>;
+    } catch {
+      setErr("שדה best_scores חייב להיות JSON תקין");
+      return;
+    }
+    const updates: AdminProfileUpdates = {
+      username: editForm.username,
+      full_name: editForm.full_name,
+      gender: editForm.gender,
+      role: editForm.role,
+      grade: editForm.grade,
+      is_active: editForm.is_active,
+      avatar_color: editForm.avatar_color,
+      avatar_preset_id: editForm.avatar_preset_id || null,
+      avatar_url: editForm.avatar_url || null,
+      best_scores: bestScores,
+      unread_message_count: editForm.unread_message_count
+    };
+    setBusy(true);
+    try {
+      const updated = await adminUpdateKidProfile(editingKid.id, updates);
+      setMsg("פרופיל המשתמש עודכן");
+      setEditingKid(updated as KidRow);
+      await reload();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "עדכון פרופיל נכשל");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function updateReportStatus(id: string, status: "pending" | "reviewed") {
@@ -342,12 +448,222 @@ export function AdminPage() {
 
       <section className="space-y-2">
         <h2 className="text-lg font-medium">ילדים / משתמשים</h2>
+        {editingKid ? (
+          <div className="mb-4 rounded-3xl border border-indigo-200 bg-white p-5 shadow-play">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <KidAvatar
+                  profile={{
+                    full_name: editForm.full_name,
+                    avatar_color: editForm.avatar_color,
+                    avatar_preset_id: editForm.avatar_preset_id || null,
+                    avatar_url: editForm.avatar_url || null
+                  }}
+                  presets={avatarPresets}
+                  className="size-16 min-h-[64px] min-w-[64px] text-2xl"
+                />
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900">
+                    עריכת {editingKid.full_name}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    נוצר: {new Date(editingKid.created_at).toLocaleString("he-IL")} · עודכן:{" "}
+                    {new Date(editingKid.updated_at).toLocaleString("he-IL")}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    נראה לאחרונה:{" "}
+                    {editingKid.last_seen
+                      ? new Date(editingKid.last_seen).toLocaleString("he-IL")
+                      : "לא ידוע"}
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                type="button"
+                onClick={() => setEditingKid(null)}
+              >
+                סגור
+              </Button>
+            </div>
+
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
+                שם משתמש
+                <input
+                  className={fieldInputClass}
+                  value={editForm.username}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, username: e.target.value }))
+                  }
+                />
+              </label>
+              <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
+                שם מלא
+                <input
+                  className={fieldInputClass}
+                  value={editForm.full_name}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, full_name: e.target.value }))
+                  }
+                />
+              </label>
+              <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
+                מגדר
+                <select
+                  className={fieldInputClass}
+                  value={editForm.gender}
+                  onChange={(e) =>
+                    setEditForm((f) => ({
+                      ...f,
+                      gender: e.target.value as "boy" | "girl"
+                    }))
+                  }
+                >
+                  <option value="boy">בן</option>
+                  <option value="girl">בת</option>
+                </select>
+              </label>
+              <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
+                תפקיד
+                <select
+                  className={fieldInputClass}
+                  value={editForm.role}
+                  onChange={(e) =>
+                    setEditForm((f) => ({
+                      ...f,
+                      role: e.target.value as "kid" | "teacher"
+                    }))
+                  }
+                >
+                  <option value="kid">ילד</option>
+                  <option value="teacher">מורה</option>
+                </select>
+              </label>
+              <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
+                כיתה
+                <input
+                  className={fieldInputClass}
+                  type="number"
+                  min={1}
+                  max={7}
+                  value={editForm.grade}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, grade: Number(e.target.value) }))
+                  }
+                />
+              </label>
+              <label className={`flex items-center gap-3 ${fieldLabelClass}`}>
+                <input
+                  type="checkbox"
+                  checked={editForm.is_active}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, is_active: e.target.checked }))
+                  }
+                />
+                משתמש פעיל
+              </label>
+              <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
+                צבע אווטאר
+                <input
+                  className={fieldInputClass}
+                  value={editForm.avatar_color}
+                  onChange={(e) =>
+                    setEditForm((f) => ({
+                      ...f,
+                      avatar_color: e.target.value
+                    }))
+                  }
+                />
+              </label>
+              <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
+                אווטאר מוכן
+                <select
+                  className={fieldInputClass}
+                  value={editForm.avatar_preset_id}
+                  onChange={(e) =>
+                    setEditForm((f) => ({
+                      ...f,
+                      avatar_preset_id: e.target.value
+                    }))
+                  }
+                >
+                  <option value="">ללא</option>
+                  {avatarPresets.map((preset) => (
+                    <option key={preset.id} value={preset.key}>
+                      {preset.label_he}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className={`flex flex-col gap-2 sm:col-span-2 ${fieldLabelClass}`}>
+                כתובת תמונת אווטאר
+                <input
+                  className={fieldInputClass}
+                  value={editForm.avatar_url}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, avatar_url: e.target.value }))
+                  }
+                />
+              </label>
+              <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
+                הודעות שלא נקראו
+                <input
+                  className={fieldInputClass}
+                  type="number"
+                  min={0}
+                  value={editForm.unread_message_count}
+                  onChange={(e) =>
+                    setEditForm((f) => ({
+                      ...f,
+                      unread_message_count: Number(e.target.value)
+                    }))
+                  }
+                />
+              </label>
+              <label className={`flex flex-col gap-2 sm:col-span-2 ${fieldLabelClass}`}>
+                best_scores JSON
+                <textarea
+                  className={`${fieldInputClass} min-h-[120px] font-mono text-xs`}
+                  value={editForm.best_scores}
+                  onChange={(e) =>
+                    setEditForm((f) => ({
+                      ...f,
+                      best_scores: e.target.value
+                    }))
+                  }
+                />
+              </label>
+            </div>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Button
+                type="button"
+                disabled={busy}
+                onClick={() => void saveKidProfile()}
+              >
+                {busy ? "שומר…" : "שמור פרופיל"}
+              </Button>
+              <Button
+                variant="outline"
+                type="button"
+                asChild
+              >
+                <Link to={`/profile/${editingKid.id}`}>פתח פרופיל ציבורי</Link>
+              </Button>
+            </div>
+            <p className="mt-3 text-xs text-slate-500">
+              איפוס סיסמה נשאר פעולה נפרדת דרך Supabase Auth Admin / Edge Function מאובטחת.
+            </p>
+          </div>
+        ) : null}
         <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
           <table className="w-full text-right text-sm">
             <thead className="bg-slate-100">
               <tr>
                 <th className="p-2">שם משתמש</th>
+                <th className="p-2">שם</th>
                 <th className="p-2">תפקיד</th>
+                <th className="p-2">מגדר</th>
                 <th className="p-2">כיתה</th>
                 <th className="p-2">פעיל</th>
                 <th className="p-2">פעולות</th>
@@ -357,10 +673,19 @@ export function AdminPage() {
               {kids.map((k) => (
                 <tr key={k.id} className="border-t border-slate-100 hover:bg-slate-50/80">
                   <td className="p-2">{k.username}</td>
+                  <td className="p-2">{k.full_name}</td>
                   <td className="p-2">{k.role}</td>
+                  <td className="p-2">{k.gender === "boy" ? "בן" : "בת"}</td>
                   <td className="p-2">{k.grade}</td>
                   <td className="p-2">{k.is_active ? "כן" : "לא"}</td>
                   <td className="p-2 space-x-2 space-x-reverse">
+                    <button
+                      type="button"
+                      className="font-semibold text-indigo-600 underline decoration-2 underline-offset-2 hover:text-indigo-800"
+                      onClick={() => startEditKid(k)}
+                    >
+                      ערוך
+                    </button>
                     <button
                       type="button"
                       className="font-semibold text-indigo-600 underline decoration-2 underline-offset-2 hover:text-indigo-800"

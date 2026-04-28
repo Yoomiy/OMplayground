@@ -193,6 +193,9 @@ export function HomePage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" type="button" asChild>
+            <Link to="/profile">הפרופיל שלי</Link>
+          </Button>
+          <Button variant="outline" type="button" asChild>
             <Link to="/friends">חברים</Link>
           </Button>
           <Button variant="outline" type="button" asChild>

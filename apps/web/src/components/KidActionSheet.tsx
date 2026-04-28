@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ComposeMessage } from "@/components/ComposeMessage";
+import { KidAvatar } from "@/components/KidAvatar";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { sendChallenge } from "@/lib/challengeApi";
@@ -130,12 +131,10 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
           onClick={(e) => e.stopPropagation()}
         >
           <header className="flex items-start gap-4 border-b border-slate-100 bg-gradient-to-l from-indigo-50/80 to-white p-5">
-            <span
-              className="flex size-14 min-h-[56px] min-w-[56px] shrink-0 items-center justify-center rounded-2xl text-xl font-bold text-white shadow-md"
-              style={{ backgroundColor: kid.avatar_color }}
-            >
-              {kid.full_name.slice(0, 1)}
-            </span>
+            <KidAvatar
+              profile={kid}
+              className="size-14 min-h-[56px] min-w-[56px] shrink-0 text-xl"
+            />
             <div className="min-w-0 flex-1 pt-0.5">
               <h3
                 id="kid-action-title"
@@ -206,6 +205,17 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
                 הודעה וחברות
               </h4>
               <div className="flex flex-col gap-2">
+                <Button
+                  variant="outline"
+                  type="button"
+                  disabled={busy !== null}
+                  onClick={() => {
+                    onClose();
+                    navigate(`/profile/${kid.id}`);
+                  }}
+                >
+                  צפה בפרופיל
+                </Button>
                 <Button
                   variant="outline"
                   type="button"

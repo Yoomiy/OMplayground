@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useOnlineKids, type PublicKidProfile } from "@/hooks/useOnlineKids";
 import { KidActionSheet } from "@/components/KidActionSheet";
+import { KidAvatar } from "@/components/KidAvatar";
 import { cn } from "@/lib/cn";
 
 export function OnlineKids() {
@@ -32,12 +33,10 @@ export function OnlineKids() {
                 onClick={() => setSelected(k)}
                 className="flex items-center gap-2 rounded-full border-2 border-slate-200 bg-white py-2 pl-4 pr-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-indigo-300 hover:shadow-md active:scale-[0.98]"
               >
-                <span
-                  className="flex size-9 min-h-[36px] min-w-[36px] items-center justify-center rounded-full text-sm font-bold text-white shadow-inner"
-                  style={{ backgroundColor: k.avatar_color }}
-                >
-                  {k.full_name.slice(0, 1)}
-                </span>
+                <KidAvatar
+                  profile={k}
+                  className="size-9 min-h-[36px] min-w-[36px] rounded-full text-sm shadow-inner"
+                />
                 <span>{k.full_name}</span>
               </button>
             </li>

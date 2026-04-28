@@ -9,6 +9,8 @@ import { RegisterPage } from "@/pages/RegisterPage";
 import { HomePage } from "@/pages/HomePage";
 import { FriendsPage } from "@/pages/FriendsPage";
 import { InboxPage } from "@/pages/InboxPage";
+import { ProfilePage } from "@/pages/ProfilePage";
+import { PublicProfilePage } from "@/pages/PublicProfilePage";
 import PlayPage from "@/pages/PlayPage";
 import { TeacherPage } from "@/pages/TeacherPage";
 import { AdminPage } from "@/pages/AdminPage";
@@ -60,6 +62,22 @@ export default function App() {
             element={
               <Protected>
                 <InboxPage />
+              </Protected>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <Protected>
+                <ProfilePage />
+              </Protected>
+            }
+          />
+          <Route
+            path="/profile/:kidId"
+            element={
+              <Protected>
+                <PublicProfilePage />
               </Protected>
             }
           />
