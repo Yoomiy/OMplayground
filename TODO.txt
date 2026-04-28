@@ -3,5 +3,4 @@
 8. allow kids to add comments to message report
 12. add a way to resume stoped soloGames
 13. add fullscreen option to the racing game
-14. send message with Enter in ingame chat 
-15. you don't see open games that you left
+15. allow host to resume game if players in room >= min_players
