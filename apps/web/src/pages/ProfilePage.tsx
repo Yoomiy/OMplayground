@@ -159,6 +159,11 @@ export function ProfilePage() {
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-8 sm:px-6">
+      <div className="absolute left-4 top-4">
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/home">בית</Link>
+        </Button>
+      </div>
       <header className="flex flex-wrap items-start justify-between gap-4 rounded-3xl border border-slate-200/90 bg-white/95 p-5 shadow-play">
         <div>
           <p className="text-xs font-bold uppercase tracking-wide text-indigo-600">
@@ -171,9 +176,6 @@ export function ProfilePage() {
             @{profile.username} · כיתה {profile.grade}
           </p>
         </div>
-        <Button variant="outline" asChild>
-          <Link to="/home">בית</Link>
-        </Button>
       </header>
 
       {err ? (
@@ -293,6 +295,13 @@ export function ProfilePage() {
           {busy === "profile" ? "שומר…" : busy === "avatar" ? "מעלה תמונה…" : "שמור פרופיל"}
         </Button>
       </section>
+
+      <section className="rounded-3xl border border-slate-200/90 bg-white/95 p-5 shadow-play">
+          <Button className="w-full" size="lg" asChild>
+            <Link to="/inbox">💬 תיבת הדואר שלי</Link>
+          </Button>
+      </section>
+
 
       <section className="rounded-3xl border border-slate-200/90 bg-white/95 p-5 shadow-play">
         <h2 className="text-lg font-bold text-slate-900">שינוי סיסמה</h2>

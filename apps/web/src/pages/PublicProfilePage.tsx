@@ -173,6 +173,11 @@ export function PublicProfilePage() {
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-8 sm:px-6">
+      <div className="absolute left-4 top-4">
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/home">בית</Link>
+        </Button>
+      </div>
       <header className="rounded-3xl border border-slate-200/90 bg-white/95 p-6 text-center shadow-play">
         <KidAvatar
           profile={profile}
@@ -200,7 +205,7 @@ export function PublicProfilePage() {
 
       <section className="rounded-3xl border border-slate-200/90 bg-white/95 p-5 shadow-play">
         <h2 className="text-lg font-bold text-slate-900">פעולות</h2>
-        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        <div className="mt-4 grid grid-cols-2 gap-2">
           <Button
             variant="outline"
             type="button"
@@ -208,6 +213,9 @@ export function PublicProfilePage() {
             onClick={() => setComposing(true)}
           >
             שלח הודעה
+          </Button>
+          <Button variant="outline" asChild>
+            <Link to={`/inbox?kidId=${profile.id}`}>פתח צ'אט</Link>
           </Button>
           <Button
             variant="outline"
@@ -218,7 +226,6 @@ export function PublicProfilePage() {
             {busy === "friend" ? "שולח…" : "בקשת חברות"}
           </Button>
           <Button
-            className="sm:col-span-2"
             variant="destructive"
             type="button"
             disabled={busy !== null}

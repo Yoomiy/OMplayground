@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useInbox, type InboxThread } from "@/hooks/useInbox";
@@ -60,7 +60,17 @@ export function InboxPage() {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const [searchParams] = useSearchParams();
+  const kidIdFromUrl = searchParams.get("kidId");
+
+  useEffect(() => {
+    if (kidIdFromUrl) {
+      setActivePartnerId(kidIdFromUrl);
+    }
+  }, [kidIdFromUrl]);
+
   const active = threads.find((t) => t.partnerId === activePartnerId) ?? null;
+
 
   useEffect(() => {
     if (!user || !active) return;
