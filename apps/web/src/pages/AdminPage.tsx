@@ -48,6 +48,17 @@ interface ReportRow {
   created_at: string;
 }
 
+type AdminSection = "moderation" | "users" | "import" | "games" | "operations" | "audit";
+
+const adminSections: { id: AdminSection; label: string }[] = [
+  { id: "moderation", label: "מודרציה" },
+  { id: "users", label: "משתמשים" },
+  { id: "import", label: "ייבוא" },
+  { id: "games", label: "משחקים" },
+  { id: "operations", label: "תפעול" },
+  { id: "audit", label: "יומן" }
+];
+
 /**
  * Platform admin only (`admin_profiles`). CRUD uses RLS; bulk kid import uses Edge Function + service role.
  */
@@ -66,6 +77,7 @@ export function AdminPage() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<AdminSection>("moderation");
   const [editingKid, setEditingKid] = useState<KidRow | null>(null);
   const [editForm, setEditForm] = useState({
     username: "",
@@ -176,6 +188,7 @@ export function AdminPage() {
   }
 
   function startEditKid(kid: KidRow) {
+    setActiveSection("users");
     setEditingKid(kid);
     setEditForm({
       username: kid.username,
@@ -351,6 +364,31 @@ export function AdminPage() {
         </p>
       ) : null}
 
+      <nav
+        className="flex gap-2 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-sm"
+        aria-label="מדורי ניהול"
+      >
+        {adminSections.map((section) => {
+          const isActive = activeSection === section.id;
+          return (
+            <button
+              key={section.id}
+              type="button"
+              aria-current={isActive ? "page" : undefined}
+              className={`min-h-[40px] whitespace-nowrap rounded-xl px-4 text-sm font-semibold transition-colors ${
+                isActive
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "text-slate-700 hover:bg-slate-100"
+              }`}
+              onClick={() => setActiveSection(section.id)}
+            >
+              {section.label}
+            </button>
+          );
+        })}
+      </nav>
+
+      {activeSection === "moderation" ? (
       <section className="space-y-3">
         <h2 className="text-lg font-medium">דיווחי ניהול (מודרציה)</h2>
         <p className="text-xs text-slate-500">
@@ -419,7 +457,9 @@ export function AdminPage() {
           <p className="text-sm text-slate-500">אין דיווחים.</p>
         ) : null}
       </section>
+      ) : null}
 
+      {activeSection === "games" ? (
       <section className="space-y-2">
         <h2 className="text-lg font-medium">משחקים</h2>
         <ul className="space-y-1 text-sm">
@@ -445,7 +485,9 @@ export function AdminPage() {
           ))}
         </ul>
       </section>
+      ) : null}
 
+      {activeSection === "users" ? (
       <section className="space-y-2">
         <h2 className="text-lg font-medium">ילדים / משתמשים</h2>
         {editingKid ? (
@@ -707,7 +749,9 @@ export function AdminPage() {
           </table>
         </div>
       </section>
+      ) : null}
 
+      {activeSection === "import" ? (
       <section className="space-y-2">
         <h2 className="text-lg font-medium">ייבוא CSV (ילדים)</h2>
         <p className="text-xs text-slate-500">
@@ -728,7 +772,9 @@ export function AdminPage() {
           {busy ? "מייבא…" : "ייבא"}
         </Button>
       </section>
+      ) : null}
 
+      {activeSection === "operations" ? (
       <section className="space-y-2">
         <h2 className="text-lg font-medium">תפעול</h2>
         <div className="flex flex-wrap gap-2">
@@ -772,7 +818,9 @@ export function AdminPage() {
           </Button>
         </div>
       </section>
+      ) : null}
 
+      {activeSection === "audit" ? (
       <section className="space-y-2">
         <h2 className="text-lg font-medium">יומן ביקורת (אחרונים)</h2>
         <ul className="space-y-1 font-mono text-xs text-slate-600">
@@ -784,6 +832,7 @@ export function AdminPage() {
           ))}
         </ul>
       </section>
+      ) : null}
     </div>
   );
 }
