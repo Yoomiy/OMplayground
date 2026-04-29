@@ -5,7 +5,6 @@ import { PresenceProvider } from "@/hooks/usePresence";
 import { PendingChallengeBanner } from "@/components/PendingChallengeBanner";
 import { FriendRequestPopup } from "@/components/FriendRequestPopup";
 import { LoginPage } from "@/pages/LoginPage";
-import { RegisterPage } from "@/pages/RegisterPage";
 import { HomePage } from "@/pages/HomePage";
 import { FriendsPage } from "@/pages/FriendsPage";
 import { InboxPage } from "@/pages/InboxPage";
@@ -40,7 +39,6 @@ export default function App() {
         <FriendRequestPopup />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
           <Route
             path="/home"
             element={

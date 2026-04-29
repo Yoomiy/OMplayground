@@ -123,15 +123,6 @@ export function LoginPage() {
           </Button>
         </form>
       </div>
-      <p className="text-center text-sm text-slate-600">
-        אין חשבון?{" "}
-        <Link
-          className="font-bold text-indigo-600 underline decoration-2 underline-offset-2 hover:text-indigo-700"
-          to="/register"
-        >
-          הרשמה
-        </Link>
-      </p>
     </div>
   );
 }
