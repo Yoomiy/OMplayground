@@ -52,14 +52,28 @@ function initialState(saved?: JsonValue | null): SimonLocalState {
       saved.phase === "showing" ||
       saved.phase === "input")
   ) {
-    return {
-      sequence: saved.sequence as number[],
+    const sequence = saved.sequence as number[];
+    const base: SimonLocalState = {
+      sequence,
       inputIndex: saved.inputIndex,
       showingIndex: saved.showingIndex,
       lit: saved.lit as number | null,
       phase: saved.phase as Phase,
       score: saved.score
     };
+    // Resume mid-round: replay the full pattern before continuing input at saved progress.
+    if (
+      sequence.length > 0 &&
+      (base.phase === "input" || base.phase === "showing")
+    ) {
+      return {
+        ...base,
+        phase: "showing",
+        showingIndex: 0,
+        lit: null
+      };
+    }
+    return base;
   }
   return {
     sequence: [],
@@ -87,7 +101,8 @@ function reducer(state: SimonLocalState, action: Action): SimonLocalState {
     case "SHOW_STEP":
       return { ...state, lit: action.lit, showingIndex: action.nextIndex };
     case "BEGIN_INPUT":
-      return { ...state, lit: null, phase: "input", inputIndex: 0 };
+      // Keep inputIndex (START_ROUND sets 0; resume replay preserves saved progress).
+      return { ...state, lit: null, phase: "input" };
     case "PRESS": {
       if (state.phase !== "input") return state;
       const expected = state.sequence[state.inputIndex];
