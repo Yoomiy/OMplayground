@@ -216,6 +216,20 @@ bkcore.hexgl.HexGL.prototype.displayScore = function(f, l)
 	if(this.gameplay.result == this.gameplay.results.FINISH)
 	{
 		ds != undefined && (ds.innerHTML = "Finished!");
+		if(window.parent !== window)
+		{
+			window.parent.postMessage({
+				source: 'playground-legacy-game',
+				gameKey: 'hexgl',
+				type: 'finish',
+				state: {
+					scoreMs: f,
+					lapTimes: tl,
+					difficulty: d,
+					track: t.name
+				}
+			}, window.location.origin);
+		}
 		// local record
 		if(typeof(Storage)!=="undefined")
 		{
@@ -225,7 +239,7 @@ bkcore.hexgl.HexGL.prototype.displayScore = function(f, l)
 				localStorage['score-'+t+'-'+d] = f;
 
 				// Export race data
-				localStorage['race-'+t+'-replay'] = JSON.Stringify(this.gameplay.raceData.export());
+				localStorage['race-'+t+'-replay'] = JSON.stringify(this.gameplay.raceData.export());
 			}
 			else
 			{

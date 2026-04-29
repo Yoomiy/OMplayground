@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { useSoloAutoSave } from "@/hooks/useSoloAutoSave";
+import {
+  isJsonObject,
+  type JsonValue,
+  type SoloGameSaveControls
+} from "@/lib/soloGameSaves";
 
 const GRID = 20;
 const TICK_MS = 160;
@@ -39,7 +45,34 @@ function randomFood(snake: Point[]): Point {
   return candidates[Math.floor(Math.random() * candidates.length)];
 }
 
-function initialState(): SnakeLocalState {
+function isPoint(value: JsonValue | undefined): boolean {
+  return (
+    isJsonObject(value) &&
+    typeof value.x === "number" &&
+    typeof value.y === "number"
+  );
+}
+
+function initialState(saved?: JsonValue | null): SnakeLocalState {
+  if (
+    isJsonObject(saved) &&
+    Array.isArray(saved.snake) &&
+    saved.snake.every(isPoint) &&
+    isPoint(saved.food) &&
+    isPoint(saved.direction) &&
+    (saved.pendingDirection === null || isPoint(saved.pendingDirection)) &&
+    typeof saved.score === "number" &&
+    saved.status === "playing"
+  ) {
+    return {
+      snake: saved.snake as unknown as Point[],
+      food: saved.food as unknown as Point,
+      direction: saved.direction as unknown as Point,
+      pendingDirection: saved.pendingDirection as unknown as Point | null,
+      score: saved.score,
+      status: "playing"
+    };
+  }
   const snake = [{ x: 10, y: 10 }];
   return {
     snake,
@@ -94,10 +127,23 @@ function reducer(state: SnakeLocalState, action: Action): SnakeLocalState {
   }
 }
 
-export function SnakeSolo() {
-  const [state, dispatch] = useReducer(reducer, undefined, initialState);
+export function SnakeSolo({ save }: { save: SoloGameSaveControls }) {
+  const [state, dispatch] = useReducer(
+    reducer,
+    save.savedState,
+    initialState
+  );
   const statusRef = useRef(state.status);
   statusRef.current = state.status;
+  useSoloAutoSave(
+    save,
+    state as unknown as JsonValue,
+    state.status === "playing"
+  );
+
+  useEffect(() => {
+    if (state.status === "gameover") void save.clearSave();
+  }, [save, state.status]);
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -210,7 +256,13 @@ export function SnakeSolo() {
         </button>
       </div>
       {state.status === "gameover" ? (
-        <Button type="button" onClick={() => dispatch({ type: "RESET" })}>
+        <Button
+          type="button"
+          onClick={() => {
+            void save.clearSave();
+            dispatch({ type: "RESET" });
+          }}
+        >
           שחק שוב
         </Button>
       ) : null}

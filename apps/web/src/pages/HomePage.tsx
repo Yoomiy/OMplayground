@@ -12,6 +12,7 @@ import {
   discardMySoloWaitingSessions,
   leavePausedGameSession
 } from "@/lib/pausedSessionActions";
+import { listSoloGameSaves } from "@/lib/soloGameSaves";
 import { useInbox } from "@/hooks/useInbox";
 import { OnlineKids } from "@/components/OnlineKids";
 import { Button } from "@/components/ui/button";
@@ -63,6 +64,7 @@ export function HomePage() {
   const [openGameScope, setOpenGameScope] =
     useState<OpenGameScopeFilter>("all");
   const [openGameIdFilter, setOpenGameIdFilter] = useState("");
+  const [soloSaveKeys, setSoloSaveKeys] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!profile) return;
@@ -97,6 +99,23 @@ export function HomePage() {
       navigate("/teacher", { replace: true });
     }
   }, [profile?.role, navigate]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void listSoloGameSaves(user?.id)
+      .then((rows) => {
+        if (!cancelled) {
+          setSoloSaveKeys(new Set(rows.map((row) => row.game_key)));
+        }
+      })
+      .catch((error: Error) => {
+        console.error(error);
+        if (!cancelled) setSoloSaveKeys(new Set());
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   const friendIds = useMemo(
     () => new Set(friends.map((f) => f.partner.id)),
@@ -300,7 +319,9 @@ export function HomePage() {
                           {g.name_he}
                         </span>
                         <span className="text-xs font-medium text-slate-600">
-                          שחק עכשיו
+                          {soloSaveKeys.has(g.game_url)
+                            ? "יש משחק שמור · המשך"
+                            : "שחק עכשיו"}
                         </span>
                       </button>
                     </li>

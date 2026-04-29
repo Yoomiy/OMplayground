@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useSoloAutoSave } from "@/hooks/useSoloAutoSave";
+import {
+  isJsonObject,
+  type JsonValue,
+  type SoloGameSaveControls
+} from "@/lib/soloGameSaves";
 
 interface Balloon {
   id: number;
@@ -23,7 +29,35 @@ const SPAWN_MAX_MS = 1400;
 const BASE_SPEED = 0.06;
 const MAX_SPEED = 0.22;
 
-function initialState(): BalloonLocalState {
+function isBalloon(value: JsonValue | undefined): boolean {
+  return (
+    isJsonObject(value) &&
+    typeof value.id === "number" &&
+    typeof value.x === "number" &&
+    typeof value.y === "number" &&
+    typeof value.speed === "number" &&
+    typeof value.hue === "number"
+  );
+}
+
+function initialState(saved?: JsonValue | null): BalloonLocalState {
+  if (
+    isJsonObject(saved) &&
+    Array.isArray(saved.balloons) &&
+    saved.balloons.every(isBalloon) &&
+    typeof saved.score === "number" &&
+    typeof saved.lives === "number" &&
+    typeof saved.nextId === "number" &&
+    saved.status === "playing"
+  ) {
+    return {
+      balloons: saved.balloons as unknown as Balloon[],
+      score: saved.score,
+      lives: saved.lives,
+      status: "playing",
+      nextId: saved.nextId
+    };
+  }
   return {
     balloons: [],
     score: 0,
@@ -33,8 +67,8 @@ function initialState(): BalloonLocalState {
   };
 }
 
-export function BalloonPopSolo() {
-  const stateRef = useRef<BalloonLocalState>(initialState());
+export function BalloonPopSolo({ save }: { save: SoloGameSaveControls }) {
+  const stateRef = useRef<BalloonLocalState>(initialState(save.savedState));
   const [, forceUpdate] = useState(0);
 
   const fieldRef = useRef<HTMLDivElement | null>(null);
@@ -128,6 +162,7 @@ export function BalloonPopSolo() {
     }, []);
 
     const reset = () => {
+      void save.clearSave();
       nextSpawnAtRef.current = Date.now() + 400;
       lastFrameRef.current = null;
       stateRef.current = initialState();
@@ -135,6 +170,22 @@ export function BalloonPopSolo() {
     };
 
     const state = stateRef.current;
+    const saveSnapshot = {
+      balloons: state.balloons.map((b) => ({ ...b })),
+      score: state.score,
+      lives: state.lives,
+      status: state.status,
+      nextId: state.nextId
+    };
+    useSoloAutoSave(
+      save,
+      saveSnapshot as unknown as JsonValue,
+      state.status === "playing"
+    );
+
+    useEffect(() => {
+      if (state.status === "gameover") void save.clearSave();
+    }, [save, state.status]);
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-3 rounded-3xl border border-sky-100 bg-white/95 p-3 shadow-play">

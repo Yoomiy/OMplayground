@@ -9,10 +9,25 @@ function startMenu()
     var _bg    = gamejs.image.load('img/splash-screen.png');
     var _world = null;
 
+    var _postProgress = function(type, state){
+        if ( window.parent === window )
+        {
+            return;
+        }
+        window.parent.postMessage({
+            source: 'playground-legacy-game',
+            gameKey: 'alges-escapade',
+            type: type,
+            state: state
+        }, window.location.origin);
+    };
+
     var _setupLevel = function( mainSurface ){
         //Initiate the world amd set the level to a reset
         _world          = new world();
-        var lvlNum      = 0;
+        var params      = new URLSearchParams(window.location.search);
+        var resumeLevel = parseInt(params.get('resumeLevel') || '1', 10);
+        var lvlNum      = Math.max(0, (isNaN(resumeLevel) ? 1 : resumeLevel) - 1);
         var self        = this;
 
         var nextLevel = function(event){
@@ -40,6 +55,7 @@ function startMenu()
 
             $('#game_scorecard_bg').hide();
 
+            _postProgress('checkpoint', { currentLevel: lvlNum });
             _world.init(lvlNum, mainSurface);
             return false;
         }

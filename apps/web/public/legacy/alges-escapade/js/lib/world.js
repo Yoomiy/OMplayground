@@ -33,6 +33,8 @@ function world()
 
     var _scorecard;
 
+    var _levelNum;
+
     /**
      * @var camera The camera to use
      */
@@ -111,6 +113,8 @@ function world()
     this.init = function( levelNum, mainSurface )
     {
         this.clear();
+        _levelNum = levelNum;
+        _scorecard.setLevelNum(levelNum);
 
         _levelSprite.image = gamejs.image.load('img/bg.png');
 

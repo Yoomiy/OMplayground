@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { useSoloAutoSave } from "@/hooks/useSoloAutoSave";
+import {
+  isJsonObject,
+  type JsonValue,
+  type SoloGameSaveControls
+} from "@/lib/soloGameSaves";
 
 const COLORS = [
   { key: 0, bg: "bg-red-500", litBg: "bg-red-300" },
@@ -33,7 +39,28 @@ function randomColor(): number {
   return Math.floor(Math.random() * 4);
 }
 
-function initialState(): SimonLocalState {
+function initialState(saved?: JsonValue | null): SimonLocalState {
+  if (
+    isJsonObject(saved) &&
+    Array.isArray(saved.sequence) &&
+    saved.sequence.every((n) => typeof n === "number" && n >= 0 && n <= 3) &&
+    typeof saved.inputIndex === "number" &&
+    typeof saved.showingIndex === "number" &&
+    (typeof saved.lit === "number" || saved.lit === null) &&
+    typeof saved.score === "number" &&
+    (saved.phase === "idle" ||
+      saved.phase === "showing" ||
+      saved.phase === "input")
+  ) {
+    return {
+      sequence: saved.sequence as number[],
+      inputIndex: saved.inputIndex,
+      showingIndex: saved.showingIndex,
+      lit: saved.lit as number | null,
+      phase: saved.phase as Phase,
+      score: saved.score
+    };
+  }
   return {
     sequence: [],
     inputIndex: 0,
@@ -84,8 +111,21 @@ function reducer(state: SimonLocalState, action: Action): SimonLocalState {
   }
 }
 
-export function SimonSolo() {
-  const [state, dispatch] = useReducer(reducer, undefined, initialState);
+export function SimonSolo({ save }: { save: SoloGameSaveControls }) {
+  const [state, dispatch] = useReducer(
+    reducer,
+    save.savedState,
+    initialState
+  );
+  useSoloAutoSave(
+    save,
+    state as unknown as JsonValue,
+    state.phase !== "gameover"
+  );
+
+  useEffect(() => {
+    if (state.phase === "gameover") void save.clearSave();
+  }, [save, state.phase]);
 
   // Auto-start the first round.
   useEffect(() => {
@@ -185,7 +225,13 @@ export function SimonSolo() {
         })}
       </div>
       {state.phase === "gameover" ? (
-        <Button type="button" onClick={() => dispatch({ type: "RESET" })}>
+        <Button
+          type="button"
+          onClick={() => {
+            void save.clearSave();
+            dispatch({ type: "RESET" });
+          }}
+        >
           שחק שוב
         </Button>
       ) : null}

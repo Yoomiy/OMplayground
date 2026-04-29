@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useSoloAutoSave } from "@/hooks/useSoloAutoSave";
+import {
+  isJsonObject,
+  type JsonValue,
+  type SoloGameSaveControls
+} from "@/lib/soloGameSaves";
 
 const ROUND_MS = 30_000;
 const MOLE_REROLL_MS = 800;
@@ -17,14 +23,44 @@ function randomCell(exclude: number): number {
   return n;
 }
 
-export function WhackAMoleSolo() {
-  const [state, setState] = useState<MoleState>({
+function initialState(saved?: JsonValue | null): MoleState {
+  if (
+    isJsonObject(saved) &&
+    typeof saved.activeCell === "number" &&
+    typeof saved.score === "number" &&
+    typeof saved.timeLeftMs === "number" &&
+    saved.status === "playing"
+  ) {
+    return {
+      activeCell: saved.activeCell,
+      score: saved.score,
+      timeLeftMs: Math.max(0, Math.min(ROUND_MS, saved.timeLeftMs)),
+      status: "playing"
+    };
+  }
+  return {
     activeCell: Math.floor(Math.random() * 9),
     score: 0,
     timeLeftMs: ROUND_MS,
     status: "playing"
-  });
-  const startedAtRef = useRef<number>(Date.now());
+  };
+}
+
+export function WhackAMoleSolo({ save }: { save: SoloGameSaveControls }) {
+  const initial = useRef(initialState(save.savedState));
+  const [state, setState] = useState<MoleState>(initial.current);
+  const startedAtRef = useRef<number>(
+    Date.now() - (ROUND_MS - initial.current.timeLeftMs)
+  );
+  useSoloAutoSave(
+    save,
+    state as unknown as JsonValue,
+    state.status === "playing"
+  );
+
+  useEffect(() => {
+    if (state.status === "done") void save.clearSave();
+  }, [save, state.status]);
 
   // Time-left tick: compute from absolute start time to avoid drift.
   useEffect(() => {
@@ -65,6 +101,7 @@ export function WhackAMoleSolo() {
   };
 
   const reset = () => {
+    void save.clearSave();
     startedAtRef.current = Date.now();
     setState({
       activeCell: Math.floor(Math.random() * 9),

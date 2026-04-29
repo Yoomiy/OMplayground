@@ -11,6 +11,10 @@ function scorecard()
 
     var _lastLevel = false;
 
+    var _levelNum = 1;
+
+    var _reported = false;
+
     if ( !($('#game_scorecard').length) )
     {
         $('#gameWindow').append('<div id="game_scorecard_bg"></div>');
@@ -49,6 +53,11 @@ function scorecard()
         return this;
     }
 
+    this.setLevelNum = function(levelNum){
+        _levelNum = levelNum;
+        return this;
+    }
+
     this.show = function(){
         $('#game_scorecard .clones').text(_clones);
         $('#game_scorecard .time').text(_calcTime());
@@ -81,6 +90,23 @@ function scorecard()
             }
 
             $('#game_scorecard .score').append(star);
+        }
+
+        if ( !_reported && window.parent !== window )
+        {
+            _reported = true;
+            window.parent.postMessage({
+                source: 'playground-legacy-game',
+                gameKey: 'alges-escapade',
+                type: 'levelComplete',
+                state: {
+                    level: _levelNum,
+                    stars: score,
+                    timeSeconds: _timeTaken,
+                    clones: _clones,
+                    lastLevel: _lastLevel
+                }
+            }, window.location.origin);
         }
 
         if ( _lastLevel )
