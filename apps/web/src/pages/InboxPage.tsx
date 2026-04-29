@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { fieldInputClass } from "@/lib/fieldStyles";
 import { cn } from "@/lib/cn";
 
+const REPORT_NOTE_MAX_LENGTH = 500;
+
 function ThreadRow({
   thread,
   active,
@@ -57,8 +59,14 @@ export function InboxPage() {
   const { threads, loading, refetch } = useInbox(user?.id);
   const [activePartnerId, setActivePartnerId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [reportDraft, setReportDraft] = useState<{
+    messageId: string;
+    messageContent: string;
+    note: string;
+  } | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [reportBusy, setReportBusy] = useState(false);
 
   const [searchParams] = useSearchParams();
   const kidIdFromUrl = searchParams.get("kidId");
@@ -71,6 +79,9 @@ export function InboxPage() {
 
   const active = threads.find((t) => t.partnerId === activePartnerId) ?? null;
 
+  useEffect(() => {
+    setReportDraft(null);
+  }, [activePartnerId]);
 
   useEffect(() => {
     if (!user || !active) return;
@@ -104,19 +115,25 @@ export function InboxPage() {
     }
   }
 
-  async function onReport(messageContent: string) {
+  async function onReport() {
     if (!user || !profile || !active || !active.partner) return;
+    if (!reportDraft) return;
     try {
+      setReportBusy(true);
       await reportMessage({
         reporterKidId: user.id,
         reporterKidName: profile.full_name,
         reportedKidId: active.partner.id,
         reportedKidName: active.partner.full_name,
-        messageContent
+        messageContent: reportDraft.messageContent,
+        note: reportDraft.note.trim() || undefined
       });
+      setReportDraft(null);
       setErr("הדיווח נשלח לצוות");
     } catch (e) {
       setErr(e instanceof Error ? e.message : "דיווח נכשל");
+    } finally {
+      setReportBusy(false);
     }
   }
 
@@ -201,14 +218,71 @@ export function InboxPage() {
                       <span className="whitespace-pre-wrap break-words">
                         {m.content}
                       </span>
-                      {!mine ? (
-                        <button
-                          type="button"
-                          className="text-xs font-semibold text-indigo-600 underline decoration-2 underline-offset-2 hover:text-indigo-800"
-                          onClick={() => void onReport(m.content)}
-                        >
-                          דווח לצוות
-                        </button>
+                      {!mine && active.partner ? (
+                        reportDraft?.messageId === m.id ? (
+                          <div className="w-full space-y-2 rounded-xl border border-indigo-100 bg-white/90 p-3 text-right text-slate-900 shadow-sm">
+                            <label
+                              className="block text-xs font-semibold text-slate-600"
+                              htmlFor={`report-note-${m.id}`}
+                            >
+                              הוסיפו הסבר לצוות
+                            </label>
+                            <textarea
+                              id={`report-note-${m.id}`}
+                              className={cn(
+                                fieldInputClass,
+                                "min-h-[84px] resize-none text-sm"
+                              )}
+                              maxLength={REPORT_NOTE_MAX_LENGTH}
+                              value={reportDraft.note}
+                              onChange={(e) =>
+                                setReportDraft({
+                                  ...reportDraft,
+                                  note: e.target.value
+                                })
+                              }
+                              placeholder="מה קרה בהודעה הזאת?"
+                            />
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <span className="text-xs text-slate-500">
+                                {reportDraft.note.length}/{REPORT_NOTE_MAX_LENGTH}
+                              </span>
+                              <div className="flex gap-2">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  disabled={reportBusy}
+                                  onClick={() => setReportDraft(null)}
+                                >
+                                  ביטול
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  disabled={reportBusy}
+                                  onClick={() => void onReport()}
+                                >
+                                  שלח דיווח
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            className="text-xs font-semibold text-indigo-600 underline decoration-2 underline-offset-2 hover:text-indigo-800"
+                            onClick={() =>
+                              setReportDraft({
+                                messageId: m.id,
+                                messageContent: m.content,
+                                note: ""
+                              })
+                            }
+                          >
+                            דווח לצוות
+                          </button>
+                        )
                       ) : null}
                     </li>
                   );
