@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -50,13 +50,60 @@ interface ReportRow {
   created_at: string;
 }
 
-type AdminSection = "moderation" | "users" | "import" | "games" | "operations" | "audit";
+interface RecessScheduleRow {
+  id: string;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  name_he: string;
+  is_active: boolean;
+}
+
+type ScheduleDraft = Omit<RecessScheduleRow, "id"> & { id: string | null };
+
+const RECESS_DAY_LABELS_HE = [
+  "יום ראשון",
+  "יום שני",
+  "יום שלישי",
+  "יום רביעי",
+  "יום חמישי",
+  "יום שישי",
+  "שבת"
+] as const;
+
+function normalizeRecessTime(t: string): string {
+  const s = t.trim();
+  if (s.length >= 5 && s[4] === ":") return s.slice(0, 5);
+  return s;
+}
+
+function recessDurationMinutes(start: string, end: string): number | null {
+  const a = normalizeRecessTime(start).split(":").map(Number);
+  const b = normalizeRecessTime(end).split(":").map(Number);
+  if (a.length < 2 || b.length < 2) return null;
+  const [sh, sm, eh, em] = [...a, ...b] as [number, number, number, number];
+  if ([sh, sm, eh, em].some((n) => Number.isNaN(n))) return null;
+  let startM = sh * 60 + sm;
+  let endM = eh * 60 + em;
+  if (endM <= startM) endM += 24 * 60;
+  return endM - startM;
+}
+
+type AdminSection =
+  | "moderation"
+  | "users"
+  | "import"
+  | "games"
+  | "schedule"
+  | "operations"
+  | "audit";
 
 const adminSections: { id: AdminSection; label: string }[] = [
   { id: "moderation", label: "מודרציה" },
   { id: "users", label: "משתמשים" },
   { id: "import", label: "ייבוא" },
   { id: "games", label: "משחקים" },
+  { id: "schedule", label: "לוח הפסקות" },
   { id: "operations", label: "תפעול" },
   { id: "audit", label: "יומן" }
 ];
@@ -70,6 +117,12 @@ export function AdminPage() {
   const { isAdmin, loading: adminLoading } = useIsAdmin(user);
   const [games, setGames] = useState<GameRow[]>([]);
   const [kids, setKids] = useState<KidRow[]>([]);
+  const [recessSchedules, setRecessSchedules] = useState<RecessScheduleRow[]>(
+    []
+  );
+  const [scheduleDraft, setScheduleDraft] = useState<ScheduleDraft | null>(
+    null
+  );
   const [avatarPresets, setAvatarPresets] = useState<AvatarPreset[]>([]);
   const [reports, setReports] = useState<ReportRow[]>([]);
   const [audit, setAudit] = useState<
@@ -117,7 +170,7 @@ export function AdminPage() {
 
     const reload = useCallback(async () => {
     if (!user || !isAdmin) return;
-    const [g, k, r, a] = await Promise.all([
+    const [g, k, rs, r, a] = await Promise.all([
       (async () => {
         let query = supabase
           .from("games")
@@ -152,6 +205,11 @@ export function AdminPage() {
         }
         return await query;
       })(),
+      supabase
+        .from("recess_schedules")
+        .select("id, day_of_week, start_time, end_time, name_he, is_active")
+        .order("day_of_week", { ascending: true })
+        .order("start_time", { ascending: true }),
       (async () => {
         let query = supabase
           .from("moderation_reports")
@@ -179,6 +237,7 @@ export function AdminPage() {
     ]);
     if (!g.error) setGames((g.data ?? []) as GameRow[]);
     if (!k.error) setKids((k.data ?? []) as KidRow[]);
+    if (!rs.error) setRecessSchedules((rs.data ?? []) as RecessScheduleRow[]);
     if (!r.error) setReports((r.data ?? []) as ReportRow[]);
     if (!a.error) setAudit((a.data ?? []) as typeof audit);
   }, [user, isAdmin, reportStatusFilter, reportReporterSearch, reportReportedSearch, userSearch, userRoleFilter, userGenderFilter, userGradeFilter, gameSearch]);
@@ -221,6 +280,104 @@ export function AdminPage() {
       void supabase.removeChannel(ch);
     };
   }, [user, isAdmin, reload]);
+
+  const recessByDay = useMemo(() => {
+    const m: RecessScheduleRow[][] = Array.from({ length: 7 }, () => []);
+    for (const row of recessSchedules) {
+      const d = row.day_of_week;
+      if (d >= 0 && d <= 6) m[d]!.push(row);
+    }
+    return m;
+  }, [recessSchedules]);
+
+  function openNewScheduleDraft() {
+    setScheduleDraft({
+      id: null,
+      day_of_week: 0,
+      start_time: "08:00",
+      end_time: "08:15",
+      name_he: "",
+      is_active: true
+    });
+  }
+
+  function openEditScheduleRow(row: RecessScheduleRow) {
+    setScheduleDraft({
+      id: row.id,
+      day_of_week: row.day_of_week,
+      start_time: normalizeRecessTime(row.start_time),
+      end_time: normalizeRecessTime(row.end_time),
+      name_he: row.name_he,
+      is_active: row.is_active
+    });
+  }
+
+  async function saveRecessSchedule() {
+    if (!scheduleDraft) return;
+    setErr(null);
+    setMsg(null);
+    if (!scheduleDraft.name_he.trim()) {
+      setErr("נא למלא שם לחלון ההפסקה");
+      return;
+    }
+    const start = normalizeRecessTime(scheduleDraft.start_time);
+    const end = normalizeRecessTime(scheduleDraft.end_time);
+    const dur = recessDurationMinutes(start, end);
+    if (dur === null || dur <= 0) {
+      setErr("שעות התחלה וסיום לא תקינות");
+      return;
+    }
+    const payload = {
+      day_of_week: scheduleDraft.day_of_week,
+      start_time: start,
+      end_time: end,
+      name_he: scheduleDraft.name_he.trim(),
+      is_active: scheduleDraft.is_active
+    };
+    setBusy(true);
+    try {
+      if (scheduleDraft.id) {
+        const { error } = await supabase
+          .from("recess_schedules")
+          .update(payload)
+          .eq("id", scheduleDraft.id);
+        if (error) {
+          setErr(error.message);
+          return;
+        }
+        setMsg("חלון ההפסקה עודכן");
+      } else {
+        const { error } = await supabase.from("recess_schedules").insert(payload);
+        if (error) {
+          setErr(error.message);
+          return;
+        }
+        setMsg("חלון הפסקה נוסף");
+      }
+      setScheduleDraft(null);
+      void reload();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function deleteRecessSchedule(id: string) {
+    if (!window.confirm("למחוק חלון הפסקה?")) return;
+    setErr(null);
+    setMsg(null);
+    setBusy(true);
+    try {
+      const { error } = await supabase.from("recess_schedules").delete().eq("id", id);
+      if (error) setErr(error.message);
+      else {
+        setMsg("חלון ההפסקה נמחק");
+        setScheduleDraft((d) => (d?.id === id ? null : d));
+      }
+      void reload();
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function logout() {
     await supabase.auth.signOut();
@@ -616,6 +773,196 @@ export function AdminPage() {
             </li>
           ))}
         </ul>
+      </section>
+      ) : null}
+
+      {activeSection === "schedule" ? (
+      <section className="space-y-4">
+        <h2 className="text-lg font-medium">לוח הפסקות</h2>
+        <p className="text-xs text-slate-500">
+          זמנים ביחס ל־Asia/Jerusalem; יום ראשון = 0. חלונות לא פעילים אינם נכללים בבדיקת שרת.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={busy}
+            onClick={() => openNewScheduleDraft()}
+          >
+            הוסף חלון
+          </Button>
+          {scheduleDraft ? (
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={busy}
+              onClick={() => setScheduleDraft(null)}
+            >
+              בטל עריכה
+            </Button>
+          ) : null}
+        </div>
+        {scheduleDraft ? (
+          <div className="space-y-3 rounded-2xl border border-indigo-200 bg-indigo-50/40 p-4">
+            <h3 className="text-sm font-semibold text-slate-800">
+              {scheduleDraft.id ? "עריכת חלון" : "חלון חדש"}
+            </h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
+                יום בשבוע
+                <select
+                  className={fieldInputClass}
+                  value={scheduleDraft.day_of_week}
+                  onChange={(e) =>
+                    setScheduleDraft((d) =>
+                      d ? { ...d, day_of_week: Number(e.target.value) } : d
+                    )
+                  }
+                >
+                  {RECESS_DAY_LABELS_HE.map((label, idx) => (
+                    <option key={label} value={idx}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
+                שם (עברית)
+                <input
+                  className={fieldInputClass}
+                  value={scheduleDraft.name_he}
+                  onChange={(e) =>
+                    setScheduleDraft((d) =>
+                      d ? { ...d, name_he: e.target.value } : d
+                    )
+                  }
+                  placeholder="למשל: הפסקה ראשונה"
+                />
+              </label>
+              <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
+                התחלה
+                <input
+                  className={fieldInputClass}
+                  type="time"
+                  value={scheduleDraft.start_time}
+                  onChange={(e) =>
+                    setScheduleDraft((d) =>
+                      d ? { ...d, start_time: e.target.value } : d
+                    )
+                  }
+                />
+              </label>
+              <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
+                סיום
+                <input
+                  className={fieldInputClass}
+                  type="time"
+                  value={scheduleDraft.end_time}
+                  onChange={(e) =>
+                    setScheduleDraft((d) =>
+                      d ? { ...d, end_time: e.target.value } : d
+                    )
+                  }
+                />
+              </label>
+            </div>
+            <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-800">
+              <input
+                type="checkbox"
+                checked={scheduleDraft.is_active}
+                onChange={(e) =>
+                  setScheduleDraft((d) =>
+                    d ? { ...d, is_active: e.target.checked } : d
+                  )
+                }
+              />
+              פעיל
+            </label>
+            <p className="text-xs text-slate-600">
+              משך משוער:{" "}
+              {recessDurationMinutes(
+                scheduleDraft.start_time,
+                scheduleDraft.end_time
+              ) ?? "—"}{" "}
+              דקות
+            </p>
+            <Button
+              type="button"
+              disabled={busy}
+              onClick={() => void saveRecessSchedule()}
+            >
+              {busy ? "שומר…" : "שמור"}
+            </Button>
+          </div>
+        ) : null}
+        <div className="space-y-6">
+          {recessByDay.map((rows, day) => (
+            <div key={RECESS_DAY_LABELS_HE[day]}>
+              <h3 className="mb-2 border-b border-slate-200 pb-1 text-sm font-semibold text-slate-800">
+                {RECESS_DAY_LABELS_HE[day]} ({day})
+              </h3>
+              {rows.length === 0 ? (
+                <p className="text-xs text-slate-500">אין חלונות</p>
+              ) : (
+                <ul className="space-y-2">
+                  {rows.map((row) => {
+                    const mins = recessDurationMinutes(
+                      row.start_time,
+                      row.end_time
+                    );
+                    return (
+                      <li
+                        key={row.id}
+                        className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm"
+                      >
+                        <div>
+                          <span className="font-medium text-slate-900">
+                            {row.name_he}
+                          </span>{" "}
+                          <span className="text-slate-600">
+                            {normalizeRecessTime(row.start_time)} –{" "}
+                            {normalizeRecessTime(row.end_time)}
+                            {mins != null ? ` · ${mins} דק׳` : ""}
+                          </span>
+                          <span
+                            className={
+                              row.is_active
+                                ? " me-2 text-emerald-600"
+                                : " me-2 text-slate-400"
+                            }
+                          >
+                            {row.is_active ? "פעיל" : "כבוי"}
+                          </span>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            type="button"
+                            disabled={busy}
+                            onClick={() => openEditScheduleRow(row)}
+                          >
+                            ערוך
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            type="button"
+                            className="border-rose-200 text-rose-700"
+                            disabled={busy}
+                            onClick={() => void deleteRecessSchedule(row.id)}
+                          >
+                            מחק
+                          </Button>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          ))}
+        </div>
       </section>
       ) : null}
 
