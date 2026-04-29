@@ -1,6 +1,6 @@
 1. min_players need to agree to a remach.
 4. audio messages
-8. allow kids to add comments to message report
 12. add a way to resume stoped soloGames
 13. add fullscreen option to the racing game
 15. allow host to resume game if players in room >= min_players
+16. add schedule management
