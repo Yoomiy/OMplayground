@@ -7,7 +7,9 @@ import {
   adminUpdateKidProfile,
   fetchAvatarPresets,
   type AdminProfileUpdates,
-  type AvatarPreset
+  type AvatarPreset,
+  adminCreateNewKidProfile,
+  type AdminNewProfile
 } from "@/lib/profileApi";
 import { KidAvatar } from "@/components/KidAvatar";
 import { Button } from "@/components/ui/button";
@@ -79,6 +81,15 @@ export function AdminPage() {
   const [err, setErr] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<AdminSection>("moderation");
   const [editingKid, setEditingKid] = useState<KidRow | null>(null);
+  const [reportStatusFilter, setReportStatusFilter] = useState<"all" | "pending" | "reviewed">("all");
+  const [reportReporterSearch, setReportReporterSearch] = useState("");
+  const [reportReportedSearch, setReportReportedSearch] = useState("");
+  const [userSearch, setUserSearch] = useState("");
+  const [userRoleFilter, setUserRoleFilter] = useState<"all" | "kid" | "teacher">("all");
+  const [userGenderFilter, setUserGenderFilter] = useState<"all" | "boy" | "girl">("all");
+  const [userGradeFilter, setUserGradeFilter] = useState<"all" | number>("all");
+  const [gameSearch, setGameSearch] = useState("");
+  const [addingNewUser, setAddingNewUser] = useState(false);
   const [editForm, setEditForm] = useState({
     username: "",
     full_name: "",
@@ -93,24 +104,73 @@ export function AdminPage() {
     unread_message_count: 0
   });
 
-  const reload = useCallback(async () => {
+  const [newKidForm, setNewKidForm] = useState({
+    username: "",
+    password: "",
+    full_name: "",
+    gender: "boy" as "boy" | "girl",
+    role: "kid" as "kid" | "teacher" | "admin",
+    grade: 1,
+    avatar_color: "#3B82F6",
+    avatar_preset_id: ""
+  });
+
+    const reload = useCallback(async () => {
     if (!user || !isAdmin) return;
     const [g, k, r, a] = await Promise.all([
-      supabase.from("games").select("id, name_he, is_active, game_url").order("name_he"),
-      supabase
-        .from("kid_profiles")
-        .select(
-          "id, username, full_name, gender, role, grade, is_active, avatar_color, avatar_preset_id, avatar_url, best_scores, unread_message_count, last_seen, created_at, updated_at"
-        )
-        .order("username")
-        .limit(80),
-      supabase
-        .from("moderation_reports")
-        .select(
-          "id, status, reporter_kid_name, reported_kid_name, message_content, reporter_note, created_at"
-        )
-        .order("created_at", { ascending: false })
-        .limit(50),
+      (async () => {
+        let query = supabase
+          .from("games")
+          .select("id, name_he, is_active, game_url")
+          .order("name_he");
+        if (gameSearch) {
+          query = query.ilike("name_he", `%${gameSearch}%`);
+        }
+        return await query;
+      })(),
+      (async () => {
+        let query = supabase
+          .from("kid_profiles")
+          .select(
+            "id, username, full_name, gender, role, grade, is_active, avatar_color, avatar_preset_id, avatar_url, best_scores, unread_message_count, last_seen, created_at, updated_at"
+          )
+          .order("username")
+          .limit(80);
+        if (userRoleFilter !== "all") {
+          query = query.eq("role", userRoleFilter);
+        }
+        if (userGenderFilter !== "all") {
+          query = query.eq("gender", userGenderFilter);
+        }
+        if (userGradeFilter !== "all") {
+          query = query.eq("grade", userGradeFilter);
+        }
+        if (userSearch) {
+          query = query.or(
+            `username.ilike.%${userSearch}%,full_name.ilike.%${userSearch}%`
+          );
+        }
+        return await query;
+      })(),
+      (async () => {
+        let query = supabase
+          .from("moderation_reports")
+          .select(
+            "id, status, reporter_kid_name, reported_kid_name, message_content, reporter_note, created_at"
+          )
+          .order("created_at", { ascending: false })
+          .limit(50);
+        if (reportStatusFilter !== "all") {
+          query = query.eq("status", reportStatusFilter);
+        }
+        if (reportReporterSearch) {
+          query = query.ilike("reporter_kid_name", `%${reportReporterSearch}%`);
+        }
+        if (reportReportedSearch) {
+          query = query.ilike("reported_kid_name", `%${reportReportedSearch}%`);
+        }
+        return await query;
+      })(),
       supabase
         .from("audit_log")
         .select("id, action, created_at, metadata")
@@ -121,7 +181,7 @@ export function AdminPage() {
     if (!k.error) setKids((k.data ?? []) as KidRow[]);
     if (!r.error) setReports((r.data ?? []) as ReportRow[]);
     if (!a.error) setAudit((a.data ?? []) as typeof audit);
-  }, [user, isAdmin]);
+  }, [user, isAdmin, reportStatusFilter, reportReporterSearch, reportReportedSearch, userSearch, userRoleFilter, userGenderFilter, userGradeFilter, gameSearch]);
 
   useEffect(() => {
     void reload();
@@ -237,6 +297,42 @@ export function AdminPage() {
       await reload();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "עדכון פרופיל נכשל");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function createNewUser() {
+    setErr(null);
+    setMsg(null);
+
+    if (!newKidForm.username || !newKidForm.full_name) {
+      setErr("שם משתמש ושם מלא הם שדות חובה");
+      return;
+    }
+
+    const profile: AdminNewProfile = {
+      ...newKidForm,
+      avatar_preset_id: newKidForm.avatar_preset_id || null
+    };
+    setBusy(true);
+    try {
+      await adminCreateNewKidProfile(profile);
+      setMsg(`המשתמש ${profile.username} נוצר בהצלחה`);
+      setAddingNewUser(false);
+      setNewKidForm({
+        username: "",
+        password: "",
+        full_name: "",
+        gender: "boy",
+        role: "kid",
+        grade: 1,
+        avatar_color: "#3B82F6",
+        avatar_preset_id: ""
+      });
+      await reload();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "יצירת משתמש נכשלה");
     } finally {
       setBusy(false);
     }
@@ -389,12 +485,41 @@ export function AdminPage() {
       </nav>
 
       {activeSection === "moderation" ? (
-      <section className="space-y-3">
-        <h2 className="text-lg font-medium">דיווחי ניהול (מודרציה)</h2>
-        <p className="text-xs text-slate-500">
-          תוכן ההודעה המדווחת והערת המדווח; עדכון סטטוס נשמר ב-RLS.
-        </p>
-        <ul className="space-y-3 text-sm">
+        <section className="space-y-3">
+          <h2 className="text-lg font-medium">דיווחי ניהול (מודרציה)</h2>
+          <p className="text-xs text-slate-500">
+            תוכן ההודעה המדווחת והערת המדווח; עדכון סטטוס נשמר ב-RLS.
+          </p>
+          <div className="flex gap-2">
+            <select
+              className={fieldInputClass}
+              value={reportStatusFilter}
+              onChange={(e) =>
+                setReportStatusFilter(
+                  e.target.value as "all" | "pending" | "reviewed"
+                )
+              }
+            >
+              <option value="all">כל הסטטוסים</option>
+              <option value="pending">ממתינים לטיפול</option>
+              <option value="reviewed">טופלו</option>
+            </select>
+            <input
+              className={fieldInputClass}
+              type="search"
+              placeholder="חיפוש לפי מדווח..."
+              value={reportReporterSearch}
+              onChange={(e) => setReportReporterSearch(e.target.value)}
+            />
+            <input
+              className={fieldInputClass}
+              type="search"
+              placeholder="חיפוש לפי מדווח..."
+              value={reportReportedSearch}
+              onChange={(e) => setReportReportedSearch(e.target.value)}
+            />
+          </div>
+          <ul className="space-y-3 text-sm">
           {reports.map((r) => (
             <li
               key={r.id}
@@ -462,6 +587,13 @@ export function AdminPage() {
       {activeSection === "games" ? (
       <section className="space-y-2">
         <h2 className="text-lg font-medium">משחקים</h2>
+        <input
+          className={fieldInputClass}
+          type="search"
+          placeholder="חיפוש לפי שם משחק..."
+          value={gameSearch}
+          onChange={(e) => setGameSearch(e.target.value)}
+        />
         <ul className="space-y-1 text-sm">
           {games.map((g) => (
             <li
@@ -488,8 +620,202 @@ export function AdminPage() {
       ) : null}
 
       {activeSection === "users" ? (
-      <section className="space-y-2">
-        <h2 className="text-lg font-medium">ילדים / משתמשים</h2>
+        <section className="space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-lg font-medium">ילדים / משתמשים</h2>
+            <Button type="button" onClick={() => setAddingNewUser(true)}>
+              הוסף משתמש חדש
+            </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <select
+              className={fieldInputClass}
+              value={userRoleFilter}
+              onChange={(e) =>
+                setUserRoleFilter(e.target.value as "all" | "kid" | "teacher")
+              }
+            >
+              <option value="all">כל התפקידים</option>
+              <option value="kid">ילדים</option>
+              <option value="teacher">מורים</option>
+            </select>
+            <select
+              className={fieldInputClass}
+              value={userGenderFilter}
+              onChange={(e) =>
+                setUserGenderFilter(e.target.value as "all" | "boy" | "girl")
+              }
+            >
+              <option value="all">כל המגדרים</option>
+              <option value="boy">בנים</option>
+              <option value="girl">בנות</option>
+            </select>
+            <select
+              className={fieldInputClass}
+              value={userGradeFilter}
+              onChange={(e) => setUserGradeFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
+            >
+              <option value="all">כל הכיתות</option>
+              {[1, 2, 3, 4, 5, 6, 7].map(g => <option key={g} value={g}>כיתה {g}</option>)}
+            </select>
+            <input
+              className={fieldInputClass}
+              type="search"
+              placeholder="חיפוש לפי שם משתמש או שם מלא..."
+              value={userSearch}
+              onChange={(e) => setUserSearch(e.target.value)}
+            />
+          </div>
+          {addingNewUser ? (
+            <div className="mb-4 rounded-3xl border border-indigo-200 bg-white p-5 shadow-play">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <h3 className="text-xl font-bold text-slate-900">הוספת משתמש חדש</h3>
+                <Button
+                  variant="ghost"
+                  type="button"
+                  onClick={() => setAddingNewUser(false)}
+                >
+                  סגור
+                </Button>
+              </div>
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
+                  שם משתמש
+                  <input
+                    className={fieldInputClass}
+                    value={newKidForm.username}
+                    onChange={(e) =>
+                      setNewKidForm((f) => ({ ...f, username: e.target.value }))
+                    }
+                  />
+                </label>
+                <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
+                  סיסמה (אם ריק, תיווצר סיסמה אקראית)
+                  <input
+                    className={fieldInputClass}
+                    value={newKidForm.password}
+                    onChange={(e) =>
+                      setNewKidForm((f) => ({ ...f, password: e.target.value }))
+                    }
+                  />
+                </label>
+                <label
+                  className={`flex flex-col gap-2 sm:col-span-2 ${fieldLabelClass}`}
+                >
+                  שם מלא
+                  <input
+                    className={fieldInputClass}
+                    value={newKidForm.full_name}
+                    onChange={(e) =>
+                      setNewKidForm((f) => ({
+                        ...f,
+                        full_name: e.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
+                  תפקיד
+                  <select
+                    className={fieldInputClass}
+                    value={newKidForm.role}
+                    onChange={(e) =>
+                      setNewKidForm((f) => ({
+                        ...f,
+                        role: e.target.value as "kid" | "teacher" | "admin",
+                      }))
+                    }
+                  >
+                    <option value="kid">ילד</option>
+                    <option value="teacher">מורה</option>
+                    <option value="admin">מנהל</option>
+                  </select>
+                </label>
+                {newKidForm.role !== "admin" && (
+                  <>
+                    <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
+                      מגדר
+                      <select
+                        className={fieldInputClass}
+                        value={newKidForm.gender}
+                        onChange={(e) =>
+                          setNewKidForm((f) => ({
+                            ...f,
+                            gender: e.target.value as "boy" | "girl",
+                          }))
+                        }
+                      >
+                        <option value="boy">בן</option>
+                        <option value="girl">בת</option>
+                      </select>
+                    </label>
+                    <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
+                      כיתה
+                      <input
+                        className={fieldInputClass}
+                        type="number"
+                        min={1}
+                        max={7}
+                        value={newKidForm.grade}
+                        onChange={(e) =>
+                          setNewKidForm((f) => ({
+                            ...f,
+                            grade: Number(e.target.value),
+                          }))
+                        }
+                      />
+                    </label>
+                    <label
+                      className={`flex flex-col gap-2 ${fieldLabelClass}`}
+                    >
+                      צבע אווטאר
+                      <input
+                        className={fieldInputClass}
+                        value={newKidForm.avatar_color}
+                        onChange={(e) =>
+                          setNewKidForm((f) => ({
+                            ...f,
+                            avatar_color: e.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    <label
+                      className={`flex flex-col gap-2 ${fieldLabelClass}`}
+                    >
+                      אווטאר מוכן
+                      <select
+                        className={fieldInputClass}
+                        value={newKidForm.avatar_preset_id}
+                        onChange={(e) =>
+                          setNewKidForm((f) => ({
+                            ...f,
+                            avatar_preset_id: e.target.value,
+                          }))
+                        }
+                      >
+                        <option value="">ללא</option>
+                        {avatarPresets.map((preset) => (
+                          <option key={preset.id} value={preset.key}>
+                            {preset.label_he}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </>
+                )}
+              </div>
+              <div className="mt-5">
+                <Button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void createNewUser()}
+                >
+                  {busy ? "יוצר..." : "צור משתמש"}
+                </Button>
+              </div>
+            </div>
+          ) : null}
         {editingKid ? (
           <div className="mb-4 rounded-3xl border border-indigo-200 bg-white p-5 shadow-play">
             <div className="flex flex-wrap items-start justify-between gap-4">

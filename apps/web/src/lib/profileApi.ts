@@ -90,6 +90,27 @@ export async function adminUpdateKidProfile(
   return data as KidProfileRow;
 }
 
+export interface AdminNewProfile {
+  username: string;
+  password?: string;
+  full_name: string;
+  gender: "boy" | "girl";
+  role: "kid" | "teacher" | "admin";
+  grade: number;
+  avatar_color: string;
+  avatar_preset_id: string | null;
+}
+
+export async function adminCreateNewKidProfile(profile: AdminNewProfile) {
+  const { data, error } = await supabase.functions.invoke("admin-create-user", {
+    body: profile
+  });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+
+
 export async function uploadAvatar(userId: string, file: File) {
   const compressed = await compressAvatarImage(file);
   const ext = compressed.type === "image/png" ? "png" : compressed.type === "image/webp" ? "webp" : "jpg";
