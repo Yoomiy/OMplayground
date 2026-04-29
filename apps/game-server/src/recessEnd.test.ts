@@ -213,4 +213,59 @@ describe("recessEndSweep", () => {
     expect(kidDisconnect).toHaveBeenCalledWith(true);
     expect(teacherDisconnect).not.toHaveBeenCalled();
   });
+
+  it("preserves sweep state when schedule loading fails", async () => {
+    const { io, emit } = buildMockIo();
+    const { supabase, update } = buildMockSupabase();
+    const state = createRecessSweepState();
+    state.activeLastTick = true;
+    const consoleError = jest.spyOn(console, "error").mockImplementation();
+
+    try {
+      const { evictedSessionIds } = await recessEndSweep(state, {
+        supabase: supabase as never,
+        loadSchedules: async () => {
+          throw new Error("network");
+        },
+        io,
+        now: () => new Date("2026-04-16T10:00:00Z"),
+        rooms: () => [roomWithState("sess-r4")],
+        remove: () => {}
+      });
+
+      expect(evictedSessionIds).toEqual([]);
+      expect(state.activeLastTick).toBe(true);
+      expect(update).not.toHaveBeenCalled();
+      expect(emit).not.toHaveBeenCalled();
+    } finally {
+      consoleError.mockRestore();
+    }
+  });
+
+  it("treats an empty schedule set as inactive on a clean load", async () => {
+    const { io, emit, disconnect } = buildMockIo();
+    const { supabase, update } = buildMockSupabase();
+    const state = createRecessSweepState();
+    state.activeLastTick = true;
+    const removed: string[] = [];
+
+    const { evictedSessionIds } = await recessEndSweep(state, {
+      supabase: supabase as never,
+      loadSchedules: async () => [],
+      io,
+      now: () => new Date("2026-04-16T10:00:00Z"),
+      rooms: () => [roomWithState("sess-r5")],
+      remove: (id) => removed.push(id)
+    });
+
+    expect(evictedSessionIds).toEqual(["sess-r5"]);
+    expect(state.activeLastTick).toBe(false);
+    expect(update).toHaveBeenCalled();
+    expect(emit).toHaveBeenCalledWith(
+      "ROOM_EVENT",
+      expect.objectContaining({ kind: "RECESS_ENDED" })
+    );
+    expect(disconnect).toHaveBeenCalledWith(true);
+    expect(removed).toEqual(["sess-r5"]);
+  });
 });

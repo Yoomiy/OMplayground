@@ -3,6 +3,6 @@
 12. add a way to resume stoped soloGames
 13. add fullscreen option to the racing game
 15. allow host to resume game if players in room >= min_players
-16. add schedule management
 17. improve stats saving
 18. access profiles from friends page
+19. test fully recess end

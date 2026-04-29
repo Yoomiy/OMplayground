@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { usernameToSyntheticEmail } from "@/lib/username";
-import { isWithinRecess, type RecessWindowRow } from "@/lib/recess";
+import { getPlaygroundAccessForUser } from "@/lib/recessAccess";
 import { Button } from "@/components/ui/button";
 import { fieldInputClass, fieldLabelClass } from "@/lib/fieldStyles";
 
@@ -33,40 +33,22 @@ export function LoginPage() {
       setLoading(false);
       return;
     }
-    const { data: adminRow } = await supabase
-      .from("admin_profiles")
-      .select("id")
-      .eq("id", uid)
-      .maybeSingle();
-    if (adminRow) {
+    const access = await getPlaygroundAccessForUser(uid);
+    if (!access.allowed) {
+      await supabase.auth.signOut();
+      setError(access.message);
+      setLoading(false);
+      return;
+    }
+
+    if (access.role === "admin") {
       setLoading(false);
       navigate("/admin", { replace: true });
       return;
     }
 
-    const { data: profile } = await supabase
-      .from("kid_profiles")
-      .select("role")
-      .eq("id", uid)
-      .maybeSingle();
-    const role = profile?.role as string | undefined;
-    if (role === "kid") {
-      const { data: schedules } = await supabase
-        .from("recess_schedules")
-        .select("day_of_week, start_time, end_time, is_active")
-        .eq("is_active", true);
-      const rows = (schedules ?? []) as RecessWindowRow[];
-      if (rows.length > 0 && !isWithinRecess(new Date(), rows)) {
-        await supabase.auth.signOut();
-        setError(
-          "כרגע אין הפסקה פעילה — לא ניתן להתחבר (מורים יכולים להתחבר בכל עת)."
-        );
-        setLoading(false);
-        return;
-      }
-    }
     setLoading(false);
-    if (role === "teacher") {
+    if (access.role === "teacher") {
       navigate("/teacher", { replace: true });
       return;
     }

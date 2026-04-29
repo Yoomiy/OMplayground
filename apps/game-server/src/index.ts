@@ -127,9 +127,9 @@ let recessCache: {
 } = { rows: [], fetchedAt: 0 };
 
 async function loadRecessSchedules() {
-  if (!supabaseAdmin) return [];
+  if (!supabaseAdmin) throw new Error("missing_supabase_admin");
   const now = Date.now();
-  if (now - recessCache.fetchedAt < 60_000 && recessCache.rows.length) {
+  if (now - recessCache.fetchedAt < 60_000) {
     return recessCache.rows;
   }
   const { data, error } = await supabaseAdmin
@@ -138,7 +138,7 @@ async function loadRecessSchedules() {
     .eq("is_active", true);
   if (error) {
     console.error("recess_schedules", error.message);
-    return recessCache.rows;
+    throw new Error("recess_schedules_unavailable");
   }
   recessCache = { rows: data ?? [], fetchedAt: now };
   return recessCache.rows;
@@ -173,8 +173,17 @@ io.use(async (socket, next) => {
       return;
     }
     if (profile.role === "kid") {
-      const schedules = await loadRecessSchedules();
-      if (schedules.length && !isWithinRecess(new Date(), schedules)) {
+      try {
+        const schedules = await loadRecessSchedules();
+        if (!isWithinRecess(new Date(), schedules)) {
+          next(new Error("RECESS_DENIED"));
+          return;
+        }
+      } catch (err) {
+        console.error(
+          "recess gate failed",
+          err instanceof Error ? err.message : err
+        );
         next(new Error("RECESS_DENIED"));
         return;
       }

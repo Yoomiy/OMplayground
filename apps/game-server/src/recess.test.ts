@@ -1,6 +1,11 @@
 import { isWithinRecess } from "./recess";
 
 describe("recessMiddleware (Israel clock)", () => {
+  it("fails closed when no active schedules are loaded", () => {
+    const d = new Date("2026-04-16T12:00:00Z");
+    expect(isWithinRecess(d, [])).toBe(false);
+  });
+
   it("allows kid when current time is inside an active schedule window", () => {
     const schedules = Array.from({ length: 7 }, (_, day_of_week) => ({
       day_of_week,

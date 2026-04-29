@@ -45,13 +45,18 @@ export async function recessEndSweep(
   deps: RecessEndSweepDeps
 ): Promise<{ evictedSessionIds: string[] }> {
   if (!deps.supabase) return { evictedSessionIds: [] };
-  const schedules = await deps.loadSchedules();
-  if (!schedules.length) {
-    state.activeLastTick = null;
+  let schedules: RecessWindowRow[];
+  try {
+    schedules = await deps.loadSchedules();
+  } catch (err) {
+    console.error(
+      "recess sweep failed to load schedules",
+      err instanceof Error ? err.message : err
+    );
     return { evictedSessionIds: [] };
   }
   const now = (deps.now ?? (() => new Date()))();
-  const active = isWithinRecess(now, schedules);
+  const active = schedules.length > 0 && isWithinRecess(now, schedules);
   const flippedToInactive = state.activeLastTick === true && !active;
   state.activeLastTick = active;
   if (!flippedToInactive) return { evictedSessionIds: [] };
