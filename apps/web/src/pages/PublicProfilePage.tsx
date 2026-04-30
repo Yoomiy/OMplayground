@@ -10,7 +10,7 @@ import {
   type PublicProfile
 } from "@/lib/profileApi";
 import { sendChallenge } from "@/lib/challengeApi";
-import { blockKid, sendFriendRequest } from "@/lib/friendsApi";
+import { blockKid } from "@/lib/friendsApi";
 import { ComposeMessage } from "@/components/ComposeMessage";
 import { KidAvatar } from "@/components/KidAvatar";
 import { Button } from "@/components/ui/button";
@@ -85,27 +85,6 @@ export function PublicProfilePage() {
     };
   }, [me, profile]);
 
-  async function friend() {
-    if (!profile) return;
-    setBusy("friend");
-    setErr(null);
-    setMsg(null);
-    try {
-      const res = await sendFriendRequest(profile.id);
-      setMsg(
-        res.status === "accepted"
-          ? "נוספתם כחברים"
-          : res.already
-            ? "בקשה כבר נשלחה"
-            : "בקשת חברות נשלחה"
-      );
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "שליחת בקשת חברות נכשלה");
-    } finally {
-      setBusy(null);
-    }
-  }
-
   async function block() {
     if (!profile) return;
     if (!window.confirm(`לחסום את ${profile.full_name}?`)) return;
@@ -115,7 +94,7 @@ export function PublicProfilePage() {
     try {
       await blockKid(profile.id);
       setMsg("המשתמש נחסם");
-      setTimeout(() => navigate("/friends"), 700);
+      setTimeout(() => navigate("/home"), 700);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "חסימה נכשלה");
     } finally {
@@ -216,14 +195,6 @@ export function PublicProfilePage() {
           </Button>
           <Button variant="outline" asChild>
             <Link to={`/inbox?kidId=${profile.id}`}>פתח צ'אט</Link>
-          </Button>
-          <Button
-            variant="outline"
-            type="button"
-            disabled={busy !== null}
-            onClick={() => void friend()}
-          >
-            {busy === "friend" ? "שולח…" : "בקשת חברות"}
           </Button>
           <Button
             variant="destructive"

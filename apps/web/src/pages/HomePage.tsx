@@ -7,7 +7,6 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useOnlinePresence } from "@/hooks/usePresence";
 import { useOpenGames } from "@/hooks/useOpenGames";
 import { useMyPausedGames } from "@/hooks/useMyPausedGames";
-import { useFriendships } from "@/hooks/useFriendships";
 import {
   discardMySoloWaitingSessions,
   leavePausedGameSession
@@ -26,7 +25,7 @@ interface GameCatalogRow {
   is_multiplayer: boolean;
 }
 
-type OpenGameScopeFilter = "all" | "class" | "friends";
+type OpenGameScopeFilter = "all" | "class";
 
 function panelClass(className?: string) {
   return cn(
@@ -52,7 +51,6 @@ export function HomePage() {
   const { rows: openGames } = useOpenGames(user?.id);
   const { rows: myPausedGames, loading: pausedLoading, refetch: refetchPaused } =
     useMyPausedGames(user?.id);
-  const { friends } = useFriendships(user?.id);
   const { unreadTotal } = useInbox(user?.id);
   const [catalog, setCatalog] = useState<GameCatalogRow[]>([]);
   const [busyGameId, setBusyGameId] = useState<string | null>(null);
@@ -117,10 +115,6 @@ export function HomePage() {
     };
   }, [user?.id]);
 
-  const friendIds = useMemo(
-    () => new Set(friends.map((f) => f.partner.id)),
-    [friends]
-  );
   const openGameOptions = useMemo(() => {
     const options = new Map<string, string>();
     for (const g of openGames) {
@@ -136,12 +130,9 @@ export function HomePage() {
       if (openGameScope === "class" && g.host_grade !== profile?.grade) {
         return false;
       }
-      if (openGameScope === "friends" && !friendIds.has(g.host_id)) {
-        return false;
-      }
       return true;
     });
-  }, [friendIds, openGameIdFilter, openGames, openGameScope, profile?.grade]);
+  }, [openGameIdFilter, openGames, openGameScope, profile?.grade]);
 
   if (adminLoading) {
     return (
@@ -256,9 +247,6 @@ export function HomePage() {
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" type="button" asChild>
             <Link to="/profile">הפרופיל שלי</Link>
-          </Button>
-          <Button variant="outline" type="button" asChild>
-            <Link to="/friends">חברים</Link>
           </Button>
           <Button variant="outline" type="button" asChild>
             <Link to="/inbox">
@@ -427,7 +415,6 @@ export function HomePage() {
               >
                 <option value="all">כולם</option>
                 <option value="class">הכיתה שלי</option>
-                <option value="friends">חברים שלי</option>
               </select>
             </label>
             <label className="flex min-w-[160px] flex-1 flex-col gap-1 font-medium text-slate-700">

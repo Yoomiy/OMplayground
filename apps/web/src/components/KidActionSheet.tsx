@@ -6,7 +6,7 @@ import { KidAvatar } from "@/components/KidAvatar";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { sendChallenge } from "@/lib/challengeApi";
-import { sendFriendRequest, blockKid } from "@/lib/friendsApi";
+import { blockKid } from "@/lib/friendsApi";
 import { supabase } from "@/lib/supabase";
 import type { PublicKidProfile } from "@/hooks/useOnlineKids";
 import { cn } from "@/lib/cn";
@@ -73,27 +73,6 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
       navigate(`/play/${sessionId}`);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "אתגר נכשל");
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  async function friend() {
-    if (!kid) return;
-    setBusy("friend");
-    setErr(null);
-    setInfo(null);
-    try {
-      const res = await sendFriendRequest(kid.id);
-      setInfo(
-        res.status === "accepted"
-          ? "נוספתם כחברים"
-          : res.already
-            ? "בקשה כבר נשלחה"
-            : "בקשת חברות נשלחה"
-      );
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "שליחה נכשלה");
     } finally {
       setBusy(null);
     }
@@ -202,7 +181,7 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
 
             <section className="space-y-2 border-t border-slate-100 pt-4">
               <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                הודעה וחברות
+                הודעה
               </h4>
               <div className="flex flex-col gap-2">
                 <Button
@@ -223,14 +202,6 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
                   onClick={() => setComposing(true)}
                 >
                   שלח הודעה
-                </Button>
-                <Button
-                  variant="outline"
-                  type="button"
-                  disabled={busy !== null}
-                  onClick={() => void friend()}
-                >
-                  {busy === "friend" ? "שולח…" : "בקשת חברות"}
                 </Button>
               </div>
             </section>

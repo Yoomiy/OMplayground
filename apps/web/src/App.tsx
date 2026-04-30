@@ -4,12 +4,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { usePlaygroundAccess } from "@/hooks/usePlaygroundAccess";
 import { PresenceProvider } from "@/hooks/usePresence";
 import { PendingChallengeBanner } from "@/components/PendingChallengeBanner";
-import { FriendRequestPopup } from "@/components/FriendRequestPopup";
 import { supabase } from "@/lib/supabase";
 import type { PlaygroundRole } from "@/lib/recessAccess";
 import { LoginPage } from "@/pages/LoginPage";
 import { HomePage } from "@/pages/HomePage";
-import { FriendsPage } from "@/pages/FriendsPage";
+import { FriendsDeprecatedPage } from "@/pages/FriendsDeprecatedPage";
 import { InboxPage } from "@/pages/InboxPage";
 import { ProfilePage } from "@/pages/ProfilePage";
 import { PublicProfilePage } from "@/pages/PublicProfilePage";
@@ -72,7 +71,6 @@ export default function App() {
     <div className="min-h-screen text-slate-800">
       <PresenceProvider>
         <PendingChallengeBanner />
-        <FriendRequestPopup />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route
@@ -87,7 +85,7 @@ export default function App() {
             path="/friends"
             element={
               <Protected>
-                <FriendsPage />
+                <FriendsDeprecatedPage />
               </Protected>
             }
           />

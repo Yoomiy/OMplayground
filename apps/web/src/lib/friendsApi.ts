@@ -1,4 +1,8 @@
 import { supabase } from "@/lib/supabase";
+import {
+  FRIENDS_DEPRECATION_MESSAGE,
+  FRIENDS_MECHANISM_DEPRECATED
+} from "@/lib/friendsDeprecation";
 
 export interface SendFriendRequestResult {
   status: "pending" | "accepted";
@@ -9,6 +13,9 @@ export interface SendFriendRequestResult {
 export async function sendFriendRequest(
   toId: string
 ): Promise<SendFriendRequestResult> {
+  if (FRIENDS_MECHANISM_DEPRECATED) {
+    throw new Error(FRIENDS_DEPRECATION_MESSAGE);
+  }
   const { data, error } = await supabase.rpc("send_friend_request", {
     to_uid: toId
   });
@@ -20,6 +27,9 @@ export async function respondToFriendRequest(
   friendshipId: string,
   accept: boolean
 ): Promise<void> {
+  if (FRIENDS_MECHANISM_DEPRECATED) {
+    throw new Error(FRIENDS_DEPRECATION_MESSAGE);
+  }
   const { error } = await supabase
     .from("friendships")
     .update({ status: accept ? "accepted" : "declined" })
@@ -28,6 +38,9 @@ export async function respondToFriendRequest(
 }
 
 export async function unfriend(meId: string, partnerId: string): Promise<void> {
+  if (FRIENDS_MECHANISM_DEPRECATED) {
+    throw new Error(FRIENDS_DEPRECATION_MESSAGE);
+  }
   const { error } = await supabase
     .from("friendships")
     .delete()
