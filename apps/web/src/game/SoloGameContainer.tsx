@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { KidDesktopShell, desktopPanelClass } from "@/components/KidDesktopShell";
 import { BalloonPopSolo } from "@/games-solo/BalloonPopSolo";
 import { AlgesEscapadeSolo } from "@/games-solo/AlgesEscapadeSolo";
 import { DrawingSolo } from "@/games-solo/DrawingSolo";
@@ -132,8 +133,10 @@ export default function SoloGameContainer() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-4 p-4">
-      <header className="flex items-center justify-between">
+    <KidDesktopShell
+      title="משחק לבד"
+      subtitle={gameKey ?? "משחק"}
+      actions={
         <Button
           type="button"
           variant="outline"
@@ -142,24 +145,26 @@ export default function SoloGameContainer() {
         >
           חזרה הביתה
         </Button>
-      </header>
+      }
+      contentClassName="min-h-[calc(100vh-136px)]"
+    >
       {err ? (
         <p
-          className="rounded-2xl border border-amber-300/80 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900"
+          className="mb-4 rounded-xl border border-amber-300/80 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900"
           role="alert"
         >
           {err}
         </p>
       ) : null}
       {loadingSave ? (
-        <p className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-600">
+        <p className={desktopPanelClass("px-4 py-3 text-sm font-bold text-slate-600")}>
           טוען שמירה…
         </p>
       ) : save && !hasStarted ? (
-        <section className="mx-auto flex max-w-md flex-col gap-4 rounded-3xl border border-amber-200 bg-amber-50 p-5 text-right shadow-play">
+        <section className="mx-auto mt-20 flex max-w-md flex-col gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-right shadow-play">
           <div className="space-y-1">
-            <h1 className="text-xl font-bold text-amber-950">נמצא משחק שמור</h1>
-            <p className="text-sm font-medium text-amber-900/80">
+            <h1 className="text-xl font-black text-amber-950">נמצא משחק שמור</h1>
+            <p className="text-sm font-semibold text-amber-900/80">
               אפשר להמשיך מהמקום שבו עצרת או להתחיל משחק חדש.
             </p>
           </div>
@@ -180,12 +185,14 @@ export default function SoloGameContainer() {
           </div>
         </section>
       ) : entry ? (
-        entry(saveControls)
+        <section className={desktopPanelClass("min-h-[620px] p-4")}>
+          <div className="mx-auto max-w-6xl">{entry(saveControls)}</div>
+        </section>
       ) : (
-        <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900" role="alert">
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900" role="alert">
           משחק לא זמין: {gameKey ?? "?"}
         </p>
       )}
-    </div>
+    </KidDesktopShell>
   );
 }

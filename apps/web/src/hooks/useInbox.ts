@@ -41,7 +41,7 @@ async function loadPartners(
   const { data } = await supabase
     .from("public_kid_profiles")
     .select(
-      "id, username, full_name, gender, avatar_color, avatar_preset_id, avatar_url, role"
+      "id, username, full_name, gender, grade, avatar_color, avatar_preset_id, avatar_url, role"
     )
     .in("id", partnerIds);
   return new Map(
@@ -116,8 +116,11 @@ export function useInbox(userId: string | undefined) {
     if (!userId) return;
     void refetch();
 
+    const channelTopic = `inbox:${userId}:${Date.now()}:${Math.random()
+      .toString(36)
+      .slice(2)}`;
     const channel = supabase
-      .channel(`inbox:${userId}`)
+      .channel(channelTopic)
       .on(
         "postgres_changes",
         {

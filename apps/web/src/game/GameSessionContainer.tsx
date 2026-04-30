@@ -19,6 +19,7 @@ import { ChessBoard } from "@/games/ChessBoard";
 import { DrawingBoard } from "@/games/DrawingBoard";
 import { MemoryBoard } from "@/games/MemoryBoard";
 import { TicTacToeBoard } from "@/games/TicTacToeBoard";
+import { desktopPanelClass } from "@/components/KidDesktopShell";
 
 type RoomEvent =
   | {
@@ -562,299 +563,254 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
     !!myUserId &&
     roster.some((p) => p.userId === myUserId);
 
+  const chatPanel = !isFullscreen && isTeacherObserver ? (
+    <section className={desktopPanelClass("space-y-2 p-3")}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-sm font-black text-slate-800">צ׳אט (ניהול מורה)</h2>
+        <button
+          type="button"
+          className="rounded-lg border border-amber-400 bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-900 hover:bg-amber-100"
+          onClick={() => {
+            if (!window.confirm("למחוק את כל ההודעות במפגש זה?")) return;
+            void teacherChat.clearSession().catch((e: Error) => setStatus(e.message));
+          }}
+        >
+          ניקוי צ׳אט
+        </button>
+      </div>
+      {teacherChat.error ? (
+        <p className="text-xs font-medium text-amber-800">{teacherChat.error}</p>
+      ) : null}
+      <ul className="max-h-64 space-y-2 overflow-y-auto text-sm text-slate-800">
+        {teacherChat.lines.map((line) => (
+          <li key={line.id} className="flex items-start justify-between gap-2 border-b border-slate-100 pb-1">
+            <span>
+              <span className="text-slate-500">{line.sender_name}:</span>{" "}
+              {line.message}
+            </span>
+            {!line.is_system ? (
+              <button
+                type="button"
+                className="shrink-0 text-xs text-rose-500 underline"
+                onClick={() =>
+                  void teacherChat.softDelete(line.id).catch((e: Error) =>
+                    setStatus(e.message)
+                  )
+                }
+              >
+                מחק
+              </button>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+    </section>
+  ) : !isFullscreen ? (
+    <section className={desktopPanelClass("space-y-2 p-3")}>
+      <h2 className="text-sm font-black text-slate-800">צ׳אט במשחק</h2>
+      {kidChat.error ? (
+        <p className="text-xs font-medium text-amber-800">{kidChat.error}</p>
+      ) : null}
+      <ul className="max-h-56 space-y-1 overflow-y-auto text-sm text-slate-800">
+        {kidChat.lines.map((line) => (
+          <li key={line.id}>
+            <span className="text-slate-500">{line.sender_name}:</span>{" "}
+            {line.message}
+          </li>
+        ))}
+      </ul>
+      <div className="flex gap-2">
+        <input
+          className="min-h-10 flex-1 rounded-xl border-2 border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+          value={chatDraft}
+          onChange={(e) => setChatDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              sendChat();
+            }
+          }}
+          placeholder="הודעה…"
+          maxLength={500}
+        />
+        <button
+          type="button"
+          className="rounded-lg bg-indigo-600 px-3 py-1 text-sm font-bold text-white hover:bg-indigo-500"
+          onClick={() => sendChat()}
+        >
+          שלח
+        </button>
+      </div>
+    </section>
+  ) : null;
+
   return (
     <div
       className={
         isFullscreen
           ? "fixed inset-0 z-40 space-y-4 overflow-auto bg-[rgb(var(--play-bg))] p-4"
-          : "space-y-4"
+          : "grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]"
       }
     >
-      <p className="text-sm text-slate-600">
-        {isTeacherObserver ? "צפייה בלבד (מורה) · " : ""}
-        {status}
-      </p>
-      {toast && (
-        <div
-          role="status"
-          className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-950 shadow-sm"
-        >
-          {toast}
+      <main className="min-w-0 space-y-4">
+        <div className={desktopPanelClass("flex flex-wrap items-center justify-between gap-3 px-4 py-3")}>
+          <p className="text-sm font-bold text-slate-600">
+            {isTeacherObserver ? "צפייה בלבד (מורה) · " : ""}
+            {status}
+          </p>
+          {toast ? (
+            <div role="status" className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-950">
+              {toast}
+            </div>
+          ) : null}
         </div>
-      )}
-      <section className="rounded-2xl border border-slate-200 bg-white/95 p-3 text-sm shadow-sm">
-        <h2 className="font-bold text-slate-800">שחקנים בחדר</h2>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {(roster.length > 0 ? roster : players).map((p) => (
-            <span
-              key={p.userId}
+
+        <section className={desktopPanelClass("min-h-[560px] p-4")}>
+          {paused ? (
+            <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
+              <p className="font-bold">המשחק מושהה ונשמר להמשך.</p>
+              <p className="mt-1">
+                {missingPlayers.length > 0
+                  ? `ממתינים להצטרפות: ${missingPlayers.map((p) => p.displayName).join(", ")}`
+                  : "כל השחקנים חזרו לחדר."}
+              </p>
+            </div>
+          ) : null}
+
+          {Board ? (
+            <div
               className={
-                connectedIds.has(p.userId)
-                  ? "rounded-lg bg-emerald-100 px-2 py-1 font-medium text-emerald-900"
-                  : "rounded-lg bg-slate-200 px-2 py-1 text-slate-600"
+                isTeacherObserver || paused
+                  ? "pointer-events-none mx-auto max-w-5xl opacity-60"
+                  : "mx-auto max-w-5xl"
               }
             >
-              {p.displayName}
-              {connectedIds.has(p.userId) ? " · מחובר" : " · חסר"}
-            </span>
-          ))}
-        </div>
-      </section>
-      {paused ? (
-        <section className="rounded-2xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 shadow-sm">
-          <p className="font-medium">המשחק מושהה ונשמר להמשך.</p>
-          {missingPlayers.length > 0 ? (
-            <p className="mt-1">
-              ממתינים להצטרפות:{" "}
-              {missingPlayers.map((p) => p.displayName).join(", ")}
-            </p>
+              <Board
+                gameState={gameState}
+                mySymbol={mySymbol}
+                myUserId={myUserId}
+                onIntent={onIntent}
+              />
+            </div>
           ) : (
-            <p className="mt-1">כל השחקנים חזרו לחדר.</p>
+            <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900">
+              משחק לא נתמך בלקוח: {gameKey}
+            </p>
           )}
-          {iAmHost ? (
-            <button
-              type="button"
-              className="mt-3 rounded bg-emerald-600 px-3 py-1 text-sm text-white hover:bg-emerald-500 disabled:opacity-50"
-              disabled={!canResume}
-              onClick={() => resumeGame()}
-            >
-              המשך משחק
-            </button>
-          ) : null}
         </section>
-      ) : null}
-      {Board ? (
-        <div
-          className={
-            isTeacherObserver || paused ? "pointer-events-none opacity-60" : undefined
-          }
-        >
-          <Board
-            gameState={gameState}
-            mySymbol={mySymbol}
-            myUserId={myUserId}
-            onIntent={onIntent}
-          />
-        </div>
-      ) : (
-        <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900">
-          משחק לא נתמך בלקוח: {gameKey}
-        </p>
-      )}
-      {iAmHost && !endOverlay && (
-        <div className="space-y-2">
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              className="rounded bg-amber-600 px-3 py-1 text-sm text-white hover:bg-amber-500 disabled:opacity-50"
-              disabled={paused}
-              onClick={() => pauseGame()}
-            >
-              השהה משחק
-            </button>
-            <button
-              type="button"
-              className="rounded bg-rose-700 px-3 py-1 text-sm text-white hover:bg-rose-600"
-              onClick={() => stopGame()}
-            >
-              סיים משחק
-            </button>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-2">
-            <span className="text-sm font-medium text-slate-700">
-              {roomIsOpen === null
-                ? "טוען פרטיות…"
-                : roomIsOpen
-                  ? "חדר פתוח"
-                  : "חדר פרטי"}
-            </span>
-            <button
-              type="button"
-              className="rounded border border-slate-300 bg-white px-3 py-1 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-50"
-              disabled={updatingVisibility || roomIsOpen === null}
-              onClick={() => void toggleRoomVisibility()}
-            >
-              {updatingVisibility
-                ? "מעדכן…"
-                : roomIsOpen
-                  ? "הפוך לפרטי"
-                  : "הפוך לפתוח"}
-            </button>
-            <button
-              type="button"
-              className="rounded border border-indigo-300 bg-indigo-50 px-3 py-1 text-sm font-semibold text-indigo-900 hover:bg-indigo-100 disabled:opacity-50"
-              disabled={!invitationCode}
-              onClick={() => void copyInviteLink()}
-            >
-              העתק קישור הזמנה
-            </button>
-          </div>
-          {inviteFallbackLink ? (
-            <p className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs text-indigo-900 break-all">
-              {inviteFallbackLink}
+
+        {endOverlay ? (
+          <div role="alertdialog" aria-label="המשחק הסתיים" className={desktopPanelClass("p-4 text-center")}>
+            <p className="text-lg font-black text-slate-900">
+              {endOverlayHeadline(endOverlay, mySymbol, isTeacherObserver)}
             </p>
-          ) : null}
-        </div>
-      )}
-      {endOverlay && (
-        <div
-          role="alertdialog"
-          aria-label="המשחק הסתיים"
-          className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-play"
-        >
-          <p className="text-lg font-bold text-slate-900">
-            {endOverlayHeadline(endOverlay, mySymbol, isTeacherObserver)}
-          </p>
-          {rematch && endOverlay.kind !== "stopped" ? (
-            <p className="mt-2 text-sm text-slate-600">
-              משחק חוזר: {rematch.accepted.length} אישרו
-              {rematch.refused.length > 0
-                ? ` · ${rematch.refused.length} סירבו`
-                : ""}
-            </p>
-          ) : null}
-          <div className="mt-3 flex flex-wrap justify-center gap-2">
-            {iAmHost && endOverlay.kind !== "stopped" && !rematch ? (
+            {rematch && endOverlay.kind !== "stopped" ? (
+              <p className="mt-2 text-sm font-semibold text-slate-600">
+                משחק חוזר: {rematch.accepted.length} אישרו
+                {rematch.refused.length > 0 ? ` · ${rematch.refused.length} סירבו` : ""}
+              </p>
+            ) : null}
+            <div className="mt-3 flex flex-wrap justify-center gap-2">
+              {iAmHost && endOverlay.kind !== "stopped" && !rematch ? (
+                <button type="button" className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-500" onClick={() => requestRematch()}>
+                  בקש משחק חוזר
+                </button>
+              ) : null}
+              {canVoteRematch ? (
+                <>
+                  <button type="button" className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-500 disabled:opacity-50" disabled={acceptedRematch} onClick={() => respondToRematch(true)}>
+                    {acceptedRematch ? "אישרת משחק חוזר" : "אני רוצה משחק חוזר"}
+                  </button>
+                  <button type="button" className="rounded-lg border-2 border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-800 hover:bg-slate-50 disabled:opacity-50" disabled={refusedRematch} onClick={() => respondToRematch(false)}>
+                    {refusedRematch ? "סירבת" : "לא עכשיו"}
+                  </button>
+                </>
+              ) : null}
               <button
                 type="button"
-                className="rounded bg-emerald-600 px-3 py-1 text-sm text-white hover:bg-emerald-500"
-                onClick={() => requestRematch()}
+                className="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-bold text-white hover:bg-indigo-500"
+                onClick={() =>
+                  navigate(isAdmin ? "/admin" : isTeacherObserver ? "/teacher" : "/home")
+                }
               >
-                בקש משחק חוזר
+                {isAdmin ? "חזרה לניהול" : isTeacherObserver ? "חזרה ללוח המורה" : "חזרה הביתה"}
               </button>
-            ) : null}
-            {canVoteRematch ? (
-              <>
-                <button
-                  type="button"
-                  className="rounded bg-emerald-600 px-3 py-1 text-sm text-white hover:bg-emerald-500 disabled:opacity-50"
-                  disabled={acceptedRematch}
-                  onClick={() => respondToRematch(true)}
-                >
-                  {acceptedRematch ? "אישרת משחק חוזר" : "אני רוצה משחק חוזר"}
-                </button>
-                <button
-                  type="button"
-                  className="rounded-xl border-2 border-slate-300 bg-white px-3 py-1 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-50"
-                  disabled={refusedRematch}
-                  onClick={() => respondToRematch(false)}
-                >
-                  {refusedRematch ? "סירבת" : "לא עכשיו"}
-                </button>
-              </>
-            ) : null}
-            <button
-              type="button"
-              className="rounded bg-indigo-600 px-3 py-1 text-sm text-white hover:bg-indigo-500"
-              onClick={() =>
-                navigate(
-                  isAdmin
-                    ? "/admin"
-                    : isTeacherObserver
-                      ? "/teacher"
-                      : "/home"
-                )
-              }
-            >
-              {isAdmin
-                ? "חזרה לניהול"
-                : isTeacherObserver
-                  ? "חזרה ללוח המורה"
-                  : "חזרה הביתה"}
-            </button>
+            </div>
           </div>
-        </div>
-      )}
-      {!isFullscreen && isTeacherObserver ? (
-        <section className="space-y-2 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-sm font-bold text-slate-800">
-              צ׳אט (ניהול מורה)
-            </h2>
-            <button
-              type="button"
-              className="rounded-lg border border-amber-400 bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-900 hover:bg-amber-100"
-              onClick={() => {
-                if (
-                  !window.confirm("למחוק את כל ההודעות במפגש זה?")
-                ) {
-                  return;
-                }
-                void teacherChat.clearSession().catch((e: Error) =>
-                  setStatus(e.message)
-                );
-              }}
-            >
-              ניקוי צ׳אט
-            </button>
-          </div>
-          {teacherChat.error ? (
-            <p className="text-xs font-medium text-amber-800">{teacherChat.error}</p>
-          ) : null}
-          <ul className="max-h-48 space-y-2 overflow-y-auto text-sm text-slate-800">
-            {teacherChat.lines.map((l) => (
-              <li
-                key={l.id}
-                className="flex items-start justify-between gap-2 border-b border-slate-100 pb-1"
+        ) : null}
+      </main>
+
+      {!isFullscreen ? (
+        <aside className="space-y-4">
+          <section className={desktopPanelClass("p-4 text-sm")}>
+            <h2 className="font-black text-slate-900">שחקנים בחדר</h2>
+            <div className="mt-3 space-y-2">
+              {(roster.length > 0 ? roster : players).map((player) => (
+                <div
+                  key={player.userId}
+                  className={
+                    connectedIds.has(player.userId)
+                      ? "rounded-xl bg-emerald-100 px-3 py-2 font-bold text-emerald-900"
+                      : "rounded-xl bg-slate-100 px-3 py-2 font-semibold text-slate-600"
+                  }
+                >
+                  {player.displayName}
+                  <span className="block text-xs">
+                    {connectedIds.has(player.userId) ? "מחובר" : "חסר"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {paused && iAmHost ? (
+            <section className={desktopPanelClass("border-amber-300 bg-amber-50 p-4 text-sm text-amber-950")}>
+              <p className="font-bold">אפשר לחדש כשהשחקנים חזרו.</p>
+              <button
+                type="button"
+                className="mt-3 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-500 disabled:opacity-50"
+                disabled={!canResume}
+                onClick={() => resumeGame()}
               >
-                <span>
-                  <span className="text-slate-500">{l.sender_name}:</span>{" "}
-                  {l.message}
-                </span>
-                {!l.is_system ? (
-                  <button
-                    type="button"
-                    className="shrink-0 text-xs text-rose-400 underline"
-                    onClick={() =>
-                      void teacherChat.softDelete(l.id).catch((e: Error) =>
-                        setStatus(e.message)
-                      )
-                    }
-                  >
-                    מחק
-                  </button>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : !isFullscreen ? (
-        <section className="space-y-2 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-sm">
-          <h2 className="text-sm font-bold text-slate-800">צ׳אט במשחק</h2>
-          {kidChat.error ? (
-            <p className="text-xs font-medium text-amber-800">{kidChat.error}</p>
+                המשך משחק
+              </button>
+            </section>
           ) : null}
-          <ul className="max-h-40 space-y-1 overflow-y-auto text-sm text-slate-800">
-            {kidChat.lines.map((l) => (
-              <li key={l.id}>
-                <span className="text-slate-500">{l.sender_name}:</span>{" "}
-                {l.message}
-              </li>
-            ))}
-          </ul>
-          <div className="flex gap-2">
-            <input
-              className="min-h-10 flex-1 rounded-xl border-2 border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-              value={chatDraft}
-              onChange={(e) => setChatDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  sendChat();
-                }
-              }}
-              placeholder="הודעה…"
-              maxLength={500}
-            />
-            <button
-              type="button"
-              className="rounded bg-indigo-600 px-3 py-1 text-sm text-white hover:bg-indigo-500"
-              onClick={() => sendChat()}
-            >
-              שלח
-            </button>
-          </div>
-        </section>
+
+          {iAmHost && !endOverlay ? (
+            <section className={desktopPanelClass("space-y-3 p-4")}>
+              <h2 className="text-sm font-black text-slate-900">ניהול חדר</h2>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" className="rounded-lg bg-amber-600 px-3 py-2 text-sm font-bold text-white hover:bg-amber-500 disabled:opacity-50" disabled={paused} onClick={() => pauseGame()}>
+                  השהה
+                </button>
+                <button type="button" className="rounded-lg bg-rose-700 px-3 py-2 text-sm font-bold text-white hover:bg-rose-600" onClick={() => stopGame()}>
+                  סיים
+                </button>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-3">
+                <p className="text-sm font-black text-slate-800">
+                  {roomIsOpen === null ? "טוען פרטיות…" : roomIsOpen ? "חדר פתוח" : "חדר פרטי"}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button type="button" className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-800 hover:bg-slate-50 disabled:opacity-50" disabled={updatingVisibility || roomIsOpen === null} onClick={() => void toggleRoomVisibility()}>
+                    {updatingVisibility ? "מעדכן…" : roomIsOpen ? "הפוך לפרטי" : "הפוך לפתוח"}
+                  </button>
+                  <button type="button" className="rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-2 text-sm font-bold text-indigo-900 hover:bg-indigo-100 disabled:opacity-50" disabled={!invitationCode} onClick={() => void copyInviteLink()}>
+                    העתק הזמנה
+                  </button>
+                </div>
+              </div>
+              {inviteFallbackLink ? (
+                <p className="break-all rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs text-indigo-900">
+                  {inviteFallbackLink}
+                </p>
+              ) : null}
+            </section>
+          ) : null}
+
+          {chatPanel}
+        </aside>
       ) : null}
     </div>
   );

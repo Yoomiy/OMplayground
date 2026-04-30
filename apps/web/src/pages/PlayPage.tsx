@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { GameSessionContainer } from "@/game/GameSessionContainer";
 import { Button } from "@/components/ui/button";
+import { KidDesktopShell } from "@/components/KidDesktopShell";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -49,17 +50,18 @@ function PlayPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-6 sm:px-6">
-      <header className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-slate-200/90 bg-white/95 p-4 shadow-play">
-        <h1 className="text-xl font-bold text-slate-900">
-          {gameName || "משחק"}
-        </h1>
+    <KidDesktopShell
+      title={gameName || "משחק"}
+      subtitle="חדר משחק"
+      actions={
         <Button variant="outline" asChild>
           <Link to={backHref}>{backLabel}</Link>
         </Button>
-      </header>
+      }
+      contentClassName="min-h-[calc(100vh-136px)]"
+    >
       <GameSessionContainer sessionId={sessionId} />
-    </div>
+    </KidDesktopShell>
   );
 }
 

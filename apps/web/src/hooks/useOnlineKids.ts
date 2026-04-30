@@ -8,6 +8,7 @@ export interface PublicKidProfile {
   username: string;
   full_name: string;
   gender: "boy" | "girl";
+  grade: number;
   avatar_color: string;
   avatar_preset_id: string | null;
   avatar_url: string | null;
@@ -52,7 +53,7 @@ export function useOnlineKids(excludeSelf = true) {
       const { data, error } = await supabase
         .from("public_kid_profiles")
         .select(
-          "id, username, full_name, gender, avatar_color, avatar_preset_id, avatar_url, role"
+          "id, username, full_name, gender, grade, avatar_color, avatar_preset_id, avatar_url, role"
         )
         .in("id", missing)
         .eq("role", "kid");

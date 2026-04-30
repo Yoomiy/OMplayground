@@ -64,7 +64,7 @@ async function hydrate(userId: string): Promise<Split> {
     const { data: profiles } = await supabase
       .from("public_kid_profiles")
       .select(
-        "id, username, full_name, gender, avatar_color, avatar_preset_id, avatar_url, role"
+        "id, username, full_name, gender, grade, avatar_color, avatar_preset_id, avatar_url, role"
       )
       .in("id", Array.from(partnerIds));
     profileMap = new Map(

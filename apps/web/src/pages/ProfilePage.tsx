@@ -12,6 +12,7 @@ import {
 } from "@/lib/profileApi";
 import { KidAvatar } from "@/components/KidAvatar";
 import { Button } from "@/components/ui/button";
+import { KidDesktopShell, desktopPanelClass } from "@/components/KidDesktopShell";
 import { fieldInputClass, fieldLabelClass } from "@/lib/fieldStyles";
 import { cn } from "@/lib/cn";
 
@@ -158,43 +159,47 @@ export function ProfilePage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-8 sm:px-6">
-      <div className="absolute left-4 top-4">
-        <Button variant="outline" size="sm" asChild>
-          <Link to="/home">בית</Link>
-        </Button>
-      </div>
-      <header className="flex flex-wrap items-start justify-between gap-4 rounded-3xl border border-slate-200/90 bg-white/95 p-5 shadow-play">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wide text-indigo-600">
-            הפרופיל שלי
+    <KidDesktopShell
+      title="הפרופיל שלי"
+      subtitle={`${profile.full_name} · @${profile.username} · כיתה ${profile.grade}`}
+      contentClassName="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)_320px]"
+    >
+      <aside className={desktopPanelClass("p-5")}>
+        <div className="flex flex-col items-center text-center">
+          <KidAvatar
+            profile={draftProfile}
+            presets={presets}
+            className="size-32 min-h-32 min-w-32 rounded-2xl text-5xl"
+          />
+          <h2 className="mt-4 text-2xl font-black text-slate-950">
+            {fullName || profile.full_name}
+          </h2>
+          <p className="text-sm font-semibold text-slate-500">
+            @{profile.username}
           </p>
-          <h1 className="mt-1 text-2xl font-bold text-slate-900">
-            {profile.full_name}
-          </h1>
-          <p className="mt-1 text-sm text-slate-600">
-            @{profile.username} · כיתה {profile.grade}
+          <p className="mt-1 rounded-full bg-indigo-50 px-3 py-1 text-sm font-black text-indigo-700">
+            כיתה {profile.grade}
           </p>
         </div>
-      </header>
+      </aside>
 
       {err ? (
-        <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
+        <p className="xl:col-span-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">
           {err}
         </p>
       ) : null}
       {msg ? (
-        <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900">
+        <p className="xl:col-span-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-900">
           {msg}
         </p>
       ) : null}
 
-      <section className="rounded-3xl border border-slate-200/90 bg-white/95 p-5 shadow-play">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+      <section className={desktopPanelClass("p-5")}>
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
           <KidAvatar
             profile={draftProfile}
             presets={presets}
-            className="size-24 min-h-[96px] min-w-[96px] rounded-3xl text-4xl"
+            className="size-24 min-h-24 min-w-24 rounded-2xl text-4xl"
           />
           <div className="min-w-0 flex-1 space-y-4">
             <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
@@ -256,11 +261,11 @@ export function ProfilePage() {
         </div>
 
         <div className="mt-5 space-y-3 border-t border-slate-100 pt-5">
-          <h2 className="text-lg font-bold text-slate-900">אווטארים מוכנים</h2>
+          <h2 className="text-lg font-black text-slate-900">אווטארים מוכנים</h2>
           {presets.length === 0 ? (
             <p className="text-sm text-slate-500">אין אווטארים מוגדרים כרגע.</p>
           ) : (
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <div className="grid max-h-80 grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3 lg:grid-cols-4">
               {presets.map((preset) => (
                 <button
                   key={preset.id}
@@ -296,15 +301,38 @@ export function ProfilePage() {
         </Button>
       </section>
 
-      <section className="rounded-3xl border border-slate-200/90 bg-white/95 p-5 shadow-play">
-          <Button className="w-full" size="lg" asChild>
-            <Link to="/inbox">💬 תיבת הדואר שלי</Link>
+      <aside className="space-y-4">
+        <section className={desktopPanelClass("p-5")}>
+          <h2 className="text-lg font-black text-slate-900">קיצורים</h2>
+          <Button className="mt-4 w-full" size="lg" asChild>
+            <Link to="/inbox">תיבת הדואר שלי</Link>
           </Button>
-      </section>
+        </section>
 
+        <section className={desktopPanelClass("p-5")}>
+          <h2 className="text-lg font-black text-slate-900">סטטיסטיקות</h2>
+          {Object.keys(profile.best_scores).length === 0 ? (
+            <p className="mt-2 text-sm font-semibold text-slate-500">
+              עדיין אין שיאים שמורים.
+            </p>
+          ) : (
+            <ul className="mt-3 max-h-72 space-y-2 overflow-y-auto pr-1 text-sm">
+              {Object.entries(profile.best_scores).map(([game, score]) => (
+                <li
+                  key={game}
+                  className="flex justify-between rounded-xl bg-slate-50 px-4 py-2"
+                >
+                  <span className="font-semibold text-slate-600">{game}</span>
+                  <span className="font-black text-slate-950">{score}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </aside>
 
-      <section className="rounded-3xl border border-slate-200/90 bg-white/95 p-5 shadow-play">
-        <h2 className="text-lg font-bold text-slate-900">שינוי סיסמה</h2>
+      <section className={desktopPanelClass("p-5 xl:col-start-2")}>
+        <h2 className="text-lg font-black text-slate-900">שינוי סיסמה</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
             סיסמה חדשה
@@ -335,25 +363,6 @@ export function ProfilePage() {
           {busy === "password" ? "מעדכן…" : "עדכן סיסמה"}
         </Button>
       </section>
-
-      <section className="rounded-3xl border border-slate-200/90 bg-white/95 p-5 shadow-play">
-        <h2 className="text-lg font-bold text-slate-900">סטטיסטיקות</h2>
-        {Object.keys(profile.best_scores).length === 0 ? (
-          <p className="mt-2 text-sm text-slate-500">עדיין אין שיאים שמורים.</p>
-        ) : (
-          <ul className="mt-3 space-y-2 text-sm">
-            {Object.entries(profile.best_scores).map(([game, score]) => (
-              <li
-                key={game}
-                className="flex justify-between rounded-2xl bg-slate-50 px-4 py-2"
-              >
-                <span>{game}</span>
-                <span className="font-bold">{score}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-    </div>
+    </KidDesktopShell>
   );
 }
