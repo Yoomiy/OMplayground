@@ -48,22 +48,28 @@ function blockColor(id: number): [number, number, number] {
   }
 }
 
+function hash3(x: number, y: number, z: number, seed: number): number {
+  let h = seed | 0;
+  h = Math.imul(h ^ (x | 0), 0x9e3779b1);
+  h = Math.imul(h ^ (y | 0), 0x85ebca6b);
+  h = Math.imul(h ^ (z | 0), 0xc2b2ae35);
+  h ^= h >>> 16;
+  return (h >>> 0) / 0xffffffff;
+}
+
 function smoothNoise(x: number, z: number, seed: number): number {
   const xi = Math.floor(x);
   const zi = Math.floor(z);
   const xf = x - xi;
   const zf = z - zi;
-  const h = (a: number, b: number) => {
-    let h2 = seed | 0;
-    h2 = Math.imul(h2 ^ (a | 0), 0x9e3779b1);
-    h2 = Math.imul(h2 ^ (b | 0), 0x85ebca6b);
-    h2 ^= h2 >>> 16;
-    return (h2 >>> 0) / 0xffffffff;
-  };
+  const h00 = hash3(xi, 0, zi, seed);
+  const h10 = hash3(xi + 1, 0, zi, seed);
+  const h01 = hash3(xi, 0, zi + 1, seed);
+  const h11 = hash3(xi + 1, 0, zi + 1, seed);
   const fx = xf * xf * (3 - 2 * xf);
   const fz = zf * zf * (3 - 2 * zf);
-  const a = h(xi, zi) * (1 - fx) + h(xi + 1, zi) * fx;
-  const b = h(xi, zi + 1) * (1 - fx) + h(xi + 1, zi + 1) * fx;
+  const a = h00 * (1 - fx) + h10 * fx;
+  const b = h01 * (1 - fx) + h11 * fx;
   return a * (1 - fz) + b * fz;
 }
 
@@ -154,6 +160,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         chunkRemoveDistance: [4, 4]
       } as Record<string, unknown>);
       noaRef.current = noa;
+      noa?.setPaused?.(pausedRef.current);
 
       const deltas = new Map<string, number>();
       for (const [x, y, z, id] of initialDeltas) {

@@ -1,5 +1,7 @@
 1. don't send data on empty ticks
 2. currently only adding blocks is working
+3. use sockets with binary data
+4. don't send data when game is paused
 
 implement:
 1. inventory/items
