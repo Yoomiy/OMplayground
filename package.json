@@ -10,6 +10,7 @@
     "test": "npm run test --workspaces --if-present",
     "dev:web": "npm run dev -w @playground/web",
     "dev:server": "npm run dev -w @playground/game-server",
+    "dev:minecraft": "npm run dev -w @playground/minecraft-server",
     "lint": "npm run lint --workspaces --if-present"
   },
   "devDependencies": {

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { GameSessionContainer } from "@/game/GameSessionContainer";
+import { MinecraftSessionContainer } from "@/game/MinecraftSessionContainer";
 import { Button } from "@/components/ui/button";
 import { KidDesktopShell } from "@/components/KidDesktopShell";
 import { supabase } from "@/lib/supabase";
@@ -14,6 +15,7 @@ function PlayPage() {
   const { profile } = useProfile(user);
   const { isAdmin } = useIsAdmin(user);
   const [gameName, setGameName] = useState<string>("");
+  const [gameUrl, setGameUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -21,14 +23,14 @@ function PlayPage() {
     void (async () => {
       const { data } = await supabase
         .from("game_sessions")
-        .select("games ( name_he )")
+        .select("games ( name_he, game_url )")
         .eq("id", sessionId)
         .maybeSingle();
       if (cancelled) return;
-      const name =
-        (data as { games?: { name_he?: string } | null } | null)?.games
-          ?.name_he ?? "";
-      setGameName(name);
+      const games =
+        (data as { games?: { name_he?: string; game_url?: string } | null } | null)?.games;
+      setGameName(games?.name_he ?? "");
+      setGameUrl(games?.game_url ?? null);
     })();
     return () => {
       cancelled = true;
@@ -47,6 +49,12 @@ function PlayPage() {
 
   if (!sessionId) {
     return <p className="p-6 text-sm font-medium text-amber-900">חסר מזהה מפגש</p>;
+  }
+
+  // Voxel game bypasses the desktop chrome — `MinecraftSessionContainer` is
+  // fullscreen by construction and renders its own back button.
+  if (gameUrl === "minecraft") {
+    return <MinecraftSessionContainer sessionId={sessionId} />;
   }
 
   return (

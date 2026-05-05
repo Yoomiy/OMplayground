@@ -228,5 +228,19 @@ Always tell the user clearly when any of these apply:
 - They must set `is_multiplayer` correctly (`true` for challenge/open-session games, `false` for `/solo/:gameKey` games).
 - The game relies on pause/resume/rematch lifecycle (already generic); no per-game socket code should be added for it.
 - The game has **hidden information** (current server broadcasts full state to all seats).
-- The game needs a **server tick** loop (current server is event-driven only).
+- The game needs a **server tick** loop (current server is event-driven only — see "Voxel / tick-based games" below).
 - `minPlayers` / `maxPlayers` differ from the module defaults and need to match the `games` row.
+
+## Voxel / tick-based games (Minecraft)
+
+Real-time voxel/tick games **do NOT extend `apps/game-server`, do NOT register in `BOARD_REGISTRY`, and do NOT implement `GameModule`**. The `applyIntent(state) -> snapshot` JSON model in `packages/game-logic/src/registry.ts` is a poor fit for high-frequency state (positions at ~15 Hz, sparse block deltas), and a per-room tick loop would block the existing event-driven server. Instead:
+
+1. **Add a new in-monorepo service** under `apps/<game>-server/` (its own Express + Socket.IO process, deployed as a separate Railway service). Mirror `apps/minecraft-server` for structure: `package.json`, `tsconfig`, `jest.config.cjs`, `.env.example`, plus `src/index.ts` / `src/room.ts` / `src/world.ts` / `src/tick.ts` / `src/sessionPersistence.ts` / `src/recessSweep.ts`. Copy `recess.ts` verbatim from `apps/game-server` (extracting to a shared package can come later).
+2. **Reuse platform plumbing** verbatim: bearer-token auth via `supabaseAdmin.auth.getUser`, the kid `is_active`/gender check, the recess gate for `role === "kid"`, recess sweep at 30 s, and `game_sessions.game_state` for paused-room hydration. Voxel `game_state` is `{ voxel: true, seed, deltas: [[x,y,z,id],...], spawnPoints }`.
+3. **Per-session isolation must be structural.** One `game_sessions.id` = one in-memory room = one Socket.IO room namespace `voxel:${sessionId}`. Every emit goes through `io.to(\`voxel:${sessionId}\`)`. No global broadcasts.
+4. **Tick rate**: a single `setInterval` at ~66 ms, coalesced per room with a `dirty` flag so idle rooms emit nothing. See `apps/minecraft-server/src/tick.ts`.
+5. **Client wiring**: a per-game container (e.g. `apps/web/src/game/MinecraftSessionContainer.tsx`) reachable from `PlayPage.tsx` via a `game_url` branch (`game_url === 'minecraft'`) that bypasses `KidDesktopShell`. The dumb game component (e.g. `apps/web/src/games/MinecraftClient.tsx`) imports its rendering deps directly (noa-engine, Babylon) and is props-only — no socket / Supabase calls. The hook `apps/web/src/hooks/useVoxelSocket.ts` owns the Socket.IO connection.
+6. **Catalog row**: same SQL pattern as multiplayer games (`is_multiplayer=true`, `game_url='<key>'`).
+7. **Anti-patterns**: do **not** import a 3D engine from the server (no rendering server-side); do **not** persist on every tick (only at lifecycle boundaries — pause / stop / recess-end / leave-empty); do **not** touch `apps/game-server/src/**` or `packages/game-logic/src/**`.
+
+Reference implementation: `apps/minecraft-server` (server) + `apps/web/src/{games,game,hooks,lib}/{MinecraftClient.tsx, MinecraftSessionContainer.tsx, useVoxelSocket.ts, voxelServerUrl.ts, voxelProtocol.ts}` (client).

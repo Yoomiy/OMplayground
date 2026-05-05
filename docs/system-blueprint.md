@@ -96,12 +96,14 @@ The "Time-Lock" is enforced at multiple levels:
 ```text
 /
 ├── apps/
-│   ├── game-server/    # Authoritative Node.js/Socket.io server
-│   ├── web/           # React frontend (Vite)
-│   └── minecraft/     # Web-based Minecraft clone integration
+│   ├── game-server/        # Authoritative Node.js/Socket.io server (event-driven, all turn-based games)
+│   ├── minecraft-server/   # Authoritative voxel server (tick-based, fullscreen 3D Minecraft)
+│   ├── web/                # React frontend (Vite). PlayPage.tsx routes `game_url='minecraft'` to MinecraftSessionContainer.
 ├── packages/
-│   └── game-logic/    # Shared game rules and state machines
+│   └── game-logic/         # Shared game rules and state machines (turn-based games only)
 ├── supabase/
-│   └── migrations/    # SQL schema, RLS policies, and triggers
-└── docs/              # Architecture and ADR documents
+│   └── migrations/         # SQL schema, RLS policies, and triggers
+└── docs/                   # Architecture and ADR documents
 ```
+
+> **Voxel games (Minecraft)** run in their own Node service (`apps/minecraft-server`) deployed as a parallel Railway service. They reuse `game_sessions` rows, the recess gate, gender partitions, and the bearer-token auth from `apps/game-server`, but bypass `packages/game-logic` and `BOARD_REGISTRY` because their state model (sparse block deltas + positions at ~15 Hz) does not fit the `applyIntent(state) → snapshot` contract. See the `playground-add-game` skill for the rules.

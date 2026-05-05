@@ -1,0 +1,10 @@
+1. don't send data on empty ticks
+2. currently only adding blocks is working
+
+implement:
+1. inventory/items
+2. mobs
+3. voice/text chat in 3D space
+4. persistent worlds across sessions (deltas only persist for paused sessions, then are dropped on completion)
+5. greedy mesh editor
+6. anti-cheat beyond range checks
