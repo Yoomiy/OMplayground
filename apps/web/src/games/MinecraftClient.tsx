@@ -25,27 +25,36 @@ import {
 
 const HOTBAR = PLACEABLE_BLOCK_IDS;
 
-function blockColor(id: number): [number, number, number] {
-  switch (id) {
-    case BLOCK_REGISTRY.GRASS:
-      return [0.36, 0.7, 0.2];
-    case BLOCK_REGISTRY.DIRT:
-      return [0.45, 0.32, 0.2];
-    case BLOCK_REGISTRY.STONE:
-      return [0.55, 0.55, 0.6];
-    case BLOCK_REGISTRY.WOOD:
-      return [0.55, 0.4, 0.22];
-    case BLOCK_REGISTRY.LEAVES:
-      return [0.2, 0.55, 0.2];
-    case BLOCK_REGISTRY.SAND:
-      return [0.92, 0.86, 0.6];
-    case BLOCK_REGISTRY.WATER:
-      return [0.25, 0.45, 0.95];
-    case BLOCK_REGISTRY.GLASS:
-      return [0.8, 0.85, 0.95];
-    default:
-      return [0.5, 0.5, 0.5];
-  }
+/** Served from apps/web/public/minecraft-assets (copied from source packs). */
+const MC_TEX = {
+  grassTop: "/minecraft-assets/grass_block_top.png",
+  grassSide: "/minecraft-assets/grass_block_side.png",
+  dirt: "/minecraft-assets/dirt.png",
+  stone: "/minecraft-assets/stone.png",
+  oakLog: "/minecraft-assets/oak_log.png",
+  oakLogTop: "/minecraft-assets/oak_log_top.png",
+  oakLeaves: "/minecraft-assets/oak_leaves.png",
+  sand: "/minecraft-assets/sand.png",
+  waterStill: "/minecraft-assets/water_still.png",
+  glass: "/minecraft-assets/glass.png"
+} as const;
+
+function registerMcTerrainMaterials(noa: {
+  registry: { registerMaterial: (name: string, opts: Record<string, unknown>) => void };
+}): void {
+  const reg = (name: string, textureURL: string, extra: Record<string, unknown> = {}) => {
+    noa.registry.registerMaterial(name, { textureURL, ...extra });
+  };
+  reg("mc_grass_top", MC_TEX.grassTop);
+  reg("mc_grass_side", MC_TEX.grassSide);
+  reg("mc_dirt", MC_TEX.dirt);
+  reg("mc_stone", MC_TEX.stone);
+  reg("mc_oak_log", MC_TEX.oakLog);
+  reg("mc_oak_log_top", MC_TEX.oakLogTop);
+  reg("mc_oak_leaves", MC_TEX.oakLeaves, { texHasAlpha: true });
+  reg("mc_sand", MC_TEX.sand);
+  reg("mc_water", MC_TEX.waterStill, { texHasAlpha: true });
+  reg("mc_glass", MC_TEX.glass, { texHasAlpha: true });
 }
 
 function hash3(x: number, y: number, z: number, seed: number): number {
@@ -168,27 +177,44 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       }
 
       const scene = noa.rendering.getScene();
-      for (const id of [
-        BLOCK_REGISTRY.GRASS,
-        BLOCK_REGISTRY.DIRT,
-        BLOCK_REGISTRY.STONE,
-        BLOCK_REGISTRY.WOOD,
-        BLOCK_REGISTRY.LEAVES,
-        BLOCK_REGISTRY.SAND,
-        BLOCK_REGISTRY.WATER,
-        BLOCK_REGISTRY.GLASS
-      ]) {
-        const [r, g, b] = blockColor(id);
-        const matName = `mat_${id}`;
-        const mat = new Babylon.StandardMaterial(matName, scene);
-        mat.diffuseColor = new Babylon.Color3(r, g, b);
-        if (id === BLOCK_REGISTRY.GLASS) mat.alpha = 0.5;
-        noa.registry.registerMaterial(matName, { renderMaterial: mat });
-        noa.registry.registerBlock(id, {
-          material: matName,
-          solid: id !== BLOCK_REGISTRY.WATER
-        });
-      }
+      registerMcTerrainMaterials(noa);
+
+      noa.registry.registerBlock(BLOCK_REGISTRY.GRASS, {
+        material: ["mc_grass_top", "mc_dirt", "mc_grass_side"],
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.DIRT, {
+        material: "mc_dirt",
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.STONE, {
+        material: "mc_stone",
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.WOOD, {
+        material: ["mc_oak_log_top", "mc_oak_log_top", "mc_oak_log"],
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.LEAVES, {
+        material: "mc_oak_leaves",
+        solid: true,
+        opaque: false
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.SAND, {
+        material: "mc_sand",
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.WATER, {
+        material: "mc_water",
+        solid: false,
+        opaque: false,
+        fluid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.GLASS, {
+        material: "mc_glass",
+        solid: true,
+        opaque: false
+      });
 
       noa.world.on(
         "worldDataNeeded",
