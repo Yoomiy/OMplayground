@@ -7,7 +7,13 @@ import {
   type DeltaTuple,
   type WorldState
 } from "./world";
-import type { Vec3 } from "./protocol";
+import {
+  createEmptyHotbar,
+  cloneHotbar,
+  hotbarFromPersisted,
+  type HotbarState
+} from "./inventory";
+import type { GameMode, HotbarSlot, Vec3 } from "./protocol";
 
 /**
  * In-memory voxel-room registry. Mirrors the structure of
@@ -31,6 +37,8 @@ export interface PlayerRuntime extends RoomPlayer {
   t: number;
   /** Server time of the last write — used by tick coalescing. */
   lastInputAt: number;
+  /** Set only in survival mode — authoritative hotbar for pause/resume. */
+  inventory?: HotbarState;
 }
 
 export interface VoxelRoom {
@@ -46,6 +54,10 @@ export interface VoxelRoom {
   roster: RoomPlayer[];
   spawnPoints: Map<string, Vec3>;
   paused: boolean;
+  /** Defaults to creative when omitted (legacy in-memory rooms). */
+  gameMode?: GameMode;
+  /** Survival inventories for roster members not currently connected. */
+  disconnectedInventories: Map<string, HotbarState>;
   /** Set true when state changed since last tick emit. */
   dirty: boolean;
   /** ms timestamp of last emitted snapshot — used by coalescing in tick.ts. */
@@ -71,6 +83,8 @@ export interface PersistedRoomState {
   seed: number;
   deltas: DeltaTuple[];
   spawnPoints: Record<string, Vec3>;
+  gameMode?: GameMode;
+  inventories?: Record<string, HotbarSlot[]>;
 }
 
 export function getRoom(sessionId: string): VoxelRoom | undefined {
@@ -93,6 +107,9 @@ export function getOrCreateRoom(
   if (existing) {
     if (meta.paused) existing.paused = true;
     if (meta.roster.length > 0) existing.roster = meta.roster;
+    if (!existing.disconnectedInventories) {
+      existing.disconnectedInventories = new Map();
+    }
     return existing;
   }
   const seed = meta.resumedState?.seed ?? seedFromSessionId(sessionId);
@@ -104,6 +121,16 @@ export function getOrCreateRoom(
   if (meta.resumedState?.spawnPoints) {
     for (const [uid, pt] of Object.entries(meta.resumedState.spawnPoints)) {
       spawnPoints.set(uid, pt);
+    }
+  }
+  const disconnectedInventories = new Map<string, HotbarState>();
+  const emptyTemplate = createEmptyHotbar();
+  if (meta.resumedState?.inventories) {
+    for (const [uid, raw] of Object.entries(meta.resumedState.inventories)) {
+      disconnectedInventories.set(
+        uid,
+        hotbarFromPersisted(raw, emptyTemplate)
+      );
     }
   }
   const created: VoxelRoom = {
@@ -118,6 +145,8 @@ export function getOrCreateRoom(
     roster: meta.roster,
     spawnPoints,
     paused: meta.paused,
+    gameMode: meta.resumedState?.gameMode ?? "creative",
+    disconnectedInventories,
     dirty: false,
     lastTickAt: 0
   };
@@ -172,6 +201,13 @@ export function assignPlayer(
     t: now,
     lastInputAt: now
   };
+  if ((room.gameMode ?? "creative") === "survival") {
+    const cached = room.disconnectedInventories.get(userId);
+    player.inventory = cached
+      ? cloneHotbar(cached)
+      : createEmptyHotbar();
+    room.disconnectedInventories.delete(userId);
+  }
   room.players.set(userId, player);
   if (!room.roster.some((p) => p.userId === userId)) {
     room.roster.push({ userId, displayName });
@@ -187,6 +223,10 @@ export function removePlayerFromRoom(
   const r = rooms.get(sessionId);
   if (!r) return { roomEmpty: true };
   const wasHost = r.hostId === userId;
+  const leaving = r.players.get(userId);
+  if (leaving?.inventory) {
+    r.disconnectedInventories.set(userId, cloneHotbar(leaving.inventory));
+  }
   r.players.delete(userId);
   r.dirty = true;
   if (r.players.size === 0) {
@@ -223,11 +263,22 @@ export function canStopGame(
 export function snapshotPersistedState(room: VoxelRoom): PersistedRoomState {
   const spawnPoints: Record<string, Vec3> = {};
   for (const [uid, pt] of room.spawnPoints) spawnPoints[uid] = pt;
+  const inventories: Record<string, HotbarSlot[]> = {};
+  if ((room.gameMode ?? "creative") === "survival") {
+    for (const p of room.players.values()) {
+      if (p.inventory) inventories[p.userId] = cloneHotbar(p.inventory);
+    }
+    for (const [uid, hotbar] of room.disconnectedInventories) {
+      if (!(uid in inventories)) inventories[uid] = cloneHotbar(hotbar);
+    }
+  }
   return {
     voxel: true,
     seed: room.world.seed,
     deltas: serializeDeltas(room.world),
-    spawnPoints
+    spawnPoints,
+    gameMode: room.gameMode ?? "creative",
+    ...(Object.keys(inventories).length > 0 ? { inventories } : {})
   };
 }
 

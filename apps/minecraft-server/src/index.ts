@@ -18,6 +18,13 @@ import {
   serializeDeltas
 } from "./world";
 import {
+  addPickUp,
+  blockDropsPickable,
+  cloneHotbar,
+  consumeOneIfPresent,
+  createEmptyHotbar
+} from "./inventory";
+import {
   assignPlayer,
   canStopGame,
   connectedPlayers,
@@ -48,8 +55,10 @@ import {
   PLACEABLE_BLOCK_IDS,
   type BlockBreakReq,
   type BlockPlaceReq,
+  type GameMode,
   type InputReq,
   type JoinRoomAck,
+  type SetGameModeReq,
   type SimpleAck,
   type Vec3
 } from "./protocol";
@@ -225,6 +234,26 @@ function isFiniteVec(v: unknown): v is Vec3 {
   );
 }
 
+function isGameMode(v: unknown): v is GameMode {
+  return v === "creative" || v === "survival";
+}
+
+async function emitInventoryToSurvivalPlayers(
+  sessionId: string,
+  room: ReturnType<typeof getRoom>
+): Promise<void> {
+  if (!room || (room.gameMode ?? "creative") !== "survival") return;
+  const socks = await io.in(`voxel:${sessionId}`).fetchSockets();
+  for (const s of socks) {
+    const uid = s.data.userId as string | undefined;
+    if (!uid) continue;
+    const inv = room.players.get(uid)?.inventory;
+    if (inv) {
+      s.emit("INVENTORY_SYNC", { slots: inv });
+    }
+  }
+}
+
 io.on("connection", (socket) => {
   const userId = socket.data.userId as string;
   const displayName = socket.data.displayName as string;
@@ -354,6 +383,7 @@ io.on("connection", (socket) => {
         kind: "PLAYER_JOINED",
         player: { userId, displayName }
       });
+      const effectiveMode = room.gameMode ?? "creative";
       ack?.({
         ok: true,
         seed: room.world.seed,
@@ -361,7 +391,12 @@ io.on("connection", (socket) => {
         roster: roomRoster(room),
         hostId: room.hostId,
         spawn: spawnFor(room, userId),
-        paused: room.paused
+        paused: room.paused,
+        gameMode: effectiveMode,
+        inventory:
+          effectiveMode === "survival" && assigned.player.inventory
+            ? cloneHotbar(assigned.player.inventory)
+            : createEmptyHotbar()
       });
     }
   );
@@ -448,6 +483,10 @@ io.on("connection", (socket) => {
         return;
       }
       applyDelta(room.world, x, y, z, blockId);
+      if ((room.gameMode ?? "creative") === "survival" && player.inventory) {
+        consumeOneIfPresent(player.inventory, blockId);
+        socket.emit("INVENTORY_SYNC", { slots: player.inventory });
+      }
       io.to(`voxel:${sessionId}`).emit("BLOCK_DELTA", {
         pos: [x, y, z],
         blockId,
@@ -513,12 +552,74 @@ io.on("connection", (socket) => {
         });
         return;
       }
+      const brokenId = getVoxelID(room.world, x, y, z);
       applyDelta(room.world, x, y, z, BLOCK_REGISTRY.AIR);
+      if ((room.gameMode ?? "creative") === "survival" && player.inventory && blockDropsPickable(brokenId)) {
+        addPickUp(player.inventory, brokenId);
+        socket.emit("INVENTORY_SYNC", { slots: player.inventory });
+      }
       io.to(`voxel:${sessionId}`).emit("BLOCK_DELTA", {
         pos: [x, y, z],
         blockId: BLOCK_REGISTRY.AIR,
         by: userId
       });
+      ack?.({ ok: true });
+    }
+  );
+
+  socket.on(
+    "SET_GAME_MODE",
+    async (payload: SetGameModeReq, ack?: (r: SimpleAck) => void) => {
+      const sessionId =
+        payload?.sessionId ?? (socket.data.sessionId as string | undefined);
+      if (!sessionId || !payload || !isGameMode(payload.gameMode)) {
+        ack?.({
+          ok: false,
+          error: { code: "BAD_REQUEST", message: "חסר מצב משחק" }
+        });
+        return;
+      }
+      const room = getRoom(sessionId);
+      if (!room) {
+        ack?.({
+          ok: false,
+          error: { code: "NOT_FOUND", message: "Room not loaded" }
+        });
+        return;
+      }
+      if (room.hostId !== userId) {
+        ack?.({
+          ok: false,
+          error: { code: "NOT_HOST", message: "רק המארח יכול לשנות מצב" }
+        });
+        return;
+      }
+      if (room.paused) {
+        ack?.({
+          ok: false,
+          error: { code: "GAME_PAUSED", message: "המשחק מושהה" }
+        });
+        return;
+      }
+      const next = payload.gameMode;
+      if (next === "survival") {
+        room.gameMode = "survival";
+        for (const p of room.players.values()) {
+          p.inventory = createEmptyHotbar();
+        }
+      } else {
+        room.gameMode = "creative";
+        for (const p of room.players.values()) {
+          delete p.inventory;
+        }
+        room.disconnectedInventories.clear();
+      }
+      io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
+        sessionId,
+        kind: "GAME_MODE_CHANGED",
+        gameMode: next
+      });
+      await emitInventoryToSurvivalPlayers(sessionId, room);
       ack?.({ ok: true });
     }
   );

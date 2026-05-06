@@ -59,12 +59,13 @@ describe("VoxelRoom", () => {
     if (!guard.ok) expect(guard.error.code).toBe("NOT_HOST");
   });
 
-  it("snapshotPersistedState writes voxel:true + seed + deltas", () => {
+  it("snapshotPersistedState writes voxel:true + seed + deltas + default gameMode", () => {
     const room = makeRoom("sess-persist");
     applyDelta(room.world, 1, 50, 1, BLOCK_REGISTRY.WOOD);
     const snap = snapshotPersistedState(room);
     expect(snap.voxel).toBe(true);
     expect(snap.seed).toBe(room.world.seed);
+    expect(snap.gameMode).toBe("creative");
     expect(snap.deltas).toEqual(
       expect.arrayContaining([[1, 50, 1, BLOCK_REGISTRY.WOOD]])
     );
@@ -97,5 +98,51 @@ describe("VoxelRoom", () => {
     });
     expect(second.world.seed).toBe(first.world.seed);
     expect(second.world.deltas.get("2,51,2")).toBe(BLOCK_REGISTRY.STONE);
+    expect(second.gameMode).toBe("creative");
+  });
+
+  it("round-trips survival inventories via persisted state", () => {
+    const sessionId = "sess-surv-inv";
+    const room = getOrCreateRoom(sessionId, {
+      gameId: "game-mc",
+      gender: "boy",
+      hostId: "u1",
+      minPlayers: 1,
+      maxPlayers: 4,
+      roster: [{ userId: "u1", displayName: "A" }],
+      paused: false
+    });
+    room.gameMode = "survival";
+    assignPlayer(room, "u1", "A");
+    const p = room.players.get("u1");
+    expect(p?.inventory).toBeDefined();
+    p!.inventory![0] = { blockId: BLOCK_REGISTRY.DIRT, count: 4 };
+    const persisted = snapshotPersistedState(room);
+    expect(persisted.gameMode).toBe("survival");
+    expect(persisted.inventories?.u1?.[0]).toEqual({
+      blockId: BLOCK_REGISTRY.DIRT,
+      count: 4
+    });
+    __resetRoomsForTest();
+
+    const again = getOrCreateRoom(sessionId, {
+      gameId: "game-mc",
+      gender: "boy",
+      hostId: "u1",
+      minPlayers: 1,
+      maxPlayers: 4,
+      roster: [{ userId: "u1", displayName: "A" }],
+      paused: true,
+      resumedState: persisted
+    });
+    expect((again.gameMode ?? "creative") === "survival").toBe(true);
+    const re = assignPlayer(again, "u1", "A");
+    expect("error" in re).toBe(false);
+    if (!("error" in re)) {
+      expect(re.player.inventory?.[0]).toEqual({
+        blockId: BLOCK_REGISTRY.DIRT,
+        count: 4
+      });
+    }
   });
 });

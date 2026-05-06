@@ -6,6 +6,13 @@
 
 export type Vec3 = [number, number, number];
 
+export type GameMode = "creative" | "survival";
+
+export interface HotbarSlot {
+  blockId: number;
+  count: number;
+}
+
 export interface RoomPlayerInfo {
   userId: string;
   displayName: string;
@@ -24,6 +31,9 @@ export interface JoinRoomAckOk {
   hostId: string;
   spawn: Vec3;
   paused: boolean;
+  gameMode: GameMode;
+  /** Survival: authoritative hotbar. Creative: empty slots (UI ignores). */
+  inventory: HotbarSlot[];
 }
 
 export interface JoinRoomAckErr {
@@ -48,6 +58,15 @@ export interface BlockPlaceReq {
 
 export interface BlockBreakReq {
   pos: Vec3;
+}
+
+export interface InventorySyncPayload {
+  slots: HotbarSlot[];
+}
+
+export interface SetGameModeReq {
+  sessionId?: string;
+  gameMode: GameMode;
 }
 
 export interface SimpleAck {
@@ -79,7 +98,8 @@ export type RoomEvent =
   | { kind: "GAME_PAUSED"; sessionId: string }
   | { kind: "GAME_RESUMED"; sessionId: string }
   | { kind: "GAME_STOPPED"; sessionId: string; stoppedBy: string }
-  | { kind: "RECESS_ENDED"; sessionId: string };
+  | { kind: "RECESS_ENDED"; sessionId: string }
+  | { kind: "GAME_MODE_CHANGED"; sessionId: string; gameMode: GameMode };
 
 /** Block IDs whitelisted for client-supplied placements. */
 export const BLOCK_REGISTRY = {

@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useVoxelSocket } from "@/hooks/useVoxelSocket";
 import { MinecraftClient } from "@/games/MinecraftClient";
-import type { RoomEvent, Vec3 } from "@/lib/voxelProtocol";
+import type { GameMode, RoomEvent, Vec3 } from "@/lib/voxelProtocol";
 
 export interface MinecraftSessionContainerProps {
   sessionId: string;
@@ -38,11 +38,14 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     leave,
     onSnapshot,
     onBlockDelta,
-    onRoomEvent
+    onRoomEvent,
+    serverInventory,
+    setGameMode
   } = useVoxelSocket({ sessionId });
 
   const [paused, setPaused] = useState(false);
   const [hostId, setHostId] = useState<string | null>(null);
+  const [liveGameMode, setLiveGameMode] = useState<GameMode>("creative");
   const [endOverlay, setEndOverlay] = useState<
     null | { kind: "stopped"; by?: string }
   >(null);
@@ -52,6 +55,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     if (!joinAck) return;
     setPaused(joinAck.paused);
     setHostId(joinAck.hostId);
+    setLiveGameMode(joinAck.gameMode);
   }, [joinAck]);
 
   useEffect(() => {
@@ -80,6 +84,10 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
           return;
         case "PLAYER_LEFT":
           setToast(`${ev.player?.displayName ?? "שחקן"} עזב`);
+          return;
+        case "GAME_MODE_CHANGED":
+          setLiveGameMode(ev.gameMode);
+          setToast(ev.gameMode === "survival" ? "מצב שרדות" : "מצב יצירתי");
           return;
       }
     });
@@ -120,6 +128,15 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     if (!ack.ok) setToast(ack.error?.message ?? "סיום נכשל");
   }, [stop]);
 
+  const handleSetCreative = useCallback(async () => {
+    const ack = await setGameMode("creative");
+    if (!ack.ok) setToast(ack.error?.message ?? "נכשל");
+  }, [setGameMode]);
+  const handleSetSurvival = useCallback(async () => {
+    const ack = await setGameMode("survival");
+    if (!ack.ok) setToast(ack.error?.message ?? "נכשל");
+  }, [setGameMode]);
+
   const handleExit = useCallback(async () => {
     await leave();
     navigate(isTeacherObserver ? "/teacher" : "/home");
@@ -146,6 +163,8 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         paused={paused || isTeacherObserver}
         roster={joinAck.roster}
         myUserId={myUserId}
+        gameMode={liveGameMode}
+        inventorySlots={serverInventory}
         onInput={sendInput}
         onBlockPlace={handlePlaceBlock}
         onBlockBreak={handleBreakBlock}
@@ -174,6 +193,22 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         </button>
         {iAmHost && !endOverlay ? (
           <>
+            <button
+              type="button"
+              onClick={() => void handleSetCreative()}
+              disabled={liveGameMode === "creative"}
+              className="rounded-lg bg-emerald-800/90 px-3 py-2 hover:bg-emerald-700 disabled:opacity-50"
+            >
+              יצירתי
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleSetSurvival()}
+              disabled={liveGameMode === "survival"}
+              className="rounded-lg bg-teal-800/90 px-3 py-2 hover:bg-teal-700 disabled:opacity-50"
+            >
+              שרדות
+            </button>
             <button
               type="button"
               onClick={() => (paused ? void handleResume() : void handlePause())}

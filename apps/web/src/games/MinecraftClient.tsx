@@ -1,8 +1,10 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   BLOCK_REGISTRY,
   PLACEABLE_BLOCK_IDS,
   type BlockDelta,
+  type GameMode,
+  type HotbarSlot,
   type InputReq,
   type RoomPlayerInfo,
   type RoomSnapshot,
@@ -16,14 +18,25 @@ import {
  *   - registerSnapshotListener / registerBlockDeltaListener: imperative
  *     fan-in for high-frequency server updates without re-rendering React.
  *
- * This component renders zero React DOM beyond the host `<div>` — noa
- * mounts its own canvas inside it.
+ * This component mounts noa on a host `<div>` and draws a hotbar HUD
+ * (block icons) in creative and survival so players see the active slot.
  *
  * `noa-engine` typings are intentionally loose; we annotate the engine as
  * `any` to keep the integration small instead of redeclaring its surface.
  */
 
 const HOTBAR = PLACEABLE_BLOCK_IDS;
+
+/** Short labels for tooltips / a11y (Hebrew). */
+const BLOCK_HUD: Record<number, string> = {
+  [BLOCK_REGISTRY.GRASS]: "דשא",
+  [BLOCK_REGISTRY.DIRT]: "עפר",
+  [BLOCK_REGISTRY.STONE]: "אבן",
+  [BLOCK_REGISTRY.WOOD]: "עץ",
+  [BLOCK_REGISTRY.LEAVES]: "עלים",
+  [BLOCK_REGISTRY.SAND]: "חול",
+  [BLOCK_REGISTRY.GLASS]: "זכוכית"
+};
 
 /** Served from apps/web/public/minecraft-assets (copied from source packs). */
 const MC_TEX = {
@@ -38,6 +51,17 @@ const MC_TEX = {
   waterStill: "/minecraft-assets/water_still.png",
   glass: "/minecraft-assets/glass.png"
 } as const;
+
+/** Item-style icon per block for the hotbar (same assets as terrain). */
+const BLOCK_HOTBAR_ICON: Record<number, string> = {
+  [BLOCK_REGISTRY.GRASS]: MC_TEX.grassTop,
+  [BLOCK_REGISTRY.DIRT]: MC_TEX.dirt,
+  [BLOCK_REGISTRY.STONE]: MC_TEX.stone,
+  [BLOCK_REGISTRY.WOOD]: MC_TEX.oakLog,
+  [BLOCK_REGISTRY.LEAVES]: MC_TEX.oakLeaves,
+  [BLOCK_REGISTRY.SAND]: MC_TEX.sand,
+  [BLOCK_REGISTRY.GLASS]: MC_TEX.glass
+};
 
 function registerMcTerrainMaterials(noa: {
   registry: { registerMaterial: (name: string, opts: Record<string, unknown>) => void };
@@ -105,9 +129,11 @@ export interface MinecraftClientProps {
   initialDeltas: [number, number, number, number][];
   mySpawn: Vec3;
   paused: boolean;
-  /** Roster used by the client only for displayName lookup of remote meshes. */
   roster: RoomPlayerInfo[];
   myUserId: string | null;
+  gameMode: GameMode;
+  /** Survival: server-confirmed stacks. Creative: ignored for placing (still passed for typing). */
+  inventorySlots: HotbarSlot[];
   onInput: (input: InputReq) => void;
   onBlockPlace: (pos: Vec3, blockId: number) => void;
   onBlockBreak: (pos: Vec3) => void;
@@ -123,12 +149,17 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     paused,
     roster,
     myUserId,
+    gameMode,
+    inventorySlots,
     onInput,
     onBlockPlace,
     onBlockBreak,
     registerSnapshotListener,
     registerBlockDeltaListener
   } = props;
+
+  const [survivalSlot, setSurvivalSlot] = useState(0);
+  const [creativeSlotIdx, setCreativeSlotIdx] = useState(0);
 
   const hostRef = useRef<HTMLDivElement | null>(null);
   // noa-engine has loose .d.ts typings; lock to any so we don't fight them.
@@ -137,13 +168,25 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const onPlaceRef = useRef(onBlockPlace);
   const onBreakRef = useRef(onBlockBreak);
   const pausedRef = useRef(paused);
+  const gameModeRef = useRef<GameMode>(gameMode);
+  const inventoryRef = useRef<HotbarSlot[]>(inventorySlots);
   const remoteEntitiesRef = useRef(new Map<string, number>());
   const selectedBlockRef = useRef<number>(BLOCK_REGISTRY.GRASS);
+  const survivalSlotRef = useRef(0);
 
   onInputRef.current = onInput;
   onPlaceRef.current = onBlockPlace;
   onBreakRef.current = onBlockBreak;
   pausedRef.current = paused;
+  gameModeRef.current = gameMode;
+  inventoryRef.current = inventorySlots;
+  survivalSlotRef.current = survivalSlot;
+
+  useEffect(() => {
+    if (gameMode !== "creative") return;
+    const idx = HOTBAR.indexOf(selectedBlockRef.current as (typeof HOTBAR)[number]);
+    if (idx >= 0) setCreativeSlotIdx(idx);
+  }, [gameMode]);
 
   useEffect(() => {
     if (!hostRef.current) return;
@@ -159,6 +202,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       const noa: any = new Engine({
         debug: false,
         silent: true,
+        /** Space is jump; without this, Space can "click" a focused HTML button (e.g. pause). */
+        preventDefaults: true,
         playerStart: mySpawn,
         playerHeight: 1.8,
         playerWidth: 0.6,
@@ -170,6 +215,13 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       } as Record<string, unknown>);
       noaRef.current = noa;
       noa?.setPaused?.(pausedRef.current);
+
+      const gameEl = noa.container.element as HTMLElement;
+      const focusGame = (): void => {
+        hostRef.current?.focus({ preventScroll: true });
+      };
+      gameEl.addEventListener("pointerdown", focusGame);
+      cleanupFns.push(() => gameEl.removeEventListener("pointerdown", focusGame));
 
       const deltas = new Map<string, number>();
       for (const [x, y, z, id] of initialDeltas) {
@@ -299,6 +351,19 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         if (pausedRef.current) return;
         const tgt = noa.targetedBlock;
         if (!tgt) return;
+        if (gameModeRef.current === "survival") {
+          const inv = inventoryRef.current;
+          const idx = survivalSlotRef.current;
+          const cell = inv[idx];
+          if (!cell || cell.count <= 0 || cell.blockId === BLOCK_REGISTRY.AIR) {
+            return;
+          }
+          onPlaceRef.current(
+            [tgt.adjacent[0], tgt.adjacent[1], tgt.adjacent[2]],
+            cell.blockId
+          );
+          return;
+        }
         onPlaceRef.current(
           [tgt.adjacent[0], tgt.adjacent[1], tgt.adjacent[2]],
           selectedBlockRef.current
@@ -307,8 +372,18 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
       function onHotbarKey(e: KeyboardEvent) {
         const n = Number(e.key);
+        if (gameModeRef.current === "survival") {
+          if (Number.isFinite(n) && n >= 1 && n <= 9) {
+            const i = n - 1;
+            survivalSlotRef.current = i;
+            setSurvivalSlot(i);
+          }
+          return;
+        }
         if (Number.isFinite(n) && n >= 1 && n <= HOTBAR.length) {
-          selectedBlockRef.current = HOTBAR[n - 1];
+          const idx = n - 1;
+          selectedBlockRef.current = HOTBAR[idx];
+          setCreativeSlotIdx(idx);
         }
       }
       window.addEventListener("keydown", onHotbarKey);
@@ -359,12 +434,75 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     noa?.setPaused?.(paused);
   }, [paused]);
 
-  return (
+  const slotBox = (active: boolean, key: number, inner: JSX.Element): JSX.Element => (
     <div
-      ref={hostRef}
-      className="absolute inset-0 outline-none"
-      tabIndex={0}
-      aria-label="minecraft viewport"
-    />
+      key={key}
+      className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border-2 border-black/70 bg-neutral-900/90 shadow-md ${
+        active ? "ring-2 ring-amber-200 ring-offset-2 ring-offset-black/50" : ""
+      }`}
+    >
+      <span className="pointer-events-none absolute left-0.5 top-0.5 text-[9px] font-bold text-white drop-shadow">
+        {key}
+      </span>
+      {inner}
+    </div>
+  );
+
+  const blockHotbarHud = !paused ? (
+    <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center gap-1.5 px-2">
+      {gameMode === "creative"
+        ? HOTBAR.map((blockId, i) =>
+            slotBox(
+              i === creativeSlotIdx,
+              i + 1,
+              <img
+                src={BLOCK_HOTBAR_ICON[blockId]}
+                alt=""
+                title={BLOCK_HUD[blockId] ?? ""}
+                className="h-9 w-9"
+                style={{ imageRendering: "pixelated" }}
+              />
+            )
+          )
+        : inventorySlots.slice(0, 9).map((cell, i) => {
+            const icon = BLOCK_HOTBAR_ICON[cell.blockId];
+            const hasItem =
+              cell.blockId !== BLOCK_REGISTRY.AIR && cell.count > 0 && icon !== undefined;
+            return slotBox(
+              i === survivalSlot,
+              i + 1,
+              <>
+                {hasItem ? (
+                  <img
+                    src={icon}
+                    alt=""
+                    title={`${BLOCK_HUD[cell.blockId] ?? cell.blockId} ×${cell.count}`}
+                    className="h-9 w-9"
+                    style={{ imageRendering: "pixelated" }}
+                  />
+                ) : (
+                  <div className="h-9 w-9 rounded bg-black/40" aria-hidden />
+                )}
+                {hasItem ? (
+                  <span className="pointer-events-none absolute bottom-0.5 right-0.5 text-[10px] font-black leading-none text-white drop-shadow-md">
+                    {cell.count}
+                  </span>
+                ) : null}
+              </>
+            );
+          })}
+    </div>
+  ) : null;
+
+  return (
+    <div className="absolute inset-0">
+      <div
+        ref={hostRef}
+        className="absolute inset-0 outline-none"
+        tabIndex={0}
+        aria-label="minecraft viewport"
+      />
+      {blockHotbarHud}
+    </div>
   );
 }

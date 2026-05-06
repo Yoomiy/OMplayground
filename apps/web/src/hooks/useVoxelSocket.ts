@@ -4,7 +4,10 @@ import { supabase } from "@/lib/supabase";
 import { getVoxelServerUrl } from "@/lib/voxelServerUrl";
 import type {
   BlockDelta,
+  GameMode,
+  HotbarSlot,
   InputReq,
+  InventorySyncPayload,
   JoinRoomAck,
   JoinRoomAckOk,
   RoomEvent,
@@ -47,6 +50,8 @@ export interface UseVoxelSocketReturn {
   onSnapshot: (cb: SnapshotListener) => () => void;
   onBlockDelta: (cb: BlockDeltaListener) => () => void;
   onRoomEvent: (cb: RoomEventListener) => () => void;
+  serverInventory: HotbarSlot[];
+  setGameMode: (mode: GameMode) => Promise<SimpleAck>;
 }
 
 function emitWithAck<T>(socket: Socket, event: string, payload: unknown): Promise<T> {
@@ -69,6 +74,7 @@ export function useVoxelSocket(
   const [connected, setConnected] = useState(false);
   const [status, setStatus] = useState<string>("מתחבר…");
   const [joinAck, setJoinAck] = useState<JoinRoomAckOk | null>(null);
+  const [serverInventory, setServerInventory] = useState<HotbarSlot[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -100,6 +106,13 @@ export function useVoxelSocket(
           return;
         }
         setJoinAck(ack);
+        setServerInventory(ack.inventory ?? []);
+      });
+
+      s.on("INVENTORY_SYNC", (payload: InventorySyncPayload) => {
+        if (payload?.slots && Array.isArray(payload.slots)) {
+          setServerInventory(payload.slots);
+        }
       });
 
       s.on("ROOM_SNAPSHOT", (payload: RoomSnapshot) => {
@@ -179,6 +192,12 @@ export function useVoxelSocket(
     return emitWithAck<SimpleAck>(s, "LEAVE_ROOM", { sessionId });
   }
 
+  async function setGameMode(mode: GameMode): Promise<SimpleAck> {
+    const s = socketRef.current;
+    if (!s?.connected) return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
+    return emitWithAck<SimpleAck>(s, "SET_GAME_MODE", { sessionId, gameMode: mode });
+  }
+
   function onSnapshot(cb: SnapshotListener): () => void {
     snapshotListeners.current.add(cb);
     return () => {
@@ -211,6 +230,8 @@ export function useVoxelSocket(
     leave,
     onSnapshot,
     onBlockDelta,
-    onRoomEvent
+    onRoomEvent,
+    serverInventory,
+    setGameMode
   };
 }
