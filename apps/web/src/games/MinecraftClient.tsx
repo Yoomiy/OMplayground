@@ -27,6 +27,11 @@ import {
 
 const HOTBAR = PLACEABLE_BLOCK_IDS;
 
+/** Max third-person camera pull-back (voxels); noa defaults `initialZoom` 0. */
+const CAMERA_ZOOM_DISTANCE_MAX = 16;
+/** Wheel delta → `zoomDistance` scale (`game-inputs` uses scaled pixel deltas). */
+const CAMERA_ZOOM_SCROLL_STEP = 0.012;
+
 /** Short labels for tooltips / a11y (Hebrew). */
 const BLOCK_HUD: Record<number, string> = {
   [BLOCK_REGISTRY.GRASS]: "דשא",
@@ -160,6 +165,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
   const [survivalSlot, setSurvivalSlot] = useState(0);
   const [creativeSlotIdx, setCreativeSlotIdx] = useState(0);
+  const [controlsHintDismissed, setControlsHintDismissed] = useState(false);
 
   const hostRef = useRef<HTMLDivElement | null>(null);
   // noa-engine has loose .d.ts typings; lock to any so we don't fight them.
@@ -392,6 +398,19 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       let lastEmit = 0;
       noa.on("tick", () => {
         if (pausedRef.current) return;
+
+        const scrolly: number = noa.inputs.pointerState.scrolly;
+        if (scrolly !== 0) {
+          const cam = noa.camera;
+          cam.zoomDistance = Math.max(
+            0,
+            Math.min(
+              CAMERA_ZOOM_DISTANCE_MAX,
+              cam.zoomDistance + scrolly * CAMERA_ZOOM_SCROLL_STEP
+            )
+          );
+        }
+
         const now = performance.now();
         if (now - lastEmit < 60) return;
         lastEmit = now;
@@ -494,6 +513,30 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     </div>
   ) : null;
 
+  const controlsHint =
+    !paused && !controlsHintDismissed ? (
+      <div className="pointer-events-none absolute left-3 top-3 max-w-[min(22rem,calc(100%-1.5rem)))]">
+        <div
+          className="relative space-y-1 rounded-lg border border-black/40 bg-neutral-950/75 py-2 ps-2.5 pe-8 pt-7 text-[10px] leading-snug text-neutral-100 shadow-md sm:text-[11px] sm:pe-9 sm:pt-8"
+          dir="rtl"
+        >
+          <button
+            type="button"
+            className="pointer-events-auto absolute end-1 top-1 flex h-6 w-6 items-center justify-center rounded-md text-base font-bold leading-none text-neutral-300 hover:bg-white/10 hover:text-white"
+            aria-label="סגור"
+            onClick={() => setControlsHintDismissed(true)}
+          >
+            ×
+          </button>
+          <p className="font-semibold text-neutral-300">בקרות</p>
+          <p className="text-neutral-200">
+            WASD תנועה · רווח קפיצה · לחצן עכבר שמאלי שובר · ימני מניח · מקשי 1–9 לסרגל · גלגלת
+            לזום המצלמה
+          </p>
+        </div>
+      </div>
+    ) : null;
+
   return (
     <div className="absolute inset-0">
       <div
@@ -502,6 +545,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         tabIndex={0}
         aria-label="minecraft viewport"
       />
+      {controlsHint}
       {blockHotbarHud}
     </div>
   );
