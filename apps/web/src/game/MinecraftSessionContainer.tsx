@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,6 +25,18 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
   const isTeacherObserver = profile?.role === "teacher";
   const myUserId = user?.id ?? null;
 
+  const [paused, setPaused] = useState(false);
+  const [hostId, setHostId] = useState<string | null>(null);
+  const [liveGameMode, setLiveGameMode] = useState<GameMode>("creative");
+  const [endOverlay, setEndOverlay] = useState<
+    null | { kind: "stopped"; by?: string }
+  >(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const [roomIsOpen, setRoomIsOpen] = useState<boolean | null>(null);
+  const [invitationCode, setInvitationCode] = useState<string | null>(null);
+  const [updatingVisibility, setUpdatingVisibility] = useState(false);
+  const [inviteFallbackLink, setInviteFallbackLink] = useState<string | null>(null);
+
   const {
     connected,
     status,
@@ -41,15 +53,10 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     onRoomEvent,
     serverInventory,
     setGameMode
-  } = useVoxelSocket({ sessionId });
-
-  const [paused, setPaused] = useState(false);
-  const [hostId, setHostId] = useState<string | null>(null);
-  const [liveGameMode, setLiveGameMode] = useState<GameMode>("creative");
-  const [endOverlay, setEndOverlay] = useState<
-    null | { kind: "stopped"; by?: string }
-  >(null);
-  const [toast, setToast] = useState<string | null>(null);
+  } = useVoxelSocket({
+    sessionId,
+    suppressInputEmit: paused || isTeacherObserver
+  });
 
   useEffect(() => {
     if (!joinAck) return;
@@ -100,6 +107,50 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     return () => window.clearTimeout(t);
   }, [toast]);
 
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const { data, error } = await supabase
+        .from("game_sessions")
+        .select("is_open, invitation_code")
+        .eq("id", sessionId)
+        .maybeSingle();
+      if (cancelled || error || !data) return;
+      setRoomIsOpen(data.is_open);
+      setInvitationCode(data.invitation_code);
+    })();
+
+    const channel = supabase
+      .channel(`minecraft-session-privacy:${sessionId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "game_sessions",
+          filter: `id=eq.${sessionId}`
+        },
+        (payload) => {
+          const next = payload.new as {
+            is_open?: boolean;
+            invitation_code?: string;
+          };
+          if (typeof next.is_open === "boolean") {
+            setRoomIsOpen(next.is_open);
+          }
+          if (typeof next.invitation_code === "string") {
+            setInvitationCode(next.invitation_code);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      void supabase.removeChannel(channel);
+    };
+  }, [sessionId]);
+
   const iAmHost = !isTeacherObserver && myUserId !== null && myUserId === hostId;
 
   const handlePlaceBlock = useCallback(
@@ -142,9 +193,38 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     navigate(isTeacherObserver ? "/teacher" : "/home");
   }, [leave, navigate, isTeacherObserver]);
 
-  const fullName = useMemo(() => profile?.full_name ?? "שחקן", [profile]);
-  void fullName;
-  void supabase;
+  const toggleRoomVisibility = useCallback(async () => {
+    if (!myUserId || !hostId || myUserId !== hostId || roomIsOpen === null) return;
+    setUpdatingVisibility(true);
+    setInviteFallbackLink(null);
+    const { data, error } = await supabase
+      .from("game_sessions")
+      .update({ is_open: !roomIsOpen })
+      .eq("id", sessionId)
+      .eq("host_id", myUserId)
+      .select("is_open")
+      .maybeSingle();
+    setUpdatingVisibility(false);
+    if (error || !data) {
+      setToast(error?.message ?? "עדכון פרטיות נכשל");
+      return;
+    }
+    setRoomIsOpen(data.is_open);
+    setToast(data.is_open ? "החדר פתוח להצטרפות" : "החדר פרטי עכשיו");
+  }, [hostId, myUserId, roomIsOpen, sessionId]);
+
+  const copyInviteLink = useCallback(async () => {
+    if (!invitationCode) return;
+    const inviteUrl = `${window.location.origin}/join/${invitationCode}`;
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      setInviteFallbackLink(null);
+      setToast("קישור ההזמנה הועתק");
+    } catch {
+      setInviteFallbackLink(inviteUrl);
+      setToast("אי אפשר להעתיק אוטומטית בדפדפן הזה");
+    }
+  }, [invitationCode]);
 
   if (!connected || !joinAck) {
     return (
@@ -183,7 +263,11 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         </div>
       ) : null}
 
-      <div className="absolute right-4 top-4 flex flex-col items-end gap-2 text-xs font-semibold text-white">
+      {/* dir=ltr keeps flex cross-axis "end" on the physical right when the app is rtl */}
+      <div
+        dir="ltr"
+        className="pointer-events-auto absolute right-4 top-4 flex w-max max-w-[min(100vw-2rem,280px)] flex-col items-end gap-2 text-xs font-semibold text-white"
+      >
         <button
           type="button"
           onClick={() => void handleExit()}
@@ -226,6 +310,45 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
           </>
         ) : null}
       </div>
+
+      {iAmHost && !endOverlay ? (
+        <div
+          dir="ltr"
+          className="pointer-events-auto absolute bottom-4 right-4 flex w-[min(100vw-2rem,280px)] flex-col items-stretch gap-2 text-xs font-semibold text-white"
+        >
+          <div className="rounded-xl border border-white/20 bg-slate-900/90 p-3 text-[11px] font-bold shadow-lg">
+            <p className="text-right text-white" dir="rtl">
+              {roomIsOpen === null ? "טוען פרטיות…" : roomIsOpen ? "חדר פתוח" : "חדר פרטי"}
+            </p>
+            <div className="mt-2 flex flex-wrap justify-end gap-2" dir="rtl">
+              <button
+                type="button"
+                className="rounded-lg border border-slate-400 bg-white px-2.5 py-1.5 text-[11px] font-bold text-slate-800 hover:bg-slate-100 disabled:opacity-50"
+                disabled={updatingVisibility || roomIsOpen === null}
+                onClick={() => void toggleRoomVisibility()}
+              >
+                {updatingVisibility ? "מעדכן…" : roomIsOpen ? "הפוך לפרטי" : "הפוך לפתוח"}
+              </button>
+              <button
+                type="button"
+                className="rounded-lg border border-indigo-300 bg-indigo-100 px-2.5 py-1.5 text-[11px] font-bold text-indigo-900 hover:bg-indigo-200 disabled:opacity-50"
+                disabled={!invitationCode}
+                onClick={() => void copyInviteLink()}
+              >
+                העתק הזמנה
+              </button>
+            </div>
+          </div>
+          {inviteFallbackLink ? (
+            <p
+              className="break-all rounded-xl border border-indigo-300 bg-indigo-950/90 px-2 py-1.5 text-right text-[10px] text-indigo-100"
+              dir="rtl"
+            >
+              {inviteFallbackLink}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       {paused && !endOverlay ? (
         <div className="pointer-events-none absolute inset-x-0 bottom-10 flex justify-center">

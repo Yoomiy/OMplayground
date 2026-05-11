@@ -21,12 +21,23 @@ import type {
  * data layer: no Babylon/noa imports, no UI logic. The container component
  * passes the typed callbacks into the dumb `MinecraftClient` board.
  *
- * INPUT is sent at most every `INPUT_INTERVAL_MS` so noa-engine's tick
- * rate doesn't flood the wire. The latest input is always re-sent to
- * cover keepalive even when the player stands still.
+ * INPUT is throttled to `INPUT_INTERVAL_MS` and only emitted when the
+ * payload meaningfully changes (and not while `suppressInputEmit` is true).
  */
 
 const INPUT_INTERVAL_MS = 66;
+const POS_EPS = 0.02;
+const HEADING_EPS = 0.002;
+
+function inputWireEqual(a: InputReq, b: InputReq): boolean {
+  return (
+    Math.abs(a.pos[0] - b.pos[0]) <= POS_EPS &&
+    Math.abs(a.pos[1] - b.pos[1]) <= POS_EPS &&
+    Math.abs(a.pos[2] - b.pos[2]) <= POS_EPS &&
+    Math.abs(a.heading - b.heading) <= HEADING_EPS &&
+    a.jumping === b.jumping
+  );
+}
 
 export type SnapshotListener = (snap: RoomSnapshot) => void;
 export type BlockDeltaListener = (delta: BlockDelta) => void;
@@ -34,6 +45,8 @@ export type RoomEventListener = (ev: RoomEvent) => void;
 
 export interface UseVoxelSocketArgs {
   sessionId: string;
+  /** When true, INPUT is not sent (paused room, teacher observer, etc.). */
+  suppressInputEmit?: boolean;
 }
 
 export interface UseVoxelSocketReturn {
@@ -63,10 +76,13 @@ function emitWithAck<T>(socket: Socket, event: string, payload: unknown): Promis
 export function useVoxelSocket(
   args: UseVoxelSocketArgs
 ): UseVoxelSocketReturn {
-  const { sessionId } = args;
+  const { sessionId, suppressInputEmit = false } = args;
+  const suppressInputRef = useRef(suppressInputEmit);
+  suppressInputRef.current = suppressInputEmit;
   const socketRef = useRef<Socket | null>(null);
   const lastInputRef = useRef<InputReq | null>(null);
   const lastSentAtRef = useRef<number>(0);
+  const lastEmittedInputRef = useRef<InputReq | null>(null);
   const snapshotListeners = useRef(new Set<SnapshotListener>());
   const blockDeltaListeners = useRef(new Set<BlockDeltaListener>());
   const roomEventListeners = useRef(new Set<RoomEventListener>());
@@ -78,6 +94,9 @@ export function useVoxelSocket(
 
   useEffect(() => {
     let cancelled = false;
+    lastInputRef.current = null;
+    lastEmittedInputRef.current = null;
+    lastSentAtRef.current = 0;
     void (async () => {
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token;
@@ -138,9 +157,13 @@ export function useVoxelSocket(
       const s = socketRef.current;
       const last = lastInputRef.current;
       if (!s?.connected || !last) return;
+      if (suppressInputRef.current) return;
+      const prev = lastEmittedInputRef.current;
+      if (prev && inputWireEqual(prev, last)) return;
       const now = performance.now();
       if (now - lastSentAtRef.current < INPUT_INTERVAL_MS) return;
       lastSentAtRef.current = now;
+      lastEmittedInputRef.current = last;
       s.emit("INPUT", last);
     }, INPUT_INTERVAL_MS);
 
