@@ -111,22 +111,45 @@ function smoothNoise(x: number, z: number, seed: number): number {
   return a * (1 - fz) + b * fz;
 }
 
+function columnHeight(x: number, z: number, seed: number): number {
+  const base = 8;
+  const amp = 4;
+  const heightF =
+    smoothNoise(x / 16, z / 16, seed) * amp +
+    smoothNoise(x / 4, z / 4, seed ^ 0x1234) * 1.2;
+  return Math.floor(base + heightF);
+}
+
 /**
  * Mirror of apps/minecraft-server/src/world.ts proceduralVoxelID. Kept
  * client-side so noa can request blocks synchronously without a
  * round-trip per chunk.
  */
 function proceduralVoxelID(x: number, y: number, z: number, seed: number): number {
-  const base = 8;
-  const amp = 4;
-  const heightF =
-    smoothNoise(x / 16, z / 16, seed) * amp +
-    smoothNoise(x / 4, z / 4, seed ^ 0x1234) * 1.2;
-  const height = Math.floor(base + heightF);
-  if (y > height) return BLOCK_REGISTRY.AIR;
-  if (y === height) return BLOCK_REGISTRY.GRASS;
-  if (y > height - 3) return BLOCK_REGISTRY.DIRT;
-  return BLOCK_REGISTRY.STONE;
+  const height = columnHeight(x, z, seed);
+  if (y <= height) {
+    if (y === height) return BLOCK_REGISTRY.GRASS;
+    if (y > height - 3) return BLOCK_REGISTRY.DIRT;
+    return BLOCK_REGISTRY.STONE;
+  }
+  for (let dx = -2; dx <= 2; dx++) {
+    for (let dz = -2; dz <= 2; dz++) {
+      const cx = x + dx;
+      const cz = z + dz;
+      const ch = columnHeight(cx, cz, seed);
+      if (hash3(cx, 0, cz, seed ^ 0xBEEF) < 0.0005) {
+        const h = hash3(cx, 1, cz, seed ^ 0xCAFE);
+        const heightVar = Math.floor(h * 5) - 2;
+        const trunkHeight = 7 + heightVar;
+        const trunkTop = ch + trunkHeight;
+        if (y <= trunkTop && dx === 0 && dz === 0) return BLOCK_REGISTRY.WOOD;
+        const dy = y - trunkTop;
+        const dist2 = dx * dx + dy * dy + dz * dz;
+        if (dist2 <= 9 && y > ch) return BLOCK_REGISTRY.LEAVES;
+      }
+    }
+  }
+  return BLOCK_REGISTRY.AIR;
 }
 
 export interface MinecraftClientProps {
