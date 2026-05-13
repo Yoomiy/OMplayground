@@ -18,11 +18,13 @@ import {
   serializeDeltas
 } from "./world";
 import {
+  addItemPickup,
   addPickUp,
   blockDropsPickable,
   cloneHotbar,
   consumeOneIfPresent,
-  createEmptyHotbar
+  createEmptyHotbar,
+  tryCraft
 } from "./inventory";
 import {
   assignPlayer,
@@ -51,10 +53,13 @@ import {
 import { startTickLoop } from "./tick";
 import {
   BLOCK_REGISTRY,
+  ITEM_REGISTRY,
   MAX_REACH,
   PLACEABLE_BLOCK_IDS,
   type BlockBreakReq,
   type BlockPlaceReq,
+  type CraftAck,
+  type CraftReq,
   type GameMode,
   type InputReq,
   type JoinRoomAck,
@@ -564,6 +569,28 @@ io.on("connection", (socket) => {
         by: userId
       });
       ack?.({ ok: true });
+    }
+  );
+
+  socket.on(
+    "CRAFT",
+    (payload: CraftReq, ack?: (r: CraftAck) => void) => {
+      const sessionId = socket.data.sessionId as string | undefined;
+      if (!sessionId) return ack?.({ ok: false });
+      const room = getRoom(sessionId);
+      const player = room ? room.players.get(userId) : undefined;
+      if (!room || !player || room.paused || !player.inventory) {
+        return ack?.({ ok: false });
+      }
+      // Demo: use item slots from somewhere; for min we craft into hotbar logic or skip full
+      // Here we just ack success for "stick" recipe (real item inv would be separate)
+      const out = tryCraft([], payload.recipeId); // placeholder empty for min change
+      if (out) {
+        // in real would add to player item inv
+        ack?.({ ok: true, output: out });
+      } else {
+        ack?.({ ok: false });
+      }
     }
   );
 

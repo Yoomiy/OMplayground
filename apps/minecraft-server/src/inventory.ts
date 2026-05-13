@@ -1,7 +1,9 @@
 import {
   BLOCK_REGISTRY,
+  ITEM_REGISTRY,
   PLACEABLE_BLOCK_IDS,
-  type HotbarSlot
+  type HotbarSlot,
+  type ItemSlot
 } from "./protocol";
 
 export const HOTBAR_SLOT_COUNT = 9;
@@ -91,4 +93,35 @@ export function hotbarFromPersisted(
     };
   }
   return out;
+}
+
+/** Minimal item inventory support (separate from hotbar blocks). */
+export function createEmptyItemInventory(size = 27): ItemSlot[] {
+  return Array.from({ length: size }, () => ({ itemId: 0, count: 0 }));
+}
+
+export function addItemPickup(slots: ItemSlot[], itemId: number): void {
+  if (itemId === 0) return;
+  const stack = slots.findIndex((s) => s.itemId === itemId && s.count > 0 && s.count < MAX_STACK);
+  if (stack >= 0) {
+    slots[stack].count = Math.min(MAX_STACK, slots[stack].count + 1);
+    return;
+  }
+  const empty = slots.findIndex((s) => s.itemId === 0 || s.count <= 0);
+  if (empty < 0) return;
+  slots[empty].itemId = itemId;
+  slots[empty].count = 1;
+}
+
+/** Very minimal 1:1 craft demo: 2 PLANKS -> 4 STICK (recipeId="stick"). */
+export function tryCraft(slots: ItemSlot[], recipeId: string): ItemSlot | null {
+  if (recipeId !== "stick") return null;
+  const plankIdx = slots.findIndex((s) => s.itemId === ITEM_REGISTRY.PLANKS && s.count >= 2);
+  if (plankIdx < 0) return null;
+  slots[plankIdx].count -= 2;
+  if (slots[plankIdx].count <= 0) {
+    slots[plankIdx].itemId = 0;
+    slots[plankIdx].count = 0;
+  }
+  return { itemId: ITEM_REGISTRY.STICK, count: 4 };
 }

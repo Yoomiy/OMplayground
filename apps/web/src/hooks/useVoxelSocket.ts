@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { getVoxelServerUrl } from "@/lib/voxelServerUrl";
 import type {
   BlockDelta,
+  CraftAck,
   GameMode,
   HotbarSlot,
   InputReq,
@@ -56,6 +57,7 @@ export interface UseVoxelSocketReturn {
   sendInput: (input: InputReq) => void;
   placeBlock: (pos: Vec3, blockId: number) => Promise<SimpleAck>;
   breakBlock: (pos: Vec3) => Promise<SimpleAck>;
+  craft: (recipeId: string) => Promise<CraftAck>;
   pause: () => Promise<SimpleAck>;
   resume: () => Promise<SimpleAck>;
   stop: () => Promise<SimpleAck>;
@@ -191,6 +193,12 @@ export function useVoxelSocket(
     return emitWithAck<SimpleAck>(s, "BLOCK_BREAK", { pos });
   }
 
+  async function craft(recipeId: string): Promise<CraftAck> {
+    const s = socketRef.current;
+    if (!s?.connected) return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
+    return emitWithAck<CraftAck>(s, "CRAFT", { recipeId });
+  }
+
   async function pause(): Promise<SimpleAck> {
     const s = socketRef.current;
     if (!s?.connected) return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
@@ -247,6 +255,7 @@ export function useVoxelSocket(
     sendInput,
     placeBlock,
     breakBlock,
+    craft,
     pause,
     resume,
     stop,

@@ -49,6 +49,7 @@ In this project, **"items" in survival parlance are block IDs**: the hotbar send
 - **Board games** (`GameModule`, `BOARD_REGISTRY`) — use [`playground-add-game`](../../../.cursor/skills/playground-add-game/SKILL.md).
 - **New voxel server features** (new socket events, tick rate) — out of scope unless explicitly required.
 - **Supabase catalog rows** — `games.game_url = 'minecraft'` already points at this experience; new blocks do not need a new catalog row.
+- Items (non-placeable) are handled by the companion `playground-voxel-items` skill; use ITEM_REGISTRY for those.
 
 ## Quick reference — files you usually touch
 

@@ -166,6 +166,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const [survivalSlot, setSurvivalSlot] = useState(0);
   const [creativeSlotIdx, setCreativeSlotIdx] = useState(0);
   const [controlsHintDismissed, setControlsHintDismissed] = useState(false);
+  const [inventoryOpen, setInventoryOpen] = useState(false);
 
   const hostRef = useRef<HTMLDivElement | null>(null);
   // noa-engine has loose .d.ts typings; lock to any so we don't fight them.
@@ -377,6 +378,10 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       });
 
       function onHotbarKey(e: KeyboardEvent) {
+        if (e.key.toLowerCase() === "e") {
+          setInventoryOpen((v) => !v);
+          return;
+        }
         const n = Number(e.key);
         if (gameModeRef.current === "survival") {
           if (Number.isFinite(n) && n >= 1 && n <= 9) {
@@ -513,6 +518,34 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     </div>
   ) : null;
 
+  const inventoryPanel = inventoryOpen ? (
+    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70">
+      <div className="w-[420px] rounded-xl border border-white/20 bg-neutral-950 p-4 text-white shadow-xl" dir="rtl">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="text-lg font-semibold">מלאי</div>
+          <button className="text-sm opacity-70 hover:opacity-100" onClick={() => setInventoryOpen(false)}>סגור (E)</button>
+        </div>
+        <div className="grid grid-cols-9 gap-1.5">
+          {inventorySlots.slice(0, 9).map((cell, i) => {
+            const icon = BLOCK_HOTBAR_ICON[cell.blockId];
+            const has = cell.blockId !== BLOCK_REGISTRY.AIR && cell.count > 0 && icon;
+            return (
+              <div key={i} className="flex h-11 w-11 items-center justify-center rounded border border-white/30 bg-neutral-900">
+                {has ? (
+                  <>
+                    <img src={icon} alt="" className="h-9 w-9" style={{ imageRendering: "pixelated" }} />
+                    <span className="absolute mt-4 text-[10px] font-black text-white drop-shadow">{cell.count}</span>
+                  </>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-3 text-xs opacity-60">סרגל חם (הרחבה מלאה תגיע בהמשך)</div>
+      </div>
+    </div>
+  ) : null;
+
   const controlsHint =
     !paused && !controlsHintDismissed ? (
       <div className="pointer-events-none absolute left-3 top-3 max-w-[min(22rem,calc(100%-1.5rem)))]">
@@ -547,6 +580,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       />
       {controlsHint}
       {blockHotbarHud}
+      {inventoryPanel}
     </div>
   );
 }

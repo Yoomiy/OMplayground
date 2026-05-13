@@ -14,6 +14,16 @@ export interface HotbarSlot {
   count: number;
 }
 
+export interface ItemSlot {
+  itemId: number;
+  count: number;
+}
+
+export const ITEM_REGISTRY = {
+  STICK: 100,
+  PLANKS: 101
+} as const;
+
 export interface RoomPlayerInfo {
   userId: string;
   displayName: string;
@@ -60,6 +70,19 @@ export interface BlockBreakReq {
 
 export interface InventorySyncPayload {
   slots: HotbarSlot[];
+}
+
+export interface ItemPickupPayload {
+  itemId: number;
+  count: number;
+}
+
+export interface CraftReq {
+  recipeId: string;
+}
+
+export interface CraftAck extends SimpleAck {
+  output?: ItemSlot;
 }
 
 export interface SetGameModeReq {
