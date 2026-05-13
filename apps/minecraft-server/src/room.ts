@@ -8,12 +8,21 @@ import {
   type WorldState
 } from "./world";
 import {
-  createEmptyHotbar,
   cloneHotbar,
+  cloneCraftingGrid,
+  cloneItemInventory,
+  createEmptyCraftingGrid,
+  createEmptyHotbar,
+  createEmptyItemInventory,
+  craftingGridFromPersisted,
   hotbarFromPersisted,
-  type HotbarState
+  itemInventoryFromPersisted,
+  spillExcessFromCraftingGrid,
+  type CraftingGridState,
+  type HotbarState,
+  type ItemInventoryState
 } from "./inventory";
-import type { GameMode, HotbarSlot, Vec3 } from "./protocol";
+import type { CraftingGridSlot, GameMode, HotbarSlot, ItemSlot, Vec3 } from "./protocol";
 
 /**
  * In-memory voxel-room registry. Mirrors the structure of
@@ -39,6 +48,10 @@ export interface PlayerRuntime extends RoomPlayer {
   lastInputAt: number;
   /** Set only in survival mode — authoritative hotbar for pause/resume. */
   inventory?: HotbarState;
+  /** Survival: main storage for non-placeable items. */
+  itemInventory?: ItemInventoryState;
+  /** Survival: 2×2 crafting grid (blocks + items). */
+  craftingGrid?: CraftingGridState;
 }
 
 export interface VoxelRoom {
@@ -58,6 +71,8 @@ export interface VoxelRoom {
   gameMode?: GameMode;
   /** Survival inventories for roster members not currently connected. */
   disconnectedInventories: Map<string, HotbarState>;
+  disconnectedItemInventories: Map<string, ItemInventoryState>;
+  disconnectedCraftingGrids: Map<string, CraftingGridState>;
   /** Set true when state changed since last tick emit. */
   dirty: boolean;
   /** ms timestamp of last emitted snapshot — used by coalescing in tick.ts. */
@@ -85,6 +100,8 @@ export interface PersistedRoomState {
   spawnPoints: Record<string, Vec3>;
   gameMode?: GameMode;
   inventories?: Record<string, HotbarSlot[]>;
+  itemInventories?: Record<string, ItemSlot[]>;
+  craftingGrids?: Record<string, CraftingGridSlot[]>;
 }
 
 export function getRoom(sessionId: string): VoxelRoom | undefined {
@@ -110,6 +127,12 @@ export function getOrCreateRoom(
     if (!existing.disconnectedInventories) {
       existing.disconnectedInventories = new Map();
     }
+    if (!existing.disconnectedItemInventories) {
+      existing.disconnectedItemInventories = new Map();
+    }
+    if (!existing.disconnectedCraftingGrids) {
+      existing.disconnectedCraftingGrids = new Map();
+    }
     return existing;
   }
   const seed = meta.resumedState?.seed ?? seedFromSessionId(sessionId);
@@ -124,7 +147,11 @@ export function getOrCreateRoom(
     }
   }
   const disconnectedInventories = new Map<string, HotbarState>();
+  const disconnectedItemInventories = new Map<string, ItemInventoryState>();
+  const disconnectedCraftingGrids = new Map<string, CraftingGridState>();
   const emptyTemplate = createEmptyHotbar();
+  const emptyItemsTemplate = createEmptyItemInventory();
+  const emptyCraftTemplate = createEmptyCraftingGrid();
   if (meta.resumedState?.inventories) {
     for (const [uid, raw] of Object.entries(meta.resumedState.inventories)) {
       disconnectedInventories.set(
@@ -132,6 +159,35 @@ export function getOrCreateRoom(
         hotbarFromPersisted(raw, emptyTemplate)
       );
     }
+  }
+  if (meta.resumedState?.itemInventories) {
+    for (const [uid, raw] of Object.entries(meta.resumedState.itemInventories)) {
+      disconnectedItemInventories.set(
+        uid,
+        itemInventoryFromPersisted(raw, emptyItemsTemplate)
+      );
+    }
+  }
+  if (meta.resumedState?.craftingGrids) {
+    for (const [uid, raw] of Object.entries(meta.resumedState.craftingGrids)) {
+      disconnectedCraftingGrids.set(
+        uid,
+        craftingGridFromPersisted(raw, emptyCraftTemplate)
+      );
+    }
+  }
+  for (const [uid, grid] of disconnectedCraftingGrids) {
+    if (!disconnectedInventories.has(uid)) {
+      disconnectedInventories.set(uid, cloneHotbar(emptyTemplate));
+    }
+    if (!disconnectedItemInventories.has(uid)) {
+      disconnectedItemInventories.set(uid, cloneItemInventory(emptyItemsTemplate));
+    }
+    spillExcessFromCraftingGrid(
+      grid,
+      disconnectedInventories.get(uid)!,
+      disconnectedItemInventories.get(uid)!
+    );
   }
   const created: VoxelRoom = {
     sessionId,
@@ -147,6 +203,8 @@ export function getOrCreateRoom(
     paused: meta.paused,
     gameMode: meta.resumedState?.gameMode ?? "creative",
     disconnectedInventories,
+    disconnectedItemInventories,
+    disconnectedCraftingGrids,
     dirty: false,
     lastTickAt: 0
   };
@@ -207,6 +265,23 @@ export function assignPlayer(
       ? cloneHotbar(cached)
       : createEmptyHotbar();
     room.disconnectedInventories.delete(userId);
+    const cachedItems = room.disconnectedItemInventories.get(userId);
+    player.itemInventory = cachedItems
+      ? cloneItemInventory(cachedItems)
+      : createEmptyItemInventory();
+    room.disconnectedItemInventories.delete(userId);
+    const cachedCraft = room.disconnectedCraftingGrids.get(userId);
+    player.craftingGrid = cachedCraft
+      ? cloneCraftingGrid(cachedCraft)
+      : createEmptyCraftingGrid();
+    room.disconnectedCraftingGrids.delete(userId);
+    if (player.inventory && player.itemInventory && player.craftingGrid) {
+      spillExcessFromCraftingGrid(
+        player.craftingGrid,
+        player.inventory,
+        player.itemInventory
+      );
+    }
   }
   room.players.set(userId, player);
   if (!room.roster.some((p) => p.userId === userId)) {
@@ -226,6 +301,18 @@ export function removePlayerFromRoom(
   const leaving = r.players.get(userId);
   if (leaving?.inventory) {
     r.disconnectedInventories.set(userId, cloneHotbar(leaving.inventory));
+  }
+  if (leaving?.itemInventory) {
+    r.disconnectedItemInventories.set(
+      userId,
+      cloneItemInventory(leaving.itemInventory)
+    );
+  }
+  if (leaving?.craftingGrid) {
+    r.disconnectedCraftingGrids.set(
+      userId,
+      cloneCraftingGrid(leaving.craftingGrid)
+    );
   }
   r.players.delete(userId);
   r.dirty = true;
@@ -264,12 +351,30 @@ export function snapshotPersistedState(room: VoxelRoom): PersistedRoomState {
   const spawnPoints: Record<string, Vec3> = {};
   for (const [uid, pt] of room.spawnPoints) spawnPoints[uid] = pt;
   const inventories: Record<string, HotbarSlot[]> = {};
+  const itemInventories: Record<string, ItemSlot[]> = {};
+  const craftingGrids: Record<string, CraftingGridSlot[]> = {};
   if ((room.gameMode ?? "creative") === "survival") {
     for (const p of room.players.values()) {
       if (p.inventory) inventories[p.userId] = cloneHotbar(p.inventory);
+      if (p.itemInventory) {
+        itemInventories[p.userId] = cloneItemInventory(p.itemInventory);
+      }
+      if (p.craftingGrid) {
+        craftingGrids[p.userId] = cloneCraftingGrid(p.craftingGrid);
+      }
     }
     for (const [uid, hotbar] of room.disconnectedInventories) {
       if (!(uid in inventories)) inventories[uid] = cloneHotbar(hotbar);
+    }
+    for (const [uid, items] of room.disconnectedItemInventories) {
+      if (!(uid in itemInventories)) {
+        itemInventories[uid] = cloneItemInventory(items);
+      }
+    }
+    for (const [uid, cg] of room.disconnectedCraftingGrids) {
+      if (!(uid in craftingGrids)) {
+        craftingGrids[uid] = cloneCraftingGrid(cg);
+      }
     }
   }
   return {
@@ -278,7 +383,9 @@ export function snapshotPersistedState(room: VoxelRoom): PersistedRoomState {
     deltas: serializeDeltas(room.world),
     spawnPoints,
     gameMode: room.gameMode ?? "creative",
-    ...(Object.keys(inventories).length > 0 ? { inventories } : {})
+    ...(Object.keys(inventories).length > 0 ? { inventories } : {}),
+    ...(Object.keys(itemInventories).length > 0 ? { itemInventories } : {}),
+    ...(Object.keys(craftingGrids).length > 0 ? { craftingGrids } : {})
   };
 }
 

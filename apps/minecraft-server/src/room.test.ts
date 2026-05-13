@@ -7,7 +7,8 @@ import {
   snapshotPersistedState
 } from "./room";
 import { applyDelta } from "./world";
-import { BLOCK_REGISTRY } from "./protocol";
+import { BLOCK_REGISTRY, ITEM_REGISTRY } from "./protocol";
+import { createEmptyCraftingGrid } from "./inventory";
 
 beforeEach(() => __resetRoomsForTest());
 
@@ -142,6 +143,96 @@ describe("VoxelRoom", () => {
       expect(re.player.inventory?.[0]).toEqual({
         blockId: BLOCK_REGISTRY.DIRT,
         count: 4
+      });
+    }
+  });
+
+  it("round-trips survival item inventories via persisted state", () => {
+    const sessionId = "sess-surv-items";
+    const room = getOrCreateRoom(sessionId, {
+      gameId: "game-mc",
+      gender: "boy",
+      hostId: "u1",
+      minPlayers: 1,
+      maxPlayers: 4,
+      roster: [{ userId: "u1", displayName: "A" }],
+      paused: false
+    });
+    room.gameMode = "survival";
+    assignPlayer(room, "u1", "A");
+    const p = room.players.get("u1");
+    expect(p?.itemInventory).toBeDefined();
+    p!.itemInventory![0] = { itemId: ITEM_REGISTRY.PLANKS, count: 8 };
+    const persisted = snapshotPersistedState(room);
+    expect(persisted.itemInventories?.u1?.[0]).toEqual({
+      itemId: ITEM_REGISTRY.PLANKS,
+      count: 8
+    });
+    __resetRoomsForTest();
+
+    const again = getOrCreateRoom(sessionId, {
+      gameId: "game-mc",
+      gender: "boy",
+      hostId: "u1",
+      minPlayers: 1,
+      maxPlayers: 4,
+      roster: [{ userId: "u1", displayName: "A" }],
+      paused: true,
+      resumedState: persisted
+    });
+    expect((again.gameMode ?? "creative") === "survival").toBe(true);
+    const re = assignPlayer(again, "u1", "A");
+    expect("error" in re).toBe(false);
+    if (!("error" in re)) {
+      expect(re.player.itemInventory?.[0]).toEqual({
+        itemId: ITEM_REGISTRY.PLANKS,
+        count: 8
+      });
+    }
+  });
+
+  it("round-trips survival crafting grids via persisted state", () => {
+    const sessionId = "sess-surv-craft";
+    const room = getOrCreateRoom(sessionId, {
+      gameId: "game-mc",
+      gender: "boy",
+      hostId: "u1",
+      minPlayers: 1,
+      maxPlayers: 4,
+      roster: [{ userId: "u1", displayName: "A" }],
+      paused: false
+    });
+    room.gameMode = "survival";
+    assignPlayer(room, "u1", "A");
+    const p = room.players.get("u1");
+    expect(p?.craftingGrid).toBeDefined();
+    const cg = p!.craftingGrid ?? createEmptyCraftingGrid();
+    cg[0] = { blockId: BLOCK_REGISTRY.WOOD, itemId: 0, count: 1 };
+    const persisted = snapshotPersistedState(room);
+    expect(persisted.craftingGrids?.u1?.[0]).toEqual({
+      blockId: BLOCK_REGISTRY.WOOD,
+      itemId: 0,
+      count: 1
+    });
+    __resetRoomsForTest();
+
+    const again = getOrCreateRoom(sessionId, {
+      gameId: "game-mc",
+      gender: "boy",
+      hostId: "u1",
+      minPlayers: 1,
+      maxPlayers: 4,
+      roster: [{ userId: "u1", displayName: "A" }],
+      paused: true,
+      resumedState: persisted
+    });
+    const re = assignPlayer(again, "u1", "A");
+    expect("error" in re).toBe(false);
+    if (!("error" in re)) {
+      expect(re.player.craftingGrid?.[0]).toEqual({
+        blockId: BLOCK_REGISTRY.WOOD,
+        itemId: 0,
+        count: 1
       });
     }
   });

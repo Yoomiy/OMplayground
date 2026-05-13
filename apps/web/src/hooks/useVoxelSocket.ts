@@ -5,16 +5,24 @@ import { getVoxelServerUrl } from "@/lib/voxelServerUrl";
 import type {
   BlockDelta,
   CraftAck,
+  CraftingGridSlot,
   GameMode,
   HotbarSlot,
   InputReq,
+  InventoryMoveReq,
   InventorySyncPayload,
+  ItemSlot,
   JoinRoomAck,
   JoinRoomAckOk,
   RoomEvent,
   RoomSnapshot,
   SimpleAck,
   Vec3
+} from "@/lib/voxelProtocol";
+import {
+  BLOCK_REGISTRY,
+  CRAFTING_GRID_SLOTS,
+  MAIN_ITEM_INVENTORY_SLOTS
 } from "@/lib/voxelProtocol";
 
 /**
@@ -29,6 +37,21 @@ import type {
 const INPUT_INTERVAL_MS = 66;
 const POS_EPS = 0.02;
 const HEADING_EPS = 0.002;
+
+function emptyItemSlots(): ItemSlot[] {
+  return Array.from({ length: MAIN_ITEM_INVENTORY_SLOTS }, () => ({
+    itemId: 0,
+    count: 0
+  }));
+}
+
+function emptyCraftingSlots(): CraftingGridSlot[] {
+  return Array.from({ length: CRAFTING_GRID_SLOTS }, () => ({
+    blockId: BLOCK_REGISTRY.AIR,
+    itemId: 0,
+    count: 0
+  }));
+}
 
 function inputWireEqual(a: InputReq, b: InputReq): boolean {
   return (
@@ -66,6 +89,9 @@ export interface UseVoxelSocketReturn {
   onBlockDelta: (cb: BlockDeltaListener) => () => void;
   onRoomEvent: (cb: RoomEventListener) => () => void;
   serverInventory: HotbarSlot[];
+  serverItemInventory: ItemSlot[];
+  serverCraftingGrid: CraftingGridSlot[];
+  inventoryMove: (req: InventoryMoveReq) => Promise<SimpleAck>;
   setGameMode: (mode: GameMode) => Promise<SimpleAck>;
 }
 
@@ -93,6 +119,12 @@ export function useVoxelSocket(
   const [status, setStatus] = useState<string>("מתחבר…");
   const [joinAck, setJoinAck] = useState<JoinRoomAckOk | null>(null);
   const [serverInventory, setServerInventory] = useState<HotbarSlot[]>([]);
+  const [serverItemInventory, setServerItemInventory] = useState<ItemSlot[]>(
+    () => emptyItemSlots()
+  );
+  const [serverCraftingGrid, setServerCraftingGrid] = useState<CraftingGridSlot[]>(
+    () => emptyCraftingSlots()
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -128,11 +160,35 @@ export function useVoxelSocket(
         }
         setJoinAck(ack);
         setServerInventory(ack.inventory ?? []);
+        setServerItemInventory(
+          ack.itemInventory?.length === MAIN_ITEM_INVENTORY_SLOTS
+            ? ack.itemInventory
+            : emptyItemSlots()
+        );
+        setServerCraftingGrid(
+          ack.craftingGrid?.length === CRAFTING_GRID_SLOTS
+            ? ack.craftingGrid
+            : emptyCraftingSlots()
+        );
       });
 
       s.on("INVENTORY_SYNC", (payload: InventorySyncPayload) => {
         if (payload?.slots && Array.isArray(payload.slots)) {
           setServerInventory(payload.slots);
+        }
+        if (
+          payload?.itemSlots &&
+          Array.isArray(payload.itemSlots) &&
+          payload.itemSlots.length === MAIN_ITEM_INVENTORY_SLOTS
+        ) {
+          setServerItemInventory(payload.itemSlots);
+        }
+        if (
+          payload?.craftingSlots &&
+          Array.isArray(payload.craftingSlots) &&
+          payload.craftingSlots.length === CRAFTING_GRID_SLOTS
+        ) {
+          setServerCraftingGrid(payload.craftingSlots);
         }
       });
 
@@ -197,6 +253,12 @@ export function useVoxelSocket(
     const s = socketRef.current;
     if (!s?.connected) return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
     return emitWithAck<CraftAck>(s, "CRAFT", { recipeId });
+  }
+
+  async function inventoryMove(req: InventoryMoveReq): Promise<SimpleAck> {
+    const s = socketRef.current;
+    if (!s?.connected) return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
+    return emitWithAck<SimpleAck>(s, "INVENTORY_MOVE", req);
   }
 
   async function pause(): Promise<SimpleAck> {
@@ -264,6 +326,9 @@ export function useVoxelSocket(
     onBlockDelta,
     onRoomEvent,
     serverInventory,
+    serverItemInventory,
+    serverCraftingGrid,
+    inventoryMove,
     setGameMode
   };
 }

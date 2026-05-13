@@ -1,15 +1,26 @@
 import { useEffect, useRef, useState } from "react";
+import type { DragEvent } from "react";
 import {
   BLOCK_REGISTRY,
+  ITEM_REGISTRY,
+  MAIN_ITEM_INVENTORY_SLOTS,
   PLACEABLE_BLOCK_IDS,
+  CRAFTING_GRID_SLOTS,
   type BlockDelta,
+  type CraftingGridSlot,
   type GameMode,
   type HotbarSlot,
   type InputReq,
+  type InventoryRegion,
+  type InventoryMoveReq,
+  type ItemSlot,
   type RoomPlayerInfo,
   type RoomSnapshot,
   type Vec3
 } from "@/lib/voxelProtocol";
+import { craftingGridPreview } from "@/lib/voxelCraftingPreview";
+
+const INV_DRAG_MIME = "application/x-playground-voxel-inv";
 
 /**
  * Dumb noa-engine wrapper — props only, no IO. The container connects to
@@ -42,6 +53,27 @@ const BLOCK_HUD: Record<number, string> = {
   [BLOCK_REGISTRY.SAND]: "חול",
   [BLOCK_REGISTRY.GLASS]: "זכוכית"
 };
+
+const ITEM_ICON: Record<number, string> = {
+  [ITEM_REGISTRY.STICK]: "/minecraft-assets/stick.png",
+  [ITEM_REGISTRY.PLANKS]: "/minecraft-assets/oak_planks.png"
+};
+
+const ITEM_HUD: Record<number, string> = {
+  [ITEM_REGISTRY.STICK]: "מקל",
+  [ITEM_REGISTRY.PLANKS]: "לוחות"
+};
+
+/** Minecraft-like slot: raised inner bevel, dark rim. */
+function mcSlotClass(selected: boolean): string {
+  return [
+    "relative flex h-10 w-10 shrink-0 items-center justify-center",
+    "border-2 border-[#2a2a2a]",
+    "bg-[#8d8d8d]",
+    "shadow-[inset_2px_2px_0_rgba(255,255,255,0.45),inset_-2px_-2px_0_rgba(0,0,0,0.35)]",
+    selected ? "z-[1] ring-2 ring-[#f8e060] ring-offset-2 ring-offset-[#5e4f38]" : ""
+  ].join(" ");
+}
 
 /** Served from apps/web/public/minecraft-assets (copied from source packs). */
 const MC_TEX = {
@@ -120,6 +152,39 @@ function columnHeight(x: number, z: number, seed: number): number {
   return Math.floor(base + heightF);
 }
 
+/** Tiny 2×2 diagram cell for the in-game recipe book (not interactive). */
+function recipeDiagramCell(
+  key: string,
+  kind: "empty" | "log" | "planks"
+): JSX.Element {
+  const inner =
+    kind === "log" ? (
+      <img
+        src={MC_TEX.oakLog}
+        alt=""
+        className="h-6 w-6"
+        style={{ imageRendering: "pixelated" }}
+      />
+    ) : kind === "planks" ? (
+      <img
+        src={ITEM_ICON[ITEM_REGISTRY.PLANKS]}
+        alt=""
+        className="h-6 w-6"
+        style={{ imageRendering: "pixelated" }}
+      />
+    ) : (
+      <div className="h-6 w-6 rounded-sm bg-black/20" aria-hidden />
+    );
+  return (
+    <div
+      key={key}
+      className="flex h-8 w-8 items-center justify-center border-2 border-[#2a2a2a] bg-[#8d8d8d] shadow-[inset_1px_1px_0_rgba(255,255,255,0.4),inset_-1px_-1px_0_rgba(0,0,0,0.25)]"
+    >
+      {inner}
+    </div>
+  );
+}
+
 /**
  * Mirror of apps/minecraft-server/src/world.ts proceduralVoxelID. Kept
  * client-side so noa can request blocks synchronously without a
@@ -162,6 +227,12 @@ export interface MinecraftClientProps {
   gameMode: GameMode;
   /** Survival: server-confirmed stacks. Creative: ignored for placing (still passed for typing). */
   inventorySlots: HotbarSlot[];
+  /** Survival: main item storage (27). Creative: may be empty. */
+  itemInventorySlots: ItemSlot[];
+  /** Survival: 2×2 crafting grid from server. */
+  craftingGridSlots: CraftingGridSlot[];
+  onInventoryMove: (req: InventoryMoveReq) => void;
+  onCraft: (recipeId: string) => void;
   onInput: (input: InputReq) => void;
   onBlockPlace: (pos: Vec3, blockId: number) => void;
   onBlockBreak: (pos: Vec3) => void;
@@ -179,6 +250,10 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     myUserId,
     gameMode,
     inventorySlots,
+    itemInventorySlots,
+    craftingGridSlots,
+    onInventoryMove,
+    onCraft,
     onInput,
     onBlockPlace,
     onBlockBreak,
@@ -190,6 +265,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const [creativeSlotIdx, setCreativeSlotIdx] = useState(0);
   const [controlsHintDismissed, setControlsHintDismissed] = useState(false);
   const [inventoryOpen, setInventoryOpen] = useState(false);
+  const [recipeBookOpen, setRecipeBookOpen] = useState(false);
 
   const hostRef = useRef<HTMLDivElement | null>(null);
   // noa-engine has loose .d.ts typings; lock to any so we don't fight them.
@@ -211,6 +287,10 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   gameModeRef.current = gameMode;
   inventoryRef.current = inventorySlots;
   survivalSlotRef.current = survivalSlot;
+
+  useEffect(() => {
+    if (!inventoryOpen) setRecipeBookOpen(false);
+  }, [inventoryOpen]);
 
   useEffect(() => {
     if (gameMode !== "creative") return;
@@ -481,15 +561,10 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     noa?.setPaused?.(paused);
   }, [paused]);
 
-  const slotBox = (active: boolean, key: number, inner: JSX.Element): JSX.Element => (
-    <div
-      key={key}
-      className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border-2 border-black/70 bg-neutral-900/90 shadow-md ${
-        active ? "ring-2 ring-amber-200 ring-offset-2 ring-offset-black/50" : ""
-      }`}
-    >
-      <span className="pointer-events-none absolute left-0.5 top-0.5 text-[9px] font-bold text-white drop-shadow">
-        {key}
+  const slotBox = (active: boolean, keyNum: number, inner: JSX.Element): JSX.Element => (
+    <div key={keyNum} className={mcSlotClass(active)}>
+      <span className="pointer-events-none absolute left-0.5 top-0.5 z-[2] text-[9px] font-black text-[#1a1510] drop-shadow-[0_1px_0_rgba(255,255,255,0.35)]">
+        {keyNum}
       </span>
       {inner}
     </div>
@@ -541,33 +616,362 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     </div>
   ) : null;
 
+  const invDraggable = gameMode === "survival" && inventoryOpen;
+
+  const slotDragHandlers = (region: InventoryRegion, index: number) => ({
+    draggable: invDraggable,
+    onDragStart: (e: DragEvent<HTMLDivElement>) => {
+      if (!invDraggable) return;
+      e.dataTransfer.setData(
+        INV_DRAG_MIME,
+        JSON.stringify({ from: region, fromIndex: index })
+      );
+      e.dataTransfer.effectAllowed = "move";
+    },
+    onDragOver: (e: DragEvent<HTMLDivElement>) => {
+      if (!invDraggable) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+    },
+    onDrop: (e: DragEvent<HTMLDivElement>) => {
+      if (!invDraggable) return;
+      e.preventDefault();
+      const raw = e.dataTransfer.getData(INV_DRAG_MIME);
+      if (!raw) return;
+      try {
+        const parsed = JSON.parse(raw) as { from: InventoryRegion; fromIndex: number };
+        if (parsed.from === undefined || !Number.isFinite(parsed.fromIndex)) return;
+        onInventoryMove({
+          from: parsed.from,
+          fromIndex: parsed.fromIndex,
+          to: region,
+          toIndex: index
+        });
+      } catch {
+        // malformed drag payload
+      }
+    }
+  });
+
+  const craftPreview =
+    gameMode === "survival"
+      ? craftingGridPreview(craftingGridSlots, itemInventorySlots)
+      : null;
+
   const inventoryPanel = inventoryOpen ? (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70">
-      <div className="w-[420px] rounded-xl border border-white/20 bg-neutral-950 p-4 text-white shadow-xl" dir="rtl">
-        <div className="mb-3 flex items-center justify-between">
-          <div className="text-lg font-semibold">מלאי</div>
-          <button className="text-sm opacity-70 hover:opacity-100" onClick={() => setInventoryOpen(false)}>סגור (E)</button>
+    <div className="pointer-events-auto absolute inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-[2px]">
+      <div
+        className="max-h-[min(92vh,720px)] w-[min(96vw,640px)] overflow-y-auto rounded-sm border-[3px] border-[#1e1e1e] bg-gradient-to-b from-[#d4c5a8] via-[#bfb196] to-[#a89274] px-4 py-3 text-[#2f261c] shadow-[0_20px_50px_rgba(0,0,0,0.92),inset_0_1px_0_rgba(255,255,255,0.35)] sm:px-6 sm:py-4"
+        dir="rtl"
+      >
+        <div className="mb-3 flex items-start justify-between gap-3 border-b-2 border-[#8a7a62] pb-2.5">
+          <div>
+            <div className="text-base font-black tracking-tight text-[#1f1810] sm:text-lg">
+              מלאי
+            </div>
+            <div className="mt-0.5 text-[10px] font-semibold text-[#4a3f30] sm:text-[11px]">
+              לחץ E או כפתור סגירה כדי לחזור למשחק
+            </div>
+          </div>
+          <button
+            type="button"
+            className="shrink-0 rounded border-2 border-[#3d3d3d] bg-gradient-to-b from-[#a89a86] to-[#8c7d68] px-3 py-1.5 text-xs font-bold text-[#1a1510] shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_2px_0_#2a2418] hover:brightness-105 active:translate-y-px active:shadow-none"
+            onClick={() => setInventoryOpen(false)}
+          >
+            ✕ סגור
+          </button>
         </div>
-        <div className="grid grid-cols-9 gap-1.5">
-          {inventorySlots.slice(0, 9).map((cell, i) => {
-            const icon = BLOCK_HOTBAR_ICON[cell.blockId];
-            const has = cell.blockId !== BLOCK_REGISTRY.AIR && cell.count > 0 && icon;
-            return (
-              <div key={i} className="flex h-11 w-11 items-center justify-center rounded border border-white/30 bg-neutral-900">
-                {has ? (
-                  <>
-                    <img src={icon} alt="" className="h-9 w-9" style={{ imageRendering: "pixelated" }} />
-                    <span className="absolute mt-4 text-[10px] font-black text-white drop-shadow">{cell.count}</span>
-                  </>
-                ) : null}
+
+        <div className="flex flex-col gap-4">
+          {gameMode === "survival" ? (
+            <section
+              className="rounded-sm border-2 border-[#6b5e4b] bg-[rgba(0,0,0,0.12)] p-3 shadow-[inset_0_2px_8px_rgba(0,0,0,0.2)]"
+              aria-label="יצירה"
+            >
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <div className="text-[11px] font-black uppercase tracking-wider text-[#2a2218]">
+                  יצירה (2×2)
+                </div>
+                <button
+                  type="button"
+                  className="rounded border-2 border-[#5c4f3e] bg-[#c9bda8] px-2 py-1 text-[10px] font-bold text-[#1a1510] shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] hover:bg-[#ddd2be]"
+                  onClick={() => setRecipeBookOpen(true)}
+                >
+                  ספר מתכונים
+                </button>
               </div>
-            );
-          })}
+              <p className="mb-2 text-[10px] font-semibold leading-snug text-[#4a3f30]">
+                גרור פריטים בשביל ליצור פריטים חדשים!
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4" dir="ltr">
+                <div
+                  className="grid grid-cols-2 gap-1 rounded border-2 border-[#5c4f3e] bg-[rgba(0,0,0,0.18)] p-1.5"
+                  title="רשת יצירה 2×2"
+                >
+                  {craftingGridSlots.slice(0, CRAFTING_GRID_SLOTS).map((cell, i) => {
+                    const itemIcon =
+                      cell.itemId > 0 && cell.count > 0 ? ITEM_ICON[cell.itemId] : undefined;
+                    const blockIcon =
+                      cell.blockId !== BLOCK_REGISTRY.AIR && cell.count > 0
+                        ? BLOCK_HOTBAR_ICON[cell.blockId]
+                        : undefined;
+                    return (
+                      <div
+                        key={`craft-${i}`}
+                        className={mcSlotClass(false)}
+                        {...slotDragHandlers("craft", i)}
+                      >
+                        {itemIcon ? (
+                          <>
+                            <img
+                              src={itemIcon}
+                              alt=""
+                              title={`${ITEM_HUD[cell.itemId] ?? cell.itemId} ×${cell.count}`}
+                              className="h-8 w-8"
+                              style={{ imageRendering: "pixelated" }}
+                            />
+                            {cell.count > 1 ? (
+                              <span className="pointer-events-none absolute bottom-0.5 end-0.5 text-[10px] font-black text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
+                                {cell.count}
+                              </span>
+                            ) : null}
+                          </>
+                        ) : blockIcon ? (
+                          <>
+                            <img
+                              src={blockIcon}
+                              alt=""
+                              title={`${BLOCK_HUD[cell.blockId] ?? cell.blockId} ×${cell.count}`}
+                              className="h-8 w-8"
+                              style={{ imageRendering: "pixelated" }}
+                            />
+                            {cell.count > 1 ? (
+                              <span className="pointer-events-none absolute bottom-0.5 end-0.5 text-[10px] font-black text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
+                                {cell.count}
+                              </span>
+                            ) : null}
+                          </>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="select-none text-2xl font-black text-[#3d3426]" aria-hidden>
+                  →
+                </div>
+                <button
+                  type="button"
+                  disabled={!craftPreview}
+                  title={
+                    craftPreview === "planks"
+                      ? "לוחות ×4"
+                      : craftPreview === "stick"
+                        ? "מקלות ×4"
+                        : "אין מתכון תקף או אין מקום בפריטים"
+                  }
+                  className={[
+                    mcSlotClass(false),
+                    "h-[3.25rem] w-[3.25rem] sm:h-14 sm:w-14",
+                    craftPreview
+                      ? "cursor-pointer hover:brightness-110 active:brightness-95"
+                      : "cursor-not-allowed opacity-45"
+                  ].join(" ")}
+                  onClick={() => onCraft("grid")}
+                >
+                  {craftPreview === "planks" ? (
+                    <>
+                      <img
+                        src={ITEM_ICON[ITEM_REGISTRY.PLANKS]}
+                        alt=""
+                        className="h-9 w-9"
+                        style={{ imageRendering: "pixelated" }}
+                      />
+                      <span className="pointer-events-none absolute bottom-0.5 end-0.5 text-[11px] font-black text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
+                        ×4
+                      </span>
+                    </>
+                  ) : craftPreview === "stick" ? (
+                    <>
+                      <img
+                        src={ITEM_ICON[ITEM_REGISTRY.STICK]}
+                        alt=""
+                        className="h-9 w-9"
+                        style={{ imageRendering: "pixelated" }}
+                      />
+                      <span className="pointer-events-none absolute bottom-0.5 end-0.5 text-[11px] font-black text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
+                        ×4
+                      </span>
+                    </>
+                  ) : null}
+                </button>
+              </div>
+            </section>
+          ) : null}
+
+          <section>
+            <div className="mb-1.5 text-[11px] font-black text-[#2a2218]">אחסון פריטים</div>
+            <div className="inline-block rounded border-2 border-[#5c4f3e] bg-[rgba(0,0,0,0.15)] p-1.5">
+              <div className="grid grid-cols-9 gap-1">
+                {itemInventorySlots.slice(0, MAIN_ITEM_INVENTORY_SLOTS).map((cell, i) => {
+                  const icon = ITEM_ICON[cell.itemId];
+                  const has = cell.itemId !== 0 && cell.count > 0 && icon;
+                  return (
+                    <div key={i} className={mcSlotClass(false)} {...slotDragHandlers("storage", i)}>
+                      {has ? (
+                        <>
+                          <img
+                            src={icon}
+                            alt=""
+                            title={`${ITEM_HUD[cell.itemId] ?? cell.itemId} ×${cell.count}`}
+                            className="h-8 w-8"
+                            style={{ imageRendering: "pixelated" }}
+                          />
+                          <span className="pointer-events-none absolute bottom-0.5 end-0.5 text-[10px] font-black text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
+                            {cell.count}
+                          </span>
+                        </>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <div className="mb-1.5 text-[11px] font-black text-[#2a2218]">סרגל חם — בלוקים</div>
+            <div className="inline-block rounded border-2 border-[#5c4f3e] bg-[rgba(0,0,0,0.15)] p-1.5">
+              <div className="grid grid-cols-9 gap-1">
+                {inventorySlots.slice(0, 9).map((cell, i) => {
+                  const icon = BLOCK_HOTBAR_ICON[cell.blockId];
+                  const has =
+                    cell.blockId !== BLOCK_REGISTRY.AIR && cell.count > 0 && icon !== undefined;
+                  return (
+                    <div
+                      key={i}
+                      className={mcSlotClass(gameMode === "survival" && i === survivalSlot)}
+                      {...slotDragHandlers("hotbar", i)}
+                    >
+                      {has ? (
+                        <>
+                          <img
+                            src={icon}
+                            alt=""
+                            title={`${BLOCK_HUD[cell.blockId] ?? cell.blockId} ×${cell.count}`}
+                            className="h-8 w-8"
+                            style={{ imageRendering: "pixelated" }}
+                          />
+                          <span className="pointer-events-none absolute bottom-0.5 end-0.5 text-[10px] font-black text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
+                            {cell.count}
+                          </span>
+                        </>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
         </div>
-        <div className="mt-3 text-xs opacity-60">סרגל חם (הרחבה מלאה תגיע בהמשך)</div>
       </div>
     </div>
   ) : null;
+
+  const recipeBookOverlay =
+    inventoryOpen && gameMode === "survival" && recipeBookOpen ? (
+      <div
+        className="pointer-events-auto absolute inset-0 z-[60] flex items-center justify-center bg-black/55 p-3"
+        onClick={() => setRecipeBookOpen(false)}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="voxel-recipe-book-title"
+      >
+        <div
+          className="max-h-[min(86vh,520px)] w-[min(94vw,440px)] overflow-y-auto rounded-sm border-[3px] border-[#1e1e1e] bg-gradient-to-b from-[#ebe1cf] via-[#d9ccb8] to-[#c0b09a] p-4 text-[#1f1810] shadow-[0_16px_40px_rgba(0,0,0,0.85)]"
+          dir="rtl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="mb-3 flex items-start justify-between gap-2 border-b-2 border-[#8a7a62] pb-2">
+            <h2
+              id="voxel-recipe-book-title"
+              className="text-sm font-black leading-tight text-[#1a1510] sm:text-base"
+            >
+              ספר המתכונים
+            </h2>
+            <button
+              type="button"
+              className="shrink-0 rounded border-2 border-[#3d3d3d] bg-gradient-to-b from-[#c4b8a6] to-[#9e907e] px-2 py-1 text-xs font-bold text-[#1a1510] shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] hover:brightness-105"
+              onClick={() => setRecipeBookOpen(false)}
+            >
+              ✕
+            </button>
+          </div>
+          <ul className="space-y-5 text-[11px] font-semibold text-[#2a2218]">
+            <li className="rounded border border-[#6b5e4b] bg-black/10 p-3">
+              <div className="mb-1 font-black">לוחות אלון / Oak planks</div>
+              <p className="mb-2 text-[10px] font-normal text-[#4a3f30]">
+                עץ אחד = 4 קרשים
+              </p>
+              <div className="flex flex-wrap items-center gap-3" dir="ltr">
+                <div className="grid grid-cols-2 gap-0.5">
+                  {recipeDiagramCell("p-l0", "log")}
+                  {recipeDiagramCell("p-l1", "empty")}
+                  {recipeDiagramCell("p-l2", "empty")}
+                  {recipeDiagramCell("p-l3", "empty")}
+                </div>
+                <span className="text-lg font-black text-[#3d3426]">→</span>
+                <div className="flex items-center gap-1">
+                  {recipeDiagramCell("p-out", "planks")}
+                  <span className="text-[10px] font-black text-[#1a1510]">×4</span>
+                </div>
+              </div>
+            </li>
+            <li className="rounded border border-[#6b5e4b] bg-black/10 p-3">
+              <div className="mb-1 font-black">מקלות / Sticks</div>
+              <p className="mb-2 text-[10px] font-normal text-[#4a3f30]">
+                2 קרשים = 4 מקלות
+              </p>
+              <div className="mb-2 flex flex-wrap items-center gap-3" dir="ltr">
+                <div className="grid grid-cols-2 gap-0.5">
+                  {recipeDiagramCell("s-a0", "planks")}
+                  {recipeDiagramCell("s-a1", "planks")}
+                  {recipeDiagramCell("s-a2", "empty")}
+                  {recipeDiagramCell("s-a3", "empty")}
+                </div>
+                <span className="text-lg font-black text-[#3d3426]">→</span>
+                <div className="flex items-center gap-1">
+                  <img
+                    src={ITEM_ICON[ITEM_REGISTRY.STICK]}
+                    alt=""
+                    className="h-8 w-8 border-2 border-[#2a2a2a] bg-[#8d8d8d] p-0.5"
+                    style={{ imageRendering: "pixelated" }}
+                  />
+                  <span className="text-[10px] font-black text-[#1a1510]">×4</span>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-3" dir="ltr">
+                <div className="grid grid-cols-2 gap-0.5">
+                  {recipeDiagramCell("s-b0", "planks")}
+                  {recipeDiagramCell("s-b1", "empty")}
+                  {recipeDiagramCell("s-b2", "planks")}
+                  {recipeDiagramCell("s-b3", "empty")}
+                </div>
+                <span className="text-lg font-black text-[#3d3426]">→</span>
+                <div className="flex items-center gap-1">
+                  <img
+                    src={ITEM_ICON[ITEM_REGISTRY.STICK]}
+                    alt=""
+                    className="h-8 w-8 border-2 border-[#2a2a2a] bg-[#8d8d8d] p-0.5"
+                    style={{ imageRendering: "pixelated" }}
+                  />
+                  <span className="text-[10px] font-black text-[#1a1510]">×4</span>
+                </div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    ) : null;
 
   const controlsHint =
     !paused && !controlsHintDismissed ? (
@@ -586,8 +990,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           </button>
           <p className="font-semibold text-neutral-300">בקרות</p>
           <p className="text-neutral-200">
-            WASD תנועה · רווח קפיצה · לחצן עכבר שמאלי שובר · ימני מניח · מקשי 1–9 לסרגל · גלגלת
-            לזום המצלמה
+            WASD תנועה · רווח קפיצה · לחצן עכבר שמאלי שובר · ימני מניח · מקשי 1–9 לסרגל · E
+            מלאי (גרירה בין משבצות) · גלגלת לזום המצלמה
           </p>
         </div>
       </div>
@@ -604,6 +1008,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       {controlsHint}
       {blockHotbarHud}
       {inventoryPanel}
+      {recipeBookOverlay}
     </div>
   );
 }

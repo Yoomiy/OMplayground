@@ -18,6 +18,22 @@ export interface ItemSlot {
   count: number;
 }
 
+/** One cell in the survival 2×2 crafting grid (blocks or items, never both). */
+export interface CraftingGridSlot {
+  blockId: number;
+  itemId: number;
+  count: number;
+}
+
+export type InventoryRegion = "hotbar" | "storage" | "craft";
+
+export interface InventoryMoveReq {
+  from: InventoryRegion;
+  fromIndex: number;
+  to: InventoryRegion;
+  toIndex: number;
+}
+
 export const ITEM_REGISTRY = {
   STICK: 100,
   PLANKS: 101
@@ -44,6 +60,10 @@ export interface JoinRoomAckOk {
   gameMode: GameMode;
   /** Survival: authoritative hotbar. Creative: empty slots (UI ignores). */
   inventory: HotbarSlot[];
+  /** Survival: non-placeable items (27 storage). Creative: empty. */
+  itemInventory: ItemSlot[];
+  /** Survival: 2×2 crafting grid. Creative: empty. */
+  craftingGrid: CraftingGridSlot[];
 }
 
 export interface JoinRoomAckErr {
@@ -70,9 +90,17 @@ export interface BlockBreakReq {
   pos: Vec3;
 }
 
+/** Survival: hotbar blocks + main item storage (27). Creative clients ignore itemSlots. */
 export interface InventorySyncPayload {
   slots: HotbarSlot[];
+  itemSlots?: ItemSlot[];
+  craftingSlots?: CraftingGridSlot[];
 }
+
+export const MAIN_ITEM_INVENTORY_SLOTS = 27;
+export const CRAFTING_GRID_SLOTS = 4;
+/** Max units per 2×2 crafting grid cell (one ingredient per slot). */
+export const CRAFTING_CELL_MAX = 1;
 
 export interface ItemPickupPayload {
   itemId: number;

@@ -5,7 +5,34 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useVoxelSocket } from "@/hooks/useVoxelSocket";
 import { MinecraftClient } from "@/games/MinecraftClient";
-import type { GameMode, RoomEvent, Vec3 } from "@/lib/voxelProtocol";
+import type {
+  CraftingGridSlot,
+  GameMode,
+  InventoryMoveReq,
+  ItemSlot,
+  RoomEvent,
+  Vec3
+} from "@/lib/voxelProtocol";
+import {
+  BLOCK_REGISTRY,
+  CRAFTING_GRID_SLOTS,
+  MAIN_ITEM_INVENTORY_SLOTS
+} from "@/lib/voxelProtocol";
+
+function emptyClientItemInv(): ItemSlot[] {
+  return Array.from({ length: MAIN_ITEM_INVENTORY_SLOTS }, () => ({
+    itemId: 0,
+    count: 0
+  }));
+}
+
+function emptyClientCrafting(): CraftingGridSlot[] {
+  return Array.from({ length: CRAFTING_GRID_SLOTS }, () => ({
+    blockId: BLOCK_REGISTRY.AIR,
+    itemId: 0,
+    count: 0
+  }));
+}
 
 export interface MinecraftSessionContainerProps {
   sessionId: string;
@@ -52,6 +79,10 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     onBlockDelta,
     onRoomEvent,
     serverInventory,
+    serverItemInventory,
+    serverCraftingGrid,
+    craft,
+    inventoryMove,
     setGameMode
   } = useVoxelSocket({
     sessionId,
@@ -188,6 +219,19 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     if (!ack.ok) setToast(ack.error?.message ?? "נכשל");
   }, [setGameMode]);
 
+  const handleCraft = useCallback((recipeId: string) => {
+    void craft(recipeId);
+  }, [craft]);
+
+  const handleInventoryMove = useCallback(
+    (req: InventoryMoveReq) => {
+      void inventoryMove(req).then((ack) => {
+        if (!ack.ok) setToast(ack.error?.message ?? "לא ניתן להעביר פריט");
+      });
+    },
+    [inventoryMove]
+  );
+
   const handleExit = useCallback(async () => {
     await leave();
     navigate(isTeacherObserver ? "/teacher" : "/home");
@@ -245,6 +289,14 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         myUserId={myUserId}
         gameMode={liveGameMode}
         inventorySlots={serverInventory}
+        itemInventorySlots={
+          liveGameMode === "survival" ? serverItemInventory : emptyClientItemInv()
+        }
+        craftingGridSlots={
+          liveGameMode === "survival" ? serverCraftingGrid : emptyClientCrafting()
+        }
+        onInventoryMove={handleInventoryMove}
+        onCraft={handleCraft}
         onInput={sendInput}
         onBlockPlace={handlePlaceBlock}
         onBlockBreak={handleBreakBlock}
