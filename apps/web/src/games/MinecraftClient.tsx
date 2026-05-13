@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { DragEvent } from "react";
+import type { Mesh } from "@babylonjs/core/Meshes/mesh";
 import {
   BLOCK_REGISTRY,
   ITEM_REGISTRY,
@@ -19,6 +20,18 @@ import {
   type Vec3
 } from "@/lib/voxelProtocol";
 import { craftingGridPreview } from "@/lib/voxelCraftingPreview";
+import { VOXEL_ENTITY_CATALOG } from "@/games/voxel/voxelEntityCatalog";
+import {
+  applyTextureToVoxelRoot,
+  cloneVoxelTemplate,
+  preloadVoxelTemplate
+} from "@/games/voxel/voxelJsonModel";
+import {
+  attachVoxelVisualToEntity,
+  attachVoxelVisualToPlayer,
+  setVisualVisible,
+  setVisualYaw
+} from "@/games/voxel/noaVoxelVisual";
 
 const INV_DRAG_MIME = "application/x-playground-voxel-inv";
 
@@ -279,6 +292,9 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const remoteEntitiesRef = useRef(new Map<string, number>());
   const selectedBlockRef = useRef<number>(BLOCK_REGISTRY.GRASS);
   const survivalSlotRef = useRef(0);
+  const myUserIdRef = useRef<string | null>(myUserId);
+  const registerSnapshotListenerRef = useRef(registerSnapshotListener);
+  const registerBlockDeltaListenerRef = useRef(registerBlockDeltaListener);
 
   onInputRef.current = onInput;
   onPlaceRef.current = onBlockPlace;
@@ -287,6 +303,9 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   gameModeRef.current = gameMode;
   inventoryRef.current = inventorySlots;
   survivalSlotRef.current = survivalSlot;
+  myUserIdRef.current = myUserId;
+  registerSnapshotListenerRef.current = registerSnapshotListener;
+  registerBlockDeltaListenerRef.current = registerBlockDeltaListener;
 
   useEffect(() => {
     if (!inventoryOpen) setRecipeBookOpen(false);
@@ -413,39 +432,83 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       sourceMesh.setEnabled(false);
       noa.rendering.addMeshToScene(sourceMesh, true);
 
+      const voxelCat = VOXEL_ENTITY_CATALOG.player;
+      let voxelAvatarsEnabled = false;
+      try {
+        await preloadVoxelTemplate(scene, voxelCat.modelId, voxelCat.modelUrl);
+        voxelAvatarsEnabled = true;
+      } catch (err) {
+        console.warn("voxel avatars: fallback to boxes", err);
+      }
+
+      /** Local third-person body mesh (noa `mesh` component); null if voxel load failed. */
+      let localPlayerVoxelRoot: Mesh | null = null;
+      if (!cancelled && voxelAvatarsEnabled) {
+        try {
+          const localRoot = cloneVoxelTemplate(voxelCat.modelId, "local-player-voxel");
+          applyTextureToVoxelRoot(scene, localRoot, voxelCat.textureUrl);
+          attachVoxelVisualToPlayer(noa, noa.playerEntity, localRoot, {
+            meshOffset: voxelCat.meshOffset
+          });
+          const md = noa.entities.getMeshData(noa.playerEntity);
+          localPlayerVoxelRoot = md?.mesh ?? null;
+          if (localPlayerVoxelRoot) {
+            setVisualVisible(localPlayerVoxelRoot, noa.camera.zoomDistance > 0);
+            setVisualYaw(localPlayerVoxelRoot, noa.camera.heading);
+          }
+        } catch (err) {
+          console.warn("voxel avatars: local body failed", err);
+          localPlayerVoxelRoot = null;
+        }
+      }
+
       function ensureRemoteEntity(userId: string): number {
         const existing = remoteEntitiesRef.current.get(userId);
         if (existing !== undefined) return existing;
         const mesh = sourceMesh.createInstance(`remote-${userId}`);
         const id: number = noa.entities.add(
           [mySpawn[0], mySpawn[1], mySpawn[2]],
-          0.6,
-          1.8,
+          voxelCat.width,
+          voxelCat.height,
           mesh,
-          [0, 0.9, 0],
+          voxelCat.meshOffset,
           false,
           false
         );
+        if (voxelAvatarsEnabled) {
+          try {
+            const visual = cloneVoxelTemplate(voxelCat.modelId, `remote-vox-${userId}`);
+            applyTextureToVoxelRoot(scene, visual, voxelCat.textureUrl);
+            attachVoxelVisualToEntity(noa, id, visual, { meshOffset: voxelCat.meshOffset });
+          } catch {
+            // keep placeholder box mesh from add()
+          }
+        }
         remoteEntitiesRef.current.set(userId, id);
         return id;
       }
 
-      const offSnapshot = registerSnapshotListener((snap) => {
+      const offSnapshot = registerSnapshotListenerRef.current((snap) => {
+        const selfId = myUserIdRef.current;
         for (const [userId, p] of Object.entries(snap.players)) {
-          if (userId === myUserId) continue;
+          if (userId === selfId) continue;
           const eid = ensureRemoteEntity(userId);
           noa.entities.setPosition(eid, p.pos);
+          if (voxelAvatarsEnabled) {
+            const md = noa.entities.getMeshData(eid);
+            if (md?.mesh) setVisualYaw(md.mesh, p.heading);
+          }
         }
         for (const [userId, eid] of remoteEntitiesRef.current) {
           if (!(userId in snap.players)) {
-            noa.ents.deleteEntity?.(eid);
+            noa.entities.deleteEntity(eid);
             remoteEntitiesRef.current.delete(userId);
           }
         }
       });
       cleanupFns.push(offSnapshot);
 
-      const offBlockDelta = registerBlockDeltaListener(({ pos, blockId }) => {
+      const offBlockDelta = registerBlockDeltaListenerRef.current(({ pos, blockId }) => {
         noa.setBlock(blockId, pos[0], pos[1], pos[2]);
         deltas.set(`${pos[0]},${pos[1]},${pos[2]}`, blockId);
       });
@@ -517,6 +580,11 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
               cam.zoomDistance + scrolly * CAMERA_ZOOM_SCROLL_STEP
             )
           );
+        }
+
+        if (localPlayerVoxelRoot) {
+          setVisualVisible(localPlayerVoxelRoot, noa.camera.zoomDistance > 0);
+          setVisualYaw(localPlayerVoxelRoot, noa.camera.heading);
         }
 
         const now = performance.now();

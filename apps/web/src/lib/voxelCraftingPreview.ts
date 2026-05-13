@@ -90,7 +90,7 @@ function stickPreviewOk(grid: CraftingGridSlot[], itemSlots: ItemSlot[]): boolea
   for (const c of grid) {
     const copy = { ...c };
     const atom = readCraftAtom(copy);
-    if (atom.kind === "empty") continue;
+    if (isEmptyCraftAtom(atom)) continue;
     if (isPlankCell(atom)) {
       plankCells++;
     } else {
