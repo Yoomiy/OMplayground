@@ -15,12 +15,6 @@ import {
 const KNOWN_ITEMS = new Set<number>([ITEM_REGISTRY.STICK, ITEM_REGISTRY.PLANKS]);
 const MAX_STACK = 64;
 
-const STICK_PLANK_PAIRS: [number, number][] = [
-  [0, 2],
-  [1, 3],
-  [0, 1],
-  [2, 3]
-];
 
 function normalizeCraftRead(s: CraftingGridSlot): void {
   if (!Number.isFinite(s.count) || s.count <= 0) {
@@ -89,19 +83,22 @@ function isPlankCell(a: CraftAtom): boolean {
 
 function stickPreviewOk(grid: CraftingGridSlot[], itemSlots: ItemSlot[]): boolean {
   if (maxAddableItemCount(itemSlots, ITEM_REGISTRY.STICK) < 4) return false;
-  const atoms = grid.map((c) => {
+  
+  let plankCells = 0;
+  let otherNonEmpty = 0;
+
+  for (const c of grid) {
     const copy = { ...c };
-    return readCraftAtom(copy);
-  });
-  for (const [i, j] of STICK_PLANK_PAIRS) {
-    const ai = atoms[i]!;
-    const aj = atoms[j]!;
-    if (!isPlankCell(ai) || !isPlankCell(aj)) continue;
-    const others = [0, 1, 2, 3].filter((k) => k !== i && k !== j);
-    if (!others.every((k) => isEmptyCraftAtom(atoms[k]!))) continue;
-    return true;
+    const atom = readCraftAtom(copy);
+    if (atom.kind === "empty") continue;
+    if (isPlankCell(atom)) {
+      plankCells++;
+    } else {
+      otherNonEmpty++;
+    }
   }
-  return false;
+
+  return plankCells === 2 && otherNonEmpty === 0;
 }
 
 /** What the result slot would craft (if the player clicks), or null. */

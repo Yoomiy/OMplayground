@@ -908,9 +908,9 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           </div>
           <ul className="space-y-5 text-[11px] font-semibold text-[#2a2218]">
             <li className="rounded border border-[#6b5e4b] bg-black/10 p-3">
-              <div className="mb-1 font-black">לוחות אלון / Oak planks</div>
+              <div className="mb-1 font-black">לוחות עץ</div>
               <p className="mb-2 text-[10px] font-normal text-[#4a3f30]">
-                עץ אחד = 4 קרשים
+                עץ אחד = 4 לוחות עץ
               </p>
               <div className="flex flex-wrap items-center gap-3" dir="ltr">
                 <div className="grid grid-cols-2 gap-0.5">
@@ -927,9 +927,9 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
               </div>
             </li>
             <li className="rounded border border-[#6b5e4b] bg-black/10 p-3">
-              <div className="mb-1 font-black">מקלות / Sticks</div>
+              <div className="mb-1 font-black">מקלות</div>
               <p className="mb-2 text-[10px] font-normal text-[#4a3f30]">
-                2 קרשים = 4 מקלות
+                2 לוחות עץ = 4 מקלות
               </p>
               <div className="mb-2 flex flex-wrap items-center gap-3" dir="ltr">
                 <div className="grid grid-cols-2 gap-0.5">
@@ -937,24 +937,6 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
                   {recipeDiagramCell("s-a1", "planks")}
                   {recipeDiagramCell("s-a2", "empty")}
                   {recipeDiagramCell("s-a3", "empty")}
-                </div>
-                <span className="text-lg font-black text-[#3d3426]">→</span>
-                <div className="flex items-center gap-1">
-                  <img
-                    src={ITEM_ICON[ITEM_REGISTRY.STICK]}
-                    alt=""
-                    className="h-8 w-8 border-2 border-[#2a2a2a] bg-[#8d8d8d] p-0.5"
-                    style={{ imageRendering: "pixelated" }}
-                  />
-                  <span className="text-[10px] font-black text-[#1a1510]">×4</span>
-                </div>
-              </div>
-              <div className="flex flex-wrap items-center gap-3" dir="ltr">
-                <div className="grid grid-cols-2 gap-0.5">
-                  {recipeDiagramCell("s-b0", "planks")}
-                  {recipeDiagramCell("s-b1", "empty")}
-                  {recipeDiagramCell("s-b2", "planks")}
-                  {recipeDiagramCell("s-b3", "empty")}
                 </div>
                 <span className="text-lg font-black text-[#3d3426]">→</span>
                 <div className="flex items-center gap-1">

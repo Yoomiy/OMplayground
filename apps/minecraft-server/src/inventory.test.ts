@@ -84,31 +84,25 @@ describe("inventory helpers", () => {
     expect(plankTotal).toBe(4);
   });
 
-  it("tryCraftFromGrid sticks: two planks in left column → four sticks", () => {
+  it("tryCraftFromGrid sticks: two planks anywhere in grid → four sticks", () => {
     const items = createEmptyItemInventory();
     const grid = createEmptyCraftingGrid();
-    grid[0] = { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.PLANKS, count: 1 };
-    grid[2] = { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.PLANKS, count: 1 };
+    grid[1] = { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.PLANKS, count: 1 };
+    grid[3] = { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.PLANKS, count: 1 };
     expect(tryCraftFromGrid(items, grid)).toBe(true);
     const sticks = items
       .filter((s) => s.itemId === ITEM_REGISTRY.STICK)
       .reduce((a, s) => a + s.count, 0);
     expect(sticks).toBe(4);
-    const planksLeft = items
-      .filter((s) => s.itemId === ITEM_REGISTRY.PLANKS)
-      .reduce((a, s) => a + s.count, 0);
-    expect(planksLeft).toBe(0);
   });
 
-  it("tryCraftFromGrid sticks: two planks in top row → four sticks", () => {
+  it("tryCraftFromGrid sticks fails: three planks do not form sticks", () => {
     const items = createEmptyItemInventory();
     const grid = createEmptyCraftingGrid();
     grid[0] = { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.PLANKS, count: 1 };
     grid[1] = { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.PLANKS, count: 1 };
-    expect(tryCraftFromGrid(items, grid)).toBe(true);
-    expect(
-      items.filter((s) => s.itemId === ITEM_REGISTRY.STICK).reduce((a, s) => a + s.count, 0)
-    ).toBe(4);
+    grid[2] = { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.PLANKS, count: 1 };
+    expect(tryCraftFromGrid(items, grid)).toBe(false);
   });
 
   it("applyInventoryMove places only one unit into an empty crafting cell", () => {

@@ -514,12 +514,6 @@ export function applyInventoryMove(
   return true;
 }
 
-const STICK_PLANK_PAIRS: [number, number][] = [
-  [0, 2],
-  [1, 3],
-  [0, 1],
-  [2, 3]
-];
 
 function isEmptyCraftAtom(a: SlotAtom): boolean {
   return a.kind === "empty";
@@ -534,30 +528,33 @@ function isPlankCell(a: SlotAtom): boolean {
   );
 }
 
-function tryCraftSticksFromPlankLine(
+function tryCraftSticksShapeless(
   itemSlots: ItemSlot[],
   grid: CraftingGridState
 ): boolean {
-  const atoms = [
-    readCraftAtom(grid[0]!),
-    readCraftAtom(grid[1]!),
-    readCraftAtom(grid[2]!),
-    readCraftAtom(grid[3]!)
-  ];
-  if (maxAddableItemCount(itemSlots, ITEM_REGISTRY.STICK) < 4) return false;
-  for (const [i, j] of STICK_PLANK_PAIRS) {
-    const ai = atoms[i]!;
-    const aj = atoms[j]!;
-    if (!isPlankCell(ai) || !isPlankCell(aj)) continue;
-    const others = [0, 1, 2, 3].filter((k) => k !== i && k !== j);
-    if (!others.every((k) => isEmptyCraftAtom(atoms[k]!))) continue;
-    grid[i]!.count -= 1;
-    normalizeCraftingSlot(grid[i]!);
-    grid[j]!.count -= 1;
-    normalizeCraftingSlot(grid[j]!);
+  const plankCellIndices: number[] = [];
+  let otherNonEmpty = 0;
+  for (let i = 0; i < CRAFTING_GRID_SLOTS; i++) {
+    const c = grid[i]!;
+    const atom = readCraftAtom(c);
+    if (atom.kind === "empty") continue;
+    if (isPlankCell(atom)) {
+      plankCellIndices.push(i);
+    } else {
+      otherNonEmpty++;
+    }
+  }
+
+  if (plankCellIndices.length === 2 && otherNonEmpty === 0) {
+    if (maxAddableItemCount(itemSlots, ITEM_REGISTRY.STICK) < 4) return false;
+    for (const i of plankCellIndices) {
+      grid[i]!.count -= 1;
+      normalizeCraftingSlot(grid[i]!);
+    }
     addItemCount(itemSlots, ITEM_REGISTRY.STICK, 4);
     return true;
   }
+
   return false;
 }
 
@@ -597,5 +594,5 @@ export function tryCraftFromGrid(
     return true;
   }
 
-  return tryCraftSticksFromPlankLine(itemSlots, grid);
+  return tryCraftSticksShapeless(itemSlots, grid);
 }
