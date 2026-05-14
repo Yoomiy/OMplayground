@@ -64,7 +64,41 @@ const BLOCK_HUD: Record<number, string> = {
   [BLOCK_REGISTRY.WOOD]: "עץ",
   [BLOCK_REGISTRY.LEAVES]: "עלים",
   [BLOCK_REGISTRY.SAND]: "חול",
-  [BLOCK_REGISTRY.GLASS]: "זכוכית"
+  [BLOCK_REGISTRY.GLASS]: "זכוכית",
+  [BLOCK_REGISTRY.COBBLESTONE]: "אבן מרוצפת",
+  [BLOCK_REGISTRY.OAK_PLANKS]: "לוחות עץ",
+  [BLOCK_REGISTRY.SAPLING]: "שתיל",
+  [BLOCK_REGISTRY.GRAVEL]: "חצץ",
+  [BLOCK_REGISTRY.GOLD_ORE]: "עפרת זהב",
+  [BLOCK_REGISTRY.IRON_ORE]: "עפרת ברזל",
+  [BLOCK_REGISTRY.COAL_ORE]: "עפרת פחם",
+  [BLOCK_REGISTRY.SPONGE]: "ספוג",
+  [BLOCK_REGISTRY.RED_WOOL]: "צמר אדום",
+  [BLOCK_REGISTRY.ORANGE_WOOL]: "צמר כתום",
+  [BLOCK_REGISTRY.YELLOW_WOOL]: "צמר צהוב",
+  [BLOCK_REGISTRY.LIME_WOOL]: "צמר ליים",
+  [BLOCK_REGISTRY.GREEN_WOOL]: "צמר ירוק",
+  [BLOCK_REGISTRY.CYAN_WOOL]: "צמר טורקיז",
+  [BLOCK_REGISTRY.BLUE_WOOL]: "צמר כחול",
+  [BLOCK_REGISTRY.PURPLE_WOOL]: "צמר סגול",
+  [BLOCK_REGISTRY.MAGENTA_WOOL]: "צמר מג'נטה",
+  [BLOCK_REGISTRY.PINK_WOOL]: "צמר ורוד",
+  [BLOCK_REGISTRY.BLACK_WOOL]: "צמר שחור",
+  [BLOCK_REGISTRY.GRAY_WOOL]: "צמר אפור",
+  [BLOCK_REGISTRY.WHITE_WOOL]: "צמר לבן",
+  [BLOCK_REGISTRY.DANDELION]: "שן הארי",
+  [BLOCK_REGISTRY.ROSE]: "ורד",
+  [BLOCK_REGISTRY.BROWN_MUSHROOM]: "פטרייה חומה",
+  [BLOCK_REGISTRY.RED_MUSHROOM]: "פטרייה אדומה",
+  [BLOCK_REGISTRY.GOLD_BLOCK]: "בלוק זהב",
+  [BLOCK_REGISTRY.IRON_BLOCK]: "בלוק ברזל",
+  [BLOCK_REGISTRY.STONE_SLAB]: "לוח אבן",
+  [BLOCK_REGISTRY.BRICKS]: "לבנים",
+  [BLOCK_REGISTRY.TNT]: "TNT",
+  [BLOCK_REGISTRY.BOOKSHELF]: "ספרייה",
+  [BLOCK_REGISTRY.MOSSY_COBBLESTONE]: "אבן טחובה",
+  [BLOCK_REGISTRY.OBSIDIAN]: "אובסידיאן",
+  [BLOCK_REGISTRY.BEDROCK]: "סלע יסוד"
 };
 
 const ITEM_ICON: Record<number, string> = {
@@ -99,7 +133,44 @@ const MC_TEX = {
   oakLeaves: "/minecraft-assets/oak_leaves.png",
   sand: "/minecraft-assets/sand.png",
   waterStill: "/minecraft-assets/water_still.png",
-  glass: "/minecraft-assets/glass.png"
+  glass: "/minecraft-assets/glass.png",
+  cobblestone: "/minecraft-assets/cobblestone.png",
+  oakPlanks: "/minecraft-assets/oak_planks.png",
+  sapling: "/minecraft-assets/oak_sapling.png",
+  gravel: "/minecraft-assets/gravel.png",
+  goldOre: "/minecraft-assets/gold_ore.png",
+  ironOre: "/minecraft-assets/iron_ore.png",
+  coalOre: "/minecraft-assets/coal_ore.png",
+  sponge: "/minecraft-assets/sponge.png",
+  redWool: "/minecraft-assets/red_wool.png",
+  orangeWool: "/minecraft-assets/orange_wool.png",
+  yellowWool: "/minecraft-assets/yellow_wool.png",
+  limeWool: "/minecraft-assets/lime_wool.png",
+  greenWool: "/minecraft-assets/green_wool.png",
+  cyanWool: "/minecraft-assets/cyan_wool.png",
+  blueWool: "/minecraft-assets/blue_wool.png",
+  purpleWool: "/minecraft-assets/purple_wool.png",
+  magentaWool: "/minecraft-assets/magenta_wool.png",
+  pinkWool: "/minecraft-assets/pink_wool.png",
+  blackWool: "/minecraft-assets/black_wool.png",
+  grayWool: "/minecraft-assets/gray_wool.png",
+  whiteWool: "/minecraft-assets/white_wool.png",
+  dandelion: "/minecraft-assets/dandelion.png",
+  rose: "/minecraft-assets/red_flower.png",
+  brownMushroom: "/minecraft-assets/brown_mushroom.png",
+  redMushroom: "/minecraft-assets/red_mushroom.png",
+  goldBlock: "/minecraft-assets/gold_block.png",
+  ironBlock: "/minecraft-assets/iron_block.png",
+  smoothStone: "/minecraft-assets/smooth_stone.png",
+  smoothStoneSlabSide: "/minecraft-assets/smooth_stone_slab_side.png",
+  bricks: "/minecraft-assets/bricks.png",
+  tntTop: "/minecraft-assets/tnt_top.png",
+  tntBottom: "/minecraft-assets/tnt_bottom.png",
+  tntSide: "/minecraft-assets/tnt_side.png",
+  bookshelf: "/minecraft-assets/bookshelf.png",
+  mossyCobblestone: "/minecraft-assets/mossy_cobblestone.png",
+  obsidian: "/minecraft-assets/obsidian.png",
+  bedrock: "/minecraft-assets/bedrock.png"
 } as const;
 
 /** Item-style icon per block for the hotbar (same assets as terrain). */
@@ -110,7 +181,41 @@ const BLOCK_HOTBAR_ICON: Record<number, string> = {
   [BLOCK_REGISTRY.WOOD]: MC_TEX.oakLog,
   [BLOCK_REGISTRY.LEAVES]: MC_TEX.oakLeaves,
   [BLOCK_REGISTRY.SAND]: MC_TEX.sand,
-  [BLOCK_REGISTRY.GLASS]: MC_TEX.glass
+  [BLOCK_REGISTRY.GLASS]: MC_TEX.glass,
+  [BLOCK_REGISTRY.COBBLESTONE]: MC_TEX.cobblestone,
+  [BLOCK_REGISTRY.OAK_PLANKS]: MC_TEX.oakPlanks,
+  [BLOCK_REGISTRY.SAPLING]: MC_TEX.sapling,
+  [BLOCK_REGISTRY.GRAVEL]: MC_TEX.gravel,
+  [BLOCK_REGISTRY.GOLD_ORE]: MC_TEX.goldOre,
+  [BLOCK_REGISTRY.IRON_ORE]: MC_TEX.ironOre,
+  [BLOCK_REGISTRY.COAL_ORE]: MC_TEX.coalOre,
+  [BLOCK_REGISTRY.SPONGE]: MC_TEX.sponge,
+  [BLOCK_REGISTRY.RED_WOOL]: MC_TEX.redWool,
+  [BLOCK_REGISTRY.ORANGE_WOOL]: MC_TEX.orangeWool,
+  [BLOCK_REGISTRY.YELLOW_WOOL]: MC_TEX.yellowWool,
+  [BLOCK_REGISTRY.LIME_WOOL]: MC_TEX.limeWool,
+  [BLOCK_REGISTRY.GREEN_WOOL]: MC_TEX.greenWool,
+  [BLOCK_REGISTRY.CYAN_WOOL]: MC_TEX.cyanWool,
+  [BLOCK_REGISTRY.BLUE_WOOL]: MC_TEX.blueWool,
+  [BLOCK_REGISTRY.PURPLE_WOOL]: MC_TEX.purpleWool,
+  [BLOCK_REGISTRY.MAGENTA_WOOL]: MC_TEX.magentaWool,
+  [BLOCK_REGISTRY.PINK_WOOL]: MC_TEX.pinkWool,
+  [BLOCK_REGISTRY.BLACK_WOOL]: MC_TEX.blackWool,
+  [BLOCK_REGISTRY.GRAY_WOOL]: MC_TEX.grayWool,
+  [BLOCK_REGISTRY.WHITE_WOOL]: MC_TEX.whiteWool,
+  [BLOCK_REGISTRY.DANDELION]: MC_TEX.dandelion,
+  [BLOCK_REGISTRY.ROSE]: MC_TEX.rose,
+  [BLOCK_REGISTRY.BROWN_MUSHROOM]: MC_TEX.brownMushroom,
+  [BLOCK_REGISTRY.RED_MUSHROOM]: MC_TEX.redMushroom,
+  [BLOCK_REGISTRY.GOLD_BLOCK]: MC_TEX.goldBlock,
+  [BLOCK_REGISTRY.IRON_BLOCK]: MC_TEX.ironBlock,
+  [BLOCK_REGISTRY.STONE_SLAB]: MC_TEX.smoothStone,
+  [BLOCK_REGISTRY.BRICKS]: MC_TEX.bricks,
+  [BLOCK_REGISTRY.TNT]: MC_TEX.tntSide,
+  [BLOCK_REGISTRY.BOOKSHELF]: MC_TEX.bookshelf,
+  [BLOCK_REGISTRY.MOSSY_COBBLESTONE]: MC_TEX.mossyCobblestone,
+  [BLOCK_REGISTRY.OBSIDIAN]: MC_TEX.obsidian,
+  [BLOCK_REGISTRY.BEDROCK]: MC_TEX.bedrock
 };
 
 function registerMcTerrainMaterials(noa: {
@@ -129,6 +234,43 @@ function registerMcTerrainMaterials(noa: {
   reg("mc_sand", MC_TEX.sand);
   reg("mc_water", MC_TEX.waterStill, { texHasAlpha: true });
   reg("mc_glass", MC_TEX.glass, { texHasAlpha: true });
+  reg("mc_cobblestone", MC_TEX.cobblestone);
+  reg("mc_oak_planks", MC_TEX.oakPlanks);
+  reg("mc_sapling", MC_TEX.sapling, { texHasAlpha: true });
+  reg("mc_gravel", MC_TEX.gravel);
+  reg("mc_gold_ore", MC_TEX.goldOre);
+  reg("mc_iron_ore", MC_TEX.ironOre);
+  reg("mc_coal_ore", MC_TEX.coalOre);
+  reg("mc_sponge", MC_TEX.sponge);
+  reg("mc_red_wool", MC_TEX.redWool);
+  reg("mc_orange_wool", MC_TEX.orangeWool);
+  reg("mc_yellow_wool", MC_TEX.yellowWool);
+  reg("mc_lime_wool", MC_TEX.limeWool);
+  reg("mc_green_wool", MC_TEX.greenWool);
+  reg("mc_cyan_wool", MC_TEX.cyanWool);
+  reg("mc_blue_wool", MC_TEX.blueWool);
+  reg("mc_purple_wool", MC_TEX.purpleWool);
+  reg("mc_magenta_wool", MC_TEX.magentaWool);
+  reg("mc_pink_wool", MC_TEX.pinkWool);
+  reg("mc_black_wool", MC_TEX.blackWool);
+  reg("mc_gray_wool", MC_TEX.grayWool);
+  reg("mc_white_wool", MC_TEX.whiteWool);
+  reg("mc_dandelion", MC_TEX.dandelion, { texHasAlpha: true });
+  reg("mc_rose", MC_TEX.rose, { texHasAlpha: true });
+  reg("mc_brown_mushroom", MC_TEX.brownMushroom, { texHasAlpha: true });
+  reg("mc_red_mushroom", MC_TEX.redMushroom, { texHasAlpha: true });
+  reg("mc_gold_block", MC_TEX.goldBlock);
+  reg("mc_iron_block", MC_TEX.ironBlock);
+  reg("mc_smooth_stone", MC_TEX.smoothStone);
+  reg("mc_smooth_stone_slab_side", MC_TEX.smoothStoneSlabSide);
+  reg("mc_bricks", MC_TEX.bricks);
+  reg("mc_tnt_top", MC_TEX.tntTop);
+  reg("mc_tnt_bottom", MC_TEX.tntBottom);
+  reg("mc_tnt_side", MC_TEX.tntSide);
+  reg("mc_bookshelf", MC_TEX.bookshelf);
+  reg("mc_mossy_cobblestone", MC_TEX.mossyCobblestone);
+  reg("mc_obsidian", MC_TEX.obsidian);
+  reg("mc_bedrock", MC_TEX.bedrock);
 }
 
 function hash3(x: number, y: number, z: number, seed: number): number {
@@ -165,6 +307,36 @@ function columnHeight(x: number, z: number, seed: number): number {
   return Math.floor(base + heightF);
 }
 
+function surfaceVoxelID(x: number, z: number, seed: number): number {
+  const patch = smoothNoise(x / 10, z / 10, seed ^ 0x53465246);
+  if (patch < 0.07) return BLOCK_REGISTRY.GRAVEL;
+  if (patch < 0.16) return BLOCK_REGISTRY.SAND;
+  return BLOCK_REGISTRY.GRASS;
+}
+
+function undergroundVoxelID(x: number, y: number, z: number, seed: number): number {
+  if (hash3(x, y, z, seed ^ 0x434f414c) < 0.013) {
+    return BLOCK_REGISTRY.COAL_ORE;
+  }
+  if (y < 10 && hash3(x, y, z, seed ^ 0x49524f4e) < 0.008) {
+    return BLOCK_REGISTRY.IRON_ORE;
+  }
+  if (y < 2 && hash3(x, y, z, seed ^ 0x474f4c44) < 0.004) {
+    return BLOCK_REGISTRY.GOLD_ORE;
+  }
+  return BLOCK_REGISTRY.STONE;
+}
+
+function surfaceDecorationVoxelID(x: number, z: number, seed: number): number {
+  const n = hash3(x, 2, z, seed ^ 0x464c5752);
+  if (n < 0.006) return BLOCK_REGISTRY.SAPLING;
+  if (n < 0.020) return BLOCK_REGISTRY.DANDELION;
+  if (n < 0.032) return BLOCK_REGISTRY.ROSE;
+  if (n < 0.040) return BLOCK_REGISTRY.BROWN_MUSHROOM;
+  if (n < 0.047) return BLOCK_REGISTRY.RED_MUSHROOM;
+  return BLOCK_REGISTRY.AIR;
+}
+
 /** Tiny 2×2 diagram cell for the in-game recipe book (not interactive). */
 function recipeDiagramCell(
   key: string,
@@ -180,7 +352,7 @@ function recipeDiagramCell(
       />
     ) : kind === "planks" ? (
       <img
-        src={ITEM_ICON[ITEM_REGISTRY.PLANKS]}
+        src={BLOCK_HOTBAR_ICON[BLOCK_REGISTRY.OAK_PLANKS]}
         alt=""
         className="h-6 w-6"
         style={{ imageRendering: "pixelated" }}
@@ -204,11 +376,16 @@ function recipeDiagramCell(
  * round-trip per chunk.
  */
 function proceduralVoxelID(x: number, y: number, z: number, seed: number): number {
+  if (y <= -28) return BLOCK_REGISTRY.BEDROCK;
+
   const height = columnHeight(x, z, seed);
   if (y <= height) {
-    if (y === height) return BLOCK_REGISTRY.GRASS;
-    if (y > height - 3) return BLOCK_REGISTRY.DIRT;
-    return BLOCK_REGISTRY.STONE;
+    const surface = surfaceVoxelID(x, z, seed);
+    if (y === height) return surface;
+    if (y > height - 3) {
+      return surface === BLOCK_REGISTRY.GRASS ? BLOCK_REGISTRY.DIRT : surface;
+    }
+    return undergroundVoxelID(x, y, z, seed);
   }
   for (let dx = -2; dx <= 2; dx++) {
     for (let dz = -2; dz <= 2; dz++) {
@@ -226,6 +403,12 @@ function proceduralVoxelID(x: number, y: number, z: number, seed: number): numbe
         if (dist2 <= 9 && y > ch) return BLOCK_REGISTRY.LEAVES;
       }
     }
+  }
+  if (
+    y === height + 1 &&
+    surfaceVoxelID(x, z, seed) === BLOCK_REGISTRY.GRASS
+  ) {
+    return surfaceDecorationVoxelID(x, z, seed);
   }
   return BLOCK_REGISTRY.AIR;
 }
@@ -306,6 +489,13 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   myUserIdRef.current = myUserId;
   registerSnapshotListenerRef.current = registerSnapshotListener;
   registerBlockDeltaListenerRef.current = registerBlockDeltaListener;
+
+  const selectCreativeBlock = (blockId: number): void => {
+    if (!PLACEABLE_BLOCK_IDS.includes(blockId)) return;
+    selectedBlockRef.current = blockId;
+    const idx = HOTBAR.indexOf(blockId);
+    if (idx >= 0) setCreativeSlotIdx(idx);
+  };
 
   useEffect(() => {
     if (!inventoryOpen) setRecipeBookOpen(false);
@@ -396,6 +586,150 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         solid: true,
         opaque: false
       });
+      noa.registry.registerBlock(BLOCK_REGISTRY.COBBLESTONE, {
+        material: "mc_cobblestone",
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.OAK_PLANKS, {
+        material: "mc_oak_planks",
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.SAPLING, {
+        material: "mc_sapling",
+        solid: false,
+        opaque: false
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.GRAVEL, {
+        material: "mc_gravel",
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.GOLD_ORE, {
+        material: "mc_gold_ore",
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.IRON_ORE, {
+        material: "mc_iron_ore",
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.COAL_ORE, {
+        material: "mc_coal_ore",
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.SPONGE, {
+        material: "mc_sponge",
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.RED_WOOL, {
+        material: "mc_red_wool",
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.ORANGE_WOOL, {
+        material: "mc_orange_wool",
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.YELLOW_WOOL, {
+        material: "mc_yellow_wool",
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.LIME_WOOL, {
+        material: "mc_lime_wool",
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.GREEN_WOOL, {
+        material: "mc_green_wool",
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.CYAN_WOOL, {
+        material: "mc_cyan_wool",
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.BLUE_WOOL, {
+        material: "mc_blue_wool",
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.PURPLE_WOOL, {
+        material: "mc_purple_wool",
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.MAGENTA_WOOL, {
+        material: "mc_magenta_wool",
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.PINK_WOOL, {
+        material: "mc_pink_wool",
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.BLACK_WOOL, {
+        material: "mc_black_wool",
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.GRAY_WOOL, {
+        material: "mc_gray_wool",
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.WHITE_WOOL, {
+        material: "mc_white_wool",
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.DANDELION, {
+        material: "mc_dandelion",
+        solid: false,
+        opaque: false
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.ROSE, {
+        material: "mc_rose",
+        solid: false,
+        opaque: false
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.BROWN_MUSHROOM, {
+        material: "mc_brown_mushroom",
+        solid: false,
+        opaque: false
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.RED_MUSHROOM, {
+        material: "mc_red_mushroom",
+        solid: false,
+        opaque: false
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.GOLD_BLOCK, {
+        material: "mc_gold_block",
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.IRON_BLOCK, {
+        material: "mc_iron_block",
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.STONE_SLAB, {
+        material: ["mc_smooth_stone", "mc_smooth_stone", "mc_smooth_stone_slab_side"],
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.BRICKS, {
+        material: "mc_bricks",
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.TNT, {
+        material: ["mc_tnt_top", "mc_tnt_bottom", "mc_tnt_side"],
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.BOOKSHELF, {
+        material: ["mc_oak_planks", "mc_oak_planks", "mc_bookshelf"],
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.MOSSY_COBBLESTONE, {
+        material: "mc_mossy_cobblestone",
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.OBSIDIAN, {
+        material: "mc_obsidian",
+        solid: true
+      });
+      noa.registry.registerBlock(BLOCK_REGISTRY.BEDROCK, {
+        material: "mc_bedrock",
+        solid: true
+      });
+
+      noa.blockTargetIdCheck = (id: number): boolean =>
+        id !== BLOCK_REGISTRY.AIR && id !== BLOCK_REGISTRY.WATER;
 
       noa.world.on(
         "worldDataNeeded",
@@ -543,9 +877,33 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         );
       });
 
+      function pickTargetedBlock() {
+        const tgt = noa.targetedBlock;
+        if (!tgt) return;
+        const blockId = Number(tgt.blockID);
+        if (!PLACEABLE_BLOCK_IDS.includes(blockId)) return;
+        if (gameModeRef.current === "creative") {
+          selectCreativeBlock(blockId);
+          return;
+        }
+        const idx = inventoryRef.current.findIndex(
+          (cell) => cell.blockId === blockId && cell.count > 0
+        );
+        if (idx >= 0) {
+          survivalSlotRef.current = idx;
+          setSurvivalSlot(idx);
+        }
+      }
+
+      noa.inputs.down.on("mid-fire", pickTargetedBlock);
+
       function onHotbarKey(e: KeyboardEvent) {
         if (e.key.toLowerCase() === "e") {
           setInventoryOpen((v) => !v);
+          return;
+        }
+        if (e.key.toLowerCase() === "q") {
+          pickTargetedBlock();
           return;
         }
         const n = Number(e.key);
@@ -557,10 +915,9 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           }
           return;
         }
-        if (Number.isFinite(n) && n >= 1 && n <= HOTBAR.length) {
+        if (Number.isFinite(n) && n >= 1 && n <= Math.min(9, HOTBAR.length)) {
           const idx = n - 1;
-          selectedBlockRef.current = HOTBAR[idx];
-          setCreativeSlotIdx(idx);
+          selectCreativeBlock(HOTBAR[idx]);
         }
       }
       window.addEventListener("keydown", onHotbarKey);
@@ -641,7 +998,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const blockHotbarHud = !paused ? (
     <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center gap-1.5 px-2">
       {gameMode === "creative"
-        ? HOTBAR.map((blockId, i) =>
+        ? HOTBAR.slice(0, 9).map((blockId, i) =>
             slotBox(
               i === creativeSlotIdx,
               i + 1,
@@ -723,7 +1080,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
   const craftPreview =
     gameMode === "survival"
-      ? craftingGridPreview(craftingGridSlots, itemInventorySlots)
+      ? craftingGridPreview(craftingGridSlots, inventorySlots, itemInventorySlots)
       : null;
 
   const inventoryPanel = inventoryOpen ? (
@@ -832,7 +1189,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
                   disabled={!craftPreview}
                   title={
                     craftPreview === "planks"
-                      ? "לוחות ×4"
+                      ? "לוחות עץ ×4"
                       : craftPreview === "stick"
                         ? "מקלות ×4"
                         : "אין מתכון תקף או אין מקום בפריטים"
@@ -849,7 +1206,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
                   {craftPreview === "planks" ? (
                     <>
                       <img
-                        src={ITEM_ICON[ITEM_REGISTRY.PLANKS]}
+                        src={BLOCK_HOTBAR_ICON[BLOCK_REGISTRY.OAK_PLANKS]}
                         alt=""
                         className="h-9 w-9"
                         style={{ imageRendering: "pixelated" }}
@@ -876,70 +1233,116 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
             </section>
           ) : null}
 
-          <section>
-            <div className="mb-1.5 text-[11px] font-black text-[#2a2218]">אחסון פריטים</div>
-            <div className="inline-block rounded border-2 border-[#5c4f3e] bg-[rgba(0,0,0,0.15)] p-1.5">
-              <div className="grid grid-cols-9 gap-1">
-                {itemInventorySlots.slice(0, MAIN_ITEM_INVENTORY_SLOTS).map((cell, i) => {
-                  const icon = ITEM_ICON[cell.itemId];
-                  const has = cell.itemId !== 0 && cell.count > 0 && icon;
-                  return (
-                    <div key={i} className={mcSlotClass(false)} {...slotDragHandlers("storage", i)}>
-                      {has ? (
-                        <>
-                          <img
-                            src={icon}
-                            alt=""
-                            title={`${ITEM_HUD[cell.itemId] ?? cell.itemId} ×${cell.count}`}
-                            className="h-8 w-8"
-                            style={{ imageRendering: "pixelated" }}
-                          />
-                          <span className="pointer-events-none absolute bottom-0.5 end-0.5 text-[10px] font-black text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
-                            {cell.count}
-                          </span>
-                        </>
-                      ) : null}
-                    </div>
-                  );
-                })}
+          {gameMode === "creative" ? (
+            <section>
+              <div className="mb-1.5 text-[11px] font-black text-[#2a2218]">
+                לוח בלוקים יצירתי
               </div>
-            </div>
-          </section>
+              <div className="rounded border-2 border-[#5c4f3e] bg-[rgba(0,0,0,0.15)] p-2">
+                <div className="grid grid-cols-6 gap-1 sm:grid-cols-9">
+                  {HOTBAR.map((blockId) => {
+                    const selected = blockId === selectedBlockRef.current;
+                    return (
+                      <button
+                        key={blockId}
+                        type="button"
+                        className={[
+                          mcSlotClass(selected),
+                          "h-11 w-11 cursor-pointer hover:brightness-110"
+                        ].join(" ")}
+                        title={BLOCK_HUD[blockId] ?? String(blockId)}
+                        onClick={() => selectCreativeBlock(blockId)}
+                      >
+                        <img
+                          src={BLOCK_HOTBAR_ICON[blockId]}
+                          alt=""
+                          className="h-9 w-9"
+                          style={{ imageRendering: "pixelated" }}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </section>
+          ) : (
+            <>
+              <section>
+                <div className="mb-1.5 text-[11px] font-black text-[#2a2218]">
+                  אחסון פריטים
+                </div>
+                <div className="inline-block rounded border-2 border-[#5c4f3e] bg-[rgba(0,0,0,0.15)] p-1.5">
+                  <div className="grid grid-cols-9 gap-1">
+                    {itemInventorySlots.slice(0, MAIN_ITEM_INVENTORY_SLOTS).map((cell, i) => {
+                      const icon = ITEM_ICON[cell.itemId];
+                      const has = cell.itemId !== 0 && cell.count > 0 && icon;
+                      return (
+                        <div
+                          key={i}
+                          className={mcSlotClass(false)}
+                          {...slotDragHandlers("storage", i)}
+                        >
+                          {has ? (
+                            <>
+                              <img
+                                src={icon}
+                                alt=""
+                                title={`${ITEM_HUD[cell.itemId] ?? cell.itemId} ×${cell.count}`}
+                                className="h-8 w-8"
+                                style={{ imageRendering: "pixelated" }}
+                              />
+                              <span className="pointer-events-none absolute bottom-0.5 end-0.5 text-[10px] font-black text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
+                                {cell.count}
+                              </span>
+                            </>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </section>
 
-          <section>
-            <div className="mb-1.5 text-[11px] font-black text-[#2a2218]">סרגל חם — בלוקים</div>
-            <div className="inline-block rounded border-2 border-[#5c4f3e] bg-[rgba(0,0,0,0.15)] p-1.5">
-              <div className="grid grid-cols-9 gap-1">
-                {inventorySlots.slice(0, 9).map((cell, i) => {
-                  const icon = BLOCK_HOTBAR_ICON[cell.blockId];
-                  const has =
-                    cell.blockId !== BLOCK_REGISTRY.AIR && cell.count > 0 && icon !== undefined;
-                  return (
-                    <div
-                      key={i}
-                      className={mcSlotClass(gameMode === "survival" && i === survivalSlot)}
-                      {...slotDragHandlers("hotbar", i)}
-                    >
-                      {has ? (
-                        <>
-                          <img
-                            src={icon}
-                            alt=""
-                            title={`${BLOCK_HUD[cell.blockId] ?? cell.blockId} ×${cell.count}`}
-                            className="h-8 w-8"
-                            style={{ imageRendering: "pixelated" }}
-                          />
-                          <span className="pointer-events-none absolute bottom-0.5 end-0.5 text-[10px] font-black text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
-                            {cell.count}
-                          </span>
-                        </>
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
+              <section>
+                <div className="mb-1.5 text-[11px] font-black text-[#2a2218]">
+                  סרגל חם — בלוקים
+                </div>
+                <div className="inline-block rounded border-2 border-[#5c4f3e] bg-[rgba(0,0,0,0.15)] p-1.5">
+                  <div className="grid grid-cols-9 gap-1">
+                    {inventorySlots.slice(0, 9).map((cell, i) => {
+                      const icon = BLOCK_HOTBAR_ICON[cell.blockId];
+                      const has =
+                        cell.blockId !== BLOCK_REGISTRY.AIR &&
+                        cell.count > 0 &&
+                        icon !== undefined;
+                      return (
+                        <div
+                          key={i}
+                          className={mcSlotClass(i === survivalSlot)}
+                          {...slotDragHandlers("hotbar", i)}
+                        >
+                          {has ? (
+                            <>
+                              <img
+                                src={icon}
+                                alt=""
+                                title={`${BLOCK_HUD[cell.blockId] ?? cell.blockId} ×${cell.count}`}
+                                className="h-8 w-8"
+                                style={{ imageRendering: "pixelated" }}
+                              />
+                              <span className="pointer-events-none absolute bottom-0.5 end-0.5 text-[10px] font-black text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
+                                {cell.count}
+                              </span>
+                            </>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </section>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -1041,7 +1444,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           <p className="font-semibold text-neutral-300">בקרות</p>
           <p className="text-neutral-200">
             WASD תנועה · רווח קפיצה · לחצן עכבר שמאלי שובר · ימני מניח · מקשי 1–9 לסרגל · E
-            מלאי (גרירה בין משבצות) · גלגלת לזום המצלמה
+            מלאי (גרירה בין משבצות / לוח בלוקים ביצירתי) · Q או לחצן אמצעי בוחר בלוק · גלגלת לזום
+            המצלמה
           </p>
         </div>
       </div>

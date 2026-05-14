@@ -54,6 +54,19 @@ function maxAddableItemCount(slots: ItemSlot[], itemId: number): number {
   return space;
 }
 
+function maxAddableBlockCount(slots: { blockId: number; count: number }[], blockId: number): number {
+  if (!PLACEABLE_BLOCK_IDS.includes(blockId)) return 0;
+  let space = 0;
+  for (const s of slots) {
+    if (s.blockId === blockId && s.count > 0 && s.count < MAX_STACK) {
+      space += MAX_STACK - s.count;
+    } else if (s.blockId === BLOCK_REGISTRY.AIR || s.count <= 0) {
+      space += MAX_STACK;
+    }
+  }
+  return space;
+}
+
 type CraftAtom =
   | { kind: "empty" }
   | { kind: "block"; blockId: number; count: number }
@@ -73,12 +86,11 @@ function isEmptyCraftAtom(a: CraftAtom): boolean {
 }
 
 function isPlankCell(a: CraftAtom): boolean {
-  return (
-    a.kind === "item" &&
-    a.itemId === ITEM_REGISTRY.PLANKS &&
-    a.count >= 1 &&
-    a.count <= CRAFTING_CELL_MAX
-  );
+  if (a.kind === "empty") return false;
+  if (a.count < 1 || a.count > CRAFTING_CELL_MAX) return false;
+  if (a.kind === "item") return a.itemId === ITEM_REGISTRY.PLANKS;
+  if (a.kind === "block") return a.blockId === BLOCK_REGISTRY.OAK_PLANKS;
+  return false;
 }
 
 function stickPreviewOk(grid: CraftingGridSlot[], itemSlots: ItemSlot[]): boolean {
@@ -104,6 +116,7 @@ function stickPreviewOk(grid: CraftingGridSlot[], itemSlots: ItemSlot[]): boolea
 /** What the result slot would craft (if the player clicks), or null. */
 export function craftingGridPreview(
   grid: CraftingGridSlot[],
+  hotbarSlots: { blockId: number; count: number }[],
   itemSlots: ItemSlot[]
 ): "planks" | "stick" | null {
   if (!Array.isArray(grid) || grid.length !== CRAFTING_GRID_SLOTS) return null;
@@ -124,7 +137,9 @@ export function craftingGridPreview(
     }
   }
   if (woodCells === 1 && otherNonEmpty === 0 && woodIdx >= 0 && g[woodIdx]!.count >= 1) {
-    return maxAddableItemCount(itemSlots, ITEM_REGISTRY.PLANKS) >= 4 ? "planks" : null;
+    return maxAddableBlockCount(hotbarSlots, BLOCK_REGISTRY.OAK_PLANKS) >= 4
+      ? "planks"
+      : null;
   }
 
   return stickPreviewOk(g, itemSlots) ? "stick" : null;

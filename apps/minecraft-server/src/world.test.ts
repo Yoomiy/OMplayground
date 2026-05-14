@@ -48,7 +48,31 @@ describe("proceduralVoxelID", () => {
 
   it("returns solid blocks below ground", () => {
     const seed = seedFromSessionId("sess-stone");
-    expect(proceduralVoxelID(0, -10, 0, seed)).toBe(BLOCK_REGISTRY.STONE);
+    expect(proceduralVoxelID(0, -10, 0, seed)).not.toBe(BLOCK_REGISTRY.AIR);
+  });
+
+  it("generates an unbreakable bedrock floor deep underground", () => {
+    const seed = seedFromSessionId("sess-bedrock");
+    expect(proceduralVoxelID(0, -28, 0, seed)).toBe(BLOCK_REGISTRY.BEDROCK);
+    expect(proceduralVoxelID(12, -40, -9, seed)).toBe(BLOCK_REGISTRY.BEDROCK);
+  });
+
+  it("sprinkles ore blocks through the underground sample volume", () => {
+    const seed = seedFromSessionId("sess-ores");
+    const ores = new Set<number>([
+      BLOCK_REGISTRY.COAL_ORE,
+      BLOCK_REGISTRY.IRON_ORE,
+      BLOCK_REGISTRY.GOLD_ORE
+    ]);
+    let foundOre = false;
+    for (let x = -20; x <= 20 && !foundOre; x++) {
+      for (let y = -20; y <= 8 && !foundOre; y++) {
+        for (let z = -20; z <= 20 && !foundOre; z++) {
+          foundOre = ores.has(proceduralVoxelID(x, y, z, seed));
+        }
+      }
+    }
+    expect(foundOre).toBe(true);
   });
 });
 

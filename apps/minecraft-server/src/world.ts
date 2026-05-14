@@ -72,6 +72,45 @@ function columnHeight(x: number, z: number, seed: number): number {
   return Math.floor(base + heightF);
 }
 
+function surfaceVoxelID(x: number, z: number, seed: number): number {
+  const patch = smoothNoise(x / 10, z / 10, seed ^ 0x53465246);
+  if (patch < 0.07) return BLOCK_REGISTRY.GRAVEL;
+  if (patch < 0.16) return BLOCK_REGISTRY.SAND;
+  return BLOCK_REGISTRY.GRASS;
+}
+
+function undergroundVoxelID(
+  x: number,
+  y: number,
+  z: number,
+  seed: number
+): number {
+  if (hash3(x, y, z, seed ^ 0x434f414c) < 0.013) {
+    return BLOCK_REGISTRY.COAL_ORE;
+  }
+  if (y < 10 && hash3(x, y, z, seed ^ 0x49524f4e) < 0.008) {
+    return BLOCK_REGISTRY.IRON_ORE;
+  }
+  if (y < 2 && hash3(x, y, z, seed ^ 0x474f4c44) < 0.004) {
+    return BLOCK_REGISTRY.GOLD_ORE;
+  }
+  return BLOCK_REGISTRY.STONE;
+}
+
+function surfaceDecorationVoxelID(
+  x: number,
+  z: number,
+  seed: number
+): number {
+  const n = hash3(x, 2, z, seed ^ 0x464c5752);
+  if (n < 0.006) return BLOCK_REGISTRY.SAPLING;
+  if (n < 0.020) return BLOCK_REGISTRY.DANDELION;
+  if (n < 0.032) return BLOCK_REGISTRY.ROSE;
+  if (n < 0.040) return BLOCK_REGISTRY.BROWN_MUSHROOM;
+  if (n < 0.047) return BLOCK_REGISTRY.RED_MUSHROOM;
+  return BLOCK_REGISTRY.AIR;
+}
+
 /**
  * Returns the procedural block at (x,y,z), ignoring deltas. Tuned for a
  * gentle rolling terrain centered on y≈8 so the spawn point is always
@@ -83,11 +122,16 @@ export function proceduralVoxelID(
   z: number,
   seed: number
 ): number {
+  if (y <= -28) return BLOCK_REGISTRY.BEDROCK;
+
   const height = columnHeight(x, z, seed);
   if (y <= height) {
-    if (y === height) return BLOCK_REGISTRY.GRASS;
-    if (y > height - 3) return BLOCK_REGISTRY.DIRT;
-    return BLOCK_REGISTRY.STONE;
+    const surface = surfaceVoxelID(x, z, seed);
+    if (y === height) return surface;
+    if (y > height - 3) {
+      return surface === BLOCK_REGISTRY.GRASS ? BLOCK_REGISTRY.DIRT : surface;
+    }
+    return undergroundVoxelID(x, y, z, seed);
   }
   for (let dx = -2; dx <= 2; dx++) {
     for (let dz = -2; dz <= 2; dz++) {
@@ -105,6 +149,12 @@ export function proceduralVoxelID(
         if (dist2 <= 9 && y > ch) return BLOCK_REGISTRY.LEAVES;
       }
     }
+  }
+  if (
+    y === height + 1 &&
+    surfaceVoxelID(x, z, seed) === BLOCK_REGISTRY.GRASS
+  ) {
+    return surfaceDecorationVoxelID(x, z, seed);
   }
   return BLOCK_REGISTRY.AIR;
 }

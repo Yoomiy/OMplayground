@@ -20,6 +20,8 @@ import {
 import {
   addPickUp,
   applyInventoryMove,
+  blockBreakable,
+  blockDropId,
   blockDropsPickable,
   cloneCraftingGrid,
   cloneHotbar,
@@ -231,6 +233,31 @@ function vecDist(a: Vec3, b: Vec3): number {
   const dy = a[1] - b[1];
   const dz = a[2] - b[2];
   return Math.sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+function blockIntersectsPlayer(pos: Vec3, x: number, y: number, z: number): boolean {
+  const blockMinX = x;
+  const blockMaxX = x + 1;
+  const blockMinY = y;
+  const blockMaxY = y + 1;
+  const blockMinZ = z;
+  const blockMaxZ = z + 1;
+
+  const playerMinX = pos[0] - 0.35;
+  const playerMaxX = pos[0] + 0.35;
+  const playerMinY = pos[1];
+  const playerMaxY = pos[1] + 1.8;
+  const playerMinZ = pos[2] - 0.35;
+  const playerMaxZ = pos[2] + 0.35;
+
+  return (
+    blockMinX < playerMaxX &&
+    blockMaxX > playerMinX &&
+    blockMinY < playerMaxY &&
+    blockMaxY > playerMinY &&
+    blockMinZ < playerMaxZ &&
+    blockMaxZ > playerMinZ
+  );
 }
 
 function isFiniteVec(v: unknown): v is Vec3 {
@@ -503,6 +530,15 @@ io.on("connection", (socket) => {
         });
         return;
       }
+      for (const p of room.players.values()) {
+        if (blockIntersectsPlayer(p.pos, x, y, z)) {
+          ack?.({
+            ok: false,
+            error: { code: "BLOCK_OCCUPIED_BY_PLAYER", message: "שחקן עומד שם" }
+          });
+          return;
+        }
+      }
       applyDelta(room.world, x, y, z, blockId);
       if (
         (room.gameMode ?? "creative") === "survival" &&
@@ -583,6 +619,13 @@ io.on("connection", (socket) => {
         return;
       }
       const brokenId = getVoxelID(room.world, x, y, z);
+      if (!blockBreakable(brokenId)) {
+        ack?.({
+          ok: false,
+          error: { code: "UNBREAKABLE_BLOCK", message: "אי אפשר לשבור את הבלוק הזה" }
+        });
+        return;
+      }
       applyDelta(room.world, x, y, z, BLOCK_REGISTRY.AIR);
       if (
         (room.gameMode ?? "creative") === "survival" &&
@@ -591,7 +634,8 @@ io.on("connection", (socket) => {
         player.craftingGrid &&
         blockDropsPickable(brokenId)
       ) {
-        addPickUp(player.inventory, brokenId);
+        const dropId = blockDropId(brokenId);
+        if (dropId !== null) addPickUp(player.inventory, dropId);
         socket.emit("INVENTORY_SYNC", {
           slots: player.inventory,
           itemSlots: player.itemInventory,
@@ -627,7 +671,7 @@ io.on("connection", (socket) => {
       if (recipeId !== "grid") {
         return ack?.({ ok: false });
       }
-      if (!tryCraftFromGrid(player.itemInventory, player.craftingGrid)) {
+      if (!tryCraftFromGrid(player.inventory, player.itemInventory, player.craftingGrid)) {
         return ack?.({ ok: false });
       }
       socket.emit("INVENTORY_SYNC", {

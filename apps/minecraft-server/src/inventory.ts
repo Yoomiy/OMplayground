@@ -31,9 +31,20 @@ export function cloneHotbar(slots: HotbarState): HotbarState {
 
 /** Blocks that never drop an item into the hotbar (fluid / air). */
 export function blockDropsPickable(blockId: number): boolean {
+  return blockDropId(blockId) !== null;
+}
+
+export function blockBreakable(blockId: number): boolean {
   if (blockId === BLOCK_REGISTRY.AIR) return false;
   if (blockId === BLOCK_REGISTRY.WATER) return false;
+  if (blockId === BLOCK_REGISTRY.BEDROCK) return false;
   return true;
+}
+
+export function blockDropId(blockId: number): number | null {
+  if (!blockBreakable(blockId)) return null;
+  if (blockId === BLOCK_REGISTRY.STONE) return BLOCK_REGISTRY.COBBLESTONE;
+  return blockId;
 }
 
 function findStackIndex(slots: HotbarState, blockId: number): number {
@@ -48,16 +59,43 @@ function findEmptyIndex(slots: HotbarState): number {
 
 /** Add one block worth of drops; merges stacks, then first empty slot. */
 export function addPickUp(slots: HotbarState, blockId: number): void {
-  if (!PLACEABLE_BLOCK_IDS.includes(blockId)) return;
-  const stack = findStackIndex(slots, blockId);
-  if (stack >= 0) {
-    slots[stack].count = Math.min(MAX_STACK, slots[stack].count + 1);
-    return;
+  addBlockCount(slots, blockId, 1);
+}
+
+/** How many units of `blockId` can still fit in the hotbar. */
+export function maxAddableBlockCount(slots: HotbarState, blockId: number): number {
+  if (!PLACEABLE_BLOCK_IDS.includes(blockId)) return 0;
+  let space = 0;
+  for (const s of slots) {
+    if (s.blockId === blockId && s.count > 0 && s.count < MAX_STACK) {
+      space += MAX_STACK - s.count;
+    } else if (s.blockId === BLOCK_REGISTRY.AIR || s.count <= 0) {
+      space += MAX_STACK;
+    }
   }
-  const empty = findEmptyIndex(slots);
-  if (empty < 0) return;
-  slots[empty].blockId = blockId;
-  slots[empty].count = 1;
+  return space;
+}
+
+/** Add `count` blocks across hotbar stacks; leaves overflow unsourced if full. */
+export function addBlockCount(slots: HotbarState, blockId: number, count: number): void {
+  if (!PLACEABLE_BLOCK_IDS.includes(blockId) || count <= 0) return;
+  let left = count;
+  while (left > 0) {
+    const stack = findStackIndex(slots, blockId);
+    if (stack >= 0) {
+      const room = MAX_STACK - slots[stack].count;
+      const add = Math.min(room, left);
+      slots[stack].count += add;
+      left -= add;
+      continue;
+    }
+    const empty = findEmptyIndex(slots);
+    if (empty < 0) return;
+    slots[empty].blockId = blockId;
+    const add = Math.min(MAX_STACK, left);
+    slots[empty].count = add;
+    left -= add;
+  }
 }
 
 /**
@@ -241,7 +279,7 @@ export function spillExcessFromCraftingGrid(
     if (c.itemId > 0) {
       addItemCount(itemSlots, c.itemId, excess);
     } else if (c.blockId !== BLOCK_REGISTRY.AIR) {
-      for (let k = 0; k < excess; k++) addPickUp(hotbar, c.blockId);
+      addBlockCount(hotbar, c.blockId, excess);
     }
     c.count = CRAFTING_CELL_MAX;
     normalizeCraftingSlot(c);
@@ -520,12 +558,11 @@ function isEmptyCraftAtom(a: SlotAtom): boolean {
 }
 
 function isPlankCell(a: SlotAtom): boolean {
-  return (
-    a.kind === "item" &&
-    a.itemId === ITEM_REGISTRY.PLANKS &&
-    a.count >= 1 &&
-    a.count <= CRAFTING_CELL_MAX
-  );
+  if (a.kind === "empty") return false;
+  if (a.count < 1 || a.count > CRAFTING_CELL_MAX) return false;
+  if (a.kind === "item") return a.itemId === ITEM_REGISTRY.PLANKS;
+  if (a.kind === "block") return a.blockId === BLOCK_REGISTRY.OAK_PLANKS;
+  return false;
 }
 
 function tryCraftSticksShapeless(
@@ -559,11 +596,12 @@ function tryCraftSticksShapeless(
 }
 
 /**
- * Craft from the 2×2 grid into item storage (survival). Patterns:
- * - One oak log alone in the grid → 4 planks
- * - Two planks in one row or column (one plank per cell), rest empty → 4 sticks
+ * Craft from the 2×2 grid into hotbar / item storage (survival). Patterns:
+ * - One oak log alone in the grid → 4 placeable oak planks
+ * - Two planks (legacy item planks or placeable plank blocks), rest empty → 4 sticks
  */
 export function tryCraftFromGrid(
+  hotbar: HotbarState,
   itemSlots: ItemSlot[],
   grid: CraftingGridState
 ): boolean {
@@ -587,10 +625,10 @@ export function tryCraftFromGrid(
   if (woodCells === 1 && otherNonEmpty === 0 && woodIdx >= 0) {
     const cell = grid[woodIdx]!;
     if (cell.count < 1) return false;
-    if (maxAddableItemCount(itemSlots, ITEM_REGISTRY.PLANKS) < 4) return false;
+    if (maxAddableBlockCount(hotbar, BLOCK_REGISTRY.OAK_PLANKS) < 4) return false;
     cell.count -= 1;
     normalizeCraftingSlot(cell);
-    addItemCount(itemSlots, ITEM_REGISTRY.PLANKS, 4);
+    addBlockCount(hotbar, BLOCK_REGISTRY.OAK_PLANKS, 4);
     return true;
   }
 
