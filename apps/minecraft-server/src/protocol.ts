@@ -35,7 +35,9 @@ export interface InventoryMoveReq {
 }
 
 export const ITEM_REGISTRY = {
-  STICK: 100
+  STICK: 100,
+  /** Non-placeable planks (craft ingredient); placeable planks use `OAK_PLANKS` in BLOCK_REGISTRY. */
+  PLANKS: 101
 } as const;
 
 export interface RoomPlayerInfo {

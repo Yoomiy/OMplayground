@@ -37,10 +37,13 @@ export interface InventoryMoveReq {
 
 export const ITEM_REGISTRY = {
   STICK: 100,
+  /** Non-placeable planks (crafting ingredient); placeable planks use `OAK_PLANKS`. */
+  PLANKS: 101
 } as const;
 
 export const ITEM_ICON: Record<number, string> = {
   [ITEM_REGISTRY.STICK]: "/minecraft-assets/stick.png",
+  [ITEM_REGISTRY.PLANKS]: "/minecraft-assets/oak_planks.png"
 };
 
 
