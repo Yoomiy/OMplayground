@@ -4,6 +4,7 @@ import type { Mesh } from "@babylonjs/core/Meshes/mesh";
 import {
   BLOCK_REGISTRY,
   ITEM_REGISTRY,
+  ITEM_ICON,
   MAIN_ITEM_INVENTORY_SLOTS,
   PLACEABLE_BLOCK_IDS,
   CRAFTING_GRID_SLOTS,
