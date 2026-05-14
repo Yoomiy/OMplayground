@@ -1,6 +1,9 @@
 1. don't send data on empty ticks
 3. use sockets with binary data
-4. don't send data when game is paused
+5. spawn from last location when resuming game
+6. borrow map rendering from volexsrv
+7. import more blocks and items
+8. fix avatr hovering and arms rendering
 
 implement:
 1. inventory/items
@@ -9,3 +12,7 @@ implement:
 4. persistent worlds across sessions (deltas only persist for paused sessions, then are dropped on completion)
 5. greedy mesh editor
 6. anti-cheat beyond range checks
+7. compass
+8. earn perks for crafting
+9. sell items
+
