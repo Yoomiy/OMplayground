@@ -101,14 +101,24 @@ const BLOCK_HUD: Record<number, string> = {
   [BLOCK_REGISTRY.BEDROCK]: "סלע יסוד"
 };
 
-const ITEM_ICON: Record<number, string> = {
-  [ITEM_REGISTRY.STICK]: "/minecraft-assets/stick.png",
-  [ITEM_REGISTRY.PLANKS]: "/minecraft-assets/oak_planks.png"
-};
+function isValidDragPayload(
+  v: unknown
+): v is { from: InventoryRegion; fromIndex: number } {
+  if (
+    v &&
+    typeof v === "object" &&
+    "from" in v &&
+    typeof (v as { from: unknown }).from === "string" &&
+    "fromIndex" in v &&
+    typeof (v as { fromIndex: unknown }).fromIndex === "number"
+  ) {
+    return true;
+  }
+  return false;
+}
 
 const ITEM_HUD: Record<number, string> = {
-  [ITEM_REGISTRY.STICK]: "מקל",
-  [ITEM_REGISTRY.PLANKS]: "לוחות"
+  [ITEM_REGISTRY.STICK]: "מקל"
 };
 
 /** Minecraft-like slot: raised inner bevel, dark rim. */
@@ -902,8 +912,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           setInventoryOpen((v) => !v);
           return;
         }
-        if (e.key.toLowerCase() === "q") {
-          pickTargetedBlock();
+        if (e.key.toLowerCase() === "p" && !inventoryOpen) {
+          onInputRef.current({ action: "drop" });
           return;
         }
         const n = Number(e.key);
@@ -1052,6 +1062,24 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         JSON.stringify({ from: region, fromIndex: index })
       );
       e.dataTransfer.effectAllowed = "move";
+      const img = e.currentTarget.querySelector("img");
+      if (img) {
+        const canvas = document.createElement("canvas");
+        const size = Math.max(img.width, img.height);
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(
+            img,
+            (size - img.width) / 2,
+            (size - img.height) / 2,
+            img.width,
+            img.height
+          );
+        }
+        e.dataTransfer.setDragImage(canvas, canvas.width / 2, canvas.height / 2);
+      }
     },
     onDragOver: (e: DragEvent<HTMLDivElement>) => {
       if (!invDraggable) return;
@@ -1064,16 +1092,19 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       const raw = e.dataTransfer.getData(INV_DRAG_MIME);
       if (!raw) return;
       try {
-        const parsed = JSON.parse(raw) as { from: InventoryRegion; fromIndex: number };
-        if (parsed.from === undefined || !Number.isFinite(parsed.fromIndex)) return;
-        onInventoryMove({
-          from: parsed.from,
-          fromIndex: parsed.fromIndex,
-          to: region,
-          toIndex: index
-        });
-      } catch {
-        // malformed drag payload
+        const parsed = JSON.parse(raw);
+        if (isValidDragPayload(parsed)) {
+          onInventoryMove({
+            from: parsed.from,
+            fromIndex: parsed.fromIndex,
+            to: region,
+            toIndex: index
+          });
+        } else {
+          console.warn("Malformed drag-and-drop payload:", parsed);
+        }
+      } catch (err) {
+        console.warn("Invalid drag-and-drop payload:", err);
       }
     }
   });

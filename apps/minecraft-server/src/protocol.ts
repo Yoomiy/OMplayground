@@ -35,8 +35,7 @@ export interface InventoryMoveReq {
 }
 
 export const ITEM_REGISTRY = {
-  STICK: 100,
-  PLANKS: 101
+  STICK: 100
 } as const;
 
 export interface RoomPlayerInfo {

@@ -37,8 +37,12 @@ export interface InventoryMoveReq {
 
 export const ITEM_REGISTRY = {
   STICK: 100,
-  PLANKS: 101
 } as const;
+
+export const ITEM_ICON: Record<number, string> = {
+  [ITEM_REGISTRY.STICK]: "/minecraft-assets/stick.png",
+};
+
 
 export interface RoomPlayerInfo {
   userId: string;
