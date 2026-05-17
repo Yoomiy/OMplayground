@@ -1,66 +1,61 @@
 ---
 name: playground-voxel-blocks
-description: Add a new block type (placeable voxel "item") to the Playground Minecraft-style game. Covers lock-step protocol IDs in apps/web and apps/minecraft-server, server placement validation, optional world generation in world.ts, noa materials/textures in MinecraftClient.tsx, and assets under public/minecraft-assets. Use when the user asks for new blocks, items, hotbar slots, textures, or BLOCK_REGISTRY changes for the voxel game (game_url minecraft / Voxel server).
+description: Add or modify placeable voxel blocks under the upcoming data-driven content model. Covers shared BLOCK_DEFS, client noa registration loops, server placement/break validation, tool-required mining metadata, worldgen hooks, and texture assets.
 ---
 
-# Adding a block type to the Voxel (Minecraft) game
+# Adding or changing voxel blocks (post-refactor model)
 
-In this project, **"items" in survival parlance are block IDs**: the hotbar sends a numeric `blockId` on place; there is no separate item entity system.
+Use this skill when touching block content for `game_url = minecraft`: IDs, textures, hardness/tool requirements, drop behavior, placeability, or world generation spawn rules.
 
-## Rules
+## Target architecture (what we are moving to)
 
-- **Keep `apps/web/src/lib/voxelProtocol.ts` and `apps/minecraft-server/src/protocol.ts` identical** for `BLOCK_REGISTRY`, `PLACEABLE_BLOCK_IDS`, and `MAX_REACH`. These files are intentionally duplicated until `packages/voxel-protocol` exists.
-- **`AIR` must stay `0`.** Assign the next unused integer (today `GLASS` is `8`; the next free id is `9`).
-- **Server is authoritative for placement**: the socket handler rejects `blockId` values not in `PLACEABLE_BLOCK_IDS` (see [`index.ts`](../../../apps/minecraft-server/src/index.ts) around the `placeBlock` / `PL.includes` check). The client must not be trusted for legality—only for UX (hotbar).
-- **World generation** uses numeric IDs from `proceduralVoxelID` in [`world.ts`](../../../apps/minecraft-server/src/world.ts). If the new block should **never** spawn naturally, skip world changes; if it should appear in terrain, update **both** `world.ts` and the mirrored `proceduralVoxelID` in [`MinecraftClient.tsx`](../../../apps/web/src/games/MinecraftClient.tsx) so chunk meshing matches the server baseline + deltas.
+- **Single source of truth** for block definitions in `packages/voxel-content` (no manual duplicated constants between web/server).
+- Block metadata is **data-driven** (`BLOCK_DEFS`), not scattered in `MinecraftClient.tsx` and server `if/else` logic.
+- Client and server both derive runtime registries from shared defs:
+  - client: noa material/block registration loops
+  - server: placement legality, break rules, drop mappings, worldgen references
+- Server remains authoritative for all block legality and outcomes.
 
-## Checklist (every new placeable block)
+## Hard rules
 
-1. **Protocol (both sides)**  
-   - Add `BLOCK_REGISTRY.YOUR_BLOCK = <id>` in:
-     - [`apps/web/src/lib/voxelProtocol.ts`](../../../apps/web/src/lib/voxelProtocol.ts)
-     - [`apps/minecraft-server/src/protocol.ts`](../../../apps/minecraft-server/src/protocol.ts)
-   - Append the id to `PLACEABLE_BLOCK_IDS` if players may **place** it from the hotbar.
+1. `AIR` stays id `0`; ids are append-only and never reused.
+2. Do not add ad-hoc block constants directly in `apps/web/src/lib/voxelProtocol.ts` or `apps/minecraft-server/src/protocol.ts` once shared defs exist.
+3. Keep **render data** and **gameplay data** in the same block definition:
+   - render: texture(s), transparent/opaque/fluid flags
+   - gameplay: hardness, required tool class/tier, drop item, placeable flag
+4. Client may optimize UX, but server validates placement and breaking.
+5. If worldgen can produce the block, server worldgen and client baseline mirror must stay aligned.
 
-2. **Hotbar**  
-   - [`MinecraftClient.tsx`](../../../apps/web/src/games/MinecraftClient.tsx) uses `const HOTBAR = PLACEABLE_BLOCK_IDS` and number keys `1..n`. New placeable blocks automatically gain a slot when added to `PLACEABLE_BLOCK_IDS` (order = hotbar order).
+## Block definition checklist
 
-3. **Rendering (noa)** — same file, inside the engine `useEffect`:
-   - **Textures**: add PNG(s) under [`apps/web/public/minecraft-assets/`](../../../apps/web/public/minecraft-assets/) (see texture skill / plan: one `registerMaterial` per unique `textureURL`).
-   - Extend `MC_TEX` and `registerMcTerrainMaterials`: one material name per distinct file; reuse material names wherever the same PNG applies.
-   - Call `noa.registry.registerBlock(BLOCK_REGISTRY.YOUR_BLOCK, { material, solid, opaque?, fluid? })`:
-     - `material`: string (all faces) or `[top, bottom, sides]` or six face names — see [noa BlockOptions](https://fenomas.github.io/noa/API/classes/_internal_.BlockOptions.html).
-     - **Transparency**: `opaque: false` + `texHasAlpha: true` on materials for leaves-style cutouts; water-like blocks use `solid: false`, `opaque: false`, often `fluid: true`.
-   - If the block can appear from **procedural** terrain, update `proceduralVoxelID` here to match `world.ts`.
+1. **Shared content**
+   - Add/update block in `packages/voxel-content` block defs.
+   - Include: stable id/key, display name key, textures/material mapping, solidity/opacity/fluid flags, drop metadata, and mining metadata (hardness + required tool).
 
-4. **Server logic**  
-   - Break/place already work per-coordinate via `getVoxelID` / `applyDelta`; usually **no** `index.ts` changes unless you add new events.
-   - If the block needs **special break rules** (e.g. only certain tools), extend validation in the break handler (not added yet—follow existing patterns).
+2. **Client registration**
+   - Ensure client loop in `apps/web/src/games/MinecraftClient.tsx` consumes shared block defs (not one-off per-block calls).
+   - Add any new textures under `apps/web/public/minecraft-assets/`.
+   - For cutout textures (leaves/plants), set alpha-friendly material options consistently.
 
-5. **Tests**  
-   - Extend [`world.test.ts`](../../../apps/minecraft-server/src/world.test.ts) if world generation or deltas involve the new id.
-   - Add/extend socket or room tests per [`playground-backend-qa`](../../../.cursor/skills/playground-backend-qa/SKILL.md) if behavior crosses the wire.
+3. **Server validation**
+   - Placement allow-list comes from shared defs (`placeable`), not hardcoded arrays.
+   - Break/drop behavior comes from shared defs and tool rules.
 
-6. **Assets & licensing**  
-   - Only commit textures you may redistribute. Copy from your resource pack staging into `public/minecraft-assets` with stable names referenced in `MC_TEX`.
+4. **World generation**
+   - If naturally generated, add rules in `apps/minecraft-server/src/world.ts`.
+   - Keep client procedural baseline (if still used) visually consistent with server defaults.
 
-## Non-goals (this skill)
+5. **Tests**
+   - Add/update server tests for placement legality, breakability, and worldgen ids (`apps/minecraft-server/src/world.test.ts` and related suites).
 
-- **Board games** (`GameModule`, `BOARD_REGISTRY`) — use [`playground-add-game`](../../../.cursor/skills/playground-add-game/SKILL.md).
-- **New voxel server features** (new socket events, tick rate) — out of scope unless explicitly required.
-- **Supabase catalog rows** — `games.game_url = 'minecraft'` already points at this experience; new blocks do not need a new catalog row.
-- Items (non-placeable) are handled by the companion `playground-voxel-items` skill; use ITEM_REGISTRY for those.
+## When this skill is NOT enough
 
-## Quick reference — files you usually touch
+- Non-placeable inventory/crafting items, dropping from inventory, pickup rules: use `playground-voxel-items`.
+- Dropped-entity rendering/animation lifecycle: use `playground-voxel-entities`.
+- Generic board-game modules (`packages/game-logic`): use `playground-add-game`.
 
-| Change | Files |
-|--------|--------|
-| New id + placeable | `voxelProtocol.ts`, `protocol.ts` |
-| Look & materials | `MinecraftClient.tsx`, `public/minecraft-assets/*` |
-| Natural generation | `world.ts`, `MinecraftClient.tsx` `proceduralVoxelID` |
-| Tests | `world.test.ts`, optional `room` / socket tests |
+## PR sanity checks
 
-## Sanity check before PR
-
-- `npm run lint -w @playground/web` and `npm test -w @playground/minecraft-server` (or full repo test) pass.
-- Grepping for the new id appears in both protocol files with the **same numeric value**.
+- New/changed blocks compile from shared defs without manual duplicate edits.
+- No client/server id drift.
+- Placement, break speed/gating, and drops behave identically across reconnects.

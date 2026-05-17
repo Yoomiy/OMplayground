@@ -243,4 +243,5 @@ Real-time voxel/tick games **do NOT extend `apps/game-server`, do NOT register i
 6. **Catalog row**: same SQL pattern as multiplayer games (`is_multiplayer=true`, `game_url='<key>'`).
 7. **Anti-patterns**: do **not** import a 3D engine from the server (no rendering server-side); do **not** persist on every tick (only at lifecycle boundaries — pause / stop / recess-end / leave-empty); do **not** touch `apps/game-server/src/**` or `packages/game-logic/src/**`.
 
-Reference implementation: `apps/minecraft-server` (server) + `apps/web/src/{games,game,hooks,lib}/{MinecraftClient.tsx, MinecraftSessionContainer.tsx, useVoxelSocket.ts, voxelServerUrl.ts, voxelProtocol.ts}` (client).
+Reference implementation: `apps/minecraft-server` (server) + `apps/web/src/{games,game,hooks,lib}/{MinecraftClient.tsx, MinecraftSessionContainer.tsx, useVoxelSocket.ts, voxelServerUrl.ts, voxelProtocol.ts}` (client).  
+For upcoming voxel content work, treat shared content definitions (for blocks/items/tools) as canonical and avoid reintroducing duplicate client/server constant tables.
