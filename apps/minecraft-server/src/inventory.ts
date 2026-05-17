@@ -1,8 +1,4 @@
-import {
-  REGISTERED_ITEM_IDS,
-  ITEM_REGISTRY,
-  itemMaxStack
-} from "@playground/voxel-content";
+import { REGISTERED_ITEM_IDS, ITEM_REGISTRY, itemMaxStack } from "@playground/voxel-content";
 import {
   BLOCK_REGISTRY,
   CRAFTING_CELL_MAX,
@@ -33,23 +29,7 @@ export function cloneHotbar(slots: HotbarState): HotbarState {
   return slots.map((s) => ({ blockId: s.blockId, count: s.count }));
 }
 
-/** Blocks that never drop an item into the hotbar (fluid / air). */
-export function blockDropsPickable(blockId: number): boolean {
-  return blockDropId(blockId) !== null;
-}
-
-export function blockBreakable(blockId: number): boolean {
-  if (blockId === BLOCK_REGISTRY.AIR) return false;
-  if (blockId === BLOCK_REGISTRY.WATER) return false;
-  if (blockId === BLOCK_REGISTRY.BEDROCK) return false;
-  return true;
-}
-
-export function blockDropId(blockId: number): number | null {
-  if (!blockBreakable(blockId)) return null;
-  if (blockId === BLOCK_REGISTRY.STONE) return BLOCK_REGISTRY.COBBLESTONE;
-  return blockId;
-}
+export { blockBreakable, blockDropId, blockDropsPickable } from "@playground/voxel-content";
 
 function findStackIndex(slots: HotbarState, blockId: number): number {
   return slots.findIndex(

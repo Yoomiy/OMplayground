@@ -20,6 +20,7 @@ import {
   type RoomSnapshot,
   type Vec3
 } from "@/lib/voxelProtocol";
+import { MC_MATERIAL_ENTRIES, NOA_BLOCK_ENTRIES } from "@playground/voxel-content";
 import { craftingGridPreview } from "@/lib/voxelCraftingPreview";
 import { VOXEL_ENTITY_CATALOG } from "@/games/voxel/voxelEntityCatalog";
 import {
@@ -193,49 +194,13 @@ const MC_TEX = {
 } as const;
 
 /** Item-style icon per block for the hotbar (same assets as terrain). */
-const BLOCK_HOTBAR_ICON: Record<number, string> = {
-  [BLOCK_REGISTRY.GRASS]: MC_TEX.grassTop,
-  [BLOCK_REGISTRY.DIRT]: MC_TEX.dirt,
-  [BLOCK_REGISTRY.STONE]: MC_TEX.stone,
-  [BLOCK_REGISTRY.WOOD]: MC_TEX.oakLog,
-  [BLOCK_REGISTRY.LEAVES]: MC_TEX.oakLeaves,
-  [BLOCK_REGISTRY.SAND]: MC_TEX.sand,
-  [BLOCK_REGISTRY.GLASS]: MC_TEX.glass,
-  [BLOCK_REGISTRY.COBBLESTONE]: MC_TEX.cobblestone,
-  [BLOCK_REGISTRY.OAK_PLANKS]: MC_TEX.oakPlanks,
-  [BLOCK_REGISTRY.SAPLING]: MC_TEX.sapling,
-  [BLOCK_REGISTRY.GRAVEL]: MC_TEX.gravel,
-  [BLOCK_REGISTRY.GOLD_ORE]: MC_TEX.goldOre,
-  [BLOCK_REGISTRY.IRON_ORE]: MC_TEX.ironOre,
-  [BLOCK_REGISTRY.COAL_ORE]: MC_TEX.coalOre,
-  [BLOCK_REGISTRY.SPONGE]: MC_TEX.sponge,
-  [BLOCK_REGISTRY.RED_WOOL]: MC_TEX.redWool,
-  [BLOCK_REGISTRY.ORANGE_WOOL]: MC_TEX.orangeWool,
-  [BLOCK_REGISTRY.YELLOW_WOOL]: MC_TEX.yellowWool,
-  [BLOCK_REGISTRY.LIME_WOOL]: MC_TEX.limeWool,
-  [BLOCK_REGISTRY.GREEN_WOOL]: MC_TEX.greenWool,
-  [BLOCK_REGISTRY.CYAN_WOOL]: MC_TEX.cyanWool,
-  [BLOCK_REGISTRY.BLUE_WOOL]: MC_TEX.blueWool,
-  [BLOCK_REGISTRY.PURPLE_WOOL]: MC_TEX.purpleWool,
-  [BLOCK_REGISTRY.MAGENTA_WOOL]: MC_TEX.magentaWool,
-  [BLOCK_REGISTRY.PINK_WOOL]: MC_TEX.pinkWool,
-  [BLOCK_REGISTRY.BLACK_WOOL]: MC_TEX.blackWool,
-  [BLOCK_REGISTRY.GRAY_WOOL]: MC_TEX.grayWool,
-  [BLOCK_REGISTRY.WHITE_WOOL]: MC_TEX.whiteWool,
-  [BLOCK_REGISTRY.DANDELION]: MC_TEX.dandelion,
-  [BLOCK_REGISTRY.ROSE]: MC_TEX.rose,
-  [BLOCK_REGISTRY.BROWN_MUSHROOM]: MC_TEX.brownMushroom,
-  [BLOCK_REGISTRY.RED_MUSHROOM]: MC_TEX.redMushroom,
-  [BLOCK_REGISTRY.GOLD_BLOCK]: MC_TEX.goldBlock,
-  [BLOCK_REGISTRY.IRON_BLOCK]: MC_TEX.ironBlock,
-  [BLOCK_REGISTRY.STONE_SLAB]: MC_TEX.smoothStone,
-  [BLOCK_REGISTRY.BRICKS]: MC_TEX.bricks,
-  [BLOCK_REGISTRY.TNT]: MC_TEX.tntSide,
-  [BLOCK_REGISTRY.BOOKSHELF]: MC_TEX.bookshelf,
-  [BLOCK_REGISTRY.MOSSY_COBBLESTONE]: MC_TEX.mossyCobblestone,
-  [BLOCK_REGISTRY.OBSIDIAN]: MC_TEX.obsidian,
-  [BLOCK_REGISTRY.BEDROCK]: MC_TEX.bedrock
-};
+const BLOCK_HOTBAR_ICON: Record<number, string> = (() => {
+  const m: Record<number, string> = {};
+  for (const e of NOA_BLOCK_ENTRIES) {
+    m[e.id] = MC_TEX[e.hotbarTextureKey];
+  }
+  return m;
+})();
 
 function registerMcTerrainMaterials(noa: {
   registry: { registerMaterial: (name: string, opts: Record<string, unknown>) => void };
@@ -243,53 +208,10 @@ function registerMcTerrainMaterials(noa: {
   const reg = (name: string, textureURL: string, extra: Record<string, unknown> = {}) => {
     noa.registry.registerMaterial(name, { textureURL, ...extra });
   };
-  reg("mc_grass_top", MC_TEX.grassTop);
-  reg("mc_grass_side", MC_TEX.grassSide);
-  reg("mc_dirt", MC_TEX.dirt);
-  reg("mc_stone", MC_TEX.stone);
-  reg("mc_oak_log", MC_TEX.oakLog);
-  reg("mc_oak_log_top", MC_TEX.oakLogTop);
-  reg("mc_oak_leaves", MC_TEX.oakLeaves, { texHasAlpha: true });
-  reg("mc_sand", MC_TEX.sand);
-  reg("mc_water", MC_TEX.waterStill, { texHasAlpha: true });
-  reg("mc_glass", MC_TEX.glass, { texHasAlpha: true });
-  reg("mc_cobblestone", MC_TEX.cobblestone);
-  reg("mc_oak_planks", MC_TEX.oakPlanks);
-  reg("mc_sapling", MC_TEX.sapling, { texHasAlpha: true });
-  reg("mc_gravel", MC_TEX.gravel);
-  reg("mc_gold_ore", MC_TEX.goldOre);
-  reg("mc_iron_ore", MC_TEX.ironOre);
-  reg("mc_coal_ore", MC_TEX.coalOre);
-  reg("mc_sponge", MC_TEX.sponge);
-  reg("mc_red_wool", MC_TEX.redWool);
-  reg("mc_orange_wool", MC_TEX.orangeWool);
-  reg("mc_yellow_wool", MC_TEX.yellowWool);
-  reg("mc_lime_wool", MC_TEX.limeWool);
-  reg("mc_green_wool", MC_TEX.greenWool);
-  reg("mc_cyan_wool", MC_TEX.cyanWool);
-  reg("mc_blue_wool", MC_TEX.blueWool);
-  reg("mc_purple_wool", MC_TEX.purpleWool);
-  reg("mc_magenta_wool", MC_TEX.magentaWool);
-  reg("mc_pink_wool", MC_TEX.pinkWool);
-  reg("mc_black_wool", MC_TEX.blackWool);
-  reg("mc_gray_wool", MC_TEX.grayWool);
-  reg("mc_white_wool", MC_TEX.whiteWool);
-  reg("mc_dandelion", MC_TEX.dandelion, { texHasAlpha: true });
-  reg("mc_rose", MC_TEX.rose, { texHasAlpha: true });
-  reg("mc_brown_mushroom", MC_TEX.brownMushroom, { texHasAlpha: true });
-  reg("mc_red_mushroom", MC_TEX.redMushroom, { texHasAlpha: true });
-  reg("mc_gold_block", MC_TEX.goldBlock);
-  reg("mc_iron_block", MC_TEX.ironBlock);
-  reg("mc_smooth_stone", MC_TEX.smoothStone);
-  reg("mc_smooth_stone_slab_side", MC_TEX.smoothStoneSlabSide);
-  reg("mc_bricks", MC_TEX.bricks);
-  reg("mc_tnt_top", MC_TEX.tntTop);
-  reg("mc_tnt_bottom", MC_TEX.tntBottom);
-  reg("mc_tnt_side", MC_TEX.tntSide);
-  reg("mc_bookshelf", MC_TEX.bookshelf);
-  reg("mc_mossy_cobblestone", MC_TEX.mossyCobblestone);
-  reg("mc_obsidian", MC_TEX.obsidian);
-  reg("mc_bedrock", MC_TEX.bedrock);
+  for (const m of MC_MATERIAL_ENTRIES) {
+    const url = MC_TEX[m.textureKey];
+    reg(m.name, url, "texHasAlpha" in m && m.texHasAlpha ? { texHasAlpha: true } : {});
+  }
 }
 
 function hash3(x: number, y: number, z: number, seed: number): number {
@@ -597,183 +519,27 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       const scene = noa.rendering.getScene();
       registerMcTerrainMaterials(noa);
 
-      noa.registry.registerBlock(BLOCK_REGISTRY.GRASS, {
-        material: ["mc_grass_top", "mc_dirt", "mc_grass_side"],
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.DIRT, {
-        material: "mc_dirt",
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.STONE, {
-        material: "mc_stone",
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.WOOD, {
-        material: ["mc_oak_log_top", "mc_oak_log_top", "mc_oak_log"],
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.LEAVES, {
-        material: "mc_oak_leaves",
-        solid: true,
-        opaque: false
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.SAND, {
-        material: "mc_sand",
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.WATER, {
-        material: "mc_water",
-        solid: false,
-        opaque: false,
-        fluid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.GLASS, {
-        material: "mc_glass",
-        solid: true,
-        opaque: false
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.COBBLESTONE, {
-        material: "mc_cobblestone",
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.OAK_PLANKS, {
-        material: "mc_oak_planks",
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.SAPLING, {
-        blockMesh: makePlantSpriteMesh(noa, Babylon, MC_TEX.sapling, "mc_sapling"),
-        solid: false,
-        opaque: false
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.GRAVEL, {
-        material: "mc_gravel",
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.GOLD_ORE, {
-        material: "mc_gold_ore",
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.IRON_ORE, {
-        material: "mc_iron_ore",
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.COAL_ORE, {
-        material: "mc_coal_ore",
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.SPONGE, {
-        material: "mc_sponge",
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.RED_WOOL, {
-        material: "mc_red_wool",
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.ORANGE_WOOL, {
-        material: "mc_orange_wool",
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.YELLOW_WOOL, {
-        material: "mc_yellow_wool",
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.LIME_WOOL, {
-        material: "mc_lime_wool",
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.GREEN_WOOL, {
-        material: "mc_green_wool",
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.CYAN_WOOL, {
-        material: "mc_cyan_wool",
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.BLUE_WOOL, {
-        material: "mc_blue_wool",
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.PURPLE_WOOL, {
-        material: "mc_purple_wool",
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.MAGENTA_WOOL, {
-        material: "mc_magenta_wool",
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.PINK_WOOL, {
-        material: "mc_pink_wool",
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.BLACK_WOOL, {
-        material: "mc_black_wool",
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.GRAY_WOOL, {
-        material: "mc_gray_wool",
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.WHITE_WOOL, {
-        material: "mc_white_wool",
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.DANDELION, {
-        blockMesh: makePlantSpriteMesh(noa, Babylon, MC_TEX.dandelion, "mc_dandelion"),
-        solid: false,
-        opaque: false
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.ROSE, {
-        blockMesh: makePlantSpriteMesh(noa, Babylon, MC_TEX.rose, "mc_rose"),
-        solid: false,
-        opaque: false
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.BROWN_MUSHROOM, {
-        blockMesh: makePlantSpriteMesh(noa, Babylon, MC_TEX.brownMushroom, "mc_brown_mushroom"),
-        solid: false,
-        opaque: false
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.RED_MUSHROOM, {
-        blockMesh: makePlantSpriteMesh(noa, Babylon, MC_TEX.redMushroom, "mc_red_mushroom"),
-        solid: false,
-        opaque: false
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.GOLD_BLOCK, {
-        material: "mc_gold_block",
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.IRON_BLOCK, {
-        material: "mc_iron_block",
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.STONE_SLAB, {
-        material: ["mc_smooth_stone", "mc_smooth_stone", "mc_smooth_stone_slab_side"],
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.BRICKS, {
-        material: "mc_bricks",
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.TNT, {
-        material: ["mc_tnt_top", "mc_tnt_bottom", "mc_tnt_side"],
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.BOOKSHELF, {
-        material: ["mc_oak_planks", "mc_oak_planks", "mc_bookshelf"],
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.MOSSY_COBBLESTONE, {
-        material: "mc_mossy_cobblestone",
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.OBSIDIAN, {
-        material: "mc_obsidian",
-        solid: true
-      });
-      noa.registry.registerBlock(BLOCK_REGISTRY.BEDROCK, {
-        material: "mc_bedrock",
-        solid: true
-      });
+      for (const e of NOA_BLOCK_ENTRIES) {
+        if (e.shape === "cube") {
+          noa.registry.registerBlock(e.id, {
+            material: e.material,
+            solid: e.solid,
+            opaque: e.opaque,
+            fluid: e.fluid
+          });
+        } else {
+          noa.registry.registerBlock(e.id, {
+            blockMesh: makePlantSpriteMesh(
+              noa,
+              Babylon,
+              MC_TEX[e.textureKey],
+              e.materialName
+            ),
+            solid: false,
+            opaque: false
+          });
+        }
+      }
 
       noa.blockTargetIdCheck = (id: number): boolean =>
         id !== BLOCK_REGISTRY.AIR && id !== BLOCK_REGISTRY.WATER;
