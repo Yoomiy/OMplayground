@@ -80,6 +80,8 @@ export type JoinRoomAck = JoinRoomAckOk | JoinRoomAckErr;
 export interface InputReq {
   pos: Vec3;
   heading: number;
+  /** Camera pitch in radians; optional for forward compat with older servers. */
+  pitch?: number;
   jumping: boolean;
   t: number;
 }
@@ -130,6 +132,8 @@ export interface SimpleAck {
 export interface PlayerSnapshot {
   pos: Vec3;
   heading: number;
+  /** Radians. Missing from older servers — treat as 0. */
+  pitch?: number;
   jumping: boolean;
   t: number;
 }

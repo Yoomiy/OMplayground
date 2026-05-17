@@ -41,6 +41,8 @@ export interface RoomPlayer {
 export interface PlayerRuntime extends RoomPlayer {
   pos: Vec3;
   heading: number;
+  /** Camera pitch in radians. Used only for avatar head rendering. */
+  pitch: number;
   jumping: boolean;
   /** Last client INPUT timestamp (ms). Forwarded in snapshots for client interp. */
   t: number;
@@ -255,6 +257,7 @@ export function assignPlayer(
     displayName,
     pos: spawn,
     heading: 0,
+    pitch: 0,
     jumping: false,
     t: now,
     lastInputAt: now

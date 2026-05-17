@@ -77,6 +77,8 @@ export type JoinRoomAck = JoinRoomAckOk | JoinRoomAckErr;
 export interface InputReq {
   pos: Vec3;
   heading: number;
+  /** Camera pitch in radians; optional for forward compat with older clients. */
+  pitch?: number;
   jumping: boolean;
   /** Client time in ms; only used for rendering interpolation. */
   t: number;
@@ -129,6 +131,8 @@ export interface SimpleAck {
 export interface PlayerSnapshot {
   pos: Vec3;
   heading: number;
+  /** Radians; omitted for older clients (treat as 0 on render). */
+  pitch?: number;
   jumping: boolean;
   t: number;
 }

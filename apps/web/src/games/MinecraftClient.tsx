@@ -30,9 +30,16 @@ import {
 import {
   attachVoxelVisualToEntity,
   attachVoxelVisualToPlayer,
-  setVisualVisible,
-  setVisualYaw
+  setVisualVisible
 } from "@/games/voxel/noaVoxelVisual";
+import {
+  createAvatarRig,
+  setAvatarHeadPitch,
+  setAvatarYaw,
+  setAvatarYawSmoothed,
+  updateAvatarWalk,
+  type AvatarRig
+} from "@/games/voxel/voxelAvatarAnimation";
 
 const INV_DRAG_MIME = "application/x-playground-voxel-inv";
 
@@ -788,6 +795,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
       /** Local third-person body mesh (noa `mesh` component); null if voxel load failed. */
       let localPlayerVoxelRoot: Mesh | null = null;
+      let localRig: AvatarRig | null = null;
       if (!cancelled && voxelAvatarsEnabled) {
         try {
           const localRoot = cloneVoxelTemplate(voxelCat.modelId, "local-player-voxel");
@@ -799,13 +807,18 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           localPlayerVoxelRoot = md?.mesh ?? null;
           if (localPlayerVoxelRoot) {
             setVisualVisible(localPlayerVoxelRoot, noa.camera.zoomDistance > 0);
-            setVisualYaw(localPlayerVoxelRoot, noa.camera.heading);
+            localRig = createAvatarRig(localPlayerVoxelRoot);
+            setAvatarYaw(localRig, noa.camera.heading);
           }
         } catch (err) {
           console.warn("voxel avatars: local body failed", err);
           localPlayerVoxelRoot = null;
+          localRig = null;
         }
       }
+
+      /** Per-remote-entity animation rigs, keyed by userId — parallel to remoteEntitiesRef. */
+      const remoteRigs = new Map<string, AvatarRig>();
 
       function ensureRemoteEntity(userId: string): number {
         const existing = remoteEntitiesRef.current.get(userId);
@@ -825,6 +838,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
             const visual = cloneVoxelTemplate(voxelCat.modelId, `remote-vox-${userId}`);
             applyTextureToVoxelRoot(scene, visual, voxelCat.textureUrl);
             attachVoxelVisualToEntity(noa, id, visual, { meshOffset: voxelCat.meshOffset });
+            const md = noa.entities.getMeshData(id);
+            if (md?.mesh) remoteRigs.set(userId, createAvatarRig(md.mesh as Mesh));
           } catch {
             // keep placeholder box mesh from add()
           }
@@ -839,15 +854,18 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           if (userId === selfId) continue;
           const eid = ensureRemoteEntity(userId);
           noa.entities.setPosition(eid, p.pos);
-          if (voxelAvatarsEnabled) {
-            const md = noa.entities.getMeshData(eid);
-            if (md?.mesh) setVisualYaw(md.mesh, p.heading);
+          const rig = remoteRigs.get(userId);
+          if (rig) {
+            updateAvatarWalk(rig, p.pos[0], p.pos[2]);
+            setAvatarHeadPitch(rig, p.pitch ?? 0);
+            setAvatarYawSmoothed(rig, p.heading);
           }
         }
         for (const [userId, eid] of remoteEntitiesRef.current) {
           if (!(userId in snap.players)) {
             noa.entities.deleteEntity(eid);
             remoteEntitiesRef.current.delete(userId);
+            remoteRigs.delete(userId);
           }
         }
       });
@@ -950,22 +968,29 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           );
         }
 
+        const playerEnt = noa.playerEntity;
+        const pos: number[] = noa.entities.getPosition(playerEnt);
+        const heading: number = noa.camera.heading;
+        const pitch: number = noa.camera.pitch;
+
         if (localPlayerVoxelRoot) {
           setVisualVisible(localPlayerVoxelRoot, noa.camera.zoomDistance > 0);
-          setVisualYaw(localPlayerVoxelRoot, noa.camera.heading);
+        }
+        if (localRig) {
+          updateAvatarWalk(localRig, pos[0], pos[2]);
+          setAvatarHeadPitch(localRig, pitch);
+          setAvatarYaw(localRig, heading);
         }
 
         const now = performance.now();
         if (now - lastEmit < 60) return;
         lastEmit = now;
-        const playerEnt = noa.playerEntity;
-        const pos: number[] = noa.entities.getPosition(playerEnt);
-        const heading: number = noa.camera.heading;
         const physState = noa.entities.getPhysics(playerEnt);
         const onGround = physState?.body?.resting?.[1] === -1;
         onInputRef.current({
           pos: [pos[0], pos[1], pos[2]],
           heading,
+          pitch,
           jumping: !onGround,
           t: Date.now()
         });

@@ -16,7 +16,7 @@ Use this skill when adding player avatars or future rendered entities to the Min
 
 ## Architecture
 
-Use three small pieces:
+Use these layers:
 
 1. **Voxel model layer**: `apps/web/src/games/voxel/voxelJsonModel.ts`
    - Pure Babylon.js only.
@@ -34,6 +34,14 @@ Use three small pieces:
    - Map `modelKey` to `{ modelUrl, textureUrl, width, height, meshOffset?, hitbox? }`.
    - Adding a visual type should usually be one catalog row plus assets.
 
+4. **Avatar animation (optional)**: `apps/web/src/games/voxel/voxelAvatarAnimation.ts`
+   - Pure Babylon: rig discovery, walk phase, head pitch on bones, yaw snap/smooth.
+   - Wire avatar-facing motion from callers (`MinecraftClient`): local uses `noa` camera + `tick`; remotes use `RoomSnapshot` positions/`heading`/`pitch`.
+   - **Walk speed tuning**: voxelsrv used `phase += dist/5`, which is very slow in practice. Prefer `updateAvatarWalk`’s `stepsPerMeter` (default tuned for Minecraft-like cadence) and a small `movingThreshold` so slow movement still animates. Remote players only get new positions at snapshot rate — animation may look a bit steppier than local unless you interpolate or drive updates more often.
+   - **Head pitch on others**: server must echo camera pitch (e.g. optional `pitch` on `InputReq` / `PlayerSnapshot` in `voxelProtocol` + minecraft-server) so remotes can run `setAvatarHeadPitch`; voxelsrv halves pitch on the head bone — match that in the animator if you want identical look.
+   - **Geometry vs skin**: `player.json` from voxelsrv is **Steve**-width limbs (4×4 voxels per arm/leg cube). Pair it with a **Steve-layout** 64×64 skin (e.g. `public/minecraft-assets` texture). Using a slim **Alex** skin on Steve geometry stretches UVs and reads as “wrong” or too-thick limbs; slim avatars need a matching slim model JSON + UV layout, not just a different PNG.
+   - Limb swing signs and bone names should stay aligned with voxelsrv `updateAnimationOfModel` in `sourceCode/voxelsrv/src/lib/gameplay/connect.ts` unless you intentionally change the rig.
+
 ## Player Avatar Checklist
 
 1. Read the current plan if present: `.cursor/plans/voxel_player_avatars_2c1c85ee.plan.md`.
@@ -42,7 +50,7 @@ Use three small pieces:
 4. Load the player visual once after noa is ready, respecting the mount effect's `cancelled` flag.
 5. Keep a fallback to the old remote box if model/texture loading fails.
 6. For remotes, keep entity creation in `MinecraftClient.ensureRemoteEntity`; then clone and attach the visual.
-7. Apply `PlayerSnapshot.heading` through one helper such as `setVisualYaw`.
+7. Drive orientation and limbs with `voxelAvatarAnimation`: e.g. `setAvatarYaw` / `setAvatarYawSmoothed` for `PlayerSnapshot.heading` (smooth for remotes), `setAvatarHeadPitch` when `pitch` is on the wire, `updateAvatarWalk` from world XZ each tick/snapshot.
 8. For the local player, show the body only in third person (`noa.camera.zoomDistance > 0`) and drive yaw from `noa.camera.heading`.
 9. On cleanup, dispose visual roots/children and delete remote noa entities.
 
@@ -55,7 +63,7 @@ Use three small pieces:
 3. Load/cache the model through `voxelJsonModel.ts`.
 4. Create the noa entity in the caller, then call `attachVoxelVisualToEntity`.
 5. Update position/yaw from the owning system only.
-6. Keep all rotation sign and offset tuning in `noaVoxelVisual.ts` or the catalog, not scattered through callers.
+6. Keep mesh attachment offsets in `noaVoxelVisual.ts` or the catalog; keep limb/head/yaw animation tuning in `voxelAvatarAnimation.ts` (or one dedicated animator per entity type), not scattered through callers.
 
 ## Verification
 

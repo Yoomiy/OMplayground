@@ -30,6 +30,7 @@ function buildSnapshot(room: VoxelRoom): RoomSnapshot {
     players[p.userId] = {
       pos: p.pos,
       heading: p.heading,
+      pitch: p.pitch,
       jumping: p.jumping,
       t: p.t
     };

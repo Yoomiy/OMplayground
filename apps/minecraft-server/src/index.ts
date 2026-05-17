@@ -460,6 +460,7 @@ io.on("connection", (socket) => {
     if (!Number.isFinite(payload?.heading)) return;
     player.pos = payload.pos;
     player.heading = payload.heading;
+    if (Number.isFinite(payload?.pitch)) player.pitch = payload.pitch as number;
     player.jumping = !!payload.jumping;
     player.t = Number.isFinite(payload?.t) ? payload.t : Date.now();
     player.lastInputAt = Date.now();
