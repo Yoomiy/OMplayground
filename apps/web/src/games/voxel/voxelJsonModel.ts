@@ -50,7 +50,11 @@ function assertGeometry(model: unknown): VoxelModelGeometryJson {
 
 /**
  * Builds a disposable template root (not added to the scene). Cached by `modelId`.
- * Ported from voxelsrv `createTemplateModel`; naming uses `VOXEL_BONE_NAME_PREFIX` + bone name.
+ * Hierarchical like voxelsrv `createTemplateModel`: empty root + per-bone merged meshes
+ * parented under it with pivot matrices (no baking) so limbs can animate later.
+ *
+ * Callers must register bone meshes with `noa.rendering.addMeshToScene` — see
+ * `registerVoxelChildMeshesInNoa` — because noa only renders meshes in its octree list.
  */
 export function buildTemplateFromJson(
   scene: Scene,
@@ -70,7 +74,7 @@ export function buildTemplateFromJson(
   placeholderMat.specularColor = Color3.Black();
   placeholderMat.diffuseColor = new Color3(1, 1, 1);
 
-  const allBoneMeshes: Mesh[] = [];
+  const main = new Mesh(`${modelId}-template-root`, scene);
 
   for (const mdata of geom.bones) {
     const box = mdata.cubes;
@@ -143,23 +147,19 @@ export function buildTemplateFromJson(
       part.push(brick);
     }
 
+    if (part.length === 0) continue;
     const merged = Mesh.MergeMeshes(part, true, true, undefined, true, true);
     if (!merged) continue;
     merged.name = `${VOXEL_BONE_NAME_PREFIX}${mdata.name}`;
+    merged.setParent(main);
     merged.setPivotMatrix(
       Matrix.Translation(-pivot[0] * MODEL_SCALE, -pivot[1] * MODEL_SCALE, -pivot[2] * MODEL_SCALE)
     );
-    merged.bakeCurrentTransformIntoVertices();
-    allBoneMeshes.push(merged);
   }
 
-  const root = Mesh.MergeMeshes(allBoneMeshes, true, true, undefined, true, true);
-  if (!root) throw new Error("Failed to merge bone meshes into root");
-  root.name = `${modelId}-template-root`;
-  root.setEnabled(false);
-
-  templateRoots.set(modelId, root);
-  return root;
+  main.setEnabled(false);
+  templateRoots.set(modelId, main);
+  return main;
 }
 
 export async function preloadVoxelTemplate(

@@ -27,6 +27,7 @@ Use three small pieces:
 2. **Noa visual layer**: `apps/web/src/games/voxel/noaVoxelVisual.ts`
    - Thin adapter for existing noa entities.
    - Attach cloned roots to entities/player, set yaw/visibility, and dispose visuals.
+   - Hierarchical voxel roots (bone meshes under an empty root) must call `registerVoxelChildMeshesInNoa` after attach: noa only draws meshes registered with `noa.rendering.addMeshToScene`, not arbitrary Babylon children.
    - Do not create authoritative gameplay state here.
 
 3. **Entity visual catalog**: `apps/web/src/games/voxel/voxelEntityCatalog.ts`

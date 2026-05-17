@@ -9,6 +9,17 @@ import type { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type NoaEngineLike = any;
 
+/**
+ * noa replaces Babylon scene picking/render lists with an octree: only meshes
+ * passed to `noa.rendering.addMeshToScene` draw. Child meshes under the entity
+ * root are not included automatically (voxelsrv registers each bone the same way).
+ */
+export function registerVoxelChildMeshesInNoa(noa: NoaEngineLike, root: Mesh): void {
+  for (const child of root.getChildMeshes(false)) {
+    noa.rendering.addMeshToScene(child as Mesh, false);
+  }
+}
+
 export function attachVoxelVisualToEntity(
   noa: NoaEngineLike,
   eid: number,
@@ -21,6 +32,7 @@ export function attachVoxelVisualToEntity(
     mesh: clonedRoot,
     offset: off
   });
+  registerVoxelChildMeshesInNoa(noa, clonedRoot);
 }
 
 /** Parent to local player rig when a parent mesh exists; else use `attachVoxelVisualToEntity` on the player id (noa default player has no mesh until you add one). */
@@ -36,6 +48,7 @@ export function attachVoxelVisualToPlayer(
     noa.rendering.addMeshToScene(clonedRoot, false);
     clonedRoot.setParent(parent);
     clonedRoot.position.copyFromFloats(0, -h / 2, 0);
+    registerVoxelChildMeshesInNoa(noa, clonedRoot);
     return;
   }
   attachVoxelVisualToEntity(noa, playerEntityId, clonedRoot, options);
