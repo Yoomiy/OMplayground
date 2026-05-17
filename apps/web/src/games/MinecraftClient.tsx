@@ -40,6 +40,7 @@ import {
   updateAvatarWalk,
   type AvatarRig
 } from "@/games/voxel/voxelAvatarAnimation";
+import { overrideObjectMesher } from "@/games/voxel/voxelObjectMesher";
 
 const INV_DRAG_MIME = "application/x-playground-voxel-inv";
 
@@ -431,6 +432,29 @@ function proceduralVoxelID(x: number, y: number, z: number, seed: number): numbe
   return BLOCK_REGISTRY.AIR;
 }
 
+function makePlantSpriteMesh(noa: any, Babylon: any, url: string, name: string) {
+  const scene = noa.rendering.getScene();
+  const matname = name || "mat";
+  const tex = new Babylon.Texture(url, scene, true, true, Babylon.Texture.NEAREST_SAMPLINGMODE);
+  tex.hasAlpha = true;
+  const mesh = Babylon.MeshBuilder.CreatePlane("sprite-" + matname, { size: 1 }, scene);
+  const mat = noa.rendering.makeStandardMaterial(matname);
+  mat.backFaceCulling = false;
+  mat.diffuseTexture = tex;
+  mat.diffuseTexture.vOffset = 0.99;
+  mesh.material = mat;
+  mesh.rotation.y += 0.81;
+
+  const offset = Babylon.Matrix.Translation(0, 0.5, 0);
+  mesh.bakeTransformIntoVertices(offset);
+  const clone = mesh.clone();
+  clone.rotation.y += 1.62;
+
+  const result = Babylon.Mesh.MergeMeshes([mesh, clone], true);
+  
+  return result;
+}
+
 export interface MinecraftClientProps {
   seed: number;
   initialDeltas: [number, number, number, number][];
@@ -550,6 +574,11 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         chunkAddDistance: [3, 3],
         chunkRemoveDistance: [4, 4]
       } as Record<string, unknown>);
+      
+      // Override default ThinInstance ObjectMesher with SolidParticleSystem version 
+      // (solves the ThinInstance origin shift bug where objects jump to sky)
+      overrideObjectMesher(noa);
+      
       noaRef.current = noa;
       noa?.setPaused?.(pausedRef.current);
 
@@ -613,7 +642,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         solid: true
       });
       noa.registry.registerBlock(BLOCK_REGISTRY.SAPLING, {
-        material: "mc_sapling",
+        blockMesh: makePlantSpriteMesh(noa, Babylon, MC_TEX.sapling, "mc_sapling"),
         solid: false,
         opaque: false
       });
@@ -690,22 +719,22 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         solid: true
       });
       noa.registry.registerBlock(BLOCK_REGISTRY.DANDELION, {
-        material: "mc_dandelion",
+        blockMesh: makePlantSpriteMesh(noa, Babylon, MC_TEX.dandelion, "mc_dandelion"),
         solid: false,
         opaque: false
       });
       noa.registry.registerBlock(BLOCK_REGISTRY.ROSE, {
-        material: "mc_rose",
+        blockMesh: makePlantSpriteMesh(noa, Babylon, MC_TEX.rose, "mc_rose"),
         solid: false,
         opaque: false
       });
       noa.registry.registerBlock(BLOCK_REGISTRY.BROWN_MUSHROOM, {
-        material: "mc_brown_mushroom",
+        blockMesh: makePlantSpriteMesh(noa, Babylon, MC_TEX.brownMushroom, "mc_brown_mushroom"),
         solid: false,
         opaque: false
       });
       noa.registry.registerBlock(BLOCK_REGISTRY.RED_MUSHROOM, {
-        material: "mc_red_mushroom",
+        blockMesh: makePlantSpriteMesh(noa, Babylon, MC_TEX.redMushroom, "mc_red_mushroom"),
         solid: false,
         opaque: false
       });
@@ -932,7 +961,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           return;
         }
         if (e.key.toLowerCase() === "p" && !inventoryOpen) {
-          onInputRef.current({ action: "drop" });
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (onInputRef.current as any)({ action: "drop" });
           return;
         }
         const n = Number(e.key);
@@ -1104,7 +1134,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
             img.height
           );
         }
-        e.dataTransfer.setDragImage(canvas, canvas.width / 2, canvas.height / 2);
+        e.dataTransfer.setDragImage(canvas as unknown as Element, canvas.width / 2, canvas.height / 2);
       }
     },
     onDragOver: (e: DragEvent<HTMLDivElement>) => {
