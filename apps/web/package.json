@@ -13,6 +13,7 @@
   "dependencies": {
     "@babylonjs/core": "^6.49.0",
     "@playground/game-logic": "0.0.1",
+    "@playground/voxel-content": "0.0.1",
     "@radix-ui/react-slot": "^1.1.2",
     "@supabase/supabase-js": "^2.49.1",
     "chess.js": "^1.4.0",

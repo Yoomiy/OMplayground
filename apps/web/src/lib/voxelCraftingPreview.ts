@@ -3,8 +3,12 @@
  * tryCraftFromGrid pattern checks + output space (no mutations).
  */
 import {
-  BLOCK_REGISTRY,
+  REGISTERED_ITEM_IDS,
   ITEM_REGISTRY,
+  itemMaxStack
+} from "@playground/voxel-content";
+import {
+  BLOCK_REGISTRY,
   CRAFTING_CELL_MAX,
   CRAFTING_GRID_SLOTS,
   PLACEABLE_BLOCK_IDS,
@@ -12,9 +16,7 @@ import {
   type ItemSlot
 } from "@/lib/voxelProtocol";
 
-const KNOWN_ITEMS = new Set<number>([ITEM_REGISTRY.STICK, ITEM_REGISTRY.PLANKS]);
 const MAX_STACK = 64;
-
 
 function normalizeCraftRead(s: CraftingGridSlot): void {
   if (!Number.isFinite(s.count) || s.count <= 0) {
@@ -23,17 +25,19 @@ function normalizeCraftRead(s: CraftingGridSlot): void {
     s.count = 0;
     return;
   }
-  s.count = Math.max(0, Math.min(MAX_STACK, Math.floor(s.count)));
   if (s.itemId > 0) {
-    if (!KNOWN_ITEMS.has(s.itemId)) {
+    if (!REGISTERED_ITEM_IDS.has(s.itemId)) {
       s.blockId = BLOCK_REGISTRY.AIR;
       s.itemId = 0;
       s.count = 0;
       return;
     }
+    const cap = Math.max(itemMaxStack(s.itemId), CRAFTING_CELL_MAX);
+    s.count = Math.max(0, Math.min(cap, Math.floor(s.count)));
     s.blockId = BLOCK_REGISTRY.AIR;
     return;
   }
+  s.count = Math.max(0, Math.min(MAX_STACK, Math.floor(s.count)));
   if (s.blockId !== BLOCK_REGISTRY.AIR && !PLACEABLE_BLOCK_IDS.includes(s.blockId)) {
     s.blockId = BLOCK_REGISTRY.AIR;
     s.itemId = 0;
@@ -42,13 +46,14 @@ function normalizeCraftRead(s: CraftingGridSlot): void {
 }
 
 function maxAddableItemCount(slots: ItemSlot[], itemId: number): number {
-  if (itemId === 0) return 0;
+  const cap = itemMaxStack(itemId);
+  if (cap <= 0) return 0;
   let space = 0;
   for (const s of slots) {
-    if (s.itemId === itemId && s.count > 0 && s.count < MAX_STACK) {
-      space += MAX_STACK - s.count;
+    if (s.itemId === itemId && s.count > 0 && s.count < cap) {
+      space += cap - s.count;
     } else if (s.itemId === 0 || s.count <= 0) {
-      space += MAX_STACK;
+      space += cap;
     }
   }
   return space;

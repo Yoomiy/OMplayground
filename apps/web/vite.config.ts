@@ -75,6 +75,10 @@ export default defineConfig({
       "@playground/game-logic": path.resolve(
         viteConfigDir,
         "../../packages/game-logic/src/index.ts"
+      ),
+      "@playground/voxel-content": path.resolve(
+        viteConfigDir,
+        "../../packages/voxel-content/src/index.ts"
       )
     }
   },

@@ -11,6 +11,7 @@
     "test": "jest --config jest.config.cjs"
   },
   "dependencies": {
+    "@playground/voxel-content": "0.0.1",
     "@supabase/supabase-js": "^2.49.1",
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",

@@ -1,8 +1,6 @@
 /**
- * Wire-protocol types for the voxel server, mirrored on the client. Kept
- * in lock-step with apps/minecraft-server/src/protocol.ts. Per the plan,
- * we inline now and extract into `packages/voxel-protocol` once both
- * sides stabilize (avoids a cross-app TS path until needed).
+ * Wire-protocol types for the voxel server, mirrored on the client (`protocol.ts`).
+ * Item ids/metadata are authored in `@playground/voxel-content`; wire types stay here.
  */
 
 export type Vec3 = [number, number, number];
@@ -35,16 +33,11 @@ export interface InventoryMoveReq {
   toIndex: number;
 }
 
-export const ITEM_REGISTRY = {
-  STICK: 100,
-  /** Non-placeable planks (crafting ingredient); placeable planks use `OAK_PLANKS`. */
-  PLANKS: 101
-} as const;
+import { webItemIcons } from "@playground/voxel-content";
 
-export const ITEM_ICON: Record<number, string> = {
-  [ITEM_REGISTRY.STICK]: "/minecraft-assets/stick.png",
-  [ITEM_REGISTRY.PLANKS]: "/minecraft-assets/oak_planks.png"
-};
+export { ITEM_REGISTRY } from "@playground/voxel-content";
+
+export const ITEM_ICON: Record<number, string> = webItemIcons();
 
 
 export interface RoomPlayerInfo {

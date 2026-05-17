@@ -1,6 +1,10 @@
 import {
-  BLOCK_REGISTRY,
+  REGISTERED_ITEM_IDS,
   ITEM_REGISTRY,
+  itemMaxStack
+} from "@playground/voxel-content";
+import {
+  BLOCK_REGISTRY,
   CRAFTING_CELL_MAX,
   MAIN_ITEM_INVENTORY_SLOTS,
   PLACEABLE_BLOCK_IDS,
@@ -140,11 +144,6 @@ export function hotbarFromPersisted(
   return out;
 }
 
-const KNOWN_ITEM_IDS = new Set<number>([
-  ITEM_REGISTRY.STICK,
-  ITEM_REGISTRY.PLANKS
-]);
-
 export function createEmptyItemInventory(
   size = MAIN_ITEM_INVENTORY_SLOTS
 ): ItemSlot[] {
@@ -172,13 +171,14 @@ export function itemInventoryFromPersisted(
       out[i] = { itemId: 0, count: 0 };
       continue;
     }
-    if (!KNOWN_ITEM_IDS.has(itemId)) {
+    if (!REGISTERED_ITEM_IDS.has(itemId)) {
       out[i] = { itemId: 0, count: 0 };
       continue;
     }
+    const cap = itemMaxStack(itemId);
     out[i] = {
       itemId,
-      count: Math.max(0, Math.min(MAX_STACK, Math.floor(count)))
+      count: Math.max(0, Math.min(cap, Math.floor(count)))
     };
   }
   return out;
@@ -186,13 +186,14 @@ export function itemInventoryFromPersisted(
 
 /** How many units of `itemId` can still fit (new stacks + partial stacks). */
 export function maxAddableItemCount(slots: ItemSlot[], itemId: number): number {
-  if (itemId === 0) return 0;
+  const cap = itemMaxStack(itemId);
+  if (cap <= 0) return 0;
   let space = 0;
   for (const s of slots) {
-    if (s.itemId === itemId && s.count > 0 && s.count < MAX_STACK) {
-      space += MAX_STACK - s.count;
+    if (s.itemId === itemId && s.count > 0 && s.count < cap) {
+      space += cap - s.count;
     } else if (s.itemId === 0 || s.count <= 0) {
-      space += MAX_STACK;
+      space += cap;
     }
   }
   return space;
@@ -201,13 +202,15 @@ export function maxAddableItemCount(slots: ItemSlot[], itemId: number): number {
 /** Add `count` items across stacks; leaves overflow unsourced if inv is full. */
 export function addItemCount(slots: ItemSlot[], itemId: number, count: number): void {
   if (itemId === 0 || count <= 0) return;
+  const stackCap = itemMaxStack(itemId);
+  if (stackCap <= 0) return;
   let left = count;
   while (left > 0) {
     const stack = slots.findIndex(
-      (s) => s.itemId === itemId && s.count > 0 && s.count < MAX_STACK
+      (s) => s.itemId === itemId && s.count > 0 && s.count < stackCap
     );
     if (stack >= 0) {
-      const room = MAX_STACK - slots[stack].count;
+      const room = stackCap - slots[stack].count;
       const add = Math.min(room, left);
       slots[stack].count += add;
       left -= add;
@@ -216,7 +219,7 @@ export function addItemCount(slots: ItemSlot[], itemId: number, count: number): 
     const empty = slots.findIndex((s) => s.itemId === 0 || s.count <= 0);
     if (empty < 0) return;
     slots[empty].itemId = itemId;
-    const add = Math.min(MAX_STACK, left);
+    const add = Math.min(stackCap, left);
     slots[empty].count = add;
     left -= add;
   }
@@ -233,17 +236,19 @@ function normalizeCraftingSlot(s: CraftingGridSlot): void {
     s.count = 0;
     return;
   }
-  s.count = Math.max(0, Math.min(MAX_STACK, Math.floor(s.count)));
   if (s.itemId > 0) {
-    if (!KNOWN_ITEM_IDS.has(s.itemId)) {
+    if (!REGISTERED_ITEM_IDS.has(s.itemId)) {
       s.blockId = BLOCK_REGISTRY.AIR;
       s.itemId = 0;
       s.count = 0;
       return;
     }
+    const cap = Math.max(itemMaxStack(s.itemId), CRAFTING_CELL_MAX);
+    s.count = Math.max(0, Math.min(cap, Math.floor(s.count)));
     s.blockId = BLOCK_REGISTRY.AIR;
     return;
   }
+  s.count = Math.max(0, Math.min(MAX_STACK, Math.floor(s.count)));
   if (s.blockId !== BLOCK_REGISTRY.AIR && !PLACEABLE_BLOCK_IDS.includes(s.blockId)) {
     s.blockId = BLOCK_REGISTRY.AIR;
     s.itemId = 0;
@@ -323,7 +328,7 @@ function readHotbarAtom(s: HotbarSlot): SlotAtom {
 
 function readItemAtom(s: ItemSlot): SlotAtom {
   if (s.itemId === 0 || s.count <= 0) return { kind: "empty" };
-  if (!KNOWN_ITEM_IDS.has(s.itemId)) return { kind: "empty" };
+  if (!REGISTERED_ITEM_IDS.has(s.itemId)) return { kind: "empty" };
   return { kind: "item", itemId: s.itemId, count: s.count };
 }
 
@@ -436,8 +441,8 @@ function mergeRoomForDestination(
 ): number {
   if (b.kind === "empty") return 0;
   if (to === "craft") return Math.max(0, CRAFTING_CELL_MAX - b.count);
-  if (b.kind === "block" || b.kind === "item")
-    return Math.max(0, MAX_STACK - b.count);
+  if (b.kind === "block") return Math.max(0, MAX_STACK - b.count);
+  if (b.kind === "item") return Math.max(0, itemMaxStack(b.itemId) - b.count);
   return 0;
 }
 

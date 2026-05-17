@@ -34,11 +34,7 @@ export interface InventoryMoveReq {
   toIndex: number;
 }
 
-export const ITEM_REGISTRY = {
-  STICK: 100,
-  /** Non-placeable planks (craft ingredient); placeable planks use `OAK_PLANKS` in BLOCK_REGISTRY. */
-  PLANKS: 101
-} as const;
+export { ITEM_REGISTRY } from "@playground/voxel-content";
 
 export interface RoomPlayerInfo {
   userId: string;
