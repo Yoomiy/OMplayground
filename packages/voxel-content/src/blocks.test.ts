@@ -6,8 +6,10 @@ import {
   blockBreakable,
   blockDef,
   blockDropId,
-  blockDropsPickable
+  blockDropsPickable,
+  blockHardness
 } from "./blocks";
+import { isInstantBreak } from "./mining";
 
 describe("@playground/voxel-content blocks", () => {
   it("lists ids 0..n contiguously", () => {
@@ -55,5 +57,12 @@ describe("@playground/voxel-content blocks", () => {
   it("stone drop stays aligned with BLOCK_DEF meta", () => {
     const stone = blockDef(BLOCK_REGISTRY.STONE);
     expect(stone?.dropHotbarBlockId).toBe(BLOCK_REGISTRY.COBBLESTONE);
+  });
+
+  it("exposes mining hardness on defs", () => {
+    expect(blockHardness(BLOCK_REGISTRY.STONE)).toBe(1.5);
+    expect(blockDef(BLOCK_REGISTRY.OBSIDIAN)?.requiredTool).toBe("pickaxe");
+    expect(isInstantBreak(BLOCK_REGISTRY.SAPLING)).toBe(true);
+    expect(isInstantBreak(BLOCK_REGISTRY.DIRT)).toBe(false);
   });
 });

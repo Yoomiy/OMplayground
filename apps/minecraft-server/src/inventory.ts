@@ -21,12 +21,18 @@ export type CraftingGridState = CraftingGridSlot[];
 export function createEmptyHotbar(): HotbarState {
   return Array.from({ length: HOTBAR_SLOT_COUNT }, () => ({
     blockId: BLOCK_REGISTRY.AIR,
+    itemId: 0,
     count: 0
   }));
 }
 
 export function cloneHotbar(slots: HotbarState): HotbarState {
-  return slots.map((s) => ({ blockId: s.blockId, count: s.count }));
+  return slots.map((s) => ({
+    blockId: s.blockId,
+    itemId: s.itemId ?? 0,
+    count: s.count,
+    ...(s.durability !== undefined ? { durability: s.durability } : {})
+  }));
 }
 
 export { blockBreakable, blockDropId, blockDropsPickable } from "@playground/voxel-content";
@@ -38,7 +44,10 @@ function findStackIndex(slots: HotbarState, blockId: number): number {
 }
 
 function findEmptyIndex(slots: HotbarState): number {
-  return slots.findIndex((s) => s.blockId === BLOCK_REGISTRY.AIR || s.count <= 0);
+  return slots.findIndex(
+    (s) =>
+      (s.blockId === BLOCK_REGISTRY.AIR && (s.itemId ?? 0) === 0) || s.count <= 0
+  );
 }
 
 /** Add one block worth of drops; merges stacks, then first empty slot. */
@@ -92,22 +101,38 @@ export function consumeOneIfPresent(slots: HotbarState, blockId: number): void {
   const next = slots[i].count - 1;
   if (next <= 0) {
     slots[i].blockId = BLOCK_REGISTRY.AIR;
+    slots[i].itemId = 0;
     slots[i].count = 0;
   } else {
     slots[i].count = next;
   }
 }
 
-/** Decrement one block from an exact hotbar cell (player drop intent). */
+/** Decrement one stack unit from an exact hotbar cell (player drop intent). */
 export function consumeOneFromHotbarIndex(slots: HotbarState, index: number): boolean {
   if (index < 0 || index >= HOTBAR_SLOT_COUNT) return false;
   const s = slots[index];
-  if (!s || s.blockId === BLOCK_REGISTRY.AIR || s.count <= 0) return false;
+  if (!s || s.count <= 0) return false;
+  if ((s.itemId ?? 0) > 0) {
+    const next = s.count - 1;
+    if (next <= 0) {
+      slots[index] = { blockId: BLOCK_REGISTRY.AIR, itemId: 0, count: 0 };
+    } else {
+      slots[index] = {
+        blockId: BLOCK_REGISTRY.AIR,
+        itemId: s.itemId,
+        count: next,
+        ...(s.durability !== undefined ? { durability: s.durability } : {})
+      };
+    }
+    return true;
+  }
+  if (s.blockId === BLOCK_REGISTRY.AIR) return false;
   const next = s.count - 1;
   if (next <= 0) {
-    slots[index] = { blockId: BLOCK_REGISTRY.AIR, count: 0 };
+    slots[index] = { blockId: BLOCK_REGISTRY.AIR, itemId: 0, count: 0 };
   } else {
-    slots[index] = { blockId: s.blockId, count: next };
+    slots[index] = { blockId: s.blockId, itemId: 0, count: next };
   }
   return true;
 }
@@ -121,17 +146,35 @@ export function hotbarFromPersisted(
   }
   const out = createEmptyHotbar();
   for (let i = 0; i < HOTBAR_SLOT_COUNT; i++) {
-    const cell = raw[i] as { blockId?: unknown; count?: unknown };
+    const cell = raw[i] as {
+      blockId?: unknown;
+      itemId?: unknown;
+      count?: unknown;
+      durability?: unknown;
+    };
     const blockId = Number(cell?.blockId);
     const count = Number(cell?.count);
     if (!Number.isFinite(count)) continue;
-    if (blockId === BLOCK_REGISTRY.AIR && count === 0) {
-      out[i] = { blockId: BLOCK_REGISTRY.AIR, count: 0 };
+    const itemId = Number(cell?.itemId) || 0;
+    const cellDur = Number(cell?.durability);
+    if (blockId === BLOCK_REGISTRY.AIR && itemId === 0 && count === 0) {
+      out[i] = { blockId: BLOCK_REGISTRY.AIR, itemId: 0, count: 0 };
+      continue;
+    }
+    if (itemId > 0 && REGISTERED_ITEM_IDS.has(itemId) && count > 0) {
+      const cap = itemMaxStack(itemId);
+      out[i] = {
+        blockId: BLOCK_REGISTRY.AIR,
+        itemId,
+        count: Math.max(0, Math.min(cap, Math.floor(count))),
+        ...(Number.isFinite(cellDur) ? { durability: Math.floor(cellDur) } : {})
+      };
       continue;
     }
     if (!PLACEABLE_BLOCK_IDS.includes(blockId)) continue;
     out[i] = {
       blockId,
+      itemId: 0,
       count: Math.max(0, Math.min(MAX_STACK, Math.floor(count)))
     };
   }
@@ -145,7 +188,11 @@ export function createEmptyItemInventory(
 }
 
 export function cloneItemInventory(slots: ItemSlot[]): ItemSlot[] {
-  return slots.map((s) => ({ itemId: s.itemId, count: s.count }));
+  return slots.map((s) => ({
+    itemId: s.itemId,
+    count: s.count,
+    ...(s.durability !== undefined ? { durability: s.durability } : {})
+  }));
 }
 
 export function itemInventoryFromPersisted(
@@ -158,7 +205,7 @@ export function itemInventoryFromPersisted(
   }
   const out = createEmptyItemInventory(size);
   for (let i = 0; i < size; i++) {
-    const cell = raw[i] as { itemId?: unknown; count?: unknown };
+    const cell = raw[i] as { itemId?: unknown; count?: unknown; durability?: unknown };
     const itemId = Number(cell?.itemId);
     const count = Number(cell?.count);
     if (!Number.isFinite(count) || itemId === 0 || count <= 0) {
@@ -170,9 +217,11 @@ export function itemInventoryFromPersisted(
       continue;
     }
     const cap = itemMaxStack(itemId);
+    const cellDur = Number(cell?.durability);
     out[i] = {
       itemId,
-      count: Math.max(0, Math.min(cap, Math.floor(count)))
+      count: Math.max(0, Math.min(cap, Math.floor(count))),
+      ...(Number.isFinite(cellDur) ? { durability: Math.floor(cellDur) } : {})
     };
   }
   return out;
@@ -259,7 +308,12 @@ export function createEmptyCraftingGrid(): CraftingGridState {
 }
 
 export function cloneCraftingGrid(grid: CraftingGridState): CraftingGridState {
-  return grid.map((c) => ({ blockId: c.blockId, itemId: c.itemId, count: c.count }));
+  return grid.map((c) => ({
+    blockId: c.blockId,
+    itemId: c.itemId,
+    count: c.count,
+    ...(c.durability !== undefined ? { durability: c.durability } : {})
+  }));
 }
 
 /**
@@ -298,11 +352,14 @@ export function craftingGridFromPersisted(
       blockId?: unknown;
       itemId?: unknown;
       count?: unknown;
+      durability?: unknown;
     };
+    const cellDur = Number(cell?.durability);
     out[i] = {
       blockId: Number(cell?.blockId) || 0,
       itemId: Number(cell?.itemId) || 0,
-      count: Number(cell?.count) || 0
+      count: Number(cell?.count) || 0,
+      ...(Number.isFinite(cellDur) ? { durability: Math.floor(cellDur) } : {})
     };
     normalizeCraftingSlot(out[i]);
   }
@@ -312,10 +369,20 @@ export function craftingGridFromPersisted(
 type SlotAtom =
   | { kind: "empty" }
   | { kind: "block"; blockId: number; count: number }
-  | { kind: "item"; itemId: number; count: number };
+  | { kind: "item"; itemId: number; count: number; durability?: number };
 
 function readHotbarAtom(s: HotbarSlot): SlotAtom {
-  if (s.blockId === BLOCK_REGISTRY.AIR || s.count <= 0) return { kind: "empty" };
+  if (s.count <= 0) return { kind: "empty" };
+  if ((s.itemId ?? 0) > 0) {
+    if (!REGISTERED_ITEM_IDS.has(s.itemId)) return { kind: "empty" };
+    return {
+      kind: "item",
+      itemId: s.itemId,
+      count: s.count,
+      ...(s.durability !== undefined ? { durability: s.durability } : {})
+    };
+  }
+  if (s.blockId === BLOCK_REGISTRY.AIR) return { kind: "empty" };
   if (!PLACEABLE_BLOCK_IDS.includes(s.blockId)) return { kind: "empty" };
   return { kind: "block", blockId: s.blockId, count: s.count };
 }
@@ -323,13 +390,25 @@ function readHotbarAtom(s: HotbarSlot): SlotAtom {
 function readItemAtom(s: ItemSlot): SlotAtom {
   if (s.itemId === 0 || s.count <= 0) return { kind: "empty" };
   if (!REGISTERED_ITEM_IDS.has(s.itemId)) return { kind: "empty" };
-  return { kind: "item", itemId: s.itemId, count: s.count };
+  return {
+    kind: "item",
+    itemId: s.itemId,
+    count: s.count,
+    ...(s.durability !== undefined ? { durability: s.durability } : {})
+  };
 }
 
 function readCraftAtom(s: CraftingGridSlot): SlotAtom {
   normalizeCraftingSlot(s);
   if (s.count <= 0) return { kind: "empty" };
-  if (s.itemId > 0) return { kind: "item", itemId: s.itemId, count: s.count };
+  if (s.itemId > 0) {
+    return {
+      kind: "item",
+      itemId: s.itemId,
+      count: s.count,
+      ...(s.durability !== undefined ? { durability: s.durability } : {})
+    };
+  }
   if (s.blockId !== BLOCK_REGISTRY.AIR)
     return { kind: "block", blockId: s.blockId, count: s.count };
   return { kind: "empty" };
@@ -338,24 +417,37 @@ function readCraftAtom(s: CraftingGridSlot): SlotAtom {
 function writeHotbarAtom(s: HotbarSlot, a: SlotAtom): void {
   if (a.kind === "empty") {
     s.blockId = BLOCK_REGISTRY.AIR;
+    s.itemId = 0;
     s.count = 0;
+    delete s.durability;
     return;
   }
   if (a.kind === "block") {
     s.blockId = a.blockId;
+    s.itemId = 0;
     s.count = a.count;
+    delete s.durability;
+    return;
   }
+  s.blockId = BLOCK_REGISTRY.AIR;
+  s.itemId = a.itemId;
+  s.count = a.count;
+  if (a.durability !== undefined) s.durability = a.durability;
+  else delete s.durability;
 }
 
 function writeItemAtom(s: ItemSlot, a: SlotAtom): void {
   if (a.kind === "empty") {
     s.itemId = 0;
     s.count = 0;
+    delete s.durability;
     return;
   }
   if (a.kind === "item") {
     s.itemId = a.itemId;
     s.count = a.count;
+    if (a.durability !== undefined) s.durability = a.durability;
+    else delete s.durability;
   }
 }
 
@@ -364,6 +456,7 @@ function writeCraftAtom(s: CraftingGridSlot, a: SlotAtom): void {
     s.blockId = BLOCK_REGISTRY.AIR;
     s.itemId = 0;
     s.count = 0;
+    delete s.durability;
     return;
   }
   if (a.kind === "block") {
@@ -375,6 +468,8 @@ function writeCraftAtom(s: CraftingGridSlot, a: SlotAtom): void {
   s.blockId = BLOCK_REGISTRY.AIR;
   s.itemId = a.itemId;
   s.count = a.count;
+  if (a.durability !== undefined) s.durability = a.durability;
+  else delete s.durability;
 }
 
 function readAtom(
@@ -407,15 +502,24 @@ function regionAllowsAtom(
   a: SlotAtom
 ): boolean {
   if (a.kind === "empty") return true;
-  if (region === "hotbar") return a.kind === "block";
+  if (region === "hotbar") return a.kind === "block" || a.kind === "item";
   if (region === "storage") return a.kind === "item";
   return a.kind === "block" || a.kind === "item";
+}
+
+function itemDurabilityKey(d?: number): number | undefined {
+  return d;
 }
 
 function sameAtomStack(a: SlotAtom, b: SlotAtom): boolean {
   if (a.kind === "empty" || b.kind === "empty") return false;
   if (a.kind === "block" && b.kind === "block") return a.blockId === b.blockId;
-  if (a.kind === "item" && b.kind === "item") return a.itemId === b.itemId;
+  if (a.kind === "item" && b.kind === "item") {
+    return (
+      a.itemId === b.itemId &&
+      itemDurabilityKey(a.durability) === itemDurabilityKey(b.durability)
+    );
+  }
   return false;
 }
 
@@ -490,7 +594,8 @@ export function applyInventoryMove(
       writeAtom(hotbar, itemSlots, craft, to, ti, {
         kind: "item",
         itemId: a.itemId,
-        count: take
+        count: take,
+        durability: a.durability
       });
     }
     const left = a.count - take;
@@ -506,7 +611,8 @@ export function applyInventoryMove(
       writeAtom(hotbar, itemSlots, craft, from, fi, {
         kind: "item",
         itemId: a.itemId,
-        count: left
+        count: left,
+        durability: a.durability
       });
     }
     return true;
@@ -531,12 +637,22 @@ export function applyInventoryMove(
           ? { kind: "empty" }
           : { kind: "block", blockId: a.blockId, count: newSrcCount };
     } else if (b.kind === "item" && a.kind === "item") {
-      b = { kind: "item", itemId: b.itemId, count: b.count + move };
+      b = {
+        kind: "item",
+        itemId: b.itemId,
+        count: b.count + move,
+        durability: b.durability
+      };
       const newSrcCount = a.count - move;
       a =
         newSrcCount <= 0
           ? { kind: "empty" }
-          : { kind: "item", itemId: a.itemId, count: newSrcCount };
+          : {
+              kind: "item",
+              itemId: a.itemId,
+              count: newSrcCount,
+              durability: a.durability
+            };
     } else {
       a = { kind: "empty" };
     }

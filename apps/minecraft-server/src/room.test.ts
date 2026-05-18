@@ -117,7 +117,7 @@ describe("VoxelRoom", () => {
     assignPlayer(room, "u1", "A");
     const p = room.players.get("u1");
     expect(p?.inventory).toBeDefined();
-    p!.inventory![0] = { blockId: BLOCK_REGISTRY.DIRT, count: 4 };
+    p!.inventory![0] = { blockId: BLOCK_REGISTRY.DIRT, itemId: 0, count: 4 };
     const persisted = snapshotPersistedState(room);
     expect(persisted.gameMode).toBe("survival");
     expect(persisted.inventories?.u1?.[0]).toEqual({

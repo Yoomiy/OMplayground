@@ -19,10 +19,18 @@ import {
   type RoomPlayerInfo,
   type RoomSnapshot,
   type Vec3,
+  type BreakStartAck,
+  type SimpleAck,
   type WorldDrop,
   type WorldDropWireDelta
 } from "@/lib/voxelProtocol";
-import { MC_MATERIAL_ENTRIES, NOA_BLOCK_ENTRIES, PLANT_SPRITE_BLOCK_IDS } from "@playground/voxel-content";
+import {
+  isInstantBreak,
+  itemMaxDurability,
+  MC_MATERIAL_ENTRIES,
+  NOA_BLOCK_ENTRIES,
+  PLANT_SPRITE_BLOCK_IDS
+} from "@playground/voxel-content";
 import { craftingGridPreview } from "@/lib/voxelCraftingPreview";
 import { VOXEL_ENTITY_CATALOG } from "@/games/voxel/voxelEntityCatalog";
 import {
@@ -44,6 +52,11 @@ import {
   type AvatarRig
 } from "@/games/voxel/voxelAvatarAnimation";
 import { overrideObjectMesher } from "@/games/voxel/voxelObjectMesher";
+import {
+  createBreakCrackOverlay,
+  destroyStageIndex,
+  type BreakCrackOverlay
+} from "@/games/voxel/breakCrackOverlay";
 
 const INV_DRAG_MIME = "application/x-playground-voxel-inv";
 
@@ -134,6 +147,20 @@ const ITEM_HUD: Record<number, string> = {
 };
 
 /** Minecraft-like slot: raised inner bevel, dark rim. */
+function toolDurabilityBar(itemId: number, durability?: number): JSX.Element | null {
+  const max = itemMaxDurability(itemId);
+  if (max <= 0) return null;
+  const cur = Math.max(0, Math.min(max, durability ?? max));
+  return (
+    <span className="pointer-events-none absolute inset-x-0.5 bottom-0.5 h-0.5 overflow-hidden rounded-full bg-black/55">
+      <span
+        className="block h-full bg-lime-400"
+        style={{ width: `${(cur / max) * 100}%` }}
+      />
+    </span>
+  );
+}
+
 function mcSlotClass(selected: boolean): string {
   return [
     "relative flex h-10 w-10 shrink-0 items-center justify-center",
@@ -398,6 +425,10 @@ export interface MinecraftClientProps {
   onInput: (input: InputReq) => void;
   onBlockPlace: (pos: Vec3, blockId: number) => void;
   onBlockBreak: (pos: Vec3) => void;
+  /** Survival timed mining (hold LMB). */
+  onBreakStart: (pos: Vec3) => Promise<BreakStartAck>;
+  onBreakFinish: (pos: Vec3) => Promise<SimpleAck>;
+  onBreakCancel: (pos: Vec3) => void;
   /** Survival: server validates and spawns a world drop. */
   onDropHotbarSlot?: (hotbarIndex: number) => void;
   registerSnapshotListener: (cb: (snap: RoomSnapshot) => void) => () => void;
@@ -429,6 +460,9 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     onInput,
     onBlockPlace,
     onBlockBreak,
+    onBreakStart,
+    onBreakFinish,
+    onBreakCancel,
     onDropHotbarSlot,
     registerSnapshotListener,
     registerBlockDeltaListener,
@@ -443,13 +477,27 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const [controlsHintDismissed, setControlsHintDismissed] = useState(false);
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [recipeBookOpen, setRecipeBookOpen] = useState(false);
-
   const hostRef = useRef<HTMLDivElement | null>(null);
   // noa-engine has loose .d.ts typings; lock to any so we don't fight them.
   const noaRef = useRef<unknown>(null);
   const onInputRef = useRef(onInput);
   const onPlaceRef = useRef(onBlockPlace);
   const onBreakRef = useRef(onBlockBreak);
+  const onBreakStartRef = useRef(onBreakStart);
+  const onBreakFinishRef = useRef(onBreakFinish);
+  const onBreakCancelRef = useRef(onBreakCancel);
+  const activeMiningRef = useRef<{
+    pos: Vec3;
+    durationMs: number;
+    startedAt: number;
+  } | null>(null);
+  const miningAnimRef = useRef<number | null>(null);
+  const breakCrackRef = useRef<BreakCrackOverlay | null>(null);
+  const lastBreakStartAtRef = useRef(0);
+  const lastBreakFinishAtRef = useRef(0);
+  const breakFinishSentRef = useRef(false);
+  const BREAK_START_MIN_MS = 100;
+  const BREAK_FINISH_MIN_MS = 100;
   const pausedRef = useRef(paused);
   const gameModeRef = useRef<GameMode>(gameMode);
   const inventoryRef = useRef<HotbarSlot[]>(inventorySlots);
@@ -467,6 +515,9 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   onInputRef.current = onInput;
   onPlaceRef.current = onBlockPlace;
   onBreakRef.current = onBlockBreak;
+  onBreakStartRef.current = onBreakStart;
+  onBreakFinishRef.current = onBreakFinish;
+  onBreakCancelRef.current = onBreakCancel;
   pausedRef.current = paused;
   gameModeRef.current = gameMode;
   inventoryRef.current = inventorySlots;
@@ -542,6 +593,12 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       }
 
       const scene = noa.rendering.getScene();
+      const breakCrack = createBreakCrackOverlay(Babylon, scene, noa);
+      breakCrackRef.current = breakCrack;
+      cleanupFns.push(() => {
+        breakCrack.dispose();
+        breakCrackRef.current = null;
+      });
       registerMcTerrainMaterials(noa);
 
       for (const e of NOA_BLOCK_ENTRIES) {
@@ -1026,12 +1083,102 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       );
       cleanupFns.push(offWorldDropUpdated);
 
-      noa.inputs.down.on("fire", () => {
+      function stopMiningAnim(): void {
+        if (miningAnimRef.current !== null) {
+          cancelAnimationFrame(miningAnimRef.current);
+          miningAnimRef.current = null;
+        }
+      }
+
+      function clearMiningState(cancelServer: boolean): void {
+        const m = activeMiningRef.current;
+        stopMiningAnim();
+        activeMiningRef.current = null;
+        breakFinishSentRef.current = false;
+        breakCrackRef.current?.clear();
+        if (cancelServer && m) {
+          onBreakCancelRef.current(m.pos);
+        }
+      }
+
+      function emitBreakFinish(pos: Vec3): void {
+        if (breakFinishSentRef.current) return;
+        const now = performance.now();
+        if (now - lastBreakFinishAtRef.current < BREAK_FINISH_MIN_MS) return;
+        breakFinishSentRef.current = true;
+        lastBreakFinishAtRef.current = now;
+        breakCrackRef.current?.clear();
+        void onBreakFinishRef.current(pos);
+      }
+
+      async function tryStartMining(): Promise<void> {
         if (pausedRef.current) return;
         const tgt = noa.targetedBlock;
         if (!tgt) return;
-        onBreakRef.current([tgt.position[0], tgt.position[1], tgt.position[2]]);
+        const pos: Vec3 = [tgt.position[0], tgt.position[1], tgt.position[2]];
+        if (gameModeRef.current === "creative") {
+          onBreakRef.current(pos);
+          return;
+        }
+        const blockId = Number(tgt.blockID);
+        if (isInstantBreak(blockId)) {
+          onBreakRef.current(pos);
+          return;
+        }
+        if (activeMiningRef.current) {
+          const cur = activeMiningRef.current.pos;
+          if (cur[0] === pos[0] && cur[1] === pos[1] && cur[2] === pos[2]) {
+            return;
+          }
+          clearMiningState(true);
+        }
+        const now = performance.now();
+        if (now - lastBreakStartAtRef.current < BREAK_START_MIN_MS) return;
+        breakFinishSentRef.current = false;
+        const ack = await onBreakStartRef.current(pos);
+        if (!ack.ok || !ack.durationMs) return;
+        lastBreakStartAtRef.current = now;
+        activeMiningRef.current = {
+          pos,
+          durationMs: ack.durationMs,
+          startedAt: performance.now()
+        };
+        breakCrackRef.current?.setStage(pos, 0);
+        const tick = (): void => {
+          const m = activeMiningRef.current;
+          if (!m) return;
+          const t = (performance.now() - m.startedAt) / m.durationMs;
+          breakCrackRef.current?.setStage(m.pos, destroyStageIndex(t));
+          if (t >= 1) {
+            activeMiningRef.current = null;
+            stopMiningAnim();
+            emitBreakFinish(m.pos);
+            return;
+          }
+          miningAnimRef.current = requestAnimationFrame(tick);
+        };
+        miningAnimRef.current = requestAnimationFrame(tick);
+      }
+
+      function endMiningHold(): void {
+        const m = activeMiningRef.current;
+        if (!m) return;
+        const elapsed = performance.now() - m.startedAt;
+        stopMiningAnim();
+        activeMiningRef.current = null;
+        if (elapsed >= m.durationMs - 60) {
+          emitBreakFinish(m.pos);
+        } else {
+          breakCrackRef.current?.clear();
+          onBreakCancelRef.current(m.pos);
+        }
+      }
+
+      noa.inputs.down.on("fire", () => {
+        void tryStartMining();
       });
+      noa.inputs.up.on("fire", endMiningHold);
+      cleanupFns.push(() => clearMiningState(true));
       noa.inputs.down.on("alt-fire", () => {
         if (pausedRef.current) return;
         const tgt = noa.targetedBlock;
@@ -1040,7 +1187,12 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           const inv = inventoryRef.current;
           const idx = survivalSlotRef.current;
           const cell = inv[idx];
-          if (!cell || cell.count <= 0 || cell.blockId === BLOCK_REGISTRY.AIR) {
+          if (
+            !cell ||
+            cell.count <= 0 ||
+            (cell.itemId ?? 0) > 0 ||
+            cell.blockId === BLOCK_REGISTRY.AIR
+          ) {
             return;
           }
           onPlaceRef.current(
@@ -1195,7 +1347,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           heading,
           pitch,
           jumping: !onGround,
-          t: Date.now()
+          t: Date.now(),
+          hotbarIndex: survivalSlotRef.current
         });
       });
 
@@ -1251,25 +1404,37 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
             )
           )
         : inventorySlots.slice(0, 9).map((cell, i) => {
-            const icon = BLOCK_HOTBAR_ICON[cell.blockId];
-            const hasItem =
-              cell.blockId !== BLOCK_REGISTRY.AIR && cell.count > 0 && icon !== undefined;
+            const itemIcon =
+              (cell.itemId ?? 0) > 0 && cell.count > 0
+                ? ITEM_ICON[cell.itemId]
+                : undefined;
+            const blockIcon =
+              cell.blockId !== BLOCK_REGISTRY.AIR && cell.count > 0
+                ? BLOCK_HOTBAR_ICON[cell.blockId]
+                : undefined;
+            const icon = itemIcon ?? blockIcon;
+            const hasStack = cell.count > 0 && icon !== undefined;
             return slotBox(
               i === survivalSlot,
               i + 1,
               <>
-                {hasItem ? (
+                {hasStack ? (
                   <img
                     src={icon}
                     alt=""
-                    title={`${BLOCK_HUD[cell.blockId] ?? cell.blockId} ×${cell.count}`}
+                    title={
+                      itemIcon
+                        ? `${ITEM_HUD[cell.itemId] ?? cell.itemId} ×${cell.count}`
+                        : `${BLOCK_HUD[cell.blockId] ?? cell.blockId} ×${cell.count}`
+                    }
                     className="h-9 w-9"
                     style={{ imageRendering: "pixelated" }}
                   />
                 ) : (
                   <div className="h-9 w-9 rounded bg-black/40" aria-hidden />
                 )}
-                {hasItem ? (
+                {itemIcon ? toolDurabilityBar(cell.itemId, cell.durability) : null}
+                {hasStack && (cell.count > 1 || itemIcon) ? (
                   <span className="pointer-events-none absolute bottom-0.5 right-0.5 text-[10px] font-black leading-none text-white drop-shadow-md">
                     {cell.count}
                   </span>
@@ -1415,6 +1580,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
                               className="h-8 w-8"
                               style={{ imageRendering: "pixelated" }}
                             />
+                            {toolDurabilityBar(cell.itemId, cell.durability)}
                             {cell.count > 1 ? (
                               <span className="pointer-events-none absolute bottom-0.5 end-0.5 text-[10px] font-black text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
                                 {cell.count}
@@ -1551,6 +1717,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
                                 className="h-8 w-8"
                                 style={{ imageRendering: "pixelated" }}
                               />
+                              {toolDurabilityBar(cell.itemId, cell.durability)}
                               <span className="pointer-events-none absolute bottom-0.5 end-0.5 text-[10px] font-black text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
                                 {cell.count}
                               </span>
@@ -1565,16 +1732,21 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
               <section>
                 <div className="mb-1.5 text-[11px] font-black text-[#2a2218]">
-                  סרגל חם — בלוקים
+                  סרגל חם
                 </div>
                 <div className="inline-block rounded border-2 border-[#5c4f3e] bg-[rgba(0,0,0,0.15)] p-1.5">
                   <div className="grid grid-cols-9 gap-1">
                     {inventorySlots.slice(0, 9).map((cell, i) => {
-                      const icon = BLOCK_HOTBAR_ICON[cell.blockId];
-                      const has =
-                        cell.blockId !== BLOCK_REGISTRY.AIR &&
-                        cell.count > 0 &&
-                        icon !== undefined;
+                      const itemIcon =
+                        (cell.itemId ?? 0) > 0 && cell.count > 0
+                          ? ITEM_ICON[cell.itemId]
+                          : undefined;
+                      const blockIcon =
+                        cell.blockId !== BLOCK_REGISTRY.AIR && cell.count > 0
+                          ? BLOCK_HOTBAR_ICON[cell.blockId]
+                          : undefined;
+                      const icon = itemIcon ?? blockIcon;
+                      const has = cell.count > 0 && icon !== undefined;
                       return (
                         <div
                           key={i}
@@ -1586,10 +1758,17 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
                               <img
                                 src={icon}
                                 alt=""
-                                title={`${BLOCK_HUD[cell.blockId] ?? cell.blockId} ×${cell.count}`}
+                                title={
+                                  itemIcon
+                                    ? `${ITEM_HUD[cell.itemId] ?? cell.itemId} ×${cell.count}`
+                                    : `${BLOCK_HUD[cell.blockId] ?? cell.blockId} ×${cell.count}`
+                                }
                                 className="h-8 w-8"
                                 style={{ imageRendering: "pixelated" }}
                               />
+                              {itemIcon
+                                ? toolDurabilityBar(cell.itemId, cell.durability)
+                                : null}
                               <span className="pointer-events-none absolute bottom-0.5 end-0.5 text-[10px] font-black text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
                                 {cell.count}
                               </span>
@@ -1703,7 +1882,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           </button>
           <p className="font-semibold text-neutral-300">בקרות</p>
           <p className="text-neutral-200">
-            WASD תנועה · רווח קפיצה · לחצן עכבר שמאלי שובר · ימני מניח · מקשי 1–9 לסרגל · E
+            WASD תנועה · רווח קפיצה · לחצן שמאלי מחזיק לשבירה · ימני מניח · מקשי 1–9 לסרגל · E
             מלאי (גרירה בין משבצות / לוח בלוקים ביצירתי) · Q או לחצן אמצעי בוחר בלוק · P/Q זורקים פריט מההוטבר בשרדות · גלגלת לזום
             המצלמה
           </p>

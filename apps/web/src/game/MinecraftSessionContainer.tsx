@@ -71,6 +71,9 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     sendInput,
     placeBlock,
     breakBlock,
+    breakStart,
+    breakFinish,
+    breakCancel,
     pause,
     resume,
     stop,
@@ -200,6 +203,20 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     },
     [breakBlock]
   );
+  const handleBreakStart = useCallback(
+    (pos: Vec3) => breakStart(pos),
+    [breakStart]
+  );
+  const handleBreakFinish = useCallback(
+    (pos: Vec3) => breakFinish(pos),
+    [breakFinish]
+  );
+  const handleBreakCancel = useCallback(
+    (pos: Vec3) => {
+      breakCancel(pos);
+    },
+    [breakCancel]
+  );
 
   const handlePause = useCallback(async () => {
     const ack = await pause();
@@ -311,6 +328,9 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         onInput={sendInput}
         onBlockPlace={handlePlaceBlock}
         onBlockBreak={handleBreakBlock}
+        onBreakStart={handleBreakStart}
+        onBreakFinish={handleBreakFinish}
+        onBreakCancel={handleBreakCancel}
         initialWorldDrops={joinAck.drops ?? []}
         registerWorldDropSpawned={onWorldDropSpawned}
         registerWorldDropRemoved={onWorldDropRemoved}

@@ -19,12 +19,16 @@ export type GameMode = "creative" | "survival";
 
 export interface HotbarSlot {
   blockId: number;
+  itemId: number;
   count: number;
+  durability?: number;
 }
 
 export interface ItemSlot {
   itemId: number;
   count: number;
+  /** Remaining tool durability; omitted = full from item def. */
+  durability?: number;
 }
 
 /** One cell in the survival 2×2 crafting grid (blocks or items, never both). */
@@ -32,6 +36,7 @@ export interface CraftingGridSlot {
   blockId: number;
   itemId: number;
   count: number;
+  durability?: number;
 }
 
 export type InventoryRegion = "hotbar" | "storage" | "craft";
@@ -113,6 +118,8 @@ export interface InputReq {
   pitch?: number;
   jumping: boolean;
   t: number;
+  /** Survival: selected hotbar index 0..8. */
+  hotbarIndex?: number;
 }
 
 export interface BlockPlaceReq {
@@ -121,6 +128,24 @@ export interface BlockPlaceReq {
 }
 
 export interface BlockBreakReq {
+  pos: Vec3;
+}
+
+export interface BreakStartReq {
+  pos: Vec3;
+}
+
+export interface BreakStartAck {
+  ok: boolean;
+  durationMs?: number;
+  error?: { code: string; message: string };
+}
+
+export interface BreakFinishReq {
+  pos: Vec3;
+}
+
+export interface BreakCancelReq {
   pos: Vec3;
 }
 

@@ -30,6 +30,7 @@ import type {
   Vec3,
   WorldDrop
 } from "./protocol";
+import type { ActiveBreak } from "./breakMining";
 
 /**
  * In-memory voxel-room registry. Mirrors the structure of
@@ -61,6 +62,10 @@ export interface PlayerRuntime extends RoomPlayer {
   itemInventory?: ItemInventoryState;
   /** Survival: 2×2 crafting grid (blocks + items). */
   craftingGrid?: CraftingGridState;
+  /** Survival: in-progress timed block break. */
+  activeBreak?: ActiveBreak;
+  /** Selected survival hotbar index 0..8 (from INPUT). */
+  selectedHotbarIndex?: number;
 }
 
 export interface VoxelRoom {
@@ -320,7 +325,8 @@ export function assignPlayer(
     pitch: 0,
     jumping: false,
     t: now,
-    lastInputAt: now
+    lastInputAt: now,
+    selectedHotbarIndex: 0
   };
   if ((room.gameMode ?? "creative") === "survival") {
     const cached = room.disconnectedInventories.get(userId);

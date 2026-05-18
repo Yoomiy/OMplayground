@@ -3,6 +3,9 @@
  * Gameplay fields are consumed by minecraft-server + client protocol.
  */
 
+import { BLOCK_MINING_META } from "./blockMiningMeta";
+import type { ToolKind, ToolTier } from "./mining";
+
 export interface BlockDef {
   readonly id: number;
   readonly key: string;
@@ -13,9 +16,16 @@ export interface BlockDef {
    * `null` when the block does not yield a hotbar stack (unbreakable / air).
    */
   readonly dropHotbarBlockId: number | null;
+  /** Seconds to break at tool speed 1 (hand). 0 = instant. */
+  readonly hardness: number;
+  /** When set, matching tool kind + tier is required to start mining. */
+  readonly requiredTool: ToolKind | null;
+  /** Tool kind used for speed bonus when `requiredTool` is null. */
+  readonly speedTool: ToolKind | null;
+  readonly minTier: ToolTier;
 }
 
-export const BLOCK_DEFS = [
+const BASE_BLOCK_DEFS = [
   { id: 0, key: "AIR", placeable: false, breakable: false, dropHotbarBlockId: null },
   { id: 1, key: "GRASS", placeable: true, breakable: true, dropHotbarBlockId: 1 },
   { id: 2, key: "DIRT", placeable: true, breakable: true, dropHotbarBlockId: 2 },
@@ -77,7 +87,13 @@ export const BLOCK_DEFS = [
     breakable: false,
     dropHotbarBlockId: null
   }
-] as const satisfies readonly BlockDef[];
+] as const;
+
+export const BLOCK_DEFS = BASE_BLOCK_DEFS.map((base) => {
+  const key = base.key as keyof typeof BLOCK_MINING_META;
+  const mining = BLOCK_MINING_META[key];
+  return { ...base, ...mining };
+}) as readonly BlockDef[];
 
 type BlockRegistryKey = (typeof BLOCK_DEFS)[number]["key"];
 
@@ -136,4 +152,8 @@ export function blockDropId(blockId: number): number | null {
 /** True when breaking this block yields a stackable hotbar drop. */
 export function blockDropsPickable(blockId: number): boolean {
   return blockDropId(blockId) !== null;
+}
+
+export function blockHardness(blockId: number): number {
+  return BLOCK_BY_ID.get(blockId)?.hardness ?? 0;
 }

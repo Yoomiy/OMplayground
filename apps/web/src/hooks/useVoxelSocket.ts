@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { getVoxelServerUrl } from "@/lib/voxelServerUrl";
 import type {
   BlockDelta,
+  BreakStartAck,
   CraftAck,
   CraftingGridSlot,
   GameMode,
@@ -85,6 +86,9 @@ export interface UseVoxelSocketReturn {
   sendInput: (input: InputReq) => void;
   placeBlock: (pos: Vec3, blockId: number) => Promise<SimpleAck>;
   breakBlock: (pos: Vec3) => Promise<SimpleAck>;
+  breakStart: (pos: Vec3) => Promise<BreakStartAck>;
+  breakFinish: (pos: Vec3) => Promise<SimpleAck>;
+  breakCancel: (pos: Vec3) => void;
   craft: (recipeId: string) => Promise<CraftAck>;
   pause: () => Promise<SimpleAck>;
   resume: () => Promise<SimpleAck>;
@@ -271,6 +275,26 @@ export function useVoxelSocket(
     return emitWithAck<SimpleAck>(s, "BLOCK_BREAK", { pos });
   }
 
+  async function breakStart(pos: Vec3): Promise<BreakStartAck> {
+    const s = socketRef.current;
+    if (!s?.connected) {
+      return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
+    }
+    return emitWithAck<BreakStartAck>(s, "BREAK_START", { pos });
+  }
+
+  async function breakFinish(pos: Vec3): Promise<SimpleAck> {
+    const s = socketRef.current;
+    if (!s?.connected) return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
+    return emitWithAck<SimpleAck>(s, "BREAK_FINISH", { pos });
+  }
+
+  function breakCancel(pos: Vec3): void {
+    const s = socketRef.current;
+    if (!s?.connected) return;
+    s.emit("BREAK_CANCEL", { pos });
+  }
+
   async function craft(recipeId: string): Promise<CraftAck> {
     const s = socketRef.current;
     if (!s?.connected) return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
@@ -366,6 +390,9 @@ export function useVoxelSocket(
     sendInput,
     placeBlock,
     breakBlock,
+    breakStart,
+    breakFinish,
+    breakCancel,
     craft,
     pause,
     resume,

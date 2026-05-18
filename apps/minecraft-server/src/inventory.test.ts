@@ -6,6 +6,7 @@ import {
   blockDropId,
   blockDropsPickable,
   consumeOneIfPresent,
+  cloneCraftingGrid,
   createEmptyCraftingGrid,
   createEmptyHotbar,
   createEmptyItemInventory,
@@ -69,7 +70,7 @@ describe("inventory helpers", () => {
       ...Array.from({ length: 8 }, () => ({ blockId: 999, count: 1 }))
     ];
     const h = hotbarFromPersisted(raw, empty);
-    expect(h[0]).toEqual({ blockId: BLOCK_REGISTRY.GLASS, count: 2 });
+    expect(h[0]).toEqual({ blockId: BLOCK_REGISTRY.GLASS, itemId: 0, count: 2 });
     expect(PLACEABLE_BLOCK_IDS.includes(h[1].blockId) || h[1].count === 0).toBe(
       true
     );
@@ -164,12 +165,50 @@ describe("inventory helpers", () => {
     const grid = createEmptyCraftingGrid();
     grid[1] = { blockId: BLOCK_REGISTRY.WOOD, itemId: 0, count: 1 };
     for (let i = 0; i < hotbar.length; i++) {
-      hotbar[i] = { blockId: BLOCK_REGISTRY.STONE, count: MAX_STACK };
+      hotbar[i] = { blockId: BLOCK_REGISTRY.STONE, itemId: 0, count: MAX_STACK };
     }
     expect(tryCraftFromGrid(hotbar, items, grid)).toBe(false);
     expect(grid.some((s) => s.blockId === BLOCK_REGISTRY.WOOD && s.count > 0)).toBe(
       true
     );
+  });
+
+  it("applyInventoryMove preserves tool durability into crafting grid", () => {
+    const hotbar = createEmptyHotbar();
+    const items = createEmptyItemInventory();
+    const grid = createEmptyCraftingGrid();
+    hotbar[0] = {
+      blockId: BLOCK_REGISTRY.AIR,
+      itemId: ITEM_REGISTRY.WOODEN_PICKAXE,
+      count: 1,
+      durability: 42
+    };
+    expect(
+      applyInventoryMove(hotbar, items, grid, {
+        from: "hotbar",
+        fromIndex: 0,
+        to: "craft",
+        toIndex: 0
+      })
+    ).toBe(true);
+    expect(grid[0]).toMatchObject({
+      itemId: ITEM_REGISTRY.WOODEN_PICKAXE,
+      count: 1,
+      durability: 42
+    });
+    expect(hotbar[0]!.itemId).toBe(0);
+  });
+
+  it("cloneCraftingGrid copies durability", () => {
+    const grid = createEmptyCraftingGrid();
+    grid[0] = {
+      blockId: BLOCK_REGISTRY.AIR,
+      itemId: ITEM_REGISTRY.STONE_PICKAXE,
+      count: 1,
+      durability: 99
+    };
+    const cloned = cloneCraftingGrid(grid);
+    expect(cloned[0]!.durability).toBe(99);
   });
 
   it("applyInventoryMove moves wood from hotbar into crafting grid", () => {

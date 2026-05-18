@@ -24,9 +24,25 @@ export {
   ITEM_REGISTRY,
   REGISTERED_ITEM_IDS,
   itemDef,
+  itemMaxDurability,
   itemMaxStack,
+  itemToolSpec,
   webItemIcons,
   type ItemCategory,
   type ItemDef,
-  type ItemRegistry
+  type ItemRegistry,
+  type ItemToolSpec
 } from "./items";
+
+export {
+  applyToolWear,
+  breakDurationForBlock,
+  breakDurationMs,
+  HAND_TOOL_SPEED,
+  isInstantBreak,
+  resolveBreakTool,
+  type ResolvedTool,
+  type ToolKind,
+  type ToolSlotRef,
+  type ToolTier
+} from "./mining";

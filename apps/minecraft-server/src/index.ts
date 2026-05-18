@@ -59,12 +59,19 @@ import {
   recessEndSweep
 } from "./recessSweep";
 import {
+  beginBreak,
+  cancelBreak,
+  finishBreak,
+  shouldUseTimedBreak
+} from "./breakMining";
+import {
   clearDropsBroadcast,
   dropPositionInFrontOfPlayer,
   jitterBreakSpawnPosition,
   listDropsWire,
   scatterImpulseBreakDrop,
   spawnBlockDropAt,
+  spawnItemDropAt,
   tickMagnetPickups,
   tickWorldDrops
 } from "./drops";
@@ -74,6 +81,10 @@ import {
   PLACEABLE_BLOCK_IDS,
   type BlockBreakReq,
   type BlockPlaceReq,
+  type BreakCancelReq,
+  type BreakFinishReq,
+  type BreakStartAck,
+  type BreakStartReq,
   type CraftAck,
   type CraftReq,
   type GameMode,
@@ -85,6 +96,7 @@ import {
   type SimpleAck,
   type Vec3
 } from "./protocol";
+import type { PlayerRuntime, VoxelRoom } from "./room";
 
 const PORT = Number(process.env.PORT ?? 8081);
 const CORS_ORIGIN =
@@ -286,6 +298,126 @@ function isGameMode(v: unknown): v is GameMode {
   return v === "creative" || v === "survival";
 }
 
+function executeBlockBreak(
+  room: VoxelRoom,
+  player: PlayerRuntime,
+  userId: string,
+  sessionId: string,
+  x: number,
+  y: number,
+  z: number,
+  brokenId: number
+): void {
+  applyDelta(room.world, x, y, z, BLOCK_REGISTRY.AIR);
+  if (
+    (room.gameMode ?? "creative") === "survival" &&
+    player.inventory &&
+    player.itemInventory &&
+    player.craftingGrid &&
+    blockDropsPickable(brokenId)
+  ) {
+    const dropId = blockDropId(brokenId);
+    if (dropId !== null) {
+      const spawned = spawnBlockDropAt(
+        room,
+        jitterBreakSpawnPosition(x, y, z),
+        dropId,
+        1,
+        { ...scatterImpulseBreakDrop() }
+      );
+      if (spawned) {
+        io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
+          sessionId,
+          kind: "WORLD_DROP_SPAWNED",
+          drop: spawned
+        });
+      }
+    }
+  }
+  io.to(`voxel:${sessionId}`).emit("BLOCK_DELTA", {
+    pos: [x, y, z],
+    blockId: BLOCK_REGISTRY.AIR,
+    by: userId
+  });
+}
+
+type BreakTarget =
+  | {
+      ok: true;
+      room: VoxelRoom;
+      player: PlayerRuntime;
+      sessionId: string;
+      x: number;
+      y: number;
+      z: number;
+      blockId: number;
+    }
+  | { ok: false; ack: SimpleAck };
+
+function resolveBreakTarget(
+  userId: string,
+  sessionId: string | undefined,
+  pos: unknown,
+  roomLookup: (id: string) => VoxelRoom | undefined
+): BreakTarget {
+  if (!sessionId) {
+    return {
+      ok: false,
+      ack: { ok: false, error: { code: "NOT_IN_ROOM", message: "לא בחדר" } }
+    };
+  }
+  const room = roomLookup(sessionId);
+  if (!room) {
+    return {
+      ok: false,
+      ack: { ok: false, error: { code: "NOT_FOUND", message: "Room not loaded" } }
+    };
+  }
+  if (room.paused) {
+    return {
+      ok: false,
+      ack: { ok: false, error: { code: "GAME_PAUSED", message: "המשחק מושהה" } }
+    };
+  }
+  const player = room.players.get(userId);
+  if (!player) {
+    return {
+      ok: false,
+      ack: { ok: false, error: { code: "NOT_IN_ROOM", message: "השחקן לא נמצא בחדר" } }
+    };
+  }
+  if (!isFiniteVec(pos)) {
+    return {
+      ok: false,
+      ack: { ok: false, error: { code: "BAD_INTENT", message: "Invalid coordinates" } }
+    };
+  }
+  const [x, y, z] = (pos as Vec3).map((n) => Math.floor(Number(n))) as Vec3;
+  if (vecDist(player.pos, [x + 0.5, y + 0.5, z + 0.5]) > MAX_REACH) {
+    return {
+      ok: false,
+      ack: { ok: false, error: { code: "OUT_OF_REACH", message: "רחוק מדי" } }
+    };
+  }
+  const blockId = getVoxelID(room.world, x, y, z);
+  if (blockId === BLOCK_REGISTRY.AIR) {
+    return {
+      ok: false,
+      ack: { ok: false, error: { code: "BLOCK_EMPTY", message: "אין שם בלוק" } }
+    };
+  }
+  if (!blockBreakable(blockId)) {
+    return {
+      ok: false,
+      ack: {
+        ok: false,
+        error: { code: "UNBREAKABLE_BLOCK", message: "אי אפשר לשבור את הבלוק הזה" }
+      }
+    };
+  }
+  return { ok: true, room, player, sessionId, x, y, z, blockId };
+}
+
 async function emitInventoryToSurvivalPlayers(
   sessionId: string,
   room: ReturnType<typeof getRoom>
@@ -476,6 +608,10 @@ io.on("connection", (socket) => {
     if (Number.isFinite(payload?.pitch)) player.pitch = payload.pitch as number;
     player.jumping = !!payload.jumping;
     player.t = Number.isFinite(payload?.t) ? payload.t : Date.now();
+    const hb = Math.floor(Number(payload?.hotbarIndex));
+    if (Number.isFinite(hb) && hb >= 0 && hb < HOTBAR_SLOT_COUNT) {
+      player.selectedHotbarIndex = hb;
+    }
     player.lastInputAt = Date.now();
     room.dirty = true;
   });
@@ -580,96 +716,109 @@ io.on("connection", (socket) => {
     "BLOCK_BREAK",
     (payload: BlockBreakReq, ack?: (r: SimpleAck) => void) => {
       const sessionId = socket.data.sessionId as string | undefined;
-      if (!sessionId) {
+      const target = resolveBreakTarget(userId, sessionId, payload?.pos, getRoom);
+      if (!target.ok) {
+        ack?.(target.ack);
+        return;
+      }
+      const { room, player, x, y, z, blockId } = target;
+      if (shouldUseTimedBreak(blockId, room.gameMode)) {
         ack?.({
           ok: false,
-          error: { code: "NOT_IN_ROOM", message: "לא בחדר" }
+          error: { code: "USE_TIMED_BREAK", message: "החזק לשבירה" }
         });
         return;
       }
-      const room = getRoom(sessionId);
-      if (!room) {
-        ack?.({
-          ok: false,
-          error: { code: "NOT_FOUND", message: "Room not loaded" }
-        });
-        return;
-      }
-      if (room.paused) {
-        ack?.({
-          ok: false,
-          error: { code: "GAME_PAUSED", message: "המשחק מושהה" }
-        });
-        return;
-      }
-      const player = room.players.get(userId);
-      if (!player) {
-        ack?.({
-          ok: false,
-          error: { code: "NOT_IN_ROOM", message: "השחקן לא נמצא בחדר" }
-        });
-        return;
-      }
-      if (!isFiniteVec(payload?.pos)) {
-        ack?.({
-          ok: false,
-          error: { code: "BAD_INTENT", message: "Invalid coordinates" }
-        });
-        return;
-      }
-      const [x, y, z] = payload.pos.map((n) => Math.floor(Number(n))) as Vec3;
-      if (vecDist(player.pos, [x + 0.5, y + 0.5, z + 0.5]) > MAX_REACH) {
-        ack?.({
-          ok: false,
-          error: { code: "OUT_OF_REACH", message: "רחוק מדי" }
-        });
-        return;
-      }
-      if (getVoxelID(room.world, x, y, z) === BLOCK_REGISTRY.AIR) {
-        ack?.({
-          ok: false,
-          error: { code: "BLOCK_EMPTY", message: "אין שם בלוק" }
-        });
-        return;
-      }
-      const brokenId = getVoxelID(room.world, x, y, z);
-      if (!blockBreakable(brokenId)) {
-        ack?.({
-          ok: false,
-          error: { code: "UNBREAKABLE_BLOCK", message: "אי אפשר לשבור את הבלוק הזה" }
-        });
-        return;
-      }
-      applyDelta(room.world, x, y, z, BLOCK_REGISTRY.AIR);
-      if (
-        (room.gameMode ?? "creative") === "survival" &&
-        player.inventory &&
-        player.itemInventory &&
-        player.craftingGrid &&
-        blockDropsPickable(brokenId)
-      ) {
-        const dropId = blockDropId(brokenId);
-        if (dropId !== null) {
-          const spawned = spawnBlockDropAt(room, jitterBreakSpawnPosition(x, y, z), dropId, 1, {
-            ...scatterImpulseBreakDrop()
-          });
-          if (spawned) {
-            io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
-              sessionId,
-              kind: "WORLD_DROP_SPAWNED",
-              drop: spawned
-            });
-          }
-        }
-      }
-      io.to(`voxel:${sessionId}`).emit("BLOCK_DELTA", {
-        pos: [x, y, z],
-        blockId: BLOCK_REGISTRY.AIR,
-        by: userId
-      });
+      executeBlockBreak(room, player, userId, sessionId!, x, y, z, blockId);
       ack?.({ ok: true });
     }
   );
+
+  socket.on(
+    "BREAK_START",
+    (payload: BreakStartReq, ack?: (r: BreakStartAck) => void) => {
+      const sessionId = socket.data.sessionId as string | undefined;
+      const target = resolveBreakTarget(userId, sessionId, payload?.pos, getRoom);
+      if (!target.ok) {
+        ack?.(target.ack);
+        return;
+      }
+      const { room, player, x, y, z, blockId } = target;
+      if ((room.gameMode ?? "creative") !== "survival") {
+        ack?.({
+          ok: false,
+          error: { code: "BAD_INTENT", message: "רק במצב שרדות" }
+        });
+        return;
+      }
+      if (!shouldUseTimedBreak(blockId, room.gameMode)) {
+        ack?.({
+          ok: false,
+          error: { code: "INSTANT_BLOCK", message: "שבירה מיידית" }
+        });
+        return;
+      }
+      const started = beginBreak(player, [x, y, z], blockId, Date.now());
+      if (!started.ok) {
+        ack?.({
+          ok: false,
+          error: { code: started.code, message: started.message }
+        });
+        return;
+      }
+      ack?.({ ok: true, durationMs: started.durationMs });
+    }
+  );
+
+  socket.on(
+    "BREAK_FINISH",
+    (payload: BreakFinishReq, ack?: (r: SimpleAck) => void) => {
+      const sessionId = socket.data.sessionId as string | undefined;
+      const target = resolveBreakTarget(userId, sessionId, payload?.pos, getRoom);
+      if (!target.ok) {
+        ack?.(target.ack);
+        return;
+      }
+      const { room, player, x, y, z, blockId } = target;
+      const done = finishBreak(player, [x, y, z], blockId, Date.now());
+      if (!done.ok) {
+        ack?.({
+          ok: false,
+          error: { code: done.code, message: done.message }
+        });
+        return;
+      }
+      executeBlockBreak(room, player, userId, sessionId!, x, y, z, blockId);
+      if (player.inventory && player.itemInventory && player.craftingGrid) {
+        socket.emit("INVENTORY_SYNC", {
+          slots: player.inventory,
+          itemSlots: player.itemInventory,
+          craftingSlots: player.craftingGrid
+        });
+      }
+      ack?.({ ok: true });
+    }
+  );
+
+  socket.on("BREAK_CANCEL", (payload: BreakCancelReq) => {
+    const sessionId = socket.data.sessionId as string | undefined;
+    const room = sessionId ? getRoom(sessionId) : undefined;
+    const player = room?.players.get(userId);
+    if (!player) return;
+    const active = player.activeBreak;
+    if (!active || !isFiniteVec(payload?.pos)) {
+      cancelBreak(player);
+      return;
+    }
+    const [x, y, z] = payload.pos.map((n) => Math.floor(Number(n))) as Vec3;
+    if (
+      active.pos[0] === x &&
+      active.pos[1] === y &&
+      active.pos[2] === z
+    ) {
+      cancelBreak(player);
+    }
+  });
 
   socket.on(
     "DROP_ITEM_REQ",
@@ -725,18 +874,23 @@ io.on("connection", (socket) => {
         return;
       }
       const cell = player.inventory[idx];
-      if (
-        !cell ||
-        cell.count <= 0 ||
-        cell.blockId === BLOCK_REGISTRY.AIR
-      ) {
+      if (!cell || cell.count <= 0) {
         ack?.({
           ok: false,
           error: { code: "EMPTY_SLOT", message: "המשבצת ריקה" }
         });
         return;
       }
-      const blockId = cell.blockId;
+      const isItem = (cell.itemId ?? 0) > 0;
+      const isBlock =
+        !isItem && cell.blockId !== BLOCK_REGISTRY.AIR;
+      if (!isItem && !isBlock) {
+        ack?.({
+          ok: false,
+          error: { code: "EMPTY_SLOT", message: "המשבצת ריקה" }
+        });
+        return;
+      }
       if (!consumeOneFromHotbarIndex(player.inventory, idx)) {
         ack?.({
           ok: false,
@@ -744,12 +898,16 @@ io.on("connection", (socket) => {
         });
         return;
       }
+      const dropPos = dropPositionInFrontOfPlayer(player);
       const h = player.heading;
-      const spawned = spawnBlockDropAt(room, dropPositionInFrontOfPlayer(player), blockId, 1, {
+      const impulse = {
         vx: Math.sin(h) * 0.45,
         vy: 0.35 + Math.random() * 0.15,
         vz: Math.cos(h) * 0.45
-      });
+      };
+      const spawned = isItem
+        ? spawnItemDropAt(room, dropPos, cell.itemId, 1, impulse)
+        : spawnBlockDropAt(room, dropPos, cell.blockId, 1, impulse);
       if (!spawned) {
         ack?.({
           ok: false,

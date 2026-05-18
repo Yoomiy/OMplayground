@@ -93,7 +93,7 @@ describe("world drops", () => {
     player.pos = [0, 64, 0];
     if (!player.inventory) throw new Error("expected inventory");
     for (let i = 0; i < 9; i++) {
-      player.inventory[i] = { blockId: BLOCK_REGISTRY.STONE, count: 64 };
+      player.inventory[i] = { blockId: BLOCK_REGISTRY.STONE, itemId: 0, count: 64 };
     }
     spawnBlockDropAt(room, [0, 64.1, 0.2], BLOCK_REGISTRY.DIRT, 8);
     const { io } = ioMockForUser("host-user");
