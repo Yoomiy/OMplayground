@@ -52,6 +52,23 @@ export interface JoinRoomReq {
   sessionId: string;
 }
 
+/** Authoritative item stack lying in the world (survival). */
+export type WorldDrop =
+  | {
+      id: string;
+      kind: "block";
+      pos: Vec3;
+      blockId: number;
+      count: number;
+    }
+  | {
+      id: string;
+      kind: "item";
+      pos: Vec3;
+      itemId: number;
+      count: number;
+    };
+
 export interface JoinRoomAckOk {
   ok: true;
   seed: number;
@@ -64,6 +81,8 @@ export interface JoinRoomAckOk {
   inventory: HotbarSlot[];
   itemInventory: ItemSlot[];
   craftingGrid: CraftingGridSlot[];
+  /** Survival world stacks; newer servers only. */
+  drops?: WorldDrop[];
 }
 
 export interface JoinRoomAckErr {
@@ -89,6 +108,10 @@ export interface BlockPlaceReq {
 
 export interface BlockBreakReq {
   pos: Vec3;
+}
+
+export interface DropItemReq {
+  hotbarIndex: number;
 }
 
 export interface InventorySyncPayload {
@@ -152,6 +175,8 @@ export type RoomEvent =
   | { kind: "GAME_RESUMED"; sessionId: string }
   | { kind: "GAME_STOPPED"; sessionId: string; stoppedBy: string }
   | { kind: "RECESS_ENDED"; sessionId: string }
-  | { kind: "GAME_MODE_CHANGED"; sessionId: string; gameMode: GameMode };
+  | { kind: "GAME_MODE_CHANGED"; sessionId: string; gameMode: GameMode }
+  | { kind: "WORLD_DROP_SPAWNED"; sessionId: string; drop: WorldDrop }
+  | { kind: "WORLD_DROP_REMOVED"; sessionId: string; id: string };
 
 export const MAX_REACH = 8;

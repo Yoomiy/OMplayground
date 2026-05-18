@@ -22,7 +22,14 @@ import {
   type HotbarState,
   type ItemInventoryState
 } from "./inventory";
-import type { CraftingGridSlot, GameMode, HotbarSlot, ItemSlot, Vec3 } from "./protocol";
+import type {
+  CraftingGridSlot,
+  GameMode,
+  HotbarSlot,
+  ItemSlot,
+  Vec3,
+  WorldDrop
+} from "./protocol";
 
 /**
  * In-memory voxel-room registry. Mirrors the structure of
@@ -79,6 +86,8 @@ export interface VoxelRoom {
   dirty: boolean;
   /** ms timestamp of last emitted snapshot — used by coalescing in tick.ts. */
   lastTickAt: number;
+  /** Survival: item stacks in the world (magnet pickup). */
+  drops: Map<string, WorldDrop>;
 }
 
 const rooms = new Map<string, VoxelRoom>();
@@ -104,6 +113,7 @@ export interface PersistedRoomState {
   inventories?: Record<string, HotbarSlot[]>;
   itemInventories?: Record<string, ItemSlot[]>;
   craftingGrids?: Record<string, CraftingGridSlot[]>;
+  drops?: WorldDrop[];
 }
 
 export function getRoom(sessionId: string): VoxelRoom | undefined {
@@ -134,6 +144,9 @@ export function getOrCreateRoom(
     }
     if (!existing.disconnectedCraftingGrids) {
       existing.disconnectedCraftingGrids = new Map();
+    }
+    if (!existing.drops) {
+      existing.drops = new Map();
     }
     return existing;
   }
@@ -208,10 +221,36 @@ export function getOrCreateRoom(
     disconnectedItemInventories,
     disconnectedCraftingGrids,
     dirty: false,
-    lastTickAt: 0
+    lastTickAt: 0,
+    drops: hydrateDropsFromPersisted(meta.resumedState?.drops)
   };
   rooms.set(sessionId, created);
   return created;
+}
+
+function hydrateDropsFromPersisted(raw: WorldDrop[] | undefined): Map<string, WorldDrop> {
+  const m = new Map<string, WorldDrop>();
+  if (!raw?.length) return m;
+  for (const d of raw) {
+    if (!isPersistedWorldDrop(d)) continue;
+    m.set(d.id, d);
+  }
+  return m;
+}
+
+function isPersistedWorldDrop(d: unknown): d is WorldDrop {
+  if (!d || typeof d !== "object") return false;
+  const o = d as Record<string, unknown>;
+  if (typeof o.id !== "string" || (o.kind !== "block" && o.kind !== "item")) return false;
+  if (!Array.isArray(o.pos) || o.pos.length !== 3) return false;
+  for (const n of o.pos) {
+    if (typeof n !== "number" || !Number.isFinite(n)) return false;
+  }
+  if (typeof o.count !== "number" || o.count < 1 || !Number.isFinite(o.count)) return false;
+  if (o.kind === "block") {
+    return typeof o.blockId === "number" && Number.isFinite(o.blockId);
+  }
+  return typeof o.itemId === "number" && Number.isFinite(o.itemId);
 }
 
 export function roomRoster(room: VoxelRoom): RoomPlayer[] {
@@ -388,7 +427,10 @@ export function snapshotPersistedState(room: VoxelRoom): PersistedRoomState {
     gameMode: room.gameMode ?? "creative",
     ...(Object.keys(inventories).length > 0 ? { inventories } : {}),
     ...(Object.keys(itemInventories).length > 0 ? { itemInventories } : {}),
-    ...(Object.keys(craftingGrids).length > 0 ? { craftingGrids } : {})
+    ...(Object.keys(craftingGrids).length > 0 ? { craftingGrids } : {}),
+    ...((room.gameMode ?? "creative") === "survival" && room.drops.size > 0
+      ? { drops: Array.from(room.drops.values()) }
+      : {})
   };
 }
 

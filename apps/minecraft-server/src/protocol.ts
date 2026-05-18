@@ -37,7 +37,8 @@ export interface InventoryMoveReq {
 export {
   BLOCK_REGISTRY,
   PLACEABLE_BLOCK_IDS,
-  ITEM_REGISTRY
+  ITEM_REGISTRY,
+  REGISTERED_ITEM_IDS
 } from "@playground/voxel-content";
 
 export interface RoomPlayerInfo {
@@ -48,6 +49,23 @@ export interface RoomPlayerInfo {
 export interface JoinRoomReq {
   sessionId: string;
 }
+
+/** Authoritative item stack lying in the world (survival). */
+export type WorldDrop =
+  | {
+      id: string;
+      kind: "block";
+      pos: Vec3;
+      blockId: number;
+      count: number;
+    }
+  | {
+      id: string;
+      kind: "item";
+      pos: Vec3;
+      itemId: number;
+      count: number;
+    };
 
 export interface JoinRoomAckOk {
   ok: true;
@@ -65,6 +83,8 @@ export interface JoinRoomAckOk {
   itemInventory: ItemSlot[];
   /** Survival: 2×2 crafting grid. Creative: empty. */
   craftingGrid: CraftingGridSlot[];
+  /** Item entities in the world (survival); creative sessions send `[]`. */
+  drops: WorldDrop[];
 }
 
 export interface JoinRoomAckErr {
@@ -91,6 +111,11 @@ export interface BlockPlaceReq {
 
 export interface BlockBreakReq {
   pos: Vec3;
+}
+
+/** Survival: drop one stack unit from a hotbar slot near the player. */
+export interface DropItemReq {
+  hotbarIndex: number;
 }
 
 /** Survival: hotbar blocks + main item storage (27). Creative clients ignore itemSlots. */
@@ -155,6 +180,8 @@ export type RoomEvent =
   | { kind: "GAME_RESUMED"; sessionId: string }
   | { kind: "GAME_STOPPED"; sessionId: string; stoppedBy: string }
   | { kind: "RECESS_ENDED"; sessionId: string }
-  | { kind: "GAME_MODE_CHANGED"; sessionId: string; gameMode: GameMode };
+  | { kind: "GAME_MODE_CHANGED"; sessionId: string; gameMode: GameMode }
+  | { kind: "WORLD_DROP_SPAWNED"; sessionId: string; drop: WorldDrop }
+  | { kind: "WORLD_DROP_REMOVED"; sessionId: string; id: string };
 
 export const MAX_REACH = 8;

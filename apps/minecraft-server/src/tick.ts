@@ -22,6 +22,8 @@ export interface TickDeps {
   io: TickIoShape;
   rooms?: () => VoxelRoom[];
   now?: () => number;
+  /** Optional e.g. survival magnet pickup (skipped in tests). */
+  magnetPickups?: (room: VoxelRoom) => void;
 }
 
 function buildSnapshot(room: VoxelRoom): RoomSnapshot {
@@ -43,6 +45,9 @@ export function tickOnce(deps: TickDeps): { emittedSessionIds: string[] } {
   const now = (deps.now ?? Date.now)();
   const emitted: string[] = [];
   for (const room of rooms) {
+    if (!room.paused && room.players.size > 0) {
+      deps.magnetPickups?.(room);
+    }
     if (room.paused) continue;
     if (room.players.size === 0) continue;
     if (!room.dirty) continue;

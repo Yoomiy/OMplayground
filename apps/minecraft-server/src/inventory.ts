@@ -98,6 +98,20 @@ export function consumeOneIfPresent(slots: HotbarState, blockId: number): void {
   }
 }
 
+/** Decrement one block from an exact hotbar cell (player drop intent). */
+export function consumeOneFromHotbarIndex(slots: HotbarState, index: number): boolean {
+  if (index < 0 || index >= HOTBAR_SLOT_COUNT) return false;
+  const s = slots[index];
+  if (!s || s.blockId === BLOCK_REGISTRY.AIR || s.count <= 0) return false;
+  const next = s.count - 1;
+  if (next <= 0) {
+    slots[index] = { blockId: BLOCK_REGISTRY.AIR, count: 0 };
+  } else {
+    slots[index] = { blockId: s.blockId, count: next };
+  }
+  return true;
+}
+
 export function hotbarFromPersisted(
   raw: unknown,
   fallback: HotbarState

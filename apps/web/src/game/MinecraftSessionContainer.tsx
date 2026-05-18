@@ -83,7 +83,10 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     serverCraftingGrid,
     craft,
     inventoryMove,
-    setGameMode
+    setGameMode,
+    dropHotbarItem,
+    onWorldDropSpawned,
+    onWorldDropRemoved
   } = useVoxelSocket({
     sessionId,
     suppressInputEmit: paused || isTeacherObserver
@@ -270,6 +273,13 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     }
   }, [invitationCode]);
 
+  const handleDropHotbar = useCallback(
+    (hotbarIndex: number) => {
+      void dropHotbarItem(hotbarIndex);
+    },
+    [dropHotbarItem]
+  );
+
   if (!connected || !joinAck) {
     return (
       <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900 text-slate-100">
@@ -300,6 +310,10 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         onInput={sendInput}
         onBlockPlace={handlePlaceBlock}
         onBlockBreak={handleBreakBlock}
+        initialWorldDrops={joinAck.drops ?? []}
+        registerWorldDropSpawned={onWorldDropSpawned}
+        registerWorldDropRemoved={onWorldDropRemoved}
+        onDropHotbarSlot={handleDropHotbar}
         registerSnapshotListener={onSnapshot}
         registerBlockDeltaListener={onBlockDelta}
       />

@@ -18,9 +18,10 @@ import {
   type ItemSlot,
   type RoomPlayerInfo,
   type RoomSnapshot,
-  type Vec3
+  type Vec3,
+  type WorldDrop
 } from "@/lib/voxelProtocol";
-import { MC_MATERIAL_ENTRIES, NOA_BLOCK_ENTRIES } from "@playground/voxel-content";
+import { MC_MATERIAL_ENTRIES, NOA_BLOCK_ENTRIES, PLANT_SPRITE_BLOCK_IDS } from "@playground/voxel-content";
 import { craftingGridPreview } from "@/lib/voxelCraftingPreview";
 import { VOXEL_ENTITY_CATALOG } from "@/games/voxel/voxelEntityCatalog";
 import {
@@ -396,8 +397,14 @@ export interface MinecraftClientProps {
   onInput: (input: InputReq) => void;
   onBlockPlace: (pos: Vec3, blockId: number) => void;
   onBlockBreak: (pos: Vec3) => void;
+  /** Survival: server validates and spawns a world drop. */
+  onDropHotbarSlot?: (hotbarIndex: number) => void;
   registerSnapshotListener: (cb: (snap: RoomSnapshot) => void) => () => void;
   registerBlockDeltaListener: (cb: (delta: BlockDelta) => void) => () => void;
+  /** World stacks present on join (survival). */
+  initialWorldDrops: WorldDrop[];
+  registerWorldDropSpawned: (cb: (drop: WorldDrop) => void) => () => void;
+  registerWorldDropRemoved: (cb: (id: string) => void) => () => void;
 }
 
 export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
@@ -417,8 +424,12 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     onInput,
     onBlockPlace,
     onBlockBreak,
+    onDropHotbarSlot,
     registerSnapshotListener,
-    registerBlockDeltaListener
+    registerBlockDeltaListener,
+    initialWorldDrops,
+    registerWorldDropSpawned,
+    registerWorldDropRemoved
   } = props;
 
   const [survivalSlot, setSurvivalSlot] = useState(0);
@@ -442,6 +453,9 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const myUserIdRef = useRef<string | null>(myUserId);
   const registerSnapshotListenerRef = useRef(registerSnapshotListener);
   const registerBlockDeltaListenerRef = useRef(registerBlockDeltaListener);
+  const registerWorldDropSpawnedRef = useRef(registerWorldDropSpawned);
+  const registerWorldDropRemovedRef = useRef(registerWorldDropRemoved);
+  const onDropHotbarSlotRef = useRef(onDropHotbarSlot);
 
   onInputRef.current = onInput;
   onPlaceRef.current = onBlockPlace;
@@ -453,6 +467,9 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   myUserIdRef.current = myUserId;
   registerSnapshotListenerRef.current = registerSnapshotListener;
   registerBlockDeltaListenerRef.current = registerBlockDeltaListener;
+  registerWorldDropSpawnedRef.current = registerWorldDropSpawned;
+  registerWorldDropRemovedRef.current = registerWorldDropRemoved;
+  onDropHotbarSlotRef.current = onDropHotbarSlot;
 
   const selectCreativeBlock = (blockId: number): void => {
     if (!PLACEABLE_BLOCK_IDS.includes(blockId)) return;
@@ -672,6 +689,107 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       });
       cleanupFns.push(offBlockDelta);
 
+      const worldDropEntities = new Map<string, number>();
+
+      function textureUrlForDrop(drop: WorldDrop): string | undefined {
+        if (drop.kind === "block") {
+          return BLOCK_HOTBAR_ICON[drop.blockId];
+        }
+        return ITEM_ICON[drop.itemId];
+      }
+
+      const DROP_CUBE_SIZE = 0.28;
+
+      function createTexturedDropCube(textureUrl: string, uniqueId: string): Mesh {
+        const scene = noa.rendering.getScene();
+        const mesh = Babylon.MeshBuilder.CreateBox(
+          `world-drop-${uniqueId}`,
+          { size: DROP_CUBE_SIZE },
+          scene
+        );
+        const tex = new Babylon.Texture(
+          textureUrl,
+          scene,
+          true,
+          false,
+          Babylon.Texture.NEAREST_SAMPLINGMODE
+        );
+        tex.hasAlpha = true;
+        const mat = noa.rendering.makeStandardMaterial(`world-drop-mat-${uniqueId}`);
+        mat.diffuseTexture = tex;
+        mat.specularColor = new Babylon.Color3(0.04, 0.04, 0.04);
+        mat.emissiveColor = new Babylon.Color3(0.12, 0.12, 0.12);
+        mesh.material = mat;
+        return mesh;
+      }
+
+      function spawnWorldDropEntity(drop: WorldDrop): void {
+        const url = textureUrlForDrop(drop);
+        if (!url) return;
+        try {
+          const usePlantSprite =
+            drop.kind === "block" && PLANT_SPRITE_BLOCK_IDS.has(drop.blockId);
+          if (usePlantSprite) {
+            const mesh = makePlantSpriteMesh(
+              noa,
+              Babylon,
+              url,
+              `world-drop-${drop.id}`
+            );
+            mesh.scaling = new Babylon.Vector3(0.36, 0.36, 0.36);
+            const eid: number = noa.entities.add(
+              [drop.pos[0], drop.pos[1], drop.pos[2]],
+              0.32,
+              0.32,
+              mesh,
+              [0, 0.12, 0],
+              false,
+              false
+            );
+            worldDropEntities.set(drop.id, eid);
+            return;
+          }
+          const mesh = createTexturedDropCube(url, drop.id);
+          const eid: number = noa.entities.add(
+            [drop.pos[0], drop.pos[1], drop.pos[2]],
+            DROP_CUBE_SIZE,
+            DROP_CUBE_SIZE,
+            mesh,
+            [0, 0, 0],
+            false,
+            false
+          );
+          worldDropEntities.set(drop.id, eid);
+        } catch {
+          // ignore malformed drop visuals
+        }
+      }
+
+      function removeWorldDropEntity(wid: string): void {
+        const eid = worldDropEntities.get(wid);
+        if (eid === undefined) return;
+        try {
+          noa.entities.deleteEntity(eid);
+        } catch {
+          // engine may already be tearing down
+        }
+        worldDropEntities.delete(wid);
+      }
+
+      for (const d of initialWorldDrops) {
+        spawnWorldDropEntity(d);
+      }
+
+      const offWorldDropSpawned = registerWorldDropSpawnedRef.current((d) => {
+        spawnWorldDropEntity(d);
+      });
+      cleanupFns.push(offWorldDropSpawned);
+
+      const offWorldDropRemoved = registerWorldDropRemovedRef.current((wid) => {
+        removeWorldDropEntity(wid);
+      });
+      cleanupFns.push(offWorldDropRemoved);
+
       noa.inputs.down.on("fire", () => {
         if (pausedRef.current) return;
         const tgt = noa.targetedBlock;
@@ -727,8 +845,15 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           return;
         }
         if (e.key.toLowerCase() === "p" && !inventoryOpen) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (onInputRef.current as any)({ action: "drop" });
+          if (gameModeRef.current === "survival") {
+            onDropHotbarSlotRef.current?.(survivalSlotRef.current);
+          }
+          return;
+        }
+        if (e.key.toLowerCase() === "q" && !inventoryOpen) {
+          if (gameModeRef.current === "survival") {
+            onDropHotbarSlotRef.current?.(survivalSlotRef.current);
+          }
           return;
         }
         const n = Number(e.key);
@@ -1297,7 +1422,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           <p className="font-semibold text-neutral-300">בקרות</p>
           <p className="text-neutral-200">
             WASD תנועה · רווח קפיצה · לחצן עכבר שמאלי שובר · ימני מניח · מקשי 1–9 לסרגל · E
-            מלאי (גרירה בין משבצות / לוח בלוקים ביצירתי) · Q או לחצן אמצעי בוחר בלוק · גלגלת לזום
+            מלאי (גרירה בין משבצות / לוח בלוקים ביצירתי) · Q או לחצן אמצעי בוחר בלוק · P/Q זורקים פריט מההוטבר בשרדות · גלגלת לזום
             המצלמה
           </p>
         </div>

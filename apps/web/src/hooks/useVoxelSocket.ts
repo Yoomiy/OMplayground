@@ -17,7 +17,8 @@ import type {
   RoomEvent,
   RoomSnapshot,
   SimpleAck,
-  Vec3
+  Vec3,
+  WorldDrop
 } from "@/lib/voxelProtocol";
 import {
   BLOCK_REGISTRY,
@@ -66,6 +67,8 @@ function inputWireEqual(a: InputReq, b: InputReq): boolean {
 export type SnapshotListener = (snap: RoomSnapshot) => void;
 export type BlockDeltaListener = (delta: BlockDelta) => void;
 export type RoomEventListener = (ev: RoomEvent) => void;
+export type WorldDropSpawnListener = (drop: WorldDrop) => void;
+export type WorldDropRemovedListener = (id: string) => void;
 
 export interface UseVoxelSocketArgs {
   sessionId: string;
@@ -93,6 +96,10 @@ export interface UseVoxelSocketReturn {
   serverCraftingGrid: CraftingGridSlot[];
   inventoryMove: (req: InventoryMoveReq) => Promise<SimpleAck>;
   setGameMode: (mode: GameMode) => Promise<SimpleAck>;
+  /** Survival: drop one block from hotbar near the player. */
+  dropHotbarItem: (hotbarIndex: number) => Promise<SimpleAck>;
+  onWorldDropSpawned: (cb: WorldDropSpawnListener) => () => void;
+  onWorldDropRemoved: (cb: WorldDropRemovedListener) => () => void;
 }
 
 function emitWithAck<T>(socket: Socket, event: string, payload: unknown): Promise<T> {
@@ -114,6 +121,8 @@ export function useVoxelSocket(
   const snapshotListeners = useRef(new Set<SnapshotListener>());
   const blockDeltaListeners = useRef(new Set<BlockDeltaListener>());
   const roomEventListeners = useRef(new Set<RoomEventListener>());
+  const worldDropSpawnListeners = useRef(new Set<WorldDropSpawnListener>());
+  const worldDropRemovedListeners = useRef(new Set<WorldDropRemovedListener>());
 
   const [connected, setConnected] = useState(false);
   const [status, setStatus] = useState<string>("מתחבר…");
@@ -199,6 +208,12 @@ export function useVoxelSocket(
         for (const cb of blockDeltaListeners.current) cb(payload);
       });
       s.on("ROOM_EVENT", (payload: RoomEvent) => {
+        if (payload.kind === "WORLD_DROP_SPAWNED") {
+          for (const cb of worldDropSpawnListeners.current) cb(payload.drop);
+        }
+        if (payload.kind === "WORLD_DROP_REMOVED") {
+          for (const cb of worldDropRemovedListeners.current) cb(payload.id);
+        }
         for (const cb of roomEventListeners.current) cb(payload);
       });
 
@@ -291,6 +306,12 @@ export function useVoxelSocket(
     return emitWithAck<SimpleAck>(s, "SET_GAME_MODE", { sessionId, gameMode: mode });
   }
 
+  async function dropHotbarItem(hotbarIndex: number): Promise<SimpleAck> {
+    const s = socketRef.current;
+    if (!s?.connected) return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
+    return emitWithAck<SimpleAck>(s, "DROP_ITEM_REQ", { hotbarIndex });
+  }
+
   function onSnapshot(cb: SnapshotListener): () => void {
     snapshotListeners.current.add(cb);
     return () => {
@@ -307,6 +328,20 @@ export function useVoxelSocket(
     roomEventListeners.current.add(cb);
     return () => {
       roomEventListeners.current.delete(cb);
+    };
+  }
+
+  function onWorldDropSpawned(cb: WorldDropSpawnListener): () => void {
+    worldDropSpawnListeners.current.add(cb);
+    return () => {
+      worldDropSpawnListeners.current.delete(cb);
+    };
+  }
+
+  function onWorldDropRemoved(cb: WorldDropRemovedListener): () => void {
+    worldDropRemovedListeners.current.add(cb);
+    return () => {
+      worldDropRemovedListeners.current.delete(cb);
     };
   }
 
@@ -329,6 +364,9 @@ export function useVoxelSocket(
     serverItemInventory,
     serverCraftingGrid,
     inventoryMove,
-    setGameMode
+    setGameMode,
+    dropHotbarItem,
+    onWorldDropSpawned,
+    onWorldDropRemoved
   };
 }

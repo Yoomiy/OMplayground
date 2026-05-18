@@ -425,3 +425,8 @@ export const NOA_BLOCK_ENTRIES: readonly NoaBlockEntry[] = [
     hotbarTextureKey: "bedrock"
   }
 ];
+
+/** Block ids rendered as crossed billboards in noa (sapling, flowers, mushrooms). */
+export const PLANT_SPRITE_BLOCK_IDS = new Set<number>(
+  NOA_BLOCK_ENTRIES.filter((e) => e.shape === "plantSprite").map((e) => e.id)
+);

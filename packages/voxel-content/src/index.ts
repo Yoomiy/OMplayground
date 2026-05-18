@@ -14,6 +14,7 @@ export {
 export {
   MC_MATERIAL_ENTRIES,
   NOA_BLOCK_ENTRIES,
+  PLANT_SPRITE_BLOCK_IDS,
   type McTerrainTextureKey,
   type NoaBlockEntry
 } from "./blockClientCatalog";

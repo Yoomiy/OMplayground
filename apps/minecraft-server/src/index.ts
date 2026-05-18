@@ -18,7 +18,6 @@ import {
   serializeDeltas
 } from "./world";
 import {
-  addPickUp,
   applyInventoryMove,
   blockBreakable,
   blockDropId,
@@ -26,11 +25,13 @@ import {
   cloneCraftingGrid,
   cloneHotbar,
   cloneItemInventory,
+  consumeOneFromHotbarIndex,
   consumeOneIfPresent,
   createEmptyCraftingGrid,
   createEmptyHotbar,
   createEmptyItemInventory,
-  tryCraftFromGrid
+  tryCraftFromGrid,
+  HOTBAR_SLOT_COUNT
 } from "./inventory";
 import {
   assignPlayer,
@@ -45,6 +46,7 @@ import {
   spawnFor,
   type PersistedRoomState
 } from "./room";
+import { startTickLoop } from "./tick";
 import {
   persistGamePaused,
   persistGameResumed,
@@ -56,7 +58,14 @@ import {
   createRecessSweepState,
   recessEndSweep
 } from "./recessSweep";
-import { startTickLoop } from "./tick";
+import {
+  clearDropsBroadcast,
+  breakBlockDropPosition,
+  dropPositionInFrontOfPlayer,
+  listDropsWire,
+  spawnBlockDropAt,
+  tickMagnetPickups
+} from "./drops";
 import {
   BLOCK_REGISTRY,
   MAX_REACH,
@@ -68,6 +77,7 @@ import {
   type GameMode,
   type InputReq,
   type InventoryMoveReq,
+  type DropItemReq,
   type JoinRoomAck,
   type SetGameModeReq,
   type SimpleAck,
@@ -444,7 +454,8 @@ io.on("connection", (socket) => {
         craftingGrid:
           effectiveMode === "survival" && assigned.player.craftingGrid
             ? cloneCraftingGrid(assigned.player.craftingGrid)
-            : createEmptyCraftingGrid()
+            : createEmptyCraftingGrid(),
+        drops: effectiveMode === "survival" ? listDropsWire(room) : []
       });
     }
   );
@@ -636,17 +647,122 @@ io.on("connection", (socket) => {
         blockDropsPickable(brokenId)
       ) {
         const dropId = blockDropId(brokenId);
-        if (dropId !== null) addPickUp(player.inventory, dropId);
-        socket.emit("INVENTORY_SYNC", {
-          slots: player.inventory,
-          itemSlots: player.itemInventory,
-          craftingSlots: player.craftingGrid
-        });
+        if (dropId !== null) {
+          const pos = breakBlockDropPosition(x, y, z);
+          const spawned = spawnBlockDropAt(room, pos, dropId, 1);
+          if (spawned) {
+            io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
+              sessionId,
+              kind: "WORLD_DROP_SPAWNED",
+              drop: spawned
+            });
+          }
+        }
       }
       io.to(`voxel:${sessionId}`).emit("BLOCK_DELTA", {
         pos: [x, y, z],
         blockId: BLOCK_REGISTRY.AIR,
         by: userId
+      });
+      ack?.({ ok: true });
+    }
+  );
+
+  socket.on(
+    "DROP_ITEM_REQ",
+    (payload: DropItemReq, ack?: (r: SimpleAck) => void) => {
+      const sessionId = socket.data.sessionId as string | undefined;
+      if (!sessionId) {
+        ack?.({
+          ok: false,
+          error: { code: "NOT_IN_ROOM", message: "לא בחדר" }
+        });
+        return;
+      }
+      const room = getRoom(sessionId);
+      if (!room) {
+        ack?.({
+          ok: false,
+          error: { code: "NOT_FOUND", message: "Room not loaded" }
+        });
+        return;
+      }
+      if (room.paused) {
+        ack?.({
+          ok: false,
+          error: { code: "GAME_PAUSED", message: "המשחק מושהה" }
+        });
+        return;
+      }
+      const player = room.players.get(userId);
+      if (!player) {
+        ack?.({
+          ok: false,
+          error: { code: "NOT_IN_ROOM", message: "השחקן לא נמצא בחדר" }
+        });
+        return;
+      }
+      if ((room.gameMode ?? "creative") !== "survival") {
+        ack?.({
+          ok: false,
+          error: { code: "BAD_INTENT", message: "רק במצב שרדות" }
+        });
+        return;
+      }
+      if (!player.inventory || !player.itemInventory || !player.craftingGrid) {
+        ack?.({ ok: false });
+        return;
+      }
+      const idx = Math.floor(Number(payload?.hotbarIndex));
+      if (!Number.isFinite(idx) || idx < 0 || idx >= HOTBAR_SLOT_COUNT) {
+        ack?.({
+          ok: false,
+          error: { code: "BAD_INTENT", message: "Invalid slot" }
+        });
+        return;
+      }
+      const cell = player.inventory[idx];
+      if (
+        !cell ||
+        cell.count <= 0 ||
+        cell.blockId === BLOCK_REGISTRY.AIR
+      ) {
+        ack?.({
+          ok: false,
+          error: { code: "EMPTY_SLOT", message: "המשבצת ריקה" }
+        });
+        return;
+      }
+      const blockId = cell.blockId;
+      if (!consumeOneFromHotbarIndex(player.inventory, idx)) {
+        ack?.({
+          ok: false,
+          error: { code: "EMPTY_SLOT", message: "המשבצת ריקה" }
+        });
+        return;
+      }
+      const spawned = spawnBlockDropAt(
+        room,
+        dropPositionInFrontOfPlayer(player),
+        blockId,
+        1
+      );
+      if (!spawned) {
+        ack?.({
+          ok: false,
+          error: { code: "BAD_INTENT", message: "לא ניתן לזרוק" }
+        });
+        return;
+      }
+      socket.emit("INVENTORY_SYNC", {
+        slots: player.inventory,
+        itemSlots: player.itemInventory,
+        craftingSlots: player.craftingGrid
+      });
+      io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
+        sessionId,
+        kind: "WORLD_DROP_SPAWNED",
+        drop: spawned
       });
       ack?.({ ok: true });
     }
@@ -788,6 +904,7 @@ io.on("connection", (socket) => {
         room.disconnectedCraftingGrids.clear();
       } else {
         room.gameMode = "creative";
+        clearDropsBroadcast(io, room);
         for (const p of room.players.values()) {
           delete p.inventory;
           delete p.itemInventory;
@@ -1021,7 +1138,10 @@ const recessTimer = setInterval(() => {
 }, RECESS_TICK_MS);
 recessTimer.unref?.();
 
-startTickLoop({ io });
+startTickLoop({
+  io,
+  magnetPickups: (room) => tickMagnetPickups(io, room)
+});
 
 server.listen(PORT, () => {
   console.log(`minecraft-server listening on ${PORT}`);
