@@ -3,10 +3,10 @@
 5. spawn from last location when resuming game
 6. borrow map rendering from volexsrv
 7. import more blocks and items
-8. fix avatr hovering and arms rendering
+8. fix e/q/p buttons
+9. allow draging of blocks to inventory
 
 implement:
-1. inventory/items
 2. mobs
 3. voice/text chat in 3D space
 4. persistent worlds across sessions (deltas only persist for paused sessions, then are dropped on completion)
