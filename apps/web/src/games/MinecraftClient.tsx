@@ -19,7 +19,8 @@ import {
   type RoomPlayerInfo,
   type RoomSnapshot,
   type Vec3,
-  type WorldDrop
+  type WorldDrop,
+  type WorldDropWireDelta
 } from "@/lib/voxelProtocol";
 import { MC_MATERIAL_ENTRIES, NOA_BLOCK_ENTRIES, PLANT_SPRITE_BLOCK_IDS } from "@playground/voxel-content";
 import { craftingGridPreview } from "@/lib/voxelCraftingPreview";
@@ -405,6 +406,10 @@ export interface MinecraftClientProps {
   initialWorldDrops: WorldDrop[];
   registerWorldDropSpawned: (cb: (drop: WorldDrop) => void) => () => void;
   registerWorldDropRemoved: (cb: (id: string) => void) => () => void;
+  /** ~5 Hz server WORLD_DROP_UPDATE for survival stack motion. */
+  registerWorldDropUpdated: (
+    cb: (updates: WorldDropWireDelta[]) => void
+  ) => () => void;
 }
 
 export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
@@ -429,7 +434,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     registerBlockDeltaListener,
     initialWorldDrops,
     registerWorldDropSpawned,
-    registerWorldDropRemoved
+    registerWorldDropRemoved,
+    registerWorldDropUpdated
   } = props;
 
   const [survivalSlot, setSurvivalSlot] = useState(0);
@@ -455,6 +461,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const registerBlockDeltaListenerRef = useRef(registerBlockDeltaListener);
   const registerWorldDropSpawnedRef = useRef(registerWorldDropSpawned);
   const registerWorldDropRemovedRef = useRef(registerWorldDropRemoved);
+  const registerWorldDropUpdatedRef = useRef(registerWorldDropUpdated);
   const onDropHotbarSlotRef = useRef(onDropHotbarSlot);
 
   onInputRef.current = onInput;
@@ -469,6 +476,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   registerBlockDeltaListenerRef.current = registerBlockDeltaListener;
   registerWorldDropSpawnedRef.current = registerWorldDropSpawned;
   registerWorldDropRemovedRef.current = registerWorldDropRemoved;
+  registerWorldDropUpdatedRef.current = registerWorldDropUpdated;
   onDropHotbarSlotRef.current = onDropHotbarSlot;
 
   const selectCreativeBlock = (blockId: number): void => {
@@ -689,13 +697,188 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       });
       cleanupFns.push(offBlockDelta);
 
+      /** Keep in sync with `DROP_PHYS_HALF_XZ` / `DROP_PHYS_HALF_Y` (apps/minecraft-server/src/drops.ts). */
+      const DROP_PHYS_HALF_XZ = 0.142;
+      const DROP_PHYS_HALF_Y = 0.142;
+      const DROP_MAX_VIS_STEP = 0.16;
+      const DEPENET_VIS_EPS = 1.2e-3;
+
+      function clientBlockAtInt(ix: number, iy: number, iz: number): number {
+        const o = deltas.get(`${ix},${iy},${iz}`);
+        return o ?? proceduralVoxelID(ix, iy, iz, seed);
+      }
+
+      function clientSolidAtInt(ix: number, iy: number, iz: number): boolean {
+        return clientBlockAtInt(ix, iy, iz) !== BLOCK_REGISTRY.AIR;
+      }
+
+      function clientDepenetrateDropVisual(px: number, py: number, pz: number): Vec3 {
+        let x = px;
+        let y = py;
+        let z = pz;
+        const hx = DROP_PHYS_HALF_XZ;
+        const hy = DROP_PHYS_HALF_Y;
+        const hz = DROP_PHYS_HALF_XZ;
+
+        for (let pass = 0; pass < 10; pass++) {
+          let moved = false;
+          const gx0 = Math.floor(x - hx);
+          const gx1 = Math.floor(x + hx);
+          const gy0 = Math.floor(y - hy);
+          const gy1 = Math.floor(y + hy);
+          const gz0 = Math.floor(z - hz);
+          const gz1 = Math.floor(z + hz);
+
+          for (let bx = gx0; bx <= gx1; bx++) {
+            for (let by = gy0; by <= gy1; by++) {
+              for (let bz = gz0; bz <= gz1; bz++) {
+                if (!clientSolidAtInt(bx, by, bz)) continue;
+
+                const ox =
+                  Math.min(x + hx, bx + 1 + 4e-7) -
+                  Math.max(x - hx, bx - 4e-7);
+                const oy =
+                  Math.min(y + hy, by + 1 + 4e-7) -
+                  Math.max(y - hy, by - 4e-7);
+                const oz =
+                  Math.min(z + hz, bz + 1 + 4e-7) -
+                  Math.max(z - hz, bz - 4e-7);
+
+                if (ox <= 0 || oy <= 0 || oz <= 0) continue;
+
+                if (ox < oy && ox < oz) {
+                  const sign = x < bx + 0.5 ? -1 : 1;
+                  x += sign * (ox + DEPENET_VIS_EPS);
+                } else if (oy < oz) {
+                  const sign = y < by + 0.5 ? -1 : 1;
+                  y += sign * (oy + DEPENET_VIS_EPS);
+                } else {
+                  const sign = z < bz + 0.5 ? -1 : 1;
+                  z += sign * (oz + DEPENET_VIS_EPS);
+                }
+
+                moved = true;
+                break;
+              }
+              if (moved) break;
+            }
+            if (moved) break;
+          }
+
+          if (!moved) break;
+        }
+
+        return [x, y, z];
+      }
+
+      function moveTowardCap(prev: Vec3, target: Vec3, maxLen: number): Vec3 {
+        const dx = target[0] - prev[0];
+        const dy = target[1] - prev[1];
+        const dz = target[2] - prev[2];
+        const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (d <= maxLen || d < 1e-8) {
+          return [target[0], target[1], target[2]];
+        }
+        const s = maxLen / d;
+        return [prev[0] + dx * s, prev[1] + dy * s, prev[2] + dz * s];
+      }
+
       const worldDropEntities = new Map<string, number>();
+      type DropInterpRecord = { p0: Vec3; p1: Vec3; t0: number };
+      const DROP_INTERP_MS = 220;
+      const worldDropInterpById = new Map<string, DropInterpRecord>();
+      const worldDropMeshes = new Map<string, Mesh>();
+      const worldDropSpinSign = new Map<string, number>();
+      const worldDropVisualBase = new Map<string, Vec3>();
+      const worldDropStackKey = new Map<string, string>();
+
+      function clientSeparateDissimilarDropBases(): void {
+        const wids = [...worldDropEntities.keys()];
+        const hx = DROP_PHYS_HALF_XZ;
+        const hy = DROP_PHYS_HALF_Y;
+        const hz = DROP_PHYS_HALF_XZ;
+
+        for (let i = 0; i < wids.length; i++) {
+          const wa = wids[i]!;
+          const ka = worldDropStackKey.get(wa);
+          const ba = worldDropVisualBase.get(wa);
+          if (ka === undefined || !ba) continue;
+
+          for (let j = i + 1; j < wids.length; j++) {
+            const wb = wids[j]!;
+            if ((worldDropStackKey.get(wb) ?? "") === ka) continue;
+            const bb = worldDropVisualBase.get(wb);
+            if (!bb) continue;
+
+            const dx = bb[0] - ba[0];
+            const dy = bb[1] - ba[1];
+            const dz = bb[2] - ba[2];
+
+            const ox =
+              Math.min(ba[0] + hx, bb[0] + hx) - Math.max(ba[0] - hx, bb[0] - hx);
+            const oy =
+              Math.min(ba[1] + hy, bb[1] + hy) - Math.max(ba[1] - hy, bb[1] - hy);
+            const oz =
+              Math.min(ba[2] + hz, bb[2] + hz) - Math.max(ba[2] - hz, bb[2] - hz);
+
+            if (ox <= 0 || oy <= 0 || oz <= 0) continue;
+
+            let mag: number;
+            let sx = 0;
+            let sy = 0;
+            let sz = 0;
+            if (ox < oy && ox < oz) {
+              mag = (ox + DEPENET_VIS_EPS) * 0.5;
+              if (Math.abs(dx) > 1e-5) sx = dx > 0 ? 1 : -1;
+              else sx = wa.localeCompare(wb) <= 0 ? -1 : 1;
+            } else if (oy < oz) {
+              mag = (oy + DEPENET_VIS_EPS) * 0.5;
+              if (Math.abs(dy) > 1e-5) sy = dy > 0 ? 1 : -1;
+              else sy = wa.localeCompare(wb) <= 0 ? -1 : 1;
+            } else {
+              mag = (oz + DEPENET_VIS_EPS) * 0.5;
+              if (Math.abs(dz) > 1e-5) sz = dz > 0 ? 1 : -1;
+              else sz = wa.localeCompare(wb) <= 0 ? -1 : 1;
+            }
+
+            ba[0] -= sx * mag;
+            ba[1] -= sy * mag;
+            ba[2] -= sz * mag;
+            bb[0] += sx * mag;
+            bb[1] += sy * mag;
+            bb[2] += sz * mag;
+          }
+        }
+      }
+
+      function smoothInterp01(u: number): number {
+        const x = Math.min(Math.max(u, 0), 1);
+        return x * x * (3 - 2 * x);
+      }
+
+      function sampleInterp(prev: DropInterpRecord): Vec3 {
+        const elapsed = performance.now() - prev.t0;
+        const u = smoothInterp01(Math.min(Math.max(elapsed / DROP_INTERP_MS, 0), 1));
+        return [
+          prev.p0[0] + (prev.p1[0] - prev.p0[0]) * u,
+          prev.p0[1] + (prev.p1[1] - prev.p0[1]) * u,
+          prev.p0[2] + (prev.p1[2] - prev.p0[2]) * u
+        ];
+      }
+
+      function spinSignForDropId(id: string): number {
+        return id.charCodeAt(0) % 2 === 0 ? 1 : -1;
+      }
 
       function textureUrlForDrop(drop: WorldDrop): string | undefined {
         if (drop.kind === "block") {
           return BLOCK_HOTBAR_ICON[drop.blockId];
         }
         return ITEM_ICON[drop.itemId];
+      }
+
+      function worldDropMergeStackKey(drop: WorldDrop): string {
+        return drop.kind === "block" ? `b:${drop.blockId}` : `i:${drop.itemId}`;
       }
 
       const DROP_CUBE_SIZE = 0.28;
@@ -723,6 +906,22 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         return mesh;
       }
 
+      function cacheDropMeshAndInterp(wid: string, eid: number, pos: Vec3): void {
+        worldDropInterpById.set(wid, {
+          p0: [pos[0], pos[1], pos[2]],
+          p1: [pos[0], pos[1], pos[2]],
+          t0: performance.now()
+        });
+        worldDropVisualBase.set(wid, [pos[0], pos[1], pos[2]]);
+        worldDropSpinSign.set(wid, spinSignForDropId(wid));
+        try {
+          const md = noa.entities.getMeshData(eid);
+          if (md?.mesh) worldDropMeshes.set(wid, md.mesh as Mesh);
+        } catch {
+          // ignore
+        }
+      }
+
       function spawnWorldDropEntity(drop: WorldDrop): void {
         const url = textureUrlForDrop(drop);
         if (!url) return;
@@ -746,7 +945,9 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
               false,
               false
             );
+            worldDropStackKey.set(drop.id, worldDropMergeStackKey(drop));
             worldDropEntities.set(drop.id, eid);
+            cacheDropMeshAndInterp(drop.id, eid, drop.pos);
             return;
           }
           const mesh = createTexturedDropCube(url, drop.id);
@@ -759,7 +960,9 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
             false,
             false
           );
+          worldDropStackKey.set(drop.id, worldDropMergeStackKey(drop));
           worldDropEntities.set(drop.id, eid);
+          cacheDropMeshAndInterp(drop.id, eid, drop.pos);
         } catch {
           // ignore malformed drop visuals
         }
@@ -774,6 +977,11 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           // engine may already be tearing down
         }
         worldDropEntities.delete(wid);
+        worldDropInterpById.delete(wid);
+        worldDropMeshes.delete(wid);
+        worldDropSpinSign.delete(wid);
+        worldDropVisualBase.delete(wid);
+        worldDropStackKey.delete(wid);
       }
 
       for (const d of initialWorldDrops) {
@@ -789,6 +997,34 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         removeWorldDropEntity(wid);
       });
       cleanupFns.push(offWorldDropRemoved);
+
+      const offWorldDropUpdated = registerWorldDropUpdatedRef.current(
+        (updates: WorldDropWireDelta[]) => {
+          for (const u of updates) {
+            const prev = worldDropInterpById.get(u.id);
+            let p0: Vec3;
+            const eid = worldDropEntities.get(u.id);
+            if (eid !== undefined) {
+              try {
+                const cur = noa.entities.getPosition(eid);
+                p0 = [cur[0], cur[1], cur[2]];
+              } catch {
+                p0 = [u.pos[0], u.pos[1], u.pos[2]];
+              }
+            } else if (prev) {
+              p0 = sampleInterp(prev);
+            } else {
+              p0 = [u.pos[0], u.pos[1], u.pos[2]];
+            }
+            worldDropInterpById.set(u.id, {
+              p0,
+              p1: [u.pos[0], u.pos[1], u.pos[2]],
+              t0: performance.now()
+            });
+          }
+        }
+      );
+      cleanupFns.push(offWorldDropUpdated);
 
       noa.inputs.down.on("fire", () => {
         if (pausedRef.current) return;
@@ -875,6 +1111,53 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
       let lastEmit = 0;
       noa.on("tick", () => {
+        const nowPerf = performance.now();
+
+        if (!pausedRef.current && gameModeRef.current === "survival" && worldDropEntities.size > 0) {
+          const bobT = nowPerf / 1000;
+          const bobUpMag = (Math.sin(bobT * 6.6) * 0.5 + 0.5) * 0.022;
+
+          for (const [wid, eid] of worldDropEntities) {
+            const ip = worldDropInterpById.get(wid);
+            let tx: number;
+            let ty: number;
+            let tz: number;
+            if (ip) {
+              const elapsed = nowPerf - ip.t0;
+              const u = smoothInterp01(Math.min(Math.max(elapsed / DROP_INTERP_MS, 0), 1));
+              tx = ip.p0[0] + (ip.p1[0] - ip.p0[0]) * u;
+              ty = ip.p0[1] + (ip.p1[1] - ip.p0[1]) * u;
+              tz = ip.p0[2] + (ip.p1[2] - ip.p0[2]) * u;
+            } else {
+              const pCur = noa.entities.getPosition(eid);
+              tx = pCur[0];
+              ty = pCur[1];
+              tz = pCur[2];
+            }
+
+            const prevBase =
+              worldDropVisualBase.get(wid) ??
+              ([tx, ty, tz] as Vec3);
+            const base = moveTowardCap(prevBase, [tx, ty, tz], DROP_MAX_VIS_STEP);
+            worldDropVisualBase.set(wid, base);
+          }
+
+          clientSeparateDissimilarDropBases();
+
+          for (const [wid, eid] of worldDropEntities) {
+            const base = worldDropVisualBase.get(wid);
+            if (!base) continue;
+            const yWithBob = base[1] + bobUpMag;
+            const [rx, ry, rz] = clientDepenetrateDropVisual(base[0], yWithBob, base[2]);
+
+            noa.entities.setPosition(eid, [rx, ry, rz]);
+            const mesh = worldDropMeshes.get(wid);
+            if (mesh) {
+              mesh.rotation.y = bobT * 2.1 * (worldDropSpinSign.get(wid) ?? 1);
+            }
+          }
+        }
+
         if (pausedRef.current) return;
 
         const scrolly: number = noa.inputs.pointerState.scrolly;
@@ -903,9 +1186,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           setAvatarYaw(localRig, heading);
         }
 
-        const now = performance.now();
-        if (now - lastEmit < 60) return;
-        lastEmit = now;
+        if (nowPerf - lastEmit < 60) return;
+        lastEmit = nowPerf;
         const physState = noa.entities.getPhysics(playerEnt);
         const onGround = physState?.body?.resting?.[1] === -1;
         onInputRef.current({

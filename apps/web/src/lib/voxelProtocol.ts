@@ -60,6 +60,10 @@ export type WorldDrop =
       pos: Vec3;
       blockId: number;
       count: number;
+      spawnedAt?: number;
+      vx?: number;
+      vy?: number;
+      vz?: number;
     }
   | {
       id: string;
@@ -67,7 +71,17 @@ export type WorldDrop =
       pos: Vec3;
       itemId: number;
       count: number;
+      spawnedAt?: number;
+      vx?: number;
+      vy?: number;
+      vz?: number;
     };
+
+export interface WorldDropWireDelta {
+  id: string;
+  pos: Vec3;
+  count?: number;
+}
 
 export interface JoinRoomAckOk {
   ok: true;
@@ -177,6 +191,11 @@ export type RoomEvent =
   | { kind: "RECESS_ENDED"; sessionId: string }
   | { kind: "GAME_MODE_CHANGED"; sessionId: string; gameMode: GameMode }
   | { kind: "WORLD_DROP_SPAWNED"; sessionId: string; drop: WorldDrop }
-  | { kind: "WORLD_DROP_REMOVED"; sessionId: string; id: string };
+  | { kind: "WORLD_DROP_REMOVED"; sessionId: string; id: string }
+  | {
+      kind: "WORLD_DROP_UPDATE";
+      sessionId: string;
+      updates: WorldDropWireDelta[];
+    };
 
 export const MAX_REACH = 8;

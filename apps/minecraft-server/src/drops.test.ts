@@ -7,11 +7,15 @@ import {
 } from "./room";
 import type { Server } from "socket.io";
 import {
+  DROP_PHYS_HALF_XZ,
+  DROP_TTL_MS,
   listDropsWire,
   MAGNET_RADIUS_SQ,
   spawnBlockDropAt,
-  tickMagnetPickups
+  tickMagnetPickups,
+  tickWorldDrops
 } from "./drops";
+import { applyDelta } from "./world";
 
 beforeEach(() => __resetRoomsForTest());
 
@@ -108,6 +112,128 @@ describe("world drops", () => {
     expect(room.drops.size).toBe(0);
     const grass = player.inventory!.find((s) => s.blockId === BLOCK_REGISTRY.GRASS);
     expect(grass?.count).toBeGreaterThanOrEqual(1);
+  });
+
+  it("drops fall under gravity toward supporting terrain", () => {
+    const room = survivalRoom("sess-drop-fall");
+    const d = spawnBlockDropAt(room, [8, 90, -3], BLOCK_REGISTRY.STONE, 1);
+    expect(d).not.toBeNull();
+    const py0 = d!.pos[1];
+    const io = {
+      to: jest.fn().mockReturnValue({ emit: jest.fn() }),
+      in: jest.fn()
+    } as unknown as Server;
+    const tBase = 1_720_050_123_456;
+    for (let step = 0; step < 180; step++) {
+      tickWorldDrops(io, room, tBase + step * 70);
+    }
+    const still = room.drops.get(d!.id)!;
+    expect(still.pos[1]).toBeLessThan(py0 - 8);
+    expect(Number.isFinite(still.pos[1])).toBe(true);
+  });
+
+  it("WORLD_DROP_UPDATE is emitted once drops move past broadcast window", () => {
+    const room = survivalRoom("sess-drop-broadcast");
+    spawnBlockDropAt(room, [2, 85, 2], BLOCK_REGISTRY.DIRT, 1);
+    const emit = jest.fn();
+    const io = {
+      to: jest.fn().mockReturnValue({ emit })
+    } as unknown as Server;
+    tickWorldDrops(io, room, 1_720_100_000_000);
+    expect(
+      emit.mock.calls.some(
+        ([, payload]) =>
+          typeof payload === "object" &&
+          payload !== null &&
+          "kind" in payload &&
+          (payload as { kind?: string }).kind === "WORLD_DROP_UPDATE"
+      )
+    ).toBe(true);
+  });
+
+  it("drops despawn past TTL", () => {
+    const room = survivalRoom("sess-drop-ttl");
+    const frozen = Date.now();
+    spawnBlockDropAt(room, [2, 65, 2], BLOCK_REGISTRY.DIRT, 1, {
+      spawnedAtMs: frozen - DROP_TTL_MS - 10_000
+    });
+    const emit = jest.fn();
+    const io = {
+      to: jest.fn().mockReturnValue({ emit })
+    } as unknown as Server;
+    tickWorldDrops(io, room, frozen + 123);
+    expect(room.drops.size).toBe(0);
+    expect(
+      emit.mock.calls.some(
+        ([, payload]) =>
+          typeof payload === "object" &&
+          payload !== null &&
+          "kind" in payload &&
+          (payload as { kind?: string }).kind === "WORLD_DROP_REMOVED"
+      )
+    ).toBe(true);
+  });
+
+  it("pushes overlapping dissimilar stacks apart (collision, no merge)", () => {
+    const room = survivalRoom("sess-drop-sep");
+    const a = spawnBlockDropAt(room, [20, 200, -4], BLOCK_REGISTRY.STONE, 3);
+    const b = spawnBlockDropAt(room, [20.001, 200, -4], BLOCK_REGISTRY.DIRT, 2);
+    expect(a).not.toBeNull();
+    expect(b).not.toBeNull();
+    const io = {
+      to: jest.fn().mockReturnValue({ emit: jest.fn() }),
+      in: jest.fn()
+    } as unknown as Server;
+    const t0 = 1_720_300_000_000;
+    for (let s = 0; s < 40; s++) {
+      tickWorldDrops(io, room, t0 + s * 70);
+    }
+    expect(room.drops.size).toBe(2);
+    const ds = [...room.drops.values()];
+    const dx = ds[0]!.pos[0] - ds[1]!.pos[0];
+    const dy = ds[0]!.pos[1] - ds[1]!.pos[1];
+    const dz = ds[0]!.pos[2] - ds[1]!.pos[2];
+    /** Touching clears AABB overlap (≈ 2 × half-extent along separation axis). */
+    expect(Math.hypot(dx, dy, dz)).toBeGreaterThan(DROP_PHYS_HALF_XZ * 1.96);
+  });
+
+  it("resolves penetration when a solid block occupies the drop AABB (side wall)", () => {
+    const room = survivalRoom("sess-drop-wall");
+    applyDelta(room.world, 30, 70, -6, BLOCK_REGISTRY.STONE);
+    const d = spawnBlockDropAt(room, [30.91, 70.15, -5.93], BLOCK_REGISTRY.GRASS, 1, {
+      vx: 0,
+      vy: 0,
+      vz: 0
+    });
+    expect(d).not.toBeNull();
+    const hx = DROP_PHYS_HALF_XZ;
+    expect(d!.pos[0] + hx).toBeGreaterThan(30); // penetrates ix=30 stone from +x side
+
+    const io = {
+      to: jest.fn().mockReturnValue({ emit: jest.fn() }),
+      in: jest.fn()
+    } as unknown as Server;
+    const t0 = 1_720_400_000_000;
+    for (let s = 0; s < 120; s++) {
+      tickWorldDrops(io, room, t0 + s * 70);
+    }
+    const still = room.drops.get(d!.id)!;
+    /** Drop AABB clears [30,31) x extent of stone at ix=30. */
+    expect(still.pos[0] - hx).toBeGreaterThanOrEqual(31 - 8e-2);
+    expect(Number.isFinite(still.pos[1])).toBe(true);
+  });
+
+  it("merges identical touching stacks when combined count fits MAX_STACK", () => {
+    const room = survivalRoom("sess-drop-merge");
+    spawnBlockDropAt(room, [12, 64, -4], BLOCK_REGISTRY.GRAVEL, 28);
+    spawnBlockDropAt(room, [12.001, 64, -4], BLOCK_REGISTRY.GRAVEL, 31);
+    const emit = jest.fn();
+    const io = {
+      to: jest.fn().mockReturnValue({ emit })
+    } as unknown as Server;
+    tickWorldDrops(io, room, 1_720_200_555_777);
+    expect(room.drops.size).toBe(1);
+    expect([...room.drops.values()][0]!.count).toBe(59);
   });
 });
 

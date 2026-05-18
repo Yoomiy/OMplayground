@@ -88,6 +88,9 @@ export interface VoxelRoom {
   lastTickAt: number;
   /** Survival: item stacks in the world (magnet pickup). */
   drops: Map<string, WorldDrop>;
+  /** Drops whose pos/stack changed — flushed as WORLD_DROP_UPDATE (~5 Hz). */
+  dropSyncIds: Set<string>;
+  lastDropBroadcastAt: number;
 }
 
 const rooms = new Map<string, VoxelRoom>();
@@ -147,6 +150,10 @@ export function getOrCreateRoom(
     }
     if (!existing.drops) {
       existing.drops = new Map();
+    }
+    if (!existing.dropSyncIds) {
+      existing.dropSyncIds = new Set();
+      existing.lastDropBroadcastAt = 0;
     }
     return existing;
   }
@@ -222,7 +229,9 @@ export function getOrCreateRoom(
     disconnectedCraftingGrids,
     dirty: false,
     lastTickAt: 0,
-    drops: hydrateDropsFromPersisted(meta.resumedState?.drops)
+    drops: hydrateDropsFromPersisted(meta.resumedState?.drops),
+    dropSyncIds: new Set(),
+    lastDropBroadcastAt: 0
   };
   rooms.set(sessionId, created);
   return created;
@@ -247,6 +256,18 @@ function isPersistedWorldDrop(d: unknown): d is WorldDrop {
     if (typeof n !== "number" || !Number.isFinite(n)) return false;
   }
   if (typeof o.count !== "number" || o.count < 1 || !Number.isFinite(o.count)) return false;
+  if (
+    o.spawnedAt !== undefined &&
+    (typeof o.spawnedAt !== "number" || !Number.isFinite(o.spawnedAt))
+  ) {
+    return false;
+  }
+  for (const k of ["vx", "vy", "vz"] as const) {
+    const v = o[k];
+    if (v !== undefined && (typeof v !== "number" || !Number.isFinite(v))) {
+      return false;
+    }
+  }
   if (o.kind === "block") {
     return typeof o.blockId === "number" && Number.isFinite(o.blockId);
   }

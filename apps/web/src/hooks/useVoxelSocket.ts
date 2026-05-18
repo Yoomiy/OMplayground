@@ -18,7 +18,8 @@ import type {
   RoomSnapshot,
   SimpleAck,
   Vec3,
-  WorldDrop
+  WorldDrop,
+  WorldDropWireDelta
 } from "@/lib/voxelProtocol";
 import {
   BLOCK_REGISTRY,
@@ -69,6 +70,7 @@ export type BlockDeltaListener = (delta: BlockDelta) => void;
 export type RoomEventListener = (ev: RoomEvent) => void;
 export type WorldDropSpawnListener = (drop: WorldDrop) => void;
 export type WorldDropRemovedListener = (id: string) => void;
+export type WorldDropUpdateListener = (updates: WorldDropWireDelta[]) => void;
 
 export interface UseVoxelSocketArgs {
   sessionId: string;
@@ -100,6 +102,7 @@ export interface UseVoxelSocketReturn {
   dropHotbarItem: (hotbarIndex: number) => Promise<SimpleAck>;
   onWorldDropSpawned: (cb: WorldDropSpawnListener) => () => void;
   onWorldDropRemoved: (cb: WorldDropRemovedListener) => () => void;
+  onWorldDropUpdated: (cb: WorldDropUpdateListener) => () => void;
 }
 
 function emitWithAck<T>(socket: Socket, event: string, payload: unknown): Promise<T> {
@@ -123,6 +126,7 @@ export function useVoxelSocket(
   const roomEventListeners = useRef(new Set<RoomEventListener>());
   const worldDropSpawnListeners = useRef(new Set<WorldDropSpawnListener>());
   const worldDropRemovedListeners = useRef(new Set<WorldDropRemovedListener>());
+  const worldDropUpdateListeners = useRef(new Set<WorldDropUpdateListener>());
 
   const [connected, setConnected] = useState(false);
   const [status, setStatus] = useState<string>("מתחבר…");
@@ -213,6 +217,9 @@ export function useVoxelSocket(
         }
         if (payload.kind === "WORLD_DROP_REMOVED") {
           for (const cb of worldDropRemovedListeners.current) cb(payload.id);
+        }
+        if (payload.kind === "WORLD_DROP_UPDATE") {
+          for (const cb of worldDropUpdateListeners.current) cb(payload.updates);
         }
         for (const cb of roomEventListeners.current) cb(payload);
       });
@@ -345,6 +352,13 @@ export function useVoxelSocket(
     };
   }
 
+  function onWorldDropUpdated(cb: WorldDropUpdateListener): () => void {
+    worldDropUpdateListeners.current.add(cb);
+    return () => {
+      worldDropUpdateListeners.current.delete(cb);
+    };
+  }
+
   return {
     connected,
     status,
@@ -367,6 +381,7 @@ export function useVoxelSocket(
     setGameMode,
     dropHotbarItem,
     onWorldDropSpawned,
-    onWorldDropRemoved
+    onWorldDropRemoved,
+    onWorldDropUpdated
   };
 }

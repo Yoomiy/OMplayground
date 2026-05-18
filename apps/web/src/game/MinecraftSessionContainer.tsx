@@ -86,7 +86,8 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     setGameMode,
     dropHotbarItem,
     onWorldDropSpawned,
-    onWorldDropRemoved
+    onWorldDropRemoved,
+    onWorldDropUpdated
   } = useVoxelSocket({
     sessionId,
     suppressInputEmit: paused || isTeacherObserver
@@ -313,6 +314,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         initialWorldDrops={joinAck.drops ?? []}
         registerWorldDropSpawned={onWorldDropSpawned}
         registerWorldDropRemoved={onWorldDropRemoved}
+        registerWorldDropUpdated={onWorldDropUpdated}
         onDropHotbarSlot={handleDropHotbar}
         registerSnapshotListener={onSnapshot}
         registerBlockDeltaListener={onBlockDelta}

@@ -60,11 +60,13 @@ import {
 } from "./recessSweep";
 import {
   clearDropsBroadcast,
-  breakBlockDropPosition,
   dropPositionInFrontOfPlayer,
+  jitterBreakSpawnPosition,
   listDropsWire,
+  scatterImpulseBreakDrop,
   spawnBlockDropAt,
-  tickMagnetPickups
+  tickMagnetPickups,
+  tickWorldDrops
 } from "./drops";
 import {
   BLOCK_REGISTRY,
@@ -648,8 +650,9 @@ io.on("connection", (socket) => {
       ) {
         const dropId = blockDropId(brokenId);
         if (dropId !== null) {
-          const pos = breakBlockDropPosition(x, y, z);
-          const spawned = spawnBlockDropAt(room, pos, dropId, 1);
+          const spawned = spawnBlockDropAt(room, jitterBreakSpawnPosition(x, y, z), dropId, 1, {
+            ...scatterImpulseBreakDrop()
+          });
           if (spawned) {
             io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
               sessionId,
@@ -741,12 +744,12 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      const spawned = spawnBlockDropAt(
-        room,
-        dropPositionInFrontOfPlayer(player),
-        blockId,
-        1
-      );
+      const h = player.heading;
+      const spawned = spawnBlockDropAt(room, dropPositionInFrontOfPlayer(player), blockId, 1, {
+        vx: Math.sin(h) * 0.45,
+        vy: 0.35 + Math.random() * 0.15,
+        vz: Math.cos(h) * 0.45
+      });
       if (!spawned) {
         ack?.({
           ok: false,
@@ -1140,6 +1143,7 @@ recessTimer.unref?.();
 
 startTickLoop({
   io,
+  worldDropsTick: (room) => tickWorldDrops(io, room, Date.now()),
   magnetPickups: (room) => tickMagnetPickups(io, room)
 });
 
