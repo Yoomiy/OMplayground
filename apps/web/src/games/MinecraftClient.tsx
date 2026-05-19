@@ -591,6 +591,10 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       // (solves the ThinInstance origin shift bug where objects jump to sky)
       overrideObjectMesher(noa);
       
+      // Unbind default KeyE from alt-fire (right-click) so pressing E to open inventory doesn't place blocks
+      noa.inputs.unbind("alt-fire");
+      noa.inputs.bind("alt-fire", "Mouse3");
+      
       noaRef.current = noa;
       noa?.setPaused?.(pausedRef.current);
 
@@ -1243,7 +1247,13 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
       function onHotbarKey(e: KeyboardEvent) {
         if (e.key.toLowerCase() === "e") {
-          setInventoryOpen((v) => !v);
+          setInventoryOpen((v) => {
+            const next = !v;
+            if (next) {
+              document.exitPointerLock?.();
+            }
+            return next;
+          });
           return;
         }
         if (e.key.toLowerCase() === "p" && !inventoryOpen) {
