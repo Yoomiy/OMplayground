@@ -86,6 +86,36 @@ const BASE_BLOCK_DEFS = [
     placeable: false,
     breakable: false,
     dropHotbarBlockId: null
+  },
+  { id: 43, key: "BIRCH_LOG", placeable: true, breakable: true, dropHotbarBlockId: 43 },
+  {
+    id: 44,
+    key: "BIRCH_PLANKS",
+    placeable: true,
+    breakable: true,
+    dropHotbarBlockId: 44
+  },
+  {
+    id: 45,
+    key: "BIRCH_LEAVES",
+    placeable: true,
+    breakable: true,
+    dropHotbarBlockId: 45
+  },
+  { id: 46, key: "SPRUCE_LOG", placeable: true, breakable: true, dropHotbarBlockId: 46 },
+  {
+    id: 47,
+    key: "SPRUCE_PLANKS",
+    placeable: true,
+    breakable: true,
+    dropHotbarBlockId: 47
+  },
+  {
+    id: 48,
+    key: "SPRUCE_LEAVES",
+    placeable: true,
+    breakable: true,
+    dropHotbarBlockId: 48
   }
 ] as const;
 

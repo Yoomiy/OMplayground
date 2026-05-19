@@ -1,6 +1,6 @@
 ---
 name: playground-voxel-blocks
-description: Add or modify placeable voxel blocks under the upcoming data-driven content model. Covers shared BLOCK_DEFS, client noa registration loops, server placement/break validation, tool-required mining metadata, worldgen hooks, and texture assets.
+description: Add or modify placeable voxel blocks under the upcoming data-driven content model. Covers shared BLOCK_DEFS, client noa registration loops, BLOCK_HUD display names, server placement/break validation, tool-required mining metadata, worldgen hooks, and texture assets.
 ---
 
 # Adding or changing voxel blocks (post-refactor model)
@@ -32,9 +32,11 @@ Use this skill when touching block content for `game_url = minecraft`: IDs, text
    - Add/update block in `packages/voxel-content` block defs.
    - Include: stable id/key, display name key, textures/material mapping, solidity/opacity/fluid flags, drop metadata, and mining metadata (hardness + required tool).
 
-2. **Client registration**
-   - Ensure client loop in `apps/web/src/games/MinecraftClient.tsx` consumes shared block defs (not one-off per-block calls).
-   - Add any new textures under `apps/web/public/minecraft-assets/`.
+2. **Client registration** (`apps/web/src/games/MinecraftClient.tsx` + `packages/voxel-content/src/blockClientCatalog.ts`)
+   - **Textures + noa materials/blocks:** add entries in `blockClientCatalog.ts` (`MC_MATERIAL_ENTRIES`, `NOA_BLOCK_ENTRIES`) and wire URLs in `MC_TEX`. Hotbar/creative icons are derived from `NOA_BLOCK_ENTRIES` via `BLOCK_HOTBAR_ICON` — do not duplicate icon maps per block.
+   - **Display names (manual):** add a Hebrew tooltip label for every new placeable block in `BLOCK_HUD` in `MinecraftClient.tsx`. This map powers hotbar, inventory, and creative-picker `title` tooltips; missing entries fall back to the raw block id.
+   - Ensure noa registration loops consume shared catalog entries (not one-off per-block calls).
+   - Add any new textures under `apps/web/public/minecraft-assets/` (use `npm run borrow-voxel-textures` when pulling from voxelsrv).
    - For cutout textures (leaves/plants), set alpha-friendly material options consistently.
 
 3. **Server validation**
@@ -58,4 +60,5 @@ Use this skill when touching block content for `game_url = minecraft`: IDs, text
 
 - New/changed blocks compile from shared defs without manual duplicate edits.
 - No client/server id drift.
+- Every new placeable block has a `BLOCK_HUD` label (tooltips show Hebrew name, not a bare id).
 - Placement, break speed/gating, and drops behave identically across reconnects.

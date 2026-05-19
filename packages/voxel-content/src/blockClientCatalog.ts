@@ -14,6 +14,14 @@ export type McTerrainTextureKey =
   | "oakLog"
   | "oakLogTop"
   | "oakLeaves"
+  | "birchLog"
+  | "birchLogTop"
+  | "birchLeaves"
+  | "birchPlanks"
+  | "spruceLog"
+  | "spruceLogTop"
+  | "spruceLeaves"
+  | "sprucePlanks"
   | "sand"
   | "waterStill"
   | "glass"
@@ -64,6 +72,14 @@ export const MC_MATERIAL_ENTRIES = [
   { name: "mc_oak_log", textureKey: "oakLog" as const },
   { name: "mc_oak_log_top", textureKey: "oakLogTop" as const },
   { name: "mc_oak_leaves", textureKey: "oakLeaves" as const, texHasAlpha: true },
+  { name: "mc_birch_log", textureKey: "birchLog" as const },
+  { name: "mc_birch_log_top", textureKey: "birchLogTop" as const },
+  { name: "mc_birch_planks", textureKey: "birchPlanks" as const },
+  { name: "mc_birch_leaves", textureKey: "birchLeaves" as const, texHasAlpha: true },
+  { name: "mc_spruce_log", textureKey: "spruceLog" as const },
+  { name: "mc_spruce_log_top", textureKey: "spruceLogTop" as const },
+  { name: "mc_spruce_planks", textureKey: "sprucePlanks" as const },
+  { name: "mc_spruce_leaves", textureKey: "spruceLeaves" as const, texHasAlpha: true },
   { name: "mc_sand", textureKey: "sand" as const },
   { name: "mc_water", textureKey: "waterStill" as const, texHasAlpha: true },
   { name: "mc_glass", textureKey: "glass" as const, texHasAlpha: true },
@@ -423,6 +439,50 @@ export const NOA_BLOCK_ENTRIES: readonly NoaBlockEntry[] = [
     material: "mc_bedrock",
     solid: true,
     hotbarTextureKey: "bedrock"
+  },
+  {
+    id: BLOCK_REGISTRY.BIRCH_LOG,
+    shape: "cube",
+    material: ["mc_birch_log_top", "mc_birch_log_top", "mc_birch_log"],
+    solid: true,
+    hotbarTextureKey: "birchLog"
+  },
+  {
+    id: BLOCK_REGISTRY.BIRCH_PLANKS,
+    shape: "cube",
+    material: "mc_birch_planks",
+    solid: true,
+    hotbarTextureKey: "birchPlanks"
+  },
+  {
+    id: BLOCK_REGISTRY.BIRCH_LEAVES,
+    shape: "cube",
+    material: "mc_birch_leaves",
+    solid: true,
+    opaque: false,
+    hotbarTextureKey: "birchLeaves"
+  },
+  {
+    id: BLOCK_REGISTRY.SPRUCE_LOG,
+    shape: "cube",
+    material: ["mc_spruce_log_top", "mc_spruce_log_top", "mc_spruce_log"],
+    solid: true,
+    hotbarTextureKey: "spruceLog"
+  },
+  {
+    id: BLOCK_REGISTRY.SPRUCE_PLANKS,
+    shape: "cube",
+    material: "mc_spruce_planks",
+    solid: true,
+    hotbarTextureKey: "sprucePlanks"
+  },
+  {
+    id: BLOCK_REGISTRY.SPRUCE_LEAVES,
+    shape: "cube",
+    material: "mc_spruce_leaves",
+    solid: true,
+    opaque: false,
+    hotbarTextureKey: "spruceLeaves"
   }
 ];
 

@@ -48,7 +48,13 @@ export const BLOCK_MINING_META: Record<BlockKey, MiningFields> = {
   BOOKSHELF: { hardness: 1.5, requiredTool: null, speedTool: "axe", minTier: 0 },
   MOSSY_COBBLESTONE: { hardness: 1.5, requiredTool: null, speedTool: "pickaxe", minTier: 0 },
   OBSIDIAN: { hardness: 10, requiredTool: "pickaxe", speedTool: "pickaxe", minTier: 2 },
-  BEDROCK: { hardness: 0, requiredTool: null, speedTool: null, minTier: 0 }
+  BEDROCK: { hardness: 0, requiredTool: null, speedTool: null, minTier: 0 },
+  BIRCH_LOG: { hardness: 2, requiredTool: null, speedTool: "axe", minTier: 0 },
+  BIRCH_PLANKS: { hardness: 1.5, requiredTool: null, speedTool: "axe", minTier: 0 },
+  BIRCH_LEAVES: { hardness: 0.15, requiredTool: null, speedTool: null, minTier: 0 },
+  SPRUCE_LOG: { hardness: 2, requiredTool: null, speedTool: "axe", minTier: 0 },
+  SPRUCE_PLANKS: { hardness: 1.5, requiredTool: null, speedTool: "axe", minTier: 0 },
+  SPRUCE_LEAVES: { hardness: 0.15, requiredTool: null, speedTool: null, minTier: 0 }
 };
 
 export function miningMetaForKey(key: BlockKey): MiningFields {

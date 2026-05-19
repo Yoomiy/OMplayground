@@ -11,9 +11,11 @@
     "dev:web": "npm run dev -w @playground/web",
     "dev:server": "npm run dev -w @playground/game-server",
     "dev:minecraft": "npm run dev -w @playground/minecraft-server",
-    "lint": "npm run lint --workspaces --if-present"
+    "lint": "npm run lint --workspaces --if-present",
+    "borrow-voxel-textures": "tsx scripts/borrow-voxel-textures.ts"
   },
   "devDependencies": {
+    "tsx": "^4.22.3",
     "typescript": "^5.8.2"
   }
 }

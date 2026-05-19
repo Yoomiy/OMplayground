@@ -13,7 +13,7 @@ import { isInstantBreak } from "./mining";
 
 describe("@playground/voxel-content blocks", () => {
   it("lists ids 0..n contiguously", () => {
-    expect(BLOCK_DEFS.length).toBe(43);
+    expect(BLOCK_DEFS.length).toBe(49);
     for (let i = 0; i < BLOCK_DEFS.length; i++) {
       expect(BLOCK_DEFS[i]!.id).toBe(i);
     }
@@ -64,5 +64,39 @@ describe("@playground/voxel-content blocks", () => {
     expect(blockDef(BLOCK_REGISTRY.OBSIDIAN)?.requiredTool).toBe("pickaxe");
     expect(isInstantBreak(BLOCK_REGISTRY.SAPLING)).toBe(true);
     expect(isInstantBreak(BLOCK_REGISTRY.DIRT)).toBe(false);
+  });
+
+  it("registers birch and spruce wood family blocks (43-48)", () => {
+    const woodKeys = [
+      "BIRCH_LOG",
+      "BIRCH_PLANKS",
+      "BIRCH_LEAVES",
+      "SPRUCE_LOG",
+      "SPRUCE_PLANKS",
+      "SPRUCE_LEAVES"
+    ] as const;
+
+    for (let i = 0; i < woodKeys.length; i++) {
+      const key = woodKeys[i]!;
+      expect(BLOCK_REGISTRY[key]).toBe(43 + i);
+      const def = blockDef(BLOCK_REGISTRY[key]);
+      expect(def?.placeable).toBe(true);
+      expect(def?.breakable).toBe(true);
+      expect(def?.dropHotbarBlockId).toBe(BLOCK_REGISTRY[key]);
+    }
+
+    expect(blockDef(BLOCK_REGISTRY.BIRCH_LOG)?.speedTool).toBe("axe");
+    expect(blockDef(BLOCK_REGISTRY.BIRCH_PLANKS)?.speedTool).toBe("axe");
+    expect(blockDef(BLOCK_REGISTRY.SPRUCE_LOG)?.speedTool).toBe("axe");
+    expect(blockDef(BLOCK_REGISTRY.SPRUCE_PLANKS)?.speedTool).toBe("axe");
+    expect(blockDef(BLOCK_REGISTRY.BIRCH_LEAVES)?.speedTool).toBe(null);
+    expect(blockDef(BLOCK_REGISTRY.SPRUCE_LEAVES)?.requiredTool).toBe(null);
+    expect(blockHardness(BLOCK_REGISTRY.BIRCH_LOG)).toBe(blockHardness(BLOCK_REGISTRY.WOOD));
+    expect(blockHardness(BLOCK_REGISTRY.BIRCH_PLANKS)).toBe(
+      blockHardness(BLOCK_REGISTRY.OAK_PLANKS)
+    );
+    expect(blockHardness(BLOCK_REGISTRY.BIRCH_LEAVES)).toBe(
+      blockHardness(BLOCK_REGISTRY.LEAVES)
+    );
   });
 });

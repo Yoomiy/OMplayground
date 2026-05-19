@@ -123,7 +123,13 @@ const BLOCK_HUD: Record<number, string> = {
   [BLOCK_REGISTRY.BOOKSHELF]: "ספרייה",
   [BLOCK_REGISTRY.MOSSY_COBBLESTONE]: "אבן טחובה",
   [BLOCK_REGISTRY.OBSIDIAN]: "אובסידיאן",
-  [BLOCK_REGISTRY.BEDROCK]: "סלע יסוד"
+  [BLOCK_REGISTRY.BEDROCK]: "סלע יסוד",
+  [BLOCK_REGISTRY.BIRCH_LOG]: "עץ ליבנה",
+  [BLOCK_REGISTRY.BIRCH_PLANKS]: "לוחות ליבנה",
+  [BLOCK_REGISTRY.BIRCH_LEAVES]: "עלי ליבנה",
+  [BLOCK_REGISTRY.SPRUCE_LOG]: "עץ אשוח",
+  [BLOCK_REGISTRY.SPRUCE_PLANKS]: "לוחות אשוח",
+  [BLOCK_REGISTRY.SPRUCE_LEAVES]: "עלי אשוח"
 };
 
 function isValidDragPayload(
@@ -180,6 +186,14 @@ const MC_TEX = {
   oakLog: "/minecraft-assets/oak_log.png",
   oakLogTop: "/minecraft-assets/oak_log_top.png",
   oakLeaves: "/minecraft-assets/oak_leaves.png",
+  birchLog: "/minecraft-assets/birch_log.png",
+  birchLogTop: "/minecraft-assets/birch_log_top.png",
+  birchPlanks: "/minecraft-assets/birch_planks.png",
+  birchLeaves: "/minecraft-assets/birch_leaves.png",
+  spruceLog: "/minecraft-assets/spruce_log.png",
+  spruceLogTop: "/minecraft-assets/spruce_log_top.png",
+  sprucePlanks: "/minecraft-assets/spruce_planks.png",
+  spruceLeaves: "/minecraft-assets/spruce_leaves.png",
   sand: "/minecraft-assets/sand.png",
   waterStill: "/minecraft-assets/water_still.png",
   glass: "/minecraft-assets/glass.png",
