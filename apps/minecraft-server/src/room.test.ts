@@ -122,6 +122,7 @@ describe("VoxelRoom", () => {
     expect(persisted.gameMode).toBe("survival");
     expect(persisted.inventories?.u1?.[0]).toEqual({
       blockId: BLOCK_REGISTRY.DIRT,
+      itemId: 0,
       count: 4
     });
     __resetRoomsForTest();
@@ -142,6 +143,7 @@ describe("VoxelRoom", () => {
     if (!("error" in re)) {
       expect(re.player.inventory?.[0]).toEqual({
         blockId: BLOCK_REGISTRY.DIRT,
+        itemId: 0,
         count: 4
       });
     }

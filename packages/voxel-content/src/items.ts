@@ -8,7 +8,7 @@ import type { ToolKind, ToolTier } from "./mining";
 export type ItemCategory = "material" | "tool" | "food" | "blockItem";
 
 /** Filename under apps/web/public/minecraft-assets/ — client-only UX. */
-const WEB_ICON_BASE = "/minecraft-assets/" as const;
+const WEB_ICON_BASE = "/minecraft-assets/item/" as const;
 
 export interface ItemToolSpec {
   readonly kind: ToolKind;
@@ -63,7 +63,7 @@ export const ITEM_DEFS = [
     key: "PLANKS",
     category: "material",
     maxStack: 64,
-    iconFilename: "oak_planks.png"
+    iconFilename: "../block/oak_planks.png"
   },
   {
     id: 102,
@@ -120,6 +120,20 @@ export const ITEM_DEFS = [
     maxStack: 1,
     iconFilename: "stone_shovel.png",
     tool: toolDef("shovel", 1)
+  },
+  {
+    id: 109,
+    key: "BUCKET",
+    category: "material",
+    maxStack: 1,
+    iconFilename: "bucket.png"
+  },
+  {
+    id: 110,
+    key: "WATER_BUCKET",
+    category: "material",
+    maxStack: 1,
+    iconFilename: "water_bucket.png"
   }
 ] as const satisfies readonly ItemDef[];
 

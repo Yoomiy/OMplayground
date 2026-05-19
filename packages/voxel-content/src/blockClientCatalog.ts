@@ -61,7 +61,62 @@ export type McTerrainTextureKey =
   | "bookshelf"
   | "mossyCobblestone"
   | "obsidian"
-  | "bedrock";
+  | "bedrock"
+  | "grassSnow"
+  | "snow"
+  | "cactusTop"
+  | "cactusBottom"
+  | "cactusSide"
+  | "deadBush"
+  | "craftingTableTop"
+  | "craftingTableSide"
+  | "stoneBrick"
+  | "brownWool"
+  | "lightBlueWool"
+  | "whiteStainedGlass"
+  | "yellowStainedGlass"
+  | "redStainedGlass"
+  | "purpleStainedGlass"
+  | "pinkStainedGlass"
+  | "orangeStainedGlass"
+  | "magentaStainedGlass"
+  | "limeStainedGlass"
+  | "lightBlueStainedGlass"
+  | "greenStainedGlass"
+  | "grayStainedGlass"
+  | "cyanStainedGlass"
+  | "brownStainedGlass"
+  | "blueStainedGlass"
+  | "blackStainedGlass"
+  | "sandstone"
+  | "diamondOre"
+  | "diamondBlock"
+  | "lapisOre"
+  | "lapisBlock"
+  | "mossyStonebricks"
+  | "whiteConcrete"
+  | "yellowConcrete"
+  | "redConcrete"
+  | "purpleConcrete"
+  | "pinkConcrete"
+  | "orangeConcrete"
+  | "magentaConcrete"
+  | "limeConcrete"
+  | "lightBlueConcrete"
+  | "greenConcrete"
+  | "grayConcrete"
+  | "cyanConcrete"
+  | "brownConcrete"
+  | "blueConcrete"
+  | "blackConcrete"
+  | "pumpkinTop"
+  | "pumpkinSide"
+  | "ice"
+  | "grassYellowTop"
+  | "grassYellowSide"
+  | "grassPlantYellow"
+  | "leavesYellow"
+  | "grassPlant";
 
 /** One Babylon material per mc_* texture file; order matches legacy registration. */
 export const MC_MATERIAL_ENTRIES = [
@@ -119,7 +174,62 @@ export const MC_MATERIAL_ENTRIES = [
   { name: "mc_bookshelf", textureKey: "bookshelf" as const },
   { name: "mc_mossy_cobblestone", textureKey: "mossyCobblestone" as const },
   { name: "mc_obsidian", textureKey: "obsidian" as const },
-  { name: "mc_bedrock", textureKey: "bedrock" as const }
+  { name: "mc_bedrock", textureKey: "bedrock" as const },
+  { name: "mc_grass_snow", textureKey: "grassSnow" as const },
+  { name: "mc_snow", textureKey: "snow" as const },
+  { name: "mc_cactus_top", textureKey: "cactusTop" as const },
+  { name: "mc_cactus_bottom", textureKey: "cactusBottom" as const },
+  { name: "mc_cactus_side", textureKey: "cactusSide" as const },
+  { name: "mc_dead_bush", textureKey: "deadBush" as const, texHasAlpha: true },
+  { name: "mc_crafting_table_top", textureKey: "craftingTableTop" as const },
+  { name: "mc_crafting_table_side", textureKey: "craftingTableSide" as const },
+  { name: "mc_stonebrick", textureKey: "stoneBrick" as const },
+  { name: "mc_brown_wool", textureKey: "brownWool" as const },
+  { name: "mc_light_blue_wool", textureKey: "lightBlueWool" as const },
+  { name: "mc_white_stained_glass", textureKey: "whiteStainedGlass" as const, texHasAlpha: true },
+  { name: "mc_yellow_stained_glass", textureKey: "yellowStainedGlass" as const, texHasAlpha: true },
+  { name: "mc_red_stained_glass", textureKey: "redStainedGlass" as const, texHasAlpha: true },
+  { name: "mc_purple_stained_glass", textureKey: "purpleStainedGlass" as const, texHasAlpha: true },
+  { name: "mc_pink_stained_glass", textureKey: "pinkStainedGlass" as const, texHasAlpha: true },
+  { name: "mc_orange_stained_glass", textureKey: "orangeStainedGlass" as const, texHasAlpha: true },
+  { name: "mc_magenta_stained_glass", textureKey: "magentaStainedGlass" as const, texHasAlpha: true },
+  { name: "mc_lime_stained_glass", textureKey: "limeStainedGlass" as const, texHasAlpha: true },
+  { name: "mc_light_blue_stained_glass", textureKey: "lightBlueStainedGlass" as const, texHasAlpha: true },
+  { name: "mc_green_stained_glass", textureKey: "greenStainedGlass" as const, texHasAlpha: true },
+  { name: "mc_gray_stained_glass", textureKey: "grayStainedGlass" as const, texHasAlpha: true },
+  { name: "mc_cyan_stained_glass", textureKey: "cyanStainedGlass" as const, texHasAlpha: true },
+  { name: "mc_brown_stained_glass", textureKey: "brownStainedGlass" as const, texHasAlpha: true },
+  { name: "mc_blue_stained_glass", textureKey: "blueStainedGlass" as const, texHasAlpha: true },
+  { name: "mc_black_stained_glass", textureKey: "blackStainedGlass" as const, texHasAlpha: true },
+  { name: "mc_sandstone", textureKey: "sandstone" as const },
+  { name: "mc_diamond_ore", textureKey: "diamondOre" as const },
+  { name: "mc_diamond_block", textureKey: "diamondBlock" as const },
+  { name: "mc_lapis_ore", textureKey: "lapisOre" as const },
+  { name: "mc_lapis_block", textureKey: "lapisBlock" as const },
+  { name: "mc_mossy_stone_bricks", textureKey: "mossyStonebricks" as const },
+  { name: "mc_white_concrete", textureKey: "whiteConcrete" as const },
+  { name: "mc_yellow_concrete", textureKey: "yellowConcrete" as const },
+  { name: "mc_red_concrete", textureKey: "redConcrete" as const },
+  { name: "mc_purple_concrete", textureKey: "purpleConcrete" as const },
+  { name: "mc_pink_concrete", textureKey: "pinkConcrete" as const },
+  { name: "mc_orange_concrete", textureKey: "orangeConcrete" as const },
+  { name: "mc_magenta_concrete", textureKey: "magentaConcrete" as const },
+  { name: "mc_lime_concrete", textureKey: "limeConcrete" as const },
+  { name: "mc_light_blue_concrete", textureKey: "lightBlueConcrete" as const },
+  { name: "mc_green_concrete", textureKey: "greenConcrete" as const },
+  { name: "mc_gray_concrete", textureKey: "grayConcrete" as const },
+  { name: "mc_cyan_concrete", textureKey: "cyanConcrete" as const },
+  { name: "mc_brown_concrete", textureKey: "brownConcrete" as const },
+  { name: "mc_blue_concrete", textureKey: "blueConcrete" as const },
+  { name: "mc_black_concrete", textureKey: "blackConcrete" as const },
+  { name: "mc_pumpkin_top", textureKey: "pumpkinTop" as const },
+  { name: "mc_pumpkin_side", textureKey: "pumpkinSide" as const },
+  { name: "mc_ice", textureKey: "ice" as const },
+  { name: "mc_grass_yellow_top", textureKey: "grassYellowTop" as const },
+  { name: "mc_grass_yellow_side", textureKey: "grassYellowSide" as const },
+  { name: "mc_grass_plant_yellow", textureKey: "grassPlantYellow" as const, texHasAlpha: true },
+  { name: "mc_leaves_yellow", textureKey: "leavesYellow" as const, texHasAlpha: true },
+  { name: "mc_grass_plant", textureKey: "grassPlant" as const, texHasAlpha: true }
 ] as const;
 
 export type NoaBlockEntry =
@@ -483,6 +593,382 @@ export const NOA_BLOCK_ENTRIES: readonly NoaBlockEntry[] = [
     solid: true,
     opaque: false,
     hotbarTextureKey: "spruceLeaves"
+  },
+  {
+    id: BLOCK_REGISTRY.GRASS_SNOW,
+    shape: "cube",
+    material: ["mc_snow", "mc_dirt", "mc_grass_snow"],
+    solid: true,
+    hotbarTextureKey: "grassSnow"
+  },
+  {
+    id: BLOCK_REGISTRY.BARRIER,
+    shape: "cube",
+    material: "mc_glass",
+    solid: true,
+    opaque: false,
+    hotbarTextureKey: "glass"
+  },
+  {
+    id: BLOCK_REGISTRY.SNOW,
+    shape: "cube",
+    material: "mc_snow",
+    solid: true,
+    hotbarTextureKey: "snow"
+  },
+  {
+    id: BLOCK_REGISTRY.CACTUS,
+    shape: "cube",
+    material: ["mc_cactus_top", "mc_cactus_bottom", "mc_cactus_side"],
+    solid: true,
+    opaque: false,
+    hotbarTextureKey: "cactusSide"
+  },
+  {
+    id: BLOCK_REGISTRY.DEADBUSH,
+    shape: "plantSprite",
+    materialName: "mc_dead_bush",
+    textureKey: "deadBush",
+    hotbarTextureKey: "deadBush"
+  },
+  {
+    id: BLOCK_REGISTRY.CRAFTING,
+    shape: "cube",
+    material: ["mc_crafting_table_top", "mc_oak_planks", "mc_crafting_table_side"],
+    solid: true,
+    hotbarTextureKey: "craftingTableSide"
+  },
+  {
+    id: BLOCK_REGISTRY.STONEBRICK,
+    shape: "cube",
+    material: "mc_stonebrick",
+    solid: true,
+    hotbarTextureKey: "stoneBrick"
+  },
+  {
+    id: BLOCK_REGISTRY.BROWN_WOOL,
+    shape: "cube",
+    material: "mc_brown_wool",
+    solid: true,
+    hotbarTextureKey: "brownWool"
+  },
+  {
+    id: BLOCK_REGISTRY.LIGHT_BLUE_WOOL,
+    shape: "cube",
+    material: "mc_light_blue_wool",
+    solid: true,
+    hotbarTextureKey: "lightBlueWool"
+  },
+  {
+    id: BLOCK_REGISTRY.WHITE_STAINED_GLASS,
+    shape: "cube",
+    material: "mc_white_stained_glass",
+    solid: true,
+    opaque: false,
+    hotbarTextureKey: "whiteStainedGlass"
+  },
+  {
+    id: BLOCK_REGISTRY.YELLOW_STAINED_GLASS,
+    shape: "cube",
+    material: "mc_yellow_stained_glass",
+    solid: true,
+    opaque: false,
+    hotbarTextureKey: "yellowStainedGlass"
+  },
+  {
+    id: BLOCK_REGISTRY.RED_STAINED_GLASS,
+    shape: "cube",
+    material: "mc_red_stained_glass",
+    solid: true,
+    opaque: false,
+    hotbarTextureKey: "redStainedGlass"
+  },
+  {
+    id: BLOCK_REGISTRY.PURPLE_STAINED_GLASS,
+    shape: "cube",
+    material: "mc_purple_stained_glass",
+    solid: true,
+    opaque: false,
+    hotbarTextureKey: "purpleStainedGlass"
+  },
+  {
+    id: BLOCK_REGISTRY.PINK_STAINED_GLASS,
+    shape: "cube",
+    material: "mc_pink_stained_glass",
+    solid: true,
+    opaque: false,
+    hotbarTextureKey: "pinkStainedGlass"
+  },
+  {
+    id: BLOCK_REGISTRY.ORANGE_STAINED_GLASS,
+    shape: "cube",
+    material: "mc_orange_stained_glass",
+    solid: true,
+    opaque: false,
+    hotbarTextureKey: "orangeStainedGlass"
+  },
+  {
+    id: BLOCK_REGISTRY.MAGENTA_STAINED_GLASS,
+    shape: "cube",
+    material: "mc_magenta_stained_glass",
+    solid: true,
+    opaque: false,
+    hotbarTextureKey: "magentaStainedGlass"
+  },
+  {
+    id: BLOCK_REGISTRY.LIME_STAINED_GLASS,
+    shape: "cube",
+    material: "mc_lime_stained_glass",
+    solid: true,
+    opaque: false,
+    hotbarTextureKey: "limeStainedGlass"
+  },
+  {
+    id: BLOCK_REGISTRY.LIGHT_BLUE_STAINED_GLASS,
+    shape: "cube",
+    material: "mc_light_blue_stained_glass",
+    solid: true,
+    opaque: false,
+    hotbarTextureKey: "lightBlueStainedGlass"
+  },
+  {
+    id: BLOCK_REGISTRY.GREEN_STAINED_GLASS,
+    shape: "cube",
+    material: "mc_green_stained_glass",
+    solid: true,
+    opaque: false,
+    hotbarTextureKey: "greenStainedGlass"
+  },
+  {
+    id: BLOCK_REGISTRY.GRAY_STAINED_GLASS,
+    shape: "cube",
+    material: "mc_gray_stained_glass",
+    solid: true,
+    opaque: false,
+    hotbarTextureKey: "grayStainedGlass"
+  },
+  {
+    id: BLOCK_REGISTRY.CYAN_STAINED_GLASS,
+    shape: "cube",
+    material: "mc_cyan_stained_glass",
+    solid: true,
+    opaque: false,
+    hotbarTextureKey: "cyanStainedGlass"
+  },
+  {
+    id: BLOCK_REGISTRY.BROWN_STAINED_GLASS,
+    shape: "cube",
+    material: "mc_brown_stained_glass",
+    solid: true,
+    opaque: false,
+    hotbarTextureKey: "brownStainedGlass"
+  },
+  {
+    id: BLOCK_REGISTRY.BLUE_STAINED_GLASS,
+    shape: "cube",
+    material: "mc_blue_stained_glass",
+    solid: true,
+    opaque: false,
+    hotbarTextureKey: "blueStainedGlass"
+  },
+  {
+    id: BLOCK_REGISTRY.BLACK_STAINED_GLASS,
+    shape: "cube",
+    material: "mc_black_stained_glass",
+    solid: true,
+    opaque: false,
+    hotbarTextureKey: "blackStainedGlass"
+  },
+  {
+    id: BLOCK_REGISTRY.SANDSTONE,
+    shape: "cube",
+    material: "mc_sandstone",
+    solid: true,
+    hotbarTextureKey: "sandstone"
+  },
+  {
+    id: BLOCK_REGISTRY.DIAMOND_ORE,
+    shape: "cube",
+    material: "mc_diamond_ore",
+    solid: true,
+    hotbarTextureKey: "diamondOre"
+  },
+  {
+    id: BLOCK_REGISTRY.DIAMOND_BLOCK,
+    shape: "cube",
+    material: "mc_diamond_block",
+    solid: true,
+    hotbarTextureKey: "diamondBlock"
+  },
+  {
+    id: BLOCK_REGISTRY.LAPIS_ORE,
+    shape: "cube",
+    material: "mc_lapis_ore",
+    solid: true,
+    hotbarTextureKey: "lapisOre"
+  },
+  {
+    id: BLOCK_REGISTRY.LAPIS_BLOCK,
+    shape: "cube",
+    material: "mc_lapis_block",
+    solid: true,
+    hotbarTextureKey: "lapisBlock"
+  },
+  {
+    id: BLOCK_REGISTRY.MOSSY_STONEBRICKS,
+    shape: "cube",
+    material: "mc_mossy_stone_bricks",
+    solid: true,
+    hotbarTextureKey: "mossyStonebricks"
+  },
+  {
+    id: BLOCK_REGISTRY.WHITE_CONCRETE,
+    shape: "cube",
+    material: "mc_white_concrete",
+    solid: true,
+    hotbarTextureKey: "whiteConcrete"
+  },
+  {
+    id: BLOCK_REGISTRY.YELLOW_CONCRETE,
+    shape: "cube",
+    material: "mc_yellow_concrete",
+    solid: true,
+    hotbarTextureKey: "yellowConcrete"
+  },
+  {
+    id: BLOCK_REGISTRY.RED_CONCRETE,
+    shape: "cube",
+    material: "mc_red_concrete",
+    solid: true,
+    hotbarTextureKey: "redConcrete"
+  },
+  {
+    id: BLOCK_REGISTRY.PURPLE_CONCRETE,
+    shape: "cube",
+    material: "mc_purple_concrete",
+    solid: true,
+    hotbarTextureKey: "purpleConcrete"
+  },
+  {
+    id: BLOCK_REGISTRY.PINK_CONCRETE,
+    shape: "cube",
+    material: "mc_pink_concrete",
+    solid: true,
+    hotbarTextureKey: "pinkConcrete"
+  },
+  {
+    id: BLOCK_REGISTRY.ORANGE_CONCRETE,
+    shape: "cube",
+    material: "mc_orange_concrete",
+    solid: true,
+    hotbarTextureKey: "orangeConcrete"
+  },
+  {
+    id: BLOCK_REGISTRY.MAGENTA_CONCRETE,
+    shape: "cube",
+    material: "mc_magenta_concrete",
+    solid: true,
+    hotbarTextureKey: "magentaConcrete"
+  },
+  {
+    id: BLOCK_REGISTRY.LIME_CONCRETE,
+    shape: "cube",
+    material: "mc_lime_concrete",
+    solid: true,
+    hotbarTextureKey: "limeConcrete"
+  },
+  {
+    id: BLOCK_REGISTRY.LIGHT_BLUE_CONCRETE,
+    shape: "cube",
+    material: "mc_light_blue_concrete",
+    solid: true,
+    hotbarTextureKey: "lightBlueConcrete"
+  },
+  {
+    id: BLOCK_REGISTRY.GREEN_CONCRETE,
+    shape: "cube",
+    material: "mc_green_concrete",
+    solid: true,
+    hotbarTextureKey: "greenConcrete"
+  },
+  {
+    id: BLOCK_REGISTRY.GRAY_CONCRETE,
+    shape: "cube",
+    material: "mc_gray_concrete",
+    solid: true,
+    hotbarTextureKey: "grayConcrete"
+  },
+  {
+    id: BLOCK_REGISTRY.CYAN_CONCRETE,
+    shape: "cube",
+    material: "mc_cyan_concrete",
+    solid: true,
+    hotbarTextureKey: "cyanConcrete"
+  },
+  {
+    id: BLOCK_REGISTRY.BROWN_CONCRETE,
+    shape: "cube",
+    material: "mc_brown_concrete",
+    solid: true,
+    hotbarTextureKey: "brownConcrete"
+  },
+  {
+    id: BLOCK_REGISTRY.BLUE_CONCRETE,
+    shape: "cube",
+    material: "mc_blue_concrete",
+    solid: true,
+    hotbarTextureKey: "blueConcrete"
+  },
+  {
+    id: BLOCK_REGISTRY.BLACK_CONCRETE,
+    shape: "cube",
+    material: "mc_black_concrete",
+    solid: true,
+    hotbarTextureKey: "blackConcrete"
+  },
+  {
+    id: BLOCK_REGISTRY.PUMPKIN,
+    shape: "cube",
+    material: ["mc_pumpkin_top", "mc_pumpkin_side", "mc_pumpkin_side"],
+    solid: true,
+    hotbarTextureKey: "pumpkinSide"
+  },
+  {
+    id: BLOCK_REGISTRY.ICE,
+    shape: "cube",
+    material: "mc_ice",
+    solid: true,
+    opaque: false,
+    hotbarTextureKey: "ice"
+  },
+  {
+    id: BLOCK_REGISTRY.GRASS_YELLOW,
+    shape: "cube",
+    material: ["mc_grass_yellow_top", "mc_dirt", "mc_grass_yellow_side"],
+    solid: true,
+    hotbarTextureKey: "grassYellowTop"
+  },
+  {
+    id: BLOCK_REGISTRY.GRASS_PLANT_YELLOW,
+    shape: "plantSprite",
+    materialName: "mc_grass_plant_yellow",
+    textureKey: "grassPlantYellow",
+    hotbarTextureKey: "grassPlantYellow"
+  },
+  {
+    id: BLOCK_REGISTRY.LEAVES_YELLOW,
+    shape: "cube",
+    material: "mc_leaves_yellow",
+    solid: true,
+    opaque: false,
+    hotbarTextureKey: "leavesYellow"
+  },
+  {
+    id: BLOCK_REGISTRY.GRASS_PLANT,
+    shape: "plantSprite",
+    materialName: "mc_grass_plant",
+    textureKey: "grassPlant",
+    hotbarTextureKey: "grassPlant"
   }
 ];
 

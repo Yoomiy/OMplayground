@@ -21,10 +21,10 @@ const WOOD_TEXTURE_FILES = [
 describe("blockClientCatalog", () => {
   it("registers exactly one noa entry per non-air block id", () => {
     const ids = NOA_BLOCK_ENTRIES.map((e) => e.id);
-    expect(ids.length).toBe(48);
-    expect(new Set(ids).size).toBe(48);
+    expect(ids.length).toBe(99);
+    expect(new Set(ids).size).toBe(99);
     expect(ids.includes(BLOCK_REGISTRY.AIR)).toBe(false);
-    for (let i = 1; i <= 48; i++) {
+    for (let i = 1; i <= 99; i++) {
       expect(ids.includes(i)).toBe(true);
     }
   });
@@ -43,7 +43,7 @@ describe("blockClientCatalog", () => {
 
   it("wood-family texture files exist under minecraft-assets", () => {
     for (const file of WOOD_TEXTURE_FILES) {
-      expect(existsSync(path.join(ASSETS_DIR, file))).toBe(true);
+      expect(existsSync(path.join(ASSETS_DIR, "block", file))).toBe(true);
     }
   });
 });

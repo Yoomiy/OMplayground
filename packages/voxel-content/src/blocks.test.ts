@@ -13,7 +13,7 @@ import { isInstantBreak } from "./mining";
 
 describe("@playground/voxel-content blocks", () => {
   it("lists ids 0..n contiguously", () => {
-    expect(BLOCK_DEFS.length).toBe(49);
+    expect(BLOCK_DEFS.length).toBe(100);
     for (let i = 0; i < BLOCK_DEFS.length; i++) {
       expect(BLOCK_DEFS[i]!.id).toBe(i);
     }

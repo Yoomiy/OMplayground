@@ -8,7 +8,7 @@ import type { Vec3 } from "@/lib/voxelProtocol";
 const STAGE_COUNT = 11;
 const STAGE_URLS = Array.from(
   { length: STAGE_COUNT },
-  (_, i) => `/minecraft-assets/destroy_stage_${i}.png`
+  (_, i) => `/minecraft-assets/break/${i}.png`
 );
 
 export interface BreakCrackOverlay {
