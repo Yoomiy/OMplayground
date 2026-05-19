@@ -46,3 +46,18 @@ export {
   type ToolSlotRef,
   type ToolTier
 } from "./mining";
+
+export {
+  CRAFTING_CELL_MAX,
+  CRAFTING_GRID_SIZE,
+  RECIPES,
+  findMatchingRecipe,
+  type GridCellSnapshot,
+  type GridSnapshot,
+  type MatchedRecipe,
+  type Recipe,
+  type RecipeIngredient,
+  type RecipeOutput,
+  type ShapedRecipe,
+  type ShapelessRecipe
+} from "./recipes";

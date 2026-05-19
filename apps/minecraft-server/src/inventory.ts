@@ -1,4 +1,9 @@
-import { REGISTERED_ITEM_IDS, ITEM_REGISTRY, itemMaxStack } from "@playground/voxel-content";
+import {
+  REGISTERED_ITEM_IDS,
+  ITEM_REGISTRY,
+  findMatchingRecipe,
+  itemMaxStack
+} from "@playground/voxel-content";
 import {
   BLOCK_REGISTRY,
   CRAFTING_CELL_MAX,
@@ -668,53 +673,7 @@ export function applyInventoryMove(
 }
 
 
-function isEmptyCraftAtom(a: SlotAtom): boolean {
-  return a.kind === "empty";
-}
-
-function isPlankCell(a: SlotAtom): boolean {
-  if (a.kind === "empty") return false;
-  if (a.count < 1 || a.count > CRAFTING_CELL_MAX) return false;
-  if (a.kind === "item") return a.itemId === ITEM_REGISTRY.PLANKS;
-  if (a.kind === "block") return a.blockId === BLOCK_REGISTRY.OAK_PLANKS;
-  return false;
-}
-
-function tryCraftSticksShapeless(
-  itemSlots: ItemSlot[],
-  grid: CraftingGridState
-): boolean {
-  const plankCellIndices: number[] = [];
-  let otherNonEmpty = 0;
-  for (let i = 0; i < CRAFTING_GRID_SLOTS; i++) {
-    const c = grid[i]!;
-    const atom = readCraftAtom(c);
-    if (atom.kind === "empty") continue;
-    if (isPlankCell(atom)) {
-      plankCellIndices.push(i);
-    } else {
-      otherNonEmpty++;
-    }
-  }
-
-  if (plankCellIndices.length === 2 && otherNonEmpty === 0) {
-    if (maxAddableItemCount(itemSlots, ITEM_REGISTRY.STICK) < 4) return false;
-    for (const i of plankCellIndices) {
-      grid[i]!.count -= 1;
-      normalizeCraftingSlot(grid[i]!);
-    }
-    addItemCount(itemSlots, ITEM_REGISTRY.STICK, 4);
-    return true;
-  }
-
-  return false;
-}
-
-/**
- * Craft from the 2×2 grid into hotbar / item storage (survival). Patterns:
- * - One oak log alone in the grid → 4 placeable oak planks
- * - Two planks (legacy item planks or placeable plank blocks), rest empty → 4 sticks
- */
+/** Craft from the 2×2 grid into hotbar / item storage (survival). */
 export function tryCraftFromGrid(
   hotbar: HotbarState,
   itemSlots: ItemSlot[],
@@ -722,30 +681,27 @@ export function tryCraftFromGrid(
 ): boolean {
   for (const c of grid) normalizeCraftingSlot(c);
 
-  let woodCells = 0;
-  let woodIdx = -1;
-  let otherNonEmpty = 0;
-  for (let i = 0; i < CRAFTING_GRID_SLOTS; i++) {
-    const c = grid[i]!;
-    const atom = readCraftAtom(c);
-    if (atom.kind === "empty") continue;
-    if (atom.kind === "block" && atom.blockId === BLOCK_REGISTRY.WOOD) {
-      woodCells += 1;
-      woodIdx = i;
-    } else {
-      otherNonEmpty += 1;
-    }
+  const matched = findMatchingRecipe(grid);
+  if (!matched) return false;
+
+  const { recipe, consumeAt } = matched;
+  const output = recipe.output;
+
+  if (output.kind === "block") {
+    if (maxAddableBlockCount(hotbar, output.id) < output.count) return false;
+  } else if (maxAddableItemCount(itemSlots, output.id) < output.count) {
+    return false;
   }
 
-  if (woodCells === 1 && otherNonEmpty === 0 && woodIdx >= 0) {
-    const cell = grid[woodIdx]!;
-    if (cell.count < 1) return false;
-    if (maxAddableBlockCount(hotbar, BLOCK_REGISTRY.OAK_PLANKS) < 4) return false;
-    cell.count -= 1;
-    normalizeCraftingSlot(cell);
-    addBlockCount(hotbar, BLOCK_REGISTRY.OAK_PLANKS, 4);
-    return true;
+  for (const idx of consumeAt) {
+    grid[idx]!.count -= 1;
+    normalizeCraftingSlot(grid[idx]!);
   }
 
-  return tryCraftSticksShapeless(itemSlots, grid);
+  if (output.kind === "block") {
+    addBlockCount(hotbar, output.id, output.count);
+  } else {
+    addItemCount(itemSlots, output.id, output.count);
+  }
+  return true;
 }

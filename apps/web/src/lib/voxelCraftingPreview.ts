@@ -1,10 +1,9 @@
 /**
- * Read-only crafting preview — must match apps/minecraft-server/src/inventory.ts
- * tryCraftFromGrid pattern checks + output space (no mutations).
+ * Read-only crafting preview — uses shared recipe matcher + output space checks.
  */
 import {
   REGISTERED_ITEM_IDS,
-  ITEM_REGISTRY,
+  findMatchingRecipe,
   itemMaxStack
 } from "@playground/voxel-content";
 import {
@@ -17,6 +16,12 @@ import {
 } from "@/lib/voxelProtocol";
 
 const MAX_STACK = 64;
+
+export interface CraftingPreview {
+  outputKind: "block" | "item";
+  outputId: number;
+  count: number;
+}
 
 function normalizeCraftRead(s: CraftingGridSlot): void {
   if (!Number.isFinite(s.count) || s.count <= 0) {
@@ -72,80 +77,29 @@ function maxAddableBlockCount(slots: { blockId: number; count: number }[], block
   return space;
 }
 
-type CraftAtom =
-  | { kind: "empty" }
-  | { kind: "block"; blockId: number; count: number }
-  | { kind: "item"; itemId: number; count: number };
-
-function readCraftAtom(s: CraftingGridSlot): CraftAtom {
-  normalizeCraftRead(s);
-  if (s.count <= 0) return { kind: "empty" };
-  if (s.itemId > 0) return { kind: "item", itemId: s.itemId, count: s.count };
-  if (s.blockId !== BLOCK_REGISTRY.AIR)
-    return { kind: "block", blockId: s.blockId, count: s.count };
-  return { kind: "empty" };
-}
-
-function isEmptyCraftAtom(a: CraftAtom): boolean {
-  return a.kind === "empty";
-}
-
-function isPlankCell(a: CraftAtom): boolean {
-  if (a.kind === "empty") return false;
-  if (a.count < 1 || a.count > CRAFTING_CELL_MAX) return false;
-  if (a.kind === "item") return a.itemId === ITEM_REGISTRY.PLANKS;
-  if (a.kind === "block") return a.blockId === BLOCK_REGISTRY.OAK_PLANKS;
-  return false;
-}
-
-function stickPreviewOk(grid: CraftingGridSlot[], itemSlots: ItemSlot[]): boolean {
-  if (maxAddableItemCount(itemSlots, ITEM_REGISTRY.STICK) < 4) return false;
-  
-  let plankCells = 0;
-  let otherNonEmpty = 0;
-
-  for (const c of grid) {
-    const copy = { ...c };
-    const atom = readCraftAtom(copy);
-    if (isEmptyCraftAtom(atom)) continue;
-    if (isPlankCell(atom)) {
-      plankCells++;
-    } else {
-      otherNonEmpty++;
-    }
-  }
-
-  return plankCells === 2 && otherNonEmpty === 0;
-}
-
 /** What the result slot would craft (if the player clicks), or null. */
 export function craftingGridPreview(
   grid: CraftingGridSlot[],
   hotbarSlots: { blockId: number; count: number }[],
   itemSlots: ItemSlot[]
-): "planks" | "stick" | null {
+): CraftingPreview | null {
   if (!Array.isArray(grid) || grid.length !== CRAFTING_GRID_SLOTS) return null;
   const g = grid.map((c) => ({ ...c }));
+  for (const c of g) normalizeCraftRead(c);
 
-  let woodCells = 0;
-  let woodIdx = -1;
-  let otherNonEmpty = 0;
-  for (let i = 0; i < CRAFTING_GRID_SLOTS; i++) {
-    const c = g[i]!;
-    const atom = readCraftAtom(c);
-    if (atom.kind === "empty") continue;
-    if (atom.kind === "block" && atom.blockId === BLOCK_REGISTRY.WOOD) {
-      woodCells += 1;
-      woodIdx = i;
-    } else {
-      otherNonEmpty += 1;
-    }
-  }
-  if (woodCells === 1 && otherNonEmpty === 0 && woodIdx >= 0 && g[woodIdx]!.count >= 1) {
-    return maxAddableBlockCount(hotbarSlots, BLOCK_REGISTRY.OAK_PLANKS) >= 4
-      ? "planks"
-      : null;
+  const matched = findMatchingRecipe(g);
+  if (!matched) return null;
+
+  const { output } = matched.recipe;
+  if (output.kind === "block") {
+    if (maxAddableBlockCount(hotbarSlots, output.id) < output.count) return null;
+  } else if (maxAddableItemCount(itemSlots, output.id) < output.count) {
+    return null;
   }
 
-  return stickPreviewOk(g, itemSlots) ? "stick" : null;
+  return {
+    outputKind: output.kind,
+    outputId: output.id,
+    count: output.count
+  };
 }

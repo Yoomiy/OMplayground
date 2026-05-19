@@ -127,6 +127,43 @@ describe("inventory helpers", () => {
     expect(tryCraftFromGrid(hotbar, items, grid)).toBe(false);
   });
 
+  it("tryCraftFromGrid birch planks: one birch log → four birch planks", () => {
+    const hotbar = createEmptyHotbar();
+    const items = createEmptyItemInventory();
+    const grid = createEmptyCraftingGrid();
+    grid[2] = { blockId: BLOCK_REGISTRY.BIRCH_LOG, itemId: 0, count: 1 };
+    expect(tryCraftFromGrid(hotbar, items, grid)).toBe(true);
+    const plankTotal = hotbar
+      .filter((s) => s.blockId === BLOCK_REGISTRY.BIRCH_PLANKS)
+      .reduce((a, s) => a + s.count, 0);
+    expect(plankTotal).toBe(4);
+  });
+
+  it("tryCraftFromGrid spruce planks: one spruce log → four spruce planks", () => {
+    const hotbar = createEmptyHotbar();
+    const items = createEmptyItemInventory();
+    const grid = createEmptyCraftingGrid();
+    grid[0] = { blockId: BLOCK_REGISTRY.SPRUCE_LOG, itemId: 0, count: 1 };
+    expect(tryCraftFromGrid(hotbar, items, grid)).toBe(true);
+    const plankTotal = hotbar
+      .filter((s) => s.blockId === BLOCK_REGISTRY.SPRUCE_PLANKS)
+      .reduce((a, s) => a + s.count, 0);
+    expect(plankTotal).toBe(4);
+  });
+
+  it("tryCraftFromGrid sticks: birch plank blocks work", () => {
+    const hotbar = createEmptyHotbar();
+    const items = createEmptyItemInventory();
+    const grid = createEmptyCraftingGrid();
+    grid[0] = { blockId: BLOCK_REGISTRY.BIRCH_PLANKS, itemId: 0, count: 1 };
+    grid[2] = { blockId: BLOCK_REGISTRY.SPRUCE_PLANKS, itemId: 0, count: 1 };
+    expect(tryCraftFromGrid(hotbar, items, grid)).toBe(true);
+    const sticks = items
+      .filter((s) => s.itemId === ITEM_REGISTRY.STICK)
+      .reduce((a, s) => a + s.count, 0);
+    expect(sticks).toBe(4);
+  });
+
   it("applyInventoryMove places only one unit into an empty crafting cell", () => {
     const hotbar = createEmptyHotbar();
     const items = createEmptyItemInventory();

@@ -1628,11 +1628,11 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
                   type="button"
                   disabled={!craftPreview}
                   title={
-                    craftPreview === "planks"
-                      ? "לוחות עץ ×4"
-                      : craftPreview === "stick"
-                        ? "מקלות ×4"
-                        : "אין מתכון תקף או אין מקום בפריטים"
+                    craftPreview
+                      ? craftPreview.outputKind === "block"
+                        ? `${BLOCK_HUD[craftPreview.outputId] ?? craftPreview.outputId} ×${craftPreview.count}`
+                        : `${ITEM_HUD[craftPreview.outputId] ?? craftPreview.outputId} ×${craftPreview.count}`
+                      : "אין מתכון תקף או אין מקום בפריטים"
                   }
                   className={[
                     mcSlotClass(false),
@@ -1643,28 +1643,20 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
                   ].join(" ")}
                   onClick={() => onCraft("grid")}
                 >
-                  {craftPreview === "planks" ? (
+                  {craftPreview ? (
                     <>
                       <img
-                        src={BLOCK_HOTBAR_ICON[BLOCK_REGISTRY.OAK_PLANKS]}
+                        src={
+                          craftPreview.outputKind === "block"
+                            ? BLOCK_HOTBAR_ICON[craftPreview.outputId]
+                            : ITEM_ICON[craftPreview.outputId]
+                        }
                         alt=""
                         className="h-9 w-9"
                         style={{ imageRendering: "pixelated" }}
                       />
                       <span className="pointer-events-none absolute bottom-0.5 end-0.5 text-[11px] font-black text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
-                        ×4
-                      </span>
-                    </>
-                  ) : craftPreview === "stick" ? (
-                    <>
-                      <img
-                        src={ITEM_ICON[ITEM_REGISTRY.STICK]}
-                        alt=""
-                        className="h-9 w-9"
-                        style={{ imageRendering: "pixelated" }}
-                      />
-                      <span className="pointer-events-none absolute bottom-0.5 end-0.5 text-[11px] font-black text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
-                        ×4
+                        ×{craftPreview.count}
                       </span>
                     </>
                   ) : null}
