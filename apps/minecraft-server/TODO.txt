@@ -5,6 +5,7 @@
 7. import more blocks and items
 8. fix e/q/p buttons (q drops and chaches basc immidiatly)
 9. allow draging of blocks to inventory
+10. (programaticly construct the recepie book?)
 
 implement:
 2. mobs
