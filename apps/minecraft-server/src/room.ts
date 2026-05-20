@@ -99,6 +99,8 @@ export interface PlayerRuntime extends RoomPlayer {
   activeChestKey?: string;
   /** Rate-limit multiplayer arm-swing broadcasts. */
   lastArmSwingAt?: number;
+  /** Rate-limit server-authoritative combat swings. */
+  lastAttackAt?: number;
 }
 
 export interface VoxelRoom {

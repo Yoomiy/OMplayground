@@ -102,10 +102,13 @@ import {
   type DropItemReq,
   type EatReq,
   type EatStartAck,
+  type FallImpactReq,
   type JoinRoomAck,
   type OpenCraftingTableReq,
   type OpenChestAck,
   type OpenChestReq,
+  type PlayerAttackReq,
+  type PlayerDamagePayload,
   type SetGameModeReq,
   type SimpleAck,
   type Vec3
@@ -123,10 +126,17 @@ import {
   MAX_HUNGER,
   tickVitals
 } from "./vitals";
-import { tickHeliosRegen } from "./perks";
+import {
+  applyFallDamage,
+  applyPlayerDamage,
+  heldWeaponDamage,
+  tickHeliosRegen
+} from "./perks";
 
 const PORT = Number(process.env.PORT ?? 8081);
 const ARM_SWING_COOLDOWN_MS = 150;
+const PLAYER_ATTACK_COOLDOWN_MS = 500;
+const PLAYER_ATTACK_REACH = 3.75;
 const CORS_ORIGIN =
   process.env.CORS_ORIGIN ??
   "http://localhost:5173,http://127.0.0.1:5173";
@@ -334,6 +344,19 @@ function inventorySyncPayload(player: PlayerRuntime) {
     craftingSlots: player.craftingGrid,
     craftingGridWidth: player.craftingGridWidth ?? 2,
     ...(player.health !== undefined ? { vitals: cloneVitals(player) } : {})
+  };
+}
+
+function playerDamagePayload(
+  player: PlayerRuntime,
+  amount: number,
+  source: PlayerDamagePayload["source"]
+): PlayerDamagePayload {
+  return {
+    userId: player.userId,
+    health: cloneVitals(player).health,
+    amount,
+    source
   };
 }
 
@@ -755,6 +778,81 @@ io.on("connection", (socket) => {
     socket.to(`voxel:${sessionId}`).emit("PLAYER_ARM_SWING", payload);
     ack?.({ ok: true });
   });
+
+  socket.on(
+    "FALL_IMPACT",
+    (payload: FallImpactReq, ack?: (r: SimpleAck) => void) => {
+      const sessionId = socket.data.sessionId as string | undefined;
+      const room = sessionId ? getRoom(sessionId) : undefined;
+      const player = room ? room.players.get(userId) : undefined;
+      if (!sessionId || !room || !player || room.paused) {
+        ack?.({ ok: false, error: { code: "NOT_IN_ROOM", message: "לא בחדר" } });
+        return;
+      }
+      if ((room.gameMode ?? "creative") !== "survival" || player.health === undefined) {
+        ack?.({ ok: false, error: { code: "BAD_INTENT", message: "רק במצב הישרדות" } });
+        return;
+      }
+      const velocityY = Number(payload?.velocityY);
+      if (!Number.isFinite(velocityY) || velocityY > -8 || velocityY < -80) {
+        ack?.({ ok: false, error: { code: "BAD_INTENT", message: "Invalid fall" } });
+        return;
+      }
+      const amount = applyFallDamage(player, velocityY);
+      if (amount > 0) {
+        room.dirty = true;
+        io.to(`voxel:${sessionId}`).emit(
+          "PLAYER_DAMAGE",
+          playerDamagePayload(player, amount, "fall")
+        );
+      }
+      socket.emit("INVENTORY_SYNC", inventorySyncPayload(player));
+      ack?.({ ok: true });
+    }
+  );
+
+  socket.on(
+    "PLAYER_ATTACK",
+    (payload: PlayerAttackReq, ack?: (r: SimpleAck) => void) => {
+      const sessionId = socket.data.sessionId as string | undefined;
+      const room = sessionId ? getRoom(sessionId) : undefined;
+      const attacker = room ? room.players.get(userId) : undefined;
+      const targetUserId = String(payload?.targetUserId ?? "");
+      const target = room?.players.get(targetUserId);
+      if (!sessionId || !room || !attacker || !target || room.paused) {
+        ack?.({ ok: false, error: { code: "NOT_IN_ROOM", message: "לא בחדר" } });
+        return;
+      }
+      if (
+        (room.gameMode ?? "creative") !== "survival" ||
+        attacker.health === undefined ||
+        target.health === undefined ||
+        target.userId === attacker.userId
+      ) {
+        ack?.({ ok: false, error: { code: "BAD_INTENT", message: "תקיפה לא תקפה" } });
+        return;
+      }
+      const now = Date.now();
+      if (now - (attacker.lastAttackAt ?? 0) < PLAYER_ATTACK_COOLDOWN_MS) {
+        ack?.({ ok: true });
+        return;
+      }
+      if (vecDist(attacker.pos, target.pos) > PLAYER_ATTACK_REACH) {
+        ack?.({ ok: false, error: { code: "OUT_OF_REACH", message: "רחוק מדי" } });
+        return;
+      }
+      attacker.lastAttackAt = now;
+      const amount = applyPlayerDamage(target, heldWeaponDamage(attacker), "combat");
+      if (amount > 0) {
+        room.dirty = true;
+        io.to(`voxel:${sessionId}`).emit(
+          "PLAYER_DAMAGE",
+          playerDamagePayload(target, amount, "combat")
+        );
+      }
+      ack?.({ ok: true });
+    }
+  );
 
   socket.on(
     "BLOCK_PLACE",

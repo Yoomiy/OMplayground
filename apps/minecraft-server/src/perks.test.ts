@@ -1,10 +1,11 @@
 import { BLOCK_REGISTRY, ITEM_REGISTRY } from "@playground/voxel-content";
-import { createEmptyEquipmentSlots } from "./inventory";
+import { createEmptyEquipmentSlots, createEmptyHotbar } from "./inventory";
 import {
   HELIOS_REGEN_INTERVAL_MS,
   VOXEL_DAY_LENGTH_MS,
   applyFallDamage,
   applyPlayerDamage,
+  heldWeaponDamage,
   tickHeliosRegen
 } from "./perks";
 import type { PlayerRuntime } from "./room";
@@ -103,5 +104,18 @@ describe("server perk hooks", () => {
 
     expect(applyFallDamage(player, -18)).toBe(9);
     expect(player.health).toBe(11);
+  });
+
+  it("derives combat damage from the selected hotbar tool tier", () => {
+    const player = survivalPlayer();
+    player.inventory = createEmptyHotbar();
+    player.selectedHotbarIndex = 2;
+    player.inventory[2] = {
+      blockId: BLOCK_REGISTRY.AIR,
+      itemId: ITEM_REGISTRY.DIAMOND_AXE,
+      count: 1
+    };
+
+    expect(heldWeaponDamage(player)).toBe(6);
   });
 });

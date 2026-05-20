@@ -170,6 +170,21 @@ export interface ArmSwingPayload {
   userId: string;
 }
 
+export interface FallImpactReq {
+  velocityY: number;
+}
+
+export interface PlayerAttackReq {
+  targetUserId: string;
+}
+
+export interface PlayerDamagePayload {
+  userId: string;
+  health: number;
+  amount: number;
+  source: "generic" | "fall" | "combat" | "explosion" | "suffocation";
+}
+
 export interface DropItemReq {
   hotbarIndex: number;
 }

@@ -26,6 +26,7 @@ import {
   type Vec3,
   type BreakStartAck,
   type OpenChestAck,
+  type PlayerDamagePayload,
   type SimpleAck,
   type WorldDrop,
   type WorldDropWireDelta
@@ -204,6 +205,13 @@ const ITEM_HUD: Record<number, string> = {
 
 function equipmentHas(slots: ItemSlot[], itemId: number): boolean {
   return slots.some((s) => s.itemId === itemId && s.count > 0);
+}
+
+function vecDist(a: readonly number[], b: readonly number[]): number {
+  const dx = a[0] - b[0];
+  const dy = a[1] - b[1];
+  const dz = a[2] - b[2];
+  return Math.sqrt(dx * dx + dy * dy + dz * dz);
 }
 
 /** Minecraft-like slot: raised inner bevel, dark rim. */
@@ -464,11 +472,14 @@ export interface MinecraftClientProps {
   onBreakFinish: (pos: Vec3) => Promise<SimpleAck>;
   onBreakCancel: (pos: Vec3) => void;
   onArmSwing: () => void;
+  onFallImpact: (velocityY: number) => Promise<SimpleAck>;
+  onPlayerAttack: (targetUserId: string) => Promise<SimpleAck>;
   /** Survival: server validates and spawns a world drop. */
   onDropHotbarSlot?: (hotbarIndex: number) => void;
   registerSnapshotListener: (cb: (snap: RoomSnapshot) => void) => () => void;
   registerBlockDeltaListener: (cb: (delta: BlockDelta) => void) => () => void;
   registerArmSwingListener: (cb: (payload: { userId: string }) => void) => () => void;
+  registerPlayerDamageListener: (cb: (payload: PlayerDamagePayload) => void) => () => void;
   /** World stacks present on join (survival). */
   initialWorldDrops: WorldDrop[];
   registerWorldDropSpawned: (cb: (drop: WorldDrop) => void) => () => void;
@@ -512,10 +523,13 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     onBreakFinish,
     onBreakCancel,
     onArmSwing,
+    onFallImpact,
+    onPlayerAttack,
     onDropHotbarSlot,
     registerSnapshotListener,
     registerBlockDeltaListener,
     registerArmSwingListener,
+    registerPlayerDamageListener,
     initialWorldDrops,
     registerWorldDropSpawned,
     registerWorldDropRemoved,
@@ -528,6 +542,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [recipeBookOpen, setRecipeBookOpen] = useState(false);
   const [localVitals, setLocalVitals] = useState<PlayerVitals>(vitals);
+  const [damageFlash, setDamageFlash] = useState(0);
   const hostRef = useRef<HTMLDivElement | null>(null);
   // noa-engine has loose .d.ts typings; lock to any so we don't fight them.
   const noaRef = useRef<unknown>(null);
@@ -538,6 +553,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const onBreakFinishRef = useRef(onBreakFinish);
   const onBreakCancelRef = useRef(onBreakCancel);
   const onArmSwingRef = useRef(onArmSwing);
+  const onFallImpactRef = useRef(onFallImpact);
+  const onPlayerAttackRef = useRef(onPlayerAttack);
   const onEatStartRef = useRef(onEatStart);
   const onEatFinishRef = useRef(onEatFinish);
   const onEatCancelRef = useRef(onEatCancel);
@@ -572,6 +589,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const registerSnapshotListenerRef = useRef(registerSnapshotListener);
   const registerBlockDeltaListenerRef = useRef(registerBlockDeltaListener);
   const registerArmSwingListenerRef = useRef(registerArmSwingListener);
+  const registerPlayerDamageListenerRef = useRef(registerPlayerDamageListener);
   const registerWorldDropSpawnedRef = useRef(registerWorldDropSpawned);
   const registerWorldDropRemovedRef = useRef(registerWorldDropRemoved);
   const registerWorldDropUpdatedRef = useRef(registerWorldDropUpdated);
@@ -588,6 +606,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   onBreakFinishRef.current = onBreakFinish;
   onBreakCancelRef.current = onBreakCancel;
   onArmSwingRef.current = onArmSwing;
+  onFallImpactRef.current = onFallImpact;
+  onPlayerAttackRef.current = onPlayerAttack;
   onEatStartRef.current = onEatStart;
   onEatFinishRef.current = onEatFinish;
   onEatCancelRef.current = onEatCancel;
@@ -603,6 +623,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   registerSnapshotListenerRef.current = registerSnapshotListener;
   registerBlockDeltaListenerRef.current = registerBlockDeltaListener;
   registerArmSwingListenerRef.current = registerArmSwingListener;
+  registerPlayerDamageListenerRef.current = registerPlayerDamageListener;
   registerWorldDropSpawnedRef.current = registerWorldDropSpawned;
   registerWorldDropRemovedRef.current = registerWorldDropRemoved;
   registerWorldDropUpdatedRef.current = registerWorldDropUpdated;
@@ -844,6 +865,22 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       });
       cleanupFns.push(offArmSwing);
 
+      let damageFlashTimer: number | null = null;
+      const offPlayerDamage = registerPlayerDamageListenerRef.current((payload) => {
+        if (payload.userId !== myUserIdRef.current) return;
+        setLocalVitals((prev) => ({ ...prev, health: payload.health }));
+        setDamageFlash(1);
+        if (damageFlashTimer !== null) window.clearTimeout(damageFlashTimer);
+        damageFlashTimer = window.setTimeout(() => {
+          setDamageFlash(0);
+          damageFlashTimer = null;
+        }, 180);
+      });
+      cleanupFns.push(offPlayerDamage);
+      cleanupFns.push(() => {
+        if (damageFlashTimer !== null) window.clearTimeout(damageFlashTimer);
+      });
+
       function currentHeldItemSpec() {
         return resolveHeldItemSpec({
           gameMode: gameModeRef.current,
@@ -860,6 +897,30 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         onArmSwingRef.current();
         if (localRig) triggerAvatarSwing(localRig);
         heldItemView?.triggerSwing();
+      }
+
+      function findAttackTarget(): { userId: string; distance: number } | null {
+        const eye = noa.camera.getPosition() as number[];
+        const dir = noa.camera.getDirection() as number[];
+        let best: { userId: string; distance: number } | null = null;
+        for (const [userId, eid] of remoteEntitiesRef.current) {
+          const p = noa.entities.getPosition(eid) as number[];
+          const cx = p[0] - eye[0];
+          const cy = p[1] + 0.9 - eye[1];
+          const cz = p[2] - eye[2];
+          const along = cx * dir[0] + cy * dir[1] + cz * dir[2];
+          if (along < 0 || along > 3.5) continue;
+          const px = eye[0] + dir[0] * along;
+          const py = eye[1] + dir[1] * along;
+          const pz = eye[2] + dir[2] * along;
+          const sideDx = p[0] - px;
+          const sideDy = p[1] + 0.9 - py;
+          const sideDz = p[2] - pz;
+          const sideDistSq = sideDx * sideDx + sideDy * sideDy + sideDz * sideDz;
+          if (sideDistSq > 0.55 * 0.55) continue;
+          if (!best || along < best.distance) best = { userId, distance: along };
+        }
+        return best;
       }
 
       function ensureRemoteEntity(userId: string): number {
@@ -1297,6 +1358,24 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       async function tryStartMining(): Promise<void> {
         if (pausedRef.current) return;
         const tgt = noa.targetedBlock;
+        const attackTarget = findAttackTarget();
+        if (attackTarget) {
+          const blockDistance = tgt
+            ? vecDist(
+                noa.camera.getPosition() as number[],
+                [
+                  tgt.position[0] + 0.5,
+                  tgt.position[1] + 0.5,
+                  tgt.position[2] + 0.5
+                ]
+              )
+            : Number.POSITIVE_INFINITY;
+          if (attackTarget.distance <= blockDistance) {
+            triggerLocalArmSwing();
+            void onPlayerAttackRef.current(attackTarget.userId);
+            return;
+          }
+        }
         if (!tgt) return;
         const pos: Vec3 = [tgt.position[0], tgt.position[1], tgt.position[2]];
         triggerLocalArmSwing();
@@ -1518,6 +1597,9 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       cleanupFns.push(() => window.removeEventListener("keydown", onHotbarKey));
 
       let lastEmit = 0;
+      let lastGrounded = true;
+      let minAirVelocityY = 0;
+      let lastFallImpactAt = 0;
       noa.on("tick", () => {
         const nowPerf = performance.now();
         const equipped = equipmentSlotsRef.current;
@@ -1605,6 +1687,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         const heading: number = noa.camera.heading;
         const pitch: number = noa.camera.pitch;
         const physState = noa.entities.getPhysics(playerEnt);
+        const onGround = physState?.body?.resting?.[1] === -1;
+        const velocityY = Number(physState?.body?.velocity?.[1] ?? 0);
         const inputState = noa.inputs.state;
         const playerMoving =
           !!inputState.forward ||
@@ -1653,9 +1737,25 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           }
         }
 
+        if (gameModeRef.current === "survival") {
+          if (!onGround) {
+            minAirVelocityY = Math.min(minAirVelocityY, velocityY);
+          } else {
+            if (
+              !lastGrounded &&
+              minAirVelocityY < -12 &&
+              nowPerf - lastFallImpactAt > 500
+            ) {
+              lastFallImpactAt = nowPerf;
+              void onFallImpactRef.current(minAirVelocityY);
+            }
+            minAirVelocityY = 0;
+          }
+          lastGrounded = onGround;
+        }
+
         if (nowPerf - lastEmit < 60) return;
         lastEmit = nowPerf;
-        const onGround = physState?.body?.resting?.[1] === -1;
         onInputRef.current({
           pos: [pos[0], pos[1], pos[2]],
           heading,
@@ -2346,6 +2446,14 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       </div>
     ) : null;
 
+  const damageOverlay =
+    damageFlash > 0 ? (
+      <div
+        className="pointer-events-none absolute inset-0 bg-red-600/20"
+        aria-hidden
+      />
+    ) : null;
+
   return (
     <div className="absolute inset-0">
       <div
@@ -2355,6 +2463,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         aria-label="minecraft viewport"
       />
       {controlsHint}
+      {damageOverlay}
       {survivalVitalsHud}
       {blockHotbarHud}
       {inventoryPanel}

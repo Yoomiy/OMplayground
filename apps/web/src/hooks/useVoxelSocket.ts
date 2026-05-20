@@ -21,6 +21,7 @@ import type {
   JoinRoomAck,
   JoinRoomAckOk,
   OpenChestAck,
+  PlayerDamagePayload,
   PlayerVitals,
   RoomEvent,
   RoomSnapshot,
@@ -92,7 +93,9 @@ function inputWireEqual(a: InputReq, b: InputReq): boolean {
     Math.abs(a.pos[1] - b.pos[1]) <= POS_EPS &&
     Math.abs(a.pos[2] - b.pos[2]) <= POS_EPS &&
     Math.abs(a.heading - b.heading) <= HEADING_EPS &&
-    a.jumping === b.jumping
+    Math.abs((a.pitch ?? 0) - (b.pitch ?? 0)) <= HEADING_EPS &&
+    a.jumping === b.jumping &&
+    a.hotbarIndex === b.hotbarIndex
   );
 }
 
@@ -103,6 +106,7 @@ export type WorldDropSpawnListener = (drop: WorldDrop) => void;
 export type WorldDropRemovedListener = (id: string) => void;
 export type WorldDropUpdateListener = (updates: WorldDropWireDelta[]) => void;
 export type ArmSwingListener = (payload: ArmSwingPayload) => void;
+export type PlayerDamageListener = (payload: PlayerDamagePayload) => void;
 
 export interface UseVoxelSocketArgs {
   sessionId: string;
@@ -121,6 +125,8 @@ export interface UseVoxelSocketReturn {
   breakFinish: (pos: Vec3) => Promise<SimpleAck>;
   breakCancel: (pos: Vec3) => void;
   armSwing: () => void;
+  fallImpact: (velocityY: number) => Promise<SimpleAck>;
+  playerAttack: (targetUserId: string) => Promise<SimpleAck>;
   craft: (recipeId: string) => Promise<CraftAck>;
   pause: () => Promise<SimpleAck>;
   resume: () => Promise<SimpleAck>;
@@ -130,6 +136,7 @@ export interface UseVoxelSocketReturn {
   onBlockDelta: (cb: BlockDeltaListener) => () => void;
   onRoomEvent: (cb: RoomEventListener) => () => void;
   onArmSwing: (cb: ArmSwingListener) => () => void;
+  onPlayerDamage: (cb: PlayerDamageListener) => () => void;
   serverInventory: HotbarSlot[];
   serverItemInventory: ItemSlot[];
   serverEquipmentSlots: ItemSlot[];
@@ -177,6 +184,7 @@ export function useVoxelSocket(
   const worldDropRemovedListeners = useRef(new Set<WorldDropRemovedListener>());
   const worldDropUpdateListeners = useRef(new Set<WorldDropUpdateListener>());
   const armSwingListeners = useRef(new Set<ArmSwingListener>());
+  const playerDamageListeners = useRef(new Set<PlayerDamageListener>());
 
   const [connected, setConnected] = useState(false);
   const [status, setStatus] = useState<string>("מתחבר…");
@@ -302,6 +310,9 @@ export function useVoxelSocket(
       s.on("PLAYER_ARM_SWING", (payload: ArmSwingPayload) => {
         for (const cb of armSwingListeners.current) cb(payload);
       });
+      s.on("PLAYER_DAMAGE", (payload: PlayerDamagePayload) => {
+        for (const cb of playerDamageListeners.current) cb(payload);
+      });
       s.on("ROOM_EVENT", (payload: RoomEvent) => {
         if (payload.kind === "WORLD_DROP_SPAWNED") {
           for (const cb of worldDropSpawnListeners.current) cb(payload.drop);
@@ -396,6 +407,18 @@ export function useVoxelSocket(
     const s = socketRef.current;
     if (!s?.connected) return;
     s.emit("ARM_SWING", {});
+  }
+
+  async function fallImpact(velocityY: number): Promise<SimpleAck> {
+    const s = socketRef.current;
+    if (!s?.connected) return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
+    return emitWithAck<SimpleAck>(s, "FALL_IMPACT", { velocityY });
+  }
+
+  async function playerAttack(targetUserId: string): Promise<SimpleAck> {
+    const s = socketRef.current;
+    if (!s?.connected) return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
+    return emitWithAck<SimpleAck>(s, "PLAYER_ATTACK", { targetUserId });
   }
 
   async function craft(recipeId: string): Promise<CraftAck> {
@@ -537,6 +560,13 @@ export function useVoxelSocket(
     };
   }
 
+  function onPlayerDamage(cb: PlayerDamageListener): () => void {
+    playerDamageListeners.current.add(cb);
+    return () => {
+      playerDamageListeners.current.delete(cb);
+    };
+  }
+
   function onWorldDropSpawned(cb: WorldDropSpawnListener): () => void {
     worldDropSpawnListeners.current.add(cb);
     return () => {
@@ -569,6 +599,8 @@ export function useVoxelSocket(
     breakFinish,
     breakCancel,
     armSwing,
+    fallImpact,
+    playerAttack,
     craft,
     pause,
     resume,
@@ -578,6 +610,7 @@ export function useVoxelSocket(
     onBlockDelta,
     onRoomEvent,
     onArmSwing,
+    onPlayerDamage,
     serverInventory,
     serverItemInventory,
     serverEquipmentSlots,

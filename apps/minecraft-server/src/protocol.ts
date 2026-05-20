@@ -180,6 +180,21 @@ export interface ArmSwingPayload {
   userId: string;
 }
 
+export interface FallImpactReq {
+  velocityY: number;
+}
+
+export interface PlayerAttackReq {
+  targetUserId: string;
+}
+
+export interface PlayerDamagePayload {
+  userId: string;
+  health: number;
+  amount: number;
+  source: "generic" | "fall" | "combat" | "explosion" | "suffocation";
+}
+
 /** Survival: drop one stack unit from a hotbar slot near the player. */
 export interface DropItemReq {
   hotbarIndex: number;

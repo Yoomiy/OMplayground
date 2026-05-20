@@ -27,6 +27,8 @@ export interface WorldState {
   deltas: Map<string, number>;
 }
 
+const SPAWN_SURFACE_CLEARANCE = 2;
+
 export function createWorld(seed: number): WorldState {
   return { seed, deltas: new Map() };
 }
@@ -127,13 +129,20 @@ export function spawnPointFor(
       const x = Math.round(baseX + Math.cos(angle) * radius);
       const z = Math.round(baseZ + Math.sin(angle) * radius);
       if (isSpawnLocationSafe(x, z, seed)) {
-        return [x + 0.5, findSurfaceY(x, z, seed) + 3, z + 0.5];
+        return [
+          x + 0.5,
+          findSurfaceY(x, z, seed) + SPAWN_SURFACE_CLEARANCE,
+          z + 0.5
+        ];
       }
     }
   }
 
   const surface = findSurfaceY(0, 0, seed);
-  let y = Math.max(surface + 3, SEA_LEVEL + 3);
+  let y = Math.max(
+    surface + SPAWN_SURFACE_CLEARANCE,
+    SEA_LEVEL + SPAWN_SURFACE_CLEARANCE
+  );
   while (
     y <= SPAWN_SCAN_MAX_Y + 8 &&
     proceduralVoxelID(0, y, 0, seed) !== BLOCK_REGISTRY.AIR

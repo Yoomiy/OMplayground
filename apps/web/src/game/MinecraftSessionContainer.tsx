@@ -93,6 +93,8 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     breakFinish,
     breakCancel,
     armSwing,
+    fallImpact,
+    playerAttack,
     pause,
     resume,
     stop,
@@ -101,6 +103,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     onBlockDelta,
     onRoomEvent,
     onArmSwing,
+    onPlayerDamage,
     serverInventory,
     serverItemInventory,
     serverEquipmentSlots,
@@ -424,6 +427,8 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         onBreakFinish={handleBreakFinish}
         onBreakCancel={handleBreakCancel}
         onArmSwing={armSwing}
+        onFallImpact={fallImpact}
+        onPlayerAttack={playerAttack}
         initialWorldDrops={joinAck.drops ?? []}
         registerWorldDropSpawned={onWorldDropSpawned}
         registerWorldDropRemoved={onWorldDropRemoved}
@@ -432,6 +437,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         registerSnapshotListener={onSnapshot}
         registerBlockDeltaListener={onBlockDelta}
         registerArmSwingListener={onArmSwing}
+        registerPlayerDamageListener={onPlayerDamage}
       />
 
       <div className="pointer-events-none absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/80" />

@@ -56,7 +56,8 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Addressed the old opaque-block rendering issue by preserving noa's default opacity for normal cube blocks.
 - Added server Helios/daylight regen plus tested damage/fall perk helpers for the upcoming combat/fall protocol.
 - Fixed surface building by treating air and surface plants as shared replaceable placement targets.
-- Next concrete step: build the combat/fall socket protocol, then tighten spawn height if the current `surface + 3` offset is too high.
+- Added the combat/fall socket protocol and lowered spawn height from `surface + 3` to `surface + 2`.
+- Next concrete step: inspect remaining weird block rendering, likely water/transparent block meshing.
 
 ## 2026-05-20 - Shared Recipe Model
 
@@ -238,6 +239,25 @@ This ledger tracks major advancements, decisions, verification, and comments to 
   - `npm run lint -w @playground/minecraft-server` passed.
   - `npm run lint -w @playground/web` passed.
 
+## 2026-05-20 - Combat/Fall Protocol and Spawn Height
+
+- Lowered spawn height by one block while keeping the existing shared spawn safety scan intact.
+- Added typed protocol payloads for `FALL_IMPACT`, `PLAYER_ATTACK`, and `PLAYER_DAMAGE`.
+- Added server handlers:
+  - `FALL_IMPACT` validates vertical velocity and applies feather-fall/shield-aware damage;
+  - `PLAYER_ATTACK` validates room, survival mode, cooldown, target identity, and range before applying weapon-tier damage.
+- Added client emitters/listeners:
+  - hard landings emit fall impact from the local physics transition;
+  - left-click can attack a remote avatar selected by a short camera ray;
+  - damage events update the local health HUD and flash a brief red overlay.
+- Fixed INPUT throttling so pitch and selected hotbar slot changes are sent even when the player is stationary.
+- Verification run:
+  - `npm run build -w @playground/voxel-content` passed.
+  - `npm test -w @playground/voxel-content -- blocks.test.ts` passed: 1 suite, 10 tests.
+  - `npm test -w @playground/minecraft-server -- perks.test.ts world.test.ts tick.test.ts --runInBand` passed: 3 suites, 25 tests.
+  - `npm run lint -w @playground/minecraft-server` passed.
+  - `npm run lint -w @playground/web` passed.
+
 ## Comments / Instructions To Address
 
 - Addressed: added `Current Work` above to explain the active implementation slice and next concrete step.
@@ -248,7 +268,8 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Addressed: zoom-out WebGL context error likely came from scene-blind voxel model template caching; templates now rebuild when the Babylon scene changes.
 - Addressed: opaque blocks behaved weird because normal cubes were registered with `opaque: undefined`, overriding noa's default `true`. Shared block options now omit undefined opacity.
 - Addressed: animation works but building does not. Likely cause was replaceable surface plants blocking placement; shared replaceable-block rules now let the client ignore plants and the server replace them.
-- In progress: combat/fall protocol does not exist yet. Server damage/fall helpers are ready; next pass should add the socket protocol and client fall/attack emitters.
-- In progress: spawn feels too high. Inspect `spawnPointFor` / `spawnFor` next and lower the offset if the safety cells remain clear.
+- In progress: building works now, but some blocks (possibly water/transparent blocks) still behave weird. Next pass should inspect water/transparent block material and meshing behavior.
+- Addressed: combat/fall protocol was missing. Added fall impact, player attack, and player damage socket flow.
+- Addressed: spawn felt too high. Spawn clearance is now `surface + 2` instead of `surface + 3`.
 
 - adress unadressed comments!

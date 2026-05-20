@@ -1,7 +1,8 @@
 import {
   BLOCK_REGISTRY,
   ITEM_REGISTRY,
-  itemPerkSpec
+  itemPerkSpec,
+  itemToolSpec
 } from "@playground/voxel-content";
 import { hasEquipped } from "./inventory";
 import type { PlayerRuntime } from "./room";
@@ -114,4 +115,15 @@ export function applyFallDamage(player: PlayerRuntime, velocityY: number): numbe
   const speed = Math.abs(Math.min(0, velocityY));
   if (speed <= 12) return 0;
   return applyPlayerDamage(player, Math.floor((speed - 12) * 1.5), "fall");
+}
+
+export function heldWeaponDamage(player: PlayerRuntime): number {
+  const cell = player.inventory?.[player.selectedHotbarIndex ?? 0];
+  const itemId = cell && cell.count > 0 ? cell.itemId ?? 0 : 0;
+  const tool = itemId > 0 ? itemToolSpec(itemId) : undefined;
+  if (!tool || (tool.kind !== "axe" && tool.kind !== "pickaxe")) return 1;
+  if (tool.tier === 0) return 3;
+  if (tool.tier === 1) return 4;
+  if (tool.tier === 2) return 5;
+  return 6;
 }

@@ -129,7 +129,7 @@ describe("spawnPointFor", () => {
     const iy = Math.floor(sy);
     const iz = Math.floor(sz);
     expect(proceduralVoxelID(ix, iy, iz, seed)).toBe(BLOCK_REGISTRY.AIR);
-    expect(proceduralVoxelID(ix, iy - 3, iz, seed)).not.toBe(BLOCK_REGISTRY.AIR);
+    expect(proceduralVoxelID(ix, iy - 2, iz, seed)).not.toBe(BLOCK_REGISTRY.AIR);
   });
 
   it("offsets per-user so two players don't share a column", () => {
