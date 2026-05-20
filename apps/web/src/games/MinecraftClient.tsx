@@ -22,6 +22,7 @@ import {
   type CraftingGridWidth,
   type EatStartAck,
   type PlayerVitals,
+  type RoomEvent,
   type RoomPlayerInfo,
   type RoomSnapshot,
   type Vec3,
@@ -633,10 +634,12 @@ export interface MinecraftClientProps {
   onArmSwing: () => void;
   onFallImpact: (velocityY: number) => Promise<SimpleAck>;
   onPlayerAttack: (targetUserId: string) => Promise<SimpleAck>;
+  onIgniteTnt: (pos: Vec3) => Promise<SimpleAck>;
   /** Survival: server validates and spawns a world drop. */
   onDropHotbarSlot?: (hotbarIndex: number) => void;
   registerSnapshotListener: (cb: (snap: RoomSnapshot) => void) => () => void;
   registerBlockDeltaListener: (cb: (delta: BlockDelta) => void) => () => void;
+  registerRoomEventListener: (cb: (ev: RoomEvent) => void) => () => void;
   registerArmSwingListener: (cb: (payload: { userId: string }) => void) => () => void;
   registerPlayerDamageListener: (cb: (payload: PlayerDamagePayload) => void) => () => void;
   /** World stacks present on join (survival). */
@@ -684,9 +687,11 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     onArmSwing,
     onFallImpact,
     onPlayerAttack,
+    onIgniteTnt,
     onDropHotbarSlot,
     registerSnapshotListener,
     registerBlockDeltaListener,
+    registerRoomEventListener,
     registerArmSwingListener,
     registerPlayerDamageListener,
     initialWorldDrops,
@@ -702,6 +707,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const [recipeBookOpen, setRecipeBookOpen] = useState(false);
   const [localVitals, setLocalVitals] = useState<PlayerVitals>(vitals);
   const [damageFlash, setDamageFlash] = useState(0);
+  const [blastFlash, setBlastFlash] = useState(0);
   const hostRef = useRef<HTMLDivElement | null>(null);
   // noa-engine has loose .d.ts typings; lock to any so we don't fight them.
   const noaRef = useRef<unknown>(null);
@@ -714,6 +720,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const onArmSwingRef = useRef(onArmSwing);
   const onFallImpactRef = useRef(onFallImpact);
   const onPlayerAttackRef = useRef(onPlayerAttack);
+  const onIgniteTntRef = useRef(onIgniteTnt);
   const onEatStartRef = useRef(onEatStart);
   const onEatFinishRef = useRef(onEatFinish);
   const onEatCancelRef = useRef(onEatCancel);
@@ -748,6 +755,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const myUserIdRef = useRef<string | null>(myUserId);
   const registerSnapshotListenerRef = useRef(registerSnapshotListener);
   const registerBlockDeltaListenerRef = useRef(registerBlockDeltaListener);
+  const registerRoomEventListenerRef = useRef(registerRoomEventListener);
   const registerArmSwingListenerRef = useRef(registerArmSwingListener);
   const registerPlayerDamageListenerRef = useRef(registerPlayerDamageListener);
   const registerWorldDropSpawnedRef = useRef(registerWorldDropSpawned);
@@ -768,6 +776,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   onArmSwingRef.current = onArmSwing;
   onFallImpactRef.current = onFallImpact;
   onPlayerAttackRef.current = onPlayerAttack;
+  onIgniteTntRef.current = onIgniteTnt;
   onEatStartRef.current = onEatStart;
   onEatFinishRef.current = onEatFinish;
   onEatCancelRef.current = onEatCancel;
@@ -782,6 +791,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   myUserIdRef.current = myUserId;
   registerSnapshotListenerRef.current = registerSnapshotListener;
   registerBlockDeltaListenerRef.current = registerBlockDeltaListener;
+  registerRoomEventListenerRef.current = registerRoomEventListener;
   registerArmSwingListenerRef.current = registerArmSwingListener;
   registerPlayerDamageListenerRef.current = registerPlayerDamageListener;
   registerWorldDropSpawnedRef.current = registerWorldDropSpawned;
@@ -870,6 +880,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
       const audio = new AudioManager();
       audioManagerRef.current = audio;
+      audio.setMuted(pausedRef.current);
       const primeAudio = (): void => audio.prime();
       gameEl.addEventListener("pointerdown", primeAudio);
       cleanupFns.push(() => gameEl.removeEventListener("pointerdown", primeAudio));
@@ -1039,6 +1050,18 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       const offPlayerDamage = registerPlayerDamageListenerRef.current((payload) => {
         if (payload.userId !== myUserIdRef.current) return;
         setLocalVitals((prev) => ({ ...prev, health: payload.health }));
+        if (payload.impulse) {
+          const phys = noa.entities.getPhysics(noa.playerEntity);
+          const velocity = phys?.body?.velocity;
+          if (velocity) {
+            velocity[0] = Number(velocity[0] ?? 0) + payload.impulse[0] * 0.08;
+            velocity[1] = Math.max(
+              Number(velocity[1] ?? 0),
+              payload.impulse[1] * 0.08
+            );
+            velocity[2] = Number(velocity[2] ?? 0) + payload.impulse[2] * 0.08;
+          }
+        }
         audio.playHurt();
         setDamageFlash(1);
         if (damageFlashTimer !== null) window.clearTimeout(damageFlashTimer);
@@ -1517,6 +1540,122 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         worldDropStackKey.delete(wid);
       }
 
+      type PrimedTntVisual = {
+        eid: number;
+        mesh: Mesh;
+        primedAt: number;
+        explodeAt: number;
+      };
+      const primedTnts = new Map<string, PrimedTntVisual>();
+
+      function createPrimedTntMesh(id: string): Mesh | null {
+        const url = BLOCK_HOTBAR_ICON[BLOCK_REGISTRY.TNT];
+        if (!url) return null;
+        const scene = noa.rendering.getScene();
+        const mesh = Babylon.MeshBuilder.CreateBox(
+          `primed-tnt-${id}`,
+          { size: 0.84 },
+          scene
+        );
+        const tex = new Babylon.Texture(
+          url,
+          scene,
+          true,
+          false,
+          Babylon.Texture.NEAREST_SAMPLINGMODE
+        );
+        const mat = noa.rendering.makeStandardMaterial(`primed-tnt-mat-${id}`);
+        mat.diffuseTexture = tex;
+        mat.specularColor = new Babylon.Color3(0.02, 0.02, 0.02);
+        mat.emissiveColor = new Babylon.Color3(0.18, 0.08, 0.08);
+        mesh.material = mat;
+        return mesh;
+      }
+
+      function spawnPrimedTntVisual(ev: Extract<RoomEvent, { kind: "TNT_PRIMED" }>): void {
+        if (primedTnts.has(ev.id)) return;
+        const mesh = createPrimedTntMesh(ev.id);
+        if (!mesh) return;
+        try {
+          const eid: number = noa.entities.add(
+            [ev.pos[0] + 0.5, ev.pos[1] + 0.5, ev.pos[2] + 0.5],
+            0.84,
+            0.84,
+            mesh,
+            [0, 0, 0],
+            false,
+            false
+          );
+          primedTnts.set(ev.id, {
+            eid,
+            mesh,
+            primedAt: ev.primedAt,
+            explodeAt: ev.explodeAt
+          });
+        } catch {
+          mesh.dispose();
+        }
+      }
+
+      function removePrimedTntVisual(id: string): void {
+        const visual = primedTnts.get(id);
+        if (!visual) return;
+        try {
+          noa.entities.deleteEntity(visual.eid);
+        } catch {
+          visual.mesh.dispose();
+        }
+        primedTnts.delete(id);
+      }
+
+      function animatePrimedTnts(nowMs: number): void {
+        for (const [id, visual] of primedTnts) {
+          const duration = Math.max(1, visual.explodeAt - visual.primedAt);
+          const progress = Math.min(1, Math.max(0, (nowMs - visual.primedAt) / duration));
+          const pulseRate = 7 + progress * 18;
+          const pulse = Math.sin((nowMs / 1000) * pulseRate) * 0.5 + 0.5;
+          const scale = 1 + pulse * (0.04 + progress * 0.12);
+          visual.mesh.scaling.set(scale, scale, scale);
+          const mat = visual.mesh.material as {
+            emissiveColor?: { r: number; g: number; b: number };
+          } | null;
+          if (mat?.emissiveColor) {
+            mat.emissiveColor.r = 0.12 + pulse * progress * 0.75;
+            mat.emissiveColor.g = 0.05 + pulse * progress * 0.5;
+            mat.emissiveColor.b = 0.05 + pulse * progress * 0.5;
+          }
+          if (nowMs > visual.explodeAt + 1500) removePrimedTntVisual(id);
+        }
+      }
+
+      let blastFlashTimer: number | null = null;
+      const offRoomEvents = registerRoomEventListenerRef.current((ev) => {
+        if (ev.kind === "TNT_PRIMED") {
+          spawnPrimedTntVisual(ev);
+          const volume = blockEventVolume(ev.pos[0], ev.pos[1], ev.pos[2], 0.32);
+          if (volume > 0) audio.playFuse(volume);
+          return;
+        }
+        if (ev.kind === "EXPLOSION") {
+          removePrimedTntVisual(ev.id);
+          const volume = blockEventVolume(ev.pos[0], ev.pos[1], ev.pos[2], 0.95);
+          if (volume > 0) audio.playExplosion(volume);
+          if (volume > 0.12) {
+            setBlastFlash(1);
+            if (blastFlashTimer !== null) window.clearTimeout(blastFlashTimer);
+            blastFlashTimer = window.setTimeout(() => {
+              setBlastFlash(0);
+              blastFlashTimer = null;
+            }, 220);
+          }
+        }
+      });
+      cleanupFns.push(offRoomEvents);
+      cleanupFns.push(() => {
+        if (blastFlashTimer !== null) window.clearTimeout(blastFlashTimer);
+        for (const id of [...primedTnts.keys()]) removePrimedTntVisual(id);
+      });
+
       for (const d of initialWorldDrops) {
         spawnWorldDropEntity(d);
       }
@@ -1723,6 +1862,25 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         if (pausedRef.current) return;
         if (gameModeRef.current === "survival") {
           const tgt = noa.targetedBlock;
+          const inv = inventoryRef.current;
+          const idx = survivalSlotRef.current;
+          const cell = inv[idx];
+          if (
+            tgt &&
+            Number(tgt.blockID) === BLOCK_REGISTRY.TNT &&
+            cell &&
+            cell.count > 0 &&
+            cell.itemId === ITEM_REGISTRY.FLINT_AND_STEEL
+          ) {
+            const pos: Vec3 = [
+              Math.floor(Number(tgt.position[0])),
+              Math.floor(Number(tgt.position[1])),
+              Math.floor(Number(tgt.position[2]))
+            ];
+            triggerLocalArmSwing();
+            void onIgniteTntRef.current(pos);
+            return;
+          }
           if (tgt && Number(tgt.blockID) === BLOCK_REGISTRY.CRAFTING) {
             const pos: Vec3 = [
               Math.floor(Number(tgt.position[0])),
@@ -1749,9 +1907,6 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
             });
             return;
           }
-          const inv = inventoryRef.current;
-          const idx = survivalSlotRef.current;
-          const cell = inv[idx];
           if (cell && cell.count > 0 && itemFoodSpec(cell.itemId ?? 0)) {
             void startEatingHold(idx);
             return;
@@ -1848,6 +2003,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       let lastFootstepAt = 0;
       noa.on("tick", () => {
         const nowPerf = performance.now();
+        if (!pausedRef.current) animatePrimedTnts(Date.now());
         const equipped = equipmentSlotsRef.current;
         const moveState = noa.entities.getMovement?.(noa.playerEntity);
         if (moveState) {
@@ -2071,6 +2227,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const noa: any = noaRef.current;
     noa?.setPaused?.(paused);
+    audioManagerRef.current?.setMuted(paused);
     if (paused) heldItemViewRef.current?.setVisible(false);
   }, [paused]);
 
@@ -2729,6 +2886,14 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       />
     ) : null;
 
+  const blastOverlay =
+    blastFlash > 0 ? (
+      <div
+        className="pointer-events-none absolute inset-0 bg-orange-200/20"
+        aria-hidden
+      />
+    ) : null;
+
   return (
     <div className="absolute inset-0">
       <div
@@ -2738,6 +2903,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         aria-label="minecraft viewport"
       />
       {controlsHint}
+      {blastOverlay}
       {damageOverlay}
       {survivalVitalsHud}
       {blockHotbarHud}

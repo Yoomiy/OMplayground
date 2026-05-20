@@ -14,6 +14,7 @@ import type {
   EatStartAck,
   GameMode,
   HotbarSlot,
+  IgniteTntReq,
   InputReq,
   InventoryMoveReq,
   InventorySyncPayload,
@@ -127,6 +128,7 @@ export interface UseVoxelSocketReturn {
   armSwing: () => void;
   fallImpact: (velocityY: number) => Promise<SimpleAck>;
   playerAttack: (targetUserId: string) => Promise<SimpleAck>;
+  igniteTnt: (pos: Vec3) => Promise<SimpleAck>;
   craft: (recipeId: string) => Promise<CraftAck>;
   pause: () => Promise<SimpleAck>;
   resume: () => Promise<SimpleAck>;
@@ -421,6 +423,13 @@ export function useVoxelSocket(
     return emitWithAck<SimpleAck>(s, "PLAYER_ATTACK", { targetUserId });
   }
 
+  async function igniteTnt(pos: Vec3): Promise<SimpleAck> {
+    const s = socketRef.current;
+    if (!s?.connected) return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
+    const payload: IgniteTntReq = { pos };
+    return emitWithAck<SimpleAck>(s, "IGNITE_TNT", payload);
+  }
+
   async function craft(recipeId: string): Promise<CraftAck> {
     const s = socketRef.current;
     if (!s?.connected) return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
@@ -601,6 +610,7 @@ export function useVoxelSocket(
     armSwing,
     fallImpact,
     playerAttack,
+    igniteTnt,
     craft,
     pause,
     resume,

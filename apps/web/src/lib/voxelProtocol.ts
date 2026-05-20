@@ -178,11 +178,16 @@ export interface PlayerAttackReq {
   targetUserId: string;
 }
 
+export interface IgniteTntReq {
+  pos: Vec3;
+}
+
 export interface PlayerDamagePayload {
   userId: string;
   health: number;
   amount: number;
   source: "generic" | "fall" | "combat" | "explosion" | "suffocation";
+  impulse?: Vec3;
 }
 
 export interface DropItemReq {
@@ -285,6 +290,23 @@ export type RoomEvent =
   | { kind: "RECESS_ENDED"; sessionId: string }
   | { kind: "GAME_MODE_CHANGED"; sessionId: string; gameMode: GameMode }
   | { kind: "CHEST_CLOSED"; sessionId: string; pos: Vec3 }
+  | {
+      kind: "TNT_PRIMED";
+      sessionId: string;
+      id: string;
+      pos: Vec3;
+      primedAt: number;
+      explodeAt: number;
+      by: string;
+    }
+  | {
+      kind: "EXPLOSION";
+      sessionId: string;
+      id: string;
+      pos: Vec3;
+      radius: number;
+      by: string;
+    }
   | { kind: "WORLD_DROP_SPAWNED"; sessionId: string; drop: WorldDrop }
   | { kind: "WORLD_DROP_REMOVED"; sessionId: string; id: string }
   | {

@@ -29,6 +29,8 @@ export interface TickDeps {
   worldDropsTick?: (room: VoxelRoom) => void;
   /** Survival hunger/health progression. */
   survivalVitalsTick?: (room: VoxelRoom, now: number) => void;
+  /** Survival TNT fuses/explosions. */
+  tntTick?: (room: VoxelRoom, now: number) => void;
 }
 
 function buildSnapshot(room: VoxelRoom): RoomSnapshot {
@@ -53,6 +55,7 @@ export function tickOnce(deps: TickDeps): { emittedSessionIds: string[] } {
   for (const room of rooms) {
     if (!room.paused && room.players.size > 0) {
       deps.survivalVitalsTick?.(room, now);
+      deps.tntTick?.(room, now);
       deps.worldDropsTick?.(room);
       deps.magnetPickups?.(room);
     }

@@ -6,7 +6,14 @@ import {
   type BlockSoundGroup
 } from "@playground/voxel-content";
 
-export type VoxelEffectSound = "swing" | "craft" | "hurt" | "eat" | "swallow";
+export type VoxelEffectSound =
+  | "swing"
+  | "craft"
+  | "hurt"
+  | "eat"
+  | "swallow"
+  | "fuse"
+  | "explosion";
 
 export interface VoxelSoundDescriptor {
   readonly url: string | null;
@@ -54,7 +61,9 @@ const EFFECT_URLS: Record<VoxelEffectSound, string> = {
   craft: "/sounds/effects/pop.mp3",
   hurt: "/sounds/effects/hurt.mp3",
   eat: "/sounds/effects/eat.mp3",
-  swallow: "/sounds/effects/swallow.mp3"
+  swallow: "/sounds/effects/swallow.mp3",
+  fuse: "/sounds/effects/fuse.mp3",
+  explosion: "/sounds/effects/explosion.mp3"
 };
 
 const AMBIENT_PROFILES: Record<
@@ -130,6 +139,7 @@ export class AudioManager {
   private activeAmbient: AmbientChannel | null = null;
   private loopTimers = new Map<string, ReturnType<typeof setInterval>>();
   private disposed = false;
+  private muted = false;
   private readonly random: () => number;
   private readonly masterVolume: number;
 
@@ -139,6 +149,7 @@ export class AudioManager {
   }
 
   public prime(): void {
+    if (this.muted) return;
     const ctx = this.ensureContext();
     if (!ctx || ctx.state !== "suspended") return;
     void ctx.resume().catch(() => {
@@ -147,6 +158,7 @@ export class AudioManager {
   }
 
   public playSFX(url: string, volume = 0.5): void {
+    if (this.muted) return;
     const descriptor = resolveVoxelSoundUrl(url, volume);
     if (!descriptor) return;
     if (descriptor.effect) {
@@ -186,7 +198,16 @@ export class AudioManager {
     this.playEffect("hurt", volume);
   }
 
+  public playFuse(volume = 0.28): void {
+    this.playEffect("fuse", volume);
+  }
+
+  public playExplosion(volume = 0.9): void {
+    this.playEffect("explosion", volume);
+  }
+
   public startEating(volume = 0.32): void {
+    if (this.muted) return;
     if (this.loopTimers.has("eat")) return;
     this.playEffect("eat", volume);
     const timer = setInterval(() => this.playEffect("eat", volume), 290);
@@ -203,7 +224,7 @@ export class AudioManager {
   }
 
   public updateAmbient(biomeId: BiomeId): void {
-    if (this.disposed || this.activeAmbient?.biomeId === biomeId) return;
+    if (this.disposed || this.muted || this.activeAmbient?.biomeId === biomeId) return;
     const ctx = this.ensureContext();
     if (!ctx) return;
     const profile = AMBIENT_PROFILES[biomeId];
@@ -242,8 +263,22 @@ export class AudioManager {
     this.context = null;
   }
 
+  public setMuted(muted: boolean): void {
+    if (this.disposed || this.muted === muted) return;
+    this.muted = muted;
+    if (this.masterGain) {
+      this.masterGain.gain.value = muted ? 0 : this.masterVolume;
+    }
+    if (!muted) return;
+    this.stopEating(false);
+    if (this.activeAmbient) {
+      this.stopAmbient(this.activeAmbient);
+      this.activeAmbient = null;
+    }
+  }
+
   private ensureContext(): AudioContext | null {
-    if (this.disposed) return null;
+    if (this.disposed || this.muted) return null;
     if (this.context) return this.context;
     if (typeof window === "undefined") return null;
     const win = window as unknown as Window & {
@@ -334,7 +369,40 @@ export class AudioManager {
       case "swallow":
         this.playToneSweep(180, 120, 0.16, clamp01(volume) * 0.1);
         break;
+      case "fuse":
+        this.playMaterial("dig", "sand", clamp01(volume) * 0.8);
+        this.playToneSweep(1200, 900, 0.12, clamp01(volume) * 0.045);
+        break;
+      case "explosion":
+        this.playExplosionSynth(clamp01(volume));
+        break;
     }
+  }
+
+  private playExplosionSynth(volume: number): void {
+    const ctx = this.ensureContext();
+    const master = this.masterGain;
+    if (!ctx || !master) return;
+    const duration = 0.72;
+    const now = ctx.currentTime;
+    const source = ctx.createBufferSource();
+    source.buffer = this.createNoiseBuffer(ctx, duration);
+    const filter = ctx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(820, now);
+    filter.frequency.exponentialRampToValueAtTime(90, now + duration);
+    filter.Q.value = 0.7;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.linearRampToValueAtTime(volume * 0.82, now + 0.018);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(master);
+    source.start(now);
+    source.stop(now + duration + 0.03);
+    this.disconnectLater([source, filter, gain], duration + 0.1);
+    this.playToneSweep(88, 34, 0.42, volume * 0.22);
   }
 
   private playTone(

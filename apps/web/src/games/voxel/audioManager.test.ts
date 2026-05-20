@@ -29,6 +29,11 @@ describe("voxel AudioManager helpers", () => {
       effect: "swing",
       volume: 0.25
     });
+    expect(resolveVoxelSoundUrl("/sounds/effects/explosion.mp3", 0.8)).toEqual({
+      url: "/sounds/effects/explosion.mp3",
+      effect: "explosion",
+      volume: 0.8
+    });
     expect(ambientUrlForBiome("forest")).toContain("forest");
   });
 
@@ -41,6 +46,9 @@ describe("voxel AudioManager helpers", () => {
       audio.playSFX("/sounds/effects/pop.mp3");
       audio.startEating();
       audio.stopEating(true);
+      audio.setMuted(true);
+      audio.playExplosion();
+      audio.setMuted(false);
       audio.dispose();
     }).not.toThrow();
   });

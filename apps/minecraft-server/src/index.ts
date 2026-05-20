@@ -11,7 +11,7 @@ import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import { Server } from "socket.io";
 import { createClient } from "@supabase/supabase-js";
-import { blockReplaceable, itemFoodSpec } from "@playground/voxel-content";
+import { applyToolWear, blockReplaceable, itemFoodSpec } from "@playground/voxel-content";
 import { isWithinRecess } from "./recess";
 import {
   applyDelta,
@@ -85,6 +85,7 @@ import {
 } from "./drops";
 import {
   BLOCK_REGISTRY,
+  ITEM_REGISTRY,
   MAX_REACH,
   PLACEABLE_BLOCK_IDS,
   type ArmSwingPayload,
@@ -98,6 +99,7 @@ import {
   type CraftReq,
   type ChestSyncPayload,
   type GameMode,
+  type IgniteTntReq,
   type InputReq,
   type InventoryMoveReq,
   type DropItemReq,
@@ -133,6 +135,7 @@ import {
   heldWeaponDamage,
   tickHeliosRegen
 } from "./perks";
+import { applyTntExplosion, primeTnt, TNT_EXPLOSION_RADIUS } from "./tnt";
 
 const PORT = Number(process.env.PORT ?? 8081);
 const ARM_SWING_COOLDOWN_MS = 150;
@@ -351,13 +354,15 @@ function inventorySyncPayload(player: PlayerRuntime) {
 function playerDamagePayload(
   player: PlayerRuntime,
   amount: number,
-  source: PlayerDamagePayload["source"]
+  source: PlayerDamagePayload["source"],
+  impulse?: Vec3
 ): PlayerDamagePayload {
   return {
     userId: player.userId,
     health: cloneVitals(player).health,
     amount,
-    source
+    source,
+    ...(impulse ? { impulse } : {})
   };
 }
 
@@ -387,6 +392,29 @@ function getOrCreateChest(room: VoxelRoom, key: string) {
 function chestSyncPayload(key: string, slots: ReturnType<typeof cloneChest>): ChestSyncPayload {
   const pos = chestPosFromKey(key) ?? [0, 0, 0];
   return { pos, slots };
+}
+
+function applyHeldItemWear(player: PlayerRuntime, itemId: number): boolean {
+  if (!player.inventory) return false;
+  const hotbarIndex = player.selectedHotbarIndex ?? 0;
+  const cell = player.inventory[hotbarIndex];
+  if (!cell || cell.itemId !== itemId || cell.count <= 0) return false;
+  const wear = applyToolWear(itemId, cell.durability);
+  if (wear.broken) {
+    player.inventory[hotbarIndex] = {
+      blockId: BLOCK_REGISTRY.AIR,
+      itemId: 0,
+      count: 0
+    };
+    return true;
+  }
+  player.inventory[hotbarIndex] = {
+    blockId: BLOCK_REGISTRY.AIR,
+    itemId,
+    count: 1,
+    ...(wear.durability !== undefined ? { durability: wear.durability } : {})
+  };
+  return true;
 }
 
 function executeBlockBreak(
@@ -852,6 +880,75 @@ io.on("connection", (socket) => {
           playerDamagePayload(target, amount, "combat")
         );
       }
+      ack?.({ ok: true });
+    }
+  );
+
+  socket.on(
+    "IGNITE_TNT",
+    (payload: IgniteTntReq, ack?: (r: SimpleAck) => void) => {
+      const sessionId = socket.data.sessionId as string | undefined;
+      const target = resolveBreakTarget(userId, sessionId, payload?.pos, getRoom);
+      if (!target.ok) {
+        ack?.(target.ack);
+        return;
+      }
+      const { room, player, sessionId: activeSessionId, x, y, z, blockId } = target;
+      if ((room.gameMode ?? "creative") !== "survival") {
+        ack?.({
+          ok: false,
+          error: { code: "BAD_INTENT", message: "רק במצב שרדות" }
+        });
+        return;
+      }
+      if (blockId !== BLOCK_REGISTRY.TNT) {
+        ack?.({
+          ok: false,
+          error: { code: "BAD_INTENT", message: "אפשר להדליק רק TNT" }
+        });
+        return;
+      }
+      const hotbarIndex = player.selectedHotbarIndex ?? 0;
+      const held = player.inventory?.[hotbarIndex];
+      if (
+        !player.inventory ||
+        !player.itemInventory ||
+        !player.craftingGrid ||
+        !held ||
+        held.itemId !== ITEM_REGISTRY.FLINT_AND_STEEL ||
+        held.count <= 0
+      ) {
+        ack?.({
+          ok: false,
+          error: { code: "MISSING_TOOL", message: "צריך מצית צור וברזל בסרגל" }
+        });
+        return;
+      }
+      const now = Date.now();
+      const tnt = primeTnt(room, [x, y, z], userId, now);
+      if (!tnt) {
+        ack?.({
+          ok: false,
+          error: { code: "BAD_INTENT", message: "TNT לא זמין" }
+        });
+        return;
+      }
+      applyHeldItemWear(player, ITEM_REGISTRY.FLINT_AND_STEEL);
+      socket.emit("INVENTORY_SYNC", inventorySyncPayload(player));
+      io.to(`voxel:${activeSessionId}`).emit("BLOCK_DELTA", {
+        pos: [x, y, z],
+        blockId: getVoxelID(room.world, x, y, z),
+        by: userId
+      });
+      io.to(`voxel:${activeSessionId}`).emit("ROOM_EVENT", {
+        kind: "TNT_PRIMED",
+        sessionId: activeSessionId,
+        id: tnt.id,
+        pos: tnt.pos,
+        primedAt: tnt.primedAt,
+        explodeAt: tnt.explodeAt,
+        by: userId
+      });
       ack?.({ ok: true });
     }
   );
@@ -1876,9 +1973,60 @@ function tickRoomVitals(room: VoxelRoom, now: number): void {
   }
 }
 
+function tickRoomTnt(room: VoxelRoom, now: number): void {
+  if ((room.gameMode ?? "creative") !== "survival" || room.activeTnts.size === 0) return;
+  const sessionId = room.sessionId;
+  for (const tnt of [...room.activeTnts.values()]) {
+    if (tnt.explodeAt > now) continue;
+    const result = applyTntExplosion(room, tnt);
+    for (const delta of result.blockDeltas) {
+      io.to(`voxel:${sessionId}`).emit("BLOCK_DELTA", {
+        pos: delta.pos,
+        blockId: delta.blockId,
+        by: tnt.by
+      });
+      if (blockDropsPickable(delta.destroyedBlockId) && Math.random() < 0.3) {
+        const [x, y, z] = delta.pos;
+        const dropId = blockDropId(delta.destroyedBlockId);
+        if (dropId !== null) {
+          const spawned = spawnBlockDropAt(
+            room,
+            jitterBreakSpawnPosition(x, y, z),
+            dropId,
+            1,
+            scatterImpulseBreakDrop()
+          );
+          if (spawned) {
+            io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
+              sessionId,
+              kind: "WORLD_DROP_SPAWNED",
+              drop: spawned
+            });
+          }
+        }
+      }
+    }
+    for (const damage of result.playerDamage) {
+      io.to(`voxel:${sessionId}`).emit(
+        "PLAYER_DAMAGE",
+        playerDamagePayload(damage.player, damage.amount, "explosion", damage.impulse)
+      );
+    }
+    io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
+      kind: "EXPLOSION",
+      sessionId,
+      id: tnt.id,
+      pos: tnt.pos,
+      radius: TNT_EXPLOSION_RADIUS,
+      by: tnt.by
+    });
+  }
+}
+
 startTickLoop({
   io,
   survivalVitalsTick: tickRoomVitals,
+  tntTick: tickRoomTnt,
   worldDropsTick: (room) => tickWorldDrops(io, room, Date.now()),
   magnetPickups: (room) => tickMagnetPickups(io, room)
 });

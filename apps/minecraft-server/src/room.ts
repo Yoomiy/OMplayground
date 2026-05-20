@@ -43,6 +43,7 @@ import {
   type WorldDrop
 } from "./protocol";
 import type { ActiveBreak } from "./breakMining";
+import { createActiveTnts, type ActiveTnt } from "./tnt";
 import {
   assignVitals,
   createDefaultVitals,
@@ -137,6 +138,8 @@ export interface VoxelRoom {
   lastTickAt: number;
   /** Survival: item stacks in the world (magnet pickup). */
   drops: Map<string, WorldDrop>;
+  /** Survival: primed TNT waiting for its fuse to complete. */
+  activeTnts: Map<string, ActiveTnt>;
   /** Drops whose pos/stack changed — flushed as WORLD_DROP_UPDATE (~5 Hz). */
   dropSyncIds: Set<string>;
   lastDropBroadcastAt: number;
@@ -218,6 +221,9 @@ export function getOrCreateRoom(
     if (!existing.dropSyncIds) {
       existing.dropSyncIds = new Set();
       existing.lastDropBroadcastAt = 0;
+    }
+    if (!existing.activeTnts) {
+      existing.activeTnts = createActiveTnts();
     }
     return existing;
   }
@@ -321,6 +327,7 @@ export function getOrCreateRoom(
     dirty: false,
     lastTickAt: 0,
     drops: hydrateDropsFromPersisted(meta.resumedState?.drops),
+    activeTnts: createActiveTnts(),
     dropSyncIds: new Set(),
     lastDropBroadcastAt: 0
   };

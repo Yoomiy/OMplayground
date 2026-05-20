@@ -95,6 +95,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     armSwing,
     fallImpact,
     playerAttack,
+    igniteTnt,
     pause,
     resume,
     stop,
@@ -252,6 +253,10 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     },
     [breakCancel]
   );
+  const handleIgniteTnt = useCallback(
+    (pos: Vec3) => igniteTnt(pos),
+    [igniteTnt]
+  );
 
   const handlePause = useCallback(async () => {
     const ack = await pause();
@@ -391,7 +396,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         seed={joinAck.seed}
         initialDeltas={joinAck.deltas}
         mySpawn={joinAck.spawn}
-        paused={paused || isTeacherObserver}
+        paused={paused || isTeacherObserver || endOverlay !== null}
         roster={joinAck.roster}
         myUserId={myUserId}
         gameMode={liveGameMode}
@@ -429,6 +434,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         onArmSwing={armSwing}
         onFallImpact={fallImpact}
         onPlayerAttack={playerAttack}
+        onIgniteTnt={handleIgniteTnt}
         initialWorldDrops={joinAck.drops ?? []}
         registerWorldDropSpawned={onWorldDropSpawned}
         registerWorldDropRemoved={onWorldDropRemoved}
@@ -436,6 +442,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         onDropHotbarSlot={handleDropHotbar}
         registerSnapshotListener={onSnapshot}
         registerBlockDeltaListener={onBlockDelta}
+        registerRoomEventListener={onRoomEvent}
         registerArmSwingListener={onArmSwing}
         registerPlayerDamageListener={onPlayerDamage}
       />

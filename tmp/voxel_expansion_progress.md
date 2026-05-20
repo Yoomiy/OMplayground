@@ -61,6 +61,7 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Added a centralized Web Audio-based voxel audio manager and wired biome ambience, footsteps, mining, block break/place, swings, eating, crafting, and damage cues.
 - Addressed the new comments about underwater spawning/building, confirming fall damage, movement/jump tuning, HUD labels, hunger speed, and underwater break water refill.
 - Addressed the recipe/recipe-book gap by adding missing utility recipes and rendering the recipe book from the shared recipe table.
+- Added server-authoritative TNT ignition, fuses, explosion block damage/drops, player damage/knockback payloads, client primed TNT visuals, and fuse/explosion cues.
 - Next concrete step: continue the original-plan review for remaining gaps before declaring the expansion complete.
 
 ## 2026-05-20 - Shared Recipe Model
@@ -341,6 +342,21 @@ This ledger tracks major advancements, decisions, verification, and comments to 
   - `npm test -w @playground/voxel-content -- recipes.test.ts blocks.test.ts` passed: 2 suites, 21 tests.
   - `npm run lint -w @playground/web` passed.
 
+## 2026-05-20 - Server-Authoritative TNT
+
+- Added typed `IGNITE_TNT`, `TNT_PRIMED`, `EXPLOSION`, and explosion impulse payloads to the voxel protocol.
+- Added room-local active TNT state with 4 second fuses.
+- Server ignition validates survival mode, reach, target TNT, and selected flint-and-steel before removing the block, syncing flint-and-steel durability, and broadcasting a primed TNT event.
+- Server tick now expires TNT fuses, applies authoritative spherical block destruction, keeps bedrock/barrier/obsidian blast-proof, emits explosion block deltas, rolls 30% world drops, and applies explosion damage through the existing perk-aware damage helper.
+- Client survival right-click now ignites targeted TNT when holding flint-and-steel.
+- Client room-event handling renders a pulsing primed TNT cube, plays fuse/explosion synthesized audio, flashes nearby blasts, and applies received explosion impulse to the local physics body.
+- Stopped game overlays now pause the voxel client and explicitly mute/stop active Web Audio loops, preventing ongoing audio/gameplay after stop.
+- Verification run:
+  - `npm test -w @playground/minecraft-server -- tnt.test.ts --runInBand` passed: 1 suite, 2 tests.
+  - `npm run lint -w @playground/minecraft-server` passed.
+  - `npm run lint -w @playground/web` passed.
+  - `npm test -w @playground/web -- audioManager.test.ts` passed: 1 suite, 3 tests.
+
 ## Comments / Instructions To Address
 
 - Addressed: added `Current Work` above to explain the active implementation slice and next concrete step.
@@ -364,8 +380,10 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Addressed: hunger exhaustion rates are slower, and fall damage health changes are covered by server tests.
 - Addressed: underwater block breaks restore water via `replacementBlockAfterBreak`.
 - Addressed: recipes and recipe book now include the missing utility recipes, and the recipe book renders from shared `RECIPES`.
+- Addressed: the Phase 6 TNT plan now has survival flint-and-steel ignition, active fuses, server-side explosion damage, blast-proof blocks, drops, client visual/audio events, and local blast impulse.
 - it seems like our algo is to heavy on seas. they should only be on the side of the game, most of the stuff happen on sore.
-- we need to stop sound on stopped games.
-
+- Addressed: stopped games now pass `paused` into the voxel client and the audio manager explicitly mutes and stops active ambient/eating loops.
+- aren't there any cacti in the desert? i couldn't find any, but maybe it's the map i was on. make sure.
+- the game still feels pretty slow, how can we optimize it more? i'd also like the players to be able to see further.
 
 - adress unadressed comments!
