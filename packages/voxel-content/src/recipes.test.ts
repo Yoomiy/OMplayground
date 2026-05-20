@@ -44,6 +44,8 @@ describe("@playground/voxel-content recipes", () => {
       "wooden_axe",
       "stone_axe",
       "diamond_axe",
+      "wooden_shovel",
+      "stone_shovel",
       "bread",
       "helium_boots",
       "swift_pickaxe",
@@ -51,12 +53,15 @@ describe("@playground/voxel-content recipes", () => {
       "iron_ore_to_ingot",
       "gold_ore_to_ingot",
       "diamond_ore_to_diamond",
+      "bucket",
+      "flint_and_steel",
       "ladder",
       "torch",
       "chest",
       "heavy_shield",
       "feather_falling_talisman",
-      "helios_medallion"
+      "helios_medallion",
+      "glow_talisman"
     ]);
   });
 
@@ -195,6 +200,53 @@ describe("@playground/voxel-content recipes", () => {
         CRAFTING_GRID_WIDTH_3
       )?.recipe.output.id
     ).toBe(ITEM_REGISTRY.FEATHER_FALLING_TALISMAN);
+  });
+
+  it("matches utility item recipes for shovels, bucket, flint and steel, and glow talisman", () => {
+    expect(
+      findMatchingRecipe(
+        gridWith(CRAFTING_TABLE_GRID_SIZE, {
+          1: { blockId: BLOCK_REGISTRY.OAK_PLANKS, count: 1 },
+          4: { itemId: ITEM_REGISTRY.STICK, count: 1 },
+          7: { itemId: ITEM_REGISTRY.STICK, count: 1 }
+        }),
+        CRAFTING_GRID_WIDTH_3
+      )?.recipe.output.id
+    ).toBe(ITEM_REGISTRY.WOODEN_SHOVEL);
+
+    expect(
+      findMatchingRecipe(
+        gridWith(CRAFTING_TABLE_GRID_SIZE, {
+          0: { itemId: ITEM_REGISTRY.IRON_INGOT, count: 1 },
+          2: { itemId: ITEM_REGISTRY.IRON_INGOT, count: 1 },
+          4: { itemId: ITEM_REGISTRY.IRON_INGOT, count: 1 }
+        }),
+        CRAFTING_GRID_WIDTH_3
+      )?.recipe.output.id
+    ).toBe(ITEM_REGISTRY.BUCKET);
+
+    expect(
+      findMatchingRecipe(
+        gridWith(PERSONAL_CRAFTING_GRID_SIZE, {
+          0: { itemId: ITEM_REGISTRY.FLINT, count: 1 },
+          3: { itemId: ITEM_REGISTRY.IRON_INGOT, count: 1 }
+        }),
+        CRAFTING_GRID_WIDTH_2
+      )?.recipe.output.id
+    ).toBe(ITEM_REGISTRY.FLINT_AND_STEEL);
+
+    expect(
+      findMatchingRecipe(
+        gridWith(CRAFTING_TABLE_GRID_SIZE, {
+          1: { itemId: ITEM_REGISTRY.COAL, count: 1 },
+          3: { itemId: ITEM_REGISTRY.COAL, count: 1 },
+          4: { blockId: BLOCK_REGISTRY.TORCH, count: 1 },
+          5: { itemId: ITEM_REGISTRY.COAL, count: 1 },
+          7: { itemId: ITEM_REGISTRY.COAL, count: 1 }
+        }),
+        CRAFTING_GRID_WIDTH_3
+      )?.recipe.output.id
+    ).toBe(ITEM_REGISTRY.GLOW_TALISMAN);
   });
 
   it("supports shapeless cold-smelting resource conversions", () => {

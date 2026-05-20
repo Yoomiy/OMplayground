@@ -39,11 +39,14 @@ import {
   MC_MATERIAL_ENTRIES,
   NOA_BLOCK_ENTRIES,
   PLANT_SPRITE_BLOCK_IDS,
+  RECIPES,
   blockSoundGroup,
   blockReplaceable,
   noaCubeBlockOptions,
   proceduralVoxelID,
-  sampleBiomeColumn
+  sampleBiomeColumn,
+  type Recipe,
+  type RecipeIngredient
 } from "@playground/voxel-content";
 import { craftingGridPreview } from "@/lib/voxelCraftingPreview";
 import { VOXEL_ENTITY_CATALOG } from "@/games/voxel/voxelEntityCatalog";
@@ -472,35 +475,96 @@ function registerMcTerrainMaterials(
   }
 }
 
-/** Tiny 2×2 diagram cell for the in-game recipe book (not interactive). */
-function recipeDiagramCell(
+function recipeIngredientDisplay(
+  ingredient: RecipeIngredient
+): { readonly icon: string; readonly label: string } {
+  if (ingredient.kind === "block") {
+    return {
+      icon: BLOCK_HOTBAR_ICON[ingredient.blockId],
+      label: BLOCK_HUD[ingredient.blockId] ?? String(ingredient.blockId)
+    };
+  }
+  if (ingredient.kind === "item") {
+    return {
+      icon: ITEM_ICON[ingredient.itemId],
+      label: ITEM_HUD[ingredient.itemId] ?? String(ingredient.itemId)
+    };
+  }
+  if (ingredient.tag === "wood_logs") {
+    return { icon: MC_TEX.oakLog, label: "גזע עץ" };
+  }
+  if (ingredient.tag === "leaves") {
+    return { icon: BLOCK_HOTBAR_ICON[BLOCK_REGISTRY.LEAVES], label: "עלים" };
+  }
+  return { icon: BLOCK_HOTBAR_ICON[BLOCK_REGISTRY.OAK_PLANKS], label: "לוחות עץ" };
+}
+
+function recipeOutputDisplay(recipe: Recipe): {
+  readonly icon: string;
+  readonly label: string;
+} {
+  const { output } = recipe;
+  if (output.kind === "block") {
+    return {
+      icon: BLOCK_HOTBAR_ICON[output.id],
+      label: BLOCK_HUD[output.id] ?? String(output.id)
+    };
+  }
+  return {
+    icon: ITEM_ICON[output.id],
+    label: ITEM_HUD[output.id] ?? String(output.id)
+  };
+}
+
+function recipeBookCell(
   key: string,
-  kind: "empty" | "log" | "planks"
+  ingredient: RecipeIngredient | null
 ): JSX.Element {
-  const inner =
-    kind === "log" ? (
-      <img
-        src={MC_TEX.oakLog}
-        alt=""
-        className="h-6 w-6"
-        style={{ imageRendering: "pixelated" }}
-      />
-    ) : kind === "planks" ? (
-      <img
-        src={BLOCK_HOTBAR_ICON[BLOCK_REGISTRY.OAK_PLANKS]}
-        alt=""
-        className="h-6 w-6"
-        style={{ imageRendering: "pixelated" }}
-      />
-    ) : (
-      <div className="h-6 w-6 rounded-sm bg-black/20" aria-hidden />
-    );
+  const display = ingredient ? recipeIngredientDisplay(ingredient) : null;
+  const inner = display ? (
+    <img
+      src={display.icon}
+      alt=""
+      title={display.label}
+      className="h-6 w-6"
+      style={{ imageRendering: "pixelated" }}
+    />
+  ) : (
+    <div className="h-6 w-6 rounded-sm bg-black/20" aria-hidden />
+  );
   return (
     <div
       key={key}
       className="flex h-8 w-8 items-center justify-center border-2 border-[#2a2a2a] bg-[#8d8d8d] shadow-[inset_1px_1px_0_rgba(255,255,255,0.4),inset_-1px_-1px_0_rgba(0,0,0,0.25)]"
     >
       {inner}
+    </div>
+  );
+}
+
+function recipeBookInputGrid(recipe: Recipe): JSX.Element {
+  if (recipe.kind === "shaped") {
+    return (
+      <div
+        className="grid gap-0.5"
+        style={{ gridTemplateColumns: `repeat(${recipe.width}, 2rem)` }}
+      >
+        {recipe.pattern.map((ingredient, i) =>
+          recipeBookCell(`${recipe.key}-${i}`, ingredient)
+        )}
+      </div>
+    );
+  }
+  return (
+    <div
+      className="grid gap-0.5"
+      style={{
+        gridTemplateColumns: `repeat(${recipe.inputs.length > 4 ? 3 : 2}, 2rem)`
+      }}
+    >
+      {recipe.inputs.map((ingredient, i) =>
+        recipeBookCell(`${recipe.key}-${i}`, ingredient)
+      )}
     </div>
   );
 }
@@ -2592,50 +2656,41 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
               ✕
             </button>
           </div>
-          <ul className="space-y-5 text-[11px] font-semibold text-[#2a2218]">
-            <li className="rounded border border-[#6b5e4b] bg-black/10 p-3">
-              <div className="mb-1 font-black">לוחות עץ</div>
-              <p className="mb-2 text-[10px] font-normal text-[#4a3f30]">
-                עץ אחד = 4 לוחות עץ
-              </p>
-              <div className="flex flex-wrap items-center gap-3" dir="ltr">
-                <div className="grid grid-cols-2 gap-0.5">
-                  {recipeDiagramCell("p-l0", "log")}
-                  {recipeDiagramCell("p-l1", "empty")}
-                  {recipeDiagramCell("p-l2", "empty")}
-                  {recipeDiagramCell("p-l3", "empty")}
-                </div>
-                <span className="text-lg font-black text-[#3d3426]">→</span>
-                <div className="flex items-center gap-1">
-                  {recipeDiagramCell("p-out", "planks")}
-                  <span className="text-[10px] font-black text-[#1a1510]">×4</span>
-                </div>
-              </div>
-            </li>
-            <li className="rounded border border-[#6b5e4b] bg-black/10 p-3">
-              <div className="mb-1 font-black">מקלות</div>
-              <p className="mb-2 text-[10px] font-normal text-[#4a3f30]">
-                2 לוחות עץ = 4 מקלות
-              </p>
-              <div className="mb-2 flex flex-wrap items-center gap-3" dir="ltr">
-                <div className="grid grid-cols-2 gap-0.5">
-                  {recipeDiagramCell("s-a0", "planks")}
-                  {recipeDiagramCell("s-a1", "planks")}
-                  {recipeDiagramCell("s-a2", "empty")}
-                  {recipeDiagramCell("s-a3", "empty")}
-                </div>
-                <span className="text-lg font-black text-[#3d3426]">→</span>
-                <div className="flex items-center gap-1">
-                  <img
-                    src={ITEM_ICON[ITEM_REGISTRY.STICK]}
-                    alt=""
-                    className="h-8 w-8 border-2 border-[#2a2a2a] bg-[#8d8d8d] p-0.5"
-                    style={{ imageRendering: "pixelated" }}
-                  />
-                  <span className="text-[10px] font-black text-[#1a1510]">×4</span>
-                </div>
-              </div>
-            </li>
+          <ul className="space-y-3 text-[11px] font-semibold text-[#2a2218]">
+            {RECIPES.map((recipe) => {
+              const output = recipeOutputDisplay(recipe);
+              return (
+                <li
+                  key={recipe.key}
+                  className="rounded border border-[#6b5e4b] bg-black/10 p-3"
+                >
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <div className="font-black">{output.label}</div>
+                    <div className="text-[10px] font-black text-[#4a3f30]">
+                      {recipe.kind === "shaped" ? "מסודר" : "חופשי"}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3" dir="ltr">
+                    {recipeBookInputGrid(recipe)}
+                    <span className="text-lg font-black text-[#3d3426]">→</span>
+                    <div className="flex items-center gap-1">
+                      <div className="flex h-8 w-8 items-center justify-center border-2 border-[#2a2a2a] bg-[#8d8d8d] shadow-[inset_1px_1px_0_rgba(255,255,255,0.4),inset_-1px_-1px_0_rgba(0,0,0,0.25)]">
+                        <img
+                          src={output.icon}
+                          alt=""
+                          title={output.label}
+                          className="h-6 w-6"
+                          style={{ imageRendering: "pixelated" }}
+                        />
+                      </div>
+                      <span className="text-[10px] font-black text-[#1a1510]">
+                        ×{recipe.output.count}
+                      </span>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </div>
       </div>

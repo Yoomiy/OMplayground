@@ -90,6 +90,7 @@ const ironIngot = { kind: "item", itemId: ITEM_REGISTRY.IRON_INGOT } as const;
 const goldIngot = { kind: "item", itemId: ITEM_REGISTRY.GOLD_INGOT } as const;
 const diamond = { kind: "item", itemId: ITEM_REGISTRY.DIAMOND } as const;
 const coal = { kind: "item", itemId: ITEM_REGISTRY.COAL } as const;
+const flint = { kind: "item", itemId: ITEM_REGISTRY.FLINT } as const;
 const wheat = { kind: "item", itemId: ITEM_REGISTRY.WHEAT } as const;
 
 function block(blockId: number): RecipeIngredient {
@@ -311,6 +312,14 @@ function axeRecipe(key: string, head: RecipeIngredient, outputId: number): Shape
   });
 }
 
+function shovelRecipe(key: string, head: RecipeIngredient, outputId: number): ShapedRecipe {
+  return shaped(key, 1, 3, [head, stick, stick], {
+    kind: "item",
+    id: outputId,
+    count: 1
+  });
+}
+
 export const RECIPES: readonly Recipe[] = [
   shapeless("oak_log_to_planks", [block(BLOCK_REGISTRY.WOOD)], {
     kind: "block",
@@ -344,6 +353,8 @@ export const RECIPES: readonly Recipe[] = [
   axeRecipe("wooden_axe", planks, ITEM_REGISTRY.WOODEN_AXE),
   axeRecipe("stone_axe", cobble, ITEM_REGISTRY.STONE_AXE),
   axeRecipe("diamond_axe", diamond, ITEM_REGISTRY.DIAMOND_AXE),
+  shovelRecipe("wooden_shovel", planks, ITEM_REGISTRY.WOODEN_SHOVEL),
+  shovelRecipe("stone_shovel", cobble, ITEM_REGISTRY.STONE_SHOVEL),
   shaped("bread", 3, 1, [wheat, wheat, wheat], {
     kind: "item",
     id: ITEM_REGISTRY.BREAD,
@@ -375,6 +386,16 @@ export const RECIPES: readonly Recipe[] = [
     id: ITEM_REGISTRY.DIAMOND,
     count: 1
   }),
+  shaped("bucket", 3, 2, [ironIngot, null, ironIngot, null, ironIngot, null], {
+    kind: "item",
+    id: ITEM_REGISTRY.BUCKET,
+    count: 1
+  }),
+  shapeless("flint_and_steel", [flint, ironIngot], {
+    kind: "item",
+    id: ITEM_REGISTRY.FLINT_AND_STEEL,
+    count: 1
+  }),
   shaped("ladder", 3, 3, [stick, null, stick, stick, stick, stick, stick, null, stick], {
     kind: "block",
     id: BLOCK_REGISTRY.LADDER,
@@ -403,6 +424,11 @@ export const RECIPES: readonly Recipe[] = [
   shaped("helios_medallion", 3, 3, [null, goldIngot, null, goldIngot, block(BLOCK_REGISTRY.GOLD_BLOCK), goldIngot, null, goldIngot, null], {
     kind: "item",
     id: ITEM_REGISTRY.HELIOS_MEDALLION,
+    count: 1
+  }),
+  shaped("glow_talisman", 3, 3, [null, coal, null, coal, block(BLOCK_REGISTRY.TORCH), coal, null, coal, null], {
+    kind: "item",
+    id: ITEM_REGISTRY.GLOW_TALISMAN,
     count: 1
   })
 ] as const;

@@ -59,7 +59,9 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Added the combat/fall socket protocol and lowered spawn height from `surface + 3` to `surface + 2`.
 - Added a custom alpha/tinted Babylon render material for water so it is not treated as an opaque texture-only material.
 - Added a centralized Web Audio-based voxel audio manager and wired biome ambience, footsteps, mining, block break/place, swings, eating, crafting, and damage cues.
-- Next concrete step: address the new comments about underwater spawning/building, confirming fall damage, and movement/jump tuning.
+- Addressed the new comments about underwater spawning/building, confirming fall damage, movement/jump tuning, HUD labels, hunger speed, and underwater break water refill.
+- Addressed the recipe/recipe-book gap by adding missing utility recipes and rendering the recipe book from the shared recipe table.
+- Next concrete step: continue the original-plan review for remaining gaps before declaring the expansion complete.
 
 ## 2026-05-20 - Shared Recipe Model
 
@@ -324,6 +326,21 @@ This ledger tracks major advancements, decisions, verification, and comments to 
   - `npm run lint -w @playground/web` passed.
   - `npm run lint -w @playground/minecraft-server` passed.
 
+## 2026-05-20 - Recipe Registry and Recipe Book Review
+
+- Addressed the open recipe/recipe-book comment.
+- Added missing utility recipes for:
+  - wooden shovel,
+  - stone shovel,
+  - bucket,
+  - flint and steel,
+  - glow talisman.
+- Replaced the hard-coded two-entry recipe book with a scrollable recipe list generated from the shared `RECIPES` table, so future recipes appear automatically in the client UI.
+- Verification run:
+  - `npm run build -w @playground/voxel-content` passed.
+  - `npm test -w @playground/voxel-content -- recipes.test.ts blocks.test.ts` passed: 2 suites, 21 tests.
+  - `npm run lint -w @playground/web` passed.
+
 ## Comments / Instructions To Address
 
 - Addressed: added `Current Work` above to explain the active implementation slice and next concrete step.
@@ -346,6 +363,9 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Addressed: sea spawn fallback now searches much farther for dry land before creating an emergency pad.
 - Addressed: hunger exhaustion rates are slower, and fall damage health changes are covered by server tests.
 - Addressed: underwater block breaks restore water via `replacementBlockAfterBreak`.
-- we need to update recepies and recepie book!
+- Addressed: recipes and recipe book now include the missing utility recipes, and the recipe book renders from shared `RECIPES`.
+- it seems like our algo is to heavy on seas. they should only be on the side of the game, most of the stuff happen on sore.
+- we need to stop sound on stopped games.
+
 
 - adress unadressed comments!
