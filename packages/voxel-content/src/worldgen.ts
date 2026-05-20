@@ -19,6 +19,14 @@ const MOUNTAIN_SEED = 0x4d544e31;
 const RELIEF_SEED = 0x52454c46;
 const MAX_COLUMN_CACHE_SIZE = 100_000;
 const MAX_STRUCTURE_ABOVE_COLUMN = 48;
+const CENTER_CONTINENT_RADIUS = 800;
+const CENTER_CONTINENT_FADE_RADIUS = 2600;
+const OUTER_OCEAN_START_RADIUS = 3200;
+const OUTER_OCEAN_FULL_RADIUS = 5200;
+const CENTER_CONTINENT_BIAS = 0.32;
+const OUTER_OCEAN_BIAS = 0.22;
+const CENTER_DRY_WATER_BIAS = 0.38;
+const OUTER_WET_WATER_BIAS = 0.18;
 
 export interface BiomeFactors {
   readonly weirdness: number;
@@ -82,6 +90,28 @@ function treeThresholdForBiome(biomeId: BiomeId): number {
 
 function dist2(x: number, z: number): number {
   return Math.sqrt(x * x + z * z);
+}
+
+function centerPlayAreaStrength(x: number, z: number): number {
+  const d = dist2(x, z);
+  return 1 - smoothstep(CENTER_CONTINENT_RADIUS, CENTER_CONTINENT_FADE_RADIUS, d);
+}
+
+function outerOceanStrength(x: number, z: number): number {
+  return smoothstep(OUTER_OCEAN_START_RADIUS, OUTER_OCEAN_FULL_RADIUS, dist2(x, z));
+}
+
+function continentPlayAreaBias(x: number, z: number): number {
+  const centerT = centerPlayAreaStrength(x, z);
+  const outerT = outerOceanStrength(x, z);
+  return CENTER_CONTINENT_BIAS * centerT - OUTER_OCEAN_BIAS * outerT;
+}
+
+function waterPlayAreaBias(x: number, z: number): number {
+  return (
+    -CENTER_DRY_WATER_BIAS * centerPlayAreaStrength(x, z) +
+    OUTER_WET_WATER_BIAS * outerOceanStrength(x, z)
+  );
 }
 
 function treeBlockAt(
@@ -156,8 +186,14 @@ export class MultiBiomeGenerator {
     return {
       weirdness: noise2D(x / 600, z / 600, this.seed ^ WEIRD_SEED) + 1.0 + jitter,
       heat: noise2D(x / 300, z / 300, this.seed ^ HEAT_SEED) + 1.0 + jitter,
-      water: noise2D(x / 400, z / 400, this.seed ^ WATER_SEED) + 1.0 + jitter,
-      continental: noise2D(x / 2500, z / 2500, this.seed ^ CONTINENTAL_SEED)
+      water:
+        noise2D(x / 400, z / 400, this.seed ^ WATER_SEED) +
+        1.0 +
+        jitter +
+        waterPlayAreaBias(x, z),
+      continental:
+        noise2D(x / 2500, z / 2500, this.seed ^ CONTINENTAL_SEED) +
+        continentPlayAreaBias(x, z)
     };
   }
 
@@ -414,10 +450,12 @@ export class MultiBiomeGenerator {
     if (column.biomeId === "desert" && column.height >= SEA_LEVEL) {
       const n = hash3(x, 4, z, this.seed ^ 0x43414354);
       const cactusHeight = 2 + Math.floor(hash3(x, 5, z, this.seed ^ 0x43414354) * 3);
-      if (n < 0.004 && y > column.height && y <= column.height + cactusHeight) {
+      if (n < 0.018 && y > column.height && y <= column.height + cactusHeight) {
         return BLOCK_REGISTRY.CACTUS;
       }
     }
+
+    if (treeThresholdForBiome(column.biomeId) <= 0) return BLOCK_REGISTRY.AIR;
 
     for (let dx = -5; dx <= 5; dx++) {
       for (let dz = -5; dz <= 5; dz++) {
@@ -425,6 +463,7 @@ export class MultiBiomeGenerator {
         const tz = z + dz;
         const trunkColumn = this.sampleColumn(tx, tz);
         if (trunkColumn.height < SEA_LEVEL || isOceanLike(trunkColumn.biomeId)) continue;
+        if (y <= trunkColumn.height || y > trunkColumn.height + 14) continue;
         const threshold = treeThresholdForBiome(trunkColumn.biomeId);
         if (threshold <= 0) continue;
         if (hash3(tx, 0, tz, this.seed ^ 0xbeef) >= threshold) continue;

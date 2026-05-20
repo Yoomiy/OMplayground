@@ -53,7 +53,7 @@ describe("@playground/voxel-content MultiBiomeGenerator", () => {
     expect(seen.has("desert") || seen.has("savanna") || seen.has("forest")).toBe(true);
   });
 
-  it("keeps a 2000x2000 sample inside the target land/ocean balance", () => {
+  it("biases the central play window toward dry land", () => {
     const gen = new MultiBiomeGenerator(seed);
     let land = 0;
     let water = 0;
@@ -65,8 +65,23 @@ describe("@playground/voxel-content MultiBiomeGenerator", () => {
       }
     }
     const landPct = land / (land + water);
-    expect(landPct).toBeGreaterThanOrEqual(0.3);
-    expect(landPct).toBeLessThanOrEqual(0.7);
+    expect(landPct).toBeGreaterThanOrEqual(0.5);
+    expect(landPct).toBeLessThanOrEqual(0.8);
+  });
+
+  it("keeps most ocean pressure on the outer rim", () => {
+    const gen = new MultiBiomeGenerator(seed);
+    let ocean = 0;
+    let sampled = 0;
+    for (let x = -5200; x <= 5200; x += 400) {
+      for (let z = -5200; z <= 5200; z += 400) {
+        if (Math.hypot(x, z) < 3200) continue;
+        sampled += 1;
+        const column = gen.sampleColumn(x, z);
+        if (column.height < SEA_LEVEL || column.biomeId === "ocean") ocean += 1;
+      }
+    }
+    expect(ocean / sampled).toBeGreaterThan(0.65);
   });
 
   it("keeps surfaces solid and the next dry air cell empty", () => {
@@ -99,6 +114,13 @@ describe("@playground/voxel-content MultiBiomeGenerator", () => {
     const column = oceanColumn!;
     expect(gen.blockAt(column.x, column.height, column.z)).not.toBe(BLOCK_REGISTRY.AIR);
     expect(gen.blockAt(column.x, SEA_LEVEL, column.z)).toBe(BLOCK_REGISTRY.WATER);
+  });
+
+  it("places cacti in dry desert columns", () => {
+    const gen = new MultiBiomeGenerator(seed);
+    const column = gen.sampleColumn(-2390, 1990);
+    expect(column.biomeId).toBe("desert");
+    expect(gen.blockAt(-2390, column.height + 1, 1990)).toBe(BLOCK_REGISTRY.CACTUS);
   });
 
   it("exports surface lookup helpers for server spawn logic", () => {

@@ -62,6 +62,7 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Addressed the new comments about underwater spawning/building, confirming fall damage, movement/jump tuning, HUD labels, hunger speed, and underwater break water refill.
 - Addressed the recipe/recipe-book gap by adding missing utility recipes and rendering the recipe book from the shared recipe table.
 - Added server-authoritative TNT ignition, fuses, explosion block damage/drops, player damage/knockback payloads, client primed TNT visuals, and fuse/explosion cues.
+- Addressed the remaining sea/cactus/performance comments by biasing the central play window toward land, keeping oceans on the outer rim, increasing deterministic desert cacti, widening chunk view distance, and cutting useless tree-structure scans in non-tree biomes.
 - Next concrete step: continue the original-plan review for remaining gaps before declaring the expansion complete.
 
 ## 2026-05-20 - Shared Recipe Model
@@ -357,6 +358,28 @@ This ledger tracks major advancements, decisions, verification, and comments to 
   - `npm run lint -w @playground/web` passed.
   - `npm test -w @playground/web -- audioManager.test.ts` passed: 1 suite, 3 tests.
 
+## 2026-05-20 - Worldgen, Cacti, and View Distance Comment Pass
+
+- Addressed the sea-heavy terrain comment:
+  - added a center-continent bias to the continental mask;
+  - added a center dry bias to the water mask;
+  - added an outer-ocean bias so seas concentrate farther from the central play window.
+- Measured the deterministic `seed=1234567` scan after tuning:
+  - central `-1000..1000` sample at step `20`: land `55.9%`, water/ocean `44.1%`;
+  - outer rim sample beyond radius `3200`: ocean/water `89.0%`.
+- Addressed desert cacti:
+  - cacti already existed but were too sparse;
+  - increased desert cactus column probability from `0.4%` to `1.8%`;
+  - added a regression at `(-2390, 1990)` confirming an actual cactus appears in a dry desert column.
+- Addressed performance/view-distance comments:
+  - increased noa chunk distances from `[3,3]/[4,4]` to `[5,4]/[6,5]` so players can see farther;
+  - skipped tree structure scans in non-tree biomes and skipped impossible trunk-height ranges before running the tree mesh math.
+- Verification run:
+  - `npm test -w @playground/voxel-content -- worldgen.test.ts --runInBand` passed: 1 suite, 9 tests.
+  - `npm run build -w @playground/voxel-content` passed.
+  - `npm run lint -w @playground/web` passed.
+  - `npm test -w @playground/minecraft-server -- world.test.ts room.test.ts --runInBand` passed: 2 suites, 27 tests.
+
 ## Comments / Instructions To Address
 
 - Addressed: added `Current Work` above to explain the active implementation slice and next concrete step.
@@ -375,15 +398,18 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Addressed: falling does damage in survival through `FALL_IMPACT`; focused tests cover normal and feather-falling cases.
 - Addressed: movement constants are centralized in `movementConfig.ts`.
 - Addressed: holding/using non-block items is covered for current item classes: visible held items, food eating, tool mining/combat, and equipment slots.
+- non-block items render as cube with it drawn on all its sides in the animation. it's wierd.
 - Addressed: filled missing block/item HUD labels, including snow.
 - Addressed: sea spawn fallback now searches much farther for dry land before creating an emergency pad.
 - Addressed: hunger exhaustion rates are slower, and fall damage health changes are covered by server tests.
 - Addressed: underwater block breaks restore water via `replacementBlockAfterBreak`.
 - Addressed: recipes and recipe book now include the missing utility recipes, and the recipe book renders from shared `RECIPES`.
 - Addressed: the Phase 6 TNT plan now has survival flint-and-steel ignition, active fuses, server-side explosion damage, blast-proof blocks, drops, client visual/audio events, and local blast impulse.
-- it seems like our algo is to heavy on seas. they should only be on the side of the game, most of the stuff happen on sore.
+- Addressed: worldgen now biases the central play window toward dry land/shore and pushes most ocean pressure to the outer rim.
 - Addressed: stopped games now pass `paused` into the voxel client and the audio manager explicitly mutes and stops active ambient/eating loops.
-- aren't there any cacti in the desert? i couldn't find any, but maybe it's the map i was on. make sure.
-- the game still feels pretty slow, how can we optimize it more? i'd also like the players to be able to see further.
+- Addressed: cacti existed but were too rare; desert cactus probability is higher and covered by a deterministic worldgen regression.
+- Addressed: view distance is wider, and non-tree biomes now skip expensive tree-structure scans to pay for the added draw distance.
+- picking a torch has weird consiqunces.
+- how do i ignite a tnt?
 
 - adress unadressed comments!
