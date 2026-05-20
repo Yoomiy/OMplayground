@@ -29,7 +29,8 @@ import {
   itemMaxDurability,
   MC_MATERIAL_ENTRIES,
   NOA_BLOCK_ENTRIES,
-  PLANT_SPRITE_BLOCK_IDS
+  PLANT_SPRITE_BLOCK_IDS,
+  proceduralVoxelID
 } from "@playground/voxel-content";
 import { craftingGridPreview } from "@/lib/voxelCraftingPreview";
 import { VOXEL_ENTITY_CATALOG } from "@/games/voxel/voxelEntityCatalog";
@@ -179,61 +180,119 @@ function mcSlotClass(selected: boolean): string {
 
 /** Served from apps/web/public/minecraft-assets (copied from source packs). */
 const MC_TEX = {
-  grassTop: "/minecraft-assets/grass_block_top.png",
-  grassSide: "/minecraft-assets/grass_block_side.png",
-  dirt: "/minecraft-assets/dirt.png",
-  stone: "/minecraft-assets/stone.png",
-  oakLog: "/minecraft-assets/oak_log.png",
-  oakLogTop: "/minecraft-assets/oak_log_top.png",
-  oakLeaves: "/minecraft-assets/oak_leaves.png",
-  birchLog: "/minecraft-assets/birch_log.png",
-  birchLogTop: "/minecraft-assets/birch_log_top.png",
-  birchPlanks: "/minecraft-assets/birch_planks.png",
-  birchLeaves: "/minecraft-assets/birch_leaves.png",
-  spruceLog: "/minecraft-assets/spruce_log.png",
-  spruceLogTop: "/minecraft-assets/spruce_log_top.png",
-  sprucePlanks: "/minecraft-assets/spruce_planks.png",
-  spruceLeaves: "/minecraft-assets/spruce_leaves.png",
-  sand: "/minecraft-assets/sand.png",
-  waterStill: "/minecraft-assets/water_still.png",
-  glass: "/minecraft-assets/glass.png",
-  cobblestone: "/minecraft-assets/cobblestone.png",
-  oakPlanks: "/minecraft-assets/oak_planks.png",
-  sapling: "/minecraft-assets/oak_sapling.png",
-  gravel: "/minecraft-assets/gravel.png",
-  goldOre: "/minecraft-assets/gold_ore.png",
-  ironOre: "/minecraft-assets/iron_ore.png",
-  coalOre: "/minecraft-assets/coal_ore.png",
-  sponge: "/minecraft-assets/sponge.png",
-  redWool: "/minecraft-assets/red_wool.png",
-  orangeWool: "/minecraft-assets/orange_wool.png",
-  yellowWool: "/minecraft-assets/yellow_wool.png",
-  limeWool: "/minecraft-assets/lime_wool.png",
-  greenWool: "/minecraft-assets/green_wool.png",
-  cyanWool: "/minecraft-assets/cyan_wool.png",
-  blueWool: "/minecraft-assets/blue_wool.png",
-  purpleWool: "/minecraft-assets/purple_wool.png",
-  magentaWool: "/minecraft-assets/magenta_wool.png",
-  pinkWool: "/minecraft-assets/pink_wool.png",
-  blackWool: "/minecraft-assets/black_wool.png",
-  grayWool: "/minecraft-assets/gray_wool.png",
-  whiteWool: "/minecraft-assets/white_wool.png",
-  dandelion: "/minecraft-assets/dandelion.png",
-  rose: "/minecraft-assets/red_flower.png",
-  brownMushroom: "/minecraft-assets/brown_mushroom.png",
-  redMushroom: "/minecraft-assets/red_mushroom.png",
-  goldBlock: "/minecraft-assets/gold_block.png",
-  ironBlock: "/minecraft-assets/iron_block.png",
-  smoothStone: "/minecraft-assets/smooth_stone.png",
-  smoothStoneSlabSide: "/minecraft-assets/smooth_stone_slab_side.png",
-  bricks: "/minecraft-assets/bricks.png",
-  tntTop: "/minecraft-assets/tnt_top.png",
-  tntBottom: "/minecraft-assets/tnt_bottom.png",
-  tntSide: "/minecraft-assets/tnt_side.png",
-  bookshelf: "/minecraft-assets/bookshelf.png",
-  mossyCobblestone: "/minecraft-assets/mossy_cobblestone.png",
-  obsidian: "/minecraft-assets/obsidian.png",
-  bedrock: "/minecraft-assets/bedrock.png"
+  grassTop: "/minecraft-assets/block/grass_block_top.png",
+  grassSide: "/minecraft-assets/block/grass_block_side.png",
+  dirt: "/minecraft-assets/block/dirt.png",
+  stone: "/minecraft-assets/block/stone.png",
+  oakLog: "/minecraft-assets/block/oak_log.png",
+  oakLogTop: "/minecraft-assets/block/oak_log_top.png",
+  oakLeaves: "/minecraft-assets/block/oak_leaves.png",
+  birchLog: "/minecraft-assets/block/birch_log.png",
+  birchLogTop: "/minecraft-assets/block/birch_log_top.png",
+  birchPlanks: "/minecraft-assets/block/birch_planks.png",
+  birchLeaves: "/minecraft-assets/block/birch_leaves.png",
+  spruceLog: "/minecraft-assets/block/spruce_log.png",
+  spruceLogTop: "/minecraft-assets/block/spruce_log_top.png",
+  sprucePlanks: "/minecraft-assets/block/spruce_planks.png",
+  spruceLeaves: "/minecraft-assets/block/spruce_leaves.png",
+  sand: "/minecraft-assets/block/sand.png",
+  waterStill: "/minecraft-assets/block/water_still.png",
+  glass: "/minecraft-assets/block/glass.png",
+  cobblestone: "/minecraft-assets/block/cobblestone.png",
+  oakPlanks: "/minecraft-assets/block/oak_planks.png",
+  sapling: "/minecraft-assets/block/oak_sapling.png",
+  gravel: "/minecraft-assets/block/gravel.png",
+  goldOre: "/minecraft-assets/block/gold_ore.png",
+  ironOre: "/minecraft-assets/block/iron_ore.png",
+  coalOre: "/minecraft-assets/block/coal_ore.png",
+  sponge: "/minecraft-assets/block/sponge.png",
+  redWool: "/minecraft-assets/block/red_wool.png",
+  orangeWool: "/minecraft-assets/block/orange_wool.png",
+  yellowWool: "/minecraft-assets/block/yellow_wool.png",
+  limeWool: "/minecraft-assets/block/lime_wool.png",
+  greenWool: "/minecraft-assets/block/green_wool.png",
+  cyanWool: "/minecraft-assets/block/cyan_wool.png",
+  blueWool: "/minecraft-assets/block/blue_wool.png",
+  purpleWool: "/minecraft-assets/block/purple_wool.png",
+  magentaWool: "/minecraft-assets/block/magenta_wool.png",
+  pinkWool: "/minecraft-assets/block/pink_wool.png",
+  blackWool: "/minecraft-assets/block/black_wool.png",
+  grayWool: "/minecraft-assets/block/gray_wool.png",
+  whiteWool: "/minecraft-assets/block/white_wool.png",
+  dandelion: "/minecraft-assets/block/dandelion.png",
+  rose: "/minecraft-assets/block/red_flower.png",
+  brownMushroom: "/minecraft-assets/block/brown_mushroom.png",
+  redMushroom: "/minecraft-assets/block/red_mushroom.png",
+  goldBlock: "/minecraft-assets/block/gold_block.png",
+  ironBlock: "/minecraft-assets/block/iron_block.png",
+  smoothStone: "/minecraft-assets/block/smooth_stone.png",
+  smoothStoneSlabSide: "/minecraft-assets/block/smooth_stone_slab_side.png",
+  bricks: "/minecraft-assets/block/bricks.png",
+  tntTop: "/minecraft-assets/block/tnt_top.png",
+  tntBottom: "/minecraft-assets/block/tnt_bottom.png",
+  tntSide: "/minecraft-assets/block/tnt_side.png",
+  bookshelf: "/minecraft-assets/block/bookshelf.png",
+  mossyCobblestone: "/minecraft-assets/block/mossy_cobblestone.png",
+  obsidian: "/minecraft-assets/block/obsidian.png",
+  bedrock: "/minecraft-assets/block/bedrock.png",
+  grassSnow: "/minecraft-assets/block/grass_snow.png",
+  snow: "/minecraft-assets/block/snow.png",
+  cactusTop: "/minecraft-assets/block/cactus_top.png",
+  cactusBottom: "/minecraft-assets/block/cactus_bottom.png",
+  cactusSide: "/minecraft-assets/block/cactus_side.png",
+  deadBush: "/minecraft-assets/block/dead_bush.png",
+  craftingTableTop: "/minecraft-assets/block/crafting_table_top.png",
+  craftingTableSide: "/minecraft-assets/block/crafting_table_side.png",
+  stoneBrick: "/minecraft-assets/block/stonebrick.png",
+  brownWool: "/minecraft-assets/block/brown_wool.png",
+  lightBlueWool: "/minecraft-assets/block/light_blue_wool.png",
+  whiteStainedGlass: "/minecraft-assets/block/white_stained_glass.png",
+  yellowStainedGlass: "/minecraft-assets/block/yellow_stained_glass.png",
+  redStainedGlass: "/minecraft-assets/block/red_stained_glass.png",
+  purpleStainedGlass: "/minecraft-assets/block/purple_stained_glass.png",
+  pinkStainedGlass: "/minecraft-assets/block/pink_stained_glass.png",
+  orangeStainedGlass: "/minecraft-assets/block/orange_stained_glass.png",
+  magentaStainedGlass: "/minecraft-assets/block/magenta_stained_glass.png",
+  limeStainedGlass: "/minecraft-assets/block/lime_stained_glass.png",
+  lightBlueStainedGlass: "/minecraft-assets/block/light_blue_stained_glass.png",
+  greenStainedGlass: "/minecraft-assets/block/green_stained_glass.png",
+  grayStainedGlass: "/minecraft-assets/block/gray_stained_glass.png",
+  cyanStainedGlass: "/minecraft-assets/block/cyan_stained_glass.png",
+  brownStainedGlass: "/minecraft-assets/block/brown_stained_glass.png",
+  blueStainedGlass: "/minecraft-assets/block/blue_stained_glass.png",
+  blackStainedGlass: "/minecraft-assets/block/black_stained_glass.png",
+  sandstone: "/minecraft-assets/block/sandstone.png",
+  diamondOre: "/minecraft-assets/block/diamond_ore.png",
+  diamondBlock: "/minecraft-assets/block/diamond_block.png",
+  lapisOre: "/minecraft-assets/block/lapis_ore.png",
+  lapisBlock: "/minecraft-assets/block/lapis_block.png",
+  mossyStonebricks: "/minecraft-assets/block/mossy_stone_bricks.png",
+  whiteConcrete: "/minecraft-assets/block/white_concrete.png",
+  yellowConcrete: "/minecraft-assets/block/yellow_concrete.png",
+  redConcrete: "/minecraft-assets/block/red_concrete.png",
+  purpleConcrete: "/minecraft-assets/block/purple_concrete.png",
+  pinkConcrete: "/minecraft-assets/block/pink_concrete.png",
+  orangeConcrete: "/minecraft-assets/block/orange_concrete.png",
+  magentaConcrete: "/minecraft-assets/block/magenta_concrete.png",
+  limeConcrete: "/minecraft-assets/block/lime_concrete.png",
+  lightBlueConcrete: "/minecraft-assets/block/light_blue_concrete.png",
+  greenConcrete: "/minecraft-assets/block/green_concrete.png",
+  grayConcrete: "/minecraft-assets/block/gray_concrete.png",
+  cyanConcrete: "/minecraft-assets/block/cyan_concrete.png",
+  brownConcrete: "/minecraft-assets/block/brown_concrete.png",
+  blueConcrete: "/minecraft-assets/block/blue_concrete.png",
+  blackConcrete: "/minecraft-assets/block/black_concrete.png",
+  pumpkinTop: "/minecraft-assets/block/pumpkin_top.png",
+  pumpkinSide: "/minecraft-assets/block/pumpkin_side.png",
+  ice: "/minecraft-assets/block/ice.png",
+  grassYellowTop: "/minecraft-assets/block/grass_yellow_top.png",
+  grassYellowSide: "/minecraft-assets/block/grass_yellow_side.png",
+  grassPlantYellow: "/minecraft-assets/block/grass_plant_yellow.png",
+  leavesYellow: "/minecraft-assets/block/leaves_yellow.png",
+  grassPlant: "/minecraft-assets/block/grass_plant.png",
+  ladder: "/minecraft-assets/block/ladder.png",
+  torch: "/minecraft-assets/block/torch.png",
+  chest: "/minecraft-assets/block/chest.png"
 } as const;
 
 /** Item-style icon per block for the hotbar (same assets as terrain). */
@@ -255,70 +314,6 @@ function registerMcTerrainMaterials(noa: {
     const url = MC_TEX[m.textureKey];
     reg(m.name, url, "texHasAlpha" in m && m.texHasAlpha ? { texHasAlpha: true } : {});
   }
-}
-
-function hash3(x: number, y: number, z: number, seed: number): number {
-  let h = seed | 0;
-  h = Math.imul(h ^ (x | 0), 0x9e3779b1);
-  h = Math.imul(h ^ (y | 0), 0x85ebca6b);
-  h = Math.imul(h ^ (z | 0), 0xc2b2ae35);
-  h ^= h >>> 16;
-  return (h >>> 0) / 0xffffffff;
-}
-
-function smoothNoise(x: number, z: number, seed: number): number {
-  const xi = Math.floor(x);
-  const zi = Math.floor(z);
-  const xf = x - xi;
-  const zf = z - zi;
-  const h00 = hash3(xi, 0, zi, seed);
-  const h10 = hash3(xi + 1, 0, zi, seed);
-  const h01 = hash3(xi, 0, zi + 1, seed);
-  const h11 = hash3(xi + 1, 0, zi + 1, seed);
-  const fx = xf * xf * (3 - 2 * xf);
-  const fz = zf * zf * (3 - 2 * zf);
-  const a = h00 * (1 - fx) + h10 * fx;
-  const b = h01 * (1 - fx) + h11 * fx;
-  return a * (1 - fz) + b * fz;
-}
-
-function columnHeight(x: number, z: number, seed: number): number {
-  const base = 8;
-  const amp = 4;
-  const heightF =
-    smoothNoise(x / 16, z / 16, seed) * amp +
-    smoothNoise(x / 4, z / 4, seed ^ 0x1234) * 1.2;
-  return Math.floor(base + heightF);
-}
-
-function surfaceVoxelID(x: number, z: number, seed: number): number {
-  const patch = smoothNoise(x / 10, z / 10, seed ^ 0x53465246);
-  if (patch < 0.07) return BLOCK_REGISTRY.GRAVEL;
-  if (patch < 0.16) return BLOCK_REGISTRY.SAND;
-  return BLOCK_REGISTRY.GRASS;
-}
-
-function undergroundVoxelID(x: number, y: number, z: number, seed: number): number {
-  if (hash3(x, y, z, seed ^ 0x434f414c) < 0.013) {
-    return BLOCK_REGISTRY.COAL_ORE;
-  }
-  if (y < 10 && hash3(x, y, z, seed ^ 0x49524f4e) < 0.008) {
-    return BLOCK_REGISTRY.IRON_ORE;
-  }
-  if (y < 2 && hash3(x, y, z, seed ^ 0x474f4c44) < 0.004) {
-    return BLOCK_REGISTRY.GOLD_ORE;
-  }
-  return BLOCK_REGISTRY.STONE;
-}
-
-function surfaceDecorationVoxelID(x: number, z: number, seed: number): number {
-  const n = hash3(x, 2, z, seed ^ 0x464c5752);
-  if (n < 0.006) return BLOCK_REGISTRY.SAPLING;
-  if (n < 0.020) return BLOCK_REGISTRY.DANDELION;
-  if (n < 0.032) return BLOCK_REGISTRY.ROSE;
-  if (n < 0.040) return BLOCK_REGISTRY.BROWN_MUSHROOM;
-  if (n < 0.047) return BLOCK_REGISTRY.RED_MUSHROOM;
-  return BLOCK_REGISTRY.AIR;
 }
 
 /** Tiny 2×2 diagram cell for the in-game recipe book (not interactive). */
@@ -352,49 +347,6 @@ function recipeDiagramCell(
       {inner}
     </div>
   );
-}
-
-/**
- * Mirror of apps/minecraft-server/src/world.ts proceduralVoxelID. Kept
- * client-side so noa can request blocks synchronously without a
- * round-trip per chunk.
- */
-function proceduralVoxelID(x: number, y: number, z: number, seed: number): number {
-  if (y <= -28) return BLOCK_REGISTRY.BEDROCK;
-
-  const height = columnHeight(x, z, seed);
-  if (y <= height) {
-    const surface = surfaceVoxelID(x, z, seed);
-    if (y === height) return surface;
-    if (y > height - 3) {
-      return surface === BLOCK_REGISTRY.GRASS ? BLOCK_REGISTRY.DIRT : surface;
-    }
-    return undergroundVoxelID(x, y, z, seed);
-  }
-  for (let dx = -2; dx <= 2; dx++) {
-    for (let dz = -2; dz <= 2; dz++) {
-      const cx = x + dx;
-      const cz = z + dz;
-      const ch = columnHeight(cx, cz, seed);
-      if (hash3(cx, 0, cz, seed ^ 0xBEEF) < 0.0005) {
-        const h = hash3(cx, 1, cz, seed ^ 0xCAFE);
-        const heightVar = Math.floor(h * 5) - 2;
-        const trunkHeight = 7 + heightVar;
-        const trunkTop = ch + trunkHeight;
-        if (y <= trunkTop && dx === 0 && dz === 0) return BLOCK_REGISTRY.WOOD;
-        const dy = y - trunkTop;
-        const dist2 = dx * dx + dy * dy + dz * dz;
-        if (dist2 <= 9 && y > ch) return BLOCK_REGISTRY.LEAVES;
-      }
-    }
-  }
-  if (
-    y === height + 1 &&
-    surfaceVoxelID(x, z, seed) === BLOCK_REGISTRY.GRASS
-  ) {
-    return surfaceDecorationVoxelID(x, z, seed);
-  }
-  return BLOCK_REGISTRY.AIR;
 }
 
 function makePlantSpriteMesh(noa: any, Babylon: any, url: string, name: string) {

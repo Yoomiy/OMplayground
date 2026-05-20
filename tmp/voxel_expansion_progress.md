@@ -34,8 +34,39 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 
 - Working on Phase 1 implementation from `docs/voxel_expansion_specification.md`.
 - Completed the shared package foundation: biome definitions, deterministic multi-biome worldgen, expansion block IDs, expansion item IDs, and focused package tests.
-- Next concrete step: integrate the shared `proceduralVoxelID` and surface lookup into `apps/minecraft-server/src/world.ts` and replace the duplicated client-side worldgen in `apps/web/src/games/MinecraftClient.tsx`.
+- Integrated the shared `proceduralVoxelID` and surface lookup into `apps/minecraft-server/src/world.ts`.
+- Replaced the duplicated client-side worldgen in `apps/web/src/games/MinecraftClient.tsx` with the shared generator import.
+- Updated the client texture map to the current `minecraft-assets/block/` asset layout, including ladder, torch, and chest.
+- Tightened spawn fallback logic so rare water-heavy searches place players above sea level and clear blocking terrain.
+- Verification run:
+  - `npm run build -w @playground/voxel-content` passed after the spawn safety update.
+  - `npm test -w @playground/minecraft-server -- world.test.ts` passed: 1 suite, 13 tests.
+  - `npm run lint -w @playground/minecraft-server` passed.
+  - `npm run lint -w @playground/web` passed.
+- Next concrete step: implement the unified 2x2/3x3 recipe model and server-authoritative 3x3 crafting table flow, because equipment/food recipes depend on those item definitions.
+
+## 2026-05-20 - Worldgen Math Check
+
+- Addressed the comment asking to double-check the new worldgen math.
+- Ran an empirical scan with seed `1234567`, window `-1000..1000` on X/Z, step `20`:
+  - Land: `36.5%`; ocean/water: `63.5%`, inside the spec target of `30%-70%` land.
+  - Sampled biome counts: beach `2079`, desert `612`, forest `611`, ice mountains `22`, iceplains `1360`, mountains `939`, ocean `1723`, plains `2406`, savanna `449`.
+  - Approximate connected biome areas at 20-block resolution: savanna around `15k` blocks, forest/desert around `27k-31k`, plains/iceplains/mountains/ocean around `62k-98k`, beach around `208k` due deliberate broad shelves.
+- Adjusted the generator after the first scan showed sharp threshold cliffs:
+  - widened water transition blending,
+  - added mountain/coastal beach shelf blending,
+  - added desert/mountain, savanna/mountain, and cold/warm highland transition blending,
+  - clamped desert dune height to avoid accidental underwater desert cells.
+- Tradeoff vs `voxelsrv-server`: this keeps our generator synchronous and O(1) for the web client, so it has less high-frequency biome detail than worker/neighborhood approaches, but it avoids the client lag and duplicated logic the spec warned about.
+- Added a regression test that samples a 2000x2000 window and asserts the land/ocean balance remains in the target range.
+- Verification after tuning:
+  - `npm run build -w @playground/voxel-content` passed.
+  - `npm test -w @playground/voxel-content` passed: 5 suites, 33 tests.
+  - `npm test -w @playground/minecraft-server -- world.test.ts` passed: 1 suite, 13 tests.
+  - `npm run lint -w @playground/minecraft-server` passed.
+  - `npm run lint -w @playground/web` passed.
 
 ## Comments / Instructions To Address
 
 - Addressed: added `Current Work` above to explain the active implementation slice and next concrete step.
+- Addressed: double-checked worldgen math and documented the empirical biome-area scan in `Worldgen Math Check`.

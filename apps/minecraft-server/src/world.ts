@@ -1,4 +1,14 @@
-import { BLOCK_REGISTRY, type Vec3 } from "./protocol";
+import {
+  BLOCK_REGISTRY,
+  SEA_LEVEL,
+  SPAWN_SCAN_MAX_Y,
+  findSurfaceY,
+  isSpawnLocationSafe,
+  proceduralVoxelID
+} from "@playground/voxel-content";
+import type { Vec3 } from "./protocol";
+
+export { proceduralVoxelID };
 
 /**
  * Pure voxel-world helpers. The server never renders; this module only
@@ -35,128 +45,6 @@ export function seedFromSessionId(sessionId: string): number {
     h = ((h << 5) + h + sessionId.charCodeAt(i)) | 0;
   }
   return Math.abs(h) || 1;
-}
-
-/** Cheap deterministic hash for procedural noise — not crypto-grade. */
-function hash3(x: number, y: number, z: number, seed: number): number {
-  let h = seed | 0;
-  h = Math.imul(h ^ (x | 0), 0x9e3779b1);
-  h = Math.imul(h ^ (y | 0), 0x85ebca6b);
-  h = Math.imul(h ^ (z | 0), 0xc2b2ae35);
-  h ^= h >>> 16;
-  return (h >>> 0) / 0xffffffff;
-}
-
-function smoothNoise(x: number, z: number, seed: number): number {
-  const xi = Math.floor(x);
-  const zi = Math.floor(z);
-  const xf = x - xi;
-  const zf = z - zi;
-  const h00 = hash3(xi, 0, zi, seed);
-  const h10 = hash3(xi + 1, 0, zi, seed);
-  const h01 = hash3(xi, 0, zi + 1, seed);
-  const h11 = hash3(xi + 1, 0, zi + 1, seed);
-  const fx = xf * xf * (3 - 2 * xf);
-  const fz = zf * zf * (3 - 2 * zf);
-  const a = h00 * (1 - fx) + h10 * fx;
-  const b = h01 * (1 - fx) + h11 * fx;
-  return a * (1 - fz) + b * fz;
-}
-
-function columnHeight(x: number, z: number, seed: number): number {
-  const base = 8;
-  const amp = 4;
-  const heightF =
-    smoothNoise(x / 16, z / 16, seed) * amp +
-    smoothNoise(x / 4, z / 4, seed ^ 0x1234) * 1.2;
-  return Math.floor(base + heightF);
-}
-
-function surfaceVoxelID(x: number, z: number, seed: number): number {
-  const patch = smoothNoise(x / 10, z / 10, seed ^ 0x53465246);
-  if (patch < 0.07) return BLOCK_REGISTRY.GRAVEL;
-  if (patch < 0.16) return BLOCK_REGISTRY.SAND;
-  return BLOCK_REGISTRY.GRASS;
-}
-
-function undergroundVoxelID(
-  x: number,
-  y: number,
-  z: number,
-  seed: number
-): number {
-  if (hash3(x, y, z, seed ^ 0x434f414c) < 0.013) {
-    return BLOCK_REGISTRY.COAL_ORE;
-  }
-  if (y < 10 && hash3(x, y, z, seed ^ 0x49524f4e) < 0.008) {
-    return BLOCK_REGISTRY.IRON_ORE;
-  }
-  if (y < 2 && hash3(x, y, z, seed ^ 0x474f4c44) < 0.004) {
-    return BLOCK_REGISTRY.GOLD_ORE;
-  }
-  return BLOCK_REGISTRY.STONE;
-}
-
-function surfaceDecorationVoxelID(
-  x: number,
-  z: number,
-  seed: number
-): number {
-  const n = hash3(x, 2, z, seed ^ 0x464c5752);
-  if (n < 0.006) return BLOCK_REGISTRY.SAPLING;
-  if (n < 0.020) return BLOCK_REGISTRY.DANDELION;
-  if (n < 0.032) return BLOCK_REGISTRY.ROSE;
-  if (n < 0.040) return BLOCK_REGISTRY.BROWN_MUSHROOM;
-  if (n < 0.047) return BLOCK_REGISTRY.RED_MUSHROOM;
-  return BLOCK_REGISTRY.AIR;
-}
-
-/**
- * Returns the procedural block at (x,y,z), ignoring deltas. Tuned for a
- * gentle rolling terrain centered on y≈8 so the spawn point is always
- * above ground and reachable.
- */
-export function proceduralVoxelID(
-  x: number,
-  y: number,
-  z: number,
-  seed: number
-): number {
-  if (y <= -28) return BLOCK_REGISTRY.BEDROCK;
-
-  const height = columnHeight(x, z, seed);
-  if (y <= height) {
-    const surface = surfaceVoxelID(x, z, seed);
-    if (y === height) return surface;
-    if (y > height - 3) {
-      return surface === BLOCK_REGISTRY.GRASS ? BLOCK_REGISTRY.DIRT : surface;
-    }
-    return undergroundVoxelID(x, y, z, seed);
-  }
-  for (let dx = -2; dx <= 2; dx++) {
-    for (let dz = -2; dz <= 2; dz++) {
-      const cx = x + dx;
-      const cz = z + dz;
-      const ch = columnHeight(cx, cz, seed);
-      if (hash3(cx, 0, cz, seed ^ 0xBEEF) < 0.0005) {
-        const h = hash3(cx, 1, cz, seed ^ 0xCAFE);
-        const heightVar = Math.floor(h * 5) - 2;
-        const trunkHeight = 7 + heightVar;
-        const trunkTop = ch + trunkHeight;
-        if (y <= trunkTop && dx === 0 && dz === 0) return BLOCK_REGISTRY.WOOD;
-        const dy = y - trunkTop;
-        const dist2 = dx * dx + dy * dy + dz * dz;
-        if (dist2 <= 9 && y > ch) return BLOCK_REGISTRY.LEAVES;
-      }
-    }
-  }
-  if (
-    y === height + 1 &&
-    surfaceVoxelID(x, z, seed) === BLOCK_REGISTRY.GRASS
-  ) {
-    return surfaceDecorationVoxelID(x, z, seed);
-  }
-  return BLOCK_REGISTRY.AIR;
 }
 
 /**
@@ -229,14 +117,28 @@ export function spawnPointFor(
   for (let i = 0; i < userId.length; i++) {
     h = (h * 16777619) ^ userId.charCodeAt(i);
   }
-  const dx = ((h | 0) % 6) - 3;
-  const dz = (((h >> 8) | 0) % 6) - 3;
-  let surface = 8;
-  for (let y = 24; y >= 0; y--) {
-    if (proceduralVoxelID(dx, y, dz, seed) !== BLOCK_REGISTRY.AIR) {
-      surface = y;
-      break;
+
+  const baseX = ((h | 0) % 12) - 6;
+  const baseZ = (((h >> 8) | 0) % 12) - 6;
+  for (let radius = 0; radius <= 48; radius += 8) {
+    const probes = radius === 0 ? 1 : 12;
+    for (let i = 0; i < probes; i++) {
+      const angle = ((i + (h & 7)) / probes) * Math.PI * 2;
+      const x = Math.round(baseX + Math.cos(angle) * radius);
+      const z = Math.round(baseZ + Math.sin(angle) * radius);
+      if (isSpawnLocationSafe(x, z, seed)) {
+        return [x + 0.5, findSurfaceY(x, z, seed) + 3, z + 0.5];
+      }
     }
   }
-  return [dx + 0.5, surface + 3, dz + 0.5];
+
+  const surface = findSurfaceY(0, 0, seed);
+  let y = Math.max(surface + 3, SEA_LEVEL + 3);
+  while (
+    y <= SPAWN_SCAN_MAX_Y + 8 &&
+    proceduralVoxelID(0, y, 0, seed) !== BLOCK_REGISTRY.AIR
+  ) {
+    y += 1;
+  }
+  return [0.5, y, 0.5];
 }

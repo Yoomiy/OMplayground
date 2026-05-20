@@ -53,6 +53,22 @@ describe("@playground/voxel-content MultiBiomeGenerator", () => {
     expect(seen.has("desert") || seen.has("savanna") || seen.has("forest")).toBe(true);
   });
 
+  it("keeps a 2000x2000 sample inside the target land/ocean balance", () => {
+    const gen = new MultiBiomeGenerator(seed);
+    let land = 0;
+    let water = 0;
+    for (let x = -1000; x <= 1000; x += 20) {
+      for (let z = -1000; z <= 1000; z += 20) {
+        const column = gen.sampleColumn(x, z);
+        if (column.height >= SEA_LEVEL && column.biomeId !== "ocean") land += 1;
+        else water += 1;
+      }
+    }
+    const landPct = land / (land + water);
+    expect(landPct).toBeGreaterThanOrEqual(0.3);
+    expect(landPct).toBeLessThanOrEqual(0.7);
+  });
+
   it("keeps surfaces solid and the next dry air cell empty", () => {
     const gen = new MultiBiomeGenerator(seed);
     let checked = 0;

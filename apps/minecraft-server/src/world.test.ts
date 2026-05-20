@@ -42,8 +42,8 @@ describe("proceduralVoxelID", () => {
 
   it("returns AIR sufficiently above the surface", () => {
     const seed = seedFromSessionId("sess-air");
-    expect(proceduralVoxelID(0, 200, 0, seed)).toBe(BLOCK_REGISTRY.AIR);
-    expect(proceduralVoxelID(10, 100, 10, seed)).toBe(BLOCK_REGISTRY.AIR);
+    expect(proceduralVoxelID(0, 220, 0, seed)).toBe(BLOCK_REGISTRY.AIR);
+    expect(proceduralVoxelID(10, 220, 10, seed)).toBe(BLOCK_REGISTRY.AIR);
   });
 
   it("returns solid blocks below ground", () => {
@@ -62,11 +62,12 @@ describe("proceduralVoxelID", () => {
     const ores = new Set<number>([
       BLOCK_REGISTRY.COAL_ORE,
       BLOCK_REGISTRY.IRON_ORE,
-      BLOCK_REGISTRY.GOLD_ORE
+      BLOCK_REGISTRY.GOLD_ORE,
+      BLOCK_REGISTRY.DIAMOND_ORE
     ]);
     let foundOre = false;
     for (let x = -20; x <= 20 && !foundOre; x++) {
-      for (let y = -20; y <= 8 && !foundOre; y++) {
+      for (let y = 5; y <= 58 && !foundOre; y++) {
         for (let z = -20; z <= 20 && !foundOre; z++) {
           foundOre = ores.has(proceduralVoxelID(x, y, z, seed));
         }

@@ -190,7 +190,7 @@ export class MultiBiomeGenerator {
         return Math.round(66 + low * 7 + detail * 2);
       case "desert":
         return Math.round(
-          65 + Math.abs(low * (1 - h) + (detail + 0.2) * h) * 7 + micro
+          clamp(65 + Math.abs(low * (1 - h) + (detail + 0.2) * h) * 7 + micro, 65, 76)
         );
       case "savanna":
         return Math.round(65 + low * 6 + detail * 2);
@@ -223,10 +223,60 @@ export class MultiBiomeGenerator {
     let landHeight = this.heightForBiome(landBiome, x, z);
     let biomeId = selected;
 
-    if (factors.water >= 1.15 && factors.water <= 1.3 && factors.weirdness <= 1.5) {
-      const t = smoothstep(1.15, 1.3, factors.water);
-      landHeight = Math.round(lerp(this.heightForBiome("beach", x, z), this.heightForBiome("ocean", x, z), t));
-      biomeId = t > 0.55 ? "ocean" : "beach";
+    if (factors.water >= 1.08 && factors.water <= 1.45) {
+      const t = smoothstep(1.08, 1.45, factors.water);
+      const coastalHeight = lerp(
+        this.heightForBiome("beach", x, z),
+        this.heightForBiome("ocean", x, z),
+        t
+      );
+      if (factors.weirdness > 1.45) {
+        const mountainT =
+          smoothstep(1.45, 1.65, factors.weirdness) *
+          (1 - smoothstep(1.3, 1.45, factors.water));
+        landHeight = Math.round(
+          lerp(coastalHeight, this.heightForBiome("mountains", x, z), mountainT)
+        );
+        biomeId = mountainT > 0.7 ? "mountains" : t > 0.55 ? "ocean" : "beach";
+      } else {
+        landHeight = Math.round(coastalHeight);
+        biomeId = t > 0.55 ? "ocean" : "beach";
+      }
+    } else if (
+      factors.water <= 1.08 &&
+      factors.heat >= 0.42 &&
+      factors.heat <= 0.58 &&
+      factors.weirdness > 1.3
+    ) {
+      const t = smoothstep(0.42, 0.58, factors.heat);
+      const coldBiome = factors.weirdness > 1.5 ? "ice_mountains" : "iceplains";
+      const warmBiome = factors.weirdness > 1.5 ? "mountains" : "forest";
+      landHeight = Math.round(
+        lerp(this.heightForBiome(coldBiome, x, z), this.heightForBiome(warmBiome, x, z), t)
+      );
+      biomeId = t > 0.55 ? warmBiome : coldBiome;
+    } else if (
+      factors.water <= 1.15 &&
+      factors.weirdness > 1.5 &&
+      factors.heat >= 1.32 &&
+      factors.heat <= 1.48
+    ) {
+      const t = smoothstep(1.32, 1.48, factors.heat);
+      landHeight = Math.round(
+        lerp(this.heightForBiome("mountains", x, z), this.heightForBiome("desert", x, z), t)
+      );
+      biomeId = t > 0.55 ? "desert" : "mountains";
+    } else if (
+      factors.water < 1.0 &&
+      factors.heat > 1.15 &&
+      factors.heat <= 1.4 &&
+      factors.weirdness > 1.5
+    ) {
+      const t = smoothstep(1.5, 1.75, factors.weirdness);
+      landHeight = Math.round(
+        lerp(this.heightForBiome("savanna", x, z), this.heightForBiome("mountains", x, z), t)
+      );
+      biomeId = t > 0.6 ? "mountains" : "savanna";
     } else if (factors.water <= 1.15 && factors.weirdness >= 1.3 && factors.weirdness <= 1.5 && factors.heat > 0.5) {
       const t = smoothstep(1.3, 1.5, factors.weirdness);
       landHeight = Math.round(lerp(this.heightForBiome("forest", x, z), this.heightForBiome("mountains", x, z), t));
@@ -235,6 +285,12 @@ export class MultiBiomeGenerator {
       const t = smoothstep(1.15, 1.3, factors.weirdness);
       landHeight = Math.round(lerp(this.heightForBiome("plains", x, z), this.heightForBiome("forest", x, z), t));
       biomeId = t > 0.5 ? "forest" : "plains";
+    }
+
+    if (factors.continental <= 0.16) {
+      const t = smoothstep(0, 0.16, Math.max(0, factors.continental));
+      landHeight = Math.round(lerp(this.heightForBiome("beach", x, z), landHeight, t));
+      if (t < 0.5 && biomeId !== "ocean") biomeId = "beach";
     }
 
     let height = landHeight;
@@ -409,10 +465,10 @@ export class MultiBiomeGenerator {
     const column = this.sampleColumn(x, z);
     if (column.height < SEA_LEVEL || isOceanLike(column.biomeId)) return false;
     const feet = column.height + 1;
-    return (
-      this.blockAt(x, feet, z) === BLOCK_REGISTRY.AIR &&
-      this.blockAt(x, feet + 1, z) === BLOCK_REGISTRY.AIR
-    );
+    for (let y = feet; y <= feet + 3; y++) {
+      if (this.blockAt(x, y, z) !== BLOCK_REGISTRY.AIR) return false;
+    }
+    return true;
   }
 }
 
