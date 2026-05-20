@@ -52,7 +52,9 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Added server-authoritative chest/container persistence and drag moves.
 - Added client ladder climbing and torch point lights.
 - Added rate-limited multiplayer arm swing sync and avatar swing animation.
-- Next concrete step: first-person held-tool rendering, then remaining perk hooks like Helios sunlight regen / damage-reduction hooks when damage exists.
+- Added first-person held item/tool rendering with bob and swing animation.
+- Addressed the old opaque-block rendering issue by preserving noa's default opacity for normal cube blocks.
+- Next concrete step: remaining perk hooks like Helios sunlight regen / damage-reduction hooks when damage exists.
 
 ## 2026-05-20 - Shared Recipe Model
 
@@ -196,6 +198,25 @@ This ledger tracks major advancements, decisions, verification, and comments to 
   - `npm run lint -w @playground/minecraft-server` passed.
   - `npm run lint -w @playground/web` passed.
 
+## 2026-05-20 - First-Person Held Tools and Opaque Blocks
+
+- Added a camera-parented first-person held-item renderer:
+  - survival shows the selected hotbar block/item icon as a held cube or flat item;
+  - creative shows the selected creative block;
+  - an empty slot shows a simple arm/hand mesh;
+  - the view hides in third-person zoom and while inventory is open.
+- Wired the existing local swing trigger into the first-person held view so mining and placing animate the hand/tool as well as the third-person avatar.
+- Added a pure resolver test for held visual selection.
+- Addressed the new ledger comment about old opaque block weirdness:
+  - root cause was passing `opaque: undefined` into noa block registration for normal cube blocks,
+  - noa treats that as false after defaults are merged, so ordinary opaque blocks were registered as non-opaque,
+  - shared `noaCubeBlockOptions` now omits undefined opacity/fluid overrides and keeps explicit `opaque: false` for glass/leaves/water/etc.
+- Verification run:
+  - `npm run build -w @playground/voxel-content` passed.
+  - `npm test -w @playground/voxel-content -- blockClientCatalog.test.ts` passed: 1 suite, 4 tests.
+  - `npm test -w @playground/web -- heldItemView.test.ts` passed: 1 file, 3 tests.
+  - `npm run lint -w @playground/web` passed.
+
 ## Comments / Instructions To Address
 
 - Addressed: added `Current Work` above to explain the active implementation slice and next concrete step.
@@ -204,5 +225,6 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Addressed: normal inventory now shows only the 2x2 personal craft cells, while right-clicking a crafting table opens the server-authorized 3x3 view.
 - Addressed: the slowdown bottleneck is primarily client chunk generation; server math is sparse. Added bounded biome-column caching and high-air structure culling before considering a worker.
 - Addressed: zoom-out WebGL context error likely came from scene-blind voxel model template caching; templates now rebuild when the Babylon scene changes.
+- Addressed: opaque blocks behaved weird because normal cubes were registered with `opaque: undefined`, overriding noa's default `true`. Shared block options now omit undefined opacity.
 
 - adress unadressed comments!

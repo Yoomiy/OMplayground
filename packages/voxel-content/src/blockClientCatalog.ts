@@ -256,6 +256,28 @@ export type NoaBlockEntry =
       hotbarTextureKey: McTerrainTextureKey;
     };
 
+export interface NoaCubeBlockOptions {
+  readonly material: string | readonly [string, string, string];
+  readonly solid: boolean;
+  readonly opaque?: boolean;
+  readonly fluid?: boolean;
+}
+
+export function noaCubeBlockOptions(
+  entry: Extract<NoaBlockEntry, { shape: "cube" }>
+): NoaCubeBlockOptions {
+  const options: NoaCubeBlockOptions = {
+    material: entry.material,
+    solid: entry.solid
+  };
+  if (entry.opaque !== undefined) {
+    return entry.fluid !== undefined
+      ? { ...options, opaque: entry.opaque, fluid: entry.fluid }
+      : { ...options, opaque: entry.opaque };
+  }
+  return entry.fluid !== undefined ? { ...options, fluid: entry.fluid } : options;
+}
+
 /** Every non-air block that noa registers (mirrors legacy `registerBlock` list). */
 export const NOA_BLOCK_ENTRIES: readonly NoaBlockEntry[] = [
   {

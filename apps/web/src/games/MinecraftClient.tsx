@@ -37,6 +37,7 @@ import {
   MC_MATERIAL_ENTRIES,
   NOA_BLOCK_ENTRIES,
   PLANT_SPRITE_BLOCK_IDS,
+  noaCubeBlockOptions,
   proceduralVoxelID
 } from "@playground/voxel-content";
 import { craftingGridPreview } from "@/lib/voxelCraftingPreview";
@@ -67,6 +68,10 @@ import {
   destroyStageIndex,
   type BreakCrackOverlay
 } from "@/games/voxel/breakCrackOverlay";
+import {
+  FirstPersonHeldItemView,
+  resolveHeldItemSpec
+} from "@/games/voxel/heldItemView";
 
 const INV_DRAG_MIME = "application/x-playground-voxel-inv";
 
@@ -546,6 +551,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   } | null>(null);
   const miningAnimRef = useRef<number | null>(null);
   const breakCrackRef = useRef<BreakCrackOverlay | null>(null);
+  const heldItemViewRef = useRef<FirstPersonHeldItemView | null>(null);
   const lastBreakStartAtRef = useRef(0);
   const lastBreakFinishAtRef = useRef(0);
   const breakFinishSentRef = useRef(false);
@@ -689,6 +695,18 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       const defaultAmbient = scene.ambientColor?.clone?.() ?? new Babylon.Color3(0, 0, 0);
       const fullBrightAmbient = new Babylon.Color3(1, 1, 1);
       const torchLights = new Map<string, { dispose: () => void }>();
+      const heldItemView = scene.activeCamera
+        ? new FirstPersonHeldItemView({
+            scene,
+            camera: scene.activeCamera,
+            addMeshToScene: (mesh) => noa.rendering.addMeshToScene(mesh, false)
+          })
+        : null;
+      heldItemViewRef.current = heldItemView;
+      cleanupFns.push(() => {
+        heldItemView?.dispose();
+        heldItemViewRef.current = null;
+      });
       const breakCrack = createBreakCrackOverlay(Babylon, scene, noa);
       breakCrackRef.current = breakCrack;
       cleanupFns.push(() => {
@@ -730,12 +748,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
       for (const e of NOA_BLOCK_ENTRIES) {
         if (e.shape === "cube") {
-          noa.registry.registerBlock(e.id, {
-            material: e.material,
-            solid: e.solid,
-            opaque: e.opaque,
-            fluid: e.fluid
-          });
+          noa.registry.registerBlock(e.id, noaCubeBlockOptions(e));
         } else {
           noa.registry.registerBlock(e.id, {
             blockMesh: makePlantSpriteMesh(
@@ -829,6 +842,24 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         if (rig) triggerAvatarSwing(rig);
       });
       cleanupFns.push(offArmSwing);
+
+      function currentHeldItemSpec() {
+        return resolveHeldItemSpec({
+          gameMode: gameModeRef.current,
+          selectedBlockId: selectedBlockRef.current,
+          survivalSlotIndex: survivalSlotRef.current,
+          survivalSlots: inventoryRef.current,
+          blockIconById: BLOCK_HOTBAR_ICON,
+          itemIconById: ITEM_ICON,
+          airBlockId: BLOCK_REGISTRY.AIR
+        });
+      }
+
+      function triggerLocalArmSwing(): void {
+        onArmSwingRef.current();
+        if (localRig) triggerAvatarSwing(localRig);
+        heldItemView?.triggerSwing();
+      }
 
       function ensureRemoteEntity(userId: string): number {
         const existing = remoteEntitiesRef.current.get(userId);
@@ -1267,8 +1298,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         const tgt = noa.targetedBlock;
         if (!tgt) return;
         const pos: Vec3 = [tgt.position[0], tgt.position[1], tgt.position[2]];
-        onArmSwingRef.current();
-        if (localRig) triggerAvatarSwing(localRig);
+        triggerLocalArmSwing();
         if (gameModeRef.current === "creative") {
           onBreakRef.current(pos);
           return;
@@ -1411,8 +1441,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           ) {
             return;
           }
-          onArmSwingRef.current();
-          if (localRig) triggerAvatarSwing(localRig);
+          triggerLocalArmSwing();
           onPlaceRef.current(
             [tgt.adjacent[0], tgt.adjacent[1], tgt.adjacent[2]],
             cell.blockId
@@ -1421,8 +1450,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         }
         const tgt = noa.targetedBlock;
         if (!tgt) return;
-        onArmSwingRef.current();
-        if (localRig) triggerAvatarSwing(localRig);
+        triggerLocalArmSwing();
         onPlaceRef.current(
           [tgt.adjacent[0], tgt.adjacent[1], tgt.adjacent[2]],
           selectedBlockRef.current
@@ -1554,7 +1582,10 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           }
         }
 
-        if (pausedRef.current) return;
+        if (pausedRef.current) {
+          heldItemView?.setVisible(false);
+          return;
+        }
 
         const scrolly: number = noa.inputs.pointerState.scrolly;
         if (scrolly !== 0) {
@@ -1573,6 +1604,19 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         const heading: number = noa.camera.heading;
         const pitch: number = noa.camera.pitch;
         const physState = noa.entities.getPhysics(playerEnt);
+        const inputState = noa.inputs.state;
+        const playerMoving =
+          !!inputState.forward ||
+          !!inputState.backward ||
+          !!inputState.left ||
+          !!inputState.right;
+
+        heldItemView?.setActiveVisual(currentHeldItemSpec());
+        heldItemView?.update({
+          now: nowPerf,
+          moving: playerMoving,
+          visible: noa.camera.zoomDistance <= 0 && !inventoryOpenRef.current
+        });
 
         if (localPlayerVoxelRoot) {
           setVisualVisible(localPlayerVoxelRoot, noa.camera.zoomDistance > 0);
@@ -1592,7 +1636,6 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           physState?.body &&
           playerIntersectsLadder([pos[0], pos[1], pos[2]])
         ) {
-          const inputState = noa.inputs.state;
           if (inputState.jump || inputState.forward) {
             physState.body.velocity[1] = LADDER_CLIMB_SPEED;
           } else if (inputState.backward) {
@@ -1646,6 +1689,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const noa: any = noaRef.current;
     noa?.setPaused?.(paused);
+    if (paused) heldItemViewRef.current?.setVisible(false);
   }, [paused]);
 
   const slotBox = (active: boolean, keyNum: number, inner: JSX.Element): JSX.Element => (
