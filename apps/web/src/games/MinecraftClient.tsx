@@ -94,6 +94,8 @@ const DEFAULT_JUMP_FORCE = 12;
 const HELIUM_JUMP_FORCE = DEFAULT_JUMP_FORCE * 1.6;
 const DEFAULT_MAX_SPEED = 10;
 const HEAVY_SHIELD_SPEED_MULT = 0.8;
+const LADDER_CLIMB_SPEED = 3.1;
+const LADDER_SLIDE_SPEED = -0.35;
 
 /** Max third-person camera pull-back (voxels); noa defaults `initialZoom` 0. */
 const CAMERA_ZOOM_DISTANCE_MAX = 16;
@@ -676,13 +678,45 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       const scene = noa.rendering.getScene();
       const defaultAmbient = scene.ambientColor?.clone?.() ?? new Babylon.Color3(0, 0, 0);
       const fullBrightAmbient = new Babylon.Color3(1, 1, 1);
+      const torchLights = new Map<string, { dispose: () => void }>();
       const breakCrack = createBreakCrackOverlay(Babylon, scene, noa);
       breakCrackRef.current = breakCrack;
       cleanupFns.push(() => {
         breakCrack.dispose();
         breakCrackRef.current = null;
       });
+      cleanupFns.push(() => {
+        for (const light of torchLights.values()) light.dispose();
+        torchLights.clear();
+      });
       registerMcTerrainMaterials(noa);
+
+      function blockCoordKey(x: number, y: number, z: number): string {
+        return `${x},${y},${z}`;
+      }
+
+      function setTorchLightAt(x: number, y: number, z: number, blockId: number): void {
+        const key = blockCoordKey(x, y, z);
+        const existing = torchLights.get(key);
+        if (existing) {
+          existing.dispose();
+          torchLights.delete(key);
+        }
+        if (blockId !== BLOCK_REGISTRY.TORCH) return;
+        const light = new Babylon.PointLight(
+          `torch-light-${key}`,
+          new Babylon.Vector3(x + 0.5, y + 0.72, z + 0.5),
+          scene
+        );
+        light.diffuse = new Babylon.Color3(1, 0.66, 0.3);
+        light.range = 10;
+        light.intensity = 1.15;
+        torchLights.set(key, light);
+      }
+
+      for (const [x, y, z, id] of initialDeltas) {
+        if (id === BLOCK_REGISTRY.TORCH) setTorchLightAt(x, y, z, id);
+      }
 
       for (const e of NOA_BLOCK_ENTRIES) {
         if (e.shape === "cube") {
@@ -836,7 +870,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
       const offBlockDelta = registerBlockDeltaListenerRef.current(({ pos, blockId }) => {
         noa.setBlock(blockId, pos[0], pos[1], pos[2]);
-        deltas.set(`${pos[0]},${pos[1]},${pos[2]}`, blockId);
+        deltas.set(blockCoordKey(pos[0], pos[1], pos[2]), blockId);
+        setTorchLightAt(pos[0], pos[1], pos[2], blockId);
       });
       cleanupFns.push(offBlockDelta);
 
@@ -853,6 +888,20 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
       function clientSolidAtInt(ix: number, iy: number, iz: number): boolean {
         return clientBlockAtInt(ix, iy, iz) !== BLOCK_REGISTRY.AIR;
+      }
+
+      function playerIntersectsLadder(pos: Vec3): boolean {
+        const xs = [Math.floor(pos[0] - 0.32), Math.floor(pos[0] + 0.32)];
+        const ys = [Math.floor(pos[1] + 0.15), Math.floor(pos[1] + 1.15)];
+        const zs = [Math.floor(pos[2] - 0.32), Math.floor(pos[2] + 0.32)];
+        for (const x of xs) {
+          for (const y of ys) {
+            for (const z of zs) {
+              if (clientBlockAtInt(x, y, z) === BLOCK_REGISTRY.LADDER) return true;
+            }
+          }
+        }
+        return false;
       }
 
       function clientDepenetrateDropVisual(px: number, py: number, pz: number): Vec3 {
@@ -1501,6 +1550,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         const pos: number[] = noa.entities.getPosition(playerEnt);
         const heading: number = noa.camera.heading;
         const pitch: number = noa.camera.pitch;
+        const physState = noa.entities.getPhysics(playerEnt);
 
         if (localPlayerVoxelRoot) {
           setVisualVisible(localPlayerVoxelRoot, noa.camera.zoomDistance > 0);
@@ -1511,9 +1561,30 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           setAvatarYaw(localRig, heading);
         }
 
+        if (
+          gameModeRef.current === "survival" &&
+          physState?.body &&
+          playerIntersectsLadder([pos[0], pos[1], pos[2]])
+        ) {
+          const inputState = noa.inputs.state;
+          if (inputState.jump || inputState.forward) {
+            physState.body.velocity[1] = LADDER_CLIMB_SPEED;
+          } else if (inputState.backward) {
+            physState.body.velocity[1] = -LADDER_CLIMB_SPEED;
+          } else {
+            physState.body.velocity[1] = Math.max(
+              physState.body.velocity[1],
+              LADDER_SLIDE_SPEED
+            );
+          }
+          if (moveState) {
+            moveState._isJumping = false;
+            moveState._currjumptime = 0;
+          }
+        }
+
         if (nowPerf - lastEmit < 60) return;
         lastEmit = nowPerf;
-        const physState = noa.entities.getPhysics(playerEnt);
         const onGround = physState?.body?.resting?.[1] === -1;
         onInputRef.current({
           pos: [pos[0], pos[1], pos[2]],

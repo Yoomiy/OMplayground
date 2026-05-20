@@ -50,7 +50,8 @@ This ledger tracks major advancements, decisions, verification, and comments to 
   - `npm run lint -w @playground/web` passed.
 - Addressed the open performance and zoom-out WebGL comments with a focused terrain/model-cache pass.
 - Added server-authoritative chest/container persistence and drag moves.
-- Next concrete step after committing chest storage: continue mechanical block behavior with ladder climbing and torch point lights, then move into held-tool/swing polish.
+- Added client ladder climbing and torch point lights.
+- Next concrete step after committing mechanical block behavior: move into held-tool/swing polish from Phase 2.
 
 ## 2026-05-20 - Shared Recipe Model
 
@@ -166,6 +167,21 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Verification run:
   - `npm test -w @playground/minecraft-server -- inventory.test.ts room.test.ts --runInBand` passed: 2 suites, 37 tests.
   - `npm run lint -w @playground/minecraft-server` passed.
+  - `npm run lint -w @playground/web` passed.
+
+## 2026-05-20 - Ladder and Torch Mechanics
+
+- Added client-side ladder movement behavior using the authoritative synced block map:
+  - detects when the player bounding box overlaps a `LADDER` block,
+  - climbs while pressing jump/forward,
+  - descends on backward,
+  - otherwise slides slowly instead of falling through.
+- Added torch point-light lifecycle:
+  - existing torch deltas create warm Babylon point lights on load,
+  - `BLOCK_DELTA` updates create/remove lights when torches are placed or broken,
+  - teardown disposes all active torch lights with the noa scene.
+- Kept placement/break authority unchanged on the server; the client derives movement/light effects from server-synced blocks.
+- Verification run:
   - `npm run lint -w @playground/web` passed.
 
 ## Comments / Instructions To Address
