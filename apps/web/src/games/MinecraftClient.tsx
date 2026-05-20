@@ -44,8 +44,10 @@ import {
   blockSoundGroup,
   blockReplaceable,
   noaCubeBlockOptions,
+  precipitationKindForColumn,
   proceduralVoxelID,
   sampleBiomeColumn,
+  type PrecipitationKind,
   type Recipe,
   type RecipeIngredient
 } from "@playground/voxel-content";
@@ -717,6 +719,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const [localVitals, setLocalVitals] = useState<PlayerVitals>(vitals);
   const [damageFlash, setDamageFlash] = useState(0);
   const [blastFlash, setBlastFlash] = useState(0);
+  const [weatherKind, setWeatherKind] = useState<PrecipitationKind>("clear");
   const hostRef = useRef<HTMLDivElement | null>(null);
   // noa-engine has loose .d.ts typings; lock to any so we don't fight them.
   const noaRef = useRef<unknown>(null);
@@ -2112,9 +2115,10 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
         if (nowPerf - lastAmbientSampleAt > 1200) {
           lastAmbientSampleAt = nowPerf;
-          audio.updateAmbient(
-            sampleBiomeColumn(Math.floor(pos[0]), Math.floor(pos[2]), seed).biomeId
-          );
+          const column = sampleBiomeColumn(Math.floor(pos[0]), Math.floor(pos[2]), seed);
+          audio.updateAmbient(column.biomeId);
+          const nextWeather = precipitationKindForColumn(column);
+          setWeatherKind((prev) => (prev === nextWeather ? prev : nextWeather));
         }
 
         if (onGround && playerMoving && !inventoryOpenRef.current) {
@@ -2899,6 +2903,54 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       />
     ) : null;
 
+  const weatherOverlay = (() => {
+    if (paused || weatherKind === "clear") return null;
+    const isRain = weatherKind === "rain";
+    const count = isRain ? 72 : 48;
+    return (
+      <div
+        className="pointer-events-none absolute inset-0 overflow-hidden"
+        aria-hidden
+      >
+        <style>{`
+          @keyframes voxel-rain-fall {
+            0% { opacity: 0; transform: translate3d(0, -18vh, 0) rotate(12deg); }
+            12% { opacity: 1; }
+            100% { opacity: 0; transform: translate3d(-14vw, 118vh, 0) rotate(12deg); }
+          }
+          @keyframes voxel-snow-fall {
+            0% { opacity: 0; transform: translate3d(0, -12vh, 0); }
+            14% { opacity: 0.95; }
+            100% { opacity: 0; transform: translate3d(8vw, 112vh, 0); }
+          }
+        `}</style>
+        {Array.from({ length: count }, (_, i) => {
+          const left = (i * 37) % 100;
+          const delay = -(((i * 137) % 2400) / 1000);
+          const duration = isRain ? 0.78 + (i % 5) * 0.05 : 3.8 + (i % 7) * 0.32;
+          return (
+            <span
+              key={i}
+              className={
+                isRain
+                  ? "absolute top-[-12%] h-14 w-px bg-sky-100/55 mix-blend-screen"
+                  : "absolute top-[-8%] h-1.5 w-1.5 rounded-full bg-white/80 shadow-[0_0_6px_rgba(255,255,255,0.7)]"
+              }
+              style={{
+                left: `${left}%`,
+                animationName: isRain ? "voxel-rain-fall" : "voxel-snow-fall",
+                animationDuration: `${duration}s`,
+                animationDelay: `${delay}s`,
+                animationIterationCount: "infinite",
+                animationTimingFunction: "linear"
+              }}
+            />
+          );
+        })}
+      </div>
+    );
+  })();
+
   const blastOverlay =
     blastFlash > 0 ? (
       <div
@@ -2915,6 +2967,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         tabIndex={0}
         aria-label="minecraft viewport"
       />
+      {weatherOverlay}
       {controlsHint}
       {blastOverlay}
       {damageOverlay}

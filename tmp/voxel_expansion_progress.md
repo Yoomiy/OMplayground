@@ -64,7 +64,8 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Added server-authoritative TNT ignition, fuses, explosion block damage/drops, player damage/knockback payloads, client primed TNT visuals, and fuse/explosion cues.
 - Addressed the remaining sea/cactus/performance comments by biasing the central play window toward land, keeping oceans on the outer rim, increasing deterministic desert cacti, widening chunk view distance, and cutting useless tree-structure scans in non-tree biomes.
 - Addressed the remaining interaction polish comments: flat held sprites for item/plant-style blocks, predictable torch middle-pick hotbar behavior, and TNT ignition path documented through implementation notes.
-- Next concrete step: continue the original-plan review for remaining gaps before declaring the expansion complete.
+- Added the remaining Phase 1 weather slice: shared precipitation classification, client rain/snow overlay, and server cold-biome exposed-water freezing.
+- Next concrete step: run the broader final verification set and commit the weather slice.
 
 ## 2026-05-20 - Shared Recipe Model
 
@@ -395,6 +396,28 @@ This ledger tracks major advancements, decisions, verification, and comments to 
   - the client emits `IGNITE_TNT`, the server validates the held item and target, then broadcasts the primed TNT event.
 - Verification run:
   - `npm test -w @playground/web -- heldItemView.test.ts` passed: 1 suite, 4 tests.
+  - `npm run lint -w @playground/web` passed.
+
+## 2026-05-20 - Weather and Precipitation
+
+- Added shared precipitation classification:
+  - dry/hot biomes are clear;
+  - wet cold biomes snow;
+  - wet temperate biomes rain.
+- Added client weather rendering:
+  - the client samples the current biome column alongside ambient audio;
+  - rain renders as fast falling streaks;
+  - snow renders as slower drifting particles;
+  - desert/savanna and other dry/hot climates stay clear.
+- Added server weather mutation:
+  - every 8 seconds, active rooms sample exposed water around players;
+  - placed surface water in snowy biomes freezes to ice if it has open sky;
+  - freeze changes are authoritative `BLOCK_DELTA` events with `by: "weather"`.
+- Verification run:
+  - `npm test -w @playground/voxel-content -- weather.test.ts worldgen.test.ts --runInBand` passed: 2 suites, 10 tests.
+  - `npm run build -w @playground/voxel-content` passed.
+  - `npm test -w @playground/minecraft-server -- weather.test.ts tick.test.ts --runInBand` passed: 2 suites, 7 tests.
+  - `npm run lint -w @playground/minecraft-server` passed.
   - `npm run lint -w @playground/web` passed.
 
 ## Comments / Instructions To Address

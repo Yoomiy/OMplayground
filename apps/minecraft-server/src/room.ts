@@ -140,6 +140,8 @@ export interface VoxelRoom {
   drops: Map<string, WorldDrop>;
   /** Survival: primed TNT waiting for its fuse to complete. */
   activeTnts: Map<string, ActiveTnt>;
+  /** Last server weather mutation tick, e.g. freezing exposed water. */
+  lastWeatherAt: number;
   /** Drops whose pos/stack changed — flushed as WORLD_DROP_UPDATE (~5 Hz). */
   dropSyncIds: Set<string>;
   lastDropBroadcastAt: number;
@@ -225,6 +227,7 @@ export function getOrCreateRoom(
     if (!existing.activeTnts) {
       existing.activeTnts = createActiveTnts();
     }
+    existing.lastWeatherAt ??= 0;
     return existing;
   }
   const seed = meta.resumedState?.seed ?? seedFromSessionId(sessionId);
@@ -328,6 +331,7 @@ export function getOrCreateRoom(
     lastTickAt: 0,
     drops: hydrateDropsFromPersisted(meta.resumedState?.drops),
     activeTnts: createActiveTnts(),
+    lastWeatherAt: 0,
     dropSyncIds: new Set(),
     lastDropBroadcastAt: 0
   };

@@ -93,6 +93,12 @@ export {
 } from "./biomes";
 
 export {
+  precipitationKindForBiome,
+  precipitationKindForColumn,
+  type PrecipitationKind
+} from "./weather";
+
+export {
   MultiBiomeGenerator,
   SEA_LEVEL,
   SPAWN_SCAN_MAX_Y,

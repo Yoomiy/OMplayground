@@ -136,6 +136,7 @@ import {
   tickHeliosRegen
 } from "./perks";
 import { applyTntExplosion, primeTnt, TNT_EXPLOSION_RADIUS } from "./tnt";
+import { tickWeatherFreezing } from "./weather";
 
 const PORT = Number(process.env.PORT ?? 8081);
 const ARM_SWING_COOLDOWN_MS = 150;
@@ -2023,10 +2024,23 @@ function tickRoomTnt(room: VoxelRoom, now: number): void {
   }
 }
 
+function tickRoomWeather(room: VoxelRoom, now: number): void {
+  const deltas = tickWeatherFreezing(room, now);
+  if (deltas.length === 0) return;
+  for (const delta of deltas) {
+    io.to(`voxel:${room.sessionId}`).emit("BLOCK_DELTA", {
+      pos: delta.pos,
+      blockId: delta.blockId,
+      by: "weather"
+    });
+  }
+}
+
 startTickLoop({
   io,
   survivalVitalsTick: tickRoomVitals,
   tntTick: tickRoomTnt,
+  weatherTick: tickRoomWeather,
   worldDropsTick: (room) => tickWorldDrops(io, room, Date.now()),
   magnetPickups: (room) => tickMagnetPickups(io, room)
 });
