@@ -63,7 +63,8 @@ export function buildTemplateFromJson(
 ): Mesh {
   const existing = templateRoots.get(modelId);
   if (existing) {
-    if (!existing.isDisposed()) return existing;
+    if (!existing.isDisposed() && existing.getScene() === scene) return existing;
+    if (!existing.isDisposed()) existing.dispose(true, true);
     templateRoots.delete(modelId);
   }
 

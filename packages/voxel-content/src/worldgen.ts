@@ -17,6 +17,8 @@ const HEIGHT_SEED_2 = 0x48473232;
 const HEIGHT_SEED_3 = 0x48473333;
 const MOUNTAIN_SEED = 0x4d544e31;
 const RELIEF_SEED = 0x52454c46;
+const MAX_COLUMN_CACHE_SIZE = 100_000;
+const MAX_STRUCTURE_ABOVE_COLUMN = 48;
 
 export interface BiomeFactors {
   readonly weirdness: number;
@@ -145,6 +147,8 @@ function treeBlockAt(
 }
 
 export class MultiBiomeGenerator {
+  private readonly columnCache = new Map<string, BiomeColumn>();
+
   constructor(readonly seed: number) {}
 
   sampleFactors(x: number, z: number): BiomeFactors {
@@ -215,6 +219,10 @@ export class MultiBiomeGenerator {
   }
 
   sampleColumn(x: number, z: number): BiomeColumn {
+    const key = `${x},${z}`;
+    const cached = this.columnCache.get(key);
+    if (cached) return cached;
+
     const factors = this.sampleFactors(x, z);
     const selected = this.selectLandBiome(factors);
     const landBiome = selected === "ocean" ? "beach" : selected;
@@ -304,7 +312,7 @@ export class MultiBiomeGenerator {
       else if (height < SEA_LEVEL + 2) biomeId = "beach";
     }
 
-    return {
+    const column = {
       x,
       z,
       seed: this.seed,
@@ -315,6 +323,9 @@ export class MultiBiomeGenerator {
       seaFloorHeight: seaHeight,
       landHeight
     };
+    this.columnCache.set(key, column);
+    this.pruneColumnCache();
+    return column;
   }
 
   surfaceBlock(column: BiomeColumn): number {
@@ -450,6 +461,7 @@ export class MultiBiomeGenerator {
     }
 
     if (y <= SEA_LEVEL) return this.waterBlock(column, y);
+    if (y > column.height + MAX_STRUCTURE_ABOVE_COLUMN) return BLOCK_REGISTRY.AIR;
 
     const structure = this.structureBlock(x, y, z, column);
     if (structure !== BLOCK_REGISTRY.AIR) return structure;
@@ -469,6 +481,17 @@ export class MultiBiomeGenerator {
       if (this.blockAt(x, y, z) !== BLOCK_REGISTRY.AIR) return false;
     }
     return true;
+  }
+
+  private pruneColumnCache(): void {
+    if (this.columnCache.size <= MAX_COLUMN_CACHE_SIZE) return;
+    const deleteCount = Math.max(1, Math.floor(MAX_COLUMN_CACHE_SIZE * 0.05));
+    const keys = this.columnCache.keys();
+    for (let i = 0; i < deleteCount; i++) {
+      const next = keys.next();
+      if (next.done) break;
+      this.columnCache.delete(next.value);
+    }
   }
 }
 

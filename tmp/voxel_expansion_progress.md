@@ -48,7 +48,8 @@ This ledger tracks major advancements, decisions, verification, and comments to 
   - `npm test -w @playground/minecraft-server -- world.test.ts` passed: 1 suite, 13 tests.
   - `npm run lint -w @playground/minecraft-server` passed.
   - `npm run lint -w @playground/web` passed.
-- Next concrete step after committing hunger/eating: address the open performance and zoom-out WebGL comments before adding another large gameplay system.
+- Addressed the open performance and zoom-out WebGL comments with a focused terrain/model-cache pass.
+- Next concrete step after committing that pass: continue Phase 1 with the next spec feature, likely chest/container persistence.
 
 ## 2026-05-20 - Shared Recipe Model
 
@@ -130,13 +131,32 @@ This ledger tracks major advancements, decisions, verification, and comments to 
   - `npm run lint -w @playground/minecraft-server` passed.
   - `npm run lint -w @playground/web` passed.
 
+## 2026-05-20 - Performance and Zoom WebGL Comment Pass
+
+- Addressed the comment asking whether rendering should move to another thread and where the bottleneck is.
+- Finding: the highest-risk hot path is the browser chunk fill path, not the server. The server samples procedural blocks sparsely for reach checks, deltas, drops, and spawn lookup; the web client fills whole noa chunks synchronously.
+- Immediate fix:
+  - cached `MultiBiomeGenerator.sampleColumn(x,z)` results per seed with bounded pruning,
+  - skipped expensive tree/structure checks for blocks far above the local terrain column,
+  - kept server math unchanged behaviorally while reducing repeated client column/noise work during vertical chunk fills.
+- Addressed the zoom-out WebGL comment:
+  - `voxelJsonModel` template caching is now scene-aware,
+  - if a cached Babylon template belongs to an old scene, it is disposed and rebuilt before cloning,
+  - this avoids cloning mesh/geometry resources from a different WebGL context when the local player body becomes visible after zooming out or after remounts.
+- Decision: do not move rendering/worldgen to a worker yet. A worker would require async chunk plumbing around noa and cross-thread delta hydration; the current bottleneck had lower-risk local fixes first.
+- Verification run:
+  - `npm run build -w @playground/voxel-content` passed.
+  - `npm test -w @playground/voxel-content -- worldgen.test.ts --runInBand` passed: 1 suite, 7 tests.
+  - `npm run lint -w @playground/web` passed.
+  - `npm run lint -w @playground/minecraft-server` passed.
+
 ## Comments / Instructions To Address
 
 - Addressed: added `Current Work` above to explain the active implementation slice and next concrete step.
 - Addressed: double-checked worldgen math and documented the empirical biome-area scan in `Worldgen Math Check`.
 - just so you know: i have ( npm run dev:server )&; ( npm run dev:minecraft )&; npm run dev:web running in the background
 - Addressed: normal inventory now shows only the 2x2 personal craft cells, while right-clicking a crafting table opens the server-authorized 3x3 view.
-- the game became pretty slow, should we cosider rendering in a different thread? what is the bottle neck? how will the server deal with all the new math?
-- zooming out raises WebGL: INVALID_OPERATION: bindBufferBase: object does not belong to this context
+- Addressed: the slowdown bottleneck is primarily client chunk generation; server math is sparse. Added bounded biome-column caching and high-air structure culling before considering a worker.
+- Addressed: zoom-out WebGL context error likely came from scene-blind voxel model template caching; templates now rebuild when the Babylon scene changes.
 
 - adress unadressed comments!
