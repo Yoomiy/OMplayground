@@ -13,7 +13,7 @@ import { isInstantBreak } from "./mining";
 
 describe("@playground/voxel-content blocks", () => {
   it("lists ids 0..n contiguously", () => {
-    expect(BLOCK_DEFS.length).toBe(100);
+    expect(BLOCK_DEFS.length).toBe(103);
     for (let i = 0; i < BLOCK_DEFS.length; i++) {
       expect(BLOCK_DEFS[i]!.id).toBe(i);
     }
@@ -98,5 +98,14 @@ describe("@playground/voxel-content blocks", () => {
     expect(blockHardness(BLOCK_REGISTRY.BIRCH_LEAVES)).toBe(
       blockHardness(BLOCK_REGISTRY.LEAVES)
     );
+  });
+
+  it("registers mechanical utility blocks at ids 100-102", () => {
+    expect(BLOCK_REGISTRY.LADDER).toBe(100);
+    expect(BLOCK_REGISTRY.TORCH).toBe(101);
+    expect(BLOCK_REGISTRY.CHEST).toBe(102);
+    expect(blockDef(BLOCK_REGISTRY.LADDER)?.speedTool).toBe("axe");
+    expect(isInstantBreak(BLOCK_REGISTRY.TORCH)).toBe(true);
+    expect(blockDef(BLOCK_REGISTRY.CHEST)?.placeable).toBe(true);
   });
 });

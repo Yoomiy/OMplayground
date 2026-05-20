@@ -21,10 +21,10 @@ const WOOD_TEXTURE_FILES = [
 describe("blockClientCatalog", () => {
   it("registers exactly one noa entry per non-air block id", () => {
     const ids = NOA_BLOCK_ENTRIES.map((e) => e.id);
-    expect(ids.length).toBe(99);
-    expect(new Set(ids).size).toBe(99);
+    expect(ids.length).toBe(102);
+    expect(new Set(ids).size).toBe(102);
     expect(ids.includes(BLOCK_REGISTRY.AIR)).toBe(false);
-    for (let i = 1; i <= 99; i++) {
+    for (let i = 1; i <= 102; i++) {
       expect(ids.includes(i)).toBe(true);
     }
   });

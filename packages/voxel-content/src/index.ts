@@ -24,12 +24,17 @@ export {
   ITEM_REGISTRY,
   REGISTERED_ITEM_IDS,
   itemDef,
+  itemFoodSpec,
   itemMaxDurability,
   itemMaxStack,
+  itemPerkSpec,
   itemToolSpec,
   webItemIcons,
+  type EquipmentSlotKey,
   type ItemCategory,
   type ItemDef,
+  type ItemFoodSpec,
+  type ItemPerkSpec,
   type ItemRegistry,
   type ItemToolSpec
 } from "./items";
@@ -61,3 +66,32 @@ export {
   type ShapedRecipe,
   type ShapelessRecipe
 } from "./recipes";
+
+export {
+  BIOME_DEFS,
+  biomeDef,
+  type BiomeDef,
+  type BiomeId
+} from "./biomes";
+
+export {
+  MultiBiomeGenerator,
+  SEA_LEVEL,
+  SPAWN_SCAN_MAX_Y,
+  WORLD_MIN_Y,
+  findSurfaceY,
+  isSpawnLocationSafe,
+  multiBiomeGenerator,
+  proceduralVoxelID,
+  sampleBiomeColumn,
+  type BiomeColumn,
+  type BiomeFactors
+} from "./worldgen";
+
+export {
+  clamp,
+  hash3,
+  noise2D,
+  smoothNoise01,
+  smoothstep
+} from "./worldgenNoise";
