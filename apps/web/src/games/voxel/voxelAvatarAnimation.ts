@@ -35,6 +35,8 @@ export interface AvatarRig {
   hasPrev: boolean;
   /** Smoothed yaw last applied to `root.rotation.y`. */
   smoothedYaw: number;
+  swingTime: number;
+  isSwinging: boolean;
 }
 
 function findBone(root: Mesh, boneName: string): Mesh | undefined {
@@ -62,7 +64,9 @@ export function createAvatarRig(root: Mesh): AvatarRig {
     prevX: 0,
     prevZ: 0,
     hasPrev: false,
-    smoothedYaw: root.rotation?.y ?? 0
+    smoothedYaw: root.rotation?.y ?? 0,
+    swingTime: 0,
+    isSwinging: false
   };
 }
 
@@ -114,6 +118,26 @@ export function updateAvatarWalk(
   if (rig.bones.rightArm) rig.bones.rightArm.rotation.x = sin;
   if (rig.bones.rightLeg) rig.bones.rightLeg.rotation.x = -sin;
   if (rig.bones.leftLeg) rig.bones.leftLeg.rotation.x = sin;
+}
+
+export function triggerAvatarSwing(rig: AvatarRig): void {
+  rig.swingTime = 0;
+  rig.isSwinging = true;
+}
+
+export function advanceAvatarSwing(rig: AvatarRig, step = 0.12): void {
+  if (!rig.isSwinging) return;
+  rig.swingTime = Math.min(1, rig.swingTime + step);
+  const swingAngle = Math.sin(Math.PI * Math.pow(rig.swingTime, 1.15)) * 1.35;
+  if (rig.bones.rightArm) {
+    rig.bones.rightArm.rotation.x = -0.45 - swingAngle;
+    rig.bones.rightArm.rotation.y = -swingAngle * 0.28;
+  }
+  if (rig.swingTime >= 1) {
+    rig.isSwinging = false;
+    rig.swingTime = 0;
+    if (rig.bones.rightArm) rig.bones.rightArm.rotation.y = 0;
+  }
 }
 
 export function setAvatarHeadPitch(rig: AvatarRig, pitch: number): void {

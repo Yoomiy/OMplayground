@@ -51,7 +51,8 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Addressed the open performance and zoom-out WebGL comments with a focused terrain/model-cache pass.
 - Added server-authoritative chest/container persistence and drag moves.
 - Added client ladder climbing and torch point lights.
-- Next concrete step after committing mechanical block behavior: move into held-tool/swing polish from Phase 2.
+- Added rate-limited multiplayer arm swing sync and avatar swing animation.
+- Next concrete step: first-person held-tool rendering, then remaining perk hooks like Helios sunlight regen / damage-reduction hooks when damage exists.
 
 ## 2026-05-20 - Shared Recipe Model
 
@@ -182,6 +183,17 @@ This ledger tracks major advancements, decisions, verification, and comments to 
   - teardown disposes all active torch lights with the noa scene.
 - Kept placement/break authority unchanged on the server; the client derives movement/light effects from server-synced blocks.
 - Verification run:
+  - `npm run lint -w @playground/web` passed.
+
+## 2026-05-20 - Arm Swing Sync
+
+- Added typed `ARM_SWING` / `PLAYER_ARM_SWING` protocol payloads.
+- Server now rate-limits swing broadcasts per player at 150ms and relays accepted swings to other players in the voxel room.
+- Client socket layer exposes `armSwing` and `onArmSwing` alongside existing snapshot/block listeners.
+- Local mining/placing actions trigger a swing request and animate the local third-person avatar if visible.
+- Remote avatar rigs now track swing state and overlay a right-arm swing animation on top of walking/head-pitch updates.
+- Verification run:
+  - `npm run lint -w @playground/minecraft-server` passed.
   - `npm run lint -w @playground/web` passed.
 
 ## Comments / Instructions To Address

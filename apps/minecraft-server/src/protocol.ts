@@ -176,6 +176,10 @@ export interface BreakCancelReq {
   pos: Vec3;
 }
 
+export interface ArmSwingPayload {
+  userId: string;
+}
+
 /** Survival: drop one stack unit from a hotbar slot near the player. */
 export interface DropItemReq {
   hotbarIndex: number;

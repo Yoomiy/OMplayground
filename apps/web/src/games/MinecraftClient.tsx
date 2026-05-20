@@ -52,10 +52,12 @@ import {
   setVisualVisible
 } from "@/games/voxel/noaVoxelVisual";
 import {
+  advanceAvatarSwing,
   createAvatarRig,
   setAvatarHeadPitch,
   setAvatarYaw,
   setAvatarYawSmoothed,
+  triggerAvatarSwing,
   updateAvatarWalk,
   type AvatarRig
 } from "@/games/voxel/voxelAvatarAnimation";
@@ -455,10 +457,12 @@ export interface MinecraftClientProps {
   onBreakStart: (pos: Vec3) => Promise<BreakStartAck>;
   onBreakFinish: (pos: Vec3) => Promise<SimpleAck>;
   onBreakCancel: (pos: Vec3) => void;
+  onArmSwing: () => void;
   /** Survival: server validates and spawns a world drop. */
   onDropHotbarSlot?: (hotbarIndex: number) => void;
   registerSnapshotListener: (cb: (snap: RoomSnapshot) => void) => () => void;
   registerBlockDeltaListener: (cb: (delta: BlockDelta) => void) => () => void;
+  registerArmSwingListener: (cb: (payload: { userId: string }) => void) => () => void;
   /** World stacks present on join (survival). */
   initialWorldDrops: WorldDrop[];
   registerWorldDropSpawned: (cb: (drop: WorldDrop) => void) => () => void;
@@ -501,9 +505,11 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     onBreakStart,
     onBreakFinish,
     onBreakCancel,
+    onArmSwing,
     onDropHotbarSlot,
     registerSnapshotListener,
     registerBlockDeltaListener,
+    registerArmSwingListener,
     initialWorldDrops,
     registerWorldDropSpawned,
     registerWorldDropRemoved,
@@ -525,6 +531,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const onBreakStartRef = useRef(onBreakStart);
   const onBreakFinishRef = useRef(onBreakFinish);
   const onBreakCancelRef = useRef(onBreakCancel);
+  const onArmSwingRef = useRef(onArmSwing);
   const onEatStartRef = useRef(onEatStart);
   const onEatFinishRef = useRef(onEatFinish);
   const onEatCancelRef = useRef(onEatCancel);
@@ -557,6 +564,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const myUserIdRef = useRef<string | null>(myUserId);
   const registerSnapshotListenerRef = useRef(registerSnapshotListener);
   const registerBlockDeltaListenerRef = useRef(registerBlockDeltaListener);
+  const registerArmSwingListenerRef = useRef(registerArmSwingListener);
   const registerWorldDropSpawnedRef = useRef(registerWorldDropSpawned);
   const registerWorldDropRemovedRef = useRef(registerWorldDropRemoved);
   const registerWorldDropUpdatedRef = useRef(registerWorldDropUpdated);
@@ -572,6 +580,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   onBreakStartRef.current = onBreakStart;
   onBreakFinishRef.current = onBreakFinish;
   onBreakCancelRef.current = onBreakCancel;
+  onArmSwingRef.current = onArmSwing;
   onEatStartRef.current = onEatStart;
   onEatFinishRef.current = onEatFinish;
   onEatCancelRef.current = onEatCancel;
@@ -586,6 +595,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   myUserIdRef.current = myUserId;
   registerSnapshotListenerRef.current = registerSnapshotListener;
   registerBlockDeltaListenerRef.current = registerBlockDeltaListener;
+  registerArmSwingListenerRef.current = registerArmSwingListener;
   registerWorldDropSpawnedRef.current = registerWorldDropSpawned;
   registerWorldDropRemovedRef.current = registerWorldDropRemoved;
   registerWorldDropUpdatedRef.current = registerWorldDropUpdated;
@@ -813,6 +823,12 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
       /** Per-remote-entity animation rigs, keyed by userId — parallel to remoteEntitiesRef. */
       const remoteRigs = new Map<string, AvatarRig>();
+
+      const offArmSwing = registerArmSwingListenerRef.current(({ userId }) => {
+        const rig = remoteRigs.get(userId);
+        if (rig) triggerAvatarSwing(rig);
+      });
+      cleanupFns.push(offArmSwing);
 
       function ensureRemoteEntity(userId: string): number {
         const existing = remoteEntitiesRef.current.get(userId);
@@ -1251,6 +1267,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         const tgt = noa.targetedBlock;
         if (!tgt) return;
         const pos: Vec3 = [tgt.position[0], tgt.position[1], tgt.position[2]];
+        onArmSwingRef.current();
+        if (localRig) triggerAvatarSwing(localRig);
         if (gameModeRef.current === "creative") {
           onBreakRef.current(pos);
           return;
@@ -1393,6 +1411,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           ) {
             return;
           }
+          onArmSwingRef.current();
+          if (localRig) triggerAvatarSwing(localRig);
           onPlaceRef.current(
             [tgt.adjacent[0], tgt.adjacent[1], tgt.adjacent[2]],
             cell.blockId
@@ -1401,6 +1421,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         }
         const tgt = noa.targetedBlock;
         if (!tgt) return;
+        onArmSwingRef.current();
+        if (localRig) triggerAvatarSwing(localRig);
         onPlaceRef.current(
           [tgt.adjacent[0], tgt.adjacent[1], tgt.adjacent[2]],
           selectedBlockRef.current
@@ -1559,6 +1581,10 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           updateAvatarWalk(localRig, pos[0], pos[2]);
           setAvatarHeadPitch(localRig, pitch);
           setAvatarYaw(localRig, heading);
+          advanceAvatarSwing(localRig);
+        }
+        for (const rig of remoteRigs.values()) {
+          advanceAvatarSwing(rig);
         }
 
         if (

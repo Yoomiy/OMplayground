@@ -96,6 +96,8 @@ export interface PlayerRuntime extends RoomPlayer {
   activeEating?: ActiveEating;
   /** Survival: currently open chest coordinate key, if locked by this player. */
   activeChestKey?: string;
+  /** Rate-limit multiplayer arm-swing broadcasts. */
+  lastArmSwingAt?: number;
 }
 
 export interface VoxelRoom {

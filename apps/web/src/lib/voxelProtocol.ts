@@ -166,6 +166,10 @@ export interface BreakCancelReq {
   pos: Vec3;
 }
 
+export interface ArmSwingPayload {
+  userId: string;
+}
+
 export interface DropItemReq {
   hotbarIndex: number;
 }

@@ -86,6 +86,7 @@ import {
   BLOCK_REGISTRY,
   MAX_REACH,
   PLACEABLE_BLOCK_IDS,
+  type ArmSwingPayload,
   type BlockBreakReq,
   type BlockPlaceReq,
   type BreakCancelReq,
@@ -124,6 +125,7 @@ import {
 } from "./vitals";
 
 const PORT = Number(process.env.PORT ?? 8081);
+const ARM_SWING_COOLDOWN_MS = 150;
 const CORS_ORIGIN =
   process.env.CORS_ORIGIN ??
   "http://localhost:5173,http://127.0.0.1:5173";
@@ -734,6 +736,23 @@ io.on("connection", (socket) => {
     }
     player.lastInputAt = Date.now();
     room.dirty = true;
+  });
+
+  socket.on("ARM_SWING", (_payload: unknown, ack?: (r: SimpleAck) => void) => {
+    const sessionId = socket.data.sessionId as string | undefined;
+    if (!sessionId) return ack?.({ ok: false });
+    const room = getRoom(sessionId);
+    if (!room || room.paused) return ack?.({ ok: false });
+    const player = room.players.get(userId);
+    if (!player) return ack?.({ ok: false });
+    const now = Date.now();
+    if (now - (player.lastArmSwingAt ?? 0) < ARM_SWING_COOLDOWN_MS) {
+      return ack?.({ ok: true });
+    }
+    player.lastArmSwingAt = now;
+    const payload: ArmSwingPayload = { userId };
+    socket.to(`voxel:${sessionId}`).emit("PLAYER_ARM_SWING", payload);
+    ack?.({ ok: true });
   });
 
   socket.on(

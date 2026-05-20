@@ -3,6 +3,7 @@ import { io, type Socket } from "socket.io-client";
 import { supabase } from "@/lib/supabase";
 import { getVoxelServerUrl } from "@/lib/voxelServerUrl";
 import type {
+  ArmSwingPayload,
   BlockDelta,
   BreakStartAck,
   ChestSlot,
@@ -101,6 +102,7 @@ export type RoomEventListener = (ev: RoomEvent) => void;
 export type WorldDropSpawnListener = (drop: WorldDrop) => void;
 export type WorldDropRemovedListener = (id: string) => void;
 export type WorldDropUpdateListener = (updates: WorldDropWireDelta[]) => void;
+export type ArmSwingListener = (payload: ArmSwingPayload) => void;
 
 export interface UseVoxelSocketArgs {
   sessionId: string;
@@ -118,6 +120,7 @@ export interface UseVoxelSocketReturn {
   breakStart: (pos: Vec3) => Promise<BreakStartAck>;
   breakFinish: (pos: Vec3) => Promise<SimpleAck>;
   breakCancel: (pos: Vec3) => void;
+  armSwing: () => void;
   craft: (recipeId: string) => Promise<CraftAck>;
   pause: () => Promise<SimpleAck>;
   resume: () => Promise<SimpleAck>;
@@ -126,6 +129,7 @@ export interface UseVoxelSocketReturn {
   onSnapshot: (cb: SnapshotListener) => () => void;
   onBlockDelta: (cb: BlockDeltaListener) => () => void;
   onRoomEvent: (cb: RoomEventListener) => () => void;
+  onArmSwing: (cb: ArmSwingListener) => () => void;
   serverInventory: HotbarSlot[];
   serverItemInventory: ItemSlot[];
   serverEquipmentSlots: ItemSlot[];
@@ -172,6 +176,7 @@ export function useVoxelSocket(
   const worldDropSpawnListeners = useRef(new Set<WorldDropSpawnListener>());
   const worldDropRemovedListeners = useRef(new Set<WorldDropRemovedListener>());
   const worldDropUpdateListeners = useRef(new Set<WorldDropUpdateListener>());
+  const armSwingListeners = useRef(new Set<ArmSwingListener>());
 
   const [connected, setConnected] = useState(false);
   const [status, setStatus] = useState<string>("מתחבר…");
@@ -294,6 +299,9 @@ export function useVoxelSocket(
       s.on("BLOCK_DELTA", (payload: BlockDelta) => {
         for (const cb of blockDeltaListeners.current) cb(payload);
       });
+      s.on("PLAYER_ARM_SWING", (payload: ArmSwingPayload) => {
+        for (const cb of armSwingListeners.current) cb(payload);
+      });
       s.on("ROOM_EVENT", (payload: RoomEvent) => {
         if (payload.kind === "WORLD_DROP_SPAWNED") {
           for (const cb of worldDropSpawnListeners.current) cb(payload.drop);
@@ -382,6 +390,12 @@ export function useVoxelSocket(
     const s = socketRef.current;
     if (!s?.connected) return;
     s.emit("BREAK_CANCEL", { pos });
+  }
+
+  function armSwing(): void {
+    const s = socketRef.current;
+    if (!s?.connected) return;
+    s.emit("ARM_SWING", {});
   }
 
   async function craft(recipeId: string): Promise<CraftAck> {
@@ -516,6 +530,13 @@ export function useVoxelSocket(
     };
   }
 
+  function onArmSwing(cb: ArmSwingListener): () => void {
+    armSwingListeners.current.add(cb);
+    return () => {
+      armSwingListeners.current.delete(cb);
+    };
+  }
+
   function onWorldDropSpawned(cb: WorldDropSpawnListener): () => void {
     worldDropSpawnListeners.current.add(cb);
     return () => {
@@ -547,6 +568,7 @@ export function useVoxelSocket(
     breakStart,
     breakFinish,
     breakCancel,
+    armSwing,
     craft,
     pause,
     resume,
@@ -555,6 +577,7 @@ export function useVoxelSocket(
     onSnapshot,
     onBlockDelta,
     onRoomEvent,
+    onArmSwing,
     serverInventory,
     serverItemInventory,
     serverEquipmentSlots,
