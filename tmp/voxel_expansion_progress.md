@@ -71,6 +71,22 @@ This ledger tracks major advancements, decisions, verification, and comments to 
   - `npm test -w @playground/minecraft-server -- drops.test.ts -t "magnet pickup adds blocks" --runInBand` passed.
   - Attempted the full minecraft-server Jest suite twice; all displayed suites passed, but the process hung before a clean summary because `drops.test.ts` did not complete. The stuck Jest processes were stopped.
 
+## 2026-05-20 - Equipment Slots and Perk Hooks
+
+- Added the `equipment` inventory region with four authoritative equipment slots: head, chest, legs, and feet.
+- Equipment slots persist through pause/resume and disconnect/reconnect alongside hotbar, item storage, and crafting grid state.
+- Server inventory moves now validate equipment placement against shared item perk metadata; e.g. helium boots only fit feet, glow/Helios items fit head, feather talisman fits legs, and heavy shield fits chest.
+- Client inventory renders a dedicated equipment area and syncs equipment through join/inventory payloads.
+- Client perk hooks are active from synced equipment:
+  - helium boots increase local jump force,
+  - heavy shield reduces local movement speed,
+  - glow talisman enables full-bright ambient lighting.
+- Verification run:
+  - `npm test -w @playground/minecraft-server -- inventory.test.ts room.test.ts` passed: 2 suites, 33 tests.
+  - `npm test -w @playground/minecraft-server -- drops.test.ts -t "magnet pickup adds blocks" --runInBand` passed.
+  - `npm run lint -w @playground/minecraft-server` passed.
+  - `npm run lint -w @playground/web` passed.
+
 ## 2026-05-20 - Worldgen Math Check
 
 - Addressed the comment asking to double-check the new worldgen math.

@@ -43,7 +43,7 @@ export interface CraftingGridSlot {
   durability?: number;
 }
 
-export type InventoryRegion = "hotbar" | "storage" | "craft";
+export type InventoryRegion = "hotbar" | "storage" | "craft" | "equipment";
 export type CraftingGridWidth = 2 | 3;
 
 export interface InventoryMoveReq {
@@ -104,6 +104,7 @@ export interface JoinRoomAckOk {
   gameMode: GameMode;
   inventory: HotbarSlot[];
   itemInventory: ItemSlot[];
+  equipmentSlots: ItemSlot[];
   craftingGrid: CraftingGridSlot[];
   craftingGridWidth?: CraftingGridWidth;
   /** Survival world stacks; newer servers only. */
@@ -162,11 +163,13 @@ export interface DropItemReq {
 export interface InventorySyncPayload {
   slots: HotbarSlot[];
   itemSlots?: ItemSlot[];
+  equipmentSlots?: ItemSlot[];
   craftingSlots?: CraftingGridSlot[];
   craftingGridWidth?: CraftingGridWidth;
 }
 
 export const MAIN_ITEM_INVENTORY_SLOTS = 27;
+export const EQUIPMENT_SLOT_COUNT = 4;
 export const PERSONAL_CRAFTING_GRID_SLOTS = PERSONAL_CRAFTING_GRID_SIZE;
 export const CRAFTING_GRID_SLOTS = CRAFTING_TABLE_GRID_SIZE;
 /** Max units per crafting grid cell (one ingredient per slot). */

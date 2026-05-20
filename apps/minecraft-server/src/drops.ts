@@ -149,13 +149,15 @@ function emitInventorySyncToPlayer(
     const inv = player.inventory;
     const items = player.itemInventory;
     const craft = player.craftingGrid;
-    if (!inv || !items || !craft) return;
+    const equipment = player.equipmentSlots;
+    if (!inv || !items || !craft || !equipment) return;
     const socks = await io.in(`voxel:${sessionId}`).fetchSockets();
     for (const s of socks) {
       if (s.data.userId === userId) {
         s.emit("INVENTORY_SYNC", {
           slots: inv,
           itemSlots: items,
+          equipmentSlots: equipment,
           craftingSlots: craft,
           craftingGridWidth: player.craftingGridWidth ?? 2
         });

@@ -193,6 +193,50 @@ describe("VoxelRoom", () => {
     }
   });
 
+  it("round-trips survival equipment slots via persisted state", () => {
+    const sessionId = "sess-surv-equipment";
+    const room = getOrCreateRoom(sessionId, {
+      gameId: "game-mc",
+      gender: "boy",
+      hostId: "u1",
+      minPlayers: 1,
+      maxPlayers: 4,
+      roster: [{ userId: "u1", displayName: "A" }],
+      paused: false
+    });
+    room.gameMode = "survival";
+    assignPlayer(room, "u1", "A");
+    const p = room.players.get("u1");
+    expect(p?.equipmentSlots).toBeDefined();
+    p!.equipmentSlots![3] = { itemId: ITEM_REGISTRY.HELIUM_BOOTS, count: 1 };
+    const persisted = snapshotPersistedState(room);
+    expect(persisted.equipmentSlots?.u1?.[3]).toEqual({
+      itemId: ITEM_REGISTRY.HELIUM_BOOTS,
+      count: 1
+    });
+    __resetRoomsForTest();
+
+    const again = getOrCreateRoom(sessionId, {
+      gameId: "game-mc",
+      gender: "boy",
+      hostId: "u1",
+      minPlayers: 1,
+      maxPlayers: 4,
+      roster: [{ userId: "u1", displayName: "A" }],
+      paused: true,
+      resumedState: persisted
+    });
+    expect((again.gameMode ?? "creative") === "survival").toBe(true);
+    const re = assignPlayer(again, "u1", "A");
+    expect("error" in re).toBe(false);
+    if (!("error" in re)) {
+      expect(re.player.equipmentSlots?.[3]).toEqual({
+        itemId: ITEM_REGISTRY.HELIUM_BOOTS,
+        count: 1
+      });
+    }
+  });
+
   it("round-trips survival crafting grids via persisted state", () => {
     const sessionId = "sess-surv-craft";
     const room = getOrCreateRoom(sessionId, {

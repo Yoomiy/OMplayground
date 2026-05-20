@@ -16,6 +16,7 @@ import type {
 import {
   BLOCK_REGISTRY,
   CRAFTING_GRID_SLOTS,
+  EQUIPMENT_SLOT_COUNT,
   MAIN_ITEM_INVENTORY_SLOTS
 } from "@/lib/voxelProtocol";
 
@@ -29,6 +30,13 @@ function emptyClientItemInv(): ItemSlot[] {
 function emptyClientCrafting(): CraftingGridSlot[] {
   return Array.from({ length: CRAFTING_GRID_SLOTS }, () => ({
     blockId: BLOCK_REGISTRY.AIR,
+    itemId: 0,
+    count: 0
+  }));
+}
+
+function emptyClientEquipment(): ItemSlot[] {
+  return Array.from({ length: EQUIPMENT_SLOT_COUNT }, () => ({
     itemId: 0,
     count: 0
   }));
@@ -83,6 +91,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     onRoomEvent,
     serverInventory,
     serverItemInventory,
+    serverEquipmentSlots,
     serverCraftingGrid,
     serverCraftingGridWidth,
     craft,
@@ -332,6 +341,9 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         inventorySlots={serverInventory}
         itemInventorySlots={
           liveGameMode === "survival" ? serverItemInventory : emptyClientItemInv()
+        }
+        equipmentSlots={
+          liveGameMode === "survival" ? serverEquipmentSlots : emptyClientEquipment()
         }
         craftingGridSlots={
           liveGameMode === "survival" ? serverCraftingGrid : emptyClientCrafting()

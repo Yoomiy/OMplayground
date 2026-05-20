@@ -26,6 +26,7 @@ import type {
 import {
   BLOCK_REGISTRY,
   CRAFTING_GRID_SLOTS,
+  EQUIPMENT_SLOT_COUNT,
   MAIN_ITEM_INVENTORY_SLOTS
 } from "@/lib/voxelProtocol";
 
@@ -55,6 +56,10 @@ function emptyCraftingSlots(): CraftingGridSlot[] {
     itemId: 0,
     count: 0
   }));
+}
+
+function emptyEquipmentSlots(): ItemSlot[] {
+  return Array.from({ length: EQUIPMENT_SLOT_COUNT }, () => ({ itemId: 0, count: 0 }));
 }
 
 function inputWireEqual(a: InputReq, b: InputReq): boolean {
@@ -100,6 +105,7 @@ export interface UseVoxelSocketReturn {
   onRoomEvent: (cb: RoomEventListener) => () => void;
   serverInventory: HotbarSlot[];
   serverItemInventory: ItemSlot[];
+  serverEquipmentSlots: ItemSlot[];
   serverCraftingGrid: CraftingGridSlot[];
   serverCraftingGridWidth: CraftingGridWidth;
   inventoryMove: (req: InventoryMoveReq) => Promise<SimpleAck>;
@@ -142,6 +148,9 @@ export function useVoxelSocket(
   const [serverInventory, setServerInventory] = useState<HotbarSlot[]>([]);
   const [serverItemInventory, setServerItemInventory] = useState<ItemSlot[]>(
     () => emptyItemSlots()
+  );
+  const [serverEquipmentSlots, setServerEquipmentSlots] = useState<ItemSlot[]>(
+    () => emptyEquipmentSlots()
   );
   const [serverCraftingGrid, setServerCraftingGrid] = useState<CraftingGridSlot[]>(
     () => emptyCraftingSlots()
@@ -188,6 +197,11 @@ export function useVoxelSocket(
             ? ack.itemInventory
             : emptyItemSlots()
         );
+        setServerEquipmentSlots(
+          ack.equipmentSlots?.length === EQUIPMENT_SLOT_COUNT
+            ? ack.equipmentSlots
+            : emptyEquipmentSlots()
+        );
         setServerCraftingGrid(
           ack.craftingGrid?.length === CRAFTING_GRID_SLOTS
             ? ack.craftingGrid
@@ -206,6 +220,13 @@ export function useVoxelSocket(
           payload.itemSlots.length === MAIN_ITEM_INVENTORY_SLOTS
         ) {
           setServerItemInventory(payload.itemSlots);
+        }
+        if (
+          payload?.equipmentSlots &&
+          Array.isArray(payload.equipmentSlots) &&
+          payload.equipmentSlots.length === EQUIPMENT_SLOT_COUNT
+        ) {
+          setServerEquipmentSlots(payload.equipmentSlots);
         }
         if (
           payload?.craftingSlots &&
@@ -425,6 +446,7 @@ export function useVoxelSocket(
     onRoomEvent,
     serverInventory,
     serverItemInventory,
+    serverEquipmentSlots,
     serverCraftingGrid,
     serverCraftingGridWidth,
     inventoryMove,

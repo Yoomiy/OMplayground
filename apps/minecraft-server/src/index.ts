@@ -23,11 +23,13 @@ import {
   blockDropId,
   blockDropsPickable,
   cloneCraftingGrid,
+  cloneEquipmentSlots,
   cloneHotbar,
   cloneItemInventory,
   consumeOneFromHotbarIndex,
   consumeOneIfPresent,
   createEmptyCraftingGrid,
+  createEmptyEquipmentSlots,
   createEmptyHotbar,
   createEmptyItemInventory,
   isPersonalCraftingIndex,
@@ -305,6 +307,7 @@ function inventorySyncPayload(player: PlayerRuntime) {
   return {
     slots: player.inventory ?? [],
     itemSlots: player.itemInventory,
+    equipmentSlots: player.equipmentSlots,
     craftingSlots: player.craftingGrid,
     craftingGridWidth: player.craftingGridWidth ?? 2
   };
@@ -440,7 +443,7 @@ async function emitInventoryToSurvivalPlayers(
     const uid = s.data.userId as string | undefined;
     if (!uid) continue;
     const p = room.players.get(uid);
-    if (p?.inventory && p.itemInventory && p.craftingGrid) {
+    if (p?.inventory && p.itemInventory && p.craftingGrid && p.equipmentSlots) {
       s.emit("INVENTORY_SYNC", inventorySyncPayload(p));
     }
   }
@@ -593,6 +596,10 @@ io.on("connection", (socket) => {
           effectiveMode === "survival" && assigned.player.itemInventory
             ? cloneItemInventory(assigned.player.itemInventory)
             : createEmptyItemInventory(),
+        equipmentSlots:
+          effectiveMode === "survival" && assigned.player.equipmentSlots
+            ? cloneEquipmentSlots(assigned.player.equipmentSlots)
+            : createEmptyEquipmentSlots(),
         craftingGrid:
           effectiveMode === "survival" && assigned.player.craftingGrid
             ? cloneCraftingGrid(assigned.player.craftingGrid)
@@ -1048,14 +1055,19 @@ io.on("connection", (socket) => {
           error: { code: "BAD_INTENT", message: "רק במצב הישרדות" }
         });
       }
-      if (!player.inventory || !player.itemInventory || !player.craftingGrid) {
+      if (
+        !player.inventory ||
+        !player.itemInventory ||
+        !player.craftingGrid ||
+        !player.equipmentSlots
+      ) {
         return ack?.({ ok: false });
       }
       const from = payload?.from;
       const to = payload?.to;
       if (
-        (from !== "hotbar" && from !== "storage" && from !== "craft") ||
-        (to !== "hotbar" && to !== "storage" && to !== "craft")
+        (from !== "hotbar" && from !== "storage" && from !== "craft" && from !== "equipment") ||
+        (to !== "hotbar" && to !== "storage" && to !== "craft" && to !== "equipment")
       ) {
         return ack?.({ ok: false });
       }
@@ -1072,12 +1084,20 @@ io.on("connection", (socket) => {
       ) {
         return ack?.({ ok: false });
       }
-      if (!applyInventoryMove(player.inventory, player.itemInventory, player.craftingGrid, {
-        from,
-        fromIndex,
-        to,
-        toIndex
-      })) {
+      if (
+        !applyInventoryMove(
+          player.inventory,
+          player.itemInventory,
+          player.craftingGrid,
+          {
+            from,
+            fromIndex,
+            to,
+            toIndex
+          },
+          player.equipmentSlots
+        )
+      ) {
         return ack?.({ ok: false });
       }
       socket.emit("INVENTORY_SYNC", inventorySyncPayload(player));
@@ -1126,11 +1146,13 @@ io.on("connection", (socket) => {
           p.inventory = createEmptyHotbar();
           p.itemInventory = createEmptyItemInventory();
           p.craftingGrid = createEmptyCraftingGrid();
+          p.equipmentSlots = createEmptyEquipmentSlots();
           p.craftingGridWidth = 2;
         }
         room.disconnectedInventories.clear();
         room.disconnectedItemInventories.clear();
         room.disconnectedCraftingGrids.clear();
+        room.disconnectedEquipmentSlots.clear();
       } else {
         room.gameMode = "creative";
         clearDropsBroadcast(io, room);
@@ -1138,11 +1160,13 @@ io.on("connection", (socket) => {
           delete p.inventory;
           delete p.itemInventory;
           delete p.craftingGrid;
+          delete p.equipmentSlots;
           delete p.craftingGridWidth;
         }
         room.disconnectedInventories.clear();
         room.disconnectedItemInventories.clear();
         room.disconnectedCraftingGrids.clear();
+        room.disconnectedEquipmentSlots.clear();
       }
       io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
         sessionId,

@@ -8,9 +8,12 @@ import {
   blockDropsPickable,
   consumeOneIfPresent,
   cloneCraftingGrid,
+  createEmptyEquipmentSlots,
   createEmptyCraftingGrid,
   createEmptyHotbar,
   createEmptyItemInventory,
+  equipmentSlotsFromPersisted,
+  hasEquipped,
   hotbarFromPersisted,
   MAX_STACK,
   returnInactiveCraftingSlotsToInventory,
@@ -307,5 +310,77 @@ describe("inventory helpers", () => {
     expect(hotbar[0]!.count === 0 || hotbar[0]!.blockId === BLOCK_REGISTRY.AIR).toBe(
       true
     );
+  });
+
+  it("applyInventoryMove equips matching perk items and leaves the rest of the stack", () => {
+    const hotbar = createEmptyHotbar();
+    const items = createEmptyItemInventory();
+    const grid = createEmptyCraftingGrid();
+    const equipment = createEmptyEquipmentSlots();
+    items[0] = { itemId: ITEM_REGISTRY.HELIUM_BOOTS, count: 2 };
+
+    expect(
+      applyInventoryMove(
+        hotbar,
+        items,
+        grid,
+        {
+          from: "storage",
+          fromIndex: 0,
+          to: "equipment",
+          toIndex: 3
+        },
+        equipment
+      )
+    ).toBe(true);
+
+    expect(equipment[3]).toEqual({ itemId: ITEM_REGISTRY.HELIUM_BOOTS, count: 1 });
+    expect(items[0]).toEqual({ itemId: ITEM_REGISTRY.HELIUM_BOOTS, count: 1 });
+    expect(hasEquipped(equipment, ITEM_REGISTRY.HELIUM_BOOTS)).toBe(true);
+  });
+
+  it("applyInventoryMove rejects equipment items in the wrong slot", () => {
+    const hotbar = createEmptyHotbar();
+    const items = createEmptyItemInventory();
+    const grid = createEmptyCraftingGrid();
+    const equipment = createEmptyEquipmentSlots();
+    items[0] = { itemId: ITEM_REGISTRY.HELIUM_BOOTS, count: 1 };
+
+    expect(
+      applyInventoryMove(
+        hotbar,
+        items,
+        grid,
+        {
+          from: "storage",
+          fromIndex: 0,
+          to: "equipment",
+          toIndex: 0
+        },
+        equipment
+      )
+    ).toBe(false);
+    expect(equipment[0]).toEqual({ itemId: 0, count: 0 });
+    expect(items[0]).toEqual({ itemId: ITEM_REGISTRY.HELIUM_BOOTS, count: 1 });
+  });
+
+  it("equipmentSlotsFromPersisted keeps only valid slot/item pairs", () => {
+    const equipment = equipmentSlotsFromPersisted(
+      [
+        { itemId: ITEM_REGISTRY.GLOW_TALISMAN, count: 4 },
+        { itemId: ITEM_REGISTRY.HELIUM_BOOTS, count: 1 },
+        { itemId: ITEM_REGISTRY.FEATHER_FALLING_TALISMAN, count: 1 },
+        { itemId: ITEM_REGISTRY.HELIUM_BOOTS, count: 1 }
+      ],
+      createEmptyEquipmentSlots()
+    );
+
+    expect(equipment[0]).toEqual({ itemId: ITEM_REGISTRY.GLOW_TALISMAN, count: 1 });
+    expect(equipment[1]).toEqual({ itemId: 0, count: 0 });
+    expect(equipment[2]).toEqual({
+      itemId: ITEM_REGISTRY.FEATHER_FALLING_TALISMAN,
+      count: 1
+    });
+    expect(equipment[3]).toEqual({ itemId: ITEM_REGISTRY.HELIUM_BOOTS, count: 1 });
   });
 });

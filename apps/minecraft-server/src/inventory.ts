@@ -3,11 +3,13 @@ import {
   CRAFTING_GRID_WIDTH_2,
   CRAFTING_GRID_WIDTH_3,
   findMatchingRecipe,
+  itemPerkSpec,
   itemMaxStack
 } from "@playground/voxel-content";
 import {
   BLOCK_REGISTRY,
   CRAFTING_CELL_MAX,
+  EQUIPMENT_SLOT_COUNT,
   MAIN_ITEM_INVENTORY_SLOTS,
   PLACEABLE_BLOCK_IDS,
   CRAFTING_GRID_SLOTS,
@@ -23,9 +25,11 @@ export const MAX_STACK = 64;
 export type HotbarState = HotbarSlot[];
 export type ItemInventoryState = ItemSlot[];
 export type CraftingGridState = CraftingGridSlot[];
+export type EquipmentSlotState = ItemSlot[];
 export type CraftingGridWidth = typeof CRAFTING_GRID_WIDTH_2 | typeof CRAFTING_GRID_WIDTH_3;
 
 export const PERSONAL_CRAFTING_SLOT_INDICES = [0, 1, 3, 4] as const;
+export const EQUIPMENT_SLOT_KEYS = ["head", "chest", "legs", "feet"] as const;
 
 export function createEmptyHotbar(): HotbarState {
   return Array.from({ length: HOTBAR_SLOT_COUNT }, () => ({
@@ -234,6 +238,55 @@ export function itemInventoryFromPersisted(
     };
   }
   return out;
+}
+
+export function createEmptyEquipmentSlots(): EquipmentSlotState {
+  return Array.from({ length: EQUIPMENT_SLOT_COUNT }, () => ({ itemId: 0, count: 0 }));
+}
+
+export function cloneEquipmentSlots(slots: EquipmentSlotState): EquipmentSlotState {
+  return slots.map((s) => ({
+    itemId: s.itemId,
+    count: s.count,
+    ...(s.durability !== undefined ? { durability: s.durability } : {})
+  }));
+}
+
+export function equipmentItemFitsSlot(itemId: number, slotIndex: number): boolean {
+  if (!Number.isInteger(slotIndex) || slotIndex < 0 || slotIndex >= EQUIPMENT_SLOT_COUNT) {
+    return false;
+  }
+  const slotKey = EQUIPMENT_SLOT_KEYS[slotIndex];
+  if (!slotKey) return false;
+  return itemPerkSpec(itemId)?.equipSlot === slotKey;
+}
+
+export function equipmentSlotsFromPersisted(
+  raw: unknown,
+  fallback: EquipmentSlotState
+): EquipmentSlotState {
+  if (!Array.isArray(raw) || raw.length !== EQUIPMENT_SLOT_COUNT) {
+    return cloneEquipmentSlots(fallback);
+  }
+  const out = createEmptyEquipmentSlots();
+  for (let i = 0; i < EQUIPMENT_SLOT_COUNT; i++) {
+    const cell = raw[i] as { itemId?: unknown; count?: unknown; durability?: unknown };
+    const itemId = Number(cell?.itemId);
+    const count = Number(cell?.count);
+    if (!Number.isFinite(count) || itemId === 0 || count <= 0) continue;
+    if (!REGISTERED_ITEM_IDS.has(itemId) || !equipmentItemFitsSlot(itemId, i)) continue;
+    const cellDur = Number(cell?.durability);
+    out[i] = {
+      itemId,
+      count: 1,
+      ...(Number.isFinite(cellDur) ? { durability: Math.floor(cellDur) } : {})
+    };
+  }
+  return out;
+}
+
+export function hasEquipped(slots: EquipmentSlotState | undefined, itemId: number): boolean {
+  return slots?.some((s) => s.itemId === itemId && s.count > 0) ?? false;
 }
 
 /** How many units of `itemId` can still fit (new stacks + partial stacks). */
@@ -483,6 +536,14 @@ function writeItemAtom(s: ItemSlot, a: SlotAtom): void {
   }
 }
 
+function readEquipmentAtom(s: ItemSlot): SlotAtom {
+  return readItemAtom(s);
+}
+
+function writeEquipmentAtom(s: ItemSlot, a: SlotAtom): void {
+  writeItemAtom(s, a);
+}
+
 function writeCraftAtom(s: CraftingGridSlot, a: SlotAtom): void {
   if (a.kind === "empty") {
     s.blockId = BLOCK_REGISTRY.AIR;
@@ -508,11 +569,13 @@ function readAtom(
   hotbar: HotbarState,
   items: ItemSlot[],
   craft: CraftingGridState,
+  equipment: EquipmentSlotState | undefined,
   region: InventoryMoveReq["from"],
   index: number
 ): SlotAtom {
   if (region === "hotbar") return readHotbarAtom(hotbar[index]!);
   if (region === "storage") return readItemAtom(items[index]!);
+  if (region === "equipment") return readEquipmentAtom(equipment![index]!);
   return readCraftAtom(craft[index]!);
 }
 
@@ -520,22 +583,28 @@ function writeAtom(
   hotbar: HotbarState,
   items: ItemSlot[],
   craft: CraftingGridState,
+  equipment: EquipmentSlotState | undefined,
   region: InventoryMoveReq["from"],
   index: number,
   a: SlotAtom
 ): void {
   if (region === "hotbar") writeHotbarAtom(hotbar[index]!, a);
   else if (region === "storage") writeItemAtom(items[index]!, a);
+  else if (region === "equipment") writeEquipmentAtom(equipment![index]!, a);
   else writeCraftAtom(craft[index]!, a);
 }
 
 function regionAllowsAtom(
   region: InventoryMoveReq["from"],
+  index: number,
   a: SlotAtom
 ): boolean {
   if (a.kind === "empty") return true;
   if (region === "hotbar") return a.kind === "block" || a.kind === "item";
   if (region === "storage") return a.kind === "item";
+  if (region === "equipment") {
+    return a.kind === "item" && equipmentItemFitsSlot(a.itemId, index);
+  }
   return a.kind === "block" || a.kind === "item";
 }
 
@@ -557,11 +626,13 @@ function sameAtomStack(a: SlotAtom, b: SlotAtom): boolean {
 
 function validMoveIndex(
   region: InventoryMoveReq["from"],
-  index: number
+  index: number,
+  equipment: EquipmentSlotState | undefined
 ): boolean {
   if (!Number.isInteger(index) || index < 0) return false;
   if (region === "hotbar") return index < HOTBAR_SLOT_COUNT;
   if (region === "storage") return index < MAIN_ITEM_INVENTORY_SLOTS;
+  if (region === "equipment") return !!equipment && index < EQUIPMENT_SLOT_COUNT;
   return index < CRAFTING_GRID_SLOTS;
 }
 
@@ -574,13 +645,13 @@ function mergeRoomForDestination(
   b: SlotAtom
 ): number {
   if (b.kind === "empty") return 0;
-  if (to === "craft") return Math.max(0, CRAFTING_CELL_MAX - b.count);
+  if (to === "craft" || to === "equipment") return Math.max(0, CRAFTING_CELL_MAX - b.count);
   if (b.kind === "block") return Math.max(0, MAX_STACK - b.count);
   if (b.kind === "item") return Math.max(0, itemMaxStack(b.itemId) - b.count);
   return 0;
 }
 
-function atomExceedsCraftMax(a: SlotAtom): boolean {
+function atomExceedsSingleCellMax(a: SlotAtom): boolean {
   if (a.kind === "empty") return false;
   return a.count > CRAFTING_CELL_MAX;
 }
@@ -595,39 +666,42 @@ export function applyInventoryMove(
   hotbar: HotbarState,
   itemSlots: ItemSlot[],
   craft: CraftingGridState,
-  req: InventoryMoveReq
+  req: InventoryMoveReq,
+  equipmentSlots?: EquipmentSlotState
 ): boolean {
   const { from, fromIndex: fi, to, toIndex: ti } = req;
-  if (!validMoveIndex(from, fi) || !validMoveIndex(to, ti)) return false;
+  if (!validMoveIndex(from, fi, equipmentSlots) || !validMoveIndex(to, ti, equipmentSlots)) {
+    return false;
+  }
   if (from === to && fi === ti) return true;
 
   for (const c of craft) normalizeCraftingSlot(c);
 
-  let a = readAtom(hotbar, itemSlots, craft, from, fi);
-  let b = readAtom(hotbar, itemSlots, craft, to, ti);
+  let a = readAtom(hotbar, itemSlots, craft, equipmentSlots, from, fi);
+  let b = readAtom(hotbar, itemSlots, craft, equipmentSlots, to, ti);
   if (a.kind === "empty") return false;
-  if (!regionAllowsAtom(to, a)) return false;
-  if (!regionAllowsAtom(from, b)) return false;
+  if (!regionAllowsAtom(to, ti, a)) return false;
+  if (!regionAllowsAtom(from, fi, b)) return false;
 
-  const toCraft = to === "craft";
-  const fromCraft = from === "craft";
+  const toSingleCell = to === "craft" || to === "equipment";
+  const fromSingleCell = from === "craft" || from === "equipment";
 
   if (b.kind === "empty") {
-    if (!toCraft) {
-      writeAtom(hotbar, itemSlots, craft, to, ti, a);
-      writeAtom(hotbar, itemSlots, craft, from, fi, { kind: "empty" });
+    if (!toSingleCell) {
+      writeAtom(hotbar, itemSlots, craft, equipmentSlots, to, ti, a);
+      writeAtom(hotbar, itemSlots, craft, equipmentSlots, from, fi, { kind: "empty" });
       return true;
     }
     const take = Math.min(a.count, CRAFTING_CELL_MAX);
     if (take <= 0) return false;
     if (a.kind === "block") {
-      writeAtom(hotbar, itemSlots, craft, to, ti, {
+      writeAtom(hotbar, itemSlots, craft, equipmentSlots, to, ti, {
         kind: "block",
         blockId: a.blockId,
         count: take
       });
     } else {
-      writeAtom(hotbar, itemSlots, craft, to, ti, {
+      writeAtom(hotbar, itemSlots, craft, equipmentSlots, to, ti, {
         kind: "item",
         itemId: a.itemId,
         count: take,
@@ -636,15 +710,15 @@ export function applyInventoryMove(
     }
     const left = a.count - take;
     if (left <= 0) {
-      writeAtom(hotbar, itemSlots, craft, from, fi, { kind: "empty" });
+      writeAtom(hotbar, itemSlots, craft, equipmentSlots, from, fi, { kind: "empty" });
     } else if (a.kind === "block") {
-      writeAtom(hotbar, itemSlots, craft, from, fi, {
+      writeAtom(hotbar, itemSlots, craft, equipmentSlots, from, fi, {
         kind: "block",
         blockId: a.blockId,
         count: left
       });
     } else {
-      writeAtom(hotbar, itemSlots, craft, from, fi, {
+      writeAtom(hotbar, itemSlots, craft, equipmentSlots, from, fi, {
         kind: "item",
         itemId: a.itemId,
         count: left,
@@ -659,10 +733,11 @@ export function applyInventoryMove(
     const move =
       a.kind === "block" || a.kind === "item" ? Math.min(a.count, room) : 0;
     if (move <= 0) {
-      if (toCraft && !fromCraft) return false;
-      if (atomExceedsCraftMax(a) || atomExceedsCraftMax(b)) return false;
-      writeAtom(hotbar, itemSlots, craft, from, fi, b);
-      writeAtom(hotbar, itemSlots, craft, to, ti, a);
+      if (toSingleCell && !fromSingleCell) return false;
+      if (fromSingleCell && atomExceedsSingleCellMax(b)) return false;
+      if (toSingleCell && atomExceedsSingleCellMax(a)) return false;
+      writeAtom(hotbar, itemSlots, craft, equipmentSlots, from, fi, b);
+      writeAtom(hotbar, itemSlots, craft, equipmentSlots, to, ti, a);
       return true;
     }
     if (b.kind === "block" && a.kind === "block") {
@@ -692,14 +767,15 @@ export function applyInventoryMove(
     } else {
       a = { kind: "empty" };
     }
-    writeAtom(hotbar, itemSlots, craft, to, ti, b);
-    writeAtom(hotbar, itemSlots, craft, from, fi, a);
+    writeAtom(hotbar, itemSlots, craft, equipmentSlots, to, ti, b);
+    writeAtom(hotbar, itemSlots, craft, equipmentSlots, from, fi, a);
     return true;
   }
 
-  if (atomExceedsCraftMax(a) || atomExceedsCraftMax(b)) return false;
-  writeAtom(hotbar, itemSlots, craft, from, fi, b);
-  writeAtom(hotbar, itemSlots, craft, to, ti, a);
+  if (fromSingleCell && atomExceedsSingleCellMax(b)) return false;
+  if (toSingleCell && atomExceedsSingleCellMax(a)) return false;
+  writeAtom(hotbar, itemSlots, craft, equipmentSlots, from, fi, b);
+  writeAtom(hotbar, itemSlots, craft, equipmentSlots, to, ti, a);
   return true;
 }
 

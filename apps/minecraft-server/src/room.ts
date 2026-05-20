@@ -10,15 +10,19 @@ import {
 import {
   cloneHotbar,
   cloneCraftingGrid,
+  cloneEquipmentSlots,
   cloneItemInventory,
   createEmptyCraftingGrid,
+  createEmptyEquipmentSlots,
   createEmptyHotbar,
   createEmptyItemInventory,
   craftingGridFromPersisted,
+  equipmentSlotsFromPersisted,
   hotbarFromPersisted,
   itemInventoryFromPersisted,
   spillExcessFromCraftingGrid,
   type CraftingGridState,
+  type EquipmentSlotState,
   type HotbarState,
   type ItemInventoryState
 } from "./inventory";
@@ -62,6 +66,8 @@ export interface PlayerRuntime extends RoomPlayer {
   itemInventory?: ItemInventoryState;
   /** Survival: 3×3 backing grid; personal crafting uses top-left 2×2. */
   craftingGrid?: CraftingGridState;
+  /** Survival: dedicated equipment slots [head, chest, legs, feet]. */
+  equipmentSlots?: EquipmentSlotState;
   /** Survival: 2 personal grid, 3 crafting table grid. */
   craftingGridWidth?: 2 | 3;
   /** Survival: in-progress timed block break. */
@@ -89,6 +95,7 @@ export interface VoxelRoom {
   disconnectedInventories: Map<string, HotbarState>;
   disconnectedItemInventories: Map<string, ItemInventoryState>;
   disconnectedCraftingGrids: Map<string, CraftingGridState>;
+  disconnectedEquipmentSlots: Map<string, EquipmentSlotState>;
   /** Set true when state changed since last tick emit. */
   dirty: boolean;
   /** ms timestamp of last emitted snapshot — used by coalescing in tick.ts. */
@@ -123,6 +130,7 @@ export interface PersistedRoomState {
   inventories?: Record<string, HotbarSlot[]>;
   itemInventories?: Record<string, ItemSlot[]>;
   craftingGrids?: Record<string, CraftingGridSlot[]>;
+  equipmentSlots?: Record<string, ItemSlot[]>;
   drops?: WorldDrop[];
 }
 
@@ -155,6 +163,9 @@ export function getOrCreateRoom(
     if (!existing.disconnectedCraftingGrids) {
       existing.disconnectedCraftingGrids = new Map();
     }
+    if (!existing.disconnectedEquipmentSlots) {
+      existing.disconnectedEquipmentSlots = new Map();
+    }
     if (!existing.drops) {
       existing.drops = new Map();
     }
@@ -178,9 +189,11 @@ export function getOrCreateRoom(
   const disconnectedInventories = new Map<string, HotbarState>();
   const disconnectedItemInventories = new Map<string, ItemInventoryState>();
   const disconnectedCraftingGrids = new Map<string, CraftingGridState>();
+  const disconnectedEquipmentSlots = new Map<string, EquipmentSlotState>();
   const emptyTemplate = createEmptyHotbar();
   const emptyItemsTemplate = createEmptyItemInventory();
   const emptyCraftTemplate = createEmptyCraftingGrid();
+  const emptyEquipmentTemplate = createEmptyEquipmentSlots();
   if (meta.resumedState?.inventories) {
     for (const [uid, raw] of Object.entries(meta.resumedState.inventories)) {
       disconnectedInventories.set(
@@ -202,6 +215,14 @@ export function getOrCreateRoom(
       disconnectedCraftingGrids.set(
         uid,
         craftingGridFromPersisted(raw, emptyCraftTemplate)
+      );
+    }
+  }
+  if (meta.resumedState?.equipmentSlots) {
+    for (const [uid, raw] of Object.entries(meta.resumedState.equipmentSlots)) {
+      disconnectedEquipmentSlots.set(
+        uid,
+        equipmentSlotsFromPersisted(raw, emptyEquipmentTemplate)
       );
     }
   }
@@ -234,6 +255,7 @@ export function getOrCreateRoom(
     disconnectedInventories,
     disconnectedItemInventories,
     disconnectedCraftingGrids,
+    disconnectedEquipmentSlots,
     dirty: false,
     lastTickAt: 0,
     drops: hydrateDropsFromPersisted(meta.resumedState?.drops),
@@ -347,6 +369,11 @@ export function assignPlayer(
       : createEmptyCraftingGrid();
     player.craftingGridWidth = 2;
     room.disconnectedCraftingGrids.delete(userId);
+    const cachedEquipment = room.disconnectedEquipmentSlots.get(userId);
+    player.equipmentSlots = cachedEquipment
+      ? cloneEquipmentSlots(cachedEquipment)
+      : createEmptyEquipmentSlots();
+    room.disconnectedEquipmentSlots.delete(userId);
     if (player.inventory && player.itemInventory && player.craftingGrid) {
       spillExcessFromCraftingGrid(
         player.craftingGrid,
@@ -384,6 +411,12 @@ export function removePlayerFromRoom(
     r.disconnectedCraftingGrids.set(
       userId,
       cloneCraftingGrid(leaving.craftingGrid)
+    );
+  }
+  if (leaving?.equipmentSlots) {
+    r.disconnectedEquipmentSlots.set(
+      userId,
+      cloneEquipmentSlots(leaving.equipmentSlots)
     );
   }
   r.players.delete(userId);
@@ -425,6 +458,7 @@ export function snapshotPersistedState(room: VoxelRoom): PersistedRoomState {
   const inventories: Record<string, HotbarSlot[]> = {};
   const itemInventories: Record<string, ItemSlot[]> = {};
   const craftingGrids: Record<string, CraftingGridSlot[]> = {};
+  const equipmentSlots: Record<string, ItemSlot[]> = {};
   if ((room.gameMode ?? "creative") === "survival") {
     for (const p of room.players.values()) {
       if (p.inventory) inventories[p.userId] = cloneHotbar(p.inventory);
@@ -433,6 +467,9 @@ export function snapshotPersistedState(room: VoxelRoom): PersistedRoomState {
       }
       if (p.craftingGrid) {
         craftingGrids[p.userId] = cloneCraftingGrid(p.craftingGrid);
+      }
+      if (p.equipmentSlots) {
+        equipmentSlots[p.userId] = cloneEquipmentSlots(p.equipmentSlots);
       }
     }
     for (const [uid, hotbar] of room.disconnectedInventories) {
@@ -448,6 +485,11 @@ export function snapshotPersistedState(room: VoxelRoom): PersistedRoomState {
         craftingGrids[uid] = cloneCraftingGrid(cg);
       }
     }
+    for (const [uid, equipment] of room.disconnectedEquipmentSlots) {
+      if (!(uid in equipmentSlots)) {
+        equipmentSlots[uid] = cloneEquipmentSlots(equipment);
+      }
+    }
   }
   return {
     voxel: true,
@@ -458,6 +500,7 @@ export function snapshotPersistedState(room: VoxelRoom): PersistedRoomState {
     ...(Object.keys(inventories).length > 0 ? { inventories } : {}),
     ...(Object.keys(itemInventories).length > 0 ? { itemInventories } : {}),
     ...(Object.keys(craftingGrids).length > 0 ? { craftingGrids } : {}),
+    ...(Object.keys(equipmentSlots).length > 0 ? { equipmentSlots } : {}),
     ...((room.gameMode ?? "creative") === "survival" && room.drops.size > 0
       ? { drops: Array.from(room.drops.values()) }
       : {})

@@ -8,6 +8,7 @@ import {
   MAIN_ITEM_INVENTORY_SLOTS,
   PLACEABLE_BLOCK_IDS,
   CRAFTING_GRID_SLOTS,
+  EQUIPMENT_SLOT_COUNT,
   type BlockDelta,
   type CraftingGridSlot,
   type GameMode,
@@ -78,11 +79,16 @@ const INV_DRAG_MIME = "application/x-playground-voxel-inv";
 
 const HOTBAR = PLACEABLE_BLOCK_IDS;
 const PERSONAL_CRAFTING_SLOT_INDICES = [0, 1, 3, 4] as const;
+const EQUIPMENT_SLOT_LABELS = ["ראש", "חזה", "רגל", "נעל"] as const;
 const EMPTY_CRAFTING_SLOT: CraftingGridSlot = {
   blockId: BLOCK_REGISTRY.AIR,
   itemId: 0,
   count: 0
 };
+const DEFAULT_JUMP_FORCE = 12;
+const HELIUM_JUMP_FORCE = DEFAULT_JUMP_FORCE * 1.6;
+const DEFAULT_MAX_SPEED = 10;
+const HEAVY_SHIELD_SPEED_MULT = 0.8;
 
 /** Max third-person camera pull-back (voxels); noa defaults `initialZoom` 0. */
 const CAMERA_ZOOM_DISTANCE_MAX = 16;
@@ -157,8 +163,33 @@ function isValidDragPayload(
 }
 
 const ITEM_HUD: Record<number, string> = {
-  [ITEM_REGISTRY.STICK]: "מקל"
+  [ITEM_REGISTRY.STICK]: "מקל",
+  [ITEM_REGISTRY.PLANKS]: "לוחות",
+  [ITEM_REGISTRY.WOODEN_PICKAXE]: "מכוש עץ",
+  [ITEM_REGISTRY.STONE_PICKAXE]: "מכוש אבן",
+  [ITEM_REGISTRY.IRON_PICKAXE]: "מכוש ברזל",
+  [ITEM_REGISTRY.DIAMOND_PICKAXE]: "מכוש יהלום",
+  [ITEM_REGISTRY.WOODEN_AXE]: "גרזן עץ",
+  [ITEM_REGISTRY.STONE_AXE]: "גרזן אבן",
+  [ITEM_REGISTRY.DIAMOND_AXE]: "גרזן יהלום",
+  [ITEM_REGISTRY.SWIFT_PICKAXE]: "מכוש מהיר",
+  [ITEM_REGISTRY.IRON_INGOT]: "מטיל ברזל",
+  [ITEM_REGISTRY.GOLD_INGOT]: "מטיל זהב",
+  [ITEM_REGISTRY.DIAMOND]: "יהלום",
+  [ITEM_REGISTRY.COAL]: "פחם",
+  [ITEM_REGISTRY.WHEAT]: "חיטה",
+  [ITEM_REGISTRY.BREAD]: "לחם",
+  [ITEM_REGISTRY.APPLE]: "תפוח",
+  [ITEM_REGISTRY.HEAVY_SHIELD]: "מגן כבד",
+  [ITEM_REGISTRY.FEATHER_FALLING_TALISMAN]: "קמע נפילת נוצה",
+  [ITEM_REGISTRY.HELIOS_MEDALLION]: "מדליון הליוס",
+  [ITEM_REGISTRY.HELIUM_BOOTS]: "מגפי הליום",
+  [ITEM_REGISTRY.GLOW_TALISMAN]: "קמע זוהר"
 };
+
+function equipmentHas(slots: ItemSlot[], itemId: number): boolean {
+  return slots.some((s) => s.itemId === itemId && s.count > 0);
+}
 
 /** Minecraft-like slot: raised inner bevel, dark rim. */
 function toolDurabilityBar(itemId: number, durability?: number): JSX.Element | null {
@@ -391,6 +422,8 @@ export interface MinecraftClientProps {
   inventorySlots: HotbarSlot[];
   /** Survival: main item storage (27). Creative: may be empty. */
   itemInventorySlots: ItemSlot[];
+  /** Survival: equipment slots [head, chest, legs, feet]. */
+  equipmentSlots: ItemSlot[];
   /** Survival: 3x3 backing grid from server; normal inventory exposes top-left 2x2. */
   craftingGridSlots: CraftingGridSlot[];
   /** Survival: 2 personal grid, 3 crafting-table grid. */
@@ -431,6 +464,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     gameMode,
     inventorySlots,
     itemInventorySlots,
+    equipmentSlots,
     craftingGridSlots,
     craftingGridWidth,
     onInventoryMove,
@@ -482,6 +516,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const gameModeRef = useRef<GameMode>(gameMode);
   const inventoryOpenRef = useRef(inventoryOpen);
   const craftingGridWidthRef = useRef<CraftingGridWidth>(craftingGridWidth);
+  const equipmentSlotsRef = useRef<ItemSlot[]>(equipmentSlots);
   const inventoryRef = useRef<HotbarSlot[]>(inventorySlots);
   const remoteEntitiesRef = useRef(new Map<string, number>());
   const selectedBlockRef = useRef<number>(BLOCK_REGISTRY.GRASS);
@@ -506,6 +541,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   gameModeRef.current = gameMode;
   inventoryOpenRef.current = inventoryOpen;
   craftingGridWidthRef.current = craftingGridWidth;
+  equipmentSlotsRef.current = equipmentSlots;
   inventoryRef.current = inventorySlots;
   survivalSlotRef.current = survivalSlot;
   myUserIdRef.current = myUserId;
@@ -592,6 +628,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       }
 
       const scene = noa.rendering.getScene();
+      const defaultAmbient = scene.ambientColor?.clone?.() ?? new Babylon.Color3(0, 0, 0);
+      const fullBrightAmbient = new Babylon.Color3(1, 1, 1);
       const breakCrack = createBreakCrackOverlay(Babylon, scene, noa);
       breakCrackRef.current = breakCrack;
       cleanupFns.push(() => {
@@ -1282,6 +1320,21 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       let lastEmit = 0;
       noa.on("tick", () => {
         const nowPerf = performance.now();
+        const equipped = equipmentSlotsRef.current;
+        const moveState = noa.entities.getMovement?.(noa.playerEntity);
+        if (moveState) {
+          moveState.jumpForce = equipmentHas(equipped, ITEM_REGISTRY.HELIUM_BOOTS)
+            ? HELIUM_JUMP_FORCE
+            : DEFAULT_JUMP_FORCE;
+          moveState.maxSpeed = equipmentHas(equipped, ITEM_REGISTRY.HEAVY_SHIELD)
+            ? DEFAULT_MAX_SPEED * HEAVY_SHIELD_SPEED_MULT
+            : DEFAULT_MAX_SPEED;
+        }
+        if (scene.ambientColor) {
+          scene.ambientColor = equipmentHas(equipped, ITEM_REGISTRY.GLOW_TALISMAN)
+            ? fullBrightAmbient
+            : defaultAmbient;
+        }
 
         if (!pausedRef.current && gameModeRef.current === "survival" && worldDropEntities.size > 0) {
           const bobT = nowPerf / 1000;
@@ -1715,6 +1768,47 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
             </section>
           ) : (
             <>
+              <section>
+                <div className="mb-1.5 text-[11px] font-black text-[#2a2218]">
+                  ציוד
+                </div>
+                <div className="inline-block rounded border-2 border-[#5c4f3e] bg-[rgba(0,0,0,0.15)] p-1.5">
+                  <div className="grid grid-cols-4 gap-1 sm:grid-cols-1">
+                    {equipmentSlots.slice(0, EQUIPMENT_SLOT_COUNT).map((cell, i) => {
+                      const icon = ITEM_ICON[cell.itemId];
+                      const has = cell.itemId !== 0 && cell.count > 0 && icon;
+                      return (
+                        <div
+                          key={`equipment-${i}`}
+                          className={mcSlotClass(false)}
+                          title={EQUIPMENT_SLOT_LABELS[i] ?? ""}
+                          {...slotDragHandlers("equipment", i)}
+                        >
+                          {has ? (
+                            <>
+                              <img
+                                src={icon}
+                                alt=""
+                                title={`${EQUIPMENT_SLOT_LABELS[i] ?? ""}: ${
+                                  ITEM_HUD[cell.itemId] ?? cell.itemId
+                                }`}
+                                className="h-8 w-8"
+                                style={{ imageRendering: "pixelated" }}
+                              />
+                              {toolDurabilityBar(cell.itemId, cell.durability)}
+                            </>
+                          ) : (
+                            <span className="pointer-events-none text-[9px] font-black text-[#33291d]/70">
+                              {EQUIPMENT_SLOT_LABELS[i]}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </section>
+
               <section>
                 <div className="mb-1.5 text-[11px] font-black text-[#2a2218]">
                   אחסון פריטים
