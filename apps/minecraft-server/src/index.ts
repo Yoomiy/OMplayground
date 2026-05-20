@@ -23,12 +23,14 @@ import {
   blockBreakable,
   blockDropId,
   blockDropsPickable,
+  cloneChest,
   cloneCraftingGrid,
   cloneEquipmentSlots,
   cloneHotbar,
   cloneItemInventory,
   consumeOneFromHotbarIndex,
   consumeOneIfPresent,
+  createEmptyChest,
   createEmptyCraftingGrid,
   createEmptyEquipmentSlots,
   createEmptyHotbar,
@@ -92,6 +94,7 @@ import {
   type BreakStartReq,
   type CraftAck,
   type CraftReq,
+  type ChestSyncPayload,
   type GameMode,
   type InputReq,
   type InventoryMoveReq,
@@ -100,6 +103,8 @@ import {
   type EatStartAck,
   type JoinRoomAck,
   type OpenCraftingTableReq,
+  type OpenChestAck,
+  type OpenChestReq,
   type SetGameModeReq,
   type SimpleAck,
   type Vec3
@@ -329,6 +334,34 @@ function inventorySyncPayload(player: PlayerRuntime) {
   };
 }
 
+function chestKey(x: number, y: number, z: number): string {
+  return `${x},${y},${z}`;
+}
+
+function chestKeyFromPos(pos: Vec3): string {
+  return chestKey(Math.floor(pos[0]), Math.floor(pos[1]), Math.floor(pos[2]));
+}
+
+function chestPosFromKey(key: string): Vec3 | null {
+  const parts = key.split(",").map(Number);
+  if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n))) return null;
+  return [parts[0]!, parts[1]!, parts[2]!];
+}
+
+function getOrCreateChest(room: VoxelRoom, key: string) {
+  let chest = room.chests.get(key);
+  if (!chest) {
+    chest = createEmptyChest();
+    room.chests.set(key, chest);
+  }
+  return chest;
+}
+
+function chestSyncPayload(key: string, slots: ReturnType<typeof cloneChest>): ChestSyncPayload {
+  const pos = chestPosFromKey(key) ?? [0, 0, 0];
+  return { pos, slots };
+}
+
 function executeBlockBreak(
   room: VoxelRoom,
   player: PlayerRuntime,
@@ -345,6 +378,40 @@ function executeBlockBreak(
     addMiningExhaustion(player)
   ) {
     room.dirty = true;
+  }
+  if ((room.gameMode ?? "creative") === "survival" && brokenId === BLOCK_REGISTRY.CHEST) {
+    const key = chestKey(x, y, z);
+    const chest = room.chests.get(key);
+    if (chest) {
+      for (const cell of chest) {
+        if (!cell || cell.count <= 0) continue;
+        const pos = jitterBreakSpawnPosition(x, y, z);
+        const impulse = scatterImpulseBreakDrop();
+        const spawned =
+          (cell.itemId ?? 0) > 0
+            ? spawnItemDropAt(room, pos, cell.itemId, cell.count, impulse)
+            : cell.blockId !== BLOCK_REGISTRY.AIR
+              ? spawnBlockDropAt(room, pos, cell.blockId, cell.count, impulse)
+              : null;
+        if (spawned) {
+          io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
+            sessionId,
+            kind: "WORLD_DROP_SPAWNED",
+            drop: spawned
+          });
+        }
+      }
+      room.chests.delete(key);
+    }
+    room.chestLocks.delete(key);
+    for (const p of room.players.values()) {
+      if (p.activeChestKey === key) delete p.activeChestKey;
+    }
+    io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
+      sessionId,
+      kind: "CHEST_CLOSED",
+      pos: [x, y, z]
+    });
   }
   applyDelta(room.world, x, y, z, BLOCK_REGISTRY.AIR);
   if (
@@ -1191,6 +1258,116 @@ io.on("connection", (socket) => {
   });
 
   socket.on(
+    "OPEN_CHEST",
+    (payload: OpenChestReq, ack?: (r: OpenChestAck) => void) => {
+      const sessionId = socket.data.sessionId as string | undefined;
+      const room = sessionId ? getRoom(sessionId) : undefined;
+      const player = room ? room.players.get(userId) : undefined;
+      if (!sessionId || !room || !player || room.paused) return ack?.({ ok: false });
+      if ((room.gameMode ?? "creative") !== "survival") return ack?.({ ok: false });
+      if (!player.inventory || !player.itemInventory || !player.craftingGrid) {
+        return ack?.({ ok: false });
+      }
+      const pos = payload?.pos;
+      if (!isFiniteVec(pos)) return ack?.({ ok: false });
+      const [x, y, z] = pos.map((n) => Math.floor(n)) as Vec3;
+      if (vecDist(player.pos, [x + 0.5, y + 0.5, z + 0.5]) > MAX_REACH) {
+        return ack?.({
+          ok: false,
+          error: { code: "OUT_OF_REACH", message: "רחוק מדי" }
+        });
+      }
+      if (getVoxelID(room.world, x, y, z) !== BLOCK_REGISTRY.CHEST) {
+        return ack?.({ ok: false });
+      }
+      const key = chestKey(x, y, z);
+      const lockedBy = room.chestLocks.get(key);
+      if (lockedBy && lockedBy !== userId) {
+        return ack?.({
+          ok: false,
+          error: { code: "CHEST_LOCKED", message: "תיבה פתוחה אצל שחקן אחר" }
+        });
+      }
+      if (player.activeChestKey && player.activeChestKey !== key) {
+        room.chestLocks.delete(player.activeChestKey);
+      }
+      player.activeChestKey = key;
+      room.chestLocks.set(key, userId);
+      const chest = getOrCreateChest(room, key);
+      ack?.({ ok: true, pos: [x, y, z], slots: cloneChest(chest) });
+    }
+  );
+
+  socket.on("CLOSE_CHEST", (_payload: unknown, ack?: (r: SimpleAck) => void) => {
+    const sessionId = socket.data.sessionId as string | undefined;
+    const room = sessionId ? getRoom(sessionId) : undefined;
+    const player = room ? room.players.get(userId) : undefined;
+    if (player?.activeChestKey) {
+      room?.chestLocks.delete(player.activeChestKey);
+      delete player.activeChestKey;
+    }
+    ack?.({ ok: true });
+  });
+
+  socket.on(
+    "CHEST_MOVE",
+    (payload: InventoryMoveReq, ack?: (r: SimpleAck) => void) => {
+      const sessionId = socket.data.sessionId as string | undefined;
+      const room = sessionId ? getRoom(sessionId) : undefined;
+      const player = room ? room.players.get(userId) : undefined;
+      if (!sessionId || !room || !player || room.paused) return ack?.({ ok: false });
+      if ((room.gameMode ?? "creative") !== "survival") return ack?.({ ok: false });
+      if (
+        !player.inventory ||
+        !player.itemInventory ||
+        !player.craftingGrid ||
+        !player.equipmentSlots ||
+        !player.activeChestKey
+      ) {
+        return ack?.({ ok: false });
+      }
+      if (room.chestLocks.get(player.activeChestKey) !== userId) {
+        return ack?.({
+          ok: false,
+          error: { code: "CHEST_LOCKED", message: "התיבה נעולה" }
+        });
+      }
+      const from = payload?.from;
+      const to = payload?.to;
+      if (
+        (from !== "hotbar" && from !== "storage" && from !== "chest") ||
+        (to !== "hotbar" && to !== "storage" && to !== "chest")
+      ) {
+        return ack?.({ ok: false });
+      }
+      const chest = room.chests.get(player.activeChestKey);
+      if (!chest) return ack?.({ ok: false });
+      const fromIndex = Math.floor(Number(payload?.fromIndex));
+      const toIndex = Math.floor(Number(payload?.toIndex));
+      if (
+        !applyInventoryMove(
+          player.inventory,
+          player.itemInventory,
+          player.craftingGrid,
+          {
+            from,
+            fromIndex,
+            to,
+            toIndex
+          },
+          player.equipmentSlots,
+          chest
+        )
+      ) {
+        return ack?.({ ok: false });
+      }
+      socket.emit("INVENTORY_SYNC", inventorySyncPayload(player));
+      socket.emit("CHEST_SYNC", chestSyncPayload(player.activeChestKey, cloneChest(chest)));
+      ack?.({ ok: true });
+    }
+  );
+
+  socket.on(
     "INVENTORY_MOVE",
     (payload: InventoryMoveReq, ack?: (r: SimpleAck) => void) => {
       const sessionId = socket.data.sessionId as string | undefined;
@@ -1309,12 +1486,15 @@ io.on("connection", (socket) => {
           p.craftingGridWidth = 2;
           assignVitals(p, createDefaultVitals());
           delete p.activeEating;
+          delete p.activeChestKey;
         }
         room.disconnectedInventories.clear();
         room.disconnectedItemInventories.clear();
         room.disconnectedCraftingGrids.clear();
         room.disconnectedEquipmentSlots.clear();
         room.disconnectedVitals.clear();
+        room.chests.clear();
+        room.chestLocks.clear();
       } else {
         room.gameMode = "creative";
         clearDropsBroadcast(io, room);
@@ -1332,12 +1512,15 @@ io.on("connection", (socket) => {
           delete p.lastRegenAt;
           delete p.lastStarveAt;
           delete p.activeEating;
+          delete p.activeChestKey;
         }
         room.disconnectedInventories.clear();
         room.disconnectedItemInventories.clear();
         room.disconnectedCraftingGrids.clear();
         room.disconnectedEquipmentSlots.clear();
         room.disconnectedVitals.clear();
+        room.chests.clear();
+        room.chestLocks.clear();
       }
       io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
         sessionId,

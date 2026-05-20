@@ -105,10 +105,14 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     serverCraftingGrid,
     serverCraftingGridWidth,
     serverVitals,
+    serverChest,
     craft,
     inventoryMove,
     openCraftingTable,
     closeCraftingTable,
+    openChest,
+    closeChest,
+    chestMove,
     eatStart,
     eatFinish,
     eatCancel,
@@ -280,6 +284,25 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     [closeCraftingTable]
   );
 
+  const handleOpenChest = useCallback(
+    (pos: Vec3) => openChest(pos),
+    [openChest]
+  );
+
+  const handleCloseChest = useCallback(
+    () => closeChest(),
+    [closeChest]
+  );
+
+  const handleChestMove = useCallback(
+    (req: InventoryMoveReq) => {
+      void chestMove(req).then((ack) => {
+        if (!ack.ok) setToast(ack.error?.message ?? "לא ניתן להעביר פריט");
+      });
+    },
+    [chestMove]
+  );
+
   const handleEatStart = useCallback(
     (hotbarIndex: number) => eatStart(hotbarIndex),
     [eatStart]
@@ -385,6 +408,10 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         onCraft={handleCraft}
         onOpenCraftingTable={handleOpenCraftingTable}
         onCloseCraftingTable={handleCloseCraftingTable}
+        activeChest={serverChest}
+        onOpenChest={handleOpenChest}
+        onCloseChest={handleCloseChest}
+        onChestMove={handleChestMove}
         onEatStart={handleEatStart}
         onEatFinish={handleEatFinish}
         onEatCancel={handleEatCancel}

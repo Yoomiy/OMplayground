@@ -8,7 +8,7 @@ import {
 } from "./room";
 import { applyDelta } from "./world";
 import { BLOCK_REGISTRY, ITEM_REGISTRY } from "./protocol";
-import { createEmptyCraftingGrid } from "./inventory";
+import { createEmptyChest, createEmptyCraftingGrid } from "./inventory";
 
 beforeEach(() => __resetRoomsForTest());
 
@@ -285,6 +285,48 @@ describe("VoxelRoom", () => {
       expect(re.player.saturation).toBe(1.5);
       expect(re.player.exhaustion).toBe(2.25);
     }
+  });
+
+  it("round-trips survival chest inventories via persisted state", () => {
+    const sessionId = "sess-surv-chests";
+    const room = getOrCreateRoom(sessionId, {
+      gameId: "game-mc",
+      gender: "boy",
+      hostId: "u1",
+      minPlayers: 1,
+      maxPlayers: 4,
+      roster: [{ userId: "u1", displayName: "A" }],
+      paused: false
+    });
+    room.gameMode = "survival";
+    const chest = createEmptyChest();
+    chest[0] = { blockId: BLOCK_REGISTRY.CHEST, itemId: 0, count: 1 };
+    chest[1] = { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.BREAD, count: 2 };
+    room.chests.set("4,65,9", chest);
+
+    const persisted = snapshotPersistedState(room);
+    expect(persisted.chests?.["4,65,9"]?.[0]).toEqual({
+      blockId: BLOCK_REGISTRY.CHEST,
+      itemId: 0,
+      count: 1
+    });
+    __resetRoomsForTest();
+
+    const again = getOrCreateRoom(sessionId, {
+      gameId: "game-mc",
+      gender: "boy",
+      hostId: "u1",
+      minPlayers: 1,
+      maxPlayers: 4,
+      roster: [{ userId: "u1", displayName: "A" }],
+      paused: true,
+      resumedState: persisted
+    });
+    expect(again.chests.get("4,65,9")?.[1]).toEqual({
+      blockId: BLOCK_REGISTRY.AIR,
+      itemId: ITEM_REGISTRY.BREAD,
+      count: 2
+    });
   });
 
   it("round-trips survival crafting grids via persisted state", () => {

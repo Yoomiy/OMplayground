@@ -49,7 +49,8 @@ This ledger tracks major advancements, decisions, verification, and comments to 
   - `npm run lint -w @playground/minecraft-server` passed.
   - `npm run lint -w @playground/web` passed.
 - Addressed the open performance and zoom-out WebGL comments with a focused terrain/model-cache pass.
-- Next concrete step after committing that pass: continue Phase 1 with the next spec feature, likely chest/container persistence.
+- Added server-authoritative chest/container persistence and drag moves.
+- Next concrete step after committing chest storage: continue mechanical block behavior with ladder climbing and torch point lights, then move into held-tool/swing polish.
 
 ## 2026-05-20 - Shared Recipe Model
 
@@ -149,6 +150,23 @@ This ledger tracks major advancements, decisions, verification, and comments to 
   - `npm test -w @playground/voxel-content -- worldgen.test.ts --runInBand` passed: 1 suite, 7 tests.
   - `npm run lint -w @playground/web` passed.
   - `npm run lint -w @playground/minecraft-server` passed.
+
+## 2026-05-20 - Chest Storage
+
+- Added a `chest` inventory region plus 27-slot mixed block/item chest slots in the shared voxel protocol.
+- Added server inventory support for moving stacks between hotbar, item storage, and open chest slots while keeping equipment/crafting validation unchanged.
+- Added persistent room chest state keyed by chest block coordinate (`"x,y,z"`) and included chests in pause/resume snapshots.
+- Added server-authoritative chest interaction:
+  - right-click/open validates survival mode, reach, block identity, and per-chest lock ownership,
+  - `CHEST_MOVE` applies authoritative stack moves against the locked chest,
+  - close/disconnect releases locks,
+  - breaking a chest ejects its contents as world drops, removes the persisted chest inventory, releases locks, and closes active clients.
+- Client socket state now tracks the active chest and receives `CHEST_SYNC`.
+- Client survival right-click opens chest blocks, and the inventory overlay renders a 27-slot chest grid that drag-moves with hotbar/storage through the server.
+- Verification run:
+  - `npm test -w @playground/minecraft-server -- inventory.test.ts room.test.ts --runInBand` passed: 2 suites, 37 tests.
+  - `npm run lint -w @playground/minecraft-server` passed.
+  - `npm run lint -w @playground/web` passed.
 
 ## Comments / Instructions To Address
 

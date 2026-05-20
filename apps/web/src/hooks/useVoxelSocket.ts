@@ -5,6 +5,8 @@ import { getVoxelServerUrl } from "@/lib/voxelServerUrl";
 import type {
   BlockDelta,
   BreakStartAck,
+  ChestSlot,
+  ChestSyncPayload,
   CraftAck,
   CraftingGridWidth,
   CraftingGridSlot,
@@ -17,6 +19,7 @@ import type {
   ItemSlot,
   JoinRoomAck,
   JoinRoomAckOk,
+  OpenChestAck,
   PlayerVitals,
   RoomEvent,
   RoomSnapshot,
@@ -27,6 +30,7 @@ import type {
 } from "@/lib/voxelProtocol";
 import {
   BLOCK_REGISTRY,
+  CHEST_SLOT_COUNT,
   CRAFTING_GRID_SLOTS,
   EQUIPMENT_SLOT_COUNT,
   MAIN_ITEM_INVENTORY_SLOTS
@@ -62,6 +66,14 @@ function emptyCraftingSlots(): CraftingGridSlot[] {
 
 function emptyEquipmentSlots(): ItemSlot[] {
   return Array.from({ length: EQUIPMENT_SLOT_COUNT }, () => ({ itemId: 0, count: 0 }));
+}
+
+function emptyChestSlots(): ChestSlot[] {
+  return Array.from({ length: CHEST_SLOT_COUNT }, () => ({
+    blockId: BLOCK_REGISTRY.AIR,
+    itemId: 0,
+    count: 0
+  }));
 }
 
 function emptyVitals(): PlayerVitals {
@@ -120,9 +132,13 @@ export interface UseVoxelSocketReturn {
   serverCraftingGrid: CraftingGridSlot[];
   serverCraftingGridWidth: CraftingGridWidth;
   serverVitals: PlayerVitals;
+  serverChest: { pos: Vec3; slots: ChestSlot[] } | null;
   inventoryMove: (req: InventoryMoveReq) => Promise<SimpleAck>;
   openCraftingTable: (pos: Vec3) => Promise<SimpleAck>;
   closeCraftingTable: () => Promise<SimpleAck>;
+  openChest: (pos: Vec3) => Promise<OpenChestAck>;
+  closeChest: () => Promise<SimpleAck>;
+  chestMove: (req: InventoryMoveReq) => Promise<SimpleAck>;
   eatStart: (hotbarIndex: number) => Promise<EatStartAck>;
   eatFinish: (hotbarIndex: number) => Promise<SimpleAck>;
   eatCancel: () => Promise<SimpleAck>;
@@ -173,6 +189,8 @@ export function useVoxelSocket(
   const [serverCraftingGridWidth, setServerCraftingGridWidth] =
     useState<CraftingGridWidth>(2);
   const [serverVitals, setServerVitals] = useState<PlayerVitals>(() => emptyVitals());
+  const [serverChest, setServerChest] =
+    useState<{ pos: Vec3; slots: ChestSlot[] } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -260,6 +278,16 @@ export function useVoxelSocket(
         }
       });
 
+      s.on("CHEST_SYNC", (payload: ChestSyncPayload) => {
+        if (
+          payload?.pos &&
+          Array.isArray(payload.slots) &&
+          payload.slots.length === CHEST_SLOT_COUNT
+        ) {
+          setServerChest({ pos: payload.pos, slots: payload.slots });
+        }
+      });
+
       s.on("ROOM_SNAPSHOT", (payload: RoomSnapshot) => {
         for (const cb of snapshotListeners.current) cb(payload);
       });
@@ -275,6 +303,16 @@ export function useVoxelSocket(
         }
         if (payload.kind === "WORLD_DROP_UPDATE") {
           for (const cb of worldDropUpdateListeners.current) cb(payload.updates);
+        }
+        if (payload.kind === "CHEST_CLOSED") {
+          setServerChest((prev) =>
+            prev &&
+            prev.pos[0] === payload.pos[0] &&
+            prev.pos[1] === payload.pos[1] &&
+            prev.pos[2] === payload.pos[2]
+              ? null
+              : prev
+          );
         }
         for (const cb of roomEventListeners.current) cb(payload);
       });
@@ -368,6 +406,37 @@ export function useVoxelSocket(
     const s = socketRef.current;
     if (!s?.connected) return { ok: true };
     return emitWithAck<SimpleAck>(s, "CLOSE_CRAFTING_TABLE", {});
+  }
+
+  async function openChest(pos: Vec3): Promise<OpenChestAck> {
+    const s = socketRef.current;
+    if (!s?.connected) {
+      return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
+    }
+    const ack = await emitWithAck<OpenChestAck>(s, "OPEN_CHEST", { pos });
+    if (ack.ok) {
+      setServerChest({
+        pos: ack.pos ?? pos,
+        slots:
+          ack.slots?.length === CHEST_SLOT_COUNT ? ack.slots : emptyChestSlots()
+      });
+    }
+    return ack;
+  }
+
+  async function closeChest(): Promise<SimpleAck> {
+    const s = socketRef.current;
+    setServerChest(null);
+    if (!s?.connected) return { ok: true };
+    return emitWithAck<SimpleAck>(s, "CLOSE_CHEST", {});
+  }
+
+  async function chestMove(req: InventoryMoveReq): Promise<SimpleAck> {
+    const s = socketRef.current;
+    if (!s?.connected) {
+      return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
+    }
+    return emitWithAck<SimpleAck>(s, "CHEST_MOVE", req);
   }
 
   async function eatStart(hotbarIndex: number): Promise<EatStartAck> {
@@ -492,9 +561,13 @@ export function useVoxelSocket(
     serverCraftingGrid,
     serverCraftingGridWidth,
     serverVitals,
+    serverChest,
     inventoryMove,
     openCraftingTable,
     closeCraftingTable,
+    openChest,
+    closeChest,
+    chestMove,
     eatStart,
     eatFinish,
     eatCancel,

@@ -10,6 +10,7 @@ import {
   CRAFTING_GRID_SLOTS,
   EQUIPMENT_SLOT_COUNT,
   type BlockDelta,
+  type ChestSlot,
   type CraftingGridSlot,
   type GameMode,
   type HotbarSlot,
@@ -24,6 +25,7 @@ import {
   type RoomSnapshot,
   type Vec3,
   type BreakStartAck,
+  type OpenChestAck,
   type SimpleAck,
   type WorldDrop,
   type WorldDropWireDelta
@@ -437,6 +439,10 @@ export interface MinecraftClientProps {
   onCraft: (recipeId: string) => void;
   onOpenCraftingTable: (pos: Vec3) => Promise<SimpleAck>;
   onCloseCraftingTable: () => Promise<SimpleAck>;
+  activeChest: { pos: Vec3; slots: ChestSlot[] } | null;
+  onOpenChest: (pos: Vec3) => Promise<OpenChestAck>;
+  onCloseChest: () => Promise<SimpleAck>;
+  onChestMove: (req: InventoryMoveReq) => void;
   onEatStart: (hotbarIndex: number) => Promise<EatStartAck>;
   onEatFinish: (hotbarIndex: number) => Promise<SimpleAck>;
   onEatCancel: () => Promise<SimpleAck>;
@@ -480,6 +486,10 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     onCraft,
     onOpenCraftingTable,
     onCloseCraftingTable,
+    activeChest,
+    onOpenChest,
+    onCloseChest,
+    onChestMove,
     onEatStart,
     onEatFinish,
     onEatCancel,
@@ -536,6 +546,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const gameModeRef = useRef<GameMode>(gameMode);
   const inventoryOpenRef = useRef(inventoryOpen);
   const craftingGridWidthRef = useRef<CraftingGridWidth>(craftingGridWidth);
+  const activeChestRef = useRef(activeChest);
   const equipmentSlotsRef = useRef<ItemSlot[]>(equipmentSlots);
   const inventoryRef = useRef<HotbarSlot[]>(inventorySlots);
   const remoteEntitiesRef = useRef(new Map<string, number>());
@@ -550,6 +561,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const onDropHotbarSlotRef = useRef(onDropHotbarSlot);
   const onOpenCraftingTableRef = useRef(onOpenCraftingTable);
   const onCloseCraftingTableRef = useRef(onCloseCraftingTable);
+  const onOpenChestRef = useRef(onOpenChest);
+  const onCloseChestRef = useRef(onCloseChest);
 
   onInputRef.current = onInput;
   onPlaceRef.current = onBlockPlace;
@@ -564,6 +577,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   gameModeRef.current = gameMode;
   inventoryOpenRef.current = inventoryOpen;
   craftingGridWidthRef.current = craftingGridWidth;
+  activeChestRef.current = activeChest;
   equipmentSlotsRef.current = equipmentSlots;
   inventoryRef.current = inventorySlots;
   survivalSlotRef.current = survivalSlot;
@@ -576,6 +590,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   onDropHotbarSlotRef.current = onDropHotbarSlot;
   onOpenCraftingTableRef.current = onOpenCraftingTable;
   onCloseCraftingTableRef.current = onCloseCraftingTable;
+  onOpenChestRef.current = onOpenChest;
+  onCloseChestRef.current = onCloseChest;
 
   const selectCreativeBlock = (blockId: number): void => {
     if (!PLACEABLE_BLOCK_IDS.includes(blockId)) return;
@@ -595,6 +611,9 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   function closeInventory(): void {
     if (craftingGridWidthRef.current === 3) {
       void onCloseCraftingTableRef.current();
+    }
+    if (activeChestRef.current) {
+      void onCloseChestRef.current();
     }
     setInventoryOpen(false);
   }
@@ -1296,6 +1315,19 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
             });
             return;
           }
+          if (tgt && Number(tgt.blockID) === BLOCK_REGISTRY.CHEST) {
+            const pos: Vec3 = [
+              Math.floor(Number(tgt.position[0])),
+              Math.floor(Number(tgt.position[1])),
+              Math.floor(Number(tgt.position[2]))
+            ];
+            void onOpenChestRef.current(pos).then((ack) => {
+              if (!ack.ok) return;
+              document.exitPointerLock?.();
+              setInventoryOpen(true);
+            });
+            return;
+          }
           const inv = inventoryRef.current;
           const idx = survivalSlotRef.current;
           const cell = inv[idx];
@@ -1667,12 +1699,17 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       try {
         const parsed = JSON.parse(raw);
         if (isValidDragPayload(parsed)) {
-          onInventoryMove({
+          const move = {
             from: parsed.from,
             fromIndex: parsed.fromIndex,
             to: region,
             toIndex: index
-          });
+          };
+          if (move.from === "chest" || move.to === "chest") {
+            onChestMove(move);
+          } else {
+            onInventoryMove(move);
+          }
         } else {
           console.warn("Malformed drag-and-drop payload:", parsed);
         }
@@ -1838,6 +1875,59 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
                     </>
                   ) : null}
                 </button>
+              </div>
+            </section>
+          ) : null}
+
+          {gameMode === "survival" && activeChest ? (
+            <section>
+              <div className="mb-1.5 text-[11px] font-black text-[#2a2218]">
+                תיבה
+              </div>
+              <div className="inline-block rounded border-2 border-[#5c4f3e] bg-[rgba(0,0,0,0.15)] p-1.5">
+                <div className="grid grid-cols-9 gap-1">
+                  {activeChest.slots.slice(0, 27).map((cell, i) => {
+                    const itemIcon =
+                      (cell.itemId ?? 0) > 0 && cell.count > 0
+                        ? ITEM_ICON[cell.itemId]
+                        : undefined;
+                    const blockIcon =
+                      cell.blockId !== BLOCK_REGISTRY.AIR && cell.count > 0
+                        ? BLOCK_HOTBAR_ICON[cell.blockId]
+                        : undefined;
+                    const icon = itemIcon ?? blockIcon;
+                    const has = cell.count > 0 && icon !== undefined;
+                    return (
+                      <div
+                        key={`chest-${i}`}
+                        className={mcSlotClass(false)}
+                        {...slotDragHandlers("chest", i)}
+                      >
+                        {has ? (
+                          <>
+                            <img
+                              src={icon}
+                              alt=""
+                              title={
+                                itemIcon
+                                  ? `${ITEM_HUD[cell.itemId] ?? cell.itemId} ×${cell.count}`
+                                  : `${BLOCK_HUD[cell.blockId] ?? cell.blockId} ×${cell.count}`
+                              }
+                              className="h-8 w-8"
+                              style={{ imageRendering: "pixelated" }}
+                            />
+                            {itemIcon
+                              ? toolDurabilityBar(cell.itemId, cell.durability)
+                              : null}
+                            <span className="pointer-events-none absolute bottom-0.5 end-0.5 text-[10px] font-black text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
+                              {cell.count}
+                            </span>
+                          </>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </section>
           ) : null}

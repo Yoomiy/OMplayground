@@ -8,10 +8,12 @@ import {
   blockDropsPickable,
   consumeOneIfPresent,
   cloneCraftingGrid,
+  createEmptyChest,
   createEmptyEquipmentSlots,
   createEmptyCraftingGrid,
   createEmptyHotbar,
   createEmptyItemInventory,
+  chestFromPersisted,
   equipmentSlotsFromPersisted,
   hasEquipped,
   hotbarFromPersisted,
@@ -310,6 +312,73 @@ describe("inventory helpers", () => {
     expect(hotbar[0]!.count === 0 || hotbar[0]!.blockId === BLOCK_REGISTRY.AIR).toBe(
       true
     );
+  });
+
+  it("applyInventoryMove moves mixed stacks between chest and player inventory", () => {
+    const hotbar = createEmptyHotbar();
+    const items = createEmptyItemInventory();
+    const grid = createEmptyCraftingGrid();
+    const equipment = createEmptyEquipmentSlots();
+    const chest = createEmptyChest();
+    hotbar[0] = { blockId: BLOCK_REGISTRY.COBBLESTONE, itemId: 0, count: 12 };
+    items[0] = { itemId: ITEM_REGISTRY.BREAD, count: 3 };
+
+    expect(
+      applyInventoryMove(
+        hotbar,
+        items,
+        grid,
+        { from: "hotbar", fromIndex: 0, to: "chest", toIndex: 0 },
+        equipment,
+        chest
+      )
+    ).toBe(true);
+    expect(
+      applyInventoryMove(
+        hotbar,
+        items,
+        grid,
+        { from: "storage", fromIndex: 0, to: "chest", toIndex: 1 },
+        equipment,
+        chest
+      )
+    ).toBe(true);
+
+    expect(chest[0]).toEqual({
+      blockId: BLOCK_REGISTRY.COBBLESTONE,
+      itemId: 0,
+      count: 12
+    });
+    expect(chest[1]).toEqual({
+      blockId: BLOCK_REGISTRY.AIR,
+      itemId: ITEM_REGISTRY.BREAD,
+      count: 3
+    });
+    expect(hotbar[0]).toEqual({ blockId: BLOCK_REGISTRY.AIR, itemId: 0, count: 0 });
+    expect(items[0]).toEqual({ itemId: 0, count: 0 });
+  });
+
+  it("chestFromPersisted accepts blocks and registered item stacks", () => {
+    const chest = chestFromPersisted(
+      [
+        { blockId: BLOCK_REGISTRY.CHEST, itemId: 0, count: 2 },
+        { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.APPLE, count: 5 },
+        ...Array.from({ length: 25 }, () => ({ blockId: 999, itemId: 0, count: 1 }))
+      ],
+      createEmptyChest()
+    );
+
+    expect(chest[0]).toEqual({
+      blockId: BLOCK_REGISTRY.CHEST,
+      itemId: 0,
+      count: 2
+    });
+    expect(chest[1]).toEqual({
+      blockId: BLOCK_REGISTRY.AIR,
+      itemId: ITEM_REGISTRY.APPLE,
+      count: 5
+    });
+    expect(chest[2]).toEqual({ blockId: BLOCK_REGISTRY.AIR, itemId: 0, count: 0 });
   });
 
   it("applyInventoryMove equips matching perk items and leaves the rest of the stack", () => {

@@ -19,6 +19,7 @@ import type { PlayerRuntime, VoxelRoom } from "./room";
 import type { WorldState } from "./world";
 import { getVoxelID } from "./world";
 import { TICK_INTERVAL_MS } from "./tick";
+import { cloneVitals } from "./vitals";
 
 /** Squared radius — player anchor is ~torso height (see `pickupAnchor`). */
 export const MAGNET_RADIUS_SQ = 2.25 * 2.25;
@@ -159,7 +160,8 @@ function emitInventorySyncToPlayer(
           itemSlots: items,
           equipmentSlots: equipment,
           craftingSlots: craft,
-          craftingGridWidth: player.craftingGridWidth ?? 2
+          craftingGridWidth: player.craftingGridWidth ?? 2,
+          ...(player.health !== undefined ? { vitals: cloneVitals(player) } : {})
         });
         return;
       }

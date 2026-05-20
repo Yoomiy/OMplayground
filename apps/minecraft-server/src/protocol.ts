@@ -21,6 +21,8 @@ export interface HotbarSlot {
   durability?: number;
 }
 
+export interface ChestSlot extends HotbarSlot {}
+
 export interface ItemSlot {
   itemId: number;
   count: number;
@@ -42,7 +44,7 @@ export interface CraftingGridSlot {
   durability?: number;
 }
 
-export type InventoryRegion = "hotbar" | "storage" | "craft" | "equipment";
+export type InventoryRegion = "hotbar" | "storage" | "craft" | "equipment" | "chest";
 export type CraftingGridWidth = 2 | 3;
 
 export interface InventoryMoveReq {
@@ -199,6 +201,7 @@ export interface InventorySyncPayload {
 
 export const MAIN_ITEM_INVENTORY_SLOTS = 27;
 export const EQUIPMENT_SLOT_COUNT = 4;
+export const CHEST_SLOT_COUNT = 27;
 export const PERSONAL_CRAFTING_GRID_SLOTS = PERSONAL_CRAFTING_GRID_SIZE;
 export const CRAFTING_GRID_SLOTS = CRAFTING_TABLE_GRID_SIZE;
 /** Max units per crafting grid cell (one ingredient per slot). */
@@ -215,6 +218,20 @@ export interface CraftReq {
 
 export interface OpenCraftingTableReq {
   pos: Vec3;
+}
+
+export interface OpenChestReq {
+  pos: Vec3;
+}
+
+export interface OpenChestAck extends SimpleAck {
+  pos?: Vec3;
+  slots?: ChestSlot[];
+}
+
+export interface ChestSyncPayload {
+  pos: Vec3;
+  slots: ChestSlot[];
 }
 
 export interface CraftAck extends SimpleAck {
@@ -260,6 +277,7 @@ export type RoomEvent =
   | { kind: "GAME_STOPPED"; sessionId: string; stoppedBy: string }
   | { kind: "RECESS_ENDED"; sessionId: string }
   | { kind: "GAME_MODE_CHANGED"; sessionId: string; gameMode: GameMode }
+  | { kind: "CHEST_CLOSED"; sessionId: string; pos: Vec3 }
   | { kind: "WORLD_DROP_SPAWNED"; sessionId: string; drop: WorldDrop }
   | { kind: "WORLD_DROP_REMOVED"; sessionId: string; id: string }
   | {
