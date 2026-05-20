@@ -212,6 +212,10 @@ export class FirstPersonHeldItemView {
       Texture.NEAREST_SAMPLINGMODE
     );
     texture.hasAlpha = true;
+    if (spec.kind !== "block") {
+      texture.vScale = -1;
+      texture.vOffset = 1;
+    }
     const mat = new StandardMaterial(`held-${visualKey(spec)}-mat`, this.args.scene);
     mat.diffuseTexture = texture;
     mat.useAlphaFromDiffuseTexture = true;

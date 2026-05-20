@@ -234,6 +234,24 @@ export function dropPositionInFrontOfPlayer(player: PlayerRuntime): Vec3 {
   return [player.pos[0] + dx, player.pos[1] + 0.2, player.pos[2] + dz];
 }
 
+export function thrownDropPositionInFrontOfPlayer(player: PlayerRuntime): Vec3 {
+  const h = player.heading;
+  const dx = Math.sin(h) * 2.55;
+  const dz = Math.cos(h) * 2.55;
+  return [player.pos[0] + dx, player.pos[1] + 0.9, player.pos[2] + dz];
+}
+
+export function throwImpulseForPlayer(
+  player: PlayerRuntime
+): Pick<SpawnDropOpts, "vx" | "vy" | "vz"> {
+  const h = player.heading;
+  return {
+    vx: Math.sin(h) * 5.2,
+    vy: 1.15,
+    vz: Math.cos(h) * 5.2
+  };
+}
+
 /** Scatter + impulse for stacks popped from breaking a block voxel. */
 export function scatterImpulseBreakDrop(): Pick<SpawnDropOpts, "vx" | "vy" | "vz"> {
   const theta = Math.random() * Math.PI * 2;

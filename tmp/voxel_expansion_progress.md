@@ -65,7 +65,7 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Addressed the remaining sea/cactus/performance comments by biasing the central play window toward land, keeping oceans on the outer rim, increasing deterministic desert cacti, widening chunk view distance, and cutting useless tree-structure scans in non-tree biomes.
 - Addressed the remaining interaction polish comments: flat held sprites for item/plant-style blocks, predictable torch middle-pick hotbar behavior, and TNT ignition path documented through implementation notes.
 - Added the remaining Phase 1 weather slice: shared precipitation classification, client rain/snow overlay, and server cold-biome exposed-water freezing.
-- Next concrete step: run the broader final verification set and commit the weather slice.
+- Final verification completed; the only remaining local working-tree change is the pre-existing `.codexignore` edit.
 
 ## 2026-05-20 - Shared Recipe Model
 
@@ -420,6 +420,42 @@ This ledger tracks major advancements, decisions, verification, and comments to 
   - `npm run lint -w @playground/minecraft-server` passed.
   - `npm run lint -w @playground/web` passed.
 
+## 2026-05-20 - Final Review Verification
+
+- Reviewed the original specification and this ledger after the last comment pass.
+- Remaining concrete gaps found and addressed in the final review:
+  - Phase 6 TNT ignition/explosions;
+  - weather/precipitation;
+  - sea-heavy central terrain, sparse cacti, and view distance/performance;
+  - non-block/plant-style held visuals;
+  - torch middle-pick behavior;
+  - stopped-game audio.
+- Final fast verification run:
+  - `npm run build -w @playground/voxel-content` passed.
+  - `npm test -w @playground/voxel-content` passed: 6 suites, 39 tests.
+  - `npm test -w @playground/minecraft-server -- world.test.ts room.test.ts perks.test.ts vitals.test.ts tnt.test.ts weather.test.ts tick.test.ts --runInBand` passed: 7 suites, 49 tests.
+  - `npm test -w @playground/web -- movementConfig.test.ts audioManager.test.ts heldItemView.test.ts` passed: 3 suites, 9 tests.
+  - `npm run lint -w @playground/minecraft-server` passed.
+  - `npm run lint -w @playground/web` passed.
+  - `git diff --check` passed.
+
+## 2026-05-20 - Throw and Flat-Sprite Final Comments
+
+- Addressed Q/drop auto-recache:
+  - hotbar throws now spawn outside the immediate magnet pickup radius;
+  - hotbar throws now use a stronger forward/upward impulse instead of the small near-drop impulse;
+  - existing nearby/drop-overflow behavior still uses the close drop position.
+- Addressed flat held sprites being upside down:
+  - first-person flat item/plant-block textures now flip their texture V axis instead of relying on plane orientation.
+- Performance note:
+  - already applied low-risk optimizations in this pass: shared column cache, high-air structure culling, non-tree-biome tree-scan skip, impossible tree-height skip, scene-aware model cache, wider view distance, and final worldgen sea/shore rebalance;
+  - deeper next options would be async chunk generation, a chunk mesh/column worker, lower particle/render presets, or actual distance LOD, all of which are larger architectural changes than this review pass.
+- Verification run:
+  - `npm test -w @playground/minecraft-server -- drops.test.ts --runInBand` passed: 1 suite, 12 tests.
+  - `npm run lint -w @playground/minecraft-server` passed.
+  - `npm test -w @playground/web -- heldItemView.test.ts` passed: 1 suite, 4 tests.
+  - `npm run lint -w @playground/web` passed.
+
 ## Comments / Instructions To Address
 
 - Addressed: added `Current Work` above to explain the active implementation slice and next concrete step.
@@ -451,6 +487,9 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Addressed: view distance is wider, and non-tree biomes now skip expensive tree-structure scans to pay for the added draw distance.
 - Addressed: middle-picking a torch now puts the picked torch into the visible compact creative hotbar instead of selecting an off-screen block index.
 - Addressed: TNT is ignited in survival by holding flint-and-steel and right-clicking a targeted TNT block.
-- add some velocity to thrown objects (ie with q) so they aren't auto re-cached.
+- Addressed: Q/hotbar throws now spawn outside immediate pickup radius and get a stronger forward/upward impulse.
+- Addressed: performance ideas are recorded above; the low-risk optimizations in this review pass are implemented, and larger worker/LOD options are called out as future architecture work.
+- Addressed: flat held item/plant-block sprites now flip the texture V axis so they render upright.
 
-- adress unadressed comments!
+- Addressed: final review pass completed and the remaining concrete comments/gaps are covered above.
+- Addressed: implementation areas were reviewed separately in the final verification pass: shared content/worldgen, server authority/ticks, client runtime/UX, and focused tests.

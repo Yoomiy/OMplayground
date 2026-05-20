@@ -81,7 +81,9 @@ import {
   spawnBlockDropAt,
   spawnItemDropAt,
   tickMagnetPickups,
-  tickWorldDrops
+  tickWorldDrops,
+  throwImpulseForPlayer,
+  thrownDropPositionInFrontOfPlayer
 } from "./drops";
 import {
   BLOCK_REGISTRY,
@@ -1228,13 +1230,8 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      const dropPos = dropPositionInFrontOfPlayer(player);
-      const h = player.heading;
-      const impulse = {
-        vx: Math.sin(h) * 0.45,
-        vy: 0.35 + Math.random() * 0.15,
-        vz: Math.cos(h) * 0.45
-      };
+      const dropPos = thrownDropPositionInFrontOfPlayer(player);
+      const impulse = throwImpulseForPlayer(player);
       const spawned = isItem
         ? spawnItemDropAt(room, dropPos, cell.itemId, 1, impulse)
         : spawnBlockDropAt(room, dropPos, cell.blockId, 1, impulse);
