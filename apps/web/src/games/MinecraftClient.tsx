@@ -365,14 +365,48 @@ const BLOCK_HOTBAR_ICON: Record<number, string> = (() => {
   return m;
 })();
 
-function registerMcTerrainMaterials(noa: {
-  registry: { registerMaterial: (name: string, opts: Record<string, unknown>) => void };
-}): void {
+function registerMcTerrainMaterials(
+  noa: {
+    registry: { registerMaterial: (name: string, opts: Record<string, unknown>) => void };
+    rendering: {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      getScene: () => any;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      makeStandardMaterial: (name: string) => any;
+    };
+  },
+  Babylon: typeof import("@babylonjs/core")
+): void {
   const reg = (name: string, textureURL: string, extra: Record<string, unknown> = {}) => {
     noa.registry.registerMaterial(name, { textureURL, ...extra });
   };
   for (const m of MC_MATERIAL_ENTRIES) {
     const url = MC_TEX[m.textureKey];
+    if (m.name === "mc_water") {
+      const scene = noa.rendering.getScene();
+      const tex = new Babylon.Texture(
+        url,
+        scene,
+        true,
+        false,
+        Babylon.Texture.NEAREST_SAMPLINGMODE
+      );
+      tex.hasAlpha = true;
+      const mat = noa.rendering.makeStandardMaterial("mc_water_render");
+      mat.diffuseTexture = tex;
+      mat.diffuseColor?.set(0.58, 0.78, 1);
+      mat.ambientColor?.set(0.58, 0.78, 1);
+      mat.specularColor?.set(0, 0, 0);
+      mat.alpha = 0.62;
+      mat.backFaceCulling = false;
+      mat.freeze?.();
+      noa.registry.registerMaterial(m.name, {
+        color: [0.35, 0.55, 0.9, 0.42],
+        renderMaterial: mat,
+        texHasAlpha: true
+      });
+      continue;
+    }
     reg(m.name, url, "texHasAlpha" in m && m.texHasAlpha ? { texHasAlpha: true } : {});
   }
 }
@@ -739,7 +773,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         for (const light of torchLights.values()) light.dispose();
         torchLights.clear();
       });
-      registerMcTerrainMaterials(noa);
+      registerMcTerrainMaterials(noa, Babylon);
 
       function blockCoordKey(x: number, y: number, z: number): string {
         return `${x},${y},${z}`;

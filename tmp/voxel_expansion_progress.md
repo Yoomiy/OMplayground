@@ -57,7 +57,8 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Added server Helios/daylight regen plus tested damage/fall perk helpers for the upcoming combat/fall protocol.
 - Fixed surface building by treating air and surface plants as shared replaceable placement targets.
 - Added the combat/fall socket protocol and lowered spawn height from `surface + 3` to `surface + 2`.
-- Next concrete step: inspect remaining weird block rendering, likely water/transparent block meshing.
+- Added a custom alpha/tinted Babylon render material for water so it is not treated as an opaque texture-only material.
+- Next concrete step: continue Phase 5 audio/SFX if no new comments appear.
 
 ## 2026-05-20 - Shared Recipe Model
 
@@ -258,6 +259,18 @@ This ledger tracks major advancements, decisions, verification, and comments to 
   - `npm run lint -w @playground/minecraft-server` passed.
   - `npm run lint -w @playground/web` passed.
 
+## 2026-05-20 - Water Transparency Rendering
+
+- Addressed the remaining weird water/transparent-block note with a focused client material fix.
+- Finding: `texHasAlpha` only marks the PNG alpha channel; the still-water asset itself is effectively opaque and noa's material registry ignores `color` alpha when a `textureURL` is registered normally.
+- Added a custom Babylon water material:
+  - uses the water texture with nearest sampling,
+  - applies explicit `alpha = 0.62`,
+  - disables back-face culling,
+  - registers noa material metadata with a blue alpha color so camera-in-water effects can use an alpha value.
+- Verification run:
+  - `npm run lint -w @playground/web` passed.
+
 ## Comments / Instructions To Address
 
 - Addressed: added `Current Work` above to explain the active implementation slice and next concrete step.
@@ -268,7 +281,7 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Addressed: zoom-out WebGL context error likely came from scene-blind voxel model template caching; templates now rebuild when the Babylon scene changes.
 - Addressed: opaque blocks behaved weird because normal cubes were registered with `opaque: undefined`, overriding noa's default `true`. Shared block options now omit undefined opacity.
 - Addressed: animation works but building does not. Likely cause was replaceable surface plants blocking placement; shared replaceable-block rules now let the client ignore plants and the server replace them.
-- In progress: building works now, but some blocks (possibly water/transparent blocks) still behave weird. Next pass should inspect water/transparent block material and meshing behavior.
+- Addressed: building works now, but some blocks, possibly water/transparent blocks, behave weird. Water now uses an explicit custom alpha material instead of relying on the PNG alpha channel.
 - Addressed: combat/fall protocol was missing. Added fall impact, player attack, and player damage socket flow.
 - Addressed: spawn felt too high. Spawn clearance is now `surface + 2` instead of `surface + 3`.
 
