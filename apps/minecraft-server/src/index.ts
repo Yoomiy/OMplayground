@@ -11,6 +11,7 @@ import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import { Server } from "socket.io";
 import { createClient } from "@supabase/supabase-js";
+import { itemFoodSpec } from "@playground/voxel-content";
 import { isWithinRecess } from "./recess";
 import {
   applyDelta,
@@ -95,6 +96,8 @@ import {
   type InputReq,
   type InventoryMoveReq,
   type DropItemReq,
+  type EatReq,
+  type EatStartAck,
   type JoinRoomAck,
   type OpenCraftingTableReq,
   type SetGameModeReq,
@@ -102,6 +105,18 @@ import {
   type Vec3
 } from "./protocol";
 import type { PlayerRuntime, VoxelRoom } from "./room";
+import {
+  addMiningExhaustion,
+  addMovementExhaustion,
+  applyFood,
+  assignVitals,
+  cloneVitals,
+  createDefaultVitals,
+  EAT_FINISH_TOLERANCE_MS,
+  EATING_DURATION_MS,
+  MAX_HUNGER,
+  tickVitals
+} from "./vitals";
 
 const PORT = Number(process.env.PORT ?? 8081);
 const CORS_ORIGIN =
@@ -309,7 +324,8 @@ function inventorySyncPayload(player: PlayerRuntime) {
     itemSlots: player.itemInventory,
     equipmentSlots: player.equipmentSlots,
     craftingSlots: player.craftingGrid,
-    craftingGridWidth: player.craftingGridWidth ?? 2
+    craftingGridWidth: player.craftingGridWidth ?? 2,
+    ...(player.health !== undefined ? { vitals: cloneVitals(player) } : {})
   };
 }
 
@@ -323,6 +339,13 @@ function executeBlockBreak(
   z: number,
   brokenId: number
 ): void {
+  if (
+    (room.gameMode ?? "creative") === "survival" &&
+    player.health !== undefined &&
+    addMiningExhaustion(player)
+  ) {
+    room.dirty = true;
+  }
   applyDelta(room.world, x, y, z, BLOCK_REGISTRY.AIR);
   if (
     (room.gameMode ?? "creative") === "survival" &&
@@ -600,6 +623,10 @@ io.on("connection", (socket) => {
           effectiveMode === "survival" && assigned.player.equipmentSlots
             ? cloneEquipmentSlots(assigned.player.equipmentSlots)
             : createEmptyEquipmentSlots(),
+        vitals:
+          effectiveMode === "survival" && assigned.player.health !== undefined
+            ? cloneVitals(assigned.player)
+            : cloneVitals(createDefaultVitals()),
         craftingGrid:
           effectiveMode === "survival" && assigned.player.craftingGrid
             ? cloneCraftingGrid(assigned.player.craftingGrid)
@@ -620,6 +647,15 @@ io.on("connection", (socket) => {
     if (!player) return;
     if (!isFiniteVec(payload?.pos)) return;
     if (!Number.isFinite(payload?.heading)) return;
+    if ((room.gameMode ?? "creative") === "survival" && player.health !== undefined) {
+      const dx = payload.pos[0] - player.pos[0];
+      const dz = payload.pos[2] - player.pos[2];
+      const distance = Math.hypot(dx, dz);
+      const jumped = !!payload.jumping && !player.jumping;
+      if (addMovementExhaustion(player, distance, jumped)) {
+        room.dirty = true;
+      }
+    }
     player.pos = payload.pos;
     player.heading = payload.heading;
     if (Number.isFinite(payload?.pitch)) player.pitch = payload.pitch as number;
@@ -935,6 +971,129 @@ io.on("connection", (socket) => {
   );
 
   socket.on(
+    "EAT_START",
+    (payload: EatReq, ack?: (r: EatStartAck) => void) => {
+      const sessionId = socket.data.sessionId as string | undefined;
+      const room = sessionId ? getRoom(sessionId) : undefined;
+      const player = room ? room.players.get(userId) : undefined;
+      if (!sessionId || !room || !player || room.paused) {
+        ack?.({
+          ok: false,
+          error: { code: "NOT_IN_ROOM", message: "לא בחדר" }
+        });
+        return;
+      }
+      if ((room.gameMode ?? "creative") !== "survival" || !player.inventory) {
+        ack?.({
+          ok: false,
+          error: { code: "BAD_INTENT", message: "רק במצב הישרדות" }
+        });
+        return;
+      }
+      if ((player.hunger ?? MAX_HUNGER) >= MAX_HUNGER) {
+        ack?.({
+          ok: false,
+          error: { code: "FULL_HUNGER", message: "לא רעב עכשיו" }
+        });
+        return;
+      }
+      const hotbarIndex = Math.floor(Number(payload?.hotbarIndex));
+      if (
+        !Number.isFinite(hotbarIndex) ||
+        hotbarIndex < 0 ||
+        hotbarIndex >= HOTBAR_SLOT_COUNT
+      ) {
+        ack?.({
+          ok: false,
+          error: { code: "BAD_INTENT", message: "Invalid slot" }
+        });
+        return;
+      }
+      const cell = player.inventory[hotbarIndex];
+      const itemId = cell?.itemId ?? 0;
+      if (!cell || cell.count <= 0 || !itemFoodSpec(itemId)) {
+        ack?.({
+          ok: false,
+          error: { code: "NOT_FOOD", message: "אין אוכל במשבצת" }
+        });
+        return;
+      }
+      player.activeEating = {
+        hotbarIndex,
+        itemId,
+        startedAt: Date.now()
+      };
+      ack?.({ ok: true, durationMs: EATING_DURATION_MS });
+    }
+  );
+
+  socket.on(
+    "EAT_FINISH",
+    (payload: EatReq, ack?: (r: SimpleAck) => void) => {
+      const sessionId = socket.data.sessionId as string | undefined;
+      const room = sessionId ? getRoom(sessionId) : undefined;
+      const player = room ? room.players.get(userId) : undefined;
+      if (!sessionId || !room || !player || room.paused) {
+        ack?.({
+          ok: false,
+          error: { code: "NOT_IN_ROOM", message: "לא בחדר" }
+        });
+        return;
+      }
+      if ((room.gameMode ?? "creative") !== "survival" || !player.inventory) {
+        ack?.({
+          ok: false,
+          error: { code: "BAD_INTENT", message: "רק במצב הישרדות" }
+        });
+        return;
+      }
+      const hotbarIndex = Math.floor(Number(payload?.hotbarIndex));
+      const active = player.activeEating;
+      if (
+        !active ||
+        active.hotbarIndex !== hotbarIndex ||
+        Date.now() - active.startedAt < EAT_FINISH_TOLERANCE_MS
+      ) {
+        ack?.({
+          ok: false,
+          error: { code: "EAT_NOT_READY", message: "עדיין לא סיימת לאכול" }
+        });
+        return;
+      }
+      const cell = player.inventory[hotbarIndex];
+      const itemId = cell?.itemId ?? 0;
+      const food = itemFoodSpec(itemId);
+      if (
+        !cell ||
+        cell.count <= 0 ||
+        itemId !== active.itemId ||
+        !food ||
+        !consumeOneFromHotbarIndex(player.inventory, hotbarIndex)
+      ) {
+        delete player.activeEating;
+        ack?.({
+          ok: false,
+          error: { code: "NOT_FOOD", message: "האוכל כבר לא שם" }
+        });
+        return;
+      }
+      delete player.activeEating;
+      applyFood(player, food.nutrition, food.saturationModifier);
+      room.dirty = true;
+      socket.emit("INVENTORY_SYNC", inventorySyncPayload(player));
+      ack?.({ ok: true });
+    }
+  );
+
+  socket.on("EAT_CANCEL", (_payload: unknown, ack?: (r: SimpleAck) => void) => {
+    const sessionId = socket.data.sessionId as string | undefined;
+    const room = sessionId ? getRoom(sessionId) : undefined;
+    const player = room ? room.players.get(userId) : undefined;
+    if (player) delete player.activeEating;
+    ack?.({ ok: true });
+  });
+
+  socket.on(
     "CRAFT",
     (payload: CraftReq, ack?: (r: CraftAck) => void) => {
       const sessionId = socket.data.sessionId as string | undefined;
@@ -1148,11 +1307,14 @@ io.on("connection", (socket) => {
           p.craftingGrid = createEmptyCraftingGrid();
           p.equipmentSlots = createEmptyEquipmentSlots();
           p.craftingGridWidth = 2;
+          assignVitals(p, createDefaultVitals());
+          delete p.activeEating;
         }
         room.disconnectedInventories.clear();
         room.disconnectedItemInventories.clear();
         room.disconnectedCraftingGrids.clear();
         room.disconnectedEquipmentSlots.clear();
+        room.disconnectedVitals.clear();
       } else {
         room.gameMode = "creative";
         clearDropsBroadcast(io, room);
@@ -1162,11 +1324,20 @@ io.on("connection", (socket) => {
           delete p.craftingGrid;
           delete p.equipmentSlots;
           delete p.craftingGridWidth;
+          delete p.health;
+          delete p.hunger;
+          delete p.saturation;
+          delete p.exhaustion;
+          delete p.lastVitalsAt;
+          delete p.lastRegenAt;
+          delete p.lastStarveAt;
+          delete p.activeEating;
         }
         room.disconnectedInventories.clear();
         room.disconnectedItemInventories.clear();
         room.disconnectedCraftingGrids.clear();
         room.disconnectedEquipmentSlots.clear();
+        room.disconnectedVitals.clear();
       }
       io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
         sessionId,
@@ -1392,8 +1563,19 @@ const recessTimer = setInterval(() => {
 }, RECESS_TICK_MS);
 recessTimer.unref?.();
 
+function tickRoomVitals(room: VoxelRoom, now: number): void {
+  if ((room.gameMode ?? "creative") !== "survival") return;
+  for (const player of room.players.values()) {
+    if (player.health === undefined) continue;
+    if (tickVitals(player, now)) {
+      room.dirty = true;
+    }
+  }
+}
+
 startTickLoop({
   io,
+  survivalVitalsTick: tickRoomVitals,
   worldDropsTick: (room) => tickWorldDrops(io, room, Date.now()),
   magnetPickups: (room) => tickMagnetPickups(io, room)
 });

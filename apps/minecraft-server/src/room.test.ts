@@ -237,6 +237,56 @@ describe("VoxelRoom", () => {
     }
   });
 
+  it("round-trips survival vitals via persisted state", () => {
+    const sessionId = "sess-surv-vitals";
+    const room = getOrCreateRoom(sessionId, {
+      gameId: "game-mc",
+      gender: "boy",
+      hostId: "u1",
+      minPlayers: 1,
+      maxPlayers: 4,
+      roster: [{ userId: "u1", displayName: "A" }],
+      paused: false
+    });
+    room.gameMode = "survival";
+    assignPlayer(room, "u1", "A");
+    const p = room.players.get("u1");
+    expect(p?.health).toBeDefined();
+    p!.health = 13;
+    p!.hunger = 7;
+    p!.saturation = 1.5;
+    p!.exhaustion = 2.25;
+    const persisted = snapshotPersistedState(room);
+    expect(persisted.vitals?.u1).toEqual(
+      expect.objectContaining({
+        health: 13,
+        hunger: 7,
+        saturation: 1.5,
+        exhaustion: 2.25
+      })
+    );
+    __resetRoomsForTest();
+
+    const again = getOrCreateRoom(sessionId, {
+      gameId: "game-mc",
+      gender: "boy",
+      hostId: "u1",
+      minPlayers: 1,
+      maxPlayers: 4,
+      roster: [{ userId: "u1", displayName: "A" }],
+      paused: true,
+      resumedState: persisted
+    });
+    const re = assignPlayer(again, "u1", "A");
+    expect("error" in re).toBe(false);
+    if (!("error" in re)) {
+      expect(re.player.health).toBe(13);
+      expect(re.player.hunger).toBe(7);
+      expect(re.player.saturation).toBe(1.5);
+      expect(re.player.exhaustion).toBe(2.25);
+    }
+  });
+
   it("round-trips survival crafting grids via persisted state", () => {
     const sessionId = "sess-surv-craft";
     const room = getOrCreateRoom(sessionId, {

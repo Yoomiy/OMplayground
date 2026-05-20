@@ -61,6 +61,30 @@ describe("tickOnce", () => {
     expect(emit).not.toHaveBeenCalled();
   });
 
+  it("runs survival vitals before dirty coalescing", () => {
+    const { io, emit } = buildIo();
+    const room = buildRoom("sess-tick-vitals");
+    room.gameMode = "survival";
+    room.dirty = false;
+    const survivalVitalsTick = jest.fn((r: VoxelRoom) => {
+      r.dirty = true;
+    });
+
+    const result = tickOnce({
+      io,
+      rooms: () => [room],
+      now: () => 123,
+      survivalVitalsTick
+    });
+
+    expect(survivalVitalsTick).toHaveBeenCalledWith(room, 123);
+    expect(result.emittedSessionIds).toEqual(["sess-tick-vitals"]);
+    expect(emit).toHaveBeenCalledWith(
+      "ROOM_SNAPSHOT",
+      expect.objectContaining({ players: expect.any(Object) })
+    );
+  });
+
   it("skips paused rooms even when dirty", () => {
     const { io, emit } = buildIo();
     const room = buildRoom("sess-tick-paused");

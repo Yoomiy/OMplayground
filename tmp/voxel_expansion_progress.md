@@ -38,12 +38,17 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Replaced the duplicated client-side worldgen in `apps/web/src/games/MinecraftClient.tsx` with the shared generator import.
 - Updated the client texture map to the current `minecraft-assets/block/` asset layout, including ladder, torch, and chest.
 - Tightened spawn fallback logic so rare water-heavy searches place players above sea level and clear blocking terrain.
+- Added server-authoritative survival vitals and timed eating:
+  - health/hunger/saturation/exhaustion persist through pause/resume and disconnect/reconnect,
+  - movement, jumping, mining, regeneration, starvation, and food consumption update server state,
+  - right-click food starts a timed eat action, releasing cancels, and completion consumes one item,
+  - survival HUD shows server-synced health/hunger and eating temporarily slows movement.
 - Verification run:
   - `npm run build -w @playground/voxel-content` passed after the spawn safety update.
   - `npm test -w @playground/minecraft-server -- world.test.ts` passed: 1 suite, 13 tests.
   - `npm run lint -w @playground/minecraft-server` passed.
   - `npm run lint -w @playground/web` passed.
-- Next concrete step: implement the unified 2x2/3x3 recipe model and server-authoritative 3x3 crafting table flow, because equipment/food recipes depend on those item definitions.
+- Next concrete step after committing hunger/eating: address the open performance and zoom-out WebGL comments before adding another large gameplay system.
 
 ## 2026-05-20 - Shared Recipe Model
 
@@ -87,6 +92,23 @@ This ledger tracks major advancements, decisions, verification, and comments to 
   - `npm run lint -w @playground/minecraft-server` passed.
   - `npm run lint -w @playground/web` passed.
 
+## 2026-05-20 - Survival Hunger and Eating
+
+- Added `PlayerVitals` to the voxel protocol, join ack, inventory sync payloads, and room snapshots.
+- Added server-side vitals runtime helpers for default state, persistence hydration, exhaustion decay, hunger/saturation drain, health regeneration, starvation damage, and food application.
+- Persisted vitals alongside survival hotbar, item storage, crafting grid, and equipment state for pause/resume and disconnect/reconnect.
+- Wired server-authoritative eating:
+  - `EAT_START` validates survival mode, hotbar slot, food metadata, and non-full hunger;
+  - `EAT_FINISH` requires the timed hold window, consumes one food item, applies nutrition/saturation, and emits inventory/vitals sync;
+  - `EAT_CANCEL` clears pending eating.
+- Added movement/jump/mining exhaustion and a survival vitals tick before dirty snapshot coalescing, so passive hunger/health changes still emit snapshots.
+- Client socket state now tracks vitals and exposes typed eat start/finish/cancel callbacks.
+- Client survival controls now right-click food to eat, cancel on release, slow movement while eating, and render a compact health/hunger HUD above the hotbar.
+- Focused verification run:
+  - `npm test -w @playground/minecraft-server -- vitals.test.ts tick.test.ts room.test.ts --runInBand` passed: 3 suites, 20 tests.
+  - `npm run lint -w @playground/minecraft-server` passed.
+  - `npm run lint -w @playground/web` passed.
+
 ## 2026-05-20 - Worldgen Math Check
 
 - Addressed the comment asking to double-check the new worldgen math.
@@ -116,3 +138,5 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Addressed: normal inventory now shows only the 2x2 personal craft cells, while right-clicking a crafting table opens the server-authorized 3x3 view.
 - the game became pretty slow, should we cosider rendering in a different thread? what is the bottle neck? how will the server deal with all the new math?
 - zooming out raises WebGL: INVALID_OPERATION: bindBufferBase: object does not belong to this context
+
+- adress unadressed comments!

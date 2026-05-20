@@ -35,6 +35,13 @@ export interface ItemSlot {
   durability?: number;
 }
 
+export interface PlayerVitals {
+  health: number;
+  hunger: number;
+  saturation: number;
+  exhaustion: number;
+}
+
 /** One cell in the survival 3x3 backing crafting grid (blocks or items, never both). */
 export interface CraftingGridSlot {
   blockId: number;
@@ -105,6 +112,7 @@ export interface JoinRoomAckOk {
   inventory: HotbarSlot[];
   itemInventory: ItemSlot[];
   equipmentSlots: ItemSlot[];
+  vitals: PlayerVitals;
   craftingGrid: CraftingGridSlot[];
   craftingGridWidth?: CraftingGridWidth;
   /** Survival world stacks; newer servers only. */
@@ -160,12 +168,21 @@ export interface DropItemReq {
   hotbarIndex: number;
 }
 
+export interface EatReq {
+  hotbarIndex: number;
+}
+
+export interface EatStartAck extends SimpleAck {
+  durationMs?: number;
+}
+
 export interface InventorySyncPayload {
   slots: HotbarSlot[];
   itemSlots?: ItemSlot[];
   equipmentSlots?: ItemSlot[];
   craftingSlots?: CraftingGridSlot[];
   craftingGridWidth?: CraftingGridWidth;
+  vitals?: PlayerVitals;
 }
 
 export const MAIN_ITEM_INVENTORY_SLOTS = 27;
@@ -209,6 +226,7 @@ export interface PlayerSnapshot {
   pitch?: number;
   jumping: boolean;
   t: number;
+  vitals?: PlayerVitals;
 }
 
 export interface RoomSnapshot {

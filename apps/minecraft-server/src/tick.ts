@@ -1,5 +1,6 @@
 import type { RoomSnapshot } from "./protocol";
 import { listRooms, type VoxelRoom } from "./room";
+import { cloneVitals } from "./vitals";
 
 /**
  * 15 Hz coalesced snapshot emitter. We never emit more than once per tick
@@ -26,6 +27,8 @@ export interface TickDeps {
   magnetPickups?: (room: VoxelRoom) => void;
   /** Survival drop physics + WORLD_DROP_UPDATE coalescing. */
   worldDropsTick?: (room: VoxelRoom) => void;
+  /** Survival hunger/health progression. */
+  survivalVitalsTick?: (room: VoxelRoom, now: number) => void;
 }
 
 function buildSnapshot(room: VoxelRoom): RoomSnapshot {
@@ -36,7 +39,8 @@ function buildSnapshot(room: VoxelRoom): RoomSnapshot {
       heading: p.heading,
       pitch: p.pitch,
       jumping: p.jumping,
-      t: p.t
+      t: p.t,
+      ...(p.health !== undefined ? { vitals: cloneVitals(p) } : {})
     };
   }
   return { players };
@@ -48,6 +52,7 @@ export function tickOnce(deps: TickDeps): { emittedSessionIds: string[] } {
   const emitted: string[] = [];
   for (const room of rooms) {
     if (!room.paused && room.players.size > 0) {
+      deps.survivalVitalsTick?.(room, now);
       deps.worldDropsTick?.(room);
       deps.magnetPickups?.(room);
     }

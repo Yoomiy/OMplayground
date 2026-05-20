@@ -35,6 +35,13 @@ import type {
   WorldDrop
 } from "./protocol";
 import type { ActiveBreak } from "./breakMining";
+import {
+  assignVitals,
+  createDefaultVitals,
+  vitalsFromPersisted,
+  type ActiveEating,
+  type VitalsRuntime
+} from "./vitals";
 
 /**
  * In-memory voxel-room registry. Mirrors the structure of
@@ -74,6 +81,14 @@ export interface PlayerRuntime extends RoomPlayer {
   activeBreak?: ActiveBreak;
   /** Selected survival hotbar index 0..8 (from INPUT). */
   selectedHotbarIndex?: number;
+  health?: number;
+  hunger?: number;
+  saturation?: number;
+  exhaustion?: number;
+  lastVitalsAt?: number;
+  lastRegenAt?: number;
+  lastStarveAt?: number;
+  activeEating?: ActiveEating;
 }
 
 export interface VoxelRoom {
@@ -96,6 +111,7 @@ export interface VoxelRoom {
   disconnectedItemInventories: Map<string, ItemInventoryState>;
   disconnectedCraftingGrids: Map<string, CraftingGridState>;
   disconnectedEquipmentSlots: Map<string, EquipmentSlotState>;
+  disconnectedVitals: Map<string, VitalsRuntime>;
   /** Set true when state changed since last tick emit. */
   dirty: boolean;
   /** ms timestamp of last emitted snapshot — used by coalescing in tick.ts. */
@@ -131,6 +147,7 @@ export interface PersistedRoomState {
   itemInventories?: Record<string, ItemSlot[]>;
   craftingGrids?: Record<string, CraftingGridSlot[]>;
   equipmentSlots?: Record<string, ItemSlot[]>;
+  vitals?: Record<string, VitalsRuntime>;
   drops?: WorldDrop[];
 }
 
@@ -166,6 +183,9 @@ export function getOrCreateRoom(
     if (!existing.disconnectedEquipmentSlots) {
       existing.disconnectedEquipmentSlots = new Map();
     }
+    if (!existing.disconnectedVitals) {
+      existing.disconnectedVitals = new Map();
+    }
     if (!existing.drops) {
       existing.drops = new Map();
     }
@@ -190,6 +210,7 @@ export function getOrCreateRoom(
   const disconnectedItemInventories = new Map<string, ItemInventoryState>();
   const disconnectedCraftingGrids = new Map<string, CraftingGridState>();
   const disconnectedEquipmentSlots = new Map<string, EquipmentSlotState>();
+  const disconnectedVitals = new Map<string, VitalsRuntime>();
   const emptyTemplate = createEmptyHotbar();
   const emptyItemsTemplate = createEmptyItemInventory();
   const emptyCraftTemplate = createEmptyCraftingGrid();
@@ -226,6 +247,11 @@ export function getOrCreateRoom(
       );
     }
   }
+  if (meta.resumedState?.vitals) {
+    for (const [uid, raw] of Object.entries(meta.resumedState.vitals)) {
+      disconnectedVitals.set(uid, vitalsFromPersisted(raw));
+    }
+  }
   for (const [uid, grid] of disconnectedCraftingGrids) {
     if (!disconnectedInventories.has(uid)) {
       disconnectedInventories.set(uid, cloneHotbar(emptyTemplate));
@@ -256,6 +282,7 @@ export function getOrCreateRoom(
     disconnectedItemInventories,
     disconnectedCraftingGrids,
     disconnectedEquipmentSlots,
+    disconnectedVitals,
     dirty: false,
     lastTickAt: 0,
     drops: hydrateDropsFromPersisted(meta.resumedState?.drops),
@@ -374,6 +401,9 @@ export function assignPlayer(
       ? cloneEquipmentSlots(cachedEquipment)
       : createEmptyEquipmentSlots();
     room.disconnectedEquipmentSlots.delete(userId);
+    const cachedVitals = room.disconnectedVitals.get(userId);
+    assignVitals(player, cachedVitals ?? createDefaultVitals(now));
+    room.disconnectedVitals.delete(userId);
     if (player.inventory && player.itemInventory && player.craftingGrid) {
       spillExcessFromCraftingGrid(
         player.craftingGrid,
@@ -419,6 +449,10 @@ export function removePlayerFromRoom(
       cloneEquipmentSlots(leaving.equipmentSlots)
     );
   }
+  const vitals = runtimeVitalsFromPlayer(leaving);
+  if (vitals) {
+    r.disconnectedVitals.set(userId, vitals);
+  }
   r.players.delete(userId);
   r.dirty = true;
   if (r.players.size === 0) {
@@ -459,6 +493,7 @@ export function snapshotPersistedState(room: VoxelRoom): PersistedRoomState {
   const itemInventories: Record<string, ItemSlot[]> = {};
   const craftingGrids: Record<string, CraftingGridSlot[]> = {};
   const equipmentSlots: Record<string, ItemSlot[]> = {};
+  const vitals: Record<string, VitalsRuntime> = {};
   if ((room.gameMode ?? "creative") === "survival") {
     for (const p of room.players.values()) {
       if (p.inventory) inventories[p.userId] = cloneHotbar(p.inventory);
@@ -471,6 +506,8 @@ export function snapshotPersistedState(room: VoxelRoom): PersistedRoomState {
       if (p.equipmentSlots) {
         equipmentSlots[p.userId] = cloneEquipmentSlots(p.equipmentSlots);
       }
+      const playerVitals = runtimeVitalsFromPlayer(p);
+      if (playerVitals) vitals[p.userId] = playerVitals;
     }
     for (const [uid, hotbar] of room.disconnectedInventories) {
       if (!(uid in inventories)) inventories[uid] = cloneHotbar(hotbar);
@@ -490,6 +527,11 @@ export function snapshotPersistedState(room: VoxelRoom): PersistedRoomState {
         equipmentSlots[uid] = cloneEquipmentSlots(equipment);
       }
     }
+    for (const [uid, cachedVitals] of room.disconnectedVitals) {
+      if (!(uid in vitals)) {
+        vitals[uid] = cachedVitals;
+      }
+    }
   }
   return {
     voxel: true,
@@ -501,9 +543,26 @@ export function snapshotPersistedState(room: VoxelRoom): PersistedRoomState {
     ...(Object.keys(itemInventories).length > 0 ? { itemInventories } : {}),
     ...(Object.keys(craftingGrids).length > 0 ? { craftingGrids } : {}),
     ...(Object.keys(equipmentSlots).length > 0 ? { equipmentSlots } : {}),
+    ...(Object.keys(vitals).length > 0 ? { vitals } : {}),
     ...((room.gameMode ?? "creative") === "survival" && room.drops.size > 0
       ? { drops: Array.from(room.drops.values()) }
       : {})
+  };
+}
+
+function runtimeVitalsFromPlayer(
+  player: PlayerRuntime | undefined
+): VitalsRuntime | null {
+  if (!player || player.health === undefined) return null;
+  const defaults = createDefaultVitals();
+  return {
+    health: player.health,
+    hunger: player.hunger ?? defaults.hunger,
+    saturation: player.saturation ?? defaults.saturation,
+    exhaustion: player.exhaustion ?? defaults.exhaustion,
+    lastVitalsAt: player.lastVitalsAt ?? defaults.lastVitalsAt,
+    lastRegenAt: player.lastRegenAt ?? defaults.lastRegenAt,
+    lastStarveAt: player.lastStarveAt ?? defaults.lastStarveAt
   };
 }
 

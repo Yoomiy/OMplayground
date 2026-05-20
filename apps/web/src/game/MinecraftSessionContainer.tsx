@@ -10,6 +10,7 @@ import type {
   GameMode,
   InventoryMoveReq,
   ItemSlot,
+  PlayerVitals,
   RoomEvent,
   Vec3
 } from "@/lib/voxelProtocol";
@@ -40,6 +41,15 @@ function emptyClientEquipment(): ItemSlot[] {
     itemId: 0,
     count: 0
   }));
+}
+
+function emptyClientVitals(): PlayerVitals {
+  return {
+    health: 20,
+    hunger: 20,
+    saturation: 5,
+    exhaustion: 0
+  };
 }
 
 export interface MinecraftSessionContainerProps {
@@ -94,10 +104,14 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     serverEquipmentSlots,
     serverCraftingGrid,
     serverCraftingGridWidth,
+    serverVitals,
     craft,
     inventoryMove,
     openCraftingTable,
     closeCraftingTable,
+    eatStart,
+    eatFinish,
+    eatCancel,
     setGameMode,
     dropHotbarItem,
     onWorldDropSpawned,
@@ -266,6 +280,21 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     [closeCraftingTable]
   );
 
+  const handleEatStart = useCallback(
+    (hotbarIndex: number) => eatStart(hotbarIndex),
+    [eatStart]
+  );
+
+  const handleEatFinish = useCallback(
+    (hotbarIndex: number) => eatFinish(hotbarIndex),
+    [eatFinish]
+  );
+
+  const handleEatCancel = useCallback(
+    () => eatCancel(),
+    [eatCancel]
+  );
+
   const handleInventoryMove = useCallback(
     (req: InventoryMoveReq) => {
       void inventoryMove(req).then((ack) => {
@@ -351,10 +380,14 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         craftingGridWidth={
           liveGameMode === "survival" ? serverCraftingGridWidth : 2
         }
+        vitals={liveGameMode === "survival" ? serverVitals : emptyClientVitals()}
         onInventoryMove={handleInventoryMove}
         onCraft={handleCraft}
         onOpenCraftingTable={handleOpenCraftingTable}
         onCloseCraftingTable={handleCloseCraftingTable}
+        onEatStart={handleEatStart}
+        onEatFinish={handleEatFinish}
+        onEatCancel={handleEatCancel}
         onInput={sendInput}
         onBlockPlace={handlePlaceBlock}
         onBlockBreak={handleBreakBlock}

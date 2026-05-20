@@ -18,6 +18,8 @@ import {
   type InventoryMoveReq,
   type ItemSlot,
   type CraftingGridWidth,
+  type EatStartAck,
+  type PlayerVitals,
   type RoomPlayerInfo,
   type RoomSnapshot,
   type Vec3,
@@ -28,6 +30,7 @@ import {
 } from "@/lib/voxelProtocol";
 import {
   isInstantBreak,
+  itemFoodSpec,
   itemMaxDurability,
   MC_MATERIAL_ENTRIES,
   NOA_BLOCK_ENTRIES,
@@ -428,10 +431,15 @@ export interface MinecraftClientProps {
   craftingGridSlots: CraftingGridSlot[];
   /** Survival: 2 personal grid, 3 crafting-table grid. */
   craftingGridWidth: CraftingGridWidth;
+  /** Survival: authoritative health/hunger state. */
+  vitals: PlayerVitals;
   onInventoryMove: (req: InventoryMoveReq) => void;
   onCraft: (recipeId: string) => void;
   onOpenCraftingTable: (pos: Vec3) => Promise<SimpleAck>;
   onCloseCraftingTable: () => Promise<SimpleAck>;
+  onEatStart: (hotbarIndex: number) => Promise<EatStartAck>;
+  onEatFinish: (hotbarIndex: number) => Promise<SimpleAck>;
+  onEatCancel: () => Promise<SimpleAck>;
   onInput: (input: InputReq) => void;
   onBlockPlace: (pos: Vec3, blockId: number) => void;
   onBlockBreak: (pos: Vec3) => void;
@@ -467,10 +475,14 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     equipmentSlots,
     craftingGridSlots,
     craftingGridWidth,
+    vitals,
     onInventoryMove,
     onCraft,
     onOpenCraftingTable,
     onCloseCraftingTable,
+    onEatStart,
+    onEatFinish,
+    onEatCancel,
     onInput,
     onBlockPlace,
     onBlockBreak,
@@ -491,6 +503,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const [controlsHintDismissed, setControlsHintDismissed] = useState(false);
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [recipeBookOpen, setRecipeBookOpen] = useState(false);
+  const [localVitals, setLocalVitals] = useState<PlayerVitals>(vitals);
   const hostRef = useRef<HTMLDivElement | null>(null);
   // noa-engine has loose .d.ts typings; lock to any so we don't fight them.
   const noaRef = useRef<unknown>(null);
@@ -500,10 +513,17 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const onBreakStartRef = useRef(onBreakStart);
   const onBreakFinishRef = useRef(onBreakFinish);
   const onBreakCancelRef = useRef(onBreakCancel);
+  const onEatStartRef = useRef(onEatStart);
+  const onEatFinishRef = useRef(onEatFinish);
+  const onEatCancelRef = useRef(onEatCancel);
   const activeMiningRef = useRef<{
     pos: Vec3;
     durationMs: number;
     startedAt: number;
+  } | null>(null);
+  const activeEatingRef = useRef<{
+    hotbarIndex: number;
+    timer: number | null;
   } | null>(null);
   const miningAnimRef = useRef<number | null>(null);
   const breakCrackRef = useRef<BreakCrackOverlay | null>(null);
@@ -537,6 +557,9 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   onBreakStartRef.current = onBreakStart;
   onBreakFinishRef.current = onBreakFinish;
   onBreakCancelRef.current = onBreakCancel;
+  onEatStartRef.current = onEatStart;
+  onEatFinishRef.current = onEatFinish;
+  onEatCancelRef.current = onEatCancel;
   pausedRef.current = paused;
   gameModeRef.current = gameMode;
   inventoryOpenRef.current = inventoryOpen;
@@ -564,6 +587,10 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   useEffect(() => {
     if (!inventoryOpen) setRecipeBookOpen(false);
   }, [inventoryOpen]);
+
+  useEffect(() => {
+    setLocalVitals(vitals);
+  }, [vitals]);
 
   function closeInventory(): void {
     if (craftingGridWidthRef.current === 3) {
@@ -765,7 +792,10 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       const offSnapshot = registerSnapshotListenerRef.current((snap) => {
         const selfId = myUserIdRef.current;
         for (const [userId, p] of Object.entries(snap.players)) {
-          if (userId === selfId) continue;
+          if (userId === selfId) {
+            if (p.vitals) setLocalVitals(p.vitals);
+            continue;
+          }
           const eid = ensureRemoteEntity(userId);
           noa.entities.setPosition(eid, p.pos);
           const rig = remoteRigs.get(userId);
@@ -1211,18 +1241,49 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         }
       }
 
+      function cancelEatingHold(): void {
+        const eating = activeEatingRef.current;
+        if (!eating) return;
+        if (eating.timer !== null) {
+          window.clearTimeout(eating.timer);
+        }
+        activeEatingRef.current = null;
+        void onEatCancelRef.current();
+      }
+
+      async function startEatingHold(hotbarIndex: number): Promise<void> {
+        if (activeEatingRef.current) return;
+        const active: { hotbarIndex: number; timer: number | null } = {
+          hotbarIndex,
+          timer: null
+        };
+        activeEatingRef.current = active;
+        const ack = await onEatStartRef.current(hotbarIndex);
+        if (activeEatingRef.current !== active) return;
+        if (!ack.ok) {
+          activeEatingRef.current = null;
+          return;
+        }
+        const durationMs = ack.durationMs ?? 1600;
+        active.timer = window.setTimeout(() => {
+          if (activeEatingRef.current !== active) return;
+          activeEatingRef.current = null;
+          void onEatFinishRef.current(hotbarIndex);
+        }, durationMs);
+      }
+
       noa.inputs.down.on("fire", () => {
         void tryStartMining();
       });
       noa.inputs.up.on("fire", endMiningHold);
+      noa.inputs.up.on("alt-fire", cancelEatingHold);
       cleanupFns.push(() => clearMiningState(true));
+      cleanupFns.push(cancelEatingHold);
       noa.inputs.down.on("alt-fire", () => {
         if (pausedRef.current) return;
-        const tgt = noa.targetedBlock;
-        if (!tgt) return;
         if (gameModeRef.current === "survival") {
-          const blockId = Number(tgt.blockID);
-          if (blockId === BLOCK_REGISTRY.CRAFTING) {
+          const tgt = noa.targetedBlock;
+          if (tgt && Number(tgt.blockID) === BLOCK_REGISTRY.CRAFTING) {
             const pos: Vec3 = [
               Math.floor(Number(tgt.position[0])),
               Math.floor(Number(tgt.position[1])),
@@ -1238,6 +1299,11 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           const inv = inventoryRef.current;
           const idx = survivalSlotRef.current;
           const cell = inv[idx];
+          if (cell && cell.count > 0 && itemFoodSpec(cell.itemId ?? 0)) {
+            void startEatingHold(idx);
+            return;
+          }
+          if (!tgt) return;
           if (
             !cell ||
             cell.count <= 0 ||
@@ -1252,6 +1318,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           );
           return;
         }
+        const tgt = noa.targetedBlock;
+        if (!tgt) return;
         onPlaceRef.current(
           [tgt.adjacent[0], tgt.adjacent[1], tgt.adjacent[2]],
           selectedBlockRef.current
@@ -1326,9 +1394,11 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           moveState.jumpForce = equipmentHas(equipped, ITEM_REGISTRY.HELIUM_BOOTS)
             ? HELIUM_JUMP_FORCE
             : DEFAULT_JUMP_FORCE;
-          moveState.maxSpeed = equipmentHas(equipped, ITEM_REGISTRY.HEAVY_SHIELD)
-            ? DEFAULT_MAX_SPEED * HEAVY_SHIELD_SPEED_MULT
-            : DEFAULT_MAX_SPEED;
+          const shieldSpeedMult = equipmentHas(equipped, ITEM_REGISTRY.HEAVY_SHIELD)
+            ? HEAVY_SHIELD_SPEED_MULT
+            : 1;
+          const eatingSpeedMult = activeEatingRef.current ? 0.3 : 1;
+          moveState.maxSpeed = DEFAULT_MAX_SPEED * shieldSpeedMult * eatingSpeedMult;
         }
         if (scene.ambientColor) {
           scene.ambientColor = equipmentHas(equipped, ITEM_REGISTRY.GLOW_TALISMAN)
@@ -1457,6 +1527,44 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       {inner}
     </div>
   );
+
+  const vitalsPct = (value: number, max: number): string =>
+    `${Math.max(0, Math.min(100, (value / max) * 100))}%`;
+
+  const survivalVitalsHud =
+    gameMode === "survival" && !paused ? (
+      <div className="pointer-events-none absolute inset-x-0 bottom-20 flex justify-center px-3">
+        <div
+          className="grid w-[min(94vw,23rem)] grid-cols-2 gap-2 rounded-sm border-2 border-black/55 bg-neutral-950/70 p-2 shadow-[0_8px_20px_rgba(0,0,0,0.55)]"
+          dir="rtl"
+        >
+          <div>
+            <div className="mb-1 flex items-center justify-between text-[10px] font-black text-red-100">
+              <span>חיים</span>
+              <span>{Math.ceil(localVitals.health)}</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-sm bg-black/60">
+              <div
+                className="h-full bg-red-500"
+                style={{ width: vitalsPct(localVitals.health, 20) }}
+              />
+            </div>
+          </div>
+          <div>
+            <div className="mb-1 flex items-center justify-between text-[10px] font-black text-amber-100">
+              <span>רעב</span>
+              <span>{Math.ceil(localVitals.hunger)}</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-sm bg-black/60">
+              <div
+                className="h-full bg-amber-400"
+                style={{ width: vitalsPct(localVitals.hunger, 20) }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    ) : null;
 
   const blockHotbarHud = !paused ? (
     <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center gap-1.5 px-2">
@@ -2015,6 +2123,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         aria-label="minecraft viewport"
       />
       {controlsHint}
+      {survivalVitalsHud}
       {blockHotbarHud}
       {inventoryPanel}
       {recipeBookOverlay}
