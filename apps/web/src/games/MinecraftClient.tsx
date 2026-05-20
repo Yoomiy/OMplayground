@@ -38,9 +38,11 @@ import {
   MC_MATERIAL_ENTRIES,
   NOA_BLOCK_ENTRIES,
   PLANT_SPRITE_BLOCK_IDS,
+  blockSoundGroup,
   blockReplaceable,
   noaCubeBlockOptions,
-  proceduralVoxelID
+  proceduralVoxelID,
+  sampleBiomeColumn
 } from "@playground/voxel-content";
 import { craftingGridPreview } from "@/lib/voxelCraftingPreview";
 import { VOXEL_ENTITY_CATALOG } from "@/games/voxel/voxelEntityCatalog";
@@ -74,6 +76,7 @@ import {
   FirstPersonHeldItemView,
   resolveHeldItemSpec
 } from "@/games/voxel/heldItemView";
+import { AudioManager } from "@/games/voxel/audioManager";
 
 const INV_DRAG_MIME = "application/x-playground-voxel-inv";
 
@@ -604,6 +607,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const miningAnimRef = useRef<number | null>(null);
   const breakCrackRef = useRef<BreakCrackOverlay | null>(null);
   const heldItemViewRef = useRef<FirstPersonHeldItemView | null>(null);
+  const audioManagerRef = useRef<AudioManager | null>(null);
   const lastBreakStartAtRef = useRef(0);
   const lastBreakFinishAtRef = useRef(0);
   const breakFinishSentRef = useRef(false);
@@ -741,6 +745,16 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       };
       gameEl.addEventListener("pointerdown", focusGame);
       cleanupFns.push(() => gameEl.removeEventListener("pointerdown", focusGame));
+
+      const audio = new AudioManager();
+      audioManagerRef.current = audio;
+      const primeAudio = (): void => audio.prime();
+      gameEl.addEventListener("pointerdown", primeAudio);
+      cleanupFns.push(() => gameEl.removeEventListener("pointerdown", primeAudio));
+      cleanupFns.push(() => {
+        audio.dispose();
+        audioManagerRef.current = null;
+      });
 
       const deltas = new Map<string, number>();
       for (const [x, y, z, id] of initialDeltas) {
@@ -903,6 +917,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       const offPlayerDamage = registerPlayerDamageListenerRef.current((payload) => {
         if (payload.userId !== myUserIdRef.current) return;
         setLocalVitals((prev) => ({ ...prev, health: payload.health }));
+        audio.playHurt();
         setDamageFlash(1);
         if (damageFlashTimer !== null) window.clearTimeout(damageFlashTimer);
         damageFlashTimer = window.setTimeout(() => {
@@ -929,6 +944,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
       function triggerLocalArmSwing(): void {
         onArmSwingRef.current();
+        audio.playSwing();
         if (localRig) triggerAvatarSwing(localRig);
         heldItemView?.triggerSwing();
       }
@@ -1012,9 +1028,20 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       cleanupFns.push(offSnapshot);
 
       const offBlockDelta = registerBlockDeltaListenerRef.current(({ pos, blockId }) => {
-        noa.setBlock(blockId, pos[0], pos[1], pos[2]);
-        deltas.set(blockCoordKey(pos[0], pos[1], pos[2]), blockId);
-        setTorchLightAt(pos[0], pos[1], pos[2], blockId);
+        const [x, y, z] = pos;
+        const previousId = clientBlockAtInt(x, y, z);
+        noa.setBlock(blockId, x, y, z);
+        deltas.set(blockCoordKey(x, y, z), blockId);
+        setTorchLightAt(x, y, z, blockId);
+        if (!pausedRef.current && previousId !== blockId) {
+          if (previousId !== BLOCK_REGISTRY.AIR && blockId === BLOCK_REGISTRY.AIR) {
+            const volume = blockEventVolume(x, y, z, 0.58);
+            if (volume > 0) audio.playBreak(blockSoundGroup(previousId), volume);
+          } else if (blockId !== BLOCK_REGISTRY.AIR) {
+            const volume = blockEventVolume(x, y, z, 0.42);
+            if (volume > 0) audio.playPlace(blockSoundGroup(blockId), volume);
+          }
+        }
       });
       cleanupFns.push(offBlockDelta);
 
@@ -1031,6 +1058,25 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
       function clientSolidAtInt(ix: number, iy: number, iz: number): boolean {
         return clientBlockAtInt(ix, iy, iz) !== BLOCK_REGISTRY.AIR;
+      }
+
+      function blockEventVolume(
+        ix: number,
+        iy: number,
+        iz: number,
+        baseVolume: number
+      ): number {
+        try {
+          const pos = noa.entities.getPosition(noa.playerEntity) as number[];
+          const dx = ix + 0.5 - pos[0];
+          const dy = iy + 0.5 - pos[1];
+          const dz = iz + 0.5 - pos[2];
+          const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+          if (dist > 18) return 0;
+          return baseVolume * Math.max(0.18, 1 - dist / 18);
+        } catch {
+          return baseVolume;
+        }
       }
 
       function playerIntersectsLadder(pos: Vec3): boolean {
@@ -1389,6 +1435,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         void onBreakFinishRef.current(pos);
       }
 
+      let lastDigSfxAt = 0;
+
       async function tryStartMining(): Promise<void> {
         if (pausedRef.current) return;
         const tgt = noa.targetedBlock;
@@ -1440,11 +1488,18 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           durationMs: ack.durationMs,
           startedAt: performance.now()
         };
+        lastDigSfxAt = 0;
         breakCrackRef.current?.setStage(pos, 0);
         const tick = (): void => {
           const m = activeMiningRef.current;
           if (!m) return;
-          const t = (performance.now() - m.startedAt) / m.durationMs;
+          const now = performance.now();
+          if (now - lastDigSfxAt > 250) {
+            const diggingId = clientBlockAtInt(m.pos[0], m.pos[1], m.pos[2]);
+            audio.playDig(blockSoundGroup(diggingId));
+            lastDigSfxAt = now;
+          }
+          const t = (now - m.startedAt) / m.durationMs;
           breakCrackRef.current?.setStage(m.pos, destroyStageIndex(t));
           if (t >= 1) {
             activeMiningRef.current = null;
@@ -1478,6 +1533,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           window.clearTimeout(eating.timer);
         }
         activeEatingRef.current = null;
+        audio.stopEating(false);
         void onEatCancelRef.current();
       }
 
@@ -1494,10 +1550,12 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           activeEatingRef.current = null;
           return;
         }
+        audio.startEating();
         const durationMs = ack.durationMs ?? 1600;
         active.timer = window.setTimeout(() => {
           if (activeEatingRef.current !== active) return;
           activeEatingRef.current = null;
+          audio.stopEating(true);
           void onEatFinishRef.current(hotbarIndex);
         }, durationMs);
       }
@@ -1634,6 +1692,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       let lastGrounded = true;
       let minAirVelocityY = 0;
       let lastFallImpactAt = 0;
+      let lastAmbientSampleAt = 0;
+      let lastFootstepAt = 0;
       noa.on("tick", () => {
         const nowPerf = performance.now();
         const equipped = equipmentSlotsRef.current;
@@ -1729,6 +1789,36 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           !!inputState.backward ||
           !!inputState.left ||
           !!inputState.right;
+
+        if (nowPerf - lastAmbientSampleAt > 1200) {
+          lastAmbientSampleAt = nowPerf;
+          audio.updateAmbient(
+            sampleBiomeColumn(Math.floor(pos[0]), Math.floor(pos[2]), seed).biomeId
+          );
+        }
+
+        if (onGround && playerMoving && !inventoryOpenRef.current) {
+          const velocity = physState?.body?.velocity ?? [0, 0, 0];
+          const horizontalSpeed = Math.hypot(
+            Number(velocity[0] ?? 0),
+            Number(velocity[2] ?? 0)
+          );
+          const strideMs = horizontalSpeed > 7.5 ? 240 : 350;
+          if (horizontalSpeed > 0.05 && nowPerf - lastFootstepAt >= strideMs) {
+            const bx = Math.floor(pos[0]);
+            const bz = Math.floor(pos[2]);
+            let by = Math.floor(pos[1] - 0.35);
+            let blockBelow = clientBlockAtInt(bx, by, bz);
+            if (blockReplaceable(blockBelow) || blockBelow === BLOCK_REGISTRY.WATER) {
+              by -= 1;
+              blockBelow = clientBlockAtInt(bx, by, bz);
+            }
+            if (blockBelow !== BLOCK_REGISTRY.AIR && blockBelow !== BLOCK_REGISTRY.WATER) {
+              audio.playStep(blockSoundGroup(blockBelow), horizontalSpeed > 7.5 ? 0.36 : 0.3);
+              lastFootstepAt = nowPerf;
+            }
+          }
+        }
 
         heldItemView?.setActiveVisual(currentHeldItemSpec());
         heldItemView?.update({
@@ -2131,7 +2221,10 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
                       ? "cursor-pointer hover:brightness-110 active:brightness-95"
                       : "cursor-not-allowed opacity-45"
                   ].join(" ")}
-                  onClick={() => onCraft("grid")}
+                  onClick={() => {
+                    audioManagerRef.current?.playCraft();
+                    onCraft("grid");
+                  }}
                 >
                   {craftPreview ? (
                     <>

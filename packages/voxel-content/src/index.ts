@@ -14,6 +14,13 @@ export {
 } from "./blocks";
 
 export {
+  blockSoundGroup,
+  blockSoundUrl,
+  type BlockSoundAction,
+  type BlockSoundGroup
+} from "./blockAudio";
+
+export {
   MC_MATERIAL_ENTRIES,
   NOA_BLOCK_ENTRIES,
   PLANT_SPRITE_BLOCK_IDS,

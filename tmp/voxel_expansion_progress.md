@@ -58,7 +58,8 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Fixed surface building by treating air and surface plants as shared replaceable placement targets.
 - Added the combat/fall socket protocol and lowered spawn height from `surface + 3` to `surface + 2`.
 - Added a custom alpha/tinted Babylon render material for water so it is not treated as an opaque texture-only material.
-- Next concrete step: continue Phase 5 audio/SFX if no new comments appear.
+- Added a centralized Web Audio-based voxel audio manager and wired biome ambience, footsteps, mining, block break/place, swings, eating, crafting, and damage cues.
+- Next concrete step: address the new comments about underwater spawning/building, confirming fall damage, and movement/jump tuning.
 
 ## 2026-05-20 - Shared Recipe Model
 
@@ -271,6 +272,25 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Verification run:
   - `npm run lint -w @playground/web` passed.
 
+## 2026-05-20 - Client Dynamic Audio
+
+- Added shared block sound group metadata and URL conventions for step, dig, break, and place material cues.
+- Added a centralized `AudioManager` for the web client:
+  - gracefully no-ops when browser audio is unavailable or locked;
+  - unlocks/resumes on viewport pointer interaction;
+  - synthesizes biome ambience, material footsteps, mining scrapes, block break/place sounds, tool swings, eating, crafting pops, and damage hits with Web Audio so the system works before external sound assets exist.
+- Wired client runtime triggers:
+  - ambience follows the shared biome column below the player;
+  - footsteps use the block below the player;
+  - active mining emits repeated material scrapes;
+  - authoritative block deltas emit nearby break/place cues;
+  - arm swings, eating, crafting, and damage events emit action cues.
+- Verification run:
+  - `npm run build -w @playground/voxel-content` passed.
+  - `npm test -w @playground/voxel-content -- blocks.test.ts` passed: 1 suite, 11 tests.
+  - `npm test -w @playground/web -- audioManager.test.ts` passed: 1 suite, 3 tests.
+  - `npm run lint -w @playground/web` passed after a Safari `webkitAudioContext` type-cast fix.
+
 ## Comments / Instructions To Address
 
 - Addressed: added `Current Work` above to explain the active implementation slice and next concrete step.
@@ -282,7 +302,12 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Addressed: opaque blocks behaved weird because normal cubes were registered with `opaque: undefined`, overriding noa's default `true`. Shared block options now omit undefined opacity.
 - Addressed: animation works but building does not. Likely cause was replaceable surface plants blocking placement; shared replaceable-block rules now let the client ignore plants and the server replace them.
 - Addressed: building works now, but some blocks, possibly water/transparent blocks, behave weird. Water now uses an explicit custom alpha material instead of relying on the PNG alpha channel.
+- i understant now. i was peing spawned underwater, and there i couldn't build where there weren't a block before. it should be possible. that's also why the fall seemed to be too long, because ii was falling to the buttom of the see. fix these and make sure also that players aren't spawned under water.
 - Addressed: combat/fall protocol was missing. Added fall impact, player attack, and player damage socket flow.
 - Addressed: spawn felt too high. Spawn clearance is now `surface + 2` instead of `surface + 3`.
+- after you are done with everything /review every detail in the original plan implementation and in this document and fix what needs fixing. your goal isn't reached until you are done with it!
+- does falling actually makes damage?
+- we need to bring order to walking speed, jump height, etc.
+- holding and using of non-block items
 
 - adress unadressed comments!

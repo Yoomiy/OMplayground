@@ -11,6 +11,7 @@ import {
   blockHardness,
   blockReplaceable
 } from "./blocks";
+import { blockSoundGroup, blockSoundUrl } from "./blockAudio";
 import { isInstantBreak } from "./mining";
 
 describe("@playground/voxel-content blocks", () => {
@@ -117,5 +118,19 @@ describe("@playground/voxel-content blocks", () => {
     expect(blockDef(BLOCK_REGISTRY.LADDER)?.speedTool).toBe("axe");
     expect(isInstantBreak(BLOCK_REGISTRY.TORCH)).toBe(true);
     expect(blockDef(BLOCK_REGISTRY.CHEST)?.placeable).toBe(true);
+  });
+
+  it("maps block ids to material sound groups and URL conventions", () => {
+    expect(blockSoundGroup(BLOCK_REGISTRY.GRASS)).toBe("grass");
+    expect(blockSoundGroup(BLOCK_REGISTRY.GRASS_SNOW)).toBe("grass");
+    expect(blockSoundGroup(BLOCK_REGISTRY.STONE)).toBe("stone");
+    expect(blockSoundGroup(BLOCK_REGISTRY.DIAMOND_ORE)).toBe("stone");
+    expect(blockSoundGroup(BLOCK_REGISTRY.SANDSTONE)).toBe("sand");
+    expect(blockSoundGroup(BLOCK_REGISTRY.BIRCH_LOG)).toBe("wood");
+    expect(blockSoundGroup(BLOCK_REGISTRY.BIRCH_LEAVES)).toBe("leaves");
+    expect(blockSoundGroup(BLOCK_REGISTRY.WHITE_WOOL)).toBe("cloth");
+    expect(blockSoundGroup(BLOCK_REGISTRY.AIR)).toBe("silent");
+    expect(blockSoundUrl("step", "grass")).toBe("/sounds/step/grass.mp3");
+    expect(blockSoundUrl("break", "silent")).toBeNull();
   });
 });
