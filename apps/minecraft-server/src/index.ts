@@ -30,6 +30,8 @@ import {
   createEmptyCraftingGrid,
   createEmptyHotbar,
   createEmptyItemInventory,
+  isPersonalCraftingIndex,
+  returnInactiveCraftingSlotsToInventory,
   tryCraftFromGrid,
   HOTBAR_SLOT_COUNT
 } from "./inventory";
@@ -92,6 +94,7 @@ import {
   type InventoryMoveReq,
   type DropItemReq,
   type JoinRoomAck,
+  type OpenCraftingTableReq,
   type SetGameModeReq,
   type SimpleAck,
   type Vec3
@@ -298,6 +301,15 @@ function isGameMode(v: unknown): v is GameMode {
   return v === "creative" || v === "survival";
 }
 
+function inventorySyncPayload(player: PlayerRuntime) {
+  return {
+    slots: player.inventory ?? [],
+    itemSlots: player.itemInventory,
+    craftingSlots: player.craftingGrid,
+    craftingGridWidth: player.craftingGridWidth ?? 2
+  };
+}
+
 function executeBlockBreak(
   room: VoxelRoom,
   player: PlayerRuntime,
@@ -429,11 +441,7 @@ async function emitInventoryToSurvivalPlayers(
     if (!uid) continue;
     const p = room.players.get(uid);
     if (p?.inventory && p.itemInventory && p.craftingGrid) {
-      s.emit("INVENTORY_SYNC", {
-        slots: p.inventory,
-        itemSlots: p.itemInventory,
-        craftingSlots: p.craftingGrid
-      });
+      s.emit("INVENTORY_SYNC", inventorySyncPayload(p));
     }
   }
 }
@@ -589,6 +597,8 @@ io.on("connection", (socket) => {
           effectiveMode === "survival" && assigned.player.craftingGrid
             ? cloneCraftingGrid(assigned.player.craftingGrid)
             : createEmptyCraftingGrid(),
+        craftingGridWidth:
+          effectiveMode === "survival" ? assigned.player.craftingGridWidth ?? 2 : 2,
         drops: effectiveMode === "survival" ? listDropsWire(room) : []
       });
     }
@@ -697,11 +707,7 @@ io.on("connection", (socket) => {
         player.craftingGrid
       ) {
         consumeOneIfPresent(player.inventory, blockId);
-        socket.emit("INVENTORY_SYNC", {
-          slots: player.inventory,
-          itemSlots: player.itemInventory,
-          craftingSlots: player.craftingGrid
-        });
+        socket.emit("INVENTORY_SYNC", inventorySyncPayload(player));
       }
       io.to(`voxel:${sessionId}`).emit("BLOCK_DELTA", {
         pos: [x, y, z],
@@ -790,11 +796,7 @@ io.on("connection", (socket) => {
       }
       executeBlockBreak(room, player, userId, sessionId!, x, y, z, blockId);
       if (player.inventory && player.itemInventory && player.craftingGrid) {
-        socket.emit("INVENTORY_SYNC", {
-          slots: player.inventory,
-          itemSlots: player.itemInventory,
-          craftingSlots: player.craftingGrid
-        });
+        socket.emit("INVENTORY_SYNC", inventorySyncPayload(player));
       }
       ack?.({ ok: true });
     }
@@ -915,11 +917,7 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      socket.emit("INVENTORY_SYNC", {
-        slots: player.inventory,
-        itemSlots: player.itemInventory,
-        craftingSlots: player.craftingGrid
-      });
+      socket.emit("INVENTORY_SYNC", inventorySyncPayload(player));
       io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
         sessionId,
         kind: "WORLD_DROP_SPAWNED",
@@ -949,17 +947,82 @@ io.on("connection", (socket) => {
       if (recipeId !== "grid") {
         return ack?.({ ok: false });
       }
-      if (!tryCraftFromGrid(player.inventory, player.itemInventory, player.craftingGrid)) {
+      if (
+        !tryCraftFromGrid(
+          player.inventory,
+          player.itemInventory,
+          player.craftingGrid,
+          player.craftingGridWidth ?? 2
+        )
+      ) {
         return ack?.({ ok: false });
       }
-      socket.emit("INVENTORY_SYNC", {
-        slots: player.inventory,
-        itemSlots: player.itemInventory,
-        craftingSlots: player.craftingGrid
-      });
+      socket.emit("INVENTORY_SYNC", inventorySyncPayload(player));
       ack?.({ ok: true });
     }
   );
+
+  socket.on(
+    "OPEN_CRAFTING_TABLE",
+    (payload: OpenCraftingTableReq, ack?: (r: SimpleAck) => void) => {
+      const sessionId = socket.data.sessionId as string | undefined;
+      const room = sessionId ? getRoom(sessionId) : undefined;
+      const player = room ? room.players.get(userId) : undefined;
+      if (!sessionId || !room || !player || room.paused) return ack?.({ ok: false });
+      if ((room.gameMode ?? "creative") !== "survival") return ack?.({ ok: false });
+      if (!player.inventory || !player.itemInventory || !player.craftingGrid) {
+        return ack?.({ ok: false });
+      }
+      const pos = payload?.pos;
+      if (!isFiniteVec(pos)) return ack?.({ ok: false });
+      const [x, y, z] = pos.map((n) => Math.floor(n)) as Vec3;
+      if (vecDist(player.pos, [x + 0.5, y + 0.5, z + 0.5]) > MAX_REACH) {
+        return ack?.({
+          ok: false,
+          error: { code: "OUT_OF_REACH", message: "רחוק מדי" }
+        });
+      }
+      if (getVoxelID(room.world, x, y, z) !== BLOCK_REGISTRY.CRAFTING) {
+        return ack?.({ ok: false });
+      }
+      player.craftingGridWidth = 3;
+      socket.emit("INVENTORY_SYNC", inventorySyncPayload(player));
+      ack?.({ ok: true });
+    }
+  );
+
+  socket.on("CLOSE_CRAFTING_TABLE", (_payload: unknown, ack?: (r: SimpleAck) => void) => {
+    const sessionId = socket.data.sessionId as string | undefined;
+    const room = sessionId ? getRoom(sessionId) : undefined;
+    const player = room ? room.players.get(userId) : undefined;
+    if (!sessionId || !room || !player) return ack?.({ ok: false });
+    if (!player.inventory || !player.itemInventory || !player.craftingGrid) {
+      player.craftingGridWidth = 2;
+      return ack?.({ ok: true });
+    }
+    const overflow = returnInactiveCraftingSlotsToInventory(
+      player.craftingGrid,
+      player.inventory,
+      player.itemInventory
+    );
+    for (const item of overflow) {
+      const dropPos = dropPositionInFrontOfPlayer(player);
+      const spawned =
+        item.kind === "block"
+          ? spawnBlockDropAt(room, dropPos, item.blockId, item.count)
+          : spawnItemDropAt(room, dropPos, item.itemId, item.count);
+      if (spawned) {
+        io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
+          sessionId,
+          kind: "WORLD_DROP_SPAWNED",
+          drop: spawned
+        });
+      }
+    }
+    player.craftingGridWidth = 2;
+    socket.emit("INVENTORY_SYNC", inventorySyncPayload(player));
+    ack?.({ ok: true });
+  });
 
   socket.on(
     "INVENTORY_MOVE",
@@ -1001,6 +1064,14 @@ io.on("connection", (socket) => {
       if (!Number.isFinite(fromIndex) || !Number.isFinite(toIndex)) {
         return ack?.({ ok: false });
       }
+      const craftingWidth = player.craftingGridWidth ?? 2;
+      if (
+        craftingWidth === 2 &&
+        ((from === "craft" && !isPersonalCraftingIndex(fromIndex)) ||
+          (to === "craft" && !isPersonalCraftingIndex(toIndex)))
+      ) {
+        return ack?.({ ok: false });
+      }
       if (!applyInventoryMove(player.inventory, player.itemInventory, player.craftingGrid, {
         from,
         fromIndex,
@@ -1009,11 +1080,7 @@ io.on("connection", (socket) => {
       })) {
         return ack?.({ ok: false });
       }
-      socket.emit("INVENTORY_SYNC", {
-        slots: player.inventory,
-        itemSlots: player.itemInventory,
-        craftingSlots: player.craftingGrid
-      });
+      socket.emit("INVENTORY_SYNC", inventorySyncPayload(player));
       ack?.({ ok: true });
     }
   );
@@ -1059,6 +1126,7 @@ io.on("connection", (socket) => {
           p.inventory = createEmptyHotbar();
           p.itemInventory = createEmptyItemInventory();
           p.craftingGrid = createEmptyCraftingGrid();
+          p.craftingGridWidth = 2;
         }
         room.disconnectedInventories.clear();
         room.disconnectedItemInventories.clear();
@@ -1070,6 +1138,7 @@ io.on("connection", (socket) => {
           delete p.inventory;
           delete p.itemInventory;
           delete p.craftingGrid;
+          delete p.craftingGridWidth;
         }
         room.disconnectedInventories.clear();
         room.disconnectedItemInventories.clear();

@@ -3,7 +3,11 @@
  * Item ids/metadata are authored in `@playground/voxel-content`; wire types stay here.
  */
 
-import { webItemIcons } from "@playground/voxel-content";
+import {
+  CRAFTING_TABLE_GRID_SIZE,
+  PERSONAL_CRAFTING_GRID_SIZE,
+  webItemIcons
+} from "@playground/voxel-content";
 
 export {
   BLOCK_REGISTRY,
@@ -31,7 +35,7 @@ export interface ItemSlot {
   durability?: number;
 }
 
-/** One cell in the survival 2×2 crafting grid (blocks or items, never both). */
+/** One cell in the survival 3x3 backing crafting grid (blocks or items, never both). */
 export interface CraftingGridSlot {
   blockId: number;
   itemId: number;
@@ -40,6 +44,7 @@ export interface CraftingGridSlot {
 }
 
 export type InventoryRegion = "hotbar" | "storage" | "craft";
+export type CraftingGridWidth = 2 | 3;
 
 export interface InventoryMoveReq {
   from: InventoryRegion;
@@ -100,6 +105,7 @@ export interface JoinRoomAckOk {
   inventory: HotbarSlot[];
   itemInventory: ItemSlot[];
   craftingGrid: CraftingGridSlot[];
+  craftingGridWidth?: CraftingGridWidth;
   /** Survival world stacks; newer servers only. */
   drops?: WorldDrop[];
 }
@@ -157,11 +163,13 @@ export interface InventorySyncPayload {
   slots: HotbarSlot[];
   itemSlots?: ItemSlot[];
   craftingSlots?: CraftingGridSlot[];
+  craftingGridWidth?: CraftingGridWidth;
 }
 
 export const MAIN_ITEM_INVENTORY_SLOTS = 27;
-export const CRAFTING_GRID_SLOTS = 4;
-/** Max units per 2×2 crafting grid cell (one ingredient per slot). */
+export const PERSONAL_CRAFTING_GRID_SLOTS = PERSONAL_CRAFTING_GRID_SIZE;
+export const CRAFTING_GRID_SLOTS = CRAFTING_TABLE_GRID_SIZE;
+/** Max units per crafting grid cell (one ingredient per slot). */
 export const CRAFTING_CELL_MAX = 1;
 
 export interface ItemPickupPayload {
@@ -171,6 +179,10 @@ export interface ItemPickupPayload {
 
 export interface CraftReq {
   recipeId: string;
+}
+
+export interface OpenCraftingTableReq {
+  pos: Vec3;
 }
 
 export interface CraftAck extends SimpleAck {

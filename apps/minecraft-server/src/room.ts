@@ -60,8 +60,10 @@ export interface PlayerRuntime extends RoomPlayer {
   inventory?: HotbarState;
   /** Survival: main storage for non-placeable items. */
   itemInventory?: ItemInventoryState;
-  /** Survival: 2×2 crafting grid (blocks + items). */
+  /** Survival: 3×3 backing grid; personal crafting uses top-left 2×2. */
   craftingGrid?: CraftingGridState;
+  /** Survival: 2 personal grid, 3 crafting table grid. */
+  craftingGridWidth?: 2 | 3;
   /** Survival: in-progress timed block break. */
   activeBreak?: ActiveBreak;
   /** Selected survival hotbar index 0..8 (from INPUT). */
@@ -343,6 +345,7 @@ export function assignPlayer(
     player.craftingGrid = cachedCraft
       ? cloneCraftingGrid(cachedCraft)
       : createEmptyCraftingGrid();
+    player.craftingGridWidth = 2;
     room.disconnectedCraftingGrids.delete(userId);
     if (player.inventory && player.itemInventory && player.craftingGrid) {
       spillExcessFromCraftingGrid(

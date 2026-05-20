@@ -96,10 +96,6 @@ function block(blockId: number): RecipeIngredient {
   return { kind: "block", blockId };
 }
 
-function item(itemId: number): RecipeIngredient {
-  return { kind: "item", itemId };
-}
-
 function isEmptyCell(cell: GridCellSnapshot): boolean {
   return cell.count <= 0 || (cell.itemId === 0 && cell.blockId === BLOCK_REGISTRY.AIR);
 }

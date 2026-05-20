@@ -84,8 +84,11 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     serverInventory,
     serverItemInventory,
     serverCraftingGrid,
+    serverCraftingGridWidth,
     craft,
     inventoryMove,
+    openCraftingTable,
+    closeCraftingTable,
     setGameMode,
     dropHotbarItem,
     onWorldDropSpawned,
@@ -244,6 +247,16 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     void craft(recipeId);
   }, [craft]);
 
+  const handleOpenCraftingTable = useCallback(
+    (pos: Vec3) => openCraftingTable(pos),
+    [openCraftingTable]
+  );
+
+  const handleCloseCraftingTable = useCallback(
+    () => closeCraftingTable(),
+    [closeCraftingTable]
+  );
+
   const handleInventoryMove = useCallback(
     (req: InventoryMoveReq) => {
       void inventoryMove(req).then((ack) => {
@@ -323,8 +336,13 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         craftingGridSlots={
           liveGameMode === "survival" ? serverCraftingGrid : emptyClientCrafting()
         }
+        craftingGridWidth={
+          liveGameMode === "survival" ? serverCraftingGridWidth : 2
+        }
         onInventoryMove={handleInventoryMove}
         onCraft={handleCraft}
+        onOpenCraftingTable={handleOpenCraftingTable}
+        onCloseCraftingTable={handleCloseCraftingTable}
         onInput={sendInput}
         onBlockPlace={handlePlaceBlock}
         onBlockBreak={handleBreakBlock}

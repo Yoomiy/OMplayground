@@ -16,6 +16,7 @@ import {
   type InventoryRegion,
   type InventoryMoveReq,
   type ItemSlot,
+  type CraftingGridWidth,
   type RoomPlayerInfo,
   type RoomSnapshot,
   type Vec3,
@@ -76,6 +77,12 @@ const INV_DRAG_MIME = "application/x-playground-voxel-inv";
  */
 
 const HOTBAR = PLACEABLE_BLOCK_IDS;
+const PERSONAL_CRAFTING_SLOT_INDICES = [0, 1, 3, 4] as const;
+const EMPTY_CRAFTING_SLOT: CraftingGridSlot = {
+  blockId: BLOCK_REGISTRY.AIR,
+  itemId: 0,
+  count: 0
+};
 
 /** Max third-person camera pull-back (voxels); noa defaults `initialZoom` 0. */
 const CAMERA_ZOOM_DISTANCE_MAX = 16;
@@ -384,10 +391,14 @@ export interface MinecraftClientProps {
   inventorySlots: HotbarSlot[];
   /** Survival: main item storage (27). Creative: may be empty. */
   itemInventorySlots: ItemSlot[];
-  /** Survival: 2×2 crafting grid from server. */
+  /** Survival: 3x3 backing grid from server; normal inventory exposes top-left 2x2. */
   craftingGridSlots: CraftingGridSlot[];
+  /** Survival: 2 personal grid, 3 crafting-table grid. */
+  craftingGridWidth: CraftingGridWidth;
   onInventoryMove: (req: InventoryMoveReq) => void;
   onCraft: (recipeId: string) => void;
+  onOpenCraftingTable: (pos: Vec3) => Promise<SimpleAck>;
+  onCloseCraftingTable: () => Promise<SimpleAck>;
   onInput: (input: InputReq) => void;
   onBlockPlace: (pos: Vec3, blockId: number) => void;
   onBlockBreak: (pos: Vec3) => void;
@@ -421,8 +432,11 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     inventorySlots,
     itemInventorySlots,
     craftingGridSlots,
+    craftingGridWidth,
     onInventoryMove,
     onCraft,
+    onOpenCraftingTable,
+    onCloseCraftingTable,
     onInput,
     onBlockPlace,
     onBlockBreak,
@@ -466,6 +480,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const BREAK_FINISH_MIN_MS = 100;
   const pausedRef = useRef(paused);
   const gameModeRef = useRef<GameMode>(gameMode);
+  const inventoryOpenRef = useRef(inventoryOpen);
+  const craftingGridWidthRef = useRef<CraftingGridWidth>(craftingGridWidth);
   const inventoryRef = useRef<HotbarSlot[]>(inventorySlots);
   const remoteEntitiesRef = useRef(new Map<string, number>());
   const selectedBlockRef = useRef<number>(BLOCK_REGISTRY.GRASS);
@@ -477,6 +493,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const registerWorldDropRemovedRef = useRef(registerWorldDropRemoved);
   const registerWorldDropUpdatedRef = useRef(registerWorldDropUpdated);
   const onDropHotbarSlotRef = useRef(onDropHotbarSlot);
+  const onOpenCraftingTableRef = useRef(onOpenCraftingTable);
+  const onCloseCraftingTableRef = useRef(onCloseCraftingTable);
 
   onInputRef.current = onInput;
   onPlaceRef.current = onBlockPlace;
@@ -486,6 +504,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   onBreakCancelRef.current = onBreakCancel;
   pausedRef.current = paused;
   gameModeRef.current = gameMode;
+  inventoryOpenRef.current = inventoryOpen;
+  craftingGridWidthRef.current = craftingGridWidth;
   inventoryRef.current = inventorySlots;
   survivalSlotRef.current = survivalSlot;
   myUserIdRef.current = myUserId;
@@ -495,6 +515,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   registerWorldDropRemovedRef.current = registerWorldDropRemoved;
   registerWorldDropUpdatedRef.current = registerWorldDropUpdated;
   onDropHotbarSlotRef.current = onDropHotbarSlot;
+  onOpenCraftingTableRef.current = onOpenCraftingTable;
+  onCloseCraftingTableRef.current = onCloseCraftingTable;
 
   const selectCreativeBlock = (blockId: number): void => {
     if (!PLACEABLE_BLOCK_IDS.includes(blockId)) return;
@@ -506,6 +528,13 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   useEffect(() => {
     if (!inventoryOpen) setRecipeBookOpen(false);
   }, [inventoryOpen]);
+
+  function closeInventory(): void {
+    if (craftingGridWidthRef.current === 3) {
+      void onCloseCraftingTableRef.current();
+    }
+    setInventoryOpen(false);
+  }
 
   useEffect(() => {
     if (gameMode !== "creative") return;
@@ -1154,6 +1183,20 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         const tgt = noa.targetedBlock;
         if (!tgt) return;
         if (gameModeRef.current === "survival") {
+          const blockId = Number(tgt.blockID);
+          if (blockId === BLOCK_REGISTRY.CRAFTING) {
+            const pos: Vec3 = [
+              Math.floor(Number(tgt.position[0])),
+              Math.floor(Number(tgt.position[1])),
+              Math.floor(Number(tgt.position[2]))
+            ];
+            void onOpenCraftingTableRef.current(pos).then((ack) => {
+              if (!ack.ok) return;
+              document.exitPointerLock?.();
+              setInventoryOpen(true);
+            });
+            return;
+          }
           const inv = inventoryRef.current;
           const idx = survivalSlotRef.current;
           const cell = inv[idx];
@@ -1199,22 +1242,21 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
       function onHotbarKey(e: KeyboardEvent) {
         if (e.key.toLowerCase() === "e") {
-          setInventoryOpen((v) => {
-            const next = !v;
-            if (next) {
-              document.exitPointerLock?.();
-            }
-            return next;
-          });
+          if (inventoryOpenRef.current) {
+            closeInventory();
+          } else {
+            document.exitPointerLock?.();
+            setInventoryOpen(true);
+          }
           return;
         }
-        if (e.key.toLowerCase() === "p" && !inventoryOpen) {
+        if (e.key.toLowerCase() === "p" && !inventoryOpenRef.current) {
           if (gameModeRef.current === "survival") {
             onDropHotbarSlotRef.current?.(survivalSlotRef.current);
           }
           return;
         }
-        if (e.key.toLowerCase() === "q" && !inventoryOpen) {
+        if (e.key.toLowerCase() === "q" && !inventoryOpenRef.current) {
           if (gameModeRef.current === "survival") {
             onDropHotbarSlotRef.current?.(survivalSlotRef.current);
           }
@@ -1481,8 +1523,22 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
   const craftPreview =
     gameMode === "survival"
-      ? craftingGridPreview(craftingGridSlots, inventorySlots, itemInventorySlots)
+      ? craftingGridPreview(
+          craftingGridSlots,
+          inventorySlots,
+          itemInventorySlots,
+          craftingGridWidth
+        )
       : null;
+  const craftGridIndices =
+    craftingGridWidth === 3
+      ? Array.from({ length: CRAFTING_GRID_SLOTS }, (_, i) => i)
+      : [...PERSONAL_CRAFTING_SLOT_INDICES];
+  const craftGridClass = [
+    "grid gap-1 rounded border-2 border-[#5c4f3e] bg-[rgba(0,0,0,0.18)] p-1.5",
+    craftingGridWidth === 3 ? "grid-cols-3" : "grid-cols-2"
+  ].join(" ");
+  const craftGridTitle = `רשת יצירה ${craftingGridWidth}×${craftingGridWidth}`;
 
   const inventoryPanel = inventoryOpen ? (
     <div className="pointer-events-auto absolute inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-[2px]">
@@ -1502,7 +1558,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           <button
             type="button"
             className="shrink-0 rounded border-2 border-[#3d3d3d] bg-gradient-to-b from-[#a89a86] to-[#8c7d68] px-3 py-1.5 text-xs font-bold text-[#1a1510] shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_2px_0_#2a2418] hover:brightness-105 active:translate-y-px active:shadow-none"
-            onClick={() => setInventoryOpen(false)}
+            onClick={closeInventory}
           >
             ✕ סגור
           </button>
@@ -1516,7 +1572,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
             >
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <div className="text-[11px] font-black uppercase tracking-wider text-[#2a2218]">
-                  יצירה (2×2)
+                  יצירה ({craftingGridWidth}×{craftingGridWidth})
                 </div>
                 <button
                   type="button"
@@ -1530,11 +1586,9 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
                 גרור פריטים בשביל ליצור פריטים חדשים!
               </p>
               <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4" dir="ltr">
-                <div
-                  className="grid grid-cols-2 gap-1 rounded border-2 border-[#5c4f3e] bg-[rgba(0,0,0,0.18)] p-1.5"
-                  title="רשת יצירה 2×2"
-                >
-                  {craftingGridSlots.slice(0, CRAFTING_GRID_SLOTS).map((cell, i) => {
+                <div className={craftGridClass} title={craftGridTitle}>
+                  {craftGridIndices.map((i) => {
+                    const cell = craftingGridSlots[i] ?? EMPTY_CRAFTING_SLOT;
                     const itemIcon =
                       cell.itemId > 0 && cell.count > 0 ? ITEM_ICON[cell.itemId] : undefined;
                     const blockIcon =

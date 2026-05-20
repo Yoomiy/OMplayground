@@ -1,3 +1,4 @@
+import { CRAFTING_GRID_WIDTH_3 } from "@playground/voxel-content";
 import { BLOCK_REGISTRY, ITEM_REGISTRY, PLACEABLE_BLOCK_IDS } from "./protocol";
 import {
   addPickUp,
@@ -12,6 +13,7 @@ import {
   createEmptyItemInventory,
   hotbarFromPersisted,
   MAX_STACK,
+  returnInactiveCraftingSlotsToInventory,
   spillExcessFromCraftingGrid,
   tryCraftFromGrid
 } from "./inventory";
@@ -91,12 +93,12 @@ describe("inventory helpers", () => {
     expect(plankTotal).toBe(4);
   });
 
-  it("tryCraftFromGrid sticks: two planks anywhere in grid → four sticks", () => {
+  it("tryCraftFromGrid sticks: two vertical planks in personal grid → four sticks", () => {
     const hotbar = createEmptyHotbar();
     const items = createEmptyItemInventory();
     const grid = createEmptyCraftingGrid();
     grid[1] = { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.PLANKS, count: 1 };
-    grid[3] = { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.PLANKS, count: 1 };
+    grid[4] = { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.PLANKS, count: 1 };
     expect(tryCraftFromGrid(hotbar, items, grid)).toBe(true);
     const sticks = items
       .filter((s) => s.itemId === ITEM_REGISTRY.STICK)
@@ -109,7 +111,7 @@ describe("inventory helpers", () => {
     const items = createEmptyItemInventory();
     const grid = createEmptyCraftingGrid();
     grid[0] = { blockId: BLOCK_REGISTRY.OAK_PLANKS, itemId: 0, count: 1 };
-    grid[1] = { blockId: BLOCK_REGISTRY.OAK_PLANKS, itemId: 0, count: 1 };
+    grid[3] = { blockId: BLOCK_REGISTRY.OAK_PLANKS, itemId: 0, count: 1 };
     expect(tryCraftFromGrid(hotbar, items, grid)).toBe(true);
     const sticks = items
       .filter((s) => s.itemId === ITEM_REGISTRY.STICK)
@@ -123,7 +125,7 @@ describe("inventory helpers", () => {
     const grid = createEmptyCraftingGrid();
     grid[0] = { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.PLANKS, count: 1 };
     grid[1] = { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.PLANKS, count: 1 };
-    grid[2] = { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.PLANKS, count: 1 };
+    grid[3] = { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.PLANKS, count: 1 };
     expect(tryCraftFromGrid(hotbar, items, grid)).toBe(false);
   });
 
@@ -131,7 +133,7 @@ describe("inventory helpers", () => {
     const hotbar = createEmptyHotbar();
     const items = createEmptyItemInventory();
     const grid = createEmptyCraftingGrid();
-    grid[2] = { blockId: BLOCK_REGISTRY.BIRCH_LOG, itemId: 0, count: 1 };
+    grid[3] = { blockId: BLOCK_REGISTRY.BIRCH_LOG, itemId: 0, count: 1 };
     expect(tryCraftFromGrid(hotbar, items, grid)).toBe(true);
     const plankTotal = hotbar
       .filter((s) => s.blockId === BLOCK_REGISTRY.BIRCH_PLANKS)
@@ -156,7 +158,7 @@ describe("inventory helpers", () => {
     const items = createEmptyItemInventory();
     const grid = createEmptyCraftingGrid();
     grid[0] = { blockId: BLOCK_REGISTRY.BIRCH_PLANKS, itemId: 0, count: 1 };
-    grid[2] = { blockId: BLOCK_REGISTRY.SPRUCE_PLANKS, itemId: 0, count: 1 };
+    grid[3] = { blockId: BLOCK_REGISTRY.SPRUCE_PLANKS, itemId: 0, count: 1 };
     expect(tryCraftFromGrid(hotbar, items, grid)).toBe(true);
     const sticks = items
       .filter((s) => s.itemId === ITEM_REGISTRY.STICK)
@@ -208,6 +210,45 @@ describe("inventory helpers", () => {
     expect(grid.some((s) => s.blockId === BLOCK_REGISTRY.WOOD && s.count > 0)).toBe(
       true
     );
+  });
+
+  it("tryCraftFromGrid only crafts 3x3 tools when crafting-table width is active", () => {
+    const hotbar = createEmptyHotbar();
+    const items = createEmptyItemInventory();
+    const grid = createEmptyCraftingGrid();
+    grid[0] = { blockId: BLOCK_REGISTRY.COBBLESTONE, itemId: 0, count: 1 };
+    grid[1] = { blockId: BLOCK_REGISTRY.COBBLESTONE, itemId: 0, count: 1 };
+    grid[2] = { blockId: BLOCK_REGISTRY.COBBLESTONE, itemId: 0, count: 1 };
+    grid[4] = { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.STICK, count: 1 };
+    grid[7] = { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.STICK, count: 1 };
+
+    expect(tryCraftFromGrid(hotbar, items, grid)).toBe(false);
+    expect(tryCraftFromGrid(hotbar, items, grid, CRAFTING_GRID_WIDTH_3)).toBe(true);
+    expect(items.some((s) => s.itemId === ITEM_REGISTRY.STONE_PICKAXE && s.count === 1)).toBe(
+      true
+    );
+    expect(grid[2]!.count).toBe(0);
+    expect(grid[7]!.count).toBe(0);
+  });
+
+  it("returnInactiveCraftingSlotsToInventory keeps personal cells and returns table-only cells", () => {
+    const hotbar = createEmptyHotbar();
+    const items = createEmptyItemInventory();
+    const grid = createEmptyCraftingGrid();
+    grid[0] = { blockId: BLOCK_REGISTRY.WOOD, itemId: 0, count: 1 };
+    grid[2] = { blockId: BLOCK_REGISTRY.COBBLESTONE, itemId: 0, count: 1 };
+    grid[5] = { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.STICK, count: 1 };
+
+    const overflow = returnInactiveCraftingSlotsToInventory(grid, hotbar, items);
+
+    expect(overflow).toEqual([]);
+    expect(grid[0]).toMatchObject({ blockId: BLOCK_REGISTRY.WOOD, count: 1 });
+    expect(grid[2]).toMatchObject({ blockId: BLOCK_REGISTRY.AIR, itemId: 0, count: 0 });
+    expect(grid[5]).toMatchObject({ blockId: BLOCK_REGISTRY.AIR, itemId: 0, count: 0 });
+    expect(hotbar.some((s) => s.blockId === BLOCK_REGISTRY.COBBLESTONE && s.count === 1)).toBe(
+      true
+    );
+    expect(items.some((s) => s.itemId === ITEM_REGISTRY.STICK && s.count === 1)).toBe(true);
   });
 
   it("applyInventoryMove preserves tool durability into crafting grid", () => {

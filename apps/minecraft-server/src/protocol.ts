@@ -4,6 +4,11 @@
  * import. Keep this file framework-free (no socket / babylon imports).
  */
 
+import {
+  CRAFTING_TABLE_GRID_SIZE,
+  PERSONAL_CRAFTING_GRID_SIZE
+} from "@playground/voxel-content";
+
 export type Vec3 = [number, number, number];
 
 export type GameMode = "creative" | "survival";
@@ -22,7 +27,7 @@ export interface ItemSlot {
   durability?: number;
 }
 
-/** One cell in the survival 2×2 crafting grid (blocks or items, never both). */
+/** One cell in the survival 3x3 backing crafting grid (blocks or items, never both). */
 export interface CraftingGridSlot {
   blockId: number;
   itemId: number;
@@ -31,6 +36,7 @@ export interface CraftingGridSlot {
 }
 
 export type InventoryRegion = "hotbar" | "storage" | "craft";
+export type CraftingGridWidth = 2 | 3;
 
 export interface InventoryMoveReq {
   from: InventoryRegion;
@@ -103,8 +109,10 @@ export interface JoinRoomAckOk {
   inventory: HotbarSlot[];
   /** Survival: non-placeable items (27 storage). Creative: empty. */
   itemInventory: ItemSlot[];
-  /** Survival: 2×2 crafting grid. Creative: empty. */
+  /** Survival: 3x3 backing crafting grid. Creative: empty. */
   craftingGrid: CraftingGridSlot[];
+  /** Survival: 2 personal grid, 3 crafting-table grid. */
+  craftingGridWidth?: CraftingGridWidth;
   /** Item entities in the world (survival); creative sessions send `[]`. */
   drops: WorldDrop[];
 }
@@ -165,11 +173,13 @@ export interface InventorySyncPayload {
   slots: HotbarSlot[];
   itemSlots?: ItemSlot[];
   craftingSlots?: CraftingGridSlot[];
+  craftingGridWidth?: CraftingGridWidth;
 }
 
 export const MAIN_ITEM_INVENTORY_SLOTS = 27;
-export const CRAFTING_GRID_SLOTS = 4;
-/** Max units per 2×2 crafting grid cell (one ingredient per slot). */
+export const PERSONAL_CRAFTING_GRID_SLOTS = PERSONAL_CRAFTING_GRID_SIZE;
+export const CRAFTING_GRID_SLOTS = CRAFTING_TABLE_GRID_SIZE;
+/** Max units per crafting grid cell (one ingredient per slot). */
 export const CRAFTING_CELL_MAX = 1;
 
 export interface ItemPickupPayload {
@@ -179,6 +189,10 @@ export interface ItemPickupPayload {
 
 export interface CraftReq {
   recipeId: string;
+}
+
+export interface OpenCraftingTableReq {
+  pos: Vec3;
 }
 
 export interface CraftAck extends SimpleAck {

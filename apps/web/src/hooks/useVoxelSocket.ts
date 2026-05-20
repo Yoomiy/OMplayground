@@ -6,6 +6,7 @@ import type {
   BlockDelta,
   BreakStartAck,
   CraftAck,
+  CraftingGridWidth,
   CraftingGridSlot,
   GameMode,
   HotbarSlot,
@@ -100,7 +101,10 @@ export interface UseVoxelSocketReturn {
   serverInventory: HotbarSlot[];
   serverItemInventory: ItemSlot[];
   serverCraftingGrid: CraftingGridSlot[];
+  serverCraftingGridWidth: CraftingGridWidth;
   inventoryMove: (req: InventoryMoveReq) => Promise<SimpleAck>;
+  openCraftingTable: (pos: Vec3) => Promise<SimpleAck>;
+  closeCraftingTable: () => Promise<SimpleAck>;
   setGameMode: (mode: GameMode) => Promise<SimpleAck>;
   /** Survival: drop one block from hotbar near the player. */
   dropHotbarItem: (hotbarIndex: number) => Promise<SimpleAck>;
@@ -142,6 +146,8 @@ export function useVoxelSocket(
   const [serverCraftingGrid, setServerCraftingGrid] = useState<CraftingGridSlot[]>(
     () => emptyCraftingSlots()
   );
+  const [serverCraftingGridWidth, setServerCraftingGridWidth] =
+    useState<CraftingGridWidth>(2);
 
   useEffect(() => {
     let cancelled = false;
@@ -187,6 +193,7 @@ export function useVoxelSocket(
             ? ack.craftingGrid
             : emptyCraftingSlots()
         );
+        setServerCraftingGridWidth(ack.craftingGridWidth ?? 2);
       });
 
       s.on("INVENTORY_SYNC", (payload: InventorySyncPayload) => {
@@ -206,6 +213,9 @@ export function useVoxelSocket(
           payload.craftingSlots.length === CRAFTING_GRID_SLOTS
         ) {
           setServerCraftingGrid(payload.craftingSlots);
+        }
+        if (payload?.craftingGridWidth === 2 || payload?.craftingGridWidth === 3) {
+          setServerCraftingGridWidth(payload.craftingGridWidth);
         }
       });
 
@@ -307,6 +317,18 @@ export function useVoxelSocket(
     return emitWithAck<SimpleAck>(s, "INVENTORY_MOVE", req);
   }
 
+  async function openCraftingTable(pos: Vec3): Promise<SimpleAck> {
+    const s = socketRef.current;
+    if (!s?.connected) return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
+    return emitWithAck<SimpleAck>(s, "OPEN_CRAFTING_TABLE", { pos });
+  }
+
+  async function closeCraftingTable(): Promise<SimpleAck> {
+    const s = socketRef.current;
+    if (!s?.connected) return { ok: true };
+    return emitWithAck<SimpleAck>(s, "CLOSE_CRAFTING_TABLE", {});
+  }
+
   async function pause(): Promise<SimpleAck> {
     const s = socketRef.current;
     if (!s?.connected) return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
@@ -404,7 +426,10 @@ export function useVoxelSocket(
     serverInventory,
     serverItemInventory,
     serverCraftingGrid,
+    serverCraftingGridWidth,
     inventoryMove,
+    openCraftingTable,
+    closeCraftingTable,
     setGameMode,
     dropHotbarItem,
     onWorldDropSpawned,

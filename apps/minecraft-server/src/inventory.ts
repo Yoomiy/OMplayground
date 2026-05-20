@@ -1,6 +1,7 @@
 import {
   REGISTERED_ITEM_IDS,
-  ITEM_REGISTRY,
+  CRAFTING_GRID_WIDTH_2,
+  CRAFTING_GRID_WIDTH_3,
   findMatchingRecipe,
   itemMaxStack
 } from "@playground/voxel-content";
@@ -22,6 +23,9 @@ export const MAX_STACK = 64;
 export type HotbarState = HotbarSlot[];
 export type ItemInventoryState = ItemSlot[];
 export type CraftingGridState = CraftingGridSlot[];
+export type CraftingGridWidth = typeof CRAFTING_GRID_WIDTH_2 | typeof CRAFTING_GRID_WIDTH_3;
+
+export const PERSONAL_CRAFTING_SLOT_INDICES = [0, 1, 3, 4] as const;
 
 export function createEmptyHotbar(): HotbarState {
   return Array.from({ length: HOTBAR_SLOT_COUNT }, () => ({
@@ -348,7 +352,30 @@ export function craftingGridFromPersisted(
   raw: unknown,
   fallback: CraftingGridState
 ): CraftingGridState {
-  if (!Array.isArray(raw) || raw.length !== CRAFTING_GRID_SLOTS) {
+  if (!Array.isArray(raw)) {
+    return cloneCraftingGrid(fallback);
+  }
+  if (raw.length === CRAFTING_GRID_WIDTH_2 * CRAFTING_GRID_WIDTH_2) {
+    const out = createEmptyCraftingGrid();
+    for (let i = 0; i < PERSONAL_CRAFTING_SLOT_INDICES.length; i++) {
+      const cell = raw[i] as {
+        blockId?: unknown;
+        itemId?: unknown;
+        count?: unknown;
+        durability?: unknown;
+      };
+      const cellDur = Number(cell?.durability);
+      out[PERSONAL_CRAFTING_SLOT_INDICES[i]!] = {
+        blockId: Number(cell?.blockId) || 0,
+        itemId: Number(cell?.itemId) || 0,
+        count: Number(cell?.count) || 0,
+        ...(Number.isFinite(cellDur) ? { durability: Math.floor(cellDur) } : {})
+      };
+      normalizeCraftingSlot(out[PERSONAL_CRAFTING_SLOT_INDICES[i]!]!);
+    }
+    return out;
+  }
+  if (raw.length !== CRAFTING_GRID_SLOTS) {
     return cloneCraftingGrid(fallback);
   }
   const out = createEmptyCraftingGrid();
@@ -538,6 +565,10 @@ function validMoveIndex(
   return index < CRAFTING_GRID_SLOTS;
 }
 
+export function isPersonalCraftingIndex(index: number): boolean {
+  return (PERSONAL_CRAFTING_SLOT_INDICES as readonly number[]).includes(index);
+}
+
 function mergeRoomForDestination(
   to: InventoryMoveReq["from"],
   b: SlotAtom
@@ -555,8 +586,8 @@ function atomExceedsCraftMax(a: SlotAtom): boolean {
 }
 
 /**
- * Move / merge / swap one stack between hotbar, item storage, and 2×2 craft grid.
- * Hotbar holds blocks only; storage holds items only; craft holds either.
+ * Move / merge / swap one stack between hotbar, item storage, and crafting grid.
+ * Hotbar holds blocks or tools, storage holds items, craft holds either.
  * Crafting cells accept at most one unit (`CRAFTING_CELL_MAX`); dragging from
  * stacks places one unit unless the whole source is one unit.
  */
@@ -673,15 +704,20 @@ export function applyInventoryMove(
 }
 
 
-/** Craft from the 2×2 grid into hotbar / item storage (survival). */
+/** Craft from the active 2x2 or 3x3 grid into hotbar / item storage (survival). */
 export function tryCraftFromGrid(
   hotbar: HotbarState,
   itemSlots: ItemSlot[],
-  grid: CraftingGridState
+  grid: CraftingGridState,
+  gridWidth: CraftingGridWidth = CRAFTING_GRID_WIDTH_2
 ): boolean {
   for (const c of grid) normalizeCraftingSlot(c);
 
-  const matched = findMatchingRecipe(grid);
+  const activeGrid =
+    gridWidth === CRAFTING_GRID_WIDTH_2
+      ? PERSONAL_CRAFTING_SLOT_INDICES.map((idx) => grid[idx]!)
+      : grid;
+  const matched = findMatchingRecipe(activeGrid, gridWidth);
   if (!matched) return false;
 
   const { recipe, consumeAt } = matched;
@@ -694,8 +730,12 @@ export function tryCraftFromGrid(
   }
 
   for (const idx of consumeAt) {
-    grid[idx]!.count -= 1;
-    normalizeCraftingSlot(grid[idx]!);
+    const gridIndex =
+      gridWidth === CRAFTING_GRID_WIDTH_2
+        ? PERSONAL_CRAFTING_SLOT_INDICES[idx]!
+        : idx;
+    grid[gridIndex]!.count -= 1;
+    normalizeCraftingSlot(grid[gridIndex]!);
   }
 
   if (output.kind === "block") {
@@ -704,4 +744,48 @@ export function tryCraftFromGrid(
     addItemCount(itemSlots, output.id, output.count);
   }
   return true;
+}
+
+export type CraftOverflow =
+  | { kind: "block"; blockId: number; count: number }
+  | { kind: "item"; itemId: number; count: number; durability?: number };
+
+export function returnInactiveCraftingSlotsToInventory(
+  grid: CraftingGridState,
+  hotbar: HotbarState,
+  itemSlots: ItemSlot[]
+): CraftOverflow[] {
+  const overflow: CraftOverflow[] = [];
+  for (let i = 0; i < grid.length; i++) {
+    if (isPersonalCraftingIndex(i)) continue;
+    const cell = grid[i]!;
+    normalizeCraftingSlot(cell);
+    if (cell.count <= 0) continue;
+    if (cell.itemId > 0) {
+      const room = maxAddableItemCount(itemSlots, cell.itemId);
+      const toAdd = Math.min(room, cell.count);
+      if (toAdd > 0) addItemCount(itemSlots, cell.itemId, toAdd);
+      if (toAdd < cell.count) {
+        overflow.push({
+          kind: "item",
+          itemId: cell.itemId,
+          count: cell.count - toAdd,
+          ...(cell.durability !== undefined ? { durability: cell.durability } : {})
+        });
+      }
+    } else if (cell.blockId !== BLOCK_REGISTRY.AIR) {
+      const room = maxAddableBlockCount(hotbar, cell.blockId);
+      const toAdd = Math.min(room, cell.count);
+      if (toAdd > 0) addBlockCount(hotbar, cell.blockId, toAdd);
+      if (toAdd < cell.count) {
+        overflow.push({
+          kind: "block",
+          blockId: cell.blockId,
+          count: cell.count - toAdd
+        });
+      }
+    }
+    grid[i] = { blockId: BLOCK_REGISTRY.AIR, itemId: 0, count: 0 };
+  }
+  return overflow;
 }

@@ -156,7 +156,8 @@ function emitInventorySyncToPlayer(
         s.emit("INVENTORY_SYNC", {
           slots: inv,
           itemSlots: items,
-          craftingSlots: craft
+          craftingSlots: craft,
+          craftingGridWidth: player.craftingGridWidth ?? 2
         });
         return;
       }

@@ -55,6 +55,22 @@ This ledger tracks major advancements, decisions, verification, and comments to 
   - `npm run build -w @playground/voxel-content` passed.
   - `npm test -w @playground/voxel-content` passed: 5 suites, 32 tests.
 
+## 2026-05-20 - Crafting Table Grid Flow
+
+- Addressed the normal-inventory crafting slot issue: survival now keeps a 9-slot server backing array, but normal inventory renders and accepts moves only in the top-left personal 2x2 cells `[0, 1, 3, 4]`.
+- Added server-authoritative `craftingGridWidth` sync, `OPEN_CRAFTING_TABLE`, and `CLOSE_CRAFTING_TABLE`; right-clicking a crafting table in survival opens the 3x3 grid only after the server verifies reach and block identity.
+- Closing a crafting table returns table-only cells to hotbar/item storage and drops overflow near the player as world drops.
+- Updated client preview to run the shared recipe matcher against either the personal 2x2 projection or the full 3x3 grid.
+- Added inventory tests for 3x3-only tool crafting and returning inactive table cells.
+- Verification run:
+  - `npm test -w @playground/minecraft-server -- inventory.test.ts room.test.ts` passed: 2 suites, 29 tests.
+  - `npm run lint -w @playground/minecraft-server` passed.
+  - `npm run build -w @playground/voxel-content` passed.
+  - `npm test -w @playground/voxel-content` passed: 5 suites, 32 tests.
+  - `npm run lint -w @playground/web` passed.
+  - `npm test -w @playground/minecraft-server -- drops.test.ts -t "magnet pickup adds blocks" --runInBand` passed.
+  - Attempted the full minecraft-server Jest suite twice; all displayed suites passed, but the process hung before a clean summary because `drops.test.ts` did not complete. The stuck Jest processes were stopped.
+
 ## 2026-05-20 - Worldgen Math Check
 
 - Addressed the comment asking to double-check the new worldgen math.
@@ -81,3 +97,6 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Addressed: added `Current Work` above to explain the active implementation slice and next concrete step.
 - Addressed: double-checked worldgen math and documented the empirical biome-area scan in `Worldgen Math Check`.
 - just so you know: i have ( npm run dev:server )&; ( npm run dev:minecraft )&; npm run dev:web running in the background
+- Addressed: normal inventory now shows only the 2x2 personal craft cells, while right-clicking a crafting table opens the server-authorized 3x3 view.
+- the game became pretty slow, should we cosider rendering in a different thread? what is the bottle neck? how will the server deal with all the new math?
+- zooming out raises WebGL: INVALID_OPERATION: bindBufferBase: object does not belong to this context
