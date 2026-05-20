@@ -44,6 +44,7 @@ describe("@playground/voxel-content blocks", () => {
 
   it("marks air and surface plants as replaceable placement targets", () => {
     expect(REPLACEABLE_BLOCK_IDS.has(BLOCK_REGISTRY.AIR)).toBe(true);
+    expect(blockReplaceable(BLOCK_REGISTRY.WATER)).toBe(true);
     expect(blockReplaceable(BLOCK_REGISTRY.GRASS_PLANT)).toBe(true);
     expect(blockReplaceable(BLOCK_REGISTRY.DANDELION)).toBe(true);
     expect(blockReplaceable(BLOCK_REGISTRY.STONE)).toBe(false);

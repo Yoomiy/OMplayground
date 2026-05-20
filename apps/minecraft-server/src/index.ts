@@ -16,6 +16,7 @@ import { isWithinRecess } from "./recess";
 import {
   applyDelta,
   getVoxelID,
+  replacementBlockAfterBreak,
   serializeDeltas
 } from "./world";
 import {
@@ -439,7 +440,8 @@ function executeBlockBreak(
       pos: [x, y, z]
     });
   }
-  applyDelta(room.world, x, y, z, BLOCK_REGISTRY.AIR);
+  const replacementBlockId = replacementBlockAfterBreak(room.world, x, y, z);
+  applyDelta(room.world, x, y, z, replacementBlockId);
   if (
     (room.gameMode ?? "creative") === "survival" &&
     player.inventory &&
@@ -467,7 +469,7 @@ function executeBlockBreak(
   }
   io.to(`voxel:${sessionId}`).emit("BLOCK_DELTA", {
     pos: [x, y, z],
-    blockId: BLOCK_REGISTRY.AIR,
+    blockId: replacementBlockId,
     by: userId
   });
 }

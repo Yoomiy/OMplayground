@@ -1,6 +1,8 @@
 import {
+  applyDelta,
   createWorld,
   hydrateDeltas,
+  isSpawnPointSafe,
   seedFromSessionId,
   serializeDeltas,
   spawnPointFor,
@@ -30,14 +32,15 @@ import {
   type HotbarState,
   type ItemInventoryState
 } from "./inventory";
-import type {
-  CraftingGridSlot,
-  ChestSlot,
-  GameMode,
-  HotbarSlot,
-  ItemSlot,
-  Vec3,
-  WorldDrop
+import {
+  BLOCK_REGISTRY,
+  type CraftingGridSlot,
+  type ChestSlot,
+  type GameMode,
+  type HotbarSlot,
+  type ItemSlot,
+  type Vec3,
+  type WorldDrop
 } from "./protocol";
 import type { ActiveBreak } from "./breakMining";
 import {
@@ -378,10 +381,24 @@ export function connectedPlayers(room: VoxelRoom): RoomPlayer[] {
   }));
 }
 
+function makeSpawnPointSafe(room: VoxelRoom, point: Vec3): Vec3 {
+  if (isSpawnPointSafe(room.world, point)) return point;
+  const x = Math.floor(point[0]);
+  const y = Math.floor(point[1]);
+  const z = Math.floor(point[2]);
+  applyDelta(room.world, x, y - 2, z, BLOCK_REGISTRY.GRASS);
+  for (let yy = y - 1; yy <= y + 2; yy++) {
+    applyDelta(room.world, x, yy, z, BLOCK_REGISTRY.AIR);
+  }
+  room.dirty = true;
+  return point;
+}
+
 export function spawnFor(room: VoxelRoom, userId: string): Vec3 {
   const cached = room.spawnPoints.get(userId);
-  if (cached) return cached;
-  const pt = spawnPointFor(room.world.seed, userId);
+  if (cached && isSpawnPointSafe(room.world, cached)) return cached;
+  if (cached) room.spawnPoints.delete(userId);
+  const pt = makeSpawnPointSafe(room, spawnPointFor(room.world.seed, userId));
   room.spawnPoints.set(userId, pt);
   return pt;
 }

@@ -6,7 +6,7 @@ import {
   removePlayerFromRoom,
   snapshotPersistedState
 } from "./room";
-import { applyDelta } from "./world";
+import { applyDelta, isSpawnPointSafe } from "./world";
 import { BLOCK_REGISTRY, ITEM_REGISTRY } from "./protocol";
 import { createEmptyChest, createEmptyCraftingGrid } from "./inventory";
 
@@ -100,6 +100,39 @@ describe("VoxelRoom", () => {
     expect(second.world.seed).toBe(first.world.seed);
     expect(second.world.deltas.get("2,51,2")).toBe(BLOCK_REGISTRY.STONE);
     expect(second.gameMode).toBe("creative");
+  });
+
+  it("regenerates unsafe persisted spawn points instead of reusing underwater coordinates", () => {
+    const sessionId = "sess-resume-bad-spawn";
+    const first = getOrCreateRoom(sessionId, {
+      gameId: "game-mc",
+      gender: "boy",
+      hostId: "u1",
+      minPlayers: 1,
+      maxPlayers: 4,
+      roster: [{ userId: "u1", displayName: "A" }],
+      paused: false
+    });
+    const persisted = snapshotPersistedState(first);
+    persisted.spawnPoints = { u1: [0.5, 10, 0.5] };
+    __resetRoomsForTest();
+
+    const again = getOrCreateRoom(sessionId, {
+      gameId: "game-mc",
+      gender: "boy",
+      hostId: "u1",
+      minPlayers: 1,
+      maxPlayers: 4,
+      roster: [{ userId: "u1", displayName: "A" }],
+      paused: true,
+      resumedState: persisted
+    });
+    const re = assignPlayer(again, "u1", "A");
+    expect("error" in re).toBe(false);
+    if (!("error" in re)) {
+      expect(re.player.pos).not.toEqual([0.5, 10, 0.5]);
+      expect(isSpawnPointSafe(again.world, re.player.pos)).toBe(true);
+    }
   });
 
   it("round-trips survival inventories via persisted state", () => {

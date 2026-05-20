@@ -6,6 +6,7 @@ import {
   ITEM_REGISTRY,
   ITEM_ICON,
   MAIN_ITEM_INVENTORY_SLOTS,
+  MAX_REACH,
   PLACEABLE_BLOCK_IDS,
   CRAFTING_GRID_SLOTS,
   EQUIPMENT_SLOT_COUNT,
@@ -77,6 +78,10 @@ import {
   resolveHeldItemSpec
 } from "@/games/voxel/heldItemView";
 import { AudioManager } from "@/games/voxel/audioManager";
+import {
+  VOXEL_MOVEMENT,
+  resolveVoxelMovement
+} from "@/games/voxel/movementConfig";
 
 const INV_DRAG_MIME = "application/x-playground-voxel-inv";
 
@@ -102,13 +107,6 @@ const EMPTY_CRAFTING_SLOT: CraftingGridSlot = {
   itemId: 0,
   count: 0
 };
-const DEFAULT_JUMP_FORCE = 12;
-const HELIUM_JUMP_FORCE = DEFAULT_JUMP_FORCE * 1.6;
-const DEFAULT_MAX_SPEED = 10;
-const HEAVY_SHIELD_SPEED_MULT = 0.8;
-const LADDER_CLIMB_SPEED = 3.1;
-const LADDER_SLIDE_SPEED = -0.35;
-
 /** Max third-person camera pull-back (voxels); noa defaults `initialZoom` 0. */
 const CAMERA_ZOOM_DISTANCE_MAX = 16;
 /** Wheel delta → `zoomDistance` scale (`game-inputs` uses scaled pixel deltas). */
@@ -162,7 +160,61 @@ const BLOCK_HUD: Record<number, string> = {
   [BLOCK_REGISTRY.BIRCH_LEAVES]: "עלי ליבנה",
   [BLOCK_REGISTRY.SPRUCE_LOG]: "עץ אשוח",
   [BLOCK_REGISTRY.SPRUCE_PLANKS]: "לוחות אשוח",
-  [BLOCK_REGISTRY.SPRUCE_LEAVES]: "עלי אשוח"
+  [BLOCK_REGISTRY.SPRUCE_LEAVES]: "עלי אשוח",
+  [BLOCK_REGISTRY.GRASS_SNOW]: "דשא מושלג",
+  [BLOCK_REGISTRY.BARRIER]: "מחסום",
+  [BLOCK_REGISTRY.SNOW]: "שלג",
+  [BLOCK_REGISTRY.CACTUS]: "קקטוס",
+  [BLOCK_REGISTRY.DEADBUSH]: "שיח יבש",
+  [BLOCK_REGISTRY.CRAFTING]: "שולחן יצירה",
+  [BLOCK_REGISTRY.STONEBRICK]: "לבני אבן",
+  [BLOCK_REGISTRY.BROWN_WOOL]: "צמר חום",
+  [BLOCK_REGISTRY.LIGHT_BLUE_WOOL]: "צמר תכלת",
+  [BLOCK_REGISTRY.WHITE_STAINED_GLASS]: "זכוכית לבנה",
+  [BLOCK_REGISTRY.YELLOW_STAINED_GLASS]: "זכוכית צהובה",
+  [BLOCK_REGISTRY.RED_STAINED_GLASS]: "זכוכית אדומה",
+  [BLOCK_REGISTRY.PURPLE_STAINED_GLASS]: "זכוכית סגולה",
+  [BLOCK_REGISTRY.PINK_STAINED_GLASS]: "זכוכית ורודה",
+  [BLOCK_REGISTRY.ORANGE_STAINED_GLASS]: "זכוכית כתומה",
+  [BLOCK_REGISTRY.MAGENTA_STAINED_GLASS]: "זכוכית מג'נטה",
+  [BLOCK_REGISTRY.LIME_STAINED_GLASS]: "זכוכית ליים",
+  [BLOCK_REGISTRY.LIGHT_BLUE_STAINED_GLASS]: "זכוכית תכלת",
+  [BLOCK_REGISTRY.GREEN_STAINED_GLASS]: "זכוכית ירוקה",
+  [BLOCK_REGISTRY.GRAY_STAINED_GLASS]: "זכוכית אפורה",
+  [BLOCK_REGISTRY.CYAN_STAINED_GLASS]: "זכוכית טורקיז",
+  [BLOCK_REGISTRY.BROWN_STAINED_GLASS]: "זכוכית חומה",
+  [BLOCK_REGISTRY.BLUE_STAINED_GLASS]: "זכוכית כחולה",
+  [BLOCK_REGISTRY.BLACK_STAINED_GLASS]: "זכוכית שחורה",
+  [BLOCK_REGISTRY.SANDSTONE]: "אבן חול",
+  [BLOCK_REGISTRY.DIAMOND_ORE]: "עפרת יהלום",
+  [BLOCK_REGISTRY.DIAMOND_BLOCK]: "בלוק יהלום",
+  [BLOCK_REGISTRY.LAPIS_ORE]: "עפרת לפיס",
+  [BLOCK_REGISTRY.LAPIS_BLOCK]: "בלוק לפיס",
+  [BLOCK_REGISTRY.MOSSY_STONEBRICKS]: "לבני אבן טחובות",
+  [BLOCK_REGISTRY.WHITE_CONCRETE]: "בטון לבן",
+  [BLOCK_REGISTRY.YELLOW_CONCRETE]: "בטון צהוב",
+  [BLOCK_REGISTRY.RED_CONCRETE]: "בטון אדום",
+  [BLOCK_REGISTRY.PURPLE_CONCRETE]: "בטון סגול",
+  [BLOCK_REGISTRY.PINK_CONCRETE]: "בטון ורוד",
+  [BLOCK_REGISTRY.ORANGE_CONCRETE]: "בטון כתום",
+  [BLOCK_REGISTRY.MAGENTA_CONCRETE]: "בטון מג'נטה",
+  [BLOCK_REGISTRY.LIME_CONCRETE]: "בטון ליים",
+  [BLOCK_REGISTRY.LIGHT_BLUE_CONCRETE]: "בטון תכלת",
+  [BLOCK_REGISTRY.GREEN_CONCRETE]: "בטון ירוק",
+  [BLOCK_REGISTRY.GRAY_CONCRETE]: "בטון אפור",
+  [BLOCK_REGISTRY.CYAN_CONCRETE]: "בטון טורקיז",
+  [BLOCK_REGISTRY.BROWN_CONCRETE]: "בטון חום",
+  [BLOCK_REGISTRY.BLUE_CONCRETE]: "בטון כחול",
+  [BLOCK_REGISTRY.BLACK_CONCRETE]: "בטון שחור",
+  [BLOCK_REGISTRY.PUMPKIN]: "דלעת",
+  [BLOCK_REGISTRY.ICE]: "קרח",
+  [BLOCK_REGISTRY.GRASS_YELLOW]: "דשא יבש",
+  [BLOCK_REGISTRY.GRASS_PLANT_YELLOW]: "עשב יבש",
+  [BLOCK_REGISTRY.LEAVES_YELLOW]: "עלים צהובים",
+  [BLOCK_REGISTRY.GRASS_PLANT]: "עשב",
+  [BLOCK_REGISTRY.LADDER]: "סולם",
+  [BLOCK_REGISTRY.TORCH]: "לפיד",
+  [BLOCK_REGISTRY.CHEST]: "תיבה"
 };
 
 function isValidDragPayload(
@@ -190,15 +242,21 @@ const ITEM_HUD: Record<number, string> = {
   [ITEM_REGISTRY.DIAMOND_PICKAXE]: "מכוש יהלום",
   [ITEM_REGISTRY.WOODEN_AXE]: "גרזן עץ",
   [ITEM_REGISTRY.STONE_AXE]: "גרזן אבן",
+  [ITEM_REGISTRY.WOODEN_SHOVEL]: "את עץ",
+  [ITEM_REGISTRY.STONE_SHOVEL]: "את אבן",
   [ITEM_REGISTRY.DIAMOND_AXE]: "גרזן יהלום",
   [ITEM_REGISTRY.SWIFT_PICKAXE]: "מכוש מהיר",
+  [ITEM_REGISTRY.BUCKET]: "דלי",
+  [ITEM_REGISTRY.WATER_BUCKET]: "דלי מים",
   [ITEM_REGISTRY.IRON_INGOT]: "מטיל ברזל",
   [ITEM_REGISTRY.GOLD_INGOT]: "מטיל זהב",
   [ITEM_REGISTRY.DIAMOND]: "יהלום",
   [ITEM_REGISTRY.COAL]: "פחם",
+  [ITEM_REGISTRY.FLINT]: "צור",
   [ITEM_REGISTRY.WHEAT]: "חיטה",
   [ITEM_REGISTRY.BREAD]: "לחם",
   [ITEM_REGISTRY.APPLE]: "תפוח",
+  [ITEM_REGISTRY.FLINT_AND_STEEL]: "מצית צור וברזל",
   [ITEM_REGISTRY.HEAVY_SHIELD]: "מגן כבד",
   [ITEM_REGISTRY.FEATHER_FALLING_TALISMAN]: "קמע נפילת נוצה",
   [ITEM_REGISTRY.HELIOS_MEDALLION]: "מדליון הליוס",
@@ -1093,6 +1151,36 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         return false;
       }
 
+      function blockIntersectsLocalPlayer(x: number, y: number, z: number): boolean {
+        const pos = noa.entities.getPosition(noa.playerEntity) as number[];
+        return (
+          x < pos[0] + 0.35 &&
+          x + 1 > pos[0] - 0.35 &&
+          y < pos[1] + 1.8 &&
+          y + 1 > pos[1] &&
+          z < pos[2] + 0.35 &&
+          z + 1 > pos[2] - 0.35
+        );
+      }
+
+      function fallbackPlacementPos(): Vec3 | null {
+        const eye = noa.camera.getPosition() as number[];
+        const dir = noa.camera.getDirection() as number[];
+        const seen = new Set<string>();
+        for (let dist = 1.6; dist <= MAX_REACH - 0.5; dist += 0.25) {
+          const x = Math.floor(eye[0] + dir[0] * dist);
+          const y = Math.floor(eye[1] + dir[1] * dist);
+          const z = Math.floor(eye[2] + dir[2] * dist);
+          const key = blockCoordKey(x, y, z);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          if (!blockReplaceable(clientBlockAtInt(x, y, z))) continue;
+          if (blockIntersectsLocalPlayer(x, y, z)) continue;
+          return [x, y, z];
+        }
+        return null;
+      }
+
       function clientDepenetrateDropVisual(px: number, py: number, pz: number): Vec3 {
         let x = px;
         let y = py;
@@ -1604,7 +1692,6 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
             void startEatingHold(idx);
             return;
           }
-          if (!tgt) return;
           if (
             !cell ||
             cell.count <= 0 ||
@@ -1613,20 +1700,21 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           ) {
             return;
           }
+          const placePos = tgt
+            ? ([tgt.adjacent[0], tgt.adjacent[1], tgt.adjacent[2]] as Vec3)
+            : fallbackPlacementPos();
+          if (!placePos) return;
           triggerLocalArmSwing();
-          onPlaceRef.current(
-            [tgt.adjacent[0], tgt.adjacent[1], tgt.adjacent[2]],
-            cell.blockId
-          );
+          onPlaceRef.current(placePos, cell.blockId);
           return;
         }
         const tgt = noa.targetedBlock;
-        if (!tgt) return;
+        const placePos = tgt
+          ? ([tgt.adjacent[0], tgt.adjacent[1], tgt.adjacent[2]] as Vec3)
+          : fallbackPlacementPos();
+        if (!placePos) return;
         triggerLocalArmSwing();
-        onPlaceRef.current(
-          [tgt.adjacent[0], tgt.adjacent[1], tgt.adjacent[2]],
-          selectedBlockRef.current
-        );
+        onPlaceRef.current(placePos, selectedBlockRef.current);
       });
 
       function pickTargetedBlock() {
@@ -1699,14 +1787,13 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         const equipped = equipmentSlotsRef.current;
         const moveState = noa.entities.getMovement?.(noa.playerEntity);
         if (moveState) {
-          moveState.jumpForce = equipmentHas(equipped, ITEM_REGISTRY.HELIUM_BOOTS)
-            ? HELIUM_JUMP_FORCE
-            : DEFAULT_JUMP_FORCE;
-          const shieldSpeedMult = equipmentHas(equipped, ITEM_REGISTRY.HEAVY_SHIELD)
-            ? HEAVY_SHIELD_SPEED_MULT
-            : 1;
-          const eatingSpeedMult = activeEatingRef.current ? 0.3 : 1;
-          moveState.maxSpeed = DEFAULT_MAX_SPEED * shieldSpeedMult * eatingSpeedMult;
+          const movement = resolveVoxelMovement({
+            heliumBoots: equipmentHas(equipped, ITEM_REGISTRY.HELIUM_BOOTS),
+            heavyShield: equipmentHas(equipped, ITEM_REGISTRY.HEAVY_SHIELD),
+            eating: activeEatingRef.current !== null
+          });
+          moveState.jumpForce = movement.jumpForce;
+          moveState.maxSpeed = movement.maxSpeed;
         }
         if (scene.ambientColor) {
           scene.ambientColor = equipmentHas(equipped, ITEM_REGISTRY.GLOW_TALISMAN)
@@ -1803,7 +1890,10 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
             Number(velocity[0] ?? 0),
             Number(velocity[2] ?? 0)
           );
-          const strideMs = horizontalSpeed > 7.5 ? 240 : 350;
+          const strideMs =
+            horizontalSpeed > VOXEL_MOVEMENT.fastStrideSpeed
+              ? VOXEL_MOVEMENT.fastStrideMs
+              : VOXEL_MOVEMENT.walkStrideMs;
           if (horizontalSpeed > 0.05 && nowPerf - lastFootstepAt >= strideMs) {
             const bx = Math.floor(pos[0]);
             const bz = Math.floor(pos[2]);
@@ -1814,7 +1904,10 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
               blockBelow = clientBlockAtInt(bx, by, bz);
             }
             if (blockBelow !== BLOCK_REGISTRY.AIR && blockBelow !== BLOCK_REGISTRY.WATER) {
-              audio.playStep(blockSoundGroup(blockBelow), horizontalSpeed > 7.5 ? 0.36 : 0.3);
+              audio.playStep(
+                blockSoundGroup(blockBelow),
+                horizontalSpeed > VOXEL_MOVEMENT.fastStrideSpeed ? 0.36 : 0.3
+              );
               lastFootstepAt = nowPerf;
             }
           }
@@ -1846,13 +1939,13 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           playerIntersectsLadder([pos[0], pos[1], pos[2]])
         ) {
           if (inputState.jump || inputState.forward) {
-            physState.body.velocity[1] = LADDER_CLIMB_SPEED;
+            physState.body.velocity[1] = VOXEL_MOVEMENT.ladderClimbSpeed;
           } else if (inputState.backward) {
-            physState.body.velocity[1] = -LADDER_CLIMB_SPEED;
+            physState.body.velocity[1] = -VOXEL_MOVEMENT.ladderClimbSpeed;
           } else {
             physState.body.velocity[1] = Math.max(
               physState.body.velocity[1],
-              LADDER_SLIDE_SPEED
+              VOXEL_MOVEMENT.ladderSlideSpeed
             );
           }
           if (moveState) {

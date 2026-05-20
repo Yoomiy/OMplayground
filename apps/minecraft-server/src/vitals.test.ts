@@ -61,4 +61,14 @@ describe("survival vitals", () => {
     expect(player.hunger).toBe(15);
     expect(player.saturation).toBe(11);
   });
+
+  it("does not drain hunger from short idle periods", () => {
+    const player = createDefaultVitals(0);
+    player.hunger = 20;
+    player.saturation = 0;
+
+    expect(tickVitals(player, 60_000)).toBe(true);
+    expect(player.hunger).toBe(20);
+    expect(player.exhaustion).toBeLessThan(1);
+  });
 });

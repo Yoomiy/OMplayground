@@ -291,6 +291,39 @@ This ledger tracks major advancements, decisions, verification, and comments to 
   - `npm test -w @playground/web -- audioManager.test.ts` passed: 1 suite, 3 tests.
   - `npm run lint -w @playground/web` passed after a Safari `webkitAudioContext` type-cast fix.
 
+## 2026-05-20 - Spawn, Placement, Fall, Movement, and Survival Tuning
+
+- Addressed underwater/sea spawning:
+  - persisted/cached spawn points are revalidated before reuse;
+  - unsafe old spawn points are discarded and regenerated;
+  - the dry-land spawn search is wider and denser so ocean-heavy seeds look for real land instead of falling back near sea;
+  - only pathological no-land cases create a small emergency dry pad.
+- Addressed placement in empty/water cells:
+  - shared replaceable placement rules now include water;
+  - the client can place a block into an aimed replaceable air/water cell even when noa has no solid targeted block.
+- Confirmed fall damage:
+  - `FALL_IMPACT` applies server-authoritative damage through `applyFallDamage`;
+  - focused tests cover normal fall damage and feather-falling immunity.
+- Brought movement constants into one place:
+  - base speed, jump force, helium jump multiplier, heavy-shield slowdown, eating slowdown, ladder speeds, and footstep cadence now live in `movementConfig.ts`.
+- Tuned survival hunger:
+  - idle, walking, jumping, and mining exhaustion rates are lower so hunger/saturation drain more slowly.
+- Filled HUD label gaps for later block IDs and missing item IDs, including snow.
+- Fixed underwater break replacement:
+  - breaking a placed block in water now restores a water block instead of leaving an odd air/custom-water cell.
+- Confirmed non-block item handling currently covers the implemented item classes:
+  - held item rendering shows item icons;
+  - food uses the right-click eating protocol;
+  - tools affect mining/combat through the selected hotbar slot;
+  - equipment items are used through equipment slots.
+- Verification run:
+  - `npm run build -w @playground/voxel-content` passed.
+  - `npm test -w @playground/voxel-content -- blocks.test.ts` passed: 1 suite, 11 tests.
+  - `npm test -w @playground/minecraft-server -- world.test.ts room.test.ts perks.test.ts vitals.test.ts --runInBand` passed: 4 suites, 40 tests.
+  - `npm test -w @playground/web -- movementConfig.test.ts audioManager.test.ts heldItemView.test.ts` passed: 3 suites, 8 tests.
+  - `npm run lint -w @playground/web` passed.
+  - `npm run lint -w @playground/minecraft-server` passed.
+
 ## Comments / Instructions To Address
 
 - Addressed: added `Current Work` above to explain the active implementation slice and next concrete step.
@@ -302,12 +335,17 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Addressed: opaque blocks behaved weird because normal cubes were registered with `opaque: undefined`, overriding noa's default `true`. Shared block options now omit undefined opacity.
 - Addressed: animation works but building does not. Likely cause was replaceable surface plants blocking placement; shared replaceable-block rules now let the client ignore plants and the server replace them.
 - Addressed: building works now, but some blocks, possibly water/transparent blocks, behave weird. Water now uses an explicit custom alpha material instead of relying on the PNG alpha channel.
-- i understant now. i was peing spawned underwater, and there i couldn't build where there weren't a block before. it should be possible. that's also why the fall seemed to be too long, because ii was falling to the buttom of the see. fix these and make sure also that players aren't spawned under water.
+- Addressed: underwater spawning/building. Cached spawns are revalidated, water is replaceable for placement, and the client has an aimed no-target placement fallback.
 - Addressed: combat/fall protocol was missing. Added fall impact, player attack, and player damage socket flow.
 - Addressed: spawn felt too high. Spawn clearance is now `surface + 2` instead of `surface + 3`.
 - after you are done with everything /review every detail in the original plan implementation and in this document and fix what needs fixing. your goal isn't reached until you are done with it!
-- does falling actually makes damage?
-- we need to bring order to walking speed, jump height, etc.
-- holding and using of non-block items
+- Addressed: falling does damage in survival through `FALL_IMPACT`; focused tests cover normal and feather-falling cases.
+- Addressed: movement constants are centralized in `movementConfig.ts`.
+- Addressed: holding/using non-block items is covered for current item classes: visible held items, food eating, tool mining/combat, and equipment slots.
+- Addressed: filled missing block/item HUD labels, including snow.
+- Addressed: sea spawn fallback now searches much farther for dry land before creating an emergency pad.
+- Addressed: hunger exhaustion rates are slower, and fall damage health changes are covered by server tests.
+- Addressed: underwater block breaks restore water via `replacementBlockAfterBreak`.
+- we need to update recepies and recepie book!
 
 - adress unadressed comments!

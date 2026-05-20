@@ -2,6 +2,7 @@ import {
   BLOCK_REGISTRY,
   SEA_LEVEL,
   SPAWN_SCAN_MAX_Y,
+  blockReplaceable,
   findSurfaceY,
   isSpawnLocationSafe,
   proceduralVoxelID
@@ -28,6 +29,8 @@ export interface WorldState {
 }
 
 const SPAWN_SURFACE_CLEARANCE = 2;
+const SPAWN_SEARCH_RADIUS = 1024;
+const SPAWN_SEARCH_STEP = 8;
 
 export function createWorld(seed: number): WorldState {
   return { seed, deltas: new Map() };
@@ -107,7 +110,7 @@ export function hydrateDeltas(world: WorldState, list: DeltaTuple[]): void {
 }
 
 /**
- * Returns a stable spawn 3 blocks above the procedural surface at the
+ * Returns a stable spawn 2 blocks above a dry procedural surface at the
  * given (x,z), so kids never spawn inside terrain. Per-user offset keeps
  * teammates from stacking on each other.
  */
@@ -122,8 +125,8 @@ export function spawnPointFor(
 
   const baseX = ((h | 0) % 12) - 6;
   const baseZ = (((h >> 8) | 0) % 12) - 6;
-  for (let radius = 0; radius <= 48; radius += 8) {
-    const probes = radius === 0 ? 1 : 12;
+  for (let radius = 0; radius <= SPAWN_SEARCH_RADIUS; radius += SPAWN_SEARCH_STEP) {
+    const probes = radius === 0 ? 1 : Math.max(12, Math.ceil(radius / 16));
     for (let i = 0; i < probes; i++) {
       const angle = ((i + (h & 7)) / probes) * Math.PI * 2;
       const x = Math.round(baseX + Math.cos(angle) * radius);
@@ -150,4 +153,53 @@ export function spawnPointFor(
     y += 1;
   }
   return [0.5, y, 0.5];
+}
+
+export function isSpawnPointSafe(world: WorldState, point: Vec3): boolean {
+  const [px, py, pz] = point;
+  if (!Number.isFinite(px) || !Number.isFinite(py) || !Number.isFinite(pz)) {
+    return false;
+  }
+  const x = Math.floor(px);
+  const y = Math.floor(py);
+  const z = Math.floor(pz);
+  const floorBlock = getVoxelID(world, x, y - SPAWN_SURFACE_CLEARANCE, z);
+  if (
+    floorBlock === BLOCK_REGISTRY.AIR ||
+    floorBlock === BLOCK_REGISTRY.WATER ||
+    blockReplaceable(floorBlock)
+  ) {
+    return false;
+  }
+  for (let yy = y - 1; yy <= y + 1; yy++) {
+    const blockId = getVoxelID(world, x, yy, z);
+    if (blockId !== BLOCK_REGISTRY.AIR) return false;
+  }
+  return true;
+}
+
+export function replacementBlockAfterBreak(
+  world: WorldState,
+  x: number,
+  y: number,
+  z: number
+): number {
+  if (y > SEA_LEVEL) return BLOCK_REGISTRY.AIR;
+  if (proceduralVoxelID(x, y, z, world.seed) === BLOCK_REGISTRY.WATER) {
+    return BLOCK_REGISTRY.WATER;
+  }
+  const neighbors = [
+    [1, 0, 0],
+    [-1, 0, 0],
+    [0, 1, 0],
+    [0, -1, 0],
+    [0, 0, 1],
+    [0, 0, -1]
+  ] as const;
+  for (const [dx, dy, dz] of neighbors) {
+    if (getVoxelID(world, x + dx, y + dy, z + dz) === BLOCK_REGISTRY.WATER) {
+      return BLOCK_REGISTRY.WATER;
+    }
+  }
+  return BLOCK_REGISTRY.AIR;
 }
