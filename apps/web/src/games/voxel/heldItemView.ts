@@ -15,6 +15,11 @@ export type HeldItemSpec =
       readonly textureUrl: string;
     }
   | {
+      readonly kind: "flatBlock";
+      readonly id: number;
+      readonly textureUrl: string;
+    }
+  | {
       readonly kind: "item";
       readonly id: number;
       readonly textureUrl: string;
@@ -33,13 +38,17 @@ export function resolveHeldItemSpec(args: {
   readonly survivalSlots: readonly HeldVisualSlot[];
   readonly blockIconById: Partial<Record<number, string>>;
   readonly itemIconById: Partial<Record<number, string>>;
+  readonly flatBlockIds?: ReadonlySet<number>;
   readonly airBlockId: number;
 }): HeldItemSpec {
   if (args.gameMode === "creative") {
     const textureUrl = args.blockIconById[args.selectedBlockId];
-    return textureUrl
-      ? { kind: "block", id: args.selectedBlockId, textureUrl }
-      : { kind: "empty" };
+    if (!textureUrl) return { kind: "empty" };
+    return {
+      kind: args.flatBlockIds?.has(args.selectedBlockId) ? "flatBlock" : "block",
+      id: args.selectedBlockId,
+      textureUrl
+    };
   }
 
   const slot = args.survivalSlots[args.survivalSlotIndex];
@@ -53,7 +62,12 @@ export function resolveHeldItemSpec(args: {
 
   if (slot.blockId !== args.airBlockId) {
     const textureUrl = args.blockIconById[slot.blockId];
-    return textureUrl ? { kind: "block", id: slot.blockId, textureUrl } : { kind: "empty" };
+    if (!textureUrl) return { kind: "empty" };
+    return {
+      kind: args.flatBlockIds?.has(slot.blockId) ? "flatBlock" : "block",
+      id: slot.blockId,
+      textureUrl
+    };
   }
 
   return { kind: "empty" };

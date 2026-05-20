@@ -39,6 +39,34 @@ describe("resolveHeldItemSpec", () => {
     ).toEqual({ kind: "item", id: 101, textureUrl: "/item/pickaxe.png" });
   });
 
+  it("renders plant-style blocks as flat held sprites", () => {
+    expect(
+      resolveHeldItemSpec({
+        gameMode: "creative",
+        selectedBlockId: 2,
+        survivalSlotIndex: 0,
+        survivalSlots: [],
+        blockIconById,
+        itemIconById,
+        flatBlockIds: new Set([2]),
+        airBlockId: 0
+      })
+    ).toEqual({ kind: "flatBlock", id: 2, textureUrl: "/block/dirt.png" });
+
+    expect(
+      resolveHeldItemSpec({
+        gameMode: "survival",
+        selectedBlockId: 1,
+        survivalSlotIndex: 0,
+        survivalSlots: [{ blockId: 2, itemId: 0, count: 1 }],
+        blockIconById,
+        itemIconById,
+        flatBlockIds: new Set([2]),
+        airBlockId: 0
+      })
+    ).toEqual({ kind: "flatBlock", id: 2, textureUrl: "/block/dirt.png" });
+  });
+
   it("falls back to an empty hand for empty or missing icons", () => {
     expect(
       resolveHeldItemSpec({

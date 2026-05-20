@@ -104,6 +104,15 @@ const INV_DRAG_MIME = "application/x-playground-voxel-inv";
  */
 
 const HOTBAR = PLACEABLE_BLOCK_IDS;
+
+function visibleCreativeHotbarBlocks(selectedBlockId: number): number[] {
+  const blocks = HOTBAR.slice(0, 9);
+  if (!blocks.includes(selectedBlockId) && PLACEABLE_BLOCK_IDS.includes(selectedBlockId)) {
+    blocks[8] = selectedBlockId;
+  }
+  return blocks;
+}
+
 const PERSONAL_CRAFTING_SLOT_INDICES = [0, 1, 3, 4] as const;
 const EQUIPMENT_SLOT_LABELS = ["ראש", "חזה", "רגל", "נעל"] as const;
 const EMPTY_CRAFTING_SLOT: CraftingGridSlot = {
@@ -806,7 +815,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const selectCreativeBlock = (blockId: number): void => {
     if (!PLACEABLE_BLOCK_IDS.includes(blockId)) return;
     selectedBlockRef.current = blockId;
-    const idx = HOTBAR.indexOf(blockId);
+    const idx = visibleCreativeHotbarBlocks(blockId).indexOf(blockId);
     if (idx >= 0) setCreativeSlotIdx(idx);
   };
 
@@ -830,7 +839,9 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
   useEffect(() => {
     if (gameMode !== "creative") return;
-    const idx = HOTBAR.indexOf(selectedBlockRef.current as (typeof HOTBAR)[number]);
+    const idx = visibleCreativeHotbarBlocks(selectedBlockRef.current).indexOf(
+      selectedBlockRef.current
+    );
     if (idx >= 0) setCreativeSlotIdx(idx);
   }, [gameMode]);
 
@@ -1083,6 +1094,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           survivalSlots: inventoryRef.current,
           blockIconById: BLOCK_HOTBAR_ICON,
           itemIconById: ITEM_ICON,
+          flatBlockIds: PLANT_SPRITE_BLOCK_IDS,
           airBlockId: BLOCK_REGISTRY.AIR
         });
       }
@@ -1987,9 +1999,10 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           }
           return;
         }
-        if (Number.isFinite(n) && n >= 1 && n <= Math.min(9, HOTBAR.length)) {
+        const visibleCreativeBlocks = visibleCreativeHotbarBlocks(selectedBlockRef.current);
+        if (Number.isFinite(n) && n >= 1 && n <= visibleCreativeBlocks.length) {
           const idx = n - 1;
-          selectCreativeBlock(HOTBAR[idx]);
+          selectCreativeBlock(visibleCreativeBlocks[idx]!);
         }
       }
       window.addEventListener("keydown", onHotbarKey);
@@ -2281,9 +2294,9 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const blockHotbarHud = !paused ? (
     <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center gap-1.5 px-2">
       {gameMode === "creative"
-        ? HOTBAR.slice(0, 9).map((blockId, i) =>
+        ? visibleCreativeHotbarBlocks(selectedBlockRef.current).map((blockId, i) =>
             slotBox(
-              i === creativeSlotIdx,
+              i === creativeSlotIdx && blockId === selectedBlockRef.current,
               i + 1,
               <img
                 src={BLOCK_HOTBAR_ICON[blockId]}

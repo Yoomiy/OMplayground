@@ -63,6 +63,7 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Addressed the recipe/recipe-book gap by adding missing utility recipes and rendering the recipe book from the shared recipe table.
 - Added server-authoritative TNT ignition, fuses, explosion block damage/drops, player damage/knockback payloads, client primed TNT visuals, and fuse/explosion cues.
 - Addressed the remaining sea/cactus/performance comments by biasing the central play window toward land, keeping oceans on the outer rim, increasing deterministic desert cacti, widening chunk view distance, and cutting useless tree-structure scans in non-tree biomes.
+- Addressed the remaining interaction polish comments: flat held sprites for item/plant-style blocks, predictable torch middle-pick hotbar behavior, and TNT ignition path documented through implementation notes.
 - Next concrete step: continue the original-plan review for remaining gaps before declaring the expansion complete.
 
 ## 2026-05-20 - Shared Recipe Model
@@ -380,6 +381,22 @@ This ledger tracks major advancements, decisions, verification, and comments to 
   - `npm run lint -w @playground/web` passed.
   - `npm test -w @playground/minecraft-server -- world.test.ts room.test.ts --runInBand` passed: 2 suites, 27 tests.
 
+## 2026-05-20 - Held Item and Torch Pick Polish
+
+- Addressed the non-block held item visual comment:
+  - non-block items already resolve through item icons;
+  - plant-style blocks such as torches, ladders, flowers, mushrooms, dead bush, and grass now render as flat first-person held sprites instead of small cubes textured on every face.
+- Addressed the torch middle-pick comment:
+  - creative middle-picking a block outside the first nine default blocks now reserves compact hotbar slot 9 for that selected block;
+  - picking torches no longer leaves the visible hotbar selection in an inconsistent off-screen state.
+- TNT ignition behavior after the Phase 6 pass:
+  - craft/hold flint-and-steel in survival;
+  - right-click a targeted TNT block;
+  - the client emits `IGNITE_TNT`, the server validates the held item and target, then broadcasts the primed TNT event.
+- Verification run:
+  - `npm test -w @playground/web -- heldItemView.test.ts` passed: 1 suite, 4 tests.
+  - `npm run lint -w @playground/web` passed.
+
 ## Comments / Instructions To Address
 
 - Addressed: added `Current Work` above to explain the active implementation slice and next concrete step.
@@ -398,7 +415,7 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Addressed: falling does damage in survival through `FALL_IMPACT`; focused tests cover normal and feather-falling cases.
 - Addressed: movement constants are centralized in `movementConfig.ts`.
 - Addressed: holding/using non-block items is covered for current item classes: visible held items, food eating, tool mining/combat, and equipment slots.
-- non-block items render as cube with it drawn on all its sides in the animation. it's wierd.
+- Addressed: plant-style blocks and non-block item visuals now use flat first-person held sprites instead of cube rendering.
 - Addressed: filled missing block/item HUD labels, including snow.
 - Addressed: sea spawn fallback now searches much farther for dry land before creating an emergency pad.
 - Addressed: hunger exhaustion rates are slower, and fall damage health changes are covered by server tests.
@@ -409,7 +426,8 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Addressed: stopped games now pass `paused` into the voxel client and the audio manager explicitly mutes and stops active ambient/eating loops.
 - Addressed: cacti existed but were too rare; desert cactus probability is higher and covered by a deterministic worldgen regression.
 - Addressed: view distance is wider, and non-tree biomes now skip expensive tree-structure scans to pay for the added draw distance.
-- picking a torch has weird consiqunces.
-- how do i ignite a tnt?
+- Addressed: middle-picking a torch now puts the picked torch into the visible compact creative hotbar instead of selecting an off-screen block index.
+- Addressed: TNT is ignited in survival by holding flint-and-steel and right-clicking a targeted TNT block.
+- add some velocity to thrown objects (ie with q) so they aren't auto re-cached.
 
 - adress unadressed comments!
