@@ -55,14 +55,21 @@ export {
 export {
   CRAFTING_CELL_MAX,
   CRAFTING_GRID_SIZE,
+  CRAFTING_GRID_WIDTH_2,
+  CRAFTING_GRID_WIDTH_3,
+  CRAFTING_TABLE_GRID_SIZE,
+  PERSONAL_CRAFTING_GRID_SIZE,
   RECIPES,
   findMatchingRecipe,
+  getBoundingBox,
   type GridCellSnapshot,
   type GridSnapshot,
+  type Matrix2D,
   type MatchedRecipe,
   type Recipe,
   type RecipeIngredient,
   type RecipeOutput,
+  type RecipeTag,
   type ShapedRecipe,
   type ShapelessRecipe
 } from "./recipes";

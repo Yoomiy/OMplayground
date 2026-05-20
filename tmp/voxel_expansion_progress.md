@@ -45,6 +45,16 @@ This ledger tracks major advancements, decisions, verification, and comments to 
   - `npm run lint -w @playground/web` passed.
 - Next concrete step: implement the unified 2x2/3x3 recipe model and server-authoritative 3x3 crafting table flow, because equipment/food recipes depend on those item definitions.
 
+## 2026-05-20 - Shared Recipe Model
+
+- Replaced the old 2x2-only shapeless recipe matcher with a unified shaped/shapeless matcher.
+- Added bounding-box shrinking so shaped recipes can match anywhere inside either the 2x2 personal grid or the 3x3 crafting-table grid.
+- Added expansion recipes for crafting table, sticks, pickaxes, axes, bread, helium boots, swift pickaxe, coal/ingot/diamond conversions, ladder, torch, chest, heavy shield, feather falling talisman, and Helios medallion.
+- Added `GOLD_INGOT` as item ID `127` because the Helios recipe requires gold ingots while the previous expansion item list omitted them.
+- Verification run:
+  - `npm run build -w @playground/voxel-content` passed.
+  - `npm test -w @playground/voxel-content` passed: 5 suites, 32 tests.
+
 ## 2026-05-20 - Worldgen Math Check
 
 - Addressed the comment asking to double-check the new worldgen math.
@@ -70,3 +80,4 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 
 - Addressed: added `Current Work` above to explain the active implementation slice and next concrete step.
 - Addressed: double-checked worldgen math and documented the empirical biome-area scan in `Worldgen Math Check`.
+- just so you know: i have ( npm run dev:server )&; ( npm run dev:minecraft )&; npm run dev:web running in the background

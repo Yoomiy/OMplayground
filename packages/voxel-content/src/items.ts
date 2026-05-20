@@ -278,6 +278,13 @@ export const ITEM_DEFS = [
     maxStack: 1,
     iconFilename: "glowstone_dust.png",
     perk: { equipSlot: "head", fullBright: true }
+  },
+  {
+    id: 127,
+    key: "GOLD_INGOT",
+    category: "material",
+    maxStack: 64,
+    iconFilename: "gold_ingot.png"
   }
 ] as const satisfies readonly ItemDef[];
 

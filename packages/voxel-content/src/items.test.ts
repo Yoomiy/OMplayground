@@ -45,6 +45,7 @@ describe("@playground/voxel-content items", () => {
     expect(ITEM_REGISTRY.COAL).toBe(113);
     expect(ITEM_REGISTRY.BREAD).toBe(116);
     expect(ITEM_REGISTRY.GLOW_TALISMAN).toBe(126);
+    expect(ITEM_REGISTRY.GOLD_INGOT).toBe(127);
 
     expect(itemFoodSpec(ITEM_REGISTRY.BREAD)).toEqual({
       nutrition: 5,
