@@ -54,7 +54,9 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Added rate-limited multiplayer arm swing sync and avatar swing animation.
 - Added first-person held item/tool rendering with bob and swing animation.
 - Addressed the old opaque-block rendering issue by preserving noa's default opacity for normal cube blocks.
-- Next concrete step: remaining perk hooks like Helios sunlight regen / damage-reduction hooks when damage exists.
+- Added server Helios/daylight regen plus tested damage/fall perk helpers for the upcoming combat/fall protocol.
+- Fixed surface building by treating air and surface plants as shared replaceable placement targets.
+- Next concrete step: build the combat/fall socket protocol, then tighten spawn height if the current `surface + 3` offset is too high.
 
 ## 2026-05-20 - Shared Recipe Model
 
@@ -217,6 +219,25 @@ This ledger tracks major advancements, decisions, verification, and comments to 
   - `npm test -w @playground/web -- heldItemView.test.ts` passed: 1 file, 3 tests.
   - `npm run lint -w @playground/web` passed.
 
+## 2026-05-20 - Server Perk Hooks and Surface Building
+
+- Added server-side perk helpers:
+  - Helios Medallion heals 1 health every 3 seconds during daytime with direct transparent sky exposure;
+  - Heavy Shield mitigation is centralized through `applyPlayerDamage`;
+  - Feather Falling Talisman absorbs fall damage through `applyFallDamage`.
+- Wired Helios regen into the existing survival vitals tick so it is authoritative and snapshot-synced.
+- Added shared replaceable block metadata for air, grass plants, flowers, mushrooms, dead bush, and saplings.
+- Addressed the building comment:
+  - client ray targeting now ignores replaceable plants so the crosshair reaches the real build face;
+  - server placement accepts replaceable plant cells instead of rejecting them as occupied.
+- Current combat/fall protocol state: no socket protocol existed yet; the server-side damage/fall helpers now exist and the next implementation pass should expose `FALL_IMPACT` and combat attack events over Socket.IO.
+- Verification run:
+  - `npm run build -w @playground/voxel-content` passed.
+  - `npm test -w @playground/voxel-content -- blocks.test.ts blockClientCatalog.test.ts` passed: 2 suites, 14 tests.
+  - `npm test -w @playground/minecraft-server -- perks.test.ts vitals.test.ts room.test.ts tick.test.ts --runInBand` passed: 4 suites, 27 tests.
+  - `npm run lint -w @playground/minecraft-server` passed.
+  - `npm run lint -w @playground/web` passed.
+
 ## Comments / Instructions To Address
 
 - Addressed: added `Current Work` above to explain the active implementation slice and next concrete step.
@@ -226,5 +247,8 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Addressed: the slowdown bottleneck is primarily client chunk generation; server math is sparse. Added bounded biome-column caching and high-air structure culling before considering a worker.
 - Addressed: zoom-out WebGL context error likely came from scene-blind voxel model template caching; templates now rebuild when the Babylon scene changes.
 - Addressed: opaque blocks behaved weird because normal cubes were registered with `opaque: undefined`, overriding noa's default `true`. Shared block options now omit undefined opacity.
+- Addressed: animation works but building does not. Likely cause was replaceable surface plants blocking placement; shared replaceable-block rules now let the client ignore plants and the server replace them.
+- In progress: combat/fall protocol does not exist yet. Server damage/fall helpers are ready; next pass should add the socket protocol and client fall/attack emitters.
+- In progress: spawn feels too high. Inspect `spawnPointFor` / `spawnFor` next and lower the offset if the safety cells remain clear.
 
 - adress unadressed comments!

@@ -214,6 +214,22 @@ export const PLACEABLE_BLOCK_IDS: readonly number[] = BLOCK_DEFS.filter(
   (d) => d.placeable
 ).map((d) => d.id);
 
+export const REPLACEABLE_BLOCK_IDS = new Set<number>([
+  BLOCK_REGISTRY.AIR,
+  BLOCK_REGISTRY.SAPLING,
+  BLOCK_REGISTRY.DANDELION,
+  BLOCK_REGISTRY.ROSE,
+  BLOCK_REGISTRY.BROWN_MUSHROOM,
+  BLOCK_REGISTRY.RED_MUSHROOM,
+  BLOCK_REGISTRY.DEADBUSH,
+  BLOCK_REGISTRY.GRASS_PLANT_YELLOW,
+  BLOCK_REGISTRY.GRASS_PLANT
+]);
+
+export function blockReplaceable(blockId: number): boolean {
+  return REPLACEABLE_BLOCK_IDS.has(blockId);
+}
+
 const BLOCK_BY_ID = new Map<number, BlockDef>(
   BLOCK_DEFS.map((d) => [d.id, d as BlockDef])
 );

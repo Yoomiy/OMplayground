@@ -11,7 +11,7 @@ import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import { Server } from "socket.io";
 import { createClient } from "@supabase/supabase-js";
-import { itemFoodSpec } from "@playground/voxel-content";
+import { blockReplaceable, itemFoodSpec } from "@playground/voxel-content";
 import { isWithinRecess } from "./recess";
 import {
   applyDelta,
@@ -123,6 +123,7 @@ import {
   MAX_HUNGER,
   tickVitals
 } from "./vitals";
+import { tickHeliosRegen } from "./perks";
 
 const PORT = Number(process.env.PORT ?? 8081);
 const ARM_SWING_COOLDOWN_MS = 150;
@@ -812,7 +813,7 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      if (getVoxelID(room.world, x, y, z) !== BLOCK_REGISTRY.AIR) {
+      if (!blockReplaceable(getVoxelID(room.world, x, y, z))) {
         ack?.({
           ok: false,
           error: { code: "BLOCK_OCCUPIED", message: "המקום תפוס" }
@@ -1769,7 +1770,7 @@ function tickRoomVitals(room: VoxelRoom, now: number): void {
   if ((room.gameMode ?? "creative") !== "survival") return;
   for (const player of room.players.values()) {
     if (player.health === undefined) continue;
-    if (tickVitals(player, now)) {
+    if (tickVitals(player, now) || tickHeliosRegen(player, room.world, now)) {
       room.dirty = true;
     }
   }

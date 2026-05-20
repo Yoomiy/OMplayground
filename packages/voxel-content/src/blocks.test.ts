@@ -2,12 +2,14 @@ import {
   BLOCK_DEFS,
   BLOCK_REGISTRY,
   PLACEABLE_BLOCK_IDS,
+  REPLACEABLE_BLOCK_IDS,
   REGISTERED_BLOCK_IDS,
   blockBreakable,
   blockDef,
   blockDropId,
   blockDropsPickable,
-  blockHardness
+  blockHardness,
+  blockReplaceable
 } from "./blocks";
 import { isInstantBreak } from "./mining";
 
@@ -37,6 +39,14 @@ describe("@playground/voxel-content blocks", () => {
     for (const d of BLOCK_DEFS) {
       expect(REGISTERED_BLOCK_IDS.has(d.id)).toBe(true);
     }
+  });
+
+  it("marks air and surface plants as replaceable placement targets", () => {
+    expect(REPLACEABLE_BLOCK_IDS.has(BLOCK_REGISTRY.AIR)).toBe(true);
+    expect(blockReplaceable(BLOCK_REGISTRY.GRASS_PLANT)).toBe(true);
+    expect(blockReplaceable(BLOCK_REGISTRY.DANDELION)).toBe(true);
+    expect(blockReplaceable(BLOCK_REGISTRY.STONE)).toBe(false);
+    expect(blockReplaceable(BLOCK_REGISTRY.TORCH)).toBe(false);
   });
 
   it("implements legacy break/drop rules", () => {

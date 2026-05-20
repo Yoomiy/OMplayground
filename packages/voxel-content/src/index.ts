@@ -2,11 +2,13 @@ export {
   BLOCK_DEFS,
   BLOCK_REGISTRY,
   PLACEABLE_BLOCK_IDS,
+  REPLACEABLE_BLOCK_IDS,
   REGISTERED_BLOCK_IDS,
   blockBreakable,
   blockDef,
   blockDropId,
   blockDropsPickable,
+  blockReplaceable,
   type BlockDef,
   type BlockRegistry
 } from "./blocks";

@@ -16,6 +16,7 @@ export interface VitalsRuntime extends PlayerVitals {
   lastVitalsAt: number;
   lastRegenAt: number;
   lastStarveAt: number;
+  lastHeliosRegenAt: number;
 }
 
 export interface VitalsCarrier extends Partial<VitalsRuntime> {}
@@ -34,7 +35,8 @@ export function createDefaultVitals(now = Date.now()): VitalsRuntime {
     exhaustion: 0,
     lastVitalsAt: now,
     lastRegenAt: now,
-    lastStarveAt: now
+    lastStarveAt: now,
+    lastHeliosRegenAt: now
   };
 }
 
@@ -58,7 +60,8 @@ export function vitalsFromPersisted(raw: unknown, now = Date.now()): VitalsRunti
     exhaustion: clampNumber(v.exhaustion, defaults.exhaustion, 0, EXHAUSTION_DECAY_THRESHOLD),
     lastVitalsAt: now,
     lastRegenAt: now,
-    lastStarveAt: now
+    lastStarveAt: now,
+    lastHeliosRegenAt: clampNumber(v.lastHeliosRegenAt, now, 0, Number.MAX_SAFE_INTEGER)
   };
 }
 
@@ -70,6 +73,7 @@ export function assignVitals(target: VitalsCarrier, vitals: VitalsRuntime): void
   target.lastVitalsAt = vitals.lastVitalsAt;
   target.lastRegenAt = vitals.lastRegenAt;
   target.lastStarveAt = vitals.lastStarveAt;
+  target.lastHeliosRegenAt = vitals.lastHeliosRegenAt;
 }
 
 export function addMovementExhaustion(

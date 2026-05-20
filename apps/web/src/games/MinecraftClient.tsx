@@ -37,6 +37,7 @@ import {
   MC_MATERIAL_ENTRIES,
   NOA_BLOCK_ENTRIES,
   PLANT_SPRITE_BLOCK_IDS,
+  blockReplaceable,
   noaCubeBlockOptions,
   proceduralVoxelID
 } from "@playground/voxel-content";
@@ -764,7 +765,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       }
 
       noa.blockTargetIdCheck = (id: number): boolean =>
-        id !== BLOCK_REGISTRY.AIR && id !== BLOCK_REGISTRY.WATER;
+        id !== BLOCK_REGISTRY.WATER && !blockReplaceable(id);
 
       noa.world.on(
         "worldDataNeeded",

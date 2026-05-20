@@ -93,6 +93,7 @@ export interface PlayerRuntime extends RoomPlayer {
   lastVitalsAt?: number;
   lastRegenAt?: number;
   lastStarveAt?: number;
+  lastHeliosRegenAt?: number;
   activeEating?: ActiveEating;
   /** Survival: currently open chest coordinate key, if locked by this player. */
   activeChestKey?: string;
@@ -599,7 +600,8 @@ function runtimeVitalsFromPlayer(
     exhaustion: player.exhaustion ?? defaults.exhaustion,
     lastVitalsAt: player.lastVitalsAt ?? defaults.lastVitalsAt,
     lastRegenAt: player.lastRegenAt ?? defaults.lastRegenAt,
-    lastStarveAt: player.lastStarveAt ?? defaults.lastStarveAt
+    lastStarveAt: player.lastStarveAt ?? defaults.lastStarveAt,
+    lastHeliosRegenAt: player.lastHeliosRegenAt ?? defaults.lastHeliosRegenAt
   };
 }
 
