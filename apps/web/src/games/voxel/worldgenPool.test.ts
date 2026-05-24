@@ -1,6 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { WorldgenWorkerPool } from "./worldgenPool";
-import { BLOCK_REGISTRY } from "@playground/voxel-content";
 
 describe("WorldgenWorkerPool", () => {
   let originalWorker: any;

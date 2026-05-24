@@ -882,8 +882,9 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         chunkRemoveDistance: [12, 10]
       } as Record<string, unknown>);
       
-      // Override default ThinInstance ObjectMesher with SolidParticleSystem version 
-      // (solves the ThinInstance origin shift bug where objects jump to sky)
+      // noa's built-in ObjectMesher uses global thin instances with manual rebase math;
+      // plants jump on origin rebase. Per-chunk thin instances were tried (Phase 3) but
+      // also jumped and were slower than SPS. Keep SPS until a rebase-safe path is proven.
       overrideObjectMesher(noa);
 
       const pool = new WorldgenWorkerPool();

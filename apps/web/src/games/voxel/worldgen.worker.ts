@@ -44,5 +44,5 @@ self.onmessage = (e: MessageEvent) => {
   };
 
   // Post back to main thread and transfer the array buffer (zero-copy)
-  self.postMessage(response, [voxels.buffer]);
+  (self as any).postMessage(response, [voxels.buffer]);
 };

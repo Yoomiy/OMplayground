@@ -73,7 +73,7 @@ export class WorldgenWorkerPool {
 
     this.activeRequests.set(req.chunkId, chunkReq);
     this.queue.push(chunkReq);
-    this.queue.sort((a, b) => b.priority - a.priority);
+    this.queue.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
 
     this.processQueue();
   }
