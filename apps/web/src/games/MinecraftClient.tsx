@@ -42,6 +42,7 @@ import {
   PLANT_SPRITE_BLOCK_IDS,
   RECIPES,
   blockSoundGroup,
+  blockBreakable,
   blockReplaceable,
   noaCubeBlockOptions,
   precipitationKindForColumn,
@@ -1289,6 +1290,29 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         return null;
       }
 
+      /** First breakable voxel along view ray (includes replaceable plants noa skips for placement). */
+      function findBreakTarget(): { pos: Vec3; blockId: number; distance: number } | null {
+        const eye = noa.camera.getPosition() as number[];
+        const dir = noa.camera.getDirection() as number[];
+        const seen = new Set<string>();
+        for (let dist = 1.0; dist <= MAX_REACH - 0.5; dist += 0.15) {
+          const x = Math.floor(eye[0] + dir[0] * dist);
+          const y = Math.floor(eye[1] + dir[1] * dist);
+          const z = Math.floor(eye[2] + dir[2] * dist);
+          const key = blockCoordKey(x, y, z);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          const blockId = clientBlockAtInt(x, y, z);
+          if (blockId === BLOCK_REGISTRY.AIR || blockId === BLOCK_REGISTRY.WATER) continue;
+          if (!blockBreakable(blockId)) continue;
+          const center: Vec3 = [x + 0.5, y + 0.5, z + 0.5];
+          const distance = vecDist(eye, center);
+          if (distance > MAX_REACH) continue;
+          return { pos: [x, y, z], blockId, distance };
+        }
+        return null;
+      }
+
       function clientDepenetrateDropVisual(px: number, py: number, pz: number): Vec3 {
         let x = px;
         let y = py;
@@ -1771,33 +1795,24 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
       async function tryStartMining(): Promise<void> {
         if (pausedRef.current) return;
-        const tgt = noa.targetedBlock;
+        const breakTgt = findBreakTarget();
         const attackTarget = findAttackTarget();
         if (attackTarget) {
-          const blockDistance = tgt
-            ? vecDist(
-                noa.camera.getPosition() as number[],
-                [
-                  tgt.position[0] + 0.5,
-                  tgt.position[1] + 0.5,
-                  tgt.position[2] + 0.5
-                ]
-              )
-            : Number.POSITIVE_INFINITY;
+          const blockDistance = breakTgt?.distance ?? Number.POSITIVE_INFINITY;
           if (attackTarget.distance <= blockDistance) {
             triggerLocalArmSwing();
             void onPlayerAttackRef.current(attackTarget.userId);
             return;
           }
         }
-        if (!tgt) return;
-        const pos: Vec3 = [tgt.position[0], tgt.position[1], tgt.position[2]];
+        if (!breakTgt) return;
+        const pos = breakTgt.pos;
         triggerLocalArmSwing();
         if (gameModeRef.current === "creative") {
           onBreakRef.current(pos);
           return;
         }
-        const blockId = Number(tgt.blockID);
+        const blockId = breakTgt.blockId;
         if (isInstantBreak(blockId)) {
           onBreakRef.current(pos);
           return;
@@ -1978,9 +1993,9 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       });
 
       function pickTargetedBlock() {
-        const tgt = noa.targetedBlock;
-        if (!tgt) return;
-        const blockId = Number(tgt.blockID);
+        const breakTgt = findBreakTarget();
+        if (!breakTgt) return;
+        const blockId = breakTgt.blockId;
         if (!PLACEABLE_BLOCK_IDS.includes(blockId)) return;
         if (gameModeRef.current === "creative") {
           selectCreativeBlock(blockId);
