@@ -722,6 +722,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const [blastFlash, setBlastFlash] = useState(0);
   const [weatherKind, setWeatherKind] = useState<PrecipitationKind>("clear");
   const [debugInfo, setDebugInfo] = useState<{ fps: number; pos: Vec3 } | null>(null);
+  const [isDead, setIsDead] = useState(false);
   const showDebugRef = useRef(false);
   const hostRef = useRef<HTMLDivElement | null>(null);
   // noa-engine has loose .d.ts typings; lock to any so we don't fight them.
@@ -758,6 +759,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const BREAK_START_MIN_MS = 100;
   const BREAK_FINISH_MIN_MS = 100;
   const pausedRef = useRef(paused);
+  const isDeadRef = useRef(isDead);
   const gameModeRef = useRef<GameMode>(gameMode);
   const inventoryOpenRef = useRef(inventoryOpen);
   const craftingGridWidthRef = useRef<CraftingGridWidth>(craftingGridWidth);
@@ -796,6 +798,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   onEatFinishRef.current = onEatFinish;
   onEatCancelRef.current = onEatCancel;
   pausedRef.current = paused;
+  isDeadRef.current = isDead;
   gameModeRef.current = gameMode;
   inventoryOpenRef.current = inventoryOpen;
   craftingGridWidthRef.current = craftingGridWidth;
@@ -1668,6 +1671,13 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           }
           return;
         }
+        if (ev.kind === "PLAYER_DEATH") {
+          if (ev.userId === myUserIdRef.current) {
+            document.exitPointerLock?.();
+            setIsDead(true);
+          }
+          return;
+        }
         if (ev.kind === "PLAYER_RESPAWN") {
           if (ev.userId === myUserIdRef.current) {
             noa.entities.setPosition(noa.playerEntity, ev.respawnPos);
@@ -2001,6 +2011,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           }
           return;
         }
+        if (isDeadRef.current) return;
         if (e.key.toLowerCase() === "e") {
           if (inventoryOpenRef.current) {
             closeInventory();
@@ -2286,10 +2297,10 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const noa: any = noaRef.current;
-    noa?.setPaused?.(paused);
-    audioManagerRef.current?.setMuted(paused);
-    if (paused) heldItemViewRef.current?.setVisible(false);
-  }, [paused]);
+    noa?.setPaused?.(paused || isDead);
+    audioManagerRef.current?.setMuted(paused || isDead);
+    if (paused || isDead) heldItemViewRef.current?.setVisible(false);
+  }, [paused, isDead]);
 
   const slotBox = (active: boolean, keyNum: number, inner: JSX.Element): JSX.Element => (
     <div key={keyNum} className={mcSlotClass(active)}>
@@ -3016,6 +3027,32 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     </div>
   ) : null;
 
+  const deathOverlay = isDead ? (
+    <div className="pointer-events-auto absolute inset-0 z-[101] flex flex-col items-center justify-center bg-red-950/70 backdrop-blur-[2px] transition-all duration-300">
+      <h1 className="mb-2 text-4xl font-black tracking-wider text-red-500 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)] sm:text-6xl animate-pulse">
+        מתת!
+      </h1>
+      <p className="mb-8 text-sm font-bold text-red-200/90 drop-shadow-md sm:text-base">
+        You Died!
+      </p>
+      <button
+        type="button"
+        className="pointer-events-auto transform rounded-md border-2 border-red-500 bg-gradient-to-b from-red-600 to-red-800 px-6 py-2.5 text-sm font-black text-white shadow-[0_4px_0_#4c0505,0_8px_16px_rgba(0,0,0,0.4)] transition-all hover:scale-105 hover:brightness-110 active:translate-y-px active:shadow-[0_2px_0_#4c0505]"
+        onClick={() => {
+          setIsDead(false);
+          setLocalVitals((prev) => ({ ...prev, health: 20 }));
+          if (hostRef.current) {
+            hostRef.current.focus();
+            const noa: any = noaRef.current;
+            noa?.container?.element?.requestPointerLock?.();
+          }
+        }}
+      >
+        היוולד מחדש / Respawn
+      </button>
+    </div>
+  ) : null;
+
   return (
     <div className="absolute inset-0">
       <div
@@ -3027,6 +3064,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       {weatherOverlay}
       {controlsHint}
       {debugOverlay}
+      {deathOverlay}
       {blastOverlay}
       {damageOverlay}
       {survivalVitalsHud}
