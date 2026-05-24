@@ -721,6 +721,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const [damageFlash, setDamageFlash] = useState(0);
   const [blastFlash, setBlastFlash] = useState(0);
   const [weatherKind, setWeatherKind] = useState<PrecipitationKind>("clear");
+  const [debugInfo, setDebugInfo] = useState<{ fps: number; pos: Vec3 } | null>(null);
+  const showDebugRef = useRef(false);
   const hostRef = useRef<HTMLDivElement | null>(null);
   // noa-engine has loose .d.ts typings; lock to any so we don't fight them.
   const noaRef = useRef<unknown>(null);
@@ -1986,6 +1988,19 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       noa.inputs.down.on("mid-fire", pickTargetedBlock);
 
       function onHotbarKey(e: KeyboardEvent) {
+        if (
+          e.target instanceof HTMLInputElement ||
+          e.target instanceof HTMLTextAreaElement
+        ) {
+          return;
+        }
+        if (e.key.toLowerCase() === "i") {
+          showDebugRef.current = !showDebugRef.current;
+          if (!showDebugRef.current) {
+            setDebugInfo(null);
+          }
+          return;
+        }
         if (e.key.toLowerCase() === "e") {
           if (inventoryOpenRef.current) {
             closeInventory();
@@ -2031,6 +2046,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       let lastFallImpactAt = 0;
       let lastAmbientSampleAt = 0;
       let lastFootstepAt = 0;
+      let lastDebugUpdate = 0;
       noa.on("tick", () => {
         const nowPerf = performance.now();
         if (!pausedRef.current) animatePrimedTnts(Date.now());
@@ -2220,6 +2236,19 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
             minAirVelocityY = 0;
           }
           lastGrounded = onGround;
+        }
+
+        if (showDebugRef.current) {
+          if (nowPerf - lastDebugUpdate > 100) {
+            lastDebugUpdate = nowPerf;
+            const scene = noa.rendering.getScene();
+            const engine = scene.getEngine();
+            const fps = engine.getFps();
+            setDebugInfo({
+              fps,
+              pos: [pos[0], pos[1], pos[2]]
+            });
+          }
         }
 
         if (nowPerf - lastEmit < 60) return;
@@ -2903,7 +2932,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           <p className="text-neutral-200">
             WASD תנועה · רווח קפיצה · לחצן שמאלי מחזיק לשבירה · ימני מניח · מקשי 1–9 לסרגל · E
             מלאי (גרירה בין משבצות / לוח בלוקים ביצירתי) · Q או לחצן אמצעי בוחר בלוק · P/Q זורקים פריט מההוטבר בשרדות · גלגלת לזום
-            המצלמה
+            המצלמה · I מידע ניפוי שגיאות (Debug)
           </p>
         </div>
       </div>
@@ -2973,6 +3002,20 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       />
     ) : null;
 
+  const debugOverlay = debugInfo ? (
+    <div
+      className={`pointer-events-none absolute left-3 z-[100] flex flex-col gap-1 rounded-sm border-2 border-[#5c4f3e]/80 bg-neutral-950/75 p-2 px-3 font-mono text-[10px] text-neutral-100 shadow-[0_8px_16px_rgba(0,0,0,0.6)] sm:text-xs ${
+        !paused && !controlsHintDismissed ? "top-36" : "top-3"
+      }`}
+    >
+      <div className="font-bold text-[#ffd700]">Monecraft Debug</div>
+      <div>FPS: {Math.round(debugInfo.fps)}</div>
+      <div>X: {debugInfo.pos[0].toFixed(2)}</div>
+      <div>Y: {debugInfo.pos[1].toFixed(2)}</div>
+      <div>Z: {debugInfo.pos[2].toFixed(2)}</div>
+    </div>
+  ) : null;
+
   return (
     <div className="absolute inset-0">
       <div
@@ -2983,6 +3026,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       />
       {weatherOverlay}
       {controlsHint}
+      {debugOverlay}
       {blastOverlay}
       {damageOverlay}
       {survivalVitalsHud}
