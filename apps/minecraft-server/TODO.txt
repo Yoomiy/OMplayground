@@ -1,12 +1,8 @@
 1. don't send data on empty ticks
 3. use sockets with binary data
 5. spawn from last location when resuming game
-6. borrow map rendering from volexsrv
-7. import more blocks and items
-8. fix e/q/p buttons (q drops and chaches basc immidiatly)
 9. allow draging of blocks to inventory
-10. (programaticly construct the recepie book?)
-11. fix glass view
+12. Set world boundaries in voxel game to prevent coordinates exceeding 0xFFFF (due to numeric hashing bounds in worldgen)
 
 implement:
 2. mobs

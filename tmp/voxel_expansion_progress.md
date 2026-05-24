@@ -1,0 +1,508 @@
+# Voxel Expansion Implementation Progress
+
+This ledger tracks major advancements, decisions, verification, and comments to address while implementing `docs/voxel_expansion_specification.md`.
+
+## 2026-05-20 - Branch and Baseline
+
+- Switched work to `dev` as requested.
+- Fast-forwarded `dev` from `main` because `dev` was the merge base and the voxel expansion specification already existed on `main`.
+- Existing uncommitted change before this work: `.codexignore` adds `!.cursor/`. Treat as pre-existing unless it becomes explicitly required for this task.
+- Loaded local `.cursor` voxel skills for block, item, and entity work.
+- Initial gap scan found the current baseline still centered on:
+  - 2x2 crafting only (`InventoryRegion = "hotbar" | "storage" | "craft"`).
+  - Mirrored worldgen inside `MinecraftClient.tsx` instead of shared `packages/voxel-content/src/worldgen.ts`.
+  - No visible shared biome registry, hunger/eating protocol, equipment inventory region, chest protocol, or centralized voxel audio manager.
+
+## Major Decisions
+
+- Implement the expansion from the shared package outward: shared content/data and tests first, then server authority, then client UX/rendering.
+- Keep heavyweight commands sequential; do not run build, lint, or test commands in parallel.
+- Use `tmp/voxel_expansion_progress.md` as the working checklist/comment file and check it before each major implementation pass.
+
+## 2026-05-20 - Shared Content Phase
+
+- Added canonical block IDs 100-102 for `LADDER`, `TORCH`, and `CHEST`.
+- Added expansion item IDs 111-126 for ingots, gems, food, diamond tools, swift pickaxe, flint and steel, and perk equipment.
+- Added shared food/perk metadata helpers so hunger and equipment systems can be server-authoritative later.
+- Added `BIOME_DEFS`, deterministic `MultiBiomeGenerator`, shared noise helpers, and shared `proceduralVoxelID` / `findSurfaceY` exports.
+- Added content tests for biome metadata, deterministic worldgen, ocean water fill, dry surface safety, mechanical block IDs, and expansion item metadata.
+- Verification run:
+  - `npm run build -w @playground/voxel-content` passed.
+  - `npm test -w @playground/voxel-content` passed: 5 suites, 32 tests.
+
+## Current Work
+
+- Working on Phase 1 implementation from `docs/voxel_expansion_specification.md`.
+- Completed the shared package foundation: biome definitions, deterministic multi-biome worldgen, expansion block IDs, expansion item IDs, and focused package tests.
+- Integrated the shared `proceduralVoxelID` and surface lookup into `apps/minecraft-server/src/world.ts`.
+- Replaced the duplicated client-side worldgen in `apps/web/src/games/MinecraftClient.tsx` with the shared generator import.
+- Updated the client texture map to the current `minecraft-assets/block/` asset layout, including ladder, torch, and chest.
+- Tightened spawn fallback logic so rare water-heavy searches place players above sea level and clear blocking terrain.
+- Added server-authoritative survival vitals and timed eating:
+  - health/hunger/saturation/exhaustion persist through pause/resume and disconnect/reconnect,
+  - movement, jumping, mining, regeneration, starvation, and food consumption update server state,
+  - right-click food starts a timed eat action, releasing cancels, and completion consumes one item,
+  - survival HUD shows server-synced health/hunger and eating temporarily slows movement.
+- Verification run:
+  - `npm run build -w @playground/voxel-content` passed after the spawn safety update.
+  - `npm test -w @playground/minecraft-server -- world.test.ts` passed: 1 suite, 13 tests.
+  - `npm run lint -w @playground/minecraft-server` passed.
+  - `npm run lint -w @playground/web` passed.
+- Addressed the open performance and zoom-out WebGL comments with a focused terrain/model-cache pass.
+- Added server-authoritative chest/container persistence and drag moves.
+- Added client ladder climbing and torch point lights.
+- Added rate-limited multiplayer arm swing sync and avatar swing animation.
+- Added first-person held item/tool rendering with bob and swing animation.
+- Addressed the old opaque-block rendering issue by preserving noa's default opacity for normal cube blocks.
+- Added server Helios/daylight regen plus tested damage/fall perk helpers for the upcoming combat/fall protocol.
+- Fixed surface building by treating air and surface plants as shared replaceable placement targets.
+- Added the combat/fall socket protocol and lowered spawn height from `surface + 3` to `surface + 2`.
+- Added a custom alpha/tinted Babylon render material for water so it is not treated as an opaque texture-only material.
+- Added a centralized Web Audio-based voxel audio manager and wired biome ambience, footsteps, mining, block break/place, swings, eating, crafting, and damage cues.
+- Addressed the new comments about underwater spawning/building, confirming fall damage, movement/jump tuning, HUD labels, hunger speed, and underwater break water refill.
+- Addressed the recipe/recipe-book gap by adding missing utility recipes and rendering the recipe book from the shared recipe table.
+- Added server-authoritative TNT ignition, fuses, explosion block damage/drops, player damage/knockback payloads, client primed TNT visuals, and fuse/explosion cues.
+- Addressed the remaining sea/cactus/performance comments by biasing the central play window toward land, keeping oceans on the outer rim, increasing deterministic desert cacti, widening chunk view distance, and cutting useless tree-structure scans in non-tree biomes.
+- Addressed the remaining interaction polish comments: flat held sprites for item/plant-style blocks, predictable torch middle-pick hotbar behavior, and TNT ignition path documented through implementation notes.
+- Added the remaining Phase 1 weather slice: shared precipitation classification, client rain/snow overlay, and server cold-biome exposed-water freezing.
+- Final verification completed; the only remaining local working-tree change is the pre-existing `.codexignore` edit.
+
+## 2026-05-20 - Shared Recipe Model
+
+- Replaced the old 2x2-only shapeless recipe matcher with a unified shaped/shapeless matcher.
+- Added bounding-box shrinking so shaped recipes can match anywhere inside either the 2x2 personal grid or the 3x3 crafting-table grid.
+- Added expansion recipes for crafting table, sticks, pickaxes, axes, bread, helium boots, swift pickaxe, coal/ingot/diamond conversions, ladder, torch, chest, heavy shield, feather falling talisman, and Helios medallion.
+- Added `GOLD_INGOT` as item ID `127` because the Helios recipe requires gold ingots while the previous expansion item list omitted them.
+- Verification run:
+  - `npm run build -w @playground/voxel-content` passed.
+  - `npm test -w @playground/voxel-content` passed: 5 suites, 32 tests.
+
+## 2026-05-20 - Crafting Table Grid Flow
+
+- Addressed the normal-inventory crafting slot issue: survival now keeps a 9-slot server backing array, but normal inventory renders and accepts moves only in the top-left personal 2x2 cells `[0, 1, 3, 4]`.
+- Added server-authoritative `craftingGridWidth` sync, `OPEN_CRAFTING_TABLE`, and `CLOSE_CRAFTING_TABLE`; right-clicking a crafting table in survival opens the 3x3 grid only after the server verifies reach and block identity.
+- Closing a crafting table returns table-only cells to hotbar/item storage and drops overflow near the player as world drops.
+- Updated client preview to run the shared recipe matcher against either the personal 2x2 projection or the full 3x3 grid.
+- Added inventory tests for 3x3-only tool crafting and returning inactive table cells.
+- Verification run:
+  - `npm test -w @playground/minecraft-server -- inventory.test.ts room.test.ts` passed: 2 suites, 29 tests.
+  - `npm run lint -w @playground/minecraft-server` passed.
+  - `npm run build -w @playground/voxel-content` passed.
+  - `npm test -w @playground/voxel-content` passed: 5 suites, 32 tests.
+  - `npm run lint -w @playground/web` passed.
+  - `npm test -w @playground/minecraft-server -- drops.test.ts -t "magnet pickup adds blocks" --runInBand` passed.
+  - Attempted the full minecraft-server Jest suite twice; all displayed suites passed, but the process hung before a clean summary because `drops.test.ts` did not complete. The stuck Jest processes were stopped.
+
+## 2026-05-20 - Equipment Slots and Perk Hooks
+
+- Added the `equipment` inventory region with four authoritative equipment slots: head, chest, legs, and feet.
+- Equipment slots persist through pause/resume and disconnect/reconnect alongside hotbar, item storage, and crafting grid state.
+- Server inventory moves now validate equipment placement against shared item perk metadata; e.g. helium boots only fit feet, glow/Helios items fit head, feather talisman fits legs, and heavy shield fits chest.
+- Client inventory renders a dedicated equipment area and syncs equipment through join/inventory payloads.
+- Client perk hooks are active from synced equipment:
+  - helium boots increase local jump force,
+  - heavy shield reduces local movement speed,
+  - glow talisman enables full-bright ambient lighting.
+- Verification run:
+  - `npm test -w @playground/minecraft-server -- inventory.test.ts room.test.ts` passed: 2 suites, 33 tests.
+  - `npm test -w @playground/minecraft-server -- drops.test.ts -t "magnet pickup adds blocks" --runInBand` passed.
+  - `npm run lint -w @playground/minecraft-server` passed.
+  - `npm run lint -w @playground/web` passed.
+
+## 2026-05-20 - Survival Hunger and Eating
+
+- Added `PlayerVitals` to the voxel protocol, join ack, inventory sync payloads, and room snapshots.
+- Added server-side vitals runtime helpers for default state, persistence hydration, exhaustion decay, hunger/saturation drain, health regeneration, starvation damage, and food application.
+- Persisted vitals alongside survival hotbar, item storage, crafting grid, and equipment state for pause/resume and disconnect/reconnect.
+- Wired server-authoritative eating:
+  - `EAT_START` validates survival mode, hotbar slot, food metadata, and non-full hunger;
+  - `EAT_FINISH` requires the timed hold window, consumes one food item, applies nutrition/saturation, and emits inventory/vitals sync;
+  - `EAT_CANCEL` clears pending eating.
+- Added movement/jump/mining exhaustion and a survival vitals tick before dirty snapshot coalescing, so passive hunger/health changes still emit snapshots.
+- Client socket state now tracks vitals and exposes typed eat start/finish/cancel callbacks.
+- Client survival controls now right-click food to eat, cancel on release, slow movement while eating, and render a compact health/hunger HUD above the hotbar.
+- Focused verification run:
+  - `npm test -w @playground/minecraft-server -- vitals.test.ts tick.test.ts room.test.ts --runInBand` passed: 3 suites, 20 tests.
+  - `npm run lint -w @playground/minecraft-server` passed.
+  - `npm run lint -w @playground/web` passed.
+
+## 2026-05-20 - Worldgen Math Check
+
+- Addressed the comment asking to double-check the new worldgen math.
+- Ran an empirical scan with seed `1234567`, window `-1000..1000` on X/Z, step `20`:
+  - Land: `36.5%`; ocean/water: `63.5%`, inside the spec target of `30%-70%` land.
+  - Sampled biome counts: beach `2079`, desert `612`, forest `611`, ice mountains `22`, iceplains `1360`, mountains `939`, ocean `1723`, plains `2406`, savanna `449`.
+  - Approximate connected biome areas at 20-block resolution: savanna around `15k` blocks, forest/desert around `27k-31k`, plains/iceplains/mountains/ocean around `62k-98k`, beach around `208k` due deliberate broad shelves.
+- Adjusted the generator after the first scan showed sharp threshold cliffs:
+  - widened water transition blending,
+  - added mountain/coastal beach shelf blending,
+  - added desert/mountain, savanna/mountain, and cold/warm highland transition blending,
+  - clamped desert dune height to avoid accidental underwater desert cells.
+- Tradeoff vs `voxelsrv-server`: this keeps our generator synchronous and O(1) for the web client, so it has less high-frequency biome detail than worker/neighborhood approaches, but it avoids the client lag and duplicated logic the spec warned about.
+- Added a regression test that samples a 2000x2000 window and asserts the land/ocean balance remains in the target range.
+- Verification after tuning:
+  - `npm run build -w @playground/voxel-content` passed.
+  - `npm test -w @playground/voxel-content` passed: 5 suites, 33 tests.
+  - `npm test -w @playground/minecraft-server -- world.test.ts` passed: 1 suite, 13 tests.
+  - `npm run lint -w @playground/minecraft-server` passed.
+  - `npm run lint -w @playground/web` passed.
+
+## 2026-05-20 - Performance and Zoom WebGL Comment Pass
+
+- Addressed the comment asking whether rendering should move to another thread and where the bottleneck is.
+- Finding: the highest-risk hot path is the browser chunk fill path, not the server. The server samples procedural blocks sparsely for reach checks, deltas, drops, and spawn lookup; the web client fills whole noa chunks synchronously.
+- Immediate fix:
+  - cached `MultiBiomeGenerator.sampleColumn(x,z)` results per seed with bounded pruning,
+  - skipped expensive tree/structure checks for blocks far above the local terrain column,
+  - kept server math unchanged behaviorally while reducing repeated client column/noise work during vertical chunk fills.
+- Addressed the zoom-out WebGL comment:
+  - `voxelJsonModel` template caching is now scene-aware,
+  - if a cached Babylon template belongs to an old scene, it is disposed and rebuilt before cloning,
+  - this avoids cloning mesh/geometry resources from a different WebGL context when the local player body becomes visible after zooming out or after remounts.
+- Decision: do not move rendering/worldgen to a worker yet. A worker would require async chunk plumbing around noa and cross-thread delta hydration; the current bottleneck had lower-risk local fixes first.
+- Verification run:
+  - `npm run build -w @playground/voxel-content` passed.
+  - `npm test -w @playground/voxel-content -- worldgen.test.ts --runInBand` passed: 1 suite, 7 tests.
+  - `npm run lint -w @playground/web` passed.
+  - `npm run lint -w @playground/minecraft-server` passed.
+
+## 2026-05-20 - Chest Storage
+
+- Added a `chest` inventory region plus 27-slot mixed block/item chest slots in the shared voxel protocol.
+- Added server inventory support for moving stacks between hotbar, item storage, and open chest slots while keeping equipment/crafting validation unchanged.
+- Added persistent room chest state keyed by chest block coordinate (`"x,y,z"`) and included chests in pause/resume snapshots.
+- Added server-authoritative chest interaction:
+  - right-click/open validates survival mode, reach, block identity, and per-chest lock ownership,
+  - `CHEST_MOVE` applies authoritative stack moves against the locked chest,
+  - close/disconnect releases locks,
+  - breaking a chest ejects its contents as world drops, removes the persisted chest inventory, releases locks, and closes active clients.
+- Client socket state now tracks the active chest and receives `CHEST_SYNC`.
+- Client survival right-click opens chest blocks, and the inventory overlay renders a 27-slot chest grid that drag-moves with hotbar/storage through the server.
+- Verification run:
+  - `npm test -w @playground/minecraft-server -- inventory.test.ts room.test.ts --runInBand` passed: 2 suites, 37 tests.
+  - `npm run lint -w @playground/minecraft-server` passed.
+  - `npm run lint -w @playground/web` passed.
+
+## 2026-05-20 - Ladder and Torch Mechanics
+
+- Added client-side ladder movement behavior using the authoritative synced block map:
+  - detects when the player bounding box overlaps a `LADDER` block,
+  - climbs while pressing jump/forward,
+  - descends on backward,
+  - otherwise slides slowly instead of falling through.
+- Added torch point-light lifecycle:
+  - existing torch deltas create warm Babylon point lights on load,
+  - `BLOCK_DELTA` updates create/remove lights when torches are placed or broken,
+  - teardown disposes all active torch lights with the noa scene.
+- Kept placement/break authority unchanged on the server; the client derives movement/light effects from server-synced blocks.
+- Verification run:
+  - `npm run lint -w @playground/web` passed.
+
+## 2026-05-20 - Arm Swing Sync
+
+- Added typed `ARM_SWING` / `PLAYER_ARM_SWING` protocol payloads.
+- Server now rate-limits swing broadcasts per player at 150ms and relays accepted swings to other players in the voxel room.
+- Client socket layer exposes `armSwing` and `onArmSwing` alongside existing snapshot/block listeners.
+- Local mining/placing actions trigger a swing request and animate the local third-person avatar if visible.
+- Remote avatar rigs now track swing state and overlay a right-arm swing animation on top of walking/head-pitch updates.
+- Verification run:
+  - `npm run lint -w @playground/minecraft-server` passed.
+  - `npm run lint -w @playground/web` passed.
+
+## 2026-05-20 - First-Person Held Tools and Opaque Blocks
+
+- Added a camera-parented first-person held-item renderer:
+  - survival shows the selected hotbar block/item icon as a held cube or flat item;
+  - creative shows the selected creative block;
+  - an empty slot shows a simple arm/hand mesh;
+  - the view hides in third-person zoom and while inventory is open.
+- Wired the existing local swing trigger into the first-person held view so mining and placing animate the hand/tool as well as the third-person avatar.
+- Added a pure resolver test for held visual selection.
+- Addressed the new ledger comment about old opaque block weirdness:
+  - root cause was passing `opaque: undefined` into noa block registration for normal cube blocks,
+  - noa treats that as false after defaults are merged, so ordinary opaque blocks were registered as non-opaque,
+  - shared `noaCubeBlockOptions` now omits undefined opacity/fluid overrides and keeps explicit `opaque: false` for glass/leaves/water/etc.
+- Verification run:
+  - `npm run build -w @playground/voxel-content` passed.
+  - `npm test -w @playground/voxel-content -- blockClientCatalog.test.ts` passed: 1 suite, 4 tests.
+  - `npm test -w @playground/web -- heldItemView.test.ts` passed: 1 file, 3 tests.
+  - `npm run lint -w @playground/web` passed.
+
+## 2026-05-20 - Server Perk Hooks and Surface Building
+
+- Added server-side perk helpers:
+  - Helios Medallion heals 1 health every 3 seconds during daytime with direct transparent sky exposure;
+  - Heavy Shield mitigation is centralized through `applyPlayerDamage`;
+  - Feather Falling Talisman absorbs fall damage through `applyFallDamage`.
+- Wired Helios regen into the existing survival vitals tick so it is authoritative and snapshot-synced.
+- Added shared replaceable block metadata for air, grass plants, flowers, mushrooms, dead bush, and saplings.
+- Addressed the building comment:
+  - client ray targeting now ignores replaceable plants so the crosshair reaches the real build face;
+  - server placement accepts replaceable plant cells instead of rejecting them as occupied.
+- Current combat/fall protocol state: no socket protocol existed yet; the server-side damage/fall helpers now exist and the next implementation pass should expose `FALL_IMPACT` and combat attack events over Socket.IO.
+- Verification run:
+  - `npm run build -w @playground/voxel-content` passed.
+  - `npm test -w @playground/voxel-content -- blocks.test.ts blockClientCatalog.test.ts` passed: 2 suites, 14 tests.
+  - `npm test -w @playground/minecraft-server -- perks.test.ts vitals.test.ts room.test.ts tick.test.ts --runInBand` passed: 4 suites, 27 tests.
+  - `npm run lint -w @playground/minecraft-server` passed.
+  - `npm run lint -w @playground/web` passed.
+
+## 2026-05-20 - Combat/Fall Protocol and Spawn Height
+
+- Lowered spawn height by one block while keeping the existing shared spawn safety scan intact.
+- Added typed protocol payloads for `FALL_IMPACT`, `PLAYER_ATTACK`, and `PLAYER_DAMAGE`.
+- Added server handlers:
+  - `FALL_IMPACT` validates vertical velocity and applies feather-fall/shield-aware damage;
+  - `PLAYER_ATTACK` validates room, survival mode, cooldown, target identity, and range before applying weapon-tier damage.
+- Added client emitters/listeners:
+  - hard landings emit fall impact from the local physics transition;
+  - left-click can attack a remote avatar selected by a short camera ray;
+  - damage events update the local health HUD and flash a brief red overlay.
+- Fixed INPUT throttling so pitch and selected hotbar slot changes are sent even when the player is stationary.
+- Verification run:
+  - `npm run build -w @playground/voxel-content` passed.
+  - `npm test -w @playground/voxel-content -- blocks.test.ts` passed: 1 suite, 10 tests.
+  - `npm test -w @playground/minecraft-server -- perks.test.ts world.test.ts tick.test.ts --runInBand` passed: 3 suites, 25 tests.
+  - `npm run lint -w @playground/minecraft-server` passed.
+  - `npm run lint -w @playground/web` passed.
+
+## 2026-05-20 - Water Transparency Rendering
+
+- Addressed the remaining weird water/transparent-block note with a focused client material fix.
+- Finding: `texHasAlpha` only marks the PNG alpha channel; the still-water asset itself is effectively opaque and noa's material registry ignores `color` alpha when a `textureURL` is registered normally.
+- Added a custom Babylon water material:
+  - uses the water texture with nearest sampling,
+  - applies explicit `alpha = 0.62`,
+  - disables back-face culling,
+  - registers noa material metadata with a blue alpha color so camera-in-water effects can use an alpha value.
+- Verification run:
+  - `npm run lint -w @playground/web` passed.
+
+## 2026-05-20 - Client Dynamic Audio
+
+- Added shared block sound group metadata and URL conventions for step, dig, break, and place material cues.
+- Added a centralized `AudioManager` for the web client:
+  - gracefully no-ops when browser audio is unavailable or locked;
+  - unlocks/resumes on viewport pointer interaction;
+  - synthesizes biome ambience, material footsteps, mining scrapes, block break/place sounds, tool swings, eating, crafting pops, and damage hits with Web Audio so the system works before external sound assets exist.
+- Wired client runtime triggers:
+  - ambience follows the shared biome column below the player;
+  - footsteps use the block below the player;
+  - active mining emits repeated material scrapes;
+  - authoritative block deltas emit nearby break/place cues;
+  - arm swings, eating, crafting, and damage events emit action cues.
+- Verification run:
+  - `npm run build -w @playground/voxel-content` passed.
+  - `npm test -w @playground/voxel-content -- blocks.test.ts` passed: 1 suite, 11 tests.
+  - `npm test -w @playground/web -- audioManager.test.ts` passed: 1 suite, 3 tests.
+  - `npm run lint -w @playground/web` passed after a Safari `webkitAudioContext` type-cast fix.
+
+## 2026-05-20 - Spawn, Placement, Fall, Movement, and Survival Tuning
+
+- Addressed underwater/sea spawning:
+  - persisted/cached spawn points are revalidated before reuse;
+  - unsafe old spawn points are discarded and regenerated;
+  - the dry-land spawn search is wider and denser so ocean-heavy seeds look for real land instead of falling back near sea;
+  - only pathological no-land cases create a small emergency dry pad.
+- Addressed placement in empty/water cells:
+  - shared replaceable placement rules now include water;
+  - the client can place a block into an aimed replaceable air/water cell even when noa has no solid targeted block.
+- Confirmed fall damage:
+  - `FALL_IMPACT` applies server-authoritative damage through `applyFallDamage`;
+  - focused tests cover normal fall damage and feather-falling immunity.
+- Brought movement constants into one place:
+  - base speed, jump force, helium jump multiplier, heavy-shield slowdown, eating slowdown, ladder speeds, and footstep cadence now live in `movementConfig.ts`.
+- Tuned survival hunger:
+  - idle, walking, jumping, and mining exhaustion rates are lower so hunger/saturation drain more slowly.
+- Filled HUD label gaps for later block IDs and missing item IDs, including snow.
+- Fixed underwater break replacement:
+  - breaking a placed block in water now restores a water block instead of leaving an odd air/custom-water cell.
+- Confirmed non-block item handling currently covers the implemented item classes:
+  - held item rendering shows item icons;
+  - food uses the right-click eating protocol;
+  - tools affect mining/combat through the selected hotbar slot;
+  - equipment items are used through equipment slots.
+- Verification run:
+  - `npm run build -w @playground/voxel-content` passed.
+  - `npm test -w @playground/voxel-content -- blocks.test.ts` passed: 1 suite, 11 tests.
+  - `npm test -w @playground/minecraft-server -- world.test.ts room.test.ts perks.test.ts vitals.test.ts --runInBand` passed: 4 suites, 40 tests.
+  - `npm test -w @playground/web -- movementConfig.test.ts audioManager.test.ts heldItemView.test.ts` passed: 3 suites, 8 tests.
+  - `npm run lint -w @playground/web` passed.
+  - `npm run lint -w @playground/minecraft-server` passed.
+
+## 2026-05-20 - Recipe Registry and Recipe Book Review
+
+- Addressed the open recipe/recipe-book comment.
+- Added missing utility recipes for:
+  - wooden shovel,
+  - stone shovel,
+  - bucket,
+  - flint and steel,
+  - glow talisman.
+- Replaced the hard-coded two-entry recipe book with a scrollable recipe list generated from the shared `RECIPES` table, so future recipes appear automatically in the client UI.
+- Verification run:
+  - `npm run build -w @playground/voxel-content` passed.
+  - `npm test -w @playground/voxel-content -- recipes.test.ts blocks.test.ts` passed: 2 suites, 21 tests.
+  - `npm run lint -w @playground/web` passed.
+
+## 2026-05-20 - Server-Authoritative TNT
+
+- Added typed `IGNITE_TNT`, `TNT_PRIMED`, `EXPLOSION`, and explosion impulse payloads to the voxel protocol.
+- Added room-local active TNT state with 4 second fuses.
+- Server ignition validates survival mode, reach, target TNT, and selected flint-and-steel before removing the block, syncing flint-and-steel durability, and broadcasting a primed TNT event.
+- Server tick now expires TNT fuses, applies authoritative spherical block destruction, keeps bedrock/barrier/obsidian blast-proof, emits explosion block deltas, rolls 30% world drops, and applies explosion damage through the existing perk-aware damage helper.
+- Client survival right-click now ignites targeted TNT when holding flint-and-steel.
+- Client room-event handling renders a pulsing primed TNT cube, plays fuse/explosion synthesized audio, flashes nearby blasts, and applies received explosion impulse to the local physics body.
+- Stopped game overlays now pause the voxel client and explicitly mute/stop active Web Audio loops, preventing ongoing audio/gameplay after stop.
+- Verification run:
+  - `npm test -w @playground/minecraft-server -- tnt.test.ts --runInBand` passed: 1 suite, 2 tests.
+  - `npm run lint -w @playground/minecraft-server` passed.
+  - `npm run lint -w @playground/web` passed.
+  - `npm test -w @playground/web -- audioManager.test.ts` passed: 1 suite, 3 tests.
+
+## 2026-05-20 - Worldgen, Cacti, and View Distance Comment Pass
+
+- Addressed the sea-heavy terrain comment:
+  - added a center-continent bias to the continental mask;
+  - added a center dry bias to the water mask;
+  - added an outer-ocean bias so seas concentrate farther from the central play window.
+- Measured the deterministic `seed=1234567` scan after tuning:
+  - central `-1000..1000` sample at step `20`: land `55.9%`, water/ocean `44.1%`;
+  - outer rim sample beyond radius `3200`: ocean/water `89.0%`.
+- Addressed desert cacti:
+  - cacti already existed but were too sparse;
+  - increased desert cactus column probability from `0.4%` to `1.8%`;
+  - added a regression at `(-2390, 1990)` confirming an actual cactus appears in a dry desert column.
+- Addressed performance/view-distance comments:
+  - increased noa chunk distances from `[3,3]/[4,4]` to `[5,4]/[6,5]` so players can see farther;
+  - skipped tree structure scans in non-tree biomes and skipped impossible trunk-height ranges before running the tree mesh math.
+- Verification run:
+  - `npm test -w @playground/voxel-content -- worldgen.test.ts --runInBand` passed: 1 suite, 9 tests.
+  - `npm run build -w @playground/voxel-content` passed.
+  - `npm run lint -w @playground/web` passed.
+  - `npm test -w @playground/minecraft-server -- world.test.ts room.test.ts --runInBand` passed: 2 suites, 27 tests.
+
+## 2026-05-20 - Held Item and Torch Pick Polish
+
+- Addressed the non-block held item visual comment:
+  - non-block items already resolve through item icons;
+  - plant-style blocks such as torches, ladders, flowers, mushrooms, dead bush, and grass now render as flat first-person held sprites instead of small cubes textured on every face.
+- Addressed the torch middle-pick comment:
+  - creative middle-picking a block outside the first nine default blocks now reserves compact hotbar slot 9 for that selected block;
+  - picking torches no longer leaves the visible hotbar selection in an inconsistent off-screen state.
+- TNT ignition behavior after the Phase 6 pass:
+  - craft/hold flint-and-steel in survival;
+  - right-click a targeted TNT block;
+  - the client emits `IGNITE_TNT`, the server validates the held item and target, then broadcasts the primed TNT event.
+- Verification run:
+  - `npm test -w @playground/web -- heldItemView.test.ts` passed: 1 suite, 4 tests.
+  - `npm run lint -w @playground/web` passed.
+
+## 2026-05-20 - Weather and Precipitation
+
+- Added shared precipitation classification:
+  - dry/hot biomes are clear;
+  - wet cold biomes snow;
+  - wet temperate biomes rain.
+- Added client weather rendering:
+  - the client samples the current biome column alongside ambient audio;
+  - rain renders as fast falling streaks;
+  - snow renders as slower drifting particles;
+  - desert/savanna and other dry/hot climates stay clear.
+- Added server weather mutation:
+  - every 8 seconds, active rooms sample exposed water around players;
+  - placed surface water in snowy biomes freezes to ice if it has open sky;
+  - freeze changes are authoritative `BLOCK_DELTA` events with `by: "weather"`.
+- Verification run:
+  - `npm test -w @playground/voxel-content -- weather.test.ts worldgen.test.ts --runInBand` passed: 2 suites, 10 tests.
+  - `npm run build -w @playground/voxel-content` passed.
+  - `npm test -w @playground/minecraft-server -- weather.test.ts tick.test.ts --runInBand` passed: 2 suites, 7 tests.
+  - `npm run lint -w @playground/minecraft-server` passed.
+  - `npm run lint -w @playground/web` passed.
+
+## 2026-05-20 - Final Review Verification
+
+- Reviewed the original specification and this ledger after the last comment pass.
+- Remaining concrete gaps found and addressed in the final review:
+  - Phase 6 TNT ignition/explosions;
+  - weather/precipitation;
+  - sea-heavy central terrain, sparse cacti, and view distance/performance;
+  - non-block/plant-style held visuals;
+  - torch middle-pick behavior;
+  - stopped-game audio.
+- Final fast verification run:
+  - `npm run build -w @playground/voxel-content` passed.
+  - `npm test -w @playground/voxel-content` passed: 6 suites, 39 tests.
+  - `npm test -w @playground/minecraft-server -- world.test.ts room.test.ts perks.test.ts vitals.test.ts tnt.test.ts weather.test.ts tick.test.ts --runInBand` passed: 7 suites, 49 tests.
+  - `npm test -w @playground/web -- movementConfig.test.ts audioManager.test.ts heldItemView.test.ts` passed: 3 suites, 9 tests.
+  - `npm run lint -w @playground/minecraft-server` passed.
+  - `npm run lint -w @playground/web` passed.
+  - `git diff --check` passed.
+
+## 2026-05-20 - Throw and Flat-Sprite Final Comments
+
+- Addressed Q/drop auto-recache:
+  - hotbar throws now spawn outside the immediate magnet pickup radius;
+  - hotbar throws now use a stronger forward/upward impulse instead of the small near-drop impulse;
+  - existing nearby/drop-overflow behavior still uses the close drop position.
+- Addressed flat held sprites being upside down:
+  - first-person flat item/plant-block textures now flip their texture V axis instead of relying on plane orientation.
+- Performance note:
+  - already applied low-risk optimizations in this pass: shared column cache, high-air structure culling, non-tree-biome tree-scan skip, impossible tree-height skip, scene-aware model cache, wider view distance, and final worldgen sea/shore rebalance;
+  - deeper next options would be async chunk generation, a chunk mesh/column worker, lower particle/render presets, or actual distance LOD, all of which are larger architectural changes than this review pass.
+- Verification run:
+  - `npm test -w @playground/minecraft-server -- drops.test.ts --runInBand` passed: 1 suite, 12 tests.
+  - `npm run lint -w @playground/minecraft-server` passed.
+  - `npm test -w @playground/web -- heldItemView.test.ts` passed: 1 suite, 4 tests.
+  - `npm run lint -w @playground/web` passed.
+
+## Comments / Instructions To Address
+
+- Addressed: added `Current Work` above to explain the active implementation slice and next concrete step.
+- Addressed: double-checked worldgen math and documented the empirical biome-area scan in `Worldgen Math Check`.
+- just so you know: i have ( npm run dev:server )&; ( npm run dev:minecraft )&; npm run dev:web running in the background
+- Addressed: normal inventory now shows only the 2x2 personal craft cells, while right-clicking a crafting table opens the server-authorized 3x3 view.
+- Addressed: the slowdown bottleneck is primarily client chunk generation; server math is sparse. Added bounded biome-column caching and high-air structure culling before considering a worker.
+- Addressed: zoom-out WebGL context error likely came from scene-blind voxel model template caching; templates now rebuild when the Babylon scene changes.
+- Addressed: opaque blocks behaved weird because normal cubes were registered with `opaque: undefined`, overriding noa's default `true`. Shared block options now omit undefined opacity.
+- Addressed: animation works but building does not. Likely cause was replaceable surface plants blocking placement; shared replaceable-block rules now let the client ignore plants and the server replace them.
+- Addressed: building works now, but some blocks, possibly water/transparent blocks, behave weird. Water now uses an explicit custom alpha material instead of relying on the PNG alpha channel.
+- Addressed: underwater spawning/building. Cached spawns are revalidated, water is replaceable for placement, and the client has an aimed no-target placement fallback.
+- Addressed: combat/fall protocol was missing. Added fall impact, player attack, and player damage socket flow.
+- Addressed: spawn felt too high. Spawn clearance is now `surface + 2` instead of `surface + 3`.
+
+- after you are done with everything /review every detail in the original plan implementation and in this document and fix what needs fixing. your goal isn't reached until you are done with it!
+
+- Addressed: falling does damage in survival through `FALL_IMPACT`; focused tests cover normal and feather-falling cases.
+- Addressed: movement constants are centralized in `movementConfig.ts`.
+- Addressed: holding/using non-block items is covered for current item classes: visible held items, food eating, tool mining/combat, and equipment slots.
+- Addressed: plant-style blocks and non-block item visuals now use flat first-person held sprites instead of cube rendering.
+- Addressed: filled missing block/item HUD labels, including snow.
+- Addressed: sea spawn fallback now searches much farther for dry land before creating an emergency pad.
+- Addressed: hunger exhaustion rates are slower, and fall damage health changes are covered by server tests.
+- Addressed: underwater block breaks restore water via `replacementBlockAfterBreak`.
+- Addressed: recipes and recipe book now include the missing utility recipes, and the recipe book renders from shared `RECIPES`.
+- Addressed: the Phase 6 TNT plan now has survival flint-and-steel ignition, active fuses, server-side explosion damage, blast-proof blocks, drops, client visual/audio events, and local blast impulse.
+- Addressed: worldgen now biases the central play window toward dry land/shore and pushes most ocean pressure to the outer rim.
+- Addressed: stopped games now pass `paused` into the voxel client and the audio manager explicitly mutes and stops active ambient/eating loops.
+- Addressed: cacti existed but were too rare; desert cactus probability is higher and covered by a deterministic worldgen regression.
+- Addressed: view distance is wider, and non-tree biomes now skip expensive tree-structure scans to pay for the added draw distance.
+- Addressed: middle-picking a torch now puts the picked torch into the visible compact creative hotbar instead of selecting an off-screen block index.
+- Addressed: TNT is ignited in survival by holding flint-and-steel and right-clicking a targeted TNT block.
+- Addressed: Q/hotbar throws now spawn outside immediate pickup radius and get a stronger forward/upward impulse.
+- Addressed: performance ideas are recorded above; the low-risk optimizations in this review pass are implemented, and larger worker/LOD options are called out as future architecture work.
+- Addressed: flat held item/plant-block sprites now flip the texture V axis so they render upright.
+
+- Addressed: final review pass completed and the remaining concrete comments/gaps are covered above.
+
+- go again through the implementation of every part, and review it separatly. question the solutions you found for stuff, and look for better solutions and optimitations.
+
+## 2026-05-24 - Integration of Death & Suffocation
+
+- Resolved TypeScript compiler errors in standalone `death.ts` by adding `lastSuffocationAt?: number` to `PlayerRuntime` in `room.ts`.
+- Implemented player-targeted socket channels (`voxel-user:${userId}:${sessionId}`) to support direct-syncing of cleared inventories to deceased players upon respawning.
+- Registered `PLAYER_DEATH` and `PLAYER_RESPAWN` events in the `RoomEvent` wire protocol union across both client and server schemas.
+- Integrated `applySuffocationDamage` and `checkAndHandlePlayerDeath` into the main server vital ticker `tickRoomVitals` to process suffocation damage and handle death from starvation or suffocation.
+- Hooked `checkAndHandlePlayerDeath` into combat strikes, fall impact, and TNT explosion loops to cover all damage-dealing systems in survival mode.
+- Programmed client-side response to `PLAYER_RESPAWN` in `MinecraftClient.tsx` to automatically teleport the local player's camera/rig to the authoritative spawn coordinate and clear lingering physical velocity.
+- Verified that all 16 server test suites pass perfectly and the web linter runs with zero errors.

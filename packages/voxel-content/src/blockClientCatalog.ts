@@ -116,7 +116,10 @@ export type McTerrainTextureKey =
   | "grassYellowSide"
   | "grassPlantYellow"
   | "leavesYellow"
-  | "grassPlant";
+  | "grassPlant"
+  | "ladder"
+  | "torch"
+  | "chest";
 
 /** One Babylon material per mc_* texture file; order matches legacy registration. */
 export const MC_MATERIAL_ENTRIES = [
@@ -229,7 +232,10 @@ export const MC_MATERIAL_ENTRIES = [
   { name: "mc_grass_yellow_side", textureKey: "grassYellowSide" as const },
   { name: "mc_grass_plant_yellow", textureKey: "grassPlantYellow" as const, texHasAlpha: true },
   { name: "mc_leaves_yellow", textureKey: "leavesYellow" as const, texHasAlpha: true },
-  { name: "mc_grass_plant", textureKey: "grassPlant" as const, texHasAlpha: true }
+  { name: "mc_grass_plant", textureKey: "grassPlant" as const, texHasAlpha: true },
+  { name: "mc_ladder", textureKey: "ladder" as const, texHasAlpha: true },
+  { name: "mc_torch", textureKey: "torch" as const, texHasAlpha: true },
+  { name: "mc_chest", textureKey: "chest" as const }
 ] as const;
 
 export type NoaBlockEntry =
@@ -249,6 +255,28 @@ export type NoaBlockEntry =
       textureKey: McTerrainTextureKey;
       hotbarTextureKey: McTerrainTextureKey;
     };
+
+export interface NoaCubeBlockOptions {
+  readonly material: string | readonly [string, string, string];
+  readonly solid: boolean;
+  readonly opaque?: boolean;
+  readonly fluid?: boolean;
+}
+
+export function noaCubeBlockOptions(
+  entry: Extract<NoaBlockEntry, { shape: "cube" }>
+): NoaCubeBlockOptions {
+  const options: NoaCubeBlockOptions = {
+    material: entry.material,
+    solid: entry.solid
+  };
+  if (entry.opaque !== undefined) {
+    return entry.fluid !== undefined
+      ? { ...options, opaque: entry.opaque, fluid: entry.fluid }
+      : { ...options, opaque: entry.opaque };
+  }
+  return entry.fluid !== undefined ? { ...options, fluid: entry.fluid } : options;
+}
 
 /** Every non-air block that noa registers (mirrors legacy `registerBlock` list). */
 export const NOA_BLOCK_ENTRIES: readonly NoaBlockEntry[] = [
@@ -969,6 +997,27 @@ export const NOA_BLOCK_ENTRIES: readonly NoaBlockEntry[] = [
     materialName: "mc_grass_plant",
     textureKey: "grassPlant",
     hotbarTextureKey: "grassPlant"
+  },
+  {
+    id: BLOCK_REGISTRY.LADDER,
+    shape: "plantSprite",
+    materialName: "mc_ladder",
+    textureKey: "ladder",
+    hotbarTextureKey: "ladder"
+  },
+  {
+    id: BLOCK_REGISTRY.TORCH,
+    shape: "plantSprite",
+    materialName: "mc_torch",
+    textureKey: "torch",
+    hotbarTextureKey: "torch"
+  },
+  {
+    id: BLOCK_REGISTRY.CHEST,
+    shape: "cube",
+    material: "mc_chest",
+    solid: true,
+    hotbarTextureKey: "chest"
   }
 ];
 

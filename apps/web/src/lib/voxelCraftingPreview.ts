@@ -2,6 +2,7 @@
  * Read-only crafting preview — uses shared recipe matcher + output space checks.
  */
 import {
+  CRAFTING_GRID_WIDTH_2,
   REGISTERED_ITEM_IDS,
   findMatchingRecipe,
   itemMaxStack
@@ -11,11 +12,13 @@ import {
   CRAFTING_CELL_MAX,
   CRAFTING_GRID_SLOTS,
   PLACEABLE_BLOCK_IDS,
+  type CraftingGridWidth,
   type CraftingGridSlot,
   type ItemSlot
 } from "@/lib/voxelProtocol";
 
 const MAX_STACK = 64;
+const PERSONAL_CRAFTING_SLOT_INDICES = [0, 1, 3, 4] as const;
 
 export interface CraftingPreview {
   outputKind: "block" | "item";
@@ -81,13 +84,18 @@ function maxAddableBlockCount(slots: { blockId: number; count: number }[], block
 export function craftingGridPreview(
   grid: CraftingGridSlot[],
   hotbarSlots: { blockId: number; count: number }[],
-  itemSlots: ItemSlot[]
+  itemSlots: ItemSlot[],
+  gridWidth: CraftingGridWidth = CRAFTING_GRID_WIDTH_2
 ): CraftingPreview | null {
   if (!Array.isArray(grid) || grid.length !== CRAFTING_GRID_SLOTS) return null;
   const g = grid.map((c) => ({ ...c }));
   for (const c of g) normalizeCraftRead(c);
 
-  const matched = findMatchingRecipe(g);
+  const activeGrid =
+    gridWidth === CRAFTING_GRID_WIDTH_2
+      ? PERSONAL_CRAFTING_SLOT_INDICES.map((idx) => g[idx]!)
+      : g;
+  const matched = findMatchingRecipe(activeGrid, gridWidth);
   if (!matched) return null;
 
   const { output } = matched.recipe;

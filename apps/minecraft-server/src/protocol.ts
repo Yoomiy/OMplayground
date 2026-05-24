@@ -4,6 +4,11 @@
  * import. Keep this file framework-free (no socket / babylon imports).
  */
 
+import {
+  CRAFTING_TABLE_GRID_SIZE,
+  PERSONAL_CRAFTING_GRID_SIZE
+} from "@playground/voxel-content";
+
 export type Vec3 = [number, number, number];
 
 export type GameMode = "creative" | "survival";
@@ -16,13 +21,22 @@ export interface HotbarSlot {
   durability?: number;
 }
 
+export interface ChestSlot extends HotbarSlot {}
+
 export interface ItemSlot {
   itemId: number;
   count: number;
   durability?: number;
 }
 
-/** One cell in the survival 2×2 crafting grid (blocks or items, never both). */
+export interface PlayerVitals {
+  health: number;
+  hunger: number;
+  saturation: number;
+  exhaustion: number;
+}
+
+/** One cell in the survival 3x3 backing crafting grid (blocks or items, never both). */
 export interface CraftingGridSlot {
   blockId: number;
   itemId: number;
@@ -30,7 +44,8 @@ export interface CraftingGridSlot {
   durability?: number;
 }
 
-export type InventoryRegion = "hotbar" | "storage" | "craft";
+export type InventoryRegion = "hotbar" | "storage" | "craft" | "equipment" | "chest";
+export type CraftingGridWidth = 2 | 3;
 
 export interface InventoryMoveReq {
   from: InventoryRegion;
@@ -103,8 +118,14 @@ export interface JoinRoomAckOk {
   inventory: HotbarSlot[];
   /** Survival: non-placeable items (27 storage). Creative: empty. */
   itemInventory: ItemSlot[];
-  /** Survival: 2×2 crafting grid. Creative: empty. */
+  /** Survival: equipment slots [head, chest, legs, feet]. Creative: empty. */
+  equipmentSlots: ItemSlot[];
+  /** Survival: authoritative health/hunger. Creative: defaults. */
+  vitals: PlayerVitals;
+  /** Survival: 3x3 backing crafting grid. Creative: empty. */
   craftingGrid: CraftingGridSlot[];
+  /** Survival: 2 personal grid, 3 crafting-table grid. */
+  craftingGridWidth?: CraftingGridWidth;
   /** Item entities in the world (survival); creative sessions send `[]`. */
   drops: WorldDrop[];
 }
@@ -155,21 +176,59 @@ export interface BreakCancelReq {
   pos: Vec3;
 }
 
+export interface ArmSwingPayload {
+  userId: string;
+}
+
+export interface FallImpactReq {
+  velocityY: number;
+}
+
+export interface PlayerAttackReq {
+  targetUserId: string;
+}
+
+export interface IgniteTntReq {
+  pos: Vec3;
+}
+
+export interface PlayerDamagePayload {
+  userId: string;
+  health: number;
+  amount: number;
+  source: "generic" | "fall" | "combat" | "explosion" | "suffocation";
+  impulse?: Vec3;
+}
+
 /** Survival: drop one stack unit from a hotbar slot near the player. */
 export interface DropItemReq {
   hotbarIndex: number;
+}
+
+export interface EatReq {
+  hotbarIndex: number;
+}
+
+export interface EatStartAck extends SimpleAck {
+  durationMs?: number;
 }
 
 /** Survival: hotbar blocks + main item storage (27). Creative clients ignore itemSlots. */
 export interface InventorySyncPayload {
   slots: HotbarSlot[];
   itemSlots?: ItemSlot[];
+  equipmentSlots?: ItemSlot[];
   craftingSlots?: CraftingGridSlot[];
+  craftingGridWidth?: CraftingGridWidth;
+  vitals?: PlayerVitals;
 }
 
 export const MAIN_ITEM_INVENTORY_SLOTS = 27;
-export const CRAFTING_GRID_SLOTS = 4;
-/** Max units per 2×2 crafting grid cell (one ingredient per slot). */
+export const EQUIPMENT_SLOT_COUNT = 4;
+export const CHEST_SLOT_COUNT = 27;
+export const PERSONAL_CRAFTING_GRID_SLOTS = PERSONAL_CRAFTING_GRID_SIZE;
+export const CRAFTING_GRID_SLOTS = CRAFTING_TABLE_GRID_SIZE;
+/** Max units per crafting grid cell (one ingredient per slot). */
 export const CRAFTING_CELL_MAX = 1;
 
 export interface ItemPickupPayload {
@@ -179,6 +238,24 @@ export interface ItemPickupPayload {
 
 export interface CraftReq {
   recipeId: string;
+}
+
+export interface OpenCraftingTableReq {
+  pos: Vec3;
+}
+
+export interface OpenChestReq {
+  pos: Vec3;
+}
+
+export interface OpenChestAck extends SimpleAck {
+  pos?: Vec3;
+  slots?: ChestSlot[];
+}
+
+export interface ChestSyncPayload {
+  pos: Vec3;
+  slots: ChestSlot[];
 }
 
 export interface CraftAck extends SimpleAck {
@@ -202,6 +279,7 @@ export interface PlayerSnapshot {
   pitch?: number;
   jumping: boolean;
   t: number;
+  vitals?: PlayerVitals;
 }
 
 export interface RoomSnapshot {
@@ -223,12 +301,32 @@ export type RoomEvent =
   | { kind: "GAME_STOPPED"; sessionId: string; stoppedBy: string }
   | { kind: "RECESS_ENDED"; sessionId: string }
   | { kind: "GAME_MODE_CHANGED"; sessionId: string; gameMode: GameMode }
+  | { kind: "CHEST_CLOSED"; sessionId: string; pos: Vec3 }
+  | {
+      kind: "TNT_PRIMED";
+      sessionId: string;
+      id: string;
+      pos: Vec3;
+      primedAt: number;
+      explodeAt: number;
+      by: string;
+    }
+  | {
+      kind: "EXPLOSION";
+      sessionId: string;
+      id: string;
+      pos: Vec3;
+      radius: number;
+      by: string;
+    }
   | { kind: "WORLD_DROP_SPAWNED"; sessionId: string; drop: WorldDrop }
   | { kind: "WORLD_DROP_REMOVED"; sessionId: string; id: string }
   | {
       kind: "WORLD_DROP_UPDATE";
       sessionId: string;
       updates: WorldDropWireDelta[];
-    };
+    }
+  | { kind: "PLAYER_DEATH"; sessionId: string; userId: string; deathPos: Vec3 }
+  | { kind: "PLAYER_RESPAWN"; sessionId: string; userId: string; respawnPos: Vec3 };
 
 export const MAX_REACH = 8;

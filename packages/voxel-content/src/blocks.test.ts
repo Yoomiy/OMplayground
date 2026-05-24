@@ -2,18 +2,21 @@ import {
   BLOCK_DEFS,
   BLOCK_REGISTRY,
   PLACEABLE_BLOCK_IDS,
+  REPLACEABLE_BLOCK_IDS,
   REGISTERED_BLOCK_IDS,
   blockBreakable,
   blockDef,
   blockDropId,
   blockDropsPickable,
-  blockHardness
+  blockHardness,
+  blockReplaceable
 } from "./blocks";
+import { blockSoundGroup, blockSoundUrl } from "./blockAudio";
 import { isInstantBreak } from "./mining";
 
 describe("@playground/voxel-content blocks", () => {
   it("lists ids 0..n contiguously", () => {
-    expect(BLOCK_DEFS.length).toBe(100);
+    expect(BLOCK_DEFS.length).toBe(103);
     for (let i = 0; i < BLOCK_DEFS.length; i++) {
       expect(BLOCK_DEFS[i]!.id).toBe(i);
     }
@@ -37,6 +40,15 @@ describe("@playground/voxel-content blocks", () => {
     for (const d of BLOCK_DEFS) {
       expect(REGISTERED_BLOCK_IDS.has(d.id)).toBe(true);
     }
+  });
+
+  it("marks air and surface plants as replaceable placement targets", () => {
+    expect(REPLACEABLE_BLOCK_IDS.has(BLOCK_REGISTRY.AIR)).toBe(true);
+    expect(blockReplaceable(BLOCK_REGISTRY.WATER)).toBe(true);
+    expect(blockReplaceable(BLOCK_REGISTRY.GRASS_PLANT)).toBe(true);
+    expect(blockReplaceable(BLOCK_REGISTRY.DANDELION)).toBe(true);
+    expect(blockReplaceable(BLOCK_REGISTRY.STONE)).toBe(false);
+    expect(blockReplaceable(BLOCK_REGISTRY.TORCH)).toBe(false);
   });
 
   it("implements legacy break/drop rules", () => {
@@ -98,5 +110,28 @@ describe("@playground/voxel-content blocks", () => {
     expect(blockHardness(BLOCK_REGISTRY.BIRCH_LEAVES)).toBe(
       blockHardness(BLOCK_REGISTRY.LEAVES)
     );
+  });
+
+  it("registers mechanical utility blocks at ids 100-102", () => {
+    expect(BLOCK_REGISTRY.LADDER).toBe(100);
+    expect(BLOCK_REGISTRY.TORCH).toBe(101);
+    expect(BLOCK_REGISTRY.CHEST).toBe(102);
+    expect(blockDef(BLOCK_REGISTRY.LADDER)?.speedTool).toBe("axe");
+    expect(isInstantBreak(BLOCK_REGISTRY.TORCH)).toBe(true);
+    expect(blockDef(BLOCK_REGISTRY.CHEST)?.placeable).toBe(true);
+  });
+
+  it("maps block ids to material sound groups and URL conventions", () => {
+    expect(blockSoundGroup(BLOCK_REGISTRY.GRASS)).toBe("grass");
+    expect(blockSoundGroup(BLOCK_REGISTRY.GRASS_SNOW)).toBe("grass");
+    expect(blockSoundGroup(BLOCK_REGISTRY.STONE)).toBe("stone");
+    expect(blockSoundGroup(BLOCK_REGISTRY.DIAMOND_ORE)).toBe("stone");
+    expect(blockSoundGroup(BLOCK_REGISTRY.SANDSTONE)).toBe("sand");
+    expect(blockSoundGroup(BLOCK_REGISTRY.BIRCH_LOG)).toBe("wood");
+    expect(blockSoundGroup(BLOCK_REGISTRY.BIRCH_LEAVES)).toBe("leaves");
+    expect(blockSoundGroup(BLOCK_REGISTRY.WHITE_WOOL)).toBe("cloth");
+    expect(blockSoundGroup(BLOCK_REGISTRY.AIR)).toBe("silent");
+    expect(blockSoundUrl("step", "grass")).toBe("/sounds/step/grass.mp3");
+    expect(blockSoundUrl("break", "silent")).toBeNull();
   });
 });

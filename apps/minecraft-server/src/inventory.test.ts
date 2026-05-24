@@ -1,3 +1,4 @@
+import { CRAFTING_GRID_WIDTH_3 } from "@playground/voxel-content";
 import { BLOCK_REGISTRY, ITEM_REGISTRY, PLACEABLE_BLOCK_IDS } from "./protocol";
 import {
   addPickUp,
@@ -7,11 +8,17 @@ import {
   blockDropsPickable,
   consumeOneIfPresent,
   cloneCraftingGrid,
+  createEmptyChest,
+  createEmptyEquipmentSlots,
   createEmptyCraftingGrid,
   createEmptyHotbar,
   createEmptyItemInventory,
+  chestFromPersisted,
+  equipmentSlotsFromPersisted,
+  hasEquipped,
   hotbarFromPersisted,
   MAX_STACK,
+  returnInactiveCraftingSlotsToInventory,
   spillExcessFromCraftingGrid,
   tryCraftFromGrid
 } from "./inventory";
@@ -91,12 +98,12 @@ describe("inventory helpers", () => {
     expect(plankTotal).toBe(4);
   });
 
-  it("tryCraftFromGrid sticks: two planks anywhere in grid → four sticks", () => {
+  it("tryCraftFromGrid sticks: two vertical planks in personal grid → four sticks", () => {
     const hotbar = createEmptyHotbar();
     const items = createEmptyItemInventory();
     const grid = createEmptyCraftingGrid();
     grid[1] = { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.PLANKS, count: 1 };
-    grid[3] = { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.PLANKS, count: 1 };
+    grid[4] = { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.PLANKS, count: 1 };
     expect(tryCraftFromGrid(hotbar, items, grid)).toBe(true);
     const sticks = items
       .filter((s) => s.itemId === ITEM_REGISTRY.STICK)
@@ -109,7 +116,7 @@ describe("inventory helpers", () => {
     const items = createEmptyItemInventory();
     const grid = createEmptyCraftingGrid();
     grid[0] = { blockId: BLOCK_REGISTRY.OAK_PLANKS, itemId: 0, count: 1 };
-    grid[1] = { blockId: BLOCK_REGISTRY.OAK_PLANKS, itemId: 0, count: 1 };
+    grid[3] = { blockId: BLOCK_REGISTRY.OAK_PLANKS, itemId: 0, count: 1 };
     expect(tryCraftFromGrid(hotbar, items, grid)).toBe(true);
     const sticks = items
       .filter((s) => s.itemId === ITEM_REGISTRY.STICK)
@@ -123,7 +130,7 @@ describe("inventory helpers", () => {
     const grid = createEmptyCraftingGrid();
     grid[0] = { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.PLANKS, count: 1 };
     grid[1] = { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.PLANKS, count: 1 };
-    grid[2] = { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.PLANKS, count: 1 };
+    grid[3] = { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.PLANKS, count: 1 };
     expect(tryCraftFromGrid(hotbar, items, grid)).toBe(false);
   });
 
@@ -131,7 +138,7 @@ describe("inventory helpers", () => {
     const hotbar = createEmptyHotbar();
     const items = createEmptyItemInventory();
     const grid = createEmptyCraftingGrid();
-    grid[2] = { blockId: BLOCK_REGISTRY.BIRCH_LOG, itemId: 0, count: 1 };
+    grid[3] = { blockId: BLOCK_REGISTRY.BIRCH_LOG, itemId: 0, count: 1 };
     expect(tryCraftFromGrid(hotbar, items, grid)).toBe(true);
     const plankTotal = hotbar
       .filter((s) => s.blockId === BLOCK_REGISTRY.BIRCH_PLANKS)
@@ -156,7 +163,7 @@ describe("inventory helpers", () => {
     const items = createEmptyItemInventory();
     const grid = createEmptyCraftingGrid();
     grid[0] = { blockId: BLOCK_REGISTRY.BIRCH_PLANKS, itemId: 0, count: 1 };
-    grid[2] = { blockId: BLOCK_REGISTRY.SPRUCE_PLANKS, itemId: 0, count: 1 };
+    grid[3] = { blockId: BLOCK_REGISTRY.SPRUCE_PLANKS, itemId: 0, count: 1 };
     expect(tryCraftFromGrid(hotbar, items, grid)).toBe(true);
     const sticks = items
       .filter((s) => s.itemId === ITEM_REGISTRY.STICK)
@@ -208,6 +215,45 @@ describe("inventory helpers", () => {
     expect(grid.some((s) => s.blockId === BLOCK_REGISTRY.WOOD && s.count > 0)).toBe(
       true
     );
+  });
+
+  it("tryCraftFromGrid only crafts 3x3 tools when crafting-table width is active", () => {
+    const hotbar = createEmptyHotbar();
+    const items = createEmptyItemInventory();
+    const grid = createEmptyCraftingGrid();
+    grid[0] = { blockId: BLOCK_REGISTRY.COBBLESTONE, itemId: 0, count: 1 };
+    grid[1] = { blockId: BLOCK_REGISTRY.COBBLESTONE, itemId: 0, count: 1 };
+    grid[2] = { blockId: BLOCK_REGISTRY.COBBLESTONE, itemId: 0, count: 1 };
+    grid[4] = { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.STICK, count: 1 };
+    grid[7] = { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.STICK, count: 1 };
+
+    expect(tryCraftFromGrid(hotbar, items, grid)).toBe(false);
+    expect(tryCraftFromGrid(hotbar, items, grid, CRAFTING_GRID_WIDTH_3)).toBe(true);
+    expect(items.some((s) => s.itemId === ITEM_REGISTRY.STONE_PICKAXE && s.count === 1)).toBe(
+      true
+    );
+    expect(grid[2]!.count).toBe(0);
+    expect(grid[7]!.count).toBe(0);
+  });
+
+  it("returnInactiveCraftingSlotsToInventory keeps personal cells and returns table-only cells", () => {
+    const hotbar = createEmptyHotbar();
+    const items = createEmptyItemInventory();
+    const grid = createEmptyCraftingGrid();
+    grid[0] = { blockId: BLOCK_REGISTRY.WOOD, itemId: 0, count: 1 };
+    grid[2] = { blockId: BLOCK_REGISTRY.COBBLESTONE, itemId: 0, count: 1 };
+    grid[5] = { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.STICK, count: 1 };
+
+    const overflow = returnInactiveCraftingSlotsToInventory(grid, hotbar, items);
+
+    expect(overflow).toEqual([]);
+    expect(grid[0]).toMatchObject({ blockId: BLOCK_REGISTRY.WOOD, count: 1 });
+    expect(grid[2]).toMatchObject({ blockId: BLOCK_REGISTRY.AIR, itemId: 0, count: 0 });
+    expect(grid[5]).toMatchObject({ blockId: BLOCK_REGISTRY.AIR, itemId: 0, count: 0 });
+    expect(hotbar.some((s) => s.blockId === BLOCK_REGISTRY.COBBLESTONE && s.count === 1)).toBe(
+      true
+    );
+    expect(items.some((s) => s.itemId === ITEM_REGISTRY.STICK && s.count === 1)).toBe(true);
   });
 
   it("applyInventoryMove preserves tool durability into crafting grid", () => {
@@ -266,5 +312,144 @@ describe("inventory helpers", () => {
     expect(hotbar[0]!.count === 0 || hotbar[0]!.blockId === BLOCK_REGISTRY.AIR).toBe(
       true
     );
+  });
+
+  it("applyInventoryMove moves mixed stacks between chest and player inventory", () => {
+    const hotbar = createEmptyHotbar();
+    const items = createEmptyItemInventory();
+    const grid = createEmptyCraftingGrid();
+    const equipment = createEmptyEquipmentSlots();
+    const chest = createEmptyChest();
+    hotbar[0] = { blockId: BLOCK_REGISTRY.COBBLESTONE, itemId: 0, count: 12 };
+    items[0] = { itemId: ITEM_REGISTRY.BREAD, count: 3 };
+
+    expect(
+      applyInventoryMove(
+        hotbar,
+        items,
+        grid,
+        { from: "hotbar", fromIndex: 0, to: "chest", toIndex: 0 },
+        equipment,
+        chest
+      )
+    ).toBe(true);
+    expect(
+      applyInventoryMove(
+        hotbar,
+        items,
+        grid,
+        { from: "storage", fromIndex: 0, to: "chest", toIndex: 1 },
+        equipment,
+        chest
+      )
+    ).toBe(true);
+
+    expect(chest[0]).toEqual({
+      blockId: BLOCK_REGISTRY.COBBLESTONE,
+      itemId: 0,
+      count: 12
+    });
+    expect(chest[1]).toEqual({
+      blockId: BLOCK_REGISTRY.AIR,
+      itemId: ITEM_REGISTRY.BREAD,
+      count: 3
+    });
+    expect(hotbar[0]).toEqual({ blockId: BLOCK_REGISTRY.AIR, itemId: 0, count: 0 });
+    expect(items[0]).toEqual({ itemId: 0, count: 0 });
+  });
+
+  it("chestFromPersisted accepts blocks and registered item stacks", () => {
+    const chest = chestFromPersisted(
+      [
+        { blockId: BLOCK_REGISTRY.CHEST, itemId: 0, count: 2 },
+        { blockId: BLOCK_REGISTRY.AIR, itemId: ITEM_REGISTRY.APPLE, count: 5 },
+        ...Array.from({ length: 25 }, () => ({ blockId: 999, itemId: 0, count: 1 }))
+      ],
+      createEmptyChest()
+    );
+
+    expect(chest[0]).toEqual({
+      blockId: BLOCK_REGISTRY.CHEST,
+      itemId: 0,
+      count: 2
+    });
+    expect(chest[1]).toEqual({
+      blockId: BLOCK_REGISTRY.AIR,
+      itemId: ITEM_REGISTRY.APPLE,
+      count: 5
+    });
+    expect(chest[2]).toEqual({ blockId: BLOCK_REGISTRY.AIR, itemId: 0, count: 0 });
+  });
+
+  it("applyInventoryMove equips matching perk items and leaves the rest of the stack", () => {
+    const hotbar = createEmptyHotbar();
+    const items = createEmptyItemInventory();
+    const grid = createEmptyCraftingGrid();
+    const equipment = createEmptyEquipmentSlots();
+    items[0] = { itemId: ITEM_REGISTRY.HELIUM_BOOTS, count: 2 };
+
+    expect(
+      applyInventoryMove(
+        hotbar,
+        items,
+        grid,
+        {
+          from: "storage",
+          fromIndex: 0,
+          to: "equipment",
+          toIndex: 3
+        },
+        equipment
+      )
+    ).toBe(true);
+
+    expect(equipment[3]).toEqual({ itemId: ITEM_REGISTRY.HELIUM_BOOTS, count: 1 });
+    expect(items[0]).toEqual({ itemId: ITEM_REGISTRY.HELIUM_BOOTS, count: 1 });
+    expect(hasEquipped(equipment, ITEM_REGISTRY.HELIUM_BOOTS)).toBe(true);
+  });
+
+  it("applyInventoryMove rejects equipment items in the wrong slot", () => {
+    const hotbar = createEmptyHotbar();
+    const items = createEmptyItemInventory();
+    const grid = createEmptyCraftingGrid();
+    const equipment = createEmptyEquipmentSlots();
+    items[0] = { itemId: ITEM_REGISTRY.HELIUM_BOOTS, count: 1 };
+
+    expect(
+      applyInventoryMove(
+        hotbar,
+        items,
+        grid,
+        {
+          from: "storage",
+          fromIndex: 0,
+          to: "equipment",
+          toIndex: 0
+        },
+        equipment
+      )
+    ).toBe(false);
+    expect(equipment[0]).toEqual({ itemId: 0, count: 0 });
+    expect(items[0]).toEqual({ itemId: ITEM_REGISTRY.HELIUM_BOOTS, count: 1 });
+  });
+
+  it("equipmentSlotsFromPersisted keeps only valid slot/item pairs", () => {
+    const equipment = equipmentSlotsFromPersisted(
+      [
+        { itemId: ITEM_REGISTRY.GLOW_TALISMAN, count: 4 },
+        { itemId: ITEM_REGISTRY.HELIUM_BOOTS, count: 1 },
+        { itemId: ITEM_REGISTRY.FEATHER_FALLING_TALISMAN, count: 1 },
+        { itemId: ITEM_REGISTRY.HELIUM_BOOTS, count: 1 }
+      ],
+      createEmptyEquipmentSlots()
+    );
+
+    expect(equipment[0]).toEqual({ itemId: ITEM_REGISTRY.GLOW_TALISMAN, count: 1 });
+    expect(equipment[1]).toEqual({ itemId: 0, count: 0 });
+    expect(equipment[2]).toEqual({
+      itemId: ITEM_REGISTRY.FEATHER_FALLING_TALISMAN,
+      count: 1
+    });
+    expect(equipment[3]).toEqual({ itemId: ITEM_REGISTRY.HELIUM_BOOTS, count: 1 });
   });
 });

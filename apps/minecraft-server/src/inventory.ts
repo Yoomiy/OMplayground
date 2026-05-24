@@ -1,12 +1,16 @@
 import {
   REGISTERED_ITEM_IDS,
-  ITEM_REGISTRY,
+  CRAFTING_GRID_WIDTH_2,
+  CRAFTING_GRID_WIDTH_3,
   findMatchingRecipe,
+  itemPerkSpec,
   itemMaxStack
 } from "@playground/voxel-content";
 import {
   BLOCK_REGISTRY,
+  CHEST_SLOT_COUNT,
   CRAFTING_CELL_MAX,
+  EQUIPMENT_SLOT_COUNT,
   MAIN_ITEM_INVENTORY_SLOTS,
   PLACEABLE_BLOCK_IDS,
   CRAFTING_GRID_SLOTS,
@@ -20,8 +24,14 @@ export const HOTBAR_SLOT_COUNT = 9;
 export const MAX_STACK = 64;
 
 export type HotbarState = HotbarSlot[];
+export type ChestState = HotbarSlot[];
 export type ItemInventoryState = ItemSlot[];
 export type CraftingGridState = CraftingGridSlot[];
+export type EquipmentSlotState = ItemSlot[];
+export type CraftingGridWidth = typeof CRAFTING_GRID_WIDTH_2 | typeof CRAFTING_GRID_WIDTH_3;
+
+export const PERSONAL_CRAFTING_SLOT_INDICES = [0, 1, 3, 4] as const;
+export const EQUIPMENT_SLOT_KEYS = ["head", "chest", "legs", "feet"] as const;
 
 export function createEmptyHotbar(): HotbarState {
   return Array.from({ length: HOTBAR_SLOT_COUNT }, () => ({
@@ -32,6 +42,23 @@ export function createEmptyHotbar(): HotbarState {
 }
 
 export function cloneHotbar(slots: HotbarState): HotbarState {
+  return slots.map((s) => ({
+    blockId: s.blockId,
+    itemId: s.itemId ?? 0,
+    count: s.count,
+    ...(s.durability !== undefined ? { durability: s.durability } : {})
+  }));
+}
+
+export function createEmptyChest(): ChestState {
+  return Array.from({ length: CHEST_SLOT_COUNT }, () => ({
+    blockId: BLOCK_REGISTRY.AIR,
+    itemId: 0,
+    count: 0
+  }));
+}
+
+export function cloneChest(slots: ChestState): ChestState {
   return slots.map((s) => ({
     blockId: s.blockId,
     itemId: s.itemId ?? 0,
@@ -186,6 +213,50 @@ export function hotbarFromPersisted(
   return out;
 }
 
+export function chestFromPersisted(
+  raw: unknown,
+  fallback: ChestState
+): ChestState {
+  if (!Array.isArray(raw) || raw.length !== CHEST_SLOT_COUNT) {
+    return cloneChest(fallback);
+  }
+  const out = createEmptyChest();
+  for (let i = 0; i < CHEST_SLOT_COUNT; i++) {
+    const cell = raw[i] as {
+      blockId?: unknown;
+      itemId?: unknown;
+      count?: unknown;
+      durability?: unknown;
+    };
+    const count = Number(cell?.count);
+    if (!Number.isFinite(count)) continue;
+    const itemId = Number(cell?.itemId) || 0;
+    const blockId = Number(cell?.blockId);
+    const cellDur = Number(cell?.durability);
+    if (blockId === BLOCK_REGISTRY.AIR && itemId === 0 && count === 0) {
+      out[i] = { blockId: BLOCK_REGISTRY.AIR, itemId: 0, count: 0 };
+      continue;
+    }
+    if (itemId > 0 && REGISTERED_ITEM_IDS.has(itemId) && count > 0) {
+      const cap = itemMaxStack(itemId);
+      out[i] = {
+        blockId: BLOCK_REGISTRY.AIR,
+        itemId,
+        count: Math.max(0, Math.min(cap, Math.floor(count))),
+        ...(Number.isFinite(cellDur) ? { durability: Math.floor(cellDur) } : {})
+      };
+      continue;
+    }
+    if (!PLACEABLE_BLOCK_IDS.includes(blockId) || count <= 0) continue;
+    out[i] = {
+      blockId,
+      itemId: 0,
+      count: Math.max(0, Math.min(MAX_STACK, Math.floor(count)))
+    };
+  }
+  return out;
+}
+
 export function createEmptyItemInventory(
   size = MAIN_ITEM_INVENTORY_SLOTS
 ): ItemSlot[] {
@@ -230,6 +301,55 @@ export function itemInventoryFromPersisted(
     };
   }
   return out;
+}
+
+export function createEmptyEquipmentSlots(): EquipmentSlotState {
+  return Array.from({ length: EQUIPMENT_SLOT_COUNT }, () => ({ itemId: 0, count: 0 }));
+}
+
+export function cloneEquipmentSlots(slots: EquipmentSlotState): EquipmentSlotState {
+  return slots.map((s) => ({
+    itemId: s.itemId,
+    count: s.count,
+    ...(s.durability !== undefined ? { durability: s.durability } : {})
+  }));
+}
+
+export function equipmentItemFitsSlot(itemId: number, slotIndex: number): boolean {
+  if (!Number.isInteger(slotIndex) || slotIndex < 0 || slotIndex >= EQUIPMENT_SLOT_COUNT) {
+    return false;
+  }
+  const slotKey = EQUIPMENT_SLOT_KEYS[slotIndex];
+  if (!slotKey) return false;
+  return itemPerkSpec(itemId)?.equipSlot === slotKey;
+}
+
+export function equipmentSlotsFromPersisted(
+  raw: unknown,
+  fallback: EquipmentSlotState
+): EquipmentSlotState {
+  if (!Array.isArray(raw) || raw.length !== EQUIPMENT_SLOT_COUNT) {
+    return cloneEquipmentSlots(fallback);
+  }
+  const out = createEmptyEquipmentSlots();
+  for (let i = 0; i < EQUIPMENT_SLOT_COUNT; i++) {
+    const cell = raw[i] as { itemId?: unknown; count?: unknown; durability?: unknown };
+    const itemId = Number(cell?.itemId);
+    const count = Number(cell?.count);
+    if (!Number.isFinite(count) || itemId === 0 || count <= 0) continue;
+    if (!REGISTERED_ITEM_IDS.has(itemId) || !equipmentItemFitsSlot(itemId, i)) continue;
+    const cellDur = Number(cell?.durability);
+    out[i] = {
+      itemId,
+      count: 1,
+      ...(Number.isFinite(cellDur) ? { durability: Math.floor(cellDur) } : {})
+    };
+  }
+  return out;
+}
+
+export function hasEquipped(slots: EquipmentSlotState | undefined, itemId: number): boolean {
+  return slots?.some((s) => s.itemId === itemId && s.count > 0) ?? false;
 }
 
 /** How many units of `itemId` can still fit (new stacks + partial stacks). */
@@ -348,7 +468,30 @@ export function craftingGridFromPersisted(
   raw: unknown,
   fallback: CraftingGridState
 ): CraftingGridState {
-  if (!Array.isArray(raw) || raw.length !== CRAFTING_GRID_SLOTS) {
+  if (!Array.isArray(raw)) {
+    return cloneCraftingGrid(fallback);
+  }
+  if (raw.length === CRAFTING_GRID_WIDTH_2 * CRAFTING_GRID_WIDTH_2) {
+    const out = createEmptyCraftingGrid();
+    for (let i = 0; i < PERSONAL_CRAFTING_SLOT_INDICES.length; i++) {
+      const cell = raw[i] as {
+        blockId?: unknown;
+        itemId?: unknown;
+        count?: unknown;
+        durability?: unknown;
+      };
+      const cellDur = Number(cell?.durability);
+      out[PERSONAL_CRAFTING_SLOT_INDICES[i]!] = {
+        blockId: Number(cell?.blockId) || 0,
+        itemId: Number(cell?.itemId) || 0,
+        count: Number(cell?.count) || 0,
+        ...(Number.isFinite(cellDur) ? { durability: Math.floor(cellDur) } : {})
+      };
+      normalizeCraftingSlot(out[PERSONAL_CRAFTING_SLOT_INDICES[i]!]!);
+    }
+    return out;
+  }
+  if (raw.length !== CRAFTING_GRID_SLOTS) {
     return cloneCraftingGrid(fallback);
   }
   const out = createEmptyCraftingGrid();
@@ -456,6 +599,14 @@ function writeItemAtom(s: ItemSlot, a: SlotAtom): void {
   }
 }
 
+function readEquipmentAtom(s: ItemSlot): SlotAtom {
+  return readItemAtom(s);
+}
+
+function writeEquipmentAtom(s: ItemSlot, a: SlotAtom): void {
+  writeItemAtom(s, a);
+}
+
 function writeCraftAtom(s: CraftingGridSlot, a: SlotAtom): void {
   if (a.kind === "empty") {
     s.blockId = BLOCK_REGISTRY.AIR;
@@ -481,11 +632,15 @@ function readAtom(
   hotbar: HotbarState,
   items: ItemSlot[],
   craft: CraftingGridState,
+  equipment: EquipmentSlotState | undefined,
+  chest: ChestState | undefined,
   region: InventoryMoveReq["from"],
   index: number
 ): SlotAtom {
   if (region === "hotbar") return readHotbarAtom(hotbar[index]!);
   if (region === "storage") return readItemAtom(items[index]!);
+  if (region === "equipment") return readEquipmentAtom(equipment![index]!);
+  if (region === "chest") return readHotbarAtom(chest![index]!);
   return readCraftAtom(craft[index]!);
 }
 
@@ -493,22 +648,31 @@ function writeAtom(
   hotbar: HotbarState,
   items: ItemSlot[],
   craft: CraftingGridState,
+  equipment: EquipmentSlotState | undefined,
+  chest: ChestState | undefined,
   region: InventoryMoveReq["from"],
   index: number,
   a: SlotAtom
 ): void {
   if (region === "hotbar") writeHotbarAtom(hotbar[index]!, a);
   else if (region === "storage") writeItemAtom(items[index]!, a);
+  else if (region === "equipment") writeEquipmentAtom(equipment![index]!, a);
+  else if (region === "chest") writeHotbarAtom(chest![index]!, a);
   else writeCraftAtom(craft[index]!, a);
 }
 
 function regionAllowsAtom(
   region: InventoryMoveReq["from"],
+  index: number,
   a: SlotAtom
 ): boolean {
   if (a.kind === "empty") return true;
   if (region === "hotbar") return a.kind === "block" || a.kind === "item";
   if (region === "storage") return a.kind === "item";
+  if (region === "chest") return a.kind === "block" || a.kind === "item";
+  if (region === "equipment") {
+    return a.kind === "item" && equipmentItemFitsSlot(a.itemId, index);
+  }
   return a.kind === "block" || a.kind === "item";
 }
 
@@ -530,12 +694,20 @@ function sameAtomStack(a: SlotAtom, b: SlotAtom): boolean {
 
 function validMoveIndex(
   region: InventoryMoveReq["from"],
-  index: number
+  index: number,
+  equipment: EquipmentSlotState | undefined,
+  chest: ChestState | undefined
 ): boolean {
   if (!Number.isInteger(index) || index < 0) return false;
   if (region === "hotbar") return index < HOTBAR_SLOT_COUNT;
   if (region === "storage") return index < MAIN_ITEM_INVENTORY_SLOTS;
+  if (region === "equipment") return !!equipment && index < EQUIPMENT_SLOT_COUNT;
+  if (region === "chest") return !!chest && index < CHEST_SLOT_COUNT;
   return index < CRAFTING_GRID_SLOTS;
+}
+
+export function isPersonalCraftingIndex(index: number): boolean {
+  return (PERSONAL_CRAFTING_SLOT_INDICES as readonly number[]).includes(index);
 }
 
 function mergeRoomForDestination(
@@ -543,20 +715,20 @@ function mergeRoomForDestination(
   b: SlotAtom
 ): number {
   if (b.kind === "empty") return 0;
-  if (to === "craft") return Math.max(0, CRAFTING_CELL_MAX - b.count);
+  if (to === "craft" || to === "equipment") return Math.max(0, CRAFTING_CELL_MAX - b.count);
   if (b.kind === "block") return Math.max(0, MAX_STACK - b.count);
   if (b.kind === "item") return Math.max(0, itemMaxStack(b.itemId) - b.count);
   return 0;
 }
 
-function atomExceedsCraftMax(a: SlotAtom): boolean {
+function atomExceedsSingleCellMax(a: SlotAtom): boolean {
   if (a.kind === "empty") return false;
   return a.count > CRAFTING_CELL_MAX;
 }
 
 /**
- * Move / merge / swap one stack between hotbar, item storage, and 2×2 craft grid.
- * Hotbar holds blocks only; storage holds items only; craft holds either.
+ * Move / merge / swap one stack between hotbar, item storage, and crafting grid.
+ * Hotbar holds blocks or tools, storage holds items, craft holds either.
  * Crafting cells accept at most one unit (`CRAFTING_CELL_MAX`); dragging from
  * stacks places one unit unless the whole source is one unit.
  */
@@ -564,39 +736,46 @@ export function applyInventoryMove(
   hotbar: HotbarState,
   itemSlots: ItemSlot[],
   craft: CraftingGridState,
-  req: InventoryMoveReq
+  req: InventoryMoveReq,
+  equipmentSlots?: EquipmentSlotState,
+  chestSlots?: ChestState
 ): boolean {
   const { from, fromIndex: fi, to, toIndex: ti } = req;
-  if (!validMoveIndex(from, fi) || !validMoveIndex(to, ti)) return false;
+  if (
+    !validMoveIndex(from, fi, equipmentSlots, chestSlots) ||
+    !validMoveIndex(to, ti, equipmentSlots, chestSlots)
+  ) {
+    return false;
+  }
   if (from === to && fi === ti) return true;
 
   for (const c of craft) normalizeCraftingSlot(c);
 
-  let a = readAtom(hotbar, itemSlots, craft, from, fi);
-  let b = readAtom(hotbar, itemSlots, craft, to, ti);
+  let a = readAtom(hotbar, itemSlots, craft, equipmentSlots, chestSlots, from, fi);
+  let b = readAtom(hotbar, itemSlots, craft, equipmentSlots, chestSlots, to, ti);
   if (a.kind === "empty") return false;
-  if (!regionAllowsAtom(to, a)) return false;
-  if (!regionAllowsAtom(from, b)) return false;
+  if (!regionAllowsAtom(to, ti, a)) return false;
+  if (!regionAllowsAtom(from, fi, b)) return false;
 
-  const toCraft = to === "craft";
-  const fromCraft = from === "craft";
+  const toSingleCell = to === "craft" || to === "equipment";
+  const fromSingleCell = from === "craft" || from === "equipment";
 
   if (b.kind === "empty") {
-    if (!toCraft) {
-      writeAtom(hotbar, itemSlots, craft, to, ti, a);
-      writeAtom(hotbar, itemSlots, craft, from, fi, { kind: "empty" });
+    if (!toSingleCell) {
+      writeAtom(hotbar, itemSlots, craft, equipmentSlots, chestSlots, to, ti, a);
+      writeAtom(hotbar, itemSlots, craft, equipmentSlots, chestSlots, from, fi, { kind: "empty" });
       return true;
     }
     const take = Math.min(a.count, CRAFTING_CELL_MAX);
     if (take <= 0) return false;
     if (a.kind === "block") {
-      writeAtom(hotbar, itemSlots, craft, to, ti, {
+      writeAtom(hotbar, itemSlots, craft, equipmentSlots, chestSlots, to, ti, {
         kind: "block",
         blockId: a.blockId,
         count: take
       });
     } else {
-      writeAtom(hotbar, itemSlots, craft, to, ti, {
+      writeAtom(hotbar, itemSlots, craft, equipmentSlots, chestSlots, to, ti, {
         kind: "item",
         itemId: a.itemId,
         count: take,
@@ -605,15 +784,15 @@ export function applyInventoryMove(
     }
     const left = a.count - take;
     if (left <= 0) {
-      writeAtom(hotbar, itemSlots, craft, from, fi, { kind: "empty" });
+      writeAtom(hotbar, itemSlots, craft, equipmentSlots, chestSlots, from, fi, { kind: "empty" });
     } else if (a.kind === "block") {
-      writeAtom(hotbar, itemSlots, craft, from, fi, {
+      writeAtom(hotbar, itemSlots, craft, equipmentSlots, chestSlots, from, fi, {
         kind: "block",
         blockId: a.blockId,
         count: left
       });
     } else {
-      writeAtom(hotbar, itemSlots, craft, from, fi, {
+      writeAtom(hotbar, itemSlots, craft, equipmentSlots, chestSlots, from, fi, {
         kind: "item",
         itemId: a.itemId,
         count: left,
@@ -628,10 +807,11 @@ export function applyInventoryMove(
     const move =
       a.kind === "block" || a.kind === "item" ? Math.min(a.count, room) : 0;
     if (move <= 0) {
-      if (toCraft && !fromCraft) return false;
-      if (atomExceedsCraftMax(a) || atomExceedsCraftMax(b)) return false;
-      writeAtom(hotbar, itemSlots, craft, from, fi, b);
-      writeAtom(hotbar, itemSlots, craft, to, ti, a);
+      if (toSingleCell && !fromSingleCell) return false;
+      if (fromSingleCell && atomExceedsSingleCellMax(b)) return false;
+      if (toSingleCell && atomExceedsSingleCellMax(a)) return false;
+      writeAtom(hotbar, itemSlots, craft, equipmentSlots, chestSlots, from, fi, b);
+      writeAtom(hotbar, itemSlots, craft, equipmentSlots, chestSlots, to, ti, a);
       return true;
     }
     if (b.kind === "block" && a.kind === "block") {
@@ -661,27 +841,33 @@ export function applyInventoryMove(
     } else {
       a = { kind: "empty" };
     }
-    writeAtom(hotbar, itemSlots, craft, to, ti, b);
-    writeAtom(hotbar, itemSlots, craft, from, fi, a);
+    writeAtom(hotbar, itemSlots, craft, equipmentSlots, chestSlots, to, ti, b);
+    writeAtom(hotbar, itemSlots, craft, equipmentSlots, chestSlots, from, fi, a);
     return true;
   }
 
-  if (atomExceedsCraftMax(a) || atomExceedsCraftMax(b)) return false;
-  writeAtom(hotbar, itemSlots, craft, from, fi, b);
-  writeAtom(hotbar, itemSlots, craft, to, ti, a);
+  if (fromSingleCell && atomExceedsSingleCellMax(b)) return false;
+  if (toSingleCell && atomExceedsSingleCellMax(a)) return false;
+  writeAtom(hotbar, itemSlots, craft, equipmentSlots, chestSlots, from, fi, b);
+  writeAtom(hotbar, itemSlots, craft, equipmentSlots, chestSlots, to, ti, a);
   return true;
 }
 
 
-/** Craft from the 2×2 grid into hotbar / item storage (survival). */
+/** Craft from the active 2x2 or 3x3 grid into hotbar / item storage (survival). */
 export function tryCraftFromGrid(
   hotbar: HotbarState,
   itemSlots: ItemSlot[],
-  grid: CraftingGridState
+  grid: CraftingGridState,
+  gridWidth: CraftingGridWidth = CRAFTING_GRID_WIDTH_2
 ): boolean {
   for (const c of grid) normalizeCraftingSlot(c);
 
-  const matched = findMatchingRecipe(grid);
+  const activeGrid =
+    gridWidth === CRAFTING_GRID_WIDTH_2
+      ? PERSONAL_CRAFTING_SLOT_INDICES.map((idx) => grid[idx]!)
+      : grid;
+  const matched = findMatchingRecipe(activeGrid, gridWidth);
   if (!matched) return false;
 
   const { recipe, consumeAt } = matched;
@@ -694,8 +880,12 @@ export function tryCraftFromGrid(
   }
 
   for (const idx of consumeAt) {
-    grid[idx]!.count -= 1;
-    normalizeCraftingSlot(grid[idx]!);
+    const gridIndex =
+      gridWidth === CRAFTING_GRID_WIDTH_2
+        ? PERSONAL_CRAFTING_SLOT_INDICES[idx]!
+        : idx;
+    grid[gridIndex]!.count -= 1;
+    normalizeCraftingSlot(grid[gridIndex]!);
   }
 
   if (output.kind === "block") {
@@ -704,4 +894,48 @@ export function tryCraftFromGrid(
     addItemCount(itemSlots, output.id, output.count);
   }
   return true;
+}
+
+export type CraftOverflow =
+  | { kind: "block"; blockId: number; count: number }
+  | { kind: "item"; itemId: number; count: number; durability?: number };
+
+export function returnInactiveCraftingSlotsToInventory(
+  grid: CraftingGridState,
+  hotbar: HotbarState,
+  itemSlots: ItemSlot[]
+): CraftOverflow[] {
+  const overflow: CraftOverflow[] = [];
+  for (let i = 0; i < grid.length; i++) {
+    if (isPersonalCraftingIndex(i)) continue;
+    const cell = grid[i]!;
+    normalizeCraftingSlot(cell);
+    if (cell.count <= 0) continue;
+    if (cell.itemId > 0) {
+      const room = maxAddableItemCount(itemSlots, cell.itemId);
+      const toAdd = Math.min(room, cell.count);
+      if (toAdd > 0) addItemCount(itemSlots, cell.itemId, toAdd);
+      if (toAdd < cell.count) {
+        overflow.push({
+          kind: "item",
+          itemId: cell.itemId,
+          count: cell.count - toAdd,
+          ...(cell.durability !== undefined ? { durability: cell.durability } : {})
+        });
+      }
+    } else if (cell.blockId !== BLOCK_REGISTRY.AIR) {
+      const room = maxAddableBlockCount(hotbar, cell.blockId);
+      const toAdd = Math.min(room, cell.count);
+      if (toAdd > 0) addBlockCount(hotbar, cell.blockId, toAdd);
+      if (toAdd < cell.count) {
+        overflow.push({
+          kind: "block",
+          blockId: cell.blockId,
+          count: cell.count - toAdd
+        });
+      }
+    }
+    grid[i] = { blockId: BLOCK_REGISTRY.AIR, itemId: 0, count: 0 };
+  }
+  return overflow;
 }

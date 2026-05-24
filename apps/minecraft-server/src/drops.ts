@@ -19,6 +19,7 @@ import type { PlayerRuntime, VoxelRoom } from "./room";
 import type { WorldState } from "./world";
 import { getVoxelID } from "./world";
 import { TICK_INTERVAL_MS } from "./tick";
+import { cloneVitals } from "./vitals";
 
 /** Squared radius — player anchor is ~torso height (see `pickupAnchor`). */
 export const MAGNET_RADIUS_SQ = 2.25 * 2.25;
@@ -149,14 +150,18 @@ function emitInventorySyncToPlayer(
     const inv = player.inventory;
     const items = player.itemInventory;
     const craft = player.craftingGrid;
-    if (!inv || !items || !craft) return;
+    const equipment = player.equipmentSlots;
+    if (!inv || !items || !craft || !equipment) return;
     const socks = await io.in(`voxel:${sessionId}`).fetchSockets();
     for (const s of socks) {
       if (s.data.userId === userId) {
         s.emit("INVENTORY_SYNC", {
           slots: inv,
           itemSlots: items,
-          craftingSlots: craft
+          equipmentSlots: equipment,
+          craftingSlots: craft,
+          craftingGridWidth: player.craftingGridWidth ?? 2,
+          ...(player.health !== undefined ? { vitals: cloneVitals(player) } : {})
         });
         return;
       }
@@ -227,6 +232,24 @@ export function dropPositionInFrontOfPlayer(player: PlayerRuntime): Vec3 {
   const dx = Math.sin(h) * 0.65;
   const dz = Math.cos(h) * 0.65;
   return [player.pos[0] + dx, player.pos[1] + 0.2, player.pos[2] + dz];
+}
+
+export function thrownDropPositionInFrontOfPlayer(player: PlayerRuntime): Vec3 {
+  const h = player.heading;
+  const dx = Math.sin(h) * 2.55;
+  const dz = Math.cos(h) * 2.55;
+  return [player.pos[0] + dx, player.pos[1] + 0.9, player.pos[2] + dz];
+}
+
+export function throwImpulseForPlayer(
+  player: PlayerRuntime
+): Pick<SpawnDropOpts, "vx" | "vy" | "vz"> {
+  const h = player.heading;
+  return {
+    vx: Math.sin(h) * 5.2,
+    vy: 1.15,
+    vz: Math.cos(h) * 5.2
+  };
 }
 
 /** Scatter + impulse for stacks popped from breaking a block voxel. */

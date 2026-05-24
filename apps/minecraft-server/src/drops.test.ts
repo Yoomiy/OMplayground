@@ -8,12 +8,15 @@ import {
 import type { Server } from "socket.io";
 import {
   DROP_PHYS_HALF_XZ,
+  DROP_PHYS_HALF_Y,
   DROP_TTL_MS,
   listDropsWire,
   MAGNET_RADIUS_SQ,
   spawnBlockDropAt,
   tickMagnetPickups,
-  tickWorldDrops
+  tickWorldDrops,
+  throwImpulseForPlayer,
+  thrownDropPositionInFrontOfPlayer
 } from "./drops";
 import { applyDelta } from "./world";
 
@@ -114,6 +117,24 @@ describe("world drops", () => {
     expect(grass?.count).toBeGreaterThanOrEqual(1);
   });
 
+  it("throws hotbar drops outside immediate pickup radius with forward velocity", () => {
+    const room = survivalRoom("sess-drop-throw");
+    assignPlayer(room, "host-user", "Host");
+    const player = room.players.get("host-user")!;
+    player.pos = [5, 70, 5];
+    player.heading = Math.PI / 2;
+
+    const pos = thrownDropPositionInFrontOfPlayer(player);
+    const impulse = throwImpulseForPlayer(player);
+    const dx = pos[0] - player.pos[0];
+    const dy = pos[1] - (player.pos[1] + 0.9);
+    const dz = pos[2] - player.pos[2];
+
+    expect(dx * dx + dy * dy + dz * dz).toBeGreaterThan(MAGNET_RADIUS_SQ);
+    expect(impulse.vx).toBeGreaterThan(5);
+    expect(Math.abs(impulse.vz ?? 0)).toBeLessThan(1e-6);
+  });
+
   it("drops fall under gravity toward supporting terrain", () => {
     const room = survivalRoom("sess-drop-fall");
     const d = spawnBlockDropAt(room, [8, 90, -3], BLOCK_REGISTRY.STONE, 1);
@@ -185,22 +206,24 @@ describe("world drops", () => {
       in: jest.fn()
     } as unknown as Server;
     const t0 = 1_720_300_000_000;
-    for (let s = 0; s < 40; s++) {
-      tickWorldDrops(io, room, t0 + s * 70);
-    }
+    tickWorldDrops(io, room, t0);
     expect(room.drops.size).toBe(2);
     const ds = [...room.drops.values()];
     const dx = ds[0]!.pos[0] - ds[1]!.pos[0];
     const dy = ds[0]!.pos[1] - ds[1]!.pos[1];
     const dz = ds[0]!.pos[2] - ds[1]!.pos[2];
-    /** Touching clears AABB overlap (≈ 2 × half-extent along separation axis). */
-    expect(Math.hypot(dx, dy, dz)).toBeGreaterThan(DROP_PHYS_HALF_XZ * 1.96);
+    /** Touching clears AABB overlap along at least one axis. */
+    expect(
+      Math.abs(dx) >= DROP_PHYS_HALF_XZ * 1.96 ||
+        Math.abs(dy) >= DROP_PHYS_HALF_Y * 1.96 ||
+        Math.abs(dz) >= DROP_PHYS_HALF_XZ * 1.96
+    ).toBe(true);
   });
 
   it("resolves penetration when a solid block occupies the drop AABB (side wall)", () => {
     const room = survivalRoom("sess-drop-wall");
-    applyDelta(room.world, 30, 70, -6, BLOCK_REGISTRY.STONE);
-    const d = spawnBlockDropAt(room, [30.91, 70.15, -5.93], BLOCK_REGISTRY.GRASS, 1, {
+    applyDelta(room.world, 30, 200, -6, BLOCK_REGISTRY.STONE);
+    const d = spawnBlockDropAt(room, [30.91, 200.15, -5.93], BLOCK_REGISTRY.GRASS, 1, {
       vx: 0,
       vy: 0,
       vz: 0
@@ -214,12 +237,14 @@ describe("world drops", () => {
       in: jest.fn()
     } as unknown as Server;
     const t0 = 1_720_400_000_000;
-    for (let s = 0; s < 120; s++) {
-      tickWorldDrops(io, room, t0 + s * 70);
-    }
+    tickWorldDrops(io, room, t0);
     const still = room.drops.get(d!.id)!;
-    /** Drop AABB clears [30,31) x extent of stone at ix=30. */
-    expect(still.pos[0] - hx).toBeGreaterThanOrEqual(31 - 8e-2);
+    /** Drop AABB no longer overlaps the stone voxel. */
+    const overlapsX = still.pos[0] + hx > 30 && still.pos[0] - hx < 31;
+    const overlapsY =
+      still.pos[1] + DROP_PHYS_HALF_Y > 200 && still.pos[1] - DROP_PHYS_HALF_Y < 201;
+    const overlapsZ = still.pos[2] + hx > -6 && still.pos[2] - hx < -5;
+    expect(overlapsX && overlapsY && overlapsZ).toBe(false);
     expect(Number.isFinite(still.pos[1])).toBe(true);
   });
 

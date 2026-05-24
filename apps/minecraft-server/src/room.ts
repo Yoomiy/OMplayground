@@ -1,6 +1,8 @@
 import {
+  applyDelta,
   createWorld,
   hydrateDeltas,
+  isSpawnPointSafe,
   seedFromSessionId,
   serializeDeltas,
   spawnPointFor,
@@ -9,28 +11,46 @@ import {
 } from "./world";
 import {
   cloneHotbar,
+  cloneChest,
   cloneCraftingGrid,
+  cloneEquipmentSlots,
   cloneItemInventory,
+  createEmptyChest,
   createEmptyCraftingGrid,
+  createEmptyEquipmentSlots,
   createEmptyHotbar,
   createEmptyItemInventory,
   craftingGridFromPersisted,
+  chestFromPersisted,
+  equipmentSlotsFromPersisted,
   hotbarFromPersisted,
   itemInventoryFromPersisted,
   spillExcessFromCraftingGrid,
   type CraftingGridState,
+  type ChestState,
+  type EquipmentSlotState,
   type HotbarState,
   type ItemInventoryState
 } from "./inventory";
-import type {
-  CraftingGridSlot,
-  GameMode,
-  HotbarSlot,
-  ItemSlot,
-  Vec3,
-  WorldDrop
+import {
+  BLOCK_REGISTRY,
+  type CraftingGridSlot,
+  type ChestSlot,
+  type GameMode,
+  type HotbarSlot,
+  type ItemSlot,
+  type Vec3,
+  type WorldDrop
 } from "./protocol";
 import type { ActiveBreak } from "./breakMining";
+import { createActiveTnts, type ActiveTnt } from "./tnt";
+import {
+  assignVitals,
+  createDefaultVitals,
+  vitalsFromPersisted,
+  type ActiveEating,
+  type VitalsRuntime
+} from "./vitals";
 
 /**
  * In-memory voxel-room registry. Mirrors the structure of
@@ -60,12 +80,32 @@ export interface PlayerRuntime extends RoomPlayer {
   inventory?: HotbarState;
   /** Survival: main storage for non-placeable items. */
   itemInventory?: ItemInventoryState;
-  /** Survival: 2×2 crafting grid (blocks + items). */
+  /** Survival: 3×3 backing grid; personal crafting uses top-left 2×2. */
   craftingGrid?: CraftingGridState;
+  /** Survival: dedicated equipment slots [head, chest, legs, feet]. */
+  equipmentSlots?: EquipmentSlotState;
+  /** Survival: 2 personal grid, 3 crafting table grid. */
+  craftingGridWidth?: 2 | 3;
   /** Survival: in-progress timed block break. */
   activeBreak?: ActiveBreak;
   /** Selected survival hotbar index 0..8 (from INPUT). */
   selectedHotbarIndex?: number;
+  health?: number;
+  hunger?: number;
+  saturation?: number;
+  exhaustion?: number;
+  lastVitalsAt?: number;
+  lastRegenAt?: number;
+  lastStarveAt?: number;
+  lastHeliosRegenAt?: number;
+  lastSuffocationAt?: number;
+  activeEating?: ActiveEating;
+  /** Survival: currently open chest coordinate key, if locked by this player. */
+  activeChestKey?: string;
+  /** Rate-limit multiplayer arm-swing broadcasts. */
+  lastArmSwingAt?: number;
+  /** Rate-limit server-authoritative combat swings. */
+  lastAttackAt?: number;
 }
 
 export interface VoxelRoom {
@@ -87,12 +127,22 @@ export interface VoxelRoom {
   disconnectedInventories: Map<string, HotbarState>;
   disconnectedItemInventories: Map<string, ItemInventoryState>;
   disconnectedCraftingGrids: Map<string, CraftingGridState>;
+  disconnectedEquipmentSlots: Map<string, EquipmentSlotState>;
+  disconnectedVitals: Map<string, VitalsRuntime>;
+  /** Survival: persistent chest inventories keyed by "x,y,z". */
+  chests: Map<string, ChestState>;
+  /** Chest open locks keyed by chest coordinate, value = userId. */
+  chestLocks: Map<string, string>;
   /** Set true when state changed since last tick emit. */
   dirty: boolean;
   /** ms timestamp of last emitted snapshot — used by coalescing in tick.ts. */
   lastTickAt: number;
   /** Survival: item stacks in the world (magnet pickup). */
   drops: Map<string, WorldDrop>;
+  /** Survival: primed TNT waiting for its fuse to complete. */
+  activeTnts: Map<string, ActiveTnt>;
+  /** Last server weather mutation tick, e.g. freezing exposed water. */
+  lastWeatherAt: number;
   /** Drops whose pos/stack changed — flushed as WORLD_DROP_UPDATE (~5 Hz). */
   dropSyncIds: Set<string>;
   lastDropBroadcastAt: number;
@@ -121,6 +171,9 @@ export interface PersistedRoomState {
   inventories?: Record<string, HotbarSlot[]>;
   itemInventories?: Record<string, ItemSlot[]>;
   craftingGrids?: Record<string, CraftingGridSlot[]>;
+  equipmentSlots?: Record<string, ItemSlot[]>;
+  vitals?: Record<string, VitalsRuntime>;
+  chests?: Record<string, ChestSlot[]>;
   drops?: WorldDrop[];
 }
 
@@ -153,6 +206,18 @@ export function getOrCreateRoom(
     if (!existing.disconnectedCraftingGrids) {
       existing.disconnectedCraftingGrids = new Map();
     }
+    if (!existing.disconnectedEquipmentSlots) {
+      existing.disconnectedEquipmentSlots = new Map();
+    }
+    if (!existing.disconnectedVitals) {
+      existing.disconnectedVitals = new Map();
+    }
+    if (!existing.chests) {
+      existing.chests = new Map();
+    }
+    if (!existing.chestLocks) {
+      existing.chestLocks = new Map();
+    }
     if (!existing.drops) {
       existing.drops = new Map();
     }
@@ -160,6 +225,10 @@ export function getOrCreateRoom(
       existing.dropSyncIds = new Set();
       existing.lastDropBroadcastAt = 0;
     }
+    if (!existing.activeTnts) {
+      existing.activeTnts = createActiveTnts();
+    }
+    existing.lastWeatherAt ??= 0;
     return existing;
   }
   const seed = meta.resumedState?.seed ?? seedFromSessionId(sessionId);
@@ -176,9 +245,14 @@ export function getOrCreateRoom(
   const disconnectedInventories = new Map<string, HotbarState>();
   const disconnectedItemInventories = new Map<string, ItemInventoryState>();
   const disconnectedCraftingGrids = new Map<string, CraftingGridState>();
+  const disconnectedEquipmentSlots = new Map<string, EquipmentSlotState>();
+  const disconnectedVitals = new Map<string, VitalsRuntime>();
+  const chests = new Map<string, ChestState>();
   const emptyTemplate = createEmptyHotbar();
+  const emptyChestTemplate = createEmptyChest();
   const emptyItemsTemplate = createEmptyItemInventory();
   const emptyCraftTemplate = createEmptyCraftingGrid();
+  const emptyEquipmentTemplate = createEmptyEquipmentSlots();
   if (meta.resumedState?.inventories) {
     for (const [uid, raw] of Object.entries(meta.resumedState.inventories)) {
       disconnectedInventories.set(
@@ -201,6 +275,24 @@ export function getOrCreateRoom(
         uid,
         craftingGridFromPersisted(raw, emptyCraftTemplate)
       );
+    }
+  }
+  if (meta.resumedState?.equipmentSlots) {
+    for (const [uid, raw] of Object.entries(meta.resumedState.equipmentSlots)) {
+      disconnectedEquipmentSlots.set(
+        uid,
+        equipmentSlotsFromPersisted(raw, emptyEquipmentTemplate)
+      );
+    }
+  }
+  if (meta.resumedState?.vitals) {
+    for (const [uid, raw] of Object.entries(meta.resumedState.vitals)) {
+      disconnectedVitals.set(uid, vitalsFromPersisted(raw));
+    }
+  }
+  if (meta.resumedState?.chests) {
+    for (const [key, raw] of Object.entries(meta.resumedState.chests)) {
+      chests.set(key, chestFromPersisted(raw, emptyChestTemplate));
     }
   }
   for (const [uid, grid] of disconnectedCraftingGrids) {
@@ -232,9 +324,15 @@ export function getOrCreateRoom(
     disconnectedInventories,
     disconnectedItemInventories,
     disconnectedCraftingGrids,
+    disconnectedEquipmentSlots,
+    disconnectedVitals,
+    chests,
+    chestLocks: new Map(),
     dirty: false,
     lastTickAt: 0,
     drops: hydrateDropsFromPersisted(meta.resumedState?.drops),
+    activeTnts: createActiveTnts(),
+    lastWeatherAt: 0,
     dropSyncIds: new Set(),
     lastDropBroadcastAt: 0
   };
@@ -295,10 +393,24 @@ export function connectedPlayers(room: VoxelRoom): RoomPlayer[] {
   }));
 }
 
+function makeSpawnPointSafe(room: VoxelRoom, point: Vec3): Vec3 {
+  if (isSpawnPointSafe(room.world, point)) return point;
+  const x = Math.floor(point[0]);
+  const y = Math.floor(point[1]);
+  const z = Math.floor(point[2]);
+  applyDelta(room.world, x, y - 2, z, BLOCK_REGISTRY.GRASS);
+  for (let yy = y - 1; yy <= y + 2; yy++) {
+    applyDelta(room.world, x, yy, z, BLOCK_REGISTRY.AIR);
+  }
+  room.dirty = true;
+  return point;
+}
+
 export function spawnFor(room: VoxelRoom, userId: string): Vec3 {
   const cached = room.spawnPoints.get(userId);
-  if (cached) return cached;
-  const pt = spawnPointFor(room.world.seed, userId);
+  if (cached && isSpawnPointSafe(room.world, cached)) return cached;
+  if (cached) room.spawnPoints.delete(userId);
+  const pt = makeSpawnPointSafe(room, spawnPointFor(room.world.seed, userId));
   room.spawnPoints.set(userId, pt);
   return pt;
 }
@@ -343,7 +455,16 @@ export function assignPlayer(
     player.craftingGrid = cachedCraft
       ? cloneCraftingGrid(cachedCraft)
       : createEmptyCraftingGrid();
+    player.craftingGridWidth = 2;
     room.disconnectedCraftingGrids.delete(userId);
+    const cachedEquipment = room.disconnectedEquipmentSlots.get(userId);
+    player.equipmentSlots = cachedEquipment
+      ? cloneEquipmentSlots(cachedEquipment)
+      : createEmptyEquipmentSlots();
+    room.disconnectedEquipmentSlots.delete(userId);
+    const cachedVitals = room.disconnectedVitals.get(userId);
+    assignVitals(player, cachedVitals ?? createDefaultVitals(now));
+    room.disconnectedVitals.delete(userId);
     if (player.inventory && player.itemInventory && player.craftingGrid) {
       spillExcessFromCraftingGrid(
         player.craftingGrid,
@@ -382,6 +503,19 @@ export function removePlayerFromRoom(
       userId,
       cloneCraftingGrid(leaving.craftingGrid)
     );
+  }
+  if (leaving?.equipmentSlots) {
+    r.disconnectedEquipmentSlots.set(
+      userId,
+      cloneEquipmentSlots(leaving.equipmentSlots)
+    );
+  }
+  const vitals = runtimeVitalsFromPlayer(leaving);
+  if (vitals) {
+    r.disconnectedVitals.set(userId, vitals);
+  }
+  for (const [key, holder] of r.chestLocks) {
+    if (holder === userId) r.chestLocks.delete(key);
   }
   r.players.delete(userId);
   r.dirty = true;
@@ -422,6 +556,9 @@ export function snapshotPersistedState(room: VoxelRoom): PersistedRoomState {
   const inventories: Record<string, HotbarSlot[]> = {};
   const itemInventories: Record<string, ItemSlot[]> = {};
   const craftingGrids: Record<string, CraftingGridSlot[]> = {};
+  const equipmentSlots: Record<string, ItemSlot[]> = {};
+  const vitals: Record<string, VitalsRuntime> = {};
+  const chests: Record<string, ChestSlot[]> = {};
   if ((room.gameMode ?? "creative") === "survival") {
     for (const p of room.players.values()) {
       if (p.inventory) inventories[p.userId] = cloneHotbar(p.inventory);
@@ -431,6 +568,11 @@ export function snapshotPersistedState(room: VoxelRoom): PersistedRoomState {
       if (p.craftingGrid) {
         craftingGrids[p.userId] = cloneCraftingGrid(p.craftingGrid);
       }
+      if (p.equipmentSlots) {
+        equipmentSlots[p.userId] = cloneEquipmentSlots(p.equipmentSlots);
+      }
+      const playerVitals = runtimeVitalsFromPlayer(p);
+      if (playerVitals) vitals[p.userId] = playerVitals;
     }
     for (const [uid, hotbar] of room.disconnectedInventories) {
       if (!(uid in inventories)) inventories[uid] = cloneHotbar(hotbar);
@@ -445,6 +587,19 @@ export function snapshotPersistedState(room: VoxelRoom): PersistedRoomState {
         craftingGrids[uid] = cloneCraftingGrid(cg);
       }
     }
+    for (const [uid, equipment] of room.disconnectedEquipmentSlots) {
+      if (!(uid in equipmentSlots)) {
+        equipmentSlots[uid] = cloneEquipmentSlots(equipment);
+      }
+    }
+    for (const [uid, cachedVitals] of room.disconnectedVitals) {
+      if (!(uid in vitals)) {
+        vitals[uid] = cachedVitals;
+      }
+    }
+    for (const [key, slots] of room.chests) {
+      chests[key] = cloneChest(slots);
+    }
   }
   return {
     voxel: true,
@@ -455,9 +610,29 @@ export function snapshotPersistedState(room: VoxelRoom): PersistedRoomState {
     ...(Object.keys(inventories).length > 0 ? { inventories } : {}),
     ...(Object.keys(itemInventories).length > 0 ? { itemInventories } : {}),
     ...(Object.keys(craftingGrids).length > 0 ? { craftingGrids } : {}),
+    ...(Object.keys(equipmentSlots).length > 0 ? { equipmentSlots } : {}),
+    ...(Object.keys(vitals).length > 0 ? { vitals } : {}),
+    ...(Object.keys(chests).length > 0 ? { chests } : {}),
     ...((room.gameMode ?? "creative") === "survival" && room.drops.size > 0
       ? { drops: Array.from(room.drops.values()) }
       : {})
+  };
+}
+
+function runtimeVitalsFromPlayer(
+  player: PlayerRuntime | undefined
+): VitalsRuntime | null {
+  if (!player || player.health === undefined) return null;
+  const defaults = createDefaultVitals();
+  return {
+    health: player.health,
+    hunger: player.hunger ?? defaults.hunger,
+    saturation: player.saturation ?? defaults.saturation,
+    exhaustion: player.exhaustion ?? defaults.exhaustion,
+    lastVitalsAt: player.lastVitalsAt ?? defaults.lastVitalsAt,
+    lastRegenAt: player.lastRegenAt ?? defaults.lastRegenAt,
+    lastStarveAt: player.lastStarveAt ?? defaults.lastStarveAt,
+    lastHeliosRegenAt: player.lastHeliosRegenAt ?? defaults.lastHeliosRegenAt
   };
 }
 

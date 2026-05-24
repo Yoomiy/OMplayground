@@ -10,12 +10,14 @@ import type {
   GameMode,
   InventoryMoveReq,
   ItemSlot,
+  PlayerVitals,
   RoomEvent,
   Vec3
 } from "@/lib/voxelProtocol";
 import {
   BLOCK_REGISTRY,
   CRAFTING_GRID_SLOTS,
+  EQUIPMENT_SLOT_COUNT,
   MAIN_ITEM_INVENTORY_SLOTS
 } from "@/lib/voxelProtocol";
 
@@ -32,6 +34,22 @@ function emptyClientCrafting(): CraftingGridSlot[] {
     itemId: 0,
     count: 0
   }));
+}
+
+function emptyClientEquipment(): ItemSlot[] {
+  return Array.from({ length: EQUIPMENT_SLOT_COUNT }, () => ({
+    itemId: 0,
+    count: 0
+  }));
+}
+
+function emptyClientVitals(): PlayerVitals {
+  return {
+    health: 20,
+    hunger: 20,
+    saturation: 5,
+    exhaustion: 0
+  };
 }
 
 export interface MinecraftSessionContainerProps {
@@ -74,6 +92,10 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     breakStart,
     breakFinish,
     breakCancel,
+    armSwing,
+    fallImpact,
+    playerAttack,
+    igniteTnt,
     pause,
     resume,
     stop,
@@ -81,11 +103,25 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     onSnapshot,
     onBlockDelta,
     onRoomEvent,
+    onArmSwing,
+    onPlayerDamage,
     serverInventory,
     serverItemInventory,
+    serverEquipmentSlots,
     serverCraftingGrid,
+    serverCraftingGridWidth,
+    serverVitals,
+    serverChest,
     craft,
     inventoryMove,
+    openCraftingTable,
+    closeCraftingTable,
+    openChest,
+    closeChest,
+    chestMove,
+    eatStart,
+    eatFinish,
+    eatCancel,
     setGameMode,
     dropHotbarItem,
     onWorldDropSpawned,
@@ -217,6 +253,10 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     },
     [breakCancel]
   );
+  const handleIgniteTnt = useCallback(
+    (pos: Vec3) => igniteTnt(pos),
+    [igniteTnt]
+  );
 
   const handlePause = useCallback(async () => {
     const ack = await pause();
@@ -243,6 +283,50 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
   const handleCraft = useCallback((recipeId: string) => {
     void craft(recipeId);
   }, [craft]);
+
+  const handleOpenCraftingTable = useCallback(
+    (pos: Vec3) => openCraftingTable(pos),
+    [openCraftingTable]
+  );
+
+  const handleCloseCraftingTable = useCallback(
+    () => closeCraftingTable(),
+    [closeCraftingTable]
+  );
+
+  const handleOpenChest = useCallback(
+    (pos: Vec3) => openChest(pos),
+    [openChest]
+  );
+
+  const handleCloseChest = useCallback(
+    () => closeChest(),
+    [closeChest]
+  );
+
+  const handleChestMove = useCallback(
+    (req: InventoryMoveReq) => {
+      void chestMove(req).then((ack) => {
+        if (!ack.ok) setToast(ack.error?.message ?? "לא ניתן להעביר פריט");
+      });
+    },
+    [chestMove]
+  );
+
+  const handleEatStart = useCallback(
+    (hotbarIndex: number) => eatStart(hotbarIndex),
+    [eatStart]
+  );
+
+  const handleEatFinish = useCallback(
+    (hotbarIndex: number) => eatFinish(hotbarIndex),
+    [eatFinish]
+  );
+
+  const handleEatCancel = useCallback(
+    () => eatCancel(),
+    [eatCancel]
+  );
 
   const handleInventoryMove = useCallback(
     (req: InventoryMoveReq) => {
@@ -312,7 +396,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         seed={joinAck.seed}
         initialDeltas={joinAck.deltas}
         mySpawn={joinAck.spawn}
-        paused={paused || isTeacherObserver}
+        paused={paused || isTeacherObserver || endOverlay !== null}
         roster={joinAck.roster}
         myUserId={myUserId}
         gameMode={liveGameMode}
@@ -320,17 +404,37 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         itemInventorySlots={
           liveGameMode === "survival" ? serverItemInventory : emptyClientItemInv()
         }
+        equipmentSlots={
+          liveGameMode === "survival" ? serverEquipmentSlots : emptyClientEquipment()
+        }
         craftingGridSlots={
           liveGameMode === "survival" ? serverCraftingGrid : emptyClientCrafting()
         }
+        craftingGridWidth={
+          liveGameMode === "survival" ? serverCraftingGridWidth : 2
+        }
+        vitals={liveGameMode === "survival" ? serverVitals : emptyClientVitals()}
         onInventoryMove={handleInventoryMove}
         onCraft={handleCraft}
+        onOpenCraftingTable={handleOpenCraftingTable}
+        onCloseCraftingTable={handleCloseCraftingTable}
+        activeChest={serverChest}
+        onOpenChest={handleOpenChest}
+        onCloseChest={handleCloseChest}
+        onChestMove={handleChestMove}
+        onEatStart={handleEatStart}
+        onEatFinish={handleEatFinish}
+        onEatCancel={handleEatCancel}
         onInput={sendInput}
         onBlockPlace={handlePlaceBlock}
         onBlockBreak={handleBreakBlock}
         onBreakStart={handleBreakStart}
         onBreakFinish={handleBreakFinish}
         onBreakCancel={handleBreakCancel}
+        onArmSwing={armSwing}
+        onFallImpact={fallImpact}
+        onPlayerAttack={playerAttack}
+        onIgniteTnt={handleIgniteTnt}
         initialWorldDrops={joinAck.drops ?? []}
         registerWorldDropSpawned={onWorldDropSpawned}
         registerWorldDropRemoved={onWorldDropRemoved}
@@ -338,6 +442,9 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         onDropHotbarSlot={handleDropHotbar}
         registerSnapshotListener={onSnapshot}
         registerBlockDeltaListener={onBlockDelta}
+        registerRoomEventListener={onRoomEvent}
+        registerArmSwingListener={onArmSwing}
+        registerPlayerDamageListener={onPlayerDamage}
       />
 
       <div className="pointer-events-none absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/80" />

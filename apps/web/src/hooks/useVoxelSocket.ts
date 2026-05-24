@@ -3,18 +3,27 @@ import { io, type Socket } from "socket.io-client";
 import { supabase } from "@/lib/supabase";
 import { getVoxelServerUrl } from "@/lib/voxelServerUrl";
 import type {
+  ArmSwingPayload,
   BlockDelta,
   BreakStartAck,
+  ChestSlot,
+  ChestSyncPayload,
   CraftAck,
+  CraftingGridWidth,
   CraftingGridSlot,
+  EatStartAck,
   GameMode,
   HotbarSlot,
+  IgniteTntReq,
   InputReq,
   InventoryMoveReq,
   InventorySyncPayload,
   ItemSlot,
   JoinRoomAck,
   JoinRoomAckOk,
+  OpenChestAck,
+  PlayerDamagePayload,
+  PlayerVitals,
   RoomEvent,
   RoomSnapshot,
   SimpleAck,
@@ -24,7 +33,9 @@ import type {
 } from "@/lib/voxelProtocol";
 import {
   BLOCK_REGISTRY,
+  CHEST_SLOT_COUNT,
   CRAFTING_GRID_SLOTS,
+  EQUIPMENT_SLOT_COUNT,
   MAIN_ITEM_INVENTORY_SLOTS
 } from "@/lib/voxelProtocol";
 
@@ -56,13 +67,36 @@ function emptyCraftingSlots(): CraftingGridSlot[] {
   }));
 }
 
+function emptyEquipmentSlots(): ItemSlot[] {
+  return Array.from({ length: EQUIPMENT_SLOT_COUNT }, () => ({ itemId: 0, count: 0 }));
+}
+
+function emptyChestSlots(): ChestSlot[] {
+  return Array.from({ length: CHEST_SLOT_COUNT }, () => ({
+    blockId: BLOCK_REGISTRY.AIR,
+    itemId: 0,
+    count: 0
+  }));
+}
+
+function emptyVitals(): PlayerVitals {
+  return {
+    health: 20,
+    hunger: 20,
+    saturation: 5,
+    exhaustion: 0
+  };
+}
+
 function inputWireEqual(a: InputReq, b: InputReq): boolean {
   return (
     Math.abs(a.pos[0] - b.pos[0]) <= POS_EPS &&
     Math.abs(a.pos[1] - b.pos[1]) <= POS_EPS &&
     Math.abs(a.pos[2] - b.pos[2]) <= POS_EPS &&
     Math.abs(a.heading - b.heading) <= HEADING_EPS &&
-    a.jumping === b.jumping
+    Math.abs((a.pitch ?? 0) - (b.pitch ?? 0)) <= HEADING_EPS &&
+    a.jumping === b.jumping &&
+    a.hotbarIndex === b.hotbarIndex
   );
 }
 
@@ -72,6 +106,8 @@ export type RoomEventListener = (ev: RoomEvent) => void;
 export type WorldDropSpawnListener = (drop: WorldDrop) => void;
 export type WorldDropRemovedListener = (id: string) => void;
 export type WorldDropUpdateListener = (updates: WorldDropWireDelta[]) => void;
+export type ArmSwingListener = (payload: ArmSwingPayload) => void;
+export type PlayerDamageListener = (payload: PlayerDamagePayload) => void;
 
 export interface UseVoxelSocketArgs {
   sessionId: string;
@@ -89,6 +125,10 @@ export interface UseVoxelSocketReturn {
   breakStart: (pos: Vec3) => Promise<BreakStartAck>;
   breakFinish: (pos: Vec3) => Promise<SimpleAck>;
   breakCancel: (pos: Vec3) => void;
+  armSwing: () => void;
+  fallImpact: (velocityY: number) => Promise<SimpleAck>;
+  playerAttack: (targetUserId: string) => Promise<SimpleAck>;
+  igniteTnt: (pos: Vec3) => Promise<SimpleAck>;
   craft: (recipeId: string) => Promise<CraftAck>;
   pause: () => Promise<SimpleAck>;
   resume: () => Promise<SimpleAck>;
@@ -97,10 +137,24 @@ export interface UseVoxelSocketReturn {
   onSnapshot: (cb: SnapshotListener) => () => void;
   onBlockDelta: (cb: BlockDeltaListener) => () => void;
   onRoomEvent: (cb: RoomEventListener) => () => void;
+  onArmSwing: (cb: ArmSwingListener) => () => void;
+  onPlayerDamage: (cb: PlayerDamageListener) => () => void;
   serverInventory: HotbarSlot[];
   serverItemInventory: ItemSlot[];
+  serverEquipmentSlots: ItemSlot[];
   serverCraftingGrid: CraftingGridSlot[];
+  serverCraftingGridWidth: CraftingGridWidth;
+  serverVitals: PlayerVitals;
+  serverChest: { pos: Vec3; slots: ChestSlot[] } | null;
   inventoryMove: (req: InventoryMoveReq) => Promise<SimpleAck>;
+  openCraftingTable: (pos: Vec3) => Promise<SimpleAck>;
+  closeCraftingTable: () => Promise<SimpleAck>;
+  openChest: (pos: Vec3) => Promise<OpenChestAck>;
+  closeChest: () => Promise<SimpleAck>;
+  chestMove: (req: InventoryMoveReq) => Promise<SimpleAck>;
+  eatStart: (hotbarIndex: number) => Promise<EatStartAck>;
+  eatFinish: (hotbarIndex: number) => Promise<SimpleAck>;
+  eatCancel: () => Promise<SimpleAck>;
   setGameMode: (mode: GameMode) => Promise<SimpleAck>;
   /** Survival: drop one block from hotbar near the player. */
   dropHotbarItem: (hotbarIndex: number) => Promise<SimpleAck>;
@@ -131,6 +185,8 @@ export function useVoxelSocket(
   const worldDropSpawnListeners = useRef(new Set<WorldDropSpawnListener>());
   const worldDropRemovedListeners = useRef(new Set<WorldDropRemovedListener>());
   const worldDropUpdateListeners = useRef(new Set<WorldDropUpdateListener>());
+  const armSwingListeners = useRef(new Set<ArmSwingListener>());
+  const playerDamageListeners = useRef(new Set<PlayerDamageListener>());
 
   const [connected, setConnected] = useState(false);
   const [status, setStatus] = useState<string>("מתחבר…");
@@ -139,9 +195,17 @@ export function useVoxelSocket(
   const [serverItemInventory, setServerItemInventory] = useState<ItemSlot[]>(
     () => emptyItemSlots()
   );
+  const [serverEquipmentSlots, setServerEquipmentSlots] = useState<ItemSlot[]>(
+    () => emptyEquipmentSlots()
+  );
   const [serverCraftingGrid, setServerCraftingGrid] = useState<CraftingGridSlot[]>(
     () => emptyCraftingSlots()
   );
+  const [serverCraftingGridWidth, setServerCraftingGridWidth] =
+    useState<CraftingGridWidth>(2);
+  const [serverVitals, setServerVitals] = useState<PlayerVitals>(() => emptyVitals());
+  const [serverChest, setServerChest] =
+    useState<{ pos: Vec3; slots: ChestSlot[] } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -182,11 +246,18 @@ export function useVoxelSocket(
             ? ack.itemInventory
             : emptyItemSlots()
         );
+        setServerEquipmentSlots(
+          ack.equipmentSlots?.length === EQUIPMENT_SLOT_COUNT
+            ? ack.equipmentSlots
+            : emptyEquipmentSlots()
+        );
         setServerCraftingGrid(
           ack.craftingGrid?.length === CRAFTING_GRID_SLOTS
             ? ack.craftingGrid
             : emptyCraftingSlots()
         );
+        setServerCraftingGridWidth(ack.craftingGridWidth ?? 2);
+        setServerVitals(ack.vitals ?? emptyVitals());
       });
 
       s.on("INVENTORY_SYNC", (payload: InventorySyncPayload) => {
@@ -201,11 +272,34 @@ export function useVoxelSocket(
           setServerItemInventory(payload.itemSlots);
         }
         if (
+          payload?.equipmentSlots &&
+          Array.isArray(payload.equipmentSlots) &&
+          payload.equipmentSlots.length === EQUIPMENT_SLOT_COUNT
+        ) {
+          setServerEquipmentSlots(payload.equipmentSlots);
+        }
+        if (
           payload?.craftingSlots &&
           Array.isArray(payload.craftingSlots) &&
           payload.craftingSlots.length === CRAFTING_GRID_SLOTS
         ) {
           setServerCraftingGrid(payload.craftingSlots);
+        }
+        if (payload?.craftingGridWidth === 2 || payload?.craftingGridWidth === 3) {
+          setServerCraftingGridWidth(payload.craftingGridWidth);
+        }
+        if (payload?.vitals) {
+          setServerVitals(payload.vitals);
+        }
+      });
+
+      s.on("CHEST_SYNC", (payload: ChestSyncPayload) => {
+        if (
+          payload?.pos &&
+          Array.isArray(payload.slots) &&
+          payload.slots.length === CHEST_SLOT_COUNT
+        ) {
+          setServerChest({ pos: payload.pos, slots: payload.slots });
         }
       });
 
@@ -214,6 +308,12 @@ export function useVoxelSocket(
       });
       s.on("BLOCK_DELTA", (payload: BlockDelta) => {
         for (const cb of blockDeltaListeners.current) cb(payload);
+      });
+      s.on("PLAYER_ARM_SWING", (payload: ArmSwingPayload) => {
+        for (const cb of armSwingListeners.current) cb(payload);
+      });
+      s.on("PLAYER_DAMAGE", (payload: PlayerDamagePayload) => {
+        for (const cb of playerDamageListeners.current) cb(payload);
       });
       s.on("ROOM_EVENT", (payload: RoomEvent) => {
         if (payload.kind === "WORLD_DROP_SPAWNED") {
@@ -224,6 +324,16 @@ export function useVoxelSocket(
         }
         if (payload.kind === "WORLD_DROP_UPDATE") {
           for (const cb of worldDropUpdateListeners.current) cb(payload.updates);
+        }
+        if (payload.kind === "CHEST_CLOSED") {
+          setServerChest((prev) =>
+            prev &&
+            prev.pos[0] === payload.pos[0] &&
+            prev.pos[1] === payload.pos[1] &&
+            prev.pos[2] === payload.pos[2]
+              ? null
+              : prev
+          );
         }
         for (const cb of roomEventListeners.current) cb(payload);
       });
@@ -295,6 +405,31 @@ export function useVoxelSocket(
     s.emit("BREAK_CANCEL", { pos });
   }
 
+  function armSwing(): void {
+    const s = socketRef.current;
+    if (!s?.connected) return;
+    s.emit("ARM_SWING", {});
+  }
+
+  async function fallImpact(velocityY: number): Promise<SimpleAck> {
+    const s = socketRef.current;
+    if (!s?.connected) return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
+    return emitWithAck<SimpleAck>(s, "FALL_IMPACT", { velocityY });
+  }
+
+  async function playerAttack(targetUserId: string): Promise<SimpleAck> {
+    const s = socketRef.current;
+    if (!s?.connected) return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
+    return emitWithAck<SimpleAck>(s, "PLAYER_ATTACK", { targetUserId });
+  }
+
+  async function igniteTnt(pos: Vec3): Promise<SimpleAck> {
+    const s = socketRef.current;
+    if (!s?.connected) return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
+    const payload: IgniteTntReq = { pos };
+    return emitWithAck<SimpleAck>(s, "IGNITE_TNT", payload);
+  }
+
   async function craft(recipeId: string): Promise<CraftAck> {
     const s = socketRef.current;
     if (!s?.connected) return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
@@ -305,6 +440,71 @@ export function useVoxelSocket(
     const s = socketRef.current;
     if (!s?.connected) return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
     return emitWithAck<SimpleAck>(s, "INVENTORY_MOVE", req);
+  }
+
+  async function openCraftingTable(pos: Vec3): Promise<SimpleAck> {
+    const s = socketRef.current;
+    if (!s?.connected) return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
+    return emitWithAck<SimpleAck>(s, "OPEN_CRAFTING_TABLE", { pos });
+  }
+
+  async function closeCraftingTable(): Promise<SimpleAck> {
+    const s = socketRef.current;
+    if (!s?.connected) return { ok: true };
+    return emitWithAck<SimpleAck>(s, "CLOSE_CRAFTING_TABLE", {});
+  }
+
+  async function openChest(pos: Vec3): Promise<OpenChestAck> {
+    const s = socketRef.current;
+    if (!s?.connected) {
+      return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
+    }
+    const ack = await emitWithAck<OpenChestAck>(s, "OPEN_CHEST", { pos });
+    if (ack.ok) {
+      setServerChest({
+        pos: ack.pos ?? pos,
+        slots:
+          ack.slots?.length === CHEST_SLOT_COUNT ? ack.slots : emptyChestSlots()
+      });
+    }
+    return ack;
+  }
+
+  async function closeChest(): Promise<SimpleAck> {
+    const s = socketRef.current;
+    setServerChest(null);
+    if (!s?.connected) return { ok: true };
+    return emitWithAck<SimpleAck>(s, "CLOSE_CHEST", {});
+  }
+
+  async function chestMove(req: InventoryMoveReq): Promise<SimpleAck> {
+    const s = socketRef.current;
+    if (!s?.connected) {
+      return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
+    }
+    return emitWithAck<SimpleAck>(s, "CHEST_MOVE", req);
+  }
+
+  async function eatStart(hotbarIndex: number): Promise<EatStartAck> {
+    const s = socketRef.current;
+    if (!s?.connected) {
+      return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
+    }
+    return emitWithAck<EatStartAck>(s, "EAT_START", { hotbarIndex });
+  }
+
+  async function eatFinish(hotbarIndex: number): Promise<SimpleAck> {
+    const s = socketRef.current;
+    if (!s?.connected) {
+      return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
+    }
+    return emitWithAck<SimpleAck>(s, "EAT_FINISH", { hotbarIndex });
+  }
+
+  async function eatCancel(): Promise<SimpleAck> {
+    const s = socketRef.current;
+    if (!s?.connected) return { ok: true };
+    return emitWithAck<SimpleAck>(s, "EAT_CANCEL", {});
   }
 
   async function pause(): Promise<SimpleAck> {
@@ -362,6 +562,20 @@ export function useVoxelSocket(
     };
   }
 
+  function onArmSwing(cb: ArmSwingListener): () => void {
+    armSwingListeners.current.add(cb);
+    return () => {
+      armSwingListeners.current.delete(cb);
+    };
+  }
+
+  function onPlayerDamage(cb: PlayerDamageListener): () => void {
+    playerDamageListeners.current.add(cb);
+    return () => {
+      playerDamageListeners.current.delete(cb);
+    };
+  }
+
   function onWorldDropSpawned(cb: WorldDropSpawnListener): () => void {
     worldDropSpawnListeners.current.add(cb);
     return () => {
@@ -393,6 +607,10 @@ export function useVoxelSocket(
     breakStart,
     breakFinish,
     breakCancel,
+    armSwing,
+    fallImpact,
+    playerAttack,
+    igniteTnt,
     craft,
     pause,
     resume,
@@ -401,10 +619,24 @@ export function useVoxelSocket(
     onSnapshot,
     onBlockDelta,
     onRoomEvent,
+    onArmSwing,
+    onPlayerDamage,
     serverInventory,
     serverItemInventory,
+    serverEquipmentSlots,
     serverCraftingGrid,
+    serverCraftingGridWidth,
+    serverVitals,
+    serverChest,
     inventoryMove,
+    openCraftingTable,
+    closeCraftingTable,
+    openChest,
+    closeChest,
+    chestMove,
+    eatStart,
+    eatFinish,
+    eatCancel,
     setGameMode,
     dropHotbarItem,
     onWorldDropSpawned,

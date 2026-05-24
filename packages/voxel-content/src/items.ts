@@ -7,6 +7,8 @@ import type { ToolKind, ToolTier } from "./mining";
 
 export type ItemCategory = "material" | "tool" | "food" | "blockItem";
 
+export type EquipmentSlotKey = "head" | "chest" | "legs" | "feet" | "hotbar";
+
 /** Filename under apps/web/public/minecraft-assets/ — client-only UX. */
 const WEB_ICON_BASE = "/minecraft-assets/item/" as const;
 
@@ -17,6 +19,22 @@ export interface ItemToolSpec {
   readonly durability: number;
 }
 
+export interface ItemFoodSpec {
+  readonly nutrition: number;
+  readonly saturationModifier: number;
+}
+
+export interface ItemPerkSpec {
+  readonly equipSlot: EquipmentSlotKey;
+  readonly jumpBonus?: number;
+  readonly speedBonus?: number;
+  readonly healOnHit?: number;
+  readonly fullBright?: boolean;
+  readonly damageReduction?: number;
+  readonly fallDamageImmune?: boolean;
+  readonly sunRegen?: boolean;
+}
+
 export interface ItemDef {
   readonly id: number;
   readonly key: string;
@@ -25,6 +43,8 @@ export interface ItemDef {
   /** Optional UI icon asset (relative filename only). */
   readonly iconFilename?: string;
   readonly tool?: ItemToolSpec;
+  readonly food?: ItemFoodSpec;
+  readonly perk?: ItemPerkSpec;
 }
 
 const TOOL_SPEED: Record<ToolTier, number> = {
@@ -134,6 +154,145 @@ export const ITEM_DEFS = [
     category: "material",
     maxStack: 1,
     iconFilename: "water_bucket.png"
+  },
+  {
+    id: 111,
+    key: "IRON_INGOT",
+    category: "material",
+    maxStack: 64,
+    iconFilename: "iron_ingot.png"
+  },
+  {
+    id: 112,
+    key: "DIAMOND",
+    category: "material",
+    maxStack: 64,
+    iconFilename: "diamond.png"
+  },
+  {
+    id: 113,
+    key: "COAL",
+    category: "material",
+    maxStack: 64,
+    iconFilename: "coal.png"
+  },
+  {
+    id: 114,
+    key: "FLINT",
+    category: "material",
+    maxStack: 64,
+    iconFilename: "flint.png"
+  },
+  {
+    id: 115,
+    key: "WHEAT",
+    category: "material",
+    maxStack: 64,
+    iconFilename: "wheat.png"
+  },
+  {
+    id: 116,
+    key: "BREAD",
+    category: "food",
+    maxStack: 64,
+    iconFilename: "bread.png",
+    food: { nutrition: 5, saturationModifier: 6.0 }
+  },
+  {
+    id: 117,
+    key: "APPLE",
+    category: "food",
+    maxStack: 64,
+    iconFilename: "apple.png",
+    food: { nutrition: 4, saturationModifier: 2.4 }
+  },
+  {
+    id: 118,
+    key: "DIAMOND_PICKAXE",
+    category: "tool",
+    maxStack: 1,
+    iconFilename: "diamond_pickaxe.png",
+    tool: toolDef("pickaxe", 3)
+  },
+  {
+    id: 119,
+    key: "DIAMOND_AXE",
+    category: "tool",
+    maxStack: 1,
+    iconFilename: "diamond_axe.png",
+    tool: toolDef("axe", 3)
+  },
+  {
+    id: 120,
+    key: "SWIFT_PICKAXE",
+    category: "tool",
+    maxStack: 1,
+    iconFilename: "gold_pickaxe.png",
+    tool: { kind: "pickaxe", tier: 3, speed: 12, durability: 80 },
+    perk: { equipSlot: "hotbar", speedBonus: 0.5 }
+  },
+  {
+    id: 121,
+    key: "FLINT_AND_STEEL",
+    category: "tool",
+    maxStack: 1,
+    iconFilename: "flint_and_steel.png",
+    tool: { kind: "hand", tier: 1, speed: 1, durability: 64 }
+  },
+  {
+    id: 122,
+    key: "HEAVY_SHIELD",
+    category: "material",
+    maxStack: 1,
+    iconFilename: "empty_armor_slot_shield.png",
+    perk: { equipSlot: "chest", damageReduction: 0.5, speedBonus: -0.2 }
+  },
+  {
+    id: 123,
+    key: "FEATHER_FALLING_TALISMAN",
+    category: "material",
+    maxStack: 1,
+    iconFilename: "feather.png",
+    perk: { equipSlot: "legs", fallDamageImmune: true }
+  },
+  {
+    id: 124,
+    key: "HELIOS_MEDALLION",
+    category: "material",
+    maxStack: 1,
+    iconFilename: "gold_ingot.png",
+    perk: { equipSlot: "head", sunRegen: true }
+  },
+  {
+    id: 125,
+    key: "HELIUM_BOOTS",
+    category: "material",
+    maxStack: 1,
+    iconFilename: "diamond_boots.png",
+    perk: { equipSlot: "feet", jumpBonus: 0.6 }
+  },
+  {
+    id: 126,
+    key: "GLOW_TALISMAN",
+    category: "material",
+    maxStack: 1,
+    iconFilename: "glowstone_dust.png",
+    perk: { equipSlot: "head", fullBright: true }
+  },
+  {
+    id: 127,
+    key: "GOLD_INGOT",
+    category: "material",
+    maxStack: 64,
+    iconFilename: "gold_ingot.png"
+  },
+  {
+    id: 128,
+    key: "IRON_AXE",
+    category: "tool",
+    maxStack: 1,
+    iconFilename: "iron_axe.png",
+    tool: toolDef("axe", 2)
   }
 ] as const satisfies readonly ItemDef[];
 
@@ -172,6 +331,14 @@ export function itemDef(itemId: number): ItemDef | undefined {
 
 export function itemToolSpec(itemId: number): ItemToolSpec | undefined {
   return ITEM_BY_ID.get(itemId)?.tool;
+}
+
+export function itemFoodSpec(itemId: number): ItemFoodSpec | undefined {
+  return ITEM_BY_ID.get(itemId)?.food;
+}
+
+export function itemPerkSpec(itemId: number): ItemPerkSpec | undefined {
+  return ITEM_BY_ID.get(itemId)?.perk;
 }
 
 export function itemMaxDurability(itemId: number): number {

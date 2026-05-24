@@ -2,7 +2,11 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 
 import { BLOCK_REGISTRY } from "./blocks";
-import { NOA_BLOCK_ENTRIES, PLANT_SPRITE_BLOCK_IDS } from "./blockClientCatalog";
+import {
+  NOA_BLOCK_ENTRIES,
+  PLANT_SPRITE_BLOCK_IDS,
+  noaCubeBlockOptions
+} from "./blockClientCatalog";
 
 const REPO_ROOT = path.resolve(__dirname, "../../..");
 const ASSETS_DIR = path.join(REPO_ROOT, "apps/web/public/minecraft-assets");
@@ -21,10 +25,10 @@ const WOOD_TEXTURE_FILES = [
 describe("blockClientCatalog", () => {
   it("registers exactly one noa entry per non-air block id", () => {
     const ids = NOA_BLOCK_ENTRIES.map((e) => e.id);
-    expect(ids.length).toBe(99);
-    expect(new Set(ids).size).toBe(99);
+    expect(ids.length).toBe(102);
+    expect(new Set(ids).size).toBe(102);
     expect(ids.includes(BLOCK_REGISTRY.AIR)).toBe(false);
-    for (let i = 1; i <= 99; i++) {
+    for (let i = 1; i <= 102; i++) {
       expect(ids.includes(i)).toBe(true);
     }
   });
@@ -39,6 +43,22 @@ describe("blockClientCatalog", () => {
     }
     expect(PLANT_SPRITE_BLOCK_IDS.has(BLOCK_REGISTRY.SAPLING)).toBe(true);
     expect(PLANT_SPRITE_BLOCK_IDS.has(BLOCK_REGISTRY.DIRT)).toBe(false);
+  });
+
+  it("does not override noa's default opacity for normal cube blocks", () => {
+    const stone = NOA_BLOCK_ENTRIES.find((e) => e.id === BLOCK_REGISTRY.STONE);
+    expect(stone?.shape).toBe("cube");
+    if (!stone || stone.shape !== "cube") throw new Error("missing stone cube entry");
+
+    expect(noaCubeBlockOptions(stone)).toEqual({
+      material: "mc_stone",
+      solid: true
+    });
+
+    const glass = NOA_BLOCK_ENTRIES.find((e) => e.id === BLOCK_REGISTRY.GLASS);
+    expect(glass?.shape).toBe("cube");
+    if (!glass || glass.shape !== "cube") throw new Error("missing glass cube entry");
+    expect(noaCubeBlockOptions(glass)).toMatchObject({ opaque: false });
   });
 
   it("wood-family texture files exist under minecraft-assets", () => {

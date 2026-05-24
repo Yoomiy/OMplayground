@@ -6,9 +6,12 @@ import {
   ITEM_REGISTRY,
   ITEM_ICON,
   MAIN_ITEM_INVENTORY_SLOTS,
+  MAX_REACH,
   PLACEABLE_BLOCK_IDS,
   CRAFTING_GRID_SLOTS,
+  EQUIPMENT_SLOT_COUNT,
   type BlockDelta,
+  type ChestSlot,
   type CraftingGridSlot,
   type GameMode,
   type HotbarSlot,
@@ -16,20 +19,38 @@ import {
   type InventoryRegion,
   type InventoryMoveReq,
   type ItemSlot,
+  type CraftingGridWidth,
+  type EatStartAck,
+  type PlayerVitals,
+  type RoomEvent,
   type RoomPlayerInfo,
   type RoomSnapshot,
   type Vec3,
   type BreakStartAck,
+  type OpenChestAck,
+  type PlayerDamagePayload,
   type SimpleAck,
   type WorldDrop,
   type WorldDropWireDelta
 } from "@/lib/voxelProtocol";
 import {
   isInstantBreak,
+  itemFoodSpec,
   itemMaxDurability,
   MC_MATERIAL_ENTRIES,
   NOA_BLOCK_ENTRIES,
-  PLANT_SPRITE_BLOCK_IDS
+  PLANT_SPRITE_BLOCK_IDS,
+  RECIPES,
+  blockSoundGroup,
+  blockBreakable,
+  blockReplaceable,
+  noaCubeBlockOptions,
+  precipitationKindForColumn,
+  proceduralVoxelID,
+  sampleBiomeColumn,
+  type PrecipitationKind,
+  type Recipe,
+  type RecipeIngredient
 } from "@playground/voxel-content";
 import { craftingGridPreview } from "@/lib/voxelCraftingPreview";
 import { VOXEL_ENTITY_CATALOG } from "@/games/voxel/voxelEntityCatalog";
@@ -44,10 +65,12 @@ import {
   setVisualVisible
 } from "@/games/voxel/noaVoxelVisual";
 import {
+  advanceAvatarSwing,
   createAvatarRig,
   setAvatarHeadPitch,
   setAvatarYaw,
   setAvatarYawSmoothed,
+  triggerAvatarSwing,
   updateAvatarWalk,
   type AvatarRig
 } from "@/games/voxel/voxelAvatarAnimation";
@@ -57,6 +80,15 @@ import {
   destroyStageIndex,
   type BreakCrackOverlay
 } from "@/games/voxel/breakCrackOverlay";
+import {
+  FirstPersonHeldItemView,
+  resolveHeldItemSpec
+} from "@/games/voxel/heldItemView";
+import { AudioManager } from "@/games/voxel/audioManager";
+import {
+  VOXEL_MOVEMENT,
+  resolveVoxelMovement
+} from "@/games/voxel/movementConfig";
 
 const INV_DRAG_MIME = "application/x-playground-voxel-inv";
 
@@ -76,6 +108,21 @@ const INV_DRAG_MIME = "application/x-playground-voxel-inv";
 
 const HOTBAR = PLACEABLE_BLOCK_IDS;
 
+function visibleCreativeHotbarBlocks(selectedBlockId: number): number[] {
+  const blocks = HOTBAR.slice(0, 9);
+  if (!blocks.includes(selectedBlockId) && PLACEABLE_BLOCK_IDS.includes(selectedBlockId)) {
+    blocks[8] = selectedBlockId;
+  }
+  return blocks;
+}
+
+const PERSONAL_CRAFTING_SLOT_INDICES = [0, 1, 3, 4] as const;
+const EQUIPMENT_SLOT_LABELS = ["ראש", "חזה", "רגל", "נעל"] as const;
+const EMPTY_CRAFTING_SLOT: CraftingGridSlot = {
+  blockId: BLOCK_REGISTRY.AIR,
+  itemId: 0,
+  count: 0
+};
 /** Max third-person camera pull-back (voxels); noa defaults `initialZoom` 0. */
 const CAMERA_ZOOM_DISTANCE_MAX = 16;
 /** Wheel delta → `zoomDistance` scale (`game-inputs` uses scaled pixel deltas). */
@@ -129,7 +176,61 @@ const BLOCK_HUD: Record<number, string> = {
   [BLOCK_REGISTRY.BIRCH_LEAVES]: "עלי ליבנה",
   [BLOCK_REGISTRY.SPRUCE_LOG]: "עץ אשוח",
   [BLOCK_REGISTRY.SPRUCE_PLANKS]: "לוחות אשוח",
-  [BLOCK_REGISTRY.SPRUCE_LEAVES]: "עלי אשוח"
+  [BLOCK_REGISTRY.SPRUCE_LEAVES]: "עלי אשוח",
+  [BLOCK_REGISTRY.GRASS_SNOW]: "דשא מושלג",
+  [BLOCK_REGISTRY.BARRIER]: "מחסום",
+  [BLOCK_REGISTRY.SNOW]: "שלג",
+  [BLOCK_REGISTRY.CACTUS]: "קקטוס",
+  [BLOCK_REGISTRY.DEADBUSH]: "שיח יבש",
+  [BLOCK_REGISTRY.CRAFTING]: "שולחן יצירה",
+  [BLOCK_REGISTRY.STONEBRICK]: "לבני אבן",
+  [BLOCK_REGISTRY.BROWN_WOOL]: "צמר חום",
+  [BLOCK_REGISTRY.LIGHT_BLUE_WOOL]: "צמר תכלת",
+  [BLOCK_REGISTRY.WHITE_STAINED_GLASS]: "זכוכית לבנה",
+  [BLOCK_REGISTRY.YELLOW_STAINED_GLASS]: "זכוכית צהובה",
+  [BLOCK_REGISTRY.RED_STAINED_GLASS]: "זכוכית אדומה",
+  [BLOCK_REGISTRY.PURPLE_STAINED_GLASS]: "זכוכית סגולה",
+  [BLOCK_REGISTRY.PINK_STAINED_GLASS]: "זכוכית ורודה",
+  [BLOCK_REGISTRY.ORANGE_STAINED_GLASS]: "זכוכית כתומה",
+  [BLOCK_REGISTRY.MAGENTA_STAINED_GLASS]: "זכוכית מג'נטה",
+  [BLOCK_REGISTRY.LIME_STAINED_GLASS]: "זכוכית ליים",
+  [BLOCK_REGISTRY.LIGHT_BLUE_STAINED_GLASS]: "זכוכית תכלת",
+  [BLOCK_REGISTRY.GREEN_STAINED_GLASS]: "זכוכית ירוקה",
+  [BLOCK_REGISTRY.GRAY_STAINED_GLASS]: "זכוכית אפורה",
+  [BLOCK_REGISTRY.CYAN_STAINED_GLASS]: "זכוכית טורקיז",
+  [BLOCK_REGISTRY.BROWN_STAINED_GLASS]: "זכוכית חומה",
+  [BLOCK_REGISTRY.BLUE_STAINED_GLASS]: "זכוכית כחולה",
+  [BLOCK_REGISTRY.BLACK_STAINED_GLASS]: "זכוכית שחורה",
+  [BLOCK_REGISTRY.SANDSTONE]: "אבן חול",
+  [BLOCK_REGISTRY.DIAMOND_ORE]: "עפרת יהלום",
+  [BLOCK_REGISTRY.DIAMOND_BLOCK]: "בלוק יהלום",
+  [BLOCK_REGISTRY.LAPIS_ORE]: "עפרת לפיס",
+  [BLOCK_REGISTRY.LAPIS_BLOCK]: "בלוק לפיס",
+  [BLOCK_REGISTRY.MOSSY_STONEBRICKS]: "לבני אבן טחובות",
+  [BLOCK_REGISTRY.WHITE_CONCRETE]: "בטון לבן",
+  [BLOCK_REGISTRY.YELLOW_CONCRETE]: "בטון צהוב",
+  [BLOCK_REGISTRY.RED_CONCRETE]: "בטון אדום",
+  [BLOCK_REGISTRY.PURPLE_CONCRETE]: "בטון סגול",
+  [BLOCK_REGISTRY.PINK_CONCRETE]: "בטון ורוד",
+  [BLOCK_REGISTRY.ORANGE_CONCRETE]: "בטון כתום",
+  [BLOCK_REGISTRY.MAGENTA_CONCRETE]: "בטון מג'נטה",
+  [BLOCK_REGISTRY.LIME_CONCRETE]: "בטון ליים",
+  [BLOCK_REGISTRY.LIGHT_BLUE_CONCRETE]: "בטון תכלת",
+  [BLOCK_REGISTRY.GREEN_CONCRETE]: "בטון ירוק",
+  [BLOCK_REGISTRY.GRAY_CONCRETE]: "בטון אפור",
+  [BLOCK_REGISTRY.CYAN_CONCRETE]: "בטון טורקיז",
+  [BLOCK_REGISTRY.BROWN_CONCRETE]: "בטון חום",
+  [BLOCK_REGISTRY.BLUE_CONCRETE]: "בטון כחול",
+  [BLOCK_REGISTRY.BLACK_CONCRETE]: "בטון שחור",
+  [BLOCK_REGISTRY.PUMPKIN]: "דלעת",
+  [BLOCK_REGISTRY.ICE]: "קרח",
+  [BLOCK_REGISTRY.GRASS_YELLOW]: "דשא יבש",
+  [BLOCK_REGISTRY.GRASS_PLANT_YELLOW]: "עשב יבש",
+  [BLOCK_REGISTRY.LEAVES_YELLOW]: "עלים צהובים",
+  [BLOCK_REGISTRY.GRASS_PLANT]: "עשב",
+  [BLOCK_REGISTRY.LADDER]: "סולם",
+  [BLOCK_REGISTRY.TORCH]: "לפיד",
+  [BLOCK_REGISTRY.CHEST]: "תיבה"
 };
 
 function isValidDragPayload(
@@ -149,8 +250,47 @@ function isValidDragPayload(
 }
 
 const ITEM_HUD: Record<number, string> = {
-  [ITEM_REGISTRY.STICK]: "מקל"
+  [ITEM_REGISTRY.STICK]: "מקל",
+  [ITEM_REGISTRY.PLANKS]: "לוחות",
+  [ITEM_REGISTRY.WOODEN_PICKAXE]: "מכוש עץ",
+  [ITEM_REGISTRY.STONE_PICKAXE]: "מכוש אבן",
+  [ITEM_REGISTRY.IRON_PICKAXE]: "מכוש ברזל",
+  [ITEM_REGISTRY.DIAMOND_PICKAXE]: "מכוש יהלום",
+  [ITEM_REGISTRY.WOODEN_AXE]: "גרזן עץ",
+  [ITEM_REGISTRY.STONE_AXE]: "גרזן אבן",
+  [ITEM_REGISTRY.IRON_AXE]: "גרזן ברזל",
+  [ITEM_REGISTRY.WOODEN_SHOVEL]: "את עץ",
+  [ITEM_REGISTRY.STONE_SHOVEL]: "את אבן",
+  [ITEM_REGISTRY.DIAMOND_AXE]: "גרזן יהלום",
+  [ITEM_REGISTRY.SWIFT_PICKAXE]: "מכוש מהיר",
+  [ITEM_REGISTRY.BUCKET]: "דלי",
+  [ITEM_REGISTRY.WATER_BUCKET]: "דלי מים",
+  [ITEM_REGISTRY.IRON_INGOT]: "מטיל ברזל",
+  [ITEM_REGISTRY.GOLD_INGOT]: "מטיל זהב",
+  [ITEM_REGISTRY.DIAMOND]: "יהלום",
+  [ITEM_REGISTRY.COAL]: "פחם",
+  [ITEM_REGISTRY.FLINT]: "צור",
+  [ITEM_REGISTRY.WHEAT]: "חיטה",
+  [ITEM_REGISTRY.BREAD]: "לחם",
+  [ITEM_REGISTRY.APPLE]: "תפוח",
+  [ITEM_REGISTRY.FLINT_AND_STEEL]: "מצית צור וברזל",
+  [ITEM_REGISTRY.HEAVY_SHIELD]: "מגן כבד",
+  [ITEM_REGISTRY.FEATHER_FALLING_TALISMAN]: "קמע נפילת נוצה",
+  [ITEM_REGISTRY.HELIOS_MEDALLION]: "מדליון הליוס",
+  [ITEM_REGISTRY.HELIUM_BOOTS]: "מגפי הליום",
+  [ITEM_REGISTRY.GLOW_TALISMAN]: "קמע זוהר"
 };
+
+function equipmentHas(slots: ItemSlot[], itemId: number): boolean {
+  return slots.some((s) => s.itemId === itemId && s.count > 0);
+}
+
+function vecDist(a: readonly number[], b: readonly number[]): number {
+  const dx = a[0] - b[0];
+  const dy = a[1] - b[1];
+  const dz = a[2] - b[2];
+  return Math.sqrt(dx * dx + dy * dy + dz * dz);
+}
 
 /** Minecraft-like slot: raised inner bevel, dark rim. */
 function toolDurabilityBar(itemId: number, durability?: number): JSX.Element | null {
@@ -179,61 +319,119 @@ function mcSlotClass(selected: boolean): string {
 
 /** Served from apps/web/public/minecraft-assets (copied from source packs). */
 const MC_TEX = {
-  grassTop: "/minecraft-assets/grass_block_top.png",
-  grassSide: "/minecraft-assets/grass_block_side.png",
-  dirt: "/minecraft-assets/dirt.png",
-  stone: "/minecraft-assets/stone.png",
-  oakLog: "/minecraft-assets/oak_log.png",
-  oakLogTop: "/minecraft-assets/oak_log_top.png",
-  oakLeaves: "/minecraft-assets/oak_leaves.png",
-  birchLog: "/minecraft-assets/birch_log.png",
-  birchLogTop: "/minecraft-assets/birch_log_top.png",
-  birchPlanks: "/minecraft-assets/birch_planks.png",
-  birchLeaves: "/minecraft-assets/birch_leaves.png",
-  spruceLog: "/minecraft-assets/spruce_log.png",
-  spruceLogTop: "/minecraft-assets/spruce_log_top.png",
-  sprucePlanks: "/minecraft-assets/spruce_planks.png",
-  spruceLeaves: "/minecraft-assets/spruce_leaves.png",
-  sand: "/minecraft-assets/sand.png",
-  waterStill: "/minecraft-assets/water_still.png",
-  glass: "/minecraft-assets/glass.png",
-  cobblestone: "/minecraft-assets/cobblestone.png",
-  oakPlanks: "/minecraft-assets/oak_planks.png",
-  sapling: "/minecraft-assets/oak_sapling.png",
-  gravel: "/minecraft-assets/gravel.png",
-  goldOre: "/minecraft-assets/gold_ore.png",
-  ironOre: "/minecraft-assets/iron_ore.png",
-  coalOre: "/minecraft-assets/coal_ore.png",
-  sponge: "/minecraft-assets/sponge.png",
-  redWool: "/minecraft-assets/red_wool.png",
-  orangeWool: "/minecraft-assets/orange_wool.png",
-  yellowWool: "/minecraft-assets/yellow_wool.png",
-  limeWool: "/minecraft-assets/lime_wool.png",
-  greenWool: "/minecraft-assets/green_wool.png",
-  cyanWool: "/minecraft-assets/cyan_wool.png",
-  blueWool: "/minecraft-assets/blue_wool.png",
-  purpleWool: "/minecraft-assets/purple_wool.png",
-  magentaWool: "/minecraft-assets/magenta_wool.png",
-  pinkWool: "/minecraft-assets/pink_wool.png",
-  blackWool: "/minecraft-assets/black_wool.png",
-  grayWool: "/minecraft-assets/gray_wool.png",
-  whiteWool: "/minecraft-assets/white_wool.png",
-  dandelion: "/minecraft-assets/dandelion.png",
-  rose: "/minecraft-assets/red_flower.png",
-  brownMushroom: "/minecraft-assets/brown_mushroom.png",
-  redMushroom: "/minecraft-assets/red_mushroom.png",
-  goldBlock: "/minecraft-assets/gold_block.png",
-  ironBlock: "/minecraft-assets/iron_block.png",
-  smoothStone: "/minecraft-assets/smooth_stone.png",
-  smoothStoneSlabSide: "/minecraft-assets/smooth_stone_slab_side.png",
-  bricks: "/minecraft-assets/bricks.png",
-  tntTop: "/minecraft-assets/tnt_top.png",
-  tntBottom: "/minecraft-assets/tnt_bottom.png",
-  tntSide: "/minecraft-assets/tnt_side.png",
-  bookshelf: "/minecraft-assets/bookshelf.png",
-  mossyCobblestone: "/minecraft-assets/mossy_cobblestone.png",
-  obsidian: "/minecraft-assets/obsidian.png",
-  bedrock: "/minecraft-assets/bedrock.png"
+  grassTop: "/minecraft-assets/block/grass_block_top.png",
+  grassSide: "/minecraft-assets/block/grass_block_side.png",
+  dirt: "/minecraft-assets/block/dirt.png",
+  stone: "/minecraft-assets/block/stone.png",
+  oakLog: "/minecraft-assets/block/oak_log.png",
+  oakLogTop: "/minecraft-assets/block/oak_log_top.png",
+  oakLeaves: "/minecraft-assets/block/oak_leaves.png",
+  birchLog: "/minecraft-assets/block/birch_log.png",
+  birchLogTop: "/minecraft-assets/block/birch_log_top.png",
+  birchPlanks: "/minecraft-assets/block/birch_planks.png",
+  birchLeaves: "/minecraft-assets/block/birch_leaves.png",
+  spruceLog: "/minecraft-assets/block/spruce_log.png",
+  spruceLogTop: "/minecraft-assets/block/spruce_log_top.png",
+  sprucePlanks: "/minecraft-assets/block/spruce_planks.png",
+  spruceLeaves: "/minecraft-assets/block/spruce_leaves.png",
+  sand: "/minecraft-assets/block/sand.png",
+  waterStill: "/minecraft-assets/block/water_still.png",
+  glass: "/minecraft-assets/block/glass.png",
+  cobblestone: "/minecraft-assets/block/cobblestone.png",
+  oakPlanks: "/minecraft-assets/block/oak_planks.png",
+  sapling: "/minecraft-assets/block/oak_sapling.png",
+  gravel: "/minecraft-assets/block/gravel.png",
+  goldOre: "/minecraft-assets/block/gold_ore.png",
+  ironOre: "/minecraft-assets/block/iron_ore.png",
+  coalOre: "/minecraft-assets/block/coal_ore.png",
+  sponge: "/minecraft-assets/block/sponge.png",
+  redWool: "/minecraft-assets/block/red_wool.png",
+  orangeWool: "/minecraft-assets/block/orange_wool.png",
+  yellowWool: "/minecraft-assets/block/yellow_wool.png",
+  limeWool: "/minecraft-assets/block/lime_wool.png",
+  greenWool: "/minecraft-assets/block/green_wool.png",
+  cyanWool: "/minecraft-assets/block/cyan_wool.png",
+  blueWool: "/minecraft-assets/block/blue_wool.png",
+  purpleWool: "/minecraft-assets/block/purple_wool.png",
+  magentaWool: "/minecraft-assets/block/magenta_wool.png",
+  pinkWool: "/minecraft-assets/block/pink_wool.png",
+  blackWool: "/minecraft-assets/block/black_wool.png",
+  grayWool: "/minecraft-assets/block/gray_wool.png",
+  whiteWool: "/minecraft-assets/block/white_wool.png",
+  dandelion: "/minecraft-assets/block/dandelion.png",
+  rose: "/minecraft-assets/block/red_flower.png",
+  brownMushroom: "/minecraft-assets/block/brown_mushroom.png",
+  redMushroom: "/minecraft-assets/block/red_mushroom.png",
+  goldBlock: "/minecraft-assets/block/gold_block.png",
+  ironBlock: "/minecraft-assets/block/iron_block.png",
+  smoothStone: "/minecraft-assets/block/smooth_stone.png",
+  smoothStoneSlabSide: "/minecraft-assets/block/smooth_stone_slab_side.png",
+  bricks: "/minecraft-assets/block/bricks.png",
+  tntTop: "/minecraft-assets/block/tnt_top.png",
+  tntBottom: "/minecraft-assets/block/tnt_bottom.png",
+  tntSide: "/minecraft-assets/block/tnt_side.png",
+  bookshelf: "/minecraft-assets/block/bookshelf.png",
+  mossyCobblestone: "/minecraft-assets/block/mossy_cobblestone.png",
+  obsidian: "/minecraft-assets/block/obsidian.png",
+  bedrock: "/minecraft-assets/block/bedrock.png",
+  grassSnow: "/minecraft-assets/block/grass_snow.png",
+  snow: "/minecraft-assets/block/snow.png",
+  cactusTop: "/minecraft-assets/block/cactus_top.png",
+  cactusBottom: "/minecraft-assets/block/cactus_bottom.png",
+  cactusSide: "/minecraft-assets/block/cactus_side.png",
+  deadBush: "/minecraft-assets/block/dead_bush.png",
+  craftingTableTop: "/minecraft-assets/block/crafting_table_top.png",
+  craftingTableSide: "/minecraft-assets/block/crafting_table_side.png",
+  stoneBrick: "/minecraft-assets/block/stonebrick.png",
+  brownWool: "/minecraft-assets/block/brown_wool.png",
+  lightBlueWool: "/minecraft-assets/block/light_blue_wool.png",
+  whiteStainedGlass: "/minecraft-assets/block/white_stained_glass.png",
+  yellowStainedGlass: "/minecraft-assets/block/yellow_stained_glass.png",
+  redStainedGlass: "/minecraft-assets/block/red_stained_glass.png",
+  purpleStainedGlass: "/minecraft-assets/block/purple_stained_glass.png",
+  pinkStainedGlass: "/minecraft-assets/block/pink_stained_glass.png",
+  orangeStainedGlass: "/minecraft-assets/block/orange_stained_glass.png",
+  magentaStainedGlass: "/minecraft-assets/block/magenta_stained_glass.png",
+  limeStainedGlass: "/minecraft-assets/block/lime_stained_glass.png",
+  lightBlueStainedGlass: "/minecraft-assets/block/light_blue_stained_glass.png",
+  greenStainedGlass: "/minecraft-assets/block/green_stained_glass.png",
+  grayStainedGlass: "/minecraft-assets/block/gray_stained_glass.png",
+  cyanStainedGlass: "/minecraft-assets/block/cyan_stained_glass.png",
+  brownStainedGlass: "/minecraft-assets/block/brown_stained_glass.png",
+  blueStainedGlass: "/minecraft-assets/block/blue_stained_glass.png",
+  blackStainedGlass: "/minecraft-assets/block/black_stained_glass.png",
+  sandstone: "/minecraft-assets/block/sandstone.png",
+  diamondOre: "/minecraft-assets/block/diamond_ore.png",
+  diamondBlock: "/minecraft-assets/block/diamond_block.png",
+  lapisOre: "/minecraft-assets/block/lapis_ore.png",
+  lapisBlock: "/minecraft-assets/block/lapis_block.png",
+  mossyStonebricks: "/minecraft-assets/block/mossy_stone_bricks.png",
+  whiteConcrete: "/minecraft-assets/block/white_concrete.png",
+  yellowConcrete: "/minecraft-assets/block/yellow_concrete.png",
+  redConcrete: "/minecraft-assets/block/red_concrete.png",
+  purpleConcrete: "/minecraft-assets/block/purple_concrete.png",
+  pinkConcrete: "/minecraft-assets/block/pink_concrete.png",
+  orangeConcrete: "/minecraft-assets/block/orange_concrete.png",
+  magentaConcrete: "/minecraft-assets/block/magenta_concrete.png",
+  limeConcrete: "/minecraft-assets/block/lime_concrete.png",
+  lightBlueConcrete: "/minecraft-assets/block/light_blue_concrete.png",
+  greenConcrete: "/minecraft-assets/block/green_concrete.png",
+  grayConcrete: "/minecraft-assets/block/gray_concrete.png",
+  cyanConcrete: "/minecraft-assets/block/cyan_concrete.png",
+  brownConcrete: "/minecraft-assets/block/brown_concrete.png",
+  blueConcrete: "/minecraft-assets/block/blue_concrete.png",
+  blackConcrete: "/minecraft-assets/block/black_concrete.png",
+  pumpkinTop: "/minecraft-assets/block/pumpkin_top.png",
+  pumpkinSide: "/minecraft-assets/block/pumpkin_side.png",
+  ice: "/minecraft-assets/block/ice.png",
+  grassYellowTop: "/minecraft-assets/block/grass_yellow_top.png",
+  grassYellowSide: "/minecraft-assets/block/grass_yellow_side.png",
+  grassPlantYellow: "/minecraft-assets/block/grass_plant_yellow.png",
+  leavesYellow: "/minecraft-assets/block/leaves_yellow.png",
+  grassPlant: "/minecraft-assets/block/grass_plant.png",
+  ladder: "/minecraft-assets/block/ladder.png",
+  torch: "/minecraft-assets/block/torch.png",
+  chest: "/minecraft-assets/block/chest.png"
 } as const;
 
 /** Item-style icon per block for the hotbar (same assets as terrain). */
@@ -245,105 +443,109 @@ const BLOCK_HOTBAR_ICON: Record<number, string> = (() => {
   return m;
 })();
 
-function registerMcTerrainMaterials(noa: {
-  registry: { registerMaterial: (name: string, opts: Record<string, unknown>) => void };
-}): void {
+function registerMcTerrainMaterials(
+  noa: {
+    registry: { registerMaterial: (name: string, opts: Record<string, unknown>) => void };
+    rendering: {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      getScene: () => any;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      makeStandardMaterial: (name: string) => any;
+    };
+  },
+  Babylon: typeof import("@babylonjs/core")
+): void {
   const reg = (name: string, textureURL: string, extra: Record<string, unknown> = {}) => {
     noa.registry.registerMaterial(name, { textureURL, ...extra });
   };
   for (const m of MC_MATERIAL_ENTRIES) {
     const url = MC_TEX[m.textureKey];
+    if (m.name === "mc_water") {
+      const scene = noa.rendering.getScene();
+      const tex = new Babylon.Texture(
+        url,
+        scene,
+        true,
+        false,
+        Babylon.Texture.NEAREST_SAMPLINGMODE
+      );
+      tex.hasAlpha = true;
+      const mat = noa.rendering.makeStandardMaterial("mc_water_render");
+      mat.diffuseTexture = tex;
+      mat.diffuseColor?.set(0.58, 0.78, 1);
+      mat.ambientColor?.set(0.58, 0.78, 1);
+      mat.specularColor?.set(0, 0, 0);
+      mat.alpha = 0.62;
+      mat.backFaceCulling = false;
+      mat.freeze?.();
+      noa.registry.registerMaterial(m.name, {
+        color: [0.35, 0.55, 0.9, 0.42],
+        renderMaterial: mat,
+        texHasAlpha: true
+      });
+      continue;
+    }
     reg(m.name, url, "texHasAlpha" in m && m.texHasAlpha ? { texHasAlpha: true } : {});
   }
 }
 
-function hash3(x: number, y: number, z: number, seed: number): number {
-  let h = seed | 0;
-  h = Math.imul(h ^ (x | 0), 0x9e3779b1);
-  h = Math.imul(h ^ (y | 0), 0x85ebca6b);
-  h = Math.imul(h ^ (z | 0), 0xc2b2ae35);
-  h ^= h >>> 16;
-  return (h >>> 0) / 0xffffffff;
-}
-
-function smoothNoise(x: number, z: number, seed: number): number {
-  const xi = Math.floor(x);
-  const zi = Math.floor(z);
-  const xf = x - xi;
-  const zf = z - zi;
-  const h00 = hash3(xi, 0, zi, seed);
-  const h10 = hash3(xi + 1, 0, zi, seed);
-  const h01 = hash3(xi, 0, zi + 1, seed);
-  const h11 = hash3(xi + 1, 0, zi + 1, seed);
-  const fx = xf * xf * (3 - 2 * xf);
-  const fz = zf * zf * (3 - 2 * zf);
-  const a = h00 * (1 - fx) + h10 * fx;
-  const b = h01 * (1 - fx) + h11 * fx;
-  return a * (1 - fz) + b * fz;
-}
-
-function columnHeight(x: number, z: number, seed: number): number {
-  const base = 8;
-  const amp = 4;
-  const heightF =
-    smoothNoise(x / 16, z / 16, seed) * amp +
-    smoothNoise(x / 4, z / 4, seed ^ 0x1234) * 1.2;
-  return Math.floor(base + heightF);
-}
-
-function surfaceVoxelID(x: number, z: number, seed: number): number {
-  const patch = smoothNoise(x / 10, z / 10, seed ^ 0x53465246);
-  if (patch < 0.07) return BLOCK_REGISTRY.GRAVEL;
-  if (patch < 0.16) return BLOCK_REGISTRY.SAND;
-  return BLOCK_REGISTRY.GRASS;
-}
-
-function undergroundVoxelID(x: number, y: number, z: number, seed: number): number {
-  if (hash3(x, y, z, seed ^ 0x434f414c) < 0.013) {
-    return BLOCK_REGISTRY.COAL_ORE;
+function recipeIngredientDisplay(
+  ingredient: RecipeIngredient
+): { readonly icon: string; readonly label: string } {
+  if (ingredient.kind === "block") {
+    return {
+      icon: BLOCK_HOTBAR_ICON[ingredient.blockId],
+      label: BLOCK_HUD[ingredient.blockId] ?? String(ingredient.blockId)
+    };
   }
-  if (y < 10 && hash3(x, y, z, seed ^ 0x49524f4e) < 0.008) {
-    return BLOCK_REGISTRY.IRON_ORE;
+  if (ingredient.kind === "item") {
+    return {
+      icon: ITEM_ICON[ingredient.itemId],
+      label: ITEM_HUD[ingredient.itemId] ?? String(ingredient.itemId)
+    };
   }
-  if (y < 2 && hash3(x, y, z, seed ^ 0x474f4c44) < 0.004) {
-    return BLOCK_REGISTRY.GOLD_ORE;
+  if (ingredient.tag === "wood_logs") {
+    return { icon: MC_TEX.oakLog, label: "גזע עץ" };
   }
-  return BLOCK_REGISTRY.STONE;
+  if (ingredient.tag === "leaves") {
+    return { icon: BLOCK_HOTBAR_ICON[BLOCK_REGISTRY.LEAVES], label: "עלים" };
+  }
+  return { icon: BLOCK_HOTBAR_ICON[BLOCK_REGISTRY.OAK_PLANKS], label: "לוחות עץ" };
 }
 
-function surfaceDecorationVoxelID(x: number, z: number, seed: number): number {
-  const n = hash3(x, 2, z, seed ^ 0x464c5752);
-  if (n < 0.006) return BLOCK_REGISTRY.SAPLING;
-  if (n < 0.020) return BLOCK_REGISTRY.DANDELION;
-  if (n < 0.032) return BLOCK_REGISTRY.ROSE;
-  if (n < 0.040) return BLOCK_REGISTRY.BROWN_MUSHROOM;
-  if (n < 0.047) return BLOCK_REGISTRY.RED_MUSHROOM;
-  return BLOCK_REGISTRY.AIR;
+function recipeOutputDisplay(recipe: Recipe): {
+  readonly icon: string;
+  readonly label: string;
+} {
+  const { output } = recipe;
+  if (output.kind === "block") {
+    return {
+      icon: BLOCK_HOTBAR_ICON[output.id],
+      label: BLOCK_HUD[output.id] ?? String(output.id)
+    };
+  }
+  return {
+    icon: ITEM_ICON[output.id],
+    label: ITEM_HUD[output.id] ?? String(output.id)
+  };
 }
 
-/** Tiny 2×2 diagram cell for the in-game recipe book (not interactive). */
-function recipeDiagramCell(
+function recipeBookCell(
   key: string,
-  kind: "empty" | "log" | "planks"
+  ingredient: RecipeIngredient | null
 ): JSX.Element {
-  const inner =
-    kind === "log" ? (
-      <img
-        src={MC_TEX.oakLog}
-        alt=""
-        className="h-6 w-6"
-        style={{ imageRendering: "pixelated" }}
-      />
-    ) : kind === "planks" ? (
-      <img
-        src={BLOCK_HOTBAR_ICON[BLOCK_REGISTRY.OAK_PLANKS]}
-        alt=""
-        className="h-6 w-6"
-        style={{ imageRendering: "pixelated" }}
-      />
-    ) : (
-      <div className="h-6 w-6 rounded-sm bg-black/20" aria-hidden />
-    );
+  const display = ingredient ? recipeIngredientDisplay(ingredient) : null;
+  const inner = display ? (
+    <img
+      src={display.icon}
+      alt=""
+      title={display.label}
+      className="h-6 w-6"
+      style={{ imageRendering: "pixelated" }}
+    />
+  ) : (
+    <div className="h-6 w-6 rounded-sm bg-black/20" aria-hidden />
+  );
   return (
     <div
       key={key}
@@ -354,47 +556,31 @@ function recipeDiagramCell(
   );
 }
 
-/**
- * Mirror of apps/minecraft-server/src/world.ts proceduralVoxelID. Kept
- * client-side so noa can request blocks synchronously without a
- * round-trip per chunk.
- */
-function proceduralVoxelID(x: number, y: number, z: number, seed: number): number {
-  if (y <= -28) return BLOCK_REGISTRY.BEDROCK;
-
-  const height = columnHeight(x, z, seed);
-  if (y <= height) {
-    const surface = surfaceVoxelID(x, z, seed);
-    if (y === height) return surface;
-    if (y > height - 3) {
-      return surface === BLOCK_REGISTRY.GRASS ? BLOCK_REGISTRY.DIRT : surface;
-    }
-    return undergroundVoxelID(x, y, z, seed);
+function recipeBookInputGrid(recipe: Recipe): JSX.Element {
+  if (recipe.kind === "shaped") {
+    return (
+      <div
+        className="grid gap-0.5"
+        style={{ gridTemplateColumns: `repeat(${recipe.width}, 2rem)` }}
+      >
+        {recipe.pattern.map((ingredient, i) =>
+          recipeBookCell(`${recipe.key}-${i}`, ingredient)
+        )}
+      </div>
+    );
   }
-  for (let dx = -2; dx <= 2; dx++) {
-    for (let dz = -2; dz <= 2; dz++) {
-      const cx = x + dx;
-      const cz = z + dz;
-      const ch = columnHeight(cx, cz, seed);
-      if (hash3(cx, 0, cz, seed ^ 0xBEEF) < 0.0005) {
-        const h = hash3(cx, 1, cz, seed ^ 0xCAFE);
-        const heightVar = Math.floor(h * 5) - 2;
-        const trunkHeight = 7 + heightVar;
-        const trunkTop = ch + trunkHeight;
-        if (y <= trunkTop && dx === 0 && dz === 0) return BLOCK_REGISTRY.WOOD;
-        const dy = y - trunkTop;
-        const dist2 = dx * dx + dy * dy + dz * dz;
-        if (dist2 <= 9 && y > ch) return BLOCK_REGISTRY.LEAVES;
-      }
-    }
-  }
-  if (
-    y === height + 1 &&
-    surfaceVoxelID(x, z, seed) === BLOCK_REGISTRY.GRASS
-  ) {
-    return surfaceDecorationVoxelID(x, z, seed);
-  }
-  return BLOCK_REGISTRY.AIR;
+  return (
+    <div
+      className="grid gap-0.5"
+      style={{
+        gridTemplateColumns: `repeat(${recipe.inputs.length > 4 ? 3 : 2}, 2rem)`
+      }}
+    >
+      {recipe.inputs.map((ingredient, i) =>
+        recipeBookCell(`${recipe.key}-${i}`, ingredient)
+      )}
+    </div>
+  );
 }
 
 function makePlantSpriteMesh(noa: any, Babylon: any, url: string, name: string) {
@@ -432,10 +618,25 @@ export interface MinecraftClientProps {
   inventorySlots: HotbarSlot[];
   /** Survival: main item storage (27). Creative: may be empty. */
   itemInventorySlots: ItemSlot[];
-  /** Survival: 2×2 crafting grid from server. */
+  /** Survival: equipment slots [head, chest, legs, feet]. */
+  equipmentSlots: ItemSlot[];
+  /** Survival: 3x3 backing grid from server; normal inventory exposes top-left 2x2. */
   craftingGridSlots: CraftingGridSlot[];
+  /** Survival: 2 personal grid, 3 crafting-table grid. */
+  craftingGridWidth: CraftingGridWidth;
+  /** Survival: authoritative health/hunger state. */
+  vitals: PlayerVitals;
   onInventoryMove: (req: InventoryMoveReq) => void;
   onCraft: (recipeId: string) => void;
+  onOpenCraftingTable: (pos: Vec3) => Promise<SimpleAck>;
+  onCloseCraftingTable: () => Promise<SimpleAck>;
+  activeChest: { pos: Vec3; slots: ChestSlot[] } | null;
+  onOpenChest: (pos: Vec3) => Promise<OpenChestAck>;
+  onCloseChest: () => Promise<SimpleAck>;
+  onChestMove: (req: InventoryMoveReq) => void;
+  onEatStart: (hotbarIndex: number) => Promise<EatStartAck>;
+  onEatFinish: (hotbarIndex: number) => Promise<SimpleAck>;
+  onEatCancel: () => Promise<SimpleAck>;
   onInput: (input: InputReq) => void;
   onBlockPlace: (pos: Vec3, blockId: number) => void;
   onBlockBreak: (pos: Vec3) => void;
@@ -443,10 +644,17 @@ export interface MinecraftClientProps {
   onBreakStart: (pos: Vec3) => Promise<BreakStartAck>;
   onBreakFinish: (pos: Vec3) => Promise<SimpleAck>;
   onBreakCancel: (pos: Vec3) => void;
+  onArmSwing: () => void;
+  onFallImpact: (velocityY: number) => Promise<SimpleAck>;
+  onPlayerAttack: (targetUserId: string) => Promise<SimpleAck>;
+  onIgniteTnt: (pos: Vec3) => Promise<SimpleAck>;
   /** Survival: server validates and spawns a world drop. */
   onDropHotbarSlot?: (hotbarIndex: number) => void;
   registerSnapshotListener: (cb: (snap: RoomSnapshot) => void) => () => void;
   registerBlockDeltaListener: (cb: (delta: BlockDelta) => void) => () => void;
+  registerRoomEventListener: (cb: (ev: RoomEvent) => void) => () => void;
+  registerArmSwingListener: (cb: (payload: { userId: string }) => void) => () => void;
+  registerPlayerDamageListener: (cb: (payload: PlayerDamagePayload) => void) => () => void;
   /** World stacks present on join (survival). */
   initialWorldDrops: WorldDrop[];
   registerWorldDropSpawned: (cb: (drop: WorldDrop) => void) => () => void;
@@ -468,18 +676,37 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     gameMode,
     inventorySlots,
     itemInventorySlots,
+    equipmentSlots,
     craftingGridSlots,
+    craftingGridWidth,
+    vitals,
     onInventoryMove,
     onCraft,
+    onOpenCraftingTable,
+    onCloseCraftingTable,
+    activeChest,
+    onOpenChest,
+    onCloseChest,
+    onChestMove,
+    onEatStart,
+    onEatFinish,
+    onEatCancel,
     onInput,
     onBlockPlace,
     onBlockBreak,
     onBreakStart,
     onBreakFinish,
     onBreakCancel,
+    onArmSwing,
+    onFallImpact,
+    onPlayerAttack,
+    onIgniteTnt,
     onDropHotbarSlot,
     registerSnapshotListener,
     registerBlockDeltaListener,
+    registerRoomEventListener,
+    registerArmSwingListener,
+    registerPlayerDamageListener,
     initialWorldDrops,
     registerWorldDropSpawned,
     registerWorldDropRemoved,
@@ -491,6 +718,13 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const [controlsHintDismissed, setControlsHintDismissed] = useState(false);
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [recipeBookOpen, setRecipeBookOpen] = useState(false);
+  const [localVitals, setLocalVitals] = useState<PlayerVitals>(vitals);
+  const [damageFlash, setDamageFlash] = useState(0);
+  const [blastFlash, setBlastFlash] = useState(0);
+  const [weatherKind, setWeatherKind] = useState<PrecipitationKind>("clear");
+  const [debugInfo, setDebugInfo] = useState<{ fps: number; pos: Vec3 } | null>(null);
+  const [isDead, setIsDead] = useState(false);
+  const showDebugRef = useRef(false);
   const hostRef = useRef<HTMLDivElement | null>(null);
   // noa-engine has loose .d.ts typings; lock to any so we don't fight them.
   const noaRef = useRef<unknown>(null);
@@ -500,20 +734,38 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const onBreakStartRef = useRef(onBreakStart);
   const onBreakFinishRef = useRef(onBreakFinish);
   const onBreakCancelRef = useRef(onBreakCancel);
+  const onArmSwingRef = useRef(onArmSwing);
+  const onFallImpactRef = useRef(onFallImpact);
+  const onPlayerAttackRef = useRef(onPlayerAttack);
+  const onIgniteTntRef = useRef(onIgniteTnt);
+  const onEatStartRef = useRef(onEatStart);
+  const onEatFinishRef = useRef(onEatFinish);
+  const onEatCancelRef = useRef(onEatCancel);
   const activeMiningRef = useRef<{
     pos: Vec3;
     durationMs: number;
     startedAt: number;
   } | null>(null);
+  const activeEatingRef = useRef<{
+    hotbarIndex: number;
+    timer: number | null;
+  } | null>(null);
   const miningAnimRef = useRef<number | null>(null);
   const breakCrackRef = useRef<BreakCrackOverlay | null>(null);
+  const heldItemViewRef = useRef<FirstPersonHeldItemView | null>(null);
+  const audioManagerRef = useRef<AudioManager | null>(null);
   const lastBreakStartAtRef = useRef(0);
   const lastBreakFinishAtRef = useRef(0);
   const breakFinishSentRef = useRef(false);
   const BREAK_START_MIN_MS = 100;
   const BREAK_FINISH_MIN_MS = 100;
   const pausedRef = useRef(paused);
+  const isDeadRef = useRef(isDead);
   const gameModeRef = useRef<GameMode>(gameMode);
+  const inventoryOpenRef = useRef(inventoryOpen);
+  const craftingGridWidthRef = useRef<CraftingGridWidth>(craftingGridWidth);
+  const activeChestRef = useRef(activeChest);
+  const equipmentSlotsRef = useRef<ItemSlot[]>(equipmentSlots);
   const inventoryRef = useRef<HotbarSlot[]>(inventorySlots);
   const remoteEntitiesRef = useRef(new Map<string, number>());
   const selectedBlockRef = useRef<number>(BLOCK_REGISTRY.GRASS);
@@ -521,10 +773,17 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const myUserIdRef = useRef<string | null>(myUserId);
   const registerSnapshotListenerRef = useRef(registerSnapshotListener);
   const registerBlockDeltaListenerRef = useRef(registerBlockDeltaListener);
+  const registerRoomEventListenerRef = useRef(registerRoomEventListener);
+  const registerArmSwingListenerRef = useRef(registerArmSwingListener);
+  const registerPlayerDamageListenerRef = useRef(registerPlayerDamageListener);
   const registerWorldDropSpawnedRef = useRef(registerWorldDropSpawned);
   const registerWorldDropRemovedRef = useRef(registerWorldDropRemoved);
   const registerWorldDropUpdatedRef = useRef(registerWorldDropUpdated);
   const onDropHotbarSlotRef = useRef(onDropHotbarSlot);
+  const onOpenCraftingTableRef = useRef(onOpenCraftingTable);
+  const onCloseCraftingTableRef = useRef(onCloseCraftingTable);
+  const onOpenChestRef = useRef(onOpenChest);
+  const onCloseChestRef = useRef(onCloseChest);
 
   onInputRef.current = onInput;
   onPlaceRef.current = onBlockPlace;
@@ -532,22 +791,41 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   onBreakStartRef.current = onBreakStart;
   onBreakFinishRef.current = onBreakFinish;
   onBreakCancelRef.current = onBreakCancel;
+  onArmSwingRef.current = onArmSwing;
+  onFallImpactRef.current = onFallImpact;
+  onPlayerAttackRef.current = onPlayerAttack;
+  onIgniteTntRef.current = onIgniteTnt;
+  onEatStartRef.current = onEatStart;
+  onEatFinishRef.current = onEatFinish;
+  onEatCancelRef.current = onEatCancel;
   pausedRef.current = paused;
+  isDeadRef.current = isDead;
   gameModeRef.current = gameMode;
+  inventoryOpenRef.current = inventoryOpen;
+  craftingGridWidthRef.current = craftingGridWidth;
+  activeChestRef.current = activeChest;
+  equipmentSlotsRef.current = equipmentSlots;
   inventoryRef.current = inventorySlots;
   survivalSlotRef.current = survivalSlot;
   myUserIdRef.current = myUserId;
   registerSnapshotListenerRef.current = registerSnapshotListener;
   registerBlockDeltaListenerRef.current = registerBlockDeltaListener;
+  registerRoomEventListenerRef.current = registerRoomEventListener;
+  registerArmSwingListenerRef.current = registerArmSwingListener;
+  registerPlayerDamageListenerRef.current = registerPlayerDamageListener;
   registerWorldDropSpawnedRef.current = registerWorldDropSpawned;
   registerWorldDropRemovedRef.current = registerWorldDropRemoved;
   registerWorldDropUpdatedRef.current = registerWorldDropUpdated;
   onDropHotbarSlotRef.current = onDropHotbarSlot;
+  onOpenCraftingTableRef.current = onOpenCraftingTable;
+  onCloseCraftingTableRef.current = onCloseCraftingTable;
+  onOpenChestRef.current = onOpenChest;
+  onCloseChestRef.current = onCloseChest;
 
   const selectCreativeBlock = (blockId: number): void => {
     if (!PLACEABLE_BLOCK_IDS.includes(blockId)) return;
     selectedBlockRef.current = blockId;
-    const idx = HOTBAR.indexOf(blockId);
+    const idx = visibleCreativeHotbarBlocks(blockId).indexOf(blockId);
     if (idx >= 0) setCreativeSlotIdx(idx);
   };
 
@@ -556,8 +834,24 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   }, [inventoryOpen]);
 
   useEffect(() => {
+    setLocalVitals(vitals);
+  }, [vitals]);
+
+  function closeInventory(): void {
+    if (craftingGridWidthRef.current === 3) {
+      void onCloseCraftingTableRef.current();
+    }
+    if (activeChestRef.current) {
+      void onCloseChestRef.current();
+    }
+    setInventoryOpen(false);
+  }
+
+  useEffect(() => {
     if (gameMode !== "creative") return;
-    const idx = HOTBAR.indexOf(selectedBlockRef.current as (typeof HOTBAR)[number]);
+    const idx = visibleCreativeHotbarBlocks(selectedBlockRef.current).indexOf(
+      selectedBlockRef.current
+    );
     if (idx >= 0) setCreativeSlotIdx(idx);
   }, [gameMode]);
 
@@ -583,8 +877,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         blockTestDistance: 8,
         domElement: hostRef.current,
         chunkSize: 16,
-        chunkAddDistance: [3, 3],
-        chunkRemoveDistance: [4, 4]
+        chunkAddDistance: [5, 4],
+        chunkRemoveDistance: [6, 5]
       } as Record<string, unknown>);
       
       // Override default ThinInstance ObjectMesher with SolidParticleSystem version 
@@ -605,28 +899,80 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       gameEl.addEventListener("pointerdown", focusGame);
       cleanupFns.push(() => gameEl.removeEventListener("pointerdown", focusGame));
 
+      const audio = new AudioManager();
+      audioManagerRef.current = audio;
+      audio.setMuted(pausedRef.current);
+      const primeAudio = (): void => audio.prime();
+      gameEl.addEventListener("pointerdown", primeAudio);
+      cleanupFns.push(() => gameEl.removeEventListener("pointerdown", primeAudio));
+      cleanupFns.push(() => {
+        audio.dispose();
+        audioManagerRef.current = null;
+      });
+
       const deltas = new Map<string, number>();
       for (const [x, y, z, id] of initialDeltas) {
         deltas.set(`${x},${y},${z}`, id);
       }
 
       const scene = noa.rendering.getScene();
+      const defaultAmbient = scene.ambientColor?.clone?.() ?? new Babylon.Color3(0, 0, 0);
+      const fullBrightAmbient = new Babylon.Color3(1, 1, 1);
+      const torchLights = new Map<string, { dispose: () => void }>();
+      const heldItemView = scene.activeCamera
+        ? new FirstPersonHeldItemView({
+            scene,
+            camera: scene.activeCamera,
+            addMeshToScene: (mesh) => noa.rendering.addMeshToScene(mesh, false)
+          })
+        : null;
+      heldItemViewRef.current = heldItemView;
+      cleanupFns.push(() => {
+        heldItemView?.dispose();
+        heldItemViewRef.current = null;
+      });
       const breakCrack = createBreakCrackOverlay(Babylon, scene, noa);
       breakCrackRef.current = breakCrack;
       cleanupFns.push(() => {
         breakCrack.dispose();
         breakCrackRef.current = null;
       });
-      registerMcTerrainMaterials(noa);
+      cleanupFns.push(() => {
+        for (const light of torchLights.values()) light.dispose();
+        torchLights.clear();
+      });
+      registerMcTerrainMaterials(noa, Babylon);
+
+      function blockCoordKey(x: number, y: number, z: number): string {
+        return `${x},${y},${z}`;
+      }
+
+      function setTorchLightAt(x: number, y: number, z: number, blockId: number): void {
+        const key = blockCoordKey(x, y, z);
+        const existing = torchLights.get(key);
+        if (existing) {
+          existing.dispose();
+          torchLights.delete(key);
+        }
+        if (blockId !== BLOCK_REGISTRY.TORCH) return;
+        const light = new Babylon.PointLight(
+          `torch-light-${key}`,
+          new Babylon.Vector3(x + 0.5, y + 0.72, z + 0.5),
+          scene
+        );
+        light.diffuse = new Babylon.Color3(1, 0.66, 0.3);
+        light.range = 10;
+        light.intensity = 1.15;
+        torchLights.set(key, light);
+      }
+
+      for (const [x, y, z, id] of initialDeltas) {
+        if (id === BLOCK_REGISTRY.TORCH) setTorchLightAt(x, y, z, id);
+      }
 
       for (const e of NOA_BLOCK_ENTRIES) {
         if (e.shape === "cube") {
-          noa.registry.registerBlock(e.id, {
-            material: e.material,
-            solid: e.solid,
-            opaque: e.opaque,
-            fluid: e.fluid
-          });
+          noa.registry.registerBlock(e.id, noaCubeBlockOptions(e));
         } else {
           noa.registry.registerBlock(e.id, {
             blockMesh: makePlantSpriteMesh(
@@ -642,7 +988,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       }
 
       noa.blockTargetIdCheck = (id: number): boolean =>
-        id !== BLOCK_REGISTRY.AIR && id !== BLOCK_REGISTRY.WATER;
+        id !== BLOCK_REGISTRY.WATER && !blockReplaceable(id);
 
       noa.world.on(
         "worldDataNeeded",
@@ -715,6 +1061,85 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       /** Per-remote-entity animation rigs, keyed by userId — parallel to remoteEntitiesRef. */
       const remoteRigs = new Map<string, AvatarRig>();
 
+      const offArmSwing = registerArmSwingListenerRef.current(({ userId }) => {
+        const rig = remoteRigs.get(userId);
+        if (rig) triggerAvatarSwing(rig);
+      });
+      cleanupFns.push(offArmSwing);
+
+      let damageFlashTimer: number | null = null;
+      const offPlayerDamage = registerPlayerDamageListenerRef.current((payload) => {
+        if (payload.userId !== myUserIdRef.current) return;
+        setLocalVitals((prev) => ({ ...prev, health: payload.health }));
+        if (payload.impulse) {
+          const phys = noa.entities.getPhysics(noa.playerEntity);
+          const velocity = phys?.body?.velocity;
+          if (velocity) {
+            velocity[0] = Number(velocity[0] ?? 0) + payload.impulse[0] * 0.08;
+            velocity[1] = Math.max(
+              Number(velocity[1] ?? 0),
+              payload.impulse[1] * 0.08
+            );
+            velocity[2] = Number(velocity[2] ?? 0) + payload.impulse[2] * 0.08;
+          }
+        }
+        audio.playHurt();
+        setDamageFlash(1);
+        if (damageFlashTimer !== null) window.clearTimeout(damageFlashTimer);
+        damageFlashTimer = window.setTimeout(() => {
+          setDamageFlash(0);
+          damageFlashTimer = null;
+        }, 180);
+      });
+      cleanupFns.push(offPlayerDamage);
+      cleanupFns.push(() => {
+        if (damageFlashTimer !== null) window.clearTimeout(damageFlashTimer);
+      });
+
+      function currentHeldItemSpec() {
+        return resolveHeldItemSpec({
+          gameMode: gameModeRef.current,
+          selectedBlockId: selectedBlockRef.current,
+          survivalSlotIndex: survivalSlotRef.current,
+          survivalSlots: inventoryRef.current,
+          blockIconById: BLOCK_HOTBAR_ICON,
+          itemIconById: ITEM_ICON,
+          flatBlockIds: PLANT_SPRITE_BLOCK_IDS,
+          airBlockId: BLOCK_REGISTRY.AIR
+        });
+      }
+
+      function triggerLocalArmSwing(): void {
+        onArmSwingRef.current();
+        audio.playSwing();
+        if (localRig) triggerAvatarSwing(localRig);
+        heldItemView?.triggerSwing();
+      }
+
+      function findAttackTarget(): { userId: string; distance: number } | null {
+        const eye = noa.camera.getPosition() as number[];
+        const dir = noa.camera.getDirection() as number[];
+        let best: { userId: string; distance: number } | null = null;
+        for (const [userId, eid] of remoteEntitiesRef.current) {
+          const p = noa.entities.getPosition(eid) as number[];
+          const cx = p[0] - eye[0];
+          const cy = p[1] + 0.9 - eye[1];
+          const cz = p[2] - eye[2];
+          const along = cx * dir[0] + cy * dir[1] + cz * dir[2];
+          if (along < 0 || along > 3.5) continue;
+          const px = eye[0] + dir[0] * along;
+          const py = eye[1] + dir[1] * along;
+          const pz = eye[2] + dir[2] * along;
+          const sideDx = p[0] - px;
+          const sideDy = p[1] + 0.9 - py;
+          const sideDz = p[2] - pz;
+          const sideDistSq = sideDx * sideDx + sideDy * sideDy + sideDz * sideDz;
+          if (sideDistSq > 0.55 * 0.55) continue;
+          if (!best || along < best.distance) best = { userId, distance: along };
+        }
+        return best;
+      }
+
       function ensureRemoteEntity(userId: string): number {
         const existing = remoteEntitiesRef.current.get(userId);
         if (existing !== undefined) return existing;
@@ -746,7 +1171,10 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       const offSnapshot = registerSnapshotListenerRef.current((snap) => {
         const selfId = myUserIdRef.current;
         for (const [userId, p] of Object.entries(snap.players)) {
-          if (userId === selfId) continue;
+          if (userId === selfId) {
+            if (p.vitals) setLocalVitals(p.vitals);
+            continue;
+          }
           const eid = ensureRemoteEntity(userId);
           noa.entities.setPosition(eid, p.pos);
           const rig = remoteRigs.get(userId);
@@ -767,8 +1195,20 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       cleanupFns.push(offSnapshot);
 
       const offBlockDelta = registerBlockDeltaListenerRef.current(({ pos, blockId }) => {
-        noa.setBlock(blockId, pos[0], pos[1], pos[2]);
-        deltas.set(`${pos[0]},${pos[1]},${pos[2]}`, blockId);
+        const [x, y, z] = pos;
+        const previousId = clientBlockAtInt(x, y, z);
+        noa.setBlock(blockId, x, y, z);
+        deltas.set(blockCoordKey(x, y, z), blockId);
+        setTorchLightAt(x, y, z, blockId);
+        if (!pausedRef.current && previousId !== blockId) {
+          if (previousId !== BLOCK_REGISTRY.AIR && blockId === BLOCK_REGISTRY.AIR) {
+            const volume = blockEventVolume(x, y, z, 0.58);
+            if (volume > 0) audio.playBreak(blockSoundGroup(previousId), volume);
+          } else if (blockId !== BLOCK_REGISTRY.AIR) {
+            const volume = blockEventVolume(x, y, z, 0.42);
+            if (volume > 0) audio.playPlace(blockSoundGroup(blockId), volume);
+          }
+        }
       });
       cleanupFns.push(offBlockDelta);
 
@@ -785,6 +1225,92 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
       function clientSolidAtInt(ix: number, iy: number, iz: number): boolean {
         return clientBlockAtInt(ix, iy, iz) !== BLOCK_REGISTRY.AIR;
+      }
+
+      function blockEventVolume(
+        ix: number,
+        iy: number,
+        iz: number,
+        baseVolume: number
+      ): number {
+        try {
+          const pos = noa.entities.getPosition(noa.playerEntity) as number[];
+          const dx = ix + 0.5 - pos[0];
+          const dy = iy + 0.5 - pos[1];
+          const dz = iz + 0.5 - pos[2];
+          const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+          if (dist > 18) return 0;
+          return baseVolume * Math.max(0.18, 1 - dist / 18);
+        } catch {
+          return baseVolume;
+        }
+      }
+
+      function playerIntersectsLadder(pos: Vec3): boolean {
+        const xs = [Math.floor(pos[0] - 0.32), Math.floor(pos[0] + 0.32)];
+        const ys = [Math.floor(pos[1] + 0.15), Math.floor(pos[1] + 1.15)];
+        const zs = [Math.floor(pos[2] - 0.32), Math.floor(pos[2] + 0.32)];
+        for (const x of xs) {
+          for (const y of ys) {
+            for (const z of zs) {
+              if (clientBlockAtInt(x, y, z) === BLOCK_REGISTRY.LADDER) return true;
+            }
+          }
+        }
+        return false;
+      }
+
+      function blockIntersectsLocalPlayer(x: number, y: number, z: number): boolean {
+        const pos = noa.entities.getPosition(noa.playerEntity) as number[];
+        return (
+          x < pos[0] + 0.35 &&
+          x + 1 > pos[0] - 0.35 &&
+          y < pos[1] + 1.8 &&
+          y + 1 > pos[1] &&
+          z < pos[2] + 0.35 &&
+          z + 1 > pos[2] - 0.35
+        );
+      }
+
+      function fallbackPlacementPos(): Vec3 | null {
+        const eye = noa.camera.getPosition() as number[];
+        const dir = noa.camera.getDirection() as number[];
+        const seen = new Set<string>();
+        for (let dist = 1.6; dist <= MAX_REACH - 0.5; dist += 0.25) {
+          const x = Math.floor(eye[0] + dir[0] * dist);
+          const y = Math.floor(eye[1] + dir[1] * dist);
+          const z = Math.floor(eye[2] + dir[2] * dist);
+          const key = blockCoordKey(x, y, z);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          if (!blockReplaceable(clientBlockAtInt(x, y, z))) continue;
+          if (blockIntersectsLocalPlayer(x, y, z)) continue;
+          return [x, y, z];
+        }
+        return null;
+      }
+
+      /** First breakable voxel along view ray (includes replaceable plants noa skips for placement). */
+      function findBreakTarget(): { pos: Vec3; blockId: number; distance: number } | null {
+        const eye = noa.camera.getPosition() as number[];
+        const dir = noa.camera.getDirection() as number[];
+        const seen = new Set<string>();
+        for (let dist = 1.0; dist <= MAX_REACH - 0.5; dist += 0.15) {
+          const x = Math.floor(eye[0] + dir[0] * dist);
+          const y = Math.floor(eye[1] + dir[1] * dist);
+          const z = Math.floor(eye[2] + dir[2] * dist);
+          const key = blockCoordKey(x, y, z);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          const blockId = clientBlockAtInt(x, y, z);
+          if (blockId === BLOCK_REGISTRY.AIR || blockId === BLOCK_REGISTRY.WATER) continue;
+          if (!blockBreakable(blockId)) continue;
+          const center: Vec3 = [x + 0.5, y + 0.5, z + 0.5];
+          const distance = vecDist(eye, center);
+          if (distance > MAX_REACH) continue;
+          return { pos: [x, y, z], blockId, distance };
+        }
+        return null;
       }
 
       function clientDepenetrateDropVisual(px: number, py: number, pz: number): Vec3 {
@@ -1059,6 +1585,142 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         worldDropStackKey.delete(wid);
       }
 
+      type PrimedTntVisual = {
+        eid: number;
+        mesh: Mesh;
+        primedAt: number;
+        explodeAt: number;
+      };
+      const primedTnts = new Map<string, PrimedTntVisual>();
+
+      function createPrimedTntMesh(id: string): Mesh | null {
+        const url = BLOCK_HOTBAR_ICON[BLOCK_REGISTRY.TNT];
+        if (!url) return null;
+        const scene = noa.rendering.getScene();
+        const mesh = Babylon.MeshBuilder.CreateBox(
+          `primed-tnt-${id}`,
+          { size: 0.84 },
+          scene
+        );
+        const tex = new Babylon.Texture(
+          url,
+          scene,
+          true,
+          false,
+          Babylon.Texture.NEAREST_SAMPLINGMODE
+        );
+        const mat = noa.rendering.makeStandardMaterial(`primed-tnt-mat-${id}`);
+        mat.diffuseTexture = tex;
+        mat.specularColor = new Babylon.Color3(0.02, 0.02, 0.02);
+        mat.emissiveColor = new Babylon.Color3(0.18, 0.08, 0.08);
+        mesh.material = mat;
+        return mesh;
+      }
+
+      function spawnPrimedTntVisual(ev: Extract<RoomEvent, { kind: "TNT_PRIMED" }>): void {
+        if (primedTnts.has(ev.id)) return;
+        const mesh = createPrimedTntMesh(ev.id);
+        if (!mesh) return;
+        try {
+          const eid: number = noa.entities.add(
+            [ev.pos[0] + 0.5, ev.pos[1] + 0.5, ev.pos[2] + 0.5],
+            0.84,
+            0.84,
+            mesh,
+            [0, 0, 0],
+            false,
+            false
+          );
+          primedTnts.set(ev.id, {
+            eid,
+            mesh,
+            primedAt: ev.primedAt,
+            explodeAt: ev.explodeAt
+          });
+        } catch {
+          mesh.dispose();
+        }
+      }
+
+      function removePrimedTntVisual(id: string): void {
+        const visual = primedTnts.get(id);
+        if (!visual) return;
+        try {
+          noa.entities.deleteEntity(visual.eid);
+        } catch {
+          visual.mesh.dispose();
+        }
+        primedTnts.delete(id);
+      }
+
+      function animatePrimedTnts(nowMs: number): void {
+        for (const [id, visual] of primedTnts) {
+          const duration = Math.max(1, visual.explodeAt - visual.primedAt);
+          const progress = Math.min(1, Math.max(0, (nowMs - visual.primedAt) / duration));
+          const pulseRate = 7 + progress * 18;
+          const pulse = Math.sin((nowMs / 1000) * pulseRate) * 0.5 + 0.5;
+          const scale = 1 + pulse * (0.04 + progress * 0.12);
+          visual.mesh.scaling.set(scale, scale, scale);
+          const mat = visual.mesh.material as {
+            emissiveColor?: { r: number; g: number; b: number };
+          } | null;
+          if (mat?.emissiveColor) {
+            mat.emissiveColor.r = 0.12 + pulse * progress * 0.75;
+            mat.emissiveColor.g = 0.05 + pulse * progress * 0.5;
+            mat.emissiveColor.b = 0.05 + pulse * progress * 0.5;
+          }
+          if (nowMs > visual.explodeAt + 1500) removePrimedTntVisual(id);
+        }
+      }
+
+      let blastFlashTimer: number | null = null;
+      const offRoomEvents = registerRoomEventListenerRef.current((ev) => {
+        if (ev.kind === "TNT_PRIMED") {
+          spawnPrimedTntVisual(ev);
+          const volume = blockEventVolume(ev.pos[0], ev.pos[1], ev.pos[2], 0.32);
+          if (volume > 0) audio.playFuse(volume);
+          return;
+        }
+        if (ev.kind === "EXPLOSION") {
+          removePrimedTntVisual(ev.id);
+          const volume = blockEventVolume(ev.pos[0], ev.pos[1], ev.pos[2], 0.95);
+          if (volume > 0) audio.playExplosion(volume);
+          if (volume > 0.12) {
+            setBlastFlash(1);
+            if (blastFlashTimer !== null) window.clearTimeout(blastFlashTimer);
+            blastFlashTimer = window.setTimeout(() => {
+              setBlastFlash(0);
+              blastFlashTimer = null;
+            }, 220);
+          }
+          return;
+        }
+        if (ev.kind === "PLAYER_DEATH") {
+          if (ev.userId === myUserIdRef.current) {
+            document.exitPointerLock?.();
+            setIsDead(true);
+          }
+          return;
+        }
+        if (ev.kind === "PLAYER_RESPAWN") {
+          if (ev.userId === myUserIdRef.current) {
+            noa.entities.setPosition(noa.playerEntity, ev.respawnPos);
+            const phys = noa.entities.getPhysics(noa.playerEntity);
+            if (phys?.body) {
+              phys.body.velocity[0] = 0;
+              phys.body.velocity[1] = 0;
+              phys.body.velocity[2] = 0;
+            }
+          }
+          return;
+        }
+      });
+      cleanupFns.push(offRoomEvents);
+      cleanupFns.push(() => {
+        if (blastFlashTimer !== null) window.clearTimeout(blastFlashTimer);
+        for (const id of [...primedTnts.keys()]) removePrimedTntVisual(id);
+      });
+
       for (const d of initialWorldDrops) {
         spawnWorldDropEntity(d);
       }
@@ -1129,16 +1791,28 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         void onBreakFinishRef.current(pos);
       }
 
+      let lastDigSfxAt = 0;
+
       async function tryStartMining(): Promise<void> {
         if (pausedRef.current) return;
-        const tgt = noa.targetedBlock;
-        if (!tgt) return;
-        const pos: Vec3 = [tgt.position[0], tgt.position[1], tgt.position[2]];
+        const breakTgt = findBreakTarget();
+        const attackTarget = findAttackTarget();
+        if (attackTarget) {
+          const blockDistance = breakTgt?.distance ?? Number.POSITIVE_INFINITY;
+          if (attackTarget.distance <= blockDistance) {
+            triggerLocalArmSwing();
+            void onPlayerAttackRef.current(attackTarget.userId);
+            return;
+          }
+        }
+        if (!breakTgt) return;
+        const pos = breakTgt.pos;
+        triggerLocalArmSwing();
         if (gameModeRef.current === "creative") {
           onBreakRef.current(pos);
           return;
         }
-        const blockId = Number(tgt.blockID);
+        const blockId = breakTgt.blockId;
         if (isInstantBreak(blockId)) {
           onBreakRef.current(pos);
           return;
@@ -1161,11 +1835,18 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           durationMs: ack.durationMs,
           startedAt: performance.now()
         };
+        lastDigSfxAt = 0;
         breakCrackRef.current?.setStage(pos, 0);
         const tick = (): void => {
           const m = activeMiningRef.current;
           if (!m) return;
-          const t = (performance.now() - m.startedAt) / m.durationMs;
+          const now = performance.now();
+          if (now - lastDigSfxAt > 250) {
+            const diggingId = clientBlockAtInt(m.pos[0], m.pos[1], m.pos[2]);
+            audio.playDig(blockSoundGroup(diggingId));
+            lastDigSfxAt = now;
+          }
+          const t = (now - m.startedAt) / m.durationMs;
           breakCrackRef.current?.setStage(m.pos, destroyStageIndex(t));
           if (t >= 1) {
             activeMiningRef.current = null;
@@ -1192,19 +1873,100 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         }
       }
 
+      function cancelEatingHold(): void {
+        const eating = activeEatingRef.current;
+        if (!eating) return;
+        if (eating.timer !== null) {
+          window.clearTimeout(eating.timer);
+        }
+        activeEatingRef.current = null;
+        audio.stopEating(false);
+        void onEatCancelRef.current();
+      }
+
+      async function startEatingHold(hotbarIndex: number): Promise<void> {
+        if (activeEatingRef.current) return;
+        const active: { hotbarIndex: number; timer: number | null } = {
+          hotbarIndex,
+          timer: null
+        };
+        activeEatingRef.current = active;
+        const ack = await onEatStartRef.current(hotbarIndex);
+        if (activeEatingRef.current !== active) return;
+        if (!ack.ok) {
+          activeEatingRef.current = null;
+          return;
+        }
+        audio.startEating();
+        const durationMs = ack.durationMs ?? 1600;
+        active.timer = window.setTimeout(() => {
+          if (activeEatingRef.current !== active) return;
+          activeEatingRef.current = null;
+          audio.stopEating(true);
+          void onEatFinishRef.current(hotbarIndex);
+        }, durationMs);
+      }
+
       noa.inputs.down.on("fire", () => {
         void tryStartMining();
       });
       noa.inputs.up.on("fire", endMiningHold);
+      noa.inputs.up.on("alt-fire", cancelEatingHold);
       cleanupFns.push(() => clearMiningState(true));
+      cleanupFns.push(cancelEatingHold);
       noa.inputs.down.on("alt-fire", () => {
         if (pausedRef.current) return;
-        const tgt = noa.targetedBlock;
-        if (!tgt) return;
         if (gameModeRef.current === "survival") {
+          const tgt = noa.targetedBlock;
           const inv = inventoryRef.current;
           const idx = survivalSlotRef.current;
           const cell = inv[idx];
+          if (
+            tgt &&
+            Number(tgt.blockID) === BLOCK_REGISTRY.TNT &&
+            cell &&
+            cell.count > 0 &&
+            cell.itemId === ITEM_REGISTRY.FLINT_AND_STEEL
+          ) {
+            const pos: Vec3 = [
+              Math.floor(Number(tgt.position[0])),
+              Math.floor(Number(tgt.position[1])),
+              Math.floor(Number(tgt.position[2]))
+            ];
+            triggerLocalArmSwing();
+            void onIgniteTntRef.current(pos);
+            return;
+          }
+          if (tgt && Number(tgt.blockID) === BLOCK_REGISTRY.CRAFTING) {
+            const pos: Vec3 = [
+              Math.floor(Number(tgt.position[0])),
+              Math.floor(Number(tgt.position[1])),
+              Math.floor(Number(tgt.position[2]))
+            ];
+            void onOpenCraftingTableRef.current(pos).then((ack) => {
+              if (!ack.ok) return;
+              document.exitPointerLock?.();
+              setInventoryOpen(true);
+            });
+            return;
+          }
+          if (tgt && Number(tgt.blockID) === BLOCK_REGISTRY.CHEST) {
+            const pos: Vec3 = [
+              Math.floor(Number(tgt.position[0])),
+              Math.floor(Number(tgt.position[1])),
+              Math.floor(Number(tgt.position[2]))
+            ];
+            void onOpenChestRef.current(pos).then((ack) => {
+              if (!ack.ok) return;
+              document.exitPointerLock?.();
+              setInventoryOpen(true);
+            });
+            return;
+          }
+          if (cell && cell.count > 0 && itemFoodSpec(cell.itemId ?? 0)) {
+            void startEatingHold(idx);
+            return;
+          }
           if (
             !cell ||
             cell.count <= 0 ||
@@ -1213,22 +1975,27 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           ) {
             return;
           }
-          onPlaceRef.current(
-            [tgt.adjacent[0], tgt.adjacent[1], tgt.adjacent[2]],
-            cell.blockId
-          );
+          const placePos = tgt
+            ? ([tgt.adjacent[0], tgt.adjacent[1], tgt.adjacent[2]] as Vec3)
+            : fallbackPlacementPos();
+          if (!placePos) return;
+          triggerLocalArmSwing();
+          onPlaceRef.current(placePos, cell.blockId);
           return;
         }
-        onPlaceRef.current(
-          [tgt.adjacent[0], tgt.adjacent[1], tgt.adjacent[2]],
-          selectedBlockRef.current
-        );
+        const tgt = noa.targetedBlock;
+        const placePos = tgt
+          ? ([tgt.adjacent[0], tgt.adjacent[1], tgt.adjacent[2]] as Vec3)
+          : fallbackPlacementPos();
+        if (!placePos) return;
+        triggerLocalArmSwing();
+        onPlaceRef.current(placePos, selectedBlockRef.current);
       });
 
       function pickTargetedBlock() {
-        const tgt = noa.targetedBlock;
-        if (!tgt) return;
-        const blockId = Number(tgt.blockID);
+        const breakTgt = findBreakTarget();
+        if (!breakTgt) return;
+        const blockId = breakTgt.blockId;
         if (!PLACEABLE_BLOCK_IDS.includes(blockId)) return;
         if (gameModeRef.current === "creative") {
           selectCreativeBlock(blockId);
@@ -1246,23 +2013,36 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       noa.inputs.down.on("mid-fire", pickTargetedBlock);
 
       function onHotbarKey(e: KeyboardEvent) {
-        if (e.key.toLowerCase() === "e") {
-          setInventoryOpen((v) => {
-            const next = !v;
-            if (next) {
-              document.exitPointerLock?.();
-            }
-            return next;
-          });
+        if (
+          e.target instanceof HTMLInputElement ||
+          e.target instanceof HTMLTextAreaElement
+        ) {
           return;
         }
-        if (e.key.toLowerCase() === "p" && !inventoryOpen) {
+        if (e.key.toLowerCase() === "i") {
+          showDebugRef.current = !showDebugRef.current;
+          if (!showDebugRef.current) {
+            setDebugInfo(null);
+          }
+          return;
+        }
+        if (isDeadRef.current) return;
+        if (e.key.toLowerCase() === "e") {
+          if (inventoryOpenRef.current) {
+            closeInventory();
+          } else {
+            document.exitPointerLock?.();
+            setInventoryOpen(true);
+          }
+          return;
+        }
+        if (e.key.toLowerCase() === "p" && !inventoryOpenRef.current) {
           if (gameModeRef.current === "survival") {
             onDropHotbarSlotRef.current?.(survivalSlotRef.current);
           }
           return;
         }
-        if (e.key.toLowerCase() === "q" && !inventoryOpen) {
+        if (e.key.toLowerCase() === "q" && !inventoryOpenRef.current) {
           if (gameModeRef.current === "survival") {
             onDropHotbarSlotRef.current?.(survivalSlotRef.current);
           }
@@ -1277,17 +2057,41 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           }
           return;
         }
-        if (Number.isFinite(n) && n >= 1 && n <= Math.min(9, HOTBAR.length)) {
+        const visibleCreativeBlocks = visibleCreativeHotbarBlocks(selectedBlockRef.current);
+        if (Number.isFinite(n) && n >= 1 && n <= visibleCreativeBlocks.length) {
           const idx = n - 1;
-          selectCreativeBlock(HOTBAR[idx]);
+          selectCreativeBlock(visibleCreativeBlocks[idx]!);
         }
       }
       window.addEventListener("keydown", onHotbarKey);
       cleanupFns.push(() => window.removeEventListener("keydown", onHotbarKey));
 
       let lastEmit = 0;
+      let lastGrounded = true;
+      let minAirVelocityY = 0;
+      let lastFallImpactAt = 0;
+      let lastAmbientSampleAt = 0;
+      let lastFootstepAt = 0;
+      let lastDebugUpdate = 0;
       noa.on("tick", () => {
         const nowPerf = performance.now();
+        if (!pausedRef.current) animatePrimedTnts(Date.now());
+        const equipped = equipmentSlotsRef.current;
+        const moveState = noa.entities.getMovement?.(noa.playerEntity);
+        if (moveState) {
+          const movement = resolveVoxelMovement({
+            heliumBoots: equipmentHas(equipped, ITEM_REGISTRY.HELIUM_BOOTS),
+            heavyShield: equipmentHas(equipped, ITEM_REGISTRY.HEAVY_SHIELD),
+            eating: activeEatingRef.current !== null
+          });
+          moveState.jumpForce = movement.jumpForce;
+          moveState.maxSpeed = movement.maxSpeed;
+        }
+        if (scene.ambientColor) {
+          scene.ambientColor = equipmentHas(equipped, ITEM_REGISTRY.GLOW_TALISMAN)
+            ? fullBrightAmbient
+            : defaultAmbient;
+        }
 
         if (!pausedRef.current && gameModeRef.current === "survival" && worldDropEntities.size > 0) {
           const bobT = nowPerf / 1000;
@@ -1334,7 +2138,10 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           }
         }
 
-        if (pausedRef.current) return;
+        if (pausedRef.current) {
+          heldItemView?.setVisible(false);
+          return;
+        }
 
         const scrolly: number = noa.inputs.pointerState.scrolly;
         if (scrolly !== 0) {
@@ -1352,6 +2159,59 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         const pos: number[] = noa.entities.getPosition(playerEnt);
         const heading: number = noa.camera.heading;
         const pitch: number = noa.camera.pitch;
+        const physState = noa.entities.getPhysics(playerEnt);
+        const onGround = physState?.body?.resting?.[1] === -1;
+        const velocityY = Number(physState?.body?.velocity?.[1] ?? 0);
+        const inputState = noa.inputs.state;
+        const playerMoving =
+          !!inputState.forward ||
+          !!inputState.backward ||
+          !!inputState.left ||
+          !!inputState.right;
+
+        if (nowPerf - lastAmbientSampleAt > 1200) {
+          lastAmbientSampleAt = nowPerf;
+          const column = sampleBiomeColumn(Math.floor(pos[0]), Math.floor(pos[2]), seed);
+          audio.updateAmbient(column.biomeId);
+          const nextWeather = precipitationKindForColumn(column);
+          setWeatherKind((prev) => (prev === nextWeather ? prev : nextWeather));
+        }
+
+        if (onGround && playerMoving && !inventoryOpenRef.current) {
+          const velocity = physState?.body?.velocity ?? [0, 0, 0];
+          const horizontalSpeed = Math.hypot(
+            Number(velocity[0] ?? 0),
+            Number(velocity[2] ?? 0)
+          );
+          const strideMs =
+            horizontalSpeed > VOXEL_MOVEMENT.fastStrideSpeed
+              ? VOXEL_MOVEMENT.fastStrideMs
+              : VOXEL_MOVEMENT.walkStrideMs;
+          if (horizontalSpeed > 0.05 && nowPerf - lastFootstepAt >= strideMs) {
+            const bx = Math.floor(pos[0]);
+            const bz = Math.floor(pos[2]);
+            let by = Math.floor(pos[1] - 0.35);
+            let blockBelow = clientBlockAtInt(bx, by, bz);
+            if (blockReplaceable(blockBelow) || blockBelow === BLOCK_REGISTRY.WATER) {
+              by -= 1;
+              blockBelow = clientBlockAtInt(bx, by, bz);
+            }
+            if (blockBelow !== BLOCK_REGISTRY.AIR && blockBelow !== BLOCK_REGISTRY.WATER) {
+              audio.playStep(
+                blockSoundGroup(blockBelow),
+                horizontalSpeed > VOXEL_MOVEMENT.fastStrideSpeed ? 0.36 : 0.3
+              );
+              lastFootstepAt = nowPerf;
+            }
+          }
+        }
+
+        heldItemView?.setActiveVisual(currentHeldItemSpec());
+        heldItemView?.update({
+          now: nowPerf,
+          moving: playerMoving,
+          visible: noa.camera.zoomDistance <= 0 && !inventoryOpenRef.current
+        });
 
         if (localPlayerVoxelRoot) {
           setVisualVisible(localPlayerVoxelRoot, noa.camera.zoomDistance > 0);
@@ -1360,12 +2220,65 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           updateAvatarWalk(localRig, pos[0], pos[2]);
           setAvatarHeadPitch(localRig, pitch);
           setAvatarYaw(localRig, heading);
+          advanceAvatarSwing(localRig);
+        }
+        for (const rig of remoteRigs.values()) {
+          advanceAvatarSwing(rig);
+        }
+
+        if (
+          gameModeRef.current === "survival" &&
+          physState?.body &&
+          playerIntersectsLadder([pos[0], pos[1], pos[2]])
+        ) {
+          if (inputState.jump || inputState.forward) {
+            physState.body.velocity[1] = VOXEL_MOVEMENT.ladderClimbSpeed;
+          } else if (inputState.backward) {
+            physState.body.velocity[1] = -VOXEL_MOVEMENT.ladderClimbSpeed;
+          } else {
+            physState.body.velocity[1] = Math.max(
+              physState.body.velocity[1],
+              VOXEL_MOVEMENT.ladderSlideSpeed
+            );
+          }
+          if (moveState) {
+            moveState._isJumping = false;
+            moveState._currjumptime = 0;
+          }
+        }
+
+        if (gameModeRef.current === "survival") {
+          if (!onGround) {
+            minAirVelocityY = Math.min(minAirVelocityY, velocityY);
+          } else {
+            if (
+              !lastGrounded &&
+              minAirVelocityY < -12 &&
+              nowPerf - lastFallImpactAt > 500
+            ) {
+              lastFallImpactAt = nowPerf;
+              void onFallImpactRef.current(minAirVelocityY);
+            }
+            minAirVelocityY = 0;
+          }
+          lastGrounded = onGround;
+        }
+
+        if (showDebugRef.current) {
+          if (nowPerf - lastDebugUpdate > 100) {
+            lastDebugUpdate = nowPerf;
+            const scene = noa.rendering.getScene();
+            const engine = scene.getEngine();
+            const fps = engine.getFps();
+            setDebugInfo({
+              fps,
+              pos: [pos[0], pos[1], pos[2]]
+            });
+          }
         }
 
         if (nowPerf - lastEmit < 60) return;
         lastEmit = nowPerf;
-        const physState = noa.entities.getPhysics(playerEnt);
-        const onGround = physState?.body?.resting?.[1] === -1;
         onInputRef.current({
           pos: [pos[0], pos[1], pos[2]],
           heading,
@@ -1399,8 +2312,10 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const noa: any = noaRef.current;
-    noa?.setPaused?.(paused);
-  }, [paused]);
+    noa?.setPaused?.(paused || isDead);
+    audioManagerRef.current?.setMuted(paused || isDead);
+    if (paused || isDead) heldItemViewRef.current?.setVisible(false);
+  }, [paused, isDead]);
 
   const slotBox = (active: boolean, keyNum: number, inner: JSX.Element): JSX.Element => (
     <div key={keyNum} className={mcSlotClass(active)}>
@@ -1411,12 +2326,50 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     </div>
   );
 
+  const vitalsPct = (value: number, max: number): string =>
+    `${Math.max(0, Math.min(100, (value / max) * 100))}%`;
+
+  const survivalVitalsHud =
+    gameMode === "survival" && !paused ? (
+      <div className="pointer-events-none absolute inset-x-0 bottom-20 flex justify-center px-3">
+        <div
+          className="grid w-[min(94vw,23rem)] grid-cols-2 gap-2 rounded-sm border-2 border-black/55 bg-neutral-950/70 p-2 shadow-[0_8px_20px_rgba(0,0,0,0.55)]"
+          dir="rtl"
+        >
+          <div>
+            <div className="mb-1 flex items-center justify-between text-[10px] font-black text-red-100">
+              <span>חיים</span>
+              <span>{Math.ceil(localVitals.health)}</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-sm bg-black/60">
+              <div
+                className="h-full bg-red-500"
+                style={{ width: vitalsPct(localVitals.health, 20) }}
+              />
+            </div>
+          </div>
+          <div>
+            <div className="mb-1 flex items-center justify-between text-[10px] font-black text-amber-100">
+              <span>רעב</span>
+              <span>{Math.ceil(localVitals.hunger)}</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-sm bg-black/60">
+              <div
+                className="h-full bg-amber-400"
+                style={{ width: vitalsPct(localVitals.hunger, 20) }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    ) : null;
+
   const blockHotbarHud = !paused ? (
     <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center gap-1.5 px-2">
       {gameMode === "creative"
-        ? HOTBAR.slice(0, 9).map((blockId, i) =>
+        ? visibleCreativeHotbarBlocks(selectedBlockRef.current).map((blockId, i) =>
             slotBox(
-              i === creativeSlotIdx,
+              i === creativeSlotIdx && blockId === selectedBlockRef.current,
               i + 1,
               <img
                 src={BLOCK_HOTBAR_ICON[blockId]}
@@ -1512,12 +2465,17 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       try {
         const parsed = JSON.parse(raw);
         if (isValidDragPayload(parsed)) {
-          onInventoryMove({
+          const move = {
             from: parsed.from,
             fromIndex: parsed.fromIndex,
             to: region,
             toIndex: index
-          });
+          };
+          if (move.from === "chest" || move.to === "chest") {
+            onChestMove(move);
+          } else {
+            onInventoryMove(move);
+          }
         } else {
           console.warn("Malformed drag-and-drop payload:", parsed);
         }
@@ -1529,8 +2487,22 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
   const craftPreview =
     gameMode === "survival"
-      ? craftingGridPreview(craftingGridSlots, inventorySlots, itemInventorySlots)
+      ? craftingGridPreview(
+          craftingGridSlots,
+          inventorySlots,
+          itemInventorySlots,
+          craftingGridWidth
+        )
       : null;
+  const craftGridIndices =
+    craftingGridWidth === 3
+      ? Array.from({ length: CRAFTING_GRID_SLOTS }, (_, i) => i)
+      : [...PERSONAL_CRAFTING_SLOT_INDICES];
+  const craftGridClass = [
+    "grid gap-1 rounded border-2 border-[#5c4f3e] bg-[rgba(0,0,0,0.18)] p-1.5",
+    craftingGridWidth === 3 ? "grid-cols-3" : "grid-cols-2"
+  ].join(" ");
+  const craftGridTitle = `רשת יצירה ${craftingGridWidth}×${craftingGridWidth}`;
 
   const inventoryPanel = inventoryOpen ? (
     <div className="pointer-events-auto absolute inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-[2px]">
@@ -1550,7 +2522,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           <button
             type="button"
             className="shrink-0 rounded border-2 border-[#3d3d3d] bg-gradient-to-b from-[#a89a86] to-[#8c7d68] px-3 py-1.5 text-xs font-bold text-[#1a1510] shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_2px_0_#2a2418] hover:brightness-105 active:translate-y-px active:shadow-none"
-            onClick={() => setInventoryOpen(false)}
+            onClick={closeInventory}
           >
             ✕ סגור
           </button>
@@ -1564,7 +2536,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
             >
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <div className="text-[11px] font-black uppercase tracking-wider text-[#2a2218]">
-                  יצירה (2×2)
+                  יצירה ({craftingGridWidth}×{craftingGridWidth})
                 </div>
                 <button
                   type="button"
@@ -1578,11 +2550,9 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
                 גרור פריטים בשביל ליצור פריטים חדשים!
               </p>
               <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4" dir="ltr">
-                <div
-                  className="grid grid-cols-2 gap-1 rounded border-2 border-[#5c4f3e] bg-[rgba(0,0,0,0.18)] p-1.5"
-                  title="רשת יצירה 2×2"
-                >
-                  {craftingGridSlots.slice(0, CRAFTING_GRID_SLOTS).map((cell, i) => {
+                <div className={craftGridClass} title={craftGridTitle}>
+                  {craftGridIndices.map((i) => {
+                    const cell = craftingGridSlots[i] ?? EMPTY_CRAFTING_SLOT;
                     const itemIcon =
                       cell.itemId > 0 && cell.count > 0 ? ITEM_ICON[cell.itemId] : undefined;
                     const blockIcon =
@@ -1651,7 +2621,10 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
                       ? "cursor-pointer hover:brightness-110 active:brightness-95"
                       : "cursor-not-allowed opacity-45"
                   ].join(" ")}
-                  onClick={() => onCraft("grid")}
+                  onClick={() => {
+                    audioManagerRef.current?.playCraft();
+                    onCraft("grid");
+                  }}
                 >
                   {craftPreview ? (
                     <>
@@ -1671,6 +2644,59 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
                     </>
                   ) : null}
                 </button>
+              </div>
+            </section>
+          ) : null}
+
+          {gameMode === "survival" && activeChest ? (
+            <section>
+              <div className="mb-1.5 text-[11px] font-black text-[#2a2218]">
+                תיבה
+              </div>
+              <div className="inline-block rounded border-2 border-[#5c4f3e] bg-[rgba(0,0,0,0.15)] p-1.5">
+                <div className="grid grid-cols-9 gap-1">
+                  {activeChest.slots.slice(0, 27).map((cell, i) => {
+                    const itemIcon =
+                      (cell.itemId ?? 0) > 0 && cell.count > 0
+                        ? ITEM_ICON[cell.itemId]
+                        : undefined;
+                    const blockIcon =
+                      cell.blockId !== BLOCK_REGISTRY.AIR && cell.count > 0
+                        ? BLOCK_HOTBAR_ICON[cell.blockId]
+                        : undefined;
+                    const icon = itemIcon ?? blockIcon;
+                    const has = cell.count > 0 && icon !== undefined;
+                    return (
+                      <div
+                        key={`chest-${i}`}
+                        className={mcSlotClass(false)}
+                        {...slotDragHandlers("chest", i)}
+                      >
+                        {has ? (
+                          <>
+                            <img
+                              src={icon}
+                              alt=""
+                              title={
+                                itemIcon
+                                  ? `${ITEM_HUD[cell.itemId] ?? cell.itemId} ×${cell.count}`
+                                  : `${BLOCK_HUD[cell.blockId] ?? cell.blockId} ×${cell.count}`
+                              }
+                              className="h-8 w-8"
+                              style={{ imageRendering: "pixelated" }}
+                            />
+                            {itemIcon
+                              ? toolDurabilityBar(cell.itemId, cell.durability)
+                              : null}
+                            <span className="pointer-events-none absolute bottom-0.5 end-0.5 text-[10px] font-black text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
+                              {cell.count}
+                            </span>
+                          </>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </section>
           ) : null}
@@ -1709,6 +2735,47 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
             </section>
           ) : (
             <>
+              <section>
+                <div className="mb-1.5 text-[11px] font-black text-[#2a2218]">
+                  ציוד
+                </div>
+                <div className="inline-block rounded border-2 border-[#5c4f3e] bg-[rgba(0,0,0,0.15)] p-1.5">
+                  <div className="grid grid-cols-4 gap-1 sm:grid-cols-1">
+                    {equipmentSlots.slice(0, EQUIPMENT_SLOT_COUNT).map((cell, i) => {
+                      const icon = ITEM_ICON[cell.itemId];
+                      const has = cell.itemId !== 0 && cell.count > 0 && icon;
+                      return (
+                        <div
+                          key={`equipment-${i}`}
+                          className={mcSlotClass(false)}
+                          title={EQUIPMENT_SLOT_LABELS[i] ?? ""}
+                          {...slotDragHandlers("equipment", i)}
+                        >
+                          {has ? (
+                            <>
+                              <img
+                                src={icon}
+                                alt=""
+                                title={`${EQUIPMENT_SLOT_LABELS[i] ?? ""}: ${
+                                  ITEM_HUD[cell.itemId] ?? cell.itemId
+                                }`}
+                                className="h-8 w-8"
+                                style={{ imageRendering: "pixelated" }}
+                              />
+                              {toolDurabilityBar(cell.itemId, cell.durability)}
+                            </>
+                          ) : (
+                            <span className="pointer-events-none text-[9px] font-black text-[#33291d]/70">
+                              {EQUIPMENT_SLOT_LABELS[i]}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </section>
+
               <section>
                 <div className="mb-1.5 text-[11px] font-black text-[#2a2218]">
                   אחסון פריטים
@@ -1832,50 +2899,41 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
               ✕
             </button>
           </div>
-          <ul className="space-y-5 text-[11px] font-semibold text-[#2a2218]">
-            <li className="rounded border border-[#6b5e4b] bg-black/10 p-3">
-              <div className="mb-1 font-black">לוחות עץ</div>
-              <p className="mb-2 text-[10px] font-normal text-[#4a3f30]">
-                עץ אחד = 4 לוחות עץ
-              </p>
-              <div className="flex flex-wrap items-center gap-3" dir="ltr">
-                <div className="grid grid-cols-2 gap-0.5">
-                  {recipeDiagramCell("p-l0", "log")}
-                  {recipeDiagramCell("p-l1", "empty")}
-                  {recipeDiagramCell("p-l2", "empty")}
-                  {recipeDiagramCell("p-l3", "empty")}
-                </div>
-                <span className="text-lg font-black text-[#3d3426]">→</span>
-                <div className="flex items-center gap-1">
-                  {recipeDiagramCell("p-out", "planks")}
-                  <span className="text-[10px] font-black text-[#1a1510]">×4</span>
-                </div>
-              </div>
-            </li>
-            <li className="rounded border border-[#6b5e4b] bg-black/10 p-3">
-              <div className="mb-1 font-black">מקלות</div>
-              <p className="mb-2 text-[10px] font-normal text-[#4a3f30]">
-                2 לוחות עץ = 4 מקלות
-              </p>
-              <div className="mb-2 flex flex-wrap items-center gap-3" dir="ltr">
-                <div className="grid grid-cols-2 gap-0.5">
-                  {recipeDiagramCell("s-a0", "planks")}
-                  {recipeDiagramCell("s-a1", "planks")}
-                  {recipeDiagramCell("s-a2", "empty")}
-                  {recipeDiagramCell("s-a3", "empty")}
-                </div>
-                <span className="text-lg font-black text-[#3d3426]">→</span>
-                <div className="flex items-center gap-1">
-                  <img
-                    src={ITEM_ICON[ITEM_REGISTRY.STICK]}
-                    alt=""
-                    className="h-8 w-8 border-2 border-[#2a2a2a] bg-[#8d8d8d] p-0.5"
-                    style={{ imageRendering: "pixelated" }}
-                  />
-                  <span className="text-[10px] font-black text-[#1a1510]">×4</span>
-                </div>
-              </div>
-            </li>
+          <ul className="space-y-3 text-[11px] font-semibold text-[#2a2218]">
+            {RECIPES.map((recipe) => {
+              const output = recipeOutputDisplay(recipe);
+              return (
+                <li
+                  key={recipe.key}
+                  className="rounded border border-[#6b5e4b] bg-black/10 p-3"
+                >
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <div className="font-black">{output.label}</div>
+                    <div className="text-[10px] font-black text-[#4a3f30]">
+                      {recipe.kind === "shaped" ? "מסודר" : "חופשי"}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3" dir="ltr">
+                    {recipeBookInputGrid(recipe)}
+                    <span className="text-lg font-black text-[#3d3426]">→</span>
+                    <div className="flex items-center gap-1">
+                      <div className="flex h-8 w-8 items-center justify-center border-2 border-[#2a2a2a] bg-[#8d8d8d] shadow-[inset_1px_1px_0_rgba(255,255,255,0.4),inset_-1px_-1px_0_rgba(0,0,0,0.25)]">
+                        <img
+                          src={output.icon}
+                          alt=""
+                          title={output.label}
+                          className="h-6 w-6"
+                          style={{ imageRendering: "pixelated" }}
+                        />
+                      </div>
+                      <span className="text-[10px] font-black text-[#1a1510]">
+                        ×{recipe.output.count}
+                      </span>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </div>
       </div>
@@ -1900,11 +2958,115 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           <p className="text-neutral-200">
             WASD תנועה · רווח קפיצה · לחצן שמאלי מחזיק לשבירה · ימני מניח · מקשי 1–9 לסרגל · E
             מלאי (גרירה בין משבצות / לוח בלוקים ביצירתי) · Q או לחצן אמצעי בוחר בלוק · P/Q זורקים פריט מההוטבר בשרדות · גלגלת לזום
-            המצלמה
+            המצלמה · I מידע ניפוי שגיאות (Debug)
           </p>
         </div>
       </div>
     ) : null;
+
+  const damageOverlay =
+    damageFlash > 0 ? (
+      <div
+        className="pointer-events-none absolute inset-0 bg-red-600/20"
+        aria-hidden
+      />
+    ) : null;
+
+  const weatherOverlay = (() => {
+    if (paused || weatherKind === "clear") return null;
+    const isRain = weatherKind === "rain";
+    const count = isRain ? 72 : 48;
+    return (
+      <div
+        className="pointer-events-none absolute inset-0 overflow-hidden"
+        aria-hidden
+      >
+        <style>{`
+          @keyframes voxel-rain-fall {
+            0% { opacity: 0; transform: translate3d(0, -18vh, 0) rotate(12deg); }
+            12% { opacity: 1; }
+            100% { opacity: 0; transform: translate3d(-14vw, 118vh, 0) rotate(12deg); }
+          }
+          @keyframes voxel-snow-fall {
+            0% { opacity: 0; transform: translate3d(0, -12vh, 0); }
+            14% { opacity: 0.95; }
+            100% { opacity: 0; transform: translate3d(8vw, 112vh, 0); }
+          }
+        `}</style>
+        {Array.from({ length: count }, (_, i) => {
+          const left = (i * 37) % 100;
+          const delay = -(((i * 137) % 2400) / 1000);
+          const duration = isRain ? 0.78 + (i % 5) * 0.05 : 3.8 + (i % 7) * 0.32;
+          return (
+            <span
+              key={i}
+              className={
+                isRain
+                  ? "absolute top-[-12%] h-14 w-px bg-sky-100/55 mix-blend-screen"
+                  : "absolute top-[-8%] h-1.5 w-1.5 rounded-full bg-white/80 shadow-[0_0_6px_rgba(255,255,255,0.7)]"
+              }
+              style={{
+                left: `${left}%`,
+                animationName: isRain ? "voxel-rain-fall" : "voxel-snow-fall",
+                animationDuration: `${duration}s`,
+                animationDelay: `${delay}s`,
+                animationIterationCount: "infinite",
+                animationTimingFunction: "linear"
+              }}
+            />
+          );
+        })}
+      </div>
+    );
+  })();
+
+  const blastOverlay =
+    blastFlash > 0 ? (
+      <div
+        className="pointer-events-none absolute inset-0 bg-orange-200/20"
+        aria-hidden
+      />
+    ) : null;
+
+  const debugOverlay = debugInfo ? (
+    <div
+      className={`pointer-events-none absolute left-3 z-[100] flex flex-col gap-1 rounded-sm border-2 border-[#5c4f3e]/80 bg-neutral-950/75 p-2 px-3 font-mono text-[10px] text-neutral-100 shadow-[0_8px_16px_rgba(0,0,0,0.6)] sm:text-xs ${
+        !paused && !controlsHintDismissed ? "top-36" : "top-3"
+      }`}
+    >
+      <div className="font-bold text-[#ffd700]">Monecraft Debug</div>
+      <div>FPS: {Math.round(debugInfo.fps)}</div>
+      <div>X: {debugInfo.pos[0].toFixed(2)}</div>
+      <div>Y: {debugInfo.pos[1].toFixed(2)}</div>
+      <div>Z: {debugInfo.pos[2].toFixed(2)}</div>
+    </div>
+  ) : null;
+
+  const deathOverlay = isDead ? (
+    <div className="pointer-events-auto absolute inset-0 z-[101] flex flex-col items-center justify-center bg-red-950/70 backdrop-blur-[2px] transition-all duration-300">
+      <h1 className="mb-2 text-4xl font-black tracking-wider text-red-500 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)] sm:text-6xl animate-pulse">
+        מתת!
+      </h1>
+      <p className="mb-8 text-sm font-bold text-red-200/90 drop-shadow-md sm:text-base">
+        You Died!
+      </p>
+      <button
+        type="button"
+        className="pointer-events-auto transform rounded-md border-2 border-red-500 bg-gradient-to-b from-red-600 to-red-800 px-6 py-2.5 text-sm font-black text-white shadow-[0_4px_0_#4c0505,0_8px_16px_rgba(0,0,0,0.4)] transition-all hover:scale-105 hover:brightness-110 active:translate-y-px active:shadow-[0_2px_0_#4c0505]"
+        onClick={() => {
+          setIsDead(false);
+          setLocalVitals((prev) => ({ ...prev, health: 20 }));
+          if (hostRef.current) {
+            hostRef.current.focus();
+            const noa: any = noaRef.current;
+            noa?.container?.element?.requestPointerLock?.();
+          }
+        }}
+      >
+        היוולד מחדש / Respawn
+      </button>
+    </div>
+  ) : null;
 
   return (
     <div className="absolute inset-0">
@@ -1914,7 +3076,13 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         tabIndex={0}
         aria-label="minecraft viewport"
       />
+      {weatherOverlay}
       {controlsHint}
+      {debugOverlay}
+      {deathOverlay}
+      {blastOverlay}
+      {damageOverlay}
+      {survivalVitalsHud}
       {blockHotbarHud}
       {inventoryPanel}
       {recipeBookOverlay}

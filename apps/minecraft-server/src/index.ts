@@ -11,10 +11,12 @@ import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import { Server } from "socket.io";
 import { createClient } from "@supabase/supabase-js";
+import { applyToolWear, blockReplaceable, itemFoodSpec } from "@playground/voxel-content";
 import { isWithinRecess } from "./recess";
 import {
   applyDelta,
   getVoxelID,
+  replacementBlockAfterBreak,
   serializeDeltas
 } from "./world";
 import {
@@ -22,14 +24,20 @@ import {
   blockBreakable,
   blockDropId,
   blockDropsPickable,
+  cloneChest,
   cloneCraftingGrid,
+  cloneEquipmentSlots,
   cloneHotbar,
   cloneItemInventory,
   consumeOneFromHotbarIndex,
   consumeOneIfPresent,
+  createEmptyChest,
   createEmptyCraftingGrid,
+  createEmptyEquipmentSlots,
   createEmptyHotbar,
   createEmptyItemInventory,
+  isPersonalCraftingIndex,
+  returnInactiveCraftingSlotsToInventory,
   tryCraftFromGrid,
   HOTBAR_SLOT_COUNT
 } from "./inventory";
@@ -73,12 +81,16 @@ import {
   spawnBlockDropAt,
   spawnItemDropAt,
   tickMagnetPickups,
-  tickWorldDrops
+  tickWorldDrops,
+  throwImpulseForPlayer,
+  thrownDropPositionInFrontOfPlayer
 } from "./drops";
 import {
   BLOCK_REGISTRY,
+  ITEM_REGISTRY,
   MAX_REACH,
   PLACEABLE_BLOCK_IDS,
+  type ArmSwingPayload,
   type BlockBreakReq,
   type BlockPlaceReq,
   type BreakCancelReq,
@@ -87,18 +99,52 @@ import {
   type BreakStartReq,
   type CraftAck,
   type CraftReq,
+  type ChestSyncPayload,
   type GameMode,
+  type IgniteTntReq,
   type InputReq,
   type InventoryMoveReq,
   type DropItemReq,
+  type EatReq,
+  type EatStartAck,
+  type FallImpactReq,
   type JoinRoomAck,
+  type OpenCraftingTableReq,
+  type OpenChestAck,
+  type OpenChestReq,
+  type PlayerAttackReq,
+  type PlayerDamagePayload,
   type SetGameModeReq,
   type SimpleAck,
   type Vec3
 } from "./protocol";
 import type { PlayerRuntime, VoxelRoom } from "./room";
+import {
+  addMiningExhaustion,
+  addMovementExhaustion,
+  applyFood,
+  assignVitals,
+  cloneVitals,
+  createDefaultVitals,
+  EAT_FINISH_TOLERANCE_MS,
+  EATING_DURATION_MS,
+  MAX_HUNGER,
+  tickVitals
+} from "./vitals";
+import {
+  applyFallDamage,
+  applyPlayerDamage,
+  heldWeaponDamage,
+  tickHeliosRegen
+} from "./perks";
+import { applyTntExplosion, primeTnt, TNT_EXPLOSION_RADIUS } from "./tnt";
+import { tickWeatherFreezing } from "./weather";
+import { applySuffocationDamage, handlePlayerDeath } from "./death";
 
 const PORT = Number(process.env.PORT ?? 8081);
+const ARM_SWING_COOLDOWN_MS = 150;
+const PLAYER_ATTACK_COOLDOWN_MS = 500;
+const PLAYER_ATTACK_REACH = 3.75;
 const CORS_ORIGIN =
   process.env.CORS_ORIGIN ??
   "http://localhost:5173,http://127.0.0.1:5173";
@@ -298,6 +344,122 @@ function isGameMode(v: unknown): v is GameMode {
   return v === "creative" || v === "survival";
 }
 
+function inventorySyncPayload(player: PlayerRuntime) {
+  return {
+    slots: player.inventory ?? [],
+    itemSlots: player.itemInventory,
+    equipmentSlots: player.equipmentSlots,
+    craftingSlots: player.craftingGrid,
+    craftingGridWidth: player.craftingGridWidth ?? 2,
+    ...(player.health !== undefined ? { vitals: cloneVitals(player) } : {})
+  };
+}
+
+function playerDamagePayload(
+  player: PlayerRuntime,
+  amount: number,
+  source: PlayerDamagePayload["source"],
+  impulse?: Vec3
+): PlayerDamagePayload {
+  return {
+    userId: player.userId,
+    health: cloneVitals(player).health,
+    amount,
+    source,
+    ...(impulse ? { impulse } : {})
+  };
+}
+
+function checkAndHandlePlayerDeath(
+  room: VoxelRoom,
+  player: PlayerRuntime,
+  now = Date.now()
+): boolean {
+  if (player.health === undefined || player.health > 0) return false;
+
+  const { deathPos, respawnPos, drops } = handlePlayerDeath(room, player, now);
+
+  io.to(`voxel:${room.sessionId}`).emit("ROOM_EVENT", {
+    sessionId: room.sessionId,
+    kind: "PLAYER_DEATH",
+    userId: player.userId,
+    deathPos
+  });
+
+  for (const drop of drops) {
+    io.to(`voxel:${room.sessionId}`).emit("ROOM_EVENT", {
+      sessionId: room.sessionId,
+      kind: "WORLD_DROP_SPAWNED",
+      drop
+    });
+  }
+
+  io.to(`voxel:${room.sessionId}`).emit("ROOM_EVENT", {
+    sessionId: room.sessionId,
+    kind: "PLAYER_RESPAWN",
+    userId: player.userId,
+    respawnPos
+  });
+
+  io.to(`voxel-user:${player.userId}:${room.sessionId}`).emit(
+    "INVENTORY_SYNC",
+    inventorySyncPayload(player)
+  );
+
+  return true;
+}
+
+function chestKey(x: number, y: number, z: number): string {
+  return `${x},${y},${z}`;
+}
+
+function chestKeyFromPos(pos: Vec3): string {
+  return chestKey(Math.floor(pos[0]), Math.floor(pos[1]), Math.floor(pos[2]));
+}
+
+function chestPosFromKey(key: string): Vec3 | null {
+  const parts = key.split(",").map(Number);
+  if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n))) return null;
+  return [parts[0]!, parts[1]!, parts[2]!];
+}
+
+function getOrCreateChest(room: VoxelRoom, key: string) {
+  let chest = room.chests.get(key);
+  if (!chest) {
+    chest = createEmptyChest();
+    room.chests.set(key, chest);
+  }
+  return chest;
+}
+
+function chestSyncPayload(key: string, slots: ReturnType<typeof cloneChest>): ChestSyncPayload {
+  const pos = chestPosFromKey(key) ?? [0, 0, 0];
+  return { pos, slots };
+}
+
+function applyHeldItemWear(player: PlayerRuntime, itemId: number): boolean {
+  if (!player.inventory) return false;
+  const hotbarIndex = player.selectedHotbarIndex ?? 0;
+  const cell = player.inventory[hotbarIndex];
+  if (!cell || cell.itemId !== itemId || cell.count <= 0) return false;
+  const wear = applyToolWear(itemId, cell.durability);
+  if (wear.broken) {
+    player.inventory[hotbarIndex] = {
+      blockId: BLOCK_REGISTRY.AIR,
+      itemId: 0,
+      count: 0
+    };
+    return true;
+  }
+  player.inventory[hotbarIndex] = {
+    blockId: BLOCK_REGISTRY.AIR,
+    itemId,
+    count: 1,
+    ...(wear.durability !== undefined ? { durability: wear.durability } : {})
+  };
+  return true;
+}
+
 function executeBlockBreak(
   room: VoxelRoom,
   player: PlayerRuntime,
@@ -308,7 +470,49 @@ function executeBlockBreak(
   z: number,
   brokenId: number
 ): void {
-  applyDelta(room.world, x, y, z, BLOCK_REGISTRY.AIR);
+  if (
+    (room.gameMode ?? "creative") === "survival" &&
+    player.health !== undefined &&
+    addMiningExhaustion(player)
+  ) {
+    room.dirty = true;
+  }
+  if ((room.gameMode ?? "creative") === "survival" && brokenId === BLOCK_REGISTRY.CHEST) {
+    const key = chestKey(x, y, z);
+    const chest = room.chests.get(key);
+    if (chest) {
+      for (const cell of chest) {
+        if (!cell || cell.count <= 0) continue;
+        const pos = jitterBreakSpawnPosition(x, y, z);
+        const impulse = scatterImpulseBreakDrop();
+        const spawned =
+          (cell.itemId ?? 0) > 0
+            ? spawnItemDropAt(room, pos, cell.itemId, cell.count, impulse)
+            : cell.blockId !== BLOCK_REGISTRY.AIR
+              ? spawnBlockDropAt(room, pos, cell.blockId, cell.count, impulse)
+              : null;
+        if (spawned) {
+          io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
+            sessionId,
+            kind: "WORLD_DROP_SPAWNED",
+            drop: spawned
+          });
+        }
+      }
+      room.chests.delete(key);
+    }
+    room.chestLocks.delete(key);
+    for (const p of room.players.values()) {
+      if (p.activeChestKey === key) delete p.activeChestKey;
+    }
+    io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
+      sessionId,
+      kind: "CHEST_CLOSED",
+      pos: [x, y, z]
+    });
+  }
+  const replacementBlockId = replacementBlockAfterBreak(room.world, x, y, z);
+  applyDelta(room.world, x, y, z, replacementBlockId);
   if (
     (room.gameMode ?? "creative") === "survival" &&
     player.inventory &&
@@ -336,7 +540,7 @@ function executeBlockBreak(
   }
   io.to(`voxel:${sessionId}`).emit("BLOCK_DELTA", {
     pos: [x, y, z],
-    blockId: BLOCK_REGISTRY.AIR,
+    blockId: replacementBlockId,
     by: userId
   });
 }
@@ -428,12 +632,8 @@ async function emitInventoryToSurvivalPlayers(
     const uid = s.data.userId as string | undefined;
     if (!uid) continue;
     const p = room.players.get(uid);
-    if (p?.inventory && p.itemInventory && p.craftingGrid) {
-      s.emit("INVENTORY_SYNC", {
-        slots: p.inventory,
-        itemSlots: p.itemInventory,
-        craftingSlots: p.craftingGrid
-      });
+    if (p?.inventory && p.itemInventory && p.craftingGrid && p.equipmentSlots) {
+      s.emit("INVENTORY_SYNC", inventorySyncPayload(p));
     }
   }
 }
@@ -547,6 +747,7 @@ io.on("connection", (socket) => {
         return;
       }
       await socket.join(`voxel:${sessionId}`);
+      await socket.join(`voxel-user:${userId}:${sessionId}`);
       socket.data.sessionId = sessionId;
       void persistPlayerJoin({
         supabase: supabaseAdmin,
@@ -585,10 +786,20 @@ io.on("connection", (socket) => {
           effectiveMode === "survival" && assigned.player.itemInventory
             ? cloneItemInventory(assigned.player.itemInventory)
             : createEmptyItemInventory(),
+        equipmentSlots:
+          effectiveMode === "survival" && assigned.player.equipmentSlots
+            ? cloneEquipmentSlots(assigned.player.equipmentSlots)
+            : createEmptyEquipmentSlots(),
+        vitals:
+          effectiveMode === "survival" && assigned.player.health !== undefined
+            ? cloneVitals(assigned.player)
+            : cloneVitals(createDefaultVitals()),
         craftingGrid:
           effectiveMode === "survival" && assigned.player.craftingGrid
             ? cloneCraftingGrid(assigned.player.craftingGrid)
             : createEmptyCraftingGrid(),
+        craftingGridWidth:
+          effectiveMode === "survival" ? assigned.player.craftingGridWidth ?? 2 : 2,
         drops: effectiveMode === "survival" ? listDropsWire(room) : []
       });
     }
@@ -603,6 +814,15 @@ io.on("connection", (socket) => {
     if (!player) return;
     if (!isFiniteVec(payload?.pos)) return;
     if (!Number.isFinite(payload?.heading)) return;
+    if ((room.gameMode ?? "creative") === "survival" && player.health !== undefined) {
+      const dx = payload.pos[0] - player.pos[0];
+      const dz = payload.pos[2] - player.pos[2];
+      const distance = Math.hypot(dx, dz);
+      const jumped = !!payload.jumping && !player.jumping;
+      if (addMovementExhaustion(player, distance, jumped)) {
+        room.dirty = true;
+      }
+    }
     player.pos = payload.pos;
     player.heading = payload.heading;
     if (Number.isFinite(payload?.pitch)) player.pitch = payload.pitch as number;
@@ -615,6 +835,169 @@ io.on("connection", (socket) => {
     player.lastInputAt = Date.now();
     room.dirty = true;
   });
+
+  socket.on("ARM_SWING", (_payload: unknown, ack?: (r: SimpleAck) => void) => {
+    const sessionId = socket.data.sessionId as string | undefined;
+    if (!sessionId) return ack?.({ ok: false });
+    const room = getRoom(sessionId);
+    if (!room || room.paused) return ack?.({ ok: false });
+    const player = room.players.get(userId);
+    if (!player) return ack?.({ ok: false });
+    const now = Date.now();
+    if (now - (player.lastArmSwingAt ?? 0) < ARM_SWING_COOLDOWN_MS) {
+      return ack?.({ ok: true });
+    }
+    player.lastArmSwingAt = now;
+    const payload: ArmSwingPayload = { userId };
+    socket.to(`voxel:${sessionId}`).emit("PLAYER_ARM_SWING", payload);
+    ack?.({ ok: true });
+  });
+
+  socket.on(
+    "FALL_IMPACT",
+    (payload: FallImpactReq, ack?: (r: SimpleAck) => void) => {
+      const sessionId = socket.data.sessionId as string | undefined;
+      const room = sessionId ? getRoom(sessionId) : undefined;
+      const player = room ? room.players.get(userId) : undefined;
+      if (!sessionId || !room || !player || room.paused) {
+        ack?.({ ok: false, error: { code: "NOT_IN_ROOM", message: "לא בחדר" } });
+        return;
+      }
+      if ((room.gameMode ?? "creative") !== "survival" || player.health === undefined) {
+        ack?.({ ok: false, error: { code: "BAD_INTENT", message: "רק במצב הישרדות" } });
+        return;
+      }
+      const velocityY = Number(payload?.velocityY);
+      if (!Number.isFinite(velocityY) || velocityY > -8 || velocityY < -80) {
+        ack?.({ ok: false, error: { code: "BAD_INTENT", message: "Invalid fall" } });
+        return;
+      }
+      const amount = applyFallDamage(player, velocityY);
+      if (amount > 0) {
+        room.dirty = true;
+        io.to(`voxel:${sessionId}`).emit(
+          "PLAYER_DAMAGE",
+          playerDamagePayload(player, amount, "fall")
+        );
+        checkAndHandlePlayerDeath(room, player);
+      }
+      socket.emit("INVENTORY_SYNC", inventorySyncPayload(player));
+      ack?.({ ok: true });
+    }
+  );
+
+  socket.on(
+    "PLAYER_ATTACK",
+    (payload: PlayerAttackReq, ack?: (r: SimpleAck) => void) => {
+      const sessionId = socket.data.sessionId as string | undefined;
+      const room = sessionId ? getRoom(sessionId) : undefined;
+      const attacker = room ? room.players.get(userId) : undefined;
+      const targetUserId = String(payload?.targetUserId ?? "");
+      const target = room?.players.get(targetUserId);
+      if (!sessionId || !room || !attacker || !target || room.paused) {
+        ack?.({ ok: false, error: { code: "NOT_IN_ROOM", message: "לא בחדר" } });
+        return;
+      }
+      if (
+        (room.gameMode ?? "creative") !== "survival" ||
+        attacker.health === undefined ||
+        target.health === undefined ||
+        target.userId === attacker.userId
+      ) {
+        ack?.({ ok: false, error: { code: "BAD_INTENT", message: "תקיפה לא תקפה" } });
+        return;
+      }
+      const now = Date.now();
+      if (now - (attacker.lastAttackAt ?? 0) < PLAYER_ATTACK_COOLDOWN_MS) {
+        ack?.({ ok: true });
+        return;
+      }
+      if (vecDist(attacker.pos, target.pos) > PLAYER_ATTACK_REACH) {
+        ack?.({ ok: false, error: { code: "OUT_OF_REACH", message: "רחוק מדי" } });
+        return;
+      }
+      attacker.lastAttackAt = now;
+      const amount = applyPlayerDamage(target, heldWeaponDamage(attacker), "combat");
+      if (amount > 0) {
+        room.dirty = true;
+        io.to(`voxel:${sessionId}`).emit(
+          "PLAYER_DAMAGE",
+          playerDamagePayload(target, amount, "combat")
+        );
+        checkAndHandlePlayerDeath(room, target, now);
+      }
+      ack?.({ ok: true });
+    }
+  );
+
+  socket.on(
+    "IGNITE_TNT",
+    (payload: IgniteTntReq, ack?: (r: SimpleAck) => void) => {
+      const sessionId = socket.data.sessionId as string | undefined;
+      const target = resolveBreakTarget(userId, sessionId, payload?.pos, getRoom);
+      if (!target.ok) {
+        ack?.(target.ack);
+        return;
+      }
+      const { room, player, sessionId: activeSessionId, x, y, z, blockId } = target;
+      if ((room.gameMode ?? "creative") !== "survival") {
+        ack?.({
+          ok: false,
+          error: { code: "BAD_INTENT", message: "רק במצב שרדות" }
+        });
+        return;
+      }
+      if (blockId !== BLOCK_REGISTRY.TNT) {
+        ack?.({
+          ok: false,
+          error: { code: "BAD_INTENT", message: "אפשר להדליק רק TNT" }
+        });
+        return;
+      }
+      const hotbarIndex = player.selectedHotbarIndex ?? 0;
+      const held = player.inventory?.[hotbarIndex];
+      if (
+        !player.inventory ||
+        !player.itemInventory ||
+        !player.craftingGrid ||
+        !held ||
+        held.itemId !== ITEM_REGISTRY.FLINT_AND_STEEL ||
+        held.count <= 0
+      ) {
+        ack?.({
+          ok: false,
+          error: { code: "MISSING_TOOL", message: "צריך מצית צור וברזל בסרגל" }
+        });
+        return;
+      }
+      const now = Date.now();
+      const tnt = primeTnt(room, [x, y, z], userId, now);
+      if (!tnt) {
+        ack?.({
+          ok: false,
+          error: { code: "BAD_INTENT", message: "TNT לא זמין" }
+        });
+        return;
+      }
+      applyHeldItemWear(player, ITEM_REGISTRY.FLINT_AND_STEEL);
+      socket.emit("INVENTORY_SYNC", inventorySyncPayload(player));
+      io.to(`voxel:${activeSessionId}`).emit("BLOCK_DELTA", {
+        pos: [x, y, z],
+        blockId: getVoxelID(room.world, x, y, z),
+        by: userId
+      });
+      io.to(`voxel:${activeSessionId}`).emit("ROOM_EVENT", {
+        kind: "TNT_PRIMED",
+        sessionId: activeSessionId,
+        id: tnt.id,
+        pos: tnt.pos,
+        primedAt: tnt.primedAt,
+        explodeAt: tnt.explodeAt,
+        by: userId
+      });
+      ack?.({ ok: true });
+    }
+  );
 
   socket.on(
     "BLOCK_PLACE",
@@ -673,7 +1056,7 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      if (getVoxelID(room.world, x, y, z) !== BLOCK_REGISTRY.AIR) {
+      if (!blockReplaceable(getVoxelID(room.world, x, y, z))) {
         ack?.({
           ok: false,
           error: { code: "BLOCK_OCCUPIED", message: "המקום תפוס" }
@@ -697,11 +1080,7 @@ io.on("connection", (socket) => {
         player.craftingGrid
       ) {
         consumeOneIfPresent(player.inventory, blockId);
-        socket.emit("INVENTORY_SYNC", {
-          slots: player.inventory,
-          itemSlots: player.itemInventory,
-          craftingSlots: player.craftingGrid
-        });
+        socket.emit("INVENTORY_SYNC", inventorySyncPayload(player));
       }
       io.to(`voxel:${sessionId}`).emit("BLOCK_DELTA", {
         pos: [x, y, z],
@@ -790,11 +1169,7 @@ io.on("connection", (socket) => {
       }
       executeBlockBreak(room, player, userId, sessionId!, x, y, z, blockId);
       if (player.inventory && player.itemInventory && player.craftingGrid) {
-        socket.emit("INVENTORY_SYNC", {
-          slots: player.inventory,
-          itemSlots: player.itemInventory,
-          craftingSlots: player.craftingGrid
-        });
+        socket.emit("INVENTORY_SYNC", inventorySyncPayload(player));
       }
       ack?.({ ok: true });
     }
@@ -898,13 +1273,8 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      const dropPos = dropPositionInFrontOfPlayer(player);
-      const h = player.heading;
-      const impulse = {
-        vx: Math.sin(h) * 0.45,
-        vy: 0.35 + Math.random() * 0.15,
-        vz: Math.cos(h) * 0.45
-      };
+      const dropPos = thrownDropPositionInFrontOfPlayer(player);
+      const impulse = throwImpulseForPlayer(player);
       const spawned = isItem
         ? spawnItemDropAt(room, dropPos, cell.itemId, 1, impulse)
         : spawnBlockDropAt(room, dropPos, cell.blockId, 1, impulse);
@@ -915,11 +1285,7 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      socket.emit("INVENTORY_SYNC", {
-        slots: player.inventory,
-        itemSlots: player.itemInventory,
-        craftingSlots: player.craftingGrid
-      });
+      socket.emit("INVENTORY_SYNC", inventorySyncPayload(player));
       io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
         sessionId,
         kind: "WORLD_DROP_SPAWNED",
@@ -928,6 +1294,129 @@ io.on("connection", (socket) => {
       ack?.({ ok: true });
     }
   );
+
+  socket.on(
+    "EAT_START",
+    (payload: EatReq, ack?: (r: EatStartAck) => void) => {
+      const sessionId = socket.data.sessionId as string | undefined;
+      const room = sessionId ? getRoom(sessionId) : undefined;
+      const player = room ? room.players.get(userId) : undefined;
+      if (!sessionId || !room || !player || room.paused) {
+        ack?.({
+          ok: false,
+          error: { code: "NOT_IN_ROOM", message: "לא בחדר" }
+        });
+        return;
+      }
+      if ((room.gameMode ?? "creative") !== "survival" || !player.inventory) {
+        ack?.({
+          ok: false,
+          error: { code: "BAD_INTENT", message: "רק במצב הישרדות" }
+        });
+        return;
+      }
+      if ((player.hunger ?? MAX_HUNGER) >= MAX_HUNGER) {
+        ack?.({
+          ok: false,
+          error: { code: "FULL_HUNGER", message: "לא רעב עכשיו" }
+        });
+        return;
+      }
+      const hotbarIndex = Math.floor(Number(payload?.hotbarIndex));
+      if (
+        !Number.isFinite(hotbarIndex) ||
+        hotbarIndex < 0 ||
+        hotbarIndex >= HOTBAR_SLOT_COUNT
+      ) {
+        ack?.({
+          ok: false,
+          error: { code: "BAD_INTENT", message: "Invalid slot" }
+        });
+        return;
+      }
+      const cell = player.inventory[hotbarIndex];
+      const itemId = cell?.itemId ?? 0;
+      if (!cell || cell.count <= 0 || !itemFoodSpec(itemId)) {
+        ack?.({
+          ok: false,
+          error: { code: "NOT_FOOD", message: "אין אוכל במשבצת" }
+        });
+        return;
+      }
+      player.activeEating = {
+        hotbarIndex,
+        itemId,
+        startedAt: Date.now()
+      };
+      ack?.({ ok: true, durationMs: EATING_DURATION_MS });
+    }
+  );
+
+  socket.on(
+    "EAT_FINISH",
+    (payload: EatReq, ack?: (r: SimpleAck) => void) => {
+      const sessionId = socket.data.sessionId as string | undefined;
+      const room = sessionId ? getRoom(sessionId) : undefined;
+      const player = room ? room.players.get(userId) : undefined;
+      if (!sessionId || !room || !player || room.paused) {
+        ack?.({
+          ok: false,
+          error: { code: "NOT_IN_ROOM", message: "לא בחדר" }
+        });
+        return;
+      }
+      if ((room.gameMode ?? "creative") !== "survival" || !player.inventory) {
+        ack?.({
+          ok: false,
+          error: { code: "BAD_INTENT", message: "רק במצב הישרדות" }
+        });
+        return;
+      }
+      const hotbarIndex = Math.floor(Number(payload?.hotbarIndex));
+      const active = player.activeEating;
+      if (
+        !active ||
+        active.hotbarIndex !== hotbarIndex ||
+        Date.now() - active.startedAt < EAT_FINISH_TOLERANCE_MS
+      ) {
+        ack?.({
+          ok: false,
+          error: { code: "EAT_NOT_READY", message: "עדיין לא סיימת לאכול" }
+        });
+        return;
+      }
+      const cell = player.inventory[hotbarIndex];
+      const itemId = cell?.itemId ?? 0;
+      const food = itemFoodSpec(itemId);
+      if (
+        !cell ||
+        cell.count <= 0 ||
+        itemId !== active.itemId ||
+        !food ||
+        !consumeOneFromHotbarIndex(player.inventory, hotbarIndex)
+      ) {
+        delete player.activeEating;
+        ack?.({
+          ok: false,
+          error: { code: "NOT_FOOD", message: "האוכל כבר לא שם" }
+        });
+        return;
+      }
+      delete player.activeEating;
+      applyFood(player, food.nutrition, food.saturationModifier);
+      room.dirty = true;
+      socket.emit("INVENTORY_SYNC", inventorySyncPayload(player));
+      ack?.({ ok: true });
+    }
+  );
+
+  socket.on("EAT_CANCEL", (_payload: unknown, ack?: (r: SimpleAck) => void) => {
+    const sessionId = socket.data.sessionId as string | undefined;
+    const room = sessionId ? getRoom(sessionId) : undefined;
+    const player = room ? room.players.get(userId) : undefined;
+    if (player) delete player.activeEating;
+    ack?.({ ok: true });
+  });
 
   socket.on(
     "CRAFT",
@@ -949,14 +1438,189 @@ io.on("connection", (socket) => {
       if (recipeId !== "grid") {
         return ack?.({ ok: false });
       }
-      if (!tryCraftFromGrid(player.inventory, player.itemInventory, player.craftingGrid)) {
+      if (
+        !tryCraftFromGrid(
+          player.inventory,
+          player.itemInventory,
+          player.craftingGrid,
+          player.craftingGridWidth ?? 2
+        )
+      ) {
         return ack?.({ ok: false });
       }
-      socket.emit("INVENTORY_SYNC", {
-        slots: player.inventory,
-        itemSlots: player.itemInventory,
-        craftingSlots: player.craftingGrid
-      });
+      socket.emit("INVENTORY_SYNC", inventorySyncPayload(player));
+      ack?.({ ok: true });
+    }
+  );
+
+  socket.on(
+    "OPEN_CRAFTING_TABLE",
+    (payload: OpenCraftingTableReq, ack?: (r: SimpleAck) => void) => {
+      const sessionId = socket.data.sessionId as string | undefined;
+      const room = sessionId ? getRoom(sessionId) : undefined;
+      const player = room ? room.players.get(userId) : undefined;
+      if (!sessionId || !room || !player || room.paused) return ack?.({ ok: false });
+      if ((room.gameMode ?? "creative") !== "survival") return ack?.({ ok: false });
+      if (!player.inventory || !player.itemInventory || !player.craftingGrid) {
+        return ack?.({ ok: false });
+      }
+      const pos = payload?.pos;
+      if (!isFiniteVec(pos)) return ack?.({ ok: false });
+      const [x, y, z] = pos.map((n) => Math.floor(n)) as Vec3;
+      if (vecDist(player.pos, [x + 0.5, y + 0.5, z + 0.5]) > MAX_REACH) {
+        return ack?.({
+          ok: false,
+          error: { code: "OUT_OF_REACH", message: "רחוק מדי" }
+        });
+      }
+      if (getVoxelID(room.world, x, y, z) !== BLOCK_REGISTRY.CRAFTING) {
+        return ack?.({ ok: false });
+      }
+      player.craftingGridWidth = 3;
+      socket.emit("INVENTORY_SYNC", inventorySyncPayload(player));
+      ack?.({ ok: true });
+    }
+  );
+
+  socket.on("CLOSE_CRAFTING_TABLE", (_payload: unknown, ack?: (r: SimpleAck) => void) => {
+    const sessionId = socket.data.sessionId as string | undefined;
+    const room = sessionId ? getRoom(sessionId) : undefined;
+    const player = room ? room.players.get(userId) : undefined;
+    if (!sessionId || !room || !player) return ack?.({ ok: false });
+    if (!player.inventory || !player.itemInventory || !player.craftingGrid) {
+      player.craftingGridWidth = 2;
+      return ack?.({ ok: true });
+    }
+    const overflow = returnInactiveCraftingSlotsToInventory(
+      player.craftingGrid,
+      player.inventory,
+      player.itemInventory
+    );
+    for (const item of overflow) {
+      const dropPos = dropPositionInFrontOfPlayer(player);
+      const spawned =
+        item.kind === "block"
+          ? spawnBlockDropAt(room, dropPos, item.blockId, item.count)
+          : spawnItemDropAt(room, dropPos, item.itemId, item.count);
+      if (spawned) {
+        io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
+          sessionId,
+          kind: "WORLD_DROP_SPAWNED",
+          drop: spawned
+        });
+      }
+    }
+    player.craftingGridWidth = 2;
+    socket.emit("INVENTORY_SYNC", inventorySyncPayload(player));
+    ack?.({ ok: true });
+  });
+
+  socket.on(
+    "OPEN_CHEST",
+    (payload: OpenChestReq, ack?: (r: OpenChestAck) => void) => {
+      const sessionId = socket.data.sessionId as string | undefined;
+      const room = sessionId ? getRoom(sessionId) : undefined;
+      const player = room ? room.players.get(userId) : undefined;
+      if (!sessionId || !room || !player || room.paused) return ack?.({ ok: false });
+      if ((room.gameMode ?? "creative") !== "survival") return ack?.({ ok: false });
+      if (!player.inventory || !player.itemInventory || !player.craftingGrid) {
+        return ack?.({ ok: false });
+      }
+      const pos = payload?.pos;
+      if (!isFiniteVec(pos)) return ack?.({ ok: false });
+      const [x, y, z] = pos.map((n) => Math.floor(n)) as Vec3;
+      if (vecDist(player.pos, [x + 0.5, y + 0.5, z + 0.5]) > MAX_REACH) {
+        return ack?.({
+          ok: false,
+          error: { code: "OUT_OF_REACH", message: "רחוק מדי" }
+        });
+      }
+      if (getVoxelID(room.world, x, y, z) !== BLOCK_REGISTRY.CHEST) {
+        return ack?.({ ok: false });
+      }
+      const key = chestKey(x, y, z);
+      const lockedBy = room.chestLocks.get(key);
+      if (lockedBy && lockedBy !== userId) {
+        return ack?.({
+          ok: false,
+          error: { code: "CHEST_LOCKED", message: "תיבה פתוחה אצל שחקן אחר" }
+        });
+      }
+      if (player.activeChestKey && player.activeChestKey !== key) {
+        room.chestLocks.delete(player.activeChestKey);
+      }
+      player.activeChestKey = key;
+      room.chestLocks.set(key, userId);
+      const chest = getOrCreateChest(room, key);
+      ack?.({ ok: true, pos: [x, y, z], slots: cloneChest(chest) });
+    }
+  );
+
+  socket.on("CLOSE_CHEST", (_payload: unknown, ack?: (r: SimpleAck) => void) => {
+    const sessionId = socket.data.sessionId as string | undefined;
+    const room = sessionId ? getRoom(sessionId) : undefined;
+    const player = room ? room.players.get(userId) : undefined;
+    if (player?.activeChestKey) {
+      room?.chestLocks.delete(player.activeChestKey);
+      delete player.activeChestKey;
+    }
+    ack?.({ ok: true });
+  });
+
+  socket.on(
+    "CHEST_MOVE",
+    (payload: InventoryMoveReq, ack?: (r: SimpleAck) => void) => {
+      const sessionId = socket.data.sessionId as string | undefined;
+      const room = sessionId ? getRoom(sessionId) : undefined;
+      const player = room ? room.players.get(userId) : undefined;
+      if (!sessionId || !room || !player || room.paused) return ack?.({ ok: false });
+      if ((room.gameMode ?? "creative") !== "survival") return ack?.({ ok: false });
+      if (
+        !player.inventory ||
+        !player.itemInventory ||
+        !player.craftingGrid ||
+        !player.equipmentSlots ||
+        !player.activeChestKey
+      ) {
+        return ack?.({ ok: false });
+      }
+      if (room.chestLocks.get(player.activeChestKey) !== userId) {
+        return ack?.({
+          ok: false,
+          error: { code: "CHEST_LOCKED", message: "התיבה נעולה" }
+        });
+      }
+      const from = payload?.from;
+      const to = payload?.to;
+      if (
+        (from !== "hotbar" && from !== "storage" && from !== "chest") ||
+        (to !== "hotbar" && to !== "storage" && to !== "chest")
+      ) {
+        return ack?.({ ok: false });
+      }
+      const chest = room.chests.get(player.activeChestKey);
+      if (!chest) return ack?.({ ok: false });
+      const fromIndex = Math.floor(Number(payload?.fromIndex));
+      const toIndex = Math.floor(Number(payload?.toIndex));
+      if (
+        !applyInventoryMove(
+          player.inventory,
+          player.itemInventory,
+          player.craftingGrid,
+          {
+            from,
+            fromIndex,
+            to,
+            toIndex
+          },
+          player.equipmentSlots,
+          chest
+        )
+      ) {
+        return ack?.({ ok: false });
+      }
+      socket.emit("INVENTORY_SYNC", inventorySyncPayload(player));
+      socket.emit("CHEST_SYNC", chestSyncPayload(player.activeChestKey, cloneChest(chest)));
       ack?.({ ok: true });
     }
   );
@@ -985,14 +1649,19 @@ io.on("connection", (socket) => {
           error: { code: "BAD_INTENT", message: "רק במצב הישרדות" }
         });
       }
-      if (!player.inventory || !player.itemInventory || !player.craftingGrid) {
+      if (
+        !player.inventory ||
+        !player.itemInventory ||
+        !player.craftingGrid ||
+        !player.equipmentSlots
+      ) {
         return ack?.({ ok: false });
       }
       const from = payload?.from;
       const to = payload?.to;
       if (
-        (from !== "hotbar" && from !== "storage" && from !== "craft") ||
-        (to !== "hotbar" && to !== "storage" && to !== "craft")
+        (from !== "hotbar" && from !== "storage" && from !== "craft" && from !== "equipment") ||
+        (to !== "hotbar" && to !== "storage" && to !== "craft" && to !== "equipment")
       ) {
         return ack?.({ ok: false });
       }
@@ -1001,19 +1670,31 @@ io.on("connection", (socket) => {
       if (!Number.isFinite(fromIndex) || !Number.isFinite(toIndex)) {
         return ack?.({ ok: false });
       }
-      if (!applyInventoryMove(player.inventory, player.itemInventory, player.craftingGrid, {
-        from,
-        fromIndex,
-        to,
-        toIndex
-      })) {
+      const craftingWidth = player.craftingGridWidth ?? 2;
+      if (
+        craftingWidth === 2 &&
+        ((from === "craft" && !isPersonalCraftingIndex(fromIndex)) ||
+          (to === "craft" && !isPersonalCraftingIndex(toIndex)))
+      ) {
         return ack?.({ ok: false });
       }
-      socket.emit("INVENTORY_SYNC", {
-        slots: player.inventory,
-        itemSlots: player.itemInventory,
-        craftingSlots: player.craftingGrid
-      });
+      if (
+        !applyInventoryMove(
+          player.inventory,
+          player.itemInventory,
+          player.craftingGrid,
+          {
+            from,
+            fromIndex,
+            to,
+            toIndex
+          },
+          player.equipmentSlots
+        )
+      ) {
+        return ack?.({ ok: false });
+      }
+      socket.emit("INVENTORY_SYNC", inventorySyncPayload(player));
       ack?.({ ok: true });
     }
   );
@@ -1059,10 +1740,19 @@ io.on("connection", (socket) => {
           p.inventory = createEmptyHotbar();
           p.itemInventory = createEmptyItemInventory();
           p.craftingGrid = createEmptyCraftingGrid();
+          p.equipmentSlots = createEmptyEquipmentSlots();
+          p.craftingGridWidth = 2;
+          assignVitals(p, createDefaultVitals());
+          delete p.activeEating;
+          delete p.activeChestKey;
         }
         room.disconnectedInventories.clear();
         room.disconnectedItemInventories.clear();
         room.disconnectedCraftingGrids.clear();
+        room.disconnectedEquipmentSlots.clear();
+        room.disconnectedVitals.clear();
+        room.chests.clear();
+        room.chestLocks.clear();
       } else {
         room.gameMode = "creative";
         clearDropsBroadcast(io, room);
@@ -1070,10 +1760,25 @@ io.on("connection", (socket) => {
           delete p.inventory;
           delete p.itemInventory;
           delete p.craftingGrid;
+          delete p.equipmentSlots;
+          delete p.craftingGridWidth;
+          delete p.health;
+          delete p.hunger;
+          delete p.saturation;
+          delete p.exhaustion;
+          delete p.lastVitalsAt;
+          delete p.lastRegenAt;
+          delete p.lastStarveAt;
+          delete p.activeEating;
+          delete p.activeChestKey;
         }
         room.disconnectedInventories.clear();
         room.disconnectedItemInventories.clear();
         room.disconnectedCraftingGrids.clear();
+        room.disconnectedEquipmentSlots.clear();
+        room.disconnectedVitals.clear();
+        room.chests.clear();
+        room.chestLocks.clear();
       }
       io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
         sessionId,
@@ -1299,8 +2004,93 @@ const recessTimer = setInterval(() => {
 }, RECESS_TICK_MS);
 recessTimer.unref?.();
 
+function tickRoomVitals(room: VoxelRoom, now: number): void {
+  if ((room.gameMode ?? "creative") !== "survival") return;
+  for (const player of room.players.values()) {
+    if (player.health === undefined) continue;
+    const suffAmount = applySuffocationDamage(room.world, player, now);
+    if (suffAmount > 0) {
+      room.dirty = true;
+      io.to(`voxel:${room.sessionId}`).emit(
+        "PLAYER_DAMAGE",
+        playerDamagePayload(player, suffAmount, "suffocation")
+      );
+    }
+    if (tickVitals(player, now) || tickHeliosRegen(player, room.world, now) || suffAmount > 0) {
+      room.dirty = true;
+    }
+    checkAndHandlePlayerDeath(room, player, now);
+  }
+}
+
+function tickRoomTnt(room: VoxelRoom, now: number): void {
+  if ((room.gameMode ?? "creative") !== "survival" || room.activeTnts.size === 0) return;
+  const sessionId = room.sessionId;
+  for (const tnt of [...room.activeTnts.values()]) {
+    if (tnt.explodeAt > now) continue;
+    const result = applyTntExplosion(room, tnt);
+    for (const delta of result.blockDeltas) {
+      io.to(`voxel:${sessionId}`).emit("BLOCK_DELTA", {
+        pos: delta.pos,
+        blockId: delta.blockId,
+        by: tnt.by
+      });
+      if (blockDropsPickable(delta.destroyedBlockId) && Math.random() < 0.3) {
+        const [x, y, z] = delta.pos;
+        const dropId = blockDropId(delta.destroyedBlockId);
+        if (dropId !== null) {
+          const spawned = spawnBlockDropAt(
+            room,
+            jitterBreakSpawnPosition(x, y, z),
+            dropId,
+            1,
+            scatterImpulseBreakDrop()
+          );
+          if (spawned) {
+            io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
+              sessionId,
+              kind: "WORLD_DROP_SPAWNED",
+              drop: spawned
+            });
+          }
+        }
+      }
+    }
+    for (const damage of result.playerDamage) {
+      io.to(`voxel:${sessionId}`).emit(
+        "PLAYER_DAMAGE",
+        playerDamagePayload(damage.player, damage.amount, "explosion", damage.impulse)
+      );
+      checkAndHandlePlayerDeath(room, damage.player, now);
+    }
+    io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
+      kind: "EXPLOSION",
+      sessionId,
+      id: tnt.id,
+      pos: tnt.pos,
+      radius: TNT_EXPLOSION_RADIUS,
+      by: tnt.by
+    });
+  }
+}
+
+function tickRoomWeather(room: VoxelRoom, now: number): void {
+  const deltas = tickWeatherFreezing(room, now);
+  if (deltas.length === 0) return;
+  for (const delta of deltas) {
+    io.to(`voxel:${room.sessionId}`).emit("BLOCK_DELTA", {
+      pos: delta.pos,
+      blockId: delta.blockId,
+      by: "weather"
+    });
+  }
+}
+
 startTickLoop({
   io,
+  survivalVitalsTick: tickRoomVitals,
+  tntTick: tickRoomTnt,
+  weatherTick: tickRoomWeather,
   worldDropsTick: (room) => tickWorldDrops(io, room, Date.now()),
   magnetPickups: (room) => tickMagnetPickups(io, room)
 });

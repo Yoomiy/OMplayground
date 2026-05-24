@@ -3,12 +3,15 @@ import {
   createWorld,
   getVoxelID,
   hydrateDeltas,
+  isSpawnPointSafe,
   proceduralVoxelID,
+  replacementBlockAfterBreak,
   seedFromSessionId,
   serializeDeltas,
   spawnPointFor
 } from "./world";
 import { BLOCK_REGISTRY } from "./protocol";
+import { SEA_LEVEL } from "@playground/voxel-content";
 
 /**
  * Layer 1 — pure voxel-world logic. No socket, no supabase.
@@ -42,8 +45,8 @@ describe("proceduralVoxelID", () => {
 
   it("returns AIR sufficiently above the surface", () => {
     const seed = seedFromSessionId("sess-air");
-    expect(proceduralVoxelID(0, 200, 0, seed)).toBe(BLOCK_REGISTRY.AIR);
-    expect(proceduralVoxelID(10, 100, 10, seed)).toBe(BLOCK_REGISTRY.AIR);
+    expect(proceduralVoxelID(0, 220, 0, seed)).toBe(BLOCK_REGISTRY.AIR);
+    expect(proceduralVoxelID(10, 220, 10, seed)).toBe(BLOCK_REGISTRY.AIR);
   });
 
   it("returns solid blocks below ground", () => {
@@ -62,11 +65,12 @@ describe("proceduralVoxelID", () => {
     const ores = new Set<number>([
       BLOCK_REGISTRY.COAL_ORE,
       BLOCK_REGISTRY.IRON_ORE,
-      BLOCK_REGISTRY.GOLD_ORE
+      BLOCK_REGISTRY.GOLD_ORE,
+      BLOCK_REGISTRY.DIAMOND_ORE
     ]);
     let foundOre = false;
     for (let x = -20; x <= 20 && !foundOre; x++) {
-      for (let y = -20; y <= 8 && !foundOre; y++) {
+      for (let y = 5; y <= 58 && !foundOre; y++) {
         for (let z = -20; z <= 20 && !foundOre; z++) {
           foundOre = ores.has(proceduralVoxelID(x, y, z, seed));
         }
@@ -123,12 +127,14 @@ describe("serializeDeltas / hydrateDeltas", () => {
 describe("spawnPointFor", () => {
   it("produces a point above the procedural surface (always solid below, air at spawn)", () => {
     const seed = seedFromSessionId("sess-spawn");
+    const world = createWorld(seed);
     const [sx, sy, sz] = spawnPointFor(seed, "user-1");
     const ix = Math.floor(sx);
     const iy = Math.floor(sy);
     const iz = Math.floor(sz);
     expect(proceduralVoxelID(ix, iy, iz, seed)).toBe(BLOCK_REGISTRY.AIR);
-    expect(proceduralVoxelID(ix, iy - 3, iz, seed)).not.toBe(BLOCK_REGISTRY.AIR);
+    expect(proceduralVoxelID(ix, iy - 2, iz, seed)).not.toBe(BLOCK_REGISTRY.AIR);
+    expect(isSpawnPointSafe(world, [sx, sy, sz])).toBe(true);
   });
 
   it("offsets per-user so two players don't share a column", () => {
@@ -136,5 +142,32 @@ describe("spawnPointFor", () => {
     const a = spawnPointFor(seed, "user-a");
     const b = spawnPointFor(seed, "user-b");
     expect(a[0] === b[0] && a[2] === b[2]).toBe(false);
+  });
+
+  it("rejects underwater or unsupported spawn points", () => {
+    const seed = seedFromSessionId("sess-spawn-safe");
+    const world = createWorld(seed);
+    expect(isSpawnPointSafe(world, [0.5, SEA_LEVEL - 4, 0.5])).toBe(false);
+    expect(isSpawnPointSafe(world, [0.5, SEA_LEVEL + 20, 0.5])).toBe(false);
+  });
+});
+
+describe("replacementBlockAfterBreak", () => {
+  it("restores water when breaking a placed block in water", () => {
+    const seed = seedFromSessionId("sess-water-break");
+    const world = createWorld(seed);
+    let waterPos: [number, number, number] | null = null;
+    for (let x = -200; x <= 200 && !waterPos; x += 20) {
+      for (let z = -200; z <= 200 && !waterPos; z += 20) {
+        if (proceduralVoxelID(x, SEA_LEVEL, z, seed) === BLOCK_REGISTRY.WATER) {
+          waterPos = [x, SEA_LEVEL, z];
+        }
+      }
+    }
+    expect(waterPos).not.toBeNull();
+    const [x, y, z] = waterPos!;
+    applyDelta(world, x, y, z, BLOCK_REGISTRY.STONE);
+    expect(getVoxelID(world, x, y, z)).toBe(BLOCK_REGISTRY.STONE);
+    expect(replacementBlockAfterBreak(world, x, y, z)).toBe(BLOCK_REGISTRY.WATER);
   });
 });
