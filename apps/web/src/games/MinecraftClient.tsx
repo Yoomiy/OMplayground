@@ -75,6 +75,7 @@ import {
   type AvatarRig
 } from "@/games/voxel/voxelAvatarAnimation";
 import { overrideObjectMesher } from "@/games/voxel/voxelObjectMesher";
+import { WorldgenWorkerPool } from "@/games/voxel/worldgenPool";
 import {
   createBreakCrackOverlay,
   destroyStageIndex,
@@ -884,6 +885,9 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       // Override default ThinInstance ObjectMesher with SolidParticleSystem version 
       // (solves the ThinInstance origin shift bug where objects jump to sky)
       overrideObjectMesher(noa);
+
+      const pool = new WorldgenWorkerPool();
+      cleanupFns.push(() => pool.dispose());
       
       // Unbind default KeyE from alt-fire (right-click) so pressing E to open inventory doesn't place blocks
       noa.inputs.unbind("alt-fire");
@@ -911,11 +915,38 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       });
 
       const deltas = new Map<string, number>();
+      const chunkDeltas = new Map<string, Map<string, number>>();
+
+      const setDelta = (x: number, y: number, z: number, id: number) => {
+        const key = `${x},${y},${z}`;
+        deltas.set(key, id);
+
+        const cx = Math.floor(x / 16);
+        const cy = Math.floor(y / 16);
+        const cz = Math.floor(z / 16);
+        const chunkKey = `${cx},${cy},${cz}`;
+        let chunkMap = chunkDeltas.get(chunkKey);
+        if (!chunkMap) {
+          chunkMap = new Map<string, number>();
+          chunkDeltas.set(chunkKey, chunkMap);
+        }
+        chunkMap.set(key, id);
+      };
+
       for (const [x, y, z, id] of initialDeltas) {
-        deltas.set(`${x},${y},${z}`, id);
+        setDelta(x, y, z, id);
       }
 
       const scene = noa.rendering.getScene();
+
+      // Configure linear distance fog to blend loading chunks into the sky/background
+      scene.fogMode = Babylon.Scene.FOGMODE_LINEAR;
+      scene.fogStart = 110;
+      scene.fogEnd = 150;
+      const skyBlue = new Babylon.Color3(0.6, 0.8, 1.0);
+      scene.fogColor = skyBlue;
+      scene.clearColor = new Babylon.Color4(0.6, 0.8, 1.0, 1.0);
+
       const defaultAmbient = scene.ambientColor?.clone?.() ?? new Babylon.Color3(0, 0, 0);
       const fullBrightAmbient = new Babylon.Color3(1, 1, 1);
       const torchLights = new Map<string, { dispose: () => void }>();
@@ -993,26 +1024,91 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       noa.world.on(
         "worldDataNeeded",
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (chunkId: unknown, data: any, x0: number, y0: number, z0: number) => {
+        (chunkId: any, data: any, x0: number, y0: number, z0: number) => {
           const [sx, sy, sz] = data.shape;
-          for (let i = 0; i < sx; i++) {
-            for (let j = 0; j < sy; j++) {
-              for (let k = 0; k < sz; k++) {
-                const x = x0 + i;
-                const y = y0 + j;
-                const z = z0 + k;
-                const override = deltas.get(`${x},${y},${z}`);
-                const blockId =
-                  override !== undefined
-                    ? override
-                    : proceduralVoxelID(x, y, z, seed);
-                data.set(i, j, k, blockId);
+
+          // Sync threshold: find player's current chunk columns to generate nearby chunks synchronously
+          const pPos = noa.entities.getPosition(noa.playerEntity) as number[];
+          const playerChunkX = Math.floor((pPos ? pPos[0] : 0) / 16);
+          const playerChunkZ = Math.floor((pPos ? pPos[2] : 0) / 16);
+          const chunkX = Math.floor(x0 / 16);
+          const chunkZ = Math.floor(z0 / 16);
+
+          // If the chunk is part of the 3x3 surrounding the player, generate synchronously to prevent gaps or falling through
+          if (Math.abs(chunkX - playerChunkX) <= 1 && Math.abs(chunkZ - playerChunkZ) <= 1) {
+            const cx = Math.floor(x0 / 16);
+            const cy = Math.floor(y0 / 16);
+            const cz = Math.floor(z0 / 16);
+            const chunkKey = `${cx},${cy},${cz}`;
+            const chunkMap = chunkDeltas.get(chunkKey);
+
+            for (let i = 0; i < sx; i++) {
+              for (let j = 0; j < sy; j++) {
+                for (let k = 0; k < sz; k++) {
+                  const x = x0 + i;
+                  const y = y0 + j;
+                  const z = z0 + k;
+                  const override = chunkMap?.get(`${x},${y},${z}`);
+                  const blockId = override !== undefined ? override : proceduralVoxelID(x, y, z, seed);
+                  data.set(i, j, k, blockId);
+                }
               }
             }
+            noa.world.setChunkData(chunkId, data);
+            return;
           }
-          noa.world.setChunkData(chunkId, data);
+
+          // Otherwise, offload asynchronous chunk generation to background worker pool
+          pool.requestChunk({
+            chunkId,
+            data,
+            x0,
+            y0,
+            z0,
+            seed,
+            sx,
+            sy,
+            sz,
+            onComplete: (voxels: Uint16Array) => {
+              const cx = Math.floor(x0 / 16);
+              const cy = Math.floor(y0 / 16);
+              const cz = Math.floor(z0 / 16);
+              const chunkKey = `${cx},${cy},${cz}`;
+              const chunkMap = chunkDeltas.get(chunkKey);
+
+              let idx = 0;
+              if (chunkMap && chunkMap.size > 0) {
+                for (let i = 0; i < sx; i++) {
+                  for (let j = 0; j < sy; j++) {
+                    for (let k = 0; k < sz; k++) {
+                      const x = x0 + i;
+                      const y = y0 + j;
+                      const z = z0 + k;
+                      const override = chunkMap.get(`${x},${y},${z}`);
+                      const blockId = override !== undefined ? override : voxels[idx];
+                      data.set(i, j, k, blockId);
+                      idx++;
+                    }
+                  }
+                }
+              } else {
+                for (let i = 0; i < sx; i++) {
+                  for (let j = 0; j < sy; j++) {
+                    for (let k = 0; k < sz; k++) {
+                      data.set(i, j, k, voxels[idx++]);
+                    }
+                  }
+                }
+              }
+              noa.world.setChunkData(chunkId, data);
+            }
+          });
         }
       );
+
+      noa.world.on("chunkBeingRemoved", (chunkId: any) => {
+        pool.cancelChunk(chunkId);
+      });
 
       const remoteMaterial = new Babylon.StandardMaterial("mat_remote", scene);
       remoteMaterial.diffuseColor = new Babylon.Color3(1, 0.8, 0.2);
@@ -1198,7 +1294,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         const [x, y, z] = pos;
         const previousId = clientBlockAtInt(x, y, z);
         noa.setBlock(blockId, x, y, z);
-        deltas.set(blockCoordKey(x, y, z), blockId);
+        setDelta(x, y, z, blockId);
         setTorchLightAt(x, y, z, blockId);
         if (!pausedRef.current && previousId !== blockId) {
           if (previousId !== BLOCK_REGISTRY.AIR && blockId === BLOCK_REGISTRY.AIR) {
@@ -2075,6 +2171,16 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       let lastDebugUpdate = 0;
       noa.on("tick", () => {
         const nowPerf = performance.now();
+
+        // Update background pool with player position and camera direction
+        const pPos = noa.entities.getPosition(noa.playerEntity) as number[];
+        const pDir = noa.camera.getDirection() as number[];
+        if (pPos && pDir) {
+          pool.updatePlayer(
+            [pPos[0], pPos[1], pPos[2]],
+            [pDir[0], pDir[1], pDir[2]]
+          );
+        }
         if (!pausedRef.current) animatePrimedTnts(Date.now());
         const equipped = equipmentSlotsRef.current;
         const moveState = noa.entities.getMovement?.(noa.playerEntity);
