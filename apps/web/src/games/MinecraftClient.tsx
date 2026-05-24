@@ -1214,7 +1214,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       }
 
       function findAttackTarget(): { userId: string; distance: number } | null {
-        const eye = noa.camera.getPosition() as number[];
+        const eye = noa.camera.getTargetPosition() as number[];
         const dir = noa.camera.getDirection() as number[];
         let best: { userId: string; distance: number } | null = null;
         for (const [userId, eid] of remoteEntitiesRef.current) {
@@ -1370,7 +1370,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       }
 
       function fallbackPlacementPos(): Vec3 | null {
-        const eye = noa.camera.getPosition() as number[];
+        const eye = noa.camera.getTargetPosition() as number[];
         const dir = noa.camera.getDirection() as number[];
         const seen = new Set<string>();
         for (let dist = 1.6; dist <= MAX_REACH - 0.5; dist += 0.25) {
@@ -1389,7 +1389,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
       /** First breakable voxel along view ray (includes replaceable plants noa skips for placement). */
       function findBreakTarget(): { pos: Vec3; blockId: number; distance: number } | null {
-        const eye = noa.camera.getPosition() as number[];
+        const eye = noa.camera.getTargetPosition() as number[];
         const dir = noa.camera.getDirection() as number[];
         const seen = new Set<string>();
         for (let dist = 1.0; dist <= MAX_REACH - 0.5; dist += 0.15) {
