@@ -877,8 +877,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         blockTestDistance: 8,
         domElement: hostRef.current,
         chunkSize: 16,
-        chunkAddDistance: [5, 4],
-        chunkRemoveDistance: [6, 5]
+        chunkAddDistance: [10, 8],
+        chunkRemoveDistance: [12, 10]
       } as Record<string, unknown>);
       
       // Override default ThinInstance ObjectMesher with SolidParticleSystem version 
