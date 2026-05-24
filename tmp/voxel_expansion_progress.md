@@ -470,7 +470,9 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Addressed: underwater spawning/building. Cached spawns are revalidated, water is replaceable for placement, and the client has an aimed no-target placement fallback.
 - Addressed: combat/fall protocol was missing. Added fall impact, player attack, and player damage socket flow.
 - Addressed: spawn felt too high. Spawn clearance is now `surface + 2` instead of `surface + 3`.
+
 - after you are done with everything /review every detail in the original plan implementation and in this document and fix what needs fixing. your goal isn't reached until you are done with it!
+
 - Addressed: falling does damage in survival through `FALL_IMPACT`; focused tests cover normal and feather-falling cases.
 - Addressed: movement constants are centralized in `movementConfig.ts`.
 - Addressed: holding/using non-block items is covered for current item classes: visible held items, food eating, tool mining/combat, and equipment slots.
@@ -492,4 +494,15 @@ This ledger tracks major advancements, decisions, verification, and comments to 
 - Addressed: flat held item/plant-block sprites now flip the texture V axis so they render upright.
 
 - Addressed: final review pass completed and the remaining concrete comments/gaps are covered above.
-- Addressed: implementation areas were reviewed separately in the final verification pass: shared content/worldgen, server authority/ticks, client runtime/UX, and focused tests.
+
+- go again through the implementation of every part, and review it separatly. question the solutions you found for stuff, and look for better solutions and optimitations.
+
+## 2026-05-24 - Integration of Death & Suffocation
+
+- Resolved TypeScript compiler errors in standalone `death.ts` by adding `lastSuffocationAt?: number` to `PlayerRuntime` in `room.ts`.
+- Implemented player-targeted socket channels (`voxel-user:${userId}:${sessionId}`) to support direct-syncing of cleared inventories to deceased players upon respawning.
+- Registered `PLAYER_DEATH` and `PLAYER_RESPAWN` events in the `RoomEvent` wire protocol union across both client and server schemas.
+- Integrated `applySuffocationDamage` and `checkAndHandlePlayerDeath` into the main server vital ticker `tickRoomVitals` to process suffocation damage and handle death from starvation or suffocation.
+- Hooked `checkAndHandlePlayerDeath` into combat strikes, fall impact, and TNT explosion loops to cover all damage-dealing systems in survival mode.
+- Programmed client-side response to `PLAYER_RESPAWN` in `MinecraftClient.tsx` to automatically teleport the local player's camera/rig to the authoritative spawn coordinate and clear lingering physical velocity.
+- Verified that all 16 server test suites pass perfectly and the web linter runs with zero errors.

@@ -139,6 +139,7 @@ import {
 } from "./perks";
 import { applyTntExplosion, primeTnt, TNT_EXPLOSION_RADIUS } from "./tnt";
 import { tickWeatherFreezing } from "./weather";
+import { applySuffocationDamage, handlePlayerDeath } from "./death";
 
 const PORT = Number(process.env.PORT ?? 8081);
 const ARM_SWING_COOLDOWN_MS = 150;
@@ -367,6 +368,45 @@ function playerDamagePayload(
     source,
     ...(impulse ? { impulse } : {})
   };
+}
+
+function checkAndHandlePlayerDeath(
+  room: VoxelRoom,
+  player: PlayerRuntime,
+  now = Date.now()
+): boolean {
+  if (player.health === undefined || player.health > 0) return false;
+
+  const { deathPos, respawnPos, drops } = handlePlayerDeath(room, player, now);
+
+  io.to(`voxel:${room.sessionId}`).emit("ROOM_EVENT", {
+    sessionId: room.sessionId,
+    kind: "PLAYER_DEATH",
+    userId: player.userId,
+    deathPos
+  });
+
+  for (const drop of drops) {
+    io.to(`voxel:${room.sessionId}`).emit("ROOM_EVENT", {
+      sessionId: room.sessionId,
+      kind: "WORLD_DROP_SPAWNED",
+      drop
+    });
+  }
+
+  io.to(`voxel:${room.sessionId}`).emit("ROOM_EVENT", {
+    sessionId: room.sessionId,
+    kind: "PLAYER_RESPAWN",
+    userId: player.userId,
+    respawnPos
+  });
+
+  io.to(`voxel-user:${player.userId}:${room.sessionId}`).emit(
+    "INVENTORY_SYNC",
+    inventorySyncPayload(player)
+  );
+
+  return true;
 }
 
 function chestKey(x: number, y: number, z: number): string {
@@ -707,6 +747,7 @@ io.on("connection", (socket) => {
         return;
       }
       await socket.join(`voxel:${sessionId}`);
+      await socket.join(`voxel-user:${userId}:${sessionId}`);
       socket.data.sessionId = sessionId;
       void persistPlayerJoin({
         supabase: supabaseAdmin,
@@ -838,6 +879,7 @@ io.on("connection", (socket) => {
           "PLAYER_DAMAGE",
           playerDamagePayload(player, amount, "fall")
         );
+        checkAndHandlePlayerDeath(room, player);
       }
       socket.emit("INVENTORY_SYNC", inventorySyncPayload(player));
       ack?.({ ok: true });
@@ -882,6 +924,7 @@ io.on("connection", (socket) => {
           "PLAYER_DAMAGE",
           playerDamagePayload(target, amount, "combat")
         );
+        checkAndHandlePlayerDeath(room, target, now);
       }
       ack?.({ ok: true });
     }
@@ -1965,9 +2008,18 @@ function tickRoomVitals(room: VoxelRoom, now: number): void {
   if ((room.gameMode ?? "creative") !== "survival") return;
   for (const player of room.players.values()) {
     if (player.health === undefined) continue;
-    if (tickVitals(player, now) || tickHeliosRegen(player, room.world, now)) {
+    const suffAmount = applySuffocationDamage(room.world, player, now);
+    if (suffAmount > 0) {
+      room.dirty = true;
+      io.to(`voxel:${room.sessionId}`).emit(
+        "PLAYER_DAMAGE",
+        playerDamagePayload(player, suffAmount, "suffocation")
+      );
+    }
+    if (tickVitals(player, now) || tickHeliosRegen(player, room.world, now) || suffAmount > 0) {
       room.dirty = true;
     }
+    checkAndHandlePlayerDeath(room, player, now);
   }
 }
 
@@ -2009,6 +2061,7 @@ function tickRoomTnt(room: VoxelRoom, now: number): void {
         "PLAYER_DAMAGE",
         playerDamagePayload(damage.player, damage.amount, "explosion", damage.impulse)
       );
+      checkAndHandlePlayerDeath(room, damage.player, now);
     }
     io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
       kind: "EXPLOSION",

@@ -1663,6 +1663,19 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
               blastFlashTimer = null;
             }, 220);
           }
+          return;
+        }
+        if (ev.kind === "PLAYER_RESPAWN") {
+          if (ev.userId === myUserIdRef.current) {
+            noa.entities.setPosition(noa.playerEntity, ev.respawnPos);
+            const phys = noa.entities.getPhysics(noa.playerEntity);
+            if (phys?.body) {
+              phys.body.velocity[0] = 0;
+              phys.body.velocity[1] = 0;
+              phys.body.velocity[2] = 0;
+            }
+          }
+          return;
         }
       });
       cleanupFns.push(offRoomEvents);

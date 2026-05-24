@@ -325,6 +325,8 @@ export type RoomEvent =
       kind: "WORLD_DROP_UPDATE";
       sessionId: string;
       updates: WorldDropWireDelta[];
-    };
+    }
+  | { kind: "PLAYER_DEATH"; sessionId: string; userId: string; deathPos: Vec3 }
+  | { kind: "PLAYER_RESPAWN"; sessionId: string; userId: string; respawnPos: Vec3 };
 
 export const MAX_REACH = 8;
