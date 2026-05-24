@@ -82,7 +82,6 @@ const LEAF_BLOCK_IDS = [
 ] as const;
 
 const planks = { kind: "tag", tag: "planks" } as const;
-const woodLogs = { kind: "tag", tag: "wood_logs" } as const;
 const leaves = { kind: "tag", tag: "leaves" } as const;
 const stick = { kind: "item", itemId: ITEM_REGISTRY.STICK } as const;
 const cobble = { kind: "block", blockId: BLOCK_REGISTRY.COBBLESTONE } as const;
@@ -352,6 +351,7 @@ export const RECIPES: readonly Recipe[] = [
   pickaxeRecipe("diamond_pickaxe", diamond, ITEM_REGISTRY.DIAMOND_PICKAXE),
   axeRecipe("wooden_axe", planks, ITEM_REGISTRY.WOODEN_AXE),
   axeRecipe("stone_axe", cobble, ITEM_REGISTRY.STONE_AXE),
+  axeRecipe("iron_axe", ironIngot, ITEM_REGISTRY.IRON_AXE),
   axeRecipe("diamond_axe", diamond, ITEM_REGISTRY.DIAMOND_AXE),
   shovelRecipe("wooden_shovel", planks, ITEM_REGISTRY.WOODEN_SHOVEL),
   shovelRecipe("stone_shovel", cobble, ITEM_REGISTRY.STONE_SHOVEL),
@@ -366,7 +366,7 @@ export const RECIPES: readonly Recipe[] = [
     count: 1
   }),
   pickaxeRecipe("swift_pickaxe", block(BLOCK_REGISTRY.GOLD_BLOCK), ITEM_REGISTRY.SWIFT_PICKAXE),
-  shapeless("wood_log_to_coal", [woodLogs], {
+  shapeless("coal_ore_to_coal", [block(BLOCK_REGISTRY.COAL_ORE)], {
     kind: "item",
     id: ITEM_REGISTRY.COAL,
     count: 1

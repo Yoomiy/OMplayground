@@ -285,6 +285,14 @@ export const ITEM_DEFS = [
     category: "material",
     maxStack: 64,
     iconFilename: "gold_ingot.png"
+  },
+  {
+    id: 128,
+    key: "IRON_AXE",
+    category: "tool",
+    maxStack: 1,
+    iconFilename: "iron_axe.png",
+    tool: toolDef("axe", 2)
   }
 ] as const satisfies readonly ItemDef[];
 

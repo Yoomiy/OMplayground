@@ -257,6 +257,7 @@ const ITEM_HUD: Record<number, string> = {
   [ITEM_REGISTRY.DIAMOND_PICKAXE]: "מכוש יהלום",
   [ITEM_REGISTRY.WOODEN_AXE]: "גרזן עץ",
   [ITEM_REGISTRY.STONE_AXE]: "גרזן אבן",
+  [ITEM_REGISTRY.IRON_AXE]: "גרזן ברזל",
   [ITEM_REGISTRY.WOODEN_SHOVEL]: "את עץ",
   [ITEM_REGISTRY.STONE_SHOVEL]: "את אבן",
   [ITEM_REGISTRY.DIAMOND_AXE]: "גרזן יהלום",
