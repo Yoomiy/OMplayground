@@ -2277,6 +2277,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           }
         }
 
+        if (isDeadRef.current) return;
         if (nowPerf - lastEmit < 60) return;
         lastEmit = nowPerf;
         onInputRef.current({

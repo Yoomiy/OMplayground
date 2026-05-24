@@ -814,7 +814,10 @@ io.on("connection", (socket) => {
     if (!player) return;
     if (!isFiniteVec(payload?.pos)) return;
     if (!Number.isFinite(payload?.heading)) return;
-    if ((room.gameMode ?? "creative") === "survival" && player.health !== undefined) {
+    const skipPositionUpdate =
+      player.lastDeathAt !== undefined && Date.now() - player.lastDeathAt < 1000;
+
+    if (!skipPositionUpdate && (room.gameMode ?? "creative") === "survival" && player.health !== undefined) {
       const dx = payload.pos[0] - player.pos[0];
       const dz = payload.pos[2] - player.pos[2];
       const distance = Math.hypot(dx, dz);
@@ -823,7 +826,9 @@ io.on("connection", (socket) => {
         room.dirty = true;
       }
     }
-    player.pos = payload.pos;
+    if (!skipPositionUpdate) {
+      player.pos = payload.pos;
+    }
     player.heading = payload.heading;
     if (Number.isFinite(payload?.pitch)) player.pitch = payload.pitch as number;
     player.jumping = !!payload.jumping;

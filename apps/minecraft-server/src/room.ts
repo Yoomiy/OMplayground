@@ -106,6 +106,8 @@ export interface PlayerRuntime extends RoomPlayer {
   lastArmSwingAt?: number;
   /** Rate-limit server-authoritative combat swings. */
   lastAttackAt?: number;
+  /** Authoritative server time of the last death (ms) — used to prevent race-condition drop pickups. */
+  lastDeathAt?: number;
 }
 
 export interface VoxelRoom {

@@ -119,6 +119,7 @@ export function handlePlayerDeath(
   player.t = now;
   player.lastInputAt = now;
   player.lastSuffocationAt = now;
+  player.lastDeathAt = now;
   room.dirty = true;
 
   return {

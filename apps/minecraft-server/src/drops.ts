@@ -210,6 +210,9 @@ export function tickMagnetPickups(io: Server, room: VoxelRoom): void {
 
   const pickedDropIds = new Set<string>();
   for (const player of room.players.values()) {
+    if (player.lastDeathAt !== undefined && Date.now() - player.lastDeathAt < 2000) {
+      continue;
+    }
     const a = pickupAnchor(player.pos);
     for (const [id, drop] of room.drops) {
       if (pickedDropIds.has(id)) continue;

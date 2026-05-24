@@ -260,6 +260,26 @@ describe("world drops", () => {
     expect(room.drops.size).toBe(1);
     expect([...room.drops.values()][0]!.count).toBe(59);
   });
+
+  it("does not pick up drops if the player recently died", async () => {
+    const room = survivalRoom("sess-drop-recent-death");
+    assignPlayer(room, "host-user", "Host");
+    const player = room.players.get("host-user")!;
+    player.pos = [10, 64, 10];
+    player.lastDeathAt = Date.now();
+    spawnBlockDropAt(room, [10, 64.2, 10.5], BLOCK_REGISTRY.DIRT, 3);
+
+    const { io } = ioMockForUser("host-user");
+    tickMagnetPickups(io, room);
+
+    await new Promise<void>((r) => setImmediate(r));
+
+    expect(room.drops.size).toBe(1); // Drop is still in world!
+    const dirtCount = player.inventory!
+      .filter((s) => s.blockId === BLOCK_REGISTRY.DIRT)
+      .reduce((a, s) => a + s.count, 0);
+    expect(dirtCount).toBe(0); // Not picked up!
+  });
 });
 
 describe("MAGNET_RADIUS_SQ", () => {
