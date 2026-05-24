@@ -3,6 +3,7 @@
 5. spawn from last location when resuming game
 9. allow draging of blocks to inventory
 12. Set world boundaries in voxel game to prevent coordinates exceeding 0xFFFF (due to numeric hashing bounds in worldgen)
+13. dinamically change distance rendering
 
 implement:
 2. mobs

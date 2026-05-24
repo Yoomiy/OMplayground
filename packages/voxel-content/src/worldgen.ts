@@ -18,6 +18,8 @@ const HEIGHT_SEED_3 = 0x48473333;
 const MOUNTAIN_SEED = 0x4d544e31;
 const RELIEF_SEED = 0x52454c46;
 const MAX_COLUMN_CACHE_SIZE = 100_000;
+const MAX_TREE_CACHE_SIZE = 100_000;
+const MAX_NEARBY_TREES_CACHE_SIZE = 50_000;
 const MAX_STRUCTURE_ABOVE_COLUMN = 48;
 const CENTER_CONTINENT_RADIUS = 800;
 const CENTER_CONTINENT_FADE_RADIUS = 2600;
@@ -48,6 +50,14 @@ export interface BiomeColumn {
 }
 
 type TreeKind = "oak" | "birch" | "spruce" | "savanna";
+
+interface TreeInfo {
+  readonly trunkX: number;
+  readonly trunkZ: number;
+  readonly trunkBaseY: number;
+  readonly kind: TreeKind;
+  readonly treeSeed: number;
+}
 
 function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
@@ -177,7 +187,9 @@ function treeBlockAt(
 }
 
 export class MultiBiomeGenerator {
-  private readonly columnCache = new Map<string, BiomeColumn>();
+  private readonly columnCache = new Map<number, BiomeColumn>();
+  private readonly treeCache = new Map<number, TreeInfo | null>();
+  private readonly nearbyTreesCache = new Map<number, TreeInfo[]>();
 
   constructor(readonly seed: number) {}
 
@@ -255,23 +267,25 @@ export class MultiBiomeGenerator {
   }
 
   sampleColumn(x: number, z: number): BiomeColumn {
-    const key = `${x},${z}`;
+    const ix = x | 0;
+    const iz = z | 0;
+    const key = ((ix & 0xFFFF) << 16) | (iz & 0xFFFF);
     const cached = this.columnCache.get(key);
     if (cached) return cached;
 
-    const factors = this.sampleFactors(x, z);
+    const factors = this.sampleFactors(ix, iz);
     const selected = this.selectLandBiome(factors);
     const landBiome = selected === "ocean" ? "beach" : selected;
-    const seaHeight = this.seaFloorHeight(x, z);
+    const seaHeight = this.seaFloorHeight(ix, iz);
 
-    let landHeight = this.heightForBiome(landBiome, x, z);
+    let landHeight = this.heightForBiome(landBiome, ix, iz);
     let biomeId = selected;
 
     if (factors.water >= 1.08 && factors.water <= 1.45) {
       const t = smoothstep(1.08, 1.45, factors.water);
       const coastalHeight = lerp(
-        this.heightForBiome("beach", x, z),
-        this.heightForBiome("ocean", x, z),
+        this.heightForBiome("beach", ix, iz),
+        this.heightForBiome("ocean", ix, iz),
         t
       );
       if (factors.weirdness > 1.45) {
@@ -279,7 +293,7 @@ export class MultiBiomeGenerator {
           smoothstep(1.45, 1.65, factors.weirdness) *
           (1 - smoothstep(1.3, 1.45, factors.water));
         landHeight = Math.round(
-          lerp(coastalHeight, this.heightForBiome("mountains", x, z), mountainT)
+          lerp(coastalHeight, this.heightForBiome("mountains", ix, iz), mountainT)
         );
         biomeId = mountainT > 0.7 ? "mountains" : t > 0.55 ? "ocean" : "beach";
       } else {
@@ -296,7 +310,7 @@ export class MultiBiomeGenerator {
       const coldBiome = factors.weirdness > 1.5 ? "ice_mountains" : "iceplains";
       const warmBiome = factors.weirdness > 1.5 ? "mountains" : "forest";
       landHeight = Math.round(
-        lerp(this.heightForBiome(coldBiome, x, z), this.heightForBiome(warmBiome, x, z), t)
+        lerp(this.heightForBiome(coldBiome, ix, iz), this.heightForBiome(warmBiome, ix, iz), t)
       );
       biomeId = t > 0.55 ? warmBiome : coldBiome;
     } else if (
@@ -307,7 +321,7 @@ export class MultiBiomeGenerator {
     ) {
       const t = smoothstep(1.32, 1.48, factors.heat);
       landHeight = Math.round(
-        lerp(this.heightForBiome("mountains", x, z), this.heightForBiome("desert", x, z), t)
+        lerp(this.heightForBiome("mountains", ix, iz), this.heightForBiome("desert", ix, iz), t)
       );
       biomeId = t > 0.55 ? "desert" : "mountains";
     } else if (
@@ -318,22 +332,22 @@ export class MultiBiomeGenerator {
     ) {
       const t = smoothstep(1.5, 1.75, factors.weirdness);
       landHeight = Math.round(
-        lerp(this.heightForBiome("savanna", x, z), this.heightForBiome("mountains", x, z), t)
+        lerp(this.heightForBiome("savanna", ix, iz), this.heightForBiome("mountains", ix, iz), t)
       );
       biomeId = t > 0.6 ? "mountains" : "savanna";
     } else if (factors.water <= 1.15 && factors.weirdness >= 1.3 && factors.weirdness <= 1.5 && factors.heat > 0.5) {
       const t = smoothstep(1.3, 1.5, factors.weirdness);
-      landHeight = Math.round(lerp(this.heightForBiome("forest", x, z), this.heightForBiome("mountains", x, z), t));
+      landHeight = Math.round(lerp(this.heightForBiome("forest", ix, iz), this.heightForBiome("mountains", ix, iz), t));
       biomeId = t > 0.45 ? "mountains" : "forest";
     } else if (factors.water <= 1.15 && factors.weirdness >= 1.15 && factors.weirdness <= 1.3 && factors.heat > 0.5) {
       const t = smoothstep(1.15, 1.3, factors.weirdness);
-      landHeight = Math.round(lerp(this.heightForBiome("plains", x, z), this.heightForBiome("forest", x, z), t));
+      landHeight = Math.round(lerp(this.heightForBiome("plains", ix, iz), this.heightForBiome("forest", ix, iz), t));
       biomeId = t > 0.5 ? "forest" : "plains";
     }
 
     if (factors.continental <= 0.16) {
       const t = smoothstep(0, 0.16, Math.max(0, factors.continental));
-      landHeight = Math.round(lerp(this.heightForBiome("beach", x, z), landHeight, t));
+      landHeight = Math.round(lerp(this.heightForBiome("beach", ix, iz), landHeight, t));
       if (t < 0.5 && biomeId !== "ocean") biomeId = "beach";
     }
 
@@ -349,8 +363,8 @@ export class MultiBiomeGenerator {
     }
 
     const column = {
-      x,
-      z,
+      x: ix,
+      z: iz,
       seed: this.seed,
       biomeId,
       biome: BIOME_DEFS[biomeId],
@@ -457,35 +471,95 @@ export class MultiBiomeGenerator {
 
     if (treeThresholdForBiome(column.biomeId) <= 0) return BLOCK_REGISTRY.AIR;
 
-    for (let dx = -5; dx <= 5; dx++) {
-      for (let dz = -5; dz <= 5; dz++) {
-        const tx = x + dx;
-        const tz = z + dz;
-        const trunkColumn = this.sampleColumn(tx, tz);
-        if (trunkColumn.height < SEA_LEVEL || isOceanLike(trunkColumn.biomeId)) continue;
-        if (y <= trunkColumn.height || y > trunkColumn.height + 14) continue;
-        const threshold = treeThresholdForBiome(trunkColumn.biomeId);
-        if (threshold <= 0) continue;
-        if (hash3(tx, 0, tz, this.seed ^ 0xbeef) >= threshold) continue;
-        const kind = treeKindForBiome(
-          trunkColumn.biomeId,
-          hash3(tx, 7, tz, this.seed ^ 0xcafe)
-        );
-        if (!kind) continue;
-        const block = treeBlockAt(
-          x,
-          y,
-          z,
-          tx,
-          tz,
-          trunkColumn.height,
-          kind,
-          Math.floor(hash3(tx, 1, tz, this.seed ^ 0xcafe) * 0xffffffff)
-        );
-        if (block !== BLOCK_REGISTRY.AIR) return block;
-      }
+    const nearby = this.getNearbyTrees(x, z);
+    for (let i = 0; i < nearby.length; i++) {
+      const tree = nearby[i];
+      if (y <= tree.trunkBaseY || y > tree.trunkBaseY + 14) continue;
+      const block = treeBlockAt(
+        x,
+        y,
+        z,
+        tree.trunkX,
+        tree.trunkZ,
+        tree.trunkBaseY,
+        tree.kind,
+        tree.treeSeed
+      );
+      if (block !== BLOCK_REGISTRY.AIR) return block;
     }
     return BLOCK_REGISTRY.AIR;
+  }
+
+  getTreeAt(tx: number, tz: number): TreeInfo | null {
+    const trunkColumn = this.sampleColumn(tx, tz);
+    if (trunkColumn.height < SEA_LEVEL || isOceanLike(trunkColumn.biomeId)) return null;
+    const threshold = treeThresholdForBiome(trunkColumn.biomeId);
+    if (threshold <= 0) return null;
+    if (hash3(tx, 0, tz, this.seed ^ 0xbeef) >= threshold) return null;
+    const kind = treeKindForBiome(
+      trunkColumn.biomeId,
+      hash3(tx, 7, tz, this.seed ^ 0xcafe)
+    );
+    if (!kind) return null;
+    return {
+      trunkX: tx,
+      trunkZ: tz,
+      trunkBaseY: trunkColumn.height,
+      kind,
+      treeSeed: Math.floor(hash3(tx, 1, tz, this.seed ^ 0xcafe) * 0xffffffff)
+    };
+  }
+
+  getNearbyTrees(x: number, z: number): TreeInfo[] {
+    const ix = x | 0;
+    const iz = z | 0;
+    const key = ((ix & 0xFFFF) << 16) | (iz & 0xFFFF);
+    let nearby = this.nearbyTreesCache.get(key);
+    if (nearby !== undefined) return nearby;
+
+    nearby = [];
+    for (let dx = -5; dx <= 5; dx++) {
+      for (let dz = -5; dz <= 5; dz++) {
+        const tx = ix + dx;
+        const tz = iz + dz;
+        const trunkKey = ((tx & 0xFFFF) << 16) | (tz & 0xFFFF);
+        let treeInfo = this.treeCache.get(trunkKey);
+        if (treeInfo === undefined) {
+          treeInfo = this.getTreeAt(tx, tz);
+          this.treeCache.set(trunkKey, treeInfo);
+          this.pruneTreeCache();
+        }
+        if (treeInfo !== null) {
+          nearby.push(treeInfo);
+        }
+      }
+    }
+
+    this.nearbyTreesCache.set(key, nearby);
+    this.pruneNearbyTreesCache();
+    return nearby;
+  }
+
+  private pruneTreeCache(): void {
+    if (this.treeCache.size <= MAX_TREE_CACHE_SIZE) return;
+    const deleteCount = Math.max(1, Math.floor(MAX_TREE_CACHE_SIZE * 0.05));
+    const keys = this.treeCache.keys();
+    for (let i = 0; i < deleteCount; i++) {
+      const next = keys.next();
+      if (next.done) break;
+      this.treeCache.delete(next.value);
+    }
+  }
+
+  private pruneNearbyTreesCache(): void {
+    if (this.nearbyTreesCache.size <= MAX_NEARBY_TREES_CACHE_SIZE) return;
+    const deleteCount = Math.max(1, Math.floor(MAX_NEARBY_TREES_CACHE_SIZE * 0.05));
+    const keys = this.nearbyTreesCache.keys();
+    for (let i = 0; i < deleteCount; i++) {
+      const next = keys.next();
+      if (next.done) break;
+      this.nearbyTreesCache.delete(next.value);
+    }
   }
 
   blockAt(x: number, y: number, z: number): number {

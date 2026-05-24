@@ -127,4 +127,120 @@ describe("@playground/voxel-content MultiBiomeGenerator", () => {
     const y = findSurfaceY(0, 0, seed);
     expect(y).toBe(sampleBiomeColumn(0, 0, seed).height);
   });
+
+  it("produces deterministic block types matching regression baselines", () => {
+    const gen = new MultiBiomeGenerator(seed);
+    
+    const h0 = gen.findSurfaceY(0, 0);
+    const h50 = gen.findSurfaceY(-50, 50);
+    const hDesert = gen.findSurfaceY(-2390, 1990);
+
+    const testPoints = [
+      { x: 0, y: 30, z: 0, name: "Underground stone" },
+      { x: 0, y: h0, z: 0, name: "Surface at 0,0" },
+      { x: 0, y: h0 - 2, z: 0, name: "Subsurface at 0,0" },
+      { x: -50, y: h50, z: 50, name: "Surface at -50,50" },
+      { x: -2390, y: hDesert, z: 1990, name: "Desert surface" },
+      { x: -2390, y: hDesert + 1, z: 1990, name: "Desert cactus" },
+      { x: 0, y: 150, z: 0, name: "High air" }
+    ];
+
+    const results = testPoints.map(p => ({
+      ...p,
+      blockId: gen.blockAt(p.x, p.y, p.z)
+    }));
+
+    expect(results[0].blockId).toBe(BLOCK_REGISTRY.STONE);
+    expect(results[1].blockId).toBe(BLOCK_REGISTRY.GRASS);
+    expect(results[2].blockId).toBe(BLOCK_REGISTRY.DIRT);
+    expect(results[3].blockId).toBe(BLOCK_REGISTRY.GRASS);
+    expect(results[4].blockId).toBe(BLOCK_REGISTRY.SAND);
+    expect(results[5].blockId).toBe(BLOCK_REGISTRY.CACTUS);
+    expect(results[6].blockId).toBe(BLOCK_REGISTRY.AIR);
+  });
+
+  it("truncates fractional column coordinates before sampling and caching", () => {
+    const gen = new MultiBiomeGenerator(seed);
+    const whole = gen.sampleColumn(25, -90);
+    const fractional = gen.sampleColumn(25.7, -90.3);
+    expect(fractional).toEqual(whole);
+    expect(gen.blockAt(25.7, 64, -90.3)).toBe(gen.blockAt(25, 64, -90));
+  });
+
+  it("places tree trunks and neighbor canopy blocks for every tree kind", () => {
+    const gen = new MultiBiomeGenerator(seed);
+    const cases = [
+      {
+        kind: "oak",
+        trunkX: -2997,
+        trunkZ: 2796,
+        trunkBlock: BLOCK_REGISTRY.WOOD,
+        canopyBlock: BLOCK_REGISTRY.LEAVES,
+        canopyX: -2999,
+        canopyY: 70,
+        canopyZ: 2794
+      },
+      {
+        kind: "birch",
+        trunkX: -2931,
+        trunkZ: 2829,
+        trunkBlock: BLOCK_REGISTRY.BIRCH_LOG,
+        canopyBlock: BLOCK_REGISTRY.BIRCH_LEAVES,
+        canopyX: -2933,
+        canopyY: 72,
+        canopyZ: 2828
+      },
+      {
+        kind: "spruce",
+        trunkX: -2898,
+        trunkZ: 2592,
+        trunkBlock: BLOCK_REGISTRY.SPRUCE_LOG,
+        canopyBlock: BLOCK_REGISTRY.SPRUCE_LEAVES,
+        canopyX: -2899,
+        canopyY: 80,
+        canopyZ: 2591
+      },
+      {
+        kind: "savanna",
+        trunkX: -2352,
+        trunkZ: 2961,
+        trunkBlock: BLOCK_REGISTRY.WOOD,
+        canopyBlock: BLOCK_REGISTRY.LEAVES_YELLOW,
+        canopyX: -2353,
+        canopyY: 72,
+        canopyZ: 2960
+      }
+    ] as const;
+
+    for (const treeCase of cases) {
+      const column = gen.sampleColumn(treeCase.trunkX, treeCase.trunkZ);
+      const tree = gen.getTreeAt(treeCase.trunkX, treeCase.trunkZ);
+      expect(tree?.kind).toBe(treeCase.kind);
+      expect(gen.blockAt(treeCase.trunkX, column.height + 1, treeCase.trunkZ)).toBe(
+        treeCase.trunkBlock
+      );
+      expect(
+        gen.blockAt(treeCase.canopyX, treeCase.canopyY, treeCase.canopyZ)
+      ).toBe(treeCase.canopyBlock);
+    }
+  });
+
+  it("finds nearby trees through the cached neighborhood lookup", () => {
+    const gen = new MultiBiomeGenerator(seed);
+    const trunkX = -2931;
+    const trunkZ = 2829;
+    const canopyX = -2933;
+    const canopyY = 72;
+    const canopyZ = 2828;
+
+    const nearby = gen.getNearbyTrees(canopyX, canopyZ);
+    expect(nearby.some((tree) => tree.trunkX === trunkX && tree.trunkZ === trunkZ)).toBe(
+      true
+    );
+    expect(gen.blockAt(canopyX, canopyY, canopyZ)).toBe(BLOCK_REGISTRY.BIRCH_LEAVES);
+
+    const warm = gen.blockAt(canopyX, canopyY, canopyZ);
+    const cold = new MultiBiomeGenerator(seed).blockAt(canopyX, canopyY, canopyZ);
+    expect(warm).toBe(cold);
+  });
 });
