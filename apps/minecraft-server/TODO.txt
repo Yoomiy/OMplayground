@@ -4,6 +4,8 @@
 9. allow draging of blocks to inventory
 12. Set world boundaries in voxel game to prevent coordinates exceeding 0xFFFF (due to numeric hashing bounds in worldgen)
 13. dinamically change distance rendering
+14. implement observer mode
+15. respawn omly upon message from the client
 
 implement:
 2. mobs

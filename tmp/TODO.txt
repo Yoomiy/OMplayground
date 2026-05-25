@@ -1,0 +1,5 @@
+1. remove hunger
+2. manage speed and jump height
+3. wire chat in
+4. make a decent help page
+
