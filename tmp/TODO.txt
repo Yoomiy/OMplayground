@@ -1,8 +1,7 @@
-1. remove hunger
-2. manage speed and jump height
-3. wire chat in
-4. make a decent help page
-5. fix mining without clicking bug
-6. separate recepies to sections
-7. fix single breaking gesture behavior
-8. 2d (all?) droped items
+ 2. manage speed and jump height
+ 3. wire chat in
+ 4. make a decent help page
+ 5. fix mining without clicking bug
+ 6. separate recepies to sections
+ 9. hide creative mode
+10. support hebrew keys

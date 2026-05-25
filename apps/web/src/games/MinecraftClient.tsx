@@ -2182,6 +2182,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         if (!breakTgt) return;
         const pos = breakTgt.pos;
         triggerLocalArmSwing();
+        const startSwingAt = performance.now();
         if (gameModeRef.current === "creative") {
           onBreakRef.current(pos);
           return;
@@ -2211,6 +2212,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         };
         lastDigSfxAt = 0;
         breakCrackRef.current?.setStage(pos, 0);
+        let lastSwingAt = startSwingAt;
         const tick = (): void => {
           const m = activeMiningRef.current;
           if (!m) return;
@@ -2219,6 +2221,10 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
             const diggingId = clientBlockAtInt(m.pos[0], m.pos[1], m.pos[2]);
             audio.playDig(blockSoundGroup(diggingId));
             lastDigSfxAt = now;
+          }
+          if (now - lastSwingAt > 250) {
+            triggerLocalArmSwing();
+            lastSwingAt = now;
           }
           const t = (now - m.startedAt) / m.durationMs;
           breakCrackRef.current?.setStage(m.pos, destroyStageIndex(t));
