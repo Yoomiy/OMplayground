@@ -722,9 +722,9 @@ function makeCakeSlabMesh(
 
   const uvInner = new Babylon.Vector4(
     uMin + 0.001,
-    0.125 + 0.001,
+    0.0 + 0.001,
     uMax - 0.001,
-    0.25 - 0.001
+    0.125 - 0.001
   );
 
   const uvSideFull = new Babylon.Vector4(
