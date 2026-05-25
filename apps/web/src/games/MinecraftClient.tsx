@@ -1081,11 +1081,11 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   };
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Escape") {
+    if (e.code === "Escape") {
       e.preventDefault();
       e.stopPropagation();
       handleCloseChat();
-    } else if (e.key === "Enter") {
+    } else if (e.code === "Enter" || e.code === "NumpadEnter") {
       e.preventDefault();
       e.stopPropagation();
       handleSendMessage();
@@ -1108,7 +1108,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if (chatOpen && e.key === "Escape") {
+      if (chatOpen && e.code === "Escape") {
         e.preventDefault();
         e.stopPropagation();
         handleCloseChat();
@@ -2596,7 +2596,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         }
         if (chatOpenRef.current) return;
 
-        if (e.key.toLowerCase() === "i") {
+        if (e.code === "KeyI") {
           showDebugRef.current = !showDebugRef.current;
           if (!showDebugRef.current) {
             setDebugInfo(null);
@@ -2605,7 +2605,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         }
         if (isDeadRef.current) return;
 
-        if (e.key === "Enter" || e.key.toLowerCase() === "t") {
+        if (e.code === "Enter" || e.code === "NumpadEnter" || e.code === "KeyT") {
           e.preventDefault();
           e.stopPropagation();
           document.exitPointerLock?.();
@@ -2617,7 +2617,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           }
           return;
         }
-        if (e.key.toLowerCase() === "e") {
+        if (e.code === "KeyE") {
           if (inventoryOpenRef.current) {
             closeInventory();
           } else {
@@ -2626,34 +2626,49 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           }
           return;
         }
-        if (e.key.toLowerCase() === "p" && !inventoryOpenRef.current) {
+        if (e.code === "KeyP" && !inventoryOpenRef.current) {
           if (gameModeRef.current === "survival") {
             onDropHotbarSlotRef.current?.(survivalSlotRef.current);
           }
           return;
         }
-        if (e.key.toLowerCase() === "q" && !inventoryOpenRef.current) {
+        if (e.code === "KeyQ" && !inventoryOpenRef.current) {
           if (gameModeRef.current === "survival") {
             onDropHotbarSlotRef.current?.(survivalSlotRef.current);
           }
           return;
         }
-        const n = Number(e.key);
-        if (gameModeRef.current === "survival") {
-          if (Number.isFinite(n) && n >= 1 && n <= 9) {
-            const i = n - 1;
-            if (survivalSlotRef.current !== i) {
-              cancelEatingHold();
-              survivalSlotRef.current = i;
-              setSurvivalSlot(i);
+        
+        let n: number | null = null;
+        if (e.code.startsWith("Digit")) {
+          const val = parseInt(e.code.substring(5), 10);
+          if (!isNaN(val)) {
+            n = val;
+          }
+        } else if (e.code.startsWith("Numpad")) {
+          const val = parseInt(e.code.substring(6), 10);
+          if (!isNaN(val)) {
+            n = val;
+          }
+        }
+
+        if (n !== null) {
+          if (gameModeRef.current === "survival") {
+            if (n >= 1 && n <= 9) {
+              const i = n - 1;
+              if (survivalSlotRef.current !== i) {
+                cancelEatingHold();
+                survivalSlotRef.current = i;
+                setSurvivalSlot(i);
+              }
             }
+            return;
           }
-          return;
-        }
-        const visibleCreativeBlocks = visibleCreativeHotbarBlocks(selectedBlockRef.current);
-        if (Number.isFinite(n) && n >= 1 && n <= visibleCreativeBlocks.length) {
-          const idx = n - 1;
-          selectCreativeBlock(visibleCreativeBlocks[idx]!);
+          const visibleCreativeBlocks = visibleCreativeHotbarBlocks(selectedBlockRef.current);
+          if (n >= 1 && n <= visibleCreativeBlocks.length) {
+            const idx = n - 1;
+            selectCreativeBlock(visibleCreativeBlocks[idx]!);
+          }
         }
       }
       window.addEventListener("keydown", onHotbarKey);
