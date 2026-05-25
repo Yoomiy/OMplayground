@@ -55,5 +55,10 @@ describe("@playground/voxel-content items", () => {
     expect(itemToolSpec(ITEM_REGISTRY.SWIFT_PICKAXE)?.speed).toBe(12);
     expect(itemPerkSpec(ITEM_REGISTRY.HELIUM_BOOTS)?.equipSlot).toBe("feet");
     expect(itemPerkSpec(ITEM_REGISTRY.HEAVY_SHIELD)?.damageReduction).toBe(0.5);
+
+    expect(ITEM_REGISTRY.COOKED_MEAT).toBe(133);
+    expect(itemFoodSpec(ITEM_REGISTRY.COOKED_MEAT)?.nutrition).toBe(8);
+    expect(itemFoodSpec(ITEM_REGISTRY.POISONOUS_POTATO)?.nutrition).toBe(-2);
+    expect(itemFoodSpec(ITEM_REGISTRY.GOLDEN_CARROT)?.nutrition).toBe(6);
   });
 });

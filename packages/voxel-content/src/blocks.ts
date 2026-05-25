@@ -165,12 +165,20 @@ const BASE_BLOCK_DEFS = [
   { id: 94, key: "PUMPKIN", placeable: true, breakable: true, dropHotbarBlockId: 94 },
   { id: 95, key: "ICE", placeable: true, breakable: true, dropHotbarBlockId: 95 },
   { id: 96, key: "GRASS_YELLOW", placeable: true, breakable: true, dropHotbarBlockId: 96 },
-  { id: 97, key: "GRASS_PLANT_YELLOW", placeable: true, breakable: true, dropHotbarBlockId: 97 },
+  { id: 97, key: "GRASS_PLANT_YELLOW", placeable: true, breakable: true, dropHotbarBlockId: null },
   { id: 98, key: "LEAVES_YELLOW", placeable: true, breakable: true, dropHotbarBlockId: 98 },
-  { id: 99, key: "GRASS_PLANT", placeable: true, breakable: true, dropHotbarBlockId: 99 },
+  { id: 99, key: "GRASS_PLANT", placeable: true, breakable: true, dropHotbarBlockId: null },
   { id: 100, key: "LADDER", placeable: true, breakable: true, dropHotbarBlockId: 100 },
   { id: 101, key: "TORCH", placeable: true, breakable: true, dropHotbarBlockId: 101 },
-  { id: 102, key: "CHEST", placeable: true, breakable: true, dropHotbarBlockId: 102 }
+  { id: 102, key: "CHEST", placeable: true, breakable: true, dropHotbarBlockId: 102 },
+  { id: 103, key: "MELON", placeable: true, breakable: true, dropHotbarBlockId: null },
+  { id: 104, key: "CAKE", placeable: true, breakable: true, dropHotbarBlockId: 104 },
+  { id: 105, key: "SUGAR_CANE", placeable: true, breakable: true, dropHotbarBlockId: 105 },
+  { id: 106, key: "CAKE_5", placeable: false, breakable: true, dropHotbarBlockId: null },
+  { id: 107, key: "CAKE_4", placeable: false, breakable: true, dropHotbarBlockId: null },
+  { id: 108, key: "CAKE_3", placeable: false, breakable: true, dropHotbarBlockId: null },
+  { id: 109, key: "CAKE_2", placeable: false, breakable: true, dropHotbarBlockId: null },
+  { id: 110, key: "CAKE_1", placeable: false, breakable: true, dropHotbarBlockId: null }
 ] as const;
 
 export const BLOCK_DEFS = BASE_BLOCK_DEFS.map((base) => {
@@ -224,7 +232,8 @@ export const REPLACEABLE_BLOCK_IDS = new Set<number>([
   BLOCK_REGISTRY.RED_MUSHROOM,
   BLOCK_REGISTRY.DEADBUSH,
   BLOCK_REGISTRY.GRASS_PLANT_YELLOW,
-  BLOCK_REGISTRY.GRASS_PLANT
+  BLOCK_REGISTRY.GRASS_PLANT,
+  BLOCK_REGISTRY.SUGAR_CANE
 ]);
 
 export function blockReplaceable(blockId: number): boolean {

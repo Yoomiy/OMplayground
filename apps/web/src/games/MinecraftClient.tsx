@@ -48,6 +48,7 @@ import {
   precipitationKindForColumn,
   proceduralVoxelID,
   sampleBiomeColumn,
+  sugarCaneMayPlaceOn,
   type PrecipitationKind,
   type Recipe,
   type RecipeIngredient
@@ -231,7 +232,15 @@ const BLOCK_HUD: Record<number, string> = {
   [BLOCK_REGISTRY.GRASS_PLANT]: "עשב",
   [BLOCK_REGISTRY.LADDER]: "סולם",
   [BLOCK_REGISTRY.TORCH]: "לפיד",
-  [BLOCK_REGISTRY.CHEST]: "תיבה"
+  [BLOCK_REGISTRY.CHEST]: "תיבה",
+  [BLOCK_REGISTRY.MELON]: "אבטיח",
+  [BLOCK_REGISTRY.CAKE]: "עוגה",
+  [BLOCK_REGISTRY.CAKE_5]: "עוגה (5 פרוסות)",
+  [BLOCK_REGISTRY.CAKE_4]: "עוגה (4 פרוסות)",
+  [BLOCK_REGISTRY.CAKE_3]: "עוגה (3 פרוסות)",
+  [BLOCK_REGISTRY.CAKE_2]: "עוגה (2 פרוסות)",
+  [BLOCK_REGISTRY.CAKE_1]: "עוגה (פרוסה אחת)",
+  [BLOCK_REGISTRY.SUGAR_CANE]: "קני סוכר"
 };
 
 function isValidDragPayload(
@@ -279,7 +288,21 @@ const ITEM_HUD: Record<number, string> = {
   [ITEM_REGISTRY.FEATHER_FALLING_TALISMAN]: "קמע נפילת נוצה",
   [ITEM_REGISTRY.HELIOS_MEDALLION]: "מדליון הליוס",
   [ITEM_REGISTRY.HELIUM_BOOTS]: "מגפי הליום",
-  [ITEM_REGISTRY.GLOW_TALISMAN]: "קמע זוהר"
+  [ITEM_REGISTRY.GLOW_TALISMAN]: "קמע זוהר",
+  [ITEM_REGISTRY.SUGAR]: "סוכר",
+  [ITEM_REGISTRY.COCOA_BEANS]: "פולי קקאו",
+  [ITEM_REGISTRY.EGG]: "ביצה",
+  [ITEM_REGISTRY.RAW_MEAT]: "בשר נא",
+  [ITEM_REGISTRY.COOKED_MEAT]: "בשר מבושל",
+  [ITEM_REGISTRY.RAW_BEEF]: "בשר בקר נא",
+  [ITEM_REGISTRY.COOKED_BEEF]: "סטייק",
+  [ITEM_REGISTRY.COOKIE]: "עוגייה",
+  [ITEM_REGISTRY.MELON_SLICE]: "פלח אבטיח",
+  [ITEM_REGISTRY.CARROT]: "גזר",
+  [ITEM_REGISTRY.GOLDEN_CARROT]: "גזר זהב",
+  [ITEM_REGISTRY.POTATO]: "תפוח אדמה",
+  [ITEM_REGISTRY.BAKED_POTATO]: "תפוח אדמה אפוי",
+  [ITEM_REGISTRY.POISONOUS_POTATO]: "תפוח אדמה רעיל"
 };
 
 function equipmentHas(slots: ItemSlot[], itemId: number): boolean {
@@ -432,17 +455,38 @@ const MC_TEX = {
   grassPlant: "/minecraft-assets/block/grass_plant.png",
   ladder: "/minecraft-assets/block/ladder.png",
   torch: "/minecraft-assets/block/torch.png",
-  chest: "/minecraft-assets/block/chest.png"
+  chest: "/minecraft-assets/block/chest.png",
+  melonTop: "/minecraft-assets/block/melon_top.png",
+  melonSide: "/minecraft-assets/block/melon_side.png",
+  cakeTop: "/minecraft-assets/block/cake_top.png",
+  cakeBottom: "/minecraft-assets/block/cake_bottom.png",
+  cakeSide: "/minecraft-assets/block/cake_side.png",
+  cakeInner: "/minecraft-assets/block/cake_inner.png",
+  sugarCane: "/minecraft-assets/block/sugar_cane.png"
 } as const;
 
 /** Item-style icon per block for the hotbar (same assets as terrain). */
 const BLOCK_HOTBAR_ICON: Record<number, string> = (() => {
   const m: Record<number, string> = {};
   for (const e of NOA_BLOCK_ENTRIES) {
-    m[e.id] = MC_TEX[e.hotbarTextureKey];
+    if (e.shape === "slabHalf") {
+      m[e.id] = e.hotbarIconUrl;
+    } else {
+      m[e.id] = MC_TEX[e.hotbarTextureKey];
+    }
   }
   return m;
 })();
+
+const FLAT_HELD_BLOCK_IDS = new Set<number>([
+  ...PLANT_SPRITE_BLOCK_IDS,
+  BLOCK_REGISTRY.CAKE,
+  BLOCK_REGISTRY.CAKE_5,
+  BLOCK_REGISTRY.CAKE_4,
+  BLOCK_REGISTRY.CAKE_3,
+  BLOCK_REGISTRY.CAKE_2,
+  BLOCK_REGISTRY.CAKE_1
+]);
 
 function registerMcTerrainMaterials(
   noa: {
@@ -607,6 +651,140 @@ function makePlantSpriteMesh(noa: any, Babylon: any, url: string, name: string) 
   return result;
 }
 
+function makeFlatDropMesh(noa: any, Babylon: any, url: string, name: string) {
+  const scene = noa.rendering.getScene();
+  const matname = name || "mat";
+  const tex = new Babylon.Texture(url, scene, true, true, Babylon.Texture.NEAREST_SAMPLINGMODE);
+  tex.hasAlpha = true;
+  const mesh = Babylon.MeshBuilder.CreatePlane("flat-drop-" + matname, { size: 0.55 }, scene);
+  const mat = noa.rendering.makeStandardMaterial(matname);
+  mat.backFaceCulling = false;
+  mat.diffuseTexture = tex;
+  mesh.material = mat;
+  const offset = Babylon.Matrix.Translation(0, 0.275, 0);
+  mesh.bakeTransformIntoVertices(offset);
+  return mesh;
+}
+
+function getUrlForMaterialName(name: string): string | undefined {
+  const entry = MC_MATERIAL_ENTRIES.find(m => m.name === name);
+  if (!entry) return undefined;
+  return MC_TEX[entry.textureKey as keyof typeof MC_TEX];
+}
+
+function makeCakeSlabMesh(
+  noa: { rendering: { getScene: () => import("@babylonjs/core").Scene; makeStandardMaterial: (n: string) => import("@babylonjs/core").StandardMaterial } },
+  Babylon: typeof import("@babylonjs/core"),
+  material: { top: string; bottom: string; sides: string; inner?: string },
+  name: string,
+  widthRatio: number = 1.0
+) {
+  const scene = noa.rendering.getScene();
+
+  const dynamicTexture = new Babylon.DynamicTexture(
+    `${name}-atlas`,
+    { width: 16, height: 64 },
+    scene,
+    false,
+    Babylon.Texture.NEAREST_SAMPLINGMODE
+  );
+  dynamicTexture.hasAlpha = true;
+
+  const ctx = dynamicTexture.getContext();
+  ctx.clearRect(0, 0, 16, 64);
+  dynamicTexture.update();
+
+  const loadAndDraw = (url: string, yOffset: number) => {
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, 0, yOffset, 16, 16);
+      dynamicTexture.update();
+    };
+    img.src = url;
+  };
+
+  const urlTop = getUrlForMaterialName(material.top);
+  const urlBottom = getUrlForMaterialName(material.bottom);
+  const urlSide = getUrlForMaterialName(material.sides);
+  const urlInner = material.inner ? getUrlForMaterialName(material.inner) : "/minecraft-assets/block/cake_inner.png";
+
+  if (urlTop) loadAndDraw(urlTop, 0);
+  if (urlBottom) loadAndDraw(urlBottom, 16);
+  if (urlSide) loadAndDraw(urlSide, 32);
+  if (urlInner) loadAndDraw(urlInner, 48);
+
+  const mat = noa.rendering.makeStandardMaterial(`${name}-mat`);
+  mat.diffuseTexture = dynamicTexture;
+
+  const uMin = 0.0625;
+  const uMax = 0.9375;
+  const uWidth = uMax - uMin;
+
+  const uvInner = new Babylon.Vector4(
+    uMin + 0.001,
+    0.125 + 0.001,
+    uMax - 0.001,
+    0.25 - 0.001
+  );
+
+  const uvSideFull = new Babylon.Vector4(
+    uMin + 0.001,
+    0.25 + 0.001,
+    uMax - 0.001,
+    0.375 - 0.001
+  );
+
+  const uvSideCropped = new Babylon.Vector4(
+    uMin + 0.001,
+    0.25 + 0.001,
+    uMin + uWidth * widthRatio - 0.001,
+    0.375 - 0.001
+  );
+
+  const uvBottom = new Babylon.Vector4(
+    uMin + 0.001,
+    0.515625 + 0.001,
+    uMin + uWidth * widthRatio - 0.001,
+    0.734375 - 0.001
+  );
+
+  const uvTop = new Babylon.Vector4(
+    uMin + 0.001,
+    0.765625 + 0.001,
+    uMin + uWidth * widthRatio - 0.001,
+    0.984375 - 0.001
+  );
+
+  const faceUV = new Array(6);
+  if (widthRatio < 1.0) {
+    faceUV[0] = uvSideCropped; // Front (Z-)
+    faceUV[1] = uvSideCropped; // Back (Z+)
+    faceUV[2] = uvInner;       // Right (X+)
+    faceUV[3] = uvSideFull;    // Left (X-)
+  } else {
+    faceUV[0] = uvSideFull;
+    faceUV[1] = uvSideFull;
+    faceUV[2] = uvSideFull;
+    faceUV[3] = uvSideFull;
+  }
+  faceUV[4] = uvTop;      // Top (Y+)
+  faceUV[5] = uvBottom;   // Bottom (Y-)
+
+  const mesh = Babylon.MeshBuilder.CreateBox(
+    name,
+    { width: widthRatio, height: 0.5, depth: 1, faceUV, wrap: true },
+    scene
+  );
+
+  mesh.material = mat;
+
+  const xOffset = -0.5 + widthRatio / 2;
+  const offset = Babylon.Matrix.Translation(xOffset, 0.25, 0);
+  mesh.bakeTransformIntoVertices(offset);
+
+  return mesh;
+}
+
 export interface MinecraftClientProps {
   seed: number;
   initialDeltas: [number, number, number, number][];
@@ -638,6 +816,7 @@ export interface MinecraftClientProps {
   onEatStart: (hotbarIndex: number) => Promise<EatStartAck>;
   onEatFinish: (hotbarIndex: number) => Promise<SimpleAck>;
   onEatCancel: () => Promise<SimpleAck>;
+  onEatCakeSlice: (pos: Vec3) => Promise<SimpleAck>;
   onInput: (input: InputReq) => void;
   onBlockPlace: (pos: Vec3, blockId: number) => void;
   onBlockBreak: (pos: Vec3) => void;
@@ -692,6 +871,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     onEatStart,
     onEatFinish,
     onEatCancel,
+    onEatCakeSlice,
     onInput,
     onBlockPlace,
     onBlockBreak,
@@ -742,6 +922,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const onEatStartRef = useRef(onEatStart);
   const onEatFinishRef = useRef(onEatFinish);
   const onEatCancelRef = useRef(onEatCancel);
+  const onEatCakeSliceRef = useRef(onEatCakeSlice);
   const activeMiningRef = useRef<{
     pos: Vec3;
     durationMs: number;
@@ -799,6 +980,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   onEatStartRef.current = onEatStart;
   onEatFinishRef.current = onEatFinish;
   onEatCancelRef.current = onEatCancel;
+  onEatCakeSliceRef.current = onEatCakeSlice;
   pausedRef.current = paused;
   isDeadRef.current = isDead;
   gameModeRef.current = gameMode;
@@ -896,6 +1078,62 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       
       noaRef.current = noa;
       noa?.setPaused?.(pausedRef.current);
+
+      // Override highlightBlockFace to handle half-height blocks like CAKE
+      if (noa && noa.rendering && noa.rendering.highlightBlockFace) {
+        const originalHighlight = noa.rendering.highlightBlockFace;
+        noa.rendering.highlightBlockFace = function (show: boolean, posArr: number[], normArr: number[]) {
+          if (show && posArr && normArr) {
+            const [bx, by, bz] = posArr;
+            const blockId = noa.getBlock(bx, by, bz);
+            const isCake =
+              blockId === BLOCK_REGISTRY.CAKE ||
+              blockId === BLOCK_REGISTRY.CAKE_5 ||
+              blockId === BLOCK_REGISTRY.CAKE_4 ||
+              blockId === BLOCK_REGISTRY.CAKE_3 ||
+              blockId === BLOCK_REGISTRY.CAKE_2 ||
+              blockId === BLOCK_REGISTRY.CAKE_1;
+            if (isCake) {
+              let ratio = 1.0;
+              if (blockId === BLOCK_REGISTRY.CAKE_5) ratio = 5 / 6;
+              else if (blockId === BLOCK_REGISTRY.CAKE_4) ratio = 4 / 6;
+              else if (blockId === BLOCK_REGISTRY.CAKE_3) ratio = 0.5;
+              else if (blockId === BLOCK_REGISTRY.CAKE_2) ratio = 2 / 6;
+              else if (blockId === BLOCK_REGISTRY.CAKE_1) ratio = 1 / 6;
+
+              originalHighlight.call(noa.rendering, show, posArr, normArr);
+              const m = noa.rendering._highlightMesh;
+              if (m) {
+                const isTop = normArr[1] === 1;
+                const isSide = normArr[1] === 0;
+                const isXFace = normArr[0] !== 0;
+
+                m.position.x += (ratio - 1) / 2;
+
+                if (isTop) {
+                  m.position.y -= 0.5;
+                  m.scaling.set(ratio, 1, 1);
+                } else if (isSide) {
+                  m.position.y -= 0.25;
+                  if (isXFace) {
+                    m.scaling.set(1, 0.5, 1);
+                  } else {
+                    m.scaling.set(ratio, 0.5, 1);
+                  }
+                } else {
+                  m.scaling.set(ratio, 1, 1);
+                }
+              }
+              return;
+            }
+          }
+          originalHighlight.call(noa.rendering, show, posArr, normArr);
+          const m = noa.rendering._highlightMesh;
+          if (m) {
+            m.scaling.set(1, 1, 1);
+          }
+        };
+      }
 
       const gameEl = noa.container.element as HTMLElement;
       const focusGame = (): void => {
@@ -1008,7 +1246,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       for (const e of NOA_BLOCK_ENTRIES) {
         if (e.shape === "cube") {
           noa.registry.registerBlock(e.id, noaCubeBlockOptions(e));
-        } else {
+        } else if (e.shape === "plantSprite") {
           noa.registry.registerBlock(e.id, {
             blockMesh: makePlantSpriteMesh(
               noa,
@@ -1017,6 +1255,19 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
               e.materialName
             ),
             solid: false,
+            opaque: false
+          });
+        } else {
+          let ratio = 1.0;
+          if (e.id === BLOCK_REGISTRY.CAKE_5) ratio = 5 / 6;
+          else if (e.id === BLOCK_REGISTRY.CAKE_4) ratio = 4 / 6;
+          else if (e.id === BLOCK_REGISTRY.CAKE_3) ratio = 0.5;
+          else if (e.id === BLOCK_REGISTRY.CAKE_2) ratio = 2 / 6;
+          else if (e.id === BLOCK_REGISTRY.CAKE_1) ratio = 1 / 6;
+
+          noa.registry.registerBlock(e.id, {
+            blockMesh: makeCakeSlabMesh(noa, Babylon, e.material, `cake-${e.id}`, ratio),
+            solid: true,
             opaque: false
           });
         }
@@ -1204,7 +1455,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           survivalSlots: inventoryRef.current,
           blockIconById: BLOCK_HOTBAR_ICON,
           itemIconById: ITEM_ICON,
-          flatBlockIds: PLANT_SPRITE_BLOCK_IDS,
+          flatBlockIds: FLAT_HELD_BLOCK_IDS,
           airBlockId: BLOCK_REGISTRY.AIR
         });
       }
@@ -1573,9 +1824,34 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
       function textureUrlForDrop(drop: WorldDrop): string | undefined {
         if (drop.kind === "block") {
+          const isCake =
+            drop.blockId === BLOCK_REGISTRY.CAKE ||
+            drop.blockId === BLOCK_REGISTRY.CAKE_5 ||
+            drop.blockId === BLOCK_REGISTRY.CAKE_4 ||
+            drop.blockId === BLOCK_REGISTRY.CAKE_3 ||
+            drop.blockId === BLOCK_REGISTRY.CAKE_2 ||
+            drop.blockId === BLOCK_REGISTRY.CAKE_1;
+          if (isCake) {
+            return "/minecraft-assets/item/cake.png";
+          }
           return BLOCK_HOTBAR_ICON[drop.blockId];
         }
         return ITEM_ICON[drop.itemId];
+      }
+
+      function dropUsesFlatSprite(drop: WorldDrop): boolean {
+        if (drop.kind === "item") return true;
+        const isCake =
+          drop.blockId === BLOCK_REGISTRY.CAKE ||
+          drop.blockId === BLOCK_REGISTRY.CAKE_5 ||
+          drop.blockId === BLOCK_REGISTRY.CAKE_4 ||
+          drop.blockId === BLOCK_REGISTRY.CAKE_3 ||
+          drop.blockId === BLOCK_REGISTRY.CAKE_2 ||
+          drop.blockId === BLOCK_REGISTRY.CAKE_1;
+        return (
+          PLANT_SPRITE_BLOCK_IDS.has(drop.blockId) ||
+          isCake
+        );
       }
 
       function worldDropMergeStackKey(drop: WorldDrop): string {
@@ -1627,16 +1903,14 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         const url = textureUrlForDrop(drop);
         if (!url) return;
         try {
-          const usePlantSprite =
-            drop.kind === "block" && PLANT_SPRITE_BLOCK_IDS.has(drop.blockId);
-          if (usePlantSprite) {
-            const mesh = makePlantSpriteMesh(
+          if (dropUsesFlatSprite(drop)) {
+            const mesh = makeFlatDropMesh(
               noa,
               Babylon,
               url,
               `world-drop-${drop.id}`
             );
-            mesh.scaling = new Babylon.Vector3(0.36, 0.36, 0.36);
+            mesh.scaling = new Babylon.Vector3(0.7, 0.7, 0.7);
             const eid: number = noa.entities.add(
               [drop.pos[0], drop.pos[1], drop.pos[2]],
               0.32,
@@ -2063,6 +2337,29 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
             });
             return;
           }
+          const tgtBlockID = tgt ? Number(tgt.blockID) : 0;
+          const isCakeBlock =
+            tgtBlockID === BLOCK_REGISTRY.CAKE ||
+            tgtBlockID === BLOCK_REGISTRY.CAKE_5 ||
+            tgtBlockID === BLOCK_REGISTRY.CAKE_4 ||
+            tgtBlockID === BLOCK_REGISTRY.CAKE_3 ||
+            tgtBlockID === BLOCK_REGISTRY.CAKE_2 ||
+            tgtBlockID === BLOCK_REGISTRY.CAKE_1;
+
+          if (tgt && isCakeBlock) {
+            const pos: Vec3 = [
+              Math.floor(Number(tgt.position[0])),
+              Math.floor(Number(tgt.position[1])),
+              Math.floor(Number(tgt.position[2]))
+            ];
+            triggerLocalArmSwing();
+            audio.startEating();
+            setTimeout(() => {
+              audio.stopEating(true);
+            }, 180);
+            void onEatCakeSliceRef.current(pos);
+            return;
+          }
           if (cell && cell.count > 0 && itemFoodSpec(cell.itemId ?? 0)) {
             void startEatingHold(idx);
             return;
@@ -2079,6 +2376,13 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
             ? ([tgt.adjacent[0], tgt.adjacent[1], tgt.adjacent[2]] as Vec3)
             : fallbackPlacementPos();
           if (!placePos) return;
+          if (cell.blockId === BLOCK_REGISTRY.SUGAR_CANE) {
+            const [px, py, pz] = placePos;
+            const belowId = clientBlockAtInt(px, py - 1, pz);
+            if (!sugarCaneMayPlaceOn(belowId)) {
+              return;
+            }
+          }
           triggerLocalArmSwing();
           onPlaceRef.current(placePos, cell.blockId);
           return;
@@ -2088,6 +2392,13 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           ? ([tgt.adjacent[0], tgt.adjacent[1], tgt.adjacent[2]] as Vec3)
           : fallbackPlacementPos();
         if (!placePos) return;
+        if (selectedBlockRef.current === BLOCK_REGISTRY.SUGAR_CANE) {
+          const [px, py, pz] = placePos;
+          const belowId = clientBlockAtInt(px, py - 1, pz);
+          if (!sugarCaneMayPlaceOn(belowId)) {
+            return;
+          }
+        }
         triggerLocalArmSwing();
         onPlaceRef.current(placePos, selectedBlockRef.current);
       });
@@ -2105,8 +2416,11 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           (cell) => cell.blockId === blockId && cell.count > 0
         );
         if (idx >= 0) {
-          survivalSlotRef.current = idx;
-          setSurvivalSlot(idx);
+          if (survivalSlotRef.current !== idx) {
+            cancelEatingHold();
+            survivalSlotRef.current = idx;
+            setSurvivalSlot(idx);
+          }
         }
       }
 
@@ -2152,8 +2466,11 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         if (gameModeRef.current === "survival") {
           if (Number.isFinite(n) && n >= 1 && n <= 9) {
             const i = n - 1;
-            survivalSlotRef.current = i;
-            setSurvivalSlot(i);
+            if (survivalSlotRef.current !== i) {
+              cancelEatingHold();
+              survivalSlotRef.current = i;
+              setSurvivalSlot(i);
+            }
           }
           return;
         }

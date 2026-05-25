@@ -123,3 +123,17 @@ export {
   smoothNoise01,
   smoothstep
 } from "./worldgenNoise";
+
+export {
+  CUSTOM_SURVIVAL_BREAK_BLOCKS,
+  GRASS_FORAGING_TOTAL_CHANCE,
+  blockPlacementHeight,
+  isGrassPlantBlock,
+  isLeavesBlock,
+  melonSliceDropCount,
+  rollGrassForagingDrop,
+  rollLeavesBonusDrop,
+  sugarCaneMayPlaceOn,
+  usesCustomSurvivalBreakDrops,
+  type BreakBonusDrop
+} from "./blockBreakDrops";

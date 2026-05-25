@@ -51,6 +51,18 @@ describe("survival vitals", () => {
     expect(player.health).toBe(20);
   });
 
+  it("damages health for negative nutrition and clamps at zero", () => {
+    const player = createDefaultVitals(0);
+    player.health = 1;
+
+    expect(applyFood(player, -2, 0)).toBe(true);
+    expect(player.health).toBe(0);
+
+    player.health = 20;
+    expect(applyFood(player, -5, 0)).toBe(true);
+    expect(player.health).toBe(15);
+  });
+
   it("does not drain hunger from long periods", () => {
     const player = createDefaultVitals(0);
     player.hunger = 20;

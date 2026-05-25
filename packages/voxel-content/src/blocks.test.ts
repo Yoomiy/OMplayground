@@ -16,7 +16,7 @@ import { isInstantBreak } from "./mining";
 
 describe("@playground/voxel-content blocks", () => {
   it("lists ids 0..n contiguously", () => {
-    expect(BLOCK_DEFS.length).toBe(103);
+    expect(BLOCK_DEFS.length).toBe(111);
     for (let i = 0; i < BLOCK_DEFS.length; i++) {
       expect(BLOCK_DEFS[i]!.id).toBe(i);
     }
@@ -121,6 +121,15 @@ describe("@playground/voxel-content blocks", () => {
     expect(blockDef(BLOCK_REGISTRY.CHEST)?.placeable).toBe(true);
   });
 
+  it("registers food blocks at ids 103-105", () => {
+    expect(BLOCK_REGISTRY.MELON).toBe(103);
+    expect(BLOCK_REGISTRY.CAKE).toBe(104);
+    expect(BLOCK_REGISTRY.SUGAR_CANE).toBe(105);
+    expect(blockDropId(BLOCK_REGISTRY.MELON)).toBeNull();
+    expect(blockDropId(BLOCK_REGISTRY.CAKE)).toBe(104);
+    expect(blockReplaceable(BLOCK_REGISTRY.SUGAR_CANE)).toBe(true);
+  });
+
   it("maps block ids to material sound groups and URL conventions", () => {
     expect(blockSoundGroup(BLOCK_REGISTRY.GRASS)).toBe("grass");
     expect(blockSoundGroup(BLOCK_REGISTRY.GRASS_SNOW)).toBe("grass");
@@ -130,6 +139,9 @@ describe("@playground/voxel-content blocks", () => {
     expect(blockSoundGroup(BLOCK_REGISTRY.BIRCH_LOG)).toBe("wood");
     expect(blockSoundGroup(BLOCK_REGISTRY.BIRCH_LEAVES)).toBe("leaves");
     expect(blockSoundGroup(BLOCK_REGISTRY.WHITE_WOOL)).toBe("cloth");
+    expect(blockSoundGroup(BLOCK_REGISTRY.MELON)).toBe("wood");
+    expect(blockSoundGroup(BLOCK_REGISTRY.SUGAR_CANE)).toBe("plant");
+    expect(blockSoundGroup(BLOCK_REGISTRY.CAKE)).toBe("cloth");
     expect(blockSoundGroup(BLOCK_REGISTRY.AIR)).toBe("silent");
     expect(blockSoundUrl("step", "grass")).toBe("/minecraft-assets/sounds/step/grass1.ogg");
     expect(blockSoundUrl("break", "silent")).toBeNull();

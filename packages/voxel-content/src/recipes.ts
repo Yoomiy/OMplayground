@@ -91,6 +91,14 @@ const diamond = { kind: "item", itemId: ITEM_REGISTRY.DIAMOND } as const;
 const coal = { kind: "item", itemId: ITEM_REGISTRY.COAL } as const;
 const flint = { kind: "item", itemId: ITEM_REGISTRY.FLINT } as const;
 const wheat = { kind: "item", itemId: ITEM_REGISTRY.WHEAT } as const;
+const sugar = { kind: "item", itemId: ITEM_REGISTRY.SUGAR } as const;
+const egg = { kind: "item", itemId: ITEM_REGISTRY.EGG } as const;
+const cocoa = { kind: "item", itemId: ITEM_REGISTRY.COCOA_BEANS } as const;
+const rawMeat = { kind: "item", itemId: ITEM_REGISTRY.RAW_MEAT } as const;
+const rawBeef = { kind: "item", itemId: ITEM_REGISTRY.RAW_BEEF } as const;
+const potato = { kind: "item", itemId: ITEM_REGISTRY.POTATO } as const;
+const carrot = { kind: "item", itemId: ITEM_REGISTRY.CARROT } as const;
+const melonSlice = { kind: "item", itemId: ITEM_REGISTRY.MELON_SLICE } as const;
 
 function block(blockId: number): RecipeIngredient {
   return { kind: "block", blockId };
@@ -429,6 +437,77 @@ export const RECIPES: readonly Recipe[] = [
   shaped("glow_talisman", 3, 3, [null, coal, null, coal, block(BLOCK_REGISTRY.TORCH), coal, null, coal, null], {
     kind: "item",
     id: ITEM_REGISTRY.GLOW_TALISMAN,
+    count: 1
+  }),
+  shapeless("sugar_from_cane", [block(BLOCK_REGISTRY.SUGAR_CANE)], {
+    kind: "item",
+    id: ITEM_REGISTRY.SUGAR,
+    count: 1
+  }),
+  shaped("cookie", 3, 1, [wheat, cocoa, wheat], {
+    kind: "item",
+    id: ITEM_REGISTRY.COOKIE,
+    count: 8
+  }),
+  shapeless("melon_block_to_slices", [block(BLOCK_REGISTRY.MELON)], {
+    kind: "item",
+    id: ITEM_REGISTRY.MELON_SLICE,
+    count: 9
+  }),
+  shaped(
+    "melon_slices_to_block",
+    3,
+    3,
+    [
+      melonSlice,
+      melonSlice,
+      melonSlice,
+      melonSlice,
+      melonSlice,
+      melonSlice,
+      melonSlice,
+      melonSlice,
+      melonSlice
+    ],
+    { kind: "block", id: BLOCK_REGISTRY.MELON, count: 1 }
+  ),
+  shaped(
+    "cake",
+    3,
+    2,
+    [sugar, egg, sugar, wheat, wheat, wheat],
+    { kind: "block", id: BLOCK_REGISTRY.CAKE, count: 1 }
+  ),
+  shaped(
+    "golden_carrot",
+    3,
+    3,
+    [
+      goldIngot,
+      goldIngot,
+      goldIngot,
+      goldIngot,
+      carrot,
+      goldIngot,
+      goldIngot,
+      goldIngot,
+      goldIngot
+    ],
+    { kind: "item", id: ITEM_REGISTRY.GOLDEN_CARROT, count: 1 }
+  ),
+  shapeless("cook_meat", [rawMeat, coal], {
+    kind: "item",
+    id: ITEM_REGISTRY.COOKED_MEAT,
+    count: 1
+  }),
+  shapeless("cook_beef", [rawBeef, coal], {
+    kind: "item",
+    id: ITEM_REGISTRY.COOKED_BEEF,
+    count: 1
+  }),
+  shapeless("bake_potato", [potato, coal], {
+    kind: "item",
+    id: ITEM_REGISTRY.BAKED_POTATO,
     count: 1
   })
 ] as const;

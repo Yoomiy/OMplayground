@@ -116,7 +116,8 @@ export function applyFood(
   saturationModifier: number
 ): boolean {
   const before = cloneVitals(player);
-  player.health = Math.min(MAX_HEALTH, (player.health ?? MAX_HEALTH) + nutrition);
+  const nextHealth = (player.health ?? MAX_HEALTH) + nutrition;
+  player.health = Math.max(0, Math.min(MAX_HEALTH, nextHealth));
   player.hunger = MAX_HUNGER;
   player.saturation = 0;
   player.exhaustion = 0;

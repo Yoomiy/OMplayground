@@ -5,3 +5,4 @@
 5. fix mining without clicking bug
 6. separate recepies to sections
 7. fix single breaking gesture behavior
+8. 2d (all?) droped items

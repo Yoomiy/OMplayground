@@ -11,7 +11,19 @@ import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import { Server } from "socket.io";
 import { createClient } from "@supabase/supabase-js";
-import { applyToolWear, blockReplaceable, itemFoodSpec } from "@playground/voxel-content";
+import {
+  applyToolWear,
+  blockPlacementHeight,
+  blockReplaceable,
+  isGrassPlantBlock,
+  isLeavesBlock,
+  itemFoodSpec,
+  melonSliceDropCount,
+  rollGrassForagingDrop,
+  rollLeavesBonusDrop,
+  sugarCaneMayPlaceOn,
+  usesCustomSurvivalBreakDrops
+} from "@playground/voxel-content";
 import { isWithinRecess } from "./recess";
 import {
   applyDelta,
@@ -306,11 +318,17 @@ function vecDist(a: Vec3, b: Vec3): number {
   return Math.sqrt(dx * dx + dy * dy + dz * dz);
 }
 
-function blockIntersectsPlayer(pos: Vec3, x: number, y: number, z: number): boolean {
+function blockIntersectsPlayer(
+  pos: Vec3,
+  x: number,
+  y: number,
+  z: number,
+  blockId: number
+): boolean {
   const blockMinX = x;
   const blockMaxX = x + 1;
   const blockMinY = y;
-  const blockMaxY = y + 1;
+  const blockMaxY = y + blockPlacementHeight(blockId);
   const blockMinZ = z;
   const blockMaxZ = z + 1;
 
@@ -518,24 +536,24 @@ function executeBlockBreak(
     (room.gameMode ?? "creative") === "survival" &&
     player.inventory &&
     player.itemInventory &&
-    player.craftingGrid &&
-    blockDropsPickable(brokenId)
+    player.craftingGrid
   ) {
-    const dropId = blockDropId(brokenId);
-    if (dropId !== null) {
-      const spawned = spawnBlockDropAt(
-        room,
-        jitterBreakSpawnPosition(x, y, z),
-        dropId,
-        1,
-        { ...scatterImpulseBreakDrop() }
-      );
-      if (spawned) {
-        io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
-          sessionId,
-          kind: "WORLD_DROP_SPAWNED",
-          drop: spawned
+    const dropPos = jitterBreakSpawnPosition(x, y, z);
+    if (usesCustomSurvivalBreakDrops(brokenId) || isLeavesBlock(brokenId)) {
+      spawnSurvivalBreakDrops(room, sessionId, brokenId, dropPos);
+    } else if (blockDropsPickable(brokenId)) {
+      const dropId = blockDropId(brokenId);
+      if (dropId !== null) {
+        const spawned = spawnBlockDropAt(room, dropPos, dropId, 1, {
+          ...scatterImpulseBreakDrop()
         });
+        if (spawned) {
+          io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
+            sessionId,
+            kind: "WORLD_DROP_SPAWNED",
+            drop: spawned
+          });
+        }
       }
     }
   }
@@ -544,6 +562,63 @@ function executeBlockBreak(
     blockId: replacementBlockId,
     by: userId
   });
+}
+
+function emitBreakBonusDrop(
+  room: VoxelRoom,
+  sessionId: string,
+  pos: Vec3,
+  bonus: { kind: "item" | "block"; id: number; count: number }
+): void {
+  const impulse = scatterImpulseBreakDrop();
+  const spawned =
+    bonus.kind === "item"
+      ? spawnItemDropAt(room, pos, bonus.id, bonus.count, impulse)
+      : spawnBlockDropAt(room, pos, bonus.id, bonus.count, impulse);
+  if (spawned) {
+    io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
+      sessionId,
+      kind: "WORLD_DROP_SPAWNED",
+      drop: spawned
+    });
+  }
+}
+
+function spawnSurvivalBreakDrops(
+  room: VoxelRoom,
+  sessionId: string,
+  brokenId: number,
+  pos: Vec3
+): void {
+  if (brokenId === BLOCK_REGISTRY.MELON) {
+    const count = melonSliceDropCount(Math.random());
+    emitBreakBonusDrop(room, sessionId, pos, {
+      kind: "item",
+      id: ITEM_REGISTRY.MELON_SLICE,
+      count
+    });
+    return;
+  }
+  if (isGrassPlantBlock(brokenId)) {
+    const bonus = rollGrassForagingDrop(Math.random());
+    if (bonus) emitBreakBonusDrop(room, sessionId, pos, bonus);
+    return;
+  }
+  if (isLeavesBlock(brokenId)) {
+    const dropId = blockDropId(brokenId);
+    if (dropId !== null) {
+      const spawned = spawnBlockDropAt(room, pos, dropId, 1, scatterImpulseBreakDrop());
+      if (spawned) {
+        io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
+          sessionId,
+          kind: "WORLD_DROP_SPAWNED",
+          drop: spawned
+        });
+      }
+    }
+    const bonus = rollLeavesBonusDrop(Math.random());
+    if (bonus) emitBreakBonusDrop(room, sessionId, pos, bonus);
+  }
 }
 
 type BreakTarget =
@@ -1039,6 +1114,13 @@ io.on("connection", (socket) => {
         });
         return;
       }
+      if (player.activeEating) {
+        ack?.({
+          ok: false,
+          error: { code: "EATING_BUSY", message: "אוכל עכשיו" }
+        });
+        return;
+      }
       if (!isFiniteVec(payload?.pos)) {
         ack?.({
           ok: false,
@@ -1069,8 +1151,21 @@ io.on("connection", (socket) => {
         });
         return;
       }
+      if (blockId === BLOCK_REGISTRY.SUGAR_CANE) {
+        const belowId = getVoxelID(room.world, x, y - 1, z);
+        if (!sugarCaneMayPlaceOn(belowId)) {
+          ack?.({
+            ok: false,
+            error: {
+              code: "BAD_INTENT",
+              message: "קני סוכר צריך דשא, עפר או חול מתחת"
+            }
+          });
+          return;
+        }
+      }
       for (const p of room.players.values()) {
-        if (blockIntersectsPlayer(p.pos, x, y, z)) {
+        if (blockIntersectsPlayer(p.pos, x, y, z, blockId)) {
           ack?.({
             ok: false,
             error: { code: "BLOCK_OCCUPIED_BY_PLAYER", message: "שחקן עומד שם" }
@@ -1107,6 +1202,13 @@ io.on("connection", (socket) => {
         return;
       }
       const { room, player, x, y, z, blockId } = target;
+      if (player.activeEating) {
+        ack?.({
+          ok: false,
+          error: { code: "EATING_BUSY", message: "אוכל עכשיו" }
+        });
+        return;
+      }
       if (shouldUseTimedBreak(blockId, room.gameMode)) {
         ack?.({
           ok: false,
@@ -1129,6 +1231,13 @@ io.on("connection", (socket) => {
         return;
       }
       const { room, player, x, y, z, blockId } = target;
+      if (player.activeEating) {
+        ack?.({
+          ok: false,
+          error: { code: "EATING_BUSY", message: "אוכל עכשיו" }
+        });
+        return;
+      }
       if ((room.gameMode ?? "creative") !== "survival") {
         ack?.({
           ok: false,
@@ -1321,13 +1430,6 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      if ((player.health ?? MAX_HEALTH) >= MAX_HEALTH) {
-        ack?.({
-          ok: false,
-          error: { code: "FULL_HEALTH", message: "מד החיים שלך כבר מלא" }
-        });
-        return;
-      }
       const hotbarIndex = Math.floor(Number(payload?.hotbarIndex));
       if (
         !Number.isFinite(hotbarIndex) ||
@@ -1342,10 +1444,18 @@ io.on("connection", (socket) => {
       }
       const cell = player.inventory[hotbarIndex];
       const itemId = cell?.itemId ?? 0;
-      if (!cell || cell.count <= 0 || !itemFoodSpec(itemId)) {
+      const food = itemFoodSpec(itemId);
+      if (!cell || cell.count <= 0 || !food) {
         ack?.({
           ok: false,
           error: { code: "NOT_FOOD", message: "אין אוכל במשבצת" }
+        });
+        return;
+      }
+      if ((player.health ?? MAX_HEALTH) >= MAX_HEALTH && food.nutrition >= 0) {
+        ack?.({
+          ok: false,
+          error: { code: "FULL_HEALTH", message: "מד החיים שלך כבר מלא" }
         });
         return;
       }
@@ -1423,6 +1533,88 @@ io.on("connection", (socket) => {
     if (player) delete player.activeEating;
     ack?.({ ok: true });
   });
+
+  socket.on(
+    "EAT_CAKE_SLICE",
+    (payload: { pos: Vec3 }, ack?: (r: SimpleAck) => void) => {
+      const sessionId = socket.data.sessionId as string | undefined;
+      const room = sessionId ? getRoom(sessionId) : undefined;
+      const player = room ? room.players.get(userId) : undefined;
+      if (!sessionId || !room || !player || room.paused) {
+        ack?.({
+          ok: false,
+          error: { code: "NOT_IN_ROOM", message: "לא בחדר" }
+        });
+        return;
+      }
+      if ((room.gameMode ?? "creative") !== "survival") {
+        ack?.({
+          ok: false,
+          error: { code: "BAD_INTENT", message: "רק במצב הישרדות" }
+        });
+        return;
+      }
+      if (!isFiniteVec(payload?.pos)) {
+        ack?.({
+          ok: false,
+          error: { code: "BAD_INTENT", message: "Invalid coordinates" }
+        });
+        return;
+      }
+      const [x, y, z] = payload.pos.map((n) => Math.floor(Number(n))) as Vec3;
+      const currentBlockId = getVoxelID(room.world, x, y, z);
+      const isCakeBlock =
+        currentBlockId === BLOCK_REGISTRY.CAKE ||
+        currentBlockId === BLOCK_REGISTRY.CAKE_5 ||
+        currentBlockId === BLOCK_REGISTRY.CAKE_4 ||
+        currentBlockId === BLOCK_REGISTRY.CAKE_3 ||
+        currentBlockId === BLOCK_REGISTRY.CAKE_2 ||
+        currentBlockId === BLOCK_REGISTRY.CAKE_1;
+
+      if (!isCakeBlock) {
+        ack?.({
+          ok: false,
+          error: { code: "NOT_CAKE", message: "אין עוגה שם" }
+        });
+        return;
+      }
+      if (vecDist(player.pos, [x + 0.5, y + 0.5, z + 0.5]) > MAX_REACH) {
+        ack?.({
+          ok: false,
+          error: { code: "OUT_OF_REACH", message: "רחוק מדי" }
+        });
+        return;
+      }
+      if ((player.health ?? MAX_HEALTH) >= MAX_HEALTH) {
+        ack?.({
+          ok: false,
+          error: { code: "FULL_HEALTH", message: "מד החיים שלך כבר מלא" }
+        });
+        return;
+      }
+
+      const nextBlockId =
+        currentBlockId === BLOCK_REGISTRY.CAKE ? BLOCK_REGISTRY.CAKE_5 :
+        currentBlockId === BLOCK_REGISTRY.CAKE_5 ? BLOCK_REGISTRY.CAKE_4 :
+        currentBlockId === BLOCK_REGISTRY.CAKE_4 ? BLOCK_REGISTRY.CAKE_3 :
+        currentBlockId === BLOCK_REGISTRY.CAKE_3 ? BLOCK_REGISTRY.CAKE_2 :
+        currentBlockId === BLOCK_REGISTRY.CAKE_2 ? BLOCK_REGISTRY.CAKE_1 :
+        BLOCK_REGISTRY.AIR;
+
+      applyFood(player, 2, 0);
+      room.dirty = true;
+      socket.emit("INVENTORY_SYNC", inventorySyncPayload(player));
+
+      applyDelta(room.world, x, y, z, nextBlockId);
+      io.to(`voxel:${sessionId}`).emit("BLOCK_DELTA", {
+        pos: [x, y, z],
+        blockId: nextBlockId,
+        by: userId
+      });
+
+      ack?.({ ok: true });
+    }
+  );
 
   socket.on(
     "CRAFT",

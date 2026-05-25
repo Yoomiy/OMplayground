@@ -68,6 +68,7 @@ const BLOCK_SOUND_GROUP_BY_ID = new Map<number, BlockSoundGroup>([
   [BLOCK_REGISTRY.LADDER, "wood"],
   [BLOCK_REGISTRY.CHEST, "wood"],
   [BLOCK_REGISTRY.PUMPKIN, "wood"],
+  [BLOCK_REGISTRY.MELON, "wood"],
 
   [BLOCK_REGISTRY.LEAVES, "leaves"],
   [BLOCK_REGISTRY.BIRCH_LEAVES, "leaves"],
@@ -82,6 +83,13 @@ const BLOCK_SOUND_GROUP_BY_ID = new Map<number, BlockSoundGroup>([
   [BLOCK_REGISTRY.GRASS_PLANT_YELLOW, "plant"],
   [BLOCK_REGISTRY.GRASS_PLANT, "plant"],
   [BLOCK_REGISTRY.TORCH, "plant"],
+  [BLOCK_REGISTRY.SUGAR_CANE, "plant"],
+  [BLOCK_REGISTRY.CAKE, "cloth"],
+  [BLOCK_REGISTRY.CAKE_5, "cloth"],
+  [BLOCK_REGISTRY.CAKE_4, "cloth"],
+  [BLOCK_REGISTRY.CAKE_3, "cloth"],
+  [BLOCK_REGISTRY.CAKE_2, "cloth"],
+  [BLOCK_REGISTRY.CAKE_1, "cloth"],
 
   [BLOCK_REGISTRY.GRAVEL, "gravel"],
   [BLOCK_REGISTRY.SNOW, "snow"],

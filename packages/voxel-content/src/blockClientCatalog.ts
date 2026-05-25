@@ -119,7 +119,14 @@ export type McTerrainTextureKey =
   | "grassPlant"
   | "ladder"
   | "torch"
-  | "chest";
+  | "chest"
+  | "melonTop"
+  | "melonSide"
+  | "cakeTop"
+  | "cakeBottom"
+  | "cakeSide"
+  | "cakeInner"
+  | "sugarCane";
 
 /** One Babylon material per mc_* texture file; order matches legacy registration. */
 export const MC_MATERIAL_ENTRIES = [
@@ -235,7 +242,14 @@ export const MC_MATERIAL_ENTRIES = [
   { name: "mc_grass_plant", textureKey: "grassPlant" as const, texHasAlpha: true },
   { name: "mc_ladder", textureKey: "ladder" as const, texHasAlpha: true },
   { name: "mc_torch", textureKey: "torch" as const, texHasAlpha: true },
-  { name: "mc_chest", textureKey: "chest" as const }
+  { name: "mc_chest", textureKey: "chest" as const },
+  { name: "mc_melon_top", textureKey: "melonTop" as const },
+  { name: "mc_melon_side", textureKey: "melonSide" as const },
+  { name: "mc_cake_top", textureKey: "cakeTop" as const },
+  { name: "mc_cake_bottom", textureKey: "cakeBottom" as const },
+  { name: "mc_cake_side", textureKey: "cakeSide" as const },
+  { name: "mc_cake_inner", textureKey: "cakeInner" as const },
+  { name: "mc_sugar_cane", textureKey: "sugarCane" as const, texHasAlpha: true }
 ] as const;
 
 export type NoaBlockEntry =
@@ -254,6 +268,17 @@ export type NoaBlockEntry =
       materialName: string;
       textureKey: McTerrainTextureKey;
       hotbarTextureKey: McTerrainTextureKey;
+    }
+  | {
+      id: number;
+      shape: "slabHalf";
+      material: {
+        top: string;
+        bottom: string;
+        sides: string;
+        inner?: string;
+      };
+      hotbarIconUrl: string;
     };
 
 export interface NoaCubeBlockOptions {
@@ -1018,6 +1043,85 @@ export const NOA_BLOCK_ENTRIES: readonly NoaBlockEntry[] = [
     material: "mc_chest",
     solid: true,
     hotbarTextureKey: "chest"
+  },
+  {
+    id: BLOCK_REGISTRY.MELON,
+    shape: "cube",
+    material: ["mc_melon_top", "mc_melon_side", "mc_melon_side"],
+    solid: true,
+    hotbarTextureKey: "melonSide"
+  },
+  {
+    id: BLOCK_REGISTRY.SUGAR_CANE,
+    shape: "plantSprite",
+    materialName: "mc_sugar_cane",
+    textureKey: "sugarCane",
+    hotbarTextureKey: "sugarCane"
+  },
+  {
+    id: BLOCK_REGISTRY.CAKE,
+    shape: "slabHalf",
+    material: {
+      top: "mc_cake_top",
+      bottom: "mc_cake_bottom",
+      sides: "mc_cake_side"
+    },
+    hotbarIconUrl: "/minecraft-assets/item/cake.png"
+  },
+  {
+    id: BLOCK_REGISTRY.CAKE_5,
+    shape: "slabHalf",
+    material: {
+      top: "mc_cake_top",
+      bottom: "mc_cake_bottom",
+      sides: "mc_cake_side",
+      inner: "mc_cake_inner"
+    },
+    hotbarIconUrl: "/minecraft-assets/item/cake.png"
+  },
+  {
+    id: BLOCK_REGISTRY.CAKE_4,
+    shape: "slabHalf",
+    material: {
+      top: "mc_cake_top",
+      bottom: "mc_cake_bottom",
+      sides: "mc_cake_side",
+      inner: "mc_cake_inner"
+    },
+    hotbarIconUrl: "/minecraft-assets/item/cake.png"
+  },
+  {
+    id: BLOCK_REGISTRY.CAKE_3,
+    shape: "slabHalf",
+    material: {
+      top: "mc_cake_top",
+      bottom: "mc_cake_bottom",
+      sides: "mc_cake_side",
+      inner: "mc_cake_inner"
+    },
+    hotbarIconUrl: "/minecraft-assets/item/cake.png"
+  },
+  {
+    id: BLOCK_REGISTRY.CAKE_2,
+    shape: "slabHalf",
+    material: {
+      top: "mc_cake_top",
+      bottom: "mc_cake_bottom",
+      sides: "mc_cake_side",
+      inner: "mc_cake_inner"
+    },
+    hotbarIconUrl: "/minecraft-assets/item/cake.png"
+  },
+  {
+    id: BLOCK_REGISTRY.CAKE_1,
+    shape: "slabHalf",
+    material: {
+      top: "mc_cake_top",
+      bottom: "mc_cake_bottom",
+      sides: "mc_cake_side",
+      inner: "mc_cake_inner"
+    },
+    hotbarIconUrl: "/minecraft-assets/item/cake.png"
   }
 ];
 

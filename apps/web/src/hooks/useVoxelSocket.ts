@@ -155,6 +155,7 @@ export interface UseVoxelSocketReturn {
   eatStart: (hotbarIndex: number) => Promise<EatStartAck>;
   eatFinish: (hotbarIndex: number) => Promise<SimpleAck>;
   eatCancel: () => Promise<SimpleAck>;
+  eatCakeSlice: (pos: Vec3) => Promise<SimpleAck>;
   setGameMode: (mode: GameMode) => Promise<SimpleAck>;
   /** Survival: drop one block from hotbar near the player. */
   dropHotbarItem: (hotbarIndex: number) => Promise<SimpleAck>;
@@ -507,6 +508,14 @@ export function useVoxelSocket(
     return emitWithAck<SimpleAck>(s, "EAT_CANCEL", {});
   }
 
+  async function eatCakeSlice(pos: Vec3): Promise<SimpleAck> {
+    const s = socketRef.current;
+    if (!s?.connected) {
+      return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
+    }
+    return emitWithAck<SimpleAck>(s, "EAT_CAKE_SLICE", { pos });
+  }
+
   async function pause(): Promise<SimpleAck> {
     const s = socketRef.current;
     if (!s?.connected) return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
@@ -637,6 +646,7 @@ export function useVoxelSocket(
     eatStart,
     eatFinish,
     eatCancel,
+    eatCakeSlice,
     setGameMode,
     dropHotbarItem,
     onWorldDropSpawned,

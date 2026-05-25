@@ -4,6 +4,7 @@ import type { StandardMaterial } from "@babylonjs/core/Materials/standardMateria
 import type { Texture } from "@babylonjs/core/Materials/Textures/texture";
 import type * as BabylonNamespace from "@babylonjs/core";
 import type { Vec3 } from "@/lib/voxelProtocol";
+import { BLOCK_REGISTRY } from "@playground/voxel-content";
 
 const STAGE_COUNT = 11;
 const STAGE_URLS = Array.from(
@@ -40,13 +41,36 @@ export function createBreakCrackOverlay(
 
   function setMeshLocalFromBlock(pos: Vec3): void {
     if (!mesh) return;
+    const blockId = noa.getBlock(pos[0], pos[1], pos[2]);
+    const isCake =
+      blockId === BLOCK_REGISTRY.CAKE ||
+      blockId === BLOCK_REGISTRY.CAKE_5 ||
+      blockId === BLOCK_REGISTRY.CAKE_4 ||
+      blockId === BLOCK_REGISTRY.CAKE_3 ||
+      blockId === BLOCK_REGISTRY.CAKE_2 ||
+      blockId === BLOCK_REGISTRY.CAKE_1;
+    const heightOffset = isCake ? 0.25 : 0.5;
+
+    let ratio = 1.0;
+    if (blockId === BLOCK_REGISTRY.CAKE_5) ratio = 5 / 6;
+    else if (blockId === BLOCK_REGISTRY.CAKE_4) ratio = 4 / 6;
+    else if (blockId === BLOCK_REGISTRY.CAKE_3) ratio = 0.5;
+    else if (blockId === BLOCK_REGISTRY.CAKE_2) ratio = 2 / 6;
+    else if (blockId === BLOCK_REGISTRY.CAKE_1) ratio = 1 / 6;
+
+    const xShift = isCake ? (ratio - 1) / 2 : 0;
     const globalCenter: [number, number, number] = [
-      pos[0] + 0.5,
-      pos[1] + 0.5,
+      pos[0] + 0.5 + xShift,
+      pos[1] + heightOffset,
       pos[2] + 0.5
     ];
     noa.globalToLocal(globalCenter, null, localPos);
     mesh.position.set(localPos[0], localPos[1], localPos[2]);
+    if (isCake) {
+      mesh.scaling.set(ratio, 0.5, 1);
+    } else {
+      mesh.scaling.set(1, 1, 1);
+    }
   }
 
   function ensureMesh(): void {

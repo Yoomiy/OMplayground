@@ -122,6 +122,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     eatStart,
     eatFinish,
     eatCancel,
+    eatCakeSlice,
     setGameMode,
     dropHotbarItem,
     onWorldDropSpawned,
@@ -328,6 +329,15 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     [eatCancel]
   );
 
+  const handleEatCakeSlice = useCallback(
+    async (pos: Vec3) => {
+      const ack = await eatCakeSlice(pos);
+      if (!ack.ok) setToast(ack.error?.message ?? "אכילת עוגה נכשלה");
+      return ack;
+    },
+    [eatCakeSlice]
+  );
+
   const handleInventoryMove = useCallback(
     (req: InventoryMoveReq) => {
       void inventoryMove(req).then((ack) => {
@@ -425,6 +435,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         onEatStart={handleEatStart}
         onEatFinish={handleEatFinish}
         onEatCancel={handleEatCancel}
+        onEatCakeSlice={handleEatCakeSlice}
         onInput={sendInput}
         onBlockPlace={handlePlaceBlock}
         onBlockBreak={handleBreakBlock}

@@ -293,6 +293,115 @@ export const ITEM_DEFS = [
     maxStack: 1,
     iconFilename: "iron_axe.png",
     tool: toolDef("axe", 2)
+  },
+  {
+    id: 129,
+    key: "SUGAR",
+    category: "material",
+    maxStack: 64,
+    iconFilename: "sugar.png"
+  },
+  {
+    id: 130,
+    key: "COCOA_BEANS",
+    category: "material",
+    maxStack: 64,
+    iconFilename: "cocoa_beans.png"
+  },
+  {
+    id: 131,
+    key: "EGG",
+    category: "material",
+    maxStack: 16,
+    iconFilename: "egg.png"
+  },
+  {
+    id: 132,
+    key: "RAW_MEAT",
+    category: "food",
+    maxStack: 64,
+    iconFilename: "porkchop.png",
+    food: { nutrition: 3, saturationModifier: 1.8 }
+  },
+  {
+    id: 133,
+    key: "COOKED_MEAT",
+    category: "food",
+    maxStack: 64,
+    iconFilename: "cooked_porkchop.png",
+    food: { nutrition: 8, saturationModifier: 12.8 }
+  },
+  {
+    id: 134,
+    key: "RAW_BEEF",
+    category: "food",
+    maxStack: 64,
+    iconFilename: "beef.png",
+    food: { nutrition: 3, saturationModifier: 1.8 }
+  },
+  {
+    id: 135,
+    key: "COOKED_BEEF",
+    category: "food",
+    maxStack: 64,
+    iconFilename: "cooked_beef.png",
+    food: { nutrition: 8, saturationModifier: 12.8 }
+  },
+  {
+    id: 136,
+    key: "COOKIE",
+    category: "food",
+    maxStack: 64,
+    iconFilename: "cookie.png",
+    food: { nutrition: 2, saturationModifier: 0.8 }
+  },
+  {
+    id: 137,
+    key: "MELON_SLICE",
+    category: "food",
+    maxStack: 64,
+    iconFilename: "melon_slice.png",
+    food: { nutrition: 2, saturationModifier: 1.2 }
+  },
+  {
+    id: 138,
+    key: "CARROT",
+    category: "food",
+    maxStack: 64,
+    iconFilename: "carrot.png",
+    food: { nutrition: 3, saturationModifier: 3.6 }
+  },
+  {
+    id: 139,
+    key: "GOLDEN_CARROT",
+    category: "food",
+    maxStack: 64,
+    iconFilename: "golden_carrot.png",
+    food: { nutrition: 6, saturationModifier: 14.4 }
+  },
+  {
+    id: 140,
+    key: "POTATO",
+    category: "food",
+    maxStack: 64,
+    iconFilename: "potato.png",
+    food: { nutrition: 1, saturationModifier: 0.6 }
+  },
+  {
+    id: 141,
+    key: "BAKED_POTATO",
+    category: "food",
+    maxStack: 64,
+    iconFilename: "baked_potato.png",
+    food: { nutrition: 5, saturationModifier: 6.0 }
+  },
+  {
+    id: 142,
+    key: "POISONOUS_POTATO",
+    category: "food",
+    maxStack: 64,
+    iconFilename: "poisonous_potato.png",
+    food: { nutrition: -2, saturationModifier: 0 }
   }
 ] as const satisfies readonly ItemDef[];
 

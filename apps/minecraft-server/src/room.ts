@@ -148,6 +148,7 @@ export interface VoxelRoom {
   /** Drops whose pos/stack changed — flushed as WORLD_DROP_UPDATE (~5 Hz). */
   dropSyncIds: Set<string>;
   lastDropBroadcastAt: number;
+  cakeSlices?: Map<string, number>;
 }
 
 const rooms = new Map<string, VoxelRoom>();
@@ -330,6 +331,7 @@ export function getOrCreateRoom(
     disconnectedVitals,
     chests,
     chestLocks: new Map(),
+    cakeSlices: new Map(),
     dirty: false,
     lastTickAt: 0,
     drops: hydrateDropsFromPersisted(meta.resumedState?.drops),

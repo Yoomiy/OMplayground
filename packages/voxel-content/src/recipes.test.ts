@@ -62,8 +62,48 @@ describe("@playground/voxel-content recipes", () => {
       "heavy_shield",
       "feather_falling_talisman",
       "helios_medallion",
-      "glow_talisman"
+      "glow_talisman",
+      "sugar_from_cane",
+      "cookie",
+      "melon_block_to_slices",
+      "melon_slices_to_block",
+      "cake",
+      "golden_carrot",
+      "cook_meat",
+      "cook_beef",
+      "bake_potato"
     ]);
+  });
+
+  it("matches cookie and cake recipes", () => {
+    const cookie = findMatchingRecipe(
+      gridWith(CRAFTING_TABLE_GRID_SIZE, {
+        0: { itemId: ITEM_REGISTRY.WHEAT, count: 1 },
+        1: { itemId: ITEM_REGISTRY.COCOA_BEANS, count: 1 },
+        2: { itemId: ITEM_REGISTRY.WHEAT, count: 1 }
+      }),
+      CRAFTING_GRID_WIDTH_3
+    );
+    expect(cookie?.recipe.key).toBe("cookie");
+    expect(cookie?.recipe.output).toEqual({
+      kind: "item",
+      id: ITEM_REGISTRY.COOKIE,
+      count: 8
+    });
+
+    const cake = findMatchingRecipe(
+      gridWith(CRAFTING_TABLE_GRID_SIZE, {
+        0: { itemId: ITEM_REGISTRY.SUGAR, count: 1 },
+        1: { itemId: ITEM_REGISTRY.EGG, count: 1 },
+        2: { itemId: ITEM_REGISTRY.SUGAR, count: 1 },
+        3: { itemId: ITEM_REGISTRY.WHEAT, count: 1 },
+        4: { itemId: ITEM_REGISTRY.WHEAT, count: 1 },
+        5: { itemId: ITEM_REGISTRY.WHEAT, count: 1 }
+      }),
+      CRAFTING_GRID_WIDTH_3
+    );
+    expect(cake?.recipe.key).toBe("cake");
+    expect(cake?.recipe.output.id).toBe(BLOCK_REGISTRY.CAKE);
   });
 
   it("matches shapeless log recipes regardless of placement", () => {

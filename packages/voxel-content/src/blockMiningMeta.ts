@@ -108,7 +108,15 @@ export const BLOCK_MINING_META: Record<BlockKey, MiningFields> = {
   GRASS_PLANT: { hardness: 0, requiredTool: null, speedTool: null, minTier: 0 },
   LADDER: { hardness: 0.4, requiredTool: null, speedTool: "axe", minTier: 0 },
   TORCH: { hardness: 0, requiredTool: null, speedTool: null, minTier: 0 },
-  CHEST: { hardness: 2.5, requiredTool: null, speedTool: "axe", minTier: 0 }
+  CHEST: { hardness: 2.5, requiredTool: null, speedTool: "axe", minTier: 0 },
+  MELON: { hardness: 1.0, requiredTool: null, speedTool: "axe", minTier: 0 },
+  CAKE: { hardness: 0.5, requiredTool: null, speedTool: null, minTier: 0 },
+  CAKE_5: { hardness: 0.5, requiredTool: null, speedTool: null, minTier: 0 },
+  CAKE_4: { hardness: 0.5, requiredTool: null, speedTool: null, minTier: 0 },
+  CAKE_3: { hardness: 0.5, requiredTool: null, speedTool: null, minTier: 0 },
+  CAKE_2: { hardness: 0.5, requiredTool: null, speedTool: null, minTier: 0 },
+  CAKE_1: { hardness: 0.5, requiredTool: null, speedTool: null, minTier: 0 },
+  SUGAR_CANE: { hardness: 0, requiredTool: null, speedTool: null, minTier: 0 }
 };
 
 export function miningMetaForKey(key: BlockKey): MiningFields {

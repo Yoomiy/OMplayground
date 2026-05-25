@@ -443,11 +443,13 @@ export class MultiBiomeGenerator {
         if (n < 0.075) return BLOCK_REGISTRY.DANDELION;
         return BLOCK_REGISTRY.AIR;
       case "forest":
+        if (n < 0.003) return BLOCK_REGISTRY.MELON;
         if (n < 0.035) return BLOCK_REGISTRY.GRASS_PLANT;
         if (n < 0.045) return BLOCK_REGISTRY.BROWN_MUSHROOM;
         if (n < 0.055) return BLOCK_REGISTRY.RED_MUSHROOM;
         return BLOCK_REGISTRY.AIR;
       case "plains":
+        if (n < 0.003) return BLOCK_REGISTRY.MELON;
         if (n < 0.045) return BLOCK_REGISTRY.GRASS_PLANT;
         if (n < 0.055) return BLOCK_REGISTRY.DANDELION;
         if (n < 0.065) return BLOCK_REGISTRY.ROSE;
