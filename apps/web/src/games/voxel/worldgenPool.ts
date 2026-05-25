@@ -128,6 +128,7 @@ export class WorldgenWorkerPool {
   }
 
   private processQueue() {
+    if (this.workers.length === 0) return;
     for (let i = 0; i < this.maxWorkers; i++) {
       if (!this.workerBusy[i] && this.queue.length > 0) {
         const req = this.queue.shift()!;

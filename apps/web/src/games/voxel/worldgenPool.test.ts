@@ -179,4 +179,24 @@ describe("WorldgenWorkerPool", () => {
     }
     expect((pool as any).workers.length).toBe(0);
   });
+
+  it("does not throw an error if processQueue is triggered after dispose", () => {
+    const pool = new WorldgenWorkerPool();
+    pool.dispose();
+    
+    const req = {
+      chunkId: "c_after_dispose",
+      data: { shape: [16, 16, 16] },
+      x0: 0,
+      y0: 0,
+      z0: 0,
+      seed: 123,
+      sx: 16,
+      sy: 16,
+      sz: 16,
+      onComplete: vi.fn()
+    };
+
+    expect(() => pool.requestChunk(req)).not.toThrow();
+  });
 });
