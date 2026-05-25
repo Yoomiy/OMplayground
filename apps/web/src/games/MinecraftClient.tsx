@@ -946,8 +946,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const onEatCakeSliceRef = useRef(onEatCakeSlice);
   const activeMiningRef = useRef<{
     pos: Vec3;
-    durationMs: number;
-    startedAt: number;
+    durationMs: number | null;
+    startedAt: number | null;
   } | null>(null);
   const activeEatingRef = useRef<{
     hotbarIndex: number;
@@ -2343,20 +2343,27 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         const now = performance.now();
         if (now - lastBreakStartAtRef.current < BREAK_START_MIN_MS) return;
         breakFinishSentRef.current = false;
-        const ack = await onBreakStartRef.current(pos);
-        if (!ack.ok || !ack.durationMs) return;
-        lastBreakStartAtRef.current = now;
-        activeMiningRef.current = {
+        const currentMining = {
           pos,
-          durationMs: ack.durationMs,
-          startedAt: performance.now()
+          durationMs: null,
+          startedAt: null
         };
+        activeMiningRef.current = currentMining;
+        const ack = await onBreakStartRef.current(pos);
+        if (activeMiningRef.current !== currentMining) return;
+        if (!ack.ok || !ack.durationMs) {
+          activeMiningRef.current = null;
+          return;
+        }
+        lastBreakStartAtRef.current = now;
+        currentMining.durationMs = ack.durationMs;
+        currentMining.startedAt = performance.now();
         lastDigSfxAt = 0;
         breakCrackRef.current?.setStage(pos, 0);
         let lastSwingAt = startSwingAt;
         const tick = (): void => {
           const m = activeMiningRef.current;
-          if (!m) return;
+          if (!m || m.durationMs === null || m.startedAt === null) return;
           const now = performance.now();
           if (now - lastDigSfxAt > 250) {
             const diggingId = clientBlockAtInt(m.pos[0], m.pos[1], m.pos[2]);
@@ -2383,6 +2390,13 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       function endMiningHold(): void {
         const m = activeMiningRef.current;
         if (!m) return;
+        if (m.durationMs === null || m.startedAt === null) {
+          stopMiningAnim();
+          activeMiningRef.current = null;
+          breakCrackRef.current?.clear();
+          onBreakCancelRef.current(m.pos);
+          return;
+        }
         const elapsed = performance.now() - m.startedAt;
         stopMiningAnim();
         activeMiningRef.current = null;
