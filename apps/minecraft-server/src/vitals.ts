@@ -31,7 +31,7 @@ export function createDefaultVitals(now = Date.now()): VitalsRuntime {
   return {
     health: MAX_HEALTH,
     hunger: MAX_HUNGER,
-    saturation: 5,
+    saturation: 0,
     exhaustion: 0,
     lastVitalsAt: now,
     lastRegenAt: now,
@@ -104,39 +104,9 @@ export function addExhaustion(player: VitalsCarrier, amount: number): boolean {
 
 export function tickVitals(player: VitalsCarrier, now: number): boolean {
   const before = cloneVitals(player);
-  const last = Number.isFinite(player.lastVitalsAt) ? player.lastVitalsAt! : now;
-  const elapsedSeconds = Math.max(0, Math.min(10, (now - last) / 1000));
   player.lastVitalsAt = now;
-  if (elapsedSeconds > 0) {
-    player.exhaustion = (player.exhaustion ?? 0) + elapsedSeconds * IDLE_EXHAUSTION_PER_SECOND;
-  }
-  while ((player.exhaustion ?? 0) >= EXHAUSTION_DECAY_THRESHOLD) {
-    player.exhaustion = (player.exhaustion ?? 0) - EXHAUSTION_DECAY_THRESHOLD;
-    if ((player.saturation ?? 0) > 0) {
-      player.saturation = Math.max(0, (player.saturation ?? 0) - 1);
-    } else {
-      player.hunger = Math.max(0, (player.hunger ?? MAX_HUNGER) - 1);
-    }
-  }
-  if ((player.hunger ?? MAX_HUNGER) >= 18 && (player.health ?? MAX_HEALTH) < MAX_HEALTH) {
-    const lastRegen = Number.isFinite(player.lastRegenAt) ? player.lastRegenAt! : now;
-    if (now - lastRegen >= REGEN_INTERVAL_MS) {
-      player.health = Math.min(MAX_HEALTH, (player.health ?? MAX_HEALTH) + 1);
-      player.saturation = Math.max(0, (player.saturation ?? 0) - 1);
-      player.lastRegenAt = now;
-    }
-  } else {
-    player.lastRegenAt = now;
-  }
-  if ((player.hunger ?? MAX_HUNGER) <= 0) {
-    const lastStarve = Number.isFinite(player.lastStarveAt) ? player.lastStarveAt! : now;
-    if (now - lastStarve >= STARVE_INTERVAL_MS) {
-      player.health = Math.max(0, (player.health ?? MAX_HEALTH) - 1);
-      player.lastStarveAt = now;
-    }
-  } else {
-    player.lastStarveAt = now;
-  }
+  player.lastRegenAt = now;
+  player.lastStarveAt = now;
   return vitalsChanged(before, cloneVitals(player));
 }
 
@@ -146,11 +116,10 @@ export function applyFood(
   saturationModifier: number
 ): boolean {
   const before = cloneVitals(player);
-  player.hunger = Math.min(MAX_HUNGER, (player.hunger ?? MAX_HUNGER) + nutrition);
-  player.saturation = Math.min(
-    player.hunger,
-    (player.saturation ?? 0) + nutrition * saturationModifier
-  );
+  player.health = Math.min(MAX_HEALTH, (player.health ?? MAX_HEALTH) + nutrition);
+  player.hunger = MAX_HUNGER;
+  player.saturation = 0;
+  player.exhaustion = 0;
   return vitalsChanged(before, cloneVitals(player));
 }
 

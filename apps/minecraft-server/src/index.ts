@@ -128,6 +128,7 @@ import {
   createDefaultVitals,
   EAT_FINISH_TOLERANCE_MS,
   EATING_DURATION_MS,
+  MAX_HEALTH,
   MAX_HUNGER,
   tickVitals
 } from "./vitals";
@@ -1320,10 +1321,10 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      if ((player.hunger ?? MAX_HUNGER) >= MAX_HUNGER) {
+      if ((player.health ?? MAX_HEALTH) >= MAX_HEALTH) {
         ack?.({
           ok: false,
-          error: { code: "FULL_HUNGER", message: "לא רעב עכשיו" }
+          error: { code: "FULL_HEALTH", message: "מד החיים שלך כבר מלא" }
         });
         return;
       }

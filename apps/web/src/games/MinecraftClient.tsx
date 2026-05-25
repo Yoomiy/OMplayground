@@ -2441,7 +2441,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     gameMode === "survival" && !paused ? (
       <div className="pointer-events-none absolute inset-x-0 bottom-20 flex justify-center px-3">
         <div
-          className="grid w-[min(94vw,23rem)] grid-cols-2 gap-2 rounded-sm border-2 border-black/55 bg-neutral-950/70 p-2 shadow-[0_8px_20px_rgba(0,0,0,0.55)]"
+          className="w-[min(94vw,11.5rem)] rounded-sm border-2 border-black/55 bg-neutral-950/70 p-2 shadow-[0_8px_20px_rgba(0,0,0,0.55)]"
           dir="rtl"
         >
           <div>
@@ -2453,18 +2453,6 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
               <div
                 className="h-full bg-red-500"
                 style={{ width: vitalsPct(localVitals.health, 20) }}
-              />
-            </div>
-          </div>
-          <div>
-            <div className="mb-1 flex items-center justify-between text-[10px] font-black text-amber-100">
-              <span>רעב</span>
-              <span>{Math.ceil(localVitals.hunger)}</span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-sm bg-black/60">
-              <div
-                className="h-full bg-amber-400"
-                style={{ width: vitalsPct(localVitals.hunger, 20) }}
               />
             </div>
           </div>
