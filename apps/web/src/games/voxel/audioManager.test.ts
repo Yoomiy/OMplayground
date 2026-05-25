@@ -9,32 +9,32 @@ import {
 
 describe("voxel AudioManager helpers", () => {
   it("resolves material URL descriptors", () => {
-    expect(voxelSoundDescriptor("step", "grass", 0.4)).toEqual({
-      url: "/sounds/step/grass.mp3",
+    const step = voxelSoundDescriptor("step", "grass", 0.4);
+    expect(step.action).toBe("step");
+    expect(step.group).toBe("grass");
+    expect(step.volume).toBe(0.4);
+    expect(step.url).toMatch(/^\/minecraft-assets\/sounds\/step\/grass[1-6]\.ogg$/);
+
+    expect(resolveVoxelSoundUrl("/minecraft-assets/sounds/step/stone3.ogg", 0.9)).toEqual({
+      url: "/minecraft-assets/sounds/step/stone3.ogg",
       action: "step",
-      group: "grass",
-      volume: 0.4
-    });
-    expect(resolveVoxelSoundUrl("/sounds/break/stone.mp3", 0.9)).toEqual({
-      url: "/sounds/break/stone.mp3",
-      action: "break",
       group: "stone",
       volume: 0.9
     });
   });
 
   it("resolves effect descriptors and biome ambient URLs", () => {
-    expect(voxelEffectDescriptor("swing", 0.25)).toEqual({
-      url: "/sounds/effects/swing.mp3",
-      effect: "swing",
+    expect(voxelEffectDescriptor("craft", 0.25)).toEqual({
+      url: "/minecraft-assets/sounds/random/pop.ogg",
+      effect: "craft",
       volume: 0.25
     });
-    expect(resolveVoxelSoundUrl("/sounds/effects/explosion.mp3", 0.8)).toEqual({
-      url: "/sounds/effects/explosion.mp3",
+    expect(resolveVoxelSoundUrl("/minecraft-assets/sounds/random/explode2.ogg", 0.8)).toEqual({
+      url: "/minecraft-assets/sounds/random/explode2.ogg",
       effect: "explosion",
       volume: 0.8
     });
-    expect(ambientUrlForBiome("forest")).toContain("forest");
+    expect(ambientUrlForBiome("forest")).toBe("");
   });
 
   it("is a no-op outside browser audio contexts", () => {
@@ -43,7 +43,7 @@ describe("voxel AudioManager helpers", () => {
       audio.prime();
       audio.updateAmbient("plains");
       audio.playStep("grass");
-      audio.playSFX("/sounds/effects/pop.mp3");
+      audio.playSFX("/minecraft-assets/sounds/random/pop.ogg");
       audio.startEating();
       audio.stopEating(true);
       audio.setMuted(true);

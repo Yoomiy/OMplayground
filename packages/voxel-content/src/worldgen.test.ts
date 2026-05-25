@@ -24,7 +24,7 @@ describe("@playground/voxel-content biomes", () => {
     ]);
     expect(BIOME_DEFS.desert.temperature).toBeGreaterThan(1.5);
     expect(BIOME_DEFS.iceplains.temperature).toBe(0);
-    expect(BIOME_DEFS.ocean.ambientSoundUrl).toContain("ocean");
+    expect(BIOME_DEFS.ocean.ambientSoundUrl).toBe("");
   });
 });
 

@@ -18,6 +18,7 @@ export interface BiomeDef {
   readonly grassColorHex: string;
   readonly waterColorHex: string;
   readonly skyColorHex: string;
+  /** @deprecated Procedural ambient in client AudioManager; no asset URL. */
   readonly ambientSoundUrl: string;
 }
 
@@ -31,7 +32,7 @@ export const BIOME_DEFS: Record<BiomeId, BiomeDef> = {
     grassColorHex: "#397824",
     waterColorHex: "#3f76e4",
     skyColorHex: "#77a2ff",
-    ambientSoundUrl: "/sounds/ambient/ocean_waves.mp3"
+    ambientSoundUrl: ""
   },
   desert: {
     id: "desert",
@@ -42,7 +43,7 @@ export const BIOME_DEFS: Record<BiomeId, BiomeDef> = {
     grassColorHex: "#b5a663",
     waterColorHex: "#37507d",
     skyColorHex: "#e3cc8c",
-    ambientSoundUrl: "/sounds/ambient/desert_wind.mp3"
+    ambientSoundUrl: ""
   },
   savanna: {
     id: "savanna",
@@ -53,7 +54,7 @@ export const BIOME_DEFS: Record<BiomeId, BiomeDef> = {
     grassColorHex: "#b0b05b",
     waterColorHex: "#375f7d",
     skyColorHex: "#ffdc99",
-    ambientSoundUrl: "/sounds/ambient/savanna_dry.mp3"
+    ambientSoundUrl: ""
   },
   forest: {
     id: "forest",
@@ -64,7 +65,7 @@ export const BIOME_DEFS: Record<BiomeId, BiomeDef> = {
     grassColorHex: "#53b533",
     waterColorHex: "#3f76e4",
     skyColorHex: "#a1c2ff",
-    ambientSoundUrl: "/sounds/ambient/forest_birds.mp3"
+    ambientSoundUrl: ""
   },
   plains: {
     id: "plains",
@@ -75,7 +76,7 @@ export const BIOME_DEFS: Record<BiomeId, BiomeDef> = {
     grassColorHex: "#6ec847",
     waterColorHex: "#3f76e4",
     skyColorHex: "#cce0ff",
-    ambientSoundUrl: "/sounds/ambient/plains_wind.mp3"
+    ambientSoundUrl: ""
   },
   mountains: {
     id: "mountains",
@@ -86,7 +87,7 @@ export const BIOME_DEFS: Record<BiomeId, BiomeDef> = {
     grassColorHex: "#689656",
     waterColorHex: "#45629e",
     skyColorHex: "#ccd6ff",
-    ambientSoundUrl: "/sounds/ambient/mountain_wind.mp3"
+    ambientSoundUrl: ""
   },
   beach: {
     id: "beach",
@@ -97,7 +98,7 @@ export const BIOME_DEFS: Record<BiomeId, BiomeDef> = {
     grassColorHex: "#a8a660",
     waterColorHex: "#3f76e4",
     skyColorHex: "#cfe7ff",
-    ambientSoundUrl: "/sounds/ambient/ocean_waves.mp3"
+    ambientSoundUrl: ""
   },
   ice_mountains: {
     id: "ice_mountains",
@@ -108,7 +109,7 @@ export const BIOME_DEFS: Record<BiomeId, BiomeDef> = {
     grassColorHex: "#74b391",
     waterColorHex: "#3d577a",
     skyColorHex: "#e0f2ff",
-    ambientSoundUrl: "/sounds/ambient/blizzard.mp3"
+    ambientSoundUrl: ""
   },
   iceplains: {
     id: "iceplains",
@@ -119,7 +120,7 @@ export const BIOME_DEFS: Record<BiomeId, BiomeDef> = {
     grassColorHex: "#74b391",
     waterColorHex: "#3d577a",
     skyColorHex: "#e0f2ff",
-    ambientSoundUrl: "/sounds/ambient/blizzard.mp3"
+    ambientSoundUrl: ""
   }
 };
 

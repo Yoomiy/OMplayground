@@ -1,9 +1,11 @@
 import {
-  BIOME_DEFS,
+  blockSoundStepPrefix,
   blockSoundUrl,
+  randomStepVariantIndex,
   type BiomeId,
   type BlockSoundAction,
-  type BlockSoundGroup
+  type BlockSoundGroup,
+  type StepSoundPrefix
 } from "@playground/voxel-content";
 
 export type VoxelEffectSound =
@@ -32,39 +34,49 @@ interface AmbientChannel {
   stopTimer: ReturnType<typeof setTimeout> | null;
 }
 
-interface GroupProfile {
-  readonly filterType: BiquadFilterType;
-  readonly frequency: number;
-  readonly q: number;
-  readonly gain: number;
-  readonly toneFrequency?: number;
+interface MaterialPlayback {
+  readonly volume: number;
+  readonly rateMin: number;
+  readonly rateMax: number;
 }
 
-const GROUP_PROFILES: Record<BlockSoundGroup, GroupProfile> = {
-  silent: { filterType: "lowpass", frequency: 1000, q: 0.2, gain: 0 },
-  grass: { filterType: "bandpass", frequency: 520, q: 0.7, gain: 0.55 },
-  stone: { filterType: "highpass", frequency: 650, q: 0.9, gain: 0.62, toneFrequency: 220 },
-  sand: { filterType: "bandpass", frequency: 1050, q: 0.45, gain: 0.42 },
-  wood: { filterType: "bandpass", frequency: 360, q: 1.2, gain: 0.58, toneFrequency: 155 },
-  leaves: { filterType: "bandpass", frequency: 1400, q: 0.65, gain: 0.34 },
-  cloth: { filterType: "lowpass", frequency: 740, q: 0.25, gain: 0.34 },
-  glass: { filterType: "highpass", frequency: 1700, q: 1.6, gain: 0.34, toneFrequency: 880 },
-  gravel: { filterType: "bandpass", frequency: 820, q: 0.9, gain: 0.58 },
-  snow: { filterType: "lowpass", frequency: 920, q: 0.55, gain: 0.31 },
-  plant: { filterType: "bandpass", frequency: 1180, q: 0.45, gain: 0.28 },
-  metal: { filterType: "highpass", frequency: 900, q: 1.4, gain: 0.4, toneFrequency: 520 },
-  water: { filterType: "lowpass", frequency: 430, q: 0.45, gain: 0.28 }
+const MATERIAL_PLAYBACK: Record<BlockSoundAction, MaterialPlayback> = {
+  step: { volume: 1, rateMin: 0.9, rateMax: 1.1 },
+  dig: { volume: 1, rateMin: 1.05, rateMax: 1.15 },
+  place: { volume: 1, rateMin: 0.95, rateMax: 1.05 },
+  break: { volume: 1, rateMin: 0.9, rateMax: 1.1 }
 };
 
-const EFFECT_URLS: Record<VoxelEffectSound, string> = {
-  swing: "/sounds/effects/swing.mp3",
-  craft: "/sounds/effects/pop.mp3",
-  hurt: "/sounds/effects/hurt.mp3",
-  eat: "/sounds/effects/eat.mp3",
-  swallow: "/sounds/effects/swallow.mp3",
-  fuse: "/sounds/effects/fuse.mp3",
-  explosion: "/sounds/effects/explosion.mp3"
+const EFFECT_URLS: Record<Exclude<VoxelEffectSound, "swing">, readonly string[]> = {
+  craft: ["/minecraft-assets/sounds/random/pop.ogg"],
+  hurt: ["/minecraft-assets/sounds/random/classic_hurt.ogg"],
+  eat: [
+    "/minecraft-assets/sounds/random/eat1.ogg",
+    "/minecraft-assets/sounds/random/eat2.ogg",
+    "/minecraft-assets/sounds/random/eat3.ogg"
+  ],
+  swallow: ["/minecraft-assets/sounds/random/burp.ogg"],
+  fuse: ["/minecraft-assets/sounds/random/fuse.ogg"],
+  explosion: [
+    "/minecraft-assets/sounds/random/explode1.ogg",
+    "/minecraft-assets/sounds/random/explode2.ogg",
+    "/minecraft-assets/sounds/random/explode3.ogg",
+    "/minecraft-assets/sounds/random/explode4.ogg"
+  ]
 };
+
+/** Warmed on prime(); first play without preload may decode lazily. */
+const PRELOAD_URLS: readonly string[] = [
+  "/minecraft-assets/sounds/step/grass1.ogg",
+  "/minecraft-assets/sounds/step/stone1.ogg",
+  "/minecraft-assets/sounds/step/wood1.ogg",
+  "/minecraft-assets/sounds/random/break.ogg",
+  "/minecraft-assets/sounds/random/pop.ogg",
+  "/minecraft-assets/sounds/random/classic_hurt.ogg",
+  "/minecraft-assets/sounds/random/eat1.ogg",
+  "/minecraft-assets/sounds/random/fuse.ogg",
+  "/minecraft-assets/sounds/random/explode1.ogg"
+];
 
 const AMBIENT_PROFILES: Record<
   BiomeId,
@@ -87,13 +99,20 @@ function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
 }
 
+function pickRandom<T>(items: readonly T[], random: () => number): T {
+  return items[Math.floor(random() * items.length)]!;
+}
+
 export function voxelSoundDescriptor(
   action: BlockSoundAction,
   group: BlockSoundGroup,
   volume = 0.5
 ): VoxelSoundDescriptor {
+  const prefix = blockSoundStepPrefix(group);
+  const variant =
+    prefix !== null ? randomStepVariantIndex(prefix) : 1;
   return {
-    url: blockSoundUrl(action, group),
+    url: blockSoundUrl(action, group, variant),
     action,
     group,
     volume: clamp01(volume)
@@ -104,33 +123,82 @@ export function voxelEffectDescriptor(
   effect: VoxelEffectSound,
   volume = 0.5
 ): VoxelSoundDescriptor {
+  if (effect === "swing") {
+    return { url: null, effect, volume: clamp01(volume) };
+  }
   return {
-    url: EFFECT_URLS[effect],
+    url: pickRandom(EFFECT_URLS[effect], Math.random),
     effect,
     volume: clamp01(volume)
   };
 }
 
-export function ambientUrlForBiome(biomeId: BiomeId): string {
-  return BIOME_DEFS[biomeId].ambientSoundUrl;
+/** Procedural biome ambient; no asset URL. */
+export function ambientUrlForBiome(_biomeId: BiomeId): string {
+  return "";
 }
 
 export function resolveVoxelSoundUrl(
   url: string,
   volume = 0.5
 ): VoxelSoundDescriptor | null {
-  const materialMatch = url.match(/^\/sounds\/(step|dig|break|place)\/([a-z_]+)\.mp3$/);
-  if (materialMatch) {
+  const stepMatch = url.match(/^\/minecraft-assets\/sounds\/step\/([a-z]+)(\d+)\.ogg$/);
+  if (stepMatch) {
+    const prefix = stepMatch[1] as StepSoundPrefix;
+    const group = prefixToGroup(prefix);
     return {
       url,
-      action: materialMatch[1] as BlockSoundAction,
-      group: materialMatch[2] as BlockSoundGroup,
+      action: "step",
+      group,
       volume: clamp01(volume)
     };
   }
-  const effect = Object.entries(EFFECT_URLS).find(([, effectUrl]) => effectUrl === url)?.[0];
-  if (effect) return voxelEffectDescriptor(effect as VoxelEffectSound, volume);
+
+  const randomMatch = url.match(/^\/minecraft-assets\/sounds\/random\/(.+)\.ogg$/);
+  if (randomMatch) {
+    const name = randomMatch[1]!;
+    if (name === "pop") {
+      return { url, effect: "craft", volume: clamp01(volume) };
+    }
+    if (name === "classic_hurt") {
+      return { url, effect: "hurt", volume: clamp01(volume) };
+    }
+    if (name.startsWith("eat")) {
+      return { url, effect: "eat", volume: clamp01(volume) };
+    }
+    if (name === "burp") {
+      return { url, effect: "swallow", volume: clamp01(volume) };
+    }
+    if (name === "fuse") {
+      return { url, effect: "fuse", volume: clamp01(volume) };
+    }
+    if (name.startsWith("explode")) {
+      return { url, effect: "explosion", volume: clamp01(volume) };
+    }
+    if (name.startsWith("glass")) {
+      return {
+        url,
+        action: "break",
+        group: "glass",
+        volume: clamp01(volume)
+      };
+    }
+    if (name === "break") {
+      return {
+        url,
+        action: "break",
+        group: "stone",
+        volume: clamp01(volume)
+      };
+    }
+  }
+
   return null;
+}
+
+function prefixToGroup(prefix: StepSoundPrefix): BlockSoundGroup {
+  if (prefix === "ladder") return "wood";
+  return prefix;
 }
 
 export class AudioManager {
@@ -140,8 +208,11 @@ export class AudioManager {
   private loopTimers = new Map<string, ReturnType<typeof setInterval>>();
   private disposed = false;
   private muted = false;
+  private primed = false;
   private readonly random: () => number;
   private readonly masterVolume: number;
+  private readonly bufferCache = new Map<string, AudioBuffer>();
+  private readonly bufferLoads = new Map<string, Promise<AudioBuffer>>();
 
   constructor(options: { masterVolume?: number; random?: () => number } = {}) {
     this.masterVolume = options.masterVolume ?? 0.72;
@@ -149,12 +220,20 @@ export class AudioManager {
   }
 
   public prime(): void {
-    if (this.muted) return;
+    if (this.muted || this.primed) return;
     const ctx = this.ensureContext();
-    if (!ctx || ctx.state !== "suspended") return;
-    void ctx.resume().catch(() => {
-      // User gesture unlocks can still be denied by browser policy.
-    });
+    if (!ctx) return;
+    this.primed = true;
+    if (ctx.state === "suspended") {
+      void ctx.resume().catch(() => {
+        // User gesture unlocks can still be denied by browser policy.
+      });
+    }
+    for (const url of PRELOAD_URLS) {
+      void this.loadBuffer(url).catch(() => {
+        // Missing assets in dev before borrow script; playback retries on demand.
+      });
+    }
   }
 
   public playSFX(url: string, volume = 0.5): void {
@@ -162,11 +241,11 @@ export class AudioManager {
     const descriptor = resolveVoxelSoundUrl(url, volume);
     if (!descriptor) return;
     if (descriptor.effect) {
-      this.playEffect(descriptor.effect, descriptor.volume);
+      this.playEffect(descriptor.effect, descriptor.volume, descriptor.url);
       return;
     }
     if (descriptor.action && descriptor.group) {
-      this.playMaterial(descriptor.action, descriptor.group, descriptor.volume);
+      this.playMaterial(descriptor.action, descriptor.group, descriptor.volume, descriptor.url);
     }
   }
 
@@ -259,8 +338,17 @@ export class AudioManager {
     } catch {
       // Best-effort teardown; the browser may already be disposing the graph.
     }
+    if (this.context) {
+      try {
+        void this.context.close();
+      } catch {
+        // Best-effort cleanup
+      }
+    }
     this.masterGain = null;
     this.context = null;
+    this.bufferCache.clear();
+    this.bufferLoads.clear();
   }
 
   public setMuted(muted: boolean): void {
@@ -299,6 +387,108 @@ export class AudioManager {
     }
   }
 
+  private async loadBuffer(url: string): Promise<AudioBuffer> {
+    const cached = this.bufferCache.get(url);
+    if (cached) return cached;
+
+    const inFlight = this.bufferLoads.get(url);
+    if (inFlight) return inFlight;
+
+    const ctx = this.ensureContext();
+    if (!ctx) throw new Error("AudioContext unavailable");
+
+    const promise = fetch(url)
+      .then((res) => {
+        if (!res.ok) throw new Error(`Failed to load ${url}: ${res.status}`);
+        return res.arrayBuffer();
+      })
+      .then((data) =>
+        new Promise<AudioBuffer>((resolve, reject) => {
+          ctx.decodeAudioData(data, resolve, reject);
+        })
+      )
+      .then((buffer) => {
+        this.bufferCache.set(url, buffer);
+        this.bufferLoads.delete(url);
+        return buffer;
+      })
+      .catch((err) => {
+        this.bufferLoads.delete(url);
+        throw err;
+      });
+
+    this.bufferLoads.set(url, promise);
+    return promise;
+  }
+
+  private playBuffer(url: string, volume: number, playbackRate?: number): void {
+    const ctx = this.ensureContext();
+    const master = this.masterGain;
+    if (!ctx || !master) return;
+
+    const rate =
+      playbackRate ??
+      0.9 + this.random() * 0.2;
+    const volJitter = 1 + (this.random() * 0.1 - 0.05);
+
+    void this.loadBuffer(url)
+      .then((buffer) => {
+        if (this.disposed || this.muted) return;
+        const now = ctx.currentTime;
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        source.playbackRate.value = rate;
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.linearRampToValueAtTime(clamp01(volume) * volJitter, now + 0.008);
+        gain.gain.linearRampToValueAtTime(0.0001, now + buffer.duration / rate + 0.02);
+        source.connect(gain);
+        gain.connect(master);
+        source.start(now);
+        source.stop(now + buffer.duration / rate + 0.05);
+        this.disconnectLater([source, gain], buffer.duration / rate + 0.1);
+      })
+      .catch(() => {
+        // Asset missing or decode failed.
+      });
+  }
+
+  private materialUrl(action: BlockSoundAction, group: BlockSoundGroup): string | null {
+    if (group === "silent") return null;
+    const prefix = blockSoundStepPrefix(group);
+    if (prefix) {
+      const variant = randomStepVariantIndex(prefix, this.random);
+      return blockSoundUrl(action, group, variant);
+    }
+    if (action === "break") {
+      return "/minecraft-assets/sounds/random/break.ogg";
+    }
+    return null;
+  }
+
+  private playMaterial(
+    action: BlockSoundAction,
+    group: BlockSoundGroup,
+    volume: number,
+    specificUrl?: string | null
+  ): void {
+    const url = specificUrl ?? this.materialUrl(action, group);
+    if (!url) return;
+    const playback = MATERIAL_PLAYBACK[action];
+    const rate =
+      playback.rateMin + this.random() * (playback.rateMax - playback.rateMin);
+    this.playBuffer(url, volume * playback.volume, rate);
+  }
+
+  private playEffect(effect: VoxelEffectSound, volume: number, specificUrl?: string | null): void {
+    if (effect === "swing") {
+      this.playToneSweep(320, 95, 0.16, clamp01(volume) * 0.12);
+      return;
+    }
+    const url = specificUrl ?? pickRandom(EFFECT_URLS[effect], this.random);
+    this.playBuffer(url, volume);
+  }
+
   private createNoiseBuffer(ctx: AudioContext, durationSeconds: number): AudioBuffer {
     const frameCount = Math.max(1, Math.floor(ctx.sampleRate * durationSeconds));
     const buffer = ctx.createBuffer(1, frameCount, ctx.sampleRate);
@@ -309,124 +499,6 @@ export class AudioManager {
       data[i] = last;
     }
     return buffer;
-  }
-
-  private playMaterial(
-    action: BlockSoundAction,
-    group: BlockSoundGroup,
-    volume: number
-  ): void {
-    if (group === "silent") return;
-    const ctx = this.ensureContext();
-    const master = this.masterGain;
-    if (!ctx || !master) return;
-    const profile = GROUP_PROFILES[group] ?? GROUP_PROFILES.stone;
-    const duration =
-      action === "step" ? 0.09 : action === "dig" ? 0.12 : action === "place" ? 0.1 : 0.18;
-    const actionGain =
-      action === "break" ? 1.25 : action === "dig" ? 0.78 : action === "place" ? 0.88 : 1;
-    const now = ctx.currentTime;
-    const source = ctx.createBufferSource();
-    source.buffer = this.createNoiseBuffer(ctx, duration);
-    const filter = ctx.createBiquadFilter();
-    filter.type = profile.filterType;
-    filter.frequency.value = profile.frequency;
-    filter.Q.value = profile.q;
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.linearRampToValueAtTime(
-      clamp01(volume) * profile.gain * actionGain,
-      now + 0.012
-    );
-    gain.gain.linearRampToValueAtTime(0.0001, now + duration);
-    source.connect(filter);
-    filter.connect(gain);
-    gain.connect(master);
-    source.start(now);
-    source.stop(now + duration + 0.02);
-    this.disconnectLater([source, filter, gain], duration + 0.08);
-    if (profile.toneFrequency && action !== "dig") {
-      this.playTone(profile.toneFrequency, duration * 0.7, clamp01(volume) * 0.08, "triangle");
-    }
-  }
-
-  private playEffect(effect: VoxelEffectSound, volume: number): void {
-    switch (effect) {
-      case "swing":
-        this.playToneSweep(320, 95, 0.16, clamp01(volume) * 0.12);
-        break;
-      case "craft":
-        this.playTone(660, 0.055, clamp01(volume) * 0.12, "square");
-        setTimeout(() => this.playTone(980, 0.055, clamp01(volume) * 0.1, "square"), 45);
-        break;
-      case "hurt":
-        this.playToneSweep(150, 90, 0.18, clamp01(volume) * 0.16);
-        this.playMaterial("break", "cloth", clamp01(volume) * 0.7);
-        break;
-      case "eat":
-        this.playMaterial("dig", "plant", clamp01(volume));
-        break;
-      case "swallow":
-        this.playToneSweep(180, 120, 0.16, clamp01(volume) * 0.1);
-        break;
-      case "fuse":
-        this.playMaterial("dig", "sand", clamp01(volume) * 0.8);
-        this.playToneSweep(1200, 900, 0.12, clamp01(volume) * 0.045);
-        break;
-      case "explosion":
-        this.playExplosionSynth(clamp01(volume));
-        break;
-    }
-  }
-
-  private playExplosionSynth(volume: number): void {
-    const ctx = this.ensureContext();
-    const master = this.masterGain;
-    if (!ctx || !master) return;
-    const duration = 0.72;
-    const now = ctx.currentTime;
-    const source = ctx.createBufferSource();
-    source.buffer = this.createNoiseBuffer(ctx, duration);
-    const filter = ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.setValueAtTime(820, now);
-    filter.frequency.exponentialRampToValueAtTime(90, now + duration);
-    filter.Q.value = 0.7;
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.linearRampToValueAtTime(volume * 0.82, now + 0.018);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-    source.connect(filter);
-    filter.connect(gain);
-    gain.connect(master);
-    source.start(now);
-    source.stop(now + duration + 0.03);
-    this.disconnectLater([source, filter, gain], duration + 0.1);
-    this.playToneSweep(88, 34, 0.42, volume * 0.22);
-  }
-
-  private playTone(
-    frequency: number,
-    duration: number,
-    volume: number,
-    type: OscillatorType
-  ): void {
-    const ctx = this.ensureContext();
-    const master = this.masterGain;
-    if (!ctx || !master) return;
-    const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    osc.type = type;
-    osc.frequency.setValueAtTime(frequency, now);
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.linearRampToValueAtTime(volume, now + 0.008);
-    gain.gain.linearRampToValueAtTime(0.0001, now + duration);
-    osc.connect(gain);
-    gain.connect(master);
-    osc.start(now);
-    osc.stop(now + duration + 0.02);
-    this.disconnectLater([osc, gain], duration + 0.08);
   }
 
   private playToneSweep(

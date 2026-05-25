@@ -12,7 +12,8 @@
     "dev:server": "npm run dev -w @playground/game-server",
     "dev:minecraft": "npm run dev -w @playground/minecraft-server",
     "lint": "npm run lint --workspaces --if-present",
-    "borrow-voxel-textures": "tsx scripts/borrow-voxel-textures.ts"
+    "borrow-voxel-textures": "tsx scripts/borrow-voxel-textures.ts",
+    "borrow-voxel-audio": "tsx scripts/borrow-voxel-audio.ts"
   },
   "devDependencies": {
     "tsx": "^4.22.3",

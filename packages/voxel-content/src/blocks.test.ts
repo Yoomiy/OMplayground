@@ -131,7 +131,7 @@ describe("@playground/voxel-content blocks", () => {
     expect(blockSoundGroup(BLOCK_REGISTRY.BIRCH_LEAVES)).toBe("leaves");
     expect(blockSoundGroup(BLOCK_REGISTRY.WHITE_WOOL)).toBe("cloth");
     expect(blockSoundGroup(BLOCK_REGISTRY.AIR)).toBe("silent");
-    expect(blockSoundUrl("step", "grass")).toBe("/sounds/step/grass.mp3");
+    expect(blockSoundUrl("step", "grass")).toBe("/minecraft-assets/sounds/step/grass1.ogg");
     expect(blockSoundUrl("break", "silent")).toBeNull();
   });
 });

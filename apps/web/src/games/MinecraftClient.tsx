@@ -907,9 +907,12 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       const audio = new AudioManager();
       audioManagerRef.current = audio;
       audio.setMuted(pausedRef.current);
-      const primeAudio = (): void => audio.prime();
-      gameEl.addEventListener("pointerdown", primeAudio);
-      cleanupFns.push(() => gameEl.removeEventListener("pointerdown", primeAudio));
+      const primeAudio = (): void => {
+        audio.prime();
+        window.removeEventListener("pointerdown", primeAudio);
+      };
+      window.addEventListener("pointerdown", primeAudio);
+      cleanupFns.push(() => window.removeEventListener("pointerdown", primeAudio));
       cleanupFns.push(() => {
         audio.dispose();
         audioManagerRef.current = null;

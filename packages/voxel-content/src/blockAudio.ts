@@ -17,6 +17,32 @@ export type BlockSoundGroup =
 
 export type BlockSoundAction = "step" | "dig" | "break" | "place";
 
+/** Material folder prefix under /minecraft-assets/sounds/step/ (voxelsrv naming). */
+export type StepSoundPrefix =
+  | "grass"
+  | "stone"
+  | "sand"
+  | "wood"
+  | "leaves"
+  | "cloth"
+  | "gravel"
+  | "snow"
+  | "ladder";
+
+export const STEP_SOUND_VARIANT_COUNT: Record<StepSoundPrefix, number> = {
+  grass: 6,
+  stone: 6,
+  sand: 5,
+  wood: 6,
+  leaves: 7,
+  cloth: 4,
+  gravel: 4,
+  snow: 4,
+  ladder: 5
+};
+
+const GLASS_BREAK_VARIANT_COUNT = 3;
+
 const BLOCK_SOUND_GROUP_BY_ID = new Map<number, BlockSoundGroup>([
   [BLOCK_REGISTRY.AIR, "silent"],
   [BLOCK_REGISTRY.WATER, "water"],
@@ -107,10 +133,63 @@ export function blockSoundGroup(blockId: number): BlockSoundGroup {
   return BLOCK_SOUND_GROUP_BY_ID.get(blockId) ?? "stone";
 }
 
+/** Maps gameplay group to voxelsrv step/ prefix (with fallbacks). */
+export function blockSoundStepPrefix(group: BlockSoundGroup): StepSoundPrefix | null {
+  switch (group) {
+    case "silent":
+      return null;
+    case "grass":
+    case "stone":
+    case "sand":
+    case "wood":
+    case "leaves":
+    case "cloth":
+    case "gravel":
+    case "snow":
+      return group;
+    case "metal":
+      return "stone";
+    case "plant":
+      return "grass";
+    case "glass":
+      return "stone";
+    case "water":
+      return "sand";
+    default:
+      return "stone";
+  }
+}
+
+export function randomStepVariantIndex(
+  prefix: StepSoundPrefix,
+  random: () => number = Math.random
+): number {
+  const count = STEP_SOUND_VARIANT_COUNT[prefix];
+  return 1 + Math.floor(random() * count);
+}
+
 export function blockSoundUrl(
   action: BlockSoundAction,
-  group: BlockSoundGroup
+  group: BlockSoundGroup,
+  variantIndex = 1
 ): string | null {
   if (group === "silent") return null;
-  return `/sounds/${action}/${group}.mp3`;
+
+  if (action === "break" && group === "glass") {
+    const idx = Math.max(1, Math.min(GLASS_BREAK_VARIANT_COUNT, variantIndex));
+    return `/minecraft-assets/sounds/random/glass${idx}.ogg`;
+  }
+
+  const prefix = blockSoundStepPrefix(group);
+  if (prefix) {
+    const count = STEP_SOUND_VARIANT_COUNT[prefix];
+    const idx = Math.max(1, Math.min(count, variantIndex));
+    return `/minecraft-assets/sounds/step/${prefix}${idx}.ogg`;
+  }
+
+  if (action === "break") {
+    return "/minecraft-assets/sounds/random/break.ogg";
+  }
+
+  return null;
 }

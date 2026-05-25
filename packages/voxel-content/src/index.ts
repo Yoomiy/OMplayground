@@ -15,9 +15,13 @@ export {
 
 export {
   blockSoundGroup,
+  blockSoundStepPrefix,
   blockSoundUrl,
+  randomStepVariantIndex,
+  STEP_SOUND_VARIANT_COUNT,
   type BlockSoundAction,
-  type BlockSoundGroup
+  type BlockSoundGroup,
+  type StepSoundPrefix
 } from "./blockAudio";
 
 export {
