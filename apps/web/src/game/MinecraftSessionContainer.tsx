@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useVoxelSocket } from "@/hooks/useVoxelSocket";
+import { usePersistedSessionChat } from "@/hooks/usePersistedSessionChat";
 import { MinecraftClient } from "@/games/MinecraftClient";
 import type {
   CraftingGridSlot,
@@ -82,6 +83,10 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
   const [updatingVisibility, setUpdatingVisibility] = useState(false);
   const [inviteFallbackLink, setInviteFallbackLink] = useState<string | null>(null);
 
+  const [chatExpanded, setChatExpanded] = useState(false);
+  const { lines: chatLines } = usePersistedSessionChat(sessionId);
+  const canSendChat = !isTeacherObserver;
+
   const {
     connected,
     status,
@@ -125,6 +130,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     eatCakeSlice,
     setGameMode,
     dropHotbarItem,
+    sendChatMessage,
     onWorldDropSpawned,
     onWorldDropRemoved,
     onWorldDropUpdated
@@ -145,36 +151,34 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
       switch (ev.kind) {
         case "GAME_PAUSED":
           setPaused(true);
-          setToast("המשחק הושהה");
+          if (!chatExpanded) setToast("המשחק הושהה");
           return;
         case "GAME_RESUMED":
           setPaused(false);
-          setToast("המשחק חודש");
+          if (!chatExpanded) setToast("המשחק חודש");
           return;
         case "GAME_STOPPED":
           setEndOverlay({ kind: "stopped", by: ev.stoppedBy });
           return;
         case "HOST_LEFT":
           setHostId(ev.newHostId ?? null);
-          setToast("המארח עזב — הקברניט הוחלף");
+          if (!chatExpanded) setToast("המארח עזב — הקברניט הוחלף");
           return;
         case "RECESS_ENDED":
-          setToast("ההפסקה הסתיימה");
+          if (!chatExpanded) setToast("ההפסקה הסתיימה");
           return;
         case "PLAYER_JOINED":
-          setToast(`${ev.player?.displayName ?? "שחקן"} הצטרף`);
           return;
         case "PLAYER_LEFT":
-          setToast(`${ev.player?.displayName ?? "שחקן"} עזב`);
           return;
         case "GAME_MODE_CHANGED":
           setLiveGameMode(ev.gameMode);
-          setToast(ev.gameMode === "survival" ? "מצב שרדות" : "מצב יצירתי");
+          if (!chatExpanded) setToast(ev.gameMode === "survival" ? "מצב שרדות" : "מצב יצירתי");
           return;
       }
     });
     return off;
-  }, [onRoomEvent]);
+  }, [onRoomEvent, chatExpanded]);
 
   useEffect(() => {
     if (!toast) return;
@@ -257,6 +261,13 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
   const handleIgniteTnt = useCallback(
     (pos: Vec3) => igniteTnt(pos),
     [igniteTnt]
+  );
+
+  const handleSendChatMessage = useCallback(
+    async (message: string) => {
+      return await sendChatMessage(message);
+    },
+    [sendChatMessage]
   );
 
   const handlePause = useCallback(async () => {
@@ -410,6 +421,10 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         roster={joinAck.roster}
         myUserId={myUserId}
         gameMode={liveGameMode}
+        chatLines={chatLines}
+        canSendChat={canSendChat}
+        onSendChatMessage={handleSendChatMessage}
+        onChatExpandedChange={setChatExpanded}
         inventorySlots={serverInventory}
         itemInventorySlots={
           liveGameMode === "survival" ? serverItemInventory : emptyClientItemInv()

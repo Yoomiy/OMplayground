@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type { ChatLineRow } from "@/hooks/usePersistedSessionChat";
 import type { DragEvent } from "react";
 import type { Mesh } from "@babylonjs/core/Meshes/mesh";
 import {
@@ -843,6 +844,10 @@ export interface MinecraftClientProps {
   registerWorldDropUpdated: (
     cb: (updates: WorldDropWireDelta[]) => void
   ) => () => void;
+  chatLines: ChatLineRow[];
+  canSendChat: boolean;
+  onSendChatMessage: (message: string) => Promise<SimpleAck>;
+  onChatExpandedChange?: (expanded: boolean) => void;
 }
 
 export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
@@ -891,7 +896,11 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     initialWorldDrops,
     registerWorldDropSpawned,
     registerWorldDropRemoved,
-    registerWorldDropUpdated
+    registerWorldDropUpdated,
+    chatLines,
+    canSendChat,
+    onSendChatMessage,
+    onChatExpandedChange
   } = props;
 
   const [survivalSlot, setSurvivalSlot] = useState(0);
@@ -900,6 +909,18 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [recipeBookOpen, setRecipeBookOpen] = useState(false);
   const [localVitals, setLocalVitals] = useState<PlayerVitals>(vitals);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [typedMessage, setTypedMessage] = useState("");
+  const [chatPosition, setChatPosition] = useState<{ x: number; y: number }>(() => {
+    return { x: 16, y: typeof window !== "undefined" ? window.innerHeight - 340 : 400 };
+  });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef<{ mouseX: number; mouseY: number; chatX: number; chatY: number }>({
+    mouseX: 0,
+    mouseY: 0,
+    chatX: 0,
+    chatY: 0,
+  });
   const [damageFlash, setDamageFlash] = useState(0);
   const [blastFlash, setBlastFlash] = useState(0);
   const [weatherKind, setWeatherKind] = useState<PrecipitationKind>("clear");
@@ -945,6 +966,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const isDeadRef = useRef(isDead);
   const gameModeRef = useRef<GameMode>(gameMode);
   const inventoryOpenRef = useRef(inventoryOpen);
+  const chatOpenRef = useRef(chatOpen);
   const craftingGridWidthRef = useRef<CraftingGridWidth>(craftingGridWidth);
   const activeChestRef = useRef(activeChest);
   const equipmentSlotsRef = useRef<ItemSlot[]>(equipmentSlots);
@@ -985,6 +1007,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   isDeadRef.current = isDead;
   gameModeRef.current = gameMode;
   inventoryOpenRef.current = inventoryOpen;
+  chatOpenRef.current = chatOpen;
   craftingGridWidthRef.current = craftingGridWidth;
   activeChestRef.current = activeChest;
   equipmentSlotsRef.current = equipmentSlots;
@@ -1029,6 +1052,124 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     }
     setInventoryOpen(false);
   }
+
+  const chatInputRef = useRef<HTMLInputElement>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+
+  const handleCloseChat = () => {
+    setChatOpen(false);
+    onChatExpandedChange?.(false);
+    const noa: any = noaRef.current;
+    if (noa) {
+      noa.inputs.disabled = false;
+      setTimeout(() => {
+        noa.container.element?.requestPointerLock?.();
+      }, 50);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    const text = typedMessage.trim();
+    if (!text) return;
+    setTypedMessage("");
+    if (onSendChatMessage) {
+      const res = await onSendChatMessage(text);
+      if (!res.ok) {
+        console.warn("failed to send chat message:", res.error);
+      }
+    }
+  };
+
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      handleCloseChat();
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      e.stopPropagation();
+      handleSendMessage();
+    }
+  };
+
+  useEffect(() => {
+    if (chatOpen) {
+      setTimeout(() => {
+        chatInputRef.current?.focus();
+      }, 50);
+    }
+  }, [chatOpen]);
+
+  useEffect(() => {
+    if (chatScrollRef.current) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    }
+  }, [chatLines, chatOpen]);
+
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (chatOpen && e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        handleCloseChat();
+      }
+    };
+    window.addEventListener("keydown", handleGlobalKeyDown, true);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown, true);
+  }, [chatOpen]);
+
+  const handleDragStart = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Only drag with left click
+    if (e.button !== 0) return;
+    setIsDragging(true);
+    dragStartRef.current = {
+      mouseX: e.clientX,
+      mouseY: e.clientY,
+      chatX: chatPosition.x,
+      chatY: chatPosition.y,
+    };
+    e.preventDefault();
+  };
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const deltaX = e.clientX - dragStartRef.current.mouseX;
+      const deltaY = e.clientY - dragStartRef.current.mouseY;
+
+      let newX = dragStartRef.current.chatX + deltaX;
+      let newY = dragStartRef.current.chatY + deltaY;
+
+      // Keep it within viewport bounds
+      newX = Math.max(0, Math.min(window.innerWidth - 320, newX));
+      newY = Math.max(0, Math.min(window.innerHeight - 100, newY));
+
+      setChatPosition({ x: newX, y: newY });
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDragging]);
+
+  useEffect(() => {
+    if (chatOpen) {
+      setChatPosition((prev) => {
+        const defaultY = window.innerHeight - 340;
+        const safeX = Math.max(16, Math.min(window.innerWidth - 384, prev.x));
+        const safeY = Math.max(16, Math.min(window.innerHeight - 300, prev.y === 0 ? defaultY : prev.y));
+        return { x: safeX, y: safeY };
+      });
+    }
+  }, [chatOpen]);
 
   useEffect(() => {
     if (gameMode !== "creative") return;
@@ -2439,6 +2580,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         ) {
           return;
         }
+        if (chatOpenRef.current) return;
+
         if (e.key.toLowerCase() === "i") {
           showDebugRef.current = !showDebugRef.current;
           if (!showDebugRef.current) {
@@ -2447,6 +2590,19 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           return;
         }
         if (isDeadRef.current) return;
+
+        if (e.key === "Enter" || e.key.toLowerCase() === "t") {
+          e.preventDefault();
+          e.stopPropagation();
+          document.exitPointerLock?.();
+          setChatOpen(true);
+          onChatExpandedChange?.(true);
+          const noa: any = noaRef.current;
+          if (noa) {
+            noa.inputs.disabled = true;
+          }
+          return;
+        }
         if (e.key.toLowerCase() === "e") {
           if (inventoryOpenRef.current) {
             closeInventory();
@@ -3490,6 +3646,105 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     </div>
   ) : null;
 
+  const renderedMessages = chatLines.map((line) => {
+    if (line.is_system) {
+      return (
+        <div key={line.id} className="text-right text-xs text-amber-300/95 italic font-medium leading-relaxed">
+          {line.message}
+        </div>
+      );
+    }
+    return (
+      <div key={line.id} className="text-right text-xs text-white leading-relaxed break-all font-sans">
+        <span className="font-bold text-sky-300">{line.sender_name}:</span> {line.message}
+      </div>
+    );
+  });
+
+  const peekMessages = chatLines.slice(-4).map((line) => {
+    if (line.is_system) {
+      return (
+        <div key={line.id} className="text-right text-xs text-amber-300/80 italic font-medium leading-tight">
+          {line.message}
+        </div>
+      );
+    }
+    return (
+      <div key={line.id} className="text-right text-xs text-white/90 leading-tight break-all font-sans">
+        <span className="font-bold text-sky-300/90">{line.sender_name}:</span> {line.message}
+      </div>
+    );
+  });
+
+  const chatOverlay = chatOpen ? (
+    <div
+      dir="rtl"
+      style={{ left: `${chatPosition.x}px`, top: `${chatPosition.y}px`, bottom: "auto" }}
+      className="pointer-events-auto absolute z-30 w-80 md:w-96 rounded-xl border border-white/15 bg-slate-950/85 p-3 shadow-2xl backdrop-blur-md flex flex-col gap-2 font-sans select-none"
+    >
+      <div
+        onMouseDown={handleDragStart}
+        className="flex items-center justify-between border-b border-white/10 pb-1.5 mb-1 text-slate-400 cursor-move select-none"
+      >
+        <span className="text-[11px] font-bold text-slate-300">צ'אט משחק (גרור להזזה)</span>
+        <button
+          type="button"
+          onClick={handleCloseChat}
+          className="rounded p-1 hover:bg-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer"
+          title="סגור צ'אט"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div
+        ref={chatScrollRef}
+        className="h-48 overflow-y-auto flex flex-col gap-1.5 pr-1 text-right custom-scrollbar select-text"
+      >
+        {renderedMessages.length === 0 ? (
+          <div className="text-center text-xs text-slate-500 py-4 select-none">אין הודעות צ'אט</div>
+        ) : (
+          renderedMessages
+        )}
+      </div>
+
+      {canSendChat ? (
+        <div className="flex gap-2 mt-1">
+          <input
+            ref={chatInputRef}
+            type="text"
+            value={typedMessage}
+            onChange={(e) => setTypedMessage(e.target.value)}
+            onKeyDown={handleInputKeyDown}
+            placeholder="כתבו הודעה כאן..."
+            maxLength={150}
+            className="flex-grow rounded border border-white/25 bg-black/50 px-2.5 py-1.5 text-xs text-white outline-none focus:border-sky-400 focus:bg-black/70 text-right font-sans select-text"
+          />
+          <button
+            type="button"
+            onClick={handleSendMessage}
+            className="rounded bg-sky-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-sky-500 transition-colors cursor-pointer"
+          >
+            שלח
+          </button>
+        </div>
+      ) : (
+        <div className="text-center text-[10px] text-slate-400 bg-white/5 py-1.5 rounded mt-1 select-none">
+          מצב תצפית (קריאה בלבד)
+        </div>
+      )}
+    </div>
+  ) : chatLines.length > 0 ? (
+    <div
+      dir="rtl"
+      className="pointer-events-none absolute top-4 left-4 z-20 w-80 md:w-96 rounded-lg bg-black/25 p-2.5 flex flex-col gap-1 text-right font-sans border border-white/5 backdrop-blur-[1px]"
+    >
+      {peekMessages}
+    </div>
+  ) : null;
+
   return (
     <div className="absolute inset-0">
       <div
@@ -3508,6 +3763,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       {blockHotbarHud}
       {inventoryPanel}
       {recipeBookOverlay}
+      {chatOverlay}
     </div>
   );
 }

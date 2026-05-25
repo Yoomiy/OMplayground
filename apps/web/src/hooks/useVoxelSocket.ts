@@ -159,6 +159,7 @@ export interface UseVoxelSocketReturn {
   setGameMode: (mode: GameMode) => Promise<SimpleAck>;
   /** Survival: drop one block from hotbar near the player. */
   dropHotbarItem: (hotbarIndex: number) => Promise<SimpleAck>;
+  sendChatMessage: (message: string) => Promise<SimpleAck>;
   onWorldDropSpawned: (cb: WorldDropSpawnListener) => () => void;
   onWorldDropRemoved: (cb: WorldDropRemovedListener) => () => void;
   onWorldDropUpdated: (cb: WorldDropUpdateListener) => () => void;
@@ -552,6 +553,12 @@ export function useVoxelSocket(
     return emitWithAck<SimpleAck>(s, "DROP_ITEM_REQ", { hotbarIndex });
   }
 
+  async function sendChatMessage(message: string): Promise<SimpleAck> {
+    const s = socketRef.current;
+    if (!s?.connected) return { ok: false, error: { code: "DISCONNECTED", message: "לא מחובר" } };
+    return emitWithAck<SimpleAck>(s, "CHAT_MESSAGE", { sessionId, message });
+  }
+
   function onSnapshot(cb: SnapshotListener): () => void {
     snapshotListeners.current.add(cb);
     return () => {
@@ -649,6 +656,7 @@ export function useVoxelSocket(
     eatCakeSlice,
     setGameMode,
     dropHotbarItem,
+    sendChatMessage,
     onWorldDropSpawned,
     onWorldDropRemoved,
     onWorldDropUpdated

@@ -404,6 +404,7 @@ function checkAndHandlePlayerDeath(
     userId: player.userId,
     deathPos
   });
+  void insertSystemChatMessage(room.sessionId, `${player.displayName} מת`);
 
   for (const drop of drops) {
     io.to(`voxel:${room.sessionId}`).emit("ROOM_EVENT", {
@@ -419,6 +420,7 @@ function checkAndHandlePlayerDeath(
     userId: player.userId,
     respawnPos
   });
+  void insertSystemChatMessage(room.sessionId, `${player.displayName} נולד מחדש`);
 
   io.to(`voxel-user:${player.userId}:${room.sessionId}`).emit(
     "INVENTORY_SYNC",
@@ -817,6 +819,7 @@ io.on("connection", (socket) => {
         paused: sess.status === "paused",
         resumedState
       });
+      const wasAlreadyInRoom = room.players.has(userId);
       const assigned = assignPlayer(room, userId, displayName);
       if ("error" in assigned) {
         ack?.({ ok: false, error: assigned.error });
@@ -844,6 +847,9 @@ io.on("connection", (socket) => {
         kind: "PLAYER_JOINED",
         player: { userId, displayName }
       });
+      if (!wasAlreadyInRoom) {
+        void insertSystemChatMessage(sessionId, `${displayName} הצטרף למשחק`);
+      }
       const effectiveMode = room.gameMode ?? "creative";
       ack?.({
         ok: true,
@@ -2155,6 +2161,9 @@ io.on("connection", (socket) => {
       kind: "PLAYER_LEFT",
       player: { userId, displayName }
     });
+    if (before && before.players.has(userId)) {
+      void insertSystemChatMessage(sessionId, `${displayName} עזב את המשחק`);
+    }
     await socket.leave(`voxel:${sessionId}`);
     if (socket.data.sessionId === sessionId) {
       socket.data.sessionId = undefined;
@@ -2181,6 +2190,68 @@ io.on("connection", (socket) => {
     }
   );
 
+  socket.on(
+    "CHAT_MESSAGE",
+    async (
+      payload: { sessionId: string; message: string },
+      ack?: (r: SimpleAck) => void
+    ) => {
+      const sessionId = payload?.sessionId;
+      const message = payload?.message;
+      if (!sessionId || typeof message !== "string") {
+        ack?.({
+          ok: false,
+          error: { code: "BAD_REQUEST", message: "sessionId and message required" }
+        });
+        return;
+      }
+      if (socket.data.role === "teacher") {
+        ack?.({
+          ok: false,
+          error: { code: "READ_ONLY", message: "Observers cannot chat here" }
+        });
+        return;
+      }
+      if (socket.data.sessionId !== sessionId) {
+        ack?.({
+          ok: false,
+          error: { code: "NOT_IN_ROOM", message: "השחקן לא בחדר הנכון" }
+        });
+        return;
+      }
+      const text = message.trim().slice(0, 500);
+      if (!text) {
+        ack?.({
+          ok: false,
+          error: { code: "BAD_REQUEST", message: "הודעה ריקה" }
+        });
+        return;
+      }
+      if (!supabaseAdmin) {
+        ack?.({
+          ok: false,
+          error: { code: "SERVER_CONFIG", message: "Supabase not configured" }
+        });
+        return;
+      }
+      const { error: insErr } = await supabaseAdmin.from("chat_messages").insert({
+        session_id: sessionId,
+        sender_id: userId,
+        sender_name: displayName,
+        message: text,
+        is_system: false
+      });
+      if (insErr) {
+        ack?.({
+          ok: false,
+          error: { code: "PERSIST_FAILED", message: insErr.message }
+        });
+        return;
+      }
+      ack?.({ ok: true });
+    }
+  );
+
   socket.on("disconnect", () => {
     const sessionId = socket.data.sessionId as string | undefined;
     if (sessionId && userId) {
@@ -2188,6 +2259,23 @@ io.on("connection", (socket) => {
     }
   });
 });
+
+async function insertSystemChatMessage(sessionId: string, message: string): Promise<void> {
+  if (!supabaseAdmin) {
+    console.warn("[minecraft-server] supabaseAdmin is not configured, cannot insert system chat message");
+    return;
+  }
+  const { error } = await supabaseAdmin.from("chat_messages").insert({
+    session_id: sessionId,
+    sender_id: null,
+    sender_name: "מערכת",
+    message: message,
+    is_system: true
+  });
+  if (error) {
+    console.error("[minecraft-server] failed to insert system chat message:", error.message);
+  }
+}
 
 type MinimalStatus = "waiting" | "playing" | "paused" | "completed";
 
