@@ -576,6 +576,122 @@ function recipeOutputDisplay(recipe: Recipe): {
   };
 }
 
+function getRecipeCategory(recipe: Recipe): "tools" | "building" | "food_misc" {
+  const key = recipe.key;
+  if (
+    key.includes("pickaxe") ||
+    key.includes("axe") ||
+    key.includes("shovel") ||
+    key.includes("boots") ||
+    key.includes("bucket") ||
+    key.includes("shield") ||
+    key.includes("talisman") ||
+    key.includes("medallion") ||
+    key === "crafting_table" ||
+    key === "chest" ||
+    key === "torch" ||
+    key === "flint_and_steel"
+  ) {
+    return "tools";
+  }
+
+  if (key === "cake") {
+    return "food_misc";
+  }
+
+  if (recipe.output.kind === "block") {
+    return "building";
+  }
+
+  return "food_misc";
+}
+
+function canCraftRecipe(
+  recipe: Recipe,
+  inventory: readonly { blockId: number; itemId: number; count: number }[]
+): boolean {
+  const ingredients: RecipeIngredient[] = [];
+  if (recipe.kind === "shapeless") {
+    ingredients.push(...recipe.inputs);
+  } else {
+    for (const ing of recipe.pattern) {
+      if (ing !== null) {
+        ingredients.push(ing);
+      }
+    }
+  }
+
+  const invCopy = inventory.map((item) => ({
+    blockId: item.blockId,
+    itemId: item.itemId,
+    count: item.count
+  }));
+
+  const isPlankCellLocal = (cell: { blockId: number; itemId: number }) => {
+    if (cell.itemId > 0) return cell.itemId === ITEM_REGISTRY.PLANKS;
+    return (
+      cell.blockId === BLOCK_REGISTRY.OAK_PLANKS ||
+      cell.blockId === BLOCK_REGISTRY.BIRCH_PLANKS ||
+      cell.blockId === BLOCK_REGISTRY.SPRUCE_PLANKS
+    );
+  };
+
+  const isWoodLogCellLocal = (cell: { blockId: number; itemId: number }) => {
+    return (
+      cell.itemId === 0 &&
+      (cell.blockId === BLOCK_REGISTRY.WOOD ||
+        cell.blockId === BLOCK_REGISTRY.BIRCH_LOG ||
+        cell.blockId === BLOCK_REGISTRY.SPRUCE_LOG)
+    );
+  };
+
+  const isLeavesCellLocal = (cell: { blockId: number; itemId: number }) => {
+    return (
+      cell.itemId === 0 &&
+      (cell.blockId === BLOCK_REGISTRY.LEAVES ||
+        cell.blockId === BLOCK_REGISTRY.BIRCH_LEAVES ||
+        cell.blockId === BLOCK_REGISTRY.SPRUCE_LEAVES ||
+        cell.blockId === BLOCK_REGISTRY.LEAVES_YELLOW)
+    );
+  };
+
+  const matchIngredient = (
+    cell: { blockId: number; itemId: number; count: number },
+    ing: RecipeIngredient
+  ): boolean => {
+    if (cell.count <= 0) return false;
+    switch (ing.kind) {
+      case "block":
+        return cell.itemId === 0 && cell.blockId === ing.blockId;
+      case "item":
+        return cell.itemId === ing.itemId;
+      case "tag":
+        if (ing.tag === "planks") return isPlankCellLocal(cell);
+        if (ing.tag === "wood_logs") return isWoodLogCellLocal(cell);
+        if (ing.tag === "leaves") return isLeavesCellLocal(cell);
+        return false;
+      default:
+        return false;
+    }
+  };
+
+  for (const ing of ingredients) {
+    let found = false;
+    for (const slot of invCopy) {
+      if (matchIngredient(slot, ing)) {
+        slot.count--;
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 function recipeBookCell(
   key: string,
   ingredient: RecipeIngredient | null
@@ -908,6 +1024,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const [controlsHintDismissed, setControlsHintDismissed] = useState(false);
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [recipeBookOpen, setRecipeBookOpen] = useState(false);
+  const [recipeTab, setRecipeTab] = useState<"all" | "tools" | "building" | "food_misc">("all");
   const [localVitals, setLocalVitals] = useState<PlayerVitals>(vitals);
   const [chatOpen, setChatOpen] = useState(false);
   const [typedMessage, setTypedMessage] = useState("");
@@ -2345,8 +2462,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         breakFinishSentRef.current = false;
         const currentMining = {
           pos,
-          durationMs: null,
-          startedAt: null
+          durationMs: null as number | null,
+          startedAt: null as number | null
         };
         activeMiningRef.current = currentMining;
         const ack = await onBreakStartRef.current(pos);
@@ -3487,11 +3604,11 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         aria-labelledby="voxel-recipe-book-title"
       >
         <div
-          className="max-h-[min(86vh,520px)] w-[min(94vw,440px)] overflow-y-auto rounded-sm border-[3px] border-[#1e1e1e] bg-gradient-to-b from-[#ebe1cf] via-[#d9ccb8] to-[#c0b09a] p-4 text-[#1f1810] shadow-[0_16px_40px_rgba(0,0,0,0.85)]"
+          className="h-[min(86vh,520px)] w-[min(94vw,440px)] flex flex-col rounded-sm border-[3px] border-[#1e1e1e] bg-gradient-to-b from-[#ebe1cf] via-[#d9ccb8] to-[#c0b09a] p-4 text-[#1f1810] shadow-[0_16px_40px_rgba(0,0,0,0.85)]"
           dir="rtl"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="mb-3 flex items-start justify-between gap-2 border-b-2 border-[#8a7a62] pb-2">
+          <div className="mb-1 flex items-start justify-between gap-2 pb-1">
             <h2
               id="voxel-recipe-book-title"
               className="text-sm font-black leading-tight text-[#1a1510] sm:text-base"
@@ -3506,41 +3623,158 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
               ✕
             </button>
           </div>
-          <ul className="space-y-3 text-[11px] font-semibold text-[#2a2218]">
-            {RECIPES.map((recipe) => {
-              const output = recipeOutputDisplay(recipe);
-              return (
-                <li
-                  key={recipe.key}
-                  className="rounded border border-[#6b5e4b] bg-black/10 p-3"
-                >
-                  <div className="mb-2 flex items-center justify-between gap-3">
-                    <div className="font-black">{output.label}</div>
-                    <div className="text-[10px] font-black text-[#4a3f30]">
-                      {recipe.kind === "shaped" ? "מסודר" : "חופשי"}
-                    </div>
+
+          <div className="mb-4 flex items-end justify-between gap-1 border-b-[3px] border-[#3d3d3d] px-1" dir="rtl">
+            <button
+              type="button"
+              className={`flex flex-col items-center justify-center rounded-t-md px-2 py-1.5 border-t-[3px] border-x-[3px] transition-all flex-1 ${
+                recipeTab === "all"
+                  ? "border-[#3d3d3d] bg-[#d9ccb8] -mb-[3px] z-10 pb-2.5 pt-2"
+                  : "border-transparent bg-black/5 hover:bg-black/10 pb-1.5 opacity-70 hover:opacity-100"
+              }`}
+              onClick={() => setRecipeTab("all")}
+              title="הכל"
+            >
+              <img
+                src="/minecraft-assets/item/compass_00.png"
+                alt="הכל"
+                className="h-6 w-6"
+                style={{ imageRendering: "pixelated" }}
+              />
+              <span className="text-[9px] font-black mt-0.5 whitespace-nowrap">הכל</span>
+            </button>
+            <button
+              type="button"
+              className={`flex flex-col items-center justify-center rounded-t-md px-2 py-1.5 border-t-[3px] border-x-[3px] transition-all flex-1 ${
+                recipeTab === "tools"
+                  ? "border-[#3d3d3d] bg-[#d9ccb8] -mb-[3px] z-10 pb-2.5 pt-2"
+                  : "border-transparent bg-black/5 hover:bg-black/10 pb-1.5 opacity-70 hover:opacity-100"
+              }`}
+              onClick={() => setRecipeTab("tools")}
+              title="כלים ונשק"
+            >
+              <img
+                src="/minecraft-assets/item/iron_axe.png"
+                alt="כלים ונשק"
+                className="h-6 w-6"
+                style={{ imageRendering: "pixelated" }}
+              />
+              <span className="text-[9px] font-black mt-0.5 whitespace-nowrap">כלים ונשק</span>
+            </button>
+            <button
+              type="button"
+              className={`flex flex-col items-center justify-center rounded-t-md px-2 py-1.5 border-t-[3px] border-x-[3px] transition-all flex-1 ${
+                recipeTab === "building"
+                  ? "border-[#3d3d3d] bg-[#d9ccb8] -mb-[3px] z-10 pb-2.5 pt-2"
+                  : "border-transparent bg-black/5 hover:bg-black/10 pb-1.5 opacity-70 hover:opacity-100"
+              }`}
+              onClick={() => setRecipeTab("building")}
+              title="חומרי בנייה"
+            >
+              <img
+                src="/minecraft-assets/block/bricks.png"
+                alt="חומרי בנייה"
+                className="h-6 w-6"
+                style={{ imageRendering: "pixelated" }}
+              />
+              <span className="text-[9px] font-black mt-0.5 whitespace-nowrap">בנייה</span>
+            </button>
+            <button
+              type="button"
+              className={`flex flex-col items-center justify-center rounded-t-md px-2 py-1.5 border-t-[3px] border-x-[3px] transition-all flex-1 ${
+                recipeTab === "food_misc"
+                  ? "border-[#3d3d3d] bg-[#d9ccb8] -mb-[3px] z-10 pb-2.5 pt-2"
+                  : "border-transparent bg-black/5 hover:bg-black/10 pb-1.5 opacity-70 hover:opacity-100"
+              }`}
+              onClick={() => setRecipeTab("food_misc")}
+              title="אוכל ושונות"
+            >
+              <img
+                src="/minecraft-assets/item/lava_bucket.png"
+                alt="אוכל ושונות"
+                className="h-6 w-6"
+                style={{ imageRendering: "pixelated" }}
+              />
+              <span className="text-[9px] font-black mt-0.5 whitespace-nowrap">אוכל ושונות</span>
+            </button>
+          </div>
+
+          <ul className="space-y-3 text-[11px] font-semibold text-[#2a2218] flex-1 overflow-y-auto pl-1">
+            {(() => {
+              const filteredRecipes = RECIPES.filter((recipe) => {
+                if (recipeTab === "all") {
+                  const combinedInventory = [
+                    ...inventorySlots.map((slot) => ({
+                      blockId: slot.blockId,
+                      itemId: slot.itemId,
+                      count: slot.count
+                    })),
+                    ...itemInventorySlots.map((slot) => ({
+                      blockId: 0,
+                      itemId: slot.itemId,
+                      count: slot.count
+                    })),
+                    ...craftingGridSlots.map((slot) => ({
+                      blockId: slot.blockId,
+                      itemId: slot.itemId,
+                      count: slot.count
+                    })),
+                    ...equipmentSlots.map((slot) => ({
+                      blockId: 0,
+                      itemId: slot.itemId,
+                      count: slot.count
+                    }))
+                  ];
+                  return canCraftRecipe(recipe, combinedInventory);
+                }
+                return getRecipeCategory(recipe) === recipeTab;
+              });
+
+              if (filteredRecipes.length === 0) {
+                return (
+                  <div className="flex flex-col items-center justify-center py-12 text-center text-xs font-bold text-[#4a3f30]">
+                    <span className="mb-2 text-2xl">🔍</span>
+                    <span>אין מתכונים זמינים לייצור כרגע</span>
+                    <span className="text-[10px] font-medium opacity-75 mt-1">אסוף עוד חומרים כדי לפתוח מתכונים חדשים!</span>
                   </div>
-                  <div className="flex flex-wrap items-center gap-3" dir="ltr">
-                    {recipeBookInputGrid(recipe)}
-                    <span className="text-lg font-black text-[#3d3426]">→</span>
-                    <div className="flex items-center gap-1">
-                      <div className="flex h-8 w-8 items-center justify-center border-2 border-[#2a2a2a] bg-[#8d8d8d] shadow-[inset_1px_1px_0_rgba(255,255,255,0.4),inset_-1px_-1px_0_rgba(0,0,0,0.25)]">
-                        <img
-                          src={output.icon}
-                          alt=""
-                          title={output.label}
-                          className="h-6 w-6"
-                          style={{ imageRendering: "pixelated" }}
-                        />
+                );
+              }
+
+              return filteredRecipes.map((recipe) => {
+                const output = recipeOutputDisplay(recipe);
+                return (
+                  <li
+                    key={recipe.key}
+                    className="rounded border border-[#6b5e4b] bg-black/10 p-3"
+                  >
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <div className="font-black">{output.label}</div>
+                      <div className="text-[10px] font-black text-[#4a3f30]">
+                        {recipe.kind === "shaped" ? "מסודר" : "חופשי"}
                       </div>
-                      <span className="text-[10px] font-black text-[#1a1510]">
-                        ×{recipe.output.count}
-                      </span>
                     </div>
-                  </div>
-                </li>
-              );
-            })}
+                    <div className="flex flex-wrap items-center gap-3" dir="ltr">
+                      {recipeBookInputGrid(recipe)}
+                      <span className="text-lg font-black text-[#3d3426]">→</span>
+                      <div className="flex items-center gap-1">
+                        <div className="flex h-8 w-8 items-center justify-center border-2 border-[#2a2a2a] bg-[#8d8d8d] shadow-[inset_1px_1px_0_rgba(255,255,255,0.4),inset_-1px_-1px_0_rgba(0,0,0,0.25)]">
+                          <img
+                            src={output.icon}
+                            alt=""
+                            title={output.label}
+                            className="h-6 w-6"
+                            style={{ imageRendering: "pixelated" }}
+                          />
+                        </div>
+                        <span className="text-[10px] font-black text-[#1a1510]">
+                          ×{recipe.output.count}
+                        </span>
+                      </div>
+                    </div>
+                  </li>
+                );
+              });
+            })()}
           </ul>
         </div>
       </div>
