@@ -92,6 +92,8 @@ import {
   VOXEL_MOVEMENT,
   resolveVoxelMovement
 } from "@/games/voxel/movementConfig";
+import { SURVIVAL_HELP_TABS } from "./minecraftSurvivalHelpHe";
+import type { SurvivalHelpTabId } from "./minecraftSurvivalHelpHe";
 
 const INV_DRAG_MIME = "application/x-playground-voxel-inv";
 
@@ -1021,7 +1023,10 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
   const [survivalSlot, setSurvivalSlot] = useState(0);
   const [creativeSlotIdx, setCreativeSlotIdx] = useState(0);
-  const [controlsHintDismissed, setControlsHintDismissed] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [helpTab, setHelpTab] = useState<SurvivalHelpTabId>("controls");
+  const [helpPulse, setHelpPulse] = useState(true);
+  const helpOpenRef = useRef(false);
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [recipeBookOpen, setRecipeBookOpen] = useState(false);
   const [recipeTab, setRecipeTab] = useState<"all" | "tools" | "building" | "food_misc">("all");
@@ -1124,6 +1129,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   isDeadRef.current = isDead;
   gameModeRef.current = gameMode;
   inventoryOpenRef.current = inventoryOpen;
+  helpOpenRef.current = helpOpen;
   chatOpenRef.current = chatOpen;
   craftingGridWidthRef.current = craftingGridWidth;
   activeChestRef.current = activeChest;
@@ -1234,6 +1240,34 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     window.addEventListener("keydown", handleGlobalKeyDown, true);
     return () => window.removeEventListener("keydown", handleGlobalKeyDown, true);
   }, [chatOpen]);
+
+  useEffect(() => {
+    if (helpPulse) {
+      const timer = setTimeout(() => {
+        setHelpPulse(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [helpPulse]);
+
+  useEffect(() => {
+    const handleHelpGlobalKeyDown = (e: KeyboardEvent) => {
+      if (helpOpen && e.code === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        setHelpOpen(false);
+        const noa: any = noaRef.current;
+        if (noa) {
+          noa.inputs.disabled = false;
+          setTimeout(() => {
+            noa.container.element?.requestPointerLock?.();
+          }, 50);
+        }
+      }
+    };
+    window.addEventListener("keydown", handleHelpGlobalKeyDown, true);
+    return () => window.removeEventListener("keydown", handleHelpGlobalKeyDown, true);
+  }, [helpOpen]);
 
   const handleDragStart = (e: React.MouseEvent<HTMLDivElement>) => {
     // Only drag with left click
@@ -2713,6 +2747,41 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         }
         if (chatOpenRef.current) return;
 
+        if (helpOpenRef.current) {
+          if (e.code === "KeyH") {
+            e.preventDefault();
+            e.stopPropagation();
+            setHelpOpen(false);
+            const noa: any = noaRef.current;
+            if (noa) {
+              noa.inputs.disabled = false;
+              setTimeout(() => {
+                noa.container.element?.requestPointerLock?.();
+              }, 50);
+            }
+          }
+          return;
+        }
+
+        if (e.code === "KeyH") {
+          e.preventDefault();
+          e.stopPropagation();
+          if (gameModeRef.current === "survival" && !isDeadRef.current) {
+            setHelpOpen(true);
+            setInventoryOpen(false);
+            setChatOpen(false);
+            onChatExpandedChange?.(false);
+            
+            document.exitPointerLock?.();
+            const noa: any = noaRef.current;
+            if (noa) {
+              noa.inputs.disabled = true;
+            }
+            setHelpPulse(false);
+          }
+          return;
+        }
+
         if (e.code === "KeyI") {
           showDebugRef.current = !showDebugRef.current;
           if (!showDebugRef.current) {
@@ -2740,12 +2809,6 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           } else {
             document.exitPointerLock?.();
             setInventoryOpen(true);
-          }
-          return;
-        }
-        if (e.code === "KeyP" && !inventoryOpenRef.current) {
-          if (gameModeRef.current === "survival") {
-            onDropHotbarSlotRef.current?.(survivalSlotRef.current);
           }
           return;
         }
@@ -3780,27 +3843,130 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       </div>
     ) : null;
 
-  const controlsHint =
-    !paused && !controlsHintDismissed ? (
-      <div className="pointer-events-none absolute left-3 top-3 max-w-[min(22rem,calc(100%-1.5rem)))]">
-        <div
-          className="relative space-y-1 rounded-lg border border-black/40 bg-neutral-950/75 py-2 ps-2.5 pe-8 pt-7 text-[10px] leading-snug text-neutral-100 shadow-md sm:text-[11px] sm:pe-9 sm:pt-8"
-          dir="rtl"
+  const helpButton =
+    gameMode === "survival" && !paused && !isDead ? (
+      <div className="absolute left-4 top-4 z-20">
+        <style>{`
+          @keyframes help-button-pulse-glow {
+            0%, 100% {
+              box-shadow: 0 0 0 0px rgba(255, 215, 0, 0.8);
+            }
+            50% {
+              box-shadow: 0 0 0 8px rgba(255, 215, 0, 0);
+            }
+          }
+          .help-btn-pulse {
+            animation: help-button-pulse-glow 1.2s infinite ease-in-out;
+          }
+        `}</style>
+        <button
+          type="button"
+          onClick={() => {
+            setHelpOpen((prev) => {
+              const next = !prev;
+              if (next) {
+                setInventoryOpen(false);
+                setChatOpen(false);
+                onChatExpandedChange?.(false);
+                
+                document.exitPointerLock?.();
+                const noa: any = noaRef.current;
+                if (noa) {
+                  noa.inputs.disabled = true;
+                }
+                setHelpPulse(false);
+              } else {
+                const noa: any = noaRef.current;
+                if (noa) {
+                  noa.inputs.disabled = false;
+                  setTimeout(() => {
+                    noa.container.element?.requestPointerLock?.();
+                  }, 50);
+                }
+              }
+              return next;
+            });
+          }}
+          className={`rounded-sm border-2 border-[#5c4f3e] bg-gradient-to-b from-[#a89a86] to-[#8c7d68] px-3.5 py-1.5 text-xs font-black text-[#1a1510] shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_2px_0_#2a2418] hover:brightness-105 active:translate-y-px active:shadow-none transition-all ${
+            helpPulse ? "help-btn-pulse !border-[#ffd700]" : ""
+          }`}
         >
+          עזרה (H)
+        </button>
+      </div>
+    ) : null;
+
+  const helpSidebar =
+    helpOpen && gameMode === "survival" ? (
+      <div className="pointer-events-auto absolute left-0 top-0 bottom-0 z-50 flex h-full w-[min(96vw,380px)] flex-col border-r-[3px] border-[#1e1e1e] bg-gradient-to-b from-[#d4c5a8] via-[#bfb196] to-[#a89274] px-4 py-3 text-[#2f261c] shadow-[10px_0_30px_rgba(0,0,0,0.7),inset_1px_0_0_rgba(255,255,255,0.35)] sm:px-5 sm:py-4 animate-in slide-in-from-left duration-200" dir="rtl">
+        <div className="mb-2 flex items-start justify-between gap-3 border-b-2 border-[#8a7a62] pb-1.5">
+          <div>
+            <div className="text-base font-black tracking-tight text-[#1f1810]">
+              מדריך הישרדות
+            </div>
+            <div className="text-[9px] font-semibold text-[#4a3f30]">
+              לחצו H או כפתור סגירה כדי לחזור
+            </div>
+          </div>
           <button
             type="button"
-            className="pointer-events-auto absolute end-1 top-1 flex h-6 w-6 items-center justify-center rounded-md text-base font-bold leading-none text-neutral-300 hover:bg-white/10 hover:text-white"
-            aria-label="סגור"
-            onClick={() => setControlsHintDismissed(true)}
+            className="shrink-0 rounded border-2 border-[#3d3d3d] bg-gradient-to-b from-[#a89a86] to-[#8c7d68] px-2.5 py-1 text-[11px] font-bold text-[#1a1510] shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_2px_0_#2a2418] hover:brightness-105 active:translate-y-px active:shadow-none"
+            onClick={() => {
+              setHelpOpen(false);
+              const noa: any = noaRef.current;
+              if (noa) {
+                noa.inputs.disabled = false;
+                setTimeout(() => {
+                  noa.container.element?.requestPointerLock?.();
+                }, 50);
+              }
+            }}
           >
-            ×
+            ✕ סגור
           </button>
-          <p className="font-semibold text-neutral-300">בקרות</p>
-          <p className="text-neutral-200">
-            WASD תנועה · רווח קפיצה · לחצן שמאלי מחזיק לשבירה · ימני מניח · מקשי 1–9 לסרגל · E
-            מלאי (גרירה בין משבצות / לוח בלוקים ביצירתי) · Q או לחצן אמצעי בוחר בלוק · P/Q זורקים פריט מההוטבר בשרדות · גלגלת לזום
-            המצלמה · I מידע ניפוי שגיאות (Debug)
-          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-1 mb-3 pb-2 border-b border-[#8a7a62]/40">
+          {SURVIVAL_HELP_TABS.map((tab) => {
+            const active = helpTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setHelpTab(tab.id)}
+                className={`px-2.5 py-1 text-[10px] font-black rounded border-2 transition-all ${
+                  active
+                    ? "border-[#1a1510] bg-[#1a1510] text-[#ffd700]"
+                    : "border-[#5c4f3e] bg-[#c9bda8] text-[#2f261c] hover:bg-[#ddd2be]"
+                }`}
+              >
+                {tab.title}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex-1 overflow-y-auto pr-1 text-right font-sans custom-scrollbar select-text space-y-3 pb-2">
+          {(() => {
+            const currentTabObj = SURVIVAL_HELP_TABS.find((t) => t.id === helpTab);
+            return currentTabObj?.sections.map((section, idx) => (
+              <div
+                key={idx}
+                className="rounded-sm border-2 border-[#6b5e4b] bg-[rgba(0,0,0,0.12)] p-3 shadow-[inset_0_2px_8px_rgba(0,0,0,0.1)]"
+              >
+                {section.heading && (
+                  <h3 className="text-xs font-black uppercase tracking-wider text-[#1a1510] mb-1.5 pb-0.5 border-b border-[#8a7a62]/30">
+                    {section.heading}
+                  </h3>
+                )}
+                <div className="space-y-1.5 text-[10.5px] font-semibold leading-relaxed text-[#3d3122]">
+                  {section.paragraphs.map((p, pIdx) => (
+                    <p key={pIdx}>{p}</p>
+                  ))}
+                </div>
+              </div>
+            ));
+          })()}
         </div>
       </div>
     ) : null;
@@ -3871,9 +4037,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
   const debugOverlay = debugInfo ? (
     <div
-      className={`pointer-events-none absolute left-3 z-[100] flex flex-col gap-1 rounded-sm border-2 border-[#5c4f3e]/80 bg-neutral-950/75 p-2 px-3 font-mono text-[10px] text-neutral-100 shadow-[0_8px_16px_rgba(0,0,0,0.6)] sm:text-xs ${
-        !paused && !controlsHintDismissed ? "top-36" : "top-3"
-      }`}
+      className="pointer-events-none absolute left-3 top-16 z-[100] flex flex-col gap-1 rounded-sm border-2 border-[#5c4f3e]/80 bg-neutral-950/75 p-2 px-3 font-mono text-[10px] text-neutral-100 shadow-[0_8px_16px_rgba(0,0,0,0.6)] sm:text-xs"
     >
       <div className="font-bold text-[#ffd700]">Monecraft Debug</div>
       <div>FPS: {Math.round(debugInfo.fps)}</div>
@@ -4002,7 +4166,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   ) : chatLines.length > 0 ? (
     <div
       dir="rtl"
-      className="pointer-events-none absolute top-4 left-4 z-20 w-80 md:w-96 rounded-lg bg-black/25 p-2.5 flex flex-col gap-1 text-right font-sans border border-white/5 backdrop-blur-[1px]"
+      className="pointer-events-none absolute top-16 left-4 z-20 w-80 md:w-96 rounded-lg bg-black/25 p-2.5 flex flex-col gap-1 text-right font-sans border border-white/5 backdrop-blur-[1px]"
     >
       {peekMessages}
     </div>
@@ -4017,7 +4181,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         aria-label="minecraft viewport"
       />
       {weatherOverlay}
-      {controlsHint}
+      {helpButton}
+      {helpSidebar}
       {debugOverlay}
       {deathOverlay}
       {blastOverlay}
