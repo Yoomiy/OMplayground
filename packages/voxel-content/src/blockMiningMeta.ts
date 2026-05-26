@@ -2,14 +2,23 @@ import type { BlockDef } from "./blocks";
 
 type BlockKey = BlockDef["key"];
 
-type MiningFields = Pick<BlockDef, "hardness" | "requiredTool" | "speedTool" | "minTier">;
+type MiningFields = Pick<
+  BlockDef,
+  "hardness" | "requiredTool" | "speedTool" | "minTier" | "wrongToolMinePenalty100"
+>;
 
 /** Per-block mining metadata keyed by registry key. */
 export const BLOCK_MINING_META: Record<BlockKey, MiningFields> = {
   AIR: { hardness: 0, requiredTool: null, speedTool: null, minTier: 0 },
   GRASS: { hardness: 0.5, requiredTool: null, speedTool: "shovel", minTier: 0 },
   DIRT: { hardness: 0.5, requiredTool: null, speedTool: "shovel", minTier: 0 },
-  STONE: { hardness: 1.5, requiredTool: null, speedTool: "pickaxe", minTier: 0 },
+  STONE: {
+    hardness: 1.5,
+    requiredTool: null,
+    speedTool: "pickaxe",
+    minTier: 0,
+    wrongToolMinePenalty100: true
+  },
   WOOD: { hardness: 2, requiredTool: null, speedTool: "axe", minTier: 0 },
   LEAVES: { hardness: 0.15, requiredTool: null, speedTool: null, minTier: 0 },
   SAND: { hardness: 0.5, requiredTool: null, speedTool: "shovel", minTier: 0 },

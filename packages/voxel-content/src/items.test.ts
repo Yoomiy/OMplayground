@@ -32,11 +32,30 @@ describe("@playground/voxel-content items", () => {
 
   it("pickaxe speeds up stone vs hand", () => {
     const handMs = breakDurationForBlock(BLOCK_REGISTRY.STONE, null);
-    const pick = resolveBreakTool(BLOCK_REGISTRY.STONE, [
+    expect(handMs).toBe(7500); // 1.0 toolSpeed on 1.5 hardness block with divisor 100: Math.ceil(1 / (1 / 1.5 / 100)) * 50 = 7500 ms
+
+    const woodenPick = resolveBreakTool(BLOCK_REGISTRY.STONE, [
       { region: "storage", index: 0, itemId: ITEM_REGISTRY.WOODEN_PICKAXE }
     ]);
-    const pickMs = breakDurationForBlock(BLOCK_REGISTRY.STONE, pick);
-    expect(pickMs).toBeLessThan(handMs);
+    const woodenPickMs = breakDurationForBlock(BLOCK_REGISTRY.STONE, woodenPick);
+    expect(woodenPickMs).toBe(1150); // 2.0 toolSpeed on 1.5 hardness block with divisor 30: Math.ceil(1 / (2 / 1.5 / 30)) * 50 = 1150 ms
+
+    const diamondPick = resolveBreakTool(BLOCK_REGISTRY.STONE, [
+      { region: "storage", index: 0, itemId: ITEM_REGISTRY.DIAMOND_PICKAXE }
+    ]);
+    const diamondPickMs = breakDurationForBlock(BLOCK_REGISTRY.STONE, diamondPick);
+    expect(diamondPickMs).toBe(300); // 8.0 toolSpeed on 1.5 hardness block with divisor 30: Math.ceil(1 / (8 / 1.5 / 30)) * 50 = 300 ms
+
+    const swiftPick = resolveBreakTool(BLOCK_REGISTRY.STONE, [
+      { region: "storage", index: 0, itemId: ITEM_REGISTRY.SWIFT_PICKAXE }
+    ]);
+    // Without heldItemId
+    const swiftPickNoHeldMs = breakDurationForBlock(BLOCK_REGISTRY.STONE, swiftPick);
+    expect(swiftPickNoHeldMs).toBe(200); // 12.0 toolSpeed on 1.5 hardness block with divisor 30: Math.ceil(1 / (12 / 1.5 / 30)) * 50 = 200 ms
+
+    // With heldItemId (swift pickaxe held in hotbar)
+    const swiftPickHeldMs = breakDurationForBlock(BLOCK_REGISTRY.STONE, swiftPick, ITEM_REGISTRY.SWIFT_PICKAXE);
+    expect(swiftPickHeldMs).toBe(150); // 18.0 toolSpeed (12.0 * 1.5) on 1.5 hardness block with divisor 30: Math.ceil(1 / (18 / 1.5 / 30)) * 50 = 150 ms
   });
 
   it("registers expansion materials, foods, tools, and perk items", () => {

@@ -1,3 +1,2 @@
- 2. manage speed and jump height
  9. hide creative mode
 11. complete tnt

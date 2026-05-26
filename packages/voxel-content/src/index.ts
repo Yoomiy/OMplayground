@@ -55,12 +55,20 @@ export {
 } from "./items";
 
 export {
+  EQUIPMENT_SLOT_KEYS,
+  resolveMovementPerks,
+  healthWalkMultiplier,
+  isEquipmentPerkActive
+} from "./movementPerks";
+
+export {
   applyToolWear,
   breakDurationForBlock,
   breakDurationMs,
   HAND_TOOL_SPEED,
   isInstantBreak,
   resolveBreakTool,
+  resolveBreakToolSpeed,
   type ResolvedTool,
   type ToolKind,
   type ToolSlotRef,

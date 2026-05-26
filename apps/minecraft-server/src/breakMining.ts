@@ -61,7 +61,9 @@ export function beginBreak(
     return { ok: false, code: "WRONG_TOOL", message: "צריך כלי מתאים בסרגל" };
   }
 
-  const durationMs = breakDurationForBlock(blockId, tool);
+  const cell = player.inventory[hotbarIndex];
+  const heldItemId = cell ? cell.itemId : 0;
+  const durationMs = breakDurationForBlock(blockId, tool, heldItemId);
   player.activeBreak = {
     pos: [...pos] as Vec3,
     blockId,

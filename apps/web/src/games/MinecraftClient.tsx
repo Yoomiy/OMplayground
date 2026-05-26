@@ -36,6 +36,7 @@ import {
 } from "@/lib/voxelProtocol";
 import {
   isInstantBreak,
+  isEquipmentPerkActive,
   itemFoodSpec,
   itemMaxDurability,
   MC_MATERIAL_ENTRIES,
@@ -307,10 +308,6 @@ const ITEM_HUD: Record<number, string> = {
   [ITEM_REGISTRY.BAKED_POTATO]: "תפוח אדמה אפוי",
   [ITEM_REGISTRY.POISONOUS_POTATO]: "תפוח אדמה רעיל"
 };
-
-function equipmentHas(slots: ItemSlot[], itemId: number): boolean {
-  return slots.some((s) => s.itemId === itemId && s.count > 0);
-}
 
 function vecDist(a: readonly number[], b: readonly number[]): number {
   const dx = a[0] - b[0];
@@ -1092,6 +1089,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const craftingGridWidthRef = useRef<CraftingGridWidth>(craftingGridWidth);
   const activeChestRef = useRef(activeChest);
   const equipmentSlotsRef = useRef<ItemSlot[]>(equipmentSlots);
+  const localVitalsRef = useRef<PlayerVitals>(localVitals);
   const inventoryRef = useRef<HotbarSlot[]>(inventorySlots);
   const remoteEntitiesRef = useRef(new Map<string, number>());
   const selectedBlockRef = useRef<number>(BLOCK_REGISTRY.GRASS);
@@ -1134,6 +1132,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   craftingGridWidthRef.current = craftingGridWidth;
   activeChestRef.current = activeChest;
   equipmentSlotsRef.current = equipmentSlots;
+  localVitalsRef.current = localVitals;
   inventoryRef.current = inventorySlots;
   survivalSlotRef.current = survivalSlot;
   myUserIdRef.current = myUserId;
@@ -1367,6 +1366,12 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       // Unbind default KeyE from alt-fire (right-click) so pressing E to open inventory doesn't place blocks
       noa.inputs.unbind("alt-fire");
       noa.inputs.bind("alt-fire", "Mouse3");
+      
+      // Bind sprint keys (Shift and Control)
+      noa.inputs.bind("sprint", "ShiftLeft");
+      noa.inputs.bind("sprint", "ShiftRight");
+      noa.inputs.bind("sprint", "ControlLeft");
+      noa.inputs.bind("sprint", "ControlRight");
       
       noaRef.current = noa;
       noa?.setPaused?.(pausedRef.current);
@@ -2877,16 +2882,37 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         const equipped = equipmentSlotsRef.current;
         const moveState = noa.entities.getMovement?.(noa.playerEntity);
         if (moveState) {
+          const inputState = noa.inputs.state;
+          const playerMoving =
+            !!inputState.forward ||
+            !!inputState.backward ||
+            !!inputState.left ||
+            !!inputState.right;
+          const sprintRequested = !!inputState.sprint && playerMoving;
+
           const movement = resolveVoxelMovement({
-            heliumBoots: equipmentHas(equipped, ITEM_REGISTRY.HELIUM_BOOTS),
-            heavyShield: equipmentHas(equipped, ITEM_REGISTRY.HEAVY_SHIELD),
-            eating: activeEatingRef.current !== null
+            equipmentSlots: equipped,
+            eating: activeEatingRef.current !== null,
+            sprintRequested,
+            health: localVitalsRef.current.health,
+            gameMode: gameModeRef.current
           });
+          const isSprinting =
+            movement.canSprint && !!inputState.sprint && playerMoving;
+          // noa `running` means "apply movement forces", not sprint — receivesInputs sets it too
+          moveState.running = playerMoving;
+          moveState.maxSpeed =
+            movement.maxSpeed *
+            (isSprinting ? VOXEL_MOVEMENT.sprintSpeedMultiplier : 1);
           moveState.jumpForce = movement.jumpForce;
-          moveState.maxSpeed = movement.maxSpeed;
+          moveState.jumpImpulse = movement.jumpImpulse;
+          moveState.jumpTime = movement.jumpTimeMs;
         }
         if (scene.ambientColor) {
-          scene.ambientColor = equipmentHas(equipped, ITEM_REGISTRY.GLOW_TALISMAN)
+          scene.ambientColor = isEquipmentPerkActive(
+            equipped,
+            ITEM_REGISTRY.GLOW_TALISMAN
+          )
             ? fullBrightAmbient
             : defaultAmbient;
         }

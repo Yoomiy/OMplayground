@@ -1,5 +1,5 @@
 import { blockDef } from "./blocks";
-import { itemDef, type ItemToolSpec } from "./items";
+import { itemDef, itemPerkSpec, type ItemToolSpec } from "./items";
 
 export type ToolKind = "pickaxe" | "axe" | "shovel" | "hand";
 
@@ -10,6 +10,7 @@ export const HAND_TOOL_SPEED = 1;
 
 export interface ResolvedTool {
   spec: ItemToolSpec;
+  itemId: number;
   /** Where durability should be decremented after a break. */
   slot: { region: "hotbar" | "storage" | "craft"; index: number };
 }
@@ -58,29 +59,70 @@ export function resolveBreakTool(
       if (spec.kind !== def.requiredTool) continue;
       if (!tierMeets(def.minTier, spec.tier)) continue;
     }
-    return { spec, slot: { region: slot.region, index: slot.index } };
+    return { spec, itemId: slot.itemId, slot: { region: slot.region, index: slot.index } };
   }
 
   if (def.requiredTool) return null;
   return null;
 }
 
+export function resolveBreakToolSpeed(
+  tool: ResolvedTool | null,
+  heldItemId?: number
+): number {
+  let speed = tool?.spec.speed ?? HAND_TOOL_SPEED;
+  if (
+    tool !== null &&
+    heldItemId !== undefined &&
+    heldItemId !== 0 &&
+    heldItemId === tool.itemId
+  ) {
+    const perk = itemPerkSpec(heldItemId);
+    if (perk && perk.equipSlot === "hotbar" && perk.speedBonus !== undefined) {
+      speed *= 1 + perk.speedBonus;
+    }
+  }
+  return speed;
+}
+
 /** Break duration in ms at the given tool speed (1 = bare hand). */
-export function breakDurationMs(hardness: number, toolSpeed: number): number {
+export function breakDurationMs(
+  hardness: number,
+  toolSpeed: number,
+  isCorrectTool = true,
+  requiresToolForDrops = false
+): number {
   const h = Math.max(0, hardness);
-  const speed = Math.max(0.05, toolSpeed);
   if (h <= 0) return 0;
-  return Math.ceil((h / speed) * 1000);
+
+  const speed = Math.max(0.05, toolSpeed);
+  const divisor = (requiresToolForDrops && !isCorrectTool) ? 100 : 30;
+  const damagePerTick = speed / h / divisor;
+
+  if (damagePerTick > 1.0) return 0;
+  return Math.ceil(1 / damagePerTick) * 50;
 }
 
 export function breakDurationForBlock(
   blockId: number,
-  tool: ResolvedTool | null
+  tool: ResolvedTool | null,
+  heldItemId?: number
 ): number {
   const def = blockDef(blockId);
   if (!def) return 0;
-  const speed = tool?.spec.speed ?? HAND_TOOL_SPEED;
-  return breakDurationMs(def.hardness, speed);
+
+  const toolSpeed = resolveBreakToolSpeed(tool, heldItemId);
+
+  let isCorrectTool = false;
+  if (def.speedTool === null && def.requiredTool === null) {
+    isCorrectTool = true;
+  } else {
+    isCorrectTool = tool !== null;
+  }
+
+  const requiresToolForDrops = def.wrongToolMinePenalty100 === true;
+
+  return breakDurationMs(def.hardness, toolSpeed, isCorrectTool, requiresToolForDrops);
 }
 
 export function isInstantBreak(blockId: number): boolean {

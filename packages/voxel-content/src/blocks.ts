@@ -23,6 +23,8 @@ export interface BlockDef {
   /** Tool kind used for speed bonus when `requiredTool` is null. */
   readonly speedTool: ToolKind | null;
   readonly minTier: ToolTier;
+  /** Hand/wrong-tool mining uses MC divisor 100 instead of 30 (raw stone). */
+  readonly wrongToolMinePenalty100?: boolean;
 }
 
 const BASE_BLOCK_DEFS = [

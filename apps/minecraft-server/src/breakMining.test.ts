@@ -71,7 +71,21 @@ describe("breakMining", () => {
     const pickMs = beginBreak(pick, [0, 0, 0], BLOCK_REGISTRY.STONE, 0);
     expect(handMs.ok && pickMs.ok).toBe(true);
     if (handMs.ok && pickMs.ok) {
-      expect(pickMs.durationMs).toBeLessThan(handMs.durationMs);
+      expect(handMs.durationMs).toBe(7500);
+      expect(pickMs.durationMs).toBe(1150);
+    }
+  });
+
+  it("swift pickaxe breaks stone faster than diamond when held", () => {
+    const swift = playerWithHotbarTool(0, ITEM_REGISTRY.SWIFT_PICKAXE);
+    const diamond = playerWithHotbarTool(0, ITEM_REGISTRY.DIAMOND_PICKAXE);
+    const swiftMs = beginBreak(swift, [0, 0, 0], BLOCK_REGISTRY.STONE, 0);
+    const diamondMs = beginBreak(diamond, [0, 0, 0], BLOCK_REGISTRY.STONE, 0);
+    expect(swiftMs.ok && diamondMs.ok).toBe(true);
+    if (swiftMs.ok && diamondMs.ok) {
+      expect(swiftMs.durationMs).toBe(150);
+      expect(diamondMs.durationMs).toBe(300);
+      expect(swiftMs.durationMs).toBeLessThan(diamondMs.durationMs);
     }
   });
 
