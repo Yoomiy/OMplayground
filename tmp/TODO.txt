@@ -2,4 +2,4 @@
  4. make a decent help page
  6. separate recepies to sections
  9. hide creative mode
-11. 
+11. complete tnt
