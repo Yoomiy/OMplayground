@@ -99,6 +99,8 @@ const rawBeef = { kind: "item", itemId: ITEM_REGISTRY.RAW_BEEF } as const;
 const potato = { kind: "item", itemId: ITEM_REGISTRY.POTATO } as const;
 const carrot = { kind: "item", itemId: ITEM_REGISTRY.CARROT } as const;
 const melonSlice = { kind: "item", itemId: ITEM_REGISTRY.MELON_SLICE } as const;
+const gunpowder = { kind: "item", itemId: ITEM_REGISTRY.GUNPOWDER } as const;
+const sand = { kind: "block", blockId: BLOCK_REGISTRY.SAND } as const;
 
 function block(blockId: number): RecipeIngredient {
   return { kind: "block", blockId };
@@ -509,7 +511,33 @@ export const RECIPES: readonly Recipe[] = [
     kind: "item",
     id: ITEM_REGISTRY.BAKED_POTATO,
     count: 1
-  })
+  }),
+  shapeless("gunpowder", [ironIngot, coal, coal, flint, flint], {
+    kind: "item",
+    id: ITEM_REGISTRY.GUNPOWDER,
+    count: 3
+  }),
+  shaped(
+    "tnt",
+    3,
+    3,
+    [
+      gunpowder,
+      sand,
+      gunpowder,
+      sand,
+      gunpowder,
+      sand,
+      gunpowder,
+      sand,
+      gunpowder
+    ],
+    {
+      kind: "block",
+      id: BLOCK_REGISTRY.TNT,
+      count: 1
+    }
+  )
 ] as const;
 
 export function findMatchingRecipe(

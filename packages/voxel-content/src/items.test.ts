@@ -76,6 +76,7 @@ describe("@playground/voxel-content items", () => {
     expect(itemPerkSpec(ITEM_REGISTRY.HEAVY_SHIELD)?.damageReduction).toBe(0.5);
 
     expect(ITEM_REGISTRY.COOKED_MEAT).toBe(133);
+    expect(ITEM_REGISTRY.GUNPOWDER).toBe(143);
     expect(itemFoodSpec(ITEM_REGISTRY.COOKED_MEAT)?.nutrition).toBe(8);
     expect(itemFoodSpec(ITEM_REGISTRY.POISONOUS_POTATO)?.nutrition).toBe(-2);
     expect(itemFoodSpec(ITEM_REGISTRY.GOLDEN_CARROT)?.nutrition).toBe(6);

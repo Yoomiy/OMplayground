@@ -306,7 +306,8 @@ const ITEM_HUD: Record<number, string> = {
   [ITEM_REGISTRY.GOLDEN_CARROT]: "גזר זהב",
   [ITEM_REGISTRY.POTATO]: "תפוח אדמה",
   [ITEM_REGISTRY.BAKED_POTATO]: "תפוח אדמה אפוי",
-  [ITEM_REGISTRY.POISONOUS_POTATO]: "תפוח אדמה רעיל"
+  [ITEM_REGISTRY.POISONOUS_POTATO]: "תפוח אדמה רעיל",
+  [ITEM_REGISTRY.GUNPOWDER]: "אבק שרפה"
 };
 
 function vecDist(a: readonly number[], b: readonly number[]): number {

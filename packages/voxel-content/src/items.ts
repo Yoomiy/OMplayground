@@ -402,6 +402,13 @@ export const ITEM_DEFS = [
     maxStack: 64,
     iconFilename: "poisonous_potato.png",
     food: { nutrition: -2, saturationModifier: 0 }
+  },
+  {
+    id: 143,
+    key: "GUNPOWDER",
+    category: "material",
+    maxStack: 64,
+    iconFilename: "gunpowder.png"
   }
 ] as const satisfies readonly ItemDef[];
 

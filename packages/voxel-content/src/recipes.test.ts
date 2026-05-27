@@ -71,7 +71,9 @@ describe("@playground/voxel-content recipes", () => {
       "golden_carrot",
       "cook_meat",
       "cook_beef",
-      "bake_potato"
+      "bake_potato",
+      "gunpowder",
+      "tnt"
     ]);
   });
 
@@ -307,6 +309,76 @@ describe("@playground/voxel-content recipes", () => {
         CRAFTING_GRID_WIDTH_2
       )?.recipe.output.id
     ).toBe(ITEM_REGISTRY.DIAMOND);
+  });
+
+  it("supports crafting gunpowder and tnt in 3x3, but gates them from 2x2 grid", () => {
+    // Gunpowder recipe is: 1x Iron Ingot + 2x Coal + 2x Flint (shapeless, 5 ingredients)
+    // First, verify gunpowder crafting on 3x3 works
+    const gunpowderMatched = findMatchingRecipe(
+      gridWith(CRAFTING_TABLE_GRID_SIZE, {
+        0: { itemId: ITEM_REGISTRY.IRON_INGOT, count: 1 },
+        1: { itemId: ITEM_REGISTRY.COAL, count: 1 },
+        2: { itemId: ITEM_REGISTRY.COAL, count: 1 },
+        3: { itemId: ITEM_REGISTRY.FLINT, count: 1 },
+        4: { itemId: ITEM_REGISTRY.FLINT, count: 1 }
+      }),
+      CRAFTING_GRID_WIDTH_3
+    );
+    expect(gunpowderMatched?.recipe.key).toBe("gunpowder");
+    expect(gunpowderMatched?.recipe.output).toEqual({
+      kind: "item",
+      id: ITEM_REGISTRY.GUNPOWDER,
+      count: 3
+    });
+
+    // Verify it fails on a 2x2 grid (since we need 5 distinct slots)
+    const gunpowderOn2x2 = findMatchingRecipe(
+      gridWith(PERSONAL_CRAFTING_GRID_SIZE, {
+        0: { itemId: ITEM_REGISTRY.IRON_INGOT, count: 1 },
+        1: { itemId: ITEM_REGISTRY.COAL, count: 1 },
+        2: { itemId: ITEM_REGISTRY.COAL, count: 1 },
+        3: { itemId: ITEM_REGISTRY.FLINT, count: 1 } // missing 1 flint, but even with 5 we couldn't fit it in a 4-slot grid
+      }),
+      CRAFTING_GRID_WIDTH_2
+    );
+    expect(gunpowderOn2x2).toBeNull();
+
+    // TNT recipe is: checkered pattern of gunpowder (item 143) and sand (block 6)
+    // Row 1: Gunpowder Sand Gunpowder
+    // Row 2: Sand Gunpowder Sand
+    // Row 3: Gunpowder Sand Gunpowder
+    const tntMatched = findMatchingRecipe(
+      gridWith(CRAFTING_TABLE_GRID_SIZE, {
+        0: { itemId: ITEM_REGISTRY.GUNPOWDER, count: 1 },
+        1: { blockId: BLOCK_REGISTRY.SAND, count: 1 },
+        2: { itemId: ITEM_REGISTRY.GUNPOWDER, count: 1 },
+        3: { blockId: BLOCK_REGISTRY.SAND, count: 1 },
+        4: { itemId: ITEM_REGISTRY.GUNPOWDER, count: 1 },
+        5: { blockId: BLOCK_REGISTRY.SAND, count: 1 },
+        6: { itemId: ITEM_REGISTRY.GUNPOWDER, count: 1 },
+        7: { blockId: BLOCK_REGISTRY.SAND, count: 1 },
+        8: { itemId: ITEM_REGISTRY.GUNPOWDER, count: 1 }
+      }),
+      CRAFTING_GRID_WIDTH_3
+    );
+    expect(tntMatched?.recipe.key).toBe("tnt");
+    expect(tntMatched?.recipe.output).toEqual({
+      kind: "block",
+      id: BLOCK_REGISTRY.TNT,
+      count: 1
+    });
+
+    // TNT requires 3x3 layout, should fail on 2x2
+    const tntOn2x2 = findMatchingRecipe(
+      gridWith(PERSONAL_CRAFTING_GRID_SIZE, {
+        0: { itemId: ITEM_REGISTRY.GUNPOWDER, count: 1 },
+        1: { blockId: BLOCK_REGISTRY.SAND, count: 1 },
+        2: { itemId: ITEM_REGISTRY.GUNPOWDER, count: 1 },
+        3: { blockId: BLOCK_REGISTRY.SAND, count: 1 }
+      }),
+      CRAFTING_GRID_WIDTH_2
+    );
+    expect(tntOn2x2).toBeNull();
   });
 
   it("exposes bounding-box shrinking for shaped recipe alignment", () => {
