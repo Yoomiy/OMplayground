@@ -35,7 +35,8 @@ export const GRASS_FORAGING_TOTAL_CHANCE = 0.105;
 export const CUSTOM_SURVIVAL_BREAK_BLOCKS = new Set<number>([
   BLOCK_REGISTRY.GRASS_PLANT,
   BLOCK_REGISTRY.GRASS_PLANT_YELLOW,
-  BLOCK_REGISTRY.MELON
+  BLOCK_REGISTRY.MELON,
+  BLOCK_REGISTRY.GRAVEL
 ]);
 
 export function usesCustomSurvivalBreakDrops(blockId: number): boolean {
@@ -83,6 +84,17 @@ export function rollLeavesBonusDrop(rand01: number): BreakBonusDrop | null {
 /** Melon block → 3–7 slices in survival. */
 export function melonSliceDropCount(rand01: number): number {
   return 3 + Math.floor(rand01 * 5);
+}
+
+/** Gravel break drop chance of flint. Put at 1.0 (100%) for testing. Change to 0.1 for 10% chance later. */
+export const GRAVEL_FLINT_CHANCE = 1.0;
+
+/** Gravel drop: 10% (by default, currently 100% for testing) chance of flint item, otherwise gravel block */
+export function rollGravelDrop(rand01: number): BreakBonusDrop {
+  if (rand01 < GRAVEL_FLINT_CHANCE) {
+    return { kind: "item", id: ITEM_REGISTRY.FLINT, count: 1 };
+  }
+  return { kind: "block", id: BLOCK_REGISTRY.GRAVEL, count: 1 };
 }
 
 /** Sugar cane must sit on grass, dirt, or sand. */

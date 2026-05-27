@@ -20,6 +20,7 @@ import {
   itemFoodSpec,
   melonSliceDropCount,
   rollGrassForagingDrop,
+  rollGravelDrop,
   rollLeavesBonusDrop,
   sugarCaneMayPlaceOn,
   usesCustomSurvivalBreakDrops
@@ -592,6 +593,11 @@ function spawnSurvivalBreakDrops(
   brokenId: number,
   pos: Vec3
 ): void {
+  if (brokenId === BLOCK_REGISTRY.GRAVEL) {
+    const bonus = rollGravelDrop(Math.random());
+    emitBreakBonusDrop(room, sessionId, pos, bonus);
+    return;
+  }
   if (brokenId === BLOCK_REGISTRY.MELON) {
     const count = melonSliceDropCount(Math.random());
     emitBreakBonusDrop(room, sessionId, pos, {

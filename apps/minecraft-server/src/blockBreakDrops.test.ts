@@ -3,11 +3,19 @@ import {
   blockDropsPickable,
   melonSliceDropCount,
   rollGrassForagingDrop,
-  usesCustomSurvivalBreakDrops
+  usesCustomSurvivalBreakDrops,
+  rollGravelDrop
 } from "@playground/voxel-content";
-import { BLOCK_REGISTRY } from "./protocol";
+import { BLOCK_REGISTRY, ITEM_REGISTRY } from "./protocol";
 
 describe("survival block break drops", () => {
+  it("gravel is recognized as a custom break block and drops flint", () => {
+    expect(usesCustomSurvivalBreakDrops(BLOCK_REGISTRY.GRAVEL)).toBe(true);
+    const drop = rollGravelDrop(0.5);
+    expect(drop.kind).toBe("item");
+    expect(drop.id).toBe(ITEM_REGISTRY.FLINT);
+  });
+
   it("grass plants have no default block drop", () => {
     expect(blockDropId(BLOCK_REGISTRY.GRASS_PLANT)).toBeNull();
     expect(blockDropsPickable(BLOCK_REGISTRY.GRASS_PLANT)).toBe(false);

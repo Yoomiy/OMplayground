@@ -135,11 +135,13 @@ export {
 export {
   CUSTOM_SURVIVAL_BREAK_BLOCKS,
   GRASS_FORAGING_TOTAL_CHANCE,
+  GRAVEL_FLINT_CHANCE,
   blockPlacementHeight,
   isGrassPlantBlock,
   isLeavesBlock,
   melonSliceDropCount,
   rollGrassForagingDrop,
+  rollGravelDrop,
   rollLeavesBonusDrop,
   sugarCaneMayPlaceOn,
   usesCustomSurvivalBreakDrops,

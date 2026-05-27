@@ -2,11 +2,21 @@ import {
   GRASS_FORAGING_TOTAL_CHANCE,
   rollGrassForagingDrop,
   rollLeavesBonusDrop,
-  melonSliceDropCount
+  melonSliceDropCount,
+  rollGravelDrop,
+  GRAVEL_FLINT_CHANCE
 } from "./blockBreakDrops";
 import { ITEM_REGISTRY } from "./items";
+import { BLOCK_REGISTRY } from "./blocks";
 
 describe("blockBreakDrops", () => {
+  it("gravel drop returns flint when random roll is below GRAVEL_FLINT_CHANCE", () => {
+    // Currently GRAVEL_FLINT_CHANCE is 1.0 (for testing), so it should always drop flint
+    const roll = rollGravelDrop(0.5);
+    expect(roll.kind).toBe("item");
+    expect(roll.id).toBe(ITEM_REGISTRY.FLINT);
+    expect(roll.count).toBe(1);
+  });
   it("grass foraging returns null above total chance", () => {
     expect(rollGrassForagingDrop(GRASS_FORAGING_TOTAL_CHANCE)).toBeNull();
     expect(rollGrassForagingDrop(0.2)).toBeNull();
