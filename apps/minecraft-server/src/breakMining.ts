@@ -133,6 +133,6 @@ function applyWearToHotbarSlot(player: PlayerRuntime, tool: ResolvedTool): void 
 }
 
 export function shouldUseTimedBreak(blockId: number, gameMode: string | undefined): boolean {
-  if ((gameMode ?? "creative") !== "survival") return false;
+  if ((gameMode ?? "survival") !== "survival") return false;
   return !isInstantBreak(blockId);
 }

@@ -123,7 +123,7 @@ export interface VoxelRoom {
   roster: RoomPlayer[];
   spawnPoints: Map<string, Vec3>;
   paused: boolean;
-  /** Defaults to creative when omitted (legacy in-memory rooms). */
+  /** Defaults to survival when omitted (legacy in-memory rooms). */
   gameMode?: GameMode;
   /** Survival inventories for roster members not currently connected. */
   disconnectedInventories: Map<string, HotbarState>;
@@ -323,7 +323,7 @@ export function getOrCreateRoom(
     roster: meta.roster,
     spawnPoints,
     paused: meta.paused,
-    gameMode: meta.resumedState?.gameMode ?? "creative",
+    gameMode: meta.resumedState?.gameMode ?? "survival",
     disconnectedInventories,
     disconnectedItemInventories,
     disconnectedCraftingGrids,
@@ -444,7 +444,7 @@ export function assignPlayer(
     lastInputAt: now,
     selectedHotbarIndex: 0
   };
-  if ((room.gameMode ?? "creative") === "survival") {
+  if ((room.gameMode ?? "survival") === "survival") {
     const cached = room.disconnectedInventories.get(userId);
     player.inventory = cached
       ? cloneHotbar(cached)
@@ -563,7 +563,7 @@ export function snapshotPersistedState(room: VoxelRoom): PersistedRoomState {
   const equipmentSlots: Record<string, ItemSlot[]> = {};
   const vitals: Record<string, VitalsRuntime> = {};
   const chests: Record<string, ChestSlot[]> = {};
-  if ((room.gameMode ?? "creative") === "survival") {
+  if ((room.gameMode ?? "survival") === "survival") {
     for (const p of room.players.values()) {
       if (p.inventory) inventories[p.userId] = cloneHotbar(p.inventory);
       if (p.itemInventory) {
@@ -610,14 +610,14 @@ export function snapshotPersistedState(room: VoxelRoom): PersistedRoomState {
     seed: room.world.seed,
     deltas: serializeDeltas(room.world),
     spawnPoints,
-    gameMode: room.gameMode ?? "creative",
+    gameMode: room.gameMode ?? "survival",
     ...(Object.keys(inventories).length > 0 ? { inventories } : {}),
     ...(Object.keys(itemInventories).length > 0 ? { itemInventories } : {}),
     ...(Object.keys(craftingGrids).length > 0 ? { craftingGrids } : {}),
     ...(Object.keys(equipmentSlots).length > 0 ? { equipmentSlots } : {}),
     ...(Object.keys(vitals).length > 0 ? { vitals } : {}),
     ...(Object.keys(chests).length > 0 ? { chests } : {}),
-    ...((room.gameMode ?? "creative") === "survival" && room.drops.size > 0
+    ...((room.gameMode ?? "survival") === "survival" && room.drops.size > 0
       ? { drops: Array.from(room.drops.values()) }
       : {})
   };

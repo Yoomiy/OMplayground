@@ -73,7 +73,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
 
   const [paused, setPaused] = useState(false);
   const [hostId, setHostId] = useState<string | null>(null);
-  const [liveGameMode, setLiveGameMode] = useState<GameMode>("creative");
+  const [liveGameMode, setLiveGameMode] = useState<GameMode>("survival");
   const [endOverlay, setEndOverlay] = useState<
     null | { kind: "stopped"; by?: string }
   >(null);
@@ -145,6 +145,36 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     setHostId(joinAck.hostId);
     setLiveGameMode(joinAck.gameMode);
   }, [joinAck]);
+
+  useEffect(() => {
+    (window as any).setGameMode = async (mode: GameMode) => {
+      if (mode !== "creative" && mode !== "survival") {
+        console.error("Invalid game mode. Must be 'creative' or 'survival'");
+        return;
+      }
+      const ack = await setGameMode(mode);
+      if (ack.ok) {
+        console.log(`Game mode successfully set to: ${mode}`);
+      } else {
+        console.error(`Failed to set game mode: ${ack.error?.message ?? "unknown error"}`);
+      }
+    };
+
+    (window as any).toggleGameMode = async () => {
+      const nextMode = liveGameMode === "creative" ? "survival" : "creative";
+      const ack = await setGameMode(nextMode);
+      if (ack.ok) {
+        console.log(`Game mode toggled to: ${nextMode}`);
+      } else {
+        console.error(`Failed to toggle game mode: ${ack.error?.message ?? "unknown error"}`);
+      }
+    };
+
+    return () => {
+      delete (window as any).setGameMode;
+      delete (window as any).toggleGameMode;
+    };
+  }, [setGameMode, liveGameMode]);
 
   useEffect(() => {
     const off = onRoomEvent((ev: RoomEvent) => {
@@ -498,22 +528,26 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         </button>
         {iAmHost && !endOverlay ? (
           <>
-            <button
-              type="button"
-              onClick={() => void handleSetCreative()}
-              disabled={liveGameMode === "creative"}
-              className="rounded-lg bg-emerald-800/90 px-3 py-2 hover:bg-emerald-700 disabled:opacity-50"
-            >
-              יצירתי
-            </button>
-            <button
-              type="button"
-              onClick={() => void handleSetSurvival()}
-              disabled={liveGameMode === "survival"}
-              className="rounded-lg bg-teal-800/90 px-3 py-2 hover:bg-teal-700 disabled:opacity-50"
-            >
-              שרדות
-            </button>
+            {import.meta.env.DEV && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => void handleSetCreative()}
+                  disabled={liveGameMode === "creative"}
+                  className="rounded-lg bg-emerald-800/90 px-3 py-2 hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  יצירתי
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleSetSurvival()}
+                  disabled={liveGameMode === "survival"}
+                  className="rounded-lg bg-teal-800/90 px-3 py-2 hover:bg-teal-700 disabled:opacity-50"
+                >
+                  הישרדות
+                </button>
+              </>
+            )}
             <button
               type="button"
               onClick={() => (paused ? void handleResume() : void handlePause())}

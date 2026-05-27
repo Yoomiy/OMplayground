@@ -205,7 +205,7 @@ function tryPickupDropForPlayer(
 }
 
 export function tickMagnetPickups(io: Server, room: VoxelRoom): void {
-  if ((room.gameMode ?? "creative") !== "survival") return;
+  if ((room.gameMode ?? "survival") !== "survival") return;
   if (room.drops.size === 0) return;
 
   const pickedDropIds = new Set<string>();
@@ -620,7 +620,7 @@ function emitDropUpdateBatch(io: Server, room: VoxelRoom, nowMs: number): void {
  * then batched position broadcast (~5 Hz).
  */
 export function tickWorldDrops(io: Server, room: VoxelRoom, nowMs: number): void {
-  if ((room.gameMode ?? "creative") !== "survival") return;
+  if ((room.gameMode ?? "survival") !== "survival") return;
   ensureDropBroadcast(room);
   if (room.drops.size === 0) {
     emitDropUpdateBatch(io, room, nowMs);

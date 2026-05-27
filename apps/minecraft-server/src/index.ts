@@ -493,13 +493,13 @@ function executeBlockBreak(
   brokenId: number
 ): void {
   if (
-    (room.gameMode ?? "creative") === "survival" &&
+    (room.gameMode ?? "survival") === "survival" &&
     player.health !== undefined &&
     addMiningExhaustion(player)
   ) {
     room.dirty = true;
   }
-  if ((room.gameMode ?? "creative") === "survival" && brokenId === BLOCK_REGISTRY.CHEST) {
+  if ((room.gameMode ?? "survival") === "survival" && brokenId === BLOCK_REGISTRY.CHEST) {
     const key = chestKey(x, y, z);
     const chest = room.chests.get(key);
     if (chest) {
@@ -536,7 +536,7 @@ function executeBlockBreak(
   const replacementBlockId = replacementBlockAfterBreak(room.world, x, y, z);
   applyDelta(room.world, x, y, z, replacementBlockId);
   if (
-    (room.gameMode ?? "creative") === "survival" &&
+    (room.gameMode ?? "survival") === "survival" &&
     player.inventory &&
     player.itemInventory &&
     player.craftingGrid
@@ -710,7 +710,7 @@ async function emitInventoryToSurvivalPlayers(
   sessionId: string,
   room: ReturnType<typeof getRoom>
 ): Promise<void> {
-  if (!room || (room.gameMode ?? "creative") !== "survival") return;
+  if (!room || (room.gameMode ?? "survival") !== "survival") return;
   const socks = await io.in(`voxel:${sessionId}`).fetchSockets();
   for (const s of socks) {
     const uid = s.data.userId as string | undefined;
@@ -856,7 +856,7 @@ io.on("connection", (socket) => {
       if (!wasAlreadyInRoom) {
         void insertSystemChatMessage(sessionId, `${displayName} הצטרף למשחק`);
       }
-      const effectiveMode = room.gameMode ?? "creative";
+      const effectiveMode = room.gameMode ?? "survival";
       ack?.({
         ok: true,
         seed: room.world.seed,
@@ -905,7 +905,7 @@ io.on("connection", (socket) => {
     const skipPositionUpdate =
       player.lastDeathAt !== undefined && Date.now() - player.lastDeathAt < 1000;
 
-    if (!skipPositionUpdate && (room.gameMode ?? "creative") === "survival" && player.health !== undefined) {
+    if (!skipPositionUpdate && (room.gameMode ?? "survival") === "survival" && player.health !== undefined) {
       const dx = payload.pos[0] - player.pos[0];
       const dz = payload.pos[2] - player.pos[2];
       const distance = Math.hypot(dx, dz);
@@ -956,7 +956,7 @@ io.on("connection", (socket) => {
         ack?.({ ok: false, error: { code: "NOT_IN_ROOM", message: "לא בחדר" } });
         return;
       }
-      if ((room.gameMode ?? "creative") !== "survival" || player.health === undefined) {
+      if ((room.gameMode ?? "survival") !== "survival" || player.health === undefined) {
         ack?.({ ok: false, error: { code: "BAD_INTENT", message: "רק במצב הישרדות" } });
         return;
       }
@@ -992,7 +992,7 @@ io.on("connection", (socket) => {
         return;
       }
       if (
-        (room.gameMode ?? "creative") !== "survival" ||
+        (room.gameMode ?? "survival") !== "survival" ||
         attacker.health === undefined ||
         target.health === undefined ||
         target.userId === attacker.userId
@@ -1033,7 +1033,7 @@ io.on("connection", (socket) => {
         return;
       }
       const { room, player, sessionId: activeSessionId, x, y, z, blockId } = target;
-      if ((room.gameMode ?? "creative") !== "survival") {
+      if ((room.gameMode ?? "survival") !== "survival") {
         ack?.({
           ok: false,
           error: { code: "BAD_INTENT", message: "רק במצב שרדות" }
@@ -1187,7 +1187,7 @@ io.on("connection", (socket) => {
       }
       applyDelta(room.world, x, y, z, blockId);
       if (
-        (room.gameMode ?? "creative") === "survival" &&
+        (room.gameMode ?? "survival") === "survival" &&
         player.inventory &&
         player.itemInventory &&
         player.craftingGrid
@@ -1250,7 +1250,7 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      if ((room.gameMode ?? "creative") !== "survival") {
+      if ((room.gameMode ?? "survival") !== "survival") {
         ack?.({
           ok: false,
           error: { code: "BAD_INTENT", message: "רק במצב שרדות" }
@@ -1356,7 +1356,7 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      if ((room.gameMode ?? "creative") !== "survival") {
+      if ((room.gameMode ?? "survival") !== "survival") {
         ack?.({
           ok: false,
           error: { code: "BAD_INTENT", message: "רק במצב שרדות" }
@@ -1435,7 +1435,7 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      if ((room.gameMode ?? "creative") !== "survival" || !player.inventory) {
+      if ((room.gameMode ?? "survival") !== "survival" || !player.inventory) {
         ack?.({
           ok: false,
           error: { code: "BAD_INTENT", message: "רק במצב הישרדות" }
@@ -1493,7 +1493,7 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      if ((room.gameMode ?? "creative") !== "survival" || !player.inventory) {
+      if ((room.gameMode ?? "survival") !== "survival" || !player.inventory) {
         ack?.({
           ok: false,
           error: { code: "BAD_INTENT", message: "רק במצב הישרדות" }
@@ -1559,7 +1559,7 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      if ((room.gameMode ?? "creative") !== "survival") {
+      if ((room.gameMode ?? "survival") !== "survival") {
         ack?.({
           ok: false,
           error: { code: "BAD_INTENT", message: "רק במצב הישרדות" }
@@ -1638,7 +1638,7 @@ io.on("connection", (socket) => {
       if (!room || !player || room.paused) {
         return ack?.({ ok: false });
       }
-      if ((room.gameMode ?? "creative") !== "survival") {
+      if ((room.gameMode ?? "survival") !== "survival") {
         return ack?.({ ok: false });
       }
       if (!player.inventory || !player.itemInventory || !player.craftingGrid) {
@@ -1670,7 +1670,7 @@ io.on("connection", (socket) => {
       const room = sessionId ? getRoom(sessionId) : undefined;
       const player = room ? room.players.get(userId) : undefined;
       if (!sessionId || !room || !player || room.paused) return ack?.({ ok: false });
-      if ((room.gameMode ?? "creative") !== "survival") return ack?.({ ok: false });
+      if ((room.gameMode ?? "survival") !== "survival") return ack?.({ ok: false });
       if (!player.inventory || !player.itemInventory || !player.craftingGrid) {
         return ack?.({ ok: false });
       }
@@ -1732,7 +1732,7 @@ io.on("connection", (socket) => {
       const room = sessionId ? getRoom(sessionId) : undefined;
       const player = room ? room.players.get(userId) : undefined;
       if (!sessionId || !room || !player || room.paused) return ack?.({ ok: false });
-      if ((room.gameMode ?? "creative") !== "survival") return ack?.({ ok: false });
+      if ((room.gameMode ?? "survival") !== "survival") return ack?.({ ok: false });
       if (!player.inventory || !player.itemInventory || !player.craftingGrid) {
         return ack?.({ ok: false });
       }
@@ -1784,7 +1784,7 @@ io.on("connection", (socket) => {
       const room = sessionId ? getRoom(sessionId) : undefined;
       const player = room ? room.players.get(userId) : undefined;
       if (!sessionId || !room || !player || room.paused) return ack?.({ ok: false });
-      if ((room.gameMode ?? "creative") !== "survival") return ack?.({ ok: false });
+      if ((room.gameMode ?? "survival") !== "survival") return ack?.({ ok: false });
       if (
         !player.inventory ||
         !player.itemInventory ||
@@ -1853,7 +1853,7 @@ io.on("connection", (socket) => {
           error: { code: "NOT_IN_ROOM", message: "לא בחדר" }
         });
       }
-      if ((room.gameMode ?? "creative") !== "survival") {
+      if ((room.gameMode ?? "survival") !== "survival") {
         return ack?.({
           ok: false,
           error: { code: "BAD_INTENT", message: "רק במצב הישרדות" }
@@ -1944,6 +1944,12 @@ io.on("connection", (socket) => {
         return;
       }
       const next = payload.gameMode;
+      const callerPlayer = room.players.get(userId);
+      const callerName = callerPlayer?.displayName ?? userId;
+      const playerNames = Array.from(room.players.values()).map(p => p.displayName).join(", ");
+      console.log(
+        `[ADMIN] Game mode changed to '${next}' in session/room '${sessionId}' (gameId: '${room.gameId}') by '${callerName}'. Players in room: [${playerNames}]`
+      );
       if (next === "survival") {
         room.gameMode = "survival";
         for (const p of room.players.values()) {
@@ -2297,7 +2303,7 @@ const recessTimer = setInterval(() => {
 recessTimer.unref?.();
 
 function tickRoomVitals(room: VoxelRoom, now: number): void {
-  if ((room.gameMode ?? "creative") !== "survival") return;
+  if ((room.gameMode ?? "survival") !== "survival") return;
   for (const player of room.players.values()) {
     if (player.health === undefined) continue;
     const suffAmount = applySuffocationDamage(room.world, player, now);
@@ -2316,7 +2322,7 @@ function tickRoomVitals(room: VoxelRoom, now: number): void {
 }
 
 function tickRoomTnt(room: VoxelRoom, now: number): void {
-  if ((room.gameMode ?? "creative") !== "survival" || room.activeTnts.size === 0) return;
+  if ((room.gameMode ?? "survival") !== "survival" || room.activeTnts.size === 0) return;
   const sessionId = room.sessionId;
   for (const tnt of [...room.activeTnts.values()]) {
     if (tnt.explodeAt > now) continue;

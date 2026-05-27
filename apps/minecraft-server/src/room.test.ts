@@ -66,7 +66,7 @@ describe("VoxelRoom", () => {
     const snap = snapshotPersistedState(room);
     expect(snap.voxel).toBe(true);
     expect(snap.seed).toBe(room.world.seed);
-    expect(snap.gameMode).toBe("creative");
+    expect(snap.gameMode).toBe("survival");
     expect(snap.deltas).toEqual(
       expect.arrayContaining([[1, 50, 1, BLOCK_REGISTRY.WOOD]])
     );
@@ -99,7 +99,7 @@ describe("VoxelRoom", () => {
     });
     expect(second.world.seed).toBe(first.world.seed);
     expect(second.world.deltas.get("2,51,2")).toBe(BLOCK_REGISTRY.STONE);
-    expect(second.gameMode).toBe("creative");
+    expect(second.gameMode).toBe("survival");
   });
 
   it("regenerates unsafe persisted spawn points instead of reusing underwater coordinates", () => {
@@ -170,7 +170,7 @@ describe("VoxelRoom", () => {
       paused: true,
       resumedState: persisted
     });
-    expect((again.gameMode ?? "creative") === "survival").toBe(true);
+    expect((again.gameMode ?? "survival") === "survival").toBe(true);
     const re = assignPlayer(again, "u1", "A");
     expect("error" in re).toBe(false);
     if (!("error" in re)) {
@@ -215,7 +215,7 @@ describe("VoxelRoom", () => {
       paused: true,
       resumedState: persisted
     });
-    expect((again.gameMode ?? "creative") === "survival").toBe(true);
+    expect((again.gameMode ?? "survival") === "survival").toBe(true);
     const re = assignPlayer(again, "u1", "A");
     expect("error" in re).toBe(false);
     if (!("error" in re)) {
@@ -259,7 +259,7 @@ describe("VoxelRoom", () => {
       paused: true,
       resumedState: persisted
     });
-    expect((again.gameMode ?? "creative") === "survival").toBe(true);
+    expect((again.gameMode ?? "survival") === "survival").toBe(true);
     const re = assignPlayer(again, "u1", "A");
     expect("error" in re).toBe(false);
     if (!("error" in re)) {
