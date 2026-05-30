@@ -135,6 +135,7 @@ export interface ChessBoardProps {
   onRequestRematch?: () => void;
   onRespondRematch?: (accept: boolean) => void;
   onGoHome?: () => void;
+  allowDrawOffers?: boolean;
 }
 
 export function ChessBoard({
@@ -152,7 +153,8 @@ export function ChessBoard({
   refusedRematch,
   onRequestRematch,
   onRespondRematch,
-  onGoHome
+  onGoHome,
+  allowDrawOffers = true
 }: ChessBoardProps) {
   const [viewIndex, setViewIndex] = useState<number>(-1);
   const [customMins, setCustomMins] = useState<string>("15");
@@ -788,7 +790,7 @@ export function ChessBoard({
 
         {inActiveGame && (
           <div className="flex flex-wrap gap-2" dir="rtl">
-            {drawOfferFrom && drawOfferFrom !== mySeat ? (
+            {allowDrawOffers && drawOfferFrom && drawOfferFrom !== mySeat ? (
               <>
                 <button
                   type="button"
@@ -806,7 +808,7 @@ export function ChessBoard({
                 </button>
               </>
             ) : null}
-            {canPlay && (!drawOfferFrom || drawOfferFrom === mySeat) && (
+            {allowDrawOffers && canPlay && (!drawOfferFrom || drawOfferFrom === mySeat) && (
               <button
                 type="button"
                 disabled={!!(drawOfferFrom && drawOfferFrom === mySeat)}

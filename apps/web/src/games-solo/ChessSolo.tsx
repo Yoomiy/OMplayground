@@ -416,6 +416,7 @@ export function ChessSolo({ save }: { save: SoloGameSaveControls }) {
           isHost={false}
           onPlayAgain={restartSameSettings}
           onExit={restartFromSetup}
+          allowDrawOffers={false}
         />
       )}
     </div>
