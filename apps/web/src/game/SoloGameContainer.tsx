@@ -10,6 +10,7 @@ import { HexGLSolo } from "@/games-solo/HexGLSolo";
 import { SimonSolo } from "@/games-solo/SimonSolo";
 import { SnakeSolo } from "@/games-solo/SnakeSolo";
 import { WhackAMoleSolo } from "@/games-solo/WhackAMoleSolo";
+import { ChessSolo } from "@/games-solo/ChessSolo";
 import { useAuth } from "@/hooks/useAuth";
 import {
   deleteSoloGameSave,
@@ -36,7 +37,8 @@ const SOLO_REGISTRY: Record<string, (save: SoloGameSaveControls) => ReactNode> =
   whackamole: (save) => <WhackAMoleSolo save={save} />,
   balloonpop: (save) => <BalloonPopSolo save={save} />,
   "alges-escapade": (save) => <AlgesEscapadeSolo save={save} />,
-  hexgl: (save) => <HexGLSolo save={save} />
+  hexgl: (save) => <HexGLSolo save={save} />,
+  "chess-solo": (save) => <ChessSolo save={save} />
 };
 
 export default function SoloGameContainer() {

@@ -78,6 +78,15 @@ interface BoardProps {
   mySymbol: string | null;
   myUserId: string | null;
   onIntent: (intent: unknown) => void;
+  isHost?: boolean;
+  endOverlay?: EndOverlay | null;
+  rematch?: RematchState | null;
+  canVoteRematch?: boolean;
+  acceptedRematch?: boolean;
+  refusedRematch?: boolean;
+  onRequestRematch?: () => void;
+  onRespondRematch?: (accept: boolean) => void;
+  onGoHome?: () => void;
 }
 
 interface BoardRegistryEntry {
@@ -87,11 +96,43 @@ interface BoardRegistryEntry {
 
 const BOARD_REGISTRY: Record<string, BoardRegistryEntry> = {
   chess: {
-    component: ({ gameState, mySymbol, onIntent }) => (
+    component: ({
+      gameState,
+      mySymbol,
+      onIntent,
+      isHost,
+      endOverlay,
+      rematch,
+      canVoteRematch,
+      acceptedRematch,
+      refusedRematch,
+      onRequestRematch,
+      onRespondRematch,
+      onGoHome
+    }) => (
       <ChessBoard
         gameState={gameState as ChessState}
         mySeat={mySymbol === "w" || mySymbol === "b" ? mySymbol : null}
         onIntent={(intent) => onIntent(intent)}
+        isHost={isHost}
+        sessionEnd={
+          endOverlay
+            ? {
+                kind: endOverlay.kind,
+                winner: endOverlay.kind === "won" ? endOverlay.winner : undefined
+              }
+            : null
+        }
+        rematch={rematch}
+        canRequestRematch={
+          !!isHost && !!endOverlay && endOverlay.kind !== "stopped" && !rematch
+        }
+        canVoteRematch={canVoteRematch}
+        acceptedRematch={acceptedRematch}
+        refusedRematch={refusedRematch}
+        onRequestRematch={onRequestRematch}
+        onRespondRematch={onRespondRematch}
+        onGoHome={onGoHome}
       />
     )
   },
@@ -690,6 +731,17 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
                 mySymbol={mySymbol}
                 myUserId={myUserId}
                 onIntent={onIntent}
+                isHost={iAmHost}
+                endOverlay={endOverlay}
+                rematch={rematch}
+                canVoteRematch={canVoteRematch}
+                acceptedRematch={acceptedRematch}
+                refusedRematch={refusedRematch}
+                onRequestRematch={requestRematch}
+                onRespondRematch={respondToRematch}
+                onGoHome={() =>
+                  navigate(isAdmin ? "/admin" : isTeacherObserver ? "/teacher" : "/home")
+                }
               />
             </div>
           ) : (
@@ -699,7 +751,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
           )}
         </section>
 
-        {endOverlay ? (
+        {endOverlay && gameKey !== "chess" ? (
           <div role="alertdialog" aria-label="המשחק הסתיים" className={desktopPanelClass("p-4 text-center")}>
             <p className="text-lg font-black text-slate-900">
               {endOverlayHeadline(endOverlay, mySymbol, isTeacherObserver)}

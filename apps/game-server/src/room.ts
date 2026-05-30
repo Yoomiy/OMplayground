@@ -4,6 +4,11 @@ import type {
   GameOutcome,
   GameSeat
 } from "@playground/game-logic";
+import {
+  applyChessIntent,
+  isChessSetTimeControlIntent,
+  type ChessState
+} from "@playground/game-logic";
 
 export interface RoomPlayer {
   userId: string;
@@ -277,6 +282,36 @@ export function applyIntent<S>(
       error: { code: "NOT_IN_ROOM", message: "השחקן לא נמצא בחדר" }
     };
   }
+
+  if (room.gameKey === "chess" && isChessSetTimeControlIntent(intent) && userId !== room.hostId) {
+    return {
+      ok: false,
+      error: { code: "NOT_HOST", message: "רק המארח יכול לשנות בקרת זמן" }
+    };
+  }
+
+  if (room.gameKey === "chess") {
+    const chessState = room.state as ChessState;
+    if (
+      chessState.status === "playing" &&
+      chessState.timeControl?.mode === "timed" &&
+      chessState.clocks &&
+      chessState.lastTickAt
+    ) {
+      const tick = applyChessIntent(chessState, chessState.next, { type: "check_timeout" });
+      room.state = tick.state as S;
+      if (tick.state.status !== "playing") {
+        let outcome: GameOutcome | undefined;
+        if (tick.state.status === "won" && tick.state.winner) {
+          outcome = { kind: "won", winner: tick.state.winner };
+        } else if (tick.state.status === "draw") {
+          outcome = { kind: "draw" };
+        }
+        return { ok: true, state: tick.state as S, outcome };
+      }
+    }
+  }
+
   const res = room.module.applyIntent(room.state, userId, intent);
   if (!res.ok) return res;
   room.state = res.state;

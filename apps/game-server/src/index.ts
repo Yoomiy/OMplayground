@@ -239,13 +239,23 @@ io.on("connection", (socket) => {
   }
 
   function resetForRematch(room: Room<unknown>, rematchPlayers = connectedPlayers(room)) {
-    const seats = rematchPlayers.map((p) => ({
+    const orderedPlayers =
+      room.module.key === "chess" ? [...rematchPlayers].reverse() : rematchPlayers;
+    const seats = orderedPlayers.map((p) => ({
       userId: p.userId,
       displayName: p.displayName
     }));
-    room.state = room.module.initialState(seats);
-    room.players = new Map(rematchPlayers.map((p) => [p.userId, p]));
-    room.roster = rematchPlayers;
+    let tc: any = undefined;
+    if (room.module.key === "chess" && room.state && typeof room.state === "object") {
+      tc = (room.state as any).timeControl;
+    }
+    if (room.module.key === "chess" && tc) {
+      room.state = (room.module as any).initialState(seats, tc);
+    } else {
+      room.state = room.module.initialState(seats);
+    }
+    room.players = new Map(orderedPlayers.map((p) => [p.userId, p]));
+    room.roster = orderedPlayers;
     room.paused = false;
     room.rematch = undefined;
   }

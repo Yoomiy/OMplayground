@@ -12,12 +12,39 @@ export type ChessDrawReason =
   | "draw"
   | "draw_by_agreement";
 
+export type ChessTimeControl =
+  | { mode: "none" }
+  | { mode: "timed"; initialMs: number; incrementMs?: number };
+
+const MIN_INITIAL_MS = 60_000;
+const MAX_INITIAL_MS = 180 * 60_000;
+const MAX_INCREMENT_MS = 60_000;
+
+export function isValidTimeControl(tc: ChessTimeControl): boolean {
+  if (tc.mode === "none") return true;
+  if (tc.initialMs < MIN_INITIAL_MS || tc.initialMs > MAX_INITIAL_MS) return false;
+  if (tc.incrementMs !== undefined) {
+    if (tc.incrementMs < 0 || tc.incrementMs > MAX_INCREMENT_MS) return false;
+  }
+  return true;
+}
+
+export function isChessSetTimeControlIntent(intent: unknown): boolean {
+  return (
+    typeof intent === "object" &&
+    intent !== null &&
+    (intent as { type?: string }).type === "set_time_control"
+  );
+}
+
 export type ChessIntent =
   | { type: "move"; from: string; to: string; promotion?: ChessPromotion }
   | { type: "resign" }
   | { type: "offer_draw" }
   | { type: "accept_draw" }
-  | { type: "decline_draw" };
+  | { type: "decline_draw" }
+  | { type: "set_time_control"; timeControl: ChessTimeControl }
+  | { type: "check_timeout" };
 
 export interface ChessState {
   fen: string;
@@ -33,6 +60,11 @@ export interface ChessState {
   } | null;
   history: Array<{ from: string; to: string; promotion?: ChessPromotion }>;
   seats?: Record<string, ChessSeat>;
+  // Clock fields:
+  clocks?: { w: number; b: number };      // ms remaining
+  lastTickAt?: number | null;              // server ms timestamp of last active moment
+  timeControl?: ChessTimeControl;
+  timeoutWinner?: ChessSeat | null;
 }
 
 export interface ChessApplyResult {
@@ -85,9 +117,10 @@ function nextStatus(
   return { status: "playing", winner: null, drawReason: null };
 }
 
-export function initialChessState(): ChessState {
+export function initialChessState(timeControl?: ChessTimeControl): ChessState {
   const chess = new Chess();
-  return {
+  const tc = timeControl ?? { mode: "none" };
+  const state: ChessState = {
     fen: chess.fen(),
     next: "w",
     status: "playing",
@@ -95,7 +128,28 @@ export function initialChessState(): ChessState {
     drawReason: null,
     drawOfferFrom: null,
     lastMove: null,
-    history: []
+    history: [],
+    timeControl: tc
+  };
+  if (tc.mode === "timed") {
+    state.clocks = { w: tc.initialMs, b: tc.initialMs };
+    state.lastTickAt = null;
+  }
+  return state;
+}
+
+/** Pick a random legal move for engine fallback when UCI output is unusable. */
+export function randomLegalMove(
+  fen: string
+): { from: string; to: string; promotion?: ChessPromotion } | null {
+  const chess = new Chess(fen);
+  const moves = chess.moves({ verbose: true });
+  if (moves.length === 0) return null;
+  const pick = moves[Math.floor(Math.random() * moves.length)];
+  return {
+    from: pick.from,
+    to: pick.to,
+    promotion: isPromotion(pick.promotion) ? pick.promotion : undefined
   };
 }
 
@@ -143,17 +197,57 @@ export function capturedMaterialFromHistory(
   const bTakes: string[] = [];
   const chess = new Chess();
   for (const played of history) {
-    const m = chess.move({
-      from: played.from,
-      to: played.to,
-      promotion: played.promotion
-    });
-    if (m.captured) {
-      if (m.color === "w") wTakes.push(m.captured);
-      else bTakes.push(m.captured);
+    try {
+      const m = chess.move({
+        from: played.from,
+        to: played.to,
+        promotion: played.promotion
+      });
+      if (m.captured) {
+        if (m.color === "w") wTakes.push(m.captured);
+        else bTakes.push(m.captured);
+      }
+    } catch {
+      // Ignored
     }
   }
   return { wTakes, bTakes };
+}
+
+/** FEN position at historical move index (0 = start position, k = after k moves, -1 or history.length = live) */
+export function fenAtHistoryIndex(state: ChessState, index: number): string {
+  const len = Array.isArray(state.history) ? state.history.length : 0;
+  if (index === -1 || index >= len) {
+    return state.fen;
+  }
+  if (index === 0) {
+    return new Chess().fen();
+  }
+  const chess = new Chess();
+  for (let i = 0; i < index; i++) {
+    try {
+      chess.move({
+        from: state.history[i].from,
+        to: state.history[i].to,
+        promotion: state.history[i].promotion
+      });
+    } catch {
+      break;
+    }
+  }
+  return chess.fen();
+}
+
+/** Captured material list up to historical index (0 = none, k = after k moves, -1 or history.length = live) */
+export function capturesAtHistoryIndex(
+  history: Array<{ from: string; to: string; promotion?: ChessPromotion }>,
+  index: number
+): { wTakes: string[]; bTakes: string[] } {
+  const len = Array.isArray(history) ? history.length : 0;
+  if (index === -1 || index >= len) {
+    return capturedMaterialFromHistory(history);
+  }
+  return capturedMaterialFromHistory(history.slice(0, index));
 }
 
 function applyChessMove(
@@ -186,6 +280,35 @@ function applyChessMove(
       state,
       error: { code: "WRONG_PLAYER", message: "Not this player's turn" }
     };
+  }
+
+  const now = Date.now();
+  let nextClocks = state.clocks ? { ...state.clocks } : undefined;
+  if (state.timeControl?.mode === "timed" && nextClocks) {
+    if (state.lastTickAt) {
+      const elapsed = now - state.lastTickAt;
+      const currentVal = seat === "w" ? nextClocks.w : nextClocks.b;
+      const newVal = Math.max(0, currentVal - elapsed);
+      if (seat === "w") {
+        nextClocks.w = newVal;
+      } else {
+        nextClocks.b = newVal;
+      }
+      if (newVal <= 0) {
+        const winner: ChessSeat = seat === "w" ? "b" : "w";
+        return {
+          state: {
+            ...state,
+            status: "won",
+            winner,
+            drawReason: null,
+            timeoutWinner: winner,
+            clocks: nextClocks
+          },
+          error: { code: "TIME_EXPIRED", message: "Time has expired" }
+        };
+      }
+    }
   }
 
   const history = Array.isArray(state.history) ? state.history : [];
@@ -225,6 +348,15 @@ function applyChessMove(
     };
   }
 
+  // Mover played a valid move. Apply increment to mover's clock.
+  if (state.timeControl?.mode === "timed" && nextClocks && state.timeControl.incrementMs) {
+    if (seat === "w") {
+      nextClocks.w += state.timeControl.incrementMs;
+    } else {
+      nextClocks.b += state.timeControl.incrementMs;
+    }
+  }
+
   const status = nextStatus(chess, seat);
   return {
     state: {
@@ -247,7 +379,9 @@ function applyChessMove(
           to: move.to,
           promotion: isPromotion(move.promotion) ? move.promotion : undefined
         }
-      ]
+      ],
+      clocks: nextClocks,
+      lastTickAt: state.timeControl?.mode === "timed" ? now : null
     }
   };
 }
@@ -321,6 +455,82 @@ function applyDeclineDraw(state: ChessState, seat: ChessSeat): ChessApplyResult 
   };
 }
 
+function applySetTimeControl(
+  state: ChessState,
+  _seat: ChessSeat,
+  tc: ChessTimeControl
+): ChessApplyResult {
+  if (!isValidTimeControl(tc)) {
+    return {
+      state,
+      error: { code: "BAD_INTENT", message: "Invalid time control values" }
+    };
+  }
+  if (state.history.length > 0) {
+    return {
+      state,
+      error: { code: "GAME_STARTED", message: "Cannot change time control after game has started" }
+    };
+  }
+  const clocks = tc.mode === "timed" ? { w: tc.initialMs, b: tc.initialMs } : undefined;
+  return {
+    state: {
+      ...state,
+      timeControl: tc,
+      clocks,
+      lastTickAt: null
+    }
+  };
+}
+
+function applyCheckTimeout(state: ChessState): ChessApplyResult {
+  if (state.status !== "playing") {
+    return { state };
+  }
+  if (state.timeControl?.mode !== "timed" || !state.clocks || !state.lastTickAt) {
+    return { state };
+  }
+  const now = Date.now();
+  const elapsed = now - state.lastTickAt;
+  const activeSeat = state.next;
+  const currentVal = activeSeat === "w" ? state.clocks.w : state.clocks.b;
+  const newVal = Math.max(0, currentVal - elapsed);
+
+  if (newVal <= 0) {
+    const winner: ChessSeat = activeSeat === "w" ? "b" : "w";
+    const nextClocks = { ...state.clocks };
+    if (activeSeat === "w") {
+      nextClocks.w = 0;
+    } else {
+      nextClocks.b = 0;
+    }
+    return {
+      state: {
+        ...state,
+        status: "won",
+        winner,
+        drawReason: null,
+        timeoutWinner: winner,
+        clocks: nextClocks
+      }
+    };
+  }
+
+  const nextClocks = { ...state.clocks };
+  if (activeSeat === "w") {
+    nextClocks.w = newVal;
+  } else {
+    nextClocks.b = newVal;
+  }
+  return {
+    state: {
+      ...state,
+      clocks: nextClocks,
+      lastTickAt: now
+    }
+  };
+}
+
 export function applyChessIntent(
   state: ChessState,
   seat: ChessSeat,
@@ -343,6 +553,10 @@ export function applyChessIntent(
       return applyAcceptDraw(state, seat);
     case "decline_draw":
       return applyDeclineDraw(state, seat);
+    case "set_time_control":
+      return applySetTimeControl(state, seat, intent.timeControl);
+    case "check_timeout":
+      return applyCheckTimeout(state);
     default:
       return { state, error: { code: "BAD_INTENT", message: "Unknown intent" } };
   }
@@ -368,6 +582,18 @@ function parseLegacyMoveIntent(
   };
 }
 
+function isTimeControl(value: unknown): value is ChessTimeControl {
+  if (!value || typeof value !== "object") return false;
+  const raw = value as Record<string, unknown>;
+  if (raw.mode === "none") return true;
+  if (raw.mode === "timed") {
+    if (typeof raw.initialMs !== "number") return false;
+    if (raw.incrementMs !== undefined && typeof raw.incrementMs !== "number") return false;
+    return isValidTimeControl(raw as ChessTimeControl);
+  }
+  return false;
+}
+
 function parseChessIntentPayload(intent: unknown): ChessIntent | null {
   if (!intent || typeof intent !== "object") return null;
   const raw = intent as Record<string, unknown>;
@@ -376,6 +602,12 @@ function parseChessIntentPayload(intent: unknown): ChessIntent | null {
   if (t === "offer_draw") return { type: "offer_draw" };
   if (t === "accept_draw") return { type: "accept_draw" };
   if (t === "decline_draw") return { type: "decline_draw" };
+  if (t === "check_timeout") return { type: "check_timeout" };
+  if (t === "set_time_control") {
+    if (isTimeControl(raw.timeControl)) {
+      return { type: "set_time_control", timeControl: raw.timeControl };
+    }
+  }
   if (t === "move") {
     if (!isSquare(raw.from) || !isSquare(raw.to)) return null;
     if (raw.promotion !== undefined && !isPromotion(raw.promotion)) return null;
@@ -396,12 +628,12 @@ export const chessModule: GameModule<ChessState, unknown> = {
   key: "chess",
   minPlayers: 2,
   maxPlayers: 2,
-  initialState(players: GameSeat[]) {
+  initialState(players: GameSeat[], timeControl?: ChessTimeControl) {
     const seats: Record<string, ChessSeat> = {};
     players.forEach((p, i) => {
       seats[p.userId] = i === 0 ? "w" : "b";
     });
-    return { ...initialChessState(), seats };
+    return { ...initialChessState(timeControl), seats };
   },
   applyIntent(state, playerId, intent: unknown) {
     const seat = state.seats?.[playerId];
