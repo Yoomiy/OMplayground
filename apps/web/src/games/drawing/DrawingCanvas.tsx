@@ -22,6 +22,7 @@ export interface DrawingCanvasProps {
   showToast: (msg: string) => void;
   isFullscreen?: boolean;
   isHost?: boolean;
+  players?: { userId: string; displayName: string }[];
 }
 
 export interface DrawingCanvasRef {
@@ -37,7 +38,8 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   subscribeLiveDeltas,
   showToast,
   isFullscreen,
-  isHost
+  isHost,
+  players
 }, ref) => {
   const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
   
@@ -417,12 +419,14 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
       const now = Date.now();
       if (now - lastCursorEmitRef.current < 50) return;
       lastCursorEmitRef.current = now;
+      const myPlayer = players?.find((p) => p.userId === myUserId);
+      const myDisplayName = myPlayer?.displayName || gameState.seats?.[myUserId!] || "משתתף";
       onLiveDelta({
         pointer: payload.pointer,
-        username: gameState.seats?.[myUserId!] || "משתתף"
+        username: myDisplayName
       });
     },
-    [onLiveDelta, gameState.seats, myUserId]
+    [onLiveDelta, gameState.seats, myUserId, players]
   );
 
   return (

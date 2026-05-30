@@ -32,37 +32,6 @@ class ChessSounds {
     this.muted = muted;
   }
 
-  private playTone(freqs: number[], durationMs: number, type: OscillatorType = "sine"): void {
-    if (this.muted) return;
-    const context = this.getContext();
-    if (!context) return;
-    if (context.state === "suspended") {
-      void context.resume().catch(() => {});
-    }
-
-    try {
-      const now = context.currentTime;
-      const gainNode = context.createGain();
-      gainNode.gain.setValueAtTime(0.001, now);
-      gainNode.gain.linearRampToValueAtTime(0.12, now + 0.01);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, now + durationMs / 1000);
-
-      const oscillators = freqs.map((f) => {
-        const osc = context.createOscillator();
-        osc.type = type;
-        osc.frequency.setValueAtTime(f, now);
-        osc.connect(gainNode);
-        return osc;
-      });
-
-      gainNode.connect(context.destination);
-      oscillators.forEach((osc) => osc.start(now));
-      oscillators.forEach((osc) => osc.stop(now + durationMs / 1000));
-    } catch {
-      // Ignored
-    }
-  }
-
   public playMove(): void {
     if (this.muted) return;
     const context = this.ensureContext();

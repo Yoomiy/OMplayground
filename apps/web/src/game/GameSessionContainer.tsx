@@ -37,7 +37,7 @@ type RoomEvent =
   | { kind: "REMATCH_CANCELLED" }
   | { kind: "REMATCH_STARTED" };
 
-interface RoomPlayer {
+export interface RoomPlayer {
   userId: string;
   displayName: string;
 }
@@ -89,6 +89,7 @@ interface BoardProps {
   onGoHome?: () => void;
   onLiveDelta?: (delta: any) => void;
   subscribeLiveDeltas?: (cb: (payload: any) => void) => () => void;
+  players?: RoomPlayer[];
 }
 
 interface BoardRegistryEntry {
@@ -166,7 +167,7 @@ const BOARD_REGISTRY: Record<string, BoardRegistryEntry> = {
     )
   },
   drawing: {
-    component: ({ gameState, mySymbol, myUserId, onIntent, onLiveDelta, subscribeLiveDeltas, isHost }) => (
+    component: ({ gameState, mySymbol, myUserId, onIntent, onLiveDelta, subscribeLiveDeltas, isHost, players }) => (
       <DrawingBoard
         gameState={gameState as DrawingState}
         mySeat={mySymbol}
@@ -175,6 +176,7 @@ const BOARD_REGISTRY: Record<string, BoardRegistryEntry> = {
         onLiveDelta={onLiveDelta}
         subscribeLiveDeltas={subscribeLiveDeltas}
         isHost={isHost}
+        players={players}
       />
     )
   }
@@ -757,7 +759,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
                   : "mx-auto max-w-5xl"
               }
             >
-              <Board
+               <Board
                 gameState={gameState}
                 mySymbol={mySymbol}
                 myUserId={myUserId}
@@ -775,6 +777,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
                 onGoHome={() =>
                   navigate(isAdmin ? "/admin" : isTeacherObserver ? "/teacher" : "/home")
                 }
+                players={roster.length > 0 ? roster : players}
               />
             </div>
           ) : (

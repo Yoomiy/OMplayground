@@ -10,6 +10,7 @@ export interface DrawingBoardProps {
   onLiveDelta?: (payload: any) => void;
   subscribeLiveDeltas?: (cb: (payload: any) => void) => () => void;
   isHost?: boolean;
+  players?: { userId: string; displayName: string }[];
 }
 
 export function DrawingBoard({
@@ -19,7 +20,8 @@ export function DrawingBoard({
   onIntent,
   onLiveDelta,
   subscribeLiveDeltas,
-  isHost
+  isHost,
+  players
 }: DrawingBoardProps) {
   const canvasRef = useRef<DrawingCanvasRef>(null);
   const boardRef = useRef<HTMLDivElement>(null);
@@ -80,6 +82,18 @@ export function DrawingBoard({
   const isSpectator = mySeat === null;
   const participantCount = Object.keys(gameState.seats || {}).length;
 
+  const myPlayer = players?.find((p) => p.userId === myUserId);
+  const myDisplayName = myPlayer?.displayName || (myUserId === "solo" ? "משתתף" : mySeat ? `משתתף (${mySeat})` : "משתתף");
+
+  const activeParticipants = Object.keys(gameState.seats || {}).map((userId) => {
+    const p = players?.find((pl) => pl.userId === userId);
+    return {
+      userId,
+      displayName: p?.displayName || (userId === "solo" ? "משתתף" : gameState.seats?.[userId] || "משתתף"),
+      isMe: userId === myUserId
+    };
+  });
+
   return (
     <div
       ref={boardRef}
@@ -97,22 +111,59 @@ export function DrawingBoard({
       {/* Top Action Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
         {/* Connection status and seat */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-3 w-3">
+        <div className="flex flex-wrap items-center gap-4">
+          {/* My connection status badge */}
+          <div className="flex items-center gap-2 rounded-2xl border border-indigo-50 bg-indigo-50/50 px-3 py-1.5 shadow-sm">
+            <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-500"></span>
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
             </span>
-            <span className="text-sm font-black text-slate-800">
-              {isSpectator ? "צופה במשחק" : `משתתף (${gameState.seats?.[myUserId!] || "מחובר"})`}
+            <span className="text-xs font-bold text-slate-700">
+              {isSpectator ? (
+                <span className="text-indigo-600">צופה במשחק</span>
+              ) : (
+                <span className="flex items-center gap-1">
+                  <span>מחובר כ:</span>
+                  <span className="font-extrabold text-indigo-950">{myDisplayName}</span>
+                </span>
+              )}
             </span>
           </div>
-          
-          <div className="h-4 w-px bg-slate-200" />
-          
-          <div className="text-xs font-semibold text-slate-500">
-            {participantCount === 1 ? "משתתף יחיד בחדר" : `${participantCount} משתתפים בחדר`}
-          </div>
+
+          {/* Active room participants avatar list/pills */}
+          {(activeParticipants.length > 1 || (isSpectator && activeParticipants.length > 0)) && (
+            <div className="flex flex-wrap items-center gap-1.5 border-r border-slate-200 pr-3 mr-1">
+              <span className="text-xs font-bold text-slate-400 ml-1">מציירים כעת:</span>
+              {activeParticipants.map((p) => (
+                <div
+                  key={p.userId}
+                  className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-all ${
+                    p.isMe
+                      ? "border-indigo-200 bg-indigo-50 font-bold text-indigo-700 shadow-sm"
+                      : "border-slate-100 bg-slate-50/80 font-medium text-slate-600"
+                  }`}
+                >
+                  {/* Small initial bubble */}
+                  <span
+                    className={`flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-black uppercase ${
+                      p.isMe ? "bg-indigo-600 text-white" : "bg-slate-200 text-slate-600"
+                    }`}
+                  >
+                    {p.displayName.charAt(0) || "מ"}
+                  </span>
+                  <span>{p.displayName}</span>
+                  {p.isMe && <span className="text-[10px] text-indigo-400 font-semibold">(אני)</span>}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Fallback connection count if no participants listed yet */}
+          {activeParticipants.length === 0 && (
+            <div className="text-xs font-bold text-slate-500 border-r border-slate-200 pr-3 mr-1">
+              {participantCount === 1 ? "משתתף יחיד בחדר" : `${participantCount} משתתפים בחדר`}
+            </div>
+          )}
         </div>
 
         {/* Buttons (Clean, Export, Fullscreen) */}
@@ -172,6 +223,7 @@ export function DrawingBoard({
           showToast={showToast}
           isFullscreen={isFullscreen}
           isHost={isHost}
+          players={players}
         />
       </div>
       
