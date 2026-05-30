@@ -29,7 +29,7 @@ export interface BlockDef {
 
 const BASE_BLOCK_DEFS = [
   { id: 0, key: "AIR", placeable: false, breakable: false, dropHotbarBlockId: null },
-  { id: 1, key: "GRASS", placeable: true, breakable: true, dropHotbarBlockId: 1 },
+  { id: 1, key: "GRASS", placeable: true, breakable: true, dropHotbarBlockId: 2 },
   { id: 2, key: "DIRT", placeable: true, breakable: true, dropHotbarBlockId: 2 },
   {
     id: 3,
@@ -119,7 +119,7 @@ const BASE_BLOCK_DEFS = [
     breakable: true,
     dropHotbarBlockId: 48
   },
-  { id: 49, key: "GRASS_SNOW", placeable: true, breakable: true, dropHotbarBlockId: 49 },
+  { id: 49, key: "GRASS_SNOW", placeable: true, breakable: true, dropHotbarBlockId: 2 },
   { id: 50, key: "BARRIER", placeable: true, breakable: false, dropHotbarBlockId: null },
   { id: 51, key: "SNOW", placeable: true, breakable: true, dropHotbarBlockId: 51 },
   { id: 52, key: "CACTUS", placeable: true, breakable: true, dropHotbarBlockId: 52 },
@@ -166,7 +166,7 @@ const BASE_BLOCK_DEFS = [
   { id: 93, key: "BLACK_CONCRETE", placeable: true, breakable: true, dropHotbarBlockId: 93 },
   { id: 94, key: "PUMPKIN", placeable: true, breakable: true, dropHotbarBlockId: 94 },
   { id: 95, key: "ICE", placeable: true, breakable: true, dropHotbarBlockId: 95 },
-  { id: 96, key: "GRASS_YELLOW", placeable: true, breakable: true, dropHotbarBlockId: 96 },
+  { id: 96, key: "GRASS_YELLOW", placeable: true, breakable: true, dropHotbarBlockId: 2 },
   { id: 97, key: "GRASS_PLANT_YELLOW", placeable: true, breakable: true, dropHotbarBlockId: null },
   { id: 98, key: "LEAVES_YELLOW", placeable: true, breakable: true, dropHotbarBlockId: 98 },
   { id: 99, key: "GRASS_PLANT", placeable: true, breakable: true, dropHotbarBlockId: null },

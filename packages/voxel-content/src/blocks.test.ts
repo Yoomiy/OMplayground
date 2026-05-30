@@ -58,7 +58,9 @@ describe("@playground/voxel-content blocks", () => {
     expect(blockBreakable(BLOCK_REGISTRY.GRASS)).toBe(true);
 
     expect(blockDropId(BLOCK_REGISTRY.STONE)).toBe(BLOCK_REGISTRY.COBBLESTONE);
-    expect(blockDropId(BLOCK_REGISTRY.GRASS)).toBe(BLOCK_REGISTRY.GRASS);
+    expect(blockDropId(BLOCK_REGISTRY.GRASS)).toBe(BLOCK_REGISTRY.DIRT);
+    expect(blockDropId(BLOCK_REGISTRY.GRASS_SNOW)).toBe(BLOCK_REGISTRY.DIRT);
+    expect(blockDropId(BLOCK_REGISTRY.GRASS_YELLOW)).toBe(BLOCK_REGISTRY.DIRT);
     expect(blockDropId(BLOCK_REGISTRY.WATER)).toBe(null);
     expect(blockDropId(BLOCK_REGISTRY.AIR)).toBe(null);
 
