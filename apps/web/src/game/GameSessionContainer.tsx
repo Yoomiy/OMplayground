@@ -166,7 +166,7 @@ const BOARD_REGISTRY: Record<string, BoardRegistryEntry> = {
     )
   },
   drawing: {
-    component: ({ gameState, mySymbol, myUserId, onIntent, onLiveDelta, subscribeLiveDeltas }) => (
+    component: ({ gameState, mySymbol, myUserId, onIntent, onLiveDelta, subscribeLiveDeltas, isHost }) => (
       <DrawingBoard
         gameState={gameState as DrawingState}
         mySeat={mySymbol}
@@ -174,6 +174,7 @@ const BOARD_REGISTRY: Record<string, BoardRegistryEntry> = {
         onIntent={(intent) => onIntent(intent)}
         onLiveDelta={onLiveDelta}
         subscribeLiveDeltas={subscribeLiveDeltas}
+        isHost={isHost}
       />
     )
   }

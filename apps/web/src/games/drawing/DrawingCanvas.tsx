@@ -21,6 +21,7 @@ export interface DrawingCanvasProps {
   subscribeLiveDeltas?: (cb: (payload: any) => void) => () => void;
   showToast: (msg: string) => void;
   isFullscreen?: boolean;
+  isHost?: boolean;
 }
 
 export interface DrawingCanvasRef {
@@ -35,7 +36,8 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   onLiveDelta,
   subscribeLiveDeltas,
   showToast,
-  isFullscreen
+  isFullscreen,
+  isHost
 }, ref) => {
   const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
   
@@ -58,6 +60,9 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
 
   // Concurrency guard to prevent duplicate compressions of the same image file
   const processingFileIdsRef = useRef<Set<string>>(new Set());
+
+  // Cursor throttle (50ms)
+  const lastCursorEmitRef = useRef<number>(0);
 
   // Compute static initialData once on mount to prevent mounting lifecycle race conditions
   const initialData = useRef<any>(null);
@@ -118,32 +123,23 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     }
   }));
 
-  // Sync state from server on join / checkpoint update
+  // Sync state from server on join / checkpoint update (authoritative replace, not reconcile)
   useEffect(() => {
     if (!excalidrawAPI || !gameState.canvas) return;
     
     const serverVersion = gameState.canvas.version;
     if (serverVersion > lastVersionRef.current) {
-      const reconciled = reconcileElements(
-        lastElementsRef.current,
-        gameState.canvas.elements || []
-      );
+      const serverElements = gameState.canvas.elements || [];
+      const serverFiles = gameState.canvas.files || {};
       
-      const newFiles = {
-        ...lastFilesRef.current,
-        ...(gameState.canvas.files || {})
-      };
+      const newFiles = { ...lastFilesRef.current, ...serverFiles };
       
-      // Correctly register files using addFiles
-      const incomingFiles = gameState.canvas.files || {};
       const filesToRegister: any[] = [];
-      for (const [id, file] of Object.entries(incomingFiles)) {
-        if (!lastFilesRef.current[id]) {
-          filesToRegister.push(file);
-        }
+      for (const [id, file] of Object.entries(serverFiles)) {
+        if (!lastFilesRef.current[id]) filesToRegister.push(file);
       }
 
-      lastElementsRef.current = reconciled;
+      lastElementsRef.current = serverElements;
       lastFilesRef.current = newFiles;
       lastVersionRef.current = serverVersion;
       
@@ -152,7 +148,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
       }
       
       excalidrawAPI.updateScene({
-        elements: reconciled,
+        elements: serverElements,
         commitToHistory: false
       });
     }
@@ -247,8 +243,9 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     });
   }, [gameState.seats]);
 
-  // Periodic Checkpoint Cadence: check every 5s if dirty and push checkpoint
+  // Periodic Checkpoint Cadence: host only, every 5s if dirty
   useEffect(() => {
+    if (!isHost) return;
     checkpointIntervalRef.current = setInterval(() => {
       if (isDirtyRef.current) {
         const nextVersion = lastVersionRef.current + 1;
@@ -266,7 +263,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     return () => {
       if (checkpointIntervalRef.current) clearInterval(checkpointIntervalRef.current);
     };
-  }, [onIntent]);
+  }, [onIntent, isHost]);
 
   // Send local edits
   const handleLocalChange = useCallback(
@@ -351,6 +348,15 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
         updatedFiles
       );
 
+      // Guard: do not emit delta while any new file is still being compressed (prevents raw image leak)
+      if (delta?.files) {
+        for (const id of Object.keys(delta.files)) {
+          if (processingFileIdsRef.current.has(id)) {
+            return; // wait for compression to finish; onChange will fire again
+          }
+        }
+      }
+
       if (delta) {
         isDirtyRef.current = true;
         
@@ -404,12 +410,13 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     [excalidrawAPI, onLiveDelta, showToast]
   );
 
-  // Share user cursor
+  // Share user cursor (throttled)
   const handlePointerUpdate = useCallback(
     (payload: any) => {
       if (!onLiveDelta || !payload.pointer) return;
-      
-      // Send small cursor payload
+      const now = Date.now();
+      if (now - lastCursorEmitRef.current < 50) return;
+      lastCursorEmitRef.current = now;
       onLiveDelta({
         pointer: payload.pointer,
         username: gameState.seats?.[myUserId!] || "משתתף"

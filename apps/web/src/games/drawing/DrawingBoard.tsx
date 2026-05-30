@@ -9,6 +9,7 @@ export interface DrawingBoardProps {
   onIntent: (intent: any) => void;
   onLiveDelta?: (payload: any) => void;
   subscribeLiveDeltas?: (cb: (payload: any) => void) => () => void;
+  isHost?: boolean;
 }
 
 export function DrawingBoard({
@@ -17,7 +18,8 @@ export function DrawingBoard({
   myUserId,
   onIntent,
   onLiveDelta,
-  subscribeLiveDeltas
+  subscribeLiveDeltas,
+  isHost
 }: DrawingBoardProps) {
   const canvasRef = useRef<DrawingCanvasRef>(null);
   const boardRef = useRef<HTMLDivElement>(null);
@@ -169,6 +171,7 @@ export function DrawingBoard({
           subscribeLiveDeltas={subscribeLiveDeltas}
           showToast={showToast}
           isFullscreen={isFullscreen}
+          isHost={isHost}
         />
       </div>
       
