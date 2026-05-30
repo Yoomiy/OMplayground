@@ -6,6 +6,7 @@
 13. dinamically change distance rendering
 14. implement observer mode
 15. respawn omly upon message from the client
+16. animate holding for other players too
 
 implement:
 2. mobs

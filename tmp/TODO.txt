@@ -1,2 +1,3 @@
- 9. hide creative mode
-11. complete tnt
+12. upgrade chess
+13. upgrade drawing board
+14. make the app shinyer
