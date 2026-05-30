@@ -20,6 +20,7 @@ export interface DrawingCanvasProps {
   onLiveDelta?: (payload: any) => void;
   subscribeLiveDeltas?: (cb: (payload: any) => void) => () => void;
   showToast: (msg: string) => void;
+  isFullscreen?: boolean;
 }
 
 export interface DrawingCanvasRef {
@@ -33,7 +34,8 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   onIntent,
   onLiveDelta,
   subscribeLiveDeltas,
-  showToast
+  showToast,
+  isFullscreen
 }, ref) => {
   const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
   
@@ -417,7 +419,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   );
 
   return (
-    <div className="relative h-[650px] w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 shadow-inner">
+    <div className={`relative ${isFullscreen ? "h-full" : "h-[650px]"} w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 shadow-inner`}>
       <Suspense
         fallback={
           <div className="flex h-full w-full items-center justify-center bg-slate-50">
