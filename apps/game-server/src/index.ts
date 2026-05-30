@@ -111,7 +111,8 @@ const io = new Server(server, {
   cors: {
     origin: CORS_ORIGIN.split(",").map((s) => s.trim()),
     credentials: true
-  }
+  },
+  perMessageDeflate: true
 });
 
 const supabaseAdmin =
@@ -404,6 +405,25 @@ io.on("connection", (socket) => {
       }
       emitSnapshot(room);
       ack?.({ ok: true, player: assigned.player });
+    }
+  );
+
+  socket.on(
+    "LIVE_DELTA",
+    (payload: { sessionId?: string; delta?: unknown }) => {
+      const sessionId = payload?.sessionId;
+      const delta = payload?.delta;
+      if (!sessionId || delta === undefined) return;
+      const room = getRoom(sessionId);
+      if (!room || !room.players.has(userId)) return; // seated only
+      
+      const deltaStr = JSON.stringify(delta);
+      if (Buffer.byteLength(deltaStr) > 1024 * 1024) return; // 1MB cap
+
+      socket.to(`session:${room.sessionId}`).emit("LIVE_DELTA", {
+        from: userId,
+        delta
+      });
     }
   );
 

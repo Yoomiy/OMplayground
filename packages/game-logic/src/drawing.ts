@@ -1,69 +1,76 @@
 import type { GameModule, GameSeat } from "./registry";
 
-export interface DrawingPoint {
-  x: number;
-  y: number;
-}
-
-export interface DrawingStroke {
-  color: string;
-  width: number;
-  points: DrawingPoint[];
+export interface DrawingCanvasSnapshot {
+  engine: "excalidraw";
+  version: number;
+  updatedAt: number;
+  elements: unknown[];
+  files: Record<string, unknown>;
 }
 
 export interface DrawingState {
-  drawings: DrawingStroke[];
-  /** Never terminal. Status exists only to match the common `seats/status` pattern. */
   status: "playing";
   seats?: Record<string, string>;
+  canvas: DrawingCanvasSnapshot;
 }
 
 export type DrawingIntent =
-  | { type: "ADD_STROKE"; stroke: DrawingStroke }
-  | { type: "CLEAR" };
+  | { type: "CHECKPOINT"; version: number; elements: unknown[]; files: Record<string, unknown> }
+  | { type: "CLEAR_CANVAS" };
 
-export const MAX_STROKES = 500;
-export const MAX_POINTS_PER_STROKE = 800;
-export const MIN_WIDTH = 1;
-export const MAX_WIDTH = 20;
+export const MAX_ELEMENTS = 5000;
+export const MAX_FILES = 50;
+export const MAX_FILE_BYTES = 512 * 1024; // 512KB per file
+export const MAX_STATE_BYTES = 2 * 1024 * 1024; // 2MB total state JSON
 
-/** `#RGB`, `#RRGGBB`, `#RRGGBBAA`. Lowercase or uppercase. */
-const COLOR_RE = /^#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+function byteLength(val: unknown): number {
+  return Buffer.byteLength(JSON.stringify(val));
+}
 
-function isValidStroke(stroke: unknown): stroke is DrawingStroke {
-  if (!stroke || typeof stroke !== "object") return false;
-  const s = stroke as Partial<DrawingStroke>;
-  if (typeof s.color !== "string" || !COLOR_RE.test(s.color)) return false;
-  if (
-    typeof s.width !== "number" ||
-    !Number.isFinite(s.width) ||
-    s.width < MIN_WIDTH ||
-    s.width > MAX_WIDTH
-  ) {
-    return false;
+function isValidCheckpoint(
+  version: number,
+  elements: unknown[],
+  files: Record<string, unknown>
+): boolean {
+  if (typeof version !== "number" || !Number.isInteger(version) || version < 0) return false;
+  if (!Array.isArray(elements) || elements.length > MAX_ELEMENTS) return false;
+  if (!files || typeof files !== "object") return false;
+  
+  const fileKeys = Object.keys(files);
+  if (fileKeys.length > MAX_FILES) return false;
+  
+  // check each file size
+  for (const key of fileKeys) {
+    const fileData = files[key];
+    if (byteLength(fileData) > MAX_FILE_BYTES) return false;
   }
-  if (!Array.isArray(s.points)) return false;
-  if (s.points.length < 2 || s.points.length > MAX_POINTS_PER_STROKE) return false;
-  return s.points.every(
-    (p) =>
-      p != null &&
-      typeof p.x === "number" &&
-      Number.isFinite(p.x) &&
-      typeof p.y === "number" &&
-      Number.isFinite(p.y)
-  );
+  
+  // check total JSON serialization size
+  if (byteLength({ elements, files }) > MAX_STATE_BYTES) return false;
+  
+  return true;
 }
 
 export const drawingModule: GameModule<DrawingState, DrawingIntent> = {
   key: "drawing",
   minPlayers: 1,
-  maxPlayers: 4,
-  initialState(players: GameSeat[]) {
+  maxPlayers: 10,
+  initialState(players: GameSeat[]): DrawingState {
     const seats: Record<string, string> = {};
     players.forEach((p, i) => {
       seats[p.userId] = `p${i + 1}`;
     });
-    return { drawings: [], status: "playing", seats };
+    return {
+      status: "playing",
+      seats,
+      canvas: {
+        engine: "excalidraw",
+        version: 0,
+        updatedAt: Date.now(),
+        elements: [],
+        files: {}
+      }
+    };
   },
   applyIntent(state, playerId, intent) {
     if (!state.seats?.[playerId]) {
@@ -73,32 +80,61 @@ export const drawingModule: GameModule<DrawingState, DrawingIntent> = {
       };
     }
 
-    if (intent?.type === "CLEAR") {
-      // Host-only clear: seat "p1" is the original first joiner / host.
-      if (state.seats?.[playerId] !== "p1") {
+    if (intent?.type === "CLEAR_CANVAS") {
+      return {
+        ok: true,
+        state: {
+          ...state,
+          canvas: {
+            engine: "excalidraw",
+            version: state.canvas.version + 1,
+            updatedAt: Date.now(),
+            elements: [],
+            files: {}
+          }
+        }
+      };
+    }
+
+    if (intent?.type === "CHECKPOINT") {
+      const { version, elements, files } = intent;
+      if (version <= state.canvas.version) {
         return {
           ok: false,
-          error: { code: "HOST_ONLY", message: "Only the host may clear" }
+          error: {
+            code: "STALE_VERSION",
+            message: `Version ${version} is stale (current: ${state.canvas.version})`
+          }
         };
       }
-      return { ok: true, state: { ...state, drawings: [] } };
-    }
-    if (intent?.type !== "ADD_STROKE") {
+      if (!isValidCheckpoint(version, elements, files)) {
+        return {
+          ok: false,
+          error: {
+            code: "BAD_CHECKPOINT",
+            message: "Checkpoint exceeds size or element limits"
+          }
+        };
+      }
       return {
-        ok: false,
-        error: { code: "BAD_INTENT", message: "Unknown intent" }
+        ok: true,
+        state: {
+          ...state,
+          canvas: {
+            engine: "excalidraw",
+            version,
+            updatedAt: Date.now(),
+            elements,
+            files
+          }
+        }
       };
     }
-    if (!isValidStroke(intent.stroke)) {
-      return {
-        ok: false,
-        error: { code: "BAD_INTENT", message: "stroke is invalid" }
-      };
-    }
-    const drawings = [...state.drawings, intent.stroke];
-    const bounded =
-      drawings.length > MAX_STROKES ? drawings.slice(-MAX_STROKES) : drawings;
-    return { ok: true, state: { ...state, drawings: bounded } };
+
+    return {
+      ok: false,
+      error: { code: "BAD_INTENT", message: "Unknown intent" }
+    };
   },
   isTerminal() {
     return false;

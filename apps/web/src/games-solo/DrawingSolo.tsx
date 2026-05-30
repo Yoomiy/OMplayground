@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { DrawingState, DrawingStroke } from "@playground/game-logic";
+import type { DrawingState } from "@playground/game-logic";
 import { DrawingBoard } from "@/games/DrawingBoard";
 import { useSoloAutoSave } from "@/hooks/useSoloAutoSave";
 import {
@@ -9,44 +9,99 @@ import {
 } from "@/lib/soloGameSaves";
 
 /**
- * Solo drawing = same dumb board, local state instead of server snapshots.
- * No socket, no catalog row required (routed by key via /solo/drawing).
+ * Solo drawing using the high-performance Excalidraw whiteboard.
+ * State is managed locally and autosaved in browser/localStorage/DB.
  */
 export function DrawingSolo({ save }: { save: SoloGameSaveControls }) {
+  const [showNotice, setShowNotice] = useState(() => {
+    // Show warning notice if old SVG stroke format drawings exist
+    return isJsonObject(save.savedState) && Array.isArray(save.savedState.drawings);
+  });
+
   const [gameState, setGameState] = useState<DrawingState>(() => {
-    if (isJsonObject(save.savedState) && Array.isArray(save.savedState.drawings)) {
-      return {
-        drawings: save.savedState.drawings as unknown as DrawingStroke[],
-        status: "playing",
-        seats: { solo: "p1" }
-      };
+    const saved = save.savedState;
+    if (isJsonObject(saved)) {
+      if (saved.canvas && isJsonObject(saved.canvas)) {
+        return {
+          status: "playing",
+          seats: { solo: "p1" },
+          canvas: {
+            engine: "excalidraw",
+            version: (saved.canvas.version as number) || 0,
+            updatedAt: (saved.canvas.updatedAt as number) || Date.now(),
+            elements: (saved.canvas.elements as any[]) || [],
+            files: (saved.canvas.files as Record<string, any>) || {}
+          }
+        };
+      }
     }
+    
     return {
-      drawings: [],
       status: "playing",
-      seats: { solo: "p1" }
+      seats: { solo: "p1" },
+      canvas: {
+        engine: "excalidraw",
+        version: 0,
+        updatedAt: Date.now(),
+        elements: [],
+        files: {}
+      }
     };
   });
+
   useSoloAutoSave(save, gameState as unknown as JsonValue);
 
-  const handleIntent = (
-    intent: { type: "ADD_STROKE"; stroke: DrawingStroke } | { type: "CLEAR" }
-  ) => {
+  const handleIntent = (intent: any) => {
     setGameState((s) => {
-      if (intent.type === "CLEAR") return { ...s, drawings: [] };
-      const drawings = [...s.drawings, intent.stroke];
-      return {
-        ...s,
-        drawings: drawings.length > 500 ? drawings.slice(-500) : drawings
-      };
+      if (intent.type === "CLEAR_CANVAS") {
+        return {
+          ...s,
+          canvas: {
+            engine: "excalidraw",
+            version: s.canvas.version + 1,
+            updatedAt: Date.now(),
+            elements: [],
+            files: {}
+          }
+        };
+      }
+      if (intent.type === "CHECKPOINT") {
+        return {
+          ...s,
+          canvas: {
+            engine: "excalidraw",
+            version: intent.version,
+            updatedAt: Date.now(),
+            elements: intent.elements,
+            files: intent.files
+          }
+        };
+      }
+      return s;
     });
   };
 
   return (
-    <DrawingBoard
-      gameState={gameState}
-      mySeat="p1"
-      onIntent={handleIntent}
-    />
+    <div className="space-y-4">
+      {showNotice && (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm font-semibold text-amber-950 flex justify-between items-center">
+          <span>ציורים ישנים בפורמט קודם אינם נתמכים בלוח החדש.</span>
+          <button
+            type="button"
+            className="text-xs text-amber-700 underline"
+            onClick={() => setShowNotice(false)}
+          >
+            הבנתי
+          </button>
+        </div>
+      )}
+      
+      <DrawingBoard
+        gameState={gameState}
+        mySeat="p1"
+        myUserId="solo"
+        onIntent={handleIntent}
+      />
+    </div>
   );
 }

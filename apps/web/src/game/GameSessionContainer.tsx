@@ -87,6 +87,8 @@ interface BoardProps {
   onRequestRematch?: () => void;
   onRespondRematch?: (accept: boolean) => void;
   onGoHome?: () => void;
+  onLiveDelta?: (delta: any) => void;
+  subscribeLiveDeltas?: (cb: (payload: any) => void) => () => void;
 }
 
 interface BoardRegistryEntry {
@@ -164,11 +166,14 @@ const BOARD_REGISTRY: Record<string, BoardRegistryEntry> = {
     )
   },
   drawing: {
-    component: ({ gameState, mySymbol, onIntent }) => (
+    component: ({ gameState, mySymbol, myUserId, onIntent, onLiveDelta, subscribeLiveDeltas }) => (
       <DrawingBoard
         gameState={gameState as DrawingState}
         mySeat={mySymbol}
+        myUserId={myUserId}
         onIntent={(intent) => onIntent(intent)}
+        onLiveDelta={onLiveDelta}
+        subscribeLiveDeltas={subscribeLiveDeltas}
       />
     )
   }
@@ -572,6 +577,31 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
     },
     [sessionId, isTeacherObserver, paused]
   );
+  const onLiveDelta = useCallback(
+    (delta: unknown) => {
+      if (isTeacherObserver) return;
+      if (paused) return;
+      const s = socketRef.current;
+      if (!s?.connected) return;
+      s.emit("LIVE_DELTA", { sessionId, delta });
+    },
+    [sessionId, isTeacherObserver, paused]
+  );
+
+  const subscribeLiveDeltas = useCallback(
+    (cb: (payload: any) => void) => {
+      const s = socketRef.current;
+      if (!s) return () => {};
+      const handler = (payload: { from: string; delta: any }) => {
+        cb(payload);
+      };
+      s.on("LIVE_DELTA", handler);
+      return () => {
+        s.off("LIVE_DELTA", handler);
+      };
+    },
+    []
+  );
 
   /** Derived from authoritative state so clients never diverge on seat order. */
   const mySymbol = useMemo<string | null>(() => {
@@ -739,6 +769,8 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
                 refusedRematch={refusedRematch}
                 onRequestRematch={requestRematch}
                 onRespondRematch={respondToRematch}
+                onLiveDelta={onLiveDelta}
+                subscribeLiveDeltas={subscribeLiveDeltas}
                 onGoHome={() =>
                   navigate(isAdmin ? "/admin" : isTeacherObserver ? "/teacher" : "/home")
                 }
