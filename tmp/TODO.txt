@@ -1,3 +1,4 @@
-12. upgrade chess
-13. upgrade drawing board
 14. make the app shinyer
+15. add logging
+16. improve networking
+17. add voice chat
