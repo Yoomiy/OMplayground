@@ -1053,6 +1053,14 @@ Teachers use the same `KidAccount` system as kids, but with `role: 'teacher'`.
 
 Teacher accounts are created in `AdminKids` by setting `role: 'teacher'`.
 
+### Voxel (Minecraft) Specific Teacher Supervision
+For the School Minecraft voxel experience, the teacher role has additional specialized features:
+- **Observer Spectator View:** Teachers join as invisible spectators. They can fly around the voxel world without gravity or collisions, and view live coordinate updates for all active players.
+- **Player Teleportation:** Teachers can instantly teleport directly to any kid player's coordinates.
+- **In-Game Chat Moderation:** An in-game chat moderation panel allows teachers to soft-delete individual messages (rendering "הודעה נמחקה על ידי מורה" in italics) or clear the session chat completely in real time.
+- **Switch to Player Mode:** Teachers can toggle between Spectator View and active Player Mode (subject to standard voxel physics and room capacity validations).
+- **Host Drop Isolation:** If only teachers remain in the voxel room, the host role is preserved for the disconnected student, and the session status is correctly paused so the game can be resumed by the student upon rejoining.
+
 ---
 
 ## 17. Data Export System

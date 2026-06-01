@@ -112,6 +112,21 @@ This document describes the rebuilt system: browser app, Supabase (Auth, Postgre
 
 ---
 
+## Voxel (Minecraft) Teacher & Spectator Architecture
+
+The School Minecraft voxel game features a specialized, real-time supervision and moderation architecture for users with the `teacher` role:
+
+- **Bypassing Capacity Limits:** When a teacher joins a voxel room, they bypass the standard `max_players` lobby capacity limit. They are assigned as an observer/spectator.
+- **Double-Channel Snapshots:** To prevent cheating or screen-sharing clutter, teachers in spectator mode are invisible to regular student clients.
+  - The server tick builds a twin snapshot.
+  - The student socket room (`voxel-snapshot:${sessionId}`) receives a filtered snapshot containing only regular players.
+  - The teacher socket room (`voxel-snapshot-teacher:${sessionId}`) receives the complete snapshot containing all player locations and teacher observer coordinates.
+- **Flight Mechanics & Input Isolation:** Spectator mode disables standard collision and gravity on the client. Movement uses camera-relative 3D vector flights. Key events and input triggers (WASD/clicks) are suppressed when chat or inventory overlays are active to prevent ghost actions.
+- **Teacher Mode Switching:** Teachers can transition from Spectator to active Player Mode via the `SWITCH_TEACHER_MODE` WebSocket intent. This transition is checked against standard player limits (`activeKids < maxPlayers`) and requires standard physics re-evaluation on the client.
+- **Host Drop Isolation:** When the last student leaves the session, the in-memory room is preserved if a teacher is present. However, the game is marked as empty (`roomEmpty: true`), which pauses the session state in the database. The `hostId` remains set to the student's ID, allowing them to resume the game and regain host permissions immediately upon refresh.
+
+---
+
 ## References
 
 - Cursor rules: `.cursor/rules/playground-project.mdc`, `.cursor/rules/playground-architecture.mdc`
