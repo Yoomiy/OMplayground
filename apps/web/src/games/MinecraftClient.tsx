@@ -1222,15 +1222,18 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   };
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    e.stopPropagation();
     if (e.code === "Escape") {
       e.preventDefault();
-      e.stopPropagation();
       handleCloseChat();
     } else if (e.code === "Enter" || e.code === "NumpadEnter") {
       e.preventDefault();
-      e.stopPropagation();
       handleSendMessage();
     }
+  };
+
+  const handleInputKeyUp = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    e.stopPropagation();
   };
 
   useEffect(() => {
@@ -2649,6 +2652,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
       noa.inputs.down.on("fire", () => {
         if (isTeacherSpectatorRef.current) return;
+        if (chatOpenRef.current || inventoryOpenRef.current) return;
         void tryStartMining();
       });
       noa.inputs.up.on("fire", endMiningHold);
@@ -2658,6 +2662,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       noa.inputs.down.on("alt-fire", () => {
         if (pausedRef.current) return;
         if (isTeacherSpectatorRef.current) return;
+        if (chatOpenRef.current || inventoryOpenRef.current) return;
         if (gameModeRef.current === "survival") {
           const tgt = noa.targetedBlock;
           const inv = inventoryRef.current;
@@ -2772,6 +2777,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       });
 
       function pickTargetedBlock() {
+        if (chatOpenRef.current || inventoryOpenRef.current) return;
         const breakTgt = findBreakTarget();
         if (!breakTgt) return;
         const blockId = breakTgt.blockId;
@@ -2920,6 +2926,19 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       let lastFootstepAt = 0;
       let lastDebugUpdate = 0;
       noa.on("tick", () => {
+        if (chatOpenRef.current || inventoryOpenRef.current) {
+          if (noa.inputs.state) {
+            for (const key in noa.inputs.state) {
+              if (Object.prototype.hasOwnProperty.call(noa.inputs.state, key)) {
+                noa.inputs.state[key] = false;
+              }
+            }
+          }
+          if (noa.inputs.pointerState) {
+            noa.inputs.pointerState.scrolly = 0;
+          }
+        }
+
         const nowPerf = performance.now();
 
         // Update background pool with player position and camera direction
@@ -4317,6 +4336,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
             value={typedMessage}
             onChange={(e) => setTypedMessage(e.target.value)}
             onKeyDown={handleInputKeyDown}
+            onKeyUp={handleInputKeyUp}
             placeholder="כתבו הודעה כאן..."
             maxLength={150}
             className="flex-grow rounded border border-white/25 bg-black/50 px-2.5 py-1.5 text-xs text-white outline-none focus:border-sky-400 focus:bg-black/70 text-right font-sans select-text"
