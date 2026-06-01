@@ -51,6 +51,16 @@ describe("VoxelRoom", () => {
     expect(room.hostId).toBe("guest-user");
   });
 
+  it("pauses session and preserves host when only teachers remain on host disconnect", () => {
+    const room = makeRoom("sess-teacher-host");
+    assignPlayer(room, "host-user", "Host");
+    assignPlayer(room, "teacher-user", "Teacher", true);
+    const r = removePlayerFromRoom("sess-teacher-host", "host-user");
+    expect(r.roomEmpty).toBe(true);
+    expect(r.newHostId).toBeUndefined();
+    expect(room.hostId).toBe("host-user");
+  });
+
   it("blocks STOP_GAME when caller is not the host", () => {
     const room = makeRoom("sess-stop");
     assignPlayer(room, "host-user", "Host");

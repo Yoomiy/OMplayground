@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useVoxelSocket } from "@/hooks/useVoxelSocket";
-import { usePersistedSessionChat } from "@/hooks/usePersistedSessionChat";
+import { useTeacherSessionChat } from "@/hooks/useTeacherSessionChat";
 import { MinecraftClient } from "@/games/MinecraftClient";
 import type {
   CraftingGridSlot,
@@ -84,7 +84,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
   const [inviteFallbackLink, setInviteFallbackLink] = useState<string | null>(null);
 
   const [chatExpanded, setChatExpanded] = useState(false);
-  const { lines: chatLines } = usePersistedSessionChat(sessionId);
+  const teacherChat = useTeacherSessionChat(sessionId);
   const canSendChat = !isTeacherObserver;
 
   const {
@@ -129,6 +129,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     eatCancel,
     eatCakeSlice,
     setGameMode,
+    switchTeacherMode,
     dropHotbarItem,
     sendChatMessage,
     onWorldDropSpawned,
@@ -136,7 +137,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     onWorldDropUpdated
   } = useVoxelSocket({
     sessionId,
-    suppressInputEmit: paused || isTeacherObserver
+    suppressInputEmit: paused
   });
 
   useEffect(() => {
@@ -447,11 +448,15 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         seed={joinAck.seed}
         initialDeltas={joinAck.deltas}
         mySpawn={joinAck.spawn}
-        paused={paused || isTeacherObserver || endOverlay !== null}
+        paused={paused || endOverlay !== null}
+        isTeacher={isTeacherObserver}
+        onSwitchTeacherMode={switchTeacherMode}
+        onSoftDeleteChatMessage={isTeacherObserver ? teacherChat.softDelete : undefined}
+        onClearSessionChat={isTeacherObserver ? teacherChat.clearSession : undefined}
         roster={joinAck.roster}
         myUserId={myUserId}
         gameMode={liveGameMode}
-        chatLines={chatLines}
+        chatLines={teacherChat.lines}
         canSendChat={canSendChat}
         onSendChatMessage={handleSendChatMessage}
         onChatExpandedChange={setChatExpanded}

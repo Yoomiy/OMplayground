@@ -37,7 +37,8 @@ describe("tickOnce", () => {
     room.dirty = true;
     const result = tickOnce({ io, rooms: () => [room] });
     expect(result.emittedSessionIds).toEqual(["sess-tick-1"]);
-    expect(io.to).toHaveBeenCalledWith("voxel:sess-tick-1");
+    expect(io.to).toHaveBeenCalledWith("voxel-snapshot:sess-tick-1");
+    expect(io.to).toHaveBeenCalledWith("voxel-snapshot-teacher:sess-tick-1");
     expect(emit).toHaveBeenCalledWith(
       "ROOM_SNAPSHOT",
       expect.objectContaining({
@@ -102,8 +103,9 @@ describe("tickOnce", () => {
     a.dirty = true;
     b.dirty = false;
     tickOnce({ io, rooms: () => [a, b] });
-    expect(io.to).toHaveBeenCalledTimes(1);
-    expect(io.to).toHaveBeenCalledWith("voxel:sess-tick-A");
-    expect(emit).toHaveBeenCalledTimes(1);
+    expect(io.to).toHaveBeenCalledTimes(2);
+    expect(io.to).toHaveBeenCalledWith("voxel-snapshot:sess-tick-A");
+    expect(io.to).toHaveBeenCalledWith("voxel-snapshot-teacher:sess-tick-A");
+    expect(emit).toHaveBeenCalledTimes(2);
   });
 });

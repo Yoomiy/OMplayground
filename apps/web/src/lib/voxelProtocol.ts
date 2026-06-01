@@ -268,6 +268,8 @@ export interface PlayerSnapshot {
   jumping: boolean;
   t: number;
   vitals?: PlayerVitals;
+  isTeacher?: boolean;
+  isTeacherObserver?: boolean;
 }
 
 export interface RoomSnapshot {

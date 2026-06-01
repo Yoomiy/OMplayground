@@ -35,15 +35,20 @@ export interface TickDeps {
   weatherTick?: (room: VoxelRoom, now: number) => void;
 }
 
-function buildSnapshot(room: VoxelRoom): RoomSnapshot {
+function buildSnapshot(room: VoxelRoom, forTeachers: boolean): RoomSnapshot {
   const players: RoomSnapshot["players"] = {};
   for (const p of room.players.values()) {
+    if (!forTeachers && p.isTeacherObserver) {
+      continue;
+    }
     players[p.userId] = {
       pos: p.pos,
       heading: p.heading,
       pitch: p.pitch,
       jumping: p.jumping,
       t: p.t,
+      isTeacher: p.isTeacher,
+      isTeacherObserver: p.isTeacherObserver,
       ...(p.health !== undefined ? { vitals: cloneVitals(p) } : {})
     };
   }
@@ -66,8 +71,11 @@ export function tickOnce(deps: TickDeps): { emittedSessionIds: string[] } {
     if (room.players.size === 0) continue;
     if (!room.dirty) continue;
     deps.io
-      .to(`voxel:${room.sessionId}`)
-      .emit("ROOM_SNAPSHOT", buildSnapshot(room));
+      .to(`voxel-snapshot:${room.sessionId}`)
+      .emit("ROOM_SNAPSHOT", buildSnapshot(room, false));
+    deps.io
+      .to(`voxel-snapshot-teacher:${room.sessionId}`)
+      .emit("ROOM_SNAPSHOT", buildSnapshot(room, true));
     room.dirty = false;
     room.lastTickAt = now;
     emitted.push(room.sessionId);

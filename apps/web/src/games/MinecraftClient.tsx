@@ -960,10 +960,14 @@ export interface MinecraftClientProps {
   registerWorldDropUpdated: (
     cb: (updates: WorldDropWireDelta[]) => void
   ) => () => void;
-  chatLines: ChatLineRow[];
-  canSendChat: boolean;
   onSendChatMessage: (message: string) => Promise<SimpleAck>;
   onChatExpandedChange?: (expanded: boolean) => void;
+  isTeacher?: boolean;
+  onSwitchTeacherMode?: (observer: boolean) => Promise<SimpleAck>;
+  onSoftDeleteChatMessage?: (messageId: string) => Promise<void>;
+  onClearSessionChat?: () => Promise<void>;
+  chatLines?: ChatLineRow[];
+  canSendChat?: boolean;
 }
 
 export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
@@ -1013,13 +1017,27 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     registerWorldDropSpawned,
     registerWorldDropRemoved,
     registerWorldDropUpdated,
-    chatLines,
+    chatLines = [],
     canSendChat,
     onSendChatMessage,
-    onChatExpandedChange
+    onChatExpandedChange,
+    isTeacher = false,
+    onSwitchTeacherMode,
+    onSoftDeleteChatMessage,
+    onClearSessionChat
   } = props;
 
   const [survivalSlot, setSurvivalSlot] = useState(0);
+  const [isTeacherSpectator, setIsTeacherSpectator] = useState(isTeacher);
+  const isTeacherSpectatorRef = useRef(isTeacher);
+  useEffect(() => {
+    setIsTeacherSpectator(isTeacher);
+    isTeacherSpectatorRef.current = isTeacher;
+  }, [isTeacher]);
+  useEffect(() => {
+    isTeacherSpectatorRef.current = isTeacherSpectator;
+  }, [isTeacherSpectator]);
+  const [playersList, setPlayersList] = useState<Array<{ userId: string; displayName: string; pos: [number, number, number] }>>([]);
   const [creativeSlotIdx, setCreativeSlotIdx] = useState(0);
   const [helpOpen, setHelpOpen] = useState(false);
   const [helpTab, setHelpTab] = useState<SurvivalHelpTabId>("controls");
@@ -1696,7 +1714,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           const md = noa.entities.getMeshData(noa.playerEntity);
           localPlayerVoxelRoot = md?.mesh ?? null;
           if (localPlayerVoxelRoot) {
-            setVisualVisible(localPlayerVoxelRoot, noa.camera.zoomDistance > 0);
+            setVisualVisible(localPlayerVoxelRoot, noa.camera.zoomDistance > 0 && !isTeacherSpectatorRef.current);
             localRig = createAvatarRig(localPlayerVoxelRoot);
             setAvatarYaw(localRig, noa.camera.heading);
           }
@@ -1819,11 +1837,39 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
       const offSnapshot = registerSnapshotListenerRef.current((snap) => {
         const selfId = myUserIdRef.current;
+        const currentPlayers: Array<{ userId: string; displayName: string; pos: [number, number, number] }> = [];
+        
         for (const [userId, p] of Object.entries(snap.players)) {
           if (userId === selfId) {
             if (p.vitals) setLocalVitals(p.vitals);
+            if (isTeacher && p.isTeacherObserver !== undefined && p.isTeacherObserver !== isTeacherSpectatorRef.current) {
+              setIsTeacherSpectator(p.isTeacherObserver);
+            }
             continue;
           }
+          
+          if (p.isTeacherObserver) {
+            const existingEid = remoteEntitiesRef.current.get(userId);
+            if (existingEid !== undefined) {
+              noa.entities.deleteEntity(existingEid);
+              remoteEntitiesRef.current.delete(userId);
+              remoteRigs.delete(userId);
+            }
+            continue;
+          }
+
+          const rosterUser = roster.find((r) => r.userId === userId);
+          const displayName = rosterUser?.displayName ?? "שחקן";
+          currentPlayers.push({
+            userId,
+            displayName,
+            pos: [
+              Math.round(p.pos[0] * 10) / 10,
+              Math.round(p.pos[1] * 10) / 10,
+              Math.round(p.pos[2] * 10) / 10
+            ]
+          });
+
           const eid = ensureRemoteEntity(userId);
           noa.entities.setPosition(eid, p.pos);
           const rig = remoteRigs.get(userId);
@@ -1833,6 +1879,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
             setAvatarYawSmoothed(rig, p.heading);
           }
         }
+        setPlayersList(currentPlayers);
+
         for (const [userId, eid] of remoteEntitiesRef.current) {
           if (!(userId in snap.players)) {
             noa.entities.deleteEntity(eid);
@@ -2600,6 +2648,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       }
 
       noa.inputs.down.on("fire", () => {
+        if (isTeacherSpectatorRef.current) return;
         void tryStartMining();
       });
       noa.inputs.up.on("fire", endMiningHold);
@@ -2608,6 +2657,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       cleanupFns.push(cancelEatingHold);
       noa.inputs.down.on("alt-fire", () => {
         if (pausedRef.current) return;
+        if (isTeacherSpectatorRef.current) return;
         if (gameModeRef.current === "survival") {
           const tgt = noa.targetedBlock;
           const inv = inventoryRef.current;
@@ -2810,6 +2860,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           return;
         }
         if (e.code === "KeyE") {
+          if (isTeacherSpectatorRef.current) return;
           if (inventoryOpenRef.current) {
             closeInventory();
           } else {
@@ -2819,6 +2870,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           return;
         }
         if (e.code === "KeyQ" && !inventoryOpenRef.current) {
+          if (isTeacherSpectatorRef.current) return;
           if (gameModeRef.current === "survival") {
             onDropHotbarSlotRef.current?.(survivalSlotRef.current);
           }
@@ -2881,33 +2933,98 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         }
         if (!pausedRef.current) animatePrimedTnts(Date.now());
         const equipped = equipmentSlotsRef.current;
+        const flightPhysState = noa.entities.getPhysics(noa.playerEntity);
         const moveState = noa.entities.getMovement?.(noa.playerEntity);
-        if (moveState) {
-          const inputState = noa.inputs.state;
-          const playerMoving =
-            !!inputState.forward ||
-            !!inputState.backward ||
-            !!inputState.left ||
-            !!inputState.right;
-          const sprintRequested = !!inputState.sprint && playerMoving;
 
-          const movement = resolveVoxelMovement({
-            equipmentSlots: equipped,
-            eating: activeEatingRef.current !== null,
-            sprintRequested,
-            health: localVitalsRef.current.health,
-            gameMode: gameModeRef.current
-          });
-          const isSprinting =
-            movement.canSprint && !!inputState.sprint && playerMoving;
-          // noa `running` means "apply movement forces", not sprint — receivesInputs sets it too
-          moveState.running = playerMoving;
-          moveState.maxSpeed =
-            movement.maxSpeed *
-            (isSprinting ? VOXEL_MOVEMENT.sprintSpeedMultiplier : 1);
-          moveState.jumpForce = movement.jumpForce;
-          moveState.jumpImpulse = movement.jumpImpulse;
-          moveState.jumpTime = movement.jumpTimeMs;
+        if (isTeacherSpectatorRef.current) {
+          if (flightPhysState?.body) {
+            flightPhysState.body.gravityMultiplier = 0;
+            if (moveState) {
+              moveState.maxSpeed = 0;
+              moveState.jumpForce = 0;
+              moveState.jumpImpulse = 0;
+            }
+
+            const inputState = noa.inputs.state;
+            let vx = 0;
+            let vy = 0;
+            let vz = 0;
+            const speed = 10; // noa agent default speed
+
+            const dir = noa.camera.getDirection() as number[];
+            const lenHorizontal = Math.hypot(dir[0], dir[2]);
+            const right = lenHorizontal > 0.001 
+              ? [dir[2] / lenHorizontal, 0, -dir[0] / lenHorizontal]
+              : [1, 0, 0];
+
+            if (inputState.forward) {
+              vx += dir[0];
+              vy += dir[1];
+              vz += dir[2];
+            }
+            if (inputState.backward) {
+              vx -= dir[0];
+              vy -= dir[1];
+              vz -= dir[2];
+            }
+            if (inputState.right) {
+              vx += right[0];
+              vz += right[2];
+            }
+            if (inputState.left) {
+              vx -= right[0];
+              vz -= right[2];
+            }
+
+            const moveLen = Math.hypot(vx, vy, vz);
+            if (moveLen > 0.001) {
+              vx = (vx / moveLen) * speed;
+              vy = (vy / moveLen) * speed;
+              vz = (vz / moveLen) * speed;
+            }
+
+            if (inputState.jump) {
+              vy = speed;
+            } else if (inputState.sprint) {
+              vy = -speed;
+            } else if (!inputState.forward && !inputState.backward) {
+              vy = 0;
+            }
+
+            flightPhysState.body.velocity[0] = vx;
+            flightPhysState.body.velocity[1] = vy;
+            flightPhysState.body.velocity[2] = vz;
+          }
+        } else {
+          if (flightPhysState?.body) {
+            flightPhysState.body.gravityMultiplier = 2; // Standard gravity multiplier
+          }
+          if (moveState) {
+            const inputState = noa.inputs.state;
+            const playerMoving =
+              !!inputState.forward ||
+              !!inputState.backward ||
+              !!inputState.left ||
+              !!inputState.right;
+            const sprintRequested = !!inputState.sprint && playerMoving;
+
+            const movement = resolveVoxelMovement({
+              equipmentSlots: equipped,
+              eating: activeEatingRef.current !== null,
+              sprintRequested,
+              health: localVitalsRef.current.health,
+              gameMode: gameModeRef.current
+            });
+            const isSprinting =
+              movement.canSprint && !!inputState.sprint && playerMoving;
+            moveState.running = playerMoving;
+            moveState.maxSpeed =
+              movement.maxSpeed *
+              (isSprinting ? VOXEL_MOVEMENT.sprintSpeedMultiplier : 1);
+            moveState.jumpForce = movement.jumpForce;
+            moveState.jumpImpulse = movement.jumpImpulse;
+            moveState.jumpTime = movement.jumpTimeMs;
+          }
         }
         if (scene.ambientColor) {
           scene.ambientColor = isEquipmentPerkActive(
@@ -3035,11 +3152,11 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         heldItemView?.update({
           now: nowPerf,
           moving: playerMoving,
-          visible: noa.camera.zoomDistance <= 0 && !inventoryOpenRef.current
+          visible: noa.camera.zoomDistance <= 0 && !inventoryOpenRef.current && !isTeacherSpectatorRef.current
         });
 
         if (localPlayerVoxelRoot) {
-          setVisualVisible(localPlayerVoxelRoot, noa.camera.zoomDistance > 0);
+          setVisualVisible(localPlayerVoxelRoot, noa.camera.zoomDistance > 0 && !isTeacherSpectatorRef.current);
         }
         if (localRig) {
           updateAvatarWalk(localRig, pos[0], pos[2]);
@@ -3156,7 +3273,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     `${Math.max(0, Math.min(100, (value / max) * 100))}%`;
 
   const survivalVitalsHud =
-    gameMode === "survival" && !paused ? (
+    gameMode === "survival" && !paused && !isTeacherSpectator ? (
       <div className="pointer-events-none absolute inset-x-0 bottom-20 flex justify-center px-3">
         <div
           className="w-[min(94vw,11.5rem)] rounded-sm border-2 border-black/55 bg-neutral-950/70 p-2 shadow-[0_8px_20px_rgba(0,0,0,0.55)]"
@@ -3178,7 +3295,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       </div>
     ) : null;
 
-  const blockHotbarHud = !paused ? (
+  const blockHotbarHud = !paused && !isTeacherSpectator ? (
     <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center gap-1.5 px-2">
       {gameMode === "creative"
         ? visibleCreativeHotbarBlocks(selectedBlockRef.current).map((blockId, i) =>
@@ -4108,9 +4225,23 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         </div>
       );
     }
+    const isDeleted = !!line.is_deleted;
     return (
-      <div key={line.id} className="text-right text-xs text-white leading-relaxed break-all font-sans">
-        <span className="font-bold text-sky-300">{line.sender_name}:</span> {line.message}
+      <div key={line.id} className="text-right text-xs text-white leading-relaxed break-all font-sans flex items-center justify-between gap-2">
+        <span className={`font-sans text-right select-text ${isDeleted ? "text-slate-500 italic" : "text-white"}`}>
+          <span className="font-bold text-sky-300 select-none">{line.sender_name}:</span>{" "}
+          {isDeleted ? "הודעה נמחקה על ידי מורה" : line.message}
+        </span>
+        {onSoftDeleteChatMessage && !isDeleted && (
+          <button
+            type="button"
+            onClick={() => void onSoftDeleteChatMessage(line.id)}
+            className="shrink-0 rounded bg-rose-950/40 border border-rose-500/25 px-1.5 py-0.5 text-[9px] font-bold text-rose-300 hover:bg-rose-900/50 hover:text-white transition-colors cursor-pointer select-none"
+            title="מחק הודעה"
+          >
+            מחק
+          </button>
+        )}
       </div>
     );
   });
@@ -4123,9 +4254,11 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         </div>
       );
     }
+    const isDeleted = !!line.is_deleted;
     return (
-      <div key={line.id} className="text-right text-xs text-white/90 leading-tight break-all font-sans">
-        <span className="font-bold text-sky-300/90">{line.sender_name}:</span> {line.message}
+      <div key={line.id} className={`text-right text-xs leading-tight break-all font-sans ${isDeleted ? "text-slate-500/80 italic" : "text-white/90"}`}>
+        <span className="font-bold text-sky-300/90">{line.sender_name}:</span>{" "}
+        {isDeleted ? "הודעה נמחקה על ידי מורה" : line.message}
       </div>
     );
   });
@@ -4141,16 +4274,28 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         className="flex items-center justify-between border-b border-white/10 pb-1.5 mb-1 text-slate-400 cursor-move select-none"
       >
         <span className="text-[11px] font-bold text-slate-300">צ'אט משחק (גרור להזזה)</span>
-        <button
-          type="button"
-          onClick={handleCloseChat}
-          className="rounded p-1 hover:bg-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer"
-          title="סגור צ'אט"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        <div className="flex items-center gap-1.5">
+          {onClearSessionChat && (
+            <button
+              type="button"
+              onClick={() => void onClearSessionChat()}
+              className="rounded border border-rose-500/35 bg-rose-950/20 px-2 py-0.5 text-[9px] font-bold text-rose-300 hover:bg-rose-900/40 hover:text-white transition-colors cursor-pointer select-none"
+              title="נקה את כל הודעות הצ'אט"
+            >
+              נקה צ'אט
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleCloseChat}
+            className="rounded p-1 hover:bg-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer"
+            title="סגור צ'אט"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div
@@ -4199,6 +4344,85 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     </div>
   ) : null;
 
+  const teacherDashboard = isTeacher && (
+    <div className="absolute right-4 top-16 z-30 flex flex-col gap-3 rounded-lg border border-indigo-500/20 bg-slate-900/90 p-4 text-white font-sans shadow-lg max-w-sm" dir="rtl">
+      <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-2">
+        <h3 className="font-bold text-sm text-indigo-400">📋 לוח בקרת מורה</h3>
+        <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${isTeacherSpectator ? "bg-amber-600/80 text-amber-100" : "bg-emerald-600/80 text-emerald-100"}`}>
+          {isTeacherSpectator ? "מצב תצפית" : "מצב שחקן"}
+        </span>
+      </div>
+
+      {isTeacherSpectator ? (
+        <>
+          <p className="text-[11px] text-slate-300 leading-relaxed">
+            אתה במצב <b>תעופה ותצפית</b>. באפשרותך לנוע בחופשיות ללא כוח משיכה, לעבור דרך שחקנים, לראות היכן כולם נמצאים ולהשתגר אליהם.
+          </p>
+          <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1">
+            <span className="text-[10px] text-slate-400 font-semibold mb-1 font-sans">שחקנים בחדר ({playersList.length}):</span>
+            {playersList.length === 0 ? (
+              <span className="text-xs text-slate-500 italic">אין שחקנים אחרים בחדר</span>
+            ) : (
+              playersList.map((player) => (
+                <div key={player.userId} className="flex items-center justify-between gap-3 bg-white/5 rounded p-2 border border-white/5 hover:bg-white/10 transition-colors">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-slate-200">{player.displayName}</span>
+                    <span className="text-[9px] text-slate-400 select-all font-sans">
+                      X: {player.pos[0]}, Y: {player.pos[1]}, Z: {player.pos[2]}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const noa: any = noaRef.current;
+                      if (noa) {
+                        noa.entities.setPosition(noa.playerEntity, [
+                          player.pos[0] + 0.5,
+                          player.pos[1] + 1.2,
+                          player.pos[2] + 0.5
+                        ]);
+                        audioManagerRef.current?.playSwing();
+                      }
+                    }}
+                    className="rounded bg-indigo-600 px-2.5 py-1.5 text-[10px] font-bold hover:bg-indigo-500 text-white transition-colors cursor-pointer"
+                  >
+                    📍 השתגר
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </>
+      ) : (
+        <p className="text-[11px] text-slate-300 leading-relaxed text-right">
+          אתה משחק כעת <b>כשחקן רגיל</b> בתוך המשחק. חלים עליך חוקי המשחק הרגילים.
+        </p>
+      )}
+
+      <button
+        type="button"
+        onClick={async () => {
+          const nextSpectator = !isTeacherSpectator;
+          if (onSwitchTeacherMode) {
+            const ack = await onSwitchTeacherMode(nextSpectator);
+            if (ack.ok) {
+              setIsTeacherSpectator(nextSpectator);
+            } else {
+              alert(ack.error?.message ?? "שגיאה בשינוי מצב");
+            }
+          }
+        }}
+        className={`w-full rounded py-2 text-center text-xs font-bold text-white transition-all shadow cursor-pointer ${
+          isTeacherSpectator
+            ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500"
+            : "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500"
+        }`}
+      >
+        {isTeacherSpectator ? "🎮 היכנס למשחק כשחקן" : "📋 חזור למצב תצפית מורה"}
+      </button>
+    </div>
+  );
+
   return (
     <div className="absolute inset-0">
       <div
@@ -4219,6 +4443,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       {inventoryPanel}
       {recipeBookOverlay}
       {chatOverlay}
+      {teacherDashboard}
     </div>
   );
 }

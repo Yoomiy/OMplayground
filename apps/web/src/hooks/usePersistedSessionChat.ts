@@ -7,6 +7,7 @@ export interface ChatLineRow {
   message: string;
   timestamp: string;
   is_system: boolean;
+  is_deleted?: boolean;
 }
 
 /**
@@ -20,9 +21,8 @@ export function usePersistedSessionChat(sessionId: string | undefined) {
     if (!sessionId) return;
     const { data, error: qErr } = await supabase
       .from("chat_messages")
-      .select("id, sender_name, message, timestamp, is_system")
+      .select("id, sender_name, message, timestamp, is_system, is_deleted")
       .eq("session_id", sessionId)
-      .eq("is_deleted", false)
       .order("timestamp", { ascending: true })
       .limit(200);
     if (qErr) {

@@ -108,6 +108,8 @@ export interface PlayerRuntime extends RoomPlayer {
   lastAttackAt?: number;
   /** Authoritative server time of the last death (ms) — used to prevent race-condition drop pickups. */
   lastDeathAt?: number;
+  isTeacher?: boolean;
+  isTeacherObserver?: boolean;
 }
 
 export interface VoxelRoom {
@@ -422,14 +424,19 @@ export function spawnFor(room: VoxelRoom, userId: string): Vec3 {
 export function assignPlayer(
   room: VoxelRoom,
   userId: string,
-  displayName: string
+  displayName: string,
+  isTeacher?: boolean
 ): { player: PlayerRuntime } | { error: { code: string; message: string } } {
   const existing = room.players.get(userId);
   if (existing) return { player: existing };
-  if (room.players.size >= room.maxPlayers) {
-    return {
-      error: { code: "ROOM_FULL", message: "Session is full" }
-    };
+  
+  if (!isTeacher) {
+    const activeKids = Array.from(room.players.values()).filter((p) => !p.isTeacherObserver);
+    if (activeKids.length >= room.maxPlayers) {
+      return {
+        error: { code: "ROOM_FULL", message: "Session is full" }
+      };
+    }
   }
   const spawn = spawnFor(room, userId);
   const now = Date.now();
@@ -442,7 +449,9 @@ export function assignPlayer(
     jumping: false,
     t: now,
     lastInputAt: now,
-    selectedHotbarIndex: 0
+    selectedHotbarIndex: 0,
+    isTeacher,
+    isTeacherObserver: isTeacher
   };
   if ((room.gameMode ?? "survival") === "survival") {
     const cached = room.disconnectedInventories.get(userId);
@@ -523,14 +532,21 @@ export function removePlayerFromRoom(
   }
   r.players.delete(userId);
   r.dirty = true;
-  if (r.players.size === 0) {
-    rooms.delete(sessionId);
+
+  const activeKids = Array.from(r.players.values()).filter((p) => !p.isTeacher);
+
+  if (activeKids.length === 0) {
+    const activeTeachers = Array.from(r.players.values()).filter((p) => p.isTeacher);
+    if (activeTeachers.length === 0) {
+      rooms.delete(sessionId);
+    }
     return { roomEmpty: true };
   }
+
   if (wasHost) {
-    const nextHost = r.players.keys().next().value as string;
-    r.hostId = nextHost;
-    return { newHostId: nextHost, roomEmpty: false };
+    const nonTeacherPlayer = activeKids[0];
+    r.hostId = nonTeacherPlayer.userId;
+    return { newHostId: nonTeacherPlayer.userId, roomEmpty: false };
   }
   return { roomEmpty: false };
 }

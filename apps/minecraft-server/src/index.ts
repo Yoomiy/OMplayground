@@ -826,13 +826,18 @@ io.on("connection", (socket) => {
         resumedState
       });
       const wasAlreadyInRoom = room.players.has(userId);
-      const assigned = assignPlayer(room, userId, displayName);
+      const assigned = assignPlayer(room, userId, displayName, socket.data.role === "teacher");
       if ("error" in assigned) {
         ack?.({ ok: false, error: assigned.error });
         return;
       }
       await socket.join(`voxel:${sessionId}`);
       await socket.join(`voxel-user:${userId}:${sessionId}`);
+      if (socket.data.role === "teacher") {
+        await socket.join(`voxel-snapshot-teacher:${sessionId}`);
+      } else {
+        await socket.join(`voxel-snapshot:${sessionId}`);
+      }
       socket.data.sessionId = sessionId;
       void persistPlayerJoin({
         supabase: supabaseAdmin,
@@ -2007,6 +2012,76 @@ io.on("connection", (socket) => {
   );
 
   socket.on(
+    "SWITCH_TEACHER_MODE",
+    async (
+      payload: { sessionId: string; observer: boolean },
+      ack?: (r: SimpleAck) => void
+    ) => {
+      const sessionId = payload?.sessionId ?? (socket.data.sessionId as string | undefined);
+      const observer = !!payload?.observer;
+      if (!sessionId) {
+        ack?.({
+          ok: false,
+          error: { code: "BAD_REQUEST", message: "sessionId required" }
+        });
+        return;
+      }
+      if (socket.data.role !== "teacher") {
+        ack?.({
+          ok: false,
+          error: { code: "FORBIDDEN", message: "רק מורה יכול לשנות מצב צפייה" }
+        });
+        return;
+      }
+      const room = getRoom(sessionId);
+      if (!room) {
+        ack?.({
+          ok: false,
+          error: { code: "NOT_FOUND", message: "Room not loaded" }
+        });
+        return;
+      }
+      const player = room.players.get(userId);
+      if (!player) {
+        ack?.({
+          ok: false,
+          error: { code: "NOT_FOUND", message: "Player not in room" }
+        });
+        return;
+      }
+
+      if (!observer) {
+        // Switching to Player Mode: check if players < max_players
+        const activeKidsCount = Array.from(room.players.values()).filter(
+          (p) => !p.isTeacherObserver && p.userId !== userId
+        ).length;
+        if (activeKidsCount >= room.maxPlayers) {
+          ack?.({
+            ok: false,
+            error: {
+              code: "ROOM_FULL",
+              message: `המשחק מלא (${activeKidsCount}/${room.maxPlayers} שחקנים). אי אפשר להיכנס כשחקן.`
+            }
+          });
+          return;
+        }
+      }
+
+      player.isTeacherObserver = observer;
+      room.dirty = true;
+
+      io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
+        sessionId,
+        kind: "TEACHER_MODE_CHANGED",
+        userId,
+        observer
+      });
+
+      ack?.({ ok: true });
+    }
+  );
+
+  socket.on(
     "PAUSE_GAME",
     (
       payload: { sessionId?: string } | undefined,
@@ -2159,6 +2234,13 @@ io.on("connection", (socket) => {
         connectedPlayerIds: connected.map((p) => p.userId),
         connectedPlayerNames: connected.map((p) => p.displayName),
         gameState: snapshotPersistedState(before)
+      });
+    }
+    if (room && result.roomEmpty) {
+      room.paused = true;
+      io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
+        sessionId,
+        kind: "GAME_PAUSED"
       });
     }
     if (result.newHostId) {
