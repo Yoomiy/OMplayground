@@ -18,5 +18,8 @@
   "devDependencies": {
     "tsx": "^4.22.3",
     "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "livekit-server-sdk": "^2.15.4"
   }
 }
