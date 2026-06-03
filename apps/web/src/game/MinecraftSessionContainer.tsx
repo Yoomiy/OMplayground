@@ -134,7 +134,9 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     sendChatMessage,
     onWorldDropSpawned,
     onWorldDropRemoved,
-    onWorldDropUpdated
+    onWorldDropUpdated,
+    muteAll,
+    onMuteAll
   } = useVoxelSocket({
     sessionId,
     suppressInputEmit: paused
@@ -455,6 +457,10 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         onClearSessionChat={isTeacherObserver ? teacherChat.clearSession : undefined}
         roster={joinAck.roster}
         myUserId={myUserId}
+        sessionId={sessionId}
+        iAmHost={iAmHost}
+        onMuteAll={onMuteAll}
+        muteAll={muteAll}
         gameMode={liveGameMode}
         chatLines={teacherChat.lines}
         canSendChat={canSendChat}

@@ -164,6 +164,8 @@ export interface UseVoxelSocketReturn {
   onWorldDropSpawned: (cb: WorldDropSpawnListener) => () => void;
   onWorldDropRemoved: (cb: WorldDropRemovedListener) => () => void;
   onWorldDropUpdated: (cb: WorldDropUpdateListener) => () => void;
+  muteAll: () => void;
+  onMuteAll: (cb: (payload: { mutedBy: string }) => void) => () => void;
 }
 
 function emitWithAck<T>(socket: Socket, event: string, payload: unknown): Promise<T> {
@@ -190,6 +192,7 @@ export function useVoxelSocket(
   const worldDropUpdateListeners = useRef(new Set<WorldDropUpdateListener>());
   const armSwingListeners = useRef(new Set<ArmSwingListener>());
   const playerDamageListeners = useRef(new Set<PlayerDamageListener>());
+  const muteAllListeners = useRef(new Set<(payload: { mutedBy: string }) => void>());
 
   const [connected, setConnected] = useState(false);
   const [status, setStatus] = useState<string>("מתחבר…");
@@ -343,6 +346,10 @@ export function useVoxelSocket(
 
       s.on("disconnect", () => {
         setConnected(false);
+      });
+
+      s.on("MUTE_ALL", (payload: { mutedBy: string }) => {
+        for (const cb of muteAllListeners.current) cb(payload);
       });
 
       s.on("connect_error", (err: Error) => {
@@ -620,6 +627,17 @@ export function useVoxelSocket(
     };
   }
 
+  function muteAll(): void {
+    socketRef.current?.emit("MUTE_ALL", {});
+  }
+
+  function onMuteAll(cb: (payload: { mutedBy: string }) => void): () => void {
+    muteAllListeners.current.add(cb);
+    return () => {
+      muteAllListeners.current.delete(cb);
+    };
+  }
+
   return {
     connected,
     status,
@@ -667,6 +685,8 @@ export function useVoxelSocket(
     sendChatMessage,
     onWorldDropSpawned,
     onWorldDropRemoved,
-    onWorldDropUpdated
+    onWorldDropUpdated,
+    muteAll,
+    onMuteAll
   };
 }

@@ -79,6 +79,7 @@ import {
   createRecessSweepState,
   recessEndSweep
 } from "./recessSweep";
+import { generateLiveKitToken } from "./livekitService";
 import {
   beginBreak,
   cancelBreak,
@@ -217,6 +218,26 @@ app.get("/ready", (_req, res) => {
     return;
   }
   res.json({ ok: true });
+});
+
+app.post("/rtc/token", async (req, res) => {
+  try {
+    const accessToken = req.headers.authorization?.replace(/^Bearer\s+/i, "");
+    const sessionId = (req.body as { sessionId?: string })?.sessionId;
+    if (!accessToken || !sessionId) {
+      res.status(400).json({ error: "missing_params" });
+      return;
+    }
+    if (!supabaseAdmin) {
+      res.status(503).json({ error: "server_config" });
+      return;
+    }
+    const token = await generateLiveKitToken({ supabaseAdmin, accessToken, sessionId });
+    res.json({ token });
+  } catch (err: any) {
+    console.error("LiveKit token generation error: ", err);
+    res.status(401).json({ error: "unauthorized", message: err.message });
+  }
 });
 
 const server = http.createServer(app);
@@ -948,6 +969,19 @@ io.on("connection", (socket) => {
     player.lastArmSwingAt = now;
     const payload: ArmSwingPayload = { userId };
     socket.to(`voxel:${sessionId}`).emit("PLAYER_ARM_SWING", payload);
+    ack?.({ ok: true });
+  });
+
+  socket.on("MUTE_ALL", (payload: unknown, ack?: (r: SimpleAck) => void) => {
+    const sessionId = socket.data.sessionId as string | undefined;
+    if (!sessionId) return ack?.({ ok: false });
+    const room = getRoom(sessionId);
+    if (!room) return ack?.({ ok: false });
+    const isHost = room.hostId === userId;
+    if (!isHost) {
+      return ack?.({ ok: false, error: { code: "UNAUTHORIZED", message: "Only the host can mute all players" } });
+    }
+    io.to(`voxel:${sessionId}`).emit("MUTE_ALL", { mutedBy: displayName });
     ack?.({ ok: true });
   });
 
