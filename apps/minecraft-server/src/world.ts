@@ -4,6 +4,7 @@ import {
   SPAWN_SCAN_MAX_Y,
   blockReplaceable,
   findSurfaceY,
+  hash3,
   isSpawnLocationSafe,
   proceduralVoxelID
 } from "@playground/voxel-content";
@@ -123,36 +124,55 @@ export function spawnPointFor(
     h = (h * 16777619) ^ userId.charCodeAt(i);
   }
 
-  const baseX = ((h | 0) % 12) - 6;
-  const baseZ = (((h >> 8) | 0) % 12) - 6;
-  for (let radius = 0; radius <= SPAWN_SEARCH_RADIUS; radius += SPAWN_SEARCH_STEP) {
-    const probes = radius === 0 ? 1 : Math.max(12, Math.ceil(radius / 16));
-    for (let i = 0; i < probes; i++) {
-      const angle = ((i + (h & 7)) / probes) * Math.PI * 2;
-      const x = Math.round(baseX + Math.cos(angle) * radius);
-      const z = Math.round(baseZ + Math.sin(angle) * radius);
+  // Find a shared base coordinate for the entire room/seed
+  let sharedX = 0;
+  let sharedZ = 0;
+  if (!isSpawnLocationSafe(0, 0, seed)) {
+    // Probe deterministically based on seed (independent of userId so all players get the same safe base)
+    for (let i = 1; i <= 1000; i++) {
+      const rx = hash3(i, 0, 0, seed) * 2 - 1;
+      const rz = hash3(i, 0, 1, seed) * 2 - 1;
+      const x = Math.round(rx * 5000);
+      const z = Math.round(rz * 5000);
       if (isSpawnLocationSafe(x, z, seed)) {
-        return [
-          x + 0.5,
-          findSurfaceY(x, z, seed) + SPAWN_SURFACE_CLEARANCE,
-          z + 0.5
-        ];
+        sharedX = x;
+        sharedZ = z;
+        break;
       }
     }
   }
 
-  const surface = findSurfaceY(0, 0, seed);
+  // Offset the player within a 12x12 grid around the shared base coordinate
+  const offsetX = ((h | 0) % 12) - 6;
+  const offsetZ = (((h >> 8) | 0) % 12) - 6;
+  let finalX = sharedX + offsetX;
+  let finalZ = sharedZ + offsetZ;
+
+  // Verify if the offset location is safe. If not, fallback to the shared safe base.
+  if (!isSpawnLocationSafe(finalX, finalZ, seed)) {
+    finalX = sharedX;
+    finalZ = sharedZ;
+  }
+
+  // If even the shared base is not safe (e.g. absolutely no safe block was found on the map),
+  // fallback to the procedural surface at (finalX, finalZ)
+  const surface = findSurfaceY(finalX, finalZ, seed);
   let y = Math.max(
     surface + SPAWN_SURFACE_CLEARANCE,
     SEA_LEVEL + SPAWN_SURFACE_CLEARANCE
   );
   while (
     y <= SPAWN_SCAN_MAX_Y + 8 &&
-    proceduralVoxelID(0, y, 0, seed) !== BLOCK_REGISTRY.AIR
+    proceduralVoxelID(finalX, y, finalZ, seed) !== BLOCK_REGISTRY.AIR
   ) {
     y += 1;
   }
-  return [0.5, y, 0.5];
+
+  return [
+    finalX + 0.5,
+    y,
+    finalZ + 0.5
+  ];
 }
 
 export function isSpawnPointSafe(world: WorldState, point: Vec3): boolean {

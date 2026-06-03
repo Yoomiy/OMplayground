@@ -200,12 +200,13 @@ export class MultiBiomeGenerator {
       heat: noise2D(x / 300, z / 300, this.seed ^ HEAT_SEED) + 1.0 + jitter,
       water:
         noise2D(x / 400, z / 400, this.seed ^ WATER_SEED) +
-        1.0 +
+        0.45 +
         jitter +
         waterPlayAreaBias(x, z),
       continental:
         noise2D(x / 2500, z / 2500, this.seed ^ CONTINENTAL_SEED) +
-        continentPlayAreaBias(x, z)
+        continentPlayAreaBias(x, z) +
+        0.25
     };
   }
 
@@ -237,24 +238,24 @@ export class MultiBiomeGenerator {
           50 + low * 5 + detail * 1.5
         );
       case "beach":
-        return Math.round(63 + low * 2);
+        return Math.round(66 + low * 2);
       case "forest":
-        return Math.round(66 + low * 7 + detail * 2);
+        return Math.round(69 + low * 7 + detail * 2);
       case "desert":
         return Math.round(
-          clamp(65 + Math.abs(low * (1 - h) + (detail + 0.2) * h) * 7 + micro, 65, 76)
+          clamp(68 + Math.abs(low * (1 - h) + (detail + 0.2) * h) * 7 + micro, 68, 79)
         );
       case "savanna":
-        return Math.round(65 + low * 6 + detail * 2);
+        return Math.round(69 + low * 6 + detail * 2);
       case "mountains":
-        return Math.round(clamp(78 + ridge * ridge * 45 * (0.75 + relief * 0.25) + low * 8, 72, 140));
+        return Math.round(clamp(81 + ridge * ridge * 45 * (0.75 + relief * 0.25) + low * 8, 75, 143));
       case "iceplains":
-        return Math.round(63 + low * 4 + detail);
+        return Math.round(66 + low * 4 + detail);
       case "ice_mountains":
-        return Math.round(clamp(74 + ridge * ridge * 35 * (0.8 + relief * 0.2) + low * 6, 68, 120));
+        return Math.round(clamp(77 + ridge * ridge * 35 * (0.8 + relief * 0.2) + low * 6, 71, 123));
       case "plains":
       default:
-        return Math.round(64 + low * 5 + detail * 1.5);
+        return Math.round(67 + low * 5 + detail * 1.5);
     }
   }
 

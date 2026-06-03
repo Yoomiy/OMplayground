@@ -150,6 +150,13 @@ describe("spawnPointFor", () => {
     expect(isSpawnPointSafe(world, [0.5, SEA_LEVEL - 4, 0.5])).toBe(false);
     expect(isSpawnPointSafe(world, [0.5, SEA_LEVEL + 20, 0.5])).toBe(false);
   });
+
+  it("searches wider deterministically when no safe spawn point is nearby", () => {
+    const seed = 999999;
+    const world = createWorld(seed);
+    const [sx, sy, sz] = spawnPointFor(seed, "user-far");
+    expect(isSpawnPointSafe(world, [sx, sy, sz])).toBe(true);
+  });
 });
 
 describe("replacementBlockAfterBreak", () => {

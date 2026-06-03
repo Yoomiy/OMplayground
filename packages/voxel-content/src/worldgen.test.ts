@@ -65,8 +65,8 @@ describe("@playground/voxel-content MultiBiomeGenerator", () => {
       }
     }
     const landPct = land / (land + water);
-    expect(landPct).toBeGreaterThanOrEqual(0.5);
-    expect(landPct).toBeLessThanOrEqual(0.8);
+    expect(landPct).toBeGreaterThanOrEqual(0.85);
+    expect(landPct).toBeLessThanOrEqual(0.98);
   });
 
   it("keeps most ocean pressure on the outer rim", () => {
@@ -81,7 +81,7 @@ describe("@playground/voxel-content MultiBiomeGenerator", () => {
         if (column.height < SEA_LEVEL || column.biomeId === "ocean") ocean += 1;
       }
     }
-    expect(ocean / sampled).toBeGreaterThan(0.65);
+    expect(ocean / sampled).toBeGreaterThan(0.35);
   });
 
   it("keeps surfaces solid and the next dry air cell empty", () => {
@@ -172,43 +172,43 @@ describe("@playground/voxel-content MultiBiomeGenerator", () => {
     const cases = [
       {
         kind: "oak",
-        trunkX: -2997,
-        trunkZ: 2796,
+        trunkX: -3490,
+        trunkZ: 3173,
         trunkBlock: BLOCK_REGISTRY.WOOD,
         canopyBlock: BLOCK_REGISTRY.LEAVES,
-        canopyX: -2999,
-        canopyY: 70,
-        canopyZ: 2794
+        canopyX: -3493,
+        canopyY: 72,
+        canopyZ: 3172
       },
       {
         kind: "birch",
-        trunkX: -2931,
-        trunkZ: 2829,
+        trunkX: -3478,
+        trunkZ: 2697,
         trunkBlock: BLOCK_REGISTRY.BIRCH_LOG,
         canopyBlock: BLOCK_REGISTRY.BIRCH_LEAVES,
-        canopyX: -2933,
-        canopyY: 72,
-        canopyZ: 2828
+        canopyX: -3481,
+        canopyY: 71,
+        canopyZ: 2698
       },
       {
         kind: "spruce",
-        trunkX: -2898,
-        trunkZ: 2592,
+        trunkX: -3500,
+        trunkZ: 3236,
         trunkBlock: BLOCK_REGISTRY.SPRUCE_LOG,
         canopyBlock: BLOCK_REGISTRY.SPRUCE_LEAVES,
-        canopyX: -2899,
-        canopyY: 80,
-        canopyZ: 2591
+        canopyX: -3502,
+        canopyY: 70,
+        canopyZ: 3235
       },
       {
         kind: "savanna",
-        trunkX: -2352,
-        trunkZ: 2961,
+        trunkX: -3500,
+        trunkZ: 2763,
         trunkBlock: BLOCK_REGISTRY.WOOD,
         canopyBlock: BLOCK_REGISTRY.LEAVES_YELLOW,
-        canopyX: -2353,
-        canopyY: 72,
-        canopyZ: 2960
+        canopyX: -3502,
+        canopyY: 74,
+        canopyZ: 2763
       }
     ] as const;
 
@@ -227,11 +227,11 @@ describe("@playground/voxel-content MultiBiomeGenerator", () => {
 
   it("finds nearby trees through the cached neighborhood lookup", () => {
     const gen = new MultiBiomeGenerator(seed);
-    const trunkX = -2931;
-    const trunkZ = 2829;
-    const canopyX = -2933;
-    const canopyY = 72;
-    const canopyZ = 2828;
+    const trunkX = -3478;
+    const trunkZ = 2697;
+    const canopyX = -3481;
+    const canopyY = 71;
+    const canopyZ = 2698;
 
     const nearby = gen.getNearbyTrees(canopyX, canopyZ);
     expect(nearby.some((tree) => tree.trunkX === trunkX && tree.trunkZ === trunkZ)).toBe(

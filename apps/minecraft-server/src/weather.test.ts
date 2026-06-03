@@ -10,8 +10,8 @@ import {
 beforeEach(() => __resetRoomsForTest());
 
 function snowWaterSample(seed: number): [number, number] {
-  const x = -4880;
-  const z = -4500;
+  const x = -4538;
+  const z = -4158;
   const column = sampleBiomeColumn(x, z, seed);
   expect(column.biome.temperature).toBeLessThanOrEqual(0.15);
   expect(column.biome.downfall).toBeGreaterThan(0.3);
