@@ -5,3 +5,4 @@
 18. fix chat keybinding
 19. save last knaown location
 20. save fps stats
+21. fix the spawn on water problem
