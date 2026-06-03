@@ -15,6 +15,8 @@ export interface AudioRig {
   filter: BiquadFilterNode;
   panner: PannerNode;
   stream: MediaStream;
+  audioEl: HTMLAudioElement;
+  track: RemoteTrack;
 }
 
 export function useLiveKitProximity(args: UseLiveKitProximityArgs) {
@@ -40,6 +42,24 @@ export function useLiveKitProximity(args: UseLiveKitProximityArgs) {
     }
     return audioContextRef.current;
   };
+
+  // Setup user interaction event listeners to reliably resume suspended AudioContext
+  useEffect(() => {
+    const resumeAudio = () => {
+      const ctx = audioContextRef.current;
+      if (ctx && ctx.state === "suspended") {
+        void ctx.resume();
+      }
+    };
+    window.addEventListener("click", resumeAudio);
+    window.addEventListener("keydown", resumeAudio);
+    window.addEventListener("mousedown", resumeAudio);
+    return () => {
+      window.removeEventListener("click", resumeAudio);
+      window.removeEventListener("keydown", resumeAudio);
+      window.removeEventListener("mousedown", resumeAudio);
+    };
+  }, []);
 
   // Enumerate output devices for UI selector
   useEffect(() => {
@@ -147,6 +167,11 @@ export function useLiveKitProximity(args: UseLiveKitProximityArgs) {
         rig.panner.disconnect();
         rig.filter.disconnect();
         rig.source.disconnect();
+        try {
+          rig.track.detach(rig.audioEl);
+        } catch (err) {
+          // ignore
+        }
       });
       audioRigsRef.current.clear();
       if (audioContextRef.current) {
@@ -158,6 +183,12 @@ export function useLiveKitProximity(args: UseLiveKitProximityArgs) {
   // 2. Setup Web Audio nodes for remote participant stream
   const setupSpatialAudioNode = (participantId: string, track: RemoteTrack) => {
     const ctx = getAudioContext();
+
+    // Attach the track to trigger Chromium's WebRTC audio pipeline
+    const audioEl = track.attach();
+    // Mute the raw audio element to avoid double playback
+    audioEl.muted = true;
+
     const mediaStream = new MediaStream([track.mediaStreamTrack]);
 
     // Create audio source node from remote WebRTC track
@@ -185,6 +216,8 @@ export function useLiveKitProximity(args: UseLiveKitProximityArgs) {
       filter,
       panner,
       stream: mediaStream,
+      audioEl,
+      track
     });
   };
 
@@ -194,6 +227,11 @@ export function useLiveKitProximity(args: UseLiveKitProximityArgs) {
       rig.panner.disconnect();
       rig.filter.disconnect();
       rig.source.disconnect();
+      try {
+        rig.track.detach(rig.audioEl);
+      } catch (err) {
+        console.warn("Failed to detach track:", err);
+      }
       audioRigsRef.current.delete(participantId);
     }
   };
