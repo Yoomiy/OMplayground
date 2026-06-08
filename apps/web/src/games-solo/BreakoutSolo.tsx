@@ -109,45 +109,21 @@ export function BreakoutSolo({ save }: { save: SoloGameSaveControls }) {
   return (
     <section
       ref={sectionRef}
-      className={`mx-auto flex w-full max-w-5xl flex-col gap-3 rounded-3xl border border-rose-100 bg-white/95 p-4 shadow-play transition-all duration-300 ${
-        isFullscreen ? "h-screen w-screen !max-w-none flex flex-col justify-between gap-4 !rounded-none bg-slate-950 border-none p-6 overflow-hidden" : ""
+      className={`relative mx-auto w-full flex flex-col gap-4 rounded-3xl border border-rose-950 bg-slate-950 p-5 shadow-2xl transition-all duration-300 ${
+        isFullscreen ? "h-screen w-screen !max-w-none !rounded-none p-6 overflow-hidden" : "max-w-5xl"
       }`}
       dir="ltr"
     >
-      <div className={`flex flex-wrap items-center justify-between gap-3 border-b pb-3 ${isFullscreen ? "border-slate-800" : "border-slate-100"}`}>
-        <div className="flex flex-col gap-0.5">
-          <h2 className={`text-lg font-bold ${isFullscreen ? "text-white" : "text-slate-900"}`}>שבירת לבנים (Breakout)</h2>
-          <p className={`text-sm font-medium ${isFullscreen ? "text-slate-400" : "text-slate-600"}`}>
-            משחק שבירת לבנים קלאסי. השתמשו במקשי החצים או במקלדת (A/D) או בעכבר כדי לנוע, ובמקש הרווח (או W / חץ למעלה / קליק) כדי לירות.
-          </p>
-        </div>
-        <button
-          type="button"
-          className={`rounded-xl border px-4 py-2 text-xs font-bold transition-all hover:scale-105 active:scale-95 duration-200 shadow-sm flex items-center gap-1.5 ${
-            isFullscreen ? "border-slate-800 bg-slate-900 text-slate-200 hover:bg-slate-800" : "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100"
-          }`}
-          onClick={toggleFullscreen}
-        >
-          {isFullscreen ? (
-            <>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9V4.5M15 9h4.5M15 9l5.25-5.25M15 15v4.5M15 15h4.5M15 15l-5.25-5.25" />
-              </svg>
-              <span>מצב רגיל</span>
-            </>
-          ) : (
-            <>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75v4.5m0-4.5h-4.5m4.5 0L15 9m5.25 11.25v-4.5m0 4.5h-4.5m4.5 0l-5.25-5.25" />
-              </svg>
-              <span>מסך מלא</span>
-            </>
-          )}
-        </button>
-      </div>
+      <button
+        type="button"
+        className="absolute top-8 right-8 z-20 rounded-xl border border-rose-850 bg-rose-950/40 hover:bg-rose-900/50 px-3.5 py-1.5 text-xs font-bold text-rose-200 transition-all hover:scale-105 active:scale-95 duration-200 shadow-md shadow-rose-950/50 flex items-center gap-1.5 opacity-60 hover:opacity-100"
+        onClick={toggleFullscreen}
+      >
+        {isFullscreen ? <span>מצב רגיל</span> : <span>מסך מלא</span>}
+      </button>
 
-      <div className={`relative mx-auto w-full overflow-hidden rounded-3xl border bg-black shadow-play ${
-        isFullscreen ? "flex-grow min-h-0 border-slate-800" : "h-[640px] max-w-[1024px] border-slate-200"
+      <div className={`relative mx-auto w-full overflow-hidden rounded-2xl border border-rose-950/80 bg-black shadow-inner shadow-black/80 cursor-pointer ${
+        isFullscreen ? "flex-grow min-h-0" : "h-[640px] max-w-[1024px]"
       }`}>
         <iframe
           ref={iframeRef}

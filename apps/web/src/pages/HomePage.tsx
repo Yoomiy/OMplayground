@@ -8,7 +8,7 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useOpenGames } from "@/hooks/useOpenGames";
 import { useMyPausedGames } from "@/hooks/useMyPausedGames";
 import { leavePausedGameSession } from "@/lib/pausedSessionActions";
-import { listSoloGameSaves } from "@/lib/soloGameSaves";
+import { hasSoloSaveForGame, listSoloGameSaves } from "@/lib/soloGameSaves";
 import { OnlineKids } from "@/components/OnlineKids";
 import { Button } from "@/components/ui/button";
 import { KidDesktopShell, desktopPanelClass } from "@/components/KidDesktopShell";
@@ -267,7 +267,7 @@ export function HomePage() {
                         ? busyGameId === game.id
                           ? "יוצר חדר…"
                           : "צור חדר"
-                        : soloSaveKeys.has(game.game_url)
+                        : hasSoloSaveForGame(soloSaveKeys, game.game_url)
                           ? "המשך משחק שמור"
                           : "שחק עכשיו"}
                     </span>

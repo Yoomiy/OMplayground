@@ -57,19 +57,41 @@ export async function listSoloGameSaves(kidId: string | undefined) {
   return (data ?? []) as SoloGameSave[];
 }
 
+const SOLO_SAVE_KEY_ALIASES: Record<string, string[]> = {
+  "breakout-solo": ["breakout"],
+  breakout: ["breakout-solo"]
+};
+
+function soloSaveKeysForLookup(gameKey: string): string[] {
+  const trimmed = gameKey.trim();
+  const aliases = SOLO_SAVE_KEY_ALIASES[trimmed] ?? [];
+  return [...new Set([trimmed, ...aliases])];
+}
+
+/** True when any alias of `gameUrl` has a row in `solo_game_saves`. */
+export function hasSoloSaveForGame(
+  savedKeys: ReadonlySet<string>,
+  gameUrl: string
+): boolean {
+  return soloSaveKeysForLookup(gameUrl).some((key) => savedKeys.has(key));
+}
+
 export async function getSoloGameSave(
   kidId: string | undefined,
   gameKey: string | undefined
 ) {
   if (!kidId || !gameKey) return null;
-  const { data, error } = await supabase
-    .from("solo_game_saves")
-    .select("kid_id, game_key, state, state_version, save_kind, updated_at")
-    .eq("kid_id", kidId)
-    .eq("game_key", gameKey)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  return data as SoloGameSave | null;
+  for (const key of soloSaveKeysForLookup(gameKey)) {
+    const { data, error } = await supabase
+      .from("solo_game_saves")
+      .select("kid_id, game_key, state, state_version, save_kind, updated_at")
+      .eq("kid_id", kidId)
+      .eq("game_key", key)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (data) return data as SoloGameSave;
+  }
+  return null;
 }
 
 export async function upsertSoloGameSave({

@@ -31,6 +31,9 @@ import {
  *
  * New solo games: add a `<gameKey>: () => <Component />` entry below.
  */
+const renderBreakoutSolo = (save: SoloGameSaveControls) => <BreakoutSolo save={save} />;
+
+/** Legacy catalog URLs (e.g. `breakout` before the solo/mp split) still resolve. */
 const SOLO_REGISTRY: Record<string, (save: SoloGameSaveControls) => ReactNode> = {
   drawing: (save) => <DrawingSolo save={save} />,
   snake: (save) => <SnakeSolo save={save} />,
@@ -40,7 +43,8 @@ const SOLO_REGISTRY: Record<string, (save: SoloGameSaveControls) => ReactNode> =
   "alges-escapade": (save) => <AlgesEscapadeSolo save={save} />,
   hexgl: (save) => <HexGLSolo save={save} />,
   "chess-solo": (save) => <ChessSolo save={save} />,
-  "breakout-solo": (save) => <BreakoutSolo save={save} />
+  breakout: renderBreakoutSolo,
+  "breakout-solo": renderBreakoutSolo
 };
 
 export default function SoloGameContainer() {
