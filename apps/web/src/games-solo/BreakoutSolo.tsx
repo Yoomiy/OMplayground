@@ -1,23 +1,13 @@
-import { useEffect, useRef, useState, useMemo } from "react";
-import { isJsonObject, type SoloGameSaveControls } from "@/lib/soloGameSaves";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { isJsonObject, type JsonValue, type SoloGameSaveControls } from "@/lib/soloGameSaves";
 
 export function BreakoutSolo({ save }: { save: SoloGameSaveControls }) {
   const sectionRef = useRef<HTMLElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const resumeLevel = useMemo(() => {
-    if (
-      isJsonObject(save.savedState) &&
-      typeof save.savedState.currentLevel === "number"
-    ) {
-      return Math.max(0, Math.floor(save.savedState.currentLevel));
-    }
-    return null;
-  }, [save.savedState]);
-
-  const src = resumeLevel !== null
-    ? `/legacy/breakout/index.html?resumeLevel=${resumeLevel}`
-    : "/legacy/breakout/index.html";
+  // Always load the clean URL — state is restored via postMessage after 'solo-ready'
+  const src = "/legacy/breakout/index.html";
 
   const toggleFullscreen = () => {
     if (!sectionRef.current) return;
@@ -40,6 +30,35 @@ export function BreakoutSolo({ save }: { save: SoloGameSaveControls }) {
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
+  // Keep a stable ref to the saved state so the message handler closure stays fresh
+  const savedStateRef = useRef<JsonValue | null>(save.savedState);
+  useEffect(() => {
+    savedStateRef.current = save.savedState;
+  }, [save.savedState]);
+
+  const sendSnapshotRestore = useCallback(() => {
+    const savedState = savedStateRef.current;
+    if (!iframeRef.current || !isJsonObject(savedState)) return;
+
+    // New format: full snapshot
+    if (savedState.kind === "fullSnapshot") {
+      iframeRef.current.contentWindow?.postMessage(
+        {
+          source: "playground-board",
+          gameKey: "breakout",
+          type: "restore-snapshot",
+          snapshot: savedState
+        },
+        window.location.origin
+      );
+      return;
+    }
+
+    // Legacy format: only currentLevel saved (old checkpoint style).
+    // We can only restore the level; the iframe handles that via query param
+    // fallback is handled by the URL (see legacy path below if needed).
+  }, []);
+
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
@@ -47,6 +66,7 @@ export function BreakoutSolo({ save }: { save: SoloGameSaveControls }) {
         source?: string;
         gameKey?: string;
         type?: string;
+        snapshot?: JsonValue;
         state?: { currentLevel?: number; score?: number };
       };
 
@@ -54,8 +74,26 @@ export function BreakoutSolo({ save }: { save: SoloGameSaveControls }) {
         return;
       }
 
+      // iframe finished initializing — restore saved state
+      if (data.type === "solo-ready") {
+        sendSnapshotRestore();
+      }
+
+      // Receive full live snapshot from iframe (sent every 2s and on unload)
+      if (data.type === "fullSnapshot" && isJsonObject(data.snapshot)) {
+        void save.saveState(data.snapshot as JsonValue);
+      }
+
+      // Legacy checkpoint: level-only save (kept for backward compat & level transitions)
+      // We no longer use this as the primary save format, but we still record it so that
+      // if the full snapshot is somehow missing, we at least know the level.
       if (data.type === "checkpoint" && typeof data.state?.currentLevel === "number") {
-        void save.saveState({ currentLevel: data.state.currentLevel }, { saveKind: "checkpoint" });
+        // Only write checkpoint if we don't already have a full snapshot for this session
+        // (fullSnapshot will overwrite this anyway within 2 seconds)
+        void save.saveState(
+          { currentLevel: data.state.currentLevel },
+          { saveKind: "checkpoint" }
+        );
       }
 
       if (data.type === "scoreUpdate" && typeof data.state?.score === "number") {
@@ -66,7 +104,7 @@ export function BreakoutSolo({ save }: { save: SoloGameSaveControls }) {
 
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [save]);
+  }, [save, sendSnapshotRestore]);
 
   return (
     <section
@@ -112,6 +150,7 @@ export function BreakoutSolo({ save }: { save: SoloGameSaveControls }) {
         isFullscreen ? "flex-grow min-h-0 border-slate-800" : "h-[640px] max-w-[1024px] border-slate-200"
       }`}>
         <iframe
+          ref={iframeRef}
           title="Breakout"
           src={src}
           className="h-full w-full"

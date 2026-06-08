@@ -615,6 +615,11 @@
             lastTime = performance.now();
             requestAnimationFrame(tickLoop);
 
+            // Authority: if a liveSnapshot is provided, restore the full mid-game state
+            if (isAuthority && data.liveSnapshot) {
+                applyLiveSnapshotAsAuthority(data.liveSnapshot);
+            }
+
             if (!isAuthority) {
                 window.parent.postMessage({
                     source: "playground-legacy-game",
@@ -624,6 +629,10 @@
             }
         }
         else if (data.type === 'need-snapshot' && isAuthority) {
+            sendSnapshot();
+        }
+        else if (data.type === 'request-save-snapshot' && isAuthority) {
+            // Parent is requesting us to emit our current full snapshot for persistence
             sendSnapshot();
         }
         else if (data.type === 'resync-level' && !isAuthority && typeof data.currentLevel === 'number') {
@@ -663,6 +672,75 @@
             lastTime = performance.now();
         }
     });
+
+    /**
+     * Authority-side restore: apply a full live snapshot to bring the sim to the
+     * exact state it was in when the game was paused. Called only on authority.
+     */
+    function applyLiveSnapshotAsAuthority(snap) {
+        if (!snap || !isAuthority) return;
+
+        // Prevent the loadLevel-triggered snapshot from firing (we'll send our own below)
+        pendingLevelSnapshot = false;
+
+        // Restore RNG + tick state
+        if (typeof snap.rngState === 'number') BreakOut.setRngState(snap.rngState);
+        if (typeof snap.tick === 'number') tick = snap.tick;
+        if (typeof snap.timer === 'number') BreakOut.timer = snap.timer;
+
+        // Restore scores
+        if (snap.scores) {
+            if (typeof snap.scores.A === 'number') BreakOut.score.A = snap.scores.A;
+            if (typeof snap.scores.B === 'number') BreakOut.score.B = snap.scores.B;
+        }
+
+        // Restore level bookkeeping
+        if (typeof snap.currentLevel === 'number') BreakOut.currentLevel = snap.currentLevel;
+        if (typeof snap.levelsCompleted === 'number') levelsCompleted = snap.levelsCompleted;
+
+        // Restore bricks (clear then place from snapshot)
+        clearAllBricks();
+        if (snap.bricks && snap.bricks.length > 0) {
+            placeBricksFromSnapshot(snap.bricks);
+        }
+
+        // Restore bonuses
+        clearAllBonuses();
+        if (snap.bonuses && snap.bonuses.length > 0) {
+            for (var i = 0; i < snap.bonuses.length; i++) {
+                var sb = snap.bonuses[i];
+                var created = createBonusFromPick(sb.type);
+                created.mpType = sb.type;
+                created.spawnX = sb.spawnX;
+                created.spawnY = sb.spawnY;
+                created.init();
+                created.add();
+                created.object.position.x = sb.x;
+                created.object.position.y = sb.y;
+                created.team = sb.team || '';
+                created.object.visible = true;
+            }
+        }
+
+        // Restore paddles
+        if (snap.paddles) {
+            if (snap.paddles.A && playerA) playerA.object.position.x = clampPaddleX(snap.paddles.A.x);
+            if (snap.paddles.B && playerB) playerB.object.position.x = clampPaddleX(snap.paddles.B.x);
+        }
+
+        // Restore balls
+        if (snap.balls) {
+            for (var bi = 0; bi < snap.balls.length; bi++) {
+                var ballData = snap.balls[bi];
+                var pl = getPlayerByTeam(ballData.team);
+                if (pl) applyBallFromSnapshot(pl, ballData);
+            }
+        }
+
+        // Authority sends the corrected state to peer immediately
+        sendSnapshot();
+    }
+
 
     function sendPaddle(paddleTick, x, shoot) {
         window.parent.postMessage({

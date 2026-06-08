@@ -6,11 +6,14 @@ export interface BreakoutMpState {
   currentLevel: number;         // level index to resume from (0-based)
   status: "playing" | "won" | "lost";
   winner: string | null;
+  /** Full live game snapshot captured by the authority on pause/save. */
+  liveSnapshot?: unknown;
 }
 
 export type BreakoutMpIntent =
   | { kind: "report-end"; result: "won" | "lost" }
-  | { kind: "checkpoint"; currentLevel: number };
+  | { kind: "checkpoint"; currentLevel: number }
+  | { kind: "save-snapshot"; snapshot: unknown };
 
 export const breakoutMpModule: GameModule<BreakoutMpState, BreakoutMpIntent> = {
   key: "breakout",
@@ -50,12 +53,25 @@ export const breakoutMpModule: GameModule<BreakoutMpState, BreakoutMpIntent> = {
       };
     }
 
+    if (intent?.kind === "save-snapshot") {
+      // Authority (seat A) is persisting the full live game snapshot so the game
+      // can be fully resumed (not just from the last level boundary).
+      return {
+        ok: true,
+        state: {
+          ...state,
+          liveSnapshot: intent.snapshot ?? null,
+        },
+      };
+    }
+
     if (intent?.kind === "report-end") {
       const nextStatus = intent.result; // "won" | "lost"
       const nextState: BreakoutMpState = {
         ...state,
         status: nextStatus,
         winner: nextStatus === "won" ? "both" : null,
+        liveSnapshot: null, // clear snapshot on game end
       };
 
       const outcome: GameOutcome = {

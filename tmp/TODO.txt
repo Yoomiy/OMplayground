@@ -1,8 +1,6 @@
 14. make the app shinyer
 15. add logging
 16. improve networking
-17. add voice chat
-18. fix chat keybinding
-19. save last knaown location
+19. save last known location
 20. save fps stats
-21. fix the spawn on water problem
+22. fix remuch in breakout

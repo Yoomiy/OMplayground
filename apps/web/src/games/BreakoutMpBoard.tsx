@@ -29,6 +29,10 @@ export function BreakoutMpBoard({
   const lastSyncedLevelRef = useRef<number | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  // Track whether we've already requested a save-snapshot on this pause cycle
+  const pauseSaveRequestedRef = useRef<boolean>(false);
+  const lastSaveTimeRef = useRef<number>(0);
+
   const toggleFullscreen = () => {
     if (!boardRef.current) return;
     if (!document.fullscreenElement) {
@@ -63,7 +67,9 @@ export function BreakoutMpBoard({
         seat: mySymbol,
         seed: gameState.seed,
         currentLevel: gameState.currentLevel ?? 0,
-        isAuthority: mySymbol === "A"
+        isAuthority: mySymbol === "A",
+        // Pass live snapshot so authority can restore exact mid-game state
+        liveSnapshot: mySymbol === "A" ? (gameState.liveSnapshot ?? null) : null
       },
       window.location.origin
     );
@@ -71,7 +77,7 @@ export function BreakoutMpBoard({
     setTimeout(() => {
       iframeRef.current?.focus();
     }, 100);
-  }, [mySymbol, gameState.seed, gameState.currentLevel]);
+  }, [mySymbol, gameState.seed, gameState.currentLevel, gameState.liveSnapshot]);
 
   // Handle outgoing messages from iframe
   useEffect(() => {
@@ -93,6 +99,18 @@ export function BreakoutMpBoard({
         onLiveDelta?.({ type: "paddle", paddle: data.paddle });
       } else if (data.type === "snapshot" && data.snapshot) {
         onLiveDelta?.({ type: "snapshot", snapshot: data.snapshot });
+        // Authority sends periodic snapshots — update server-side room state in-memory periodically.
+        // We save immediately if pause was requested, or every 5 seconds.
+        const now = Date.now();
+        const shouldSave =
+          mySymbol === "A" &&
+          (pauseSaveRequestedRef.current || now - lastSaveTimeRef.current > 5000);
+
+        if (shouldSave) {
+          pauseSaveRequestedRef.current = false;
+          lastSaveTimeRef.current = now;
+          onIntent({ kind: "save-snapshot", snapshot: data.snapshot });
+        }
       } else if (data.type === "end" && data.result) {
         onIntent({ kind: "report-end", result: data.result });
       }
@@ -100,7 +118,7 @@ export function BreakoutMpBoard({
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [sendInit, onLiveDelta, onIntent]);
+  }, [sendInit, onLiveDelta, onIntent, mySymbol]);
 
   // Retransmit seed when parameters are resolved
   useEffect(() => {
@@ -152,17 +170,43 @@ export function BreakoutMpBoard({
     return () => unsubscribe();
   }, [subscribeLiveDeltas]);
 
+  // On pause: request authority to send a save-snapshot
+  // On resume: send resume message
   useEffect(() => {
     if (!iframeRef.current) return;
-    iframeRef.current.contentWindow?.postMessage(
-      {
-        source: "playground-board",
-        gameKey: "breakout",
-        type: paused ? "pause" : "resume"
-      },
-      window.location.origin
-    );
-  }, [paused]);
+    if (paused) {
+      // Request immediate snapshot capture from authority so we can persist it
+      if (mySymbol === "A") {
+        pauseSaveRequestedRef.current = true;
+        iframeRef.current.contentWindow?.postMessage(
+          {
+            source: "playground-board",
+            gameKey: "breakout",
+            type: "request-save-snapshot"
+          },
+          window.location.origin
+        );
+      }
+      iframeRef.current.contentWindow?.postMessage(
+        {
+          source: "playground-board",
+          gameKey: "breakout",
+          type: "pause"
+        },
+        window.location.origin
+      );
+    } else {
+      pauseSaveRequestedRef.current = false;
+      iframeRef.current.contentWindow?.postMessage(
+        {
+          source: "playground-board",
+          gameKey: "breakout",
+          type: "resume"
+        },
+        window.location.origin
+      );
+    }
+  }, [paused, mySymbol]);
 
   const myPlayer = players?.find((p) => p.userId === myUserId);
   const myDisplayName = myPlayer?.displayName || "שחקן";

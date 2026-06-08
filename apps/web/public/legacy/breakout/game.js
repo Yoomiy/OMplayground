@@ -35,6 +35,233 @@ var renderer, stage, players = [], tmpPlayer = '', mousePos = {
     }, light = {}, mouseHideTimeOut, sounds = {},
     soundFiles = [], activeKeys = {};
 
+// ---- Solo Full-State Snapshot System ----
+// Brick type reverse-map (constructor name -> tile key)
+var SOLO_BRICK_TYPE_MAP = {
+    BrickStar: 'brick-star',
+    BrickFire: 'brick-fire',
+    BrickIce: 'brick-ice',
+    BrickColorOrange: 'brick-color-orange',
+    BrickColorRed: 'brick-color-red',
+    BrickColorPurple: 'brick-color-purple',
+    BrickSand: 'brick-sand',
+    BrickStone: 'brick-stone-003',
+    BrickFourStones: 'brick-4-001'
+};
+
+function soloGetBrickTypeKey(brick) {
+    if (brick.tileKey) return brick.tileKey;
+    var shortName = brick.constructor.name.replace(/^BreakOut\./, '');
+    return SOLO_BRICK_TYPE_MAP[shortName] || 'brick';
+}
+
+function soloGetBrickTexIdx(brick) {
+    var tex = brick.object._originalTexture || brick.object.texture;
+    var idx = brick.textures.indexOf(tex);
+    return idx < 0 ? brick.textures.length - 1 : idx;
+}
+
+function soloCaptureSnapshot() {
+    if (!tmpPlayer || tmpPlayer === '') return null;
+    var ball = tmpPlayer.ball;
+    var ballData = null;
+    if (ball) {
+        ballData = {
+            x: ball.object.position.x,
+            y: ball.object.position.y,
+            vx: ball.stats ? ball.stats.speed.x : 0,
+            vy: ball.stats ? ball.stats.speed.y : 0,
+            prevX: ball.prevPosition ? ball.prevPosition.x : ball.object.position.x,
+            prevY: ball.prevPosition ? ball.prevPosition.y : ball.object.position.y,
+            attached: ball.attachtTo !== '' && ball.attachtTo != null,
+            attachX: ball.attachtToPos ? ball.attachtToPos.x : 0,
+            attachY: ball.attachtToPos ? ball.attachtToPos.y : 0,
+            hasFire: !!ball.hasFire,
+            maxSpeed: ball.stats ? ball.stats.maxSpeed : 8
+        };
+    }
+
+    var bricks = [];
+    for (var j = 0; j < BreakOut.objects.length; j++) {
+        var obj = BreakOut.objects[j];
+        if (obj.name === 'brick' && obj.object.visible) {
+            bricks.push({
+                x: obj.object.position.x,
+                y: obj.object.position.y,
+                texIdx: soloGetBrickTexIdx(obj),
+                brickKey: soloGetBrickTypeKey(obj)
+            });
+        }
+    }
+
+    var bonuses = [];
+    for (var k = 0; k < BreakOut.objects.length; k++) {
+        var bonus = BreakOut.objects[k];
+        if (bonus.name === 'bonus' && bonus.object.visible) {
+            bonuses.push({
+                x: bonus.object.position.x,
+                y: bonus.object.position.y,
+                spawnX: bonus.spawnX || bonus.object.position.x,
+                spawnY: bonus.spawnY || bonus.object.position.y,
+                type: bonus.mpType || 'bonus-coin'
+            });
+        }
+    }
+
+    // currentLevel was already incremented after loadLevel, so the *playing* level
+    // is currentLevel - 1 (wrapping handled). Save the playing level index.
+    var playingLevel = BreakOut.currentLevel - 1;
+    if (playingLevel < 0) playingLevel = BreakOut.levels.length - 1;
+
+    return {
+        kind: 'fullSnapshot',
+        currentLevel: playingLevel,
+        score: BreakOut.score.A,
+        paddleX: tmpPlayer.object ? tmpPlayer.object.position.x : 640,
+        ball: ballData,
+        bricks: bricks,
+        bonuses: bonuses,
+        timer: BreakOut.timer
+    };
+}
+
+function soloSendSnapshot() {
+    var snap = soloCaptureSnapshot();
+    if (!snap) return;
+    window.parent.postMessage({
+        source: "playground-legacy-game",
+        gameKey: "breakout",
+        type: "fullSnapshot",
+        snapshot: snap
+    }, window.location.origin);
+}
+
+// Periodic auto-save every 2 seconds
+var soloSnapshotInterval = null;
+function soloStartAutoSave() {
+    if (soloSnapshotInterval) clearInterval(soloSnapshotInterval);
+    soloSnapshotInterval = setInterval(function() {
+        soloSendSnapshot();
+    }, 2000);
+}
+
+// Save on page hide/unload
+window.addEventListener('pagehide', function() { soloSendSnapshot(); });
+window.addEventListener('beforeunload', function() { soloSendSnapshot(); });
+
+// Listen for restore-snapshot message from parent
+window.addEventListener('message', function(event) {
+    if (event.origin !== window.location.origin) return;
+    var data = event.data;
+    if (data && data.source === 'playground-board' && data.gameKey === 'breakout' && data.type === 'restore-snapshot') {
+        soloRestoreSnapshot(data.snapshot);
+    }
+});
+
+// Brick factory for restoring from snapshot (mirrors multiplayer.js createBrickByKey)
+function soloCreateBrickByKey(key) {
+    key = key || 'brick';
+    var brick;
+    switch (key) {
+        case 'brick-star': brick = new BreakOut.BrickStar(); break;
+        case 'brick-fire': brick = new BreakOut.BrickFire(); break;
+        case 'brick-ice': brick = new BreakOut.BrickIce(); break;
+        case 'brick-color-orange': brick = new BreakOut.BrickColorOrange(); break;
+        case 'brick-color-red': brick = new BreakOut.BrickColorRed(); break;
+        case 'brick-color-purple': brick = new BreakOut.BrickColorPurple(); break;
+        case 'brick-sand': brick = new BreakOut.BrickSand(); break;
+        case 'brick-stone-003': brick = new BreakOut.BrickStone(); break;
+        case 'brick-4-001': brick = new BreakOut.BrickFourStones(); break;
+        default:
+            brick = new BreakOut.Brick();
+    }
+    brick.tileKey = key;
+    return brick;
+}
+
+function soloSetBrickTexIdx(brick, texIdx) {
+    if (typeof brick.textures[texIdx] !== 'undefined') {
+        brick.object._originalTexture = brick.textures[texIdx];
+        brick.object.texture = brick.textures[texIdx];
+    }
+}
+
+function soloRestoreSnapshot(snap) {
+    if (!snap || !tmpPlayer || tmpPlayer === '') return;
+
+    // Restore score
+    if (typeof snap.score === 'number') {
+        BreakOut.score.A = snap.score;
+        BreakOut.score.B = 0;
+    }
+    if (typeof snap.timer === 'number') {
+        BreakOut.timer = snap.timer;
+    }
+
+    // Restore paddle position
+    if (typeof snap.paddleX === 'number') {
+        tmpPlayer.object.position.x = snap.paddleX;
+    }
+
+    // Clear existing bricks
+    var toRemove = [];
+    for (var i = 0; i < BreakOut.objects.length; i++) {
+        if (BreakOut.objects[i].name === 'brick') {
+            toRemove.push(BreakOut.objects[i]);
+        }
+    }
+    for (var r = 0; r < toRemove.length; r++) {
+        if (toRemove[r].object != null) stage.removeChild(toRemove[r].object);
+        var idx = BreakOut.objects.indexOf(toRemove[r]);
+        if (idx >= 0) BreakOut.objects.splice(idx, 1);
+    }
+    BreakOut.totalBricks = 0;
+
+    // Place bricks from snapshot
+    if (snap.bricks && snap.bricks.length > 0) {
+        for (var b = 0; b < snap.bricks.length; b++) {
+            var sb = snap.bricks[b];
+            var brick = soloCreateBrickByKey(sb.brickKey || 'brick');
+            brick.init();
+            brick.add();
+            brick.object.position.x = sb.x;
+            brick.object.position.y = sb.y;
+            soloSetBrickTexIdx(brick, sb.texIdx || 0);
+            BreakOut.totalBricks++;
+        }
+    }
+
+    // Restore ball
+    if (snap.ball) {
+        var ballData = snap.ball;
+        var ball = tmpPlayer.ball;
+        if (ball) {
+            ball.object.position.x = ballData.x;
+            ball.object.position.y = ballData.y;
+            if (ball.stats) {
+                if (ballData.attached) {
+                    ball.attachtTo = tmpPlayer;
+                    ball.attachtToPos = { x: ballData.attachX, y: ballData.attachY };
+                    tmpPlayer.attachedBalls = [ball];
+                    ball.stats.speed.x = 0;
+                    ball.stats.speed.y = 0;
+                } else {
+                    ball.attachtTo = '';
+                    ball.stats.speed.x = ballData.vx;
+                    ball.stats.speed.y = ballData.vy;
+                }
+                if (ball.prevPosition) {
+                    ball.prevPosition.x = typeof ballData.prevX === 'number' ? ballData.prevX : ballData.x;
+                    ball.prevPosition.y = typeof ballData.prevY === 'number' ? ballData.prevY : ballData.y;
+                }
+                if (typeof ballData.maxSpeed === 'number') ball.stats.maxSpeed = ballData.maxSpeed;
+                ball.hasFire = !!ballData.hasFire;
+            }
+        }
+    }
+}
+// ---- End Solo Snapshot System ----
+
 soundFiles.push(
     {
         key: 'background',
@@ -117,6 +344,18 @@ function init() {
     BreakOut.init();
     var player = BreakOut.addPlayer('solo-player');
     tmpPlayer = player.element;
+
+    // Send solo-ready AFTER the initial level's AJAX completes (bricks placed)
+    // so that restore-snapshot can safely clear and replace those bricks.
+    BreakOut.onFirstLevelLoaded = function() {
+        soloStartAutoSave();
+        window.parent.postMessage({
+            source: "playground-legacy-game",
+            gameKey: "breakout",
+            type: "solo-ready"
+        }, window.location.origin);
+    };
+
     BreakOut.loadLevel();
 
     window.addEventListener('keydown', function (e) {

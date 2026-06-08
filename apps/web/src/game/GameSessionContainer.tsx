@@ -755,15 +755,57 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
     >
       <main className="min-w-0 space-y-4">
         <div className={desktopPanelClass("flex flex-wrap items-center justify-between gap-3 px-4 py-3")}>
-          <p className="text-sm font-bold text-slate-600">
-            {isTeacherObserver ? "צפייה בלבד (מורה) · " : ""}
-            {status}
-          </p>
-          {toast ? (
-            <div role="status" className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-950">
-              {toast}
-            </div>
-          ) : null}
+          <div className="flex items-center gap-3">
+            <p className="text-sm font-bold text-slate-600">
+              {isTeacherObserver ? "צפייה בלבד (מורה) · " : ""}
+              {status}
+            </p>
+            {toast ? (
+              <div role="status" className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-950">
+                {toast}
+              </div>
+            ) : null}
+          </div>
+          <div className="flex items-center gap-2">
+            {iAmHost && !endOverlay ? (
+              <>
+                {paused ? (
+                  <button
+                    type="button"
+                    className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-500 disabled:opacity-50"
+                    disabled={!canResume}
+                    onClick={() => resumeGame()}
+                  >
+                    המשך משחק
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-500"
+                    onClick={() => pauseGame()}
+                  >
+                    השהה
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="rounded-lg bg-rose-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-rose-600"
+                  onClick={() => stopGame()}
+                >
+                  סיים משחק
+                </button>
+              </>
+            ) : null}
+            <button
+              type="button"
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-50"
+              onClick={() =>
+                navigate(isAdmin ? "/admin" : isTeacherObserver ? "/teacher" : "/home")
+              }
+            >
+              {isAdmin ? "חזרה לניהול" : isTeacherObserver ? "חזרה ללוח המורה" : "יציאה"}
+            </button>
+          </div>
         </div>
 
         <section className={desktopPanelClass("min-h-[560px] p-4")}>

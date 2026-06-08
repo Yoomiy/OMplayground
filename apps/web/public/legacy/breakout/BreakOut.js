@@ -367,6 +367,7 @@ var BreakOut = {
             }
             BreakOut.firstLevelLoaded = true;
 
+
             var tileWidth = jsonData.tilewidth;
             var tileHeight = jsonData.tileheight;
             var tiles = [];
@@ -437,6 +438,7 @@ var BreakOut = {
                                 console.log(tiles[tileIndex].key);
                                 brick = new BreakOut.Brick();
                         }
+                        brick.tileKey = tiles[tileIndex].key;
                         brick.init();
                         brick.add();
                         brick.object.position.x = x + tileWidth / 2;
@@ -445,6 +447,12 @@ var BreakOut = {
                     }
                     x += tileWidth;
                 }
+            }
+            // Notify game.js that the first level has been fully loaded (bricks placed)
+            if (typeof BreakOut.onFirstLevelLoaded === 'function') {
+                var cb = BreakOut.onFirstLevelLoaded;
+                BreakOut.onFirstLevelLoaded = null;
+                cb();
             }
         });
 

@@ -8,3 +8,4 @@
 19. test fully recess end
 20. check why games aren't shown under resume game immidietly after leaving
 21. don't change host if they leave when game is paused
+22. allow hebrew usernames
