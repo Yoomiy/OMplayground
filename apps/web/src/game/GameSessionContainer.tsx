@@ -91,6 +91,7 @@ interface BoardProps {
   onGoHome?: () => void;
   onLiveDelta?: (delta: any) => void;
   subscribeLiveDeltas?: (cb: (payload: any) => void) => () => void;
+  paused?: boolean;
   players?: RoomPlayer[];
 }
 
@@ -183,6 +184,7 @@ const BOARD_REGISTRY: Record<string, BoardRegistryEntry> = {
     )
   },
   breakout: {
+    fullscreen: true,
     component: ({
       gameState,
       mySymbol,
@@ -190,6 +192,7 @@ const BOARD_REGISTRY: Record<string, BoardRegistryEntry> = {
       onIntent,
       onLiveDelta,
       subscribeLiveDeltas,
+      paused,
       players
     }) => (
       <BreakoutMpBoard
@@ -199,6 +202,7 @@ const BOARD_REGISTRY: Record<string, BoardRegistryEntry> = {
         onIntent={(intent) => onIntent(intent)}
         onLiveDelta={onLiveDelta}
         subscribeLiveDeltas={subscribeLiveDeltas}
+        paused={paused}
         players={players}
       />
     )
@@ -797,6 +801,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
                 onRespondRematch={respondToRematch}
                 onLiveDelta={onLiveDelta}
                 subscribeLiveDeltas={subscribeLiveDeltas}
+                paused={paused}
                 onGoHome={() =>
                   navigate(isAdmin ? "/admin" : isTeacherObserver ? "/teacher" : "/home")
                 }

@@ -21,7 +21,7 @@ export const breakoutMpModule: GameModule<BreakoutMpState, BreakoutMpIntent> = {
     if (players[0]) seats[players[0].userId] = "A";
     if (players[1]) seats[players[1].userId] = "B";
 
-    // Generate a random integer seed for deterministic lockstep physics
+    // Generate a shared seed for the iframe simulation; seat A periodically snapshots authority state.
     const seed = Math.floor(Math.random() * 1000000) + 1;
 
     return {
@@ -79,4 +79,3 @@ export const breakoutMpModule: GameModule<BreakoutMpState, BreakoutMpIntent> = {
     return state.status === "won" || state.status === "lost";
   }
 };
-

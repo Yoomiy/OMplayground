@@ -9,6 +9,7 @@ export interface BreakoutMpBoardProps {
   onLiveDelta?: (payload: any) => void;
   subscribeLiveDeltas?: (cb: (payload: any) => void) => () => void;
   isHost?: boolean;
+  paused?: boolean;
   players?: { userId: string; displayName: string }[];
 }
 
@@ -19,11 +20,13 @@ export function BreakoutMpBoard({
   onIntent,
   onLiveDelta,
   subscribeLiveDeltas,
+  paused = false,
   players
 }: BreakoutMpBoardProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
   const iframeReadyRef = useRef<boolean>(false);
+  const lastSyncedLevelRef = useRef<number | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const toggleFullscreen = () => {
@@ -59,7 +62,8 @@ export function BreakoutMpBoard({
         type: "init",
         seat: mySymbol,
         seed: gameState.seed,
-        currentLevel: gameState.currentLevel ?? 0
+        currentLevel: gameState.currentLevel ?? 0,
+        isAuthority: mySymbol === "A"
       },
       window.location.origin
     );
@@ -83,10 +87,12 @@ export function BreakoutMpBoard({
         sendInit();
       } else if (data.type === "checkpoint" && typeof data.state?.currentLevel === "number") {
         onIntent({ kind: "checkpoint", currentLevel: data.state.currentLevel });
-      } else if (data.type === "input" && data.input) {
-        onLiveDelta?.({ type: "input", input: data.input });
-      } else if (data.type === "heartbeat" && data.heartbeat) {
-        onLiveDelta?.({ type: "heartbeat", heartbeat: data.heartbeat });
+      } else if (data.type === "need-snapshot") {
+        onLiveDelta?.({ type: "need-snapshot" });
+      } else if (data.type === "paddle" && data.paddle) {
+        onLiveDelta?.({ type: "paddle", paddle: data.paddle });
+      } else if (data.type === "snapshot" && data.snapshot) {
+        onLiveDelta?.({ type: "snapshot", snapshot: data.snapshot });
       } else if (data.type === "end" && data.result) {
         onIntent({ kind: "report-end", result: data.result });
       }
@@ -103,6 +109,27 @@ export function BreakoutMpBoard({
     }
   }, [mySymbol, gameState.seed, sendInit]);
 
+  // If the server checkpoint advances while the iframe stays mounted, resync quietly.
+  useEffect(() => {
+    if (!iframeReadyRef.current || !iframeRef.current) return;
+    const level = gameState.currentLevel ?? 0;
+    if (lastSyncedLevelRef.current === null) {
+      lastSyncedLevelRef.current = level;
+      return;
+    }
+    if (lastSyncedLevelRef.current === level) return;
+    lastSyncedLevelRef.current = level;
+    iframeRef.current.contentWindow?.postMessage(
+      {
+        source: "playground-board",
+        gameKey: "breakout",
+        type: "resync-level",
+        currentLevel: level
+      },
+      window.location.origin
+    );
+  }, [gameState.currentLevel]);
+
   // Handle incoming live deltas from the peer
   useEffect(() => {
     if (!subscribeLiveDeltas) return;
@@ -115,8 +142,8 @@ export function BreakoutMpBoard({
           source: "playground-board",
           gameKey: "breakout",
           type: delta.type,
-          input: delta.input,
-          heartbeat: delta.heartbeat
+          paddle: delta.paddle,
+          snapshot: delta.snapshot
         },
         window.location.origin
       );
@@ -124,6 +151,18 @@ export function BreakoutMpBoard({
 
     return () => unsubscribe();
   }, [subscribeLiveDeltas]);
+
+  useEffect(() => {
+    if (!iframeRef.current) return;
+    iframeRef.current.contentWindow?.postMessage(
+      {
+        source: "playground-board",
+        gameKey: "breakout",
+        type: paused ? "pause" : "resume"
+      },
+      window.location.origin
+    );
+  }, [paused]);
 
   const myPlayer = players?.find((p) => p.userId === myUserId);
   const myDisplayName = myPlayer?.displayName || "שחקן";
@@ -173,7 +212,7 @@ export function BreakoutMpBoard({
               <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
             </span>
             <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">
-              Lockstep Active
+              Split Paddle Sync
             </span>
           </div>
 
