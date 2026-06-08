@@ -1,9 +1,23 @@
-import { useEffect, useRef, useState } from "react";
-import type { SoloGameSaveControls } from "@/lib/soloGameSaves";
+import { useEffect, useRef, useState, useMemo } from "react";
+import { isJsonObject, type SoloGameSaveControls } from "@/lib/soloGameSaves";
 
 export function BreakoutSolo({ save }: { save: SoloGameSaveControls }) {
   const sectionRef = useRef<HTMLElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const resumeLevel = useMemo(() => {
+    if (
+      isJsonObject(save.savedState) &&
+      typeof save.savedState.currentLevel === "number"
+    ) {
+      return Math.max(0, Math.floor(save.savedState.currentLevel));
+    }
+    return null;
+  }, [save.savedState]);
+
+  const src = resumeLevel !== null
+    ? `/legacy/breakout/index.html?resumeLevel=${resumeLevel}`
+    : "/legacy/breakout/index.html";
 
   const toggleFullscreen = () => {
     if (!sectionRef.current) return;
@@ -99,7 +113,7 @@ export function BreakoutSolo({ save }: { save: SoloGameSaveControls }) {
       }`}>
         <iframe
           title="Breakout"
-          src="/legacy/breakout/index.html"
+          src={src}
           className="h-full w-full"
           style={{ border: 0 }}
           allow="autoplay; fullscreen"

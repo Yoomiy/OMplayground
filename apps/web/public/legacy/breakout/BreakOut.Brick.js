@@ -111,8 +111,8 @@ BreakOut.Brick.prototype.damage = function (team, damage) {
 
 BreakOut.Brick.prototype.remove = function () {
 
-    if (this.bonuses.length > 0 && Math.random() * 100 < this.dropChance) {
-        var bonus = this.bonuses[Math.floor(Math.random() * this.bonuses.length)];
+    if (this.bonuses.length > 0 && BreakOut.random() * 100 < this.dropChance) {
+        var bonus = this.bonuses[Math.floor(BreakOut.random() * this.bonuses.length)];
         switch (bonus) {
             case 'bonus-coin':
                 bonus = new BreakOut.BonusCoin();

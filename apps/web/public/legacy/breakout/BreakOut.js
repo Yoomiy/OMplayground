@@ -248,8 +248,8 @@ var BreakOut = {
             for (var i = 0; i < 2; i++) {
                 var ball = new BreakOut.Ball();
                 ball.init();
-                ball.object.position.x = Math.random() * 64;
-                ball.object.position.y = Math.random() * this.settings.height / 2;
+                ball.object.position.x = BreakOut.random() * 64;
+                ball.object.position.y = BreakOut.random() * this.settings.height / 2;
                 ball.add();
             }
         }
@@ -328,11 +328,10 @@ var BreakOut = {
             COUCHFRIENDS.connect();
         }
 
-        if (window.localStorage) {
-            var level = window.localStorage.getItem('currentLevel');
-            if (level != '' && level >= 0) {
-                this.currentLevel = level;
-            }
+        // Check for resumeLevel query parameter (managed by React save system)
+        var match = window.location.search.match(/[?&]resumeLevel=(\d+)/);
+        if (match) {
+            this.currentLevel = Number(match[1]);
         }
     },
     loadLevel: function () {
@@ -349,7 +348,7 @@ var BreakOut = {
             player.element.ball.object.position.y = player.element.object.position.y;
             player.element.ball.attachtTo = player.element;
             player.element.ball.attachtToPos = {
-                x: Math.random() * 56 - 28,
+                x: BreakOut.random() * 56 - 28,
                 y: yPosBall
             };
             //player.element.ball = player.element.ball;
@@ -449,8 +448,11 @@ var BreakOut = {
             }
         });
 
-        if (window.localStorage) {
-            window.localStorage.setItem('currentLevel', this.currentLevel);
+        // Advance to the next level index first so the saved checkpoint points to
+        // the level that should be loaded on resume (not the just-completed one).
+        this.currentLevel++;
+        if (this.currentLevel >= this.levels.length) {
+            this.currentLevel = 0;
         }
 
         window.parent.postMessage({
@@ -459,11 +461,6 @@ var BreakOut = {
             type: "checkpoint",
             state: { currentLevel: Number(this.currentLevel) }
         }, window.location.origin);
-
-        this.currentLevel++;
-        if (this.currentLevel > this.levels.length) {
-            this.currentLevel = 0;
-        }
     },
     addPlayer: function (id) {
         var countA = 0;
@@ -505,7 +502,7 @@ var BreakOut = {
         ball.add();
         ball.attachtTo = playerElement;
         ball.attachtToPos = {
-            x: Math.random() * 56 - 28,
+            x: BreakOut.random() * 56 - 28,
             y: yPosBall
         };
         playerElement.ball = ball;
@@ -523,4 +520,8 @@ var BreakOut = {
             }
         }
     }
+};
+
+BreakOut.random = function () {
+    return Math.random();
 };

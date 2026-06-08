@@ -40,7 +40,7 @@ const SOLO_REGISTRY: Record<string, (save: SoloGameSaveControls) => ReactNode> =
   "alges-escapade": (save) => <AlgesEscapadeSolo save={save} />,
   hexgl: (save) => <HexGLSolo save={save} />,
   "chess-solo": (save) => <ChessSolo save={save} />,
-  breakout: (save) => <BreakoutSolo save={save} />
+  "breakout-solo": (save) => <BreakoutSolo save={save} />
 };
 
 export default function SoloGameContainer() {

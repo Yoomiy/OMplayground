@@ -4,12 +4,14 @@ This document outlines the architectural proposal, implementation steps, and cod
 
 Following the structure of other games in our system (which support both single-player and multiplayer modes), we outline a two-phased adoption roadmap.
 
+> **Status:** Phase 1 (Solo/Sandbox) is **implemented** — `BreakoutSolo` is registered under the solo key `breakout` in `SoloGameContainer.tsx`, with the legacy sandbox copied to `apps/web/public/legacy/breakout/`. Section 3 is kept for reference. The active work is **Phase 2** (Section 4).
+
 ---
 
 ## 1. Executive Summary
 The external Breakout game in [sourceCode/breakout](file:///home/yosi/OMplayground/sourceCode/breakout) is a JavaScript/PixiJS-based arcade game that supports multiplayer controls using a third-party API called CouchFriends. Because the CouchFriends API relies on external web-sockets and mobile controllers, we will implement a phased rollout:
-* **Phase 1: Solo/Sandbox Play**: Packages Breakout as an iframe-embedded solo game using custom keyboard/mouse adapter code. Saves state/progress directly to Supabase.
-* **Phase 2: Hybrid Client-Broadcast Multiplayer**: Converts the game into a shared-session multiplayer experience by utilizing our existing Socket.io server to relay client controller inputs to the Host, and broadcasting coordinate snapshots back to the clients.
+* **Phase 1: Solo/Sandbox Play** *(implemented)*: Packages Breakout as an iframe-embedded solo game using custom keyboard/mouse adapter code. Saves state/progress directly to Supabase.
+* **Phase 2: Deterministic-Lockstep Multiplayer**: Both clients run the **same** Breakout physics simulation; we relay only small **input intents** (paddle direction / shoot) between peers over the existing `LIVE_DELTA` relay channel. No server-side physics and **no changes to the game server**.
 
 ---
 
@@ -243,69 +245,147 @@ const SOLO_REGISTRY: Record<string, (save: SoloGameSaveControls) => ReactNode> =
 
 ---
 
-## 4. Phase 2: Hybrid Client-Broadcast Multiplayer
-Because kids in **OMplayground** play on remote screens, they cannot share a single physical TV screen (unlike standard CouchFriends setups). However, we can adapt the multi-paddle support already present in [BreakOut.addPlayer](file:///home/yosi/OMplayground/sourceCode/breakout/src/BreakOut.js#L453) using a **Host-Broadcast & Relay Model**.
+## 4. Phase 2: Deterministic-Lockstep Multiplayer
 
-This keeps the physics simulations strictly on the Host's browser, preventing CPU overload on the game-server while still syncing the screens of both players.
+### 4.0 Approach & accepted trade-off
+Both clients run the **identical** PixiJS Breakout simulation (the Phase-1 sandbox, reused). Each player owns one paddle and broadcasts only **input intents** (direction change / shoot) to the peer. Because the simulation is deterministic and both ends apply the same inputs at the same simulation tick, the two screens stay in sync **without** sending coordinate snapshots and **without** server-side physics.
+
+> **Authority trade-off (explicitly accepted for this game):** This model is **not** server-authoritative — it deviates from the platform's "never trust the client" rule. There is no anti-cheat and no authoritative correction; a malicious/modified client could desync. This is acceptable for a casual co-op arcade game between two kids. Do **not** copy this pattern for competitive/ranked games.
+
+Why this is significantly cheaper than the earlier host-broadcast draft:
+- **No server changes.** Inputs ride the existing `LIVE_DELTA` relay (see 4.1). We do not touch `apps/game-server/src/**`.
+- **No headless physics port.** We reuse the Phase-1 sandbox physics verbatim on both clients.
+- **Tiny payloads.** Only `{tick, dir, shoot}` per input change (not per frame), instead of 30 FPS coordinate dumps.
 
 ### Architecture
-
 ```
-┌────────────────────────┐                   ┌────────────────────────┐
-│  Player A (Host)       │                   │  Player B (Client)     │
-│  Runs physics & logic  │                   │  Renders visuals only  │
-│  Renders local screen  │                   │  Captures local input  │
-└─────┬───────────▲──────┘                   └──────┬──────────▲──────┘
-      │           │                                 │          │
-      │ 30 FPS    │ Inputs                          │ Inputs   │ 30 FPS
-      │ Snapshots │ (Relayed)                       │ (Sent)   │ Snapshots
-      ▼           │                                 ▼          │
-┌─────────────────┴────────────────────────────────────────────┴──────┐
-│            Socket.io Relay Broker (apps/game-server)                │
-└─────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────┐                         ┌──────────────────────────┐
+│  Player A (seat "A")      │                         │  Player B (seat "B")      │
+│  Runs FULL physics sim    │   input intents only    │  Runs FULL physics sim    │
+│  Owns paddle A            │  {tick,dir,shoot}        │  Owns paddle B            │
+│  Applies A locally + B    │ ───────────────────────▶│  Applies B locally + A    │
+│  from relay               │◀─────────────────────── │  from relay               │
+└──────────┬────────▲───────┘                         └──────────┬────────▲───────┘
+           │        │                                            │        │
+           ▼        │            LIVE_DELTA passthrough          ▼        │
+┌──────────────────────────────────────────────────────────────────────────────┐
+│   apps/game-server (UNCHANGED) — relays LIVE_DELTA to the other seat only      │
+└──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Step 1: Capture & Relay Client Inputs
-* **Client Interface (Player B)**: Player B runs a lightweight shell of the game. Keyboard actions (ArrowLeft / ArrowRight / Spacebar) are captured and emitted via the active Socket.io room channel:
-  ```typescript
-  socket.emit("INTENT_GAME", { type: "PADDLE_INPUT", direction: -1 | 1 | 0, shoot: boolean });
-  ```
-* **Server Relay**: The server receives this intent and broadcasts it back to the room Host (Player A).
-* **Host Application**: Player A's browser catches the input payload and applies it to Player B's paddle reference in the game sandbox:
-  ```javascript
-  // On input packet received from Player B:
-  var playerBPaddle = BreakOut.players.find(p => p.id === playerBId);
-  if (playerBPaddle) {
-      playerBPaddle.element.setSpeed(data.direction * 8);
-      if (data.shoot) {
-          playerBPaddle.element.shoot();
-      }
-  }
-  ```
+### 4.1 Transport: reuse the existing `LIVE_DELTA` relay (no server edits)
+The game server already exposes a pure peer-relay used today by the live-drawing board:
 
-### Step 2: Broadcast Host Game Coordinates (30 FPS)
-* **Host Application**: The Host client executes the game physics loop. At a throttle rate (e.g. every 30-40ms), it captures coordinate positions of moving components:
-  ```javascript
-  // Host captures state
-  var stateSnapshot = {
-      balls: BreakOut.objects.filter(o => o.name === 'ball').map(b => ({ x: b.object.position.x, y: b.object.position.y })),
-      paddles: BreakOut.players.map(p => ({ id: p.id, x: p.element.object.position.x, y: p.element.object.position.y })),
-      bricks: BreakOut.objects.filter(o => o.name === 'brick').map(br => ({ id: br.id, destroyed: br.destroyed }))
-  };
-  window.parent.postMessage({ source: "playground-legacy-game", gameKey: "breakout", type: "stateBroadcast", state: stateSnapshot }, "*");
-  ```
-  The React container forwards this snapshot to the game-server room via Socket.io.
-* **Client Interface (Player B)**: The client wrapper receives this periodic payload and overrides local PixiJS rendering layout:
-  * For paddles & balls, it smoothly interpolates (slides) objects to coordinates received in the snapshot.
-  * For bricks, it triggers destruction events if marked destroyed.
+```411:428:apps/game-server/src/index.ts
+  socket.on(
+    "LIVE_DELTA",
+    (payload: { sessionId?: string; delta?: unknown }) => {
+      const sessionId = payload?.sessionId;
+      const delta = payload?.delta;
+      if (!sessionId || delta === undefined) return;
+      const room = getRoom(sessionId);
+      if (!room || !room.players.has(userId)) return; // seated only
+      ...
+      socket.to(`session:${room.sessionId}`).emit("LIVE_DELTA", {
+        from: userId,
+        delta
+      });
+    }
+  );
+```
 
-This hybrid approach allows us to utilize **100% of the game's existing multi-paddle codebase** without complex server-side game-loop programming.
+It is seated-only, has a 1 MB cap, broadcasts to the rest of the room (sender excluded), tags the payload with `from: userId`, and does **no** validation or persistence — exactly an input bus. It is already surfaced to boards via `BoardProps` as `onLiveDelta(delta)` / `subscribeLiveDeltas(cb)` in `GameSessionContainer.tsx`. We send/receive input intents through these and **add nothing to the server**.
+
+Input-intent shape sent over `LIVE_DELTA`:
+```ts
+type BreakoutInput = { kind: "input"; seat: "A" | "B"; tick: number; dir: -1 | 0 | 1; shoot: boolean; seq: number };
+```
+
+### 4.2 Minimal `GameModule` (seats + lifecycle only — not physics)
+Add a tiny pure module `breakout-mp` whose only jobs are: assign seats, gate `minPlayers/maxPlayers = 2`, carry a shared `seed`, and report terminal/outcome. **Gameplay does not flow through `applyIntent`** — it flows over `LIVE_DELTA`. This keeps all the generic lifecycle (join, host transfer, pause/resume, recess, stop, rematch) working for free.
+
+```ts
+// packages/game-logic/src/breakoutMp.ts
+export interface BreakoutMpState {
+  seats?: Record<string, "A" | "B">;
+  seed: number;                 // shared deterministic seed for both sims
+  status: "playing" | "won" | "lost";
+  winner: string | null;
+}
+export interface BreakoutMpIntent {
+  // optional, low-rate: report game end / sync barrier; NOT per-frame input
+  kind: "report-end";
+  result: "won" | "lost";
+}
+```
+- `initialState(players)` assigns `seats` in join order and sets a `seed` (constant or derived; it just needs to be identical for both seats — it is broadcast in the snapshot).
+- `applyIntent` handles only the occasional `report-end` (or simply remains a near no-op). Reads seat from `state.seats[playerId]`, never from the intent.
+- `isTerminal` → `status !== "playing"`.
+
+Register it in `packages/game-logic/src/index.ts` and add unit tests (`breakoutMp.test.ts`) for seat assignment + terminal transition.
+
+### 4.3 Determinism requirements (the real work)
+For two independent simulations to agree frame-for-frame:
+
+1. **Fixed timestep + tick counter.** Decouple the sandbox update loop from `requestAnimationFrame`; accumulate elapsed time and step physics in fixed increments (e.g. 1000/60 ms), incrementing an integer `tick`. Both clients count ticks from a shared **start barrier** (a "START at tick 0" countdown both sides agree on after both have joined).
+2. **Input delay buffer.** A locally-pressed input is scheduled to apply at `tick + N` (e.g. N = 4 ≈ 66 ms), and broadcast tagged with that `applyTick`. Both sims apply every input (local and remote) exactly at its `applyTick`, so ordering is identical on both ends despite network latency. If a remote input for a due tick has not arrived, the sim must **stall** that tick until it does (classic lockstep).
+3. **Seeded RNG — replace physics-affecting `Math.random`.** The legacy code uses `Math.random` in ways that change gameplay and therefore must be made deterministic from the shared `seed`:
+   - `BreakOut.Brick.js:114-115` — whether a bonus drops and **which** bonus.
+   - `BreakOut.js:251-252` — a spawned ball's start position.
+   - `BreakOut.js:352` and `BreakOut.js:508` — the ball's attach offset on the paddle (affects launch trajectory).
+   Introduce a small seeded PRNG (e.g. mulberry32) seeded with `state.seed`, and route the above sites through it. Cosmetic randomness (`randomcolor.js`, `EffectSparkles`, `EffectPickup`, particle/sound variation) can keep `Math.random` — it does not affect simulation state.
+4. **No floating-point cross-engine concern** in practice: both clients run the same JS in the same browser engine family; given identical code path, fixed `dt`, and seeded RNG, results match. (If drift is ever observed, add the optional re-sync in 4.6.)
+
+### 4.4 Sandbox (iframe) changes — `apps/web/public/legacy/breakout/`
+Extend the existing Phase-1 sandbox (do not fork a second copy). Add a small `multiplayer.js` loaded by `index.html` only when a `?mp=1` query flag is present, so solo mode is untouched:
+- On load, read init via `postMessage` from the parent: `{ seat: "A"|"B", seed }`. Seed the PRNG; add the second paddle with `BreakOut.addPlayer` (multi-paddle already supported).
+- Replace the rAF loop with the fixed-timestep loop (4.3.1) and the input-delay scheduler (4.3.2).
+- Capture local keyboard → enqueue local input at `tick+N` and `postMessage` it up: `{ source:"playground-legacy-game", gameKey:"breakout-mp", type:"input", input:{...} }`.
+- Receive remote input via `postMessage` from the parent and enqueue it at its `applyTick`.
+- On game end, `postMessage` `{ type:"end", result }` so the board can report it via the module intent (optional, for the end overlay).
+
+### 4.5 React board — `apps/web/src/games/BreakoutMpBoard.tsx` (dumb bridge)
+A board with **no sockets/fetch** of its own (per architecture rule). It:
+- Renders the iframe `src="/legacy/breakout/index.html?mp=1"`, fullscreen layout.
+- Reads `mySymbol` (seat `"A"|"B"`) and `gameState.seed` from props; `postMessage`s the init to the iframe once loaded.
+- `subscribeLiveDeltas((p) => ...)` → forwards peer `BreakoutInput` into the iframe via `postMessage` (ignores its own `from`).
+- Listens to iframe `postMessage` local inputs → calls `onLiveDelta(input)`.
+- Optionally calls `onIntent({ kind:"report-end", result })` on game end to drive `GAME_ENDED`/overlay.
+
+Register it in `BOARD_REGISTRY` in `GameSessionContainer.tsx` with `fullscreen: true`, mapping `mySymbol`/`onLiveDelta`/`subscribeLiveDeltas`/`onIntent` through (the registry already passes these props — see the drawing entry at lines 170-177).
+
+### 4.6 Optional drift safety net
+If desync is ever observed in testing, add a low-rate integrity check **without** adding server authority: each client periodically sends a `LIVE_DELTA` `{ kind:"checksum", tick, hash }` of its simulation state; on mismatch, the seat-A client broadcasts a one-off full state dump over `LIVE_DELTA` and seat B hard-resets to it. This stays entirely client-side and is only a correction, not validation.
 
 ---
 
 ## 5. Summary of Actions & Proposed Next Steps
-* Create legacy app folder under `/apps/web/public/legacy/breakout/` and copy assets/source files.
-* Stub CouchFriends calls and enable local keyboard event listeners inside the sandbox script copy.
-* Inject `postMessage` calls into key transition boundaries.
-* Write wrapper React component and append to the solo game routes.
-* Verify performance, sound, and fullscreen scale responsiveness.
+
+### Phase 1 — done
+* Sandbox copied to `apps/web/public/legacy/breakout/`, CouchFriends stubbed, keyboard controls + `postMessage` save sync, `BreakoutSolo` registered (solo key `breakout`).
+
+### Phase 2 — to implement (deterministic lockstep)
+1. `packages/game-logic/src/breakoutMp.ts` — minimal seats/lifecycle module + `breakoutMp.test.ts`; register in `packages/game-logic/src/index.ts`.
+2. `apps/web/public/legacy/breakout/multiplayer.js` (+ `index.html` `?mp=1` hook) — fixed-timestep loop, input-delay scheduler, second paddle, seeded PRNG replacing the four physics-affecting `Math.random` sites.
+3. `apps/web/src/games/BreakoutMpBoard.tsx` — dumb iframe↔`LIVE_DELTA` bridge.
+4. Register the board in `BOARD_REGISTRY` (`GameSessionContainer.tsx`, `fullscreen: true`).
+5. **No changes** to `apps/game-server/src/**`, `room.ts`, `lifecycle.ts`, etc.
+6. Verify sync over real latency; add the optional checksum re-sync (4.6) only if drift appears.
+
+### What you (the user) must do
+* Run the catalog SQL. **The `breakout` key is already taken by the solo game**, so multiplayer needs a distinct key, e.g. `breakout-mp`:
+
+```sql
+INSERT INTO public.games (
+  id, name_he, description_he, type, game_url, min_players, max_players, is_active, is_multiplayer, for_gender
+) VALUES (
+  gen_random_uuid(), 'שבירת לבנים (שניים)', 'שבירת לבנים שיתופי לשני שחקנים', 'custom', 'breakout-mp', 2, 2, true, true, 'both'
+)
+ON CONFLICT (game_url) DO NOTHING;
+```
+  `game_url` must equal the module key and the `BOARD_REGISTRY` key (`breakout-mp`). `min_players`/`max_players` on the row must be `2`/`2`.
+
+### Known limitations (accepted)
+* Not server-authoritative — no anti-cheat; trusts both clients (explicitly accepted, see 4.0).
+* Lockstep stalls the slower client to the speed of the laggier link; fine for 2 players on reasonable connections, not for high-latency or >2 players.
+* Recovery from desync relies on the optional client-side re-sync (4.6), not the server.

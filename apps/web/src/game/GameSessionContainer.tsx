@@ -6,7 +6,8 @@ import type {
   ConnectFourState,
   DrawingState,
   MemoryState,
-  TicTacToeState
+  TicTacToeState,
+  BreakoutMpState
 } from "@playground/game-logic";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -19,6 +20,7 @@ import { ChessBoard } from "@/games/ChessBoard";
 import { DrawingBoard } from "@/games/DrawingBoard";
 import { MemoryBoard } from "@/games/MemoryBoard";
 import { TicTacToeBoard } from "@/games/TicTacToeBoard";
+import { BreakoutMpBoard } from "@/games/BreakoutMpBoard";
 import { desktopPanelClass } from "@/components/KidDesktopShell";
 
 type RoomEvent =
@@ -65,7 +67,7 @@ function endOverlayHeadline(
   }
   if (overlay.kind === "draw") return "תיקו!";
   if (overlay.kind === "stopped") return "המארח עצר את המשחק";
-  if (mySymbol && overlay.winner === mySymbol) return "ניצחת!";
+  if (mySymbol && (overlay.winner === mySymbol || overlay.winner === "both")) return "ניצחת!";
   return "הפסדת";
 }
 
@@ -176,6 +178,27 @@ const BOARD_REGISTRY: Record<string, BoardRegistryEntry> = {
         onLiveDelta={onLiveDelta}
         subscribeLiveDeltas={subscribeLiveDeltas}
         isHost={isHost}
+        players={players}
+      />
+    )
+  },
+  breakout: {
+    component: ({
+      gameState,
+      mySymbol,
+      myUserId,
+      onIntent,
+      onLiveDelta,
+      subscribeLiveDeltas,
+      players
+    }) => (
+      <BreakoutMpBoard
+        gameState={gameState as BreakoutMpState}
+        mySymbol={mySymbol as "A" | "B" | null}
+        myUserId={myUserId}
+        onIntent={(intent) => onIntent(intent)}
+        onLiveDelta={onLiveDelta}
+        subscribeLiveDeltas={subscribeLiveDeltas}
         players={players}
       />
     )
