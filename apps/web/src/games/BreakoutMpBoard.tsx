@@ -11,23 +11,27 @@ export interface BreakoutMpBoardProps {
   isHost?: boolean;
   paused?: boolean;
   players?: { userId: string; displayName: string }[];
+  connectedPlayers?: { userId: string; displayName: string }[];
+  endOverlay?: { kind: "won" | "draw" | "stopped"; winner?: string } | null;
 }
 
 export function BreakoutMpBoard({
   gameState,
   mySymbol,
-  myUserId,
   onIntent,
   onLiveDelta,
   subscribeLiveDeltas,
   paused = false,
-  players
+  connectedPlayers,
+  endOverlay
 }: BreakoutMpBoardProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
   const iframeReadyRef = useRef<boolean>(false);
   const lastSyncedLevelRef = useRef<number | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const isWaitingForPlayers = !connectedPlayers || connectedPlayers.length < 2;
 
   // Track whether we've already requested a save-snapshot on this pause cycle
   const pauseSaveRequestedRef = useRef<boolean>(false);
@@ -55,7 +59,7 @@ export function BreakoutMpBoard({
   }, []);
 
   const sendInit = useCallback(() => {
-    if (!iframeReadyRef.current || !iframeRef.current || !mySymbol || !gameState.seed) {
+    if (!iframeReadyRef.current || !iframeRef.current || !mySymbol || !gameState.seed || isWaitingForPlayers) {
       return;
     }
     console.log("Sending init to breakout iframe...");
@@ -122,10 +126,10 @@ export function BreakoutMpBoard({
 
   // Retransmit seed when parameters are resolved
   useEffect(() => {
-    if (mySymbol && gameState.seed) {
+    if (mySymbol && gameState.seed && !isWaitingForPlayers) {
       sendInit();
     }
-  }, [mySymbol, gameState.seed, sendInit]);
+  }, [mySymbol, gameState.seed, isWaitingForPlayers, sendInit]);
 
   // If the server checkpoint advances while the iframe stays mounted, resync quietly.
   useEffect(() => {
@@ -174,9 +178,10 @@ export function BreakoutMpBoard({
   // On resume: send resume message
   useEffect(() => {
     if (!iframeRef.current) return;
-    if (paused) {
+    const shouldPause = paused || !!endOverlay;
+    if (shouldPause) {
       // Request immediate snapshot capture from authority so we can persist it
-      if (mySymbol === "A") {
+      if (mySymbol === "A" && !endOverlay) {
         pauseSaveRequestedRef.current = true;
         iframeRef.current.contentWindow?.postMessage(
           {
@@ -206,16 +211,9 @@ export function BreakoutMpBoard({
         window.location.origin
       );
     }
-  }, [paused, mySymbol]);
+  }, [paused, endOverlay, mySymbol]);
 
-  const myPlayer = players?.find((p) => p.userId === myUserId);
-  const myDisplayName = myPlayer?.displayName || "שחקן";
 
-  const partnerSeat = mySymbol === "A" ? "B" : "A";
-  const partnerPlayer = players?.find((p) => p.userId !== myUserId);
-  const partnerDisplayName = partnerPlayer?.displayName || `שחקן ${partnerSeat}`;
-
-  const isObserver = !mySymbol;
 
   return (
     <div
@@ -225,50 +223,16 @@ export function BreakoutMpBoard({
       }`}
       dir="ltr"
     >
-      {/* Top Header Controls / Connection info */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-rose-950/40 pb-4">
-        <div className="flex flex-col gap-1">
-          <h2 className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-rose-400 via-pink-500 to-violet-500 tracking-wide">
-            שבירת לבנים שיתופי (Breakout Coop)
-          </h2>
-          <p className="text-xs font-semibold text-slate-400 text-right">
-            {isObserver ? (
-              <span className="text-yellow-500">צופה במשחק</span>
-            ) : (
-              <span className="flex items-center gap-1.5 justify-end">
-                <span>משחק בתור:</span>
-                <span className="font-extrabold text-rose-400">
-                  {myDisplayName} (מגן {mySymbol === "A" ? "תחתון" : "עליון"})
-                </span>
-                <span className="text-slate-500">|</span>
-                <span>שותף:</span>
-                <span className="font-bold text-slate-300">{partnerDisplayName}</span>
-              </span>
-            )}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {/* Active status indicator */}
-          <div className="flex items-center gap-2 rounded-2xl border border-rose-500/20 bg-rose-950/20 px-3.5 py-1.5 shadow-sm">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
-            </span>
-            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">
-              Split Paddle Sync
-            </span>
-          </div>
-
-          <button
-            type="button"
-            className="rounded-xl border border-rose-800 bg-rose-950/30 hover:bg-rose-900/40 px-4 py-2 text-xs font-bold text-rose-200 transition-all hover:scale-105 active:scale-95 duration-200 shadow-md shadow-rose-950/50 flex items-center gap-2"
-            onClick={toggleFullscreen}
-          >
-            {isFullscreen ? <span>מצב רגיל</span> : <span>מסך מלא</span>}
-          </button>
-        </div>
-      </div>
+      {/* Floating Fullscreen Toggle Button */}
+      {!isWaitingForPlayers && (
+        <button
+          type="button"
+          className="absolute top-8 right-8 z-20 rounded-xl border border-rose-850 bg-rose-950/40 hover:bg-rose-900/50 px-3.5 py-1.5 text-xs font-bold text-rose-200 transition-all hover:scale-105 active:scale-95 duration-200 shadow-md shadow-rose-950/50 flex items-center gap-1.5 opacity-60 hover:opacity-100"
+          onClick={toggleFullscreen}
+        >
+          {isFullscreen ? <span>מצב רגיל</span> : <span>מסך מלא</span>}
+        </button>
+      )}
 
       {/* Legacy Game Container */}
       <div 
@@ -285,16 +249,36 @@ export function BreakoutMpBoard({
           style={{ border: 0 }}
           allow="autoplay; fullscreen"
         />
-      </div>
 
-      {/* Control Tips Overlay */}
-      <div className="flex justify-between items-center bg-slate-900/30 border border-slate-900 rounded-2xl p-3 text-[11px] text-slate-400 font-semibold">
-        <div>
-          <span className="text-rose-400 font-bold">מגן תחתון (Team A):</span> תנועה עם מקשי החצים שמאלה/ימינה או A/D, ירייה עם מקש הרווח / חץ למעלה / W.
-        </div>
-        <div>
-          <span className="text-pink-400 font-bold">מגן עליון (Team B):</span> תנועה עם מקשי החצים שמאלה/ימינה או A/D, ירייה עם מקש הרווח / חץ למעלה / W.
-        </div>
+        {isWaitingForPlayers && (
+          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950/95 backdrop-blur-sm text-white p-6 text-center select-none" dir="rtl">
+            <div className="relative mb-6 flex h-20 w-20 items-center justify-center">
+              {/* Pulsing neon waves */}
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-500/20 opacity-75"></span>
+              <span className="absolute inline-flex h-4/5 w-4/5 animate-pulse rounded-full bg-pink-500/30"></span>
+              {/* Inner glowing core */}
+              <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 to-violet-600 shadow-lg shadow-rose-500/50">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6 animate-spin text-white">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                </svg>
+              </div>
+            </div>
+            
+            <h3 className="text-2xl font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-rose-400 via-pink-400 to-violet-400 mb-2">
+              ממתינים לשחקנים
+            </h3>
+            
+            <p className="text-slate-400 text-sm max-w-sm font-medium leading-relaxed">
+              המשחק דורש שני שחקנים. ברגע שהשחקן השני יתחבר, המשחק יתחיל באופן אוטומטי.
+            </p>
+            
+            {connectedPlayers && connectedPlayers.length > 0 && (
+              <div className="mt-6 rounded-2xl border border-rose-950/50 bg-rose-950/10 px-4 py-2 text-xs font-semibold text-rose-300">
+                שחקן מחובר: {connectedPlayers[0]?.displayName}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

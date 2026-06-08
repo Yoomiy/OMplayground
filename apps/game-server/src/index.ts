@@ -653,6 +653,13 @@ io.on("connection", (socket) => {
         });
         return;
       }
+      if (room.gameKey === "breakout") {
+        ack?.({
+          ok: false,
+          error: { code: "NO_REMATCH", message: "משחק חוזר לא נתמך במשחק זה" }
+        });
+        return;
+      }
       const guard = canStopGame(room, userId);
       if (!guard.ok) {
         ack?.({ ok: false, error: guard.error });
@@ -710,6 +717,13 @@ io.on("connection", (socket) => {
         ack?.({
           ok: false,
           error: { code: "NOT_FOUND", message: "Room not loaded" }
+        });
+        return;
+      }
+      if (room.gameKey === "breakout") {
+        ack?.({
+          ok: false,
+          error: { code: "NO_REMATCH", message: "משחק חוזר לא נתמך במשחק זה" }
         });
         return;
       }
@@ -851,13 +865,36 @@ io.on("connection", (socket) => {
       const connected = room
         ? connectedPayload(room)
         : { connectedPlayerIds: [], connectedPlayerNames: [] };
-      void persistPlayerLeave({
+      await persistPlayerLeave({
         supabase: supabaseAdmin,
         sessionId,
         result,
         ...connected,
         gameState: before?.state
       });
+      if (room && !room.paused && room.hasBeenActive && !room.module.isTerminal(room.state) && room.players.size < room.minPlayers) {
+        room.paused = true;
+        room.rematch = undefined;
+        await persistGamePaused({
+          supabase: supabaseAdmin,
+          sessionId,
+          gameState: room.state,
+          ...connected
+        });
+        io.to(`session:${sessionId}`).emit("ROOM_EVENT", {
+          sessionId,
+          kind: "GAME_PAUSED"
+        });
+      }
+    } else {
+      if (room && !room.paused && room.hasBeenActive && !room.module.isTerminal(room.state) && room.players.size < room.minPlayers) {
+        room.paused = true;
+        room.rematch = undefined;
+        io.to(`session:${sessionId}`).emit("ROOM_EVENT", {
+          sessionId,
+          kind: "GAME_PAUSED"
+        });
+      }
     }
     if (result.newHostId) {
       io.to(`session:${sessionId}`).emit("ROOM_EVENT", {

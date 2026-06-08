@@ -91,15 +91,10 @@ describe("Room / host transfer", () => {
     expect(state.seats?.["b-user"]).toBe("p2");
 
     const move = applyIntent(room, "b-user", {
-      type: "ADD_STROKE",
-      stroke: {
-        color: "#ffffff",
-        width: 2,
-        points: [
-          { x: 0, y: 0 },
-          { x: 10, y: 10 }
-        ]
-      }
+      type: "CHECKPOINT",
+      version: 1,
+      elements: [],
+      files: {}
     });
     expect(move.ok).toBe(true);
   });

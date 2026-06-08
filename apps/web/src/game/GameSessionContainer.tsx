@@ -93,6 +93,7 @@ interface BoardProps {
   subscribeLiveDeltas?: (cb: (payload: any) => void) => () => void;
   paused?: boolean;
   players?: RoomPlayer[];
+  connectedPlayers?: RoomPlayer[];
 }
 
 interface BoardRegistryEntry {
@@ -184,7 +185,6 @@ const BOARD_REGISTRY: Record<string, BoardRegistryEntry> = {
     )
   },
   breakout: {
-    fullscreen: true,
     component: ({
       gameState,
       mySymbol,
@@ -193,7 +193,9 @@ const BOARD_REGISTRY: Record<string, BoardRegistryEntry> = {
       onLiveDelta,
       subscribeLiveDeltas,
       paused,
-      players
+      players,
+      connectedPlayers,
+      endOverlay
     }) => (
       <BreakoutMpBoard
         gameState={gameState as BreakoutMpState}
@@ -204,6 +206,8 @@ const BOARD_REGISTRY: Record<string, BoardRegistryEntry> = {
         subscribeLiveDeltas={subscribeLiveDeltas}
         paused={paused}
         players={players}
+        connectedPlayers={connectedPlayers}
+        endOverlay={endOverlay}
       />
     )
   }
@@ -767,35 +771,6 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
             ) : null}
           </div>
           <div className="flex items-center gap-2">
-            {iAmHost && !endOverlay ? (
-              <>
-                {paused ? (
-                  <button
-                    type="button"
-                    className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-500 disabled:opacity-50"
-                    disabled={!canResume}
-                    onClick={() => resumeGame()}
-                  >
-                    המשך משחק
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-500"
-                    onClick={() => pauseGame()}
-                  >
-                    השהה
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className="rounded-lg bg-rose-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-rose-600"
-                  onClick={() => stopGame()}
-                >
-                  סיים משחק
-                </button>
-              </>
-            ) : null}
             <button
               type="button"
               className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-50"
@@ -848,6 +823,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
                   navigate(isAdmin ? "/admin" : isTeacherObserver ? "/teacher" : "/home")
                 }
                 players={roster.length > 0 ? roster : players}
+                connectedPlayers={players}
               />
             </div>
           ) : (
@@ -869,12 +845,12 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
               </p>
             ) : null}
             <div className="mt-3 flex flex-wrap justify-center gap-2">
-              {iAmHost && endOverlay.kind !== "stopped" && !rematch ? (
+              {iAmHost && endOverlay.kind !== "stopped" && !rematch && gameKey !== "breakout" ? (
                 <button type="button" className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-500" onClick={() => requestRematch()}>
                   בקש משחק חוזר
                 </button>
               ) : null}
-              {canVoteRematch ? (
+              {canVoteRematch && gameKey !== "breakout" ? (
                 <>
                   <button type="button" className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-500 disabled:opacity-50" disabled={acceptedRematch} onClick={() => respondToRematch(true)}>
                     {acceptedRematch ? "אישרת משחק חוזר" : "אני רוצה משחק חוזר"}
