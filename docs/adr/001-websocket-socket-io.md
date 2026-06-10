@@ -20,9 +20,20 @@ Use **Socket.io** for WebSockets.
 
 ## Room model
 
+### game-server (turn-based / event-driven)
+
 - Namespace: default `/`.
-- **Room name:** `session:<game_session_id>` for game session isolation.
-- **Authoritative state:** Held in server memory per session; clients send **intents** only; `packages/game-logic` validates transitions.
+- **Room name:** `session:{game_session_id}`.
+- **Primary client intent:** `INTENT_GAME` with `{ sessionId, intent }`.
+- **Authoritative state:** In server memory; `packages/game-logic` validates transitions.
+
+### minecraft-server (voxel tick)
+
+- **Room names:** `voxel:{sessionId}` (gameplay), `voxel-snapshot:{sessionId}` / `voxel-snapshot-teacher:{sessionId}` (filtered snapshots).
+- **Logic:** `packages/voxel-content` + server tick loop — **not** `GameModule`.
+- **Voice:** LiveKit SFU separate from Socket.io position sync (`POST /rtc/token`).
+
+See `ARCHITECTURE.md` for the full event matrix.
 
 ## Review
 

@@ -1,6 +1,8 @@
 # Data migration and cutover
 
-This document tracks the legacy SQL → Supabase migration path described in the implementation plan.
+This document tracks the legacy SQL → Supabase migration path. See [`ARCHITECTURE.md`](../ARCHITECTURE.md) for the current schema.
+
+> **Status (June 2026):** Schema and app rebuild are in production use. Migration from legacy Base44 may still be pending for some environments. Post-migration schema differs in places: `game_challenges` replaces `kid_profiles.pending_challenge`; friends UI is deprecated (`docs/friends-deprecation.md`) but `friendships` table remains.
 
 ## Preconditions
 
