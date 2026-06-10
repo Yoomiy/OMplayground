@@ -193,6 +193,7 @@ export function useVoxelSocket(
   const armSwingListeners = useRef(new Set<ArmSwingListener>());
   const playerDamageListeners = useRef(new Set<PlayerDamageListener>());
   const muteAllListeners = useRef(new Set<(payload: { mutedBy: string }) => void>());
+  const mergedPlayersRef = useRef<RoomSnapshot["players"]>({});
 
   const [connected, setConnected] = useState(false);
   const [status, setStatus] = useState<string>("מתחבר…");
@@ -218,6 +219,7 @@ export function useVoxelSocket(
     lastInputRef.current = null;
     lastEmittedInputRef.current = null;
     lastSentAtRef.current = 0;
+    mergedPlayersRef.current = {};
     void (async () => {
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token;
@@ -310,8 +312,20 @@ export function useVoxelSocket(
         }
       });
 
+      const notifySnapshotListeners = (players: RoomSnapshot["players"]) => {
+        for (const cb of snapshotListeners.current) cb({ players });
+      };
+
       s.on("ROOM_SNAPSHOT", (payload: RoomSnapshot) => {
-        for (const cb of snapshotListeners.current) cb(payload);
+        mergedPlayersRef.current = payload.players;
+        notifySnapshotListeners(mergedPlayersRef.current);
+      });
+      s.on("PLAYER_DELTA", (payload: RoomSnapshot) => {
+        mergedPlayersRef.current = {
+          ...mergedPlayersRef.current,
+          ...payload.players
+        };
+        notifySnapshotListeners(mergedPlayersRef.current);
       });
       s.on("BLOCK_DELTA", (payload: BlockDelta) => {
         for (const cb of blockDeltaListeners.current) cb(payload);
@@ -341,6 +355,10 @@ export function useVoxelSocket(
               ? null
               : prev
           );
+        }
+        if (payload.kind === "PLAYER_LEFT") {
+          delete mergedPlayersRef.current[payload.player.userId];
+          notifySnapshotListeners({ ...mergedPlayersRef.current });
         }
         for (const cb of roomEventListeners.current) cb(payload);
       });

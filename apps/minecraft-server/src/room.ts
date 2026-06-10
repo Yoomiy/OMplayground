@@ -139,6 +139,8 @@ export interface VoxelRoom {
   chestLocks: Map<string, string>;
   /** Set true when state changed since last tick emit. */
   dirty: boolean;
+  /** Players whose position/vitals changed since the last tick emit. */
+  dirtyPlayerIds: Set<string>;
   /** ms timestamp of last emitted snapshot — used by coalescing in tick.ts. */
   lastTickAt: number;
   /** Survival: item stacks in the world (magnet pickup). */
@@ -335,6 +337,7 @@ export function getOrCreateRoom(
     chestLocks: new Map(),
     cakeSlices: new Map(),
     dirty: false,
+    dirtyPlayerIds: new Set(),
     lastTickAt: 0,
     drops: hydrateDropsFromPersisted(meta.resumedState?.drops),
     activeTnts: createActiveTnts(),
@@ -410,6 +413,18 @@ function makeSpawnPointSafe(room: VoxelRoom, point: Vec3): Vec3 {
   }
   room.dirty = true;
   return point;
+}
+
+export function markPlayerDirty(room: VoxelRoom, userId: string): void {
+  room.dirty = true;
+  room.dirtyPlayerIds.add(userId);
+}
+
+export function markAllPlayersDirty(room: VoxelRoom): void {
+  room.dirty = true;
+  for (const id of room.players.keys()) {
+    room.dirtyPlayerIds.add(id);
+  }
 }
 
 export function spawnFor(room: VoxelRoom, userId: string): Vec3 {
@@ -490,7 +505,7 @@ export function assignPlayer(
   if (!room.roster.some((p) => p.userId === userId)) {
     room.roster.push({ userId, displayName });
   }
-  room.dirty = true;
+  markAllPlayersDirty(room);
   return { player };
 }
 
@@ -531,7 +546,7 @@ export function removePlayerFromRoom(
     if (holder === userId) r.chestLocks.delete(key);
   }
   r.players.delete(userId);
-  r.dirty = true;
+  markAllPlayersDirty(r);
 
   const activeKids = Array.from(r.players.values()).filter((p) => !p.isTeacher);
 

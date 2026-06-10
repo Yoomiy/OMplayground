@@ -26,8 +26,8 @@ interface SessionRow {
 export function TeacherPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { profile, loading } = useProfile(user);
-  const { isAdmin, loading: adminLoading } = useIsAdmin(user);
+  const { profile, loading } = useProfile();
+  const { isAdmin, loading: adminLoading } = useIsAdmin();
 
   useEffect(() => {
     if (isAdmin) {
@@ -159,7 +159,12 @@ function TeacherSessionList({
       .channel("teacher-sessions-live")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "game_sessions" },
+        {
+          event: "*",
+          schema: "public",
+          table: "game_sessions",
+          filter: `gender=eq.${teacherGender}`
+        },
         () => {
           void load();
         }
@@ -168,7 +173,7 @@ function TeacherSessionList({
     return () => {
       void supabase.removeChannel(ch);
     };
-  }, [load]);
+  }, [load, teacherGender]);
 
   const gameOptions = useMemo(() => {
     const m = new Map<string, string>();

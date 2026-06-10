@@ -47,6 +47,7 @@ import {
   persistGameStopped
 } from "./lifecycle";
 import { createRecessSweepState, recessEndSweep } from "./recessSweep";
+import { getCachedAuth } from "./authCache";
 
 const PORT = Number(process.env.PORT ?? 8080);
 /** localhost vs 127.0.0.1 are different origins — allow both for local Vite */
@@ -178,21 +179,7 @@ io.use(async (socket, next) => {
       next(new Error("SERVER_CONFIG"));
       return;
     }
-    const { data: authData, error: authErr } =
-      await supabaseAdmin.auth.getUser(token);
-    if (authErr || !authData?.user?.id) {
-      next(new Error("UNAUTHORIZED"));
-      return;
-    }
-    const { data: profile, error } = await supabaseAdmin
-      .from("kid_profiles")
-      .select("id, role, gender, full_name, is_active")
-      .eq("id", authData.user.id)
-      .maybeSingle();
-    if (error || !profile || !profile.is_active) {
-      next(new Error("FORBIDDEN"));
-      return;
-    }
+    const profile = await getCachedAuth(supabaseAdmin, token);
     if (profile.role === "kid") {
       try {
         const schedules = await loadRecessSchedules();
@@ -209,20 +196,29 @@ io.use(async (socket, next) => {
         return;
       }
     }
-    socket.data.userId = profile.id as string;
-    socket.data.displayName = profile.full_name as string;
-    socket.data.role = profile.role as string;
-    socket.data.gender = profile.gender as "boy" | "girl";
+    socket.data.userId = profile.userId;
+    socket.data.displayName = profile.full_name;
+    socket.data.role = profile.role;
+    socket.data.gender = profile.gender;
     logSocketAuthenticated(logger, socket);
     next();
-  } catch {
-    next(new Error("UNAUTHORIZED"));
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg === "FORBIDDEN") {
+      next(new Error("FORBIDDEN"));
+    } else {
+      next(new Error("UNAUTHORIZED"));
+    }
   }
 });
 
 io.on("connection", (socket) => {
   const originalOn = socket.on.bind(socket);
+  const HOT_SOCKET_EVENTS = new Set(["LIVE_DELTA"]);
   socket.on = (event: string, listener: (...args: any[]) => void | Promise<void>) => {
+    if (HOT_SOCKET_EVENTS.has(event)) {
+      return originalOn(event, listener);
+    }
     return originalOn(event, async (...args: any[]) => {
       const started = Date.now();
       const ack = typeof args[args.length - 1] === "function" ? args[args.length - 1] : undefined;
@@ -315,6 +311,25 @@ io.on("connection", (socket) => {
 
   function emitSnapshot(room: Room<unknown>) {
     io.to(`session:${room.sessionId}`).emit("ROOM_SNAPSHOT", roomSnapshot(room));
+  }
+
+  function shouldSkipFullSnapshot(gameKey: string, intent: unknown): boolean {
+    if (!intent || typeof intent !== "object") return false;
+    const typed = intent as { type?: string; kind?: string };
+    if (gameKey === "drawing" && typed.type === "CHECKPOINT") return true;
+    if (gameKey === "breakout" && typed.kind === "save-snapshot") return true;
+    return false;
+  }
+
+  function estimatePayloadBytes(value: unknown): number {
+    if (value == null) return 0;
+    if (typeof value === "string") return Buffer.byteLength(value);
+    if (typeof value === "number" || typeof value === "boolean") return 8;
+    if (Array.isArray(value)) return Math.min(value.length * 256, 1024 * 1024);
+    if (typeof value === "object") {
+      return Math.min(Object.keys(value as object).length * 512, 1024 * 1024);
+    }
+    return 64;
   }
 
   function connectedPayload(room: Room<unknown>) {
@@ -531,9 +546,8 @@ io.on("connection", (socket) => {
       if (!boundSessionId || boundSessionId !== sessionId) return;
       const room = getRoom(sessionId);
       if (!room || !room.players.has(userId)) return; // seated only
-      
-      const deltaStr = JSON.stringify(delta);
-      if (Buffer.byteLength(deltaStr) > 1024 * 1024) return; // 1MB cap
+
+      if (estimatePayloadBytes(delta) > 1024 * 1024) return; // 1MB cap
 
       socket.to(`session:${room.sessionId}`).emit("LIVE_DELTA", {
         from: userId,
@@ -590,7 +604,10 @@ io.on("connection", (socket) => {
         reply?.({ ok: false, error: res.error });
         return;
       }
-      emitSnapshot(room);
+      const skipSnapshot = shouldSkipFullSnapshot(room.gameKey, payload.intent);
+      if (!skipSnapshot) {
+        emitSnapshot(room);
+      }
       if (res.outcome) {
         io.to(`session:${sessionId}`).emit("ROOM_EVENT", {
           sessionId,
@@ -606,7 +623,11 @@ io.on("connection", (socket) => {
           });
         }
       }
-      reply?.({ ok: true, gameState: res.state });
+      reply?.(
+        skipSnapshot
+          ? { ok: true, gameState: res.state }
+          : { ok: true }
+      );
     }
   );
 

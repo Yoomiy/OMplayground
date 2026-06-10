@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { PlaygroundUserProvider } from "@/hooks/usePlaygroundUser";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { installGlobalTelemetry } from "@/utils/telemetry";
 import App from "./App";
@@ -14,7 +15,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <ErrorBoundary>
       <BrowserRouter>
         <AuthProvider>
-          <App />
+          <PlaygroundUserProvider>
+            <App />
+          </PlaygroundUserProvider>
         </AuthProvider>
       </BrowserRouter>
     </ErrorBoundary>

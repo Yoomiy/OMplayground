@@ -1,26 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { io, type Socket } from "socket.io-client";
-import type {
-  ChessState,
-  ConnectFourState,
-  DrawingState,
-  MemoryState,
-  TicTacToeState,
-  BreakoutMpState
-} from "@playground/game-logic";
+import type { BreakoutMpState } from "@playground/game-logic";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { usePersistedSessionChat } from "@/hooks/usePersistedSessionChat";
 import { useTeacherSessionChat } from "@/hooks/useTeacherSessionChat";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
-import { ConnectFourBoard } from "@/games/ConnectFourBoard";
-import { ChessBoard } from "@/games/ChessBoard";
-import { DrawingBoard } from "@/games/DrawingBoard";
-import { MemoryBoard } from "@/games/MemoryBoard";
-import { TicTacToeBoard } from "@/games/TicTacToeBoard";
-import { BreakoutMpBoard } from "@/games/BreakoutMpBoard";
+import { LazyGameBoard, isFullscreenBoard } from "@/game/lazyBoards";
 import { desktopPanelClass } from "@/components/KidDesktopShell";
 import { reportTelemetry } from "@/utils/telemetry";
 
@@ -97,123 +85,6 @@ interface BoardProps {
   connectedPlayers?: RoomPlayer[];
 }
 
-interface BoardRegistryEntry {
-  component: (props: BoardProps) => JSX.Element;
-  fullscreen?: boolean;
-}
-
-const BOARD_REGISTRY: Record<string, BoardRegistryEntry> = {
-  chess: {
-    component: ({
-      gameState,
-      mySymbol,
-      onIntent,
-      isHost,
-      endOverlay,
-      rematch,
-      canVoteRematch,
-      acceptedRematch,
-      refusedRematch,
-      onRequestRematch,
-      onRespondRematch,
-      onGoHome
-    }) => (
-      <ChessBoard
-        gameState={gameState as ChessState}
-        mySeat={mySymbol === "w" || mySymbol === "b" ? mySymbol : null}
-        onIntent={(intent) => onIntent(intent)}
-        isHost={isHost}
-        sessionEnd={
-          endOverlay
-            ? {
-                kind: endOverlay.kind,
-                winner: endOverlay.kind === "won" ? endOverlay.winner : undefined
-              }
-            : null
-        }
-        rematch={rematch}
-        canRequestRematch={
-          !!isHost && !!endOverlay && endOverlay.kind !== "stopped" && !rematch
-        }
-        canVoteRematch={canVoteRematch}
-        acceptedRematch={acceptedRematch}
-        refusedRematch={refusedRematch}
-        onRequestRematch={onRequestRematch}
-        onRespondRematch={onRespondRematch}
-        onGoHome={onGoHome}
-      />
-    )
-  },
-  tictactoe: {
-    component: ({ gameState, mySymbol, onIntent }) => (
-      <TicTacToeBoard
-        gameState={gameState as TicTacToeState}
-        mySymbol={mySymbol === "X" || mySymbol === "O" ? mySymbol : null}
-        onCellPress={(i) => onIntent({ cellIndex: i })}
-      />
-    )
-  },
-  connectfour: {
-    component: ({ gameState, mySymbol, onIntent }) => (
-      <ConnectFourBoard
-        gameState={gameState as ConnectFourState}
-        mySeat={mySymbol === "R" || mySymbol === "Y" ? mySymbol : null}
-        onIntent={(intent) => onIntent(intent)}
-      />
-    )
-  },
-  memory: {
-    component: ({ gameState, myUserId, onIntent }) => (
-      <MemoryBoard
-        gameState={gameState as MemoryState}
-        myUserId={myUserId}
-        onIntent={(intent) => onIntent(intent)}
-      />
-    )
-  },
-  drawing: {
-    component: ({ gameState, mySymbol, myUserId, onIntent, onLiveDelta, subscribeLiveDeltas, isHost, players }) => (
-      <DrawingBoard
-        gameState={gameState as DrawingState}
-        mySeat={mySymbol}
-        myUserId={myUserId}
-        onIntent={(intent) => onIntent(intent)}
-        onLiveDelta={onLiveDelta}
-        subscribeLiveDeltas={subscribeLiveDeltas}
-        isHost={isHost}
-        players={players}
-      />
-    )
-  },
-  breakout: {
-    component: ({
-      gameState,
-      mySymbol,
-      myUserId,
-      onIntent,
-      onLiveDelta,
-      subscribeLiveDeltas,
-      paused,
-      players,
-      connectedPlayers,
-      endOverlay
-    }) => (
-      <BreakoutMpBoard
-        gameState={gameState as BreakoutMpState}
-        mySymbol={mySymbol as "A" | "B" | null}
-        myUserId={myUserId}
-        onIntent={(intent) => onIntent(intent)}
-        onLiveDelta={onLiveDelta}
-        subscribeLiveDeltas={subscribeLiveDeltas}
-        paused={paused}
-        players={players}
-        connectedPlayers={connectedPlayers}
-        endOverlay={endOverlay}
-      />
-    )
-  }
-};
-
 /** In dev, prefer same-origin + Vite proxy so the browser does not hit :8080 directly (avoids wrong URL / CORS). */
 function gameServerUrl(): string {
   const fromEnv = import.meta.env.VITE_GAME_SERVER_URL?.trim();
@@ -250,8 +121,8 @@ export interface GameSessionContainerProps {
 export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { profile } = useProfile(user);
-  const { isAdmin } = useIsAdmin(user);
+  const { profile } = useProfile();
+  const { isAdmin } = useIsAdmin();
   const isTeacherObserver = profile?.role === "teacher";
   const teacherChat = useTeacherSessionChat(
     isTeacherObserver ? sessionId : undefined
@@ -682,9 +553,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
     return <p className="text-sm text-slate-600">{status}</p>;
   }
 
-  const boardEntry = BOARD_REGISTRY[gameKey];
-  const Board = boardEntry?.component;
-  const isFullscreen = boardEntry?.fullscreen === true;
+  const isFullscreen = isFullscreenBoard(gameKey);
   const iAmHost =
     !isTeacherObserver &&
     myUserId != null &&
@@ -828,42 +697,38 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
             </div>
           ) : null}
 
-          {Board ? (
-            <div
-              className={
-                isTeacherObserver || paused
-                  ? "pointer-events-none mx-auto max-w-5xl opacity-60"
-                  : "mx-auto max-w-5xl"
-              }
-            >
-               <Board
-                gameState={gameState}
-                mySymbol={mySymbol}
-                myUserId={myUserId}
-                onIntent={onIntent}
-                isHost={iAmHost}
-                endOverlay={endOverlay}
-                rematch={rematch}
-                canVoteRematch={canVoteRematch}
-                acceptedRematch={acceptedRematch}
-                refusedRematch={refusedRematch}
-                onRequestRematch={requestRematch}
-                onRespondRematch={respondToRematch}
-                onLiveDelta={onLiveDelta}
-                subscribeLiveDeltas={subscribeLiveDeltas}
-                paused={paused}
-                onGoHome={() =>
-                  navigate(isAdmin ? "/admin" : isTeacherObserver ? "/teacher" : "/home")
-                }
-                players={roster.length > 0 ? roster : players}
-                connectedPlayers={players}
-              />
-            </div>
-          ) : (
-            <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900">
-              משחק לא נתמך בלקוח: {gameKey}
-            </p>
-          )}
+          <div
+            className={
+              isTeacherObserver || paused
+                ? "pointer-events-none mx-auto max-w-5xl opacity-60"
+                : "mx-auto max-w-5xl"
+            }
+          >
+            <LazyGameBoard
+              gameKey={gameKey}
+              boardProps={{
+                gameState,
+                mySymbol,
+                myUserId: myUserId ?? "",
+                onIntent,
+                isHost: iAmHost,
+                endOverlay,
+                rematch,
+                canVoteRematch,
+                acceptedRematch,
+                refusedRematch,
+                onRequestRematch: requestRematch,
+                onRespondRematch: respondToRematch,
+                onLiveDelta,
+                subscribeLiveDeltas,
+                paused,
+                onGoHome: () =>
+                  navigate(isAdmin ? "/admin" : isTeacherObserver ? "/teacher" : "/home"),
+                players: roster.length > 0 ? roster : players,
+                connectedPlayers: players
+              }}
+            />
+          </div>
         </section>
 
         {endOverlay && gameKey !== "chess" ? (

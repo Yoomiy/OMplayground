@@ -66,7 +66,7 @@ function KidRow({
 
 export function OnlineKids({ className }: { className?: string }) {
   const { user } = useAuth();
-  const { profile } = useProfile(user);
+  const { profile } = useProfile();
   const { kids, loading } = useOnlineKids(true);
   const [selected, setSelected] = useState<PublicKidProfile | null>(null);
   const [query, setQuery] = useState("");

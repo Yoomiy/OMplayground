@@ -41,10 +41,9 @@ export function KidDesktopShell({
   contentClassName?: string;
 }) {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { profile } = useProfile(user);
+  const { profile } = useProfile();
   const { onlineUserIds } = useOnlinePresence();
-  const { unreadTotal } = useInbox(user?.id);
+  const { unreadTotal } = useInbox();
 
   async function logout() {
     const { error } = await discardMySoloWaitingSessions();

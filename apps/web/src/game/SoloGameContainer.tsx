@@ -1,17 +1,7 @@
-import type { ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { KidDesktopShell, desktopPanelClass } from "@/components/KidDesktopShell";
-import { BalloonPopSolo } from "@/games-solo/BalloonPopSolo";
-import { AlgesEscapadeSolo } from "@/games-solo/AlgesEscapadeSolo";
-import { DrawingSolo } from "@/games-solo/DrawingSolo";
-import { HexGLSolo } from "@/games-solo/HexGLSolo";
-import { SimonSolo } from "@/games-solo/SimonSolo";
-import { SnakeSolo } from "@/games-solo/SnakeSolo";
-import { WhackAMoleSolo } from "@/games-solo/WhackAMoleSolo";
-import { ChessSolo } from "@/games-solo/ChessSolo";
-import { BreakoutSolo } from "@/games-solo/BreakoutSolo";
 import { useAuth } from "@/hooks/useAuth";
 import {
   deleteSoloGameSave,
@@ -23,35 +13,62 @@ import {
   type SoloGameSaveControls
 } from "@/lib/soloGameSaves";
 
-/**
- * Solo games are pure client-side React components. They do NOT go through
- * the multiplayer socket server, do NOT create a `game_sessions` row, and do
- * NOT implement `GameModule`. Each entry renders standalone; the container
- * only provides a back-to-home chrome and routes by `:gameKey`.
- *
- * New solo games: add a `<gameKey>: () => <Component />` entry below.
- */
-const renderBreakoutSolo = (save: SoloGameSaveControls) => <BreakoutSolo save={save} />;
+type SoloGameComponent = (props: { save: SoloGameSaveControls }) => ReactNode;
 
-/** Legacy catalog URLs (e.g. `breakout` before the solo/mp split) still resolve. */
-const SOLO_REGISTRY: Record<string, (save: SoloGameSaveControls) => ReactNode> = {
-  drawing: (save) => <DrawingSolo save={save} />,
-  snake: (save) => <SnakeSolo save={save} />,
-  simon: (save) => <SimonSolo save={save} />,
-  whackamole: (save) => <WhackAMoleSolo save={save} />,
-  balloonpop: (save) => <BalloonPopSolo save={save} />,
-  "alges-escapade": (save) => <AlgesEscapadeSolo save={save} />,
-  hexgl: (save) => <HexGLSolo save={save} />,
-  "chess-solo": (save) => <ChessSolo save={save} />,
-  breakout: renderBreakoutSolo,
-  "breakout-solo": renderBreakoutSolo
+const SOLO_LOADERS: Record<string, () => Promise<{ default: SoloGameComponent }>> = {
+  drawing: () => import("@/games-solo/DrawingSolo").then((m) => ({ default: m.DrawingSolo })),
+  snake: () => import("@/games-solo/SnakeSolo").then((m) => ({ default: m.SnakeSolo })),
+  simon: () => import("@/games-solo/SimonSolo").then((m) => ({ default: m.SimonSolo })),
+  whackamole: () =>
+    import("@/games-solo/WhackAMoleSolo").then((m) => ({ default: m.WhackAMoleSolo })),
+  balloonpop: () =>
+    import("@/games-solo/BalloonPopSolo").then((m) => ({ default: m.BalloonPopSolo })),
+  "alges-escapade": () =>
+    import("@/games-solo/AlgesEscapadeSolo").then((m) => ({ default: m.AlgesEscapadeSolo })),
+  hexgl: () => import("@/games-solo/HexGLSolo").then((m) => ({ default: m.HexGLSolo })),
+  "chess-solo": () => import("@/games-solo/ChessSolo").then((m) => ({ default: m.ChessSolo })),
+  breakout: () => import("@/games-solo/BreakoutSolo").then((m) => ({ default: m.BreakoutSolo })),
+  "breakout-solo": () =>
+    import("@/games-solo/BreakoutSolo").then((m) => ({ default: m.BreakoutSolo }))
 };
+
+function LazySoloGame({
+  gameKey,
+  save
+}: {
+  gameKey: string;
+  save: SoloGameSaveControls;
+}) {
+  const [Game, setGame] = useState<SoloGameComponent | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setGame(null);
+    const loader = SOLO_LOADERS[gameKey];
+    if (!loader) return;
+    void loader().then((mod) => {
+      if (!cancelled) setGame(() => mod.default);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [gameKey]);
+
+  if (!Game) {
+    return (
+      <div className="flex min-h-[320px] items-center justify-center text-sm font-medium text-slate-500">
+        טוען משחק…
+      </div>
+    );
+  }
+  return <Game save={save} />;
+}
 
 export default function SoloGameContainer() {
   const { gameKey } = useParams<{ gameKey: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const entry = gameKey ? SOLO_REGISTRY[gameKey] : undefined;
+  const hasEntry = gameKey ? Boolean(SOLO_LOADERS[gameKey]) : false;
   const [save, setSave] = useState<SoloGameSave | null>(null);
   const [loadingSave, setLoadingSave] = useState(true);
   const [useSavedState, setUseSavedState] = useState(false);
@@ -192,9 +209,11 @@ export default function SoloGameContainer() {
             </Button>
           </div>
         </section>
-      ) : entry ? (
+      ) : hasEntry && gameKey ? (
         <section className={desktopPanelClass("min-h-[620px] p-4")}>
-          <div className="mx-auto max-w-6xl">{entry(saveControls)}</div>
+          <div className="mx-auto max-w-6xl">
+            <LazySoloGame gameKey={gameKey} save={saveControls} />
+          </div>
         </section>
       ) : (
         <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900" role="alert">

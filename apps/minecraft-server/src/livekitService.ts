@@ -1,5 +1,6 @@
 import { AccessToken } from "livekit-server-sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getCachedAuth } from "./authCache";
 
 export interface GenerateTokenArgs {
   supabaseAdmin: SupabaseClient;
@@ -51,26 +52,20 @@ export async function generateLiveKitToken(
     );
   }
 
-  const { data: authData, error: authErr } =
-    await supabaseAdmin.auth.getUser(accessToken);
-  if (authErr || !authData?.user?.id) {
+  let profile;
+  try {
+    profile = await getCachedAuth(supabaseAdmin, accessToken);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg === "FORBIDDEN") {
+      throw new LiveKitTokenError(
+        "profile_inactive",
+        "Profile not found or inactive."
+      );
+    }
     throw new LiveKitTokenError(
       "unauthorized",
       "Unauthorized: Invalid user session token."
-    );
-  }
-  const user = authData.user;
-
-  const { data: profile } = await supabaseAdmin
-    .from("kid_profiles")
-    .select("full_name, is_active, gender, role")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (!profile || !profile.is_active) {
-    throw new LiveKitTokenError(
-      "profile_inactive",
-      "Profile not found or inactive."
     );
   }
 
@@ -91,7 +86,7 @@ export async function generateLiveKitToken(
   }
   const playerIds = ((session.player_ids as string[]) ?? []).map(String);
   const isTeacher = profile.role === "teacher";
-  if (!isTeacher && !playerIds.includes(user.id)) {
+  if (!isTeacher && !playerIds.includes(profile.userId)) {
     throw new LiveKitTokenError(
       "roster_block",
       "Not in session roster."
@@ -105,8 +100,8 @@ export async function generateLiveKitToken(
   }
 
   const livekitRoom = `voxel-session-${sessionId}`;
-  const identity = user.id;
-  const participantName = profile.full_name as string;
+  const identity = profile.userId;
+  const participantName = profile.full_name;
 
   const at = new AccessToken(apiKey, apiSecret, {
     identity,
@@ -123,5 +118,5 @@ export async function generateLiveKitToken(
   });
 
   const token = await at.toJwt();
-  return { token, serverUrl, livekitRoom, userId: user.id };
+  return { token, serverUrl, livekitRoom, userId: profile.userId };
 }

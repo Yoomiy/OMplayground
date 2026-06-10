@@ -28,8 +28,8 @@ const PresenceContext = createContext<PresenceContextValue>({
 
 export function PresenceProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const { profile } = useProfile(user);
-  const { isAdmin } = useIsAdmin(user);
+  const { profile } = useProfile();
+  const { isAdmin } = useIsAdmin();
   const userId = user?.id;
   const gender = profile?.gender;
   /** Only same-gender kids count as "online" for the playground presence channel. */
@@ -60,7 +60,19 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
       for (const key of Object.keys(state)) {
         next.add(key);
       }
-      setOnlineUserIds(next);
+      setOnlineUserIds((prev) => {
+        if (prev.size === next.size) {
+          let same = true;
+          for (const id of next) {
+            if (!prev.has(id)) {
+              same = false;
+              break;
+            }
+          }
+          if (same) return prev;
+        }
+        return next;
+      });
     };
 
     channel

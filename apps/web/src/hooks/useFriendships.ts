@@ -130,14 +130,36 @@ export function useFriendships(userId: string | undefined) {
       .channel(`friends:${userId}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "friendships" },
+        {
+          event: "*",
+          schema: "public",
+          table: "friendships",
+          filter: `requester_id=eq.${userId}`
+        },
         () => {
           void refetch();
         }
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "kid_blocks" },
+        {
+          event: "*",
+          schema: "public",
+          table: "friendships",
+          filter: `addressee_id=eq.${userId}`
+        },
+        () => {
+          void refetch();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "kid_blocks",
+          filter: `blocker_id=eq.${userId}`
+        },
         () => {
           void refetch();
         }

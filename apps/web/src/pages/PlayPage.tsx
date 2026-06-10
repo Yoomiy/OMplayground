@@ -12,8 +12,8 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 function PlayPage() {
   const { sessionId } = useParams();
   const { user } = useAuth();
-  const { profile } = useProfile(user);
-  const { isAdmin } = useIsAdmin(user);
+  const { profile } = useProfile();
+  const { isAdmin } = useIsAdmin();
   const [gameName, setGameName] = useState<string>("");
   const [gameUrl, setGameUrl] = useState<string | null>(null);
 

@@ -22,21 +22,18 @@ import { applyDelta } from "./world";
 
 beforeEach(() => __resetRoomsForTest());
 
-function ioMockForUser(userId: string): { io: Server; socketEmit: jest.Mock } {
-  const socketEmit = jest.fn();
-  const fetchSockets = jest.fn().mockResolvedValue([
-    {
-      data: { userId },
-      emit: socketEmit
-    }
-  ]);
+function ioMockForUser(userId: string, sessionId = "sess-drop-1"): { io: Server; roomEmit: jest.Mock } {
+  const roomEmit = jest.fn();
   const io = {
-    to: jest.fn().mockReturnValue({
-      emit: jest.fn()
+    to: jest.fn((room: string) => {
+      if (room === `voxel-user:${userId}:${sessionId}`) {
+        return { emit: roomEmit };
+      }
+      return { emit: jest.fn() };
     }),
-    in: jest.fn().mockReturnValue({ fetchSockets })
+    in: jest.fn().mockReturnValue({ fetchSockets: jest.fn().mockResolvedValue([]) })
   };
-  return { io: io as unknown as Server, socketEmit };
+  return { io: io as unknown as Server, roomEmit };
 }
 
 function survivalRoom(sessionId: string): VoxelRoom {
@@ -70,10 +67,8 @@ describe("world drops", () => {
     player.pos = [10, 64, 10];
     spawnBlockDropAt(room, [10, 64.2, 10.5], BLOCK_REGISTRY.DIRT, 3);
 
-    const { io, socketEmit } = ioMockForUser("host-user");
+    const { io, roomEmit } = ioMockForUser("host-user", "sess-drop-2");
     tickMagnetPickups(io, room);
-
-    await new Promise<void>((r) => setImmediate(r));
 
     expect(room.drops.size).toBe(0);
     expect(player.inventory).toBeDefined();
@@ -81,7 +76,7 @@ describe("world drops", () => {
       .inventory!.filter((s) => s.blockId === BLOCK_REGISTRY.DIRT)
       .reduce((a, s) => a + s.count, 0);
     expect(dirtCount).toBe(3);
-    expect(socketEmit).toHaveBeenCalledWith(
+    expect(roomEmit).toHaveBeenCalledWith(
       "INVENTORY_SYNC",
       expect.objectContaining({
         slots: expect.any(Array)

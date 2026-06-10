@@ -3,6 +3,7 @@ import type { Server } from "socket.io";
 import {
   BLOCK_REGISTRY,
   PLACEABLE_BLOCK_IDS,
+  PLACEABLE_BLOCK_IDS_SET,
   REGISTERED_ITEM_IDS,
   type Vec3,
   type WorldDrop,
@@ -73,7 +74,7 @@ export function spawnBlockDropAt(
   count: number,
   opts?: SpawnDropOpts
 ): WorldDrop | null {
-  if (!PLACEABLE_BLOCK_IDS.includes(blockId) || count < 1) return null;
+  if (!PLACEABLE_BLOCK_IDS_SET.has(blockId) || count < 1) return null;
   const t = opts?.spawnedAtMs ?? Date.now();
   const drop: WorldDrop = {
     id: randomUUID(),
@@ -146,27 +147,19 @@ function emitInventorySyncToPlayer(
   userId: string,
   player: PlayerRuntime
 ): void {
-  void (async () => {
-    const inv = player.inventory;
-    const items = player.itemInventory;
-    const craft = player.craftingGrid;
-    const equipment = player.equipmentSlots;
-    if (!inv || !items || !craft || !equipment) return;
-    const socks = await io.in(`voxel:${sessionId}`).fetchSockets();
-    for (const s of socks) {
-      if (s.data.userId === userId) {
-        s.emit("INVENTORY_SYNC", {
-          slots: inv,
-          itemSlots: items,
-          equipmentSlots: equipment,
-          craftingSlots: craft,
-          craftingGridWidth: player.craftingGridWidth ?? 2,
-          ...(player.health !== undefined ? { vitals: cloneVitals(player) } : {})
-        });
-        return;
-      }
-    }
-  })();
+  const inv = player.inventory;
+  const items = player.itemInventory;
+  const craft = player.craftingGrid;
+  const equipment = player.equipmentSlots;
+  if (!inv || !items || !craft || !equipment) return;
+  io.to(`voxel-user:${userId}:${sessionId}`).emit("INVENTORY_SYNC", {
+    slots: inv,
+    itemSlots: items,
+    equipmentSlots: equipment,
+    craftingSlots: craft,
+    craftingGridWidth: player.craftingGridWidth ?? 2,
+    ...(player.health !== undefined ? { vitals: cloneVitals(player) } : {})
+  });
 }
 
 function tryPickupDropForPlayer(
@@ -183,7 +176,7 @@ function tryPickupDropForPlayer(
   if (!inv || !items || !craft) return false;
 
   if (drop.kind === "block") {
-    if (!PLACEABLE_BLOCK_IDS.includes(drop.blockId)) return false;
+    if (!PLACEABLE_BLOCK_IDS_SET.has(drop.blockId)) return false;
     if (maxAddableBlockCount(inv, drop.blockId) < drop.count) return false;
     addBlockCount(inv, drop.blockId, drop.count);
   } else {

@@ -73,8 +73,8 @@ function ThreadRow({
 
 export function InboxPage() {
   const { user } = useAuth();
-  const { profile } = useProfile(user);
-  const { threads, loading, refetch } = useInbox(user?.id);
+  const { profile } = useProfile();
+  const { threads, loading, refetch } = useInbox();
   const [activePartnerId, setActivePartnerId] = useState<string | null>(null);
   const [threadSearch, setThreadSearch] = useState("");
   const [draft, setDraft] = useState("");

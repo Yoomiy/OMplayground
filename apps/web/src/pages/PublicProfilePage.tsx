@@ -24,7 +24,7 @@ export function PublicProfilePage() {
   const { kidId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { profile: me } = useProfile(user);
+  const { profile: me } = useProfile();
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [presets, setPresets] = useState<AvatarPreset[]>([]);
   const [catalog, setCatalog] = useState<GameCatalogRow[]>([]);

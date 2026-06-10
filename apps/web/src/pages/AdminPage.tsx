@@ -117,7 +117,7 @@ const adminSections: { id: AdminSection; label: string }[] = [
 export function AdminPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isAdmin, loading: adminLoading } = useIsAdmin(user);
+  const { isAdmin, loading: adminLoading } = useIsAdmin();
   const [games, setGames] = useState<GameRow[]>([]);
   const [kids, setKids] = useState<KidRow[]>([]);
   const [recessSchedules, setRecessSchedules] = useState<RecessScheduleRow[]>(

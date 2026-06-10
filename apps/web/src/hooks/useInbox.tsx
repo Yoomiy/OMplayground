@@ -1,4 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode
+} from "react";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
 import type { PublicKidProfile } from "@/hooks/useOnlineKids";
 
@@ -21,6 +30,16 @@ export interface InboxThread {
   unreadCount: number;
   messages: PrivateMessageRow[];
 }
+
+type InboxContextValue = {
+  threads: InboxThread[];
+  messages: PrivateMessageRow[];
+  loading: boolean;
+  unreadTotal: number;
+  refetch: () => Promise<void>;
+};
+
+const InboxContext = createContext<InboxContextValue | null>(null);
 
 async function loadMessages(userId: string): Promise<PrivateMessageRow[]> {
   const { data } = await supabase
@@ -86,7 +105,7 @@ function groupThreads(
   return threads;
 }
 
-export function useInbox(userId: string | undefined) {
+function useInboxState(userId: string | undefined): InboxContextValue {
   const [messages, setMessages] = useState<PrivateMessageRow[]>([]);
   const [partners, setPartners] = useState<Map<string, PublicKidProfile>>(
     () => new Map()
@@ -112,15 +131,42 @@ export function useInbox(userId: string | undefined) {
     setLoading(false);
   }, [userId]);
 
+  const appendMessage = useCallback(
+    async (row: PrivateMessageRow) => {
+      if (!userId) return;
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === row.id)) return prev;
+        return [row, ...prev];
+      });
+      const partnerId =
+        row.from_kid_id === userId ? row.to_kid_id : row.from_kid_id;
+      if (partnerId) {
+        setPartners((prev) => {
+          if (prev.has(partnerId)) return prev;
+          void loadPartners([partnerId]).then((next) => {
+            setPartners((current) => {
+              const merged = new Map(current);
+              for (const [id, profile] of next) merged.set(id, profile);
+              return merged;
+            });
+          });
+          return prev;
+        });
+      }
+    },
+    [userId]
+  );
+
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      setMessages([]);
+      setPartners(new Map());
+      return;
+    }
     void refetch();
 
-    const channelTopic = `inbox:${userId}:${Date.now()}:${Math.random()
-      .toString(36)
-      .slice(2)}`;
     const channel = supabase
-      .channel(channelTopic)
+      .channel(`inbox:${userId}`)
       .on(
         "postgres_changes",
         {
@@ -129,8 +175,8 @@ export function useInbox(userId: string | undefined) {
           table: "private_messages",
           filter: `to_kid_id=eq.${userId}`
         },
-        () => {
-          void refetch();
+        (payload) => {
+          void appendMessage(payload.new as PrivateMessageRow);
         }
       )
       .on(
@@ -141,8 +187,8 @@ export function useInbox(userId: string | undefined) {
           table: "private_messages",
           filter: `from_kid_id=eq.${userId}`
         },
-        () => {
-          void refetch();
+        (payload) => {
+          void appendMessage(payload.new as PrivateMessageRow);
         }
       )
       .on(
@@ -165,7 +211,7 @@ export function useInbox(userId: string | undefined) {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [userId, refetch]);
+  }, [userId, refetch, appendMessage]);
 
   const threads = useMemo(
     () => (userId ? groupThreads(userId, messages, partners) : []),
@@ -178,4 +224,20 @@ export function useInbox(userId: string | undefined) {
   );
 
   return { threads, messages, loading, unreadTotal, refetch };
+}
+
+export function InboxProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  const value = useInboxState(user?.id);
+  return (
+    <InboxContext.Provider value={value}>{children}</InboxContext.Provider>
+  );
+}
+
+export function useInbox(): InboxContextValue {
+  const ctx = useContext(InboxContext);
+  if (!ctx) {
+    throw new Error("useInbox must be used within InboxProvider");
+  }
+  return ctx;
 }

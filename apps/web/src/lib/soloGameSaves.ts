@@ -46,6 +46,16 @@ export function isJsonObject(value: JsonValue | undefined): value is {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+export async function listSoloGameSaveKeys(kidId: string | undefined) {
+  if (!kidId) return [] as string[];
+  const { data, error } = await supabase
+    .from("solo_game_saves")
+    .select("game_key")
+    .eq("kid_id", kidId);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row) => row.game_key as string);
+}
+
 export async function listSoloGameSaves(kidId: string | undefined) {
   if (!kidId) return [];
   const { data, error } = await supabase

@@ -37,7 +37,7 @@ function RowCard({
 
 export function FriendsPage() {
   const { user } = useAuth();
-  const { profile } = useProfile(user);
+  const { profile } = useProfile();
   const {
     friends,
     incomingRequests,

@@ -226,3 +226,23 @@ export async function persistGameStopped(
     })
     .eq("id", args.sessionId);
 }
+
+export interface PersistGameAutosaveArgs {
+  supabase: SupabaseClient;
+  sessionId: string;
+  gameState: PersistedRoomState;
+}
+
+export async function persistGameAutosave(
+  args: PersistGameAutosaveArgs
+): Promise<void> {
+  await args.supabase
+    .from("game_sessions")
+    .update({
+      game_state: args.gameState as unknown as Record<string, unknown>,
+      last_activity: new Date().toISOString()
+    })
+    .eq("id", args.sessionId)
+    .in("status", ["playing", "waiting"]);
+}
+

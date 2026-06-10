@@ -91,6 +91,26 @@ export default defineConfig({
       plugins: [babylonCoreSubpathEsbuild()]
     }
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules/react/") || id.includes("node_modules/react-dom/")) {
+            return "react-vendor";
+          }
+          if (id.includes("node_modules/react-router") || id.includes("node_modules/@remix-run/router")) {
+            return "router-vendor";
+          }
+          if (id.includes("node_modules/@supabase/")) {
+            return "supabase-vendor";
+          }
+          if (id.includes("node_modules/socket.io-client")) {
+            return "socket-vendor";
+          }
+        }
+      }
+    }
+  },
   server: {
     port: 5173,
     proxy: {

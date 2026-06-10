@@ -57,6 +57,7 @@ export interface InventoryMoveReq {
 export {
   BLOCK_REGISTRY,
   PLACEABLE_BLOCK_IDS,
+  PLACEABLE_BLOCK_IDS_SET,
   ITEM_REGISTRY,
   REGISTERED_ITEM_IDS
 } from "@playground/voxel-content";
@@ -329,6 +330,7 @@ export type RoomEvent =
       updates: WorldDropWireDelta[];
     }
   | { kind: "PLAYER_DEATH"; sessionId: string; userId: string; deathPos: Vec3 }
-  | { kind: "PLAYER_RESPAWN"; sessionId: string; userId: string; respawnPos: Vec3 };
+  | { kind: "PLAYER_RESPAWN"; sessionId: string; userId: string; respawnPos: Vec3 }
+  | { kind: "PLAYER_DELTA"; sessionId: string; delta: RoomSnapshot };
 
 export const MAX_REACH = 8;

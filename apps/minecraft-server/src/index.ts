@@ -71,6 +71,7 @@ import {
   getOrCreateRoom,
   getRoom,
   listRooms,
+  markPlayerDirty,
   removePlayerFromRoom,
   roomRoster,
   snapshotPersistedState,
@@ -79,6 +80,7 @@ import {
 } from "./room";
 import { startTickLoop } from "./tick";
 import {
+  persistGameAutosave,
   persistGamePaused,
   persistGameResumed,
   persistGameStopped,
@@ -93,6 +95,7 @@ import {
   generateLiveKitToken,
   LiveKitTokenError
 } from "./livekitService";
+import { getCachedAuth } from "./authCache";
 import {
   beginBreak,
   cancelBreak,
@@ -400,21 +403,7 @@ io.use(async (socket, next) => {
       next(new Error("SERVER_CONFIG"));
       return;
     }
-    const { data: authData, error: authErr } =
-      await supabaseAdmin.auth.getUser(token);
-    if (authErr || !authData?.user?.id) {
-      next(new Error("UNAUTHORIZED"));
-      return;
-    }
-    const { data: profile, error } = await supabaseAdmin
-      .from("kid_profiles")
-      .select("id, role, gender, full_name, is_active")
-      .eq("id", authData.user.id)
-      .maybeSingle();
-    if (error || !profile || !profile.is_active) {
-      next(new Error("FORBIDDEN"));
-      return;
-    }
+    const profile = await getCachedAuth(supabaseAdmin, token);
     if (profile.role === "kid") {
       try {
         const schedules = await loadRecessSchedules();
@@ -431,14 +420,19 @@ io.use(async (socket, next) => {
         return;
       }
     }
-    socket.data.userId = profile.id as string;
-    socket.data.displayName = profile.full_name as string;
-    socket.data.role = profile.role as string;
-    socket.data.gender = profile.gender as "boy" | "girl";
+    socket.data.userId = profile.userId;
+    socket.data.displayName = profile.full_name;
+    socket.data.role = profile.role;
+    socket.data.gender = profile.gender;
     logSocketAuthenticated(logger, socket);
     next();
-  } catch {
-    next(new Error("UNAUTHORIZED"));
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg === "FORBIDDEN") {
+      next(new Error("FORBIDDEN"));
+    } else {
+      next(new Error("UNAUTHORIZED"));
+    }
   }
 });
 
@@ -854,7 +848,11 @@ async function emitInventoryToSurvivalPlayers(
 
 io.on("connection", (socket) => {
   const originalOn = socket.on.bind(socket);
+  const HOT_SOCKET_EVENTS = new Set(["INPUT", "ARM_SWING"]);
   socket.on = (event: string, listener: (...args: any[]) => void | Promise<void>) => {
+    if (HOT_SOCKET_EVENTS.has(event)) {
+      return originalOn(event, listener);
+    }
     return originalOn(event, async (...args: any[]) => {
       const started = Date.now();
       const ack = typeof args[args.length - 1] === "function" ? args[args.length - 1] : undefined;
@@ -1130,7 +1128,7 @@ io.on("connection", (socket) => {
       const distance = Math.hypot(dx, dz);
       const jumped = !!payload.jumping && !player.jumping;
       if (addMovementExhaustion(player, distance, jumped)) {
-        room.dirty = true;
+        markPlayerDirty(room, userId);
       }
     }
     if (!skipPositionUpdate) {
@@ -1145,7 +1143,7 @@ io.on("connection", (socket) => {
       player.selectedHotbarIndex = hb;
     }
     player.lastInputAt = Date.now();
-    room.dirty = true;
+    markPlayerDirty(room, userId);
   });
 
   socket.on("ARM_SWING", (_payload: unknown, ack?: (r: SimpleAck) => void) => {
@@ -2483,7 +2481,9 @@ io.on("connection", (socket) => {
         result,
         connectedPlayerIds: connected.map((p) => p.userId),
         connectedPlayerNames: connected.map((p) => p.displayName),
-        gameState: snapshotPersistedState(before)
+        ...(result.roomEmpty
+          ? { gameState: snapshotPersistedState(before) }
+          : {})
       });
     }
     if (room && result.roomEmpty) {
@@ -2739,6 +2739,26 @@ startTickLoop({
       error: err instanceof Error ? err.message : String(err)
     })
 });
+
+const AUTOSAVE_INTERVAL_MS = 2 * 60_000; // 2 minutes
+
+setInterval(() => {
+  if (!supabaseAdmin) return;
+  const activeRooms = listRooms().filter((room) => !room.paused && room.players.size > 0);
+  for (const room of activeRooms) {
+    const state = snapshotPersistedState(room);
+    persistGameAutosave({
+      supabase: supabaseAdmin,
+      sessionId: room.sessionId,
+      gameState: state
+    }).catch((err) => {
+      logger.error({
+        message: `Autosave failed for session ${room.sessionId}`,
+        error: err instanceof Error ? err.message : String(err)
+      });
+    });
+  }
+}, AUTOSAVE_INTERVAL_MS);
 
 server.listen(PORT, () => {
   logger.info({ message: `minecraft-server listening on ${PORT}`, protocol: "http" });

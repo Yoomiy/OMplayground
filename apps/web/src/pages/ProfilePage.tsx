@@ -29,7 +29,7 @@ const COLORS = [
 
 export function ProfilePage() {
   const { user } = useAuth();
-  const { profile, loading, error, refetch } = useProfile(user);
+  const { profile, loading, error, refetch } = useProfile();
   const [presets, setPresets] = useState<AvatarPreset[]>([]);
   const [fullName, setFullName] = useState("");
   const [avatarColor, setAvatarColor] = useState(COLORS[0]);

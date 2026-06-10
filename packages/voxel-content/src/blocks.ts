@@ -224,6 +224,8 @@ export const PLACEABLE_BLOCK_IDS: readonly number[] = BLOCK_DEFS.filter(
   (d) => d.placeable
 ).map((d) => d.id);
 
+export const PLACEABLE_BLOCK_IDS_SET = new Set<number>(PLACEABLE_BLOCK_IDS);
+
 export const REPLACEABLE_BLOCK_IDS = new Set<number>([
   BLOCK_REGISTRY.AIR,
   BLOCK_REGISTRY.WATER,

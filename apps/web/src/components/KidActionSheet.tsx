@@ -24,7 +24,7 @@ export interface KidActionSheetProps {
 export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { profile } = useProfile(user);
+  const { profile } = useProfile();
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);

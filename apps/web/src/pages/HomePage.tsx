@@ -8,7 +8,7 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useOpenGames } from "@/hooks/useOpenGames";
 import { useMyPausedGames } from "@/hooks/useMyPausedGames";
 import { leavePausedGameSession } from "@/lib/pausedSessionActions";
-import { hasSoloSaveForGame, listSoloGameSaves } from "@/lib/soloGameSaves";
+import { hasSoloSaveForGame, listSoloGameSaveKeys } from "@/lib/soloGameSaves";
 import { OnlineKids } from "@/components/OnlineKids";
 import { Button } from "@/components/ui/button";
 import { KidDesktopShell, desktopPanelClass } from "@/components/KidDesktopShell";
@@ -36,11 +36,11 @@ const GAME_COLORS = [
 export function HomePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { profile } = useProfile(user);
-  const { isAdmin, loading: adminLoading } = useIsAdmin(user);
-  const { rows: openGames } = useOpenGames(user?.id);
+  const { profile } = useProfile();
+  const { isAdmin, loading: adminLoading } = useIsAdmin();
+  const { rows: openGames } = useOpenGames(user?.id, profile?.gender);
   const { rows: myPausedGames, loading: pausedLoading, refetch: refetchPaused } =
-    useMyPausedGames(user?.id);
+    useMyPausedGames(user?.id, profile?.gender);
   const [catalog, setCatalog] = useState<GameCatalogRow[]>([]);
   const [busyGameId, setBusyGameId] = useState<string | null>(null);
   const [dismissingPausedId, setDismissingPausedId] = useState<string | null>(null);
@@ -84,9 +84,9 @@ export function HomePage() {
 
   useEffect(() => {
     let cancelled = false;
-    void listSoloGameSaves(user?.id)
-      .then((rows) => {
-        if (!cancelled) setSoloSaveKeys(new Set(rows.map((row) => row.game_key)));
+    void listSoloGameSaveKeys(user?.id)
+      .then((keys) => {
+        if (!cancelled) setSoloSaveKeys(new Set(keys));
       })
       .catch((error: Error) => {
         console.error(error);
@@ -171,16 +171,20 @@ export function HomePage() {
     await refetchPaused();
   }
 
-  if (adminLoading || isAdmin || profile?.role === "teacher") {
-    return <div className="p-6 text-sm font-medium text-slate-500">טוען…</div>;
-  }
-
   return (
     <KidDesktopShell
       title="לוח המשחקים"
       subtitle="משחקים, חדרים פתוחים וילדים מחוברים במקום אחד"
-      contentClassName="grid min-h-[calc(100vh-136px)] gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.85fr)_360px]"
+      contentClassName="relative grid min-h-[calc(100vh-136px)] gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.85fr)_360px]"
     >
+      {adminLoading || !profile ? (
+        <div className="absolute inset-0 z-50 flex items-center justify-center rounded-2xl border border-slate-200/90 bg-white/70 backdrop-blur-sm">
+          <div className="rounded-xl border border-slate-200 bg-white px-6 py-4 shadow-lg text-slate-500 font-medium">
+            טוען נתוני שרת…
+          </div>
+        </div>
+      ) : null}
+
       <section className={desktopPanelClass("flex min-h-[620px] flex-col p-4")}>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
           <div>
@@ -370,8 +374,8 @@ export function HomePage() {
                         </p>
                         <p className="truncate text-xs text-slate-500">
                           {game.connected_player_names.length > 0
-                            ? game.connected_player_names.join(", ")
-                            : "אין שחקנים בחדר כרגע"}
+                             ? game.connected_player_names.join(", ")
+                             : "אין שחקנים בחדר כרגע"}
                         </p>
                       </div>
                       <Button size="sm" type="button" onClick={() => navigate(`/play/${game.id}`)}>

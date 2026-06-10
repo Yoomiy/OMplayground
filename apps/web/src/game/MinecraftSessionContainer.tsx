@@ -67,7 +67,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
   const { sessionId } = props;
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { profile } = useProfile(user);
+  const { profile } = useProfile();
   const isTeacherObserver = profile?.role === "teacher";
   const myUserId = user?.id ?? null;
 

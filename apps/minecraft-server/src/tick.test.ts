@@ -2,6 +2,7 @@ import {
   __resetRoomsForTest,
   assignPlayer,
   getOrCreateRoom,
+  markAllPlayersDirty,
   type VoxelRoom
 } from "./room";
 import { tickOnce, type TickIoShape } from "./tick";
@@ -31,16 +32,16 @@ function buildRoom(sessionId: string): VoxelRoom {
 }
 
 describe("tickOnce", () => {
-  it("emits a ROOM_SNAPSHOT for a dirty room and clears the dirty flag", () => {
+  it("emits a PLAYER_DELTA for a dirty room and clears the dirty flag", () => {
     const { io, emit } = buildIo();
     const room = buildRoom("sess-tick-1");
-    room.dirty = true;
+    markAllPlayersDirty(room);
     const result = tickOnce({ io, rooms: () => [room] });
     expect(result.emittedSessionIds).toEqual(["sess-tick-1"]);
     expect(io.to).toHaveBeenCalledWith("voxel-snapshot:sess-tick-1");
     expect(io.to).toHaveBeenCalledWith("voxel-snapshot-teacher:sess-tick-1");
     expect(emit).toHaveBeenCalledWith(
-      "ROOM_SNAPSHOT",
+      "PLAYER_DELTA",
       expect.objectContaining({
         players: expect.objectContaining({
           "host-user": expect.objectContaining({
@@ -57,6 +58,7 @@ describe("tickOnce", () => {
     const { io, emit } = buildIo();
     const room = buildRoom("sess-tick-clean");
     room.dirty = false;
+    room.dirtyPlayerIds.clear();
     const result = tickOnce({ io, rooms: () => [room] });
     expect(result.emittedSessionIds).toEqual([]);
     expect(emit).not.toHaveBeenCalled();
@@ -67,8 +69,9 @@ describe("tickOnce", () => {
     const room = buildRoom("sess-tick-vitals");
     room.gameMode = "survival";
     room.dirty = false;
+    room.dirtyPlayerIds.clear();
     const survivalVitalsTick = jest.fn((r: VoxelRoom) => {
-      r.dirty = true;
+      markAllPlayersDirty(r);
     });
 
     const result = tickOnce({
@@ -81,7 +84,7 @@ describe("tickOnce", () => {
     expect(survivalVitalsTick).toHaveBeenCalledWith(room, 123);
     expect(result.emittedSessionIds).toEqual(["sess-tick-vitals"]);
     expect(emit).toHaveBeenCalledWith(
-      "ROOM_SNAPSHOT",
+      "PLAYER_DELTA",
       expect.objectContaining({ players: expect.any(Object) })
     );
   });
@@ -90,7 +93,7 @@ describe("tickOnce", () => {
     const { io, emit } = buildIo();
     const room = buildRoom("sess-tick-paused");
     room.paused = true;
-    room.dirty = true;
+    markAllPlayersDirty(room);
     const result = tickOnce({ io, rooms: () => [room] });
     expect(result.emittedSessionIds).toEqual([]);
     expect(emit).not.toHaveBeenCalled();
@@ -100,8 +103,9 @@ describe("tickOnce", () => {
     const { io, emit } = buildIo();
     const a = buildRoom("sess-tick-A");
     const b = buildRoom("sess-tick-B");
-    a.dirty = true;
+    markAllPlayersDirty(a);
     b.dirty = false;
+    b.dirtyPlayerIds.clear();
     tickOnce({ io, rooms: () => [a, b] });
     expect(io.to).toHaveBeenCalledTimes(2);
     expect(io.to).toHaveBeenCalledWith("voxel-snapshot:sess-tick-A");

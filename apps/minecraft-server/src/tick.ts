@@ -1,5 +1,5 @@
 import type { RoomSnapshot } from "./protocol";
-import { listRooms, type VoxelRoom } from "./room";
+import { listRooms, markAllPlayersDirty, type VoxelRoom } from "./room";
 import { cloneVitals } from "./vitals";
 
 /**
@@ -36,24 +36,41 @@ export interface TickDeps {
   weatherTick?: (room: VoxelRoom, now: number) => void;
 }
 
-function buildSnapshot(room: VoxelRoom, forTeachers: boolean): RoomSnapshot {
+function buildPlayerSnapshot(
+  room: VoxelRoom,
+  userId: string,
+  forTeachers: boolean
+): RoomSnapshot["players"][string] | null {
+  const p = room.players.get(userId);
+  if (!p) return null;
+  if (!forTeachers && p.isTeacherObserver) return null;
+  return {
+    pos: p.pos,
+    heading: p.heading,
+    pitch: p.pitch,
+    jumping: p.jumping,
+    t: p.t,
+    isTeacher: p.isTeacher,
+    isTeacherObserver: p.isTeacherObserver,
+    ...(p.health !== undefined ? { vitals: cloneVitals(p) } : {})
+  };
+}
+
+function buildPlayerDelta(
+  room: VoxelRoom,
+  userIds: Iterable<string>,
+  forTeachers: boolean
+): RoomSnapshot {
   const players: RoomSnapshot["players"] = {};
-  for (const p of room.players.values()) {
-    if (!forTeachers && p.isTeacherObserver) {
-      continue;
-    }
-    players[p.userId] = {
-      pos: p.pos,
-      heading: p.heading,
-      pitch: p.pitch,
-      jumping: p.jumping,
-      t: p.t,
-      isTeacher: p.isTeacher,
-      isTeacherObserver: p.isTeacherObserver,
-      ...(p.health !== undefined ? { vitals: cloneVitals(p) } : {})
-    };
+  for (const userId of userIds) {
+    const snap = buildPlayerSnapshot(room, userId, forTeachers);
+    if (snap) players[userId] = snap;
   }
   return { players };
+}
+
+export function buildSnapshot(room: VoxelRoom, forTeachers: boolean): RoomSnapshot {
+  return buildPlayerDelta(room, room.players.keys(), forTeachers);
 }
 
 export function tickOnce(deps: TickDeps): { emittedSessionIds: string[] } {
@@ -61,23 +78,34 @@ export function tickOnce(deps: TickDeps): { emittedSessionIds: string[] } {
   const now = (deps.now ?? Date.now)();
   const emitted: string[] = [];
   for (const room of rooms) {
-    if (!room.paused && room.players.size > 0) {
+    const isSurvival = (room.gameMode ?? "survival") === "survival";
+    if (!room.paused && room.players.size > 0 && isSurvival) {
       deps.survivalVitalsTick?.(room, now);
       deps.tntTick?.(room, now);
       deps.weatherTick?.(room, now);
-      deps.worldDropsTick?.(room);
-      deps.magnetPickups?.(room);
+      if (room.drops.size > 0 || room.activeTnts.size > 0) {
+        deps.worldDropsTick?.(room);
+        deps.magnetPickups?.(room);
+      }
     }
     if (room.paused) continue;
     if (room.players.size === 0) continue;
     if (!room.dirty) continue;
+
+    const syncIds =
+      room.dirtyPlayerIds.size > 0
+        ? room.dirtyPlayerIds
+        : new Set(room.players.keys());
+
     deps.io
       .to(`voxel-snapshot:${room.sessionId}`)
-      .emit("ROOM_SNAPSHOT", buildSnapshot(room, false));
+      .emit("PLAYER_DELTA", buildPlayerDelta(room, syncIds, false));
     deps.io
       .to(`voxel-snapshot-teacher:${room.sessionId}`)
-      .emit("ROOM_SNAPSHOT", buildSnapshot(room, true));
+      .emit("PLAYER_DELTA", buildPlayerDelta(room, syncIds, true));
+
     room.dirty = false;
+    room.dirtyPlayerIds.clear();
     room.lastTickAt = now;
     emitted.push(room.sessionId);
   }

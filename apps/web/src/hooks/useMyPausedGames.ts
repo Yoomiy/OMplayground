@@ -14,10 +14,15 @@ export interface MyPausedGameRow {
 /**
  * Paused sessions this kid is still listed on (`player_ids`), same gender via RLS.
  */
-export function useMyPausedGames(userId: string | undefined) {
+export function useMyPausedGames(userId: string | undefined, gender: "boy" | "girl" | undefined) {
   const [rows, setRows] = useState<MyPausedGameRow[]>([]);
   const [loading, setLoading] = useState(false);
   const prevUserIdRef = useRef<string | undefined>(undefined);
+
+  const rowsRef = useRef<MyPausedGameRow[]>([]);
+  rowsRef.current = rows;
+  const userIdRef = useRef<string | undefined>(userId);
+  userIdRef.current = userId;
 
   const refetch = useCallback(async () => {
     if (!userId) {
@@ -44,7 +49,7 @@ export function useMyPausedGames(userId: string | undefined) {
   }, [userId]);
 
   useEffect(() => {
-    if (!userId) {
+    if (!userId || !gender) {
       setRows([]);
       setLoading(false);
       prevUserIdRef.current = undefined;
@@ -59,21 +64,54 @@ export function useMyPausedGames(userId: string | undefined) {
 
     void refetch();
 
+    const handleRealtime = (payload: any) => {
+      const currentUserId = userIdRef.current;
+      if (!currentUserId) return;
+
+      if (payload.eventType === "INSERT") {
+        const newRow = payload.new;
+        if (newRow.status === "paused" && newRow.player_ids && newRow.player_ids.includes(currentUserId)) {
+          void refetch();
+        }
+      } else if (payload.eventType === "DELETE") {
+        const deletedId = payload.old.id;
+        setRows(prev => prev.filter(r => r.id !== deletedId));
+      } else if (payload.eventType === "UPDATE") {
+        const newRow = payload.new;
+        const exists = rowsRef.current.some(r => r.id === newRow.id);
+
+        if (exists) {
+          if (newRow.status !== "paused" || (newRow.player_ids && !newRow.player_ids.includes(currentUserId))) {
+            setRows(prev => prev.filter(r => r.id !== newRow.id));
+          } else {
+            void refetch();
+          }
+        } else {
+          if (newRow.status === "paused" && newRow.player_ids && newRow.player_ids.includes(currentUserId)) {
+            void refetch();
+          }
+        }
+      }
+    };
+
     const channel = supabase
       .channel(`paused-games:${userId}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "game_sessions" },
-        () => {
-          void refetch();
-        }
+        {
+          event: "*",
+          schema: "public",
+          table: "game_sessions",
+          filter: `gender=eq.${gender}`
+        },
+        handleRealtime
       )
       .subscribe();
 
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [userId, refetch]);
+  }, [userId, gender, refetch]);
 
   return { rows, loading, refetch };
 }
