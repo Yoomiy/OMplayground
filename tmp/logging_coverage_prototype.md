@@ -1,976 +1,583 @@
-# Logging and Statistics Coverage Prototype — OMplayground
+# Logging and Statistics Coverage — OMplayground
 
-This document provides a technical specification and prototype implementation for a unified, structured logging and statistics tracking architecture across the OMplayground application. It addresses client-side telemetry, game-server socket and HTTP tracking, durable Supabase audit events, and live statistics (room usage, message traffic, system performance) integrated into the Admin view.
+Technical specification for unified structured logging and live statistics across OMplayground. Covers client telemetry, both Node game servers, LiveKit voice, durable Supabase audit events, and an Admin stats view.
+
+**Status:** design spec (not yet implemented). Last revised for dual-server + LiveKit topology.
 
 ---
 
 ## 1. Core Objectives and Architecture
 
-A robust logging and metrics system is critical for diagnosing multiplayer sync issues, tracking client-side React errors, auditing privileged actions, and monitoring live traffic load.
+### What we log (and what we do not)
 
-The architecture intentionally splits two different concerns:
+| Category | Log? | Sink |
+|----------|------|------|
+| **Lifecycle events** — connect/disconnect, room create/destroy, join/leave, game start/stop/pause, token issued | ✅ Yes | Pino → Railway drain |
+| **Errors** — handler failures, auth denials, validation errors, unhandled exceptions | ✅ Yes | Pino → Railway drain |
+| **Aggregated stats** — connection counts, active rooms, intent throughput (counters only) | ✅ Yes | In-memory collector → `/api/admin/stats` |
+| **Privileged product actions** — admin CRUD, moderation, imports, recess toggles | ✅ Yes | Supabase `audit_log` |
+| **Client crashes** — React errors, unhandled rejections, LiveKit/Web Audio failures | ✅ Yes | Client buffer → server `/api/telemetry` → Pino |
+| **Per-packet / per-tick socket traffic** — every `INPUT`, `SNAPSHOT`, `INTENT`, chat delta | ❌ No | Too high-volume; voxel alone emits ~15 Hz snapshots per room |
+| **Raw socket payloads, chat bodies, game state blobs** | ❌ No | Security + noise |
+| **Host CPU / memory** | ❌ No in-app | Use **Railway**, **Vercel**, **Supabase**, and **LiveKit** platform dashboards |
 
-1. **Durable audit trail:** low-volume admin/teacher actions remain in Supabase using the existing `audit_log` mechanism.
-2. **Operational observability:** high-volume request, socket, crash, and performance logs are emitted by the game-server as structured Pino logs to Railway stdout and forwarded by a log drain.
+### Two-lane model (unchanged)
 
-### Core Objectives
-1. **End-to-End Tracing:** Trace a single user action from the browser, through WebSockets or REST requests, to the game-server and Supabase database using a unique `correlationId`.
-2. **Structured JSON Logs:** Employ structured JSON output in production to facilitate querying in log aggregators (e.g., Axiom, Datadog, or Grafana Loki).
-3. **Live Telemetry & Statistics:** Track active connection counts, live rooms, message throughput (messages/sec), average event latencies, and server resource metrics.
-4. **Client Crash Telemetry:** Intercept and buffer client-side React runtime errors and unhandled promise rejections, batch-forwarding them to a telemetry sink.
-5. **Secure Audit Trails:** Ensure moderation commands, admin CRUD, imports, recess toggles, and privileged session operations are written to the existing append-only Supabase `audit_log`.
-6. **Admin Dashboard**: Integrate a statistics tab within the Admin view to visualize current room usage and system traffic in real time. This view is platform-admin only (`admin_profiles`), not teacher-accessible.
+1. **Durable audit trail:** low-volume admin/teacher actions in Supabase `audit_log`.
+2. **Operational observability:** structured Pino JSON on Railway stdout, forwarded by log drain. Client telemetry lands here via server ingest — never directly in Postgres.
 
-### System Data Flow
+### System topology
+
+OMplayground is no longer a single game server. A session may touch several systems:
+
+```mermaid
+flowchart LR
+  subgraph Browser["apps/web"]
+    SPA[React SPA]
+  end
+  subgraph Railway["Railway Node services"]
+    GS["game-server :8080<br/>board games"]
+    MS["minecraft-server :8081<br/>voxel + /rtc/token"]
+  end
+  subgraph External
+    LK["LiveKit SFU<br/>livekit.play-ormenachem.com"]
+    SB[(Supabase)]
+  end
+  SPA -->|Socket.io VITE_GAME_SERVER_URL| GS
+  SPA -->|Socket.io VITE_VOXEL_SERVER_URL| MS
+  SPA -->|WebRTC voice| LK
+  MS -->|Room Service API + webhooks| LK
+  GS --> SB
+  MS --> SB
+```
+
+| Env var | Target |
+|---------|--------|
+| `VITE_GAME_SERVER_URL` | `apps/game-server` — tictactoe, chess, drawing, etc. |
+| `VITE_VOXEL_SERVER_URL` | `apps/minecraft-server` — voxel survival + `POST /rtc/token` |
+| `VITE_LIVEKIT_URL` | LiveKit SFU WebSocket URL (replace hardcoded client URL) |
+| `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` | `minecraft-server` token signing + Room Service API |
+
+**Parallel room namespaces:**
+- Socket.io: `voxel:${sessionId}` (minecraft), per-game rooms on game-server
+- LiveKit: `voxel-session-${sessionId}` (voice only; positions stay on Socket.io)
+
+### Core objectives
+
+1. **End-to-end tracing:** `correlationId` from browser through HTTP, Socket.io, and (where useful) LiveKit `participant.identity` (= Supabase `user.id`).
+2. **Structured JSON logs:** Pino in production for log-aggregator queries (Axiom, Datadog, Loki).
+3. **Live stats (app-level):** connections, active rooms, intent/event rates — **not** host CPU/memory.
+4. **Client crash telemetry:** buffered, batched, redacted.
+5. **Secure audit trails:** privileged actions → `audit_log` with optional `correlation_id`.
+6. **Admin stats tab:** platform-admin only (`admin_profiles`); federates both game servers + LiveKit voice summary.
+
+### Data flow
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Client as Kid Browser (SPA)
-    participant Server as Game Server (Pino / Express)
+    actor Client as Browser
+    participant GS as game-server / minecraft-server
+    participant LK as LiveKit SFU
     participant DB as Supabase audit_log
     participant Drain as Railway Log Drain
 
-    Client->>Client: Generate Correlation ID (c_12345)
-    Client->>Server: HTTP / WebSocket Event (c_12345)
-    Note over Server: StatsCollector increments event/message rates
-    Note over Server: Inject Correlation ID into Context
-    Server->>Drain: Operational JSON log (c_12345, latency_ms)
-    Server->>DB: Durable audit event only when action is privileged
-    DB-->>Server: Return Result
-    Server-->>Client: Respond / Broadcast
+    Client->>Client: correlationId (c_xxx)
+    Client->>GS: HTTP or Socket lifecycle event
+    Note over GS: StatsCollector increments counters only
+    Note over GS: Log event or error (not every packet)
+    GS->>Drain: Pino JSON
+    GS->>DB: audit row only if privileged
+    Client->>LK: WebRTC connect (token from /rtc/token)
+    LK-->>GS: Webhook: participant_joined / left
+    GS->>Drain: Pino JSON (source: livekit-webhook)
 ```
 
 ---
 
 ## 2. Standardized Log Schema
 
-To ensure consistency, operational logs emitted by the browser telemetry endpoint and game-server should match a standardized JSON schema. Supabase audit rows keep their existing `audit_log` relational shape and store extra structured detail in `metadata`.
+Operational logs from servers and accepted client telemetry share one shape. Audit rows keep the existing relational `audit_log` shape; put extras in `metadata` or new optional columns.
 
 ```json
 {
-  "timestamp": "2026-05-31T13:20:00.000Z",
+  "timestamp": "2026-06-10T13:20:00.000Z",
   "level": "info",
-  "service": "game-server",
+  "service": "minecraft-server",
   "environment": "production",
-  "correlationId": "req-98765-abcde",
-  "userId": "usr-kid-456",
-  "sessionId": "sess-room-101",
+  "correlationId": "c-98765-abcde",
+  "userId": "uuid-kid",
+  "sessionId": "uuid-session",
+  "protocol": "socket",
   "message": "Player joined room",
   "context": {
-    "gender": "male",
-    "roomType": "tictactoe",
-    "connectionsInRoom": 2
+    "event": "JOIN_ROOM",
+    "gameType": "voxel",
+    "status": "success",
+    "duration_ms": 12.4
   },
-  "duration_ms": 12.4,
   "error": null
 }
 ```
 
+**`protocol` values:** `http` | `socket` | `webrtc` | `livekit-webhook` | `client`
+
+**Fields to omit from routine logs:** raw payloads, chat text, board state, JWTs, LiveKit tokens.
+
 ---
 
-## 3. Node.js Game Server Logging & Telemetry (Pino & Express)
+## 3. Shared Observability Package
 
-The game-server uses `pino` for low-overhead JSON logging, replacing generic `console` statements, and tracks socket events to aggregate statistics.
+Avoid duplicating logger/middleware between servers. Create `packages/observability`:
 
-### A. Centralized Logger Module
-Create a reusable logger class in `apps/game-server/src/utils/logger.ts`:
-
-```typescript
-import pino from 'pino';
-
-const isProduction = process.env.NODE_ENV === 'production';
-
-export const logger = pino({
-  level: process.env.LOG_LEVEL || 'info',
-  formatters: {
-    level: (label) => {
-      return { level: label };
-    },
-  },
-  timestamp: pino.stdTimeFunctions.isoTime,
-  redact: {
-    paths: ['req.headers.authorization', 'req.headers.cookie', 'body.password', 'body.token'],
-    censor: '[REDACTED]',
-  },
-  transport: !isProduction
-    ? {
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          ignore: 'pid,hostname',
-          translateTime: 'SYS:standard',
-        },
-      }
-    : undefined,
-});
+```
+packages/observability/
+  src/
+    logger.ts           # Pino factory (service name param)
+    correlation.ts      # Express + Socket.io correlation ID middleware
+    socketLifecycle.ts  # connect/disconnect + whitelisted event logging helpers
+    statsCollector.ts   # in-memory counters (instantiate per service)
+    adminAuth.ts        # admin_profiles gate for /api/admin/stats
+    telemetryIngest.ts  # POST /api/telemetry + beacon handler
 ```
 
-### B. Express Integration (Correlation ID and HTTP Logs)
-Integrate standard request tracing in the main application setup inside `apps/game-server/src/index.ts`. This extracts or creates a `correlationId` for every incoming HTTP request:
+Both `apps/game-server` and `apps/minecraft-server` depend on `@playground/observability`. Replace `morgan` + scattered `console.*` with Pino.
+
+### A. Logger (`packages/observability/src/logger.ts`)
 
 ```typescript
-import express from 'express';
-import { v4 as uuidv4 } from 'uuid';
-import pinoHttp from 'pino-http';
-import { logger } from './utils/logger';
+import pino from "pino";
 
-const app = express();
-
-// Middleware to inject/extract Correlation ID
-app.use((req, res, next) => {
-  const correlationId = req.header('x-correlation-id') || `req-${uuidv4()}`;
-  req.headers['x-correlation-id'] = correlationId;
-  res.setHeader('x-correlation-id', correlationId);
-  next();
-});
-
-// Pino HTTP Middleware
-app.use(
-  pinoHttp({
-    logger,
-    genReqId: (req) => req.headers['x-correlation-id'] as string,
-    customSuccessMessage: (req, res, responseTime) => {
-      return `${req.method} ${req.url} completed in ${responseTime}ms`;
+export function createLogger(service: "game-server" | "minecraft-server") {
+  const isProduction = process.env.NODE_ENV === "production";
+  return pino({
+    level: process.env.LOG_LEVEL || "info",
+    base: { service, environment: process.env.NODE_ENV || "development" },
+    timestamp: pino.stdTimeFunctions.isoTime,
+    redact: {
+      paths: [
+        "req.headers.authorization",
+        "req.headers.cookie",
+        "body.password",
+        "body.token",
+        "context.token",
+        "context.accessToken"
+      ],
+      censor: "[REDACTED]"
     },
-    customErrorMessage: (req, res, err) => {
-      return `${req.method} ${req.url} failed: ${err.message}`;
-    },
-    serializers: {
-      req: (req) => ({
-        method: req.method,
-        url: req.url,
-        query: req.query,
-        id: req.id,
-      }),
-      res: (res) => ({
-        statusCode: res.statusCode,
-      }),
-    },
-  })
-);
-```
-
-### C. Socket.io Event Logging Middleware
-Track authorization, connection counts, event names, safe routing fields, and lifecycle execution times for WebSocket events.
-
-Important constraints:
-- Do not trust `socket.handshake.auth.userId`; the existing server must continue deriving `socket.data.userId` from the verified Supabase JWT.
-- Do not log raw socket payloads. Log event names, payload byte size, `sessionId` when present, validation outcome, and selected safe fields only.
-- Apply payload-size checks before logging derived payload facts where possible.
-
-```typescript
-import { Server, Socket } from 'socket.io';
-import { logger } from './utils/logger';
-import { statsCollector } from './statsCollector';
-
-export function setupSocketLogging(io: Server) {
-  io.use((socket: Socket, next) => {
-    // Inject or inherit Correlation ID during Socket handshake.
-    // User identity is set later by the existing Supabase auth middleware.
-    const correlationId = socket.handshake.auth.correlationId || `ws-${uuidv4()}`;
-    socket.data.correlationId = correlationId;
-    next();
-  });
-
-  io.on('connection', (socket: Socket) => {
-    const correlationId = socket.data.correlationId;
-    const userId = socket.data.userId;
-
-    statsCollector.recordConnection();
-
-    logger.info({
-      message: 'Socket connection established',
-      correlationId,
-      userId,
-      socketId: socket.id,
-      transport: socket.conn.transport.name,
-    });
-
-    // Custom packet middleware to profile user intents and messages without storing raw payloads.
-    socket.use(([event, data], next) => {
-      socket.data.startTime = performance.now();
-      statsCollector.recordMessageReceived();
-      const payloadSizeBytes = Buffer.byteLength(JSON.stringify(data ?? null));
-      const sessionId =
-        data && typeof data === 'object' && 'sessionId' in data
-          ? String((data as { sessionId?: unknown }).sessionId ?? '')
-          : undefined;
-      
-      logger.debug({
-        message: `Received Socket event: ${event}`,
-        correlationId,
-        userId: socket.data.userId,
-        event,
-        sessionId,
-        payloadSizeBytes,
-      });
-      next();
-    });
-
-    socket.on('disconnect', (reason) => {
-      statsCollector.recordDisconnect();
-      logger.info({
-        message: 'Socket connection disconnected',
-        correlationId,
-        userId,
-        socketId: socket.id,
-        reason,
-      });
-    });
+    transport: !isProduction
+      ? { target: "pino-pretty", options: { colorize: true, ignore: "pid,hostname" } }
+      : undefined
   });
 }
+```
 
-// Utility to track inside custom game event listeners
-export function logEventDuration(socket: Socket, event: string, isSuccess: boolean, extraContext = {}) {
-  const startTime = socket.data.startTime || performance.now();
-  const durationMs = performance.now() - startTime;
+### B. Express — correlation ID + HTTP access (errors only in prod)
 
-  statsCollector.recordLatency(durationMs);
+- Inject/propagate `x-correlation-id` on every HTTP request.
+- Use `pino-http` for request completion logs.
+- In production, default `pino-http` to **warn+** for successful health/ready probes; log all **4xx/5xx** at warn/error.
 
-  logger.info({
-    message: `Socket event processing complete`,
+### C. Socket.io — lifecycle and whitelisted events only
+
+**Do not** attach a per-packet `socket.use` logger. High-frequency events (`INPUT`, tick `SNAPSHOT` broadcasts, drawing deltas) must never emit log lines.
+
+**Do log:**
+- `connection` / `disconnect` (with `reason`, `socketId`, `userId` once auth completes)
+- Whitelisted handler outcomes at **info** (success) or **warn/error** (failure):
+  - **game-server:** `JOIN_ROOM`, `INTENT`, `STOP_GAME`, `REMATCH`, host disconnect sweep
+  - **minecraft-server:** `JOIN_ROOM`, `LEAVE_ROOM`, `STOP_GAME`, `MUTE_ALL`, `BLOCK_PLACE`, `BLOCK_BREAK` (failures only for place/break if noisy)
+- Handler duration via explicit `logSocketEvent()` call at the **end** of whitelisted handlers — not on every inbound packet.
+
+**Security constraints (unchanged):**
+- Never trust `socket.handshake.auth.userId`; derive `socket.data.userId` from verified Supabase JWT.
+- Never log raw payloads. Log `event`, `sessionId`, `status`, `error.code`, `duration_ms` only.
+
+```typescript
+// packages/observability/src/socketLifecycle.ts
+import type { Socket } from "socket.io";
+import type { Logger } from "pino";
+import type { StatsCollector } from "./statsCollector";
+
+const GAME_SERVER_EVENTS = new Set([
+  "JOIN_ROOM", "INTENT", "STOP_GAME", "REMATCH", "SPECTATE"
+]);
+const MINECRAFT_SERVER_EVENTS = new Set([
+  "JOIN_ROOM", "LEAVE_ROOM", "STOP_GAME", "MUTE_ALL"
+]);
+
+export function logSocketEvent(
+  logger: Logger,
+  stats: StatsCollector,
+  socket: Socket,
+  event: string,
+  outcome: { ok: boolean; code?: string; sessionId?: string; durationMs: number }
+) {
+  const whitelist =
+    process.env.SERVICE_NAME === "minecraft-server"
+      ? MINECRAFT_SERVER_EVENTS
+      : GAME_SERVER_EVENTS;
+
+  if (!whitelist.has(event)) return; // silently skip — stats counters may still increment
+
+  const level = outcome.ok ? "info" : "warn";
+  logger[level]({
     correlationId: socket.data.correlationId,
     userId: socket.data.userId,
-    event,
-    status: isSuccess ? 'success' : 'failed',
-    duration_ms: parseFloat(durationMs.toFixed(3)),
-    ...extraContext,
+    sessionId: outcome.sessionId,
+    protocol: "socket",
+    message: `Socket event ${event}`,
+    context: {
+      event,
+      status: outcome.ok ? "success" : "failed",
+      code: outcome.code,
+      duration_ms: outcome.durationMs
+    }
   });
+
+  if (outcome.ok) stats.recordIntentProcessed(outcome.durationMs);
+  else stats.recordIntentFailed();
 }
 ```
 
+**Stats counters** increment on whitelisted intents and connection lifecycle — not on every packet.
+
 ---
 
-## 4. Live Statistics Collector Module (Game Server Backend)
+## 4. Live Statistics Collector
 
-To monitor system load, live traffic, and room occupancy without scanning database records on every tick, we store active statistics in an in-memory accumulator.
+In-memory per-process accumulator. Counters reset on deploy/restart (acceptable for live ops view).
 
-### A. Stats Accumulator Implementation
-Create `apps/game-server/src/utils/statsCollector.ts`:
+### What stats include
 
 ```typescript
-import os from 'os';
-
-export interface RoomStat {
-  roomId: string;
-  gameType: string;
-  playerCount: number;
-  messageCount: number;
-  uptimeSeconds: number;
-}
-
-export interface TelemetryStats {
+export interface ServiceStats {
+  service: "game-server" | "minecraft-server";
   activeConnections: number;
   activeRoomsCount: number;
-  totalMessagesReceived: number;
-  messagesPerSecond: number;
-  averageLatencyMs: number;
-  memoryUsageMb: number;
-  cpuLoadPercent: number;
+  intentsPerSecond: number;       // whitelisted handler throughput, not raw packets
+  averageIntentLatencyMs: number; // whitelisted handlers only
+  intentFailuresLast5Min: number;
   rooms: RoomStat[];
 }
 
-class StatsCollector {
-  private activeConnections = 0;
-  private totalMessagesReceived = 0;
-  private recentMessagesReceived = 0;
-  private messagesPerSecond = 0;
-  
-  private latencySum = 0;
-  private latencyCount = 0;
-  private averageLatencyMs = 0;
-  
-  // Track active rooms internally
-  private activeRooms = new Map<string, {
-    gameType: string;
-    playerIds: Set<string>;
-    messageCount: number;
-    createdAt: number;
-  }>();
-
-  constructor() {
-    // Periodically compute throughput (every 5 seconds)
-    setInterval(() => {
-      this.messagesPerSecond = parseFloat((this.recentMessagesReceived / 5).toFixed(2));
-      this.recentMessagesReceived = 0;
-      
-      if (this.latencyCount > 0) {
-        this.averageLatencyMs = parseFloat((this.latencySum / this.latencyCount).toFixed(2));
-        this.latencySum = 0;
-        this.latencyCount = 0;
-      }
-    }, 5000);
-  }
-
-  public recordConnection() {
-    this.activeConnections++;
-  }
-
-  public recordDisconnect() {
-    this.activeConnections = Math.max(0, this.activeConnections - 1);
-  }
-
-  public recordMessageReceived() {
-    this.totalMessagesReceived++;
-    this.recentMessagesReceived++;
-  }
-
-  public recordLatency(durationMs: number) {
-    this.latencySum += durationMs;
-    this.latencyCount++;
-  }
-
-  public roomCreated(roomId: string, gameType: string) {
-    this.activeRooms.set(roomId, {
-      gameType,
-      playerIds: new Set(),
-      messageCount: 0,
-      createdAt: Date.now(),
-    });
-  }
-
-  public roomDestroyed(roomId: string) {
-    this.activeRooms.delete(roomId);
-  }
-
-  public playerJoinedRoom(roomId: string, playerId: string) {
-    const room = this.activeRooms.get(roomId);
-    if (room) {
-      room.playerIds.add(playerId);
-    }
-  }
-
-  public playerLeftRoom(roomId: string, playerId: string) {
-    const room = this.activeRooms.get(roomId);
-    if (room) {
-      room.playerIds.delete(playerId);
-    }
-  }
-
-  public recordRoomMessage(roomId: string) {
-    const room = this.activeRooms.get(roomId);
-    if (room) {
-      room.messageCount++;
-    }
-    this.recordMessageReceived();
-  }
-
-  public getStats(): TelemetryStats {
-    const roomsArray: RoomStat[] = [];
-    this.activeRooms.forEach((data, roomId) => {
-      roomsArray.push({
-        roomId,
-        gameType: data.gameType,
-        playerCount: data.playerIds.size,
-        messageCount: data.messageCount,
-        uptimeSeconds: Math.floor((Date.now() - data.createdAt) / 1000),
-      });
-    });
-
-    const totalMemory = os.totalmem();
-    const freeMemory = os.freemem();
-    const memoryUsageMb = parseFloat(((totalMemory - freeMemory) / 1024 / 1024).toFixed(2));
-
-    return {
-      activeConnections: this.activeConnections,
-      activeRoomsCount: this.activeRooms.size,
-      totalMessagesReceived: this.totalMessagesReceived,
-      messagesPerSecond: this.messagesPerSecond,
-      averageLatencyMs: this.averageLatencyMs,
-      memoryUsageMb,
-      cpuLoadPercent: parseFloat((os.loadavg()[0] * 100 / os.cpus().length).toFixed(1)),
-      rooms: roomsArray,
-    };
-  }
+export interface RoomStat {
+  sessionId: string;
+  gameType: string;
+  playerCount: number;
+  uptimeSeconds: number;
 }
-
-export const statsCollector = new StatsCollector();
 ```
 
-### B. Authenticated Stats Express Endpoint
-Secure the live statistics endpoint to ensure only platform admins can query backend telemetry. Teachers can observe student activity through the existing teacher-facing product views, but operational server telemetry is restricted to `admin_profiles`.
+### What stats explicitly exclude
 
-```typescript
-// apps/game-server/src/index.ts (Express Routing section)
-import { createClient } from '@supabase/supabase-js';
-import { statsCollector } from './utils/statsCollector';
-import { logger } from './utils/logger';
+- `memoryUsageMb`, `cpuLoadPercent` — use Railway service metrics instead
+- Per-room packet/message counts — misleading on voxel tick traffic
+- LiveKit WebRTC quality metrics — use LiveKit dashboard / webhooks (§5)
 
-const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
+Hook `statsCollector` from existing room lifecycle (`getOrCreateRoom`, `deleteRoom`, `assignPlayer`, `removePlayerFromRoom`) — do not instrument the tick loop.
 
-app.get('/api/admin/stats', async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Missing or malformed Authorization header' });
-  }
+### Admin stats API (per service)
 
-  const token = authHeader.split(' ')[1];
+Each server exposes:
 
-  try {
-    // 1. Authenticate JWT token via Supabase Auth
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-    if (authError || !user) {
-      return res.status(401).json({ error: 'Invalid authentication credentials' });
-    }
-
-    // 2. Query admin list to verify platform-admin access.
-    const { data: adminProfile } = await supabaseAdmin
-      .from('admin_profiles')
-      .select('id')
-      .eq('id', user.id)
-      .maybeSingle();
-
-    if (!adminProfile) {
-      return res.status(403).json({ error: 'Access forbidden: Administrator permissions required' });
-    }
-
-    // 3. Serialize and emit the calculated stats payload
-    res.json(statsCollector.getStats());
-  } catch (error: any) {
-    logger.error({ error: error.message }, 'Failed to fetch live statistics');
-    res.status(500).json({ error: 'Internal system statistics gathering failed' });
-  }
-});
 ```
+GET /api/admin/stats
+Authorization: Bearer <supabase access_token>
+→ 401/403 if not admin_profiles
+→ ServiceStats JSON
+```
+
+Admin UI fetches **both** endpoints and renders side-by-side (or merged) cards. Link out to Railway/LiveKit dashboards for infra metrics (see §6).
 
 ---
 
-## 5. Client-Side SPA Logging & Stats (React / Vite)
+## 5. LiveKit Observability
 
-To avoid synchronous network overhead on the client browser while still capturing issues, client logs are buffered in memory and batched to a telemetry route on the game-server. The game-server validates, redacts, rate-limits, and emits accepted telemetry to Pino/Railway. Client telemetry is not written directly to Supabase.
+Voice is a separate transport from Socket.io. Logging must cover token issuance, SFU lifecycle, and client connect failures — without logging audio data.
 
-Required server-side controls for `/api/telemetry` and `/api/telemetry-beacon`:
-- Accept only a small schema: timestamp, level, correlationId, route/session context, message, and sanitized stack/error fields.
-- Require either a valid Supabase bearer token when available or apply strict anonymous rate limits for pre-auth crashes.
-- Redact tokens, cookies, Authorization headers, passwords, Supabase keys, chat message bodies, and raw game payloads.
-- Cap batch size and payload size; reject or truncate oversized `context` and `stack` fields.
-- Emit accepted entries through the server logger with `source: "client"` so the Railway log drain handles persistence/search.
+**References:**
+- [Webhooks & events](https://docs.livekit.io/intro/basics/rooms-participants-tracks/webhooks-events/)
+- [Room Service API](https://docs.livekit.io/reference/other/roomservice-api/)
 
-### A. Centralized Telemetry Class
-Create `apps/web/src/utils/telemetry.ts` to manage local logs:
+### A. Token endpoint (`POST /rtc/token` on minecraft-server)
 
-```typescript
-import { v4 as uuidv4 } from 'uuid';
+The endpoint is implemented in `livekitService.ts` and enforces robust security checks (gender partition matching, paused session roster restriction, completed session checks, and teacher bypasses).
 
-type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+Add structured logging:
 
-interface LogPayload {
-  timestamp: string;
-  level: LogLevel;
-  correlationId: string;
-  userId: string | null;
-  sessionId: string | null;
-  message: string;
-  context: Record<string, any>;
-  stack?: string;
-}
+| Outcome | Level | Fields |
+|---------|-------|--------|
+| Token issued | `info` | `sessionId`, `userId`, `livekitRoom`, `correlationId`, `protocol: http` |
+| Auth/session denial | `warn` | `sessionId`, `reason` (gender_mismatch, paused_roster_block, session_completed, profile_inactive) — **no JWT** |
+| Repeated denials (rate-limit hit) | `warn` + optional `audit_log` | security-sensitive |
 
-class TelemetryLogger {
-  private logBuffer: LogPayload[] = [];
-  private batchSize = 10;
-  private flushIntervalMs = 5000;
-  private flushTimer: number | null = null;
-  private currentCorrelationId = `c-${uuidv4()}`;
-  private userId: string | null = null;
-  private sessionId: string | null = null;
+Do **not** log the signed JWT. Return the server URL (from `LIVEKIT_URL` env variable) alongside the token: `{ token, serverUrl }`. The client hook `useLiveKitProximity` should consume this `serverUrl` instead of hardcoding `wss://livekit.play-ormenachem.com`.
 
-  constructor() {
-    this.setupWindowListeners();
-    this.startInterval();
-  }
 
-  public setContext(userId: string | null, sessionId: string | null) {
-    this.userId = userId;
-    this.sessionId = sessionId;
-  }
+### B. LiveKit webhooks (recommended)
 
-  public getCorrelationId(): string {
-    return this.currentCorrelationId;
-  }
+Configure the self-hosted LiveKit server to POST webhooks to minecraft-server:
 
-  public rotateCorrelationId() {
-    this.currentCorrelationId = `c-${uuidv4()}`;
-  }
-
-  public log(level: LogLevel, message: string, context: Record<string, any> = {}, error?: Error) {
-    const logEntry: LogPayload = {
-      timestamp: new Date().toISOString(),
-      level,
-      correlationId: this.currentCorrelationId,
-      userId: this.userId,
-      sessionId: this.sessionId,
-      message,
-      context,
-      stack: error?.stack,
-    };
-
-    if (import.meta.env.DEV) {
-      console[level](`[${level.toUpperCase()}] ${message}`, context, error || '');
-    }
-
-    this.logBuffer.push(logEntry);
-
-    if (this.logBuffer.length >= this.batchSize || level === 'error') {
-      this.flush();
-    }
-  }
-
-  public info(message: string, context?: Record<string, any>) {
-    this.log('info', message, context);
-  }
-
-  public warn(message: string, context?: Record<string, any>, error?: Error) {
-    this.log('warn', message, context, error);
-  }
-
-  public error(message: string, context?: Record<string, any>, error?: Error) {
-    this.log('error', message, context, error);
-  }
-
-  private startInterval() {
-    if (typeof window !== 'undefined') {
-      this.flushTimer = window.setInterval(() => this.flush(), this.flushIntervalMs);
-    }
-  }
-
-  private setupWindowListeners() {
-    if (typeof window === 'undefined') return;
-
-    window.addEventListener('error', (event) => {
-      this.error('Unhandled runtime exception', {
-        filename: event.filename,
-        lineno: event.lineno,
-        colno: event.colno,
-      }, event.error);
-    });
-
-    window.addEventListener('unhandledrejection', (event) => {
-      this.error('Unhandled promise rejection', {
-        reason: String(event.reason),
-      }, event.reason instanceof Error ? event.reason : undefined);
-    });
-
-    window.addEventListener('beforeunload', () => {
-      this.flushSync();
-    });
-  }
-
-  private async flush() {
-    if (this.logBuffer.length === 0) return;
-
-    const logsToSend = [...this.logBuffer];
-    this.logBuffer = [];
-
-    try {
-      await fetch(`${import.meta.env.VITE_GAME_SERVER_URL}/api/telemetry`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-correlation-id': this.currentCorrelationId,
-        },
-        body: JSON.stringify({ logs: logsToSend }),
-      });
-    } catch (e) {
-      this.logBuffer = [...logsToSend, ...this.logBuffer].slice(0, 100);
-    }
-  }
-
-  private flushSync() {
-    if (this.logBuffer.length === 0) return;
-    const body = JSON.stringify({ logs: this.logBuffer });
-    this.logBuffer = [];
-
-    if (navigator.sendBeacon) {
-      navigator.sendBeacon(`${import.meta.env.VITE_GAME_SERVER_URL}/api/telemetry-beacon`, body);
-    }
-  }
-}
-
-export const telemetry = new TelemetryLogger();
+```
+POST /webhooks/livekit
 ```
 
-### B. React Error Boundary Component
-Create a modern React component to render a fallback layout and log rendering failures using `telemetry`:
+Verify webhook signature using the `WebhookReceiver` from `livekit-server-sdk` with `LIVEKIT_API_KEY` and `LIVEKIT_API_SECRET`. Map events to Pino logs + stats:
 
-```tsx
-// apps/web/src/components/ErrorBoundary.tsx
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { telemetry } from '../utils/telemetry';
+| Webhook event | Action |
+|---------------|--------|
+| `room_started` | `info` — `livekitRoom`, `protocol: livekit-webhook` |
+| `room_finished` | `info` — room duration |
+| `participant_joined` | `info` — `participantIdentity` (= `user.id`), `livekitRoom`; increment voice participant counter |
+| `participant_left` | `info` — same fields; decrement counter |
+| `track_published` / `track_unpublished` | `debug` in dev only — track kind (`audio`), no SDP/media |
+| `egress_*` | `info` if egress used later |
 
-interface Props {
-  children: ReactNode;
-  fallback?: ReactNode;
-}
+Extract `sessionId` from room name: `voxel-session-${sessionId}`.
 
-interface State {
-  hasError: boolean;
-}
 
-export class ErrorBoundary extends Component<Props, State> {
-  public state: State = {
-    hasError: false
-  };
+### C. Room Service API (on-demand, Admin UI)
 
-  public static getDerivedStateFromError(_: Error): State {
-    return { hasError: true };
-  }
+For the Admin stats tab voice section, minecraft-server calls LiveKit Room Service API (server-side only):
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    telemetry.error('React component tree crash caught by boundary', {
-      componentStack: errorInfo.componentStack,
-    }, error);
-  }
+- `ListRooms` — active voice rooms
+- `ListParticipants` per room — headcount, identities
 
-  public render() {
-    if (this.state.hasError) {
-      return this.props.fallback || (
-        <div className="flex flex-col items-center justify-center p-8 bg-rose-50 text-rose-900 border border-rose-200 rounded-lg m-4">
-          <h2 className="text-lg font-bold mb-2">אירעה שגיאה בטעינת הרכיב</h2>
-          <p className="text-sm">אנא נסה לרענן את העמוד או לפנות למדריך.</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="mt-4 px-4 py-2 bg-rose-600 text-white rounded hover:bg-rose-700 text-sm font-medium transition"
-          >
-            רענן עמוד
-          </button>
-        </div>
-      );
-    }
+Expose aggregated result via `GET /api/admin/stats` → `voice: { activeRooms, totalParticipants }` or a dedicated `GET /api/admin/voice-stats`. Cache 10–15 s to avoid hammering LiveKit.
 
-    return this.props.children;
-  }
-}
-```
+Do not expose LiveKit API keys to the browser.
+
+### D. Client-side LiveKit / Web Audio errors
+
+`useLiveKitProximity` should report via telemetry (not `console.error` only):
+
+- Token fetch failure (`/rtc/token`)
+- `room.connect` failure
+- Mic permission denied
+- `AudioContext` suspended/resume failures
+- Output device routing changes/failures (`setSinkId` failures)
+
+Include `protocol: "webrtc"`, `sessionId`, `livekitRoom` in context. Forward to **voxel server** telemetry ingest (`VITE_VOXEL_SERVER_URL`).
+
+
+### E. Cross-protocol correlation
+
+| System | Correlation key |
+|--------|-----------------|
+| Browser | `correlationId` header on HTTP + socket handshake |
+| Socket.io | `socket.data.correlationId` |
+| LiveKit | `participant.identity` = Supabase `user.id`; room name encodes `sessionId` |
+| Audit | optional `correlation_id` column on `audit_log` rows |
 
 ---
 
-## 6. Admin Stats Dashboard UI Component (Frontend React Tab)
+## 6. Client-Side Telemetry (React / Vite)
 
-This component will be embedded within `AdminPage.tsx` under the new `stats` navigation section, displaying system load, live connections, and active rooms list.
+Buffered in-memory, batched to the **correct** backend:
 
-### A. Integrated React Stats Tab Section
-Integrating this UI code adds an interactive dashboard:
+| App context | Telemetry target |
+|-------------|------------------|
+| Board games (`GameSessionContainer`) | `VITE_GAME_SERVER_URL/api/telemetry` |
+| Voxel + voice (`MinecraftSessionContainer`) | `VITE_VOXEL_SERVER_URL/api/telemetry` |
+| Global shell / auth | either server (prefer game-server); include `context.appArea` |
 
-```tsx
-// Place within the activeSection switcher in apps/web/src/pages/AdminPage.tsx
+Server ingest (`packages/observability/src/telemetryIngest.ts`):
+- Accept schema: `timestamp`, `level`, `correlationId`, `route`, `sessionId`, `message`, `context`, `stack`
+- Require Supabase bearer when available; strict IP rate-limit for anonymous pre-auth crashes
+- Redact tokens, chat bodies, game payloads
+- Cap batch size (10) and payload size; truncate `stack` / `context`
+- Re-emit through Pino with `source: "client"`, `protocol: "client"`
 
-import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+### ErrorBoundary
 
-interface TelemetryStats {
-  activeConnections: number;
-  activeRoomsCount: number;
-  totalMessagesReceived: number;
-  messagesPerSecond: number;
-  averageLatencyMs: number;
-  memoryUsageMb: number;
-  cpuLoadPercent: number;
-  rooms: {
-    roomId: string;
-    gameType: string;
-    playerCount: number;
-    messageCount: number;
-    uptimeSeconds: number;
-  }[];
-}
+Wrap app shell in `apps/web/src/components/ErrorBoundary.tsx` (Hebrew fallback). Log via telemetry on `componentDidCatch`.
 
-export function AdminStatsTab() {
-  const [stats, setStats] = useState<TelemetryStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [autoRefresh, setAutoRefresh] = useState(true);
-  const [recentThroughput, setRecentThroughput] = useState<number[]>(Array(10).fill(0));
+### LiveKit URL fix
 
-  const loadStats = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('No user session present');
+Replace hardcoded `wss://livekit.play-ormenachem.com` in `useLiveKitProximity` with `serverUrl` returned from the `/rtc/token` endpoint (which maps to `process.env.LIVEKIT_URL` on the backend).
 
-      const res = await fetch(`${import.meta.env.VITE_GAME_SERVER_URL}/api/admin/stats`, {
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-        }
-      });
-
-      if (!res.ok) {
-        throw new Error(`Failed to load server statistics: Status ${res.status}`);
-      }
-
-      const data: TelemetryStats = await res.json();
-      setStats(data);
-      setError(null);
-      
-      // Update sparkline metrics
-      setRecentThroughput(prev => [...prev.slice(1), data.messagesPerSecond]);
-    } catch (err: any) {
-      setError(err.message || 'Unknown network telemetry error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadStats();
-    if (!autoRefresh) return;
-    const interval = setInterval(loadStats, 5000);
-    return () => clearInterval(interval);
-  }, [autoRefresh]);
-
-  if (loading && !stats) {
-    return <div className="p-6 text-sm font-medium text-slate-500">טוען נתוני שרת וסטטיסטיקה...</div>;
-  }
-
-  if (error) {
-    return (
-      <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
-        שגיאה בחיבור לשרת הסטטיסטיקה: {error}
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6 text-right" dir="rtl">
-      <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-        <h2 className="text-xl font-bold text-slate-800">סטטיסטיקה ויומני פעילות בזמן אמת</h2>
-        <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2 text-sm text-slate-600">
-            <input 
-              type="checkbox" 
-              checked={autoRefresh} 
-              onChange={(e) => setAutoRefresh(e.target.checked)} 
-              className="rounded text-indigo-600 focus:ring-indigo-500" 
-            />
-            רענון אוטומטי (5 שניות)
-          </label>
-          <button 
-            onClick={loadStats} 
-            className="rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition"
-          >
-            רענן כעת
-          </button>
-        </div>
-      </div>
-
-      {/* KPI Cards */}
-      {stats && (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
-          <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-            <span className="text-xs font-medium text-slate-400">חיבורים פעילים</span>
-            <div className="text-2xl font-bold text-slate-800 mt-1">{stats.activeConnections}</div>
-          </div>
-          <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-            <span className="text-xs font-medium text-slate-400">חדרים פעילים</span>
-            <div className="text-2xl font-bold text-slate-800 mt-1">{stats.activeRoomsCount}</div>
-          </div>
-          <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-            <span className="text-xs font-medium text-slate-400">הודעות לשניה</span>
-            <div className="text-2xl font-bold text-indigo-600 mt-1">{stats.messagesPerSecond} req/s</div>
-          </div>
-          <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-            <span className="text-xs font-medium text-slate-400">זמן תגובה ממוצע</span>
-            <div className="text-2xl font-bold text-emerald-600 mt-1">{stats.averageLatencyMs} ms</div>
-          </div>
-          <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-            <span className="text-xs font-medium text-slate-400">עומס מעבד ומכונה</span>
-            <div className="text-2xl font-bold text-slate-800 mt-1">{stats.cpuLoadPercent}%</div>
-          </div>
-        </div>
-      )}
-
-      {/* Sparkline / Resource Visualization */}
-      <div className="grid gap-6 md:grid-cols-3">
-        <div className="md:col-span-2 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h3 className="text-sm font-semibold text-slate-700 mb-4">קצב תעבורה שוטף (הודעות לשנייה)</h3>
-          
-          {/* Custom SVG sparkline line chart */}
-          <div className="h-32 w-full flex items-end">
-            <svg viewBox="0 0 100 30" className="h-full w-full overflow-visible" preserveAspectRatio="none">
-              <path
-                d={`M ${recentThroughput.map((val, idx) => `${idx * 11},${30 - Math.min(30, (val * 1.5))}`).join(' L ')}`}
-                fill="none"
-                stroke="#6366f1"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d={`M 0,30 L ${recentThroughput.map((val, idx) => `${idx * 11},${30 - Math.min(30, (val * 1.5))}`).join(' L ')} L 99,30 Z`}
-                fill="url(#sparkline-grad)"
-                opacity="0.1"
-              />
-              <defs>
-                <linearGradient id="sparkline-grad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#6366f1" />
-                  <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
-          <div className="flex justify-between text-[10px] text-slate-400 mt-2">
-            <span>לפני 45 שניות</span>
-            <span>בזמן אמת</span>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col justify-between">
-          <div>
-            <h3 className="text-sm font-semibold text-slate-700 mb-4">שימוש בזיכרון המערכת</h3>
-            {stats && (
-              <div className="space-y-3">
-                <div className="flex justify-between text-xs font-semibold text-slate-600">
-                  <span>בשימוש: {stats.memoryUsageMb} MB</span>
-                </div>
-                <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-indigo-500 rounded-full transition-all duration-500" 
-                    style={{ width: `${Math.min(100, (stats.memoryUsageMb / 1024) * 10)}%` }}
-                  />
-                </div>
-                <span className="text-[10px] text-slate-400 block">מדד זה משקף את הזיכרון הכולל המוקצה לתהליך NodeJS על השרת.</span>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Active Rooms Grid */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <div className="bg-slate-50 px-5 py-4 border-b border-slate-200">
-          <h3 className="text-sm font-semibold text-slate-700">חדרי משחק ורשת פעילים בשרת</h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-right text-sm">
-            <thead className="bg-slate-100/50 text-slate-500 text-xs">
-              <tr>
-                <th className="p-3">מזהה חדר / Session ID</th>
-                <th className="p-3">סוג משחק</th>
-                <th className="p-3">שחקנים מחוברים</th>
-                <th className="p-3">סה"כ פאקטים</th>
-                <th className="p-3">משך פעילות (Uptime)</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {stats?.rooms.map((room) => (
-                <tr key={room.roomId} className="hover:bg-slate-50/50">
-                  <td className="p-3 font-mono text-xs">{room.roomId}</td>
-                  <td className="p-3 font-semibold text-slate-700">{room.gameType}</td>
-                  <td className="p-3">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800">
-                      <span className="size-1.5 rounded-full bg-emerald-500" />
-                      {room.playerCount} שחקנים
-                    </span>
-                  </td>
-                  <td className="p-3">{room.messageCount} הודעות</td>
-                  <td className="p-3">{Math.floor(room.uptimeSeconds / 60)} דקות, {room.uptimeSeconds % 60} שניות</td>
-                </tr>
-              ))}
-              {(!stats || stats.rooms.length === 0) && (
-                <tr>
-                  <td colSpan={5} className="p-8 text-center text-sm text-slate-400">אין חדרים פעילים ברשת ברגע זה.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-}
-```
 
 ---
 
-## 7. Database Audit Trail & Security
+## 7. Admin Stats Dashboard
 
-Critical operations performed by administrators or teachers must be persisted securely and permanently in Supabase. OMplayground already has `public.audit_log` plus `public.append_audit_log(...)`; this prototype extends that mechanism instead of creating a parallel table. Operational logs, socket packet traces, and client crash telemetry stay out of Supabase and flow through Pino/Railway.
+New `stats` section in `AdminPage.tsx` (platform-admin only).
 
-### Migration Shape: Extend Existing `audit_log`
+### KPI cards (app metrics only)
 
-```sql
--- Existing table from 20260422000000_teacher_admin_audit.sql:
--- public.audit_log(id, actor_id, actor_kind, action, entity_type, entity_id, metadata, created_at)
+| Card | Source |
+|------|--------|
+| Active socket connections | Sum of both servers' `activeConnections` |
+| Active game rooms | Sum of `activeRoomsCount` |
+| Intent rate (5s avg) | Per-server `intentsPerSecond` |
+| Intent latency (avg) | Per-server `averageIntentLatencyMs` |
+| Voice participants | minecraft-server LiveKit Room Service or webhook counters |
+| Intent failures (5 min) | Per-server |
 
-ALTER TABLE public.audit_log
-  ADD COLUMN IF NOT EXISTS correlation_id text,
-  ADD COLUMN IF NOT EXISTS request_id text;
+### Infra links (not polled into UI)
 
-CREATE INDEX IF NOT EXISTS audit_log_correlation_id
-  ON public.audit_log (correlation_id)
-  WHERE correlation_id IS NOT NULL;
+Show static links/buttons to platform dashboards — no in-app CPU/memory charts:
 
-CREATE INDEX IF NOT EXISTS audit_log_action_created_at
-  ON public.audit_log (action, created_at DESC);
+- Railway → game-server service metrics
+- Railway → minecraft-server service metrics
+- LiveKit project dashboard (participants, bandwidth, node health)
+- Vercel → web deployment analytics
+- Supabase → database health
 
--- Keep RLS admin-only for reads. Do not add a permissive FOR ALL policy.
--- Keep inserts behind SECURITY DEFINER RPCs or service-role backend code paths.
-```
+Remove sparkline memory bar and CPU % from the original prototype.
 
-### Audit Write Pattern
+### Active rooms table
 
-Audit rows should be produced only by trusted server/database paths:
-
-1. Existing database functions call `public.append_audit_log(...)`.
-2. Edge Functions and game-server privileged actions can insert with the service role after validating the actor.
-3. Browser clients do not insert audit rows directly.
-
-When adding correlation support, prefer extending `append_audit_log` with optional `p_correlation_id` / `p_request_id` parameters, or include them in `metadata` if avoiding function signature churn. Keep the table name singular (`audit_log`) because the Admin view already reads it.
+Columns: `sessionId`, `gameType`, `server` (game / voxel), `players`, `uptime`, optional `voiceParticipants`.
 
 ---
 
-## 8. Log Drainage & Observability Setup
+## 8. Database Audit Trail
 
-Once structured JSON logs are outputted by Pino, they can be securely directed to external observability backends.
+Extend existing `audit_log` — do not create a parallel table.
 
-### A. Production Drainage Pipeline
-1. **Pino Output:** The game-server writes JSON directly to `stdout`.
-2. **Railway Log Drain:** Configure Railway's Log Drain integration to read from standard out and direct to:
-   - **Axiom / Datadog / BetterStack:** Via syslog or custom HTTP collectors.
-3. **Supabase Audit Trail:** Keep only durable product/security audit rows in `public.audit_log`; do not store routine request/socket/client telemetry in Supabase tables.
-4. **Supabase Platform Logs:** Use the Supabase dashboard or project log export for database platform diagnostics when needed, separate from the app audit log.
+To link logs with database transactions, either:
+1. **Add `correlation_id` to `metadata` JSONB (Recommended):** Stash correlation ID in the existing `metadata` column of `audit_log` to avoid database schema alterations.
+2. **Alter Table Schema:**
+   ```sql
+   ALTER TABLE public.audit_log
+     ADD COLUMN IF NOT EXISTS correlation_id text;
 
-### B. Standard Metrics & Monitors
-Set up proactive alert conditions in the monitoring dashboard to catch critical faults:
+   CREATE INDEX IF NOT EXISTS audit_log_correlation_id
+     ON public.audit_log (correlation_id)
+     WHERE correlation_id IS NOT NULL;
 
-| Alarm Condition | Threshold | Action / Alert Route |
-| :--- | :--- | :--- |
-| **Pino Level is 'error'** | > 5 occurrences / 1 minute | Slack / Telegram alert to development channel |
-| **Socket Connection Disconnects** | Spikes > 200% over the moving average | PagerDuty alerting (possible game server network disruption) |
-| **Postgres RLS Violations** | Any occurrence | Security alert (possible compromise attempt) |
-| **React Component Crashes** | > 10 captured logs in a 5-minute interval | Sentry or direct logging alarm |
+   CREATE INDEX IF NOT EXISTS audit_log_action_created_at
+     ON public.audit_log (action, created_at DESC);
+   ```
+
+Extend `append_audit_log(...)` with optional `p_correlation_id` (if selecting Option 2), or stash in `metadata` (Option 1) to avoid signature churn.
+
+**Write paths:** SECURITY DEFINER RPCs, Edge Functions, server privileged actions. Browsers never insert directly.
+
+**New audit candidates:**
+- Repeated `/rtc/token` denials (abuse)
+- Bulk kid import (already via Edge Function)
+- Admin ops (existing)
+
 
 ---
 
-## 9. Setup & Validation Steps
+## 9. Log Drainage & Platform Observability
 
-To roll out and verify the logging and stats prototype, complete these key verification stages:
+### Application logs (Pino → Railway drain)
 
-### Step 1: Install Dependencies
-Run the following within the game server package to install logging utilities:
+1. Both Node services emit JSON to stdout.
+2. Railway log drain → Axiom / Datadog / BetterStack.
+3. Query by `service`, `correlationId`, `level`, `event`, `protocol`.
+
+### Platform dashboards (infra — not duplicated in app)
+
+| Signal | Where |
+|--------|-------|
+| Node CPU, memory, restarts | Railway per-service metrics |
+| HTTP 5xx, latency | Railway / Vercel |
+| Postgres connections, slow queries | Supabase dashboard |
+| WebRTC participants, bandwidth, SFU health | LiveKit dashboard |
+| RLS violations | Supabase logs → alert |
+
+### Alert conditions (log drain + platform)
+
+| Condition | Threshold | Route |
+|-----------|-----------|-------|
+| Pino `error` | > 5 / minute per service | Dev Slack/Telegram |
+| `intentFailuresLast5Min` spike | > 3× baseline | Dev alert |
+| Socket disconnect burst | > 200% moving avg | Investigate network |
+| Postgres RLS violation | any | Security alert |
+| Client `error` telemetry | > 10 / 5 min | Dev alert |
+| LiveKit `participant_left` mass exodus | room empties in < 30 s | Voice incident |
+| Railway memory / CPU sustained high | platform alert | Ops (not app code) |
+
+---
+
+## 10. Implementation Phases
+
+### Phase 1 — Shared package + Pino (both servers)
+- [ ] Create `packages/observability`
+- [ ] Replace `morgan` + `console.*` in `game-server` and `minecraft-server`
+- [ ] Correlation ID middleware (HTTP + socket handshake)
+- [ ] Socket connect/disconnect logging
+
+### Phase 2 — Event-level socket logging + stats
+- [ ] Whitelist-based `logSocketEvent()` in room handlers
+- [ ] `StatsCollector` hooked to room lifecycle
+- [ ] `GET /api/admin/stats` on both servers
+
+### Phase 3 — Client telemetry + ErrorBoundary
+- [ ] `apps/web/src/utils/telemetry.ts` with dual-server routing
+- [ ] `/api/telemetry` + `/api/telemetry-beacon` on both servers
+- [ ] ErrorBoundary on app shell
+- [ ] LiveKit client errors via telemetry
+
+### Phase 4 — LiveKit observability
+- [ ] Structured `/rtc/token` logs
+- [ ] `VITE_LIVEKIT_URL` + return URL from token endpoint
+- [ ] Webhook receiver `/webhooks/livekit`
+- [ ] Room Service API for Admin voice stats
+
+### Phase 5 — Admin UI + audit migration
+- [ ] `stats` tab in `AdminPage.tsx` (federated fetch)
+- [ ] Platform dashboard links
+- [ ] `audit_log.correlation_id` migration + `append_audit_log` extension
+- [ ] Railway log drain configuration
+
+---
+
+## 11. Setup & Validation
+
+### Dependencies (root + both servers + observability package)
+
 ```bash
-npm install pino pino-http
-npm install --save-dev @types/pino-http pino-pretty
+npm install pino pino-http uuid livekit-server-sdk -w @playground/observability
+npm install --save-dev pino-pretty @types/pino-http -w @playground/observability
 ```
 
-### Step 2: Implement Test Endpoints
-Add a test endpoint on the game-server to verify correlation flow:
-```typescript
-app.get('/api/log-test', (req, res) => {
-  const cid = req.headers['x-correlation-id'];
-  req.log.info({ testContext: true }, 'Manual log test endpoint hit');
-  res.json({ success: true, correlationId: cid });
-});
-```
+Wire `@playground/observability` into both server `package.json` files.
 
-### Step 3: Run Validation Command
-Send a request using curl containing a custom header and observe the structured terminal output:
+### Smoke tests
+
+**Correlation (game-server):**
 ```bash
-curl -H "x-correlation-id: c_manual_test_123" http://localhost:8080/api/log-test
+curl -H "x-correlation-id: c_manual_test" http://localhost:8080/health
+# Expect pino line with correlationId, no per-socket spam during gameplay
 ```
-*Expected Log output:*
-```json
-{"level":"info","time":"2026-05-31T13:22:00.000Z","reqId":"c_manual_test_123","testContext":true,"msg":"Manual log test endpoint hit"}
+
+**Correlation (minecraft-server):**
+```bash
+curl -H "x-correlation-id: c_voxel_test" http://localhost:8081/health
 ```
+
+**Stats (admin JWT):**
+```bash
+curl -H "Authorization: Bearer $ADMIN_JWT" http://localhost:8080/api/admin/stats
+curl -H "Authorization: Bearer $ADMIN_JWT" http://localhost:8081/api/admin/stats
+# Expect ServiceStats without memoryUsageMb / cpuLoadPercent
+```
+
+**Telemetry ingest:**
+```bash
+curl -X POST http://localhost:8080/api/telemetry \
+  -H "Content-Type: application/json" \
+  -H "x-correlation-id: c_client_test" \
+  -d '{"logs":[{"timestamp":"2026-06-10T12:00:00Z","level":"error","correlationId":"c_client_test","message":"test","context":{}}]}'
+```
+
+**LiveKit webhook (after configured):**
+```bash
+# Send test webhook from LiveKit dashboard; verify participant_joined log line
+```
+
+### Validation checklist
+
+- [ ] Playing voxel for 60 s produces **zero** log lines for `INPUT` / `SNAPSHOT`
+- [ ] `JOIN_ROOM` success produces exactly **one** info log per join
+- [ ] Failed `/rtc/token` produces warn log without JWT
+- [ ] Admin stats shows both servers; no CPU/memory fields
+- [ ] Client React error appears in Railway drain with `source: "client"`
+- [ ] `audit_log` row for admin action includes `correlation_id` when passed
