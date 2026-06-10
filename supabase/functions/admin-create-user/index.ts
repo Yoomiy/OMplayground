@@ -24,6 +24,14 @@ serve(async (req) => {
   }
 
   try {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401
+      });
+    }
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -35,18 +43,25 @@ serve(async (req) => {
       }
     );
 
-    // Enforce admin-only access
     const { data: { user } } = await supabase.auth.getUser(
-      req.headers.get("Authorization")!.replace("Bearer ", "")
+      authHeader.replace("Bearer ", "")
     );
-    if (!user) throw new Error("Forbidden");
+    if (!user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401
+      });
+    }
 
     const { count, error: adminCheckError } = await supabase
       .from("admin_profiles")
       .select("*", { count: "exact", head: true })
       .eq("id", user.id);
     if (adminCheckError || count !== 1) {
-      throw new Error("Forbidden: not an admin");
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 403
+      });
     }
 
     const profile: AdminNewProfile = await req.json();

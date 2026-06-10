@@ -29,7 +29,9 @@ export function usePersistedSessionChat(sessionId: string | undefined) {
       setError(qErr.message);
       return;
     }
-    setLines((data ?? []) as ChatLineRow[]);
+    setLines(
+      ((data ?? []) as ChatLineRow[]).filter((line) => !line.is_deleted)
+    );
     setError(null);
   }, [sessionId]);
 

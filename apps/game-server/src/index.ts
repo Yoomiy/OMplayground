@@ -375,6 +375,10 @@ io.on("connection", (socket) => {
         reply?.({ ok: false, error: { code: "BAD_REQUEST", message: "sessionId required" } });
         return;
       }
+      const prevSessionId = socket.data.sessionId as string | undefined;
+      if (prevSessionId && prevSessionId !== sessionId) {
+        await handleLeave(prevSessionId);
+      }
       if (!supabaseAdmin) {
         reply?.({ ok: false, error: { code: "SERVER_CONFIG", message: "Supabase not configured" } });
         return;
@@ -382,7 +386,7 @@ io.on("connection", (socket) => {
       const { data: session, error } = await supabaseAdmin
         .from("game_sessions")
         .select(
-          "id, game_id, gender, player_ids, player_names, host_id, status, game_state, games ( game_url, min_players )"
+          "id, game_id, gender, player_ids, player_names, host_id, status, game_state, is_open, games ( game_url, min_players )"
         )
         .eq("id", sessionId)
         .maybeSingle();
@@ -412,6 +416,24 @@ io.on("connection", (socket) => {
       const existingRoom = getRoom(sessionId);
       const playerIds = ((session.player_ids as string[]) ?? []).map(String);
       const playerNames = ((session.player_names as string[]) ?? []).map(String);
+      const role = socket.data.role as string;
+      const hostId = String(session.host_id ?? "");
+      const isOpen = (session as { is_open?: boolean }).is_open !== false;
+      if (
+        !isOpen &&
+        role !== "teacher" &&
+        !playerIds.includes(userId) &&
+        hostId !== userId
+      ) {
+        reply?.({
+          ok: false,
+          error: {
+            code: "SESSION_CLOSED",
+            message: "החדר סגור — נדרשת הזמנה"
+          }
+        });
+        return;
+      }
       if (sess.status === "paused" && !playerIds.includes(userId)) {
         reply?.({
           ok: false,
@@ -448,7 +470,6 @@ io.on("connection", (socket) => {
         paused: sess.status === "paused",
         resumedState
       });
-      const role = socket.data.role as string;
       if (!existingRoom) {
         stats.onRoomCreated(sessionId, gameKey);
       }
@@ -505,7 +526,9 @@ io.on("connection", (socket) => {
     (payload: { sessionId?: string; delta?: unknown }) => {
       const sessionId = payload?.sessionId;
       const delta = payload?.delta;
+      const boundSessionId = socket.data.sessionId as string | undefined;
       if (!sessionId || delta === undefined) return;
+      if (!boundSessionId || boundSessionId !== sessionId) return;
       const room = getRoom(sessionId);
       if (!room || !room.players.has(userId)) return; // seated only
       
@@ -532,6 +555,14 @@ io.on("connection", (socket) => {
         reply?.({
           ok: false,
           error: { code: "BAD_REQUEST", message: "sessionId and intent required" }
+        });
+        return;
+      }
+      const boundSessionId = socket.data.sessionId as string | undefined;
+      if (!boundSessionId || boundSessionId !== sessionId) {
+        reply?.({
+          ok: false,
+          error: { code: "NOT_IN_ROOM", message: "לא בחדר הפעיל" }
         });
         return;
       }
@@ -913,6 +944,21 @@ io.on("connection", (socket) => {
         ack?.({
           ok: false,
           error: { code: "READ_ONLY", message: "Observers cannot chat here" }
+        });
+        return;
+      }
+      if (socket.data.sessionId !== sessionId) {
+        ack?.({
+          ok: false,
+          error: { code: "NOT_IN_ROOM", message: "לא בחדר הפעיל" }
+        });
+        return;
+      }
+      const room = getRoom(sessionId);
+      if (!room || !room.players.has(userId)) {
+        ack?.({
+          ok: false,
+          error: { code: "NOT_IN_ROOM", message: "לא בחדר" }
         });
         return;
       }

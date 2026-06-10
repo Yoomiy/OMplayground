@@ -4,6 +4,10 @@ Operational notes for production. Aligned with `ARCHITECTURE.md` and `tmp/loggin
 
 **Last updated:** June 2026.
 
+## Auth signup
+
+- **Supabase Auth public signup must stay disabled** in the Supabase dashboard. Kids and teachers are created only via admin Edge Functions (`import-bulk-kids`, `admin-create-user`). Self-service `kid_profiles` INSERT is not relied on for onboarding.
+
 ## Rate limiting
 
 - **HTTP:** `express-rate-limit` on both Node servers (120 req/min per IP default).

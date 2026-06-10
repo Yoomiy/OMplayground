@@ -929,6 +929,10 @@ io.on("connection", (socket) => {
         });
         return;
       }
+      const prevSessionId = socket.data.sessionId as string | undefined;
+      if (prevSessionId && prevSessionId !== sessionId) {
+        await handleLeave(prevSessionId);
+      }
       if (!supabaseAdmin) {
         reply?.({
           ok: false,
@@ -939,7 +943,7 @@ io.on("connection", (socket) => {
       const { data: session, error } = await supabaseAdmin
         .from("game_sessions")
         .select(
-          "id, game_id, gender, player_ids, player_names, host_id, status, game_state, games ( game_url, min_players, max_players )"
+          "id, game_id, gender, player_ids, player_names, host_id, status, game_state, is_open, games ( game_url, min_players, max_players )"
         )
         .eq("id", sessionId)
         .maybeSingle();
@@ -979,6 +983,24 @@ io.on("connection", (socket) => {
       const playerNames = ((session.player_names as string[]) ?? []).map(
         String
       );
+      const joinRole = socket.data.role as string;
+      const hostId = String(session.host_id ?? "");
+      const isOpen = (session as { is_open?: boolean }).is_open !== false;
+      if (
+        !isOpen &&
+        joinRole !== "teacher" &&
+        !playerIds.includes(userId) &&
+        hostId !== userId
+      ) {
+        reply?.({
+          ok: false,
+          error: {
+            code: "SESSION_CLOSED",
+            message: "החדר סגור — נדרשת הזמנה"
+          }
+        });
+        return;
+      }
       if (sess.status === "paused" && !playerIds.includes(userId)) {
         reply?.({
           ok: false,

@@ -13,6 +13,7 @@ export type LiveKitDenialReason =
   | "session_not_found"
   | "gender_mismatch"
   | "paused_roster_block"
+  | "roster_block"
   | "session_completed"
   | "server_config";
 
@@ -90,13 +91,9 @@ export async function generateLiveKitToken(
   }
   const playerIds = ((session.player_ids as string[]) ?? []).map(String);
   const isTeacher = profile.role === "teacher";
-  if (
-    session.status === "paused" &&
-    !isTeacher &&
-    !playerIds.includes(user.id)
-  ) {
+  if (!isTeacher && !playerIds.includes(user.id)) {
     throw new LiveKitTokenError(
-      "paused_roster_block",
+      "roster_block",
       "Not in session roster."
     );
   }
