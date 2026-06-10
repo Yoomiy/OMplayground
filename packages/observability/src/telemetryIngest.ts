@@ -29,7 +29,7 @@ function truncate(value: string, max: number): string {
   return value.length <= max ? value : `${value.slice(0, max)}…`;
 }
 
-function redactSensitive(
+export function redactSensitive(
   value: unknown,
   depth = 0
 ): unknown {
@@ -57,26 +57,27 @@ function sanitizeContext(
   return { truncated: true, preview: json.slice(0, MAX_CONTEXT_JSON) };
 }
 
-const anonymousLimiter = rateLimit({
+const telemetryLimiter = rateLimit({
   windowMs: 60_000,
-  max: 20,
+  max: (req: Request) => {
+    const token = req.headers.authorization?.replace(/^Bearer\s+/i, "");
+    const jwtPattern = /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/;
+    const isValidJwt = token ? jwtPattern.test(token) : false;
+    return isValidJwt ? 100 : 20;
+  },
+  keyGenerator: (req: Request) => {
+    const token = req.headers.authorization?.replace(/^Bearer\s+/i, "");
+    const jwtPattern = /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/;
+    const isValidJwt = token ? jwtPattern.test(token) : false;
+    if (isValidJwt && token) {
+      return `auth:${token.slice(-20)}`;
+    }
+    return `ip:${req.ip}`;
+  },
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "rate_limited" }
 });
-
-function anonymousTelemetryLimiter(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void {
-  const token = req.headers.authorization?.replace(/^Bearer\s+/i, "");
-  if (token) {
-    next();
-    return;
-  }
-  anonymousLimiter(req, res, next);
-}
 
 export function mountTelemetryRoutes(
   app: Express,
@@ -121,8 +122,8 @@ export function mountTelemetryRoutes(
     res.json({ ok: true, accepted: logs.length });
   };
 
-  app.post("/api/telemetry", anonymousTelemetryLimiter, ingest);
-  app.post("/api/telemetry-beacon", anonymousTelemetryLimiter, (req, res) => {
+  app.post("/api/telemetry", telemetryLimiter, ingest);
+  app.post("/api/telemetry-beacon", telemetryLimiter, (req, res) => {
     void ingest(req, res);
   });
 }

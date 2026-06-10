@@ -853,6 +853,43 @@ async function emitInventoryToSurvivalPlayers(
 }
 
 io.on("connection", (socket) => {
+  const originalOn = socket.on.bind(socket);
+  socket.on = (event: string, listener: (...args: any[]) => void | Promise<void>) => {
+    return originalOn(event, async (...args: any[]) => {
+      const started = Date.now();
+      const ack = typeof args[args.length - 1] === "function" ? args[args.length - 1] : undefined;
+      try {
+        const result = listener(...args);
+        if (result instanceof Promise) {
+          await result;
+        }
+      } catch (err) {
+        const sessionId = (args[0] as { sessionId?: string })?.sessionId ?? (socket.data.sessionId as string | undefined);
+        logger.error({
+          correlationId: socket.data.correlationId,
+          userId: socket.data.userId,
+          sessionId,
+          protocol: "socket",
+          message: `Socket handler ${event} threw`,
+          context: {
+            event,
+            status: "failed",
+            duration_ms: Date.now() - started
+          },
+          error: err instanceof Error ? err.message : String(err)
+        });
+        stats.recordIntentFailed();
+        if (ack) {
+          try {
+            ack({ ok: false, error: { code: "INTERNAL", message: "Internal server error" } });
+          } catch {
+            // ignore
+          }
+        }
+      }
+    });
+  };
+
   const userId = socket.data.userId as string;
   const displayName = socket.data.displayName as string;
   const gender = socket.data.gender as "boy" | "girl";
