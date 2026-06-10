@@ -1,6 +1,6 @@
 ---
 name: playground-add-game
-description: Add a new game (or port a legacy old_project game) to The Playground without modifying the generic room/socket server. Covers the GameModule<State,Intent> contract in packages/game-logic, the dumb board component + BOARD_REGISTRY wiring in apps/web, the games-catalog SQL the user must run, and how the already-generic lifecycle (join, intent, stop, host disconnect, recess pause/resume) interacts with the new game. Use when the user asks to add, port, implement, wire up, or migrate a game (tictactoe, connectfour, memory, snakes, quiz, etc.), when touching packages/game-logic/src, or when registering a new gameKey.
+description: Add a new game (or port a legacy old_project game) to The Playground without modifying the generic room/socket server. Covers the GameModule<State,Intent> contract in packages/game-logic, the dumb board component + BOARD_REGISTRY wiring in apps/web, the games-catalog SQL the user must run, and how the already-generic lifecycle (join, intent, stop, host disconnect, recess pause/resume) interacts with the new game. Use when the user asks to add, port, implement, wire up, or migrate a game (tictactoe, connectfour, memory, chess, drawing, etc.), when touching packages/game-logic/src, or when registering a new gameKey.
 ---
 
 # Adding a Game to The Playground
@@ -15,6 +15,10 @@ Before implementing, decide whether the new game is **multiplayer** or **solo**:
 - **Solo game** (single-player local gameplay): do **not** add a `GameModule`; build a pure client component under `apps/web/src/games-solo`, register it in `apps/web/src/game/SoloGameContainer.tsx`, and route via `/solo/:gameKey`.
 
 Catalog (`public.games`) must set `is_multiplayer` correctly because Home/Challenge flows depend on it.
+
+**Known catalog splits / hidden games:**
+- **chess** (MP, `GameModule`) vs **chess-solo** (solo, Stockfish client — no `GameModule`).
+- **breakout-solo** (solo, iframe) vs **breakout** MP (`breakoutMpModule`) — MP row exists but **`is_active = false`** until sync/latency is fixed; code remains in registry.
 
 ## The contract (read this first)
 
@@ -74,7 +78,7 @@ For **solo games**:
 2. `apps/web/src/game/SoloGameContainer.tsx` — add one `SOLO_REGISTRY` entry.
 3. **Tell the user** the SQL to insert/update a `games` row with `is_multiplayer=false`. Do not run it for them.
 
-Do not touch: `apps/game-server/src/index.ts`, `room.ts`, `lifecycle.ts`, `sessionPersistence.ts`, `recessSweep.ts`.
+Do not touch: `apps/game-server/src/index.ts`, `room.ts`, `lifecycle.ts`, `sessionPersistence.ts`, `recessSweep.ts` — **unless** the user explicitly asked for a cross-cutting change. Existing per-game exceptions in `index.ts`: `chess` (rematch seat order), `breakout` (rematch disabled).
 
 ## Step-by-step workflow
 
@@ -183,14 +187,26 @@ Per the coding protocol, **do not run SQL**. Tell the user to execute, e.g.:
 ```sql
 INSERT INTO public.games (
   id, name_he, description_he, type, game_url, min_players, max_players, is_active, is_multiplayer, for_gender
-) VALUES (
-  gen_random_uuid(), 'שם בעברית', 'תיאור קצר', 'custom', 'mygame', 2, 2, true, true, 'both'
 )
-ON CONFLICT (game_url) DO NOTHING;
+SELECT
+  gen_random_uuid(), 'שם בעברית', 'תיאור קצר', 'custom', 'mygame', 2, 2, true, true, 'both'
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.games WHERE game_url = 'mygame'
+);
 ```
 
-`game_url` **must equal** `myGameModule.key`. `min_players` / `max_players` on the row override the module's defaults at `JOIN_ROOM` time.
+`game_url` is **not** a UNIQUE column — use `WHERE NOT EXISTS` (same pattern as chess/connect-four migrations). `game_url` **must equal** `myGameModule.key`.
 Set `is_multiplayer=true` for multiplayer games and `is_multiplayer=false` for solo games.
+
+Set `is_multiplayer=true` for multiplayer games and `is_multiplayer=false` for solo games. `min_players` / `max_players` on the row override the module's defaults at `JOIN_ROOM` time.
+
+## Hybrid patterns (not pure turn-based `INTENT_GAME`)
+
+| Pattern | When | Where |
+|---|---|---|
+| **`LIVE_DELTA`** | High-frequency partial state (drawing strokes; breakout MP score sync) | Container relays; server may whitelist relay in `index.ts` |
+| **Legacy iframe solo/MP** | Porting HTML5 games (breakout, alges-escapade, hexgl) | `apps/web/src/games-solo/*` or MP board wrapper + `/legacy/...`; solo uses `SOLO_REGISTRY`, not `GameModule` |
+| **Server tick / voxel** | Minecraft | Separate skill section below — not `GameModule` |
 
 ## Complexity guide — simple vs complex games
 

@@ -15,7 +15,7 @@ Canonical product + architecture guide: **[`ARCHITECTURE.md`](../ARCHITECTURE.md
 
 | Doc | Purpose |
 |-----|---------|
-| [`../tmp/logging_coverage_prototype.md`](../tmp/logging_coverage_prototype.md) | Observability rollout (`packages/observability`) |
+| [`../tmp/logging_coverage_prototype.md`](../tmp/logging_coverage_prototype.md) | Observability spec (`packages/observability`) — **implemented**; package unit tests still open |
 | [`voxel_expansion_specification.md`](voxel_expansion_specification.md) | Biomes, tools, recipes, hunger |
 | [`voxel_client_optimization_proposal.md`](voxel_client_optimization_proposal.md) | Client perf (worldgen worker done; instancing open) |
 

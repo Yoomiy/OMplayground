@@ -1,6 +1,6 @@
 ---
 name: playground-backend-qa
-description: Jest QA strategy for Playground backends, including the voxel server roadmap (data-driven registries, drops/pickup, tools/durability, and biome-aware worldgen). Prefer tests-first and server-authoritative assertions.
+description: Jest QA strategy for Playground backends — game-logic, voxel-content, minecraft-server, game-server, and observability. Prefer tests-first and server-authoritative assertions.
 ---
 
 # Lead Backend QA — The Playground
@@ -19,8 +19,10 @@ Backend QA owner for Node.js + Socket.IO + Supabase with strong focus on authori
 
 ### 1) Pure logic unit tests
 
-- Target pure modules (inventory helpers, recipe matching, drop physics helpers, worldgen functions).
-- No real sockets, no Supabase calls.
+- **Board games:** `packages/game-logic/src/*.test.ts`
+- **Voxel content:** `packages/voxel-content/src/*.test.ts` (blocks, items, recipes, worldgen, mining)
+- **Observability:** `packages/observability/src/*.test.ts` (when added — package currently has no tests)
+- No real sockets, no Supabase calls in layer 1.
 - Cover happy path + edge path + invalid input path.
 
 ### 2) Integration tests (HTTP/middleware)
@@ -28,34 +30,41 @@ Backend QA owner for Node.js + Socket.IO + Supabase with strong focus on authori
 - Mock Supabase auth/profile calls.
 - Validate auth/recess/role gates and session ownership checks.
 - Use `supertest` and fake timers for recess windows.
+- Targets: `apps/game-server/src/*.test.ts`, `apps/minecraft-server/src/recess.test.ts`, `health.test.ts`, observability routes (`/api/admin/stats`, `/api/telemetry`, `requireAdmin`).
 
 ### 3) Socket behavior tests
 
 - Use `socket.io-client` as multiple players.
 - Assert per-room broadcast scoping, join/leave behavior, and lifecycle events.
 - Never accept client-declared truth; assert server recomputation.
+- Examples: `roomIsolation.test.ts`, `tictactoeRoom.test.ts`, `chessRoom.test.ts` (game-server); `room.test.ts`, `roomIsolation.test.ts` (minecraft-server).
 
-## Voxel server roadmap coverage (must-have suites)
+## Voxel server coverage (keep green)
 
-For `apps/minecraft-server`, keep these suites current as phases land:
+Existing suites under `apps/minecraft-server/src/`:
 
-1. **Registry parity suite**  
-   Shared block/item definitions load and map to runtime ids/metadata consistently.
+| Area | Files |
+|---|---|
+| Registry / drops | `blockBreakDrops.test.ts`, `drops.test.ts` |
+| Inventory / craft | `inventory.test.ts` |
+| Mining / tools | `breakMining.test.ts` |
+| Vitals / food | `vitals.test.ts`, `death.test.ts` |
+| Perks / weather / TNT | `perks.test.ts`, `weather.test.ts`, `tnt.test.ts` |
+| Worldgen / tick | `world.test.ts`, `tick.test.ts` |
+| Lifecycle | `sessionPersistence.test.ts`, `recessSweep.test.ts`, `room.test.ts` |
 
-2. **Inventory suite** (`inventory.ts`)  
-   add/merge/split stacks, max stack boundaries, block-item vs plain item behavior.
+Shared defs: `packages/voxel-content/src/blocks.test.ts`, `items.test.ts`, `recipes.test.ts`, `worldgen.test.ts`, `mining.test.ts`.
 
-3. **Drop/pickup suite**  
-   drop spawn, gravity/tick updates, pickup merge order, full inventory rejection, despawn timing.
+## Observability coverage
 
-4. **Mining/tools suite**  
-   break denied without required tool, break time scaling by hardness/tier, durability decrement/break removal.
+When touching `@playground/observability` or admin stats:
 
-5. **Crafting suite**  
-   recipe validation, exact input consumption, output insertion, failure rollback.
+- `requireAdmin` rejects non-admin JWT / missing token
+- `GET /api/admin/stats` returns `ServiceStats` shape; room list scoped to caller's server
+- `POST /api/telemetry` accepts batched client entries, rate-limited; no raw chat/game blobs
+- Correlation ID attached on HTTP + socket connect (smoke via integration test)
 
-6. **Worldgen suite** (`world.ts`)  
-   biome-dependent surface/tree generation and deterministic seeded output checks.
+Admin UI (`AdminStatsSection`) federates both servers — manual smoke on `/admin` → **סטטיסטיקות** tab.
 
 ## Socket test expectations for voxel
 

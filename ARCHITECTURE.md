@@ -126,7 +126,7 @@ Key frontend entry points: `GameSessionContainer` + `BOARD_REGISTRY`, `Minecraft
 | `/inbox`, `/profile`, `/profile/:kidId` | Messaging & profiles | |
 | `/friends` | `FriendsDeprecatedPage` | UI disabled — `docs/friends-deprecation.md` |
 | `/teacher` | `TeacherPage` | |
-| `/admin` | `AdminPage` | moderation, users, import, games, schedule, operations, audit |
+| `/admin` | `AdminPage` | moderation, users, import, games, schedule, **stats**, operations, audit |
 
 ---
 
@@ -197,7 +197,7 @@ Add games: `.cursor/skills/playground-add-game/SKILL.md`.
 
 **Teacher:** `TeacherPage` lists sessions; observes via `/play/:sessionId`; chat moderation RPCs; voxel spectator/teleport/`SWITCH_TEACHER_MODE`.
 
-**Admin:** `AdminPage` — kid CRUD, CSV import (`import-bulk-kids` Edge Function), games, recess, reports, `audit_log`, operations RPCs.
+**Admin:** `AdminPage` — kid CRUD, CSV import (`import-bulk-kids` Edge Function), games, recess, reports, `audit_log`, live stats tab (`AdminStatsSection`), operations RPCs.
 
 ---
 
@@ -217,7 +217,7 @@ Supabase JWT; gender checks on join + LiveKit tokens; server-authoritative game 
 
 ## 13. Observability & ops
 
-`packages/observability`: Pino, correlation IDs, `/api/admin/stats`, telemetry ingest. game-server wired; minecraft-server in progress. Admin stats UI spec'd in `tmp/logging_coverage_prototype.md`.
+`packages/observability`: Pino, correlation IDs, `/api/admin/stats`, client `/api/telemetry` ingest, LiveKit webhook + voice stats. Wired on **both** Railway services. Admin **סטטיסטיקות** tab (`AdminStatsSection`) federates game-server + minecraft-server + LiveKit participant counts. Client: `ErrorBoundary` + `utils/telemetry.ts`. Spec/history: `tmp/logging_coverage_prototype.md`.
 
 `GET /health`, `GET /ready`, rate limits. Details: `docs/HARDENING.md`.
 

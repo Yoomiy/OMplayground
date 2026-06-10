@@ -2,7 +2,7 @@
 
 Technical specification for unified structured logging and live statistics across OMplayground. Covers client telemetry, both Node game servers, LiveKit voice, durable Supabase audit events, and an Admin stats view.
 
-**Status:** design spec (not yet implemented). Last revised for dual-server + LiveKit topology.
+**Status:** implemented (June 2026) — both Railway services, client telemetry, Admin **סטטיסטיקות** tab. Remaining gap: `packages/observability` Jest suite. Last revised for dual-server + LiveKit topology.
 
 ---
 

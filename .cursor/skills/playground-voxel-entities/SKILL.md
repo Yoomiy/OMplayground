@@ -1,6 +1,6 @@
 ---
 name: playground-voxel-entities
-description: Add or modify rendered voxel entities with emphasis on the upcoming world-drop system, player avatars, and reusable visual catalogs for noa/Babylon integration.
+description: Add or modify rendered voxel entities — player avatars, world-drop visuals, and future mobs/NPCs — for noa/Babylon integration.
 ---
 
 # Voxel entity visuals (avatars + world drops)
@@ -9,7 +9,7 @@ Use this skill for render-side entities in the Minecraft experience: player avat
 
 ## Scope boundaries
 
-- Server owns gameplay truth (spawn, position, despawn, pickup).
+- Server owns gameplay truth (spawn, position, despawn, pickup) — see `apps/minecraft-server/src/drops.ts`.
 - Client owns visual interpolation, mesh lifecycle, and polish only.
 - Blocks/items definitions belong to:
   - `playground-voxel-blocks` for blocks
@@ -27,24 +27,22 @@ Use this skill for render-side entities in the Minecraft experience: player avat
 
 3. **Visual catalog**  
    `apps/web/src/games/voxel/voxelEntityCatalog.ts`  
-   Central mapping of visual type -> model/texture/hitbox/render scale metadata.
+   Central mapping of visual type → model/texture/hitbox/render scale metadata. **Today:** only `player` avatar is cataloged.
 
 4. **Callers/orchestration**  
    `apps/web/src/games/MinecraftClient.tsx`  
-   Consume room snapshots/events, create/update/remove noa entities.
+   Consume room snapshots/events, create/update/remove noa entities. World drops wired via `useVoxelSocket` drop listeners.
 
-## World-drop specific guidance (new priority)
+## World drops (implemented)
 
-For dropped items as world entities:
+Server issues `worldDrop` ids; client must never invent drops.
 
-- Render from **server-issued worldDrop ids** only; never invent drops client-side.
-- Visual key should resolve from item definition (`itemId -> itemVisual`), not hardcoded switch logic.
-- Use lightweight visuals by default (billboard/voxel icon) and reserve full models for rare entities.
-- Add simple polish that does not affect authority:
-  - idle bob
-  - slow spin
-  - short pickup fade/shrink animation after server pickup ack
-- Keep entity counts safe: support culling/LOD strategy for dense drop piles.
+- **Rendering today:** flat sprites / item textures in `MinecraftClient.tsx` (`spawnWorldDropEntity`, bob/spin) — **not** yet routed through `voxelEntityCatalog`.
+- Resolve visuals from item definition (`itemId` → texture), avoid hardcoded per-item switches when adding new drops.
+- Polish (client-only): idle bob, slow spin, pickup fade after server ack.
+- Keep entity counts safe: culling/LOD for dense drop piles.
+
+When adding a new drop visual type, prefer extending catalog + shared item icon paths over one-off mesh code.
 
 ## Avatar guidance
 
@@ -52,10 +50,13 @@ For dropped items as world entities:
 - Drive remote yaw/pitch/walk from snapshot fields; smooth client-side.
 - Maintain strict cleanup on leave/reconnect to avoid leaked meshes and orphan noa entities.
 
+## Future: mobs / NPCs
+
+Not shipped. When added, follow the same catalog + `noaVoxelVisual` layering; server spawns authoritative entity ids first.
+
 ## Verification checklist
 
 - Two clients in one room: both see identical drop spawn/despawn timing.
 - Pickup event removes world drop exactly once and updates inventory once.
 - Stress test dense drops: FPS remains acceptable and no mesh leak after despawns.
 - Avatar visibility and orientation remain correct in first-person vs third-person.
-

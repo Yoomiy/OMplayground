@@ -5,23 +5,33 @@ alwaysApply: true
 
 # The Playground — Project & Delivery
 
+**Canonical overview:** [`ARCHITECTURE.md`](../../ARCHITECTURE.md). **Doc index:** [`docs/README.md`](../../docs/README.md).
+
 ## Stack & deployment
 
-- **Frontend:** React 18, Vite, Tailwind CSS, shadcn/ui. Prefer TypeScript where new code is added.
-- **Realtime backend:** Node.js on Railway; WebSockets via **Colyseus or Socket.io** (pick one per repo conventions).
+- **Frontend:** React 18, Vite, Tailwind CSS, shadcn/ui (`apps/web`). Prefer TypeScript for new code.
+- **Realtime backend:** Node.js on **Railway** — **Socket.io** only (see [`docs/adr/001-websocket-socket-io.md`](../../docs/adr/001-websocket-socket-io.md)).
 - **Data:** Supabase (PostgreSQL, Auth, **RLS**). See companion rule `playground-architecture` for access patterns.
-- **Deploy:** Vercel (frontend), Railway (WebSocket/game server).
+- **Deploy:** Vercel (web), Railway (**two** Node services):
+  - `apps/game-server` — board / event-driven multiplayer
+  - `apps/minecraft-server` — voxel tick loop + LiveKit token route
+- **Shared packages:** `packages/game-logic`, `packages/voxel-content`, `packages/observability`
+- **Voice (voxel):** LiveKit SFU — separate from Socket.io position sync (`POST /rtc/token` on minecraft-server)
 
-## Implementation phases (strict order)
+## Product domains (parallel — not a strict linear checklist)
 
-1. **Database & Auth** — Supabase schema, RLS, login/logout, dummy-email username mapping, recess-time checks.
-2. **Social layer** — Friends, online status (Supabase Presence/Realtime), private messaging; UI + queries under RLS.
-3. **Game server** — Railway Node app: rooms, matchmaking, generic lifecycle `waiting → playing → completed`.
-4. **Game porting** — Port React games one by one; wire to WebSocket/state from the container (not inside the game file).
+1. **Database & Auth** — Supabase schema, RLS, username → synthetic email login, recess gate.
+2. **Social** — Messaging, blocks, **`game_challenges`**, Supabase Presence (`usePresence`). Friends UI is **deprecated** — see [`docs/friends-deprecation.md`](../../docs/friends-deprecation.md); schema retained.
+3. **Board multiplayer** — `game-server` + `GameModule` in `packages/game-logic`; lifecycle `waiting → playing → paused | completed`.
+4. **Solo games** — `/solo/:gameKey` via `SoloGameContainer`; saves in `solo_game_saves`; no Railway socket.
+5. **Voxel** — `minecraft-server` + `packages/voxel-content`; not `GameModule`.
+6. **Observability** — `@playground/observability`: Pino, correlation IDs, `/api/admin/stats`, client `/api/telemetry`; Admin **סטטיסטיקות** tab federates both servers + LiveKit voice summary.
+7. **Admin / teacher** — `AdminPage`, `TeacherPage` (moderation, import, live session oversight).
 
 ## Anti-patterns (do not)
 
 - Polling the DB (`setInterval` + fetch) for **live game state**.
-- Writing to PostgreSQL on every **multiplayer game tick** — keep hot state in the game server; persist at boundaries (match end, pause, etc.) per project conventions.
+- Writing to PostgreSQL on every **multiplayer game tick** — keep hot state on Railway; persist at boundaries (match end, pause, etc.).
+- Per-packet / per-tick socket logging, or logging raw payloads / chat bodies / full game state blobs.
 - New UI libraries without explicit approval — **Tailwind + shadcn only**.
 - Placeholder/demo data — use defined schemas and real shapes.

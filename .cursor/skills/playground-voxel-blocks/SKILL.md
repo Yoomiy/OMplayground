@@ -1,54 +1,54 @@
 ---
 name: playground-voxel-blocks
-description: Add or modify placeable voxel blocks under the upcoming data-driven content model. Covers shared BLOCK_DEFS, client noa registration loops, BLOCK_HUD display names, server placement/break validation, tool-required mining metadata, worldgen hooks, and texture assets.
+description: Add or modify placeable voxel blocks using the shared packages/voxel-content model. Covers BLOCK_DEFS, blockClientCatalog noa registration, BLOCK_HUD display names, server placement/break validation, tool-required mining metadata, worldgen hooks, and texture assets.
 ---
 
-# Adding or changing voxel blocks (post-refactor model)
+# Adding or changing voxel blocks
 
 Use this skill when touching block content for `game_url = minecraft`: IDs, textures, hardness/tool requirements, drop behavior, placeability, or world generation spawn rules.
 
-## Target architecture (what we are moving to)
+## Current architecture
 
-- **Single source of truth** for block definitions in `packages/voxel-content` (no manual duplicated constants between web/server).
-- Block metadata is **data-driven** (`BLOCK_DEFS`), not scattered in `MinecraftClient.tsx` and server `if/else` logic.
+- **Single source of truth:** `packages/voxel-content` — no duplicated block constants between web and server.
+- Block metadata is **data-driven** (`BLOCK_DEFS` in `blocks.ts` + `blockMiningMeta.ts`), not scattered `if/else` in apps.
 - Client and server both derive runtime registries from shared defs:
-  - client: noa material/block registration loops
-  - server: placement legality, break rules, drop mappings, worldgen references
+  - client: `blockClientCatalog.ts` → noa material/block registration loops in `MinecraftClient.tsx`
+  - server: placement legality, break rules, drop mappings, worldgen via `world.ts` + shared `worldgen.ts`
 - Server remains authoritative for all block legality and outcomes.
+- **Hebrew display names** remain a manual map: `BLOCK_HUD` in `MinecraftClient.tsx` (not yet in shared defs).
 
 ## Hard rules
 
 1. `AIR` stays id `0`; ids are append-only and never reused.
-2. Do not add ad-hoc block constants directly in `apps/web/src/lib/voxelProtocol.ts` or `apps/minecraft-server/src/protocol.ts` once shared defs exist.
-3. Keep **render data** and **gameplay data** in the same block definition:
-   - render: texture(s), transparent/opaque/fluid flags
-   - gameplay: hardness, required tool class/tier, drop item, placeable flag
+2. Do not add ad-hoc block constants in `apps/web/src/lib/voxelProtocol.ts` or `apps/minecraft-server/src/protocol.ts` — extend `packages/voxel-content`.
+3. Gameplay fields live in `blocks.ts` / `blockMiningMeta.ts`; render catalog entries in `blockClientCatalog.ts`. Keep ids aligned.
 4. Client may optimize UX, but server validates placement and breaking.
-5. If worldgen can produce the block, server worldgen and client baseline mirror must stay aligned.
+5. If worldgen can produce the block, extend shared `packages/voxel-content/src/worldgen.ts` first; keep client procedural baseline aligned.
 
 ## Block definition checklist
 
 1. **Shared content**
-   - Add/update block in `packages/voxel-content` block defs.
-   - Include: stable id/key, display name key, textures/material mapping, solidity/opacity/fluid flags, drop metadata, and mining metadata (hardness + required tool).
+   - Add/update block in `packages/voxel-content` (`blocks.ts`, mining meta as needed).
+   - Include: stable id/key, placeable/breakable flags, drop metadata, hardness + required tool.
 
-2. **Client registration** (`apps/web/src/games/MinecraftClient.tsx` + `packages/voxel-content/src/blockClientCatalog.ts`)
+2. **Client registration** (`MinecraftClient.tsx` + `packages/voxel-content/src/blockClientCatalog.ts`)
    - **Textures + noa materials/blocks:** add entries in `blockClientCatalog.ts` (`MC_MATERIAL_ENTRIES`, `NOA_BLOCK_ENTRIES`) and wire URLs in `MC_TEX`. Hotbar/creative icons are derived from `NOA_BLOCK_ENTRIES` via `BLOCK_HOTBAR_ICON` — do not duplicate icon maps per block.
-   - **Display names (manual):** add a Hebrew tooltip label for every new placeable block in `BLOCK_HUD` in `MinecraftClient.tsx`. This map powers hotbar, inventory, and creative-picker `title` tooltips; missing entries fall back to the raw block id.
+   - **Display names (manual):** add a Hebrew tooltip label for every new placeable block in `BLOCK_HUD` in `MinecraftClient.tsx`.
    - Ensure noa registration loops consume shared catalog entries (not one-off per-block calls).
    - Add any new textures under `apps/web/public/minecraft-assets/` (use `npm run borrow-voxel-textures` when pulling from voxelsrv).
    - For cutout textures (leaves/plants), set alpha-friendly material options consistently.
 
 3. **Server validation**
-   - Placement allow-list comes from shared defs (`placeable`), not hardcoded arrays.
-   - Break/drop behavior comes from shared defs and tool rules.
+   - Placement allow-list from shared defs (`placeable`).
+   - Break/drop from shared defs + `apps/minecraft-server/src/breakMining.ts`.
 
 4. **World generation**
-   - If naturally generated, add rules in `apps/minecraft-server/src/world.ts`.
-   - Keep client procedural baseline (if still used) visually consistent with server defaults.
+   - Biome/multi-biome rules in shared `worldgen.ts`; server `world.ts` consumes them.
+   - Client worldgen worker must stay deterministic with server output.
 
 5. **Tests**
-   - Add/update server tests for placement legality, breakability, and worldgen ids (`apps/minecraft-server/src/world.test.ts` and related suites).
+   - `packages/voxel-content/src/blocks.test.ts`, `worldgen.test.ts`
+   - `apps/minecraft-server/src/world.test.ts`, `breakMining.test.ts`, `blockBreakDrops.test.ts`
 
 ## When this skill is NOT enough
 

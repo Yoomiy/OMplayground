@@ -5,20 +5,33 @@ alwaysApply: true
 
 # The Playground — Architecture & Supabase
 
+**Canonical overview:** [`ARCHITECTURE.md`](../../ARCHITECTURE.md).
+
 ## UI vs network
 
 - **Components stay dumb:** Pages/components must not embed fetch/WebSocket logic inline. Use hooks or thin data modules the UI imports.
-- **Games are pure:** e.g. `TicTacToe` accepts props like `gameState` and `onMove` (or `onIntent`). The **parent container** connects to the WebSocket server and maps server state → props.
+- **Games are pure:** e.g. `TicTacToe` accepts props like `gameState` and `onIntent`. The **parent container** connects to the WebSocket server and maps server state → props.
+- **Session containers:**
+  - `GameSessionContainer` + `BOARD_REGISTRY` — board multiplayer (`game-server`)
+  - `MinecraftSessionContainer` — voxel (`minecraft-server`)
+  - `SoloGameContainer` + `SOLO_REGISTRY` — solo (`/solo/:gameKey`, no socket)
 
 ## Authoritative server
 
-- **Never trust the client** for game truth. Clients send **intents** (e.g. `ACTION_MOVE`, column index). The Node server validates, updates authoritative state, broadcasts snapshots/events.
-- Do not let clients PATCH arbitrary `game_state` blobs without server validation if the rule is “authoritative” for that game.
+- **Never trust the client** for game truth. Board clients send **`INTENT_GAME`** with `{ sessionId, intent }` (e.g. `{ cellIndex: 4 }`, `{ column: 3 }`). The Node server validates via `packages/game-logic`, updates authoritative state, broadcasts `ROOM_SNAPSHOT` / events.
+- Voxel clients send tick-appropriate intents on `minecraft-server`; logic and defs live in server code + `packages/voxel-content` — **not** `GameModule`.
+- Do not let clients PATCH arbitrary `game_state` blobs without server validation.
+- **Hybrid realtime (exceptions):** `LIVE_DELTA` for drawing (and breakout MP score sync); legacy iframe wrappers (breakout, alges-escapade, hexgl) — still no sockets inside the dumb board/iframe shell; container owns wiring.
 
 ## Supabase Auth (username login)
 
 - Map usernames to synthetic emails: `[username]@playground.school.local` **only** for Supabase Auth API calls.
 - **Never** show or persist this dummy email in the UI; display real usernames from profile tables.
+
+## Social & presence
+
+- **Challenges:** `game_challenges` table + Realtime (not `kid_profiles.pending_challenge`).
+- **Online peers:** Supabase Realtime Presence via `usePresence` — channel `presence:playground:{gender}`.
 
 ## RLS first
 

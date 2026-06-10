@@ -7,15 +7,18 @@ description: Implement and evolve the voxel item system (non-block and block-ite
 
 Use this skill when adding or changing inventory items, block-items, crafting inputs/outputs, item dropping, pickup behavior, or tool durability/mining interactions.
 
-## Target architecture (what this skill assumes)
+## Current architecture
 
-- Shared content package provides item definitions (`ITEM_DEFS`) and block/item relationships.
-- Server inventory logic (`apps/minecraft-server/src/inventory.ts`) is data-driven from shared defs.
-- Items are true gameplay entities, not just constants:
-  - collectible
-  - droppable to world
-  - craftable/consumable/material/tool
-- Client UI is responsive but server authoritative for ownership, stack limits, crafting validity, and pickup.
+- Shared content: `packages/voxel-content` — `items.ts`, `recipes.ts`, `mining.ts`, `movementPerks.ts`.
+- Server inventory: `apps/minecraft-server/src/inventory.ts` (data-driven from shared defs).
+- Implemented server surfaces (extend these, don't duplicate):
+  - `drops.ts` — world drop spawn, tick physics, pickup
+  - `breakMining.ts` — break timing, tool gating, durability
+  - `perks.ts` — movement/equipment perks from item defs
+  - `vitals.ts` — food/eating (simplified vs full spec — see below)
+- Client UI: `MinecraftClient.tsx`, `useVoxelSocket.ts`; protocol mirrors in `voxelProtocol.ts` / `protocol.ts`.
+
+**Spec vs shipped:** `docs/voxel_expansion_specification.md` describes full hunger/exhaustion loops; current `vitals.ts` behavior is intentionally simplified (see `vitals.test.ts`). Follow the spec for new hunger work; don't assume all spec phases are live.
 
 ## Item model expectations
 
@@ -33,7 +36,7 @@ Each item definition should include only what gameplay actually needs:
 ### 1) Drop from inventory
 
 - Client emits explicit drop intent (single unit or stack-split based on UX).
-- Server decrements inventory first, then spawns world drop entity.
+- Server decrements inventory first, then spawns world drop entity (`drops.ts`).
 - If spawn fails, rollback inventory mutation.
 
 ### 2) World pickup
@@ -44,25 +47,21 @@ Each item definition should include only what gameplay actually needs:
 
 ### 3) Craft
 
-- Recipe matching and consumption happen server-side only.
+- Recipe matching and consumption happen server-side only (`CRAFT`, crafting-table handlers in `index.ts`).
 - Client sends recipe/intention, never trusted for result computation.
 
 ### 4) Mining + tools
 
-- Break timing and allowed breaks depend on block hardness and required tool.
+- Break timing and allowed breaks: `breakMining.ts` + shared mining defs.
 - Tool durability loss is server-owned and synced back to UI.
 
 ## Implementation checklist (for item changes)
 
-1. Add/update shared `ITEM_DEFS` (+ linked block defs when needed).
-2. Update server inventory helpers in `apps/minecraft-server/src/inventory.ts` to use defs, not hardcoded `if/else`.
-3. Update socket handlers in `apps/minecraft-server/src/index.ts` for drop/pickup/craft/tool durability sync.
-4. Keep protocol payloads in sync between:
-   - `apps/web/src/lib/voxelProtocol.ts`
-   - `apps/minecraft-server/src/protocol.ts`
-5. Update client inventory/hotbar UX in:
-   - `apps/web/src/games/MinecraftClient.tsx`
-   - `apps/web/src/hooks/useVoxelSocket.ts`
+1. Add/update shared `ITEM_DEFS` / `RECIPES` in `packages/voxel-content` (+ linked block defs when needed). Run package build before app changes.
+2. Update `inventory.ts` to use defs, not hardcoded `if/else`.
+3. Update socket handlers in `index.ts` for drop/pickup/craft/tool durability sync.
+4. Keep protocol payloads in sync between `voxelProtocol.ts` and `protocol.ts`.
+5. Update client inventory/hotbar UX in `MinecraftClient.tsx` / `useVoxelSocket.ts`.
 6. Add/update item icons in `apps/web/public/minecraft-assets/`.
 
 ## UX rules
@@ -74,9 +73,7 @@ Each item definition should include only what gameplay actually needs:
 
 ## Tests to always include
 
-- inventory add/merge/split with max-stack boundaries
-- drop request decrements inventory and spawns world drop
-- pickup merges into partial stacks, then empty slots
-- full inventory rejects pickup without item loss
-- crafting consumes exact inputs and yields exact outputs
-- tool durability decrements and breaks/removes tool at zero
+- `packages/voxel-content/src/items.test.ts`, `recipes.test.ts`, `mining.test.ts`
+- `apps/minecraft-server/src/inventory.test.ts`, `drops.test.ts`, `breakMining.test.ts`, `perks.test.ts`
+
+Cover: inventory add/merge/split with max-stack boundaries; drop decrements inventory and spawns world drop; pickup merge + full-inventory rejection; crafting input/output exactness; tool durability at zero.
