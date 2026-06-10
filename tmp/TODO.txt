@@ -1,6 +1,5 @@
 14. make the app shinyer
-15. add logging
 16. improve networking
 19. save last known location
 20. save fps stats
-22. fix remuch in breakout
+23. add stats

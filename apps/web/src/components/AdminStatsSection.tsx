@@ -2,8 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import {
   fetchFederatedAdminStats,
-  type FederatedStats,
-  type ServiceStats
+  type FederatedStats
 } from "@/lib/adminStats";
 import { Button } from "@/components/ui/button";
 
