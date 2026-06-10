@@ -7,8 +7,12 @@ import http from "http";
 import cors from "cors";
 import express from "express";
 import helmet from "helmet";
-import morgan from "morgan";
 import rateLimit from "express-rate-limit";
+import {
+  initObservability,
+  logSocketAuthenticated,
+  logSocketEvent
+} from "@playground/observability";
 import { Server } from "socket.io";
 import { createClient } from "@supabase/supabase-js";
 import { isWithinRecess } from "./recess";
@@ -23,6 +27,7 @@ import {
   getOrCreateRoom,
   isRoomIdle,
   getRoom,
+  listRooms,
   missingPlayers,
   removePlayerFromRoom,
   removeSpectatorFromRoom,
@@ -55,17 +60,17 @@ function exitIfInvalidSupabaseUrlForClient(): void {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return;
   const u = SUPABASE_URL.trim();
   if (!/^https?:\/\//i.test(u)) {
-    console.error(
+    process.stderr.write(
       "[game-server] SUPABASE_URL must include the scheme, e.g. https://YOUR_PROJECT.supabase.co\n" +
-        `  Got: ${JSON.stringify(u)} (check apps/game-server/.env)`
+        `  Got: ${JSON.stringify(u)} (check apps/game-server/.env)\n`
     );
     process.exit(1);
   }
   try {
     new URL(u);
   } catch {
-    console.error(
-      "[game-server] SUPABASE_URL is not a valid URL. Fix apps/game-server/.env"
+    process.stderr.write(
+      "[game-server] SUPABASE_URL is not a valid URL. Fix apps/game-server/.env\n"
     );
     process.exit(1);
   }
@@ -83,7 +88,6 @@ app.use(
   })
 );
 app.use(express.json());
-app.use(morgan("combined"));
 
 const httpLimiter = rateLimit({
   windowMs: 60_000,
@@ -92,6 +96,39 @@ const httpLimiter = rateLimit({
   legacyHeaders: false
 });
 app.use(httpLimiter);
+
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: CORS_ORIGIN.split(",").map((s) => s.trim()),
+    credentials: true
+  },
+  perMessageDeflate: true
+});
+
+let logger: ReturnType<typeof initObservability>["logger"];
+let stats: ReturnType<typeof initObservability>["stats"];
+
+const supabaseAdmin =
+  SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+        auth: { persistSession: false, autoRefreshToken: false }
+      })
+    : null;
+
+const observability = initObservability(app, io, {
+  service: "game-server",
+  supabaseAdmin,
+  listRooms: () =>
+    listRooms().map((room) => ({
+      sessionId: room.sessionId,
+      gameType: room.gameKey,
+      playerCount: connectedPlayers(room).length
+    }))
+});
+logger = observability.logger;
+stats = observability.stats;
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "playground-game-server" });
@@ -104,23 +141,6 @@ app.get("/ready", (_req, res) => {
   }
   res.json({ ok: true });
 });
-
-const server = http.createServer(app);
-
-const io = new Server(server, {
-  cors: {
-    origin: CORS_ORIGIN.split(",").map((s) => s.trim()),
-    credentials: true
-  },
-  perMessageDeflate: true
-});
-
-const supabaseAdmin =
-  SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
-    ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-        auth: { persistSession: false, autoRefreshToken: false }
-      })
-    : null;
 
 let recessCache: {
   rows: { day_of_week: number; start_time: string; end_time: string; is_active: boolean }[];
@@ -138,7 +158,7 @@ async function loadRecessSchedules() {
     .select("day_of_week, start_time, end_time, is_active")
     .eq("is_active", true);
   if (error) {
-    console.error("recess_schedules", error.message);
+    logger.error({ message: "recess_schedules fetch failed", error: error.message });
     throw new Error("recess_schedules_unavailable");
   }
   recessCache = { rows: data ?? [], fetchedAt: now };
@@ -181,10 +201,10 @@ io.use(async (socket, next) => {
           return;
         }
       } catch (err) {
-        console.error(
-          "recess gate failed",
-          err instanceof Error ? err.message : err
-        );
+        logger.warn({
+          message: "recess gate failed",
+          error: err instanceof Error ? err.message : String(err)
+        });
         next(new Error("RECESS_DENIED"));
         return;
       }
@@ -193,6 +213,7 @@ io.use(async (socket, next) => {
     socket.data.displayName = profile.full_name as string;
     socket.data.role = profile.role as string;
     socket.data.gender = profile.gender as "boy" | "girl";
+    logSocketAuthenticated(logger, socket);
     next();
   } catch {
     next(new Error("UNAUTHORIZED"));
@@ -203,6 +224,34 @@ io.on("connection", (socket) => {
   const userId = socket.data.userId as string;
   const displayName = socket.data.displayName as string;
   const gender = socket.data.gender as "boy" | "girl";
+
+  function trackSocket(
+    event: string,
+    started: number,
+    result: { ok?: boolean; error?: { code?: string } },
+    sessionId?: string
+  ) {
+    logSocketEvent(logger, stats, "game-server", socket, event, {
+      ok: result.ok !== false,
+      code: result.error?.code,
+      sessionId,
+      durationMs: Date.now() - started
+    });
+  }
+
+  function wrapAck<T>(
+    event: string,
+    started: number,
+    sessionId: string | undefined,
+    ack?: (r: T) => void
+  ): ((r: T) => void) | undefined {
+    if (!ack) return undefined;
+    return (result: T) => {
+      const outcome = result as { ok?: boolean; error?: { code?: string } };
+      trackSocket(event, started, outcome, sessionId);
+      ack(result);
+    };
+  }
 
   function roomSnapshot(room: Room<unknown>) {
     const players = connectedPlayers(room);
@@ -282,13 +331,15 @@ io.on("connection", (socket) => {
       payload: { sessionId: string },
       ack?: (r: unknown) => void
     ) => {
+      const started = Date.now();
       const sessionId = payload?.sessionId;
+      const reply = wrapAck("JOIN_ROOM", started, sessionId, ack);
       if (!sessionId) {
-        ack?.({ ok: false, error: { code: "BAD_REQUEST", message: "sessionId required" } });
+        reply?.({ ok: false, error: { code: "BAD_REQUEST", message: "sessionId required" } });
         return;
       }
       if (!supabaseAdmin) {
-        ack?.({ ok: false, error: { code: "SERVER_CONFIG", message: "Supabase not configured" } });
+        reply?.({ ok: false, error: { code: "SERVER_CONFIG", message: "Supabase not configured" } });
         return;
       }
       const { data: session, error } = await supabaseAdmin
@@ -299,11 +350,11 @@ io.on("connection", (socket) => {
         .eq("id", sessionId)
         .maybeSingle();
       if (error || !session) {
-        ack?.({ ok: false, error: { code: "NOT_FOUND", message: "Session not found" } });
+        reply?.({ ok: false, error: { code: "NOT_FOUND", message: "Session not found" } });
         return;
       }
       if ((session.gender as string) !== gender) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "GENDER_MISMATCH", message: "Wrong gender partition" }
         });
@@ -314,7 +365,7 @@ io.on("connection", (socket) => {
       const gameKey = gameRow?.game_url ?? "";
       const gameModule = getGameModule(gameKey);
       if (!gameModule) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "GAME_UNSUPPORTED", message: `No module for game '${gameKey}'` }
         });
@@ -325,7 +376,7 @@ io.on("connection", (socket) => {
       const playerIds = ((session.player_ids as string[]) ?? []).map(String);
       const playerNames = ((session.player_names as string[]) ?? []).map(String);
       if (sess.status === "paused" && !playerIds.includes(userId)) {
-        ack?.({
+        reply?.({
           ok: false,
           error: {
             code: "NOT_IN_ROSTER",
@@ -335,7 +386,7 @@ io.on("connection", (socket) => {
         return;
       }
       if (sess.status === "completed" && !existingRoom) {
-        ack?.({
+        reply?.({
           ok: false,
           error: {
             code: "SESSION_COMPLETED",
@@ -361,18 +412,22 @@ io.on("connection", (socket) => {
         resumedState
       });
       const role = socket.data.role as string;
+      if (!existingRoom) {
+        stats.onRoomCreated(sessionId, gameKey);
+      }
       if (role === "teacher") {
         attachSpectator(room, userId, displayName);
         await socket.join(`session:${sessionId}`);
         socket.data.sessionId = sessionId;
         socket.data.isSpectator = true;
         emitSnapshot(room);
-        ack?.({ ok: true, spectator: true });
+        const spectateAck = wrapAck("SPECTATE", started, sessionId, ack);
+        spectateAck?.({ ok: true, spectator: true });
         return;
       }
       const assigned = assignPlayer(room, userId, displayName);
       if ("error" in assigned) {
-        ack?.({ ok: false, error: assigned.error });
+        reply?.({ ok: false, error: assigned.error });
         return;
       }
       socket.data.isSpectator = false;
@@ -404,7 +459,7 @@ io.on("connection", (socket) => {
         resumeRoom(room);
       }
       emitSnapshot(room);
-      ack?.({ ok: true, player: assigned.player });
+      reply?.({ ok: true, player: assigned.player });
     }
   );
 
@@ -433,16 +488,18 @@ io.on("connection", (socket) => {
       payload: { sessionId?: string; intent?: unknown },
       ack?: (r: unknown) => void
     ) => {
+      const started = Date.now();
       const sessionId = payload?.sessionId;
+      const reply = wrapAck("INTENT", started, sessionId, ack);
       if (!sessionId || payload?.intent === undefined) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "BAD_REQUEST", message: "sessionId and intent required" }
         });
         return;
       }
       if (socket.data.role === "teacher") {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "READ_ONLY", message: "Observers cannot send moves" }
         });
@@ -450,11 +507,11 @@ io.on("connection", (socket) => {
       }
       const room = getRoom(sessionId);
       if (!room) {
-        ack?.({ ok: false, error: { code: "NOT_FOUND", message: "Room not loaded" } });
+        reply?.({ ok: false, error: { code: "NOT_FOUND", message: "Room not loaded" } });
         return;
       }
       if (room.paused) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "GAME_PAUSED", message: "המשחק מושהה" }
         });
@@ -462,7 +519,7 @@ io.on("connection", (socket) => {
       }
       const res = applyIntent(room, userId, payload.intent);
       if (!res.ok) {
-        ack?.({ ok: false, error: res.error });
+        reply?.({ ok: false, error: res.error });
         return;
       }
       emitSnapshot(room);
@@ -481,7 +538,7 @@ io.on("connection", (socket) => {
           });
         }
       }
-      ack?.({ ok: true, gameState: res.state });
+      reply?.({ ok: true, gameState: res.state });
     }
   );
 
@@ -491,10 +548,12 @@ io.on("connection", (socket) => {
       payload: { sessionId?: string } | undefined,
       ack?: (r: unknown) => void
     ) => {
+      const started = Date.now();
       const sessionId =
         payload?.sessionId ?? (socket.data.sessionId as string | undefined);
+      const reply = wrapAck("STOP_GAME", started, sessionId, ack);
       if (!sessionId) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "BAD_REQUEST", message: "sessionId required" }
         });
@@ -502,7 +561,7 @@ io.on("connection", (socket) => {
       }
       const room = getRoom(sessionId);
       if (!room) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "NOT_FOUND", message: "Room not loaded" }
         });
@@ -510,7 +569,7 @@ io.on("connection", (socket) => {
       }
       const guard = canStopGame(room, userId);
       if (!guard.ok) {
-        ack?.({ ok: false, error: guard.error });
+        reply?.({ ok: false, error: guard.error });
         return;
       }
       io.to(`session:${sessionId}`).emit("ROOM_EVENT", {
@@ -527,7 +586,8 @@ io.on("connection", (socket) => {
         });
       }
       deleteRoom(sessionId);
-      ack?.({ ok: true });
+      stats.onRoomDeleted(sessionId);
+      reply?.({ ok: true });
     }
   );
 
@@ -629,17 +689,19 @@ io.on("connection", (socket) => {
       payload: { sessionId?: string } | undefined,
       ack?: (r: unknown) => void
     ) => {
+      const started = Date.now();
       const sessionId =
         payload?.sessionId ?? (socket.data.sessionId as string | undefined);
+      const reply = wrapAck("REMATCH", started, sessionId, ack);
       if (!sessionId) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "BAD_REQUEST", message: "sessionId required" }
         });
         return;
       }
       if (socket.data.role === "teacher") {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "READ_ONLY", message: "צופים לא יכולים לבקש משחק חוזר" }
         });
@@ -647,14 +709,14 @@ io.on("connection", (socket) => {
       }
       const room = getRoom(sessionId);
       if (!room) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "NOT_FOUND", message: "Room not loaded" }
         });
         return;
       }
       if (room.gameKey === "breakout") {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "NO_REMATCH", message: "משחק חוזר לא נתמך במשחק זה" }
         });
@@ -662,11 +724,11 @@ io.on("connection", (socket) => {
       }
       const guard = canStopGame(room, userId);
       if (!guard.ok) {
-        ack?.({ ok: false, error: guard.error });
+        reply?.({ ok: false, error: guard.error });
         return;
       }
       if (!room.module.isTerminal(room.state)) {
-        ack?.({
+        reply?.({
           ok: false,
           error: {
             code: "NOT_TERMINAL",
@@ -686,7 +748,7 @@ io.on("connection", (socket) => {
         requestedBy: userId
       });
       emitSnapshot(room);
-      ack?.({ ok: true });
+      reply?.({ ok: true });
     }
   );
 
@@ -860,6 +922,9 @@ io.on("connection", (socket) => {
     }
     const before = getRoom(sessionId);
     const result = removePlayerFromRoom(sessionId, userId);
+    if (result.roomEmpty) {
+      stats.onRoomDeleted(sessionId);
+    }
     const room = getRoom(sessionId);
     if (supabaseAdmin) {
       const connected = room
@@ -954,7 +1019,12 @@ const recessTimer = setInterval(() => {
   void recessEndSweep(recessSweepState, {
     supabase: supabaseAdmin,
     loadSchedules: loadRecessSchedules,
-    io
+    io,
+    logError: (message, err) =>
+      logger.error({
+        message,
+        error: err instanceof Error ? err.message : String(err)
+      })
   });
 }, RECESS_TICK_MS);
 recessTimer.unref?.();
@@ -972,5 +1042,5 @@ const cleanupTimer = setInterval(() => {
 cleanupTimer.unref?.();
 
 server.listen(PORT, () => {
-  console.log(`game-server listening on ${PORT}`);
+  logger.info({ message: `game-server listening on ${PORT}`, protocol: "http" });
 });

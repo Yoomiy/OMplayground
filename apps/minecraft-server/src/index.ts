@@ -7,8 +7,17 @@ import http from "http";
 import cors from "cors";
 import express from "express";
 import helmet from "helmet";
-import morgan from "morgan";
 import rateLimit from "express-rate-limit";
+import {
+  auditMetadata,
+  createObservabilityContext,
+  fetchLiveKitVoiceStats,
+  initObservability,
+  logSocketAuthenticated,
+  logSocketEvent,
+  correlationMiddleware,
+  mountLiveKitWebhook
+} from "@playground/observability";
 import { Server } from "socket.io";
 import { createClient } from "@supabase/supabase-js";
 import {
@@ -61,6 +70,7 @@ import {
   deleteRoom,
   getOrCreateRoom,
   getRoom,
+  listRooms,
   removePlayerFromRoom,
   roomRoster,
   snapshotPersistedState,
@@ -79,7 +89,10 @@ import {
   createRecessSweepState,
   recessEndSweep
 } from "./recessSweep";
-import { generateLiveKitToken } from "./livekitService";
+import {
+  generateLiveKitToken,
+  LiveKitTokenError
+} from "./livekitService";
 import {
   beginBreak,
   cancelBreak,
@@ -165,28 +178,39 @@ const CORS_ORIGIN =
   "http://localhost:5173,http://127.0.0.1:5173";
 const SUPABASE_URL = process.env.SUPABASE_URL ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+const LIVEKIT_URL = process.env.LIVEKIT_URL ?? "";
+const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY ?? "";
+const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET ?? "";
+
+const tokenDenialLog = new Map<string, number[]>();
+const TOKEN_DENIAL_WINDOW_MS = 5 * 60_000;
+const TOKEN_DENIAL_THRESHOLD = 5;
 
 function exitIfInvalidSupabaseUrlForClient(): void {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return;
   const u = SUPABASE_URL.trim();
   if (!/^https?:\/\//i.test(u)) {
-    console.error(
+    process.stderr.write(
       "[minecraft-server] SUPABASE_URL must include the scheme, e.g. https://YOUR_PROJECT.supabase.co\n" +
-        `  Got: ${JSON.stringify(u)} (check apps/minecraft-server/.env)`
+        `  Got: ${JSON.stringify(u)} (check apps/minecraft-server/.env)\n`
     );
     process.exit(1);
   }
   try {
     new URL(u);
   } catch {
-    console.error(
-      "[minecraft-server] SUPABASE_URL is not a valid URL. Fix apps/minecraft-server/.env"
+    process.stderr.write(
+      "[minecraft-server] SUPABASE_URL is not a valid URL. Fix apps/minecraft-server/.env\n"
     );
     process.exit(1);
   }
 }
 
 exitIfInvalidSupabaseUrlForClient();
+
+const observabilityEarly = createObservabilityContext("minecraft-server");
+let logger = observabilityEarly.logger;
+let stats = observabilityEarly.stats;
 
 const app = express();
 app.set("trust proxy", 1);
@@ -197,8 +221,16 @@ app.use(
     credentials: true
   })
 );
+app.use(correlationMiddleware());
+if (LIVEKIT_API_KEY && LIVEKIT_API_SECRET) {
+  mountLiveKitWebhook(app, {
+    logger,
+    stats,
+    apiKey: LIVEKIT_API_KEY,
+    apiSecret: LIVEKIT_API_SECRET
+  });
+}
 app.use(express.json());
-app.use(morgan("combined"));
 
 const httpLimiter = rateLimit({
   windowMs: 60_000,
@@ -207,38 +239,6 @@ const httpLimiter = rateLimit({
   legacyHeaders: false
 });
 app.use(httpLimiter);
-
-app.get("/health", (_req, res) => {
-  res.json({ ok: true, service: "playground-minecraft-server" });
-});
-
-app.get("/ready", (_req, res) => {
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    res.status(503).json({ ok: false, reason: "missing_env" });
-    return;
-  }
-  res.json({ ok: true });
-});
-
-app.post("/rtc/token", async (req, res) => {
-  try {
-    const accessToken = req.headers.authorization?.replace(/^Bearer\s+/i, "");
-    const sessionId = (req.body as { sessionId?: string })?.sessionId;
-    if (!accessToken || !sessionId) {
-      res.status(400).json({ error: "missing_params" });
-      return;
-    }
-    if (!supabaseAdmin) {
-      res.status(503).json({ error: "server_config" });
-      return;
-    }
-    const token = await generateLiveKitToken({ supabaseAdmin, accessToken, sessionId });
-    res.json({ token });
-  } catch (err: any) {
-    console.error("LiveKit token generation error: ", err);
-    res.status(401).json({ error: "unauthorized", message: err.message });
-  }
-});
 
 const server = http.createServer(app);
 
@@ -256,6 +256,114 @@ const supabaseAdmin =
       })
     : null;
 
+function trackTokenDenial(key: string): boolean {
+  const now = Date.now();
+  const hits = (tokenDenialLog.get(key) ?? []).filter(
+    (t) => now - t <= TOKEN_DENIAL_WINDOW_MS
+  );
+  hits.push(now);
+  tokenDenialLog.set(key, hits);
+  return hits.length >= TOKEN_DENIAL_THRESHOLD;
+}
+
+app.post("/rtc/token", async (req, res) => {
+  const correlationId = (req as express.Request & { correlationId?: string })
+    .correlationId;
+  try {
+    const accessToken = req.headers.authorization?.replace(/^Bearer\s+/i, "");
+    const sessionId = (req.body as { sessionId?: string })?.sessionId;
+    if (!accessToken || !sessionId) {
+      res.status(400).json({ error: "missing_params" });
+      return;
+    }
+    if (!supabaseAdmin) {
+      res.status(503).json({ error: "server_config" });
+      return;
+    }
+    const result = await generateLiveKitToken({
+      supabaseAdmin,
+      accessToken,
+      sessionId
+    });
+    logger.info({
+      correlationId,
+      userId: result.userId,
+      sessionId,
+      protocol: "http",
+      message: "LiveKit token issued",
+      context: {
+        event: "RTC_TOKEN_ISSUED",
+        livekitRoom: result.livekitRoom,
+        status: "success"
+      }
+    });
+    res.json({ token: result.token, serverUrl: result.serverUrl });
+  } catch (err) {
+    const sessionId = (req.body as { sessionId?: string })?.sessionId;
+    const denialKey = `${req.ip ?? "unknown"}:${sessionId ?? "none"}`;
+    const reason =
+      err instanceof LiveKitTokenError ? err.reason : "unauthorized";
+    const abuse = trackTokenDenial(denialKey);
+    logger.warn({
+      correlationId,
+      sessionId,
+      protocol: "http",
+      message: "LiveKit token denied",
+      context: {
+        event: "RTC_TOKEN_DENIED",
+        reason,
+        status: "failed",
+        repeatedDenials: abuse
+      }
+    });
+    if (abuse && supabaseAdmin && sessionId) {
+      void supabaseAdmin.from("audit_log").insert({
+        actor_id: null,
+        actor_kind: "system",
+        action: "rtc_token_abuse",
+        entity_type: "game_session",
+        entity_id: sessionId,
+        metadata: auditMetadata(correlationId, { reason, ip: req.ip })
+      });
+    }
+    const status = reason === "server_config" ? 503 : 401;
+    res.status(status).json({
+      error: reason,
+      message: err instanceof Error ? err.message : "unauthorized"
+    });
+  }
+});
+
+const wiredObservability = initObservability(app, io, {
+  service: "minecraft-server",
+  supabaseAdmin,
+  logger,
+  stats,
+  skipCorrelation: true,
+  listRooms: () =>
+    listRooms().map((room) => ({
+      sessionId: room.sessionId,
+      gameType: "voxel",
+      playerCount: connectedPlayers(room).length
+    })),
+  voiceStats: () =>
+    fetchLiveKitVoiceStats(LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET)
+});
+logger = wiredObservability.logger;
+stats = wiredObservability.stats;
+
+app.get("/health", (_req, res) => {
+  res.json({ ok: true, service: "playground-minecraft-server" });
+});
+
+app.get("/ready", (_req, res) => {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    res.status(503).json({ ok: false, reason: "missing_env" });
+    return;
+  }
+  res.json({ ok: true });
+});
+
 let recessCache: {
   rows: { day_of_week: number; start_time: string; end_time: string; is_active: boolean }[];
   fetchedAt: number;
@@ -272,7 +380,7 @@ async function loadRecessSchedules() {
     .select("day_of_week, start_time, end_time, is_active")
     .eq("is_active", true);
   if (error) {
-    console.error("recess_schedules", error.message);
+    logger.error({ message: "recess_schedules fetch failed", error: error.message });
     throw new Error("recess_schedules_unavailable");
   }
   recessCache = { rows: data ?? [], fetchedAt: now };
@@ -315,10 +423,10 @@ io.use(async (socket, next) => {
           return;
         }
       } catch (err) {
-        console.error(
-          "recess gate failed",
-          err instanceof Error ? err.message : err
-        );
+        logger.warn({
+          message: "recess gate failed",
+          error: err instanceof Error ? err.message : String(err)
+        });
         next(new Error("RECESS_DENIED"));
         return;
       }
@@ -327,6 +435,7 @@ io.use(async (socket, next) => {
     socket.data.displayName = profile.full_name as string;
     socket.data.role = profile.role as string;
     socket.data.gender = profile.gender as "boy" | "girl";
+    logSocketAuthenticated(logger, socket);
     next();
   } catch {
     next(new Error("UNAUTHORIZED"));
@@ -748,22 +857,43 @@ io.on("connection", (socket) => {
   const displayName = socket.data.displayName as string;
   const gender = socket.data.gender as "boy" | "girl";
 
+  function wrapAck<T>(
+    event: string,
+    started: number,
+    sessionId: string | undefined,
+    ack?: (r: T) => void
+  ): ((r: T) => void) | undefined {
+    if (!ack) return undefined;
+    return (result: T) => {
+      const outcome = result as { ok?: boolean; error?: { code?: string } };
+      logSocketEvent(logger, stats, "minecraft-server", socket, event, {
+        ok: outcome.ok !== false,
+        code: outcome.error?.code,
+        sessionId,
+        durationMs: Date.now() - started
+      });
+      ack(result);
+    };
+  }
+
   socket.on(
     "JOIN_ROOM",
     async (
       payload: { sessionId: string },
       ack?: (r: JoinRoomAck) => void
     ) => {
+      const started = Date.now();
       const sessionId = payload?.sessionId;
+      const reply = wrapAck("JOIN_ROOM", started, sessionId, ack);
       if (!sessionId) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "BAD_REQUEST", message: "sessionId required" }
         });
         return;
       }
       if (!supabaseAdmin) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "SERVER_CONFIG", message: "Supabase not configured" }
         });
@@ -777,14 +907,14 @@ io.on("connection", (socket) => {
         .eq("id", sessionId)
         .maybeSingle();
       if (error || !session) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "NOT_FOUND", message: "Session not found" }
         });
         return;
       }
       if ((session.gender as string) !== gender) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "GENDER_MISMATCH", message: "Wrong gender partition" }
         });
@@ -798,7 +928,7 @@ io.on("connection", (socket) => {
         } | null;
       }).games;
       if (gameRow?.game_url !== "minecraft") {
-        ack?.({
+        reply?.({
           ok: false,
           error: {
             code: "GAME_UNSUPPORTED",
@@ -813,7 +943,7 @@ io.on("connection", (socket) => {
         String
       );
       if (sess.status === "paused" && !playerIds.includes(userId)) {
-        ack?.({
+        reply?.({
           ok: false,
           error: {
             code: "NOT_IN_ROSTER",
@@ -823,12 +953,13 @@ io.on("connection", (socket) => {
         return;
       }
       if (sess.status === "completed") {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "SESSION_COMPLETED", message: "המשחק כבר הסתיים" }
         });
         return;
       }
+      const existingRoom = getRoom(sessionId);
       const resumedState =
         sess.status === "paused" && sess.game_state != null
           ? (sess.game_state as PersistedRoomState)
@@ -846,10 +977,13 @@ io.on("connection", (socket) => {
         paused: sess.status === "paused",
         resumedState
       });
+      if (!existingRoom) {
+        stats.onRoomCreated(sessionId, "voxel");
+      }
       const wasAlreadyInRoom = room.players.has(userId);
       const assigned = assignPlayer(room, userId, displayName, socket.data.role === "teacher");
       if ("error" in assigned) {
-        ack?.({ ok: false, error: assigned.error });
+        reply?.({ ok: false, error: assigned.error });
         return;
       }
       await socket.join(`voxel:${sessionId}`);
@@ -883,7 +1017,7 @@ io.on("connection", (socket) => {
         void insertSystemChatMessage(sessionId, `${displayName} הצטרף למשחק`);
       }
       const effectiveMode = room.gameMode ?? "survival";
-      ack?.({
+      reply?.({
         ok: true,
         seed: room.world.seed,
         deltas: serializeDeltas(room.world),
@@ -973,16 +1107,21 @@ io.on("connection", (socket) => {
   });
 
   socket.on("MUTE_ALL", (payload: unknown, ack?: (r: SimpleAck) => void) => {
+    const started = Date.now();
     const sessionId = socket.data.sessionId as string | undefined;
-    if (!sessionId) return ack?.({ ok: false });
+    const reply = wrapAck("MUTE_ALL", started, sessionId, ack);
+    if (!sessionId) return reply?.({ ok: false });
     const room = getRoom(sessionId);
-    if (!room) return ack?.({ ok: false });
+    if (!room) return reply?.({ ok: false });
     const isHost = room.hostId === userId;
     if (!isHost) {
-      return ack?.({ ok: false, error: { code: "UNAUTHORIZED", message: "Only the host can mute all players" } });
+      return reply?.({
+        ok: false,
+        error: { code: "UNAUTHORIZED", message: "Only the host can mute all players" }
+      });
     }
     io.to(`voxel:${sessionId}`).emit("MUTE_ALL", { mutedBy: displayName });
-    ack?.({ ok: true });
+    reply?.({ ok: true });
   });
 
   socket.on(
@@ -1986,9 +2125,21 @@ io.on("connection", (socket) => {
       const callerPlayer = room.players.get(userId);
       const callerName = callerPlayer?.displayName ?? userId;
       const playerNames = Array.from(room.players.values()).map(p => p.displayName).join(", ");
-      console.log(
-        `[ADMIN] Game mode changed to '${next}' in session/room '${sessionId}' (gameId: '${room.gameId}') by '${callerName}'. Players in room: [${playerNames}]`
-      );
+      logger.info({
+        correlationId: socket.data.correlationId,
+        userId,
+        sessionId,
+        protocol: "socket",
+        message: "Game mode changed",
+        context: {
+          event: "SET_GAME_MODE",
+          gameMode: next,
+          gameId: room.gameId,
+          callerName,
+          playerCount: room.players.size,
+          status: "success"
+        }
+      });
       if (next === "survival") {
         room.gameMode = "survival";
         for (const p of room.players.values()) {
@@ -2214,10 +2365,12 @@ io.on("connection", (socket) => {
       payload: { sessionId?: string } | undefined,
       ack?: (r: SimpleAck) => void
     ) => {
+      const started = Date.now();
       const sessionId =
         payload?.sessionId ?? (socket.data.sessionId as string | undefined);
+      const reply = wrapAck("STOP_GAME", started, sessionId, ack);
       if (!sessionId) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "BAD_REQUEST", message: "sessionId required" }
         });
@@ -2225,7 +2378,7 @@ io.on("connection", (socket) => {
       }
       const room = getRoom(sessionId);
       if (!room) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "NOT_FOUND", message: "Room not loaded" }
         });
@@ -2233,7 +2386,7 @@ io.on("connection", (socket) => {
       }
       const guard = canStopGame(room, userId);
       if (!guard.ok) {
-        ack?.({ ok: false, error: guard.error });
+        reply?.({ ok: false, error: guard.error });
         return;
       }
       io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
@@ -2250,7 +2403,8 @@ io.on("connection", (socket) => {
         });
       }
       deleteRoom(sessionId);
-      ack?.({ ok: true });
+      stats.onRoomDeleted(sessionId);
+      reply?.({ ok: true });
     }
   );
 
@@ -2258,6 +2412,9 @@ io.on("connection", (socket) => {
     if (!userId) return;
     const before = getRoom(sessionId);
     const result = removePlayerFromRoom(sessionId, userId);
+    if (result.roomEmpty) {
+      stats.onRoomDeleted(sessionId);
+    }
     const room = getRoom(sessionId);
     if (supabaseAdmin && before) {
       const connected = room ? connectedPlayers(room) : [];
@@ -2304,17 +2461,19 @@ io.on("connection", (socket) => {
       payload: { sessionId?: string } | undefined,
       ack?: (r: SimpleAck) => void
     ) => {
+      const started = Date.now();
       const sessionId =
         payload?.sessionId ?? (socket.data.sessionId as string | undefined);
+      const reply = wrapAck("LEAVE_ROOM", started, sessionId, ack);
       if (!sessionId) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "BAD_REQUEST", message: "sessionId required" }
         });
         return;
       }
       await handleLeave(sessionId);
-      ack?.({ ok: true });
+      reply?.({ ok: true });
     }
   );
 
@@ -2390,7 +2549,7 @@ io.on("connection", (socket) => {
 
 async function insertSystemChatMessage(sessionId: string, message: string): Promise<void> {
   if (!supabaseAdmin) {
-    console.warn("[minecraft-server] supabaseAdmin is not configured, cannot insert system chat message");
+    logger.warn({ message: "supabaseAdmin not configured for system chat" });
     return;
   }
   const { error } = await supabaseAdmin.from("chat_messages").insert({
@@ -2401,7 +2560,10 @@ async function insertSystemChatMessage(sessionId: string, message: string): Prom
     is_system: true
   });
   if (error) {
-    console.error("[minecraft-server] failed to insert system chat message:", error.message);
+    logger.error({
+      message: "failed to insert system chat message",
+      error: error.message
+    });
   }
 }
 
@@ -2413,7 +2575,12 @@ const recessTimer = setInterval(() => {
   void recessEndSweep(recessSweepState, {
     supabase: supabaseAdmin,
     loadSchedules: loadRecessSchedules,
-    io
+    io,
+    logError: (message, err) =>
+      logger.error({
+        message,
+        error: err instanceof Error ? err.message : String(err)
+      })
   });
 }, RECESS_TICK_MS);
 recessTimer.unref?.();
@@ -2506,9 +2673,14 @@ startTickLoop({
   tntTick: tickRoomTnt,
   weatherTick: tickRoomWeather,
   worldDropsTick: (room) => tickWorldDrops(io, room, Date.now()),
-  magnetPickups: (room) => tickMagnetPickups(io, room)
+  magnetPickups: (room) => tickMagnetPickups(io, room),
+  onError: (message, err) =>
+    logger.error({
+      message,
+      error: err instanceof Error ? err.message : String(err)
+    })
 });
 
 server.listen(PORT, () => {
-  console.log(`minecraft-server listening on ${PORT}`);
+  logger.info({ message: `minecraft-server listening on ${PORT}`, protocol: "http" });
 });

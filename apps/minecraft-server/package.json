@@ -4,6 +4,7 @@
   "private": true,
   "main": "dist/index.js",
   "scripts": {
+    "prebuild": "npm --prefix ../.. run build -w @playground/observability",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
@@ -11,6 +12,7 @@
     "test": "jest --config jest.config.cjs"
   },
   "dependencies": {
+    "@playground/observability": "^0.0.1",
     "@playground/voxel-content": "0.0.1",
     "@supabase/supabase-js": "^2.49.1",
     "cors": "^2.8.5",
@@ -19,14 +21,12 @@
     "express-rate-limit": "^7.5.0",
     "helmet": "^8.0.0",
     "livekit-server-sdk": "^2.15.4",
-    "morgan": "^1.10.0",
     "socket.io": "^4.8.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/jest": "^29.5.14",
-    "@types/morgan": "^1.9.9",
     "@types/node": "^22.14.0",
     "@types/supertest": "^6.0.2",
     "jest": "^29.7.0",

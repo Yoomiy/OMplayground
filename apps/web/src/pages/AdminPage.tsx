@@ -14,6 +14,7 @@ import {
 import { KidAvatar } from "@/components/KidAvatar";
 import { Button } from "@/components/ui/button";
 import { fieldInputClass, fieldLabelClass } from "@/lib/fieldStyles";
+import { AdminStatsSection } from "@/components/AdminStatsSection";
 
 interface GameRow {
   id: string;
@@ -95,6 +96,7 @@ type AdminSection =
   | "import"
   | "games"
   | "schedule"
+  | "stats"
   | "operations"
   | "audit";
 
@@ -104,6 +106,7 @@ const adminSections: { id: AdminSection; label: string }[] = [
   { id: "import", label: "ייבוא" },
   { id: "games", label: "משחקים" },
   { id: "schedule", label: "לוח הפסקות" },
+  { id: "stats", label: "סטטיסטיקות" },
   { id: "operations", label: "תפעול" },
   { id: "audit", label: "יומן" }
 ];
@@ -1446,6 +1449,8 @@ export function AdminPage() {
         </Button>
       </section>
       ) : null}
+
+      {activeSection === "stats" ? <AdminStatsSection /> : null}
 
       {activeSection === "operations" ? (
       <section className="space-y-2">

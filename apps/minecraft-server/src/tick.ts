@@ -23,6 +23,7 @@ export interface TickDeps {
   io: TickIoShape;
   rooms?: () => VoxelRoom[];
   now?: () => number;
+  onError?: (message: string, err: unknown) => void;
   /** Optional survival magnet pickups (skipped in tests). */
   magnetPickups?: (room: VoxelRoom) => void;
   /** Survival drop physics + WORLD_DROP_UPDATE coalescing. */
@@ -88,7 +89,7 @@ export function startTickLoop(deps: TickDeps): { stop: () => void } {
     try {
       tickOnce(deps);
     } catch (err) {
-      console.error(
+      deps.onError?.(
         "voxel tick error",
         err instanceof Error ? err.message : err
       );

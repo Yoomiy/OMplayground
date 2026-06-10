@@ -22,6 +22,7 @@ import { MemoryBoard } from "@/games/MemoryBoard";
 import { TicTacToeBoard } from "@/games/TicTacToeBoard";
 import { BreakoutMpBoard } from "@/games/BreakoutMpBoard";
 import { desktopPanelClass } from "@/components/KidDesktopShell";
+import { reportTelemetry } from "@/utils/telemetry";
 
 type RoomEvent =
   | {
@@ -286,14 +287,24 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token;
       if (!token) {
+        reportTelemetry(
+          {
+            level: "warn",
+            message: "Game session socket setup without auth token",
+            sessionId,
+            context: { appArea: "game-session" }
+          },
+          "game-server"
+        );
         setStatus("אין סשן — התחבר מחדש.");
         return;
       }
       if (cancelled) return;
       setMyUserId(data.session?.user.id ?? null);
 
+      const { getCorrelationId } = await import("@/utils/correlation");
       const s = io(gameServerUrl(), {
-        auth: { token },
+        auth: { token, correlationId: getCorrelationId() },
         reconnectionAttempts: 2,
         reconnectionDelay: 1500
       });
@@ -304,8 +315,21 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         s.emit(
           "JOIN_ROOM",
           { sessionId },
-          (ack: { ok?: boolean; error?: { message?: string } }) => {
+          (ack: { ok?: boolean; error?: { code?: string; message?: string } }) => {
             if (!ack?.ok) {
+              reportTelemetry(
+                {
+                  level: "warn",
+                  message: "JOIN_ROOM failed",
+                  sessionId,
+                  context: {
+                    appArea: "game-session",
+                    code: ack?.error?.code,
+                    event: "JOIN_ROOM"
+                  }
+                },
+                "game-server"
+              );
               setStatus(ack?.error?.message ?? "הצטרפות לחדר נכשלה");
             }
           }
@@ -406,6 +430,15 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
       });
 
       s.on("connect_error", (err: Error) => {
+        reportTelemetry(
+          {
+            level: "error",
+            message: "Game socket connect_error",
+            sessionId,
+            context: { appArea: "game-session", code: err.message }
+          },
+          "game-server"
+        );
         setStatus(connectErrorLabel(err));
       });
     })();

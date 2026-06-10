@@ -227,8 +227,9 @@ export function useVoxelSocket(
       }
       if (cancelled) return;
 
+      const { getCorrelationId } = await import("@/utils/correlation");
       const s = io(getVoxelServerUrl(), {
-        auth: { token },
+        auth: { token, correlationId: getCorrelationId() },
         reconnectionAttempts: 2,
         reconnectionDelay: 1500,
         transports: ["websocket"]

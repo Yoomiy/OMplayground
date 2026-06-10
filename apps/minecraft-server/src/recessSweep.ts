@@ -33,6 +33,7 @@ export interface RecessEndSweepDeps {
   now?: () => Date;
   rooms?: () => VoxelRoom[];
   remove?: (sessionId: string) => void;
+  logError?: (message: string, err: unknown) => void;
 }
 
 export interface RecessSweepState {
@@ -52,7 +53,7 @@ export async function recessEndSweep(
   try {
     schedules = await deps.loadSchedules();
   } catch (err) {
-    console.error(
+    deps.logError?.(
       "recess sweep failed to load schedules",
       err instanceof Error ? err.message : err
     );
