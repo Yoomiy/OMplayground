@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { io, type Socket } from "socket.io-client";
 import type { BreakoutMpState } from "@playground/game-logic";
 import { supabase } from "@/lib/supabase";
@@ -120,6 +120,8 @@ export interface GameSessionContainerProps {
 
 export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const inviteCode = searchParams.get("invite") ?? undefined;
   const { user } = useAuth();
   const { profile } = useProfile();
   const { isAdmin } = useIsAdmin();
@@ -185,7 +187,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         setStatus("מחובר");
         s.emit(
           "JOIN_ROOM",
-          { sessionId },
+          { sessionId, ...(inviteCode ? { invitationCode: inviteCode } : {}) },
           (ack: { ok?: boolean; error?: { code?: string; message?: string } }) => {
             if (!ack?.ok) {
               reportTelemetry(
@@ -319,7 +321,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
       socketRef.current?.disconnect();
       socketRef.current = null;
     };
-  }, [sessionId]);
+  }, [sessionId, inviteCode, navigate]);
 
   useEffect(() => {
     let cancelled = false;

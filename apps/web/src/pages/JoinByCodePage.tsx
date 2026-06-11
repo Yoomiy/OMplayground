@@ -25,7 +25,7 @@ export function JoinByCodePage() {
         setErr("קוד הזמנה לא נמצא");
         return;
       }
-      navigate(`/play/${data.id}`, { replace: true });
+      navigate(`/play/${data.id}?invite=${encodeURIComponent(code)}`, { replace: true });
     })();
     return () => {
       cancelled = true;

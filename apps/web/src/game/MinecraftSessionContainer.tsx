@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -66,6 +66,8 @@ export interface MinecraftSessionContainerProps {
 export function MinecraftSessionContainer(props: MinecraftSessionContainerProps): JSX.Element {
   const { sessionId } = props;
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const inviteCode = searchParams.get("invite") ?? undefined;
   const { user } = useAuth();
   const { profile } = useProfile();
   const isTeacherObserver = profile?.role === "teacher";
@@ -139,6 +141,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     onMuteAll
   } = useVoxelSocket({
     sessionId,
+    invitationCode: inviteCode,
     suppressInputEmit: paused
   });
 

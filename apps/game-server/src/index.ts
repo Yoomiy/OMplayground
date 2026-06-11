@@ -48,6 +48,7 @@ import {
 } from "./lifecycle";
 import { createRecessSweepState, recessEndSweep } from "./recessSweep";
 import { getCachedAuth } from "./authCache";
+import { canJoinClosedSession } from "./closedSessionAccess";
 
 const PORT = Number(process.env.PORT ?? 8080);
 /** localhost vs 127.0.0.1 are different origins — allow both for local Vite */
@@ -380,7 +381,7 @@ io.on("connection", (socket) => {
   socket.on(
     "JOIN_ROOM",
     async (
-      payload: { sessionId: string },
+      payload: { sessionId: string; invitationCode?: string },
       ack?: (r: unknown) => void
     ) => {
       const started = Date.now();
@@ -401,7 +402,7 @@ io.on("connection", (socket) => {
       const { data: session, error } = await supabaseAdmin
         .from("game_sessions")
         .select(
-          "id, game_id, gender, player_ids, player_names, host_id, status, game_state, is_open, games ( game_url, min_players )"
+          "id, game_id, gender, player_ids, player_names, host_id, status, game_state, is_open, invitation_code, games ( game_url, min_players )"
         )
         .eq("id", sessionId)
         .maybeSingle();
@@ -440,14 +441,25 @@ io.on("connection", (socket) => {
         !playerIds.includes(userId) &&
         hostId !== userId
       ) {
-        reply?.({
-          ok: false,
-          error: {
-            code: "SESSION_CLOSED",
-            message: "החדר סגור — נדרשת הזמנה"
-          }
+        const invited = await canJoinClosedSession({
+          supabase: supabaseAdmin,
+          sessionId,
+          userId,
+          sessionInvitationCode: String(
+            (session as { invitation_code?: string }).invitation_code ?? ""
+          ),
+          invitationCode: payload?.invitationCode
         });
-        return;
+        if (!invited) {
+          reply?.({
+            ok: false,
+            error: {
+              code: "SESSION_CLOSED",
+              message: "החדר סגור — נדרשת הזמנה"
+            }
+          });
+          return;
+        }
       }
       if (sess.status === "paused" && !playerIds.includes(userId)) {
         reply?.({
