@@ -96,6 +96,11 @@ import {
 } from "@/games/voxel/movementConfig";
 import { SURVIVAL_HELP_TABS } from "./minecraftSurvivalHelpHe";
 import type { SurvivalHelpTabId } from "./minecraftSurvivalHelpHe";
+import { SurvivalVitalsHud } from "@/games/voxel/hud/SurvivalVitalsHud";
+import { BlockHotbarHud } from "@/games/voxel/hud/BlockHotbarHud";
+import { ChatOverlay } from "@/games/voxel/hud/ChatOverlay";
+import { TeacherDashboard } from "@/games/voxel/hud/TeacherDashboard";
+import { VoiceWidget } from "@/games/voxel/hud/VoiceWidget";
 
 const INV_DRAG_MIME = "application/x-playground-voxel-inv";
 
@@ -3403,98 +3408,26 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     if (paused || isDead) heldItemViewRef.current?.setVisible(false);
   }, [paused, isDead]);
 
-  const slotBox = (active: boolean, keyNum: number, inner: JSX.Element): JSX.Element => (
-    <div key={keyNum} className={mcSlotClass(active)}>
-      <span className="pointer-events-none absolute left-0.5 top-0.5 z-[2] text-[9px] font-black text-[#1a1510] drop-shadow-[0_1px_0_rgba(255,255,255,0.35)]">
-        {keyNum}
-      </span>
-      {inner}
-    </div>
+  const survivalVitalsHud = (
+    <SurvivalVitalsHud
+      gameMode={gameMode}
+      paused={paused}
+      isTeacherSpectator={isTeacherSpectator}
+      localVitals={localVitals}
+    />
   );
 
-  const vitalsPct = (value: number, max: number): string =>
-    `${Math.max(0, Math.min(100, (value / max) * 100))}%`;
-
-  const survivalVitalsHud =
-    gameMode === "survival" && !paused && !isTeacherSpectator ? (
-      <div className="pointer-events-none absolute inset-x-0 bottom-20 flex justify-center px-3">
-        <div
-          className="w-[min(94vw,11.5rem)] rounded-sm border-2 border-black/55 bg-neutral-950/70 p-2 shadow-[0_8px_20px_rgba(0,0,0,0.55)]"
-          dir="rtl"
-        >
-          <div>
-            <div className="mb-1 flex items-center justify-between text-[10px] font-black text-red-100">
-              <span>חיים</span>
-              <span>{Math.ceil(localVitals.health)}</span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-sm bg-black/60">
-              <div
-                className="h-full bg-red-500"
-                style={{ width: vitalsPct(localVitals.health, 20) }}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    ) : null;
-
-  const blockHotbarHud = !paused && !isTeacherSpectator ? (
-    <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center gap-1.5 px-2">
-      {gameMode === "creative"
-        ? visibleCreativeHotbarBlocks(selectedBlockRef.current).map((blockId, i) =>
-            slotBox(
-              i === creativeSlotIdx && blockId === selectedBlockRef.current,
-              i + 1,
-              <img
-                src={BLOCK_HOTBAR_ICON[blockId]}
-                alt=""
-                title={BLOCK_HUD[blockId] ?? ""}
-                className="h-9 w-9"
-                style={{ imageRendering: "pixelated" }}
-              />
-            )
-          )
-        : inventorySlots.slice(0, 9).map((cell, i) => {
-            const itemIcon =
-              (cell.itemId ?? 0) > 0 && cell.count > 0
-                ? ITEM_ICON[cell.itemId]
-                : undefined;
-            const blockIcon =
-              cell.blockId !== BLOCK_REGISTRY.AIR && cell.count > 0
-                ? BLOCK_HOTBAR_ICON[cell.blockId]
-                : undefined;
-            const icon = itemIcon ?? blockIcon;
-            const hasStack = cell.count > 0 && icon !== undefined;
-            return slotBox(
-              i === survivalSlot,
-              i + 1,
-              <>
-                {hasStack ? (
-                  <img
-                    src={icon}
-                    alt=""
-                    title={
-                      itemIcon
-                        ? `${ITEM_HUD[cell.itemId] ?? cell.itemId} ×${cell.count}`
-                        : `${BLOCK_HUD[cell.blockId] ?? cell.blockId} ×${cell.count}`
-                    }
-                    className="h-9 w-9"
-                    style={{ imageRendering: "pixelated" }}
-                  />
-                ) : (
-                  <div className="h-9 w-9 rounded bg-black/40" aria-hidden />
-                )}
-                {itemIcon ? toolDurabilityBar(cell.itemId, cell.durability) : null}
-                {hasStack && (cell.count > 1 || itemIcon) ? (
-                  <span className="pointer-events-none absolute bottom-0.5 right-0.5 text-[10px] font-black leading-none text-white drop-shadow-md">
-                    {cell.count}
-                  </span>
-                ) : null}
-              </>
-            );
-          })}
-    </div>
-  ) : null;
+  const blockHotbarHud = (
+    <BlockHotbarHud
+      gameMode={gameMode}
+      paused={paused}
+      isTeacherSpectator={isTeacherSpectator}
+      selectedBlock={selectedBlockRef.current}
+      creativeSlotIdx={creativeSlotIdx}
+      survivalSlot={survivalSlot}
+      inventorySlots={inventorySlots}
+    />
+  );
 
   const invDraggable = gameMode === "survival" && inventoryOpen;
 
@@ -4360,211 +4293,47 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     </div>
   ) : null;
 
-  const renderedMessages = chatLines.map((line) => {
-    if (line.is_system) {
-      return (
-        <div key={line.id} className="text-right text-xs text-amber-300/95 italic font-medium leading-relaxed">
-          {line.message}
-        </div>
-      );
+  const onTeleport = (pos: [number, number, number]) => {
+    const noa: any = noaRef.current;
+    if (noa) {
+      noa.entities.setPosition(noa.playerEntity, [
+        pos[0] + 0.5,
+        pos[1] + 1.2,
+        pos[2] + 0.5
+      ]);
+      audioManagerRef.current?.playSwing();
     }
-    const isDeleted = !!line.is_deleted;
-    return (
-      <div key={line.id} className="text-right text-xs text-white leading-relaxed break-all font-sans flex items-center justify-between gap-2">
-        <span className={`font-sans text-right select-text ${isDeleted ? "text-slate-500 italic" : "text-white"}`}>
-          <span className="font-bold text-sky-300 select-none">{line.sender_name}:</span>{" "}
-          {isDeleted ? "הודעה נמחקה על ידי מורה" : line.message}
-        </span>
-        {onSoftDeleteChatMessage && !isDeleted && (
-          <button
-            type="button"
-            onClick={() => void onSoftDeleteChatMessage(line.id)}
-            className="shrink-0 rounded bg-rose-950/40 border border-rose-500/25 px-1.5 py-0.5 text-[9px] font-bold text-rose-300 hover:bg-rose-900/50 hover:text-white transition-colors cursor-pointer select-none"
-            title="מחק הודעה"
-          >
-            מחק
-          </button>
-        )}
-      </div>
-    );
-  });
+  };
 
-  const peekMessages = chatLines.slice(-4).map((line) => {
-    if (line.is_system) {
-      return (
-        <div key={line.id} className="text-right text-xs text-amber-300/80 italic font-medium leading-tight">
-          {line.message}
-        </div>
-      );
-    }
-    const isDeleted = !!line.is_deleted;
-    return (
-      <div key={line.id} className={`text-right text-xs leading-tight break-all font-sans ${isDeleted ? "text-slate-500/80 italic" : "text-white/90"}`}>
-        <span className="font-bold text-sky-300/90">{line.sender_name}:</span>{" "}
-        {isDeleted ? "הודעה נמחקה על ידי מורה" : line.message}
-      </div>
-    );
-  });
+  const chatOverlay = (
+    <ChatOverlay
+      chatOpen={chatOpen}
+      chatPosition={chatPosition}
+      chatLines={chatLines}
+      canSendChat={!!canSendChat}
+      typedMessage={typedMessage}
+      setTypedMessage={setTypedMessage}
+      onClearSessionChat={onClearSessionChat}
+      onSoftDeleteChatMessage={onSoftDeleteChatMessage}
+      handleDragStart={handleDragStart}
+      handleCloseChat={handleCloseChat}
+      chatScrollRef={chatScrollRef}
+      chatInputRef={chatInputRef}
+      handleInputKeyDown={handleInputKeyDown}
+      handleInputKeyUp={handleInputKeyUp}
+      handleSendMessage={handleSendMessage}
+    />
+  );
 
-  const chatOverlay = chatOpen ? (
-    <div
-      dir="rtl"
-      style={{ left: `${chatPosition.x}px`, top: `${chatPosition.y}px`, bottom: "auto" }}
-      className="pointer-events-auto absolute z-30 w-80 md:w-96 rounded-xl border border-white/15 bg-slate-950/85 p-3 shadow-2xl backdrop-blur-md flex flex-col gap-2 font-sans select-none"
-    >
-      <div
-        onMouseDown={handleDragStart}
-        className="flex items-center justify-between border-b border-white/10 pb-1.5 mb-1 text-slate-400 cursor-move select-none"
-      >
-        <span className="text-[11px] font-bold text-slate-300">צ'אט משחק (גרור להזזה)</span>
-        <div className="flex items-center gap-1.5">
-          {onClearSessionChat && (
-            <button
-              type="button"
-              onClick={() => void onClearSessionChat()}
-              className="rounded border border-rose-500/35 bg-rose-950/20 px-2 py-0.5 text-[9px] font-bold text-rose-300 hover:bg-rose-900/40 hover:text-white transition-colors cursor-pointer select-none"
-              title="נקה את כל הודעות הצ'אט"
-            >
-              נקה צ'אט
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={handleCloseChat}
-            className="rounded p-1 hover:bg-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer"
-            title="סגור צ'אט"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <div
-        ref={chatScrollRef}
-        className="h-48 overflow-y-auto flex flex-col gap-1.5 pr-1 text-right custom-scrollbar select-text"
-      >
-        {renderedMessages.length === 0 ? (
-          <div className="text-center text-xs text-slate-500 py-4 select-none">אין הודעות צ'אט</div>
-        ) : (
-          renderedMessages
-        )}
-      </div>
-
-      {canSendChat ? (
-        <div className="flex gap-2 mt-1">
-          <input
-            ref={chatInputRef}
-            type="text"
-            value={typedMessage}
-            onChange={(e) => setTypedMessage(e.target.value)}
-            onKeyDown={handleInputKeyDown}
-            onKeyUp={handleInputKeyUp}
-            placeholder="כתבו הודעה כאן..."
-            maxLength={150}
-            className="flex-grow rounded border border-white/25 bg-black/50 px-2.5 py-1.5 text-xs text-white outline-none focus:border-sky-400 focus:bg-black/70 text-right font-sans select-text"
-          />
-          <button
-            type="button"
-            onClick={handleSendMessage}
-            className="rounded bg-sky-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-sky-500 transition-colors cursor-pointer"
-          >
-            שלח
-          </button>
-        </div>
-      ) : (
-        <div className="text-center text-[10px] text-slate-400 bg-white/5 py-1.5 rounded mt-1 select-none">
-          מצב תצפית (קריאה בלבד)
-        </div>
-      )}
-    </div>
-  ) : chatLines.length > 0 ? (
-    <div
-      dir="rtl"
-      className="pointer-events-none absolute top-16 left-4 z-20 w-80 md:w-96 rounded-lg bg-black/25 p-2.5 flex flex-col gap-1 text-right font-sans border border-white/5 backdrop-blur-[1px]"
-    >
-      {peekMessages}
-    </div>
-  ) : null;
-
-  const teacherDashboard = isTeacher && (
-    <div className="absolute right-4 top-16 z-30 flex flex-col gap-3 rounded-lg border border-indigo-500/20 bg-slate-900/90 p-4 text-white font-sans shadow-lg max-w-sm" dir="rtl">
-      <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-2">
-        <h3 className="font-bold text-sm text-indigo-400">📋 לוח בקרת מורה</h3>
-        <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${isTeacherSpectator ? "bg-amber-600/80 text-amber-100" : "bg-emerald-600/80 text-emerald-100"}`}>
-          {isTeacherSpectator ? "מצב תצפית" : "מצב שחקן"}
-        </span>
-      </div>
-
-      {isTeacherSpectator ? (
-        <>
-          <p className="text-[11px] text-slate-300 leading-relaxed">
-            אתה במצב <b>תעופה ותצפית</b>. באפשרותך לנוע בחופשיות ללא כוח משיכה, לעבור דרך שחקנים, לראות היכן כולם נמצאים ולהשתגר אליהם.
-          </p>
-          <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1">
-            <span className="text-[10px] text-slate-400 font-semibold mb-1 font-sans">שחקנים בחדר ({playersList.length}):</span>
-            {playersList.length === 0 ? (
-              <span className="text-xs text-slate-500 italic">אין שחקנים אחרים בחדר</span>
-            ) : (
-              playersList.map((player) => (
-                <div key={player.userId} className="flex items-center justify-between gap-3 bg-white/5 rounded p-2 border border-white/5 hover:bg-white/10 transition-colors">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold text-slate-200">{player.displayName}</span>
-                    <span className="text-[9px] text-slate-400 select-all font-sans">
-                      X: {player.pos[0]}, Y: {player.pos[1]}, Z: {player.pos[2]}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const noa: any = noaRef.current;
-                      if (noa) {
-                        noa.entities.setPosition(noa.playerEntity, [
-                          player.pos[0] + 0.5,
-                          player.pos[1] + 1.2,
-                          player.pos[2] + 0.5
-                        ]);
-                        audioManagerRef.current?.playSwing();
-                      }
-                    }}
-                    className="rounded bg-indigo-600 px-2.5 py-1.5 text-[10px] font-bold hover:bg-indigo-500 text-white transition-colors cursor-pointer"
-                  >
-                    📍 השתגר
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
-        </>
-      ) : (
-        <p className="text-[11px] text-slate-300 leading-relaxed text-right">
-          אתה משחק כעת <b>כשחקן רגיל</b> בתוך המשחק. חלים עליך חוקי המשחק הרגילים.
-        </p>
-      )}
-
-      <button
-        type="button"
-        onClick={async () => {
-          const nextSpectator = !isTeacherSpectator;
-          if (onSwitchTeacherMode) {
-            const ack = await onSwitchTeacherMode(nextSpectator);
-            if (ack.ok) {
-              setIsTeacherSpectator(nextSpectator);
-            } else {
-              alert(ack.error?.message ?? "שגיאה בשינוי מצב");
-            }
-          }
-        }}
-        className={`w-full rounded py-2 text-center text-xs font-bold text-white transition-all shadow cursor-pointer ${
-          isTeacherSpectator
-            ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500"
-            : "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500"
-        }`}
-      >
-        {isTeacherSpectator ? "🎮 היכנס למשחק כשחקן" : "📋 חזור למצב תצפית מורה"}
-      </button>
-    </div>
+  const teacherDashboard = (
+    <TeacherDashboard
+      isTeacher={isTeacher}
+      isTeacherSpectator={isTeacherSpectator}
+      setIsTeacherSpectator={setIsTeacherSpectator}
+      playersList={playersList}
+      onTeleport={onTeleport}
+      onSwitchTeacherMode={onSwitchTeacherMode}
+    />
   );
 
   const getPlayerDistanceAndOcclusion = (playerPos: [number, number, number]) => {
@@ -4584,262 +4353,25 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   };
 
   const voiceWidget = (
-    <div
-      dir="rtl"
-      className="pointer-events-auto absolute left-4 bottom-4 z-30 flex flex-col gap-2 font-sans select-none"
-    >
-      {/* Muted by Host Warning Toast */}
-      {mutedByHostReason && (
-        <div className="flex items-center gap-2 rounded-lg border border-rose-500/20 bg-rose-950/80 px-3.5 py-2 text-xs font-bold text-rose-100 shadow-lg animate-bounce max-w-xs">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-          </svg>
-          <span>{mutedByHostReason}</span>
-        </div>
-      )}
-
-      {/* Main voice card */}
-      <div className={`rounded-xl border border-white/10 bg-slate-950/80 p-3 shadow-2xl backdrop-blur-md flex flex-col transition-all duration-300 ${voiceWidgetExpanded ? "w-64" : "w-14 items-center"}`}>
-        {/* Header */}
-        <div className="flex items-center justify-between w-full border-b border-white/5 pb-2 mb-2">
-          {voiceWidgetExpanded ? (
-            <>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] font-bold text-slate-300">קשר קולי (סביבתי)</span>
-                {activeRoom?.state === "connected" ? (
-                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" title="מחובר" />
-                ) : (
-                  <span className="h-2 w-2 rounded-full bg-amber-500" title="מתחבר" />
-                )}
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setShowVoiceSettings(!showVoiceSettings)}
-                  className={`rounded p-1 text-slate-400 hover:text-white transition-colors hover:bg-white/5 ${showVoiceSettings ? "text-sky-400 bg-white/5" : ""}`}
-                  title="הגדרות שמע"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setVoiceWidgetExpanded(false)}
-                  className="rounded p-1 text-slate-400 hover:text-white transition-colors hover:bg-white/5"
-                  title="מזער"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-              </div>
-            </>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setVoiceWidgetExpanded(true)}
-              className="rounded p-1 text-slate-400 hover:text-white transition-colors hover:bg-white/5"
-              title="הרחב"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
-              </svg>
-            </button>
-          )}
-        </div>
-
-        {/* Content */}
-        {voiceWidgetExpanded ? (
-          <div className="flex flex-col gap-3">
-            {showVoiceSettings ? (
-              /* Settings panel */
-              <div className="flex flex-col gap-2 bg-slate-900/50 p-2.5 rounded-lg border border-white/5">
-                <span className="text-[10px] text-slate-400 font-bold">התקן פלט שמע</span>
-                <select
-                  value={selectedDevice}
-                  onChange={(e) => void changeAudioOutput(e.target.value)}
-                  className="w-full bg-slate-950 text-[11px] text-white border border-white/15 rounded p-1 outline-none"
-                >
-                  <option value="">ברירת מחדל של המערכת</option>
-                  {audioDevices.map((device) => (
-                    <option key={device.deviceId} value={device.deviceId}>
-                      {device.label || `רמקול/אוזניות (${device.deviceId.slice(0, 5)})`}
-                    </option>
-                  ))}
-                </select>
-                <div className="text-[9px] text-slate-500 leading-normal mt-1">
-                  * תוכל להעביר את קולות השחקנים לאוזניות כדי לשפר את חווית התלת-מימד (HRTF).
-                </div>
-              </div>
-            ) : (
-              /* Active speakers & players list */
-              <div className="flex flex-col gap-2">
-                {/* Local User Row */}
-                <div className="flex items-center justify-between bg-white/5 rounded-lg p-2 border border-white/5">
-                  <div className="flex items-center gap-2">
-                    <div className={`relative flex h-6 w-6 items-center justify-center rounded-full bg-sky-600/35 border ${micEnabled ? "border-emerald-500/50" : "border-slate-500/50"}`}>
-                      {micEnabled ? (
-                        activeSpeakers.includes(myUserId || "") ? (
-                          <span className="absolute inset-0 rounded-full bg-emerald-500/35 animate-ping" />
-                        ) : null
-                      ) : null}
-                      <span className="text-[9px] font-bold text-white">אני</span>
-                    </div>
-                    <span className="text-xs font-bold text-slate-200">אתה</span>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={toggleMute}
-                    className={`rounded-lg px-2.5 py-1 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
-                      micEnabled 
-                        ? "bg-emerald-600/90 text-white hover:bg-emerald-500" 
-                        : "bg-rose-700/90 text-white hover:bg-rose-600 animate-pulse"
-                    }`}
-                    title={micEnabled ? "השתק מיקרופון (M)" : "הפעל מיקרופון (M)"}
-                  >
-                    {micEnabled ? (
-                      <>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
-                        </svg>
-                        <span>פעיל</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M13.477 14.89A6 6 0 015 8a1 1 0 00-2 0 8 8 0 006.88 7.902V18H7a1 1 0 100 2h6a1 1 0 100-2h-2.12v-2.11a5.975 5.975 0 012.597-1zM4 8a4 4 0 017.75-1.39l-1.042 1.043A2.5 2.5 0 006.5 8a.5.5 0 00-1 0zm7.843 3.657l1.414-1.414A5.96 5.96 0 0014 8v-.25l-2.157 2.157v1.75z" clipRule="evenodd" />
-                          <path d="M2.293 2.293a1 1 0 011.414 0l14 14a1 1 0 01-1.414 1.414l-14-14a1 1 0 010-1.414z" />
-                        </svg>
-                        <span>מושתק</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-
-                {/* Host Mute All Button */}
-                {iAmHost && (
-                  <button
-                    type="button"
-                    onClick={muteAll}
-                    className="w-full rounded bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/30 text-rose-300 py-1.5 text-center text-[10px] font-bold transition-all shadow flex items-center justify-center gap-1 cursor-pointer"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                    </svg>
-                    שקט בחדר! השתק את כולם
-                  </button>
-                )}
-
-                {/* Remote Players Nearby List */}
-                <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
-                  <span className="text-[9px] text-slate-400 font-bold mb-0.5" dir="rtl">שחקנים בטווח שמיעה</span>
-                  
-                  {playersList.length === 0 ? (
-                    <span className="text-[10px] text-slate-500 italic py-1 text-center">אין שחקנים בטווח</span>
-                  ) : (
-                    (() => {
-                      const listWithMetrics = playersList.map((player) => {
-                        const metrics = getPlayerDistanceAndOcclusion(player.pos);
-                        return { ...player, ...metrics };
-                      });
-
-                      // Sort by distance (closest first)
-                      listWithMetrics.sort((a, b) => a.distance - b.distance);
-
-                      return listWithMetrics.map((player) => {
-                        const inRange = player.distance <= 32;
-                        const isPlayerSpeaking = activeSpeakers.includes(player.userId);
-                        const isMuffled = player.solidBlocks > 0;
-
-                        return (
-                          <div 
-                            key={player.userId} 
-                            className={`flex items-center justify-between rounded p-1.5 border transition-all ${
-                              isPlayerSpeaking 
-                                ? "bg-emerald-950/20 border-emerald-500/25" 
-                                : inRange 
-                                  ? "bg-white/5 border-white/5" 
-                                  : "bg-black/10 border-white/5 opacity-55"
-                            }`}
-                          >
-                            <div className="flex items-center gap-2 max-w-[65%]">
-                              <div className={`relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-700 text-[10px] font-bold text-slate-200 border ${
-                                isPlayerSpeaking ? "border-emerald-400 bg-emerald-800" : "border-slate-600"
-                              }`}>
-                                {isPlayerSpeaking && (
-                                  <span className="absolute inset-0 rounded-full bg-emerald-500/35 animate-ping" />
-                                )}
-                                {player.displayName.charAt(0)}
-                              </div>
-                              <span className="text-[11px] font-semibold text-slate-300 truncate" title={player.displayName}>
-                                {player.displayName}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-1.5">
-                              {/* Occlusion Icon */}
-                              {inRange && isMuffled && (
-                                <span 
-                                  className="text-amber-400 shrink-0" 
-                                  title={
-                                    player.solidBlocks === 1 
-                                      ? "עמום (בלוק אחד מפריד)" 
-                                      : player.solidBlocks === 2 
-                                        ? "עמום מאוד (שני בלוקים מפרידים)" 
-                                        : `עמום כבד (${player.solidBlocks} בלוקים מפרידים)`
-                                  }
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317 4.66-1.647 8-6.092 8-11.317 0-.681-.056-1.351-.166-2C17.834 5 10 1.944 10 1.944zM11 14a1 1 0 11-2 0 1 1 0 012 0zm-1-3a1 1 0 001-1V7a1 1 0 10-2 0v3a1 1 0 001 1z" clipRule="evenodd" />
-                                  </svg>
-                                </span>
-                              )}
-
-                              {/* Distance indicator */}
-                              <span className="text-[10px] text-slate-400 font-mono shrink-0">
-                                {inRange ? `${Math.round(player.distance)}מ'` : "מחוץ לטווח"}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      });
-                    })()
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          /* Minimized mic action button */
-          <button
-            type="button"
-            onClick={toggleMute}
-            className={`flex h-8 w-8 items-center justify-center rounded-full shadow-lg border transition-all hover:scale-105 cursor-pointer shrink-0 ${
-              micEnabled
-                ? activeSpeakers.includes(myUserId || "")
-                  ? "bg-emerald-600 border-emerald-400 animate-pulse text-white"
-                  : "bg-emerald-700/80 border-emerald-600 text-slate-100"
-                : "bg-rose-700/90 border-rose-600 text-white"
-            }`}
-            title={micEnabled ? "הפעל שמע (M)" : "השתק שמע (M)"}
-          >
-            {micEnabled ? (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
-              </svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M13.477 14.89A6 6 0 015 8a1 1 0 00-2 0 8 8 0 006.88 7.902V18H7a1 1 0 100 2h6a1 1 0 100-2h-2.12v-2.11a5.975 5.975 0 012.597-1zM4 8a4 4 0 017.75-1.39l-1.042 1.043A2.5 2.5 0 006.5 8a.5.5 0 00-1 0zm7.843 3.657l1.414-1.414A5.96 5.96 0 0014 8v-.25l-2.157 2.157v1.75z" clipRule="evenodd" />
-                <path d="M2.293 2.293a1 1 0 011.414 0l14 14a1 1 0 01-1.414 1.414l-14-14a1 1 0 010-1.414z" />
-              </svg>
-            )}
-          </button>
-        )}
-      </div>
-    </div>
+    <VoiceWidget
+      mutedByHostReason={mutedByHostReason}
+      voiceWidgetExpanded={voiceWidgetExpanded}
+      setVoiceWidgetExpanded={setVoiceWidgetExpanded}
+      activeRoom={activeRoom as any}
+      showVoiceSettings={showVoiceSettings}
+      setShowVoiceSettings={setShowVoiceSettings}
+      selectedDevice={selectedDevice}
+      changeAudioOutput={changeAudioOutput}
+      audioDevices={audioDevices}
+      micEnabled={micEnabled}
+      activeSpeakers={activeSpeakers}
+      myUserId={myUserId}
+      toggleMute={toggleMute}
+      iAmHost={iAmHost}
+      muteAll={muteAll}
+      playersList={playersList}
+      getPlayerDistanceAndOcclusion={getPlayerDistanceAndOcclusion}
+    />
   );
 
   return (

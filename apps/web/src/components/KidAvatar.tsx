@@ -50,6 +50,9 @@ export function KidAvatar({
       <img
         src={profile.avatar_url}
         alt={label}
+        loading="lazy"
+        width={48}
+        height={48}
         className={cn(
           "size-12 min-h-[48px] min-w-[48px] rounded-2xl object-cover shadow-md",
           className
@@ -63,6 +66,9 @@ export function KidAvatar({
       <img
         src={preset.image_url}
         alt={label}
+        loading="lazy"
+        width={48}
+        height={48}
         className={cn(
           "size-12 min-h-[48px] min-w-[48px] rounded-2xl object-cover shadow-md",
           className

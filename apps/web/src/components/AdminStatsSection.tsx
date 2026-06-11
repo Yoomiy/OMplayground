@@ -40,8 +40,22 @@ export function AdminStatsSection() {
 
   useEffect(() => {
     void refresh();
-    const timer = setInterval(() => void refresh(), 15_000);
-    return () => clearInterval(timer);
+    let timer = setInterval(() => void refresh(), 15_000);
+
+    const handleVisibility = () => {
+      if (document.hidden) {
+        clearInterval(timer);
+      } else {
+        void refresh();
+        timer = setInterval(() => void refresh(), 15_000);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [refresh]);
 
   const game = stats?.game;

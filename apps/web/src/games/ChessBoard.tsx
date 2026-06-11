@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback, memo, type CSSProperties } from "react";
 import { Chessboard } from "react-chessboard";
 import type { ChessIntent, ChessPromotion, ChessState, ChessTimeControl } from "@playground/game-logic";
 import {
@@ -62,19 +62,63 @@ function gameOverHeadline(state: ChessState, mySeat: "w" | "b" | null): string {
   return "";
 }
 
-function ChessClock({
+/**
+ * Self-ticking chess clock — runs its own 100ms interval internally so
+ * the parent ChessBoard doesn't re-render on every tick.
+ */
+const ChessClock = memo(function ChessClock({
   seat,
   label,
-  ms,
-  active,
-  isMine
+  serverMs,
+  lastTickAt,
+  activeTurn,
+  gameStatus,
+  isMine,
+  onTimeout
 }: {
   seat: "w" | "b";
   label: string;
-  ms: number;
-  active: boolean;
+  serverMs: number;
+  lastTickAt: number | null;
+  activeTurn: "w" | "b";
+  gameStatus: string;
   isMine?: boolean;
+  onTimeout?: () => void;
 }) {
+  const isMyTurn = activeTurn === seat;
+  const active = isMyTurn && gameStatus === "playing";
+  const shouldTick = active && lastTickAt != null;
+
+  const [displayMs, setDisplayMs] = useState(serverMs);
+  const timeoutSentRef = useRef(false);
+  const onTimeoutRef = useRef(onTimeout);
+  onTimeoutRef.current = onTimeout;
+
+  // Reset when server clocks update
+  useEffect(() => {
+    setDisplayMs(serverMs);
+    timeoutSentRef.current = false;
+  }, [serverMs]);
+
+  // Self-tick
+  useEffect(() => {
+    if (!shouldTick || lastTickAt == null) return;
+
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - lastTickAt;
+      const next = Math.max(0, serverMs - elapsed);
+      setDisplayMs(next);
+
+      if (next <= 0 && !timeoutSentRef.current) {
+        timeoutSentRef.current = true;
+        onTimeoutRef.current?.();
+      }
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [shouldTick, lastTickAt, serverMs]);
+
+  const ms = shouldTick ? displayMs : serverMs;
   const low = active && ms > 0 && ms < 30_000;
   const isBlack = seat === "b";
   const shell = isBlack
@@ -107,7 +151,7 @@ function ChessClock({
       </div>
     </div>
   );
-}
+});
 
 function getTimeControlDescription(tc?: ChessTimeControl): string {
   if (!tc || tc.mode === "none") return "ללא שעון (משחק חופשי)";
@@ -188,51 +232,14 @@ export function ChessBoard({
     to: string;
   } | null>(null);
 
-  // Clocks smooth ticking state
-  const [localClocks, setLocalClocks] = useState<{ w: number; b: number } | null>(null);
-  const timeoutSentRef = useRef(false);
+  // Clocks: server-side clocks are passed directly to self-ticking ChessClock
+  // components that handle their own 100ms intervals, avoiding re-rendering
+  // the entire board 10x/sec.
+  const hasClocks = gameState.clocks != null && gameState.timeControl?.mode === "timed";
 
-  useEffect(() => {
-    if (gameState.clocks) {
-      setLocalClocks(gameState.clocks);
-    } else {
-      setLocalClocks(null);
-    }
-  }, [gameState.clocks]);
-
-  useEffect(() => {
-    timeoutSentRef.current = false;
-  }, [gameState.lastTickAt, gameState.next, gameState.status]);
-
-  useEffect(() => {
-    if (
-      gameState.status !== "playing" ||
-      !gameState.clocks ||
-      !gameState.lastTickAt ||
-      gameState.timeControl?.mode !== "timed"
-    ) {
-      return;
-    }
-
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - gameState.lastTickAt!;
-      const turn = gameState.next;
-      const nextW =
-        turn === "w" ? Math.max(0, gameState.clocks!.w - elapsed) : gameState.clocks!.w;
-      const nextB =
-        turn === "b" ? Math.max(0, gameState.clocks!.b - elapsed) : gameState.clocks!.b;
-
-      setLocalClocks({ w: nextW, b: nextB });
-
-      const expired = (turn === "w" && nextW <= 0) || (turn === "b" && nextB <= 0);
-      if (expired && !timeoutSentRef.current) {
-        timeoutSentRef.current = true;
-        onIntent({ type: "check_timeout" });
-      }
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, [gameState.clocks, gameState.lastTickAt, gameState.next, gameState.status, gameState.timeControl, onIntent]);
+  const handleClockTimeout = useCallback(() => {
+    onIntent({ type: "check_timeout" });
+  }, [onIntent]);
 
   useEffect(() => {
     if (!inActiveGame) setConfirmResign(false);
@@ -355,16 +362,18 @@ export function ChessBoard({
   }
 
   function renderClock(seat: "w" | "b") {
-    if (!localClocks) return null;
+    if (!hasClocks || !gameState.clocks) return null;
     const label = seat === "w" ? "לבן" : "שחור";
-    const active = gameState.next === seat && gameState.status === "playing";
     return (
       <ChessClock
         seat={seat}
         label={label}
-        ms={localClocks[seat]}
-        active={active}
+        serverMs={gameState.clocks[seat]}
+        lastTickAt={gameState.lastTickAt ?? null}
+        activeTurn={gameState.next}
+        gameStatus={gameState.status}
         isMine={seat === myColor}
+        onTimeout={seat === gameState.next ? handleClockTimeout : undefined}
       />
     );
   }
@@ -684,7 +693,7 @@ export function ChessBoard({
         </div>
 
         <div className="flex flex-col items-stretch gap-3 md:flex-row md:items-center md:justify-center md:gap-4">
-          {localClocks ? (
+          {hasClocks ? (
             <div className="order-1 flex justify-center md:order-1 md:w-32 md:shrink-0">
               {renderClock(opponentColor)}
             </div>
@@ -714,7 +723,7 @@ export function ChessBoard({
           </div>
           </div>
 
-          {localClocks ? (
+          {hasClocks ? (
             <div className="order-3 flex justify-center md:order-3 md:w-32 md:shrink-0">
               {renderClock(myColor)}
             </div>
