@@ -3,7 +3,5 @@
 19. save last known location
 20. save fps stats
 23. add stats
-24. draw game lacks host functionalities.
-25. drawgame raises private room error on direct challange
 26. review saving mechanism
-27. free wsad keys for typing in drawing game
+28.
