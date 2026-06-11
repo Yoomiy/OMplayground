@@ -204,6 +204,7 @@ export function ChessBoard({
   const [customMins, setCustomMins] = useState<string>("15");
   const [customInc, setCustomInc] = useState<string>("10");
   const [confirmResign, setConfirmResign] = useState(false);
+  const [viewBoardAfterEnd, setViewBoardAfterEnd] = useState(false);
 
   const activeFen = useMemo(() => {
     return fenAtHistoryIndex(gameState, viewIndex);
@@ -224,7 +225,10 @@ export function ChessBoard({
   const drawOfferFrom = gameState.drawOfferFrom ?? null;
   const myColor = mySeat ?? "w";
   const opponentColor: "w" | "b" = myColor === "w" ? "b" : "w";
-  const showEndOverlay = gameState.status !== "playing" || sessionEnd?.kind === "stopped";
+  const showEndOverlay =
+    (gameState.status !== "playing" || sessionEnd?.kind === "stopped") &&
+    !viewBoardAfterEnd &&
+    viewIndex === -1;
 
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [pendingPromotion, setPendingPromotion] = useState<{
@@ -244,6 +248,12 @@ export function ChessBoard({
   useEffect(() => {
     if (!inActiveGame) setConfirmResign(false);
   }, [inActiveGame]);
+
+  useEffect(() => {
+    if (gameState.status === "playing") {
+      setViewBoardAfterEnd(false);
+    }
+  }, [gameState.status]);
 
   // When opponent plays a move, auto-return to live
   useEffect(() => {
@@ -501,6 +511,13 @@ export function ChessBoard({
                   </button>
                 </>
               ) : null}
+              <button
+                type="button"
+                className="rounded-xl border-2 border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 transition"
+                onClick={() => setViewBoardAfterEnd(true)}
+              >
+                צפה בלוח
+              </button>
               {onPlayAgain ? (
                 <button
                   type="button"
@@ -796,6 +813,28 @@ export function ChessBoard({
             )}
           </div>
         )}
+
+        {(gameState.status !== "playing" || sessionEnd?.kind === "stopped") &&
+          (viewBoardAfterEnd || viewIndex !== -1) && (
+            <div
+              className="flex flex-col items-center gap-2 rounded-2xl border border-indigo-100 bg-indigo-50/70 p-3 text-center"
+              dir="rtl"
+            >
+              <span className="text-sm font-bold text-indigo-950">
+                המשחק הסתיים ({gameOverHeadline(gameState, mySeat)}). 
+              </span>
+              <button
+                type="button"
+                className="rounded-xl bg-indigo-600 px-4 py-1.5 text-xs font-black text-white hover:bg-indigo-500 transition shadow-sm"
+                onClick={() => {
+                  setViewBoardAfterEnd(false);
+                  setViewIndex(-1);
+                }}
+              >
+                הצג אפשרויות סיום ומשחק חוזר
+              </button>
+            </div>
+          )}
 
         {inActiveGame && (
           <div className="flex flex-wrap gap-2" dir="rtl">
