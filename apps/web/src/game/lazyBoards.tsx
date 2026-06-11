@@ -31,7 +31,6 @@ export interface BoardProps {
 
 export interface BoardRegistryEntry {
   component: (props: BoardProps) => JSX.Element;
-  fullscreen?: boolean;
 }
 
 const BOARD_LOADERS: Record<
@@ -224,8 +223,4 @@ export function LazyGameBoard({
     );
   }
   return entry.component(boardProps);
-}
-
-export function isFullscreenBoard(gameKey: string): boolean {
-  return gameKey === "drawing" || gameKey === "breakout";
 }

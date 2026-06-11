@@ -8,7 +8,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { usePersistedSessionChat } from "@/hooks/usePersistedSessionChat";
 import { useTeacherSessionChat } from "@/hooks/useTeacherSessionChat";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
-import { LazyGameBoard, isFullscreenBoard } from "@/game/lazyBoards";
+import { LazyGameBoard } from "@/game/lazyBoards";
 import { desktopPanelClass } from "@/components/KidDesktopShell";
 import { reportTelemetry } from "@/utils/telemetry";
 
@@ -553,7 +553,6 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
     return <p className="text-sm text-slate-600">{status}</p>;
   }
 
-  const isFullscreen = isFullscreenBoard(gameKey);
   const iAmHost =
     !isTeacherObserver &&
     myUserId != null &&
@@ -570,7 +569,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
     !!myUserId &&
     roster.some((p) => p.userId === myUserId);
 
-  const chatPanel = !isFullscreen && isTeacherObserver ? (
+  const chatPanel = isTeacherObserver ? (
     <section className={desktopPanelClass("space-y-2 p-3")}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-black text-slate-800">צ׳אט (ניהול מורה)</h2>
@@ -612,7 +611,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         ))}
       </ul>
     </section>
-  ) : !isFullscreen ? (
+  ) : (
     <section className={desktopPanelClass("space-y-2 p-3")}>
       <h2 className="text-sm font-black text-slate-800">צ׳אט במשחק</h2>
       {kidChat.error ? (
@@ -649,16 +648,10 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         </button>
       </div>
     </section>
-  ) : null;
+  );
 
   return (
-    <div
-      className={
-        isFullscreen
-          ? "fixed inset-0 z-40 space-y-4 overflow-auto bg-[rgb(var(--play-bg))] p-4"
-          : "grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]"
-      }
-    >
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
       <main className="min-w-0 space-y-4">
         <div className={desktopPanelClass("flex flex-wrap items-center justify-between gap-3 px-4 py-3")}>
           <div className="flex items-center gap-3">
@@ -772,8 +765,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         ) : null}
       </main>
 
-      {!isFullscreen ? (
-        <aside className="space-y-4">
+      <aside className="space-y-4">
           <section className={desktopPanelClass("p-4 text-sm")}>
             <h2 className="font-black text-slate-900">שחקנים בחדר</h2>
             <div className="mt-3 space-y-2">
@@ -843,7 +835,6 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
 
           {chatPanel}
         </aside>
-      ) : null}
     </div>
   );
 }

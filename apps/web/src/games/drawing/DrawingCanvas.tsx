@@ -447,6 +447,8 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
           onPointerUpdate={handlePointerUpdate}
           collaborators={collaborators}
           theme="light"
+          autoFocus={false}
+          handleKeyboardGlobally={false}
           viewModeEnabled={mySeat === null} // Spectators cannot draw, only view
           initialData={initialData.current}
           UIOptions={{
