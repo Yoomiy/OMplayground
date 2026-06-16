@@ -13,7 +13,7 @@ export interface OpenGameRow {
   is_open: boolean;
   gender: "boy" | "girl";
   invitation_code: string;
-  host_grade: number | null;
+  host_grade: string | null;
   created_at: string;
   games: { name_he: string } | null;
 }

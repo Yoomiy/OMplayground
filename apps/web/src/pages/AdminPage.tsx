@@ -15,6 +15,16 @@ import { KidAvatar } from "@/components/KidAvatar";
 import { kidFieldInputClass, kidFieldLabelClass } from "@/lib/fieldStyles";
 import { AdminStatsSection } from "@/components/AdminStatsSection";
 
+function parseGradeInput(raw: string): string {
+  const clean = raw.trim().replace(/['"]+/g, "");
+  const validLetters = ["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח"];
+  const numMap: Record<string, string> = {
+    "1": "א", "2": "ב", "3": "ג", "4": "ד", "5": "ה", "6": "ו", "7": "ז", "8": "ח"
+  };
+  if (validLetters.includes(clean)) return clean;
+  return numMap[clean] ?? "א";
+}
+
 interface GameRow {
   id: string;
   name_he: string;
@@ -28,7 +38,7 @@ interface KidRow {
   full_name: string;
   gender: "boy" | "girl";
   role: "kid" | "teacher";
-  grade: number;
+  grade: string;
   is_active: boolean;
   avatar_color: string;
   avatar_preset_id: string | null;
@@ -142,7 +152,7 @@ export function AdminPage() {
   const [userSearch, setUserSearch] = useState("");
   const [userRoleFilter, setUserRoleFilter] = useState<"all" | "kid" | "teacher">("all");
   const [userGenderFilter, setUserGenderFilter] = useState<"all" | "boy" | "girl">("all");
-  const [userGradeFilter, setUserGradeFilter] = useState<"all" | number>("all");
+  const [userGradeFilter, setUserGradeFilter] = useState<"all" | string>("all");
   const [gameSearch, setGameSearch] = useState("");
   const [addingNewUser, setAddingNewUser] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -150,7 +160,7 @@ export function AdminPage() {
     full_name: "",
     gender: "boy" as "boy" | "girl",
     role: "kid" as "kid" | "teacher",
-    grade: 1,
+    grade: "א",
     is_active: true,
     avatar_color: "#3B82F6",
     avatar_preset_id: "",
@@ -165,7 +175,7 @@ export function AdminPage() {
     full_name: "",
     gender: "boy" as "boy" | "girl",
     role: "kid" as "kid" | "teacher" | "admin",
-    grade: 1,
+    grade: "א",
     avatar_color: "#3B82F6",
     avatar_preset_id: ""
   });
@@ -485,7 +495,7 @@ export function AdminPage() {
         full_name: "",
         gender: "boy",
         role: "kid",
-        grade: 1,
+        grade: "א",
         avatar_color: "#3B82F6",
         avatar_preset_id: ""
       });
@@ -559,7 +569,7 @@ export function AdminPage() {
         password: cells[idx["password"]!] ?? "",
         full_name: cells[idx["full_name"]!] ?? "",
         gender: cells[idx["gender"]!] ?? "boy",
-        grade: Number(cells[idx["grade"]!] ?? "1"),
+        grade: parseGradeInput(cells[idx["grade"]!] ?? "1"),
         role: roleIdx !== undefined ? cells[roleIdx] || "kid" : "kid"
       };
     });
@@ -1011,10 +1021,10 @@ export function AdminPage() {
             <select
               className={kidFieldInputClass}
               value={userGradeFilter}
-              onChange={(e) => setUserGradeFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
+              onChange={(e) => setUserGradeFilter(e.target.value)}
             >
               <option value="all">כל הכיתות</option>
-              {[1, 2, 3, 4, 5, 6, 7].map(g => <option key={g} value={g}>כיתה {g}</option>)}
+              {["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח"].map(g => <option key={g} value={g}>כיתה {g}</option>)}
             </select>
             <input
               className={kidFieldInputClass}
@@ -1109,19 +1119,22 @@ export function AdminPage() {
                     </label>
                     <label className={`flex flex-col gap-2 ${kidFieldLabelClass}`}>
                       כיתה
-                      <input
+                      <select
                         className={kidFieldInputClass}
-                        type="number"
-                        min={1}
-                        max={7}
                         value={newKidForm.grade}
                         onChange={(e) =>
                           setNewKidForm((f) => ({
                             ...f,
-                            grade: Number(e.target.value),
+                            grade: e.target.value,
                           }))
                         }
-                      />
+                      >
+                        {["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח"].map((g) => (
+                          <option key={g} value={g}>
+                            כיתה {g}
+                          </option>
+                        ))}
+                      </select>
                     </label>
                     <label
                       className={`flex flex-col gap-2 ${kidFieldLabelClass}`}
@@ -1269,16 +1282,19 @@ export function AdminPage() {
               </label>
               <label className={`flex flex-col gap-2 ${kidFieldLabelClass}`}>
                 כיתה
-                <input
+                <select
                   className={kidFieldInputClass}
-                  type="number"
-                  min={1}
-                  max={7}
                   value={editForm.grade}
                   onChange={(e) =>
-                    setEditForm((f) => ({ ...f, grade: Number(e.target.value) }))
+                    setEditForm((f) => ({ ...f, grade: e.target.value }))
                   }
-                />
+                >
+                  {["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח"].map((g) => (
+                    <option key={g} value={g}>
+                      כיתה {g}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label className={`flex items-center gap-3 ${kidFieldLabelClass}`}>
                 <input

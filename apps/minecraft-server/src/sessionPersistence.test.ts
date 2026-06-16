@@ -27,7 +27,7 @@ function makeMockSupabase() {
   const update = jest.fn().mockReturnValue(builder);
   const maybeSingle = jest
     .fn()
-    .mockResolvedValue({ data: { grade: 4, full_name: "Guest" }, error: null });
+    .mockResolvedValue({ data: { grade: "ד", full_name: "Guest" }, error: null });
   const eqKp = jest.fn().mockReturnValue({ maybeSingle });
   const select = jest.fn().mockReturnValue({ eq: eqKp });
   const from = jest.fn((table: string) => {
@@ -135,11 +135,11 @@ describe("persistPlayerLeave", () => {
     const payload = m.update.mock.calls[0][0] as {
       host_id: string;
       host_name: string;
-      host_grade: number;
+      host_grade: string;
     };
     expect(payload.host_id).toBe("next-host");
     expect(payload.host_name).toBe("Guest");
-    expect(payload.host_grade).toBe(4);
+    expect(payload.host_grade).toBe("ד");
   });
 });
 

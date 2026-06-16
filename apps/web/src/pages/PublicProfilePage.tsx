@@ -14,7 +14,6 @@ import { blockKid } from "@/lib/friendsApi";
 import { ComposeMessage } from "@/components/ComposeMessage";
 import { KidAvatar } from "@/components/KidAvatar";
 import { KidDesktopShell, desktopPanelClass } from "@/components/KidDesktopShell";
-import { cn } from "@/lib/cn";
 
 interface GameCatalogRow {
   id: string;

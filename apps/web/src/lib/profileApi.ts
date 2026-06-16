@@ -17,7 +17,7 @@ export interface AvatarPreset {
 }
 
 export interface PublicProfile extends PublicKidProfile {
-  grade: number;
+  grade: string;
   last_seen: string | null;
   created_at: string;
 }
@@ -96,7 +96,7 @@ export interface AdminNewProfile {
   full_name: string;
   gender: "boy" | "girl";
   role: "kid" | "teacher" | "admin";
-  grade: number;
+  grade: string;
   avatar_color: string;
   avatar_preset_id: string | null;
 }

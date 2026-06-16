@@ -16,7 +16,7 @@ export interface KidProfileRow {
   username: string;
   full_name: string;
   gender: "boy" | "girl";
-  grade: number;
+  grade: string;
   role: "kid" | "teacher";
   is_active: boolean;
   avatar_color: string;

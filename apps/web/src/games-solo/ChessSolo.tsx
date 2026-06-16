@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useSoloAutoSave } from "@/hooks/useSoloAutoSave";
-import { kidFieldInputClass, kidFieldLabelClass } from "@/lib/fieldStyles";
+import { kidFieldLabelClass } from "@/lib/fieldStyles";
 import { isJsonObject, type JsonValue, type SoloGameSaveControls } from "@/lib/soloGameSaves";
 import { ChessBoard } from "@/games/ChessBoard";
 import { useStockfishEngine, DIFFICULTY_LEVELS } from "@/games/chess/useStockfishEngine";

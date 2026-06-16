@@ -13,7 +13,7 @@ interface AdminNewProfile {
   full_name: string;
   gender: "boy" | "girl";
   role: "kid" | "teacher" | "admin";
-  grade: number;
+  grade: string;
   avatar_color: string;
   avatar_preset_id: string | null;
 }

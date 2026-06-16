@@ -74,7 +74,15 @@ Deno.serve(async (req) => {
     const password = String(raw.password ?? "");
     const full_name = String(raw.full_name ?? "").trim();
     const gender = raw.gender === "girl" ? "girl" : "boy";
-    const grade = Math.min(7, Math.max(1, Number(raw.grade) || 1));
+    const rawGrade = String(raw.grade ?? "").trim();
+    const cleanGrade = rawGrade.replace(/['"]+/g, "");
+    const validLetters = ["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח"];
+    const numMap: Record<string, string> = {
+      "1": "א", "2": "ב", "3": "ג", "4": "ד", "5": "ה", "6": "ו", "7": "ז", "8": "ח"
+    };
+    const grade = validLetters.includes(cleanGrade)
+      ? cleanGrade
+      : (numMap[cleanGrade] ?? "א");
     const role = raw.role === "teacher" ? "teacher" : "kid";
 
     if (!username || !password || !full_name) {

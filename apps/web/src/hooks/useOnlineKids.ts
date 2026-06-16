@@ -8,7 +8,7 @@ export interface PublicKidProfile {
   username: string;
   full_name: string;
   gender: "boy" | "girl";
-  grade: number;
+  grade: string;
   avatar_color: string;
   avatar_preset_id: string | null;
   avatar_url: string | null;

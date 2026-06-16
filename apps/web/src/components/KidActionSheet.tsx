@@ -8,7 +8,6 @@ import { sendChallenge } from "@/lib/challengeApi";
 import { blockKid } from "@/lib/friendsApi";
 import { supabase } from "@/lib/supabase";
 import type { PublicKidProfile } from "@/hooks/useOnlineKids";
-import { cn } from "@/lib/cn";
 
 interface GameCatalogRow {
   id: string;
