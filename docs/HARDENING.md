@@ -31,8 +31,9 @@ Operational notes for production. Aligned with `ARCHITECTURE.md` and `tmp/loggin
 ## Admin stats (app-level)
 
 - `GET /api/admin/stats` per server — requires `admin_profiles` bearer JWT.
-- In-memory counters only (connections, rooms, intent throughput); **no** in-app CPU/memory charts.
-- Federated admin UI planned (logging spec Phase 5).
+- **On-Demand Live Flushing**: When `/api/admin/stats` is requested, the servers run `onAdminStatsQuery` to flush all active rooms' in-memory launches and FPS telemetry to the database before returning the stats snapshot.
+- **Polling Optimization**: The Admin UI pauses polling `/api/admin/stats` requests when the tab is hidden, preventing background tabs from generating redundant REST requests and database writes.
+- **Historical stats**: Admin UI displays a grid of catalog games with aggregated launch counts and details on player history/multiplayer sessions.
 
 ## Audit trail
 

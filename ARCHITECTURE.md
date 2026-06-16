@@ -217,7 +217,13 @@ Supabase JWT; gender checks on join + LiveKit tokens; server-authoritative game 
 
 ## 13. Observability & ops
 
-`packages/observability`: Pino, correlation IDs, `/api/admin/stats`, client `/api/telemetry` ingest, LiveKit webhook + voice stats. Wired on **both** Railway services. Admin **סטטיסטיקות** tab (`AdminStatsSection`) federates game-server + minecraft-server + LiveKit participant counts. Client: `ErrorBoundary` + `utils/telemetry.ts`. Spec/history: `tmp/logging_coverage_prototype.md`.
+`packages/observability`: Pino, correlation IDs, `/api/admin/stats`, client `/api/telemetry` ingest, LiveKit webhook + voice stats. Wired on **both** Railway services.
+
+**Admin Stats & Telemetry Persistence:**
+- **In-Memory Buffering**: To prevent per-tick database writes, client FPS metrics and player launches are aggregated in-memory on the servers (`launchTracker.ts`, `fpsAggregator.ts`) and flushed to Supabase (`game_launch_stats`, `minecraft_fps_stats`) at session boundaries.
+- **Disconnect Flushing**: When a player disconnects leaving a room empty, the server auto-flushes their accumulated stats to the database. For Minecraft, this flush has a 1-second delay (`setTimeout`) to ensure the final clientside unmount telemetry fetch (sent via `keepalive` fetch) arrives and is ingested.
+- **Live Admin Flushing**: When an admin loads or refreshes the stats page, the server intercepts the stats request and invokes a non-destructive flush (`onAdminStatsQuery` hook) of all active game rooms. This flushes active launch/FPS metrics to the database without deleting active session keys from memory.
+- **Polling Optimization**: The Admin Stats UI dashboard tab (`AdminStatsSection`) monitors tab visibility via the Page Visibility API. It pauses stats polling requests immediately when the browser tab is hidden to conserve network bandwidth and backend server CPU cycles.
 
 `GET /health`, `GET /ready`, rate limits. Details: `docs/HARDENING.md`.
 
