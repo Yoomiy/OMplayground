@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
@@ -25,7 +24,6 @@ interface SessionRow {
 
 export function TeacherPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const { profile, loading } = useProfile();
   const { isAdmin, loading: adminLoading } = useIsAdmin();
 

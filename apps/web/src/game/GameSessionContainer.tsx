@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { io, type Socket } from "socket.io-client";
-import type { BreakoutMpState } from "@playground/game-logic";
 import { supabase } from "@/lib/supabase";
-import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { usePersistedSessionChat } from "@/hooks/usePersistedSessionChat";
 import { useTeacherSessionChat } from "@/hooks/useTeacherSessionChat";
@@ -64,26 +62,7 @@ function endOverlayHeadline(
  * Map of `gameKey` (matches `games.game_url`) → client board renderer.
  * The container stays game-agnostic; new games just register here.
  */
-interface BoardProps {
-  gameState: unknown;
-  mySymbol: string | null;
-  myUserId: string | null;
-  onIntent: (intent: unknown) => void;
-  isHost?: boolean;
-  endOverlay?: EndOverlay | null;
-  rematch?: RematchState | null;
-  canVoteRematch?: boolean;
-  acceptedRematch?: boolean;
-  refusedRematch?: boolean;
-  onRequestRematch?: () => void;
-  onRespondRematch?: (accept: boolean) => void;
-  onGoHome?: () => void;
-  onLiveDelta?: (delta: any) => void;
-  subscribeLiveDeltas?: (cb: (payload: any) => void) => () => void;
-  paused?: boolean;
-  players?: RoomPlayer[];
-  connectedPlayers?: RoomPlayer[];
-}
+
 
 /** In dev, prefer same-origin + Vite proxy so the browser does not hit :8080 directly (avoids wrong URL / CORS). */
 function gameServerUrl(): string {
@@ -122,7 +101,6 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const inviteCode = searchParams.get("invite") ?? undefined;
-  const { user } = useAuth();
   const { profile } = useProfile();
   const { isAdmin } = useIsAdmin();
   const isTeacherObserver = profile?.role === "teacher";

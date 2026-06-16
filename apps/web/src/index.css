@@ -21,12 +21,69 @@
   }
 
   body {
-    @apply min-h-screen text-[rgb(var(--play-text)/1)];
-    background-color: rgb(var(--play-bg));
-    background-image: linear-gradient(
-      165deg,
-      rgb(var(--play-bg)),
-      rgb(var(--play-bg-end))
-    );
+    @apply min-h-screen;
+    color: #f1f5f9;
+    background-color: #0f0a1e;
+    background-image:
+      radial-gradient(ellipse at 20% 50%, rgba(109, 40, 217, 0.18) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+      radial-gradient(ellipse at 60% 80%, rgba(236, 72, 153, 0.12) 0%, transparent 50%),
+      linear-gradient(160deg, #0f0a1e 0%, #130d2b 50%, #0a1628 100%);
   }
 }
+
+@layer utilities {
+  @keyframes kid-float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
+  }
+  @keyframes kid-wiggle {
+    0%, 100% { transform: rotate(-3deg); }
+    50% { transform: rotate(3deg); }
+  }
+  @keyframes kid-pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.12); }
+    100% { transform: scale(1); }
+  }
+  @keyframes star-twinkle {
+    0%, 100% { opacity: 0.3; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.2); }
+  }
+  @keyframes slide-up-fade {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-kid-float { animation: kid-float 3s ease-in-out infinite; }
+  .animate-kid-wiggle { animation: kid-wiggle 0.6s ease-in-out infinite; }
+  .animate-kid-pop { animation: kid-pop 1.2s ease-in-out infinite; }
+  .animate-star-twinkle { animation: star-twinkle 2s ease-in-out infinite; }
+  .animate-slide-up { animation: slide-up-fade 0.4s ease-out both; }
+
+  /* Custom thin scrollbars for dark theme scroll zones */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 9999px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.24);
+  }
+
+  /* Scrollbar hide utility */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
+}
+

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { usePendingChallenge } from "@/hooks/usePendingChallenge";
-import { Button } from "@/components/ui/button";
+
 
 /**
  * Global incoming-challenge banner — appears on any page when another kid
@@ -60,42 +60,41 @@ export function PendingChallengeBanner() {
   }
 
   return (
-    <div className="sticky top-0 z-30 w-full border-b border-amber-200 bg-gradient-to-l from-amber-100 to-orange-50 shadow-md">
+    <div className="sticky top-0 z-30 w-full border-b border-amber-400/30 bg-gradient-to-l from-amber-500/20 to-orange-500/10 shadow-[0_4px_24px_rgba(245,158,11,0.3)] backdrop-blur-md">
       <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6">
         <div className="flex min-w-0 items-start gap-3">
           <span
-            className="mt-0.5 flex size-11 shrink-0 items-center justify-center rounded-2xl bg-amber-400 text-2xl shadow-inner"
+            className="mt-0.5 flex size-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500 text-2xl shadow-[0_4px_12px_rgba(245,158,11,0.4)] animate-kid-pop"
             aria-hidden
           >
             🎮
           </span>
           <div>
-            <p className="text-base font-bold text-amber-950">
-              אתגר מ-{fromName ?? "חבר"}
+            <p className="text-base font-black text-amber-300">
+              אתגר מ-{fromName ?? "חבר"}!
             </p>
-            <p className="text-sm text-amber-900/90">
-              מישהו מזמין אותך למשחק — רוצה להצטרף?
+            <p className="text-sm text-white/70">
+              מישהו מזמין אותך למשחק — רוצה להצטרף? 🚀
             </p>
           </div>
         </div>
         <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row">
-          <Button
+          <button
             type="button"
-            size="lg"
             disabled={busy}
             onClick={() => void onAccept()}
+            className="rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 border border-amber-300/50 px-6 py-2.5 text-sm font-black text-white shadow-[0_4px_12px_rgba(245,158,11,0.5)] hover:shadow-[0_4px_16px_rgba(245,158,11,0.7)] hover:-translate-y-0.5 transition-all disabled:opacity-50"
           >
-            בואו נשחק!
-          </Button>
-          <Button
-            variant="outline"
+            בואו נשחק! 🎉
+          </button>
+          <button
             type="button"
-            size="lg"
             disabled={busy}
             onClick={() => void onDecline()}
+            className="rounded-2xl bg-white/10 border border-white/20 px-6 py-2.5 text-sm font-black text-white/70 hover:bg-white/20 hover:text-white transition-all disabled:opacity-50"
           >
             אולי אחר כך
-          </Button>
+          </button>
         </div>
       </div>
     </div>

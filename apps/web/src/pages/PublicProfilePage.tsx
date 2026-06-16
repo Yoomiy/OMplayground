@@ -13,7 +13,8 @@ import { sendChallenge } from "@/lib/challengeApi";
 import { blockKid } from "@/lib/friendsApi";
 import { ComposeMessage } from "@/components/ComposeMessage";
 import { KidAvatar } from "@/components/KidAvatar";
-import { Button } from "@/components/ui/button";
+import { KidDesktopShell, desktopPanelClass } from "@/components/KidDesktopShell";
+import { cn } from "@/lib/cn";
 
 interface GameCatalogRow {
   id: string;
@@ -125,112 +126,132 @@ export function PublicProfilePage() {
 
   if (kidId && user?.id === kidId) {
     return (
-      <div className="mx-auto max-w-lg p-6">
-        <Button asChild>
-          <Link to="/profile">עבור לפרופיל שלי</Link>
-        </Button>
-      </div>
+      <KidDesktopShell title="הפרופיל שלי" subtitle="צפייה בפרופיל האישי">
+        <div className="mx-auto max-w-lg p-6">
+          <Link
+            to="/profile"
+            className="w-full flex items-center justify-center rounded-2xl bg-gradient-to-r from-violet-500 to-indigo-500 border border-violet-400/50 py-3.5 text-sm font-black text-white shadow-[0_4px_12px_rgba(139,92,246,0.3)] hover:shadow-[0_4px_16px_rgba(139,92,246,0.5)] hover:-translate-y-0.5 transition-all duration-200"
+          >
+            עבור לפרופיל שלי 👤
+          </Link>
+        </div>
+      </KidDesktopShell>
     );
   }
 
   if (loading) {
-    return <p className="p-6 text-sm text-slate-500">טוען…</p>;
+    return (
+      <KidDesktopShell title="טוען..." subtitle="טוען פרטי פרופיל">
+        <p className="p-6 text-sm font-bold text-white/50 text-center">טוען את פרטי הפרופיל…</p>
+      </KidDesktopShell>
+    );
   }
 
   if (!profile) {
     return (
-      <div className="mx-auto max-w-lg p-6">
-        <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
-          {err ?? "הפרופיל לא זמין. ייתכן שהוא חסום או לא באותו מגדר."}
-        </p>
-        <Button className="mt-4" variant="outline" asChild>
-          <Link to="/home">בית</Link>
-        </Button>
-      </div>
+      <KidDesktopShell title="פרופיל לא זמין" subtitle="שגיאה בטעינת הפרופיל">
+        <div className="mx-auto max-w-lg p-6 flex flex-col gap-4">
+          <p className="rounded-2xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-300">
+            {err ?? "הפרופיל לא זמין. ייתכן שהוא חסום או לא באותו מגדר."}
+          </p>
+          <Link
+            to="/home"
+            className="w-full flex items-center justify-center rounded-2xl bg-white/10 border border-white/20 py-3 text-xs font-black text-white hover:bg-white/15 hover:-translate-y-0.5 transition-all duration-200"
+          >
+            חזרה ללוח המשחקים 🎮
+          </Link>
+        </div>
+      </KidDesktopShell>
     );
   }
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-8 sm:px-6">
-      <div className="absolute left-4 top-4">
-        <Button variant="outline" size="sm" asChild>
-          <Link to="/home">בית</Link>
-        </Button>
-      </div>
-      <header className="rounded-3xl border border-slate-200/90 bg-white/95 p-6 text-center shadow-play">
-        <KidAvatar
-          profile={profile}
-          presets={presets}
-          className="mx-auto size-28 min-h-[112px] min-w-[112px] rounded-3xl text-5xl"
-        />
-        <h1 className="mt-4 text-3xl font-bold text-slate-900">
-          {profile.full_name}
-        </h1>
-        <p className="mt-1 text-sm text-slate-600">
-          @{profile.username} · כיתה {profile.grade}
-        </p>
-      </header>
+    <KidDesktopShell
+      title={`הפרופיל של ${profile.full_name}`}
+      subtitle={`צפייה בפרטים ואתגר למשחק של ${profile.full_name}`}
+      contentClassName="relative grid min-h-[calc(100vh-136px)] gap-5 lg:grid-cols-[1fr_320px] grid-cols-1 items-start max-w-4xl mx-auto"
+    >
+      <div className="flex flex-col gap-5">
+        <header className={desktopPanelClass("p-6 text-center flex flex-col items-center")}>
+          <KidAvatar
+            profile={profile}
+            presets={presets}
+            className="mx-auto size-28 min-h-[112px] min-w-[112px] rounded-3xl text-5xl border-4 border-white/20 shadow-lg"
+          />
+          <h1 className="mt-4 text-2xl font-black text-white leading-tight">
+            {profile.full_name}
+          </h1>
+          <p className="mt-1 text-xs font-bold text-white/50">
+            @{profile.username} · כיתה {profile.grade}
+          </p>
+        </header>
 
-      {err ? (
-        <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
-          {err}
-        </p>
-      ) : null}
-      {msg ? (
-        <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900">
-          {msg}
-        </p>
-      ) : null}
-
-      <section className="rounded-3xl border border-slate-200/90 bg-white/95 p-5 shadow-play">
-        <h2 className="text-lg font-bold text-slate-900">פעולות</h2>
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <Button
-            variant="outline"
-            type="button"
-            disabled={busy !== null}
-            onClick={() => setComposing(true)}
-          >
-            שלח הודעה
-          </Button>
-          <Button variant="outline" asChild>
-            <Link to={`/inbox?kidId=${profile.id}`}>פתח צ'אט</Link>
-          </Button>
-          <Button
-            variant="destructive"
-            type="button"
-            disabled={busy !== null}
-            onClick={() => void block()}
-          >
-            {busy === "block" ? "חוסם…" : "חסום משתמש"}
-          </Button>
-        </div>
-      </section>
-
-      <section className="rounded-3xl border border-slate-200/90 bg-white/95 p-5 shadow-play">
-        <h2 className="text-lg font-bold text-slate-900">הזמן למשחק</h2>
-        {catalog.length === 0 ? (
-          <p className="mt-2 text-sm text-slate-500">אין משחקים זמינים לאתגר.</p>
-        ) : (
-          <ul className="mt-4 space-y-2">
-            {catalog.map((game) => (
-              <li key={game.id}>
-                <Button
-                  className="w-full justify-between"
-                  type="button"
-                  disabled={busy !== null}
-                  onClick={() => void challenge(game.id)}
-                >
-                  <span>{game.name_he}</span>
-                  <span className="text-xs font-semibold opacity-90">
-                    {busy === `challenge:${game.id}` ? "שולח…" : "אתגר"}
-                  </span>
-                </Button>
-              </li>
-            ))}
-          </ul>
+        {err && (
+          <p className="rounded-2xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-300 shadow-sm" role="alert">
+            ⚠️ {err}
+          </p>
         )}
-      </section>
+        {msg && (
+          <p className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm font-bold text-emerald-400 shadow-sm" role="alert">
+            ✅ {msg}
+          </p>
+        )}
+
+        <section className={desktopPanelClass("p-5")}>
+          <h2 className="text-base font-black text-white">הזמן למשחק</h2>
+          {catalog.length === 0 ? (
+            <p className="mt-3 text-xs font-bold text-white/50">אין משחקים זמינים לאתגר.</p>
+          ) : (
+            <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
+              {catalog.map((game) => (
+                <li key={game.id}>
+                  <button
+                    type="button"
+                    disabled={busy !== null}
+                    onClick={() => void challenge(game.id)}
+                    className="w-full flex items-center justify-between rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 border border-violet-400/50 py-3 px-4 text-xs font-black text-white shadow-[0_4px_12px_rgba(139,92,246,0.3)] hover:shadow-[0_4px_16px_rgba(139,92,246,0.5)] hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50"
+                  >
+                    <span>{game.name_he}</span>
+                    <span className="rounded-lg bg-white/20 px-2 py-0.5 text-[10px] font-black">
+                      {busy === `challenge:${game.id}` ? "שולח…" : "אתגר ⚔️"}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
+
+      <aside className="space-y-4 w-full">
+        <section className={desktopPanelClass("p-5")}>
+          <h2 className="text-base font-black text-white">פעולות</h2>
+          <div className="mt-4 flex flex-col gap-2.5">
+            <button
+              type="button"
+              className="w-full rounded-2xl bg-white/10 border border-white/20 hover:bg-white/15 py-3 text-xs font-black text-white hover:-translate-y-0.5 transition-all duration-200"
+              disabled={busy !== null}
+              onClick={() => setComposing(true)}
+            >
+              ✉️ שלח הודעה מהירה
+            </button>
+            <Link
+              to={`/inbox?kidId=${profile.id}`}
+              className="w-full flex items-center justify-center rounded-2xl bg-gradient-to-r from-violet-500 to-indigo-500 border border-violet-400/50 py-3 text-xs font-black text-white shadow-[0_4px_12px_rgba(139,92,246,0.3)] hover:shadow-[0_4px_16px_rgba(139,92,246,0.5)] hover:-translate-y-0.5 transition-all duration-200 text-center"
+            >
+              💬 פתח שיחה מלאה
+            </Link>
+            <button
+              type="button"
+              className="w-full rounded-2xl bg-rose-500/10 border border-rose-400/30 hover:bg-rose-500 hover:text-white py-3 text-xs font-black text-rose-400 hover:-translate-y-0.5 transition-all duration-200"
+              disabled={busy !== null}
+              onClick={() => void block()}
+            >
+              {busy === "block" ? "חוסם…" : "⛔ חסום משתמש"}
+            </button>
+          </div>
+        </section>
+      </aside>
 
       {user && me ? (
         <ComposeMessage
@@ -243,6 +264,6 @@ export function PublicProfilePage() {
           toDisplayName={profile.full_name}
         />
       ) : null}
-    </div>
+    </KidDesktopShell>
   );
 }

@@ -6,9 +6,8 @@ import { useProfile } from "@/hooks/useProfile";
 import { useInbox, type InboxThread } from "@/hooks/useInbox";
 import { markReadByPartner, reportMessage, sendMessage } from "@/lib/messagesApi";
 import { KidAvatar } from "@/components/KidAvatar";
-import { Button } from "@/components/ui/button";
 import { KidDesktopShell, desktopPanelClass } from "@/components/KidDesktopShell";
-import { fieldInputClass } from "@/lib/fieldStyles";
+import { kidFieldInputClass } from "@/lib/fieldStyles";
 import { cn } from "@/lib/cn";
 
 const REPORT_NOTE_MAX_LENGTH = 500;
@@ -31,39 +30,39 @@ function ThreadRow({
       type="button"
       onClick={onOpen}
       className={cn(
-        "grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border px-3 py-3 text-right transition",
+        "grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border px-3 py-3 text-right transition-all duration-200",
         active
-          ? "border-indigo-300 bg-indigo-50 shadow-sm"
-          : "border-slate-200 bg-white hover:border-indigo-200 hover:bg-slate-50"
+          ? "border-violet-400 bg-violet-500/20 text-white shadow-[0_0_12px_rgba(139,92,246,0.3)]"
+          : "border-white/10 bg-white/5 text-white/80 hover:bg-white/10 hover:border-white/20"
       )}
     >
       {thread.partner ? (
         <KidAvatar
           profile={thread.partner}
-          className="size-10 min-h-10 min-w-10 rounded-xl text-sm"
+          className="size-10 min-h-10 min-w-10 rounded-xl text-sm border border-white/10"
         />
       ) : (
-        <span className="flex size-10 items-center justify-center rounded-xl bg-slate-200 text-sm font-black text-slate-600">
+        <span className="flex size-10 items-center justify-center rounded-xl bg-white/10 text-sm font-black text-white/60">
           צוות
         </span>
       )}
       <span className="min-w-0">
         <span className="flex items-center gap-2">
-          <span className="truncate text-sm font-black text-slate-900">
+          <span className={cn("truncate text-sm font-black transition-colors", active ? "text-violet-300" : "text-white")}>
             {thread.partner?.full_name ?? thread.lastMessage.from_display_name}
           </span>
           {thread.partner?.grade ? (
-            <span className="shrink-0 text-[11px] font-bold text-slate-500">
+            <span className={cn("shrink-0 text-[11px] font-bold", active ? "text-violet-300/60" : "text-white/40")}>
               כיתה {thread.partner.grade}
             </span>
           ) : null}
         </span>
-        <span className="block truncate text-xs font-semibold text-slate-500">
+        <span className={cn("block truncate text-xs font-semibold mt-0.5", active ? "text-white/70" : "text-white/40")}>
           {preview}
         </span>
       </span>
       {thread.unreadCount > 0 ? (
-        <span className="rounded-full bg-indigo-600 px-2 py-1 text-[11px] font-black leading-none text-white">
+        <span className="rounded-full bg-rose-500 px-2 py-1 text-[11px] font-black leading-none text-white shadow-[0_0_8px_rgba(239,68,68,0.5)]">
           {thread.unreadCount}
         </span>
       ) : null}
@@ -173,29 +172,29 @@ export function InboxPage() {
       contentClassName="grid min-h-[calc(100vh-136px)] gap-4 xl:grid-cols-[360px_minmax(0,1fr)_280px]"
     >
       <aside className={desktopPanelClass("flex min-h-[560px] flex-col p-4")}>
-        <div className="mb-3 border-b border-slate-100 pb-3">
-          <h2 className="text-base font-black text-slate-950">שיחות</h2>
-          <p className="text-xs font-semibold text-slate-500">
+        <div className="mb-3 border-b border-white/10 pb-3">
+          <h2 className="text-base font-black text-white">שיחות</h2>
+          <p className="text-xs font-bold text-white/50">
             {threads.length} שיחות
           </p>
         </div>
         <label className="relative mb-3 block">
-          <Search className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" aria-hidden />
+          <Search className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-white/40" aria-hidden />
           <input
-            className="min-h-10 w-full rounded-xl border-2 border-slate-200 bg-white py-2 pl-3 pr-9 text-sm font-semibold outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+            className={kidFieldInputClass}
             value={threadSearch}
             onChange={(event) => setThreadSearch(event.target.value)}
-            placeholder="חיפוש שיחה…"
+            placeholder="חפשו שיחה..."
           />
         </label>
-        <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+        <div className="min-h-0 flex-1 overflow-y-auto pr-1 scrollbar-hide">
           {loading ? (
-            <p className="text-sm font-medium text-slate-500">טוען…</p>
+            <p className="text-sm font-bold text-white/50">טוען…</p>
           ) : filteredThreads.length === 0 ? (
-            <div className="rounded-xl bg-slate-50 p-4 text-sm font-semibold text-slate-500">
+            <div className="rounded-2xl border border-dashed border-white/15 bg-white/5 p-4 text-sm font-bold text-white/50 text-center">
               <p>אין שיחות מתאימות.</p>
-              <Link className="mt-2 inline-block text-indigo-700 underline decoration-2 underline-offset-4" to="/home">
-                מצא ילדים מחוברים
+              <Link className="mt-2 inline-block text-violet-400 underline decoration-2 underline-offset-4 hover:text-violet-300" to="/home">
+                מצאו חברים מחוברים 🚀
               </Link>
             </div>
           ) : (
@@ -223,46 +222,50 @@ export function InboxPage() {
 
         {!active ? (
           <div className="m-auto max-w-sm text-center">
-            <p className="text-lg font-black text-slate-900">בחרו שיחה</p>
-            <p className="mt-1 text-sm font-semibold text-slate-500">
-              או חזרו ללוח כדי למצוא ילד מחובר.
+            <span className="text-5xl block mb-3 animate-kid-float">💬</span>
+            <p className="text-lg font-black text-white">בחרו שיחה</p>
+            <p className="mt-1 text-sm font-bold text-white/50">
+              או חזרו ללוח כדי למצוא חבר מחובר.
             </p>
-            <Button className="mt-4" asChild>
-              <Link to="/home">ללוח המשחקים</Link>
-            </Button>
+            <Link
+              to="/home"
+              className="mt-4 inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-violet-500 to-indigo-500 border border-violet-400/50 px-6 py-3.5 text-sm font-black text-white shadow-[0_4px_16px_rgba(139,92,246,0.4)] hover:shadow-[0_4px_20px_rgba(139,92,246,0.6)] hover:-translate-y-0.5 transition-all"
+            >
+              ללוח המשחקים 🎮
+            </Link>
           </div>
         ) : (
           <>
-            <header className="mb-3 flex items-center gap-3 border-b border-slate-100 pb-3">
+            <header className="mb-3 flex items-center gap-3 border-b border-white/10 pb-3">
               {active.partner ? (
                 <KidAvatar
                   profile={active.partner}
-                  className="size-11 min-h-11 min-w-11 rounded-xl text-sm"
+                  className="size-11 min-h-11 min-w-11 rounded-xl text-sm border border-white/10"
                 />
               ) : null}
               <div className="min-w-0">
-                <h3 className="truncate text-lg font-black text-slate-950">
+                <h3 className="truncate text-lg font-black text-white">
                   {active.partner?.full_name ?? active.partnerId.slice(0, 8)}
                 </h3>
                 {active.partner ? (
-                  <p className="text-xs font-semibold text-slate-500">
+                  <p className="text-xs font-bold text-white/50">
                     @{active.partner.username} · כיתה {active.partner.grade}
                   </p>
                 ) : null}
               </div>
             </header>
 
-            <ul className="flex min-h-0 flex-1 flex-col-reverse gap-2 overflow-y-auto pr-1 text-sm">
+            <ul className="flex min-h-0 flex-1 flex-col-reverse gap-2 overflow-y-auto pr-1 text-sm custom-scrollbar">
               {active.messages.map((message) => {
                 const mine = message.from_kid_id === user?.id;
                 return (
                   <li
                     key={message.id}
                     className={cn(
-                      "max-w-[72%] rounded-2xl px-4 py-3",
+                      "max-w-[72%] rounded-2xl px-4 py-2.5 text-sm",
                       mine
-                        ? "mr-auto rounded-br-md bg-indigo-600 text-white shadow-sm"
-                        : "ml-auto rounded-bl-md bg-slate-100 text-slate-900"
+                        ? "mr-auto rounded-br-sm bg-gradient-to-r from-violet-500 to-indigo-500 text-white shadow-[0_4px_12px_rgba(139,92,246,0.3)]"
+                        : "ml-auto rounded-bl-sm bg-white/10 border border-white/5 text-white"
                     )}
                   >
                     <span className="block whitespace-pre-wrap break-words">
@@ -270,9 +273,9 @@ export function InboxPage() {
                     </span>
                     {!mine && active.partner ? (
                       reportDraft?.messageId === message.id ? (
-                        <div className="mt-3 w-full space-y-2 rounded-xl border border-indigo-100 bg-white p-3 text-right text-slate-900 shadow-sm">
+                        <div className="mt-3 w-full space-y-2.5 rounded-2xl border border-rose-500/25 bg-rose-500/10 p-3 text-right text-white shadow-md">
                           <textarea
-                            className={cn(fieldInputClass, "min-h-[74px] resize-none text-sm")}
+                            className={cn(kidFieldInputClass, "min-h-[74px] resize-none text-xs")}
                             maxLength={REPORT_NOTE_MAX_LENGTH}
                             value={reportDraft.note}
                             onChange={(event) =>
@@ -281,23 +284,33 @@ export function InboxPage() {
                             placeholder="מה קרה בהודעה הזאת?"
                           />
                           <div className="flex flex-wrap items-center justify-between gap-2">
-                            <span className="text-xs font-semibold text-slate-500">
+                            <span className="text-[10px] font-bold text-white/40">
                               {reportDraft.note.length}/{REPORT_NOTE_MAX_LENGTH}
                             </span>
                             <div className="flex gap-2">
-                              <Button type="button" variant="ghost" size="sm" disabled={reportBusy} onClick={() => setReportDraft(null)}>
+                              <button
+                                type="button"
+                                className="rounded-xl px-3 py-1 text-xs font-bold text-white/60 hover:bg-white/10 transition-colors"
+                                disabled={reportBusy}
+                                onClick={() => setReportDraft(null)}
+                              >
                                 ביטול
-                              </Button>
-                              <Button type="button" size="sm" disabled={reportBusy} onClick={() => void onReport()}>
+                              </button>
+                              <button
+                                type="button"
+                                className="rounded-xl bg-rose-500 hover:bg-rose-600 px-3 py-1 text-xs font-black text-white shadow-sm transition-all"
+                                disabled={reportBusy}
+                                onClick={() => void onReport()}
+                              >
                                 שלח דיווח
-                              </Button>
+                              </button>
                             </div>
                           </div>
                         </div>
                       ) : (
                         <button
                           type="button"
-                          className="mt-2 block text-xs font-black text-indigo-700 underline decoration-2 underline-offset-2"
+                          className="mt-2 block text-[10px] font-black text-rose-400/80 hover:text-rose-300 underline decoration-2 underline-offset-2 transition-colors"
                           onClick={() =>
                             setReportDraft({
                               messageId: message.id,
@@ -306,7 +319,7 @@ export function InboxPage() {
                             })
                           }
                         >
-                          דווח לצוות
+                          🚩 דווח לצוות
                         </button>
                       )
                     ) : null}
@@ -315,13 +328,13 @@ export function InboxPage() {
               })}
             </ul>
 
-            <div className="mt-3 flex gap-2 border-t border-slate-100 pt-3">
+            <div className="mt-3 flex gap-2 border-t border-white/10 pt-3">
               <input
-                className={cn(fieldInputClass, "min-h-11 flex-1")}
+                className={cn(kidFieldInputClass, "min-h-11 flex-1")}
                 maxLength={300}
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
-                placeholder="כתוב הודעה…"
+                placeholder="כתבו הודעה..."
                 onKeyDown={(event) => {
                   if (event.key === "Enter" && !event.shiftKey) {
                     event.preventDefault();
@@ -329,37 +342,45 @@ export function InboxPage() {
                   }
                 }}
               />
-              <Button type="button" disabled={busy || !draft.trim()} onClick={() => void send()}>
+              <button
+                type="button"
+                className="rounded-2xl bg-gradient-to-r from-violet-500 to-indigo-500 hover:shadow-[0_4px_12px_rgba(139,92,246,0.3)] border border-violet-400/50 px-5 py-2.5 text-sm font-black text-white hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50"
+                disabled={busy || !draft.trim()}
+                onClick={() => void send()}
+              >
                 שלח
-              </Button>
+              </button>
             </div>
           </>
         )}
       </section>
 
       <aside className={desktopPanelClass("hidden p-4 xl:block")}>
-        <h2 className="text-base font-black text-slate-950">פרטי שיחה</h2>
+        <h2 className="text-base font-black text-white">פרטי שיחה</h2>
         {active?.partner ? (
           <div className="mt-4 space-y-4">
             <KidAvatar
               profile={active.partner}
-              className="size-24 min-h-24 min-w-24 rounded-2xl text-3xl"
+              className="size-24 min-h-24 min-w-24 rounded-2xl text-3xl border-2 border-white/20"
             />
             <div>
-              <p className="text-lg font-black text-slate-950">{active.partner.full_name}</p>
-              <p className="text-sm font-semibold text-slate-500">
+              <p className="text-lg font-black text-white">{active.partner.full_name}</p>
+              <p className="text-sm font-bold text-white/50">
                 @{active.partner.username}
               </p>
-              <p className="mt-1 text-sm font-semibold text-slate-500">
+              <p className="mt-1 text-sm font-bold text-white/50">
                 כיתה {active.partner.grade}
               </p>
             </div>
-            <Button variant="outline" asChild>
-              <Link to={`/profile/${active.partner.id}`}>צפה בפרופיל</Link>
-            </Button>
+            <Link
+              to={`/profile/${active.partner.id}`}
+              className="mt-4 w-full flex items-center justify-center rounded-2xl bg-white/10 border border-white/20 py-3 text-xs font-black text-white hover:bg-white/15 hover:-translate-y-0.5 transition-all duration-200"
+            >
+              צפה בפרופיל 👤
+            </Link>
           </div>
         ) : (
-          <p className="mt-4 text-sm font-semibold text-slate-500">
+          <p className="mt-4 text-sm font-bold text-white/40">
             בחרו שיחה כדי לראות פרטים.
           </p>
         )}

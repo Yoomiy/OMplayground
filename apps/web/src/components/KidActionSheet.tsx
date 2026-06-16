@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { ComposeMessage } from "@/components/ComposeMessage";
 import { KidAvatar } from "@/components/KidAvatar";
 import { useAuth } from "@/hooks/useAuth";
@@ -97,7 +96,7 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
   return (
     <>
       <div
-        className="fixed inset-0 z-40 flex items-end justify-center bg-slate-900/40 p-4 backdrop-blur-[2px] sm:items-center"
+        className="fixed inset-0 z-40 flex items-end justify-center bg-slate-950/60 p-4 backdrop-blur-md sm:items-center animate-slide-up"
         role="dialog"
         aria-modal="true"
         aria-labelledby="kid-action-title"
@@ -106,10 +105,10 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
         }}
       >
         <div
-          className="max-h-[90vh] w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl"
+          className="max-h-[90vh] w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-[#150d32]/95 shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
           onClick={(e) => e.stopPropagation()}
         >
-          <header className="flex items-start gap-4 border-b border-slate-100 bg-gradient-to-l from-indigo-50/80 to-white p-5">
+          <header className="flex items-start gap-4 border-b border-white/10 bg-white/5 p-5">
             <KidAvatar
               profile={kid}
               className="size-14 min-h-[56px] min-w-[56px] shrink-0 text-xl"
@@ -117,75 +116,75 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
             <div className="min-w-0 flex-1 pt-0.5">
               <h3
                 id="kid-action-title"
-                className="text-xl font-bold text-slate-900"
+                className="text-xl font-black text-white"
               >
                 {kid.full_name}
               </h3>
-              <p className="truncate text-sm text-slate-500">@{kid.username}</p>
+              <p className="truncate text-sm font-bold text-white/50">@{kid.username}</p>
             </div>
             <button
               type="button"
-              className="shrink-0 rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100"
+              className="shrink-0 rounded-xl px-3 py-2 text-sm font-bold text-white/60 hover:bg-white/10"
               onClick={onClose}
             >
               ✕
             </button>
           </header>
 
-          <div className="max-h-[min(60vh,420px)] space-y-5 overflow-y-auto p-5">
+          <div className="max-h-[min(60vh,420px)] space-y-5 overflow-y-auto p-5 custom-scrollbar">
             {err ? (
               <p
-                className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900"
+                className="rounded-2xl border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-sm font-bold text-amber-300"
                 role="alert"
               >
-                {err}
+                ⚠️ {err}
               </p>
             ) : null}
             {info ? (
               <p
-                className="rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-900"
+                className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-3 py-2 text-sm font-bold text-emerald-300"
                 role="status"
               >
-                {info}
+                ✅ {info}
               </p>
             ) : null}
 
             <section className="space-y-2">
-              <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500">
+              <h4 className="text-xs font-bold uppercase tracking-wide text-white/40">
                 נשחק ביחד
               </h4>
               {catalog.length === 0 ? (
-                <p className="text-sm text-slate-500">
+                <p className="text-sm font-bold text-white/50">
                   אין משחקים זמינים לאתגר
                 </p>
               ) : (
                 <ul className="flex flex-col gap-2">
                   {catalog.map((g) => (
                     <li key={g.id}>
-                      <Button
-                        className="w-full justify-between"
+                      <button
+                        className="w-full flex items-center justify-between gap-3 rounded-2xl bg-gradient-to-r from-violet-500 to-indigo-500 border border-violet-400/50 px-4 py-3 text-sm font-black text-white shadow-[0_4px_12px_rgba(139,92,246,0.3)] hover:shadow-[0_4px_16px_rgba(139,92,246,0.5)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:opacity-50"
                         type="button"
                         disabled={busy !== null}
                         onClick={() => void challenge(g.id)}
                       >
                         <span>{g.name_he}</span>
-                        <span className="text-xs font-semibold opacity-90">
-                          {busy === `challenge:${g.id}` ? "שולח…" : "אתגר"}
+                        <span className="text-xs font-black opacity-90">
+                          {busy === `challenge:${g.id}` ? "שולח…" : "אתגר 🎮"}
                         </span>
-                      </Button>
+                      </button>
                     </li>
                   ))}
                 </ul>
               )}
             </section>
 
-            <section className="space-y-2 border-t border-slate-100 pt-4">
-              <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                הודעה
+            <section className="space-y-2 border-t border-white/10 pt-4">
+              <h4 className="text-xs font-bold uppercase tracking-wide text-white/40">
+                פעולות
               </h4>
               <div className="flex flex-col gap-2">
-                <Button
-                  variant="outline"
+                <button
+                  className="w-full text-center rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-black text-white/70 hover:bg-white/10 hover:text-white transition duration-200 disabled:opacity-50"
                   type="button"
                   disabled={busy !== null}
                   onClick={() => {
@@ -193,51 +192,45 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
                     navigate(`/profile/${kid.id}`);
                   }}
                 >
-                  צפה בפרופיל
-                </Button>
-                <Button
-                  variant="outline"
+                  צפה בפרופיל 👀
+                </button>
+                <button
+                  className="w-full text-center rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-black text-white/70 hover:bg-white/10 hover:text-white transition duration-200 disabled:opacity-50"
                   type="button"
                   disabled={busy !== null}
                   onClick={() => setComposing(true)}
                 >
-                  שלח הודעה
-                </Button>
+                  שלח הודעה ✉️
+                </button>
               </div>
             </section>
 
-            <section
-              className={cn(
-                "space-y-2 border-t border-rose-100 pt-4",
-                "rounded-2xl bg-rose-50/50 p-3"
-              )}
-            >
-              <h4 className="text-xs font-bold uppercase tracking-wide text-rose-700">
+            <section className="space-y-2 border-t border-rose-500/25 pt-4 rounded-2xl bg-rose-500/5 p-3">
+              <h4 className="text-xs font-bold uppercase tracking-wide text-rose-400">
                 בטיחות
               </h4>
-              <p className="text-xs text-rose-800/90">
-                חסימה מסתירה את המשתמש ממך. אפשר להסיר חסימה בדף חברים.
+              <p className="text-xs font-bold text-rose-300/80">
+                חסימה מסתירה את המשתמש ממך.
               </p>
-              <Button
-                variant="destructive"
+              <button
+                className="w-full text-center rounded-2xl bg-rose-600 border border-rose-500/50 py-3 text-sm font-black text-white hover:bg-rose-700 transition duration-200 disabled:opacity-50"
                 type="button"
                 disabled={busy !== null}
                 onClick={() => void block()}
               >
-                {busy === "block" ? "חוסם…" : "חסום משתמש"}
-              </Button>
+                {busy === "block" ? "חוסם…" : "חסום משתמש 🚫"}
+              </button>
             </section>
           </div>
 
-          <div className="border-t border-slate-100 bg-slate-50/80 p-4">
-            <Button
-              className="w-full"
-              variant="ghost"
+          <div className="border-t border-white/10 bg-white/5 p-4">
+            <button
+              className="w-full rounded-2xl border border-white/10 bg-white/5 py-3 text-sm font-black text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
               type="button"
               onClick={onClose}
             >
               סגור
-            </Button>
+            </button>
           </div>
         </div>
       </div>

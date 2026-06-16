@@ -2,16 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { GameSessionContainer } from "@/game/GameSessionContainer";
 import { MinecraftSessionContainer } from "@/game/MinecraftSessionContainer";
-import { Button } from "@/components/ui/button";
 import { KidDesktopShell } from "@/components/KidDesktopShell";
 import { supabase } from "@/lib/supabase";
-import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 function PlayPage() {
   const { sessionId } = useParams();
-  const { user } = useAuth();
   const { profile } = useProfile();
   const { isAdmin } = useIsAdmin();
   const [gameName, setGameName] = useState<string>("");
@@ -62,9 +59,12 @@ function PlayPage() {
       title={gameName || "משחק"}
       subtitle="חדר משחק"
       actions={
-        <Button variant="outline" asChild>
-          <Link to={backHref}>{backLabel}</Link>
-        </Button>
+        <Link
+          to={backHref}
+          className="rounded-xl bg-white/10 border border-white/20 hover:bg-white/15 px-4 py-2 text-xs font-black text-white hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 flex items-center justify-center min-h-10 shadow-sm"
+        >
+          {backLabel}
+        </Link>
       }
       contentClassName="min-h-[calc(100vh-136px)]"
     >

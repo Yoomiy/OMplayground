@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { sendMessage } from "@/lib/messagesApi";
 import { cn } from "@/lib/cn";
 
@@ -21,6 +20,7 @@ export function ComposeMessage(props: ComposeMessageProps) {
   if (!props.open) return null;
 
   async function send() {
+    if (!text.trim()) return;
     setErr(null);
     setBusy(true);
     try {
@@ -43,7 +43,7 @@ export function ComposeMessage(props: ComposeMessageProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 p-4 backdrop-blur-[2px] sm:items-center"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/60 p-4 backdrop-blur-md sm:items-center animate-slide-up"
       role="dialog"
       aria-modal="true"
       aria-labelledby="compose-msg-title"
@@ -52,23 +52,23 @@ export function ComposeMessage(props: ComposeMessageProps) {
       }}
     >
       <div
-        className="w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl"
+        className="w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-[#150d32]/95 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="border-b border-slate-100 bg-gradient-to-l from-violet-50 to-white px-5 py-4">
+        <div className="border-b border-white/10 bg-white/5 px-5 py-4">
           <h3
             id="compose-msg-title"
-            className="text-lg font-bold text-slate-900"
+            className="text-lg font-black text-white"
           >
             הודעה ל־{props.toDisplayName}
           </h3>
-          <p className="mt-1 text-sm text-slate-600">עד 300 תווים</p>
+          <p className="mt-1 text-xs font-bold text-white/50">עד 300 תווים</p>
         </div>
         <div className="p-5">
           <textarea
             className={cn(
-              "min-h-[7.5rem] w-full resize-none rounded-2xl border-2 border-slate-200 bg-slate-50/80 px-4 py-3 text-base text-slate-900",
-              "placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              "min-h-[7.5rem] w-full resize-none rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-base font-bold text-white outline-none transition placeholder:text-white/40",
+              "focus:border-violet-400 focus:ring-4 focus:ring-violet-500/20"
             )}
             maxLength={300}
             value={text}
@@ -82,30 +82,34 @@ export function ComposeMessage(props: ComposeMessageProps) {
               }
             }}
           />
-          <div className="mt-2 flex items-center justify-between text-xs font-medium text-slate-500">
+          <div className="mt-2 flex items-center justify-between text-xs font-bold text-white/40">
             <span>{text.length} / 300</span>
             <span>Enter לשליחה</span>
           </div>
           {err ? (
             <p
-              className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900"
+              className="mt-3 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-sm font-bold text-amber-300"
               role="alert"
             >
-              {err}
+              ⚠️ {err}
             </p>
           ) : null}
           <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button variant="outline" type="button" onClick={props.onClose}>
-              ביטול
-            </Button>
-            <Button
+            <button
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-black text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
               type="button"
-              size="lg"
+              onClick={props.onClose}
+            >
+              ביטול
+            </button>
+            <button
+              type="button"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-500 to-indigo-500 border border-violet-400/50 px-5 py-2.5 text-sm font-black text-white shadow-[0_4px_12px_rgba(139,92,246,0.3)] hover:shadow-[0_4px_16px_rgba(139,92,246,0.5)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:opacity-50"
               disabled={busy || !text.trim()}
               onClick={() => void send()}
             >
               {busy ? "שולח…" : "שלח הודעה"}
-            </Button>
+            </button>
           </div>
         </div>
       </div>

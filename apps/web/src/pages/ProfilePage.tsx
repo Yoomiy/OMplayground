@@ -11,9 +11,8 @@ import {
   type AvatarPreset
 } from "@/lib/profileApi";
 import { KidAvatar } from "@/components/KidAvatar";
-import { Button } from "@/components/ui/button";
 import { KidDesktopShell, desktopPanelClass } from "@/components/KidDesktopShell";
-import { fieldInputClass, fieldLabelClass } from "@/lib/fieldStyles";
+import { kidFieldInputClass, kidFieldLabelClass } from "@/lib/fieldStyles";
 import { cn } from "@/lib/cn";
 
 const COLORS = [
@@ -148,12 +147,15 @@ export function ProfilePage() {
   if (!profile || !draftProfile) {
     return (
       <div className="mx-auto max-w-lg p-6">
-        <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
-          {error ?? "לא נמצא פרופיל"}
+        <p className="rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-300">
+          ⚠️ {error ?? "לא נמצא פרופיל"}
         </p>
-        <Button className="mt-4" variant="outline" asChild>
-          <Link to="/home">בית</Link>
-        </Button>
+        <Link
+          to="/home"
+          className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-black text-white/70 hover:bg-white/10 hover:text-white hover:-translate-y-0.5 transition-all duration-200"
+        >
+          בית 🏠
+        </Link>
       </div>
     );
   }
@@ -171,26 +173,26 @@ export function ProfilePage() {
             presets={presets}
             className="size-32 min-h-32 min-w-32 rounded-2xl text-5xl"
           />
-          <h2 className="mt-4 text-2xl font-black text-slate-950">
+          <h2 className="mt-4 text-2xl font-black text-white">
             {fullName || profile.full_name}
           </h2>
-          <p className="text-sm font-semibold text-slate-500">
+          <p className="text-sm font-bold text-white/50">
             @{profile.username}
           </p>
-          <p className="mt-1 rounded-full bg-indigo-50 px-3 py-1 text-sm font-black text-indigo-700">
+          <p className="mt-1.5 rounded-full bg-indigo-500/25 border border-indigo-400/20 px-3 py-1 text-sm font-black text-indigo-300">
             כיתה {profile.grade}
           </p>
         </div>
       </aside>
 
       {err ? (
-        <p className="xl:col-span-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">
-          {err}
+        <p className="xl:col-span-3 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-300">
+          ⚠️ {err}
         </p>
       ) : null}
       {msg ? (
-        <p className="xl:col-span-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-900">
-          {msg}
+        <p className="xl:col-span-3 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm font-bold text-emerald-300">
+          ✅ {msg}
         </p>
       ) : null}
 
@@ -202,10 +204,10 @@ export function ProfilePage() {
             className="size-24 min-h-24 min-w-24 rounded-2xl text-4xl"
           />
           <div className="min-w-0 flex-1 space-y-4">
-            <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
+            <label className={`flex flex-col gap-2 ${kidFieldLabelClass}`}>
               שם תצוגה
               <input
-                className={fieldInputClass}
+                className={kidFieldInputClass}
                 value={fullName}
                 maxLength={80}
                 onChange={(e) => setFullName(e.target.value)}
@@ -213,17 +215,17 @@ export function ProfilePage() {
             </label>
 
             <div className="space-y-2">
-              <p className={fieldLabelClass}>צבע רקע</p>
+              <p className={kidFieldLabelClass}>צבע רקע</p>
               <div className="flex flex-wrap gap-2">
                 {COLORS.map((color) => (
                   <button
                     key={color}
                     type="button"
                     className={cn(
-                      "size-9 rounded-full border-2 shadow-sm",
+                      "size-9 rounded-full border-2 transition-all duration-200",
                       avatarColor === color
-                        ? "border-slate-900"
-                        : "border-white ring-1 ring-slate-200"
+                        ? "border-white scale-110 shadow-[0_0_12px_rgba(255,255,255,0.4)]"
+                        : "border-transparent hover:scale-105"
                     )}
                     style={{ backgroundColor: color }}
                     aria-label={`בחר צבע ${color}`}
@@ -233,48 +235,48 @@ export function ProfilePage() {
               </div>
             </div>
 
-            <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
+            <label className={`flex flex-col gap-2 ${kidFieldLabelClass}`}>
               העלאת תמונה
               <input
-                className={fieldInputClass}
+                className={kidFieldInputClass}
                 type="file"
                 accept="image/png,image/jpeg,image/webp"
                 disabled={busy !== null}
                 onChange={(e) => void handleFile(e.target.files?.[0])}
               />
-              <span className="text-xs font-normal text-slate-500">
+              <span className="text-xs font-bold text-white/40">
                 התמונה תידחס אוטומטית עד 512KB
               </span>
             </label>
 
             {avatarUrl ? (
-              <Button
-                variant="outline"
+              <button
                 type="button"
+                className="rounded-2xl bg-rose-500/10 border border-rose-500/20 px-4 py-2 text-xs font-black text-rose-400 hover:bg-rose-500 hover:text-white hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 shrink-0"
                 disabled={busy !== null}
                 onClick={() => setAvatarUrl(null)}
               >
                 הסר תמונה
-              </Button>
+              </button>
             ) : null}
           </div>
         </div>
 
-        <div className="mt-5 space-y-3 border-t border-slate-100 pt-5">
-          <h2 className="text-lg font-black text-slate-900">אווטארים מוכנים</h2>
+        <div className="mt-5 space-y-3 border-t border-white/10 pt-5">
+          <h2 className="text-lg font-black text-white">אווטארים מוכנים</h2>
           {presets.length === 0 ? (
-            <p className="text-sm text-slate-500">אין אווטארים מוגדרים כרגע.</p>
+            <p className="text-sm font-bold text-white/50">אין אווטארים מוגדרים כרגע.</p>
           ) : (
-            <div className="grid max-h-80 grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
               {presets.map((preset) => (
                 <button
                   key={preset.id}
                   type="button"
                   className={cn(
-                    "rounded-2xl border-2 bg-slate-50 px-3 py-2 text-sm font-semibold transition",
+                    "rounded-2xl border bg-white/5 px-3 py-2.5 text-sm font-black text-white transition-all duration-200",
                     avatarPresetId === preset.key
-                      ? "border-indigo-500 text-indigo-800"
-                      : "border-slate-200 text-slate-700 hover:border-indigo-200"
+                      ? "border-violet-400 bg-violet-500/20 text-violet-300 shadow-[0_0_12px_rgba(139,92,246,0.3)]"
+                      : "border-white/10 text-white/70 hover:border-white/20 hover:bg-white/10"
                   )}
                   onClick={() => {
                     setAvatarPresetId(preset.key);
@@ -291,39 +293,42 @@ export function ProfilePage() {
           )}
         </div>
 
-        <Button
-          className="mt-5 w-full"
+        <button
           type="button"
+          className="mt-5 w-full rounded-2xl bg-gradient-to-r from-violet-500 to-indigo-500 border border-violet-400/50 py-3.5 text-sm font-black text-white shadow-[0_4px_12px_rgba(139,92,246,0.3)] hover:shadow-[0_4px_16px_rgba(139,92,246,0.5)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:opacity-50"
           disabled={busy !== null || !fullName.trim()}
           onClick={() => void saveProfile()}
         >
           {busy === "profile" ? "שומר…" : busy === "avatar" ? "מעלה תמונה…" : "שמור פרופיל"}
-        </Button>
+        </button>
       </section>
 
       <aside className="space-y-4">
         <section className={desktopPanelClass("p-5")}>
-          <h2 className="text-lg font-black text-slate-900">קיצורים</h2>
-          <Button className="mt-4 w-full" size="lg" asChild>
-            <Link to="/inbox">תיבת הדואר שלי</Link>
-          </Button>
+          <h2 className="text-lg font-black text-white">קיצורים</h2>
+          <Link
+            to="/inbox"
+            className="mt-4 w-full flex items-center justify-center rounded-2xl bg-gradient-to-r from-violet-500 to-indigo-500 border border-violet-400/50 py-3.5 text-sm font-black text-white shadow-[0_4px_12px_rgba(139,92,246,0.3)] hover:shadow-[0_4px_16px_rgba(139,92,246,0.5)] hover:-translate-y-0.5 transition-all duration-200"
+          >
+            תיבת הדואר שלי ✉️
+          </Link>
         </section>
-
+ 
         <section className={desktopPanelClass("p-5")}>
-          <h2 className="text-lg font-black text-slate-900">סטטיסטיקות</h2>
+          <h2 className="text-lg font-black text-white">סטטיסטיקות</h2>
           {Object.keys(profile.best_scores).length === 0 ? (
-            <p className="mt-2 text-sm font-semibold text-slate-500">
+            <p className="mt-2 text-sm font-bold text-white/50">
               עדיין אין שיאים שמורים.
             </p>
           ) : (
-            <ul className="mt-3 max-h-72 space-y-2 overflow-y-auto pr-1 text-sm">
+            <ul className="mt-3 space-y-2 text-sm">
               {Object.entries(profile.best_scores).map(([game, score]) => (
                 <li
                   key={game}
-                  className="flex justify-between rounded-xl bg-slate-50 px-4 py-2"
+                  className="flex justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5"
                 >
-                  <span className="font-semibold text-slate-600">{game}</span>
-                  <span className="font-black text-slate-950">{score}</span>
+                  <span className="font-bold text-white/60">{game}</span>
+                  <span className="font-black text-white">{score}</span>
                 </li>
               ))}
             </ul>
@@ -332,36 +337,35 @@ export function ProfilePage() {
       </aside>
 
       <section className={desktopPanelClass("p-5 xl:col-start-2")}>
-        <h2 className="text-lg font-black text-slate-900">שינוי סיסמה</h2>
+        <h2 className="text-lg font-black text-white">שינוי סיסמה</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
+          <label className={`flex flex-col gap-2 ${kidFieldLabelClass}`}>
             סיסמה חדשה
             <input
-              className={fieldInputClass}
+              className={kidFieldInputClass}
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
           </label>
-          <label className={`flex flex-col gap-2 ${fieldLabelClass}`}>
+          <label className={`flex flex-col gap-2 ${kidFieldLabelClass}`}>
             אימות סיסמה
             <input
-              className={fieldInputClass}
+              className={kidFieldInputClass}
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
           </label>
         </div>
-        <Button
-          className="mt-4"
-          variant="outline"
+        <button
           type="button"
+          className="mt-4 rounded-2xl bg-white/10 border border-white/20 hover:bg-white/15 px-6 py-2.5 text-xs font-black text-white hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:opacity-50"
           disabled={busy !== null || !password || !confirmPassword}
           onClick={() => void changePassword()}
         >
           {busy === "password" ? "מעדכן…" : "עדכן סיסמה"}
-        </Button>
+        </button>
       </section>
     </KidDesktopShell>
   );
