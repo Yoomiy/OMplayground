@@ -430,13 +430,13 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   );
 
   return (
-    <div className={`relative ${isFullscreen ? "h-full" : "h-[650px]"} w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 shadow-inner`}>
+    <div className={`relative ${isFullscreen ? "h-full" : "h-[650px]"} w-full overflow-hidden rounded-2xl border border-white/10 bg-slate-950/20 shadow-inner`}>
       <Suspense
         fallback={
-          <div className="flex h-full w-full items-center justify-center bg-slate-50">
+          <div className="flex h-full w-full items-center justify-center bg-slate-950/40 backdrop-blur-md">
             <div className="flex flex-col items-center gap-3">
               <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent" />
-              <p className="text-sm font-semibold text-slate-500">טוען לוח ציור...</p>
+              <p className="text-sm font-semibold text-white/55">טוען לוח ציור...</p>
             </div>
           </div>
         }

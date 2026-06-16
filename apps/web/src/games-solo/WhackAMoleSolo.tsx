@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { useSoloAutoSave } from "@/hooks/useSoloAutoSave";
 import {
   isJsonObject,
@@ -112,8 +111,8 @@ export function WhackAMoleSolo({ save }: { save: SoloGameSaveControls }) {
   };
 
   return (
-    <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-3xl border border-amber-100 bg-white/95 p-4 shadow-play">
-      <div className="flex w-full items-center justify-between text-sm font-medium text-slate-700">
+    <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-md p-5 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+      <div className="flex w-full items-center justify-between text-sm font-bold text-white/80">
         <span>ניקוד: {state.score}</span>
         <span>זמן: {(state.timeLeftMs / 1000).toFixed(1)}s</span>
       </div>
@@ -126,7 +125,7 @@ export function WhackAMoleSolo({ save }: { save: SoloGameSaveControls }) {
               type="button"
               aria-label={`תא ${i}${isActive ? " — חפרפרת" : ""}`}
               disabled={state.status !== "playing"}
-              className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-amber-200 bg-gradient-to-b from-amber-100 to-orange-100 text-3xl shadow-inner hover:from-amber-200 hover:to-orange-200 disabled:opacity-50"
+              className="flex h-20 w-20 items-center justify-center rounded-full border border-white/10 bg-white/5 text-3xl shadow-inner transition hover:bg-white/10 hover:scale-[1.04] active:scale-[0.96] duration-200 disabled:opacity-30 disabled:hover:scale-100"
               onClick={() => whack(i)}
             >
               {isActive ? "🐹" : ""}
@@ -136,12 +135,16 @@ export function WhackAMoleSolo({ save }: { save: SoloGameSaveControls }) {
       </div>
       {state.status === "done" ? (
         <div className="flex flex-col items-center gap-2">
-          <p className="text-lg font-bold text-slate-900">
+          <p className="text-lg font-black text-white">
             המשחק הסתיים · {state.score} נק'
           </p>
-          <Button type="button" onClick={reset}>
-            שחק שוב
-          </Button>
+          <button
+            type="button"
+            className="rounded-2xl bg-gradient-to-r from-violet-500 to-indigo-500 border border-violet-400/50 px-6 py-2.5 text-sm font-black text-white shadow-[0_4px_12px_rgba(139,92,246,0.3)] hover:-translate-y-0.5 transition duration-200"
+            onClick={reset}
+          >
+            שחק שוב 🔁
+          </button>
         </div>
       ) : null}
     </div>

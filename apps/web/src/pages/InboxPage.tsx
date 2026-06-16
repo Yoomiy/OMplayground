@@ -215,7 +215,7 @@ export function InboxPage() {
 
       <section className={desktopPanelClass("flex min-h-[560px] flex-col p-4")}>
         {err ? (
-          <p className="mb-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-900" role="alert">
+          <p className="mb-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm font-bold text-amber-300" role="alert">
             {err}
           </p>
         ) : null}

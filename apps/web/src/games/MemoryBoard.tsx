@@ -35,21 +35,21 @@ export function MemoryBoard({ gameState, myUserId, onIntent }: MemoryBoardProps)
     scoreEntries.find(([id]) => id !== myUserId)?.[1] ?? 0;
 
   return (
-    <div className="mx-auto max-w-md space-y-3 rounded-3xl border border-indigo-100 bg-white/95 p-3 shadow-play">
-      <div className="flex items-center justify-between text-sm font-medium">
-        <span className="text-slate-600">
-          אני: <strong className="text-slate-900">{meScore}</strong>
+    <div className="mx-auto max-w-md space-y-4 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-md p-4 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+      <div className="flex items-center justify-between text-sm font-medium text-white/70">
+        <span>
+          אני: <strong className="text-white font-bold">{meScore}</strong>
         </span>
-        <span className="text-slate-600">
-          יריב: <strong className="text-slate-900">{opponentScore}</strong>
+        <span>
+          יריב: <strong className="text-white font-bold">{opponentScore}</strong>
         </span>
         <span
           className={
             isMyTurn
-              ? "text-emerald-700"
+              ? "text-emerald-400 font-bold"
               : gameState.status !== "playing"
-                ? "text-slate-500"
-                : "text-amber-700"
+                ? "text-white/40"
+                : "text-amber-400 font-bold"
           }
         >
           {gameState.status === "playing"
@@ -74,8 +74,8 @@ export function MemoryBoard({ gameState, myUserId, onIntent }: MemoryBoardProps)
               aria-label={shown ? `קלף ${card.emoji}` : "קלף הפוך"}
               className={
                 shown
-                  ? "flex aspect-square items-center justify-center rounded-2xl border-2 border-emerald-200 bg-emerald-50 text-3xl shadow-sm"
-                  : "flex aspect-square items-center justify-center rounded-2xl border-2 border-indigo-100 bg-gradient-to-br from-indigo-50 to-sky-50 text-2xl font-black text-indigo-400 shadow-sm transition hover:border-indigo-300 hover:from-indigo-100 hover:to-sky-100 disabled:cursor-not-allowed disabled:opacity-40"
+                  ? "flex aspect-square items-center justify-center rounded-2xl border-2 border-emerald-500/30 bg-emerald-500/10 text-3xl shadow-[0_0_12px_rgba(16,185,129,0.2)] text-white"
+                  : "flex aspect-square items-center justify-center rounded-2xl border-2 border-white/10 bg-white/5 text-2xl font-black text-violet-400/80 shadow-sm transition hover:border-violet-500/50 hover:bg-white/10 hover:text-violet-300 disabled:cursor-not-allowed disabled:opacity-30"
               }
               onClick={() => onIntent({ cardIndex: index })}
             >
@@ -87,3 +87,4 @@ export function MemoryBoard({ gameState, myUserId, onIntent }: MemoryBoardProps)
     </div>
   );
 }
+

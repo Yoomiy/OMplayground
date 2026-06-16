@@ -210,7 +210,7 @@ export function LazyGameBoard({
 
   if (loadError) {
     return (
-      <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">
+      <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-300">
         משחק לא נתמך בלקוח: {gameKey}
       </p>
     );

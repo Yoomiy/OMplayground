@@ -141,7 +141,7 @@ export function ProfilePage() {
   }
 
   if (loading && !profile) {
-    return <p className="p-6 text-sm text-slate-500">טוען…</p>;
+    return <p className="p-6 text-sm text-white/50">טוען…</p>;
   }
 
   if (!profile || !draftProfile) {

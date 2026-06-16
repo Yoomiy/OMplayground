@@ -34,18 +34,21 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-slate-50 p-6 text-center text-slate-800">
-          <h1 className="text-xl font-semibold">משהו השתבש</h1>
-          <p className="max-w-md text-sm text-slate-600">
-            אירעה שגיאה בלתי צפויה. רענן את הדף או חזור למסך הבית.
-          </p>
-          <button
-            type="button"
-            className="rounded-lg bg-slate-800 px-4 py-2 text-sm text-white"
-            onClick={() => window.location.assign("/home")}
-          >
-            חזרה לבית
-          </button>
+        <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-slate-950 p-6 text-center text-white">
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-md max-w-md w-full">
+            <span className="text-5xl block mb-4 animate-kid-float">⚠️</span>
+            <h1 className="text-2xl font-black text-white">משהו השתבש</h1>
+            <p className="mt-2 text-sm font-semibold text-white/70">
+              אירעה שגיאה בלתי צפויה. רעננו את הדף או חזרו למסך הבית.
+            </p>
+            <button
+              type="button"
+              className="mt-6 w-full rounded-2xl bg-gradient-to-r from-violet-500 to-indigo-500 border border-violet-400/50 py-3 text-sm font-black text-white hover:shadow-[0_4px_16px_rgba(139,92,246,0.4)] hover:-translate-y-0.5 transition duration-200"
+              onClick={() => window.location.assign("/home")}
+            >
+              חזרה לבית 🚀
+            </button>
+          </div>
         </div>
       );
     }

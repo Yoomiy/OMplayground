@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useReducer, useRef } from "react";
-import { Button } from "@/components/ui/button";
 import { useSoloAutoSave } from "@/hooks/useSoloAutoSave";
 import {
   isJsonObject,
@@ -182,17 +181,17 @@ export function SnakeSolo({ save }: { save: SoloGameSaveControls }) {
 
   return (
     <div
-      className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-3xl border border-emerald-100 bg-white/95 p-4 shadow-play"
+      className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-md p-5 shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
       dir="ltr"
     >
       <div className="flex w-full items-center justify-between text-sm font-medium">
-        <span className="text-slate-700">ניקוד: {state.score}</span>
+        <span className="text-white/80 font-bold">ניקוד: {state.score}</span>
         {state.status === "gameover" ? (
-          <span className="text-rose-600">המשחק הסתיים</span>
+          <span className="text-rose-400 font-bold">המשחק הסתיים</span>
         ) : null}
       </div>
       <div
-        className="grid gap-px rounded-2xl bg-emerald-100 p-1 shadow-inner"
+        className="grid gap-px rounded-2xl bg-black/40 p-1.5 shadow-inner border border-white/5"
         style={{
           gridTemplateColumns: `repeat(${GRID}, 1rem)`,
           gridTemplateRows: `repeat(${GRID}, 1rem)`
@@ -215,7 +214,7 @@ export function SnakeSolo({ save }: { save: SoloGameSaveControls }) {
                     ? "h-4 w-4 rounded-sm bg-emerald-400"
                     : isFood
                       ? "h-4 w-4 rounded-sm bg-rose-500"
-                      : "h-4 w-4 bg-white"
+                      : "h-4 w-4 bg-white/5 rounded-sm"
               }
             />
           );
@@ -225,7 +224,7 @@ export function SnakeSolo({ save }: { save: SoloGameSaveControls }) {
         <button
           type="button"
           aria-label="למעלה"
-          className="col-start-2 rounded-xl border border-emerald-200 bg-emerald-50 py-2 font-bold text-emerald-900 shadow-sm hover:bg-emerald-100"
+          className="col-start-2 rounded-xl border border-white/10 bg-white/5 py-2 font-black text-white hover:bg-white/10 transition duration-200"
           onClick={() => setDir(0, -1)}
         >
           ↑
@@ -233,7 +232,7 @@ export function SnakeSolo({ save }: { save: SoloGameSaveControls }) {
         <button
           type="button"
           aria-label="שמאלה"
-          className="col-start-1 row-start-2 rounded-xl border border-emerald-200 bg-emerald-50 py-2 font-bold text-emerald-900 shadow-sm hover:bg-emerald-100"
+          className="col-start-1 row-start-2 rounded-xl border border-white/10 bg-white/5 py-2 font-black text-white hover:bg-white/10 transition duration-200"
           onClick={() => setDir(-1, 0)}
         >
           ←
@@ -241,7 +240,7 @@ export function SnakeSolo({ save }: { save: SoloGameSaveControls }) {
         <button
           type="button"
           aria-label="למטה"
-          className="col-start-2 row-start-2 rounded-xl border border-emerald-200 bg-emerald-50 py-2 font-bold text-emerald-900 shadow-sm hover:bg-emerald-100"
+          className="col-start-2 row-start-2 rounded-xl border border-white/10 bg-white/5 py-2 font-black text-white hover:bg-white/10 transition duration-200"
           onClick={() => setDir(0, 1)}
         >
           ↓
@@ -249,22 +248,23 @@ export function SnakeSolo({ save }: { save: SoloGameSaveControls }) {
         <button
           type="button"
           aria-label="ימינה"
-          className="col-start-3 row-start-2 rounded-xl border border-emerald-200 bg-emerald-50 py-2 font-bold text-emerald-900 shadow-sm hover:bg-emerald-100"
+          className="col-start-3 row-start-2 rounded-xl border border-white/10 bg-white/5 py-2 font-black text-white hover:bg-white/10 transition duration-200"
           onClick={() => setDir(1, 0)}
         >
           →
         </button>
       </div>
       {state.status === "gameover" ? (
-        <Button
+        <button
           type="button"
+          className="rounded-2xl bg-gradient-to-r from-violet-500 to-indigo-500 border border-violet-400/50 px-6 py-2.5 text-sm font-black text-white shadow-[0_4px_12px_rgba(139,92,246,0.3)] hover:-translate-y-0.5 transition duration-200"
           onClick={() => {
             void save.clearSave();
             dispatch({ type: "RESET" });
           }}
         >
-          שחק שוב
-        </Button>
+          שחק שוב 🔁
+        </button>
       ) : null}
     </div>
   );

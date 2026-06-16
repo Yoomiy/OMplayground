@@ -13,7 +13,6 @@ import {
   unblockKid
 } from "@/lib/friendsApi";
 import { ComposeMessage } from "@/components/ComposeMessage";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 
 function RowCard({
@@ -26,7 +25,7 @@ function RowCard({
   return (
     <div
       className={cn(
-        "rounded-3xl border border-slate-200/90 bg-white/95 p-4 shadow-play",
+        "rounded-3xl border border-white/10 bg-white/5 p-4 shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md",
         className
       )}
     >
@@ -61,21 +60,24 @@ export function FriendsPage() {
 
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-6 px-4 py-8 sm:px-6">
-      <header className="flex flex-wrap items-start justify-between gap-4 rounded-3xl border border-slate-200/90 bg-white/95 p-5 shadow-play">
+      <header className="flex flex-wrap items-start justify-between gap-4 rounded-3xl border border-white/10 bg-white/5 p-5 shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">חברים</h1>
-          <p className="mt-1 text-sm text-slate-600">
+          <h1 className="text-2xl font-bold text-white">חברים</h1>
+          <p className="mt-1 text-sm text-white/60">
             בקשות, רשימה וחסימות — הכל במקום אחד
           </p>
         </div>
-        <Button variant="outline" type="button" asChild>
-          <Link to="/home">בית</Link>
-        </Button>
+        <Link
+          to="/home"
+          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-black text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+        >
+          בית
+        </Link>
       </header>
 
       {err ? (
         <p
-          className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900"
+          className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm font-medium text-amber-300"
           role="alert"
         >
           {err}
@@ -83,46 +85,45 @@ export function FriendsPage() {
       ) : null}
 
       {loading ? (
-        <p className="text-center text-sm text-slate-500">טוען…</p>
+        <p className="text-center text-sm text-white/50">טוען…</p>
       ) : null}
 
       <section className="space-y-4">
-        <h2 className="text-lg font-bold text-slate-900">בקשות חברות</h2>
+        <h2 className="text-lg font-bold text-white">בקשות חברות</h2>
         {incomingRequests.length === 0 ? (
-          <p className="text-sm text-slate-500">אין בקשות נכנסות.</p>
+          <p className="text-sm text-white/40">אין בקשות נכנסות.</p>
         ) : (
           <ul className="space-y-3">
             {incomingRequests.map((f) => (
               <li key={f.friendship.id}>
-                <RowCard className="border-emerald-200/90 bg-emerald-50/40">
+                <RowCard className="border-emerald-500/30 bg-emerald-500/10">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <span className="font-semibold text-slate-900">
+                    <span className="font-semibold text-white">
                       {f.partner.full_name}
                     </span>
                     <div className="flex flex-wrap gap-2">
-                      <Button
-                        size="sm"
+                      <button
                         type="button"
                         onClick={() =>
                           void runWithRefresh(() =>
                             respondToFriendRequest(f.friendship.id, true)
                           )
                         }
+                        className="rounded-xl bg-emerald-600 border border-emerald-500/50 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-500 hover:shadow-[0_0_12px_rgba(16,185,129,0.3)] transition duration-200"
                       >
                         אשר
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
+                      </button>
+                      <button
                         type="button"
                         onClick={() =>
                           void runWithRefresh(() =>
                             respondToFriendRequest(f.friendship.id, false)
                           )
                         }
+                        className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
                       >
                         דחה
-                      </Button>
+                      </button>
                     </div>
                   </div>
                 </RowCard>
@@ -134,18 +135,16 @@ export function FriendsPage() {
 
       {outgoingRequests.length > 0 ? (
         <section className="space-y-4">
-          <h2 className="text-lg font-bold text-slate-900">ממתינות לאישור</h2>
+          <h2 className="text-lg font-bold text-white">ממתינות לאישור</h2>
           <ul className="space-y-3">
             {outgoingRequests.map((f) => (
               <li key={f.friendship.id}>
                 <RowCard>
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <span className="font-medium text-slate-800">
+                    <span className="font-medium text-white/80">
                       {f.partner.full_name}
                     </span>
-                    <Button
-                      size="sm"
-                      variant="outline"
+                    <button
                       type="button"
                       onClick={() =>
                         void runWithRefresh(() =>
@@ -154,9 +153,10 @@ export function FriendsPage() {
                             : Promise.resolve()
                         )
                       }
+                      className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
                     >
                       בטל
-                    </Button>
+                    </button>
                   </div>
                 </RowCard>
               </li>
@@ -166,31 +166,28 @@ export function FriendsPage() {
       ) : null}
 
       <section className="space-y-4">
-        <h2 className="text-lg font-bold text-slate-900">החברים שלי</h2>
+        <h2 className="text-lg font-bold text-white">החברים שלי</h2>
         {friends.length === 0 ? (
-          <p className="text-sm text-slate-500">עדיין אין חברים.</p>
+          <p className="text-sm text-white/40">עדיין אין חברים.</p>
         ) : (
           <ul className="space-y-3">
             {friends.map((f) => (
               <li key={f.friendship.id}>
                 <RowCard>
                   <div className="flex flex-col gap-4">
-                    <span className="text-lg font-bold text-slate-900">
+                    <span className="text-lg font-bold text-white">
                       {f.partner.full_name}
                     </span>
                     <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                      <Button
-                        variant="outline"
+                      <button
                         type="button"
-                        size="sm"
                         onClick={() => setMessageTo(f)}
+                        className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
                       >
                         שלח הודעה
-                      </Button>
-                      <Button
-                        variant="outline"
+                      </button>
+                      <button
                         type="button"
-                        size="sm"
                         onClick={() =>
                           void runWithRefresh(() =>
                             user
@@ -198,19 +195,19 @@ export function FriendsPage() {
                               : Promise.resolve()
                           )
                         }
+                        className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
                       >
                         הסר חבר
-                      </Button>
-                      <Button
-                        variant="destructive"
+                      </button>
+                      <button
                         type="button"
-                        size="sm"
                         onClick={() =>
                           void runWithRefresh(() => blockKid(f.partner.id))
                         }
+                        className="rounded-xl bg-rose-600 border border-rose-500/50 px-4 py-2 text-xs font-bold text-white hover:bg-rose-500 transition duration-200"
                       >
                         חסום
-                      </Button>
+                      </button>
                     </div>
                   </div>
                 </RowCard>
@@ -221,21 +218,19 @@ export function FriendsPage() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-lg font-bold text-slate-900">חסומים</h2>
+        <h2 className="text-lg font-bold text-white">חסומים</h2>
         {blocked.length === 0 ? (
-          <p className="text-sm text-slate-500">לא חסמת אף אחד.</p>
+          <p className="text-sm text-white/40">לא חסמת אף אחד.</p>
         ) : (
           <ul className="space-y-3">
             {blocked.map((b) => (
               <li key={b.blocked_id}>
-                <RowCard className="border-slate-200 bg-slate-50/90">
+                <RowCard>
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <span className="font-medium text-slate-800">
+                    <span className="font-medium text-white/80">
                       {b.profile?.full_name ?? b.blocked_id.slice(0, 8)}
                     </span>
-                    <Button
-                      size="sm"
-                      variant="outline"
+                    <button
                       type="button"
                       onClick={() =>
                         void runWithRefresh(() =>
@@ -244,9 +239,10 @@ export function FriendsPage() {
                             : Promise.resolve()
                         )
                       }
+                      className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
                     >
                       הסר חסימה
-                    </Button>
+                    </button>
                   </div>
                 </RowCard>
               </li>

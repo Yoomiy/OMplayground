@@ -57,29 +57,23 @@ export function HexGLSolo({ save }: { save: SoloGameSaveControls }) {
   return (
     <section
       ref={sectionRef}
-      className={`mx-auto flex w-full max-w-5xl flex-col gap-3 rounded-3xl border border-sky-100 bg-white/95 p-4 shadow-play transition-all duration-300 ${
+      className={`mx-auto flex w-full max-w-5xl flex-col gap-3 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-md p-4 shadow-[0_8px_32px_rgba(0,0,0,0.5)] transition-all duration-300 ${
         isFullscreen ? "h-screen w-screen !max-w-none flex flex-col justify-between gap-4 !rounded-none bg-slate-950 border-none p-6 overflow-hidden" : ""
       }`}
       dir="ltr"
     >
       {/* Top Action Bar */}
-      <div className={`flex flex-wrap items-center justify-between gap-3 border-b pb-3 ${
-        isFullscreen ? "border-slate-800" : "border-slate-100"
-      }`}>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
         <div className="flex flex-col gap-0.5">
-          <h2 className={`text-lg font-bold ${isFullscreen ? "text-white" : "text-slate-900"}`}>מרוץ מכוניות</h2>
-          <p className={`text-sm font-medium ${isFullscreen ? "text-slate-400" : "text-slate-600"}`}>
+          <h2 className="text-lg font-bold text-white">מרוץ מכוניות</h2>
+          <p className="text-sm font-medium text-white/70">
             מירוץ תלת-ממדי מהיר בעולם עתידני. השתמשו במקלדת כדי לשחק.
           </p>
         </div>
 
         <button
           type="button"
-          className={`rounded-xl border px-4 py-2 text-xs font-bold transition-all hover:scale-105 active:scale-95 duration-200 shadow-sm flex items-center gap-1.5 ${
-            isFullscreen
-              ? "border-slate-800 bg-slate-900 text-slate-200 hover:bg-slate-800"
-              : "border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100"
-          }`}
+          className="rounded-xl border border-white/10 bg-white/5 text-white hover:bg-white/10 px-4 py-2 text-xs font-bold transition-all hover:-translate-y-0.5 active:translate-y-0 duration-200 shadow-sm flex items-center gap-1.5 backdrop-blur-sm"
           onClick={toggleFullscreen}
         >
           {isFullscreen ? (
@@ -100,10 +94,10 @@ export function HexGLSolo({ save }: { save: SoloGameSaveControls }) {
         </button>
       </div>
 
-      <div className={`relative mx-auto w-full overflow-hidden rounded-3xl border bg-black shadow-play ${
+      <div className={`relative mx-auto w-full overflow-hidden rounded-3xl border border-white/10 bg-black/40 shadow-[0_4px_24px_rgba(0,0,0,0.4)] ${
         isFullscreen
-          ? "flex-grow min-h-0 border-slate-800"
-          : "h-[640px] max-w-[1024px] border-slate-200"
+          ? "flex-grow min-h-0 border-none"
+          : "h-[640px] max-w-[1024px]"
       }`}>
         <iframe
           title="HexGL"
@@ -116,3 +110,4 @@ export function HexGLSolo({ save }: { save: SoloGameSaveControls }) {
     </section>
   );
 }
+

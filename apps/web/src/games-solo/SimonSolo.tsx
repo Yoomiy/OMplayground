@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useReducer, useRef } from "react";
-import { Button } from "@/components/ui/button";
 import { useSoloAutoSave } from "@/hooks/useSoloAutoSave";
 import {
   isJsonObject,
@@ -8,10 +7,10 @@ import {
 } from "@/lib/soloGameSaves";
 
 const COLORS = [
-  { key: 0, bg: "bg-red-500", litBg: "bg-red-300" },
-  { key: 1, bg: "bg-blue-500", litBg: "bg-blue-300" },
-  { key: 2, bg: "bg-yellow-400", litBg: "bg-yellow-200" },
-  { key: 3, bg: "bg-emerald-500", litBg: "bg-emerald-300" }
+  { key: 0, bg: "bg-rose-500/25 border-rose-500/30 text-rose-300 shadow-[0_0_8px_rgba(244,63,94,0.1)]", litBg: "bg-rose-500 border-rose-400/60 text-white shadow-[0_0_20px_rgba(244,63,94,0.6)] scale-105" },
+  { key: 1, bg: "bg-blue-500/25 border-blue-500/30 text-blue-300 shadow-[0_0_8px_rgba(59,130,246,0.1)]", litBg: "bg-blue-500 border-blue-400/60 text-white shadow-[0_0_20px_rgba(59,130,246,0.6)] scale-105" },
+  { key: 2, bg: "bg-amber-500/25 border-amber-500/30 text-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.1)]", litBg: "bg-amber-400 border-amber-300/60 text-white shadow-[0_0_20px_rgba(245,158,11,0.6)] scale-105" },
+  { key: 3, bg: "bg-emerald-500/25 border-emerald-500/30 text-emerald-300 shadow-[0_0_8px_rgba(16,185,129,0.1)]", litBg: "bg-emerald-500 border-emerald-400/60 text-white shadow-[0_0_20px_rgba(16,185,129,0.6)] scale-105" }
 ] as const;
 
 const SHOW_ON_MS = 500;
@@ -205,8 +204,8 @@ export function SimonSolo({ save }: { save: SoloGameSaveControls }) {
         : null;
 
   return (
-    <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-3xl border border-indigo-100 bg-white/95 p-4 shadow-play">
-      <div className="flex w-full items-center justify-between text-sm font-medium text-slate-700">
+    <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-md p-5 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+      <div className="flex w-full items-center justify-between text-sm font-semibold text-white/80">
         <span>ניקוד: {state.score}</span>
         <span>
           אורך רצף: {state.sequence.length}
@@ -219,7 +218,7 @@ export function SimonSolo({ save }: { save: SoloGameSaveControls }) {
                 : ""}
         </span>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-4">
         {COLORS.map((c) => {
           const isLit = effectiveLit === c.key;
           return (
@@ -228,8 +227,8 @@ export function SimonSolo({ save }: { save: SoloGameSaveControls }) {
               type="button"
               aria-label={`צבע ${c.key}`}
               disabled={state.phase !== "input"}
-              className={`h-28 w-28 rounded-3xl border-4 border-white shadow-play transition-transform hover:scale-[1.02] disabled:opacity-70 ${
-                isLit ? c.litBg : c.bg
+              className={`h-28 w-28 rounded-3xl border-2 transition-all duration-200 hover:scale-105 active:scale-95 disabled:scale-100 disabled:cursor-not-allowed ${
+                isLit ? c.litBg : `${c.bg} disabled:opacity-40`
               }`}
               onClick={() => {
                 flashOnPress(c.key);
@@ -240,16 +239,18 @@ export function SimonSolo({ save }: { save: SoloGameSaveControls }) {
         })}
       </div>
       {state.phase === "gameover" ? (
-        <Button
+        <button
           type="button"
           onClick={() => {
             void save.clearSave();
             dispatch({ type: "RESET" });
           }}
+          className="rounded-2xl bg-gradient-to-r from-violet-500 to-fuchsia-500 border border-violet-400/50 px-6 py-2.5 text-sm font-black text-white shadow-[0_4px_12px_rgba(139,92,246,0.4)] hover:shadow-[0_4px_16px_rgba(139,92,246,0.6)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
         >
           שחק שוב
-        </Button>
+        </button>
       ) : null}
     </div>
   );
 }
+

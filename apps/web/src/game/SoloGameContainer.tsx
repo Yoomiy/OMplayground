@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { KidDesktopShell, desktopPanelClass } from "@/components/KidDesktopShell";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
@@ -57,7 +56,7 @@ function LazySoloGame({
 
   if (!Game) {
     return (
-      <div className="flex min-h-[320px] items-center justify-center text-sm font-medium text-slate-500">
+      <div className="flex min-h-[320px] items-center justify-center text-sm font-medium text-white/40">
         טוען משחק…
       </div>
     );
@@ -178,51 +177,55 @@ export default function SoloGameContainer() {
       title="משחק לבד"
       subtitle={gameKey ?? "משחק"}
       actions={
-        <Button
+        <button
           type="button"
-          variant="outline"
-          size="sm"
           onClick={() => navigate("/home")}
+          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-black text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
         >
           חזרה הביתה
-        </Button>
+        </button>
       }
       contentClassName="min-h-[calc(100vh-136px)]"
     >
       {err ? (
         <p
-          className="mb-4 rounded-xl border border-amber-300/80 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900"
+          className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-300"
           role="alert"
         >
           {err}
         </p>
       ) : null}
       {loadingSave ? (
-        <p className={desktopPanelClass("px-4 py-3 text-sm font-bold text-slate-600")}>
+        <p className={desktopPanelClass("px-4 py-3 text-sm font-bold text-white/50")}>
           טוען שמירה…
         </p>
       ) : save && !hasStarted ? (
-        <section className="mx-auto mt-20 flex max-w-md flex-col gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-right shadow-play">
+        <section className="mx-auto mt-20 flex max-w-md flex-col gap-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 text-right shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-md">
           <div className="space-y-1">
-            <h1 className="text-xl font-black text-amber-950">נמצא משחק שמור</h1>
-            <p className="text-sm font-semibold text-amber-900/80">
+            <h1 className="text-xl font-black text-amber-300">נמצא משחק שמור</h1>
+            <p className="text-sm font-semibold text-amber-200/80">
               אפשר להמשיך מהמקום שבו עצרת או להתחיל משחק חדש.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button
+            <button
               type="button"
               onClick={() => {
                 setResumeState(save.state);
                 setUseSavedState(true);
                 setHasStarted(true);
               }}
+              className="rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 border border-violet-400/50 px-5 py-2 text-sm font-black text-white hover:shadow-[0_0_12px_rgba(139,92,246,0.3)] hover:-translate-y-0.5 transition duration-200"
             >
               המשך
-            </Button>
-            <Button type="button" variant="outline" onClick={() => void startNewGame()}>
+            </button>
+            <button
+              type="button"
+              onClick={() => void startNewGame()}
+              className="rounded-xl border border-white/10 bg-white/5 px-5 py-2 text-sm font-bold text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+            >
               משחק חדש
-            </Button>
+            </button>
           </div>
         </section>
       ) : hasEntry && gameKey ? (
@@ -232,7 +235,7 @@ export default function SoloGameContainer() {
           </div>
         </section>
       ) : (
-        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900" role="alert">
+        <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-300" role="alert">
           משחק לא זמין: {gameKey ?? "?"}
         </p>
       )}

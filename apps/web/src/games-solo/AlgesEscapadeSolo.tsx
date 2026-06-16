@@ -78,17 +78,17 @@ export function AlgesEscapadeSolo({ save }: { save: SoloGameSaveControls }) {
 
   return (
     <section
-      className="mx-auto flex w-full max-w-5xl flex-col gap-3 rounded-3xl border border-violet-100 bg-white/95 p-4 shadow-play"
+      className="mx-auto flex w-full max-w-5xl flex-col gap-3 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-md p-4 shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
       dir="ltr"
     >
-      <h2 className="text-center text-lg font-bold text-slate-900">
+      <h2 className="text-center text-lg font-bold text-white">
         מסע בין שערים
       </h2>
-      <p className="text-center text-sm font-medium text-slate-600">
+      <p className="text-center text-sm font-medium text-white/70">
         המשחק הקלאסי בגרסת יחיד. השתמשו במקלדת כדי לשחק.
       </p>
       <div
-        className="relative mx-auto overflow-hidden rounded-3xl border border-slate-200 shadow-play"
+        className="relative mx-auto overflow-hidden rounded-3xl border border-white/10 shadow-[0_4px_24px_rgba(0,0,0,0.4)] bg-black/20"
         style={{ width: "862px", height: "640px" }}
       >
         <iframe
@@ -101,3 +101,4 @@ export function AlgesEscapadeSolo({ save }: { save: SoloGameSaveControls }) {
     </section>
   );
 }
+

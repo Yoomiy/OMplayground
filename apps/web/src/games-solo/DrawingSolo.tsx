@@ -84,11 +84,11 @@ export function DrawingSolo({ save }: { save: SoloGameSaveControls }) {
   return (
     <div className="space-y-4">
       {showNotice && (
-        <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm font-semibold text-amber-950 flex justify-between items-center">
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3.5 text-sm font-semibold text-amber-200 flex justify-between items-center backdrop-blur-md">
           <span>ציורים ישנים בפורמט קודם אינם נתמכים בלוח החדש.</span>
           <button
             type="button"
-            className="text-xs text-amber-700 underline"
+            className="text-xs text-amber-400 hover:text-amber-300 underline font-bold transition-colors"
             onClick={() => setShowNotice(false)}
           >
             הבנתי

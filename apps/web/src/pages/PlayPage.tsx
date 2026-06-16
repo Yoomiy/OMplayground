@@ -45,7 +45,11 @@ function PlayPage() {
   }, [isAdmin, profile?.role]);
 
   if (!sessionId) {
-    return <p className="p-6 text-sm font-medium text-amber-900">חסר מזהה מפגש</p>;
+    return (
+      <p className="p-6 text-sm font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-2xl max-w-md mx-auto mt-10 text-center">
+        חסר מזהה מפגש
+      </p>
+    );
   }
 
   // Voxel game bypasses the desktop chrome — `MinecraftSessionContainer` is

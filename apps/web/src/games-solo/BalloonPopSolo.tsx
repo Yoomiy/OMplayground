@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { useSoloAutoSave } from "@/hooks/useSoloAutoSave";
 import {
   isJsonObject,
@@ -188,14 +187,14 @@ export function BalloonPopSolo({ save }: { save: SoloGameSaveControls }) {
     }, [save, state.status]);
 
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col gap-3 rounded-3xl border border-sky-100 bg-white/95 p-3 shadow-play">
-      <div className="flex w-full items-center justify-between text-sm font-medium text-slate-700">
+    <div className="mx-auto flex w-full max-w-xl flex-col gap-3 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-md p-4 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+      <div className="flex w-full items-center justify-between text-sm font-semibold text-white/80">
         <span>ניקוד: {state.score}</span>
         <span>חיים: {"❤️".repeat(Math.max(0, state.lives))}</span>
       </div>
       <div
         ref={fieldRef}
-        className="relative h-[70vh] w-full overflow-hidden rounded-3xl border border-sky-200 bg-gradient-to-b from-sky-100 via-cyan-50 to-emerald-50 shadow-inner"
+        className="relative h-[70vh] w-full overflow-hidden rounded-3xl border border-white/10 bg-slate-950/40 shadow-inner backdrop-blur-sm"
       >
         {state.balloons.map((b) => (
           <button
@@ -203,7 +202,7 @@ export function BalloonPopSolo({ save }: { save: SoloGameSaveControls }) {
             type="button"
             aria-label="בלון"
             disabled={state.status !== "playing"}
-            className="absolute flex h-14 w-12 items-center justify-center rounded-full text-3xl shadow-lg"
+            className="absolute flex h-14 w-12 items-center justify-center rounded-full text-3xl shadow-lg border border-white/20 transition hover:scale-105 active:scale-95"
             style={{
               left: b.x,
               top: b.y,
@@ -216,14 +215,18 @@ export function BalloonPopSolo({ save }: { save: SoloGameSaveControls }) {
           </button>
         ))}
         {state.status === "gameover" ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/75 backdrop-blur-sm">
-            <div className="flex flex-col items-center gap-3 rounded-2xl border border-sky-100 bg-white p-4 shadow-play">
-              <p className="text-lg font-bold text-slate-900">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-4 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-md p-6 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+              <p className="text-lg font-bold text-white">
                 המשחק הסתיים · {state.score} נק'
               </p>
-              <Button type="button" onClick={reset}>
+              <button
+                type="button"
+                onClick={reset}
+                className="rounded-2xl bg-gradient-to-r from-violet-500 to-fuchsia-500 border border-violet-400/50 px-6 py-2.5 text-sm font-black text-white shadow-[0_4px_12px_rgba(139,92,246,0.4)] hover:shadow-[0_4px_16px_rgba(139,92,246,0.6)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
+              >
                 שחק שוב
-              </Button>
+              </button>
             </div>
           </div>
         ) : null}
@@ -231,3 +234,4 @@ export function BalloonPopSolo({ save }: { save: SoloGameSaveControls }) {
     </div>
   );
 }
+

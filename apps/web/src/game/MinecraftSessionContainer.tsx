@@ -548,7 +548,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
       {toast ? (
         <div
           role="status"
-          className="pointer-events-none absolute left-1/2 top-6 -translate-x-1/2 rounded-xl bg-amber-100/95 px-4 py-2 text-sm font-bold text-amber-900 shadow"
+          className="pointer-events-none absolute left-1/2 top-6 -translate-x-1/2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm font-bold text-amber-300 shadow-lg backdrop-blur-md"
         >
           {toast}
         </div>
@@ -618,7 +618,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
             <div className="mt-2 flex flex-wrap justify-end gap-2" dir="rtl">
               <button
                 type="button"
-                className="rounded-lg border border-slate-400 bg-white px-2.5 py-1.5 text-[11px] font-bold text-slate-800 hover:bg-slate-100 disabled:opacity-50"
+                className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-[11px] font-bold text-white/70 hover:bg-white/10 hover:text-white disabled:opacity-50 transition duration-200"
                 disabled={updatingVisibility || roomIsOpen === null}
                 onClick={() => void toggleRoomVisibility()}
               >
@@ -626,7 +626,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
               </button>
               <button
                 type="button"
-                className="rounded-lg border border-indigo-300 bg-indigo-100 px-2.5 py-1.5 text-[11px] font-bold text-indigo-900 hover:bg-indigo-200 disabled:opacity-50"
+                className="rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-1.5 text-[11px] font-bold text-indigo-300 hover:bg-indigo-500/20 disabled:opacity-50 transition duration-200"
                 disabled={!invitationCode}
                 onClick={() => void copyInviteLink()}
               >
@@ -636,7 +636,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
           </div>
           {inviteFallbackLink ? (
             <p
-              className="break-all rounded-xl border border-indigo-300 bg-indigo-950/90 px-2 py-1.5 text-right text-[10px] text-indigo-100"
+              className="break-all rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-2 py-1.5 text-right text-[10px] text-indigo-300"
               dir="rtl"
             >
               {inviteFallbackLink}
@@ -647,20 +647,20 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
 
       {paused && !endOverlay ? (
         <div className="pointer-events-none absolute inset-x-0 bottom-10 flex justify-center">
-          <p className="rounded-xl bg-amber-100/95 px-4 py-2 text-sm font-bold text-amber-900 shadow">
+          <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm font-bold text-amber-300 shadow backdrop-blur-md">
             המשחק מושהה
           </p>
         </div>
       ) : null}
 
       {endOverlay ? (
-        <div className="absolute inset-0 flex items-center justify-center bg-slate-900/80">
-          <div className="rounded-2xl bg-white p-6 text-center text-slate-900 shadow-2xl">
-            <p className="text-lg font-black">המשחק נעצר</p>
+        <div className="absolute inset-0 flex items-center justify-center bg-slate-900/80 backdrop-blur-md">
+          <div className="rounded-2xl border border-white/10 bg-slate-950/90 p-6 text-center text-white shadow-2xl">
+            <p className="text-lg font-black text-white">המשחק נעצר</p>
             <button
               type="button"
               onClick={() => void handleExit()}
-              className="mt-4 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-500"
+              className="mt-4 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-500 border border-violet-400/50 px-4 py-2 text-sm font-bold text-white hover:shadow-[0_0_12px_rgba(139,92,246,0.3)] transition duration-200"
             >
               {isTeacherObserver ? "חזרה ללוח המורה" : "חזרה הביתה"}
             </button>

@@ -109,20 +109,20 @@ export function BreakoutSolo({ save }: { save: SoloGameSaveControls }) {
   return (
     <section
       ref={sectionRef}
-      className={`relative mx-auto w-full flex flex-col gap-4 rounded-3xl border border-rose-950 bg-slate-950 p-5 shadow-2xl transition-all duration-300 ${
+      className={`relative mx-auto w-full flex flex-col gap-4 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-md p-5 shadow-2xl transition-all duration-300 ${
         isFullscreen ? "h-screen w-screen !max-w-none !rounded-none p-6 overflow-hidden" : "max-w-5xl"
       }`}
       dir="ltr"
     >
       <button
         type="button"
-        className="absolute top-8 right-8 z-20 rounded-xl border border-rose-850 bg-rose-950/40 hover:bg-rose-900/50 px-3.5 py-1.5 text-xs font-bold text-rose-200 transition-all hover:scale-105 active:scale-95 duration-200 shadow-md shadow-rose-950/50 flex items-center gap-1.5 opacity-60 hover:opacity-100"
+        className="absolute top-8 right-8 z-20 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-3.5 py-1.5 text-xs font-bold text-white transition-all hover:-translate-y-0.5 active:translate-y-0 duration-200 shadow-md flex items-center gap-1.5 backdrop-blur-sm"
         onClick={toggleFullscreen}
       >
         {isFullscreen ? <span>מצב רגיל</span> : <span>מסך מלא</span>}
       </button>
 
-      <div className={`relative mx-auto w-full overflow-hidden rounded-2xl border border-rose-950/80 bg-black shadow-inner shadow-black/80 cursor-pointer ${
+      <div className={`relative mx-auto w-full overflow-hidden rounded-2xl border border-white/10 bg-black/40 shadow-inner cursor-pointer ${
         isFullscreen ? "flex-grow min-h-0" : "h-[640px] max-w-[1024px]"
       }`}>
         <iframe
@@ -137,3 +137,4 @@ export function BreakoutSolo({ save }: { save: SoloGameSaveControls }) {
     </section>
   );
 }
+

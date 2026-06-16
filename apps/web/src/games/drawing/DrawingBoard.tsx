@@ -97,34 +97,34 @@ export function DrawingBoard({
   return (
     <div
       ref={boardRef}
-      className={`relative mx-auto w-full space-y-4 rounded-3xl border border-indigo-100 bg-white/95 p-4 shadow-play ${
-        isFullscreen ? "h-screen w-screen !max-w-none flex flex-col justify-between gap-4 !rounded-none bg-white p-6 overflow-hidden" : ""
+      className={`relative mx-auto w-full space-y-4 rounded-3xl border border-white/10 bg-white/5 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-md ${
+        isFullscreen ? "h-screen w-screen !max-w-none flex flex-col justify-between gap-4 !rounded-none bg-slate-950 p-6 overflow-hidden" : ""
       }`}
     >
       {/* Toast Alert */}
       {toast && (
-        <div className="absolute right-4 top-20 z-50 animate-bounce rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-bold text-indigo-950 shadow-md">
+        <div className="absolute right-4 top-20 z-50 animate-bounce rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-4 py-2 text-sm font-bold text-indigo-200 shadow-[0_0_12px_rgba(99,102,241,0.2)]">
           {toast}
         </div>
       )}
 
       {/* Top Action Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
         {/* Connection status and seat */}
         <div className="flex flex-wrap items-center gap-4">
           {/* My connection status badge */}
-          <div className="flex items-center gap-2 rounded-2xl border border-indigo-50 bg-indigo-50/50 px-3 py-1.5 shadow-sm">
+          <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-1.5 shadow-sm">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
             </span>
-            <span className="text-xs font-bold text-slate-700">
+            <span className="text-xs font-bold text-white/80">
               {isSpectator ? (
-                <span className="text-indigo-600">צופה במשחק</span>
+                <span className="text-indigo-300">צופה במשחק</span>
               ) : (
                 <span className="flex items-center gap-1">
                   <span>מחובר כ:</span>
-                  <span className="font-extrabold text-indigo-950">{myDisplayName}</span>
+                  <span className="font-extrabold text-white">{myDisplayName}</span>
                 </span>
               )}
             </span>
@@ -132,27 +132,27 @@ export function DrawingBoard({
 
           {/* Active room participants avatar list/pills */}
           {(activeParticipants.length > 1 || (isSpectator && activeParticipants.length > 0)) && (
-            <div className="flex flex-wrap items-center gap-1.5 border-r border-slate-200 pr-3 mr-1">
-              <span className="text-xs font-bold text-slate-400 ml-1">מציירים כעת:</span>
+            <div className="flex flex-wrap items-center gap-1.5 border-r border-white/10 pr-3 mr-1">
+              <span className="text-xs font-bold text-white/40 ml-1">מציירים כעת:</span>
               {activeParticipants.map((p) => (
                 <div
                   key={p.userId}
                   className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-all ${
                     p.isMe
-                      ? "border-indigo-200 bg-indigo-50 font-bold text-indigo-700 shadow-sm"
-                      : "border-slate-100 bg-slate-50/80 font-medium text-slate-600"
+                      ? "border-indigo-400/30 bg-indigo-500/10 font-bold text-indigo-200 shadow-sm"
+                      : "border-white/5 bg-white/5 font-medium text-white/60"
                   }`}
                 >
                   {/* Small initial bubble */}
                   <span
                     className={`flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-black uppercase ${
-                      p.isMe ? "bg-indigo-600 text-white" : "bg-slate-200 text-slate-600"
+                      p.isMe ? "bg-indigo-500 text-white" : "bg-white/10 text-white/50"
                     }`}
                   >
                     {p.displayName.charAt(0) || "מ"}
                   </span>
                   <span>{p.displayName}</span>
-                  {p.isMe && <span className="text-[10px] text-indigo-400 font-semibold">(אני)</span>}
+                  {p.isMe && <span className="text-[10px] text-indigo-300 font-semibold">(אני)</span>}
                 </div>
               ))}
             </div>
@@ -160,7 +160,7 @@ export function DrawingBoard({
 
           {/* Fallback connection count if no participants listed yet */}
           {activeParticipants.length === 0 && (
-            <div className="text-xs font-bold text-slate-500 border-r border-slate-200 pr-3 mr-1">
+            <div className="text-xs font-bold text-white/50 border-r border-white/10 pr-3 mr-1">
               {participantCount === 1 ? "משתתף יחיד בחדר" : `${participantCount} משתתפים בחדר`}
             </div>
           )}
@@ -171,7 +171,7 @@ export function DrawingBoard({
           {!isSpectator && (
             <button
               type="button"
-              className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 transition-all hover:scale-105 active:scale-95 duration-200 shadow-sm"
+              className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-2 text-xs font-bold text-rose-300 hover:bg-rose-500/20 transition-all hover:scale-105 active:scale-95 duration-200 shadow-sm"
               onClick={handleClear}
             >
               נקה לוח
@@ -180,7 +180,7 @@ export function DrawingBoard({
 
           <button
             type="button"
-            className="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition-all hover:scale-105 active:scale-95 duration-200 shadow-sm"
+            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white/70 hover:bg-white/10 hover:text-white transition-all hover:scale-105 active:scale-95 duration-200 shadow-sm"
             onClick={handleExport}
           >
             ייצא לתמונה
@@ -188,7 +188,7 @@ export function DrawingBoard({
 
           <button
             type="button"
-            className="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition-all hover:scale-105 active:scale-95 duration-200 shadow-sm flex items-center gap-1.5"
+            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white/70 hover:bg-white/10 hover:text-white transition-all hover:scale-105 active:scale-95 duration-200 shadow-sm flex items-center gap-1.5"
             onClick={toggleFullscreen}
           >
             {isFullscreen ? (
@@ -228,7 +228,7 @@ export function DrawingBoard({
       </div>
       
       {/* Footer statistics */}
-      <div className="flex items-center justify-between text-xs font-medium text-slate-500">
+      <div className="flex items-center justify-between text-xs font-medium text-white/40">
         <div>
           <span>מנוע ציור: Excalidraw</span>
         </div>
