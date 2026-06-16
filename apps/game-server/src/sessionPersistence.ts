@@ -23,6 +23,7 @@ export interface PersistJoinArgs {
   connectedPlayerNames?: string[];
   /** Room's in-memory game status; when the ruleset is still idle we leave session.status alone. */
   roomStatusIsIdle: boolean;
+  peakPlayerCount?: number;
 }
 
 /**
@@ -40,7 +41,8 @@ export async function persistPlayerJoin(
     displayName,
       connectedPlayerIds = [],
       connectedPlayerNames = [],
-    roomStatusIsIdle
+    roomStatusIsIdle,
+    peakPlayerCount
   } = args;
   if (session.player_ids.includes(userId)) {
     await supabase
@@ -48,7 +50,8 @@ export async function persistPlayerJoin(
       .update({
         connected_player_ids: connectedPlayerIds,
         connected_player_names: connectedPlayerNames,
-        last_activity: new Date().toISOString()
+        last_activity: new Date().toISOString(),
+        ...(peakPlayerCount !== undefined ? { peak_player_count: peakPlayerCount } : {})
       })
       .eq("id", sessionId);
     return false;
@@ -69,7 +72,8 @@ export async function persistPlayerJoin(
       connected_player_ids: connectedPlayerIds,
       connected_player_names: connectedPlayerNames,
       status: nextStatus,
-      last_activity: new Date().toISOString()
+      last_activity: new Date().toISOString(),
+      ...(peakPlayerCount !== undefined ? { peak_player_count: peakPlayerCount } : {})
     })
     .eq("id", sessionId);
   return true;
@@ -87,6 +91,7 @@ export interface PersistLeaveArgs {
   connectedPlayerIds?: string[];
   connectedPlayerNames?: string[];
   gameState?: unknown;
+  peakPlayerCount?: number;
 }
 
 /**
@@ -102,7 +107,8 @@ export async function persistPlayerLeave(
     result,
     connectedPlayerIds = [],
     connectedPlayerNames = [],
-    gameState
+    gameState,
+    peakPlayerCount
   } = args;
   if (result.newHostId) {
     const { data: kp } = await supabase
@@ -118,7 +124,8 @@ export async function persistPlayerLeave(
         host_grade: kp?.grade ?? null,
         connected_player_ids: connectedPlayerIds,
         connected_player_names: connectedPlayerNames,
-        last_activity: new Date().toISOString()
+        last_activity: new Date().toISOString(),
+        ...(peakPlayerCount !== undefined ? { peak_player_count: peakPlayerCount } : {})
       })
       .eq("id", sessionId);
   }
@@ -129,6 +136,7 @@ export async function persistPlayerLeave(
       connected_player_ids: string[];
       connected_player_names: string[];
       last_activity: string;
+      peak_player_count?: number;
     } = {
       status: "paused",
       connected_player_ids: connectedPlayerIds,
@@ -137,6 +145,9 @@ export async function persistPlayerLeave(
     };
     if (gameState !== undefined) {
       payload.game_state = gameState as Record<string, unknown>;
+    }
+    if (peakPlayerCount !== undefined) {
+      payload.peak_player_count = peakPlayerCount;
     }
     await supabase
       .from("game_sessions")
@@ -149,7 +160,8 @@ export async function persistPlayerLeave(
       .update({
         connected_player_ids: connectedPlayerIds,
         connected_player_names: connectedPlayerNames,
-        last_activity: new Date().toISOString()
+        last_activity: new Date().toISOString(),
+        ...(peakPlayerCount !== undefined ? { peak_player_count: peakPlayerCount } : {})
       })
       .eq("id", sessionId);
   }

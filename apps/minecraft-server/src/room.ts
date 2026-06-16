@@ -153,6 +153,7 @@ export interface VoxelRoom {
   dropSyncIds: Set<string>;
   lastDropBroadcastAt: number;
   cakeSlices?: Map<string, number>;
+  peakPlayerCount: number;
 }
 
 const rooms = new Map<string, VoxelRoom>();
@@ -167,6 +168,7 @@ export interface CreateRoomMeta {
   paused: boolean;
   /** game_sessions.game_state for paused rows; replays seed + deltas. */
   resumedState?: PersistedRoomState | null;
+  peakPlayerCount?: number;
 }
 
 export interface PersistedRoomState {
@@ -343,7 +345,8 @@ export function getOrCreateRoom(
     activeTnts: createActiveTnts(),
     lastWeatherAt: 0,
     dropSyncIds: new Set(),
-    lastDropBroadcastAt: 0
+    lastDropBroadcastAt: 0,
+    peakPlayerCount: meta.peakPlayerCount ?? 0
   };
   rooms.set(sessionId, created);
   return created;
@@ -502,6 +505,8 @@ export function assignPlayer(
     }
   }
   room.players.set(userId, player);
+  const activeKids = Array.from(room.players.values()).filter((p) => !p.isTeacherObserver);
+  room.peakPlayerCount = Math.max(room.peakPlayerCount || 0, activeKids.length);
   if (!room.roster.some((p) => p.userId === userId)) {
     room.roster.push({ userId, displayName });
   }

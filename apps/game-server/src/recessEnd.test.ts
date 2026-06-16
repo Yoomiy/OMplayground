@@ -101,7 +101,8 @@ function roomWithState(sessionId: string): Room<unknown> {
     players: new Map(),
     spectators: new Map(),
     hasBeenActive: false,
-    paused: false
+    paused: false,
+    peakPlayerCount: 0
   };
 }
 

@@ -216,6 +216,51 @@ const observabilityEarly = createObservabilityContext("minecraft-server");
 let logger = observabilityEarly.logger;
 let stats = observabilityEarly.stats;
 
+import { recordLaunch, flushLaunches } from "./launchTracker";
+import { ingestFpsBatch, flushFps } from "./fpsAggregator";
+
+async function persistLaunches(supabase: any, sessionId: string) {
+  const records = flushLaunches(sessionId);
+  for (const record of records) {
+    try {
+      await supabase.rpc("increment_game_launch_server", {
+        p_kid_id: record.userId,
+        p_game_url: record.gameUrl,
+        p_amount: record.count
+      });
+    } catch (e) {
+      logger.error({
+        message: "Failed to persist launch stats for user",
+        userId: record.userId,
+        error: e instanceof Error ? e.message : String(e)
+      });
+    }
+  }
+}
+
+async function persistFps(supabase: any, sessionId: string) {
+  const records = flushFps(sessionId);
+  for (const record of records) {
+    try {
+      await supabase.from("minecraft_fps_stats").upsert({
+        kid_id: record.userId,
+        session_id: sessionId,
+        loading_avg_fps: record.loadingAvg,
+        loading_sample_count: record.loadingCount,
+        runtime_avg_fps: record.runtimeAvg,
+        runtime_sample_count: record.runtimeCount,
+        recorded_at: new Date().toISOString()
+      });
+    } catch (e) {
+      logger.error({
+        message: "Failed to persist FPS stats for user",
+        userId: record.userId,
+        error: e instanceof Error ? e.message : String(e)
+      });
+    }
+  }
+}
+
 const app = express();
 app.set("trust proxy", 1);
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
@@ -335,6 +380,45 @@ app.post("/rtc/token", async (req, res) => {
       error: reason,
       message: err instanceof Error ? err.message : "unauthorized"
     });
+  }
+});
+
+app.post("/api/fps-batch", async (req, res) => {
+  const correlationId = (req as express.Request & { correlationId?: string }).correlationId;
+  try {
+    const accessToken = req.headers.authorization?.replace(/^Bearer\s+/i, "");
+    if (!accessToken) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+    if (!supabaseAdmin) {
+      res.status(503).json({ error: "server_config" });
+      return;
+    }
+    const profile = await getCachedAuth(supabaseAdmin, accessToken);
+    if (!profile || profile.role !== "kid") {
+      res.status(403).json({ error: "Forbidden" });
+      return;
+    }
+    const { sessionId, phase, avgFps, sampleCount } = req.body as {
+      sessionId: string;
+      phase: "loading" | "runtime";
+      avgFps: number;
+      sampleCount: number;
+    };
+    if (!sessionId || !phase || typeof avgFps !== "number" || typeof sampleCount !== "number") {
+      res.status(400).json({ error: "missing_or_invalid_params" });
+      return;
+    }
+    ingestFpsBatch(sessionId, profile.userId, phase, avgFps, sampleCount);
+    res.json({ ok: true });
+  } catch (err) {
+    logger.error({
+      correlationId,
+      message: "Failed to ingest FPS batch",
+      error: err instanceof Error ? err.message : String(err)
+    });
+    res.status(500).json({ error: "internal_server_error" });
   }
 });
 
@@ -942,7 +1026,7 @@ io.on("connection", (socket) => {
       const { data: session, error } = await supabaseAdmin
         .from("game_sessions")
         .select(
-          "id, game_id, gender, player_ids, player_names, host_id, status, game_state, is_open, invitation_code, games ( game_url, min_players, max_players )"
+          "id, game_id, gender, player_ids, player_names, host_id, status, game_state, is_open, invitation_code, peak_player_count, games ( game_url, min_players, max_players )"
         )
         .eq("id", sessionId)
         .maybeSingle();
@@ -1044,6 +1128,7 @@ io.on("connection", (socket) => {
           displayName: playerNames[i] ?? "שחקן"
         })),
         paused: sess.status === "paused",
+        peakPlayerCount: (session as any).peak_player_count ?? 0,
         resumedState
       });
       if (!existingRoom) {
@@ -1054,6 +1139,9 @@ io.on("connection", (socket) => {
       if ("error" in assigned) {
         reply?.({ ok: false, error: assigned.error });
         return;
+      }
+      if (socket.data.role !== "teacher" && !wasAlreadyInRoom) {
+        recordLaunch(sessionId, userId, "minecraft");
       }
       await socket.join(`voxel:${sessionId}`);
       await socket.join(`voxel-user:${userId}:${sessionId}`);
@@ -1075,7 +1163,8 @@ io.on("connection", (socket) => {
         displayName,
         connectedPlayerIds: connectedPlayers(room).map((p) => p.userId),
         connectedPlayerNames: connectedPlayers(room).map((p) => p.displayName),
-        roomStatusIsIdle: false
+        roomStatusIsIdle: false,
+        peakPlayerCount: room.peakPlayerCount
       });
       io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
         sessionId,
@@ -2411,6 +2500,11 @@ io.on("connection", (socket) => {
         return;
       }
       room.paused = false;
+      for (const p of room.players.values()) {
+        if (!p.isTeacherObserver) {
+          recordLaunch(sessionId, p.userId, "minecraft");
+        }
+      }
       if (supabaseAdmin) {
         const connected = connectedPlayers(room);
         void persistGameResumed({
@@ -2470,6 +2564,8 @@ io.on("connection", (socket) => {
           stoppedBy: userId,
           gameState: snapshotPersistedState(room)
         });
+        void persistLaunches(supabaseAdmin, sessionId);
+        void persistFps(supabaseAdmin, sessionId);
       }
       deleteRoom(sessionId);
       stats.onRoomDeleted(sessionId);
@@ -2493,6 +2589,7 @@ io.on("connection", (socket) => {
         result,
         connectedPlayerIds: connected.map((p) => p.userId),
         connectedPlayerNames: connected.map((p) => p.displayName),
+        peakPlayerCount: before.peakPlayerCount,
         ...(result.roomEmpty
           ? { gameState: snapshotPersistedState(before) }
           : {})

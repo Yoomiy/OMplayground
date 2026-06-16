@@ -978,6 +978,7 @@ export interface MinecraftClientProps {
   sessionId: string;
   onMuteAll: (cb: (payload: { mutedBy: string }) => void) => () => void;
   muteAll: () => void;
+  onFPSReport?: (phase: "loading" | "runtime", avgFps: number, sampleCount: number) => void;
 }
 
 export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
@@ -1038,7 +1039,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     sessionId,
     onMuteAll,
     muteAll,
-    iAmHost
+    iAmHost,
+    onFPSReport
   } = props;
 
   const [survivalSlot, setSurvivalSlot] = useState(0);
@@ -1116,6 +1118,18 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   const breakFinishSentRef = useRef(false);
   const BREAK_START_MIN_MS = 100;
   const BREAK_FINISH_MIN_MS = 100;
+  const onFPSReportRef = useRef(onFPSReport);
+  useEffect(() => {
+    onFPSReportRef.current = onFPSReport;
+  }, [onFPSReport]);
+
+  const loadedColumnsRef = useRef<Set<string>>(new Set());
+  const loadingCompleteRef = useRef<boolean>(false);
+  const loadingFpsBufRef = useRef<number[]>([]);
+  const runtimeFpsBufRef = useRef<number[]>([]);
+  const lastFpsSampleAtRef = useRef<number>(0);
+  const lastFpsFlushAtRef = useRef<number>(0);
+
   const pausedRef = useRef(paused);
   const isDeadRef = useRef(isDead);
   const gameModeRef = useRef<GameMode>(gameMode);
@@ -1663,6 +1677,12 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
               }
             }
             noa.world.setChunkData(chunkId, data);
+            if (!loadingCompleteRef.current) {
+              loadedColumnsRef.current.add(`${chunkX},${chunkZ}`);
+              if (loadedColumnsRef.current.size >= 9) {
+                loadingCompleteRef.current = true;
+              }
+            }
             return;
           }
 
@@ -3054,6 +3074,23 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         });
       });
 
+      const flushFpsReports = () => {
+        if (onFPSReportRef.current) {
+          if (loadingFpsBufRef.current.length > 0) {
+            const sum = loadingFpsBufRef.current.reduce((a, b) => a + b, 0);
+            const avg = sum / loadingFpsBufRef.current.length;
+            onFPSReportRef.current("loading", avg, loadingFpsBufRef.current.length);
+            loadingFpsBufRef.current = [];
+          }
+          if (runtimeFpsBufRef.current.length > 0) {
+            const sum = runtimeFpsBufRef.current.reduce((a, b) => a + b, 0);
+            const avg = sum / runtimeFpsBufRef.current.length;
+            onFPSReportRef.current("runtime", avg, runtimeFpsBufRef.current.length);
+            runtimeFpsBufRef.current = [];
+          }
+        }
+      };
+
       noa.on("tick", () => {
         if (chatOpenRef.current || inventoryOpenRef.current) {
           if (noa.inputs.state) {
@@ -3069,6 +3106,29 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         }
 
         const nowPerf = performance.now();
+
+        if (nowPerf - lastFpsSampleAtRef.current >= 1000) {
+          lastFpsSampleAtRef.current = nowPerf;
+          const scene = noa.rendering.getScene();
+          const engine = scene.getEngine();
+          const fps = engine.getFps();
+          if (typeof fps === "number" && !isNaN(fps) && fps > 0) {
+            if (loadingCompleteRef.current) {
+              runtimeFpsBufRef.current.push(fps);
+            } else {
+              loadingFpsBufRef.current.push(fps);
+            }
+          }
+        }
+
+        const timeNow = Date.now();
+        if (lastFpsFlushAtRef.current === 0) {
+          lastFpsFlushAtRef.current = timeNow;
+        }
+        if (timeNow - lastFpsFlushAtRef.current >= 30000) {
+          lastFpsFlushAtRef.current = timeNow;
+          flushFpsReports();
+        }
 
         // Update background pool with player position and camera direction
         const pPos = noa.entities.getPosition(noa.playerEntity) as number[];
@@ -3378,6 +3438,10 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           t: Date.now(),
           hotbarIndex: survivalSlotRef.current
         });
+      });
+
+      cleanupFns.push(() => {
+        flushFpsReports();
       });
 
       cleanupFns.push(() => {

@@ -37,6 +37,7 @@ export interface Room<State = unknown> {
    */
   hasBeenActive: boolean;
   paused: boolean;
+  peakPlayerCount: number;
   rematch?: {
     requestedBy: string;
     accepted: Set<string>;
@@ -70,6 +71,7 @@ export function getOrCreateRoom<State>(
     minPlayers?: number;
     roster?: RoomPlayer[];
     paused?: boolean;
+    peakPlayerCount?: number;
     /** DB snapshot for `status='paused'` rows — skip idle `initialState` re-seeding. */
     resumedState?: unknown;
   }
@@ -98,7 +100,8 @@ export function getOrCreateRoom<State>(
     players: new Map(),
     spectators: new Map(),
     hasBeenActive: resumed,
-    paused: meta.paused === true
+    paused: meta.paused === true,
+    peakPlayerCount: meta.peakPlayerCount ?? 0
   };
   rooms.set(sessionId, created as Room<unknown>);
   return created;
@@ -215,6 +218,7 @@ export function assignPlayer<S>(
   const wasIdle = isRoomIdle(room);
   const player: RoomPlayer = { userId, displayName };
   room.players.set(userId, player);
+  room.peakPlayerCount = Math.max(room.peakPlayerCount || 0, room.players.size);
   if (!room.roster.some((p) => p.userId === userId)) {
     room.roster.push(player);
   }

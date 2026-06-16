@@ -50,6 +50,23 @@ import { createRecessSweepState, recessEndSweep } from "./recessSweep";
 import { getCachedAuth } from "./authCache";
 import { canJoinClosedSession } from "./closedSessionAccess";
 
+import { recordLaunch, flushLaunches } from "./launchTracker";
+
+async function persistLaunches(supabase: any, sessionId: string) {
+  const records = flushLaunches(sessionId);
+  for (const record of records) {
+    try {
+      await supabase.rpc("increment_game_launch_server", {
+        p_kid_id: record.userId,
+        p_game_url: record.gameUrl,
+        p_amount: record.count
+      });
+    } catch (e) {
+      console.error("Failed to persist launch stats for user", record.userId, e);
+    }
+  }
+}
+
 const PORT = Number(process.env.PORT ?? 8080);
 /** localhost vs 127.0.0.1 are different origins — allow both for local Vite */
 const CORS_ORIGIN =
@@ -402,7 +419,7 @@ io.on("connection", (socket) => {
       const { data: session, error } = await supabaseAdmin
         .from("game_sessions")
         .select(
-          "id, game_id, gender, player_ids, player_names, host_id, status, game_state, is_open, invitation_code, games ( game_url, min_players )"
+          "id, game_id, gender, player_ids, player_names, host_id, status, game_state, is_open, invitation_code, peak_player_count, games ( game_url, min_players )"
         )
         .eq("id", sessionId)
         .maybeSingle();
@@ -495,6 +512,7 @@ io.on("connection", (socket) => {
           displayName: playerNames[i] ?? "שחקן"
         })),
         paused: sess.status === "paused",
+        peakPlayerCount: (session as any).peak_player_count ?? 0,
         resumedState
       });
       if (!existingRoom) {
@@ -510,10 +528,20 @@ io.on("connection", (socket) => {
         spectateAck?.({ ok: true, spectator: true });
         return;
       }
+      const wasIdle = isRoomIdle(room);
       const assigned = assignPlayer(room, userId, displayName);
       if ("error" in assigned) {
         reply?.({ ok: false, error: assigned.error });
         return;
+      }
+      if (!isRoomIdle(room)) {
+        if (wasIdle) {
+          for (const p of room.players.values()) {
+            recordLaunch(sessionId, p.userId, room.gameKey);
+          }
+        } else {
+          recordLaunch(sessionId, userId, room.gameKey);
+        }
       }
       socket.data.isSpectator = false;
       await socket.join(`session:${sessionId}`);
@@ -533,7 +561,8 @@ io.on("connection", (socket) => {
         userId,
         displayName,
         ...connectedPayload(room),
-        roomStatusIsIdle: isRoomIdle(room)
+        roomStatusIsIdle: isRoomIdle(room),
+        peakPlayerCount: room.peakPlayerCount
       });
       io.to(`session:${sessionId}`).emit("ROOM_EVENT", {
         sessionId,
@@ -633,6 +662,7 @@ io.on("connection", (socket) => {
             gameState: res.state,
             ...connectedPayload(room)
           });
+          void persistLaunches(supabaseAdmin, sessionId);
         }
       }
       reply?.(
@@ -685,6 +715,7 @@ io.on("connection", (socket) => {
           stoppedBy: userId,
           gameState: room.state
         });
+        void persistLaunches(supabaseAdmin, sessionId);
       }
       deleteRoom(sessionId);
       stats.onRoomDeleted(sessionId);
@@ -779,6 +810,9 @@ io.on("connection", (socket) => {
         return;
       }
       resumeRoom(room);
+      for (const p of room.players.values()) {
+        recordLaunch(sessionId, p.userId, room.gameKey);
+      }
       emitSnapshot(room);
       ack?.({ ok: true });
     }
@@ -1051,7 +1085,8 @@ io.on("connection", (socket) => {
         sessionId,
         result,
         ...connected,
-        gameState: before?.state
+        gameState: before?.state,
+        peakPlayerCount: before?.peakPlayerCount
       });
       if (room && !room.paused && room.hasBeenActive && !room.module.isTerminal(room.state) && room.players.size < room.minPlayers) {
         room.paused = true;

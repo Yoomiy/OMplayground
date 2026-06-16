@@ -6,6 +6,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useVoxelSocket } from "@/hooks/useVoxelSocket";
 import { useTeacherSessionChat } from "@/hooks/useTeacherSessionChat";
 import { MinecraftClient } from "@/games/MinecraftClient";
+import { getVoxelServerUrl } from "@/lib/voxelServerUrl";
 import type {
   CraftingGridSlot,
   GameMode,
@@ -439,6 +440,30 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     [dropHotbarItem]
   );
 
+  const handleFPSReport = useCallback(
+    async (phase: "loading" | "runtime", avgFps: number, sampleCount: number) => {
+      try {
+        const sessionRes = await supabase.auth.getSession();
+        const token = sessionRes.data.session?.access_token;
+        if (!token) return;
+
+        const url = `${getVoxelServerUrl()}/api/fps-batch`;
+        await fetch(url, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ sessionId, phase, avgFps, sampleCount }),
+          keepalive: true
+        });
+      } catch (e) {
+        console.error("Failed to report FPS stats:", e);
+      }
+    },
+    [sessionId]
+  );
+
   if (!connected || !joinAck) {
     return (
       <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900 text-slate-100">
@@ -464,6 +489,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         iAmHost={iAmHost}
         onMuteAll={onMuteAll}
         muteAll={muteAll}
+        onFPSReport={handleFPSReport}
         gameMode={liveGameMode}
         chatLines={teacherChat.lines}
         canSendChat={canSendChat}

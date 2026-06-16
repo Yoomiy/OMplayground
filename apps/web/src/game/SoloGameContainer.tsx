@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { KidDesktopShell, desktopPanelClass } from "@/components/KidDesktopShell";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/lib/supabase";
 import {
   deleteSoloGameSave,
   getSoloGameSave,
@@ -103,6 +104,21 @@ export default function SoloGameContainer() {
       cancelled = true;
     };
   }, [gameKey, user?.id]);
+
+  useEffect(() => {
+    if (hasStarted && gameKey) {
+      void (async () => {
+        try {
+          const { error } = await supabase.rpc("increment_game_launch", { p_game_url: gameKey });
+          if (error) {
+            console.error("Failed to increment game launch stats:", error);
+          }
+        } catch (e) {
+          console.error("Failed to increment game launch stats:", e);
+        }
+      })();
+    }
+  }, [hasStarted, gameKey]);
 
   const saveState = useCallback(
     async (
