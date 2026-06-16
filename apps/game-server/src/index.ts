@@ -52,8 +52,8 @@ import { canJoinClosedSession } from "./closedSessionAccess";
 
 import { recordLaunch, flushLaunches } from "./launchTracker";
 
-async function persistLaunches(supabase: any, sessionId: string) {
-  const records = flushLaunches(sessionId);
+async function persistLaunches(supabase: any, sessionId: string, keepSession = false) {
+  const records = flushLaunches(sessionId, keepSession);
   for (const record of records) {
     try {
       await supabase.rpc("increment_game_launch_server", {
@@ -144,7 +144,15 @@ const observability = initObservability(app, io, {
       sessionId: room.sessionId,
       gameType: room.gameKey,
       playerCount: connectedPlayers(room).length
-    }))
+    })),
+  onAdminStatsQuery: async () => {
+    if (supabaseAdmin) {
+      const activeRooms = listRooms();
+      for (const room of activeRooms) {
+        await persistLaunches(supabaseAdmin, room.sessionId, true);
+      }
+    }
+  }
 });
 logger = observability.logger;
 stats = observability.stats;
@@ -1088,6 +1096,9 @@ io.on("connection", (socket) => {
         gameState: before?.state,
         peakPlayerCount: before?.peakPlayerCount
       });
+      if (result.roomEmpty) {
+        void persistLaunches(supabaseAdmin, sessionId);
+      }
       if (room && !room.paused && room.hasBeenActive && !room.module.isTerminal(room.state) && room.players.size < room.minPlayers) {
         room.paused = true;
         room.rematch = undefined;

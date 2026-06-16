@@ -219,8 +219,8 @@ let stats = observabilityEarly.stats;
 import { recordLaunch, flushLaunches } from "./launchTracker";
 import { ingestFpsBatch, flushFps } from "./fpsAggregator";
 
-async function persistLaunches(supabase: any, sessionId: string) {
-  const records = flushLaunches(sessionId);
+async function persistLaunches(supabase: any, sessionId: string, keepSession = false) {
+  const records = flushLaunches(sessionId, keepSession);
   for (const record of records) {
     try {
       await supabase.rpc("increment_game_launch_server", {
@@ -238,8 +238,8 @@ async function persistLaunches(supabase: any, sessionId: string) {
   }
 }
 
-async function persistFps(supabase: any, sessionId: string) {
-  const records = flushFps(sessionId);
+async function persistFps(supabase: any, sessionId: string, keepSession = false) {
+  const records = flushFps(sessionId, keepSession);
   for (const record of records) {
     try {
       await supabase.from("minecraft_fps_stats").upsert({
@@ -435,7 +435,16 @@ const wiredObservability = initObservability(app, io, {
       playerCount: connectedPlayers(room).length
     })),
   voiceStats: () =>
-    fetchLiveKitVoiceStats(LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET)
+    fetchLiveKitVoiceStats(LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET),
+  onAdminStatsQuery: async () => {
+    if (supabaseAdmin) {
+      const activeRooms = listRooms();
+      for (const room of activeRooms) {
+        await persistLaunches(supabaseAdmin, room.sessionId, true);
+        await persistFps(supabaseAdmin, room.sessionId, true);
+      }
+    }
+  }
 });
 logger = wiredObservability.logger;
 stats = wiredObservability.stats;
@@ -2594,6 +2603,12 @@ io.on("connection", (socket) => {
           ? { gameState: snapshotPersistedState(before) }
           : {})
       });
+      if (result.roomEmpty) {
+        setTimeout(() => {
+          void persistLaunches(supabaseAdmin, sessionId);
+          void persistFps(supabaseAdmin, sessionId);
+        }, 1000);
+      }
     }
     if (room && result.roomEmpty) {
       room.paused = true;

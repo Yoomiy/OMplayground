@@ -43,6 +43,7 @@ export function initObservability(
     voiceStats?: () => Promise<
       import("./statsCollector").VoiceStats | undefined
     >;
+    onAdminStatsQuery?: () => Promise<void>;
     logger?: Logger;
     stats?: StatsCollector;
     skipCorrelation?: boolean;
@@ -71,6 +72,16 @@ export function initObservability(
     "/api/admin/stats",
     requireAdmin({ supabaseAdmin: options.supabaseAdmin }),
     async (_req, res) => {
+      if (options.onAdminStatsQuery) {
+        try {
+          await options.onAdminStatsQuery();
+        } catch (err) {
+          logger.error({
+            message: "onAdminStatsQuery failed",
+            error: err instanceof Error ? err.message : String(err)
+          });
+        }
+      }
       const voice = options.voiceStats
         ? await options.voiceStats()
         : undefined;

@@ -14,13 +14,26 @@ export function recordLaunch(sessionId: string, userId: string, gameUrl: string)
   sessionLaunches.set(userId, current);
 }
 
-export function flushLaunches(sessionId: string): Array<{ userId: string; gameUrl: string; count: number }> {
+export function flushLaunches(
+  sessionId: string,
+  keepSession = false
+): Array<{ userId: string; gameUrl: string; count: number }> {
   const sessionLaunches = launches.get(sessionId);
   if (!sessionLaunches) return [];
-  launches.delete(sessionId);
+  
   const result: Array<{ userId: string; gameUrl: string; count: number }> = [];
   for (const [userId, record] of sessionLaunches.entries()) {
-    result.push({ userId, gameUrl: record.gameUrl, count: record.count });
+    if (record.count > 0) {
+      result.push({ userId, gameUrl: record.gameUrl, count: record.count });
+      if (keepSession) {
+        record.count = 0;
+      }
+    }
   }
+  
+  if (!keepSession) {
+    launches.delete(sessionId);
+  }
+  
   return result;
 }

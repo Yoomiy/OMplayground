@@ -47,7 +47,10 @@ export function ingestFpsBatch(
   }
 }
 
-export function flushFps(sessionId: string): Array<{
+export function flushFps(
+  sessionId: string,
+  keepSession = false
+): Array<{
   userId: string;
   loadingAvg: number | null;
   loadingCount: number;
@@ -56,7 +59,6 @@ export function flushFps(sessionId: string): Array<{
 }> {
   const sessionMap = aggregations.get(sessionId);
   if (!sessionMap) return [];
-  aggregations.delete(sessionId);
 
   const result: Array<{
     userId: string;
@@ -74,6 +76,10 @@ export function flushFps(sessionId: string): Array<{
       runtimeAvg: accum.runtimeCount > 0 ? accum.runtimeAvg : null,
       runtimeCount: accum.runtimeCount
     });
+  }
+
+  if (!keepSession) {
+    aggregations.delete(sessionId);
   }
 
   return result;
