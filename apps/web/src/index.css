@@ -30,6 +30,11 @@
       radial-gradient(ellipse at 60% 80%, rgba(236, 72, 153, 0.12) 0%, transparent 50%),
       linear-gradient(160deg, #0f0a1e 0%, #130d2b 50%, #0a1628 100%);
   }
+
+  select option {
+    background-color: #0f0a1e;
+    color: #ffffff;
+  }
 }
 
 @layer utilities {
