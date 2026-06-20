@@ -14,6 +14,7 @@ import {
 import { KidAvatar } from "@/components/KidAvatar";
 import { kidFieldInputClass, kidFieldLabelClass } from "@/lib/fieldStyles";
 import { AdminStatsSection } from "@/components/AdminStatsSection";
+import { AdminFeedbackSection } from "@/components/AdminFeedbackSection";
 
 function parseGradeInput(raw: string): string {
   const clean = raw.trim().replace(/['"]+/g, "");
@@ -107,7 +108,8 @@ type AdminSection =
   | "schedule"
   | "stats"
   | "operations"
-  | "audit";
+  | "audit"
+  | "feedback";
 
 const adminSections: { id: AdminSection; label: string }[] = [
   { id: "moderation", label: "מודרציה" },
@@ -116,6 +118,7 @@ const adminSections: { id: AdminSection; label: string }[] = [
   { id: "games", label: "משחקים" },
   { id: "schedule", label: "לוח הפסקות" },
   { id: "stats", label: "סטטיסטיקות" },
+  { id: "feedback", label: "משובי בטא 🐛" },
   { id: "operations", label: "תפעול" },
   { id: "audit", label: "יומן" }
 ];
@@ -1536,6 +1539,8 @@ export function AdminPage() {
         </ul>
       </section>
       ) : null}
+
+      {activeSection === "feedback" && <AdminFeedbackSection />}
     </div>
   );
 }

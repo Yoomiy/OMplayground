@@ -151,7 +151,9 @@ export async function captureFullViewportScreenshot(): Promise<string | null> {
     const stream = await navigator.mediaDevices.getDisplayMedia({
       video: { displaySurface: "browser" } as any,
       audio: false,
-    });
+      preferCurrentTab: true,          // Pre-select and highlight the current game tab
+      selfBrowserSurface: "include",   // Explicitly include current tab in the prompt options
+    } as any);
 
     const video = document.createElement("video");
     video.srcObject = stream;

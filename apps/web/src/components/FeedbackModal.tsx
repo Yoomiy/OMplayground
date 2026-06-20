@@ -80,10 +80,10 @@ export function FeedbackModal({ onClose }: Props) {
 
       const dialog = dialogRef.current;
       if (dialog) {
-        dialog.style.opacity = "0";
+        dialog.style.display = "none";
       }
 
-      // Wait 50ms for browser to render the transparent state
+      // Wait 50ms for browser to render the hidden state
       await new Promise((resolve) => setTimeout(resolve, 50));
 
       try {
@@ -96,7 +96,7 @@ export function FeedbackModal({ onClose }: Props) {
         }
       } finally {
         if (dialog) {
-          dialog.style.opacity = "";
+          dialog.style.display = "";
         }
         setCapturingScreen(false);
       }
@@ -112,6 +112,8 @@ export function FeedbackModal({ onClose }: Props) {
     setStatus("submitting");
 
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const reporterId = user?.id || null;
       // 1. Upload screenshot to Storage if available
       let screenshotUrl: string | null = null;
       if (screenshot) {
@@ -122,10 +124,7 @@ export function FeedbackModal({ onClose }: Props) {
           .upload(filename, blob, { contentType: "image/jpeg" });
 
         if (!uploadError) {
-          const { data } = supabase.storage
-            .from("feedback-screenshots")
-            .getPublicUrl(filename);
-          screenshotUrl = data.publicUrl;
+          screenshotUrl = filename;
         }
       }
 
@@ -141,16 +140,14 @@ export function FeedbackModal({ onClose }: Props) {
             .upload(filename, blob, { contentType: "image/jpeg" });
 
           if (!uploadError) {
-            const { data } = supabase.storage
-              .from("feedback-screenshots")
-              .getPublicUrl(filename);
-            canvasScreenshotUrl = data.publicUrl;
+            canvasScreenshotUrl = filename;
           }
         }
       }
 
       // 3. Insert the report row
       const { error } = await supabase.from("feedback_reports").insert({
+        reporter_id: reporterId,
         user_message: message,
         category,
         browser_info: getBrowserSpecs(),
