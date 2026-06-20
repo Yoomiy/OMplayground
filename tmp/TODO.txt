@@ -1,7 +1,5 @@
-14. make the app shinyer
 16. improve networking
 19. save last known location
-20. save fps stats
 23. add stats
 26. review saving mechanism
 28.

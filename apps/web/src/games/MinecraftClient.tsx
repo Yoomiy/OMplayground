@@ -1422,7 +1422,8 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         domElement: hostRef.current,
         chunkSize: 16,
         chunkAddDistance: [10, 8],
-        chunkRemoveDistance: [12, 10]
+        chunkRemoveDistance: [12, 10],
+        engineOptions: { preserveDrawingBuffer: true }
       } as Record<string, unknown>);
       
       // noa's built-in ObjectMesher uses global thin instances with manual rebase math;

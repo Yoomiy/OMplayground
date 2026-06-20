@@ -5,6 +5,7 @@ import { usePlaygroundAccess } from "@/hooks/usePlaygroundAccess";
 import { PresenceProvider } from "@/hooks/usePresence";
 import { InboxProvider } from "@/hooks/useInbox";
 import { PendingChallengeBanner } from "@/components/PendingChallengeBanner";
+import { FeedbackTrigger } from "@/components/FeedbackTrigger";
 import { supabase } from "@/lib/supabase";
 import type { PlaygroundRole } from "@/lib/recessAccess";
 import { LoginPage } from "@/pages/LoginPage";
@@ -87,11 +88,13 @@ function Protected({
 }
 
 export default function App() {
+  const { user } = useAuth();
   return (
     <div className="min-h-screen text-slate-100">
       <PresenceProvider>
         <InboxProvider>
           <PendingChallengeBanner />
+          {user && <FeedbackTrigger />}
           <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
