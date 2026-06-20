@@ -314,6 +314,7 @@ export function ProfilePage() {
           </Link>
         </section>
  
+        {/* TODO: Stats section needs to be redesigned/transformed before re-adding.
         <section className={desktopPanelClass("p-5")}>
           <h2 className="text-lg font-black text-white">סטטיסטיקות</h2>
           {Object.keys(profile.best_scores).length === 0 ? (
@@ -334,6 +335,7 @@ export function ProfilePage() {
             </ul>
           )}
         </section>
+        */}
       </aside>
 
       <section className={desktopPanelClass("p-5 xl:col-start-2")}>
