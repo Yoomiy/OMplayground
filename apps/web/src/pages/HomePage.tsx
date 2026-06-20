@@ -286,7 +286,7 @@ export function HomePage() {
                 onClick={() => setGameTab("solo")}
               >
                 <span className="text-base">👤</span>
-                לבד ({soloGames.length})
+                 יחיד ({soloGames.length})
               </button>
               <button
                 type="button"
@@ -299,7 +299,7 @@ export function HomePage() {
                 onClick={() => setGameTab("multi")}
               >
                 <span className="text-base">👥</span>
-                ביחד ({mpGames.length})
+                מרובי משתתפים ({mpGames.length})
               </button>
             </div>
           </div>

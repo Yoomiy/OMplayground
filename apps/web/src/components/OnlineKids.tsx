@@ -141,7 +141,7 @@ export function OnlineKids({ className }: { className?: string }) {
           className="min-h-11 w-full rounded-2xl border border-white/10 bg-white/10 py-2 pl-3 pr-10 text-xs font-bold text-white outline-none transition placeholder:text-white/40 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="חפשו חבר או חברה..."
+          placeholder="חפשו חבר..."
         />
       </label>
 
