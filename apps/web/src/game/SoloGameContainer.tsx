@@ -31,7 +31,9 @@ const SOLO_LOADERS: Record<string, () => Promise<{ default: SoloGameComponent }>
   "breakout-solo": () =>
     import("@/games-solo/BreakoutSolo").then((m) => ({ default: m.BreakoutSolo })),
   "2048": () =>
-    import("@/games-solo/Game2048Solo").then((m) => ({ default: m.Game2048Solo }))
+    import("@/games-solo/Game2048Solo").then((m) => ({ default: m.Game2048Solo })),
+  "supertux-classic": () =>
+    import("@/games-solo/SuperTuxClassicSolo").then((m) => ({ default: m.SuperTuxClassicSolo }))
 };
 
 function LazySoloGame({

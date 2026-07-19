@@ -46,7 +46,8 @@ const GAME_METADATA: Record<
   hexgl: { emoji: "🏎️", gradient: "from-orange-400 to-rose-600", glowColor: "shadow-rose-500/40", badgeGradient: "from-orange-400 to-rose-500" },
   "alges-escapade": { emoji: "🔢", gradient: "from-teal-400 to-cyan-600", glowColor: "shadow-teal-500/40", badgeGradient: "from-teal-400 to-cyan-500" },
   minecraft: { emoji: "🧱", gradient: "from-green-600 to-amber-800", glowColor: "shadow-green-700/40", badgeGradient: "from-green-600 to-amber-700", thumbnailUrl: "/legacy/minecraft/thumbnail.png" },
-  "2048": { emoji: "🔢", gradient: "from-amber-400 to-yellow-600", glowColor: "shadow-amber-500/40", badgeGradient: "from-amber-400 to-yellow-500" }
+  "2048": { emoji: "🔢", gradient: "from-amber-400 to-yellow-600", glowColor: "shadow-amber-500/40", badgeGradient: "from-amber-400 to-yellow-500" },
+  "supertux-classic": { emoji: "🐧", gradient: "from-sky-400 to-blue-700", glowColor: "shadow-sky-500/40", badgeGradient: "from-sky-400 to-blue-600" }
 };
 
 function panelClass(className?: string) {
