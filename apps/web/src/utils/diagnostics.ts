@@ -134,7 +134,7 @@ function resizeCanvasIfNeeded(sourceCanvas: HTMLCanvasElement, maxDim = 1280): H
 }
 
 export function captureGameScreenshot(): string | null {
-  const canvas = document.querySelector<HTMLCanvasElement>("canvas");
+  const canvas = document.querySelector("canvas") as HTMLCanvasElement | null;
   if (!canvas) return null;
   try {
     const resized = resizeCanvasIfNeeded(canvas, 1280);

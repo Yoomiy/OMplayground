@@ -29,7 +29,9 @@ const SOLO_LOADERS: Record<string, () => Promise<{ default: SoloGameComponent }>
   "chess-solo": () => import("@/games-solo/ChessSolo").then((m) => ({ default: m.ChessSolo })),
   breakout: () => import("@/games-solo/BreakoutSolo").then((m) => ({ default: m.BreakoutSolo })),
   "breakout-solo": () =>
-    import("@/games-solo/BreakoutSolo").then((m) => ({ default: m.BreakoutSolo }))
+    import("@/games-solo/BreakoutSolo").then((m) => ({ default: m.BreakoutSolo })),
+  "2048": () =>
+    import("@/games-solo/Game2048Solo").then((m) => ({ default: m.Game2048Solo }))
 };
 
 function LazySoloGame({
