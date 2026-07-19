@@ -37,7 +37,9 @@ const SOLO_LOADERS: Record<string, () => Promise<{ default: SoloGameComponent }>
   "ball2box": () =>
     import("@/games-solo/Ball2BoxSolo").then((m) => ({ default: m.Ball2BoxSolo })),
   "get-that-bit": () =>
-    import("@/games-solo/GetThatBitSolo").then((m) => ({ default: m.GetThatBitSolo }))
+    import("@/games-solo/GetThatBitSolo").then((m) => ({ default: m.GetThatBitSolo })),
+  "chromavescence": () =>
+    import("@/games-solo/ChromavescenceSolo").then((m) => ({ default: m.ChromavescenceSolo }))
 };
 
 function LazySoloGame({

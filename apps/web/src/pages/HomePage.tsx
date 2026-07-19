@@ -49,7 +49,8 @@ const GAME_METADATA: Record<
   "2048": { emoji: "🔢", gradient: "from-amber-400 to-yellow-600", glowColor: "shadow-amber-500/40", badgeGradient: "from-amber-400 to-yellow-500" },
   "supertux-classic": { emoji: "🐧", gradient: "from-sky-400 to-blue-700", glowColor: "shadow-sky-500/40", badgeGradient: "from-sky-400 to-blue-600" },
   "ball2box": { emoji: "📦", gradient: "from-fuchsia-500 to-indigo-600", glowColor: "shadow-indigo-500/40", badgeGradient: "from-fuchsia-500 to-indigo-500" },
-  "get-that-bit": { emoji: "👾", gradient: "from-purple-500 to-indigo-700", glowColor: "shadow-purple-500/40", badgeGradient: "from-purple-500 to-indigo-600" }
+  "get-that-bit": { emoji: "👾", gradient: "from-purple-500 to-indigo-700", glowColor: "shadow-purple-500/40", badgeGradient: "from-purple-500 to-indigo-600" },
+  "chromavescence": { emoji: "🌗", gradient: "from-slate-400 to-zinc-700", glowColor: "shadow-zinc-500/40", badgeGradient: "from-slate-400 to-zinc-600" }
 };
 
 function panelClass(className?: string) {
