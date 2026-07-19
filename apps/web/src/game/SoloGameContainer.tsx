@@ -47,7 +47,9 @@ const SOLO_LOADERS: Record<string, () => Promise<{ default: SoloGameComponent }>
   "connect-the-dots": () =>
     import("@/games-solo/ConnectTheDotsSolo").then((m) => ({ default: m.ConnectTheDotsSolo })),
   "gravvity": () =>
-    import("@/games-solo/GravvitySolo").then((m) => ({ default: m.GravvitySolo }))
+    import("@/games-solo/GravvitySolo").then((m) => ({ default: m.GravvitySolo })),
+  "pacman-canvas": () =>
+    import("@/games-solo/PacmanCanvasSolo").then((m) => ({ default: m.PacmanCanvasSolo }))
 };
 
 function LazySoloGame({

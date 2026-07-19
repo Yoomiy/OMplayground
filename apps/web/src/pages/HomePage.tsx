@@ -54,7 +54,8 @@ const GAME_METADATA: Record<
   "octogone": { emoji: "🛑", gradient: "from-rose-500 to-red-700", glowColor: "shadow-rose-500/40", badgeGradient: "from-rose-500 to-red-600" },
   "all-colors-in-control": { emoji: "🌈", gradient: "from-teal-400 to-indigo-600", glowColor: "shadow-teal-500/40", badgeGradient: "from-teal-400 to-indigo-500" },
   "connect-the-dots": { emoji: "🔵", gradient: "from-cyan-400 to-indigo-600", glowColor: "shadow-cyan-500/40", badgeGradient: "from-cyan-400 to-indigo-500" },
-  "gravvity": { emoji: "🪐", gradient: "from-purple-400 to-indigo-700", glowColor: "shadow-indigo-500/40", badgeGradient: "from-purple-400 to-indigo-500" }
+  "gravvity": { emoji: "🪐", gradient: "from-purple-400 to-indigo-700", glowColor: "shadow-indigo-500/40", badgeGradient: "from-purple-400 to-indigo-500" },
+  "pacman-canvas": { emoji: "🟡", gradient: "from-yellow-400 to-amber-600", glowColor: "shadow-yellow-500/40", badgeGradient: "from-yellow-400 to-amber-500" }
 };
 
 function panelClass(className?: string) {
