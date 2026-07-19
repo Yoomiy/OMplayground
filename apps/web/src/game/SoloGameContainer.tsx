@@ -43,7 +43,9 @@ const SOLO_LOADERS: Record<string, () => Promise<{ default: SoloGameComponent }>
   "octogone": () =>
     import("@/games-solo/OctogoneSolo").then((m) => ({ default: m.OctogoneSolo })),
   "all-colors-in-control": () =>
-    import("@/games-solo/AllColorsInControlSolo").then((m) => ({ default: m.AllColorsInControlSolo }))
+    import("@/games-solo/AllColorsInControlSolo").then((m) => ({ default: m.AllColorsInControlSolo })),
+  "connect-the-dots": () =>
+    import("@/games-solo/ConnectTheDotsSolo").then((m) => ({ default: m.ConnectTheDotsSolo }))
 };
 
 function LazySoloGame({

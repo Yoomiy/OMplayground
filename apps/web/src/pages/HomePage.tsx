@@ -52,7 +52,8 @@ const GAME_METADATA: Record<
   "get-that-bit": { emoji: "👾", gradient: "from-purple-500 to-indigo-700", glowColor: "shadow-purple-500/40", badgeGradient: "from-purple-500 to-indigo-600" },
   "chromavescence": { emoji: "🌗", gradient: "from-slate-400 to-zinc-700", glowColor: "shadow-zinc-500/40", badgeGradient: "from-slate-400 to-zinc-600" },
   "octogone": { emoji: "🛑", gradient: "from-rose-500 to-red-700", glowColor: "shadow-rose-500/40", badgeGradient: "from-rose-500 to-red-600" },
-  "all-colors-in-control": { emoji: "🌈", gradient: "from-teal-400 to-indigo-600", glowColor: "shadow-teal-500/40", badgeGradient: "from-teal-400 to-indigo-500" }
+  "all-colors-in-control": { emoji: "🌈", gradient: "from-teal-400 to-indigo-600", glowColor: "shadow-teal-500/40", badgeGradient: "from-teal-400 to-indigo-500" },
+  "connect-the-dots": { emoji: "🔵", gradient: "from-cyan-400 to-indigo-600", glowColor: "shadow-cyan-500/40", badgeGradient: "from-cyan-400 to-indigo-500" }
 };
 
 function panelClass(className?: string) {
