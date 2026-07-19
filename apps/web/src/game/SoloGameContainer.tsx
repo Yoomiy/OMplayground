@@ -45,7 +45,9 @@ const SOLO_LOADERS: Record<string, () => Promise<{ default: SoloGameComponent }>
   "all-colors-in-control": () =>
     import("@/games-solo/AllColorsInControlSolo").then((m) => ({ default: m.AllColorsInControlSolo })),
   "connect-the-dots": () =>
-    import("@/games-solo/ConnectTheDotsSolo").then((m) => ({ default: m.ConnectTheDotsSolo }))
+    import("@/games-solo/ConnectTheDotsSolo").then((m) => ({ default: m.ConnectTheDotsSolo })),
+  "gravvity": () =>
+    import("@/games-solo/GravvitySolo").then((m) => ({ default: m.GravvitySolo }))
 };
 
 function LazySoloGame({
