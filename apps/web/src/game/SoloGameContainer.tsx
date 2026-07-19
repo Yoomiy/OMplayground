@@ -33,7 +33,9 @@ const SOLO_LOADERS: Record<string, () => Promise<{ default: SoloGameComponent }>
   "2048": () =>
     import("@/games-solo/Game2048Solo").then((m) => ({ default: m.Game2048Solo })),
   "supertux-classic": () =>
-    import("@/games-solo/SuperTuxClassicSolo").then((m) => ({ default: m.SuperTuxClassicSolo }))
+    import("@/games-solo/SuperTuxClassicSolo").then((m) => ({ default: m.SuperTuxClassicSolo })),
+  "ball2box": () =>
+    import("@/games-solo/Ball2BoxSolo").then((m) => ({ default: m.Ball2BoxSolo }))
 };
 
 function LazySoloGame({
