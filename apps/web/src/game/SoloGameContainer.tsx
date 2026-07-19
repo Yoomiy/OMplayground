@@ -35,7 +35,9 @@ const SOLO_LOADERS: Record<string, () => Promise<{ default: SoloGameComponent }>
   "supertux-classic": () =>
     import("@/games-solo/SuperTuxClassicSolo").then((m) => ({ default: m.SuperTuxClassicSolo })),
   "ball2box": () =>
-    import("@/games-solo/Ball2BoxSolo").then((m) => ({ default: m.Ball2BoxSolo }))
+    import("@/games-solo/Ball2BoxSolo").then((m) => ({ default: m.Ball2BoxSolo })),
+  "get-that-bit": () =>
+    import("@/games-solo/GetThatBitSolo").then((m) => ({ default: m.GetThatBitSolo }))
 };
 
 function LazySoloGame({
