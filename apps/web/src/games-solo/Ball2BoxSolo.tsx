@@ -92,7 +92,7 @@ export function Ball2BoxSolo({ save }: { save: SoloGameSaveControls }) {
       {/* Top bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
         <div className="flex flex-col gap-0.5">
-          <h2 className="text-lg font-bold text-white">כדור לקופסה (Ball to Box)</h2>
+          <h2 className="text-lg font-bold text-white">קליעה לסל</h2>
           <p className="text-sm font-medium text-white/70">משחק פאזל פיזיקלי תלת-ממדי מאתגר - הכניסו את הכדור לקופסה!</p>
         </div>
         <button
