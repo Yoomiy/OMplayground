@@ -387,12 +387,13 @@ function TeacherClassroomSection({ teacherProfile }: { teacherProfile: any }) {
     const { data } = await supabase
       .from("classroom_sessions")
       .select("id, title, subject, teacher_name, room_code, status, created_at")
+      .eq("teacher_id", teacherProfile.id)
       .order("created_at", { ascending: false })
       .limit(50);
 
     setClassrooms((data ?? []) as ClassroomRow[]);
     setLoading(false);
-  }, []);
+  }, [teacherProfile.id]);
 
   useEffect(() => {
     void loadClassrooms();

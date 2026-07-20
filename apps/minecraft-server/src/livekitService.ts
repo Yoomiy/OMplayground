@@ -1,6 +1,24 @@
-import { AccessToken } from "livekit-server-sdk";
+import { AccessToken, RoomServiceClient } from "livekit-server-sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCachedAuth } from "./authCache";
+
+export async function deleteLiveKitRoom(roomCode: string): Promise<boolean> {
+  try {
+    const host = process.env.LIVEKIT_URL;
+    const apiKey = process.env.LIVEKIT_API_KEY;
+    const apiSecret = process.env.LIVEKIT_API_SECRET;
+    if (!host || !apiKey || !apiSecret) return false;
+
+    const httpHost = host.replace(/^ws:/, "http:").replace(/^wss:/, "https:");
+    const roomService = new RoomServiceClient(httpHost, apiKey, apiSecret);
+    const livekitRoom = `classroom-${roomCode}`;
+    await roomService.deleteRoom(livekitRoom);
+    return true;
+  } catch (err: any) {
+    console.warn(`LiveKit room cleanup note for ${roomCode}:`, err?.message || err);
+    return false;
+  }
+}
 
 export interface GenerateTokenArgs {
   supabaseAdmin: SupabaseClient;
@@ -163,14 +181,15 @@ export async function generateClassroomToken(
   }
 
   const livekitRoom = `classroom-${roomCode}`;
-  const isTeacher = profile?.role === "teacher" || profile?.role === "admin";
+  const isAdmin = profile?.role === "admin";
+  const isTeacher = profile?.role === "teacher" || isAdmin;
   const isCreatorTeacher = profile && classroom.teacher_id === profile.userId;
-  const isHost = isTeacher || isCreatorTeacher;
+  const isHost = isTeacher || isCreatorTeacher || isAdmin;
   const role = profile?.role ?? "student";
   const finalDisplayName = (profile?.full_name ?? displayName ?? "משתתף").trim();
   const identity = profile?.userId ?? `guest-${Math.random().toString(36).substring(2, 9)}`;
 
-  const isHidden = role === "admin" && spectateMode === "invisible";
+  const isHidden = isAdmin && spectateMode === "invisible";
 
   const at = new AccessToken(apiKey, apiSecret, {
     identity,
@@ -178,7 +197,7 @@ export async function generateClassroomToken(
     ttl: "4h",
     metadata: JSON.stringify({
       role,
-      isHost,
+      isHost: true,
       hidden: isHidden,
       spectateMode: spectateMode ?? "none"
     })

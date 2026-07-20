@@ -2,6 +2,7 @@ import React, { Suspense, useEffect, useRef, useState, useCallback, forwardRef, 
 import type { DrawingState } from "@playground/game-logic";
 import { reconcileElements, diffScene, type DrawingDelta } from "./drawingSync";
 import { compressImage, getBase64Size, MAX_FILE_SIZE_BYTES, MAX_IMAGES_PER_BOARD } from "./drawingImages";
+import { cn } from "@/lib/cn";
 
 // Import Excalidraw CSS
 import "@excalidraw/excalidraw/index.css";
@@ -157,6 +158,9 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   }, [excalidrawAPI, gameState.canvas]);
 
   // Subscribe to remote live deltas
+  // Track host viewport for locking kids' board view
+  const lastHostViewportRef = useRef<{ scrollX: number; scrollY: number; zoom: any } | null>(null);
+
   useEffect(() => {
     if (!subscribeLiveDeltas || !excalidrawAPI) return;
 
@@ -174,6 +178,19 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
             color: "#6366f1"
           });
           return next;
+        });
+      }
+
+      // Handle viewport focus sync from host (focus kids on the exact same point & lock view)
+      if (delta.viewport && !isHost) {
+        lastHostViewportRef.current = delta.viewport;
+        excalidrawAPI.updateScene({
+          appState: {
+            scrollX: delta.viewport.scrollX,
+            scrollY: delta.viewport.scrollY,
+            zoom: typeof delta.viewport.zoom === "number" ? { value: delta.viewport.zoom } : delta.viewport.zoom
+          },
+          commitToHistory: false
         });
       }
 
@@ -271,6 +288,27 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   const handleLocalChange = useCallback(
     async (elements: readonly any[], _appState: any, files: any) => {
       if (!excalidrawAPI) return;
+
+      // Lock board view for kids: prevent kids from panning/zooming away from host's focus
+      if (!isHost && lastHostViewportRef.current && _appState) {
+        const hostVp = lastHostViewportRef.current;
+        const currentZoom = _appState.zoom?.value ?? _appState.zoom;
+        const hostZoom = typeof hostVp.zoom === "number" ? hostVp.zoom : hostVp.zoom?.value;
+        if (
+          Math.abs(_appState.scrollX - hostVp.scrollX) > 2 ||
+          Math.abs(_appState.scrollY - hostVp.scrollY) > 2 ||
+          Math.abs((currentZoom || 1) - (hostZoom || 1)) > 0.02
+        ) {
+          excalidrawAPI.updateScene({
+            appState: {
+              scrollX: hostVp.scrollX,
+              scrollY: hostVp.scrollY,
+              zoom: typeof hostVp.zoom === "number" ? { value: hostVp.zoom } : hostVp.zoom
+            },
+            commitToHistory: false
+          });
+        }
+      }
 
       // Filter out elements that are fully initialized and not in-progress
       const currentElements = elements.map((el) => {
@@ -412,7 +450,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     [excalidrawAPI, onLiveDelta, showToast]
   );
 
-  // Share user cursor (throttled)
+  // Share user cursor & host viewport focus (throttled)
   const handlePointerUpdate = useCallback(
     (payload: any) => {
       if (!onLiveDelta || !payload.pointer) return;
@@ -421,16 +459,58 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
       lastCursorEmitRef.current = now;
       const myPlayer = players?.find((p) => p.userId === myUserId);
       const myDisplayName = myPlayer?.displayName || gameState.seats?.[myUserId!] || "משתתף";
+      
+      let viewport: any = undefined;
+      if (isHost && excalidrawAPI) {
+        const appState = excalidrawAPI.getAppState();
+        if (appState) {
+          viewport = {
+            scrollX: appState.scrollX,
+            scrollY: appState.scrollY,
+            zoom: appState.zoom?.value ?? appState.zoom
+          };
+        }
+      }
+
       onLiveDelta({
         pointer: payload.pointer,
-        username: myDisplayName
+        username: myDisplayName,
+        ...(viewport ? { viewport } : {})
       });
     },
-    [onLiveDelta, gameState.seats, myUserId, players]
+    [onLiveDelta, gameState.seats, myUserId, players, isHost, excalidrawAPI]
   );
 
   return (
-    <div className={`relative ${isFullscreen ? "h-full" : "h-[650px]"} w-full overflow-hidden rounded-2xl border border-white/10 bg-slate-950/20 shadow-inner`}>
+    <div
+      className={cn(
+        "relative w-full overflow-hidden rounded-2xl border border-white/10 bg-slate-950/20 shadow-inner",
+        isFullscreen ? "h-full" : "h-[650px]",
+        mySeat === null && "no-board-privileges"
+      )}
+    >
+      <style>{`
+        /* Remove report/feedback button for everybody */
+        #feedback-trigger-btn,
+        button#feedback-trigger-btn,
+        .excalidraw #feedback-trigger-btn,
+        .excalidraw .help-icon,
+        .excalidraw button[aria-label*="feedback"],
+        .excalidraw button[aria-label*="Feedback"],
+        .excalidraw button[title*="feedback"],
+        .excalidraw button[title*="Feedback"],
+        .excalidraw [aria-label*="report"],
+        .excalidraw [aria-label*="Report"],
+        .excalidraw .excalidraw-feedback-button {
+          display: none !important;
+        }
+
+        /* Remove .dropdown-menu-button for participants without board privileges */
+        .no-board-privileges .dropdown-menu-button {
+          display: none !important;
+        }
+      `}</style>
+
       <Suspense
         fallback={
           <div className="flex h-full w-full items-center justify-center bg-slate-950/40 backdrop-blur-md">

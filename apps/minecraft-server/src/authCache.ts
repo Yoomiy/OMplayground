@@ -26,24 +26,43 @@ export async function getCachedAuth(
     throw new Error("UNAUTHORIZED");
   }
 
-  const { data: profile, error } = await supabaseAdmin
+  // 1. Check kid_profiles table
+  const { data: profile } = await supabaseAdmin
     .from("kid_profiles")
     .select("id, role, gender, full_name, is_active")
     .eq("id", authData.user.id)
     .maybeSingle();
 
-  if (error || !profile || !profile.is_active) {
-    throw new Error("FORBIDDEN");
+  if (profile && profile.is_active) {
+    const result: CachedAuthResult = {
+      userId: profile.id as string,
+      role: profile.role as string,
+      gender: profile.gender as "boy" | "girl",
+      full_name: profile.full_name as string,
+      is_active: profile.is_active as boolean
+    };
+    authCache.set(token, { result, expiresAt: now + AUTH_TTL_MS });
+    return result;
   }
 
-  const result: CachedAuthResult = {
-    userId: profile.id as string,
-    role: profile.role as string,
-    gender: profile.gender as "boy" | "girl",
-    full_name: profile.full_name as string,
-    is_active: profile.is_active as boolean
-  };
+  // 2. Check admin_profiles table (Admins are stored in admin_profiles!)
+  const { data: adminProfile } = await supabaseAdmin
+    .from("admin_profiles")
+    .select("id, full_name")
+    .eq("id", authData.user.id)
+    .maybeSingle();
 
-  authCache.set(token, { result, expiresAt: now + AUTH_TTL_MS });
-  return result;
+  if (adminProfile) {
+    const result: CachedAuthResult = {
+      userId: adminProfile.id as string,
+      role: "admin",
+      gender: "boy",
+      full_name: (adminProfile.full_name as string) || "מנהל מערכת (אדמין)",
+      is_active: true
+    };
+    authCache.set(token, { result, expiresAt: now + AUTH_TTL_MS });
+    return result;
+  }
+
+  throw new Error("FORBIDDEN");
 }

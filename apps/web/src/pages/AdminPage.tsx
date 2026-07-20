@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
+import { getVoxelServerUrl } from "@/lib/voxelServerUrl";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import {
@@ -1552,20 +1553,20 @@ export function AdminPage() {
   );
 }
 
-interface AdminClassroomRow {
+interface ClassroomRow {
   id: string;
   title: string;
   subject: string | null;
   teacher_name: string;
   room_code: string;
   status: string;
+  is_persistent?: boolean;
   created_at: string;
-  last_activity: string;
 }
 
 function AdminClassroomSection() {
   const navigate = useNavigate();
-  const [classrooms, setClassrooms] = useState<AdminClassroomRow[]>([]);
+  const [classrooms, setClassrooms] = useState<ClassroomRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<"active" | "ended" | "all">("active");
   const [searchQuery, setSearchQuery] = useState("");
@@ -1575,27 +1576,34 @@ function AdminClassroomSection() {
     setLoading(true);
     let query = supabase
       .from("classroom_sessions")
-      .select("id, title, subject, teacher_name, room_code, status, created_at, last_activity")
-      .order("created_at", { ascending: false })
-      .limit(100);
+      .select("id, title, subject, teacher_name, room_code, status, is_persistent, created_at")
+      .order("created_at", { ascending: false });
 
-    if (statusFilter !== "all") {
-      query = query.eq("status", statusFilter);
-    }
-    if (searchQuery.trim()) {
-      query = query.or(`title.ilike.%${searchQuery}%,teacher_name.ilike.%${searchQuery}%,room_code.ilike.%${searchQuery}%`);
+    if (statusFilter === "active") {
+      query = query.eq("status", "active");
+    } else if (statusFilter === "ended") {
+      query = query.eq("status", "ended");
     }
 
     const { data } = await query;
-    setClassrooms((data ?? []) as AdminClassroomRow[]);
+    let list = (data ?? []) as ClassroomRow[];
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(
+        (c) =>
+          c.title.toLowerCase().includes(q) ||
+          c.teacher_name.toLowerCase().includes(q) ||
+          c.room_code.toLowerCase().includes(q)
+      );
+    }
+
+    setClassrooms(list);
     setLoading(false);
   }, [statusFilter, searchQuery]);
 
   useEffect(() => {
     void loadClassrooms();
-  }, [loadClassrooms]);
-
-  useEffect(() => {
     const ch = supabase
       .channel("admin-classrooms-realtime")
       .on(
@@ -1608,6 +1616,43 @@ function AdminClassroomSection() {
       void supabase.removeChannel(ch);
     };
   }, [loadClassrooms]);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createTitle, setCreateTitle] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [cleaning, setCleaning] = useState(false);
+  const [isPersistentNew, setIsPersistentNew] = useState(false);
+
+  const cleanupOldClassrooms = async () => {
+    if (!window.confirm("לנקות את כל הכיתות הלא-קבועות (הזמניות) שאינן פעילות בשבוע האחרון?")) return;
+    setCleaning(true);
+    try {
+      const session = (await supabase.auth.getSession()).data.session;
+      const res = await fetch(`${getVoxelServerUrl()}/rtc/classroom-cleanup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
+        },
+        body: JSON.stringify({ daysOld: 7 })
+      });
+      const data = await res.json();
+      setNotice(`ניקוי הושלם בהצלחה! נוקו ${data.deletedCount ?? 0} כיתות ישנות מ-LiveKit ומהמסד.`);
+    } catch {
+      await supabase.rpc("cleanup_old_classroom_sessions", { p_days_old: 7 });
+      setNotice("ניקוי מסד נתונים הושלם.");
+    }
+    setCleaning(false);
+    setTimeout(() => setNotice(null), 4000);
+    void loadClassrooms();
+  };
+
+  const togglePersistence = async (roomCode: string, current: boolean) => {
+    await supabase
+      .from("classroom_sessions")
+      .update({ is_persistent: !current })
+      .eq("room_code", roomCode);
+    void loadClassrooms();
+  };
 
   const endClassroom = async (roomCode: string) => {
     if (!window.confirm("להפסיק/לסגור כיתה וירטואלית זו באופן מיידי?")) return;
@@ -1615,6 +1660,35 @@ function AdminClassroomSection() {
     setNotice("השיעור הופסק והנתונים נוקו.");
     setTimeout(() => setNotice(null), 3000);
     void loadClassrooms();
+  };
+
+  const createClassroom = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createTitle.trim()) return;
+    setCreating(true);
+
+    const roomCode = `class-${Math.random().toString(36).substring(2, 8)}`;
+    const { error } = await supabase
+      .from("classroom_sessions")
+      .insert({
+        title: createTitle.trim(),
+        teacher_id: null,
+        teacher_name: "מנהל מערכת (אדמין)",
+        room_code: roomCode,
+        status: "active",
+        is_persistent: isPersistentNew
+      });
+
+    setCreating(false);
+    if (error) {
+      alert(`שגיאה ביצירת הכיתה: ${error.message}`);
+      return;
+    }
+
+    setShowCreateModal(false);
+    setCreateTitle("");
+    setIsPersistentNew(false);
+    navigate(`/classroom/${roomCode}`);
   };
 
   const activeCount = classrooms.filter((c) => c.status === "active").length;
@@ -1627,11 +1701,76 @@ function AdminClassroomSection() {
           <p className="text-xs text-white/50">צפייה וניהול כיתות וירטואליות פעילות, עם אפשרות לצפייה בסתר (Stealth) או גלויה (Admin Badge)</p>
         </div>
 
-        <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-4 py-2 text-xs font-bold text-indigo-300 flex items-center gap-2">
-          <span>כיתות פעילות בלייב:</span>
-          <span className="rounded-full bg-indigo-600 px-2 py-0.5 text-white font-black">{activeCount}</span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => void cleanupOldClassrooms()}
+            disabled={cleaning}
+            className="rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-bold px-3 py-2 transition duration-200 flex items-center gap-1.5"
+          >
+            🧹 {cleaning ? "מנקה כיתות..." : "ניקוי כיתות ישנות"}
+          </button>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black px-4 py-2 shadow-md transition duration-200"
+          >
+            + צור כיתה וירטואלית חדשה
+          </button>
+
+          <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3 py-1.5 text-xs font-bold text-indigo-300 flex items-center gap-2">
+            <span>כיתות פעילות:</span>
+            <span className="rounded-full bg-indigo-600 px-2 py-0.5 text-white font-black">{activeCount}</span>
+          </div>
         </div>
       </div>
+
+      {/* CREATE CLASSROOM MODAL FOR ADMIN */}
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl space-y-4 text-right">
+            <h3 className="text-lg font-black text-white">צור כיתה וירטואלית חדשה (כאדמין)</h3>
+            <form onSubmit={createClassroom} className="space-y-4 text-sm">
+              <label className="flex flex-col gap-1 font-bold text-white/80">
+                שם השיעור:
+                <input
+                  type="text"
+                  required
+                  placeholder="למשל: שיעור תגבור - כיתה ה'"
+                  value={createTitle}
+                  onChange={(e) => setCreateTitle(e.target.value)}
+                  className={cn(kidFieldInputClass, "py-2 bg-white/5 text-white border-white/10 rounded-xl")}
+                />
+              </label>
+
+              <label className="flex items-center gap-2 text-xs font-bold text-white/80 cursor-pointer pt-1">
+                <input
+                  type="checkbox"
+                  checked={isPersistentNew}
+                  onChange={(e) => setIsPersistentNew(e.target.checked)}
+                  className="rounded accent-indigo-600"
+                />
+                <span>הגדר ככיתה קבועה (📌 חדר קבוע שלא יימחק בניקוי אוטומטי)</span>
+              </label>
+
+              <div className="flex gap-2 justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white/70 hover:bg-white/10"
+                >
+                  ביטול
+                </button>
+                <button
+                  type="submit"
+                  disabled={creating}
+                  className="rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-xs font-black text-white"
+                >
+                  {creating ? "יוצר כיתה..." : "צור והכנס כעת 🚀"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {notice && (
         <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm font-bold text-emerald-300">
@@ -1669,6 +1808,7 @@ function AdminClassroomSection() {
               <th className="p-3">מורה / מארח</th>
               <th className="p-3">קוד חדר</th>
               <th className="p-3">נוצר בתאריך</th>
+              <th className="p-3">סוג חדר</th>
               <th className="p-3">סטטוס</th>
               <th className="p-3">אפשרויות צפייה וניהול</th>
             </tr>
@@ -1679,8 +1819,19 @@ function AdminClassroomSection() {
                 <td className="p-3 font-bold text-white">{c.title}</td>
                 <td className="p-3 text-white/80 font-semibold">{c.teacher_name}</td>
                 <td className="p-3 font-mono text-xs text-indigo-300 font-bold">{c.room_code}</td>
-                <td className="p-3 font-mono text-xs text-white/50">
-                  {new Date(c.created_at).toLocaleString("he-IL")}
+                <td className="p-3">
+                  <button
+                    onClick={() => void togglePersistence(c.room_code, Boolean(c.is_persistent))}
+                    title="לחץ לשינוי סוג החדר (קבוע / זמני)"
+                    className={cn(
+                      "px-2.5 py-0.5 rounded-full text-xs font-bold transition duration-200",
+                      c.is_persistent
+                        ? "bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30"
+                        : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+                    )}
+                  >
+                    {c.is_persistent ? "📌 קבועה" : "⏳ זמנית"}
+                  </button>
                 </td>
                 <td className="p-3">
                   <span className={cn("px-2.5 py-0.5 rounded-full text-xs font-bold", c.status === "active" ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" : "bg-slate-800 text-slate-400")}>

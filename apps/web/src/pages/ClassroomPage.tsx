@@ -305,8 +305,15 @@ export function ClassroomPage() {
         pMetadata = JSON.parse(p.metadata || "{}");
       } catch {}
 
-      // Skip stealth invisible admin
-      if (pMetadata.hidden) return;
+      // Skip stealth invisible admin from remote participants
+      if (
+        pMetadata.hidden === true ||
+        pMetadata.spectateMode === "invisible" ||
+        (p.permissions as any)?.hidden === true ||
+        (pMetadata.role === "admin" && pMetadata.hidden)
+      ) {
+        return;
+      }
 
       list.push({
         sid: p.sid,
@@ -369,8 +376,9 @@ export function ClassroomPage() {
         throw new Error(errJson.message || "ההתחברות לחדר הוידאו נכשלה.");
       }
 
-      const { token, serverUrl, isHost: tokenIsHost } = await response.json();
-      setIsHost(Boolean(tokenIsHost));
+      const { token, serverUrl, isHost: tokenIsHost, role } = await response.json();
+      const isUserHost = Boolean(tokenIsHost || (profile?.role as string) === "admin" || role === "admin" || spectateMode != null);
+      setIsHost(isUserHost);
 
       const lkRoom = new Room({
         adaptiveStream: true,
@@ -470,33 +478,33 @@ export function ClassroomPage() {
           } else if (msg.type === "INDIVIDUAL_MIC_TOGGLE") {
             if (lkRoom.localParticipant.identity === msg.targetIdentity && !isStealthAdmin) {
               const nextState = Boolean(msg.enable);
-              void lkRoom.localParticipant.setMicrophoneEnabled(nextState);
+              void lkRoom.localParticipant.setMicrophoneEnabled(nextState).catch(() => {});
               setMicOn(nextState);
             }
           } else if (msg.type === "INDIVIDUAL_CAM_TOGGLE") {
             if (lkRoom.localParticipant.identity === msg.targetIdentity && !isStealthAdmin) {
               const nextState = Boolean(msg.enable);
-              void lkRoom.localParticipant.setCameraEnabled(nextState);
+              void lkRoom.localParticipant.setCameraEnabled(nextState).catch(() => {});
               setCamOn(nextState);
             }
           } else if (msg.type === "MUTE_ALL") {
-            if (!tokenIsHost && !isHost) {
-              void lkRoom.localParticipant.setMicrophoneEnabled(false);
+            if (!tokenIsHost && !isUserHost) {
+              void lkRoom.localParticipant.setMicrophoneEnabled(false).catch(() => {});
               setMicOn(false);
             }
           } else if (msg.type === "UNMUTE_ALL") {
-            if (!tokenIsHost && !isHost && !isStealthAdmin) {
-              void lkRoom.localParticipant.setMicrophoneEnabled(true);
+            if (!tokenIsHost && !isUserHost && !isStealthAdmin) {
+              void lkRoom.localParticipant.setMicrophoneEnabled(true).catch(() => {});
               setMicOn(true);
             }
           } else if (msg.type === "CLOSE_ALL_CAMS") {
-            if (!tokenIsHost && !isHost) {
-              void lkRoom.localParticipant.setCameraEnabled(false);
+            if (!tokenIsHost && !isUserHost) {
+              void lkRoom.localParticipant.setCameraEnabled(false).catch(() => {});
               setCamOn(false);
             }
           } else if (msg.type === "OPEN_ALL_CAMS") {
-            if (!tokenIsHost && !isHost && !isStealthAdmin) {
-              void lkRoom.localParticipant.setCameraEnabled(true);
+            if (!tokenIsHost && !isUserHost && !isStealthAdmin) {
+              void lkRoom.localParticipant.setCameraEnabled(true).catch(() => {});
               setCamOn(true);
             }
           }
@@ -515,22 +523,42 @@ export function ClassroomPage() {
         setActiveSpeakers(speakers.map((s) => s.identity));
       });
 
-      await lkRoom.connect(serverUrl, token);
+      // Connect to LiveKit room with timeout safety to prevent hanging on WebRTC PC connection errors
+      const connectPromise = lkRoom.connect(serverUrl, token);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("לא ניתן להשלים חיבור PeerConnection בזמן (Timeout). נא לבדוק את החיבור לרשת ולנסות שוב.")), 10000)
+      );
+
+      await Promise.race([connectPromise, timeoutPromise]);
       setRoom(lkRoom);
       setConnState("connected");
 
-      // ADMIN STEALTH MODE: Completely hide cams and mics if spectateMode is invisible
+      // ADMIN STEALTH MODE vs Normal participant
       if (isStealthAdmin) {
-        await lkRoom.localParticipant.setMicrophoneEnabled(false);
-        await lkRoom.localParticipant.setCameraEnabled(false);
         setMicOn(false);
         setCamOn(false);
+        void lkRoom.localParticipant.setMicrophoneEnabled(false).catch(() => {});
+        void lkRoom.localParticipant.setCameraEnabled(false).catch(() => {});
       } else {
-        // Normal participant: Enable mic and cam by default
-        await lkRoom.localParticipant.setMicrophoneEnabled(true);
-        await lkRoom.localParticipant.setCameraEnabled(true);
-        setMicOn(true);
-        setCamOn(true);
+        // Normal participant: Try enabling mic and cam safely in background so errors NEVER block entry!
+        setTimeout(async () => {
+          try {
+            await lkRoom.localParticipant.setMicrophoneEnabled(true);
+            setMicOn(true);
+          } catch (mErr) {
+            console.warn("Could not start microphone source", mErr);
+            setMicOn(false);
+          }
+
+          try {
+            await lkRoom.localParticipant.setCameraEnabled(true);
+            setCamOn(true);
+          } catch (cErr) {
+            console.warn("Could not start video source", cErr);
+            setCamOn(false);
+          }
+          updateParticipantList(lkRoom);
+        }, 50);
       }
 
       updateParticipantList(lkRoom);
@@ -543,7 +571,11 @@ export function ClassroomPage() {
 
     } catch (err: any) {
       console.error(err);
-      setConnError(err.message || "שגיאה בחיבור לשיעור.");
+      if (room) {
+        try { room.disconnect(); } catch {}
+        setRoom(null);
+      }
+      setConnError(err.message || "ההתחברות לשיעור נכשלה (PC Connection Error).");
       setConnState("disconnected");
     }
   };
@@ -858,6 +890,12 @@ export function ClassroomPage() {
 
   return (
     <div className="min-h-screen h-screen bg-slate-950 text-slate-100 flex flex-col font-sans overflow-hidden" dir="rtl">
+      <style>{`
+        #feedback-trigger-btn,
+        button#feedback-trigger-btn {
+          display: none !important;
+        }
+      `}</style>
       
       {/* HEADER BAR */}
       <header className="flex items-center justify-between border-b border-slate-800/80 bg-slate-900/60 px-6 py-2.5 backdrop-blur-md shrink-0">

@@ -94,6 +94,7 @@ import {
 import {
   generateLiveKitToken,
   generateClassroomToken,
+  deleteLiveKitRoom,
   LiveKitTokenError
 } from "./livekitService";
 import { getCachedAuth } from "./authCache";
@@ -455,6 +456,90 @@ app.post("/rtc/classroom-token", async (req, res) => {
     });
   }
 });
+
+app.post("/rtc/classroom-end", async (req, res) => {
+  try {
+    const { roomCode } = req.body || {};
+    if (!roomCode) {
+      res.status(400).json({ error: "missing_room_code" });
+      return;
+    }
+
+    // 1. Delete LiveKit server room memory & disconnect participants
+    await deleteLiveKitRoom(roomCode);
+
+    // 2. Mark session ended in DB
+    if (supabaseAdmin) {
+      await supabaseAdmin.rpc("end_classroom_session", { p_room_code: roomCode });
+    }
+
+    res.json({ success: true, roomCode });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "failed to end classroom" });
+  }
+});
+
+app.post("/rtc/classroom-cleanup", async (req, res) => {
+  try {
+    const accessToken = req.headers.authorization?.replace(/^Bearer\s+/i, "");
+    if (accessToken && supabaseAdmin) {
+      const authResult = await getCachedAuth(supabaseAdmin, accessToken).catch(() => null);
+      if (authResult?.role !== "admin") {
+        res.status(403).json({ error: "forbidden" });
+        return;
+      }
+    }
+
+    const { daysOld = 7 } = req.body || {};
+
+    if (supabaseAdmin) {
+      // 1. Find non-persistent classrooms older than daysOld or ended
+      const cutoffDate = new Date(Date.now() - daysOld * 86400000).toISOString();
+      const { data: roomsToClean } = await supabaseAdmin
+        .from("classroom_sessions")
+        .select("room_code")
+        .eq("is_persistent", false)
+        .or(`status.eq.ended,last_activity.lt.${cutoffDate}`);
+
+      if (roomsToClean && roomsToClean.length > 0) {
+        for (const room of roomsToClean) {
+          void deleteLiveKitRoom(room.room_code);
+        }
+      }
+
+      // 2. Execute DB RPC cleanup
+      const { data: deletedCount } = await supabaseAdmin.rpc("cleanup_old_classroom_sessions", { p_days_old: daysOld });
+      res.json({ success: true, deletedCount: deletedCount ?? 0 });
+      return;
+    }
+
+    res.status(503).json({ error: "server_config" });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "cleanup failed" });
+  }
+});
+
+// Periodic Background Classroom Cleanup (runs every 6 hours)
+setInterval(async () => {
+  if (!supabaseAdmin) return;
+  try {
+    const cutoffDate = new Date(Date.now() - 7 * 86400000).toISOString();
+    const { data: roomsToClean } = await supabaseAdmin
+      .from("classroom_sessions")
+      .select("room_code")
+      .eq("is_persistent", false)
+      .or(`status.eq.ended,last_activity.lt.${cutoffDate}`);
+
+    if (roomsToClean && roomsToClean.length > 0) {
+      for (const r of roomsToClean) {
+        void deleteLiveKitRoom(r.room_code);
+      }
+    }
+    await supabaseAdmin.rpc("cleanup_old_classroom_sessions", { p_days_old: 7 });
+  } catch (e) {
+    console.warn("Background classroom cleanup error:", e);
+  }
+}, 6 * 3600 * 1000);
 
 app.post("/api/fps-batch", async (req, res) => {
   const correlationId = (req as express.Request & { correlationId?: string }).correlationId;
