@@ -3,6 +3,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Room, RoomEvent, Participant, Track } from "livekit-client";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { supabase } from "@/lib/supabase";
 import { getVoxelServerUrl } from "@/lib/voxelServerUrl";
 import { DrawingBoard } from "@/games/drawing/DrawingBoard";
@@ -77,11 +78,16 @@ interface CustomParticipantInfo {
 export function ClassroomPage() {
   const { roomCode } = useParams<{ roomCode: string }>();
   const [searchParams] = useSearchParams();
-  const spectateMode = searchParams.get("spectate") as "invisible" | "visible" | null;
-  const isStealthAdmin = spectateMode === "invisible";
   const navigate = useNavigate();
   const { user } = useAuth();
   const { profile } = useProfile();
+  const { isAdmin } = useIsAdmin();
+
+  // SECURITY & PERFORMANCE: Only evaluate admin check if URL explicitly requests spectate mode
+  const rawSpectateMode = searchParams.get("spectate") as "invisible" | "visible" | null;
+  const isRealAdmin = Boolean(rawSpectateMode && (isAdmin || (profile?.role as string) === "admin"));
+  const spectateMode = isRealAdmin ? rawSpectateMode : null;
+  const isStealthAdmin = isRealAdmin && spectateMode === "invisible";
 
   // Classroom Session DB metadata
   const [sessionData, setSessionData] = useState<ClassroomSessionData | null>(null);
@@ -377,7 +383,7 @@ export function ClassroomPage() {
       }
 
       const { token, serverUrl, isHost: tokenIsHost, role } = await response.json();
-      const isUserHost = Boolean(tokenIsHost || (profile?.role as string) === "admin" || role === "admin" || spectateMode != null);
+      const isUserHost = Boolean(tokenIsHost || isAdmin || (profile?.role as string) === "admin" || role === "admin");
       setIsHost(isUserHost);
 
       const lkRoom = new Room({
