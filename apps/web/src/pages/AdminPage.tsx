@@ -13,6 +13,7 @@ import {
 } from "@/lib/profileApi";
 import { KidAvatar } from "@/components/KidAvatar";
 import { kidFieldInputClass, kidFieldLabelClass } from "@/lib/fieldStyles";
+import { cn } from "@/lib/cn";
 import { AdminStatsSection } from "@/components/AdminStatsSection";
 import { AdminFeedbackSection } from "@/components/AdminFeedbackSection";
 
@@ -101,6 +102,7 @@ function recessDurationMinutes(start: string, end: string): number | null {
 }
 
 type AdminSection =
+  | "classrooms"
   | "moderation"
   | "users"
   | "import"
@@ -112,6 +114,7 @@ type AdminSection =
   | "feedback";
 
 const adminSections: { id: AdminSection; label: string }[] = [
+  { id: "classrooms", label: "כיתות וירטואליות 🪐" },
   { id: "moderation", label: "מודרציה" },
   { id: "users", label: "משתמשים" },
   { id: "import", label: "ייבוא" },
@@ -665,6 +668,10 @@ export function AdminPage() {
           );
         })}
       </nav>
+
+      {activeSection === "classrooms" ? (
+        <AdminClassroomSection />
+      ) : null}
 
       {activeSection === "moderation" ? (
         <section className="space-y-3">
@@ -1544,3 +1551,183 @@ export function AdminPage() {
     </div>
   );
 }
+
+interface AdminClassroomRow {
+  id: string;
+  title: string;
+  subject: string | null;
+  teacher_name: string;
+  room_code: string;
+  status: string;
+  created_at: string;
+  last_activity: string;
+}
+
+function AdminClassroomSection() {
+  const navigate = useNavigate();
+  const [classrooms, setClassrooms] = useState<AdminClassroomRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<"active" | "ended" | "all">("active");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const loadClassrooms = useCallback(async () => {
+    setLoading(true);
+    let query = supabase
+      .from("classroom_sessions")
+      .select("id, title, subject, teacher_name, room_code, status, created_at, last_activity")
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    if (statusFilter !== "all") {
+      query = query.eq("status", statusFilter);
+    }
+    if (searchQuery.trim()) {
+      query = query.or(`title.ilike.%${searchQuery}%,teacher_name.ilike.%${searchQuery}%,room_code.ilike.%${searchQuery}%`);
+    }
+
+    const { data } = await query;
+    setClassrooms((data ?? []) as AdminClassroomRow[]);
+    setLoading(false);
+  }, [statusFilter, searchQuery]);
+
+  useEffect(() => {
+    void loadClassrooms();
+  }, [loadClassrooms]);
+
+  useEffect(() => {
+    const ch = supabase
+      .channel("admin-classrooms-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "classroom_sessions" },
+        () => void loadClassrooms()
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(ch);
+    };
+  }, [loadClassrooms]);
+
+  const endClassroom = async (roomCode: string) => {
+    if (!window.confirm("להפסיק/לסגור כיתה וירטואלית זו באופן מיידי?")) return;
+    await supabase.rpc("end_classroom_session", { p_room_code: roomCode });
+    setNotice("השיעור הופסק והנתונים נוקו.");
+    setTimeout(() => setNotice(null), 3000);
+    void loadClassrooms();
+  };
+
+  const activeCount = classrooms.filter((c) => c.status === "active").length;
+
+  return (
+    <section className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-bold text-white">ניטור כיתות וירטואליות בזמן אמת</h2>
+          <p className="text-xs text-white/50">צפייה וניהול כיתות וירטואליות פעילות, עם אפשרות לצפייה בסתר (Stealth) או גלויה (Admin Badge)</p>
+        </div>
+
+        <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-4 py-2 text-xs font-bold text-indigo-300 flex items-center gap-2">
+          <span>כיתות פעילות בלייב:</span>
+          <span className="rounded-full bg-indigo-600 px-2 py-0.5 text-white font-black">{activeCount}</span>
+        </div>
+      </div>
+
+      {notice && (
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm font-bold text-emerald-300">
+          {notice}
+        </div>
+      )}
+
+      {/* FILTERS BAR */}
+      <div className="flex flex-wrap items-center gap-3">
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as any)}
+          className={cn(kidFieldInputClass, "py-1.5 px-3 text-sm min-h-10 w-auto bg-white/5 border-white/10 text-white rounded-xl")}
+        >
+          <option className="bg-slate-900 text-white" value="active">כיתות פעילות בלבד</option>
+          <option className="bg-slate-900 text-white" value="ended">שיעורים שהסתיימו</option>
+          <option className="bg-slate-900 text-white" value="all">כל ההיסטוריה</option>
+        </select>
+
+        <input
+          type="search"
+          placeholder="חיפוש לפי שם שיעור / מורה / קוד..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className={cn(kidFieldInputClass, "py-1.5 px-3 text-sm min-h-10 flex-1 bg-white/5 border-white/10 text-white rounded-xl")}
+        />
+      </div>
+
+      {/* CLASSROOMS MONITOR TABLE */}
+      <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5 shadow-lg backdrop-blur-md">
+        <table className="w-full text-right text-sm text-white/80">
+          <thead className="border-b border-white/10 bg-white/10 text-white/90">
+            <tr>
+              <th className="p-3">שם השיעור</th>
+              <th className="p-3">מורה / מארח</th>
+              <th className="p-3">מקצוע</th>
+              <th className="p-3">קוד חדר</th>
+              <th className="p-3">נוצר בתאריך</th>
+              <th className="p-3">סטטוס</th>
+              <th className="p-3">אפשרויות צפייה וניהול</th>
+            </tr>
+          </thead>
+          <tbody>
+            {classrooms.map((c) => (
+              <tr key={c.id} className="border-b border-white/5 hover:bg-white/5">
+                <td className="p-3 font-bold text-white">{c.title}</td>
+                <td className="p-3 text-white/80 font-semibold">{c.teacher_name}</td>
+                <td className="p-3 text-white/70">{c.subject || "כללי"}</td>
+                <td className="p-3 font-mono text-xs text-indigo-300 font-bold">{c.room_code}</td>
+                <td className="p-3 font-mono text-xs text-white/50">
+                  {new Date(c.created_at).toLocaleString("he-IL")}
+                </td>
+                <td className="p-3">
+                  <span className={cn("px-2.5 py-0.5 rounded-full text-xs font-bold", c.status === "active" ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" : "bg-slate-800 text-slate-400")}>
+                    {c.status === "active" ? "פעיל בלייב" : "הסתיים"}
+                  </span>
+                </td>
+                <td className="p-3 flex items-center gap-1.5 flex-wrap">
+                  {c.status === "active" ? (
+                    <>
+                      <button
+                        onClick={() => navigate(`/classroom/${c.room_code}?spectate=invisible`)}
+                        title="הצטרפות כצופה סמוי בלתי נראה"
+                        className="rounded-lg bg-indigo-600/80 hover:bg-indigo-500 px-2.5 py-1 text-xs font-bold text-white flex items-center gap-1"
+                      >
+                        🕵️ צפה בסתר
+                      </button>
+
+                      <button
+                        onClick={() => navigate(`/classroom/${c.room_code}?spectate=visible`)}
+                        title="הצטרפות כגורם מפקח עם תג אדמין"
+                        className="rounded-lg bg-amber-600/80 hover:bg-amber-500 px-2.5 py-1 text-xs font-bold text-white flex items-center gap-1"
+                      >
+                        👁️ צפה בגלוי
+                      </button>
+
+                      <button
+                        onClick={() => void endClassroom(c.room_code)}
+                        className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-xs font-bold text-rose-300 hover:bg-rose-500/20"
+                      >
+                        סגור כיתה
+                      </button>
+                    </>
+                  ) : (
+                    <span className="text-xs text-white/40">השיעור הסתיים</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {classrooms.length === 0 && !loading && (
+        <p className="text-sm text-white/50 text-center py-4">אין כיתות לפי המסננים שנגדרו.</p>
+      )}
+    </section>
+  );
+}
+

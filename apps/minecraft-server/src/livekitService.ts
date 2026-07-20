@@ -120,3 +120,88 @@ export async function generateLiveKitToken(
   const token = await at.toJwt();
   return { token, serverUrl, livekitRoom, userId: profile.userId };
 }
+
+export interface GenerateClassroomTokenArgs {
+  supabaseAdmin: SupabaseClient;
+  roomCode: string;
+  displayName: string;
+  accessToken?: string;
+  spectateMode?: "invisible" | "visible";
+}
+
+export async function generateClassroomToken(
+  args: GenerateClassroomTokenArgs
+): Promise<LiveKitTokenResult & { isHost: boolean; role: string }> {
+  const { supabaseAdmin, roomCode, displayName, accessToken, spectateMode } = args;
+  const serverUrl = process.env.LIVEKIT_URL?.trim() ?? "";
+  const apiKey = process.env.LIVEKIT_API_KEY?.trim() ?? "";
+  const apiSecret = process.env.LIVEKIT_API_SECRET?.trim() ?? "";
+  if (!serverUrl || !apiKey || !apiSecret) {
+    throw new LiveKitTokenError(
+      "server_config",
+      "LiveKit is not configured on the server."
+    );
+  }
+
+  const { data: classroom } = await supabaseAdmin
+    .from("classroom_sessions")
+    .select("id, room_code, teacher_id, teacher_name, status, settings")
+    .eq("room_code", roomCode)
+    .maybeSingle();
+
+  if (!classroom || classroom.status !== "active") {
+    throw new LiveKitTokenError("session_completed", "Classroom session not active.");
+  }
+
+  let profile: any = null;
+  if (accessToken) {
+    try {
+      profile = await getCachedAuth(supabaseAdmin, accessToken);
+    } catch {
+      profile = null;
+    }
+  }
+
+  const livekitRoom = `classroom-${roomCode}`;
+  const isTeacher = profile?.role === "teacher" || profile?.role === "admin";
+  const isCreatorTeacher = profile && classroom.teacher_id === profile.userId;
+  const isHost = isTeacher || isCreatorTeacher;
+  const role = profile?.role ?? "student";
+  const finalDisplayName = (profile?.full_name ?? displayName ?? "משתתף").trim();
+  const identity = profile?.userId ?? `guest-${Math.random().toString(36).substring(2, 9)}`;
+
+  const isHidden = role === "admin" && spectateMode === "invisible";
+
+  const at = new AccessToken(apiKey, apiSecret, {
+    identity,
+    name: finalDisplayName,
+    ttl: "4h",
+    metadata: JSON.stringify({
+      role,
+      isHost,
+      hidden: isHidden,
+      spectateMode: spectateMode ?? "none"
+    })
+  });
+
+  at.addGrant({
+    roomJoin: true,
+    room: livekitRoom,
+    canPublish: !isHidden,
+    canSubscribe: true,
+    canPublishData: true,
+    roomAdmin: isHost,
+    hidden: isHidden
+  });
+
+  const token = await at.toJwt();
+  return {
+    token,
+    serverUrl,
+    livekitRoom,
+    userId: identity,
+    isHost,
+    role
+  };
+}
+

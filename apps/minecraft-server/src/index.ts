@@ -93,6 +93,7 @@ import {
 } from "./recessSweep";
 import {
   generateLiveKitToken,
+  generateClassroomToken,
   LiveKitTokenError
 } from "./livekitService";
 import { getCachedAuth } from "./authCache";
@@ -379,6 +380,78 @@ app.post("/rtc/token", async (req, res) => {
     res.status(status).json({
       error: reason,
       message: err instanceof Error ? err.message : "unauthorized"
+    });
+  }
+});
+
+app.post("/rtc/classroom-token", async (req, res) => {
+  const correlationId = (req as express.Request & { correlationId?: string })
+    .correlationId;
+  try {
+    const accessToken = req.headers.authorization?.replace(/^Bearer\s+/i, "");
+    const { roomCode, displayName, spectateMode } = req.body as {
+      roomCode?: string;
+      displayName?: string;
+      spectateMode?: "invisible" | "visible";
+    };
+
+    if (!roomCode) {
+      res.status(400).json({ error: "missing_room_code" });
+      return;
+    }
+    if (!supabaseAdmin) {
+      res.status(503).json({ error: "server_config" });
+      return;
+    }
+
+    const result = await generateClassroomToken({
+      supabaseAdmin,
+      roomCode,
+      displayName: displayName ?? "משתתף",
+      accessToken,
+      spectateMode
+    });
+
+    logger.info({
+      correlationId,
+      userId: result.userId,
+      roomCode,
+      protocol: "http",
+      message: "Classroom LiveKit token issued",
+      context: {
+        event: "CLASSROOM_RTC_TOKEN_ISSUED",
+        livekitRoom: result.livekitRoom,
+        isHost: result.isHost,
+        role: result.role,
+        status: "success"
+      }
+    });
+
+    res.json({
+      token: result.token,
+      serverUrl: result.serverUrl,
+      livekitRoom: result.livekitRoom,
+      userId: result.userId,
+      isHost: result.isHost,
+      role: result.role
+    });
+  } catch (err) {
+    const reason =
+      err instanceof LiveKitTokenError ? err.reason : "unauthorized";
+    logger.warn({
+      correlationId,
+      protocol: "http",
+      message: "Classroom LiveKit token denied",
+      context: {
+        event: "CLASSROOM_RTC_TOKEN_DENIED",
+        reason,
+        status: "failed"
+      }
+    });
+    const status = reason === "server_config" ? 503 : 400;
+    res.status(status).json({
+      error: reason,
+      message: err instanceof Error ? err.message : "token generation failed"
     });
   }
 });
