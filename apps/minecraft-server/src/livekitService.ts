@@ -190,6 +190,7 @@ export async function generateClassroomToken(
     canPublish: !isHidden,
     canSubscribe: true,
     canPublishData: true,
+    canUpdateOwnMetadata: true,
     roomAdmin: isHost,
     hidden: isHidden
   });

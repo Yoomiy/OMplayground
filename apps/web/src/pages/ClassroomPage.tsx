@@ -78,6 +78,7 @@ export function ClassroomPage() {
   const { roomCode } = useParams<{ roomCode: string }>();
   const [searchParams] = useSearchParams();
   const spectateMode = searchParams.get("spectate") as "invisible" | "visible" | null;
+  const isStealthAdmin = spectateMode === "invisible";
   const navigate = useNavigate();
   const { user } = useAuth();
   const { profile } = useProfile();
@@ -97,8 +98,8 @@ export function ClassroomPage() {
 
   // User Local Media & Permissions state
   const [isHost, setIsHost] = useState(false);
-  const [micOn, setMicOn] = useState(true);
-  const [camOn, setCamOn] = useState(true);
+  const [micOn, setMicOn] = useState(false);
+  const [camOn, setCamOn] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [isHandRaised, setIsHandRaised] = useState(false);
 
@@ -266,20 +267,22 @@ export function ClassroomPage() {
       localMetadata = JSON.parse(local.metadata || "{}");
     } catch {}
 
-    const localInfo: CustomParticipantInfo = {
-      sid: local.sid,
-      identity: local.identity,
-      name: local.name || "אני",
-      isHost: Boolean(localMetadata.isHost || (local.permissions?.canPublishData && (local.permissions as any)?.roomAdmin)),
-      isMe: true,
-      isMuted: !local.isMicrophoneEnabled,
-      isVideoOff: !local.isCameraEnabled,
-      isHandRaised: Boolean(localMetadata.handRaised),
-      screenTrack: localScreenTrack,
-      videoTrack: localVideoTrack,
-      audioTrack: localAudioTrack
-    };
-    list.push(localInfo);
+    // Skip stealth invisible admin from participant list & grid
+    if (!localMetadata.hidden && !isStealthAdmin) {
+      list.push({
+        sid: local.sid,
+        identity: local.identity,
+        name: local.name || "אני",
+        isHost: Boolean(localMetadata.isHost || (local.permissions?.canPublishData && (local.permissions as any)?.roomAdmin)),
+        isMe: true,
+        isMuted: !local.isMicrophoneEnabled,
+        isVideoOff: !local.isCameraEnabled,
+        isHandRaised: Boolean(localMetadata.handRaised),
+        screenTrack: localScreenTrack,
+        videoTrack: localVideoTrack,
+        audioTrack: localAudioTrack
+      });
+    }
 
     // Remote participants
     lkRoom.remoteParticipants.forEach((p) => {
@@ -332,7 +335,7 @@ export function ClassroomPage() {
     // Find screen share participant
     const screenSharing = list.find((p) => p.screenTrack != null);
     setScreenShareParticipant(screenSharing || null);
-  }, []);
+  }, [isStealthAdmin]);
 
   // Connect to LiveKit Room
   const connectToRoom = async () => {
@@ -374,7 +377,7 @@ export function ClassroomPage() {
         dynacast: true
       });
 
-      // Handle Data Channel Messages (Chat, Whiteboard Deltas, Full State Sync, Controls, Reactions)
+      // Handle Data Channel Messages (Chat, Whiteboard Deltas, Full State Sync, Controls, Reactions, Hand Raise)
       lkRoom.on(RoomEvent.DataReceived, (payload: Uint8Array, participant?: Participant) => {
         try {
           const str = new TextDecoder().decode(payload);
@@ -394,6 +397,10 @@ export function ClassroomPage() {
           } else if (msg.type === "REACTION") {
             setRecentReaction({ emoji: msg.emoji, name: msg.senderName });
             setTimeout(() => setRecentReaction(null), 3000);
+          } else if (msg.type === "HAND_RAISE") {
+            setParticipants((prev) =>
+              prev.map((p) => (p.identity === msg.targetIdentity ? { ...p, isHandRaised: Boolean(msg.handRaised) } : p))
+            );
           } else if (msg.type === "REQUEST_WHITEBOARD_STATE") {
             // LATE JOINER EDGE CASE: Send full current whiteboard state to newly joined participant
             if (currentBoardElementsRef.current.length > 0) {
@@ -457,17 +464,17 @@ export function ClassroomPage() {
           } else if (msg.type === "GRANT_HOST") {
             if (lkRoom.localParticipant.identity === msg.targetIdentity) {
               setIsHost(true);
-              void lkRoom.localParticipant.setMetadata(JSON.stringify({ isHost: true }));
+              void lkRoom.localParticipant.setMetadata(JSON.stringify({ isHost: true })).catch(() => {});
               updateParticipantList(lkRoom);
             }
           } else if (msg.type === "INDIVIDUAL_MIC_TOGGLE") {
-            if (lkRoom.localParticipant.identity === msg.targetIdentity) {
+            if (lkRoom.localParticipant.identity === msg.targetIdentity && !isStealthAdmin) {
               const nextState = Boolean(msg.enable);
               void lkRoom.localParticipant.setMicrophoneEnabled(nextState);
               setMicOn(nextState);
             }
           } else if (msg.type === "INDIVIDUAL_CAM_TOGGLE") {
-            if (lkRoom.localParticipant.identity === msg.targetIdentity) {
+            if (lkRoom.localParticipant.identity === msg.targetIdentity && !isStealthAdmin) {
               const nextState = Boolean(msg.enable);
               void lkRoom.localParticipant.setCameraEnabled(nextState);
               setCamOn(nextState);
@@ -478,7 +485,7 @@ export function ClassroomPage() {
               setMicOn(false);
             }
           } else if (msg.type === "UNMUTE_ALL") {
-            if (!tokenIsHost && !isHost) {
+            if (!tokenIsHost && !isHost && !isStealthAdmin) {
               void lkRoom.localParticipant.setMicrophoneEnabled(true);
               setMicOn(true);
             }
@@ -488,7 +495,7 @@ export function ClassroomPage() {
               setCamOn(false);
             }
           } else if (msg.type === "OPEN_ALL_CAMS") {
-            if (!tokenIsHost && !isHost) {
+            if (!tokenIsHost && !isHost && !isStealthAdmin) {
               void lkRoom.localParticipant.setCameraEnabled(true);
               setCamOn(true);
             }
@@ -512,11 +519,19 @@ export function ClassroomPage() {
       setRoom(lkRoom);
       setConnState("connected");
 
-      // Enable mic and cam by default for everyone (kids aren't muted by default!)
-      await lkRoom.localParticipant.setMicrophoneEnabled(true);
-      await lkRoom.localParticipant.setCameraEnabled(true);
-      setMicOn(true);
-      setCamOn(true);
+      // ADMIN STEALTH MODE: Completely hide cams and mics if spectateMode is invisible
+      if (isStealthAdmin) {
+        await lkRoom.localParticipant.setMicrophoneEnabled(false);
+        await lkRoom.localParticipant.setCameraEnabled(false);
+        setMicOn(false);
+        setCamOn(false);
+      } else {
+        // Normal participant: Enable mic and cam by default
+        await lkRoom.localParticipant.setMicrophoneEnabled(true);
+        await lkRoom.localParticipant.setCameraEnabled(true);
+        setMicOn(true);
+        setCamOn(true);
+      }
 
       updateParticipantList(lkRoom);
 
@@ -590,7 +605,7 @@ export function ClassroomPage() {
 
   // Toggle Microphone
   const toggleMic = async () => {
-    if (!room) return;
+    if (!room || isStealthAdmin) return;
     const nextState = !micOn;
     await room.localParticipant.setMicrophoneEnabled(nextState);
     setMicOn(nextState);
@@ -599,7 +614,7 @@ export function ClassroomPage() {
 
   // Toggle Camera
   const toggleCam = async () => {
-    if (!room) return;
+    if (!room || isStealthAdmin) return;
     const nextState = !camOn;
     await room.localParticipant.setCameraEnabled(nextState);
     setCamOn(nextState);
@@ -608,7 +623,7 @@ export function ClassroomPage() {
 
   // Toggle Screen Sharing
   const toggleScreenShare = async () => {
-    if (!room) return;
+    if (!room || isStealthAdmin) return;
     const canShare = isHost || roomSettings.allowStudentScreenShare;
     if (!canShare && !isScreenSharing) {
       alert("שיתוף מסך מורשה באישור המורה בלבד.");
@@ -624,17 +639,28 @@ export function ClassroomPage() {
     }
   };
 
-  // Raise / Lower Hand
+  // Raise / Lower Hand (Safe metadata update + Data Channel broadcast)
   const toggleHandRaise = async () => {
-    if (!room) return;
+    if (!room || isStealthAdmin) return;
     const next = !isHandRaised;
     setIsHandRaised(next);
-    let meta: any = {};
+
     try {
-      meta = JSON.parse(room.localParticipant.metadata || "{}");
+      let meta: any = {};
+      try {
+        meta = JSON.parse(room.localParticipant.metadata || "{}");
+      } catch {}
+      meta.handRaised = next;
+      await room.localParticipant.setMetadata(JSON.stringify(meta)).catch(() => {});
     } catch {}
-    meta.handRaised = next;
-    await room.localParticipant.setMetadata(JSON.stringify(meta));
+
+    const payload = JSON.stringify({
+      type: "HAND_RAISE",
+      targetIdentity: room.localParticipant.identity,
+      handRaised: next
+    });
+    await room.localParticipant.publishData(new TextEncoder().encode(payload), { reliable: true });
+
     updateParticipantList(room);
   };
 
@@ -674,7 +700,7 @@ export function ClassroomPage() {
 
   // Send Emoji Reaction
   const sendReaction = async (emoji: string) => {
-    if (!room) return;
+    if (!room || isStealthAdmin) return;
     const payload = JSON.stringify({
       type: "REACTION",
       senderName: room.localParticipant.name || "משתתף",
@@ -845,6 +871,11 @@ export function ClassroomPage() {
               {isHost && (
                 <span className="rounded-md bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 text-xs font-bold text-amber-300 flex items-center gap-1">
                   <Crown className="size-3" /> מורה / מארח
+                </span>
+              )}
+              {isStealthAdmin && (
+                <span className="rounded-md bg-indigo-500/20 border border-indigo-500/30 px-2 py-0.5 text-xs font-bold text-indigo-300">
+                  🕵️ צופה בסתר
                 </span>
               )}
             </h1>
@@ -1099,6 +1130,7 @@ export function ClassroomPage() {
                         onLiveDelta={handleLocalBoardDelta}
                         subscribeLiveDeltas={subscribeLiveDeltas}
                         isHost={isHost}
+                        hideTopBar={true}
                         players={participants.map((p) => ({
                           userId: p.identity,
                           displayName: p.name
@@ -1115,63 +1147,73 @@ export function ClassroomPage() {
               
               {/* Media Toggles */}
               <div className="flex items-center gap-2">
-                <button
-                  onClick={toggleMic}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
-                    micOn ? "bg-emerald-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                  )}
-                >
-                  {micOn ? <Mic className="size-3.5" /> : <MicOff className="size-3.5" />}
-                  {micOn ? "מיקרופון פעיל" : "מיקרופון כבוי"}
-                </button>
+                {!isStealthAdmin ? (
+                  <>
+                    <button
+                      onClick={toggleMic}
+                      className={cn(
+                        "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
+                        micOn ? "bg-emerald-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                      )}
+                    >
+                      {micOn ? <Mic className="size-3.5" /> : <MicOff className="size-3.5" />}
+                      {micOn ? "מיקרופון פעיל" : "מיקרופון כבוי"}
+                    </button>
 
-                <button
-                  onClick={toggleCam}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
-                    camOn ? "bg-emerald-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                  )}
-                >
-                  {camOn ? <VideoIcon className="size-3.5" /> : <VideoOff className="size-3.5" />}
-                  {camOn ? "מצלמה פעילה" : "מצלמה כבויה"}
-                </button>
+                    <button
+                      onClick={toggleCam}
+                      className={cn(
+                        "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
+                        camOn ? "bg-emerald-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                      )}
+                    >
+                      {camOn ? <VideoIcon className="size-3.5" /> : <VideoOff className="size-3.5" />}
+                      {camOn ? "מצלמה פעילה" : "מצלמה כבויה"}
+                    </button>
 
-                <button
-                  onClick={toggleScreenShare}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
-                    isScreenSharing ? "bg-indigo-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                  )}
-                >
-                  {isScreenSharing ? <MonitorOff className="size-3.5" /> : <Monitor className="size-3.5" />}
-                  {isScreenSharing ? "עצור שיתוף" : "שתף מסך"}
-                </button>
+                    <button
+                      onClick={toggleScreenShare}
+                      className={cn(
+                        "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
+                        isScreenSharing ? "bg-indigo-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                      )}
+                    >
+                      {isScreenSharing ? <MonitorOff className="size-3.5" /> : <Monitor className="size-3.5" />}
+                      {isScreenSharing ? "עצור שיתוף" : "שתף מסך"}
+                    </button>
 
-                <button
-                  onClick={toggleHandRaise}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
-                    isHandRaised ? "bg-amber-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                  )}
-                >
-                  <Hand className="size-3.5" />
-                  {isHandRaised ? "הורד יד" : "הרם יד ✋"}
-                </button>
+                    <button
+                      onClick={toggleHandRaise}
+                      className={cn(
+                        "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
+                        isHandRaised ? "bg-amber-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                      )}
+                    >
+                      <Hand className="size-3.5" />
+                      {isHandRaised ? "הורד יד" : "הרם יד ✋"}
+                    </button>
+                  </>
+                ) : (
+                  <div className="px-3 py-1.5 rounded-xl bg-slate-800 text-indigo-300 text-xs font-bold flex items-center gap-1.5">
+                    🕵️ מצב צפייה בסתר בלבד (ללא מיקרופון/מצלמה)
+                  </div>
+                )}
               </div>
 
               {/* Emoji Quick Reactions */}
-              <div className="flex items-center gap-1 border-x border-slate-800 px-3">
-                {["👏", "👍", "❤️", "❓", "😊"].map((emoji) => (
-                  <button
-                    key={emoji}
-                    onClick={() => sendReaction(emoji)}
-                    className="p-1 rounded-lg hover:bg-slate-800 text-sm transition duration-150"
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
+              {!isStealthAdmin && (
+                <div className="flex items-center gap-1 border-x border-slate-800 px-3">
+                  {["👏", "👍", "❤️", "❓", "😊"].map((emoji) => (
+                    <button
+                      key={emoji}
+                      onClick={() => sendReaction(emoji)}
+                      className="p-1 rounded-lg hover:bg-slate-800 text-sm transition duration-150"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               {/* Side Panels Toggles */}
               <div className="flex items-center gap-2">

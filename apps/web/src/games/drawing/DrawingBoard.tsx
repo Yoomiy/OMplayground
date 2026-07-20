@@ -1,6 +1,7 @@
 import { useRef, useState, useCallback, useEffect } from "react";
 import type { DrawingState } from "@playground/game-logic";
 import { DrawingCanvas, type DrawingCanvasRef } from "./DrawingCanvas";
+import { cn } from "@/lib/cn";
 
 export interface DrawingBoardProps {
   gameState: DrawingState;
@@ -11,6 +12,7 @@ export interface DrawingBoardProps {
   subscribeLiveDeltas?: (cb: (payload: any) => void) => () => void;
   isHost?: boolean;
   players?: { userId: string; displayName: string }[];
+  hideTopBar?: boolean;
 }
 
 export function DrawingBoard({
@@ -21,7 +23,8 @@ export function DrawingBoard({
   onLiveDelta,
   subscribeLiveDeltas,
   isHost,
-  players
+  players,
+  hideTopBar = false
 }: DrawingBoardProps) {
   const canvasRef = useRef<DrawingCanvasRef>(null);
   const boardRef = useRef<HTMLDivElement>(null);
@@ -97,9 +100,13 @@ export function DrawingBoard({
   return (
     <div
       ref={boardRef}
-      className={`relative mx-auto w-full space-y-4 rounded-3xl border border-white/10 bg-white/5 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-md ${
+      className={cn(
+        "relative mx-auto w-full backdrop-blur-md",
+        hideTopBar
+          ? "h-full flex flex-col p-0 space-y-0 bg-transparent shadow-none border-none rounded-none"
+          : "space-y-4 rounded-3xl border border-white/10 bg-white/5 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.5)]",
         isFullscreen ? "h-screen w-screen !max-w-none flex flex-col justify-between gap-4 !rounded-none bg-slate-950 p-6 overflow-hidden" : ""
-      }`}
+      )}
     >
       {/* Toast Alert */}
       {toast && (
@@ -109,109 +116,111 @@ export function DrawingBoard({
       )}
 
       {/* Top Action Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
-        {/* Connection status and seat */}
-        <div className="flex flex-wrap items-center gap-4">
-          {/* My connection status badge */}
-          <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-1.5 shadow-sm">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
-            </span>
-            <span className="text-xs font-bold text-white/80">
-              {isSpectator ? (
-                <span className="text-indigo-300">צופה במשחק</span>
-              ) : (
-                <span className="flex items-center gap-1">
-                  <span>מחובר כ:</span>
-                  <span className="font-extrabold text-white">{myDisplayName}</span>
-                </span>
-              )}
-            </span>
-          </div>
+      {!hideTopBar && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
+          {/* Connection status and seat */}
+          <div className="flex flex-wrap items-center gap-4">
+            {/* My connection status badge */}
+            <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-1.5 shadow-sm">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+              </span>
+              <span className="text-xs font-bold text-white/80">
+                {isSpectator ? (
+                  <span className="text-indigo-300">צופה במשחק</span>
+                ) : (
+                  <span className="flex items-center gap-1">
+                    <span>מחובר כ:</span>
+                    <span className="font-extrabold text-white">{myDisplayName}</span>
+                  </span>
+                )}
+              </span>
+            </div>
 
-          {/* Active room participants avatar list/pills */}
-          {(activeParticipants.length > 1 || (isSpectator && activeParticipants.length > 0)) && (
-            <div className="flex flex-wrap items-center gap-1.5 border-r border-white/10 pr-3 mr-1">
-              <span className="text-xs font-bold text-white/40 ml-1">מציירים כעת:</span>
-              {activeParticipants.map((p) => (
-                <div
-                  key={p.userId}
-                  className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-all ${
-                    p.isMe
-                      ? "border-indigo-400/30 bg-indigo-500/10 font-bold text-indigo-200 shadow-sm"
-                      : "border-white/5 bg-white/5 font-medium text-white/60"
-                  }`}
-                >
-                  {/* Small initial bubble */}
-                  <span
-                    className={`flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-black uppercase ${
-                      p.isMe ? "bg-indigo-500 text-white" : "bg-white/10 text-white/50"
+            {/* Active room participants avatar list/pills */}
+            {(activeParticipants.length > 1 || (isSpectator && activeParticipants.length > 0)) && (
+              <div className="flex flex-wrap items-center gap-1.5 border-r border-white/10 pr-3 mr-1">
+                <span className="text-xs font-bold text-white/40 ml-1">מציירים כעת:</span>
+                {activeParticipants.map((p) => (
+                  <div
+                    key={p.userId}
+                    className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-all ${
+                      p.isMe
+                        ? "border-indigo-400/30 bg-indigo-500/10 font-bold text-indigo-200 shadow-sm"
+                        : "border-white/5 bg-white/5 font-medium text-white/60"
                     }`}
                   >
-                    {p.displayName.charAt(0) || "מ"}
-                  </span>
-                  <span>{p.displayName}</span>
-                  {p.isMe && <span className="text-[10px] text-indigo-300 font-semibold">(אני)</span>}
-                </div>
-              ))}
-            </div>
-          )}
+                    {/* Small initial bubble */}
+                    <span
+                      className={`flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-black uppercase ${
+                        p.isMe ? "bg-indigo-500 text-white" : "bg-white/10 text-white/50"
+                      }`}
+                    >
+                      {p.displayName.charAt(0) || "מ"}
+                    </span>
+                    <span>{p.displayName}</span>
+                    {p.isMe && <span className="text-[10px] text-indigo-300 font-semibold">(אני)</span>}
+                  </div>
+                ))}
+              </div>
+            )}
 
-          {/* Fallback connection count if no participants listed yet */}
-          {activeParticipants.length === 0 && (
-            <div className="text-xs font-bold text-white/50 border-r border-white/10 pr-3 mr-1">
-              {participantCount === 1 ? "משתתף יחיד בחדר" : `${participantCount} משתתפים בחדר`}
-            </div>
-          )}
-        </div>
+            {/* Fallback connection count if no participants listed yet */}
+            {activeParticipants.length === 0 && (
+              <div className="text-xs font-bold text-white/50 border-r border-white/10 pr-3 mr-1">
+                {participantCount === 1 ? "משתתף יחיד בחדר" : `${participantCount} משתתפים בחדר`}
+              </div>
+            )}
+          </div>
 
-        {/* Buttons (Clean, Export, Fullscreen) */}
-        <div className="flex items-center gap-2">
-          {!isSpectator && (
+          {/* Buttons (Clean, Export, Fullscreen) */}
+          <div className="flex items-center gap-2">
+            {!isSpectator && (
+              <button
+                type="button"
+                className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-2 text-xs font-bold text-rose-300 hover:bg-rose-500/20 transition-all hover:scale-105 active:scale-95 duration-200 shadow-sm"
+                onClick={handleClear}
+              >
+                נקה לוח
+              </button>
+            )}
+
             <button
               type="button"
-              className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-2 text-xs font-bold text-rose-300 hover:bg-rose-500/20 transition-all hover:scale-105 active:scale-95 duration-200 shadow-sm"
-              onClick={handleClear}
+              className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white/70 hover:bg-white/10 hover:text-white transition-all hover:scale-105 active:scale-95 duration-200 shadow-sm"
+              onClick={handleExport}
             >
-              נקה לוח
+              ייצא לתמונה
             </button>
-          )}
 
-          <button
-            type="button"
-            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white/70 hover:bg-white/10 hover:text-white transition-all hover:scale-105 active:scale-95 duration-200 shadow-sm"
-            onClick={handleExport}
-          >
-            ייצא לתמונה
-          </button>
-
-          <button
-            type="button"
-            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white/70 hover:bg-white/10 hover:text-white transition-all hover:scale-105 active:scale-95 duration-200 shadow-sm flex items-center gap-1.5"
-            onClick={toggleFullscreen}
-          >
-            {isFullscreen ? (
-              <>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9V4.5M15 9h4.5M15 9l5.25-5.25M15 15v4.5M15 15h4.5M15 15l5.25 5.25" />
-                </svg>
-                <span>מצב רגיל</span>
-              </>
-            ) : (
-              <>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75v4.5m0-4.5h-4.5m4.5 0L15 9m5.25 11.25v-4.5m0 4.5h-4.5m4.5 0l-5.25-5.25" />
-                </svg>
-                <span>מסך מלא</span>
-              </>
-            )}
-          </button>
+            <button
+              type="button"
+              className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white/70 hover:bg-white/10 hover:text-white transition-all hover:scale-105 active:scale-95 duration-200 shadow-sm flex items-center gap-1.5"
+              onClick={toggleFullscreen}
+            >
+              {isFullscreen ? (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9V4.5M15 9h4.5M15 9l5.25-5.25M15 15v4.5M15 15h4.5M15 15l5.25 5.25" />
+                  </svg>
+                  <span>מצב רגיל</span>
+                </>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75v4.5m0-4.5h-4.5m4.5 0L15 9m5.25 11.25v-4.5m0 4.5h-4.5m4.5 0l-5.25-5.25" />
+                  </svg>
+                  <span>מסך מלא</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Excalidraw Canvas Container */}
-      <div className={`w-full ${isFullscreen ? "flex-grow min-h-0" : ""}`}>
+      <div className={`w-full h-full ${isFullscreen ? "flex-grow min-h-0" : ""}`}>
         <DrawingCanvas
           ref={canvasRef}
           gameState={gameState}
@@ -228,14 +237,16 @@ export function DrawingBoard({
       </div>
       
       {/* Footer statistics */}
-      <div className="flex items-center justify-between text-xs font-medium text-white/40">
-        <div>
-          <span>מנוע ציור: Excalidraw</span>
+      {!hideTopBar && (
+        <div className="flex items-center justify-between text-xs font-medium text-white/40">
+          <div>
+            <span>מנוע ציור: Excalidraw</span>
+          </div>
+          <div>
+            <span>עדכון אחרון: {new Date(gameState.canvas?.updatedAt || Date.now()).toLocaleTimeString()}</span>
+          </div>
         </div>
-        <div>
-          <span>עדכון אחרון: {new Date(gameState.canvas?.updatedAt || Date.now()).toLocaleTimeString()}</span>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
