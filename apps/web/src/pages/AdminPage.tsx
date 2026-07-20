@@ -1667,7 +1667,6 @@ function AdminClassroomSection() {
             <tr>
               <th className="p-3">שם השיעור</th>
               <th className="p-3">מורה / מארח</th>
-              <th className="p-3">מקצוע</th>
               <th className="p-3">קוד חדר</th>
               <th className="p-3">נוצר בתאריך</th>
               <th className="p-3">סטטוס</th>
@@ -1679,7 +1678,6 @@ function AdminClassroomSection() {
               <tr key={c.id} className="border-b border-white/5 hover:bg-white/5">
                 <td className="p-3 font-bold text-white">{c.title}</td>
                 <td className="p-3 text-white/80 font-semibold">{c.teacher_name}</td>
-                <td className="p-3 text-white/70">{c.subject || "כללי"}</td>
                 <td className="p-3 font-mono text-xs text-indigo-300 font-bold">{c.room_code}</td>
                 <td className="p-3 font-mono text-xs text-white/50">
                   {new Date(c.created_at).toLocaleString("he-IL")}

@@ -1,11 +1,11 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Room, RoomEvent, Participant, Track } from "livekit-client";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/lib/supabase";
 import { getVoxelServerUrl } from "@/lib/voxelServerUrl";
-import { DrawingCanvas } from "@/games/drawing/DrawingCanvas";
+import { DrawingBoard } from "@/games/drawing/DrawingBoard";
 import { cn } from "@/lib/cn";
 import {
   Mic,
@@ -16,7 +16,6 @@ import {
   MonitorOff,
   Hand,
   MessageSquare,
-  PenTool,
   Users,
   Shield,
   LogOut,
@@ -25,16 +24,20 @@ import {
   Crown,
   UserX,
   VolumeX,
-  Trash2,
-  Sparkles,
+  Volume2,
   AlertCircle,
-  Radio
+  Radio,
+  Maximize2,
+  Minimize2,
+  Eye,
+  EyeOff,
+  Sparkles,
+  Trash2
 } from "lucide-react";
 
 interface ClassroomSessionData {
   id: string;
   title: string;
-  subject: string | null;
   teacher_id: string | null;
   teacher_name: string;
   room_code: string;
@@ -94,13 +97,14 @@ export function ClassroomPage() {
 
   // User Local Media & Permissions state
   const [isHost, setIsHost] = useState(false);
-  const [micOn, setMicOn] = useState(false);
-  const [camOn, setCamOn] = useState(false);
+  const [micOn, setMicOn] = useState(true);
+  const [camOn, setCamOn] = useState(true);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [isHandRaised, setIsHandRaised] = useState(false);
 
-  // UI Tabs & Toggles
-  const [activeTab, setActiveTab] = useState<"video" | "whiteboard">("video");
+  // Layout & Visibility Options
+  const [focusMode, setFocusMode] = useState(false); // Vertical cameras layout on side
+  const [showBoard, setShowBoard] = useState(true); // Toggle board visibility
   const [showChat, setShowChat] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
@@ -110,12 +114,26 @@ export function ClassroomPage() {
   const [activeSpeakers, setActiveSpeakers] = useState<string[]>([]);
   const [screenShareParticipant, setScreenShareParticipant] = useState<CustomParticipantInfo | null>(null);
 
+  // Dynamic Whiteboard Live Delta Subscriptions & Refs for full state sync
+  const deltaListenersRef = useRef<Set<(payload: any) => void>>(new Set());
+  const currentBoardElementsRef = useRef<any[]>([]);
+  const currentBoardFilesRef = useRef<Record<string, any>>({});
+  const dbSaveTimerRef = useRef<any>(null);
+
+  const subscribeLiveDeltas = useCallback((cb: (payload: any) => void) => {
+    deltaListenersRef.current.add(cb);
+    return () => {
+      deltaListenersRef.current.delete(cb);
+    };
+  }, []);
+
   // Room Level Dynamic Settings (Controlled by Host)
   const [roomSettings, setRoomSettings] = useState({
-    allowStudentChat: false,
+    allowStudentChat: true,
     allowStudentScreenShare: false,
-    allowStudentMic: false,
-    allowWhiteboardDraw: false
+    allowStudentMic: true,
+    allowStudentCam: true,
+    allowWhiteboardDraw: false // By default only host can draw on board
   });
 
   // In-Room Chat & Reactions
@@ -123,13 +141,22 @@ export function ClassroomPage() {
   const [chatInput, setChatInput] = useState("");
   const [recentReaction, setRecentReaction] = useState<{ emoji: string; name: string } | null>(null);
 
-  // Ephemeral Whiteboard State
+  // Ephemeral Whiteboard State (Using drawingModule structure)
   const [whiteboardState, setWhiteboardState] = useState<any>({
     status: "playing",
-    canvas: { engine: "excalidraw", version: 1, elements: [], files: {} }
+    seats: {},
+    canvas: { engine: "excalidraw", version: 1, updatedAt: Date.now(), elements: [], files: {} }
   });
 
-  // Fetch classroom session details from Supabase
+  // Auto-fill display name if user is logged in
+  const resolvedDisplayName = useMemo(() => {
+    if (user) {
+      return (profile?.full_name || profile?.username || user.email || "משתמש").trim();
+    }
+    return guestName.trim();
+  }, [user, profile, guestName]);
+
+  // Fetch classroom session details from Supabase (including initial DB whiteboard snapshot)
   useEffect(() => {
     if (!roomCode) return;
     let cancelled = false;
@@ -158,6 +185,23 @@ export function ClassroomPage() {
       if (data.settings) {
         setRoomSettings((prev) => ({ ...prev, ...data.settings }));
       }
+      
+      // Load initial whiteboard snapshot from DB if exists
+      if (data.whiteboard_data) {
+        currentBoardElementsRef.current = data.whiteboard_data.elements || [];
+        currentBoardFilesRef.current = data.whiteboard_data.files || {};
+        setWhiteboardState({
+          status: "playing",
+          canvas: {
+            engine: "excalidraw",
+            version: 1,
+            updatedAt: Date.now(),
+            elements: data.whiteboard_data.elements || [],
+            files: data.whiteboard_data.files || {}
+          }
+        });
+      }
+
       setLoadingSession(false);
     }
 
@@ -197,7 +241,7 @@ export function ClassroomPage() {
     };
   }, [roomCode]);
 
-  // Handle participant updates in room
+  // Handle participant updates in room (TEACHER ALWAYS FIRST)
   const updateParticipantList = useCallback((lkRoom: Room) => {
     const list: CustomParticipantInfo[] = [];
 
@@ -276,6 +320,13 @@ export function ClassroomPage() {
       });
     });
 
+    // SORT: TEACHER / HOST ALWAYS FIRST IN TOP ROW
+    list.sort((a, b) => {
+      if (a.isHost && !b.isHost) return -1;
+      if (!a.isHost && b.isHost) return 1;
+      return a.name.localeCompare(b.name);
+    });
+
     setParticipants(list);
 
     // Find screen share participant
@@ -289,8 +340,7 @@ export function ClassroomPage() {
     setConnState("connecting");
     setConnError(null);
 
-    const displayName = user ? (profile?.full_name || user.email || "משתתף") : guestName.trim();
-    if (!displayName) {
+    if (!resolvedDisplayName) {
       setConnError("נא להזין שם תצוגה לפני ההתחברות.");
       setConnState("disconnected");
       return;
@@ -306,7 +356,7 @@ export function ClassroomPage() {
         },
         body: JSON.stringify({
           roomCode,
-          displayName,
+          displayName: resolvedDisplayName,
           spectateMode: spectateMode ?? undefined
         })
       });
@@ -324,7 +374,7 @@ export function ClassroomPage() {
         dynacast: true
       });
 
-      // Handle Data Channel Messages (Chat, Whiteboard, Controls, Reactions)
+      // Handle Data Channel Messages (Chat, Whiteboard Deltas, Full State Sync, Controls, Reactions)
       lkRoom.on(RoomEvent.DataReceived, (payload: Uint8Array, participant?: Participant) => {
         try {
           const str = new TextDecoder().decode(payload);
@@ -344,19 +394,60 @@ export function ClassroomPage() {
           } else if (msg.type === "REACTION") {
             setRecentReaction({ emoji: msg.emoji, name: msg.senderName });
             setTimeout(() => setRecentReaction(null), 3000);
-          } else if (msg.type === "WHITEBOARD_DELTA") {
-            setWhiteboardState((prev: any) => ({
-              ...prev,
-              canvas: {
-                ...prev.canvas,
-                version: prev.canvas.version + 1,
-                elements: msg.elements ?? prev.canvas.elements
+          } else if (msg.type === "REQUEST_WHITEBOARD_STATE") {
+            // LATE JOINER EDGE CASE: Send full current whiteboard state to newly joined participant
+            if (currentBoardElementsRef.current.length > 0) {
+              const fullPayload = JSON.stringify({
+                type: "FULL_WHITEBOARD_STATE",
+                targetIdentity: participant?.identity,
+                elements: currentBoardElementsRef.current,
+                files: currentBoardFilesRef.current
+              });
+              void lkRoom.localParticipant.publishData(
+                new TextEncoder().encode(fullPayload),
+                { reliable: true }
+              );
+            }
+          } else if (msg.type === "FULL_WHITEBOARD_STATE") {
+            // LATE JOINER EDGE CASE: Receive full whiteboard state upon joining
+            if (!msg.targetIdentity || msg.targetIdentity === lkRoom.localParticipant.identity) {
+              if (msg.elements) {
+                currentBoardElementsRef.current = msg.elements;
+                currentBoardFilesRef.current = msg.files || {};
+                setWhiteboardState({
+                  status: "playing",
+                  canvas: {
+                    engine: "excalidraw",
+                    version: Date.now(),
+                    updatedAt: Date.now(),
+                    elements: msg.elements,
+                    files: msg.files || {}
+                  }
+                });
               }
-            }));
+            }
+          } else if (msg.type === "WHITEBOARD_DELTA") {
+            // DISPATCH TO ALL DELTA LISTENERS
+            deltaListenersRef.current.forEach((cb) => {
+              cb({
+                from: msg.from,
+                delta: msg.delta
+              });
+            });
+            // Update local state tracker
+            if (msg.delta?.changed) {
+              const changedIds = new Set(msg.delta.changed.map((e: any) => e.id));
+              const filtered = currentBoardElementsRef.current.filter((e) => !changedIds.has(e.id));
+              currentBoardElementsRef.current = [...filtered, ...msg.delta.changed];
+            }
+          } else if (msg.type === "TOGGLE_BOARD") {
+            setShowBoard(Boolean(msg.show));
           } else if (msg.type === "CLEAR_WHITEBOARD") {
+            currentBoardElementsRef.current = [];
+            currentBoardFilesRef.current = {};
             setWhiteboardState((prev: any) => ({
               ...prev,
-              canvas: { ...prev.canvas, version: prev.canvas.version + 1, elements: [] }
+              canvas: { ...prev.canvas, version: prev.canvas.version + 1, updatedAt: Date.now(), elements: [] }
             }));
           } else if (msg.type === "KICK") {
             if (participant && lkRoom.localParticipant.identity === msg.targetIdentity) {
@@ -366,14 +457,40 @@ export function ClassroomPage() {
           } else if (msg.type === "GRANT_HOST") {
             if (lkRoom.localParticipant.identity === msg.targetIdentity) {
               setIsHost(true);
-              // Update local metadata
               void lkRoom.localParticipant.setMetadata(JSON.stringify({ isHost: true }));
               updateParticipantList(lkRoom);
+            }
+          } else if (msg.type === "INDIVIDUAL_MIC_TOGGLE") {
+            if (lkRoom.localParticipant.identity === msg.targetIdentity) {
+              const nextState = Boolean(msg.enable);
+              void lkRoom.localParticipant.setMicrophoneEnabled(nextState);
+              setMicOn(nextState);
+            }
+          } else if (msg.type === "INDIVIDUAL_CAM_TOGGLE") {
+            if (lkRoom.localParticipant.identity === msg.targetIdentity) {
+              const nextState = Boolean(msg.enable);
+              void lkRoom.localParticipant.setCameraEnabled(nextState);
+              setCamOn(nextState);
             }
           } else if (msg.type === "MUTE_ALL") {
             if (!tokenIsHost && !isHost) {
               void lkRoom.localParticipant.setMicrophoneEnabled(false);
               setMicOn(false);
+            }
+          } else if (msg.type === "UNMUTE_ALL") {
+            if (!tokenIsHost && !isHost) {
+              void lkRoom.localParticipant.setMicrophoneEnabled(true);
+              setMicOn(true);
+            }
+          } else if (msg.type === "CLOSE_ALL_CAMS") {
+            if (!tokenIsHost && !isHost) {
+              void lkRoom.localParticipant.setCameraEnabled(false);
+              setCamOn(false);
+            }
+          } else if (msg.type === "OPEN_ALL_CAMS") {
+            if (!tokenIsHost && !isHost) {
+              void lkRoom.localParticipant.setCameraEnabled(true);
+              setCamOn(true);
             }
           }
         } catch (e) {
@@ -394,7 +511,21 @@ export function ClassroomPage() {
       await lkRoom.connect(serverUrl, token);
       setRoom(lkRoom);
       setConnState("connected");
+
+      // Enable mic and cam by default for everyone (kids aren't muted by default!)
+      await lkRoom.localParticipant.setMicrophoneEnabled(true);
+      await lkRoom.localParticipant.setCameraEnabled(true);
+      setMicOn(true);
+      setCamOn(true);
+
       updateParticipantList(lkRoom);
+
+      // LATE JOINER EDGE CASE: Request full whiteboard state from active room participants
+      setTimeout(() => {
+        const reqPayload = JSON.stringify({ type: "REQUEST_WHITEBOARD_STATE" });
+        void lkRoom.localParticipant.publishData(new TextEncoder().encode(reqPayload), { reliable: true });
+      }, 1000);
+
     } catch (err: any) {
       console.error(err);
       setConnError(err.message || "שגיאה בחיבור לשיעור.");
@@ -413,14 +544,53 @@ export function ClassroomPage() {
     setIsScreenSharing(false);
   };
 
+  // Debounced DB persistence of whiteboard elements for Host/Teacher
+  const scheduleDbBoardSave = useCallback((elements: any[], files: any) => {
+    if (!roomCode) return;
+    if (dbSaveTimerRef.current) clearTimeout(dbSaveTimerRef.current);
+    dbSaveTimerRef.current = setTimeout(async () => {
+      await supabase
+        .from("classroom_sessions")
+        .update({ whiteboard_data: { elements, files } })
+        .eq("room_code", roomCode);
+    }, 4000);
+  }, [roomCode]);
+
+  // Broadcast Whiteboard Deltas via LiveKit Data Channel & track current board elements
+  const handleLocalBoardDelta = useCallback((delta: any) => {
+    if (!room) return;
+
+    if (delta.changed) {
+      const changedIds = new Set(delta.changed.map((e: any) => e.id));
+      const filtered = currentBoardElementsRef.current.filter((e) => !changedIds.has(e.id));
+      currentBoardElementsRef.current = [...filtered, ...delta.changed];
+    }
+
+    if (isHost || roomSettings.allowWhiteboardDraw) {
+      scheduleDbBoardSave(currentBoardElementsRef.current, currentBoardFilesRef.current);
+    }
+
+    const payload = JSON.stringify({
+      type: "WHITEBOARD_DELTA",
+      from: room.localParticipant.identity,
+      delta
+    });
+    void room.localParticipant.publishData(
+      new TextEncoder().encode(payload),
+      { reliable: Boolean(delta.files || delta.changed || delta.deleted) }
+    );
+  }, [room, isHost, roomSettings.allowWhiteboardDraw, scheduleDbBoardSave]);
+
+  // Handle board intent (such as CLEAR_CANVAS from DrawingBoard component)
+  const handleBoardIntent = useCallback((intent: any) => {
+    if (intent?.type === "CLEAR_CANVAS") {
+      void clearWhiteboard();
+    }
+  }, []);
+
   // Toggle Microphone
   const toggleMic = async () => {
     if (!room) return;
-    const canUseMic = isHost || roomSettings.allowStudentMic;
-    if (!canUseMic && !micOn) {
-      alert("המיקרופונים בכיתה מופעלים באישור המורה בלבד.");
-      return;
-    }
     const nextState = !micOn;
     await room.localParticipant.setMicrophoneEnabled(nextState);
     setMicOn(nextState);
@@ -517,14 +687,43 @@ export function ClassroomPage() {
     setTimeout(() => setRecentReaction(null), 3000);
   };
 
+  // HOST ACTION: Toggle Board Visibility
+  const toggleBoardVisibility = async () => {
+    if (!room || !isHost) return;
+    const next = !showBoard;
+    setShowBoard(next);
+    const payload = JSON.stringify({ type: "TOGGLE_BOARD", show: next });
+    await room.localParticipant.publishData(new TextEncoder().encode(payload), { reliable: true });
+  };
+
+  // HOST ACTION: Individual Mute/Unmute
+  const toggleIndividualMic = async (targetIdentity: string, currentMuted: boolean) => {
+    if (!room || !isHost) return;
+    const payload = JSON.stringify({
+      type: "INDIVIDUAL_MIC_TOGGLE",
+      targetIdentity,
+      enable: currentMuted // if currently muted, enable mic
+    });
+    await room.localParticipant.publishData(new TextEncoder().encode(payload), { reliable: true });
+  };
+
+  // HOST ACTION: Individual Cam Toggle
+  const toggleIndividualCam = async (targetIdentity: string, currentOff: boolean) => {
+    if (!room || !isHost) return;
+    const payload = JSON.stringify({
+      type: "INDIVIDUAL_CAM_TOGGLE",
+      targetIdentity,
+      enable: currentOff // if currently off, enable cam
+    });
+    await room.localParticipant.publishData(new TextEncoder().encode(payload), { reliable: true });
+  };
+
   // HOST ACTION: Kick Participant
   const kickParticipant = async (identity: string) => {
     if (!room || !isHost) return;
     if (!window.confirm("להוציא משתתף זה מהכיתה?")) return;
     const payload = JSON.stringify({ type: "KICK", targetIdentity: identity });
-    await room.localParticipant.publishData(new TextEncoder().encode(payload), {
-      reliable: true
-    });
+    await room.localParticipant.publishData(new TextEncoder().encode(payload), { reliable: true });
   };
 
   // HOST ACTION: Grant Host Status
@@ -532,30 +731,35 @@ export function ClassroomPage() {
     if (!room || !isHost) return;
     if (!window.confirm("להעניק סמכויות מורה/מארח מלאות למשתתף זה?")) return;
     const payload = JSON.stringify({ type: "GRANT_HOST", targetIdentity: identity });
-    await room.localParticipant.publishData(new TextEncoder().encode(payload), {
-      reliable: true
-    });
+    await room.localParticipant.publishData(new TextEncoder().encode(payload), { reliable: true });
   };
 
-  // HOST ACTION: Mute All
-  const muteAllStudents = async () => {
+  // HOST ACTIONS: Global Media Toggles
+  const triggerGlobalAction = async (type: "MUTE_ALL" | "UNMUTE_ALL" | "CLOSE_ALL_CAMS" | "OPEN_ALL_CAMS") => {
     if (!room || !isHost) return;
-    const payload = JSON.stringify({ type: "MUTE_ALL" });
-    await room.localParticipant.publishData(new TextEncoder().encode(payload), {
-      reliable: true
-    });
+    const payload = JSON.stringify({ type });
+    await room.localParticipant.publishData(new TextEncoder().encode(payload), { reliable: true });
   };
 
   // HOST ACTION: Clear Whiteboard
   const clearWhiteboard = async () => {
     if (!room || !isHost) return;
+    currentBoardElementsRef.current = [];
+    currentBoardFilesRef.current = {};
     const payload = JSON.stringify({ type: "CLEAR_WHITEBOARD" });
-    await room.localParticipant.publishData(new TextEncoder().encode(payload), {
-      reliable: true
-    });
+    await room.localParticipant.publishData(new TextEncoder().encode(payload), { reliable: true });
+
+    // Wipe from DB as well
+    if (roomCode) {
+      await supabase
+        .from("classroom_sessions")
+        .update({ whiteboard_data: null })
+        .eq("room_code", roomCode);
+    }
+
     setWhiteboardState((prev: any) => ({
       ...prev,
-      canvas: { ...prev.canvas, version: prev.canvas.version + 1, elements: [] }
+      canvas: { ...prev.canvas, version: prev.canvas.version + 1, updatedAt: Date.now(), elements: [] }
     }));
   };
 
@@ -624,14 +828,16 @@ export function ClassroomPage() {
     );
   }
 
+  const isMainContentActive = screenShareParticipant != null || showBoard;
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans" dir="rtl">
+    <div className="min-h-screen h-screen bg-slate-950 text-slate-100 flex flex-col font-sans overflow-hidden" dir="rtl">
       
       {/* HEADER BAR */}
-      <header className="flex items-center justify-between border-b border-slate-800/80 bg-slate-900/60 px-6 py-3.5 backdrop-blur-md">
+      <header className="flex items-center justify-between border-b border-slate-800/80 bg-slate-900/60 px-6 py-2.5 backdrop-blur-md shrink-0">
         <div className="flex items-center gap-3">
-          <div className="size-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
-            <Radio className="size-5 animate-pulse" />
+          <div className="size-9 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+            <Radio className="size-4 animate-pulse" />
           </div>
           <div>
             <h1 className="text-base font-black text-white flex items-center gap-2">
@@ -643,12 +849,51 @@ export function ClassroomPage() {
               )}
             </h1>
             <p className="text-xs font-semibold text-slate-400">
-              מורה: {sessionData?.teacher_name} · מקצוע: {sessionData?.subject || "כללי"}
+              מורה: {sessionData?.teacher_name}
             </p>
           </div>
         </div>
 
+        {recentReaction && (
+          <div className="flex items-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-xs font-bold text-indigo-300 animate-bounce">
+            <Sparkles className="size-3.5 text-indigo-400" />
+            <span>{recentReaction.name}: {recentReaction.emoji}</span>
+          </div>
+        )}
+
         <div className="flex items-center gap-2">
+          {/* HOST BOARD VISIBILITY TOGGLE BUTTON */}
+          {isHost && connState === "connected" && (
+            <button
+              onClick={toggleBoardVisibility}
+              className={cn(
+                "rounded-xl border px-3 py-1.5 font-bold text-xs flex items-center gap-1.5 transition duration-200",
+                showBoard
+                  ? "bg-indigo-600/80 border-indigo-500 text-white"
+                  : "border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-400"
+              )}
+            >
+              {showBoard ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+              {showBoard ? "הסתר לוח שרטוט" : "הצג לוח שרטוט ✏️"}
+            </button>
+          )}
+
+          {/* FOCUS MODE TOGGLE BUTTON */}
+          {connState === "connected" && isMainContentActive && (
+            <button
+              onClick={() => setFocusMode(!focusMode)}
+              className={cn(
+                "rounded-xl border px-3 py-1.5 font-bold text-xs flex items-center gap-1.5 transition duration-200",
+                focusMode
+                  ? "bg-indigo-600 border-indigo-500 text-white"
+                  : "border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-300"
+              )}
+            >
+              {focusMode ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
+              {focusMode ? "מצב רגיל" : "מצב פוקוס 🔍"}
+            </button>
+          )}
+
           <button
             onClick={copyInviteLink}
             className="rounded-xl border border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-200 font-bold text-xs px-3 py-1.5 flex items-center gap-1.5"
@@ -715,64 +960,123 @@ export function ClassroomPage() {
 
       {/* CONNECTED CLASSROOM MAIN VIEW */}
       {connState === "connected" && (
-        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+        <div className="flex-1 flex overflow-hidden relative">
           
-          {/* MAIN STAGE & NAVIGATION */}
-          <div className="flex-1 flex flex-col overflow-hidden bg-slate-950/80 p-4 gap-4">
+          {/* MAIN CLASSROOM WORKSPACE */}
+          <div className="flex-1 flex flex-col overflow-hidden bg-slate-950/90 p-3 gap-3">
             
-            {/* VIEW MODE TAB SELECTOR */}
-            <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-3 flex-wrap">
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setActiveTab("video")}
-                  className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition duration-200",
-                    activeTab === "video"
-                      ? "bg-indigo-600 text-white shadow-sm"
-                      : "bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
-                  )}
-                >
-                  <VideoIcon className="size-4" />
-                  שידור וידאו ותמונות
-                </button>
+            {/* DYNAMIC CAMERAS CONTAINER & MAIN CONTENT */}
+            <div className={cn("flex-1 flex gap-3 overflow-hidden", focusMode && isMainContentActive ? "flex-row" : "flex-col")}>
+              
+              {/* CAMERAS SECTION: Teacher ALWAYS FIRST in top row / side column */}
+              <div
+                className={cn(
+                  "flex gap-2 overflow-x-auto overflow-y-auto shrink-0 transition-all duration-300 p-1.5 bg-slate-900/40 rounded-2xl border border-slate-800/60",
+                  focusMode && isMainContentActive
+                    ? "w-64 flex-col justify-start max-h-full" // Vertical column in focus mode
+                    : isMainContentActive
+                    ? "w-full flex-row justify-start max-h-44" // Compact row on top when board/screen is active
+                    : "w-full flex-row flex-wrap justify-center items-center flex-1 max-h-full" // Expanded grid when no board/screen
+                )}
+              >
+                {participants.map((p) => {
+                  const isSpeaking = activeSpeakers.includes(p.identity);
+                  return (
+                    <div
+                      key={p.sid}
+                      className={cn(
+                        "relative aspect-video rounded-xl border bg-slate-900 overflow-hidden shadow-sm flex flex-col items-center justify-center shrink-0 transition duration-200",
+                        focusMode && isMainContentActive
+                          ? "w-full"
+                          : isMainContentActive
+                          ? "h-36 min-w-[190px]"
+                          : "h-48 w-72", // Larger solo video tile when board is hidden
+                        p.isHost ? "border-amber-500/60 ring-2 ring-amber-500/20" : isSpeaking ? "border-emerald-500 ring-2 ring-emerald-500/20" : "border-slate-800"
+                      )}
+                    >
+                      {/* Video Element */}
+                      {!p.isVideoOff && p.videoTrack ? (
+                        <video
+                          ref={(el) => {
+                            if (el && p.videoTrack) p.videoTrack.attach(el);
+                          }}
+                          autoPlay
+                          playsInline
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center gap-1.5 text-slate-500">
+                          <div className="size-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center font-black text-slate-300 text-base">
+                            {p.name.charAt(0)}
+                          </div>
+                        </div>
+                      )}
 
-                <button
-                  onClick={() => setActiveTab("whiteboard")}
-                  className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition duration-200",
-                    activeTab === "whiteboard"
-                      ? "bg-indigo-600 text-white shadow-sm"
-                      : "bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
-                  )}
-                >
-                  <PenTool className="size-4" />
-                  לוח שרטוט שיתופי (Excalidraw)
-                </button>
+                      {/* Audio Element */}
+                      {!p.isMe && p.audioTrack && (
+                        <audio
+                          ref={(el) => {
+                            if (el && p.audioTrack) p.audioTrack.attach(el);
+                          }}
+                          autoPlay
+                        />
+                      )}
+
+                      {/* Top Name Badge */}
+                      <div className="absolute top-1.5 right-1.5 left-1.5 flex items-center justify-between gap-1 pointer-events-none">
+                        <span className="rounded-md bg-slate-950/80 px-2 py-0.5 text-[10px] font-bold text-slate-200 backdrop-blur-md flex items-center gap-1">
+                          {p.name} {p.isHost && <Crown className="size-3 text-amber-400 inline" />}
+                        </span>
+
+                        <span className={cn("rounded-md p-0.5 text-xs", p.isMuted ? "bg-rose-500/20 text-rose-400" : "bg-emerald-500/20 text-emerald-400")}>
+                          {p.isMuted ? <MicOff className="size-3" /> : <Mic className="size-3" />}
+                        </span>
+                      </div>
+
+                      {/* RAISED HAND BADGE (AT THE BOTTOM OF THE CAMERA TILE UNTIL DROPPED) */}
+                      {p.isHandRaised && (
+                        <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 bg-amber-500 text-slate-950 px-2.5 py-0.5 rounded-full font-black text-[10px] flex items-center justify-center gap-1 shadow-lg animate-bounce z-10 pointer-events-none">
+                          <Hand className="size-3 fill-slate-950" />
+                          <span>הרם/ה יד ✋</span>
+                        </div>
+                      )}
+
+                      {/* INDIVIDUAL TEACHER CONTROLS OVERLAY */}
+                      {isHost && !p.isMe && (
+                        <div className="absolute top-1.5 left-1.5 flex items-center gap-1 bg-slate-950/80 p-1 rounded-lg border border-slate-700 backdrop-blur-md">
+                          <button
+                            onClick={() => toggleIndividualMic(p.identity, p.isMuted)}
+                            title={p.isMuted ? "ביטול השתקה לתלמיד זה" : "השתק תלמיד זה"}
+                            className={cn("p-1 rounded text-xs", p.isMuted ? "text-rose-400 hover:bg-rose-500/20" : "text-emerald-400 hover:bg-emerald-500/20")}
+                          >
+                            {p.isMuted ? <VolumeX className="size-3" /> : <Volume2 className="size-3" />}
+                          </button>
+
+                          <button
+                            onClick={() => toggleIndividualCam(p.identity, p.isVideoOff)}
+                            title={p.isVideoOff ? "פתח מצלמה לתלמיד זה" : "סגור מצלמה לתלמיד זה"}
+                            className={cn("p-1 rounded text-xs", p.isVideoOff ? "text-rose-400 hover:bg-rose-500/20" : "text-emerald-400 hover:bg-emerald-500/20")}
+                          >
+                            {p.isVideoOff ? <VideoOff className="size-3" /> : <VideoIcon className="size-3" />}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
-              {/* FLOATING REACTION NOTIFICATION */}
-              {recentReaction && (
-                <div className="flex items-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3 py-1.5 text-xs font-bold text-indigo-300 animate-bounce">
-                  <Sparkles className="size-3.5 text-indigo-400" />
-                  <span>{recentReaction.name}: {recentReaction.emoji}</span>
-                </div>
-              )}
-            </div>
-
-            {/* TAB CONTENT 1: VIDEO GRID & SCREEN SHARE */}
-            {activeTab === "video" && (
-              <div className="flex-1 flex flex-col gap-4 overflow-y-auto">
-                
-                {/* MAIN STAGE: Screen Share presentation view if active */}
-                {screenShareParticipant && (
-                  <div className="relative w-full h-96 rounded-2xl border border-indigo-500/30 bg-slate-900 overflow-hidden shadow-2xl flex flex-col">
-                    <div className="bg-slate-950/80 px-4 py-2 text-xs font-bold text-indigo-300 flex items-center justify-between border-b border-slate-800">
-                      <span className="flex items-center gap-2">
-                        <Monitor className="size-4 text-indigo-400" />
-                        מסך משותף מאת: {screenShareParticipant.name}
-                      </span>
-                    </div>
+              {/* MAIN CONTENT FRAME: EXCALIDRAW BOARD OR SHARED SCREEN */}
+              {isMainContentActive && (
+                <div className="flex-1 rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden shadow-2xl flex flex-col relative">
+                  
+                  {/* SHARED SCREEN PRECEDENCE */}
+                  {screenShareParticipant ? (
                     <div className="flex-1 bg-black flex items-center justify-center relative">
+                      <div className="absolute top-2 right-2 bg-slate-950/80 px-3 py-1 rounded-lg text-xs font-bold text-indigo-300 z-10 border border-slate-800 flex items-center gap-1.5">
+                        <Monitor className="size-3.5 text-indigo-400" />
+                        מסך משותף מאת: {screenShareParticipant.name}
+                      </div>
                       <video
                         ref={(el) => {
                           if (el && screenShareParticipant.screenTrack) {
@@ -784,145 +1088,74 @@ export function ClassroomPage() {
                         className="h-full w-full object-contain"
                       />
                     </div>
-                  </div>
-                )}
-
-                {/* PARTICIPANTS VIDEO TILES GRID */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {participants.map((p) => {
-                    const isSpeaking = activeSpeakers.includes(p.identity);
-                    return (
-                      <div
-                        key={p.sid}
-                        className={cn(
-                          "relative aspect-video rounded-2xl border bg-slate-900/90 overflow-hidden shadow-md flex flex-col items-center justify-center transition duration-200",
-                          isSpeaking ? "border-emerald-500 ring-2 ring-emerald-500/20" : "border-slate-800"
-                        )}
-                      >
-                        {/* Video Element */}
-                        {!p.isVideoOff && p.videoTrack ? (
-                          <video
-                            ref={(el) => {
-                              if (el && p.videoTrack) p.videoTrack.attach(el);
-                            }}
-                            autoPlay
-                            playsInline
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex flex-col items-center gap-2 text-slate-500">
-                            <div className="size-12 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center font-black text-slate-300 text-lg">
-                              {p.name.charAt(0)}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Audio Element */}
-                        {!p.isMe && p.audioTrack && (
-                          <audio
-                            ref={(el) => {
-                              if (el && p.audioTrack) p.audioTrack.attach(el);
-                            }}
-                            autoPlay
-                          />
-                        )}
-
-                        {/* Top Indicators Badge */}
-                        <div className="absolute top-2 right-2 left-2 flex items-center justify-between gap-1 pointer-events-none">
-                          <span className="rounded-lg bg-slate-950/80 px-2 py-0.5 text-[11px] font-bold text-slate-200 backdrop-blur-md flex items-center gap-1">
-                            {p.name} {p.isHost && <Crown className="size-3 text-amber-400 inline" />}
-                          </span>
-
-                          <div className="flex items-center gap-1">
-                            {p.isHandRaised && (
-                              <span className="rounded-lg bg-amber-500/20 border border-amber-500/30 p-1 text-amber-300 animate-pulse">
-                                <Hand className="size-3.5" />
-                              </span>
-                            )}
-                            <span className={cn("rounded-lg p-1 text-xs", p.isMuted ? "bg-rose-500/20 text-rose-400" : "bg-emerald-500/20 text-emerald-400")}>
-                              {p.isMuted ? <MicOff className="size-3.5" /> : <Mic className="size-3.5" />}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                  ) : showBoard ? (
+                    /* REUSED APP DRAWINGBOARD COMPONENT */
+                    <div className="flex-1 w-full h-full relative overflow-hidden">
+                      <DrawingBoard
+                        gameState={whiteboardState}
+                        mySeat={isHost || roomSettings.allowWhiteboardDraw ? "player" : null}
+                        myUserId={room?.localParticipant.identity || null}
+                        onIntent={handleBoardIntent}
+                        onLiveDelta={handleLocalBoardDelta}
+                        subscribeLiveDeltas={subscribeLiveDeltas}
+                        isHost={isHost}
+                        players={participants.map((p) => ({
+                          userId: p.identity,
+                          displayName: p.name
+                        }))}
+                      />
+                    </div>
+                  ) : null}
                 </div>
-              </div>
-            )}
-
-            {/* TAB CONTENT 2: INTEGRATED EXCALIDRAW WHITEBOARD */}
-            {activeTab === "whiteboard" && (
-              <div className="flex-1 flex flex-col gap-2 relative">
-                {isHost && (
-                  <div className="flex items-center justify-end gap-2 mb-1">
-                    <button
-                      onClick={clearWhiteboard}
-                      className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs px-3 py-1.5 flex items-center gap-1.5"
-                    >
-                      <Trash2 className="size-3.5" />
-                      נקה/בטל לוח
-                    </button>
-                  </div>
-                )}
-                <DrawingCanvas
-                  gameState={whiteboardState}
-                  mySeat={isHost ? "host" : "student"}
-                  myUserId={room?.localParticipant.identity || null}
-                  onIntent={() => {}}
-                  showToast={(msg) => console.log(msg)}
-                  isFullscreen={true}
-                  isHost={isHost}
-                />
-              </div>
-            )}
+              )}
+            </div>
 
             {/* BOTTOM CONTROL BAR */}
-            <div className="mt-auto border-t border-slate-800/80 bg-slate-900/90 rounded-2xl p-3 flex items-center justify-between flex-wrap gap-3 backdrop-blur-md">
+            <div className="border-t border-slate-800 bg-slate-900/90 rounded-2xl p-2.5 flex items-center justify-between flex-wrap gap-2 shrink-0 backdrop-blur-md">
               
               {/* Media Toggles */}
               <div className="flex items-center gap-2">
                 <button
                   onClick={toggleMic}
                   className={cn(
-                    "flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition duration-200",
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
                     micOn ? "bg-emerald-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
                   )}
                 >
-                  {micOn ? <Mic className="size-4" /> : <MicOff className="size-4" />}
+                  {micOn ? <Mic className="size-3.5" /> : <MicOff className="size-3.5" />}
                   {micOn ? "מיקרופון פעיל" : "מיקרופון כבוי"}
                 </button>
 
                 <button
                   onClick={toggleCam}
                   className={cn(
-                    "flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition duration-200",
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
                     camOn ? "bg-emerald-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
                   )}
                 >
-                  {camOn ? <VideoIcon className="size-4" /> : <VideoOff className="size-4" />}
+                  {camOn ? <VideoIcon className="size-3.5" /> : <VideoOff className="size-3.5" />}
                   {camOn ? "מצלמה פעילה" : "מצלמה כבויה"}
                 </button>
 
                 <button
                   onClick={toggleScreenShare}
                   className={cn(
-                    "flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition duration-200",
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
                     isScreenSharing ? "bg-indigo-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
                   )}
                 >
-                  {isScreenSharing ? <MonitorOff className="size-4" /> : <Monitor className="size-4" />}
+                  {isScreenSharing ? <MonitorOff className="size-3.5" /> : <Monitor className="size-3.5" />}
                   {isScreenSharing ? "עצור שיתוף" : "שתף מסך"}
                 </button>
 
                 <button
                   onClick={toggleHandRaise}
                   className={cn(
-                    "flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition duration-200",
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
                     isHandRaised ? "bg-amber-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
                   )}
                 >
-                  <Hand className="size-4" />
+                  <Hand className="size-3.5" />
                   {isHandRaised ? "הורד יד" : "הרם יד ✋"}
                 </button>
               </div>
@@ -933,7 +1166,7 @@ export function ClassroomPage() {
                   <button
                     key={emoji}
                     onClick={() => sendReaction(emoji)}
-                    className="p-1.5 rounded-lg hover:bg-slate-800 text-base transition duration-150"
+                    className="p-1 rounded-lg hover:bg-slate-800 text-sm transition duration-150"
                   >
                     {emoji}
                   </button>
@@ -945,31 +1178,31 @@ export function ClassroomPage() {
                 <button
                   onClick={() => setShowParticipants(!showParticipants)}
                   className={cn(
-                    "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition duration-200",
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
                     showParticipants ? "bg-indigo-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
                   )}
                 >
-                  <Users className="size-4" />
+                  <Users className="size-3.5" />
                   משתתפים ({participants.length})
                 </button>
 
                 <button
                   onClick={() => setShowChat(!showChat)}
                   className={cn(
-                    "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition duration-200",
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
                     showChat ? "bg-indigo-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
                   )}
                 >
-                  <MessageSquare className="size-4" />
+                  <MessageSquare className="size-3.5" />
                   צ'אט
                 </button>
               </div>
             </div>
           </div>
 
-          {/* SIDE PANEL 1: PARTICIPANTS & HOST CONTROLS */}
+          {/* SIDE PANEL 1: PARTICIPANTS & HOST GLOBAL CONTROLS */}
           {showParticipants && (
-            <div className="w-full lg:w-80 border-r border-slate-800 bg-slate-900/95 p-4 flex flex-col gap-4 overflow-y-auto">
+            <div className="w-full lg:w-80 border-r border-slate-800 bg-slate-900/95 p-4 flex flex-col gap-4 overflow-y-auto shrink-0">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h3 className="text-sm font-black text-white flex items-center gap-2">
                   <Users className="size-4 text-indigo-400" />
@@ -980,20 +1213,46 @@ export function ClassroomPage() {
 
               {/* HOST GLOBAL ACTIONS PANEL */}
               {isHost && (
-                <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-3 flex flex-col gap-2.5">
-                  <span className="text-xs font-black text-amber-300 flex items-center gap-1">
+                <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-3 flex flex-col gap-2">
+                  <span className="text-xs font-black text-amber-300 flex items-center gap-1 mb-1">
                     <Shield className="size-3.5" /> בקרת מורה / מארח
                   </span>
 
-                  <button
-                    onClick={muteAllStudents}
-                    className="w-full py-1.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-2 justify-center"
-                  >
-                    <VolumeX className="size-3.5 text-rose-400" />
-                    השתק את כל התלמידים
-                  </button>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      onClick={() => triggerGlobalAction("MUTE_ALL")}
+                      className="py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold flex items-center gap-1 justify-center"
+                    >
+                      <VolumeX className="size-3 text-rose-400" />
+                      השתק הכל
+                    </button>
 
-                  <div className="flex flex-col gap-1.5 text-xs font-bold text-slate-300 mt-1">
+                    <button
+                      onClick={() => triggerGlobalAction("UNMUTE_ALL")}
+                      className="py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold flex items-center gap-1 justify-center"
+                    >
+                      <Volume2 className="size-3 text-emerald-400" />
+                      בטל השתקה
+                    </button>
+
+                    <button
+                      onClick={() => triggerGlobalAction("CLOSE_ALL_CAMS")}
+                      className="py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold flex items-center gap-1 justify-center"
+                    >
+                      <VideoOff className="size-3 text-rose-400" />
+                      סגור מצלמות
+                    </button>
+
+                    <button
+                      onClick={() => triggerGlobalAction("OPEN_ALL_CAMS")}
+                      className="py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold flex items-center gap-1 justify-center"
+                    >
+                      <VideoIcon className="size-3 text-emerald-400" />
+                      פתח מצלמות
+                    </button>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 text-[11px] font-bold text-slate-300 mt-2">
                     <label className="flex items-center justify-between">
                       <span>אפשר צ'אט לתלמידים:</span>
                       <input
@@ -1013,7 +1272,25 @@ export function ClassroomPage() {
                         className="rounded accent-indigo-600"
                       />
                     </label>
+
+                    <label className="flex items-center justify-between">
+                      <span>אפשר לתלמידים לצייר בלוח:</span>
+                      <input
+                        type="checkbox"
+                        checked={roomSettings.allowWhiteboardDraw}
+                        onChange={() => toggleRoomSetting("allowWhiteboardDraw")}
+                        className="rounded accent-indigo-600"
+                      />
+                    </label>
                   </div>
+
+                  <button
+                    onClick={clearWhiteboard}
+                    className="w-full py-1.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-300 text-xs font-bold flex items-center gap-1.5 justify-center"
+                  >
+                    <Trash2 className="size-3.5" />
+                    נקה/בטל לוח שרטוט
+                  </button>
 
                   <button
                     onClick={endClassroomSession}
@@ -1027,8 +1304,8 @@ export function ClassroomPage() {
               {/* PARTICIPANTS LIST */}
               <div className="flex flex-col gap-2 overflow-y-auto">
                 {participants.map((p) => (
-                  <div key={p.sid} className="flex items-center justify-between rounded-xl bg-slate-950/60 p-2.5 border border-slate-800 text-xs font-bold">
-                    <div className="flex items-center gap-2">
+                  <div key={p.sid} className="flex items-center justify-between rounded-xl bg-slate-950/60 p-2 border border-slate-800 text-xs font-bold">
+                    <div className="flex items-center gap-1.5">
                       <span className="size-2 rounded-full bg-emerald-500" />
                       <span className="text-slate-200">{p.name}</span>
                       {p.isHost && <Crown className="size-3 text-amber-400" />}
@@ -1059,10 +1336,10 @@ export function ClassroomPage() {
             </div>
           )}
 
-          {/* SIDE PANEL 2: CHAT */}
+          {/* SIDE PANEL 2: CHAT (SCROLLABLE & NEVER STRETCHES SCREEN DOWN) */}
           {showChat && (
-            <div className="w-full lg:w-80 border-r border-slate-800 bg-slate-900/95 p-4 flex flex-col gap-3 overflow-hidden">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="w-full lg:w-80 border-r border-slate-800 bg-slate-900/95 p-4 flex flex-col h-full overflow-hidden shrink-0">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3 shrink-0">
                 <h3 className="text-sm font-black text-white flex items-center gap-2">
                   <MessageSquare className="size-4 text-indigo-400" />
                   צ'אט כיתתי
@@ -1070,13 +1347,13 @@ export function ClassroomPage() {
                 <button onClick={() => setShowChat(false)} className="text-slate-400 hover:text-white text-xs font-bold">✕</button>
               </div>
 
-              {/* MESSAGES LIST */}
-              <div className="flex-1 flex flex-col gap-2 overflow-y-auto p-1">
+              {/* MESSAGES LIST: SCROLLABLE CONTAINER */}
+              <div className="flex-1 min-h-0 overflow-y-auto p-1 py-3 flex flex-col gap-2">
                 {chatMessages.length === 0 ? (
                   <p className="text-xs text-slate-500 text-center py-6">אין הודעות בצ'אט עדיין.</p>
                 ) : (
                   chatMessages.map((msg) => (
-                    <div key={msg.id} className="rounded-xl bg-slate-950/80 p-2.5 border border-slate-800/80 flex flex-col gap-1">
+                    <div key={msg.id} className="rounded-xl bg-slate-950/80 p-2.5 border border-slate-800/80 flex flex-col gap-1 shrink-0">
                       <div className="flex items-center justify-between text-[11px] font-bold text-slate-400">
                         <span className="text-indigo-300 flex items-center gap-1">
                           {msg.senderName} {msg.isHost && <Crown className="size-3 text-amber-400 inline" />}
@@ -1090,7 +1367,7 @@ export function ClassroomPage() {
               </div>
 
               {/* CHAT INPUT FORM */}
-              <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+              <div className="flex items-center gap-2 pt-2 border-t border-slate-800 shrink-0">
                 <input
                   type="text"
                   placeholder={isHost || roomSettings.allowStudentChat ? "רשום הודעה..." : "הצ'אט נעול למשתתפים"}

@@ -379,8 +379,7 @@ function TeacherClassroomSection({ teacherProfile }: { teacherProfile: any }) {
   const [notice, setNotice] = useState<string | null>(null);
 
   const [form, setForm] = useState({
-    title: "",
-    subject: "מתמטיקה"
+    title: ""
   });
 
   const loadClassrooms = useCallback(async () => {
@@ -409,7 +408,6 @@ function TeacherClassroomSection({ teacherProfile }: { teacherProfile: any }) {
       .from("classroom_sessions")
       .insert({
         title: form.title.trim(),
-        subject: form.subject.trim(),
         teacher_id: teacherProfile.id,
         teacher_name: teacherProfile.full_name || "מורה",
         room_code: roomCode,
@@ -425,7 +423,7 @@ function TeacherClassroomSection({ teacherProfile }: { teacherProfile: any }) {
     }
 
     setShowCreateModal(false);
-    setForm({ title: "", subject: "מתמטיקה" });
+    setForm({ title: "" });
     navigate(`/classroom/${roomCode}`);
   };
 
@@ -433,7 +431,7 @@ function TeacherClassroomSection({ teacherProfile }: { teacherProfile: any }) {
     const url = `${window.location.origin}/classroom/${roomCode}`;
     try {
       await navigator.clipboard.writeText(url);
-      setNotice("הקישור הועתק — ניתן לשלוח לכל תלמיד/מורה מחליף!");
+      setNotice("הקישור הועתק — ניתן לשלוח לכל תלמיד!");
       setTimeout(() => setNotice(null), 3000);
     } catch {
       window.prompt("העתק קישור לשיעור:", url);
@@ -475,24 +473,13 @@ function TeacherClassroomSection({ teacherProfile }: { teacherProfile: any }) {
             <h3 className="text-lg font-black text-white">צור כיתה וירטואלית חדשה</h3>
             <form onSubmit={createClassroom} className="space-y-4 text-sm">
               <label className="flex flex-col gap-1 font-bold text-white/80">
-                נושא / שם השיעור:
+                שם השיעור:
                 <input
                   type="text"
                   required
                   placeholder="למשל: שיעור חשבון - כיתה ד'"
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  className={cn(kidFieldInputClass, "py-2 bg-white/5 text-white border-white/10 rounded-xl")}
-                />
-              </label>
-
-              <label className="flex flex-col gap-1 font-bold text-white/80">
-                מקצוע:
-                <input
-                  type="text"
-                  placeholder="למשל: מתמטיקה / אנגלית / מדעים"
-                  value={form.subject}
-                  onChange={(e) => setForm({ ...form, subject: e.target.value })}
                   className={cn(kidFieldInputClass, "py-2 bg-white/5 text-white border-white/10 rounded-xl")}
                 />
               </label>
@@ -524,7 +511,6 @@ function TeacherClassroomSection({ teacherProfile }: { teacherProfile: any }) {
           <thead className="border-b border-white/10 bg-white/10 text-white/90">
             <tr>
               <th className="p-3">שם השיעור</th>
-              <th className="p-3">מקצוע</th>
               <th className="p-3">קוד חדר</th>
               <th className="p-3">סטטוס</th>
               <th className="p-3">פעולות</th>
@@ -534,7 +520,6 @@ function TeacherClassroomSection({ teacherProfile }: { teacherProfile: any }) {
             {classrooms.map((c) => (
               <tr key={c.id} className="border-b border-white/5 hover:bg-white/5">
                 <td className="p-3 font-bold text-white">{c.title}</td>
-                <td className="p-3 text-white/70">{c.subject || "כללי"}</td>
                 <td className="p-3 font-mono text-xs text-indigo-300 font-bold">{c.room_code}</td>
                 <td className="p-3">
                   <span className={cn("px-2 py-0.5 rounded-full text-xs font-bold", c.status === "active" ? "bg-emerald-500/20 text-emerald-300" : "bg-slate-700 text-slate-400")}>
