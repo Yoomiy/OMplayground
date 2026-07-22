@@ -1,0 +1,52 @@
+diff --git a/node_modules/y-excalidraw/dist/y-excalidraw.cjs b/node_modules/y-excalidraw/dist/y-excalidraw.cjs
+index 169b24a..f9c578a 100644
+--- a/node_modules/y-excalidraw/dist/y-excalidraw.cjs
++++ b/node_modules/y-excalidraw/dist/y-excalidraw.cjs
+@@ -206,7 +206,7 @@ var getDeltaOperationsForAssets = (lastKnownFileIds, files) => {
+       operations.push({ type: "append", id: fileId, asset: files[fileId] });
+     }
+   }
+-  for (let fileId in lastKnownFileIds) {
++  for (let fileId of lastKnownFileIds) {
+     if (!files.hasOwnProperty(fileId)) {
+       operations.push({ type: "delete", id: fileId });
+     }
+@@ -354,8 +354,10 @@ var ExcalidrawBinding = class {
+       }
+       const addedFiles = [...events.keysChanged].map(
+         (key) => this.yAssets.get(key)
+-      );
+-      this.api.addFiles(addedFiles);
++      ).filter(Boolean);
++      if (addedFiles.length > 0) {
++        this.api.addFiles(addedFiles);
++      }
+     };
+     this.yAssets.observe(_remoteFilesChangeHandler);
+     this.subscriptions.push(() => {
+diff --git a/node_modules/y-excalidraw/dist/y-excalidraw.js b/node_modules/y-excalidraw/dist/y-excalidraw.js
+index 84ad536..d6290ae 100644
+--- a/node_modules/y-excalidraw/dist/y-excalidraw.js
++++ b/node_modules/y-excalidraw/dist/y-excalidraw.js
+@@ -172,7 +172,7 @@ var getDeltaOperationsForAssets = (lastKnownFileIds, files) => {
+       operations.push({ type: "append", id: fileId, asset: files[fileId] });
+     }
+   }
+-  for (let fileId in lastKnownFileIds) {
++  for (let fileId of lastKnownFileIds) {
+     if (!files.hasOwnProperty(fileId)) {
+       operations.push({ type: "delete", id: fileId });
+     }
+@@ -320,8 +320,10 @@ var ExcalidrawBinding = class {
+       }
+       const addedFiles = [...events.keysChanged].map(
+         (key) => this.yAssets.get(key)
+-      );
+-      this.api.addFiles(addedFiles);
++      ).filter(Boolean);
++      if (addedFiles.length > 0) {
++        this.api.addFiles(addedFiles);
++      }
+     };
+     this.yAssets.observe(_remoteFilesChangeHandler);
+     this.subscriptions.push(() => {

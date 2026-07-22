@@ -6,6 +6,7 @@
     "packages/*"
   ],
   "scripts": {
+    "postinstall": "patch-package",
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "dev:web": "npm run dev -w @playground/web",
@@ -16,6 +17,7 @@
     "borrow-voxel-audio": "tsx scripts/borrow-voxel-audio.ts"
   },
   "devDependencies": {
+    "patch-package": "^8.0.0",
     "tsx": "^4.22.3",
     "typescript": "^5.8.2"
   },

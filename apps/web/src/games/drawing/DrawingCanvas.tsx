@@ -1,6 +1,19 @@
-import React, { Suspense, useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
+import React, { Suspense, useEffect, useRef, useState, useCallback, useMemo, forwardRef, useImperativeHandle } from "react";
 import type { DrawingState } from "@playground/game-logic";
-import { reconcileElements, diffScene, type DrawingDelta } from "./drawingSync";
+import {
+  createYjsCanvasSession,
+  uint8ArrayToBase64,
+  base64ToUint8Array,
+  populateYElements,
+  populateYAssets,
+  replaceYElements,
+  replaceYAssets,
+  sanitizeExcalidrawElements,
+  ExcalidrawBinding,
+  encodeAwarenessUpdate,
+  applyAwarenessUpdate,
+  Y
+} from "./yjsSyncHelper";
 import { compressImage, getBase64Size, MAX_FILE_SIZE_BYTES, MAX_IMAGES_PER_BOARD } from "./drawingImages";
 import { cn } from "@/lib/cn";
 
@@ -43,35 +56,30 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   players
 }, ref) => {
   const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
-  
-  // Keep track of internal snapshots to avoid infinite loop echoes
-  const lastElementsRef = useRef<any[]>([]);
-  const lastFilesRef = useRef<Record<string, any>>({});
-  const lastVersionRef = useRef<number>(0);
-  
-  // Track remote cursors/collaborators
-  const [collaborators, setCollaborators] = useState<Map<string, any>>(new Map());
-  
-  // Coalescing delta buffers
-  const pendingDeltaRef = useRef<DrawingDelta>({ changed: [], deleted: [] });
-  const pendingFilesRef = useRef<Record<string, any>>({});
-  const syncTimeoutRef = useRef<any>(null);
-  
-  // For dirty state / checkpoint scheduling
-  const isDirtyRef = useRef<boolean>(false);
-  const checkpointIntervalRef = useRef<any>(null);
 
-  // Concurrency guard to prevent duplicate compressions of the same image file
-  const processingFileIdsRef = useRef<Set<string>>(new Set());
+  // User details for awareness
+  const myPlayer = players?.find((p) => p.userId === myUserId);
+  const myDisplayName = myPlayer?.displayName || (myUserId === "solo" ? "משתתף" : mySeat ? `משתתף (${mySeat})` : "משתתף");
 
-  // Cursor throttle (50ms)
-  const lastCursorEmitRef = useRef<number>(0);
+  // Create Yjs Session instance using useMemo so it stays alive across renders
+  const yjsSession = useMemo(() => {
+    return createYjsCanvasSession(myDisplayName, "#6366f1");
+  }, [myDisplayName]);
 
-  // Compute static initialData once on mount to prevent mounting lifecycle race conditions
+  // Clean up Yjs session on component unmount
+  useEffect(() => {
+    return () => {
+      yjsSession.destroy();
+    };
+  }, [yjsSession]);
+
+  const bindingRef = useRef<ExcalidrawBinding | null>(null);
+
+  // Compute static initialData once on mount
   const initialData = useRef<any>(null);
   if (!initialData.current && gameState.canvas) {
     initialData.current = {
-      elements: gameState.canvas.elements || [],
+      elements: sanitizeExcalidrawElements(gameState.canvas.elements || []),
       files: gameState.canvas.files || {},
       appState: {
         viewBackgroundColor: "#ffffff"
@@ -79,14 +87,221 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     };
   }
 
-  // Initialize refs once the API ref is available to align with initialData mount
+  // Bind Excalidraw API to Yjs Document
   useEffect(() => {
-    if (excalidrawAPI && initialData.current) {
-      lastElementsRef.current = initialData.current.elements || [];
-      lastFilesRef.current = initialData.current.files || {};
-      lastVersionRef.current = gameState.canvas?.version || 0;
+    if (!excalidrawAPI || !yjsSession) return;
+    const { yElements, yAssets, awareness } = yjsSession;
+
+    // Populate initial elements into Yjs if brand new document and initial elements exist
+    if (yElements.length === 0 && initialData.current) {
+      if (initialData.current.elements?.length > 0) {
+        populateYElements(yElements, initialData.current.elements);
+      }
+      if (initialData.current.files && Object.keys(initialData.current.files).length > 0) {
+        populateYAssets(yAssets, initialData.current.files);
+      }
     }
-  }, [excalidrawAPI]);
+
+    const binding = new ExcalidrawBinding(yElements, yAssets, excalidrawAPI, awareness);
+    bindingRef.current = binding;
+
+    return () => {
+      binding.destroy();
+      bindingRef.current = null;
+    };
+  }, [excalidrawAPI, yjsSession]);
+
+  // Sync state from server on join / checkpoint update / clear canvas
+  const lastVersionRef = useRef<number>(gameState.canvas?.version || 0);
+  useEffect(() => {
+    if (!gameState.canvas || !yjsSession) return;
+    const { yElements, yAssets } = yjsSession;
+
+    const serverVersion = gameState.canvas.version ?? 0;
+    if (serverVersion > lastVersionRef.current) {
+      lastVersionRef.current = serverVersion;
+      const serverElements = gameState.canvas.elements || [];
+      const serverFiles = gameState.canvas.files || {};
+
+      replaceYElements(yElements, serverElements, bindingRef.current);
+      replaceYAssets(yAssets, serverFiles, bindingRef.current);
+    }
+  }, [gameState.canvas, yjsSession]);
+
+  // Image compression & file count guards
+  const processingFileIdsRef = useRef<Set<string>>(new Set());
+
+  const handleLocalChange = useCallback(
+    async (_elements: readonly any[], _appState: any, files: any) => {
+      if (!excalidrawAPI || !files) return;
+      const fileIds = Object.keys(files);
+      const currentImgCount = fileIds.length;
+
+      if (currentImgCount > MAX_IMAGES_PER_BOARD) {
+        showToast("הגעת למגבלת התמונות בלוח (מקסימום 10)");
+      }
+
+      for (const id of fileIds) {
+        if (!processingFileIdsRef.current.has(id)) {
+          processingFileIdsRef.current.add(id);
+          const fileData = files[id];
+          if (fileData && fileData.dataURL?.startsWith("data:image/")) {
+            const size = getBase64Size(fileData.dataURL);
+            if (size > MAX_FILE_SIZE_BYTES) {
+              try {
+                showToast("מעבד תמונה ומכווץ...");
+                const compressedUrl = await compressImage(fileData.dataURL);
+                if (getBase64Size(compressedUrl) <= MAX_FILE_SIZE_BYTES) {
+                  excalidrawAPI.addFiles([{ ...fileData, dataURL: compressedUrl }]);
+                } else {
+                  showToast("התמונה גדולה מדי (מקסימום 512KB)");
+                }
+              } catch (err) {
+                console.error("Compression failed", err);
+              }
+            }
+          }
+        }
+      }
+    },
+    [excalidrawAPI, showToast]
+  );
+
+  // Emit local Yjs updates and Awareness changes
+  useEffect(() => {
+    if (!yjsSession || !onLiveDelta) return;
+    const { ydoc, awareness } = yjsSession;
+
+    const handleDocUpdate = (update: Uint8Array, origin: any) => {
+      if (origin !== "remote") {
+        onLiveDelta({
+          yjsUpdate: uint8ArrayToBase64(update)
+        });
+      }
+    };
+
+    const handleAwarenessUpdate = ({ added, updated, removed }: any, origin: any) => {
+      if (origin !== "remote") {
+        const changedClients = [...added, ...updated, ...removed];
+        if (changedClients.length > 0) {
+          const encoded = encodeAwarenessUpdate(awareness, changedClients);
+          onLiveDelta({
+            yjsAwareness: uint8ArrayToBase64(encoded)
+          });
+        }
+      }
+    };
+
+    ydoc.on("update", handleDocUpdate);
+    awareness.on("update", handleAwarenessUpdate);
+
+    return () => {
+      ydoc.off("update", handleDocUpdate);
+      awareness.off("update", handleAwarenessUpdate);
+    };
+  }, [yjsSession, onLiveDelta]);
+
+  // Subscribe to remote live deltas and Yjs sync messages
+  const lastHostViewportRef = useRef<{ scrollX: number; scrollY: number; zoom: any } | null>(null);
+
+  useEffect(() => {
+    if (!subscribeLiveDeltas || !yjsSession) return;
+    const { ydoc, awareness } = yjsSession;
+
+    // Request initial Yjs state sync from connected peers upon joining
+    if (onLiveDelta) {
+      onLiveDelta({ yjsSyncRequest: true });
+    }
+
+    const unsubscribe = subscribeLiveDeltas((payload) => {
+      if (!payload) return;
+      const from = payload.from;
+      if (from === myUserId) return; // ignore own echo
+
+      const delta = payload.delta || payload;
+
+      const yjsUpdate = delta.yjsUpdate;
+      const yjsAwareness = delta.yjsAwareness;
+      const yjsSyncRequest = delta.yjsSyncRequest;
+      const yjsSyncResponse = delta.yjsSyncResponse;
+      const targetUserId = delta.targetUserId;
+
+      // Handle Yjs document update
+      if (yjsUpdate) {
+        try {
+          const bytes = base64ToUint8Array(yjsUpdate);
+          Y.applyUpdate(ydoc, bytes, "remote");
+        } catch (err) {
+          console.error("Failed to apply remote Yjs update:", err);
+        }
+      }
+
+      // Handle Yjs awareness update
+      if (yjsAwareness) {
+        try {
+          const bytes = base64ToUint8Array(yjsAwareness);
+          applyAwarenessUpdate(awareness, bytes, "remote");
+        } catch (err) {
+          console.error("Failed to apply remote Yjs awareness:", err);
+        }
+      }
+
+      // Handle sync request from late joiner
+      if (yjsSyncRequest && isHost && onLiveDelta) {
+        const stateUpdate = Y.encodeStateAsUpdate(ydoc);
+        onLiveDelta({
+          targetUserId: from,
+          yjsSyncResponse: uint8ArrayToBase64(stateUpdate)
+        });
+      }
+
+      // Handle sync response containing full Yjs document snapshot
+      if (yjsSyncResponse && (targetUserId === myUserId || !targetUserId)) {
+        try {
+          const bytes = base64ToUint8Array(yjsSyncResponse);
+          Y.applyUpdate(ydoc, bytes, "remote");
+        } catch (err) {
+          console.error("Failed to apply Yjs sync response:", err);
+        }
+      }
+
+      // Handle host viewport focus sync
+      if (delta.viewport && !isHost && excalidrawAPI) {
+        lastHostViewportRef.current = delta.viewport;
+        excalidrawAPI.updateScene({
+          appState: {
+            scrollX: delta.viewport.scrollX,
+            scrollY: delta.viewport.scrollY,
+            zoom: typeof delta.viewport.zoom === "number" ? { value: delta.viewport.zoom } : delta.viewport.zoom
+          },
+          commitToHistory: false
+        });
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [subscribeLiveDeltas, myUserId, isHost, excalidrawAPI, onLiveDelta, yjsSession]);
+
+  // Periodic Checkpoint Cadence: host only, every 5s
+  useEffect(() => {
+    if (!isHost) return;
+    const interval = setInterval(() => {
+      if (excalidrawAPI) {
+        const elements = excalidrawAPI.getSceneElements();
+        const files = excalidrawAPI.getFiles();
+        onIntent({
+          type: "CHECKPOINT",
+          version: Date.now(),
+          elements: sanitizeExcalidrawElements(elements),
+          files
+        });
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [onIntent, isHost, excalidrawAPI]);
 
   // Expose exportPNG function to parent via ref
   useImperativeHandle(ref, () => ({
@@ -97,10 +312,9 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
         const elements = excalidrawAPI.getSceneElements();
         const files = excalidrawAPI.getFiles();
         const appState = excalidrawAPI.getAppState();
-        
-        // Dynamically import exportToBlob to preserve code splitting
+
         const { exportToBlob } = await import("@excalidraw/excalidraw");
-        
+
         const blob = await exportToBlob({
           elements,
           appState: {
@@ -111,7 +325,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
           files,
           getDimensions: (width: number, height: number) => ({ width: width * 1.5, height: height * 1.5 })
         });
-        
+
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
@@ -126,360 +340,56 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     }
   }));
 
-  // Sync state from server on join / checkpoint update (authoritative replace, not reconcile)
-  useEffect(() => {
-    if (!excalidrawAPI || !gameState.canvas) return;
-    
-    const serverVersion = gameState.canvas.version;
-    if (serverVersion > lastVersionRef.current) {
-      const serverElements = gameState.canvas.elements || [];
-      const serverFiles = gameState.canvas.files || {};
-      
-      const newFiles = { ...lastFilesRef.current, ...serverFiles };
-      
-      const filesToRegister: any[] = [];
-      for (const [id, file] of Object.entries(serverFiles)) {
-        if (!lastFilesRef.current[id]) filesToRegister.push(file);
-      }
-
-      lastElementsRef.current = serverElements;
-      lastFilesRef.current = newFiles;
-      lastVersionRef.current = serverVersion;
-      
-      if (filesToRegister.length > 0) {
-        excalidrawAPI.addFiles(filesToRegister);
-      }
-      
-      excalidrawAPI.updateScene({
-        elements: serverElements,
-        commitToHistory: false
-      });
-    }
-  }, [excalidrawAPI, gameState.canvas]);
-
-  // Subscribe to remote live deltas
-  // Track host viewport for locking kids' board view
-  const lastHostViewportRef = useRef<{ scrollX: number; scrollY: number; zoom: any } | null>(null);
-
-  useEffect(() => {
-    if (!subscribeLiveDeltas || !excalidrawAPI) return;
-
-    const unsubscribe = subscribeLiveDeltas((payload) => {
-      const { from, delta } = payload;
-      if (from === myUserId) return; // ignore own echo
-
-      // Handle cursor updates
-      if (delta.pointer !== undefined) {
-        setCollaborators((prev) => {
-          const next = new Map(prev);
-          next.set(from, {
-            pointer: delta.pointer,
-            username: delta.username || "משתתף",
-            color: "#6366f1"
-          });
-          return next;
-        });
-      }
-
-      // Handle viewport focus sync from host (focus kids on the exact same point & lock view)
-      if (delta.viewport && !isHost) {
-        lastHostViewportRef.current = delta.viewport;
-        excalidrawAPI.updateScene({
-          appState: {
-            scrollX: delta.viewport.scrollX,
-            scrollY: delta.viewport.scrollY,
-            zoom: typeof delta.viewport.zoom === "number" ? { value: delta.viewport.zoom } : delta.viewport.zoom
-          },
-          commitToHistory: false
-        });
-      }
-
-      // Handle element changes
-      if (delta.changed || delta.deleted || delta.files) {
-        const receivedChanged = delta.changed || [];
-        const receivedDeletedIds = delta.deleted || [];
-        
-        // Convert deleted ids to deleted elements
-        const receivedDeleted = receivedDeletedIds.map((id: string) => ({
-          id,
-          isDeleted: true,
-          version: (lastElementsRef.current.find((e) => e.id === id)?.version || 0) + 1
-        }));
-        
-        const updates = [...receivedChanged, ...receivedDeleted];
-        const reconciled = reconcileElements(lastElementsRef.current, updates);
-        
-        const mergedFiles = {
-          ...lastFilesRef.current,
-          ...(delta.files || {})
-        };
-        
-        // Correctly register files using addFiles
-        const filesToRegister: any[] = [];
-        if (delta.files) {
-          for (const [id, file] of Object.entries(delta.files)) {
-            if (!lastFilesRef.current[id]) {
-              filesToRegister.push(file);
-            }
-          }
-        }
-        
-        lastElementsRef.current = reconciled;
-        lastFilesRef.current = mergedFiles;
-
-        if (filesToRegister.length > 0) {
-          excalidrawAPI.addFiles(filesToRegister);
-        }
-        
-        excalidrawAPI.updateScene({
-          elements: reconciled,
-          commitToHistory: false
-        });
-      }
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, [subscribeLiveDeltas, excalidrawAPI, myUserId]);
-
-  // Cleanup remote cursors when player leaves (based on room roster changes)
-  const rosterUserIds = useRef<string[]>([]);
-  useEffect(() => {
-    const activeIds = Object.keys(gameState.seats || {});
-    rosterUserIds.current = activeIds;
-    
-    setCollaborators((prev) => {
-      const next = new Map(prev);
-      let changed = false;
-      for (const key of next.keys()) {
-        if (!activeIds.includes(key)) {
-          next.delete(key);
-          changed = true;
-        }
-      }
-      return changed ? next : prev;
-    });
-  }, [gameState.seats]);
-
-  // Periodic Checkpoint Cadence: host only, every 5s if dirty
-  useEffect(() => {
-    if (!isHost) return;
-    checkpointIntervalRef.current = setInterval(() => {
-      if (isDirtyRef.current) {
-        const nextVersion = lastVersionRef.current + 1;
-        onIntent({
-          type: "CHECKPOINT",
-          version: nextVersion,
-          elements: lastElementsRef.current,
-          files: lastFilesRef.current
-        });
-        isDirtyRef.current = false;
-        lastVersionRef.current = nextVersion;
-      }
-    }, 5000);
-
-    return () => {
-      if (checkpointIntervalRef.current) clearInterval(checkpointIntervalRef.current);
-    };
-  }, [onIntent, isHost]);
-
-  // Send local edits
-  const handleLocalChange = useCallback(
-    async (elements: readonly any[], _appState: any, files: any) => {
-      if (!excalidrawAPI) return;
-
-      // Lock board view for kids: prevent kids from panning/zooming away from host's focus
-      if (!isHost && lastHostViewportRef.current && _appState) {
-        const hostVp = lastHostViewportRef.current;
-        const currentZoom = _appState.zoom?.value ?? _appState.zoom;
-        const hostZoom = typeof hostVp.zoom === "number" ? hostVp.zoom : hostVp.zoom?.value;
-        if (
-          Math.abs(_appState.scrollX - hostVp.scrollX) > 2 ||
-          Math.abs(_appState.scrollY - hostVp.scrollY) > 2 ||
-          Math.abs((currentZoom || 1) - (hostZoom || 1)) > 0.02
-        ) {
-          excalidrawAPI.updateScene({
-            appState: {
-              scrollX: hostVp.scrollX,
-              scrollY: hostVp.scrollY,
-              zoom: typeof hostVp.zoom === "number" ? { value: hostVp.zoom } : hostVp.zoom
-            },
-            commitToHistory: false
-          });
-        }
-      }
-
-      // Filter out elements that are fully initialized and not in-progress
-      const currentElements = elements.map((el) => {
-        return {
-          ...el
-        };
-      });
-
-      // Intercept image processing
-      let updatedFiles = { ...files };
-      const currentFileIds = Object.keys(files);
-
-      for (const id of currentFileIds) {
-        if (!lastFilesRef.current[id] && !pendingFilesRef.current[id] && !processingFileIdsRef.current.has(id)) {
-          processingFileIdsRef.current.add(id);
-          const fileData = files[id];
-          if (fileData && fileData.dataURL.startsWith("data:image/")) {
-            // Check number of images cap
-            const currentImgCount = Object.keys(lastFilesRef.current).length + Object.keys(pendingFilesRef.current).length;
-            if (currentImgCount >= MAX_IMAGES_PER_BOARD) {
-              showToast("הגעת למגבלת התמונות בלוח (מקסימום 10)");
-              // Remove the image element
-              const imageElement = currentElements.find((e) => e.type === "image" && e.fileId === id);
-              if (imageElement) {
-                excalidrawAPI.updateScene({
-                  elements: elements.map((e) => e.id === imageElement.id ? { ...e, isDeleted: true } : e)
-                });
-              }
-              processingFileIdsRef.current.delete(id);
-              continue;
-            }
-
-            try {
-              showToast("מעבד תמונה ומכווץ...");
-              const compressedUrl = await compressImage(fileData.dataURL);
-              const compressedSize = getBase64Size(compressedUrl);
-
-              if (compressedSize > MAX_FILE_SIZE_BYTES) {
-                showToast("התמונה גדולה מדי גם לאחר כיווץ (מקסימום 512KB)");
-                // Remove the image element
-                const imageElement = currentElements.find((e) => e.type === "image" && e.fileId === id);
-                if (imageElement) {
-                  excalidrawAPI.updateScene({
-                    elements: elements.map((e) => e.id === imageElement.id ? { ...e, isDeleted: true } : e)
-                  });
-                }
-                processingFileIdsRef.current.delete(id);
-                continue;
-              }
-
-              const compressedFile = {
-                ...fileData,
-                dataURL: compressedUrl
-              };
-              updatedFiles[id] = compressedFile;
-              pendingFilesRef.current[id] = compressedFile;
-              processingFileIdsRef.current.delete(id);
-              
-              // Feed the compressed file back to Excalidraw
-              excalidrawAPI.addFiles([compressedFile]);
-            } catch (err) {
-              console.error("Image processing failed", err);
-              showToast("עיבוד התמונה נכשל");
-              processingFileIdsRef.current.delete(id);
-            }
-          } else {
-            processingFileIdsRef.current.delete(id);
-          }
-        }
-      }
-
-      // Check if geometry/elements changed
-      const delta = diffScene(
-        lastElementsRef.current,
-        currentElements,
-        lastFilesRef.current,
-        updatedFiles
-      );
-
-      // Guard: do not emit delta while any new file is still being compressed (prevents raw image leak)
-      if (delta?.files) {
-        for (const id of Object.keys(delta.files)) {
-          if (processingFileIdsRef.current.has(id)) {
-            return; // wait for compression to finish; onChange will fire again
-          }
-        }
-      }
-
-      if (delta) {
-        isDirtyRef.current = true;
-        
-        // Coalesce changes
-        const changedMap = new Map<string, any>();
-        for (const el of pendingDeltaRef.current.changed) {
-          changedMap.set(el.id, el);
-        }
-        for (const el of delta.changed) {
-          changedMap.set(el.id, el);
-        }
-
-        const deletedSet = new Set<string>(pendingDeltaRef.current.deleted);
-        for (const id of delta.deleted) {
-          deletedSet.add(id);
-          changedMap.delete(id);
-        }
-
-        pendingDeltaRef.current = {
-          changed: Array.from(changedMap.values()),
-          deleted: Array.from(deletedSet)
-        };
-
-        if (delta.files) {
-          pendingDeltaRef.current.files = {
-            ...pendingDeltaRef.current.files,
-            ...delta.files
-          };
-        }
-
-        // Throttle emissions to ~100ms
-        if (!syncTimeoutRef.current && onLiveDelta) {
-          syncTimeoutRef.current = setTimeout(() => {
-            if (pendingDeltaRef.current.changed.length > 0 || pendingDeltaRef.current.deleted.length > 0 || pendingDeltaRef.current.files) {
-              onLiveDelta(pendingDeltaRef.current);
-            }
-            pendingDeltaRef.current = { changed: [], deleted: [] };
-            syncTimeoutRef.current = null;
-          }, 100);
-        }
-
-        // Update local memory of elements
-        const reconciledLocal = reconcileElements(lastElementsRef.current, currentElements);
-        lastElementsRef.current = reconciledLocal;
-        lastFilesRef.current = {
-          ...lastFilesRef.current,
-          ...updatedFiles
-        };
-      }
-    },
-    [excalidrawAPI, onLiveDelta, showToast]
-  );
-
-  // Share user cursor & host viewport focus (throttled)
+  // Handle pointer update from Excalidraw component
   const handlePointerUpdate = useCallback(
     (payload: any) => {
-      if (!onLiveDelta || !payload.pointer) return;
-      const now = Date.now();
-      if (now - lastCursorEmitRef.current < 50) return;
-      lastCursorEmitRef.current = now;
-      const myPlayer = players?.find((p) => p.userId === myUserId);
-      const myDisplayName = myPlayer?.displayName || gameState.seats?.[myUserId!] || "משתתף";
-      
-      let viewport: any = undefined;
-      if (isHost && excalidrawAPI) {
-        const appState = excalidrawAPI.getAppState();
-        if (appState) {
-          viewport = {
-            scrollX: appState.scrollX,
-            scrollY: appState.scrollY,
-            zoom: appState.zoom?.value ?? appState.zoom
+      if (bindingRef.current) {
+        bindingRef.current.onPointerUpdate(payload);
+      }
+    },
+    []
+  );
+
+  const setExcalidrawAPISafely = useCallback((api: any) => {
+    if (!api) {
+      setExcalidrawAPI(null);
+      return;
+    }
+    // Wrap addFiles
+    if (api.addFiles && !api._isWrappedAddFiles) {
+      const origAddFiles = api.addFiles.bind(api);
+      api.addFiles = (files: any) => {
+        let fileList: any[] = [];
+        if (Array.isArray(files)) {
+          fileList = files;
+        } else if (files && typeof files === "object") {
+          fileList = Object.values(files);
+        }
+        const validFiles = fileList.filter((f) => f && typeof f === "object" && typeof f.id === "string");
+        if (validFiles.length > 0) {
+          origAddFiles(validFiles);
+        }
+      };
+      api._isWrappedAddFiles = true;
+    }
+
+    // Wrap updateScene
+    if (api.updateScene && !api._isWrappedUpdateScene) {
+      const origUpdateScene = api.updateScene.bind(api);
+      api.updateScene = (opts: any) => {
+        if (opts && Array.isArray(opts.elements)) {
+          opts = {
+            ...opts,
+            elements: sanitizeExcalidrawElements(opts.elements)
           };
         }
-      }
+        origUpdateScene(opts);
+      };
+      api._isWrappedUpdateScene = true;
+    }
 
-      onLiveDelta({
-        pointer: payload.pointer,
-        username: myDisplayName,
-        ...(viewport ? { viewport } : {})
-      });
-    },
-    [onLiveDelta, gameState.seats, myUserId, players, isHost, excalidrawAPI]
-  );
+    setExcalidrawAPI(api);
+  }, []);
 
   return (
     <div
@@ -490,7 +400,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
       )}
     >
       <style>{`
-        /* Remove report/feedback button for everybody */
+        /* Remove report/feedback button */
         #feedback-trigger-btn,
         button#feedback-trigger-btn,
         .excalidraw #feedback-trigger-btn,
@@ -522,14 +432,13 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
         }
       >
         <ExcalidrawComponent
-          excalidrawAPI={(api: any) => setExcalidrawAPI(api)}
+          excalidrawAPI={setExcalidrawAPISafely}
           onChange={handleLocalChange}
           onPointerUpdate={handlePointerUpdate}
-          collaborators={collaborators}
           theme="light"
           autoFocus={false}
           handleKeyboardGlobally={false}
-          viewModeEnabled={mySeat === null} // Spectators cannot draw, only view
+          viewModeEnabled={mySeat === null}
           initialData={initialData.current}
           UIOptions={{
             canvasActions: {

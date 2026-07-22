@@ -630,7 +630,7 @@ export function ClassroomPage() {
     });
     void room.localParticipant.publishData(
       new TextEncoder().encode(payload),
-      { reliable: Boolean(delta.files || delta.changed || delta.deleted) }
+      { reliable: Boolean(delta.yjsUpdate || delta.yjsSyncResponse || delta.files || delta.changed || delta.deleted) }
     );
   }, [room, isHost, roomSettings.allowWhiteboardDraw, scheduleDbBoardSave]);
 
