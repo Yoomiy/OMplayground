@@ -123,6 +123,7 @@ const io = new Server(server, {
     origin: CORS_ORIGIN.split(",").map((s) => s.trim()),
     credentials: true
   },
+  maxHttpBufferSize: 1e7,
   perMessageDeflate: true
 });
 

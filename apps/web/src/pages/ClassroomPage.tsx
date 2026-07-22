@@ -628,10 +628,21 @@ export function ClassroomPage() {
       from: room.localParticipant.identity,
       delta
     });
-    void room.localParticipant.publishData(
-      new TextEncoder().encode(payload),
-      { reliable: Boolean(delta.yjsUpdate || delta.yjsSyncResponse || delta.files || delta.changed || delta.deleted) }
-    );
+    try {
+      const encoded = new TextEncoder().encode(payload);
+      if (encoded.byteLength <= 14000) {
+        void room.localParticipant.publishData(
+          encoded,
+          { reliable: Boolean(delta.yjsUpdate || delta.yjsSyncResponse || delta.files || delta.changed || delta.deleted) }
+        ).catch((err) => {
+          console.error("LiveKit publishData error:", err);
+        });
+      } else {
+        console.warn("Skipping LiveKit data channel payload exceeding 14KB limit (byteLength:", encoded.byteLength, ")");
+      }
+    } catch (err) {
+      console.error("Failed to encode/publish whiteboard delta:", err);
+    }
   }, [room, isHost, roomSettings.allowWhiteboardDraw, scheduleDbBoardSave]);
 
   // Handle board intent (such as CLEAR_CANVAS from DrawingBoard component)

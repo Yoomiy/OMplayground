@@ -14,7 +14,7 @@ import {
   applyAwarenessUpdate,
   Y
 } from "./yjsSyncHelper";
-import { compressImage, getBase64Size, MAX_FILE_SIZE_BYTES, MAX_IMAGES_PER_BOARD } from "./drawingImages";
+import { compressImage, MAX_IMAGES_PER_BOARD } from "./drawingImages";
 import { cn } from "@/lib/cn";
 
 // Import Excalidraw CSS
@@ -146,19 +146,13 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
           processingFileIdsRef.current.add(id);
           const fileData = files[id];
           if (fileData && fileData.dataURL?.startsWith("data:image/")) {
-            const size = getBase64Size(fileData.dataURL);
-            if (size > MAX_FILE_SIZE_BYTES) {
-              try {
-                showToast("מעבד תמונה ומכווץ...");
-                const compressedUrl = await compressImage(fileData.dataURL);
-                if (getBase64Size(compressedUrl) <= MAX_FILE_SIZE_BYTES) {
-                  excalidrawAPI.addFiles([{ ...fileData, dataURL: compressedUrl }]);
-                } else {
-                  showToast("התמונה גדולה מדי (מקסימום 512KB)");
-                }
-              } catch (err) {
-                console.error("Compression failed", err);
+            try {
+              const compressedUrl = await compressImage(fileData.dataURL);
+              if (compressedUrl && compressedUrl !== fileData.dataURL) {
+                excalidrawAPI.addFiles([{ ...fileData, dataURL: compressedUrl }]);
               }
+            } catch (err) {
+              console.error("Compression failed", err);
             }
           }
         }

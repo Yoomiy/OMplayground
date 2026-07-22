@@ -2,9 +2,9 @@
  * Utilities for downscaling and recompressing image files inside Excalidraw.
  */
 
-export const MAX_IMAGE_DIMENSION = 1280;
-export const IMAGE_QUALITY = 0.7;
-export const MAX_FILE_SIZE_BYTES = 512 * 1024; // 512 KB
+export const MAX_IMAGE_DIMENSION = 640;
+export const IMAGE_QUALITY = 0.5;
+export const MAX_FILE_SIZE_BYTES = 10 * 1024; // 10 KB - always compress to keep updates tiny!
 export const MAX_IMAGES_PER_BOARD = 10;
 
 export async function compressImage(
@@ -13,11 +13,11 @@ export async function compressImage(
   quality = IMAGE_QUALITY
 ): Promise<string> {
   // If not a data url or not an image, return as is
-  if (!dataUrl.startsWith("data:image/")) {
+  if (!dataUrl || !dataUrl.startsWith("data:image/")) {
     return dataUrl;
   }
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const img = new Image();
     img.src = dataUrl;
     img.onload = () => {
@@ -45,19 +45,13 @@ export async function compressImage(
       }
 
       ctx.drawImage(img, 0, 0, width, height);
-      
-      const originalType = dataUrl.split(";")[0].split(":")[1] || "image/jpeg";
-      // Convert to webp if original is png/webp, otherwise jpeg
-      const outputType =
-        originalType.includes("png") || originalType.includes("webp")
-          ? "image/webp"
-          : "image/jpeg";
 
-      const compressed = canvas.toDataURL(outputType, quality);
+      // Always compress to WebP format for minimal size
+      const compressed = canvas.toDataURL("image/webp", quality);
       resolve(compressed);
     };
-    img.onerror = (err) => {
-      reject(err);
+    img.onerror = () => {
+      resolve(dataUrl);
     };
   });
 }
