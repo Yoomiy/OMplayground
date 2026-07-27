@@ -12,3 +12,4 @@
 26. solve the size limit barrier in the drawing board
 27. when host stops game - others need to stop sending intents
 28. close class for clients when host clode it
+29. fix the pointers situation - in drawing game and classrooms boards

@@ -1,0 +1,8 @@
+tasks:
+
+1) review all hanges made since commit 1ce8007c847c9999234232bfbfd7e44eefc08306 and on.
+
+2) list your findings at the bottom of this document, and after you are done reviewing start to fix what needs to be fixed.
+under the said stuff, at the buttom of this document - create a section in which you'll list all your question you might have that demend human intervention/decision. when you hit something like that start working on something else and wait for a human to add their input into the document.
+
+3) you are only done when the audit has been finish and there are no unfulffiled tasks in this document or unanswered answeres. if you're waiting for a question to be answered and you have nothing to do in the meantime - just review the changes again and think of special edge cases that need to be addressed
