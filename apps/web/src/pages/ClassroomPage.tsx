@@ -126,6 +126,7 @@ export function ClassroomPage() {
   const currentBoardElementsRef = useRef<any[]>([]);
   const currentBoardFilesRef = useRef<Record<string, any>>({});
   const dbSaveTimerRef = useRef<any>(null);
+  const pendingChunksRef = useRef<Map<string, { total: number; chunks: Map<number, string>; timer: any }>>(new Map());
 
   const subscribeLiveDeltas = useCallback((cb: (payload: any) => void) => {
     deltaListenersRef.current.add(cb);
@@ -397,7 +398,48 @@ export function ClassroomPage() {
           const str = new TextDecoder().decode(payload);
           const msg = JSON.parse(str);
 
-          if (msg.type === "CHAT") {
+          const processIncomingDataMsg = (msg: any, senderParticipant?: Participant) => {
+            if (msg.type === "WHITEBOARD_CHUNK") {
+              const { chunkId, index, total, data } = msg;
+              let entry = pendingChunksRef.current.get(chunkId);
+              if (!entry) {
+                entry = {
+                  total,
+                  chunks: new Map(),
+                  timer: setTimeout(() => pendingChunksRef.current.delete(chunkId), 15000)
+                };
+                pendingChunksRef.current.set(chunkId, entry);
+              }
+              entry.chunks.set(index, data);
+              if (entry.chunks.size === total) {
+                clearTimeout(entry.timer);
+                pendingChunksRef.current.delete(chunkId);
+
+                let totalLen = 0;
+                const slices: Uint8Array[] = [];
+                for (let i = 0; i < total; i++) {
+                  const chunkData = entry.chunks.get(i);
+                  if (!chunkData) return;
+                  const binaryStr = atob(chunkData);
+                  const bytes = new Uint8Array(binaryStr.length);
+                  for (let j = 0; j < binaryStr.length; j++) bytes[j] = binaryStr.charCodeAt(j);
+                  slices.push(bytes);
+                  totalLen += bytes.length;
+                }
+                const fullBytes = new Uint8Array(totalLen);
+                let offset = 0;
+                for (const slice of slices) {
+                  fullBytes.set(slice, offset);
+                  offset += slice.length;
+                }
+                const fullStr = new TextDecoder().decode(fullBytes);
+                const fullMsg = JSON.parse(fullStr);
+                processIncomingDataMsg(fullMsg, senderParticipant);
+              }
+              return;
+            }
+
+            if (msg.type === "CHAT") {
             setChatMessages((prev) => [
               ...prev,
               {
@@ -514,10 +556,13 @@ export function ClassroomPage() {
               setCamOn(true);
             }
           }
-        } catch (e) {
-          console.error("Data channel parse error", e);
-        }
-      });
+        };
+
+        processIncomingDataMsg(msg, participant);
+      } catch (e) {
+        console.error("Data channel parse error", e);
+      }
+    });
 
       lkRoom.on(RoomEvent.ParticipantConnected, () => updateParticipantList(lkRoom));
       lkRoom.on(RoomEvent.ParticipantDisconnected, () => updateParticipantList(lkRoom));
@@ -630,15 +675,34 @@ export function ClassroomPage() {
     });
     try {
       const encoded = new TextEncoder().encode(payload);
-      if (encoded.byteLength <= 14000) {
-        void room.localParticipant.publishData(
-          encoded,
-          { reliable: Boolean(delta.yjsUpdate || delta.yjsSyncResponse || delta.files || delta.changed || delta.deleted) }
-        ).catch((err) => {
+      const reliable = Boolean(delta.yjsUpdate || delta.yjsSyncResponse || delta.files || delta.changed || delta.deleted);
+      if (encoded.byteLength <= 12000) {
+        void room.localParticipant.publishData(encoded, { reliable }).catch((err) => {
           console.error("LiveKit publishData error:", err);
         });
       } else {
-        console.warn("Skipping LiveKit data channel payload exceeding 14KB limit (byteLength:", encoded.byteLength, ")");
+        const chunkId = `wb-${room.localParticipant.identity}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+        const MAX_SIZE = 9500;
+        const totalChunks = Math.ceil(encoded.byteLength / MAX_SIZE);
+
+        for (let i = 0; i < totalChunks; i++) {
+          const slice = encoded.subarray(i * MAX_SIZE, (i + 1) * MAX_SIZE);
+          let binaryStr = "";
+          for (let j = 0; j < slice.length; j++) binaryStr += String.fromCharCode(slice[j]);
+          const base64Chunk = btoa(binaryStr);
+
+          const chunkMsg = JSON.stringify({
+            type: "WHITEBOARD_CHUNK",
+            chunkId,
+            index: i,
+            total: totalChunks,
+            data: base64Chunk
+          });
+          void room.localParticipant.publishData(
+            new TextEncoder().encode(chunkMsg),
+            { reliable }
+          ).catch((err) => console.error("LiveKit publish chunk error:", err));
+        }
       }
     } catch (err) {
       console.error("Failed to encode/publish whiteboard delta:", err);

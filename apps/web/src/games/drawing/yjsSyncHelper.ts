@@ -61,6 +61,38 @@ export function sanitizeExcalidrawElements(elements: any[]): any[] {
   return sanitized;
 }
 
+export function deduplicateYElements(yElements: Y.Array<Y.Map<any>>) {
+  if (!yElements || yElements.length <= 1) return;
+  const doc = yElements.doc;
+  const seenIds = new Set<string>();
+  const indicesToDelete: number[] = [];
+
+  for (let i = 0; i < yElements.length; i++) {
+    const map = yElements.get(i);
+    const el = map?.get("el");
+    const id = el?.id;
+    if (!id) continue;
+    if (seenIds.has(id)) {
+      indicesToDelete.push(i);
+    } else {
+      seenIds.add(id);
+    }
+  }
+
+  if (indicesToDelete.length > 0) {
+    const applyDelete = () => {
+      for (let i = indicesToDelete.length - 1; i >= 0; i--) {
+        yElements.delete(indicesToDelete[i], 1);
+      }
+    };
+    if (doc) {
+      doc.transact(applyDelete, YJS_ORIGIN_SYSTEM);
+    } else {
+      applyDelete();
+    }
+  }
+}
+
 export function populateYElements(yElements: Y.Array<Y.Map<any>>, elements: any[], origin: any = YJS_ORIGIN_SYSTEM) {
   if (!elements || elements.length === 0) return;
   const doc = yElements.doc;
@@ -80,6 +112,7 @@ export function populateYElements(yElements: Y.Array<Y.Map<any>>, elements: any[
   } else {
     applyChange();
   }
+  deduplicateYElements(yElements);
 }
 
 export function populateYAssets(yAssets: Y.Map<any>, files: Record<string, any>, origin: any = YJS_ORIGIN_SYSTEM) {

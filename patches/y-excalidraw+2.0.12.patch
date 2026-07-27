@@ -1,26 +1,210 @@
 diff --git a/node_modules/y-excalidraw/dist/y-excalidraw.cjs b/node_modules/y-excalidraw/dist/y-excalidraw.cjs
-index 169b24a..6daf37e 100644
+index 169b24a..90aa211 100644
 --- a/node_modules/y-excalidraw/dist/y-excalidraw.cjs
 +++ b/node_modules/y-excalidraw/dist/y-excalidraw.cjs
-@@ -152,7 +152,16 @@ var getDeltaOperationsForElements = (lastKnownElements, newElements, bulkify = t
+@@ -64,37 +64,47 @@ var areElementsSame = (els1, els2) => {
+   return true;
+ };
+ var yjsToExcalidraw = (yArray) => {
+-  let x = yArray.toArray().sort((a, b) => {
+-    const key1 = a.get("pos");
+-    const key2 = b.get("pos");
+-    return key1 > key2 ? 1 : key1 < key2 ? -1 : 0;
+-  }).map((x2) => x2.get("el"));
++  let x = yArray.toArray()
++    .filter((x2) => x2 && typeof x2.get === "function" && x2.get("el"))
++    .sort((a, b) => {
++      const key1 = a.get("pos") || "";
++      const key2 = b.get("pos") || "";
++      return key1 > key2 ? 1 : key1 < key2 ? -1 : 0;
++    }).map((x2) => x2.get("el"));
+   return x;
+ };
+ 
+ // src/diff.ts
+ var import_fractional_indexing = require("fractional-indexing");
+ var Y = __toESM(require("yjs"), 1);
+-var getDeltaOperationsForElements = (lastKnownElements, newElements, bulkify = true) => {
++var getDeltaOperationsForElements = (lastKnownElements = [], newElements = [], bulkify = true) => {
+   const updateOperations = [];
+   const appendOperations = [];
+   const deleteOperations = [];
+   const moveOperations = [];
++
++  const safeLastKnown = (lastKnownElements || []).filter((x) => x && x.id);
++  const safeNewElements = (newElements || []).filter((x) => x && x.id);
++
+   const opsTracker = {
+-    elementIds: lastKnownElements.map((x) => x.id),
+-    // id map is needed to quickly look up index for the element with a given id
+-    idMap: lastKnownElements.reduce((map, data, index) => {
++    elementIds: safeLastKnown.map((x) => x.id),
++    idMap: safeLastKnown.reduce((map, data, index) => {
+       map[data.id] = { id: data.id, version: data.version, pos: data.pos, index };
+       return map;
+     }, {})
+   };
++
+   const _updateIdIndexLookup = () => {
+-    opsTracker.idMap = opsTracker.elementIds.reduce((map, id, index) => {
+-      map[id] = { ...opsTracker.idMap[id], index };
+-      return map;
+-    }, {});
++    const newMap = {};
++    opsTracker.elementIds.forEach((id, index) => {
++      if (id && opsTracker.idMap[id]) {
++        newMap[id] = { ...opsTracker.idMap[id], index };
++      }
++    });
++    opsTracker.idMap = newMap;
+   };
+-  for (let newElement of newElements) {
++
++  for (let newElement of safeNewElements) {
+     let oldIndex = null;
+     let oldElement = null;
+     if (opsTracker.idMap[newElement.id]) {
+@@ -106,12 +116,12 @@ var getDeltaOperationsForElements = (lastKnownElements, newElements, bulkify = t
+       const op = {
+         id: newElement.id,
+         version: newElement.version,
+-        pos: !bulkify ? (0, import_fractional_indexing.generateKeyBetween)(opsTracker.idMap[opsTracker.elementIds[opsTracker.elementIds.length - 1]]?.pos, null) : "",
++        pos: "",
+         index: opsTracker.elementIds.length
+       };
+       opsTracker.elementIds.push(op.id);
+       opsTracker.idMap[op.id] = op;
+-      appendOperations.push({ type: "append", id: newElement.id, pos: op.pos, element: newElement });
++      appendOperations.push({ type: "append", id: newElement.id, pos: "", element: newElement });
+     } else if (oldElement && newElement.version !== oldElement.version) {
+       const op = {
+         id: newElement.id,
+@@ -123,7 +133,8 @@ var getDeltaOperationsForElements = (lastKnownElements, newElements, bulkify = t
+       updateOperations.push({ type: "update", id: op.id, index: op.index, element: newElement });
+     }
+   }
+-  const newElementIds = new Set(newElements.map((x) => x.id));
++
++  const newElementIds = new Set(safeNewElements.map((x) => x.id));
+   const newOpsTrackerElementIds = [];
+   let runningIndex = 0;
+   for (let i = 0; i < opsTracker.elementIds.length; i++) {
+@@ -139,9 +150,38 @@ var getDeltaOperationsForElements = (lastKnownElements, newElements, bulkify = t
+     opsTracker.elementIds = newOpsTrackerElementIds;
+     _updateIdIndexLookup();
+   }
+-  for (let toIndex = 0; toIndex < newElements.length; toIndex++) {
+-    const id = newElements[toIndex].id;
+-    const { index: fromIndex } = opsTracker.idMap[id];
++
++  const bulkAppendOperations = [];
++  const bulkDeleteOperations = [];
++
++  if (appendOperations.length > 0) {
++    const lastPos = opsTracker.elementIds
++      .map((id) => opsTracker.idMap[id]?.pos)
++      .filter(Boolean)
++      .pop() || null;
++    const sortIndexes = (0, import_fractional_indexing.generateNKeysBetween)(lastPos, null, appendOperations.length);
++    for (let [i, op] of appendOperations.entries()) {
++      if (opsTracker.idMap[op.id]) {
++        opsTracker.idMap[op.id].pos = sortIndexes[i];
++        op.pos = sortIndexes[i];
++      }
++    }
++    if (bulkify) {
++      bulkAppendOperations.push({
++        type: "bulkAppend",
++        data: appendOperations.map((op, _index) => ({ id: op.id, pos: sortIndexes[_index], element: op.element }))
++      });
++    }
++  }
++
++  for (let toIndex = 0; toIndex < safeNewElements.length; toIndex++) {
++    const el = safeNewElements[toIndex];
++    if (!el || !el.id) continue;
++    const id = el.id;
++    const trackerItem = opsTracker.idMap[id];
++    if (!trackerItem || typeof trackerItem.index !== "number") continue;
++    const fromIndex = trackerItem.index;
++
+     if (toIndex !== fromIndex) {
+       let leftSortIndex = null;
+       let rightSortIndex = null;
+@@ -152,26 +192,32 @@ var getDeltaOperationsForElements = (lastKnownElements, newElements, bulkify = t
          leftSortIndex = opsTracker.idMap[opsTracker.elementIds[toIndex - 1]]?.pos || null;
          rightSortIndex = opsTracker.idMap[opsTracker.elementIds[toIndex]]?.pos || null;
        }
 -      const newSortIndex = (0, import_fractional_indexing.generateKeyBetween)(leftSortIndex, rightSortIndex);
 +      let newSortIndex = "";
 +      try {
-+        if (leftSortIndex && rightSortIndex && leftSortIndex >= rightSortIndex) {
-+          newSortIndex = (0, import_fractional_indexing.generateKeyBetween)(leftSortIndex, null);
++        const validLeft = (leftSortIndex && typeof leftSortIndex === "string") ? leftSortIndex : null;
++        const validRight = (rightSortIndex && typeof rightSortIndex === "string") ? rightSortIndex : null;
++        if (validLeft && validRight && validLeft >= validRight) {
++          newSortIndex = (0, import_fractional_indexing.generateKeyBetween)(validLeft, null);
 +        } else {
-+          newSortIndex = (0, import_fractional_indexing.generateKeyBetween)(leftSortIndex, rightSortIndex);
++          newSortIndex = (0, import_fractional_indexing.generateKeyBetween)(validLeft, validRight);
 +        }
 +      } catch (err) {
-+        newSortIndex = (0, import_fractional_indexing.generateKeyBetween)(null, null);
++        try {
++          newSortIndex = (0, import_fractional_indexing.generateKeyBetween)(leftSortIndex || null, null);
++        } catch (err2) {
++          newSortIndex = (0, import_fractional_indexing.generateKeyBetween)(null, null);
++        }
 +      }
        opsTracker.elementIds = moveArrayItem(opsTracker.elementIds, fromIndex, toIndex, true);
-       opsTracker.idMap[id].pos = newSortIndex;
+-      opsTracker.idMap[id].pos = newSortIndex;
++      if (opsTracker.idMap[id]) {
++        opsTracker.idMap[id].pos = newSortIndex;
++      }
        _updateIdIndexLookup();
-@@ -206,7 +215,7 @@ var getDeltaOperationsForAssets = (lastKnownFileIds, files) => {
+       moveOperations.push({ type: "move", id, fromIndex, toIndex, pos: newSortIndex });
+     }
+   }
+-  const bulkAppendOperations = [];
+-  const bulkDeleteOperations = [];
++
+   if (bulkify) {
+-    if (appendOperations.length > 0) {
+-      const sortIndexes = (0, import_fractional_indexing.generateNKeysBetween)(lastKnownElements[lastKnownElements.length - 1]?.pos, null, appendOperations.length);
+-      for (let [i, op] of appendOperations.entries()) {
+-        opsTracker.idMap[op.id].pos = sortIndexes[i];
+-      }
+-      bulkAppendOperations.push({
+-        type: "bulkAppend",
+-        data: appendOperations.map((op, _index) => ({ id: op.id, pos: sortIndexes[_index], element: op.element }))
+-      });
+-    }
+     let lastIndex = null;
+     for (let op of deleteOperations) {
+       if (lastIndex === null || op.index > lastIndex) {
+@@ -187,11 +233,20 @@ var getDeltaOperationsForElements = (lastKnownElements, newElements, bulkify = t
+       }
+     }
+   }
+-  const operations = !bulkify ? [...updateOperations, ...appendOperations, ...deleteOperations, ...moveOperations] : [...updateOperations, ...bulkAppendOperations, ...bulkDeleteOperations, ...moveOperations];
+-  const updatedLastKnownElements = opsTracker.elementIds.map((x) => {
+-    const { index, ...rest } = opsTracker.idMap[x];
+-    return rest;
+-  });
++
++  const operations = !bulkify
++    ? [...updateOperations, ...appendOperations, ...deleteOperations, ...moveOperations]
++    : [...updateOperations, ...bulkAppendOperations, ...bulkDeleteOperations, ...moveOperations];
++
++  const updatedLastKnownElements = opsTracker.elementIds
++    .map((x) => {
++      const item = opsTracker.idMap[x];
++      if (!item) return null;
++      const { index, ...rest } = item;
++      return rest;
++    })
++    .filter(Boolean);
++
+   return { operations, lastKnownElements: updatedLastKnownElements };
+ };
+ var getDeltaOperationsForAssets = (lastKnownFileIds, files) => {
+@@ -206,7 +261,7 @@ var getDeltaOperationsForAssets = (lastKnownFileIds, files) => {
        operations.push({ type: "append", id: fileId, asset: files[fileId] });
      }
    }
@@ -29,7 +213,20 @@ index 169b24a..6daf37e 100644
      if (!files.hasOwnProperty(fileId)) {
        operations.push({ type: "delete", id: fileId });
      }
-@@ -300,19 +309,23 @@ var ExcalidrawBinding = class {
+@@ -217,8 +272,10 @@ var applyElementOperations = (yElements, operations, origin) => {
+   yElements.doc.transact((tr) => {
+     const _updateYjsIndexMap = () => {
+       for (let i = 0; i < yElements.length; i++) {
+-        let item = yElements.get(i).get("el");
+-        idYjsIndexMap[item.id] = i;
++        let item = yElements.get(i)?.get("el");
++        if (item && item.id) {
++          idYjsIndexMap[item.id] = i;
++        }
+       }
+     };
+     const idYjsIndexMap = {};
+@@ -300,19 +357,23 @@ var ExcalidrawBinding = class {
      this.undoManager = undoConfig?.undoManager;
      this.subscriptions.push(
        this.api.onChange((_, state, files) => {
@@ -66,7 +263,46 @@ index 169b24a..6daf37e 100644
          }
          if (this.awareness) {
            this.awareness.setLocalStateField(
-@@ -354,8 +367,10 @@ var ExcalidrawBinding = class {
+@@ -328,22 +389,30 @@ var ExcalidrawBinding = class {
+       }
+       const changedElementIds = new Set(event.flatMap((e) => {
+         if (e instanceof Y2.YMapEvent) {
+-          return [e.target.get("el").id];
++          const el = e.target.get("el");
++          return el && el.id ? [el.id] : [];
+         }
+         return [];
+       }));
+       const remoteElements = yjsToExcalidraw(this.yElements);
+       const elements = remoteElements.map((el) => {
++        if (!el || !el.id) return el;
+         if (changedElementIds.has(el.id)) {
+           return el;
+         }
+-        return this.api.getSceneElements().find((existingEl) => existingEl.id === el.id) || el;
+-      });
+-      this.lastKnownElements = this.yElements.toArray().map((x) => ({ id: x.get("el").id, version: x.get("el").version, pos: x.get("pos") })).sort((a, b) => {
+-        const key1 = a.pos;
+-        const key2 = b.pos;
+-        return key1 > key2 ? 1 : key1 < key2 ? -1 : 0;
+-      });
++        return this.api.getSceneElements().find((existingEl) => existingEl && existingEl.id === el.id) || el;
++      }).filter(Boolean);
++      this.lastKnownElements = this.yElements.toArray()
++        .map((x) => {
++          const el = x.get("el");
++          return el && el.id ? { id: el.id, version: el.version, pos: x.get("pos") || "" } : null;
++        })
++        .filter(Boolean)
++        .sort((a, b) => {
++          const key1 = a.pos;
++          const key2 = b.pos;
++          return key1 > key2 ? 1 : key1 < key2 ? -1 : 0;
++        });
+       this.api.updateScene({ elements });
+     };
+     this.yElements.observeDeep(_remoteElementsChangeHandler);
+@@ -354,8 +423,10 @@ var ExcalidrawBinding = class {
        }
        const addedFiles = [...events.keysChanged].map(
          (key) => this.yAssets.get(key)
@@ -79,29 +315,254 @@ index 169b24a..6daf37e 100644
      };
      this.yAssets.observe(_remoteFilesChangeHandler);
      this.subscriptions.push(() => {
+@@ -376,6 +447,8 @@ var ExcalidrawBinding = class {
+             continue;
+           }
+           collaborators2.set(id.toString(), {
++            id: id.toString(),
++            key: id.toString(),
+             pointer: state.pointer,
+             button: state.button,
+             selectedElementIds: state.selectedElementIds,
+@@ -401,11 +474,17 @@ var ExcalidrawBinding = class {
+       this.setupUndoRedo(excalidrawDom);
+     }
+     const initialValue = yjsToExcalidraw(this.yElements);
+-    this.lastKnownElements = this.yElements.toArray().map((x) => ({ id: x.get("el").id, version: x.get("el").version, pos: x.get("pos") })).sort((a, b) => {
+-      const key1 = a.pos;
+-      const key2 = b.pos;
+-      return key1 > key2 ? 1 : key1 < key2 ? -1 : 0;
+-    });
++    this.lastKnownElements = this.yElements.toArray()
++      .map((x) => {
++        const el = x.get("el");
++        return el && el.id ? { id: el.id, version: el.version, pos: x.get("pos") || "" } : null;
++      })
++      .filter(Boolean)
++      .sort((a, b) => {
++        const key1 = a.pos;
++        const key2 = b.pos;
++        return key1 > key2 ? 1 : key1 < key2 ? -1 : 0;
++      });
+     this.api.updateScene({ elements: initialValue });
+     this.api.addFiles(
+       [...this.yAssets.keys()].map((key) => this.yAssets.get(key))
+@@ -414,6 +493,8 @@ var ExcalidrawBinding = class {
+     for (let id of this.awareness.getStates().keys()) {
+       const state = this.awareness.getStates().get(id);
+       collaborators.set(id.toString(), {
++        id: id.toString(),
++        key: id.toString(),
+         pointer: state.pointer,
+         button: state.button,
+         selectedElementIds: state.selectedElementIds,
 diff --git a/node_modules/y-excalidraw/dist/y-excalidraw.js b/node_modules/y-excalidraw/dist/y-excalidraw.js
-index 84ad536..07ee199 100644
+index 84ad536..eb820ab 100644
 --- a/node_modules/y-excalidraw/dist/y-excalidraw.js
 +++ b/node_modules/y-excalidraw/dist/y-excalidraw.js
-@@ -118,7 +118,16 @@ var getDeltaOperationsForElements = (lastKnownElements, newElements, bulkify = t
+@@ -30,37 +30,47 @@ var areElementsSame = (els1, els2) => {
+   return true;
+ };
+ var yjsToExcalidraw = (yArray) => {
+-  let x = yArray.toArray().sort((a, b) => {
+-    const key1 = a.get("pos");
+-    const key2 = b.get("pos");
+-    return key1 > key2 ? 1 : key1 < key2 ? -1 : 0;
+-  }).map((x2) => x2.get("el"));
++  let x = yArray.toArray()
++    .filter((x2) => x2 && typeof x2.get === "function" && x2.get("el"))
++    .sort((a, b) => {
++      const key1 = a.get("pos") || "";
++      const key2 = b.get("pos") || "";
++      return key1 > key2 ? 1 : key1 < key2 ? -1 : 0;
++    }).map((x2) => x2.get("el"));
+   return x;
+ };
+ 
+ // src/diff.ts
+ import { generateKeyBetween, generateNKeysBetween } from "fractional-indexing";
+ import * as Y from "yjs";
+-var getDeltaOperationsForElements = (lastKnownElements, newElements, bulkify = true) => {
++var getDeltaOperationsForElements = (lastKnownElements = [], newElements = [], bulkify = true) => {
+   const updateOperations = [];
+   const appendOperations = [];
+   const deleteOperations = [];
+   const moveOperations = [];
++
++  const safeLastKnown = (lastKnownElements || []).filter((x) => x && x.id);
++  const safeNewElements = (newElements || []).filter((x) => x && x.id);
++
+   const opsTracker = {
+-    elementIds: lastKnownElements.map((x) => x.id),
+-    // id map is needed to quickly look up index for the element with a given id
+-    idMap: lastKnownElements.reduce((map, data, index) => {
++    elementIds: safeLastKnown.map((x) => x.id),
++    idMap: safeLastKnown.reduce((map, data, index) => {
+       map[data.id] = { id: data.id, version: data.version, pos: data.pos, index };
+       return map;
+     }, {})
+   };
++
+   const _updateIdIndexLookup = () => {
+-    opsTracker.idMap = opsTracker.elementIds.reduce((map, id, index) => {
+-      map[id] = { ...opsTracker.idMap[id], index };
+-      return map;
+-    }, {});
++    const newMap = {};
++    opsTracker.elementIds.forEach((id, index) => {
++      if (id && opsTracker.idMap[id]) {
++        newMap[id] = { ...opsTracker.idMap[id], index };
++      }
++    });
++    opsTracker.idMap = newMap;
+   };
+-  for (let newElement of newElements) {
++
++  for (let newElement of safeNewElements) {
+     let oldIndex = null;
+     let oldElement = null;
+     if (opsTracker.idMap[newElement.id]) {
+@@ -72,12 +82,12 @@ var getDeltaOperationsForElements = (lastKnownElements, newElements, bulkify = t
+       const op = {
+         id: newElement.id,
+         version: newElement.version,
+-        pos: !bulkify ? generateKeyBetween(opsTracker.idMap[opsTracker.elementIds[opsTracker.elementIds.length - 1]]?.pos, null) : "",
++        pos: "",
+         index: opsTracker.elementIds.length
+       };
+       opsTracker.elementIds.push(op.id);
+       opsTracker.idMap[op.id] = op;
+-      appendOperations.push({ type: "append", id: newElement.id, pos: op.pos, element: newElement });
++      appendOperations.push({ type: "append", id: newElement.id, pos: "", element: newElement });
+     } else if (oldElement && newElement.version !== oldElement.version) {
+       const op = {
+         id: newElement.id,
+@@ -89,7 +99,8 @@ var getDeltaOperationsForElements = (lastKnownElements, newElements, bulkify = t
+       updateOperations.push({ type: "update", id: op.id, index: op.index, element: newElement });
+     }
+   }
+-  const newElementIds = new Set(newElements.map((x) => x.id));
++
++  const newElementIds = new Set(safeNewElements.map((x) => x.id));
+   const newOpsTrackerElementIds = [];
+   let runningIndex = 0;
+   for (let i = 0; i < opsTracker.elementIds.length; i++) {
+@@ -105,9 +116,38 @@ var getDeltaOperationsForElements = (lastKnownElements, newElements, bulkify = t
+     opsTracker.elementIds = newOpsTrackerElementIds;
+     _updateIdIndexLookup();
+   }
+-  for (let toIndex = 0; toIndex < newElements.length; toIndex++) {
+-    const id = newElements[toIndex].id;
+-    const { index: fromIndex } = opsTracker.idMap[id];
++
++  const bulkAppendOperations = [];
++  const bulkDeleteOperations = [];
++
++  if (appendOperations.length > 0) {
++    const lastPos = opsTracker.elementIds
++      .map((id) => opsTracker.idMap[id]?.pos)
++      .filter(Boolean)
++      .pop() || null;
++    const sortIndexes = generateNKeysBetween(lastPos, null, appendOperations.length);
++    for (let [i, op] of appendOperations.entries()) {
++      if (opsTracker.idMap[op.id]) {
++        opsTracker.idMap[op.id].pos = sortIndexes[i];
++        op.pos = sortIndexes[i];
++      }
++    }
++    if (bulkify) {
++      bulkAppendOperations.push({
++        type: "bulkAppend",
++        data: appendOperations.map((op, _index) => ({ id: op.id, pos: sortIndexes[_index], element: op.element }))
++      });
++    }
++  }
++
++  for (let toIndex = 0; toIndex < safeNewElements.length; toIndex++) {
++    const el = safeNewElements[toIndex];
++    if (!el || !el.id) continue;
++    const id = el.id;
++    const trackerItem = opsTracker.idMap[id];
++    if (!trackerItem || typeof trackerItem.index !== "number") continue;
++    const fromIndex = trackerItem.index;
++
+     if (toIndex !== fromIndex) {
+       let leftSortIndex = null;
+       let rightSortIndex = null;
+@@ -118,26 +158,32 @@ var getDeltaOperationsForElements = (lastKnownElements, newElements, bulkify = t
          leftSortIndex = opsTracker.idMap[opsTracker.elementIds[toIndex - 1]]?.pos || null;
          rightSortIndex = opsTracker.idMap[opsTracker.elementIds[toIndex]]?.pos || null;
        }
 -      const newSortIndex = generateKeyBetween(leftSortIndex, rightSortIndex);
 +      let newSortIndex = "";
 +      try {
-+        if (leftSortIndex && rightSortIndex && leftSortIndex >= rightSortIndex) {
-+          newSortIndex = generateKeyBetween(leftSortIndex, null);
++        const validLeft = (leftSortIndex && typeof leftSortIndex === "string") ? leftSortIndex : null;
++        const validRight = (rightSortIndex && typeof rightSortIndex === "string") ? rightSortIndex : null;
++        if (validLeft && validRight && validLeft >= validRight) {
++          newSortIndex = generateKeyBetween(validLeft, null);
 +        } else {
-+          newSortIndex = generateKeyBetween(leftSortIndex, rightSortIndex);
++          newSortIndex = generateKeyBetween(validLeft, validRight);
 +        }
 +      } catch (err) {
-+        newSortIndex = generateKeyBetween(null, null);
++        try {
++          newSortIndex = generateKeyBetween(leftSortIndex || null, null);
++        } catch (err2) {
++          newSortIndex = generateKeyBetween(null, null);
++        }
 +      }
        opsTracker.elementIds = moveArrayItem(opsTracker.elementIds, fromIndex, toIndex, true);
-       opsTracker.idMap[id].pos = newSortIndex;
+-      opsTracker.idMap[id].pos = newSortIndex;
++      if (opsTracker.idMap[id]) {
++        opsTracker.idMap[id].pos = newSortIndex;
++      }
        _updateIdIndexLookup();
-@@ -172,7 +181,7 @@ var getDeltaOperationsForAssets = (lastKnownFileIds, files) => {
+       moveOperations.push({ type: "move", id, fromIndex, toIndex, pos: newSortIndex });
+     }
+   }
+-  const bulkAppendOperations = [];
+-  const bulkDeleteOperations = [];
++
+   if (bulkify) {
+-    if (appendOperations.length > 0) {
+-      const sortIndexes = generateNKeysBetween(lastKnownElements[lastKnownElements.length - 1]?.pos, null, appendOperations.length);
+-      for (let [i, op] of appendOperations.entries()) {
+-        opsTracker.idMap[op.id].pos = sortIndexes[i];
+-      }
+-      bulkAppendOperations.push({
+-        type: "bulkAppend",
+-        data: appendOperations.map((op, _index) => ({ id: op.id, pos: sortIndexes[_index], element: op.element }))
+-      });
+-    }
+     let lastIndex = null;
+     for (let op of deleteOperations) {
+       if (lastIndex === null || op.index > lastIndex) {
+@@ -153,11 +199,20 @@ var getDeltaOperationsForElements = (lastKnownElements, newElements, bulkify = t
+       }
+     }
+   }
+-  const operations = !bulkify ? [...updateOperations, ...appendOperations, ...deleteOperations, ...moveOperations] : [...updateOperations, ...bulkAppendOperations, ...bulkDeleteOperations, ...moveOperations];
+-  const updatedLastKnownElements = opsTracker.elementIds.map((x) => {
+-    const { index, ...rest } = opsTracker.idMap[x];
+-    return rest;
+-  });
++
++  const operations = !bulkify
++    ? [...updateOperations, ...appendOperations, ...deleteOperations, ...moveOperations]
++    : [...updateOperations, ...bulkAppendOperations, ...bulkDeleteOperations, ...moveOperations];
++
++  const updatedLastKnownElements = opsTracker.elementIds
++    .map((x) => {
++      const item = opsTracker.idMap[x];
++      if (!item) return null;
++      const { index, ...rest } = item;
++      return rest;
++    })
++    .filter(Boolean);
++
+   return { operations, lastKnownElements: updatedLastKnownElements };
+ };
+ var getDeltaOperationsForAssets = (lastKnownFileIds, files) => {
+@@ -172,7 +227,7 @@ var getDeltaOperationsForAssets = (lastKnownFileIds, files) => {
        operations.push({ type: "append", id: fileId, asset: files[fileId] });
      }
    }
@@ -110,7 +571,20 @@ index 84ad536..07ee199 100644
      if (!files.hasOwnProperty(fileId)) {
        operations.push({ type: "delete", id: fileId });
      }
-@@ -266,19 +275,23 @@ var ExcalidrawBinding = class {
+@@ -183,8 +238,10 @@ var applyElementOperations = (yElements, operations, origin) => {
+   yElements.doc.transact((tr) => {
+     const _updateYjsIndexMap = () => {
+       for (let i = 0; i < yElements.length; i++) {
+-        let item = yElements.get(i).get("el");
+-        idYjsIndexMap[item.id] = i;
++        let item = yElements.get(i)?.get("el");
++        if (item && item.id) {
++          idYjsIndexMap[item.id] = i;
++        }
+       }
+     };
+     const idYjsIndexMap = {};
+@@ -266,19 +323,23 @@ var ExcalidrawBinding = class {
      this.undoManager = undoConfig?.undoManager;
      this.subscriptions.push(
        this.api.onChange((_, state, files) => {
@@ -147,7 +621,46 @@ index 84ad536..07ee199 100644
          }
          if (this.awareness) {
            this.awareness.setLocalStateField(
-@@ -320,8 +333,10 @@ var ExcalidrawBinding = class {
+@@ -294,22 +355,30 @@ var ExcalidrawBinding = class {
+       }
+       const changedElementIds = new Set(event.flatMap((e) => {
+         if (e instanceof Y2.YMapEvent) {
+-          return [e.target.get("el").id];
++          const el = e.target.get("el");
++          return el && el.id ? [el.id] : [];
+         }
+         return [];
+       }));
+       const remoteElements = yjsToExcalidraw(this.yElements);
+       const elements = remoteElements.map((el) => {
++        if (!el || !el.id) return el;
+         if (changedElementIds.has(el.id)) {
+           return el;
+         }
+-        return this.api.getSceneElements().find((existingEl) => existingEl.id === el.id) || el;
+-      });
+-      this.lastKnownElements = this.yElements.toArray().map((x) => ({ id: x.get("el").id, version: x.get("el").version, pos: x.get("pos") })).sort((a, b) => {
+-        const key1 = a.pos;
+-        const key2 = b.pos;
+-        return key1 > key2 ? 1 : key1 < key2 ? -1 : 0;
+-      });
++        return this.api.getSceneElements().find((existingEl) => existingEl && existingEl.id === el.id) || el;
++      }).filter(Boolean);
++      this.lastKnownElements = this.yElements.toArray()
++        .map((x) => {
++          const el = x.get("el");
++          return el && el.id ? { id: el.id, version: el.version, pos: x.get("pos") || "" } : null;
++        })
++        .filter(Boolean)
++        .sort((a, b) => {
++          const key1 = a.pos;
++          const key2 = b.pos;
++          return key1 > key2 ? 1 : key1 < key2 ? -1 : 0;
++        });
+       this.api.updateScene({ elements });
+     };
+     this.yElements.observeDeep(_remoteElementsChangeHandler);
+@@ -320,8 +389,10 @@ var ExcalidrawBinding = class {
        }
        const addedFiles = [...events.keysChanged].map(
          (key) => this.yAssets.get(key)
@@ -160,3 +673,44 @@ index 84ad536..07ee199 100644
      };
      this.yAssets.observe(_remoteFilesChangeHandler);
      this.subscriptions.push(() => {
+@@ -342,6 +413,8 @@ var ExcalidrawBinding = class {
+             continue;
+           }
+           collaborators2.set(id.toString(), {
++            id: id.toString(),
++            key: id.toString(),
+             pointer: state.pointer,
+             button: state.button,
+             selectedElementIds: state.selectedElementIds,
+@@ -367,11 +440,17 @@ var ExcalidrawBinding = class {
+       this.setupUndoRedo(excalidrawDom);
+     }
+     const initialValue = yjsToExcalidraw(this.yElements);
+-    this.lastKnownElements = this.yElements.toArray().map((x) => ({ id: x.get("el").id, version: x.get("el").version, pos: x.get("pos") })).sort((a, b) => {
+-      const key1 = a.pos;
+-      const key2 = b.pos;
+-      return key1 > key2 ? 1 : key1 < key2 ? -1 : 0;
+-    });
++    this.lastKnownElements = this.yElements.toArray()
++      .map((x) => {
++        const el = x.get("el");
++        return el && el.id ? { id: el.id, version: el.version, pos: x.get("pos") || "" } : null;
++      })
++      .filter(Boolean)
++      .sort((a, b) => {
++        const key1 = a.pos;
++        const key2 = b.pos;
++        return key1 > key2 ? 1 : key1 < key2 ? -1 : 0;
++      });
+     this.api.updateScene({ elements: initialValue });
+     this.api.addFiles(
+       [...this.yAssets.keys()].map((key) => this.yAssets.get(key))
+@@ -380,6 +459,8 @@ var ExcalidrawBinding = class {
+     for (let id of this.awareness.getStates().keys()) {
+       const state = this.awareness.getStates().get(id);
+       collaborators.set(id.toString(), {
++        id: id.toString(),
++        key: id.toString(),
+         pointer: state.pointer,
+         button: state.button,
+         selectedElementIds: state.selectedElementIds,

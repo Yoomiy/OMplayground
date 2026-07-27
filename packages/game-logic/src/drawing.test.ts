@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest";
 import { drawingModule, type DrawingState } from "./drawing";
 
 const P1 = { userId: "u1", displayName: "A" };
@@ -76,7 +77,7 @@ describe("Drawing rules (Excalidraw)", () => {
 
   it("rejects CHECKPOINT with files exceeding byte size limits", () => {
     const s = init();
-    const largeFileContent = "a".repeat(600 * 1024); // 600KB (limit is 512KB)
+    const largeFileContent = "a".repeat(1200 * 1024); // 1.2MB (limit is 1MB)
     const r = drawingModule.applyIntent(s, P1.userId, {
       type: "CHECKPOINT",
       version: 1,

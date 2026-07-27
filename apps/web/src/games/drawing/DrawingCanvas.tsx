@@ -10,6 +10,7 @@ import {
   populateYAssets,
   replaceYElements,
   replaceYAssets,
+  deduplicateYElements,
   sanitizeExcalidrawElements,
   ExcalidrawBinding,
   encodeAwarenessUpdate,
@@ -141,7 +142,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
 
   const handleLocalChange = useCallback(
     async (_elements: readonly any[], _appState: any, files: any) => {
-      if (!excalidrawAPI || !files) return;
+      if (!excalidrawAPI || !files || !yjsSession) return;
       const fileIds = Object.keys(files);
       const currentImgCount = fileIds.length;
 
@@ -150,14 +151,19 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
       }
 
       for (const id of fileIds) {
-        if (!processingFileIdsRef.current.has(id)) {
+        const fileData = files[id];
+        if (!fileData) continue;
+        const isUncompressed = fileData.dataURL?.startsWith("data:image/") && fileData.dataURL.length > 50000;
+
+        if (!processingFileIdsRef.current.has(id) || isUncompressed) {
           processingFileIdsRef.current.add(id);
-          const fileData = files[id];
-          if (fileData && fileData.dataURL?.startsWith("data:image/")) {
+          if (isUncompressed) {
             try {
               const compressedUrl = await compressImage(fileData.dataURL);
               if (compressedUrl && compressedUrl !== fileData.dataURL) {
-                excalidrawAPI.addFiles([{ ...fileData, dataURL: compressedUrl }]);
+                const updatedFile = { ...fileData, dataURL: compressedUrl };
+                excalidrawAPI.addFiles([updatedFile]);
+                yjsSession.yAssets.set(id, updatedFile);
               }
             } catch (err) {
               console.error("Compression failed", err);
@@ -166,7 +172,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
         }
       }
     },
-    [excalidrawAPI, showToast]
+    [excalidrawAPI, showToast, yjsSession]
   );
 
   // Emit local Yjs updates and Awareness changes
@@ -237,6 +243,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
         try {
           const bytes = base64ToUint8Array(yjsUpdate);
           Y.applyUpdate(ydoc, bytes, YJS_ORIGIN_REMOTE);
+          deduplicateYElements(yElements);
         } catch (err) {
           console.error("Failed to apply remote Yjs update:", err);
         }
@@ -267,6 +274,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
         try {
           const bytes = base64ToUint8Array(yjsSyncResponse);
           Y.applyUpdate(ydoc, bytes, YJS_ORIGIN_REMOTE);
+          deduplicateYElements(yElements);
         } catch (err) {
           console.error("Failed to apply Yjs sync response:", err);
         }
@@ -294,14 +302,37 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   // Periodic Checkpoint Cadence: host only, every 5s for server persistence
   useEffect(() => {
     if (!isHost) return;
-    const interval = setInterval(() => {
+    const interval = setInterval(async () => {
       if (excalidrawAPI) {
         const elements = excalidrawAPI.getSceneElements();
-        const files = excalidrawAPI.getFiles();
+        const rawFiles = excalidrawAPI.getFiles() || {};
+        const sanitized = sanitizeExcalidrawElements(elements);
+
+        // Filter files to only active image elements to avoid bloated checkpoints
+        const referencedFileIds = new Set(
+          sanitized.filter((el: any) => el && el.type === "image" && el.fileId).map((el: any) => el.fileId)
+        );
+        const files: Record<string, any> = {};
+        for (const fileId of referencedFileIds) {
+          const fileData = rawFiles[fileId];
+          if (fileData) {
+            if (fileData.dataURL?.startsWith("data:image/") && fileData.dataURL.length > 50000) {
+              try {
+                const compressedUrl = await compressImage(fileData.dataURL);
+                files[fileId] = { ...fileData, dataURL: compressedUrl };
+              } catch {
+                files[fileId] = fileData;
+              }
+            } else {
+              files[fileId] = fileData;
+            }
+          }
+        }
+
         onIntent({
           type: "CHECKPOINT",
           version: Date.now(),
-          elements: sanitizeExcalidrawElements(elements),
+          elements: sanitized,
           files
         });
       }

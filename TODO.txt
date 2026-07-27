@@ -7,3 +7,7 @@
 20. check why games aren't shown under resume game immidietly after leaving
 21. don't change host if they leave when game is paused
 23. address ltr bug
+24. add dirty check to drawing board sync
+25. make sure that errors in the drawing board do not kik you out of the room
+26. solve the size limit barrier in the drawing board
+27. when host stops game - others need to stop sending intents

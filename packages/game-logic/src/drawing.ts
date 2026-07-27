@@ -20,8 +20,8 @@ export type DrawingIntent =
 
 export const MAX_ELEMENTS = 5000;
 export const MAX_FILES = 50;
-export const MAX_FILE_BYTES = 512 * 1024; // 512KB per file
-export const MAX_STATE_BYTES = 2 * 1024 * 1024; // 2MB total state JSON
+export const MAX_FILE_BYTES = 1024 * 1024; // 1MB per file
+export const MAX_STATE_BYTES = 5 * 1024 * 1024; // 5MB total state JSON
 
 function byteLength(val: unknown): number {
   return Buffer.byteLength(JSON.stringify(val));
