@@ -54,7 +54,7 @@ function isValidCheckpoint(
 export const drawingModule: GameModule<DrawingState, DrawingIntent> = {
   key: "drawing",
   minPlayers: 1,
-  maxPlayers: 10,
+  maxPlayers: 100,
   initialState(players: GameSeat[]): DrawingState {
     const seats: Record<string, string> = {};
     players.forEach((p, i) => {

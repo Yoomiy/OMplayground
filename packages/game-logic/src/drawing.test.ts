@@ -1,4 +1,3 @@
-import { describe, it, expect } from "vitest";
 import { drawingModule, type DrawingState } from "./drawing";
 
 const P1 = { userId: "u1", displayName: "A" };

@@ -98,6 +98,28 @@ describe("Room / host transfer", () => {
     });
     expect(move.ok).toBe(true);
   });
+
+  it("preserves drawing canvas elements when a new player joins", () => {
+    const room = getOrCreateRoom("sess-drawing-preserve-canvas", {
+      gameId: "g-drawing",
+      gameKey: drawingModule.key,
+      module: drawingModule,
+      gender: "boy",
+      hostId: "user-1"
+    });
+    assignPlayer(room, "user-1", "User 1");
+    applyIntent(room, "user-1", {
+      type: "CHECKPOINT",
+      version: 1,
+      elements: [{ id: "elem1", type: "rectangle" }],
+      files: {}
+    });
+
+    assignPlayer(room, "user-2", "User 2");
+    const state = room.state as DrawingState;
+    expect(state.canvas.elements).toHaveLength(1);
+    expect((state.canvas.elements[0] as any).id).toBe("elem1");
+  });
 });
 
 /**

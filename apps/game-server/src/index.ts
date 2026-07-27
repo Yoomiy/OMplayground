@@ -436,13 +436,6 @@ io.on("connection", (socket) => {
         reply?.({ ok: false, error: { code: "NOT_FOUND", message: "Session not found" } });
         return;
       }
-      if ((session.gender as string) !== gender) {
-        reply?.({
-          ok: false,
-          error: { code: "GENDER_MISMATCH", message: "Wrong gender partition" }
-        });
-        return;
-      }
       const gameRow = (session as { games?: { game_url?: string; min_players?: number } | null })
         .games;
       const gameKey = gameRow?.game_url ?? "";
@@ -451,6 +444,13 @@ io.on("connection", (socket) => {
         reply?.({
           ok: false,
           error: { code: "GAME_UNSUPPORTED", message: `No module for game '${gameKey}'` }
+        });
+        return;
+      }
+      if (session.gender && session.gender !== "all" && (session.gender as string) !== gender) {
+        reply?.({
+          ok: false,
+          error: { code: "GENDER_MISMATCH", message: "Wrong gender partition" }
         });
         return;
       }
@@ -513,7 +513,7 @@ io.on("connection", (socket) => {
         gameId: session.game_id as string,
         gameKey,
         module: gameModule,
-        gender,
+        gender: (session.gender as "boy" | "girl" | "all") || gender,
         hostId: session.host_id as string,
         minPlayers: gameRow?.min_players ?? gameModule.minPlayers,
         roster: playerIds.map((id, i) => ({
@@ -527,7 +527,7 @@ io.on("connection", (socket) => {
       if (!existingRoom) {
         stats.onRoomCreated(sessionId, gameKey);
       }
-      if (role === "teacher") {
+      if (role === "teacher" && gameKey !== "drawing" && hostId !== userId) {
         attachSpectator(room, userId, displayName);
         await socket.join(`session:${sessionId}`);
         socket.data.sessionId = sessionId;

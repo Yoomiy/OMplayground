@@ -1,12 +1,23 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Room, RoomEvent, Participant, Track } from "livekit-client";
+import { io, type Socket } from "socket.io-client";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { supabase } from "@/lib/supabase";
 import { getVoxelServerUrl } from "@/lib/voxelServerUrl";
+import { reportTelemetry } from "@/utils/telemetry";
 import { DrawingBoard } from "@/games/drawing/DrawingBoard";
+
+function gameServerUrl(): string {
+  const fromEnv = import.meta.env.VITE_GAME_SERVER_URL?.trim();
+  if (fromEnv) return fromEnv;
+  if (import.meta.env.DEV && typeof window !== "undefined") {
+    return window.location.origin;
+  }
+  return "http://localhost:8080";
+}
 import { cn } from "@/lib/cn";
 import {
   Mic,
@@ -97,6 +108,14 @@ export function ClassroomPage() {
   // Guest name input state if unauthenticated
   const [guestName, setGuestName] = useState("");
 
+  // Auto-fill display name if user is logged in
+  const resolvedDisplayName = useMemo(() => {
+    if (user) {
+      return (profile?.full_name || profile?.username || user.email || "משתמש").trim();
+    }
+    return guestName.trim();
+  }, [user, profile, guestName]);
+
   // LiveKit Connection & Room state
   const [room, setRoom] = useState<Room | null>(null);
   const [connState, setConnState] = useState<"disconnected" | "connecting" | "connected">("disconnected");
@@ -121,12 +140,11 @@ export function ClassroomPage() {
   const [activeSpeakers, setActiveSpeakers] = useState<string[]>([]);
   const [screenShareParticipant, setScreenShareParticipant] = useState<CustomParticipantInfo | null>(null);
 
-  // Dynamic Whiteboard Live Delta Subscriptions & Refs for full state sync
+  // Under-the-hood Draw Game Room (Socket.io) for Whiteboard Syncing
+  const [drawSessionId, setDrawSessionId] = useState<string | null>(null);
+  const drawSocketRef = useRef<Socket | null>(null);
+
   const deltaListenersRef = useRef<Set<(payload: any) => void>>(new Set());
-  const currentBoardElementsRef = useRef<any[]>([]);
-  const currentBoardFilesRef = useRef<Record<string, any>>({});
-  const dbSaveTimerRef = useRef<any>(null);
-  const pendingChunksRef = useRef<Map<string, { total: number; chunks: Map<number, string>; timer: any }>>(new Map());
 
   const subscribeLiveDeltas = useCallback((cb: (payload: any) => void) => {
     deltaListenersRef.current.add(cb);
@@ -156,13 +174,203 @@ export function ClassroomPage() {
     canvas: { engine: "excalidraw", version: 1, updatedAt: Date.now(), elements: [], files: {} }
   });
 
-  // Auto-fill display name if user is logged in
-  const resolvedDisplayName = useMemo(() => {
-    if (user) {
-      return (profile?.full_name || profile?.username || user.email || "משתמש").trim();
+  // Fetch or create the under-the-hood drawing game_session for this classroom roomCode
+  useEffect(() => {
+    if (!roomCode) return;
+    let cancelled = false;
+
+    async function initDrawSession() {
+      const drawCode = `class-draw-${roomCode}`;
+
+      // 1. Try fetching existing drawing session
+      const { data: existing } = await supabase
+        .from("game_sessions")
+        .select("id")
+        .eq("invitation_code", drawCode)
+        .maybeSingle();
+
+      if (cancelled) return;
+      if (existing?.id) {
+        setDrawSessionId(existing.id);
+        return;
+      }
+
+      // If user is logged in (e.g. host teacher or student account), attempt creation if not present
+      if (user) {
+        const { data: gameRow } = await supabase
+          .from("games")
+          .select("id")
+          .eq("game_url", "drawing")
+          .maybeSingle();
+
+        if (cancelled || !gameRow?.id) return;
+
+        const { data: created, error } = await supabase
+          .from("game_sessions")
+          .insert({
+            game_id: gameRow.id,
+            host_id: user.id,
+            host_name: profile?.full_name || "מורה",
+            player_ids: [user.id],
+            player_names: [profile?.full_name || "משתתף"],
+            status: "playing",
+            is_open: true,
+            invitation_code: drawCode,
+            gender: "all"
+          })
+          .select("id")
+          .maybeSingle();
+
+        if (cancelled) return;
+        if (created?.id) {
+          setDrawSessionId(created.id);
+          return;
+        } else if (error) {
+          console.warn("Classroom draw session insert notice:", error.message);
+        }
+      }
+
+      // Refetch if race condition occurred or created by host
+      const { data: refetched } = await supabase
+        .from("game_sessions")
+        .select("id")
+        .eq("invitation_code", drawCode)
+        .maybeSingle();
+
+      if (!cancelled && refetched?.id) {
+        setDrawSessionId(refetched.id);
+      }
     }
-    return guestName.trim();
-  }, [user, profile, guestName]);
+
+    void initDrawSession();
+
+    // Polling retry for guest students waiting for session creation by host
+    const pollTimer = setInterval(() => {
+      if (!drawSessionId) {
+        void initDrawSession();
+      }
+    }, 2500);
+
+    return () => {
+      cancelled = true;
+      clearInterval(pollTimer);
+    };
+  }, [roomCode, user?.id, profile?.full_name, drawSessionId]);
+
+  // Connect socket to game-server when drawSessionId is ready (supports both logged-in users and guests)
+  useEffect(() => {
+    if (!drawSessionId) return;
+    let cancelled = false;
+    let s: Socket | null = null;
+
+    void (async () => {
+      const { data } = await supabase.auth.getSession();
+      const authToken = data.session?.access_token;
+
+      // Guest fallback token if user is unauthenticated
+      const guestId = user?.id || `guest-${Math.random().toString(36).substring(2, 9)}`;
+      const token = authToken || `guest:${guestId}:${encodeURIComponent(resolvedDisplayName || "משתתף")}`;
+
+      if (cancelled) return;
+
+      reportTelemetry(
+        {
+          level: "info",
+          message: "Classroom drawgame socket connecting",
+          sessionId: drawSessionId,
+          context: {
+            appArea: "classroom",
+            event: "CLASSROOM_DRAW_SOCKET_CONNECTING",
+            roomCode,
+            isGuest: !authToken
+          }
+        },
+        "game-server"
+      );
+
+      s = io(gameServerUrl(), {
+        auth: { token },
+        transports: ["websocket", "polling"]
+      });
+      drawSocketRef.current = s;
+
+      s.on("connect", () => {
+        if (cancelled) return;
+        reportTelemetry(
+          {
+            level: "info",
+            message: "Classroom drawgame socket connected",
+            sessionId: drawSessionId,
+            context: {
+              appArea: "classroom",
+              event: "CLASSROOM_DRAW_SOCKET_CONNECTED",
+              roomCode
+            }
+          },
+          "game-server"
+        );
+
+        s?.emit("JOIN_ROOM", { sessionId: drawSessionId }, (reply: any) => {
+          if (!reply?.ok) {
+            console.warn("Failed to join classroom drawgame room:", reply?.error);
+            reportTelemetry(
+              {
+                level: "warn",
+                message: "Classroom drawgame JOIN_ROOM failed",
+                sessionId: drawSessionId,
+                context: {
+                  appArea: "classroom",
+                  event: "CLASSROOM_DRAW_JOIN_FAILED",
+                  error: reply?.error
+                }
+              },
+              "game-server"
+            );
+          }
+        });
+      });
+
+      s.on("connect_error", (err) => {
+        reportTelemetry(
+          {
+            level: "warn",
+            message: "Classroom drawgame socket connect error",
+            sessionId: drawSessionId,
+            context: {
+              appArea: "classroom",
+              event: "CLASSROOM_DRAW_SOCKET_ERROR",
+              error: err.message
+            }
+          },
+          "game-server"
+        );
+      });
+
+      s.on("ROOM_SNAPSHOT", (snapshot: any) => {
+        if (cancelled) return;
+        if (snapshot?.gameState) {
+          setWhiteboardState(snapshot.gameState);
+        }
+      });
+
+      s.on("LIVE_DELTA", (payload: { from?: string; delta?: any }) => {
+        if (cancelled) return;
+        deltaListenersRef.current.forEach((cb) => {
+          cb(payload);
+        });
+      });
+    })();
+
+    return () => {
+      cancelled = true;
+      if (s) {
+        s.disconnect();
+        drawSocketRef.current = null;
+      }
+    };
+  }, [drawSessionId, resolvedDisplayName, roomCode, user?.id]);
+
+
 
   // Fetch classroom session details from Supabase (including initial DB whiteboard snapshot)
   useEffect(() => {
@@ -196,8 +404,6 @@ export function ClassroomPage() {
       
       // Load initial whiteboard snapshot from DB if exists
       if (data.whiteboard_data) {
-        currentBoardElementsRef.current = data.whiteboard_data.elements || [];
-        currentBoardFilesRef.current = data.whiteboard_data.files || {};
         setWhiteboardState({
           status: "playing",
           canvas: {
@@ -380,66 +586,39 @@ export function ClassroomPage() {
 
       if (!response.ok) {
         const errJson = await response.json().catch(() => ({}));
-        throw new Error(errJson.message || "ההתחברות לחדר הוידאו נכשלה.");
+        const errMsg = errJson.message || "ההתחברות לחדר הוידאו נכשלה.";
+        reportTelemetry({
+          level: "warn",
+          message: "Classroom LiveKit token request failed",
+          sessionId: roomCode,
+          context: { event: "CLASSROOM_TOKEN_FAILED", roomCode, error: errMsg }
+        }, "voxel-server");
+        throw new Error(errMsg);
       }
 
       const { token, serverUrl, isHost: tokenIsHost, role } = await response.json();
       const isUserHost = Boolean(tokenIsHost || isAdmin || (profile?.role as string) === "admin" || role === "admin");
       setIsHost(isUserHost);
 
+      reportTelemetry({
+        level: "info",
+        message: "Classroom LiveKit token issued",
+        sessionId: roomCode,
+        context: { event: "CLASSROOM_TOKEN_ISSUED", roomCode, role, isUserHost }
+      }, "voxel-server");
+
       const lkRoom = new Room({
         adaptiveStream: true,
         dynacast: true
       });
 
-      // Handle Data Channel Messages (Chat, Whiteboard Deltas, Full State Sync, Controls, Reactions, Hand Raise)
+      // Handle LiveKit Data Channel Messages (Chat, Reactions, Hand Raise, Controls)
       lkRoom.on(RoomEvent.DataReceived, (payload: Uint8Array, participant?: Participant) => {
         try {
           const str = new TextDecoder().decode(payload);
           const msg = JSON.parse(str);
 
-          const processIncomingDataMsg = (msg: any, senderParticipant?: Participant) => {
-            if (msg.type === "WHITEBOARD_CHUNK") {
-              const { chunkId, index, total, data } = msg;
-              let entry = pendingChunksRef.current.get(chunkId);
-              if (!entry) {
-                entry = {
-                  total,
-                  chunks: new Map(),
-                  timer: setTimeout(() => pendingChunksRef.current.delete(chunkId), 15000)
-                };
-                pendingChunksRef.current.set(chunkId, entry);
-              }
-              entry.chunks.set(index, data);
-              if (entry.chunks.size === total) {
-                clearTimeout(entry.timer);
-                pendingChunksRef.current.delete(chunkId);
-
-                let totalLen = 0;
-                const slices: Uint8Array[] = [];
-                for (let i = 0; i < total; i++) {
-                  const chunkData = entry.chunks.get(i);
-                  if (!chunkData) return;
-                  const binaryStr = atob(chunkData);
-                  const bytes = new Uint8Array(binaryStr.length);
-                  for (let j = 0; j < binaryStr.length; j++) bytes[j] = binaryStr.charCodeAt(j);
-                  slices.push(bytes);
-                  totalLen += bytes.length;
-                }
-                const fullBytes = new Uint8Array(totalLen);
-                let offset = 0;
-                for (const slice of slices) {
-                  fullBytes.set(slice, offset);
-                  offset += slice.length;
-                }
-                const fullStr = new TextDecoder().decode(fullBytes);
-                const fullMsg = JSON.parse(fullStr);
-                processIncomingDataMsg(fullMsg, senderParticipant);
-              }
-              return;
-            }
-
-            if (msg.type === "CHAT") {
+          if (msg.type === "CHAT") {
             setChatMessages((prev) => [
               ...prev,
               {
@@ -457,61 +636,8 @@ export function ClassroomPage() {
             setParticipants((prev) =>
               prev.map((p) => (p.identity === msg.targetIdentity ? { ...p, isHandRaised: Boolean(msg.handRaised) } : p))
             );
-          } else if (msg.type === "REQUEST_WHITEBOARD_STATE") {
-            // LATE JOINER EDGE CASE: Send full current whiteboard state to newly joined participant
-            if (currentBoardElementsRef.current.length > 0) {
-              const fullPayload = JSON.stringify({
-                type: "FULL_WHITEBOARD_STATE",
-                targetIdentity: participant?.identity,
-                elements: currentBoardElementsRef.current,
-                files: currentBoardFilesRef.current
-              });
-              void lkRoom.localParticipant.publishData(
-                new TextEncoder().encode(fullPayload),
-                { reliable: true }
-              );
-            }
-          } else if (msg.type === "FULL_WHITEBOARD_STATE") {
-            // LATE JOINER EDGE CASE: Receive full whiteboard state upon joining
-            if (!msg.targetIdentity || msg.targetIdentity === lkRoom.localParticipant.identity) {
-              if (msg.elements) {
-                currentBoardElementsRef.current = msg.elements;
-                currentBoardFilesRef.current = msg.files || {};
-                setWhiteboardState({
-                  status: "playing",
-                  canvas: {
-                    engine: "excalidraw",
-                    version: Date.now(),
-                    updatedAt: Date.now(),
-                    elements: msg.elements,
-                    files: msg.files || {}
-                  }
-                });
-              }
-            }
-          } else if (msg.type === "WHITEBOARD_DELTA") {
-            // DISPATCH TO ALL DELTA LISTENERS
-            deltaListenersRef.current.forEach((cb) => {
-              cb({
-                from: msg.from,
-                delta: msg.delta
-              });
-            });
-            // Update local state tracker
-            if (msg.delta?.changed) {
-              const changedIds = new Set(msg.delta.changed.map((e: any) => e.id));
-              const filtered = currentBoardElementsRef.current.filter((e) => !changedIds.has(e.id));
-              currentBoardElementsRef.current = [...filtered, ...msg.delta.changed];
-            }
           } else if (msg.type === "TOGGLE_BOARD") {
             setShowBoard(Boolean(msg.show));
-          } else if (msg.type === "CLEAR_WHITEBOARD") {
-            currentBoardElementsRef.current = [];
-            currentBoardFilesRef.current = {};
-            setWhiteboardState((prev: any) => ({
-              ...prev,
-              canvas: { ...prev.canvas, version: prev.canvas.version + 1, updatedAt: Date.now(), elements: [] }
-            }));
           } else if (msg.type === "KICK") {
             if (participant && lkRoom.localParticipant.identity === msg.targetIdentity) {
               setConnError("הוצאת מהכיתה על ידי המורה.");
@@ -556,13 +682,10 @@ export function ClassroomPage() {
               setCamOn(true);
             }
           }
-        };
-
-        processIncomingDataMsg(msg, participant);
-      } catch (e) {
-        console.error("Data channel parse error", e);
-      }
-    });
+        } catch (e) {
+          console.error("Data channel parse error", e);
+        }
+      });
 
       lkRoom.on(RoomEvent.ParticipantConnected, () => updateParticipantList(lkRoom));
       lkRoom.on(RoomEvent.ParticipantDisconnected, () => updateParticipantList(lkRoom));
@@ -583,6 +706,21 @@ export function ClassroomPage() {
       await Promise.race([connectPromise, timeoutPromise]);
       setRoom(lkRoom);
       setConnState("connected");
+
+      reportTelemetry(
+        {
+          level: "info",
+          message: "Classroom LiveKit room connected successfully",
+          sessionId: roomCode,
+          context: {
+            appArea: "classroom",
+            event: "CLASSROOM_RTC_CONNECTED",
+            roomCode,
+            isUserHost
+          }
+        },
+        "voxel-server"
+      );
 
       // ADMIN STEALTH MODE vs Normal participant
       if (isStealthAdmin) {
@@ -614,14 +752,24 @@ export function ClassroomPage() {
 
       updateParticipantList(lkRoom);
 
-      // LATE JOINER EDGE CASE: Request full whiteboard state from active room participants
-      setTimeout(() => {
-        const reqPayload = JSON.stringify({ type: "REQUEST_WHITEBOARD_STATE" });
-        void lkRoom.localParticipant.publishData(new TextEncoder().encode(reqPayload), { reliable: true });
-      }, 1000);
-
     } catch (err: any) {
       console.error(err);
+      reportTelemetry(
+        {
+          level: "error",
+          message: "Classroom LiveKit room connection error",
+          sessionId: roomCode,
+          context: {
+            appArea: "classroom",
+            event: "CLASSROOM_RTC_CONNECT_ERROR",
+            roomCode,
+            error: err.message || String(err)
+          },
+          stack: err.stack
+        },
+        "voxel-server"
+      );
+
       if (room) {
         try { room.disconnect(); } catch {}
         setRoom(null);
@@ -642,79 +790,31 @@ export function ClassroomPage() {
     setIsScreenSharing(false);
   };
 
-  // Debounced DB persistence of whiteboard elements for Host/Teacher
-  const scheduleDbBoardSave = useCallback((elements: any[], files: any) => {
-    if (!roomCode) return;
-    if (dbSaveTimerRef.current) clearTimeout(dbSaveTimerRef.current);
-    dbSaveTimerRef.current = setTimeout(async () => {
-      await supabase
-        .from("classroom_sessions")
-        .update({ whiteboard_data: { elements, files } })
-        .eq("room_code", roomCode);
-    }, 4000);
-  }, [roomCode]);
-
-  // Broadcast Whiteboard Deltas via LiveKit Data Channel & track current board elements
-  const handleLocalBoardDelta = useCallback((delta: any) => {
-    if (!room) return;
-
-    if (delta.changed) {
-      const changedIds = new Set(delta.changed.map((e: any) => e.id));
-      const filtered = currentBoardElementsRef.current.filter((e) => !changedIds.has(e.id));
-      currentBoardElementsRef.current = [...filtered, ...delta.changed];
-    }
-
-    if (isHost || roomSettings.allowWhiteboardDraw) {
-      scheduleDbBoardSave(currentBoardElementsRef.current, currentBoardFilesRef.current);
-    }
-
-    const payload = JSON.stringify({
-      type: "WHITEBOARD_DELTA",
-      from: room.localParticipant.identity,
-      delta
-    });
-    try {
-      const encoded = new TextEncoder().encode(payload);
-      const reliable = Boolean(delta.yjsUpdate || delta.yjsSyncResponse || delta.files || delta.changed || delta.deleted);
-      if (encoded.byteLength <= 12000) {
-        void room.localParticipant.publishData(encoded, { reliable }).catch((err) => {
-          console.error("LiveKit publishData error:", err);
+  // Broadcast Whiteboard Deltas via Socket.io to under-the-hood drawgame room
+  const handleLocalBoardDelta = useCallback(
+    (delta: any) => {
+      if (drawSocketRef.current && drawSessionId) {
+        drawSocketRef.current.emit("LIVE_DELTA", {
+          sessionId: drawSessionId,
+          delta
         });
-      } else {
-        const chunkId = `wb-${room.localParticipant.identity}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-        const MAX_SIZE = 9500;
-        const totalChunks = Math.ceil(encoded.byteLength / MAX_SIZE);
-
-        for (let i = 0; i < totalChunks; i++) {
-          const slice = encoded.subarray(i * MAX_SIZE, (i + 1) * MAX_SIZE);
-          let binaryStr = "";
-          for (let j = 0; j < slice.length; j++) binaryStr += String.fromCharCode(slice[j]);
-          const base64Chunk = btoa(binaryStr);
-
-          const chunkMsg = JSON.stringify({
-            type: "WHITEBOARD_CHUNK",
-            chunkId,
-            index: i,
-            total: totalChunks,
-            data: base64Chunk
-          });
-          void room.localParticipant.publishData(
-            new TextEncoder().encode(chunkMsg),
-            { reliable }
-          ).catch((err) => console.error("LiveKit publish chunk error:", err));
-        }
       }
-    } catch (err) {
-      console.error("Failed to encode/publish whiteboard delta:", err);
-    }
-  }, [room, isHost, roomSettings.allowWhiteboardDraw, scheduleDbBoardSave]);
+    },
+    [drawSessionId]
+  );
 
-  // Handle board intent (such as CLEAR_CANVAS from DrawingBoard component)
-  const handleBoardIntent = useCallback((intent: any) => {
-    if (intent?.type === "CLEAR_CANVAS") {
-      void clearWhiteboard();
-    }
-  }, []);
+  // Handle board intent (such as CLEAR_CANVAS or CHECKPOINT from DrawingBoard component)
+  const handleBoardIntent = useCallback(
+    (intent: any) => {
+      if (drawSocketRef.current && drawSessionId) {
+        drawSocketRef.current.emit("INTENT_GAME", {
+          sessionId: drawSessionId,
+          intent
+        });
+      }
+    },
+    [drawSessionId]
+  );
 
   // Toggle Microphone
   const toggleMic = async () => {
@@ -882,24 +982,13 @@ export function ClassroomPage() {
 
   // HOST ACTION: Clear Whiteboard
   const clearWhiteboard = async () => {
-    if (!room || !isHost) return;
-    currentBoardElementsRef.current = [];
-    currentBoardFilesRef.current = {};
-    const payload = JSON.stringify({ type: "CLEAR_WHITEBOARD" });
-    await room.localParticipant.publishData(new TextEncoder().encode(payload), { reliable: true });
-
-    // Wipe from DB as well
-    if (roomCode) {
-      await supabase
-        .from("classroom_sessions")
-        .update({ whiteboard_data: null })
-        .eq("room_code", roomCode);
+    if (!isHost) return;
+    if (drawSocketRef.current && drawSessionId) {
+      drawSocketRef.current.emit("INTENT_GAME", {
+        sessionId: drawSessionId,
+        intent: { type: "CLEAR_CANVAS" }
+      });
     }
-
-    setWhiteboardState((prev: any) => ({
-      ...prev,
-      canvas: { ...prev.canvas, version: prev.canvas.version + 1, updatedAt: Date.now(), elements: [] }
-    }));
   };
 
   // HOST ACTION: Toggle Room Setting

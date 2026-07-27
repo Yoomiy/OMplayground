@@ -19,7 +19,7 @@ export interface Room<State = unknown> {
   sessionId: string;
   gameId: string;
   gameKey: string;
-  gender: "boy" | "girl";
+  gender: "boy" | "girl" | "all";
   /** Authoritative host for disconnect transfer (from game_sessions.host_id). */
   hostId: string;
   /** Minimum players required before the session transitions out of "waiting". */
@@ -53,7 +53,6 @@ function assignLateJoinSeatIfSequential<S>(room: Room<S>, userId: string): void 
   if (!seats || seats[userId]) return;
   const values = Object.values(seats);
   if (
-    values.length > 0 &&
     values.every((v) => typeof v === "string" && /^p\d+$/.test(v))
   ) {
     (seats as Record<string, string>)[userId] = `p${values.length + 1}`;
@@ -66,7 +65,7 @@ export function getOrCreateRoom<State>(
     gameId: string;
     gameKey: string;
     module: GameModule<State, unknown>;
-    gender: "boy" | "girl";
+    gender: "boy" | "girl" | "all";
     hostId: string;
     minPlayers?: number;
     roster?: RoomPlayer[];
@@ -223,14 +222,14 @@ export function assignPlayer<S>(
     room.roster.push(player);
   }
   assignLateJoinSeatIfSequential(room, userId);
-  if (wasIdle && !room.hasBeenActive) {
+  if (wasIdle && !room.hasBeenActive && room.gameKey !== "drawing") {
     const seats: GameSeat[] = Array.from(room.players.values()).map((p) => ({
       userId: p.userId,
       displayName: p.displayName
     }));
     room.state = room.module.initialState(seats);
   }
-  if (!isRoomIdle(room)) {
+  if (!isRoomIdle(room) || room.gameKey === "drawing") {
     room.hasBeenActive = true;
   }
   return { player };
