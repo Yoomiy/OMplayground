@@ -4,6 +4,8 @@ import {
   createYjsCanvasSession,
   uint8ArrayToBase64,
   base64ToUint8Array,
+  encodeYjsStateVector,
+  encodeYjsStateAsUpdate,
   populateYElements,
   populateYAssets,
   replaceYElements,
@@ -12,6 +14,8 @@ import {
   ExcalidrawBinding,
   encodeAwarenessUpdate,
   applyAwarenessUpdate,
+  YJS_ORIGIN_SYSTEM,
+  YJS_ORIGIN_REMOTE,
   Y
 } from "./yjsSyncHelper";
 import { compressImage, MAX_IMAGES_PER_BOARD } from "./drawingImages";
@@ -95,10 +99,10 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     // Populate initial elements into Yjs if brand new document and initial elements exist
     if (yElements.length === 0 && initialData.current) {
       if (initialData.current.elements?.length > 0) {
-        populateYElements(yElements, initialData.current.elements);
+        populateYElements(yElements, initialData.current.elements, YJS_ORIGIN_SYSTEM);
       }
       if (initialData.current.files && Object.keys(initialData.current.files).length > 0) {
-        populateYAssets(yAssets, initialData.current.files);
+        populateYAssets(yAssets, initialData.current.files, YJS_ORIGIN_SYSTEM);
       }
     }
 
@@ -111,7 +115,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     };
   }, [excalidrawAPI, yjsSession]);
 
-  // Sync state from server on join / checkpoint update / clear canvas
+  // Sync state from server on clear canvas or uninitialized doc
   const lastVersionRef = useRef<number>(gameState.canvas?.version || 0);
   useEffect(() => {
     if (!gameState.canvas || !yjsSession) return;
@@ -123,8 +127,12 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
       const serverElements = gameState.canvas.elements || [];
       const serverFiles = gameState.canvas.files || {};
 
-      replaceYElements(yElements, serverElements, bindingRef.current);
-      replaceYAssets(yAssets, serverFiles, bindingRef.current);
+      // ONLY replace Yjs elements if the server snapshot is an explicit clear (0 elements)
+      // or if local Yjs elements array is empty.
+      if (serverElements.length === 0 || yElements.length === 0) {
+        replaceYElements(yElements, serverElements, YJS_ORIGIN_SYSTEM);
+        replaceYAssets(yAssets, serverFiles, YJS_ORIGIN_SYSTEM);
+      }
     }
   }, [gameState.canvas, yjsSession]);
 
@@ -167,7 +175,8 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     const { ydoc, awareness } = yjsSession;
 
     const handleDocUpdate = (update: Uint8Array, origin: any) => {
-      if (origin !== "remote") {
+      // Only broadcast local user drawing edits (skip remote updates and system initializations)
+      if (origin !== YJS_ORIGIN_REMOTE && origin !== YJS_ORIGIN_SYSTEM) {
         onLiveDelta({
           yjsUpdate: uint8ArrayToBase64(update)
         });
@@ -175,7 +184,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     };
 
     const handleAwarenessUpdate = ({ added, updated, removed }: any, origin: any) => {
-      if (origin !== "remote") {
+      if (origin !== YJS_ORIGIN_REMOTE && origin !== YJS_ORIGIN_SYSTEM) {
         const changedClients = [...added, ...updated, ...removed];
         if (changedClients.length > 0) {
           const encoded = encodeAwarenessUpdate(awareness, changedClients);
@@ -200,11 +209,14 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
 
   useEffect(() => {
     if (!subscribeLiveDeltas || !yjsSession) return;
-    const { ydoc, awareness } = yjsSession;
+    const { ydoc, yElements, awareness } = yjsSession;
 
-    // Request initial Yjs state sync from connected peers upon joining
+    // Request initial Yjs state vector catchup from connected peers upon joining
     if (onLiveDelta) {
-      onLiveDelta({ yjsSyncRequest: true });
+      onLiveDelta({
+        yjsSyncRequest: true,
+        stateVector: encodeYjsStateVector(ydoc)
+      });
     }
 
     const unsubscribe = subscribeLiveDeltas((payload) => {
@@ -224,7 +236,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
       if (yjsUpdate) {
         try {
           const bytes = base64ToUint8Array(yjsUpdate);
-          Y.applyUpdate(ydoc, bytes, "remote");
+          Y.applyUpdate(ydoc, bytes, YJS_ORIGIN_REMOTE);
         } catch (err) {
           console.error("Failed to apply remote Yjs update:", err);
         }
@@ -234,26 +246,27 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
       if (yjsAwareness) {
         try {
           const bytes = base64ToUint8Array(yjsAwareness);
-          applyAwarenessUpdate(awareness, bytes, "remote");
+          applyAwarenessUpdate(awareness, bytes, YJS_ORIGIN_REMOTE);
         } catch (err) {
           console.error("Failed to apply remote Yjs awareness:", err);
         }
       }
 
-      // Handle sync request from late joiner
-      if (yjsSyncRequest && isHost && onLiveDelta) {
-        const stateUpdate = Y.encodeStateAsUpdate(ydoc);
+      // Handle sync request from late joiner (any peer with active elements can reply)
+      if (yjsSyncRequest && onLiveDelta && (yElements.length > 0 || isHost)) {
+        const remoteStateVector = delta.stateVector;
+        const stateUpdate = encodeYjsStateAsUpdate(ydoc, remoteStateVector);
         onLiveDelta({
           targetUserId: from,
-          yjsSyncResponse: uint8ArrayToBase64(stateUpdate)
+          yjsSyncResponse: stateUpdate
         });
       }
 
-      // Handle sync response containing full Yjs document snapshot
+      // Handle sync response containing missing Yjs updates
       if (yjsSyncResponse && (targetUserId === myUserId || !targetUserId)) {
         try {
           const bytes = base64ToUint8Array(yjsSyncResponse);
-          Y.applyUpdate(ydoc, bytes, "remote");
+          Y.applyUpdate(ydoc, bytes, YJS_ORIGIN_REMOTE);
         } catch (err) {
           console.error("Failed to apply Yjs sync response:", err);
         }
@@ -278,7 +291,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     };
   }, [subscribeLiveDeltas, myUserId, isHost, excalidrawAPI, onLiveDelta, yjsSession]);
 
-  // Periodic Checkpoint Cadence: host only, every 5s
+  // Periodic Checkpoint Cadence: host only, every 5s for server persistence
   useEffect(() => {
     if (!isHost) return;
     const interval = setInterval(() => {

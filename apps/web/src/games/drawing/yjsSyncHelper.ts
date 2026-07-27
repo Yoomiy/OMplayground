@@ -1,6 +1,11 @@
 import * as Y from "yjs";
 import { Awareness, encodeAwarenessUpdate, applyAwarenessUpdate } from "y-protocols/awareness";
 import { ExcalidrawBinding, yjsToExcalidraw } from "y-excalidraw";
+import { generateNKeysBetween } from "fractional-indexing";
+
+export const YJS_ORIGIN_SYSTEM = "system";
+export const YJS_ORIGIN_REMOTE = "remote";
+export const YJS_ORIGIN_LOCAL = "local";
 
 export function uint8ArrayToBase64(array: Uint8Array): string {
   let binary = "";
@@ -19,6 +24,17 @@ export function base64ToUint8Array(base64: string): Uint8Array {
     bytes[i] = binaryString.charCodeAt(i);
   }
   return bytes;
+}
+
+export function encodeYjsStateVector(ydoc: Y.Doc): string {
+  const sv = Y.encodeStateVector(ydoc);
+  return uint8ArrayToBase64(sv);
+}
+
+export function encodeYjsStateAsUpdate(ydoc: Y.Doc, targetStateVectorBase64?: string): string {
+  const sv = targetStateVectorBase64 ? base64ToUint8Array(targetStateVectorBase64) : undefined;
+  const update = Y.encodeStateAsUpdate(ydoc, sv);
+  return uint8ArrayToBase64(update);
 }
 
 export function sanitizeExcalidrawElements(elements: any[]): any[] {
@@ -45,37 +61,55 @@ export function sanitizeExcalidrawElements(elements: any[]): any[] {
   return sanitized;
 }
 
-export function populateYElements(yElements: Y.Array<Y.Map<any>>, elements: any[]) {
+export function populateYElements(yElements: Y.Array<Y.Map<any>>, elements: any[], origin: any = YJS_ORIGIN_SYSTEM) {
   if (!elements || elements.length === 0) return;
+  const doc = yElements.doc;
   const sanitized = sanitizeExcalidrawElements(elements);
-  const maps = sanitized.map((el, i) => {
-    const map = new Y.Map<any>();
-    map.set("el", el);
-    map.set("pos", "a" + i.toString(36));
-    return map;
-  });
-  yElements.push(maps);
-}
-
-export function populateYAssets(yAssets: Y.Map<any>, files: Record<string, any>) {
-  if (!files) return;
-  for (const [id, file] of Object.entries(files)) {
-    if (file && (file as any).id) {
-      yAssets.set(id, file);
-    }
+  const positions = generateNKeysBetween(null, null, sanitized.length);
+  const applyChange = () => {
+    const maps = sanitized.map((el, i) => {
+      const map = new Y.Map<any>();
+      map.set("el", el);
+      map.set("pos", positions[i]);
+      return map;
+    });
+    yElements.push(maps);
+  };
+  if (doc) {
+    doc.transact(applyChange, origin);
+  } else {
+    applyChange();
   }
 }
 
-export function replaceYElements(yElements: Y.Array<Y.Map<any>>, elements: any[], origin?: any) {
+export function populateYAssets(yAssets: Y.Map<any>, files: Record<string, any>, origin: any = YJS_ORIGIN_SYSTEM) {
+  if (!files) return;
+  const doc = yAssets.doc;
+  const applyChange = () => {
+    for (const [id, file] of Object.entries(files)) {
+      if (file && (file as any).id) {
+        yAssets.set(id, file);
+      }
+    }
+  };
+  if (doc) {
+    doc.transact(applyChange, origin);
+  } else {
+    applyChange();
+  }
+}
+
+export function replaceYElements(yElements: Y.Array<Y.Map<any>>, elements: any[], origin: any = YJS_ORIGIN_SYSTEM) {
   const doc = yElements.doc;
   const sanitized = sanitizeExcalidrawElements(elements || []);
+  const positions = sanitized.length > 0 ? generateNKeysBetween(null, null, sanitized.length) : [];
   const applyChange = () => {
     yElements.delete(0, yElements.length);
     if (sanitized.length > 0) {
       const maps = sanitized.map((el, i) => {
         const map = new Y.Map<any>();
         map.set("el", el);
-        map.set("pos", "a" + i.toString(36));
+        map.set("pos", positions[i]);
         return map;
       });
       yElements.push(maps);
@@ -88,7 +122,7 @@ export function replaceYElements(yElements: Y.Array<Y.Map<any>>, elements: any[]
   }
 }
 
-export function replaceYAssets(yAssets: Y.Map<any>, files: Record<string, any>, origin?: any) {
+export function replaceYAssets(yAssets: Y.Map<any>, files: Record<string, any>, origin: any = YJS_ORIGIN_SYSTEM) {
   if (!files) return;
   const doc = yAssets.doc;
   const applyChange = () => {

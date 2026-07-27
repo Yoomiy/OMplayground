@@ -1,8 +1,26 @@
 diff --git a/node_modules/y-excalidraw/dist/y-excalidraw.cjs b/node_modules/y-excalidraw/dist/y-excalidraw.cjs
-index 169b24a..f9c578a 100644
+index 169b24a..6daf37e 100644
 --- a/node_modules/y-excalidraw/dist/y-excalidraw.cjs
 +++ b/node_modules/y-excalidraw/dist/y-excalidraw.cjs
-@@ -206,7 +206,7 @@ var getDeltaOperationsForAssets = (lastKnownFileIds, files) => {
+@@ -152,7 +152,16 @@ var getDeltaOperationsForElements = (lastKnownElements, newElements, bulkify = t
+         leftSortIndex = opsTracker.idMap[opsTracker.elementIds[toIndex - 1]]?.pos || null;
+         rightSortIndex = opsTracker.idMap[opsTracker.elementIds[toIndex]]?.pos || null;
+       }
+-      const newSortIndex = (0, import_fractional_indexing.generateKeyBetween)(leftSortIndex, rightSortIndex);
++      let newSortIndex = "";
++      try {
++        if (leftSortIndex && rightSortIndex && leftSortIndex >= rightSortIndex) {
++          newSortIndex = (0, import_fractional_indexing.generateKeyBetween)(leftSortIndex, null);
++        } else {
++          newSortIndex = (0, import_fractional_indexing.generateKeyBetween)(leftSortIndex, rightSortIndex);
++        }
++      } catch (err) {
++        newSortIndex = (0, import_fractional_indexing.generateKeyBetween)(null, null);
++      }
+       opsTracker.elementIds = moveArrayItem(opsTracker.elementIds, fromIndex, toIndex, true);
+       opsTracker.idMap[id].pos = newSortIndex;
+       _updateIdIndexLookup();
+@@ -206,7 +215,7 @@ var getDeltaOperationsForAssets = (lastKnownFileIds, files) => {
        operations.push({ type: "append", id: fileId, asset: files[fileId] });
      }
    }
@@ -11,7 +29,44 @@ index 169b24a..f9c578a 100644
      if (!files.hasOwnProperty(fileId)) {
        operations.push({ type: "delete", id: fileId });
      }
-@@ -354,8 +354,10 @@ var ExcalidrawBinding = class {
+@@ -300,19 +309,23 @@ var ExcalidrawBinding = class {
+     this.undoManager = undoConfig?.undoManager;
+     this.subscriptions.push(
+       this.api.onChange((_, state, files) => {
+-        const elements = this.api.getSceneElements();
+-        let operations = [];
+-        if (!areElementsSame(this.lastKnownElements, elements)) {
+-          const res2 = getDeltaOperationsForElements(this.lastKnownElements, elements);
+-          operations = res2.operations;
+-          this.lastKnownElements = res2.lastKnownElements;
+-          applyElementOperations(this.yElements, operations, this);
+-        }
+-        const res = getDeltaOperationsForAssets(this.lastKnownFileIds, files);
+-        const assetOperations = res.operations;
+-        this.lastKnownFileIds = res.lastKnownFileIds;
+-        if (assetOperations.length > 0) {
+-          applyAssetOperations(this.yAssets, assetOperations, this);
++        try {
++          const elements = this.api.getSceneElements();
++          let operations = [];
++          if (!areElementsSame(this.lastKnownElements, elements)) {
++            const res2 = getDeltaOperationsForElements(this.lastKnownElements, elements);
++            operations = res2.operations;
++            this.lastKnownElements = res2.lastKnownElements;
++            applyElementOperations(this.yElements, operations, this);
++          }
++          const res = getDeltaOperationsForAssets(this.lastKnownFileIds, files);
++          const assetOperations = res.operations;
++          this.lastKnownFileIds = res.lastKnownFileIds;
++          if (assetOperations.length > 0) {
++            applyAssetOperations(this.yAssets, assetOperations, this);
++          }
++        } catch (err) {
++          console.warn("y-excalidraw onChange diff error (swallowed safely):", err);
+         }
+         if (this.awareness) {
+           this.awareness.setLocalStateField(
+@@ -354,8 +367,10 @@ var ExcalidrawBinding = class {
        }
        const addedFiles = [...events.keysChanged].map(
          (key) => this.yAssets.get(key)
@@ -25,10 +80,28 @@ index 169b24a..f9c578a 100644
      this.yAssets.observe(_remoteFilesChangeHandler);
      this.subscriptions.push(() => {
 diff --git a/node_modules/y-excalidraw/dist/y-excalidraw.js b/node_modules/y-excalidraw/dist/y-excalidraw.js
-index 84ad536..d6290ae 100644
+index 84ad536..07ee199 100644
 --- a/node_modules/y-excalidraw/dist/y-excalidraw.js
 +++ b/node_modules/y-excalidraw/dist/y-excalidraw.js
-@@ -172,7 +172,7 @@ var getDeltaOperationsForAssets = (lastKnownFileIds, files) => {
+@@ -118,7 +118,16 @@ var getDeltaOperationsForElements = (lastKnownElements, newElements, bulkify = t
+         leftSortIndex = opsTracker.idMap[opsTracker.elementIds[toIndex - 1]]?.pos || null;
+         rightSortIndex = opsTracker.idMap[opsTracker.elementIds[toIndex]]?.pos || null;
+       }
+-      const newSortIndex = generateKeyBetween(leftSortIndex, rightSortIndex);
++      let newSortIndex = "";
++      try {
++        if (leftSortIndex && rightSortIndex && leftSortIndex >= rightSortIndex) {
++          newSortIndex = generateKeyBetween(leftSortIndex, null);
++        } else {
++          newSortIndex = generateKeyBetween(leftSortIndex, rightSortIndex);
++        }
++      } catch (err) {
++        newSortIndex = generateKeyBetween(null, null);
++      }
+       opsTracker.elementIds = moveArrayItem(opsTracker.elementIds, fromIndex, toIndex, true);
+       opsTracker.idMap[id].pos = newSortIndex;
+       _updateIdIndexLookup();
+@@ -172,7 +181,7 @@ var getDeltaOperationsForAssets = (lastKnownFileIds, files) => {
        operations.push({ type: "append", id: fileId, asset: files[fileId] });
      }
    }
@@ -37,7 +110,44 @@ index 84ad536..d6290ae 100644
      if (!files.hasOwnProperty(fileId)) {
        operations.push({ type: "delete", id: fileId });
      }
-@@ -320,8 +320,10 @@ var ExcalidrawBinding = class {
+@@ -266,19 +275,23 @@ var ExcalidrawBinding = class {
+     this.undoManager = undoConfig?.undoManager;
+     this.subscriptions.push(
+       this.api.onChange((_, state, files) => {
+-        const elements = this.api.getSceneElements();
+-        let operations = [];
+-        if (!areElementsSame(this.lastKnownElements, elements)) {
+-          const res2 = getDeltaOperationsForElements(this.lastKnownElements, elements);
+-          operations = res2.operations;
+-          this.lastKnownElements = res2.lastKnownElements;
+-          applyElementOperations(this.yElements, operations, this);
+-        }
+-        const res = getDeltaOperationsForAssets(this.lastKnownFileIds, files);
+-        const assetOperations = res.operations;
+-        this.lastKnownFileIds = res.lastKnownFileIds;
+-        if (assetOperations.length > 0) {
+-          applyAssetOperations(this.yAssets, assetOperations, this);
++        try {
++          const elements = this.api.getSceneElements();
++          let operations = [];
++          if (!areElementsSame(this.lastKnownElements, elements)) {
++            const res2 = getDeltaOperationsForElements(this.lastKnownElements, elements);
++            operations = res2.operations;
++            this.lastKnownElements = res2.lastKnownElements;
++            applyElementOperations(this.yElements, operations, this);
++          }
++          const res = getDeltaOperationsForAssets(this.lastKnownFileIds, files);
++          const assetOperations = res.operations;
++          this.lastKnownFileIds = res.lastKnownFileIds;
++          if (assetOperations.length > 0) {
++            applyAssetOperations(this.yAssets, assetOperations, this);
++          }
++        } catch (err) {
++          console.warn("y-excalidraw onChange diff error (swallowed safely):", err);
+         }
+         if (this.awareness) {
+           this.awareness.setLocalStateField(
+@@ -320,8 +333,10 @@ var ExcalidrawBinding = class {
        }
        const addedFiles = [...events.keysChanged].map(
          (key) => this.yAssets.get(key)
