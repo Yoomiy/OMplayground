@@ -17,11 +17,11 @@
     "borrow-voxel-audio": "tsx scripts/borrow-voxel-audio.ts"
   },
   "devDependencies": {
-    "patch-package": "^8.0.0",
     "tsx": "^4.22.3",
     "typescript": "^5.8.2"
   },
   "dependencies": {
-    "livekit-server-sdk": "^2.15.4"
+    "livekit-server-sdk": "^2.15.4",
+    "patch-package": "^8.0.1"
   }
 }
