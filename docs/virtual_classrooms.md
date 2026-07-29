@@ -20,12 +20,13 @@ The Virtual Classrooms platform enables dynamic, standalone virtual classrooms b
 - **Connection Timeout Race**: WebRTC connection is raced with a 10s timeout to prevent page freezes when PeerConnection negotiation fails.
 
 ### 3. Integrated Excalidraw Whiteboard
-- **Collaborative Real-time Board**: Embedded Excalidraw canvas uses the game-server Socket.IO drawing session (`class-draw-{roomCode}`) for Yjs deltas; LiveKit is reserved for media, chat, and room controls.
+- **Collaborative Real-time Board**: Each active drawing session (`class-draw-{roomCode}`) has one canonical Yjs document held by the game server. Permitted drawers send deltas to that server, which applies and broadcasts them; LiveKit is reserved for media, chat, and room controls.
+- **Reliable Join and Reconnect**: On every connection, the server sends the full canonical state through `CLASSROOM_DRAWING_SYNC`. The canvas renders it before acknowledging readiness, and the server does not accept live deltas from that socket until the acknowledgement. This keeps late joiners and refreshed browsers from replacing the current board with empty or stale state.
 - **Viewport Focus Sync & Lock**:
   - The teacher's scroll position and zoom level are synchronized to all students in real-time.
   - Students without drawing privileges have their board locked to the host's view, preventing them from panning or zooming away from the teacher's focus point.
 - **Clean Whiteboard UI**: Hides all redundant top bars, headers, and footer statistics to maximize board real estate inside the classroom.
-- **Durable Active State**: Authorized host checkpoints and clears are written to the drawing `game_sessions.game_state`, so a reconnect or game-server restart restores the board. A monotonic clear revision permits an explicit remote clear without allowing an empty late-join snapshot to erase existing content. The board is cleared when the classroom ends.
+- **Durable Active State**: The drawing `game_sessions.game_state` is a periodic and lifecycle checkpoint of the server's live board, used to rebuild it after a game-server restart. It is not used to hydrate active joins. Explicit clears are persisted immediately, and the board is cleared when the classroom ends.
 
 ### 4. Comprehensive Host Control Panel
 - **Grant Host Status**: Promote substitute teachers / co-presenters to server-backed in-room Hosts.

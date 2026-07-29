@@ -264,8 +264,9 @@ Teachers bypass capacity; invisible to students (double-channel snapshots). Spec
 
 ### Excalidraw Whiteboard Integration & Sync
 - **Whiteboard Engine**: Embedded `DrawingCanvas.tsx` / `DrawingBoard.tsx` (reusing the platform's drawing module).
-- **Delta Broadcasting**: Real-time Yjs canvas deltas flow through the game-server Socket.IO room `class-draw-{roomCode}`. LiveKit Data Channels carry only media-adjacent chat, reactions, hand raises, and host controls.
-- **Late Joiner State Sync**: Socket `ROOM_SNAPSHOT` hydrates the durable checkpoint before mounting the drawing canvas. A monotonic clear revision permits a remote clear without letting an empty late-join state erase an existing board.
+- **Canonical Live State**: The game server owns one in-memory Yjs document for each active `class-draw-{roomCode}` room. Permitted clients submit Yjs deltas; the server applies and broadcasts them. LiveKit Data Channels carry only media-adjacent chat, reactions, hand raises, and host controls.
+- **Join and Reconnect Sync**: The server sends `CLASSROOM_DRAWING_SYNC` with its complete canonical Yjs state to every joining socket. The client renders that state before enabling its binding, then acknowledges it; live deltas are accepted only after that acknowledgement. This prevents a late client from overwriting the active board with an empty or stale local scene.
+- **Durability**: The linked drawing `game_sessions.game_state` is a recovery checkpoint, not the live source of truth. The canonical state is checkpointed periodically and on lifecycle events, so the board can be rebuilt after a game-server restart. Explicit clears update both the live document and its durable checkpoint.
 - **Viewport Lock & Refocus**: The host's scroll position and zoom level are synchronized to all student screens. Non-host students are locked to the host's focus area to prevent them from panning/scrolling away.
 
 ### Room Lifecycle & Cleanup
