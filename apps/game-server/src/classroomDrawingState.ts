@@ -29,7 +29,9 @@ export interface ClassroomDrawingSocketSync {
   acknowledged: boolean;
 }
 
-const MAX_YJS_DOCUMENT_BYTES = 8 * 1024 * 1024;
+// A full canonical update is base64 encoded for Socket.IO. Keep the binary
+// document comfortably below the 10 MB transport buffer after that expansion.
+const MAX_YJS_DOCUMENT_BYTES = 6 * 1024 * 1024;
 const ORDER_KEY_DIGITS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
 function initialOrderKey(index: number): string {

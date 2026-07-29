@@ -2,58 +2,71 @@
  * Utilities for downscaling and recompressing image files inside Excalidraw.
  */
 
-export const MAX_IMAGE_DIMENSION = 640;
-export const IMAGE_QUALITY = 0.5;
-export const MAX_FILE_SIZE_BYTES = 10 * 1024; // 10 KB - always compress to keep updates tiny!
+export const MAX_IMAGE_DIMENSION = 1280;
+export const MIN_IMAGE_DIMENSION = 256;
+export const MAX_FILE_SIZE_BYTES = 256 * 1024;
 export const MAX_IMAGES_PER_BOARD = 10;
 
-export async function compressImage(
-  dataUrl: string,
-  maxDimension = MAX_IMAGE_DIMENSION,
-  quality = IMAGE_QUALITY
-): Promise<string> {
-  // If not a data url or not an image, return as is
-  if (!dataUrl || !dataUrl.startsWith("data:image/")) {
-    return dataUrl;
+export function isImageDataUrl(dataUrl: unknown): dataUrl is string {
+  return typeof dataUrl === "string" && dataUrl.startsWith("data:image/");
+}
+
+function dimensionsWithinLimit(width: number, height: number, maxDimension: number) {
+  if (width <= maxDimension && height <= maxDimension) return { width, height };
+  if (width >= height) {
+    return { width: maxDimension, height: Math.max(1, Math.round((height * maxDimension) / width)) };
   }
+  return { width: Math.max(1, Math.round((width * maxDimension) / height)), height: maxDimension };
+}
+
+/**
+ * Produces a board-safe image asset. Returning null means the browser could
+ * not reduce the image enough to keep the shared Yjs document bounded.
+ */
+export async function prepareImageForBoard(dataUrl: string): Promise<string | null> {
+  if (!isImageDataUrl(dataUrl)) return null;
+  if (getBase64Size(dataUrl) <= MAX_FILE_SIZE_BYTES) return dataUrl;
 
   return new Promise((resolve) => {
     const img = new Image();
     img.src = dataUrl;
     img.onload = () => {
-      let width = img.width;
-      let height = img.height;
-
-      if (width > maxDimension || height > maxDimension) {
-        if (width > height) {
-          height = Math.round((height * maxDimension) / width);
-          width = maxDimension;
-        } else {
-          width = Math.round((width * maxDimension) / height);
-          height = maxDimension;
-        }
-      }
-
       const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-
       const ctx = canvas.getContext("2d");
       if (!ctx) {
-        resolve(dataUrl);
+        resolve(null);
         return;
       }
 
-      ctx.drawImage(img, 0, 0, width, height);
+      let dimension = MAX_IMAGE_DIMENSION;
+      while (dimension >= MIN_IMAGE_DIMENSION) {
+        const { width, height } = dimensionsWithinLimit(img.width, img.height, dimension);
+        canvas.width = width;
+        canvas.height = height;
+        ctx.clearRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
 
-      // Always compress to WebP format for minimal size
-      const compressed = canvas.toDataURL("image/webp", quality);
-      resolve(compressed);
+        for (const quality of [0.82, 0.7, 0.58, 0.45, 0.35]) {
+          const compressed = canvas.toDataURL("image/webp", quality);
+          if (getBase64Size(compressed) <= MAX_FILE_SIZE_BYTES) {
+            resolve(compressed);
+            return;
+          }
+        }
+        dimension = Math.floor(dimension * 0.7);
+      }
+
+      resolve(null);
     };
     img.onerror = () => {
-      resolve(dataUrl);
+      resolve(null);
     };
   });
+}
+
+// Kept as the existing public helper for non-classroom checkpoint callers.
+export async function compressImage(dataUrl: string): Promise<string> {
+  return (await prepareImageForBoard(dataUrl)) ?? dataUrl;
 }
 
 /**

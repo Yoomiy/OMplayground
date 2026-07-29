@@ -892,7 +892,15 @@ io.on("connection", (socket) => {
 
       if (isCanonicalClassroomDrawing(room)) {
         const typed = typeof delta === "object" && delta !== null ? delta as Record<string, unknown> : null;
-        if (!typed || estimatePayloadBytes(delta) > MAX_LIVE_DELTA_BYTES) return;
+        if (!typed) return;
+        if (estimatePayloadBytes(delta) > MAX_LIVE_DELTA_BYTES) {
+          socket.emit("LIVE_DELTA_REJECTED", {
+            sessionId,
+            code: "PAYLOAD_TOO_LARGE"
+          });
+          serveCanonicalClassroomDrawing(room, "payload-too-large");
+          return;
+        }
 
         if (typed.yjsSyncRequest === true) {
           serveCanonicalClassroomDrawing(room, "client-request");

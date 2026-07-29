@@ -19,9 +19,10 @@ import {
   removeAwarenessStates,
   YJS_ORIGIN_SYSTEM,
   YJS_ORIGIN_REMOTE,
+  YJS_ORIGIN_LOCAL,
   Y
 } from "./yjsSyncHelper";
-import { compressImage, MAX_IMAGES_PER_BOARD } from "./drawingImages";
+import { compressImage, isImageDataUrl, MAX_IMAGES_PER_BOARD, prepareImageForBoard } from "./drawingImages";
 import { cn } from "@/lib/cn";
 
 // Import Excalidraw CSS
@@ -93,6 +94,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   const [yjsSession, setYjsSession] = useState<AuthoritativeYjsSession>(() =>
     createSession(initialYjsUpdate, initialYjsSyncToken)
   );
+  const yjsSessionRef = useRef(yjsSession);
   const authoritativeDocumentsRef = useRef(new WeakSet<object>());
   const serverSyncReadyRef = useRef(!serverAuthoritative);
   const onLiveDeltaRef = useRef(onLiveDelta);
@@ -102,6 +104,10 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   useEffect(() => {
     onLiveDeltaRef.current = onLiveDelta;
   }, [onLiveDelta]);
+
+  useEffect(() => {
+    yjsSessionRef.current = yjsSession;
+  }, [yjsSession]);
 
   useEffect(() => {
     isHostRef.current = Boolean(isHost);
@@ -179,7 +185,21 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
       }
     }
 
-    const binding = new ExcalidrawBinding(yElements, yAssets, excalidrawAPI, awareness);
+    // y-excalidraw normally writes every file received from Excalidraw straight
+    // into Yjs. Images arrive at their original size, so that is too late to
+    // compress them safely. Elements still use the binding; assets are added by
+    // handleLocalChange only after they pass the board size budget.
+    const elementOnlyApi = new Proxy(excalidrawAPI, {
+      get(target, property, receiver) {
+        if (property === "onChange") {
+          return (listener: (elements: readonly any[], appState: any, files: Record<string, never>) => void) =>
+            target.onChange((elements: readonly any[], appState: any) => listener(elements, appState, {}));
+        }
+        const value = Reflect.get(target, property, receiver);
+        return typeof value === "function" ? value.bind(target) : value;
+      }
+    });
+    const binding = new ExcalidrawBinding(yElements, yAssets, elementOnlyApi, awareness);
     bindingRef.current = binding;
 
     let readyFrame: number | undefined;
@@ -227,7 +247,8 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   }, [gameState.canvas, serverAuthoritative, yjsSession]);
 
   // Image compression & file count guards
-  const processingFileIdsRef = useRef<Set<string>>(new Set());
+  const processingFileIdsRef = useRef(new WeakMap<object, Map<string, string>>());
+  const rejectedImageElementIdsRef = useRef(new Set<string>());
   const boardDirtyRef = useRef(false);
 
   const handleLocalChange = useCallback(
@@ -236,37 +257,85 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
         excalidrawSceneReadyRef.current = true;
         setExcalidrawSceneReady(true);
       }
-      if (!excalidrawAPI || !files || !yjsSession) return;
+      if (!excalidrawAPI || !files || !yjsSession || mySeat === null) return;
       const fileIds = Object.keys(files);
-      const currentImgCount = fileIds.length;
-
-      if (currentImgCount > MAX_IMAGES_PER_BOARD) {
-        showToast("הגעת למגבלת התמונות בלוח (מקסימום 10)");
+      const activeImageFileIds = new Set<string>();
+      const rejectedImageFileIds = new Set<string>();
+      for (const element of _elements) {
+        if (element?.type !== "image" || element.isDeleted) continue;
+        if (typeof element.fileId !== "string") continue;
+        if (activeImageFileIds.has(element.fileId)) continue;
+        if (activeImageFileIds.size < MAX_IMAGES_PER_BOARD) {
+          activeImageFileIds.add(element.fileId);
+        } else {
+          rejectedImageFileIds.add(element.fileId);
+        }
       }
+
+      if (rejectedImageFileIds.size > 0) {
+        showToast("הגעת למגבלת התמונות בלוח (מקסימום 10)");
+        const newlyRejectedFileIds = [...rejectedImageFileIds].filter(
+          (id) => !rejectedImageElementIdsRef.current.has(id)
+        );
+        newlyRejectedFileIds.forEach((id) => rejectedImageElementIdsRef.current.add(id));
+        if (newlyRejectedFileIds.length > 0) {
+          window.queueMicrotask(() => {
+            const currentElements = excalidrawAPI.getSceneElements();
+            excalidrawAPI.updateScene({
+              elements: currentElements.map((element: any) =>
+                newlyRejectedFileIds.includes(element.fileId)
+                  ? { ...element, isDeleted: true, version: (element.version ?? 0) + 1 }
+                  : element
+              )
+            });
+          });
+        }
+      }
+
+      const processingFiles = processingFileIdsRef.current.get(yjsSession.ydoc) ?? new Map<string, string>();
+      processingFileIdsRef.current.set(yjsSession.ydoc, processingFiles);
 
       for (const id of fileIds) {
         const fileData = files[id];
-        if (!fileData) continue;
-        const isUncompressed = fileData.dataURL?.startsWith("data:image/") && fileData.dataURL.length > 50000;
+        if (
+          !activeImageFileIds.has(id) ||
+          !fileData ||
+          !isImageDataUrl(fileData.dataURL) ||
+          yjsSession.yAssets.has(id)
+        ) continue;
+        if (processingFiles.get(id) === fileData.dataURL) continue;
 
-        if (!processingFileIdsRef.current.has(id) || isUncompressed) {
-          processingFileIdsRef.current.add(id);
-          if (isUncompressed) {
-            try {
-              const compressedUrl = await compressImage(fileData.dataURL);
-              if (compressedUrl && compressedUrl !== fileData.dataURL) {
-                const updatedFile = { ...fileData, dataURL: compressedUrl };
-                excalidrawAPI.addFiles([updatedFile]);
-                yjsSession.yAssets.set(id, updatedFile);
-              }
-            } catch (err) {
-              console.error("Compression failed", err);
+        processingFiles.set(id, fileData.dataURL);
+        void prepareImageForBoard(fileData.dataURL)
+          .then((dataURL) => {
+            if (yjsSessionRef.current !== yjsSession || yjsSession.yAssets.has(id)) return;
+            if (!dataURL) {
+              showToast("לא ניתן להוסיף את התמונה: היא גדולה מדי עבור הלוח");
+              return;
             }
-          }
+            yjsSession.ydoc.transact(() => {
+              yjsSession.yAssets.set(id, { ...fileData, dataURL });
+            }, YJS_ORIGIN_LOCAL);
+          })
+          .catch((err) => {
+            console.error("Image preparation failed", err);
+            showToast("לא ניתן לעבד את התמונה");
+          });
+      }
+
+      // Assets are intentionally managed outside y-excalidraw's default file
+      // binding. Remove assets no longer referenced by a live image so a board
+      // cannot accumulate image data through repeated insert/delete cycles.
+      if (bindingRef.current) {
+        const staleAssetIds = [...yjsSession.yAssets.keys()].filter((id) => !activeImageFileIds.has(id));
+        if (staleAssetIds.length > 0) {
+          yjsSession.ydoc.transact(() => {
+            staleAssetIds.forEach((id) => yjsSession.yAssets.delete(id));
+          }, YJS_ORIGIN_LOCAL);
         }
       }
     },
-    [excalidrawAPI, showToast, yjsSession]
+    [excalidrawAPI, mySeat, showToast, yjsSession]
   );
 
   // Emit local Yjs updates and Awareness changes

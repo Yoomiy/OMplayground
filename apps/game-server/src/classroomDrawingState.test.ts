@@ -52,6 +52,24 @@ describe("classroom drawing live state", () => {
     expect(canvasFromDoc(server.doc).elements).toEqual([{ id: "live", type: "ellipse" }]);
   });
 
+  it("rejects an oversized image asset without changing the canonical board", () => {
+    const server = createClassroomDrawingState(undefined);
+    const client = new Y.Doc();
+    Y.applyUpdate(client, decode(encodeFullClassroomDrawingState(server)));
+    client.getMap("assets").set("large-image", {
+      id: "large-image",
+      mimeType: "image/png",
+      dataURL: `data:image/png;base64,${"a".repeat(1024 * 1024)}`
+    });
+
+    const update = Y.encodeStateAsUpdate(client, Y.encodeStateVector(server.doc));
+    expect(applyClassroomDrawingUpdate(server, Buffer.from(update).toString("base64"))).toEqual({
+      ok: false,
+      code: "BOARD_LIMIT_EXCEEDED"
+    });
+    expect(canvasFromDoc(server.doc)).toEqual({ elements: [], files: {} });
+  });
+
   it("clears the canonical document and advances its durable revision", () => {
     const state = createClassroomDrawingState({
       status: "playing",
