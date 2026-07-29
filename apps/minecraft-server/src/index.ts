@@ -96,8 +96,21 @@ import {
   generateClassroomToken,
   deleteLiveKitRoom,
   promoteClassroomParticipant,
+  removeClassroomParticipant,
+  sendClassroomDelegateEnrollment,
+  syncClassroomParticipantPermissions,
   LiveKitTokenError
 } from "./livekitService";
+import {
+  CLASSROOM_DELEGATE_SCOPES,
+  createClassroomDelegateGameToken,
+  delegateCookieName,
+  findClassroomDelegateAuthority,
+  newOpaqueSecret,
+  secretHash,
+  type ClassroomDelegateAuthority,
+  type ClassroomDelegateScope
+} from "./classroomDelegates";
 import { getCachedAuth } from "./authCache";
 import { canJoinClosedSession } from "./closedSessionAccess";
 import {
@@ -310,6 +323,8 @@ const supabaseAdmin =
 
 const CLASSROOM_CLEANUP_MIN_DAYS = 1;
 const CLASSROOM_CLEANUP_MAX_DAYS = 365;
+const CLASSROOM_DELEGATE_ENROLLMENT_MS = 2 * 60_000;
+const CLASSROOM_DELEGATE_SESSION_MS = 365 * 24 * 60 * 60_000;
 
 async function completeClassroomDrawingSessions(roomCodes: string[]): Promise<void> {
   if (!supabaseAdmin || roomCodes.length === 0) return;
@@ -356,6 +371,78 @@ async function requireClassroomAdmin(req: express.Request, res: express.Response
     return null;
   }
   return actor;
+}
+
+function isTrustedBrowserOrigin(req: express.Request): boolean {
+  const origin = req.headers.origin;
+  return Boolean(origin && CORS_ORIGIN.split(",").map((value) => value.trim()).includes(origin));
+}
+
+interface ClassroomAuthority {
+  userId?: string;
+  delegate?: ClassroomDelegateAuthority;
+}
+
+async function requireClassroomAuthority(
+  req: express.Request,
+  res: express.Response,
+  classroomId: string,
+  requiredScope: ClassroomDelegateScope
+): Promise<ClassroomAuthority | null> {
+  const accessToken = req.headers.authorization?.replace(/^Bearer\s+/i, "");
+  if (accessToken && supabaseAdmin) {
+    const actor = await getCachedAuth(supabaseAdmin, accessToken).catch(() => null);
+    if (actor?.role === "teacher" || actor?.role === "admin") {
+      return { userId: actor.userId };
+    }
+  }
+
+  if (!supabaseAdmin || !isTrustedBrowserOrigin(req)) {
+    res.status(401).json({ error: "unauthorized" });
+    return null;
+  }
+  const delegate = await findClassroomDelegateAuthority(
+    supabaseAdmin,
+    req,
+    classroomId,
+    requiredScope
+  );
+  if (!delegate) {
+    res.status(403).json({ error: "forbidden" });
+    return null;
+  }
+  return { delegate };
+}
+
+async function getActiveClassroom(roomCode: string) {
+  if (!supabaseAdmin) return null;
+  const { data, error } = await supabaseAdmin
+    .from("classroom_sessions")
+    .select("id, room_code, settings, status")
+    .eq("room_code", roomCode)
+    .eq("status", "active")
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+function classroomSettings(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+}
+
+function setDelegateCookie(
+  res: express.Response,
+  delegateId: string,
+  sessionId: string,
+  secret: string
+): void {
+  res.cookie(delegateCookieName(delegateId), `${sessionId}.${secret}`, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    path: "/",
+    maxAge: CLASSROOM_DELEGATE_SESSION_MS
+  });
 }
 
 function trackTokenDenial(key: string): boolean {
@@ -456,13 +543,34 @@ app.post("/rtc/classroom-token", async (req, res) => {
       return;
     }
 
+    const classroom = await getActiveClassroom(roomCode);
+    if (!classroom) {
+      res.status(404).json({ error: "classroom_not_found" });
+      return;
+    }
+    const delegate = isTrustedBrowserOrigin(req)
+      ? await findClassroomDelegateAuthority(supabaseAdmin, req, classroom.id)
+      : null;
+
     const result = await generateClassroomToken({
       supabaseAdmin,
       roomCode,
       displayName: displayName ?? "משתתף",
       accessToken,
-      spectateMode
+      spectateMode,
+      delegate: delegate ? { id: delegate.delegateId, displayName: delegate.displayName } : null
     });
+    const delegateGameToken = delegate
+      ? createClassroomDelegateGameToken(
+          {
+            delegateId: delegate.delegateId,
+            classroomId: classroom.id,
+            roomCode,
+            identity: result.userId
+          },
+          SUPABASE_SERVICE_ROLE_KEY
+        )
+      : undefined;
 
     logger.info({
       correlationId,
@@ -485,7 +593,9 @@ app.post("/rtc/classroom-token", async (req, res) => {
       livekitRoom: result.livekitRoom,
       userId: result.userId,
       isHost: result.isHost,
-      role: result.role
+      role: result.role,
+      isDelegate: result.isDelegate,
+      delegateGameToken
     });
   } catch (err) {
     const reason =
@@ -599,6 +709,176 @@ app.post("/rtc/classroom-cleanup", async (req, res) => {
   }
 });
 
+app.post("/rtc/classroom-delegate/activate", async (req, res) => {
+  try {
+    const { roomCode, enrollmentCode } = req.body || {};
+    if (
+      !isTrustedBrowserOrigin(req) ||
+      typeof roomCode !== "string" ||
+      !roomCode.trim() ||
+      typeof enrollmentCode !== "string" ||
+      enrollmentCode.length < 32 ||
+      !supabaseAdmin
+    ) {
+      res.status(400).json({ error: "invalid_delegate_enrollment" });
+      return;
+    }
+
+    const classroom = await getActiveClassroom(roomCode.trim());
+    if (!classroom) {
+      res.status(404).json({ error: "classroom_not_found" });
+      return;
+    }
+    const { data: enrollment } = await supabaseAdmin
+      .from("classroom_delegate_enrollments")
+      .select("id, delegate_id, expires_at, used_at")
+      .eq("code_hash", secretHash(enrollmentCode))
+      .maybeSingle();
+    if (
+      !enrollment ||
+      enrollment.used_at ||
+      new Date(enrollment.expires_at).getTime() <= Date.now()
+    ) {
+      res.status(401).json({ error: "delegate_enrollment_expired" });
+      return;
+    }
+    const { data: delegate } = await supabaseAdmin
+      .from("classroom_host_delegates")
+      .select("id, classroom_id, display_name, is_active")
+      .eq("id", enrollment.delegate_id)
+      .eq("classroom_id", classroom.id)
+      .maybeSingle();
+    if (!delegate?.is_active) {
+      res.status(403).json({ error: "delegate_not_active" });
+      return;
+    }
+    const { data: consumed } = await supabaseAdmin
+      .from("classroom_delegate_enrollments")
+      .update({ used_at: new Date().toISOString() })
+      .eq("id", enrollment.id)
+      .is("used_at", null)
+      .select("id")
+      .maybeSingle();
+    if (!consumed) {
+      res.status(409).json({ error: "delegate_enrollment_already_used" });
+      return;
+    }
+
+    const sessionSecret = newOpaqueSecret();
+    const expiresAt = new Date(Date.now() + CLASSROOM_DELEGATE_SESSION_MS).toISOString();
+    const { data: delegateSession, error: sessionError } = await supabaseAdmin
+      .from("classroom_delegate_sessions")
+      .insert({
+        delegate_id: delegate.id,
+        token_hash: secretHash(sessionSecret),
+        expires_at: expiresAt
+      })
+      .select("id")
+      .single();
+    if (sessionError || !delegateSession) throw sessionError ?? new Error("session_create_failed");
+
+    setDelegateCookie(res, delegate.id, delegateSession.id, sessionSecret);
+    const identity = `delegate:${delegate.id}`;
+    res.json({
+      success: true,
+      delegateGameToken: createClassroomDelegateGameToken(
+        { delegateId: delegate.id, classroomId: classroom.id, roomCode: classroom.room_code, identity },
+        SUPABASE_SERVICE_ROLE_KEY
+      )
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "delegate_activation_failed" });
+  }
+});
+
+app.post("/rtc/classroom-settings", async (req, res) => {
+  try {
+    const { roomCode, settings } = req.body || {};
+    if (
+      typeof roomCode !== "string" ||
+      !roomCode.trim() ||
+      !settings ||
+      typeof settings !== "object" ||
+      Array.isArray(settings)
+    ) {
+      res.status(400).json({ error: "invalid_classroom_settings" });
+      return;
+    }
+    const classroom = await getActiveClassroom(roomCode.trim());
+    if (!classroom) {
+      res.status(404).json({ error: "classroom_not_found" });
+      return;
+    }
+    const authority = await requireClassroomAuthority(
+      req,
+      res,
+      classroom.id,
+      "manage_settings"
+    );
+    if (!authority || !supabaseAdmin) return;
+
+    const current = classroomSettings(classroom.settings);
+    const allowedKeys = [
+      "allowStudentChat",
+      "allowStudentScreenShare",
+      "allowStudentMic",
+      "allowStudentCam",
+      "allowWhiteboardDraw"
+    ];
+    const changed = Object.fromEntries(
+      Object.entries(settings).filter(
+        ([key, value]) => allowedKeys.includes(key) && typeof value === "boolean"
+      )
+    );
+    if (Object.keys(changed).length === 0) {
+      res.status(400).json({ error: "no_valid_classroom_settings" });
+      return;
+    }
+    const nextSettings = { ...current, ...changed };
+    const { error } = await supabaseAdmin
+      .from("classroom_sessions")
+      .update({ settings: nextSettings, last_activity: new Date().toISOString() })
+      .eq("id", classroom.id);
+    if (error) throw error;
+    await syncClassroomParticipantPermissions(classroom.room_code, nextSettings);
+    res.json({ success: true, settings: nextSettings, delegated: Boolean(authority.delegate) });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "classroom_settings_failed" });
+  }
+});
+
+app.post("/rtc/classroom-remove-participant", async (req, res) => {
+  try {
+    const { roomCode, targetIdentity } = req.body || {};
+    if (
+      typeof roomCode !== "string" ||
+      !roomCode.trim() ||
+      typeof targetIdentity !== "string" ||
+      !targetIdentity.trim() ||
+      targetIdentity.length > 256
+    ) {
+      res.status(400).json({ error: "invalid_remove_request" });
+      return;
+    }
+    const classroom = await getActiveClassroom(roomCode.trim());
+    if (!classroom) {
+      res.status(404).json({ error: "classroom_not_found" });
+      return;
+    }
+    const authority = await requireClassroomAuthority(
+      req,
+      res,
+      classroom.id,
+      "remove_participants"
+    );
+    if (!authority) return;
+    await removeClassroomParticipant(classroom.room_code, targetIdentity.trim());
+    res.json({ success: true, delegated: Boolean(authority.delegate) });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "participant_remove_failed" });
+  }
+});
+
 app.post("/rtc/classroom-promote", async (req, res) => {
   try {
     const { roomCode, targetIdentity } = req.body || {};
@@ -612,42 +892,46 @@ app.post("/rtc/classroom-promote", async (req, res) => {
       res.status(400).json({ error: "invalid_promotion_request" });
       return;
     }
-    const actor = await requireClassroomManager(req, res);
-    if (!actor || !supabaseAdmin) return;
-
     const normalizedRoomCode = roomCode.trim();
-    const { data: classroom, error: classroomError } = await supabaseAdmin
-      .from("classroom_sessions")
-      .select("id, settings")
-      .eq("room_code", normalizedRoomCode)
-      .eq("status", "active")
-      .maybeSingle();
-    if (classroomError || !classroom) {
+    const classroom = await getActiveClassroom(normalizedRoomCode);
+    if (!classroom) {
       res.status(404).json({ error: "classroom_not_found" });
       return;
     }
+    const authority = await requireClassroomAuthority(
+      req,
+      res,
+      classroom.id,
+      "manage_delegates"
+    );
+    if (!authority || !supabaseAdmin) return;
 
-    const settings =
-      classroom.settings && typeof classroom.settings === "object"
-        ? (classroom.settings as Record<string, unknown>)
-        : {};
-    const existingDelegates = Array.isArray(settings.delegatedHostIdentities)
-      ? settings.delegatedHostIdentities.filter((identity): identity is string => typeof identity === "string")
-      : [];
-    const delegatedHostIdentities = Array.from(
-      new Set([...existingDelegates, targetIdentity.trim()])
-    ).slice(-50);
-    await promoteClassroomParticipant(normalizedRoomCode, targetIdentity.trim());
-    const { error: settingsError } = await supabaseAdmin
-      .from("classroom_sessions")
-      .update({
-        settings: { ...settings, delegatedHostIdentities },
-        last_activity: new Date().toISOString()
+    const promoted = await promoteClassroomParticipant(normalizedRoomCode, targetIdentity.trim());
+    const { data: delegate, error: delegateError } = await supabaseAdmin
+      .from("classroom_host_delegates")
+      .insert({
+        classroom_id: classroom.id,
+        display_name: promoted.displayName.slice(0, 120),
+        scopes: CLASSROOM_DELEGATE_SCOPES,
+        created_by: authority.userId ?? null
       })
-      .eq("id", classroom.id);
-    if (settingsError) throw settingsError;
+      .select("id")
+      .single();
+    if (delegateError || !delegate) throw delegateError ?? new Error("delegate_create_failed");
+
+    const enrollmentCode = newOpaqueSecret();
+    const { error: enrollmentError } = await supabaseAdmin
+      .from("classroom_delegate_enrollments")
+      .insert({
+        delegate_id: delegate.id,
+        code_hash: secretHash(enrollmentCode),
+        target_livekit_identity: targetIdentity.trim(),
+        expires_at: new Date(Date.now() + CLASSROOM_DELEGATE_ENROLLMENT_MS).toISOString()
+      });
+    if (enrollmentError) throw enrollmentError;
+    await sendClassroomDelegateEnrollment(normalizedRoomCode, targetIdentity.trim(), enrollmentCode);
     logger.info({
-      userId: actor.userId,
+      userId: authority.userId ?? authority.delegate?.delegateId,
       protocol: "http",
       message: "Classroom participant promoted",
       context: {
@@ -656,7 +940,7 @@ app.post("/rtc/classroom-promote", async (req, res) => {
         targetIdentity: targetIdentity.trim()
       }
     });
-    res.json({ success: true });
+    res.json({ success: true, delegated: Boolean(authority.delegate) });
   } catch (err: any) {
     res.status(500).json({ error: err.message || "promotion failed" });
   }

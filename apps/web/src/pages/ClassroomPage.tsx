@@ -146,6 +146,8 @@ export function ClassroomPage() {
 
   // User Local Media & Permissions state
   const [isHost, setIsHost] = useState(false);
+  const [isDelegatedHost, setIsDelegatedHost] = useState(false);
+  const [delegateGameToken, setDelegateGameToken] = useState<string | null>(null);
   const [micOn, setMicOn] = useState(false);
   const [camOn, setCamOn] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
@@ -295,7 +297,9 @@ export function ClassroomPage() {
 
       // Guest fallback token using the stable localUserId issued by the server
       const guestId = user?.id || localUserId || `guest-${Math.random().toString(36).substring(2, 9)}`;
-      const token = authToken || `guest:${guestId}:${encodeURIComponent(resolvedDisplayName || "משתתף")}`;
+      const token = delegateGameToken
+        ? `classroom-delegate:${delegateGameToken}`
+        : authToken || `guest:${guestId}:${encodeURIComponent(resolvedDisplayName || "משתתף")}`;
 
       if (cancelled) return;
 
@@ -398,7 +402,7 @@ export function ClassroomPage() {
       }
       setDrawSocketReady(false);
     };
-  }, [drawSessionId, resolvedDisplayName, roomCode, user?.id, connState, localUserId]);
+  }, [drawSessionId, resolvedDisplayName, roomCode, user?.id, connState, localUserId, delegateGameToken]);
 
 
   // Fetch classroom metadata. The drawing session socket is the source of whiteboard state.
@@ -593,6 +597,7 @@ export function ClassroomPage() {
       const session = (await supabase.auth.getSession()).data.session;
       const response = await fetch(`${getVoxelServerUrl()}/rtc/classroom-token`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
           ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
@@ -616,8 +621,10 @@ export function ClassroomPage() {
         throw new Error(errMsg);
       }
 
-      const { token, serverUrl, isHost: tokenIsHost, role, userId } = await response.json();
+      const { token, serverUrl, isHost: tokenIsHost, role, userId, isDelegate, delegateGameToken: issuedDelegateGameToken } = await response.json();
       setLocalUserId(userId || null);
+      setIsDelegatedHost(Boolean(isDelegate));
+      setDelegateGameToken(issuedDelegateGameToken || null);
       const isUserHost = Boolean(tokenIsHost || isAdmin || (profile?.role as string) === "admin" || role === "admin");
       setIsHost(isUserHost);
 
@@ -639,6 +646,26 @@ export function ClassroomPage() {
           const str = new TextDecoder().decode(payload);
           const msg = JSON.parse(str);
           const senderIsHost = participantIsHost(participant);
+
+          if (msg.type === "CLASSROOM_DELEGATE_ENROLLMENT" && !participant) {
+            if (msg.roomCode !== roomCode || typeof msg.enrollmentCode !== "string") return;
+            void fetch(`${getVoxelServerUrl()}/rtc/classroom-delegate/activate`, {
+              method: "POST",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ roomCode, enrollmentCode: msg.enrollmentCode })
+            })
+              .then(async (response) => {
+                if (!response.ok) throw new Error("delegate activation failed");
+                return response.json();
+              })
+              .then((result) => {
+                setIsDelegatedHost(true);
+                setDelegateGameToken(result.delegateGameToken || null);
+              })
+              .catch(() => setConnError("לא ניתן לשמור את הרשאת המארח."));
+            return;
+          }
 
           if (HOST_CONTROL_MESSAGE_TYPES.has(msg.type) && !senderIsHost) {
             return;
@@ -817,6 +844,19 @@ export function ClassroomPage() {
     setIsScreenSharing(false);
   };
 
+  const classroomRequest = async (path: string, body: Record<string, unknown>) => {
+    const { data } = await supabase.auth.getSession();
+    return fetch(`${getVoxelServerUrl()}${path}`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...(data.session?.access_token ? { Authorization: `Bearer ${data.session.access_token}` } : {})
+      },
+      body: JSON.stringify(body)
+    });
+  };
+
   // Broadcast Whiteboard Deltas via Socket.io to under-the-hood drawgame room
   const handleLocalBoardDelta = useCallback(
     (delta: any) => {
@@ -988,27 +1028,21 @@ export function ClassroomPage() {
   const kickParticipant = async (identity: string) => {
     if (!room || !isHost) return;
     if (!window.confirm("להוציא משתתף זה מהכיתה?")) return;
-    const payload = JSON.stringify({ type: "KICK", targetIdentity: identity });
-    await room.localParticipant.publishData(new TextEncoder().encode(payload), { reliable: true });
+    const response = await classroomRequest("/rtc/classroom-remove-participant", {
+      roomCode,
+      targetIdentity: identity
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      setConnError(body.message || "לא ניתן להוציא את המשתתף.");
+    }
   };
 
   // HOST ACTION: Grant Host Status
   const grantHostStatus = async (identity: string) => {
     if (!room || !isHost) return;
     if (!window.confirm("להעניק סמכויות מורה/מארח מלאות למשתתף זה?")) return;
-    const { data } = await supabase.auth.getSession();
-    if (!data.session?.access_token) {
-      setConnError("רק משתמש מורשה יכול להעניק סמכויות מארח.");
-      return;
-    }
-    const response = await fetch(`${getVoxelServerUrl()}/rtc/classroom-promote`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${data.session.access_token}`
-      },
-      body: JSON.stringify({ roomCode, targetIdentity: identity })
-    });
+    const response = await classroomRequest("/rtc/classroom-promote", { roomCode, targetIdentity: identity });
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
       setConnError(body.message || "לא ניתן להעניק סמכויות מארח.");
@@ -1035,14 +1069,14 @@ export function ClassroomPage() {
 
   // HOST ACTION: Toggle Room Setting
   const toggleRoomSetting = async (key: keyof typeof roomSettings) => {
-    if (!sessionData || !isHost || !canManageClassroom) return;
+    if (!sessionData || !isHost || !(canManageClassroom || isDelegatedHost)) return;
     const updated = { ...roomSettings, [key]: !roomSettings[key] };
     setRoomSettings(updated);
-    const { error } = await supabase
-      .from("classroom_sessions")
-      .update({ settings: updated })
-      .eq("room_code", sessionData.room_code);
-    if (error) {
+    const response = await classroomRequest("/rtc/classroom-settings", {
+      roomCode: sessionData.room_code,
+      settings: { [key]: updated[key] }
+    });
+    if (!response.ok) {
       setRoomSettings(roomSettings);
       setConnError("לא ניתן לעדכן את הגדרות הכיתה.");
     }
@@ -1569,7 +1603,7 @@ export function ClassroomPage() {
                     </button>
                   </div>
 
-                  {canManageClassroom && <div className="flex flex-col gap-1.5 text-[11px] font-bold text-slate-300 mt-2">
+                  {(canManageClassroom || isDelegatedHost) && <div className="flex flex-col gap-1.5 text-[11px] font-bold text-slate-300 mt-2">
                     <label className="flex items-center justify-between">
                       <span>אפשר צ'אט לתלמידים:</span>
                       <input
@@ -1628,7 +1662,7 @@ export function ClassroomPage() {
                       {p.isHost && <Crown className="size-3 text-amber-400" />}
                     </div>
 
-                    {isHost && canManageClassroom && !p.isMe && (
+                    {isHost && (canManageClassroom || isDelegatedHost) && !p.isMe && (
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => grantHostStatus(p.identity)}

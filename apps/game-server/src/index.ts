@@ -50,6 +50,7 @@ import {
 import { createRecessSweepState, recessEndSweep } from "./recessSweep";
 import { getCachedAuth } from "./authCache";
 import { canJoinClosedSession } from "./closedSessionAccess";
+import { verifyClassroomDelegateGameToken } from "./classroomDelegateToken";
 
 import { recordLaunch, flushLaunches } from "./launchTracker";
 
@@ -208,7 +209,47 @@ io.use(async (socket, next) => {
       next(new Error("SERVER_CONFIG"));
       return;
     }
-    const profile = await getCachedAuth(supabaseAdmin, token);
+    const classroomDelegate = token.startsWith("classroom-delegate:")
+      ? verifyClassroomDelegateGameToken(
+          token.slice("classroom-delegate:".length),
+          SUPABASE_SERVICE_ROLE_KEY
+        )
+      : null;
+    if (token.startsWith("classroom-delegate:") && !classroomDelegate) {
+      next(new Error("UNAUTHORIZED"));
+      return;
+    }
+
+    let profile;
+    if (classroomDelegate) {
+      const { data: delegate } = await supabaseAdmin
+        .from("classroom_host_delegates")
+        .select("id, classroom_id, display_name, is_active")
+        .eq("id", classroomDelegate.delegateId)
+        .eq("classroom_id", classroomDelegate.classroomId)
+        .maybeSingle();
+      const { data: classroom } = await supabaseAdmin
+        .from("classroom_sessions")
+        .select("id")
+        .eq("id", classroomDelegate.classroomId)
+        .eq("room_code", classroomDelegate.roomCode)
+        .eq("status", "active")
+        .maybeSingle();
+      if (!delegate?.is_active || !classroom) {
+        next(new Error("FORBIDDEN"));
+        return;
+      }
+      profile = {
+        userId: classroomDelegate.identity,
+        role: "classroom_delegate",
+        gender: "boy" as const,
+        full_name: delegate.display_name,
+        is_active: true
+      };
+      socket.data.classroomDelegate = classroomDelegate;
+    } else {
+      profile = await getCachedAuth(supabaseAdmin, token);
+    }
     if (profile.role === "kid") {
       try {
         const schedules = await loadRecessSchedules();
@@ -373,6 +414,12 @@ io.on("connection", (socket) => {
       return true;
     }
     const roomCode = invitationCode.slice("class-draw-".length);
+    const delegate = socket.data.classroomDelegate as
+      | { classroomId: string; roomCode: string; identity: string }
+      | undefined;
+    if (delegate?.roomCode === roomCode && delegate.identity === userId) {
+      return true;
+    }
     const { data: classroom } = await supabaseAdmin
       .from("classroom_sessions")
       .select("settings")
@@ -381,6 +428,25 @@ io.on("connection", (socket) => {
       .maybeSingle();
     const settings = classroom?.settings as { delegatedHostIdentities?: unknown } | null;
     return Array.isArray(settings?.delegatedHostIdentities) && settings.delegatedHostIdentities.includes(userId);
+  }
+
+  async function canEditClassroomDrawing(room: Room<unknown>): Promise<boolean> {
+    if (room.gameKey !== "drawing" || !supabaseAdmin) return true;
+    if (await isClassroomDrawingHost(room)) return true;
+    const { data: session } = await supabaseAdmin
+      .from("game_sessions")
+      .select("invitation_code")
+      .eq("id", room.sessionId)
+      .maybeSingle();
+    const invitationCode = String(session?.invitation_code ?? "");
+    if (!invitationCode.startsWith("class-draw-")) return true;
+    const { data: classroom } = await supabaseAdmin
+      .from("classroom_sessions")
+      .select("settings")
+      .eq("room_code", invitationCode.slice("class-draw-".length))
+      .eq("status", "active")
+      .maybeSingle();
+    return (classroom?.settings as { allowWhiteboardDraw?: unknown } | null)?.allowWhiteboardDraw === true;
   }
 
   function connectedPayload(room: Room<unknown>) {
@@ -614,7 +680,7 @@ io.on("connection", (socket) => {
 
   socket.on(
     "LIVE_DELTA",
-    (payload: { sessionId?: string; delta?: unknown }) => {
+    async (payload: { sessionId?: string; delta?: unknown }) => {
       const sessionId = payload?.sessionId;
       const delta = payload?.delta;
       const boundSessionId = socket.data.sessionId as string | undefined;
@@ -622,6 +688,8 @@ io.on("connection", (socket) => {
       if (!boundSessionId || boundSessionId !== sessionId) return;
       const room = getRoom(sessionId);
       if (!room || !room.players.has(userId)) return; // seated only
+
+      if (!(await canEditClassroomDrawing(room))) return;
 
       if (estimatePayloadBytes(delta) > MAX_LIVE_DELTA_BYTES) return;
 

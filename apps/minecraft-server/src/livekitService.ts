@@ -1,4 +1,9 @@
-import { AccessToken, RoomServiceClient } from "livekit-server-sdk";
+import {
+  AccessToken,
+  DataPacket_Kind,
+  RoomServiceClient,
+  TrackSource
+} from "livekit-server-sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCachedAuth } from "./authCache";
 
@@ -16,6 +21,23 @@ function classroomLiveKitRoom(roomCode: string): string {
   return `classroom-${roomCode}`;
 }
 
+const HOST_PUBLISH_SOURCES = [
+  TrackSource.MICROPHONE,
+  TrackSource.CAMERA,
+  TrackSource.SCREEN_SHARE,
+  TrackSource.SCREEN_SHARE_AUDIO
+];
+
+export function classroomParticipantPublishSources(settings: Record<string, unknown>): TrackSource[] {
+  const sources: TrackSource[] = [];
+  if (settings.allowStudentMic !== false) sources.push(TrackSource.MICROPHONE);
+  if (settings.allowStudentCam !== false) sources.push(TrackSource.CAMERA);
+  if (settings.allowStudentScreenShare === true) {
+    sources.push(TrackSource.SCREEN_SHARE, TrackSource.SCREEN_SHARE_AUDIO);
+  }
+  return sources;
+}
+
 export async function deleteLiveKitRoom(roomCode: string): Promise<boolean> {
   try {
     const roomService = getRoomServiceClient();
@@ -31,7 +53,7 @@ export async function deleteLiveKitRoom(roomCode: string): Promise<boolean> {
 export async function promoteClassroomParticipant(
   roomCode: string,
   participantIdentity: string
-): Promise<void> {
+): Promise<{ displayName: string }> {
   const roomService = getRoomServiceClient();
   if (!roomService) {
     throw new LiveKitTokenError("server_config", "LiveKit is not configured on the server.");
@@ -47,8 +69,80 @@ export async function promoteClassroomParticipant(
   }
 
   await roomService.updateParticipant(roomName, participantIdentity, {
-    metadata: JSON.stringify({ ...metadata, isHost: true })
+    metadata: JSON.stringify({ ...metadata, isHost: true }),
+    permission: {
+      canSubscribe: true,
+      canPublish: true,
+      canPublishData: true,
+      canPublishSources: HOST_PUBLISH_SOURCES,
+      canUpdateMetadata: false
+    }
   });
+  return { displayName: participant.name || participantIdentity };
+}
+
+export async function sendClassroomDelegateEnrollment(
+  roomCode: string,
+  participantIdentity: string,
+  enrollmentCode: string
+): Promise<void> {
+  const roomService = getRoomServiceClient();
+  if (!roomService) {
+    throw new LiveKitTokenError("server_config", "LiveKit is not configured on the server.");
+  }
+  const payload = new TextEncoder().encode(
+    JSON.stringify({ type: "CLASSROOM_DELEGATE_ENROLLMENT", roomCode, enrollmentCode })
+  );
+  await roomService.sendData(classroomLiveKitRoom(roomCode), payload, DataPacket_Kind.RELIABLE, {
+    destinationIdentities: [participantIdentity],
+    topic: "classroom-delegate-enrollment"
+  });
+}
+
+export async function removeClassroomParticipant(
+  roomCode: string,
+  participantIdentity: string
+): Promise<void> {
+  const roomService = getRoomServiceClient();
+  if (!roomService) {
+    throw new LiveKitTokenError("server_config", "LiveKit is not configured on the server.");
+  }
+  await roomService.removeParticipant(classroomLiveKitRoom(roomCode), participantIdentity, {
+    revokeTokenTs: BigInt(Math.floor(Date.now() / 1000))
+  });
+}
+
+export async function syncClassroomParticipantPermissions(
+  roomCode: string,
+  settings: Record<string, unknown>
+): Promise<void> {
+  const roomService = getRoomServiceClient();
+  if (!roomService) {
+    throw new LiveKitTokenError("server_config", "LiveKit is not configured on the server.");
+  }
+  const roomName = classroomLiveKitRoom(roomCode);
+  const participants = await roomService.listParticipants(roomName);
+  const sources = classroomParticipantPublishSources(settings);
+  await Promise.all(
+    participants.map(async (participant) => {
+      let metadata: Record<string, unknown> = {};
+      try {
+        metadata = participant.metadata ? JSON.parse(participant.metadata) : {};
+      } catch {
+        metadata = {};
+      }
+      if (metadata.isHost === true) return;
+      await roomService.updateParticipant(roomName, participant.identity, {
+        permission: {
+          canSubscribe: true,
+          canPublish: true,
+          canPublishData: true,
+          canPublishSources: sources,
+          canUpdateMetadata: false
+        }
+      });
+    })
+  );
 }
 
 export interface GenerateTokenArgs {
@@ -176,12 +270,13 @@ export interface GenerateClassroomTokenArgs {
   displayName: string;
   accessToken?: string;
   spectateMode?: "invisible" | "visible";
+  delegate?: { id: string; displayName: string } | null;
 }
 
 export async function generateClassroomToken(
   args: GenerateClassroomTokenArgs
-): Promise<LiveKitTokenResult & { isHost: boolean; role: string }> {
-  const { supabaseAdmin, roomCode, displayName, accessToken, spectateMode } = args;
+): Promise<LiveKitTokenResult & { isHost: boolean; role: string; isDelegate: boolean }> {
+  const { supabaseAdmin, roomCode, displayName, accessToken, spectateMode, delegate } = args;
   const serverUrl = process.env.LIVEKIT_URL?.trim() ?? "";
   const apiKey = process.env.LIVEKIT_API_KEY?.trim() ?? "";
   const apiSecret = process.env.LIVEKIT_API_SECRET?.trim() ?? "";
@@ -215,10 +310,13 @@ export async function generateClassroomToken(
   const isAdmin = profile?.role === "admin";
   const isTeacher = profile?.role === "teacher" || isAdmin;
   const isCreatorTeacher = profile && classroom.teacher_id === profile.userId;
-  const isHost = isTeacher || isCreatorTeacher || isAdmin;
-  const role = profile?.role ?? "student";
-  const finalDisplayName = (profile?.full_name ?? displayName ?? "משתתף").trim().slice(0, 80) || "משתתף";
-  const identity = profile?.userId ?? `guest-${Math.random().toString(36).substring(2, 9)}`;
+  const isDelegate = Boolean(delegate);
+  const isHost = isTeacher || isCreatorTeacher || isAdmin || isDelegate;
+  const role = isDelegate ? "classroom_delegate" : profile?.role ?? "student";
+  const finalDisplayName = (delegate?.displayName ?? profile?.full_name ?? displayName ?? "משתתף").trim().slice(0, 80) || "משתתף";
+  const identity = delegate
+    ? `delegate:${delegate.id}`
+    : profile?.userId ?? `guest-${Math.random().toString(36).substring(2, 9)}`;
 
   const isHidden = isAdmin && spectateMode === "invisible";
 
@@ -238,6 +336,13 @@ export async function generateClassroomToken(
     roomJoin: true,
     room: livekitRoom,
     canPublish: !isHidden,
+    canPublishSources: isHost
+      ? HOST_PUBLISH_SOURCES
+      : classroomParticipantPublishSources(
+          classroom.settings && typeof classroom.settings === "object"
+            ? (classroom.settings as Record<string, unknown>)
+            : {}
+        ),
     canSubscribe: true,
     canPublishData: true,
     roomAdmin: isHost,
@@ -260,6 +365,7 @@ export async function generateClassroomToken(
     livekitRoom,
     userId: identity,
     isHost,
-    role
+    role,
+    isDelegate
   };
 }

@@ -9,7 +9,8 @@ The Virtual Classrooms platform enables dynamic, standalone virtual classrooms b
 ### 1. Guest Entry and Host Authority
 - **Unauthenticated Entry**: Guests can join any active classroom by opening the invite link (`/classroom/:roomCode`) and entering a display name.
 - **Server-issued Hosts**: Authenticated teachers and admins receive host authority in their LiveKit token. Host metadata is issued and updated only by the application server.
-- **Guest Co-hosts**: An authenticated teacher or admin can promote a connected guest through the server. The server updates LiveKit metadata and the classroom's delegated identity list, so browsers cannot self-promote. Guest co-hosts do not receive database lifecycle authority: settings changes, further promotions, and ending a class remain authenticated teacher/admin actions.
+- **Persistent Co-hosts**: Promoting a connected participant now sends a one-time enrollment secret directly to that participant over a targeted LiveKit data packet. The browser exchanges it for a one-year, opaque `HttpOnly` cookie; no secret appears in the classroom URL. Future visits receive a stable delegated LiveKit identity and full room-management scopes.
+- **Scoped Server Authority**: Delegates can change student chat, whiteboard, microphone, camera, and screen-share settings; promote another co-host; and remove a participant through server-authorized endpoints. They cannot end or archive the persistent classroom.
 
 ### 2. High-Quality Video, Audio & Presentation Stage
 - **LiveKit SFU Integration**: High-definition video/audio streaming with active speaker highlight badges and dynamic grid layouts.
@@ -28,9 +29,9 @@ The Virtual Classrooms platform enables dynamic, standalone virtual classrooms b
 
 ### 4. Comprehensive Host Control Panel
 - **Grant Host Status**: Promote substitute teachers / co-presenters to server-backed in-room Hosts.
-- **Kick Participant (`הוצא מהכיתה`)**: Instantly evict any participant from the room.
+- **Kick Participant (`הוצא מהכיתה`)**: Removes the participant through LiveKit's server API and revokes their current room token, rather than relying on a client-side disconnect request.
 - **Host-Permission Gated Student Chat**: Chat disabled by default for students, unlocked only with host permission.
-- **Host-Permission Gated Screen Share**: Screen sharing locked by default for non-hosts, unlocked only with host permission.
+- **Host-Permission Gated Screen Share**: Screen sharing locked by default for non-hosts, unlocked only with host permission. The backend updates participant publish-source permissions immediately when the setting changes.
 - **Mute All Students (`השתק את כל התלמידים`)**: Global microphone mute trigger.
 - **Lower All Hands (`הורד כל הידיים`)**: Clear hand raises.
 - **End Classroom (`סים שיעור וסגור כיתה`)**: Authenticated teacher/admin action that terminates the session, deletes LiveKit room memory, and completes the drawing session.
@@ -50,11 +51,15 @@ The Virtual Classrooms platform enables dynamic, standalone virtual classrooms b
 
 | Layer | File / Component | Description |
 |---|---|---|
-| **Database** | `supabase/migrations/` | Schema/RLS for `classroom_sessions`; lifecycle maintenance functions are service-role only |
-| **Backend API** | `apps/minecraft-server/src/livekitService.ts` | LiveKit classroom token issuance, cleanup, and trusted participant promotion via `RoomServiceClient` |
-| **Backend API** | `apps/minecraft-server/src/index.ts` | Authenticated `/rtc/classroom-token`, `/rtc/classroom-end`, `/rtc/classroom-cleanup`, and `/rtc/classroom-promote` routes; background cleanup |
+| **Database** | `supabase/migrations/` | Schema/RLS for classrooms plus server-only delegate, enrollment, and cookie-session records |
+| **Backend API** | `apps/minecraft-server/src/livekitService.ts` | LiveKit classroom token issuance, permission synchronization, removal, cleanup, and trusted enrollment delivery |
+| **Backend API** | `apps/minecraft-server/src/index.ts` | Classroom token, delegate activation, settings, removal, promotion, lifecycle, and cleanup routes |
 | **Frontend UI** | `apps/web/src/pages/ClassroomPage.tsx` | Interactive classroom page: authenticated lifecycle calls, server-issued host controls, and Socket.IO board hydration |
 | **Frontend UI** | `apps/web/src/pages/TeacherPage.tsx` | Teacher tab for creating classrooms (scoped to creator `teacher_id`) & copying links |
 | **Frontend UI** | `apps/web/src/pages/AdminPage.tsx` | Admin tab for real-time monitoring, stealth modes, persistence toggles, and manual cleanup |
 | **Frontend UI** | `apps/web/src/games/drawing/DrawingCanvas.tsx` | Yjs state sync, authoritative clear revision handling, and viewport controls |
 | **Routing** | `apps/web/src/App.tsx` | Public route `/classroom/:roomCode` |
+
+## Deployment note
+
+The classroom page must call the RTC service from an allowed `CORS_ORIGIN` with credentials enabled. In production, serve the web app and RTC service from the same site (or a same-site subdomain) so browsers retain the secure delegate cookie. The cookie is `HttpOnly`, `Secure`, `SameSite=None` in production, and is accepted only by delegate endpoints with an allow-listed browser `Origin`.
