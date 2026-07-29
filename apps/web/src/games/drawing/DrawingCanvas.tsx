@@ -12,6 +12,7 @@ import {
   clearYAssets,
   deduplicateYElements,
   sanitizeExcalidrawElements,
+  yjsToExcalidraw,
   ExcalidrawBinding,
   encodeAwarenessUpdate,
   applyAwarenessUpdate,
@@ -70,6 +71,8 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   players
 }, ref) => {
   const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
+  const [excalidrawSceneReady, setExcalidrawSceneReady] = useState(false);
+  const excalidrawSceneReadyRef = useRef(false);
 
   // User details for awareness
   const myPlayer = players?.find((p) => p.userId === myUserId);
@@ -94,6 +97,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   const serverSyncReadyRef = useRef(!serverAuthoritative);
   const onLiveDeltaRef = useRef(onLiveDelta);
   const isHostRef = useRef(Boolean(isHost));
+  const yjsDestroyTimersRef = useRef(new Map<object, number>());
 
   useEffect(() => {
     onLiveDeltaRef.current = onLiveDelta;
@@ -116,16 +120,36 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
 
   // Clean up Yjs session on component unmount
   useEffect(() => {
+    const pendingDestroy = yjsDestroyTimersRef.current.get(yjsSession.ydoc);
+    if (pendingDestroy !== undefined) {
+      window.clearTimeout(pendingDestroy);
+      yjsDestroyTimersRef.current.delete(yjsSession.ydoc);
+    }
     return () => {
-      yjsSession.destroy();
+      const sessionToDestroy = yjsSession;
+      const destroyTimer = window.setTimeout(() => {
+        yjsDestroyTimersRef.current.delete(sessionToDestroy.ydoc);
+        sessionToDestroy.destroy();
+      }, 0);
+      yjsDestroyTimersRef.current.set(sessionToDestroy.ydoc, destroyTimer);
     };
   }, [yjsSession]);
 
   const bindingRef = useRef<ExcalidrawBinding | null>(null);
 
-  // Compute static initialData once on mount
+  // Excalidraw must start from the same source as the binding. A persisted
+  // checkpoint can be stale, but the initial canonical Yjs update is already
+  // available before the component mounts.
   const initialData = useRef<any>(null);
-  if (!serverAuthoritative && !initialData.current && gameState.canvas) {
+  if (!initialData.current && serverAuthoritative) {
+    initialData.current = {
+      elements: sanitizeExcalidrawElements(yjsToExcalidraw(yjsSession.yElements)),
+      files: Object.fromEntries(yjsSession.yAssets.entries()),
+      appState: {
+        viewBackgroundColor: "#ffffff"
+      }
+    };
+  } else if (!initialData.current && gameState.canvas) {
     initialData.current = {
       elements: sanitizeExcalidrawElements(gameState.canvas.elements || []),
       files: gameState.canvas.files || {},
@@ -137,7 +161,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
 
   // Bind Excalidraw API to Yjs Document
   useEffect(() => {
-    if (!excalidrawAPI || !yjsSession) return;
+    if (!excalidrawAPI || !yjsSession || !excalidrawSceneReady) return;
     const { ydoc, yElements, yAssets, awareness } = yjsSession;
 
     // Populate initial elements into Yjs if brand new document and initial elements exist
@@ -174,7 +198,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
       binding.destroy();
       bindingRef.current = null;
     };
-  }, [excalidrawAPI, serverAuthoritative, yjsSession]);
+  }, [excalidrawAPI, excalidrawSceneReady, serverAuthoritative, yjsSession]);
 
   // A late joiner can have an empty stale checkpoint. Only an authoritative
   // clear revision is allowed to erase a populated local document.
@@ -208,6 +232,10 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
 
   const handleLocalChange = useCallback(
     async (_elements: readonly any[], _appState: any, files: any) => {
+      if (!excalidrawSceneReadyRef.current) {
+        excalidrawSceneReadyRef.current = true;
+        setExcalidrawSceneReady(true);
+      }
       if (!excalidrawAPI || !files || !yjsSession) return;
       const fileIds = Object.keys(files);
       const currentImgCount = fileIds.length;
@@ -602,7 +630,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
           autoFocus={false}
           handleKeyboardGlobally={false}
           viewModeEnabled={mySeat === null}
-          initialData={serverAuthoritative ? undefined : initialData.current}
+          initialData={initialData.current}
           UIOptions={{
             canvasActions: {
               changeViewBackgroundColor: false,
