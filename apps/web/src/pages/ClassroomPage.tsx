@@ -169,7 +169,8 @@ export function ClassroomPage() {
   const [drawSessionId, setDrawSessionId] = useState<string | null>(null);
   const drawSocketRef = useRef<Socket | null>(null);
   const [drawSocketReady, setDrawSocketReady] = useState(false);
-  const [boardCheckpointSignal, setBoardCheckpointSignal] = useState(0);
+  const [boardInitialYjsUpdate, setBoardInitialYjsUpdate] = useState<string | null>(null);
+  const [boardInitialYjsSyncToken, setBoardInitialYjsSyncToken] = useState<string | null>(null);
 
   const deltaListenersRef = useRef<Set<(payload: any) => void>>(new Set());
 
@@ -288,6 +289,8 @@ export function ClassroomPage() {
   // Connect socket to game-server when drawSessionId is ready and connected to classroom room
   useEffect(() => {
     setDrawSocketReady(false);
+    setBoardInitialYjsUpdate(null);
+    setBoardInitialYjsSyncToken(null);
     if (!drawSessionId || connState !== "connected") return;
     let cancelled = false;
     let s: Socket | null = null;
@@ -383,8 +386,17 @@ export function ClassroomPage() {
         if (cancelled) return;
         if (snapshot?.gameState) {
           setWhiteboardState(snapshot.gameState);
-          setDrawSocketReady(true);
         }
+      });
+
+      s.on("CLASSROOM_DRAWING_SYNC", (payload: { sessionId?: string; yjsUpdate?: string; syncToken?: string }) => {
+        if (cancelled || payload?.sessionId !== drawSessionId || typeof payload.yjsUpdate !== "string") return;
+        setBoardInitialYjsUpdate(payload.yjsUpdate);
+        setBoardInitialYjsSyncToken(typeof payload.syncToken === "string" ? payload.syncToken : null);
+        setDrawSocketReady(true);
+        deltaListenersRef.current.forEach((cb) => {
+          cb({ delta: { yjsServerSync: payload.yjsUpdate, yjsServerSyncToken: payload.syncToken } });
+        });
       });
 
       s.on("LIVE_DELTA", (payload: { from?: string; delta?: any }) => {
@@ -407,6 +419,8 @@ export function ClassroomPage() {
         drawSocketRef.current = null;
       }
       setDrawSocketReady(false);
+      setBoardInitialYjsUpdate(null);
+      setBoardInitialYjsSyncToken(null);
     };
   }, [drawSessionId, resolvedDisplayName, roomCode, user?.id, connState, localUserId, delegateGameToken]);
 
@@ -890,6 +904,13 @@ export function ClassroomPage() {
   const handleLocalBoardDelta = useCallback(
     (delta: any) => {
       if (drawSocketRef.current && drawSessionId) {
+        if (typeof delta?.yjsCanonicalSyncAck === "string") {
+          drawSocketRef.current.emit("CLASSROOM_DRAWING_SYNC_ACK", {
+            sessionId: drawSessionId,
+            syncToken: delta.yjsCanonicalSyncAck
+          });
+          return;
+        }
         drawSocketRef.current.emit("LIVE_DELTA", {
           sessionId: drawSessionId,
           delta
@@ -1085,7 +1106,6 @@ export function ClassroomPage() {
       setConnError(body.message || "לא ניתן להעניק סמכויות מארח.");
       return;
     }
-    setBoardCheckpointSignal((value) => value + 1);
   };
 
   // HOST ACTIONS: Global Media Toggles
@@ -1480,7 +1500,9 @@ export function ClassroomPage() {
                           onLiveDelta={handleLocalBoardDelta}
                           subscribeLiveDeltas={subscribeLiveDeltas}
                           isHost={isHost}
-                          checkpointSignal={boardCheckpointSignal}
+                          serverAuthoritative={true}
+                          initialYjsUpdate={boardInitialYjsUpdate}
+                          initialYjsSyncToken={boardInitialYjsSyncToken}
                           hideTopBar={true}
                           players={participants.map((p) => ({
                             userId: p.identity,

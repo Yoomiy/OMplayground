@@ -43,6 +43,9 @@ export interface DrawingCanvasProps {
   isFullscreen?: boolean;
   isHost?: boolean;
   checkpointSignal?: number;
+  serverAuthoritative?: boolean;
+  initialYjsUpdate?: string | null;
+  initialYjsSyncToken?: string | null;
   players?: { userId: string; displayName: string }[];
 }
 
@@ -61,6 +64,9 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   isFullscreen,
   isHost,
   checkpointSignal,
+  serverAuthoritative = false,
+  initialYjsUpdate,
+  initialYjsSyncToken,
   players
 }, ref) => {
   const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
@@ -69,9 +75,29 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   const myPlayer = players?.find((p) => p.userId === myUserId);
   const myDisplayName = myPlayer?.displayName || (myUserId === "solo" ? "משתתף" : mySeat ? `משתתף (${mySeat})` : "משתתף");
 
-  const [yjsSession, setYjsSession] = useState(() => createYjsCanvasSession("משתתף", "#6366f1"));
+  type AuthoritativeYjsSession = ReturnType<typeof createYjsCanvasSession> & {
+    canonicalSyncToken?: string;
+  };
+
+  const createSession = (update?: string | null, syncToken?: string | null): AuthoritativeYjsSession => {
+    const session = createYjsCanvasSession("משתתף", "#6366f1");
+    if (update) {
+      Y.applyUpdate(session.ydoc, base64ToUint8Array(update), YJS_ORIGIN_REMOTE);
+    }
+    return { ...session, canonicalSyncToken: syncToken ?? undefined };
+  };
+
+  const [yjsSession, setYjsSession] = useState<AuthoritativeYjsSession>(() =>
+    createSession(initialYjsUpdate, initialYjsSyncToken)
+  );
   const authoritativeDocumentsRef = useRef(new WeakSet<object>());
+  const serverSyncReadyRef = useRef(!serverAuthoritative);
+  const onLiveDeltaRef = useRef(onLiveDelta);
   const isHostRef = useRef(Boolean(isHost));
+
+  useEffect(() => {
+    onLiveDeltaRef.current = onLiveDelta;
+  }, [onLiveDelta]);
 
   useEffect(() => {
     isHostRef.current = Boolean(isHost);
@@ -99,7 +125,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
 
   // Compute static initialData once on mount
   const initialData = useRef<any>(null);
-  if (!initialData.current && gameState.canvas) {
+  if (!serverAuthoritative && !initialData.current && gameState.canvas) {
     initialData.current = {
       elements: sanitizeExcalidrawElements(gameState.canvas.elements || []),
       files: gameState.canvas.files || {},
@@ -115,7 +141,12 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     const { ydoc, yElements, yAssets, awareness } = yjsSession;
 
     // Populate initial elements into Yjs if brand new document and initial elements exist
-    if (yElements.length === 0 && !authoritativeDocumentsRef.current.has(ydoc) && initialData.current) {
+    if (
+      !serverAuthoritative &&
+      yElements.length === 0 &&
+      !authoritativeDocumentsRef.current.has(ydoc) &&
+      initialData.current
+    ) {
       if (initialData.current.elements?.length > 0) {
         populateYElements(yElements, initialData.current.elements, YJS_ORIGIN_SYSTEM);
       }
@@ -127,18 +158,30 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     const binding = new ExcalidrawBinding(yElements, yAssets, excalidrawAPI, awareness);
     bindingRef.current = binding;
 
+    let readyFrame: number | undefined;
+    if (serverAuthoritative) {
+      serverSyncReadyRef.current = false;
+      readyFrame = window.requestAnimationFrame(() => {
+        serverSyncReadyRef.current = true;
+        if (yjsSession.canonicalSyncToken) {
+          onLiveDeltaRef.current?.({ yjsCanonicalSyncAck: yjsSession.canonicalSyncToken });
+        }
+      });
+    }
+
     return () => {
+      if (readyFrame !== undefined) window.cancelAnimationFrame(readyFrame);
       binding.destroy();
       bindingRef.current = null;
     };
-  }, [excalidrawAPI, yjsSession]);
+  }, [excalidrawAPI, serverAuthoritative, yjsSession]);
 
   // A late joiner can have an empty stale checkpoint. Only an authoritative
   // clear revision is allowed to erase a populated local document.
   const lastVersionRef = useRef<number>(gameState.canvas?.version || 0);
   const lastClearVersionRef = useRef<number>(gameState.canvas?.clearVersion || 0);
   useEffect(() => {
-    if (!gameState.canvas || !yjsSession) return;
+    if (serverAuthoritative || !gameState.canvas || !yjsSession) return;
     const { yElements, yAssets } = yjsSession;
 
     const serverVersion = gameState.canvas.version ?? 0;
@@ -157,7 +200,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
         replaceYAssets(yAssets, serverFiles, YJS_ORIGIN_SYSTEM);
       }
     }
-  }, [gameState.canvas, yjsSession]);
+  }, [gameState.canvas, serverAuthoritative, yjsSession]);
 
   // Image compression & file count guards
   const processingFileIdsRef = useRef<Set<string>>(new Set());
@@ -200,11 +243,12 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
 
   // Emit local Yjs updates and Awareness changes
   useEffect(() => {
-    if (!yjsSession || !onLiveDelta) return;
+    if (!yjsSession || !onLiveDelta || mySeat === null) return;
     const { ydoc, awareness } = yjsSession;
 
     const handleDocUpdate = (update: Uint8Array, origin: any) => {
-      if (isHostRef.current && origin !== YJS_ORIGIN_SYSTEM) {
+      if (serverAuthoritative && !serverSyncReadyRef.current) return;
+      if (!serverAuthoritative && isHostRef.current && origin !== YJS_ORIGIN_SYSTEM) {
         boardDirtyRef.current = true;
       }
       // Only broadcast local user drawing edits (skip remote updates and system initializations)
@@ -216,6 +260,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     };
 
     const handleAwarenessUpdate = ({ added, updated, removed }: any, origin: any) => {
+      if (serverAuthoritative && !serverSyncReadyRef.current) return;
       if (origin !== YJS_ORIGIN_REMOTE && origin !== YJS_ORIGIN_SYSTEM) {
         const changedClients = [...added, ...updated, ...removed];
         if (changedClients.length > 0) {
@@ -232,11 +277,13 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     awareness.on("update", handleAwarenessUpdate);
 
     return () => {
-      onLiveDelta({ yjsAwarenessRemove: [awareness.clientID] });
+      if (!serverAuthoritative || serverSyncReadyRef.current) {
+        onLiveDelta({ yjsAwarenessRemove: [awareness.clientID] });
+      }
       ydoc.off("update", handleDocUpdate);
       awareness.off("update", handleAwarenessUpdate);
     };
-  }, [yjsSession, onLiveDelta]);
+  }, [mySeat, yjsSession, onLiveDelta]);
 
   // Subscribe to remote live deltas and Yjs sync messages
   const lastHostViewportRef = useRef<{ scrollX: number; scrollY: number; zoom: any } | null>(null);
@@ -245,15 +292,14 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     if (!subscribeLiveDeltas || !yjsSession) return;
     const { ydoc, yElements, awareness } = yjsSession;
 
-    // Request a full authoritative document from the host on join/reconnect.
-    if (onLiveDelta && !authoritativeDocumentsRef.current.has(ydoc)) {
+    // Non-classroom boards retain their peer-sync compatibility path.
+    if (!serverAuthoritative && onLiveDelta && !authoritativeDocumentsRef.current.has(ydoc)) {
       onLiveDelta({ yjsSyncRequest: true });
     }
 
     const unsubscribe = subscribeLiveDeltas((payload) => {
       if (!payload) return;
-      const from = payload.from;
-      if (from === myUserId) return; // ignore own echo
+      const fromSocketId = payload.fromSocketId;
 
       const delta = payload.delta || payload;
 
@@ -262,8 +308,25 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
       const yjsSyncRequest = delta.yjsSyncRequest;
       const yjsSyncResponse = delta.yjsSyncResponse;
       const yjsSyncFullState = delta.yjsSyncFullState === true;
+      const yjsServerSync = delta.yjsServerSync;
       const yjsAwarenessRemove = delta.yjsAwarenessRemove;
       const targetUserId = delta.targetUserId;
+      const targetSocketId = delta.targetSocketId;
+
+      if (serverAuthoritative && typeof yjsServerSync === "string") {
+        try {
+          if (serverSyncReadyRef.current && onLiveDelta) {
+            onLiveDelta({ yjsAwarenessRemove: [yjsSession.awareness.clientID] });
+          }
+          serverSyncReadyRef.current = false;
+          const replacement = createSession(yjsServerSync, delta.yjsServerSyncToken);
+          authoritativeDocumentsRef.current.add(replacement.ydoc);
+          setYjsSession(replacement);
+        } catch (err) {
+          console.error("Failed to apply canonical classroom Yjs state:", err);
+        }
+        return;
+      }
 
       // Handle Yjs document update
       if (yjsUpdate) {
@@ -296,17 +359,17 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
       // Handle a late joiner's sync request from the host's current document.
       // The host is the sole source for a late joiner's Yjs document. A viewer
       // may have reconstructed an older checkpoint and must not overwrite it.
-      if (yjsSyncRequest && onLiveDelta && isHost) {
+      if (!serverAuthoritative && yjsSyncRequest && onLiveDelta && isHost) {
         const stateUpdate = encodeYjsStateAsUpdate(ydoc);
         onLiveDelta({
-          targetUserId: from,
+          targetSocketId: fromSocketId,
           yjsSyncResponse: stateUpdate,
           yjsSyncFullState: true
         });
       }
 
       // Handle sync response containing missing Yjs updates
-      if (yjsSyncResponse && (targetUserId === myUserId || !targetUserId)) {
+      if (!serverAuthoritative && yjsSyncResponse && (targetSocketId || targetUserId === myUserId || !targetUserId)) {
         try {
           const bytes = base64ToUint8Array(yjsSyncResponse);
           if (yjsSyncFullState) {
@@ -340,7 +403,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     return () => {
       unsubscribe();
     };
-  }, [subscribeLiveDeltas, myUserId, isHost, excalidrawAPI, onLiveDelta, yjsSession]);
+  }, [subscribeLiveDeltas, myUserId, isHost, excalidrawAPI, onLiveDelta, serverAuthoritative, yjsSession]);
 
   const publishCheckpoint = useCallback(async () => {
     if (!excalidrawAPI) return;
@@ -375,7 +438,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
 
   // Persist an active board periodically, without writing idle classrooms.
   useEffect(() => {
-    if (!isHost) return;
+    if (serverAuthoritative || !isHost) return;
     const interval = setInterval(async () => {
       if (excalidrawAPI && boardDirtyRef.current) {
         boardDirtyRef.current = false;
@@ -384,24 +447,24 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     }, 60_000);
 
     return () => clearInterval(interval);
-  }, [isHost, excalidrawAPI, publishCheckpoint]);
+  }, [serverAuthoritative, isHost, excalidrawAPI, publishCheckpoint]);
 
   const lastCheckpointSignalRef = useRef(0);
   useEffect(() => {
-    if (!isHost || !checkpointSignal || checkpointSignal === lastCheckpointSignalRef.current) return;
+    if (serverAuthoritative || !isHost || !checkpointSignal || checkpointSignal === lastCheckpointSignalRef.current) return;
     lastCheckpointSignalRef.current = checkpointSignal;
     boardDirtyRef.current = false;
     void publishCheckpoint();
-  }, [checkpointSignal, isHost, publishCheckpoint]);
+  }, [checkpointSignal, serverAuthoritative, isHost, publishCheckpoint]);
 
   useEffect(() => {
-    if (!isHost || !excalidrawAPI) return;
+    if (serverAuthoritative || !isHost || !excalidrawAPI) return;
     return () => {
       if (!boardDirtyRef.current) return;
       boardDirtyRef.current = false;
       void publishCheckpoint();
     };
-  }, [isHost, excalidrawAPI, publishCheckpoint]);
+  }, [serverAuthoritative, isHost, excalidrawAPI, publishCheckpoint]);
 
   // Expose exportPNG function to parent via ref
   useImperativeHandle(ref, () => ({
@@ -539,7 +602,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
           autoFocus={false}
           handleKeyboardGlobally={false}
           viewModeEnabled={mySeat === null}
-          initialData={initialData.current}
+          initialData={serverAuthoritative ? undefined : initialData.current}
           UIOptions={{
             canvasActions: {
               changeViewBackgroundColor: false,

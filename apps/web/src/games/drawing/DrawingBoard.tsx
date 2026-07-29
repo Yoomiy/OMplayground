@@ -12,6 +12,9 @@ export interface DrawingBoardProps {
   subscribeLiveDeltas?: (cb: (payload: any) => void) => () => void;
   isHost?: boolean;
   checkpointSignal?: number;
+  serverAuthoritative?: boolean;
+  initialYjsUpdate?: string | null;
+  initialYjsSyncToken?: string | null;
   players?: { userId: string; displayName: string }[];
   hideTopBar?: boolean;
 }
@@ -25,6 +28,9 @@ export function DrawingBoard({
   subscribeLiveDeltas,
   isHost,
   checkpointSignal,
+  serverAuthoritative,
+  initialYjsUpdate,
+  initialYjsSyncToken,
   players,
   hideTopBar = false
 }: DrawingBoardProps) {
@@ -235,6 +241,9 @@ export function DrawingBoard({
           isFullscreen={isFullscreen}
           isHost={isHost}
           checkpointSignal={checkpointSignal}
+          serverAuthoritative={serverAuthoritative}
+          initialYjsUpdate={initialYjsUpdate}
+          initialYjsSyncToken={initialYjsSyncToken}
           players={players}
         />
       </div>

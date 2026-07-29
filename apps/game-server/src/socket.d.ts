@@ -1,3 +1,5 @@
+import type { ClassroomDrawingSocketSync } from "./classroomDrawingState";
+
 export {};
 
 declare module "socket.io" {
@@ -7,5 +9,7 @@ declare module "socket.io" {
     role?: string;
     gender?: "boy" | "girl";
     sessionId?: string;
+    classroomDrawingSync?: ClassroomDrawingSocketSync;
+    classroomDrawingAwarenessClientIds?: number[];
   }
 }
