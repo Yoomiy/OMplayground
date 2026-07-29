@@ -275,7 +275,16 @@ export interface GenerateClassroomTokenArgs {
 
 export async function generateClassroomToken(
   args: GenerateClassroomTokenArgs
-): Promise<LiveKitTokenResult & { isHost: boolean; role: string; isDelegate: boolean }> {
+): Promise<
+  LiveKitTokenResult & {
+    isHost: boolean;
+    role: string;
+    isDelegate: boolean;
+    canPublishMicrophone: boolean;
+    canPublishCamera: boolean;
+    canPublishScreenShare: boolean;
+  }
+> {
   const { supabaseAdmin, roomCode, displayName, accessToken, spectateMode, delegate } = args;
   const serverUrl = process.env.LIVEKIT_URL?.trim() ?? "";
   const apiKey = process.env.LIVEKIT_API_KEY?.trim() ?? "";
@@ -319,6 +328,15 @@ export async function generateClassroomToken(
     : profile?.userId ?? `guest-${Math.random().toString(36).substring(2, 9)}`;
 
   const isHidden = isAdmin && spectateMode === "invisible";
+  const publishSources = isHidden
+    ? []
+    : isHost
+      ? HOST_PUBLISH_SOURCES
+      : classroomParticipantPublishSources(
+          classroom.settings && typeof classroom.settings === "object"
+            ? (classroom.settings as Record<string, unknown>)
+            : {}
+        );
 
   const at = new AccessToken(apiKey, apiSecret, {
     identity,
@@ -336,13 +354,7 @@ export async function generateClassroomToken(
     roomJoin: true,
     room: livekitRoom,
     canPublish: !isHidden,
-    canPublishSources: isHost
-      ? HOST_PUBLISH_SOURCES
-      : classroomParticipantPublishSources(
-          classroom.settings && typeof classroom.settings === "object"
-            ? (classroom.settings as Record<string, unknown>)
-            : {}
-        ),
+    canPublishSources: publishSources,
     canSubscribe: true,
     canPublishData: true,
     roomAdmin: isHost,
@@ -366,6 +378,9 @@ export async function generateClassroomToken(
     userId: identity,
     isHost,
     role,
-    isDelegate
+    isDelegate,
+    canPublishMicrophone: publishSources.includes(TrackSource.MICROPHONE),
+    canPublishCamera: publishSources.includes(TrackSource.CAMERA),
+    canPublishScreenShare: publishSources.includes(TrackSource.SCREEN_SHARE)
   };
 }

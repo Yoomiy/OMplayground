@@ -169,6 +169,7 @@ export function ClassroomPage() {
   const [drawSessionId, setDrawSessionId] = useState<string | null>(null);
   const drawSocketRef = useRef<Socket | null>(null);
   const [drawSocketReady, setDrawSocketReady] = useState(false);
+  const [boardCheckpointSignal, setBoardCheckpointSignal] = useState(0);
 
   const deltaListenersRef = useRef<Set<(payload: any) => void>>(new Set());
 
@@ -391,6 +392,11 @@ export function ClassroomPage() {
         deltaListenersRef.current.forEach((cb) => {
           cb(payload);
         });
+      });
+
+      s.on("LIVE_DELTA_REJECTED", (payload: { code?: string }) => {
+        if (cancelled || payload?.code !== "WHITEBOARD_EDIT_FORBIDDEN") return;
+        setConnError("הציור בלוח אינו מורשה עבור משתמש זה.");
       });
     })();
 
@@ -621,7 +627,17 @@ export function ClassroomPage() {
         throw new Error(errMsg);
       }
 
-      const { token, serverUrl, isHost: tokenIsHost, role, userId, isDelegate, delegateGameToken: issuedDelegateGameToken } = await response.json();
+      const {
+        token,
+        serverUrl,
+        isHost: tokenIsHost,
+        role,
+        userId,
+        isDelegate,
+        canPublishMicrophone,
+        canPublishCamera,
+        delegateGameToken: issuedDelegateGameToken
+      } = await response.json();
       setLocalUserId(userId || null);
       setIsDelegatedHost(Boolean(isDelegate));
       setDelegateGameToken(issuedDelegateGameToken || null);
@@ -661,7 +677,12 @@ export function ClassroomPage() {
               })
               .then((result) => {
                 setIsDelegatedHost(true);
-                setDelegateGameToken(result.delegateGameToken || null);
+                if (drawSocketRef.current && drawSessionId && result.delegateGameToken) {
+                  drawSocketRef.current.emit("CLASSROOM_DELEGATE_ACTIVATED", {
+                    sessionId: drawSessionId,
+                    delegateGameToken: result.delegateGameToken
+                  });
+                }
               })
               .catch(() => setConnError("לא ניתן לשמור את הרשאת המארח."));
             return;
@@ -787,19 +808,27 @@ export function ClassroomPage() {
       } else {
         // Normal participant: Try enabling mic and cam safely in background so errors NEVER block entry!
         setTimeout(async () => {
-          try {
-            await lkRoom.localParticipant.setMicrophoneEnabled(true);
-            setMicOn(true);
-          } catch (mErr) {
-            console.warn("Could not start microphone source", mErr);
+          if (canPublishMicrophone) {
+            try {
+              await lkRoom.localParticipant.setMicrophoneEnabled(true);
+              setMicOn(true);
+            } catch (mErr) {
+              console.warn("Could not start microphone source", mErr);
+              setMicOn(false);
+            }
+          } else {
             setMicOn(false);
           }
 
-          try {
-            await lkRoom.localParticipant.setCameraEnabled(true);
-            setCamOn(true);
-          } catch (cErr) {
-            console.warn("Could not start video source", cErr);
+          if (canPublishCamera) {
+            try {
+              await lkRoom.localParticipant.setCameraEnabled(true);
+              setCamOn(true);
+            } catch (cErr) {
+              console.warn("Could not start video source", cErr);
+              setCamOn(false);
+            }
+          } else {
             setCamOn(false);
           }
           updateParticipantList(lkRoom);
@@ -886,6 +915,10 @@ export function ClassroomPage() {
   // Toggle Microphone
   const toggleMic = async () => {
     if (!room || isStealthAdmin) return;
+    if (!isHost && !roomSettings.allowStudentMic) {
+      setConnError("המיקרופון סגור כעת על ידי המורה.");
+      return;
+    }
     const nextState = !micOn;
     await room.localParticipant.setMicrophoneEnabled(nextState);
     setMicOn(nextState);
@@ -895,6 +928,10 @@ export function ClassroomPage() {
   // Toggle Camera
   const toggleCam = async () => {
     if (!room || isStealthAdmin) return;
+    if (!isHost && !roomSettings.allowStudentCam) {
+      setConnError("המצלמה סגורה כעת על ידי המורה.");
+      return;
+    }
     const nextState = !camOn;
     await room.localParticipant.setCameraEnabled(nextState);
     setCamOn(nextState);
@@ -1046,7 +1083,9 @@ export function ClassroomPage() {
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
       setConnError(body.message || "לא ניתן להעניק סמכויות מארח.");
+      return;
     }
+    setBoardCheckpointSignal((value) => value + 1);
   };
 
   // HOST ACTIONS: Global Media Toggles
@@ -1079,6 +1118,13 @@ export function ClassroomPage() {
     if (!response.ok) {
       setRoomSettings(roomSettings);
       setConnError("לא ניתן לעדכן את הגדרות הכיתה.");
+      return;
+    }
+    if (key === "allowWhiteboardDraw" && drawSocketRef.current && drawSessionId) {
+      drawSocketRef.current.emit("CLASSROOM_WHITEBOARD_POLICY", {
+        sessionId: drawSessionId,
+        allowWhiteboardDraw: updated.allowWhiteboardDraw
+      });
     }
   };
 
@@ -1434,6 +1480,7 @@ export function ClassroomPage() {
                           onLiveDelta={handleLocalBoardDelta}
                           subscribeLiveDeltas={subscribeLiveDeltas}
                           isHost={isHost}
+                          checkpointSignal={boardCheckpointSignal}
                           hideTopBar={true}
                           players={participants.map((p) => ({
                             userId: p.identity,

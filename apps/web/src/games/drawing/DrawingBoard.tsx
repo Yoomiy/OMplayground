@@ -11,6 +11,7 @@ export interface DrawingBoardProps {
   onLiveDelta?: (payload: any) => void;
   subscribeLiveDeltas?: (cb: (payload: any) => void) => () => void;
   isHost?: boolean;
+  checkpointSignal?: number;
   players?: { userId: string; displayName: string }[];
   hideTopBar?: boolean;
 }
@@ -23,6 +24,7 @@ export function DrawingBoard({
   onLiveDelta,
   subscribeLiveDeltas,
   isHost,
+  checkpointSignal,
   players,
   hideTopBar = false
 }: DrawingBoardProps) {
@@ -232,6 +234,7 @@ export function DrawingBoard({
           showToast={showToast}
           isFullscreen={isFullscreen}
           isHost={isHost}
+          checkpointSignal={checkpointSignal}
           players={players}
         />
       </div>

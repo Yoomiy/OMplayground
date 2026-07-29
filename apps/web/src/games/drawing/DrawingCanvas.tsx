@@ -42,6 +42,7 @@ export interface DrawingCanvasProps {
   showToast: (msg: string) => void;
   isFullscreen?: boolean;
   isHost?: boolean;
+  checkpointSignal?: number;
   players?: { userId: string; displayName: string }[];
 }
 
@@ -59,6 +60,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   showToast,
   isFullscreen,
   isHost,
+  checkpointSignal,
   players
 }, ref) => {
   const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
@@ -156,6 +158,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
 
   // Image compression & file count guards
   const processingFileIdsRef = useRef<Set<string>>(new Set());
+  const boardDirtyRef = useRef(false);
 
   const handleLocalChange = useCallback(
     async (_elements: readonly any[], _appState: any, files: any) => {
@@ -198,6 +201,9 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     const { ydoc, awareness } = yjsSession;
 
     const handleDocUpdate = (update: Uint8Array, origin: any) => {
+      if (isHost && origin !== YJS_ORIGIN_SYSTEM) {
+        boardDirtyRef.current = true;
+      }
       // Only broadcast local user drawing edits (skip remote updates and system initializations)
       if (origin !== YJS_ORIGIN_REMOTE && origin !== YJS_ORIGIN_SYSTEM) {
         onLiveDelta({
@@ -225,7 +231,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
       ydoc.off("update", handleDocUpdate);
       awareness.off("update", handleAwarenessUpdate);
     };
-  }, [yjsSession, onLiveDelta]);
+  }, [yjsSession, onLiveDelta, isHost]);
 
   // Subscribe to remote live deltas and Yjs sync messages
   const lastHostViewportRef = useRef<{ scrollX: number; scrollY: number; zoom: any } | null>(null);
@@ -316,47 +322,66 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     };
   }, [subscribeLiveDeltas, myUserId, isHost, excalidrawAPI, onLiveDelta, yjsSession]);
 
-  // Periodic Checkpoint Cadence: host only, every 5s for server persistence
+  const publishCheckpoint = useCallback(async () => {
+    if (!excalidrawAPI) return;
+    const elements = excalidrawAPI.getSceneElements();
+    const rawFiles = excalidrawAPI.getFiles() || {};
+    const sanitized = sanitizeExcalidrawElements(elements);
+    const referencedFileIds = new Set(
+      sanitized.filter((el: any) => el && el.type === "image" && el.fileId).map((el: any) => el.fileId)
+    );
+    const files: Record<string, any> = {};
+    for (const fileId of referencedFileIds) {
+      const fileData = rawFiles[fileId];
+      if (!fileData) continue;
+      if (fileData.dataURL?.startsWith("data:image/") && fileData.dataURL.length > 50000) {
+        try {
+          const compressedUrl = await compressImage(fileData.dataURL);
+          files[fileId] = { ...fileData, dataURL: compressedUrl };
+        } catch {
+          files[fileId] = fileData;
+        }
+      } else {
+        files[fileId] = fileData;
+      }
+    }
+    onIntent({
+      type: "CHECKPOINT",
+      version: Date.now(),
+      elements: sanitized,
+      files
+    });
+  }, [excalidrawAPI, onIntent]);
+
+  // Persist an active board periodically, without writing idle classrooms.
   useEffect(() => {
     if (!isHost) return;
     const interval = setInterval(async () => {
-      if (excalidrawAPI) {
-        const elements = excalidrawAPI.getSceneElements();
-        const rawFiles = excalidrawAPI.getFiles() || {};
-        const sanitized = sanitizeExcalidrawElements(elements);
-
-        // Filter files to only active image elements to avoid bloated checkpoints
-        const referencedFileIds = new Set(
-          sanitized.filter((el: any) => el && el.type === "image" && el.fileId).map((el: any) => el.fileId)
-        );
-        const files: Record<string, any> = {};
-        for (const fileId of referencedFileIds) {
-          const fileData = rawFiles[fileId];
-          if (fileData) {
-            if (fileData.dataURL?.startsWith("data:image/") && fileData.dataURL.length > 50000) {
-              try {
-                const compressedUrl = await compressImage(fileData.dataURL);
-                files[fileId] = { ...fileData, dataURL: compressedUrl };
-              } catch {
-                files[fileId] = fileData;
-              }
-            } else {
-              files[fileId] = fileData;
-            }
-          }
-        }
-
-        onIntent({
-          type: "CHECKPOINT",
-          version: Date.now(),
-          elements: sanitized,
-          files
-        });
+      if (excalidrawAPI && boardDirtyRef.current) {
+        boardDirtyRef.current = false;
+        void publishCheckpoint();
       }
-    }, 5000);
+    }, 60_000);
 
     return () => clearInterval(interval);
-  }, [onIntent, isHost, excalidrawAPI]);
+  }, [isHost, excalidrawAPI, publishCheckpoint]);
+
+  const lastCheckpointSignalRef = useRef(0);
+  useEffect(() => {
+    if (!isHost || !checkpointSignal || checkpointSignal === lastCheckpointSignalRef.current) return;
+    lastCheckpointSignalRef.current = checkpointSignal;
+    boardDirtyRef.current = false;
+    void publishCheckpoint();
+  }, [checkpointSignal, isHost, publishCheckpoint]);
+
+  useEffect(() => {
+    if (!isHost || !excalidrawAPI) return;
+    return () => {
+      if (!boardDirtyRef.current) return;
+      boardDirtyRef.current = false;
+      void publishCheckpoint();
+    };
+  }, [isHost, excalidrawAPI, publishCheckpoint]);
 
   // Expose exportPNG function to parent via ref
   useImperativeHandle(ref, () => ({

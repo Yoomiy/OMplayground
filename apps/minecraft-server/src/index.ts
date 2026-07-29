@@ -595,6 +595,9 @@ app.post("/rtc/classroom-token", async (req, res) => {
       isHost: result.isHost,
       role: result.role,
       isDelegate: result.isDelegate,
+      canPublishMicrophone: result.canPublishMicrophone,
+      canPublishCamera: result.canPublishCamera,
+      canPublishScreenShare: result.canPublishScreenShare,
       delegateGameToken
     });
   } catch (err) {

@@ -78,6 +78,43 @@ const SUPABASE_URL = process.env.SUPABASE_URL ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 const MAX_LIVE_DELTA_BYTES = 8 * 1024 * 1024;
 
+interface ClassroomDrawingPolicy {
+  allowWhiteboardDraw: boolean;
+}
+
+const classroomDrawingPolicies = new Map<string, ClassroomDrawingPolicy>();
+const classroomDrawingPolicyLoads = new Map<string, Promise<ClassroomDrawingPolicy>>();
+
+async function loadClassroomDrawingPolicy(roomCode: string): Promise<ClassroomDrawingPolicy> {
+  const cached = classroomDrawingPolicies.get(roomCode);
+  if (cached) return cached;
+  const pending = classroomDrawingPolicyLoads.get(roomCode);
+  if (pending) return pending;
+
+  const load = (async () => {
+    if (!supabaseAdmin) return { allowWhiteboardDraw: false };
+    const { data, error } = await supabaseAdmin
+      .from("classroom_sessions")
+      .select("settings, status")
+      .eq("room_code", roomCode)
+      .maybeSingle();
+    if (error) throw error;
+    const policy = {
+      allowWhiteboardDraw:
+        data?.status === "active" &&
+        (data.settings as { allowWhiteboardDraw?: unknown } | null)?.allowWhiteboardDraw === true
+    };
+    classroomDrawingPolicies.set(roomCode, policy);
+    return policy;
+  })();
+  classroomDrawingPolicyLoads.set(roomCode, load);
+  try {
+    return await load;
+  } finally {
+    classroomDrawingPolicyLoads.delete(roomCode);
+  }
+}
+
 function exitIfInvalidSupabaseUrlForClient(): void {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return;
   const u = SUPABASE_URL.trim();
@@ -216,6 +253,10 @@ io.use(async (socket, next) => {
         )
       : null;
     if (token.startsWith("classroom-delegate:") && !classroomDelegate) {
+      logger.warn({
+        message: "Classroom delegate socket token rejected",
+        context: { event: "CLASSROOM_DELEGATE_SOCKET_DENIED" }
+      });
       next(new Error("UNAUTHORIZED"));
       return;
     }
@@ -285,6 +326,7 @@ io.use(async (socket, next) => {
 io.on("connection", (socket) => {
   const originalOn = socket.on.bind(socket);
   const HOT_SOCKET_EVENTS = new Set(["LIVE_DELTA"]);
+  let lastWhiteboardRejectionAt = 0;
   socket.on = (event: string, listener: (...args: any[]) => void | Promise<void>) => {
     if (HOT_SOCKET_EVENTS.has(event)) {
       return originalOn(event, listener);
@@ -400,53 +442,22 @@ io.on("connection", (socket) => {
   }
 
   async function isClassroomDrawingHost(room: Room<unknown>): Promise<boolean> {
-    if (room.gameKey !== "drawing" || !supabaseAdmin) return true;
-    const { data: session } = await supabaseAdmin
-      .from("game_sessions")
-      .select("invitation_code")
-      .eq("id", room.sessionId)
-      .maybeSingle();
-    const invitationCode = String(session?.invitation_code ?? "");
+    const classroom = socket.data.classroomDrawing as
+      | { sessionId: string; roomCode: string; isHost: boolean }
+      | undefined;
+    if (room.gameKey !== "drawing" || !classroom || classroom.sessionId !== room.sessionId) return true;
     // Regular drawing games intentionally remain collaborative. The host-only
     // rule is the classroom policy, identified by its reserved invite code.
-    if (!invitationCode.startsWith("class-draw-")) return true;
-    if (socket.data.role === "teacher" || socket.data.role === "admin" || room.hostId === userId) {
-      return true;
-    }
-    const roomCode = invitationCode.slice("class-draw-".length);
-    const delegate = socket.data.classroomDelegate as
-      | { classroomId: string; roomCode: string; identity: string }
-      | undefined;
-    if (delegate?.roomCode === roomCode && delegate.identity === userId) {
-      return true;
-    }
-    const { data: classroom } = await supabaseAdmin
-      .from("classroom_sessions")
-      .select("settings")
-      .eq("room_code", roomCode)
-      .eq("status", "active")
-      .maybeSingle();
-    const settings = classroom?.settings as { delegatedHostIdentities?: unknown } | null;
-    return Array.isArray(settings?.delegatedHostIdentities) && settings.delegatedHostIdentities.includes(userId);
+    return classroom.isHost;
   }
 
   async function canEditClassroomDrawing(room: Room<unknown>): Promise<boolean> {
-    if (room.gameKey !== "drawing" || !supabaseAdmin) return true;
-    if (await isClassroomDrawingHost(room)) return true;
-    const { data: session } = await supabaseAdmin
-      .from("game_sessions")
-      .select("invitation_code")
-      .eq("id", room.sessionId)
-      .maybeSingle();
-    const invitationCode = String(session?.invitation_code ?? "");
-    if (!invitationCode.startsWith("class-draw-")) return true;
-    const { data: classroom } = await supabaseAdmin
-      .from("classroom_sessions")
-      .select("settings")
-      .eq("room_code", invitationCode.slice("class-draw-".length))
-      .eq("status", "active")
-      .maybeSingle();
-    return (classroom?.settings as { allowWhiteboardDraw?: unknown } | null)?.allowWhiteboardDraw === true;
+    const classroom = socket.data.classroomDrawing as
+      | { sessionId: string; roomCode: string; isHost: boolean }
+      | undefined;
+    if (room.gameKey !== "drawing" || !classroom || classroom.sessionId !== room.sessionId) return true;
+    if (classroom.isHost) return true;
+    return classroomDrawingPolicies.get(classroom.roomCode)?.allowWhiteboardDraw === true;
   }
 
   function connectedPayload(room: Room<unknown>) {
@@ -551,6 +562,51 @@ io.on("connection", (socket) => {
       const role = socket.data.role as string;
       const hostId = String(session.host_id ?? "");
       const isOpen = (session as { is_open?: boolean }).is_open !== false;
+      const classroomRoomCode =
+        gameKey === "drawing" && String(session.invitation_code ?? "").startsWith("class-draw-")
+          ? String(session.invitation_code).slice("class-draw-".length)
+          : null;
+      if (classroomRoomCode) {
+        let policy: ClassroomDrawingPolicy = {
+          allowWhiteboardDraw: false
+        };
+        try {
+          policy = await loadClassroomDrawingPolicy(classroomRoomCode);
+        } catch (err) {
+          logger.warn({
+            message: "Classroom drawing policy load failed",
+            sessionId,
+            error: err instanceof Error ? err.message : String(err)
+          });
+        }
+        const delegate = socket.data.classroomDelegate as
+          | { roomCode: string; identity: string }
+          | undefined;
+        socket.data.classroomDrawing = {
+          sessionId,
+          roomCode: classroomRoomCode,
+          isHost:
+            role === "teacher" ||
+            role === "admin" ||
+            hostId === userId ||
+            (delegate?.roomCode === classroomRoomCode && delegate.identity === userId)
+        };
+        logger.info({
+          userId,
+          sessionId,
+          protocol: "socket",
+          message: "Classroom drawing policy loaded",
+          context: {
+            event: "CLASSROOM_DRAWING_POLICY_LOADED",
+            roomCode: classroomRoomCode,
+            isHost: socket.data.classroomDrawing.isHost,
+            allowWhiteboardDraw: policy.allowWhiteboardDraw,
+            isDelegate: Boolean(socket.data.classroomDelegate)
+          }
+        });
+      } else {
+        socket.data.classroomDrawing = undefined;
+      }
       if (
         !isOpen &&
         role !== "teacher" &&
@@ -577,7 +633,7 @@ io.on("connection", (socket) => {
           return;
         }
       }
-      if (sess.status === "paused" && !playerIds.includes(userId)) {
+      if (sess.status === "paused" && !playerIds.includes(userId) && !classroomRoomCode) {
         reply?.({
           ok: false,
           error: {
@@ -635,6 +691,9 @@ io.on("connection", (socket) => {
         reply?.({ ok: false, error: assigned.error });
         return;
       }
+      if (room.paused && classroomRoomCode) {
+        resumeRoom(room);
+      }
       if (!isRoomIdle(room)) {
         if (wasIdle) {
           for (const p of room.players.values()) {
@@ -689,13 +748,89 @@ io.on("connection", (socket) => {
       const room = getRoom(sessionId);
       if (!room || !room.players.has(userId)) return; // seated only
 
-      if (!(await canEditClassroomDrawing(room))) return;
+      if (!(await canEditClassroomDrawing(room))) {
+        if (Date.now() - lastWhiteboardRejectionAt >= 10_000) {
+          lastWhiteboardRejectionAt = Date.now();
+          logger.warn({
+            userId,
+            sessionId,
+            protocol: "socket",
+            message: "Classroom drawing delta rejected",
+            context: { event: "CLASSROOM_DRAWING_DELTA_REJECTED" }
+          });
+          socket.emit("LIVE_DELTA_REJECTED", {
+            sessionId,
+            code: "WHITEBOARD_EDIT_FORBIDDEN"
+          });
+        }
+        return;
+      }
 
       if (estimatePayloadBytes(delta) > MAX_LIVE_DELTA_BYTES) return;
 
       socket.to(`session:${room.sessionId}`).emit("LIVE_DELTA", {
         from: userId,
         delta
+      });
+    }
+  );
+
+  socket.on(
+    "CLASSROOM_DELEGATE_ACTIVATED",
+    (payload: { sessionId?: string; delegateGameToken?: string }) => {
+      const classroom = socket.data.classroomDrawing as
+        | { sessionId: string; roomCode: string; isHost: boolean }
+        | undefined;
+      const token =
+        typeof payload?.delegateGameToken === "string"
+          ? verifyClassroomDelegateGameToken(payload.delegateGameToken, SUPABASE_SERVICE_ROLE_KEY)
+          : null;
+      if (
+        !classroom ||
+        payload?.sessionId !== classroom.sessionId ||
+        !token ||
+        token.roomCode !== classroom.roomCode
+      ) {
+        logger.warn({
+          userId,
+          sessionId: payload?.sessionId,
+          protocol: "socket",
+          message: "Classroom delegate activation rejected",
+          context: { event: "CLASSROOM_DELEGATE_ACTIVATION_REJECTED" }
+        });
+        return;
+      }
+      classroom.isHost = true;
+      logger.info({
+        userId,
+        sessionId: classroom.sessionId,
+        protocol: "socket",
+        message: "Classroom delegate activated on current board socket",
+        context: { event: "CLASSROOM_DELEGATE_SOCKET_ACTIVATED", roomCode: classroom.roomCode }
+      });
+    }
+  );
+
+  socket.on(
+    "CLASSROOM_WHITEBOARD_POLICY",
+    (payload: { sessionId?: string; allowWhiteboardDraw?: unknown }) => {
+      const sessionId = payload?.sessionId;
+      const classroom = socket.data.classroomDrawing as
+        | { sessionId: string; roomCode: string; isHost: boolean }
+        | undefined;
+      if (
+        !sessionId ||
+        socket.data.sessionId !== sessionId ||
+        !classroom ||
+        classroom.sessionId !== sessionId ||
+        !classroom.isHost ||
+        typeof payload.allowWhiteboardDraw !== "boolean"
+      ) {
+        return;
+      }
+      classroomDrawingPolicies.set(classroom.roomCode, {
+        ...(classroomDrawingPolicies.get(classroom.roomCode) ?? {}),
+        allowWhiteboardDraw: payload.allowWhiteboardDraw
       });
     }
   );
