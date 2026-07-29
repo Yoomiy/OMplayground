@@ -497,7 +497,14 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
   );
   const onLiveDelta = useCallback(
     (delta: unknown) => {
-      if (isTeacherObserver) return;
+      // Read-only teachers may request the host's current Yjs document, but
+      // must never publish drawing edits or awareness updates.
+      if (isTeacherObserver) {
+        const isSyncRequest =
+          typeof delta === "object" && delta !== null &&
+          (delta as { yjsSyncRequest?: unknown }).yjsSyncRequest === true;
+        if (!isSyncRequest) return;
+      }
       if (paused) return;
       const s = socketRef.current;
       if (!s?.connected) return;

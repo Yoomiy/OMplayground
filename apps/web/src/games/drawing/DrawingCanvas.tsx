@@ -615,6 +615,13 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
       setExcalidrawAPI(null);
       return;
     }
+    // Read-only viewers do not necessarily trigger Excalidraw's onChange
+    // callback on mount. Mark the scene ready when the API is available so
+    // the Yjs binding is attached before the first remote drawing delta.
+    if (!excalidrawSceneReadyRef.current) {
+      excalidrawSceneReadyRef.current = true;
+      setExcalidrawSceneReady(true);
+    }
     // Wrap addFiles
     if (api.addFiles && !api._isWrappedAddFiles) {
       const origAddFiles = api.addFiles.bind(api);

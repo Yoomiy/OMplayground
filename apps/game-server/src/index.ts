@@ -789,7 +789,12 @@ io.on("connection", (socket) => {
       if (!existingRoom) {
         stats.onRoomCreated(sessionId, gameKey);
       }
-      if (role === "teacher" && gameKey !== "drawing" && hostId !== userId) {
+      // Teachers observe sessions rather than taking a player seat. Drawing
+      // used to be the exception here, which made the teacher's drawing view
+      // initialize as an editor (and could consume the last available seat).
+      // Keep the host exception so a teacher who owns the session can still
+      // operate their own board.
+      if (role === "teacher" && hostId !== userId) {
         attachSpectator(room, userId, displayName);
         await socket.join(`session:${sessionId}`);
         socket.data.sessionId = sessionId;
@@ -888,7 +893,10 @@ io.on("connection", (socket) => {
       if (!sessionId || delta === undefined) return;
       if (!boundSessionId || boundSessionId !== sessionId) return;
       const room = getRoom(sessionId);
-      if (!room || !room.players.has(userId)) return; // seated only
+      const isSyncRequest =
+        typeof delta === "object" && delta !== null &&
+        (delta as { yjsSyncRequest?: unknown }).yjsSyncRequest === true;
+      if (!room || (!room.players.has(userId) && !isSyncRequest)) return;
 
       if (isCanonicalClassroomDrawing(room)) {
         const typed = typeof delta === "object" && delta !== null ? delta as Record<string, unknown> : null;
@@ -1012,7 +1020,17 @@ io.on("connection", (socket) => {
       }
 
       if (estimatePayloadBytes(delta) > MAX_LIVE_DELTA_BYTES) return;
-      socket.to(`session:${room.sessionId}`).emit("LIVE_DELTA", { from: userId, delta });
+      const targetSocketId =
+        typeof delta === "object" && delta !== null &&
+        typeof (delta as { targetSocketId?: unknown }).targetSocketId === "string"
+          ? (delta as { targetSocketId: string }).targetSocketId
+          : null;
+      const outbound = { from: userId, fromSocketId: socket.id, delta };
+      if (targetSocketId) {
+        io.to(targetSocketId).emit("LIVE_DELTA", outbound);
+      } else {
+        socket.to(`session:${room.sessionId}`).emit("LIVE_DELTA", outbound);
+      }
     }
   );
 
