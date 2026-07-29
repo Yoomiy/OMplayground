@@ -1007,7 +1007,7 @@ export function ClassroomPage() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${data.session.access_token}`
       },
-      body: JSON.stringify({ roomCode, participantIdentity: identity })
+      body: JSON.stringify({ roomCode, targetIdentity: identity })
     });
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
