@@ -1,5 +1,10 @@
 import * as Y from "yjs";
-import { Awareness, encodeAwarenessUpdate, applyAwarenessUpdate } from "y-protocols/awareness";
+import {
+  Awareness,
+  encodeAwarenessUpdate,
+  applyAwarenessUpdate,
+  removeAwarenessStates
+} from "y-protocols/awareness";
 import { ExcalidrawBinding, yjsToExcalidraw } from "y-excalidraw";
 import { generateNKeysBetween } from "fractional-indexing";
 
@@ -221,4 +226,12 @@ export function createYjsCanvasSession(
   };
 }
 
-export { yjsToExcalidraw, ExcalidrawBinding, encodeAwarenessUpdate, applyAwarenessUpdate, Y, Awareness };
+export {
+  yjsToExcalidraw,
+  ExcalidrawBinding,
+  encodeAwarenessUpdate,
+  applyAwarenessUpdate,
+  removeAwarenessStates,
+  Y,
+  Awareness
+};

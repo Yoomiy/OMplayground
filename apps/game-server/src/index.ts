@@ -748,7 +748,14 @@ io.on("connection", (socket) => {
       const room = getRoom(sessionId);
       if (!room || !room.players.has(userId)) return; // seated only
 
-      if (!(await canEditClassroomDrawing(room))) {
+      const isReadOnlySyncRequest =
+        typeof delta === "object" &&
+        delta !== null &&
+        (delta as { yjsSyncRequest?: unknown }).yjsSyncRequest === true &&
+        !(delta as { yjsUpdate?: unknown }).yjsUpdate &&
+        !(delta as { yjsAwareness?: unknown }).yjsAwareness &&
+        !(delta as { yjsSyncResponse?: unknown }).yjsSyncResponse;
+      if (!isReadOnlySyncRequest && !(await canEditClassroomDrawing(room))) {
         if (Date.now() - lastWhiteboardRejectionAt >= 10_000) {
           lastWhiteboardRejectionAt = Date.now();
           logger.warn({
@@ -767,6 +774,37 @@ io.on("connection", (socket) => {
       }
 
       if (estimatePayloadBytes(delta) > MAX_LIVE_DELTA_BYTES) return;
+
+      const awarenessClientIds =
+        typeof delta === "object" && delta !== null && typeof (delta as { yjsAwareness?: unknown }).yjsAwareness === "string"
+          ? (delta as { yjsAwarenessClientIds?: unknown }).yjsAwarenessClientIds
+          : undefined;
+      if (Array.isArray(awarenessClientIds)) {
+        socket.data.classroomDrawingAwarenessClientIds = awarenessClientIds.filter(
+          (clientId): clientId is number => Number.isSafeInteger(clientId)
+        );
+      }
+
+      const isYjsSyncResponse =
+        typeof delta === "object" &&
+        delta !== null &&
+        typeof (delta as { yjsSyncResponse?: unknown }).yjsSyncResponse === "string";
+      if (socket.data.classroomDrawing && (isReadOnlySyncRequest || isYjsSyncResponse)) {
+        logger.info({
+          service: "game-server",
+          environment: process.env.NODE_ENV ?? "development",
+          source: "server",
+          protocol: "socket",
+          message: "Classroom drawing sync relayed",
+          context: {
+            event: isReadOnlySyncRequest
+              ? "CLASSROOM_DRAWING_SYNC_REQUEST_RELAYED"
+              : "CLASSROOM_DRAWING_SYNC_RESPONSE_RELAYED",
+            sessionId: room.sessionId,
+            userId
+          }
+        });
+      }
 
       socket.to(`session:${room.sessionId}`).emit("LIVE_DELTA", {
         from: userId,
@@ -1322,6 +1360,14 @@ io.on("connection", (socket) => {
 
   async function handleLeave(sessionId: string) {
     if (!userId) return;
+    const awarenessClientIds = socket.data.classroomDrawingAwarenessClientIds as number[] | undefined;
+    if (awarenessClientIds?.length) {
+      socket.to(`session:${sessionId}`).emit("LIVE_DELTA", {
+        from: userId,
+        delta: { yjsAwarenessRemove: awarenessClientIds }
+      });
+      socket.data.classroomDrawingAwarenessClientIds = undefined;
+    }
     if (socket.data.isSpectator) {
       removeSpectatorFromRoom(sessionId, userId);
       const room = getRoom(sessionId);
