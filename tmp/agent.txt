@@ -5,4 +5,12 @@ tasks:
 2) list your findings at the bottom of this document, and after you are done reviewing start to fix what needs to be fixed.
 under the said stuff, at the buttom of this document - create a section in which you'll list all your question you might have that demend human intervention/decision. when you hit something like that start working on something else and wait for a human to add their input into the document.
 
-3) you are only done when the audit has been finish and there are no unfulffiled tasks in this document or unanswered answeres. if you're waiting for a question to be answered and you have nothing to do in the meantime - just review the changes again and think of special edge cases that need to be addressed
+3) look for bugs. for example - in the current version there's a wured bug that deletes the board content from everyone's board when new users join a classroom.
+
+4) complete the docs if needed (eg the readme etc. - mos of them under the doc/ dir)
+
+5) commit when you fill that you made something segnificant. work on the dev dir (merge main to it first). and since we have all commited - don't be affraid to make reducal changes.
+
+6) if needed i can test stuff manually running a local server.
+
+7) if you're waiting for a question to be answered and you have nothing to do in the meantime - just review the changes again and think of special edge cases that need to be addressed

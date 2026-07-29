@@ -66,10 +66,21 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   const myPlayer = players?.find((p) => p.userId === myUserId);
   const myDisplayName = myPlayer?.displayName || (myUserId === "solo" ? "משתתף" : mySeat ? `משתתף (${mySeat})` : "משתתף");
 
-  // Create Yjs Session instance using useMemo so it stays alive across renders
+  // Create Yjs Session instance once on mount so it remains stable for the entire component lifecycle
   const yjsSession = useMemo(() => {
-    return createYjsCanvasSession(myDisplayName, "#6366f1");
-  }, [myDisplayName]);
+    return createYjsCanvasSession("משתתף", "#6366f1");
+  }, []);
+
+  // Update Yjs Awareness user info dynamically when the display name changes
+  useEffect(() => {
+    if (!yjsSession) return;
+    yjsSession.awareness.setLocalState({
+      user: {
+        name: myDisplayName,
+        color: "#6366f1"
+      }
+    });
+  }, [yjsSession, myDisplayName]);
 
   // Clean up Yjs session on component unmount
   useEffect(() => {
@@ -128,9 +139,9 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
       const serverElements = gameState.canvas.elements || [];
       const serverFiles = gameState.canvas.files || {};
 
-      // ONLY replace Yjs elements if the server snapshot is an explicit clear (0 elements)
-      // or if local Yjs elements array is empty.
-      if (serverElements.length === 0 || yElements.length === 0) {
+      // ONLY populate Yjs elements from server snapshot if local yElements is empty AND server snapshot has elements.
+      // Never wipe non-empty local yElements when server elements is empty.
+      if (yElements.length === 0 && serverElements.length > 0) {
         replaceYElements(yElements, serverElements, YJS_ORIGIN_SYSTEM);
         replaceYAssets(yAssets, serverFiles, YJS_ORIGIN_SYSTEM);
       }

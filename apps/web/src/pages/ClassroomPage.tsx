@@ -120,6 +120,7 @@ export function ClassroomPage() {
   const [room, setRoom] = useState<Room | null>(null);
   const [connState, setConnState] = useState<"disconnected" | "connecting" | "connected">("disconnected");
   const [connError, setConnError] = useState<string | null>(null);
+  const [localUserId, setLocalUserId] = useState<string | null>(null);
 
   // User Local Media & Permissions state
   const [isHost, setIsHost] = useState(false);
@@ -257,9 +258,9 @@ export function ClassroomPage() {
     };
   }, [roomCode, user?.id, profile?.full_name, drawSessionId]);
 
-  // Connect socket to game-server when drawSessionId is ready (supports both logged-in users and guests)
+  // Connect socket to game-server when drawSessionId is ready and connected to classroom room
   useEffect(() => {
-    if (!drawSessionId) return;
+    if (!drawSessionId || connState !== "connected") return;
     let cancelled = false;
     let s: Socket | null = null;
 
@@ -267,8 +268,8 @@ export function ClassroomPage() {
       const { data } = await supabase.auth.getSession();
       const authToken = data.session?.access_token;
 
-      // Guest fallback token if user is unauthenticated
-      const guestId = user?.id || `guest-${Math.random().toString(36).substring(2, 9)}`;
+      // Guest fallback token using the stable localUserId issued by the server
+      const guestId = user?.id || localUserId || `guest-${Math.random().toString(36).substring(2, 9)}`;
       const token = authToken || `guest:${guestId}:${encodeURIComponent(resolvedDisplayName || "משתתף")}`;
 
       if (cancelled) return;
@@ -368,7 +369,7 @@ export function ClassroomPage() {
         drawSocketRef.current = null;
       }
     };
-  }, [drawSessionId, resolvedDisplayName, roomCode, user?.id]);
+  }, [drawSessionId, resolvedDisplayName, roomCode, user?.id, connState, localUserId]);
 
 
 
@@ -596,7 +597,8 @@ export function ClassroomPage() {
         throw new Error(errMsg);
       }
 
-      const { token, serverUrl, isHost: tokenIsHost, role } = await response.json();
+      const { token, serverUrl, isHost: tokenIsHost, role, userId } = await response.json();
+      setLocalUserId(userId || null);
       const isUserHost = Boolean(tokenIsHost || isAdmin || (profile?.role as string) === "admin" || role === "admin");
       setIsHost(isUserHost);
 
