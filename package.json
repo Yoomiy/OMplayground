@@ -6,7 +6,7 @@
     "packages/*"
   ],
   "scripts": {
-    "postinstall": "patch-package",
+    "postinstall": "node -e \"const cp=require('child_process'),p=require('path');const root=process.env.npm_config_local_prefix||process.cwd();cp.execFileSync(p.join(root,'node_modules','.bin',process.platform==='win32'?'patch-package.cmd':'patch-package'),{cwd:root,stdio:'inherit'});\"",
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "dev:web": "npm run dev -w @playground/web",
