@@ -36,7 +36,8 @@ import {
 } from "./room";
 import {
   persistPlayerJoin,
-  persistPlayerLeave
+  persistPlayerLeave,
+  persistDrawingCheckpoint
 } from "./sessionPersistence";
 import {
   cleanupStalePausedSessions,
@@ -74,6 +75,7 @@ const CORS_ORIGIN =
   "http://localhost:5173,http://127.0.0.1:5173";
 const SUPABASE_URL = process.env.SUPABASE_URL ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+const MAX_LIVE_DELTA_BYTES = 8 * 1024 * 1024;
 
 function exitIfInvalidSupabaseUrlForClient(): void {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return;
@@ -349,14 +351,36 @@ io.on("connection", (socket) => {
   }
 
   function estimatePayloadBytes(value: unknown): number {
-    if (value == null) return 0;
-    if (typeof value === "string") return Buffer.byteLength(value);
-    if (typeof value === "number" || typeof value === "boolean") return 8;
-    if (Array.isArray(value)) return Math.min(value.length * 256, 1024 * 1024);
-    if (typeof value === "object") {
-      return Math.min(Object.keys(value as object).length * 512, 1024 * 1024);
+    try {
+      return Buffer.byteLength(JSON.stringify(value), "utf8");
+    } catch {
+      return Number.POSITIVE_INFINITY;
     }
-    return 64;
+  }
+
+  async function isClassroomDrawingHost(room: Room<unknown>): Promise<boolean> {
+    if (room.gameKey !== "drawing" || !supabaseAdmin) return true;
+    const { data: session } = await supabaseAdmin
+      .from("game_sessions")
+      .select("invitation_code")
+      .eq("id", room.sessionId)
+      .maybeSingle();
+    const invitationCode = String(session?.invitation_code ?? "");
+    // Regular drawing games intentionally remain collaborative. The host-only
+    // rule is the classroom policy, identified by its reserved invite code.
+    if (!invitationCode.startsWith("class-draw-")) return true;
+    if (socket.data.role === "teacher" || socket.data.role === "admin" || room.hostId === userId) {
+      return true;
+    }
+    const roomCode = invitationCode.slice("class-draw-".length);
+    const { data: classroom } = await supabaseAdmin
+      .from("classroom_sessions")
+      .select("settings")
+      .eq("room_code", roomCode)
+      .eq("status", "active")
+      .maybeSingle();
+    const settings = classroom?.settings as { delegatedHostIdentities?: unknown } | null;
+    return Array.isArray(settings?.delegatedHostIdentities) && settings.delegatedHostIdentities.includes(userId);
   }
 
   function connectedPayload(room: Room<unknown>) {
@@ -497,7 +521,7 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      if (sess.status === "completed" && !existingRoom) {
+      if (sess.status === "completed") {
         reply?.({
           ok: false,
           error: {
@@ -508,7 +532,9 @@ io.on("connection", (socket) => {
         return;
       }
       const resumedState =
-        sess.status === "paused" && sess.game_state != null ? sess.game_state : undefined;
+        sess.game_state != null && (sess.status === "paused" || gameKey === "drawing")
+          ? sess.game_state
+          : undefined;
       const room = getOrCreateRoom(sessionId, {
         gameId: session.game_id as string,
         gameKey,
@@ -597,7 +623,7 @@ io.on("connection", (socket) => {
       const room = getRoom(sessionId);
       if (!room || !room.players.has(userId)) return; // seated only
 
-      if (estimatePayloadBytes(delta) > 1024 * 1024) return; // 1MB cap
+      if (estimatePayloadBytes(delta) > MAX_LIVE_DELTA_BYTES) return;
 
       socket.to(`session:${room.sessionId}`).emit("LIVE_DELTA", {
         from: userId,
@@ -608,7 +634,7 @@ io.on("connection", (socket) => {
 
   socket.on(
     "INTENT_GAME",
-    (
+    async (
       payload: { sessionId?: string; intent?: unknown },
       ack?: (r: unknown) => void
     ) => {
@@ -630,13 +656,6 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      if (socket.data.role === "teacher") {
-        reply?.({
-          ok: false,
-          error: { code: "READ_ONLY", message: "Observers cannot send moves" }
-        });
-        return;
-      }
       const room = getRoom(sessionId);
       if (!room) {
         reply?.({ ok: false, error: { code: "NOT_FOUND", message: "Room not loaded" } });
@@ -649,6 +668,25 @@ io.on("connection", (socket) => {
         });
         return;
       }
+      if (socket.data.role === "teacher" && room.gameKey !== "drawing") {
+        reply?.({
+          ok: false,
+          error: { code: "READ_ONLY", message: "Observers cannot send moves" }
+        });
+        return;
+      }
+      const drawingIntent = payload.intent as { type?: string };
+      if (
+        room.gameKey === "drawing" &&
+        (drawingIntent.type === "CHECKPOINT" || drawingIntent.type === "CLEAR_CANVAS") &&
+        !(await isClassroomDrawingHost(room))
+      ) {
+        reply?.({
+          ok: false,
+          error: { code: "UNAUTHORIZED", message: "Only a classroom host can change the board" }
+        });
+        return;
+      }
       const res = applyIntent(room, userId, payload.intent);
       if (!res.ok) {
         reply?.({ ok: false, error: res.error });
@@ -657,6 +695,19 @@ io.on("connection", (socket) => {
       const skipSnapshot = shouldSkipFullSnapshot(room.gameKey, payload.intent);
       if (!skipSnapshot) {
         emitSnapshot(room);
+      }
+      if (
+        room.gameKey === "drawing" &&
+        (drawingIntent.type === "CHECKPOINT" || drawingIntent.type === "CLEAR_CANVAS") &&
+        supabaseAdmin
+      ) {
+        void persistDrawingCheckpoint(supabaseAdmin, sessionId, res.state).catch((err) => {
+          logger.error({
+            message: "Drawing checkpoint persistence failed",
+            sessionId,
+            error: err instanceof Error ? err.message : String(err)
+          });
+        });
       }
       if (res.outcome) {
         io.to(`session:${sessionId}`).emit("ROOM_EVENT", {

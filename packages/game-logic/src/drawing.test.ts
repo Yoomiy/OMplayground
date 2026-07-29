@@ -13,6 +13,7 @@ describe("Drawing rules (Excalidraw)", () => {
     expect(s.canvas.elements).toEqual([]);
     expect(s.canvas.files).toEqual({});
     expect(s.canvas.version).toBe(0);
+    expect(s.canvas.clearVersion).toBe(0);
     expect(s.seats?.[P1.userId]).toBe("p1");
     expect(s.seats?.[P2.userId]).toBe("p2");
     expect(drawingModule.isTerminal(s)).toBe(false);
@@ -33,7 +34,7 @@ describe("Drawing rules (Excalidraw)", () => {
     expect(s.canvas.elements.length).toBe(1);
   });
 
-  it("rejects stale version CHECKPOINT", () => {
+  it("advances server revisions for valid checkpoints regardless of client clock", () => {
     let s = init();
     // Advance version to 2
     const r1 = drawingModule.applyIntent(s, P1.userId, {
@@ -46,17 +47,16 @@ describe("Drawing rules (Excalidraw)", () => {
     if (!r1.ok) return;
     s = r1.state as DrawingState;
 
-    // Send version 1 (stale)
+    // An older client timestamp must not make the server revision go backwards.
     const r2 = drawingModule.applyIntent(s, P2.userId, {
       type: "CHECKPOINT",
       version: 1,
       elements: [],
       files: {}
     });
-    expect(r2.ok).toBe(false);
-    if (!r2.ok) {
-      expect(r2.error.code).toBe("STALE_VERSION");
-    }
+    expect(r2.ok).toBe(true);
+    if (!r2.ok) return;
+    expect((r2.state as DrawingState).canvas.version).toBe(2);
   });
 
   it("rejects CHECKPOINT exceeding element limits", () => {
@@ -112,6 +112,7 @@ describe("Drawing rules (Excalidraw)", () => {
     expect(s.canvas.elements).toEqual([]);
     expect(s.canvas.files).toEqual({});
     expect(s.canvas.version).toBe(2);
+    expect(s.canvas.clearVersion).toBe(1);
   });
 
   it("rejects intent from non-player stranger", () => {

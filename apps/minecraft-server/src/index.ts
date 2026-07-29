@@ -95,6 +95,7 @@ import {
   generateLiveKitToken,
   generateClassroomToken,
   deleteLiveKitRoom,
+  promoteClassroomParticipant,
   LiveKitTokenError
 } from "./livekitService";
 import { getCachedAuth } from "./authCache";
@@ -307,6 +308,56 @@ const supabaseAdmin =
       })
     : null;
 
+const CLASSROOM_CLEANUP_MIN_DAYS = 1;
+const CLASSROOM_CLEANUP_MAX_DAYS = 365;
+
+async function completeClassroomDrawingSessions(roomCodes: string[]): Promise<void> {
+  if (!supabaseAdmin || roomCodes.length === 0) return;
+  const invitationCodes = roomCodes.map((roomCode) => `class-draw-${roomCode}`);
+  const { error } = await supabaseAdmin
+    .from("game_sessions")
+    .update({
+      status: "completed",
+      game_state: null,
+      connected_player_ids: [],
+      connected_player_names: [],
+      last_activity: new Date().toISOString()
+    })
+    .in("invitation_code", invitationCodes)
+    .in("status", ["waiting", "playing", "paused"]);
+  if (error) throw error;
+}
+
+async function requireClassroomManager(req: express.Request, res: express.Response) {
+  const accessToken = req.headers.authorization?.replace(/^Bearer\s+/i, "");
+  if (!accessToken || !supabaseAdmin) {
+    res.status(401).json({ error: "unauthorized" });
+    return null;
+  }
+
+  const actor = await getCachedAuth(supabaseAdmin, accessToken).catch(() => null);
+  if (!actor || (actor.role !== "teacher" && actor.role !== "admin")) {
+    res.status(403).json({ error: "forbidden" });
+    return null;
+  }
+  return actor;
+}
+
+async function requireClassroomAdmin(req: express.Request, res: express.Response) {
+  const accessToken = req.headers.authorization?.replace(/^Bearer\s+/i, "");
+  if (!accessToken || !supabaseAdmin) {
+    res.status(401).json({ error: "unauthorized" });
+    return null;
+  }
+
+  const actor = await getCachedAuth(supabaseAdmin, accessToken).catch(() => null);
+  if (!actor || actor.role !== "admin") {
+    res.status(403).json({ error: "forbidden" });
+    return null;
+  }
+  return actor;
+}
+
 function trackTokenDenial(key: string): boolean {
   const now = Date.now();
   const hits = (tokenDenialLog.get(key) ?? []).filter(
@@ -460,20 +511,46 @@ app.post("/rtc/classroom-token", async (req, res) => {
 app.post("/rtc/classroom-end", async (req, res) => {
   try {
     const { roomCode } = req.body || {};
-    if (!roomCode) {
+    if (typeof roomCode !== "string" || !roomCode.trim()) {
       res.status(400).json({ error: "missing_room_code" });
       return;
     }
+    const actor = await requireClassroomManager(req, res);
+    if (!actor || !supabaseAdmin) return;
 
-    // 1. Delete LiveKit server room memory & disconnect participants
-    await deleteLiveKitRoom(roomCode);
-
-    // 2. Mark session ended in DB
-    if (supabaseAdmin) {
-      await supabaseAdmin.rpc("end_classroom_session", { p_room_code: roomCode });
+    const normalizedRoomCode = roomCode.trim();
+    const { data: classroom, error: classroomError } = await supabaseAdmin
+      .from("classroom_sessions")
+      .select("id, settings")
+      .eq("room_code", normalizedRoomCode)
+      .maybeSingle();
+    if (classroomError || !classroom) {
+      res.status(404).json({ error: "classroom_not_found" });
+      return;
     }
 
-    res.json({ success: true, roomCode });
+    const { error: updateError } = await supabaseAdmin
+      .from("classroom_sessions")
+      .update({
+        status: "ended",
+        ended_at: new Date().toISOString(),
+        whiteboard_data: null,
+        last_activity: new Date().toISOString()
+      })
+      .eq("id", classroom.id);
+    if (updateError) {
+      throw updateError;
+    }
+
+    await completeClassroomDrawingSessions([normalizedRoomCode]);
+    const livekitDeleted = await deleteLiveKitRoom(normalizedRoomCode);
+    logger.info({
+      userId: actor.userId,
+      protocol: "http",
+      message: "Classroom ended",
+      context: { event: "CLASSROOM_ENDED", roomCode: normalizedRoomCode, livekitDeleted }
+    });
+    res.json({ success: true, roomCode: normalizedRoomCode, livekitDeleted });
   } catch (err: any) {
     res.status(500).json({ error: err.message || "failed to end classroom" });
   }
@@ -481,41 +558,107 @@ app.post("/rtc/classroom-end", async (req, res) => {
 
 app.post("/rtc/classroom-cleanup", async (req, res) => {
   try {
-    const accessToken = req.headers.authorization?.replace(/^Bearer\s+/i, "");
-    if (accessToken && supabaseAdmin) {
-      const authResult = await getCachedAuth(supabaseAdmin, accessToken).catch(() => null);
-      if (authResult?.role !== "admin") {
-        res.status(403).json({ error: "forbidden" });
-        return;
-      }
-    }
-
-    const { daysOld = 7 } = req.body || {};
-
-    if (supabaseAdmin) {
-      // 1. Find non-persistent classrooms older than daysOld or ended
-      const cutoffDate = new Date(Date.now() - daysOld * 86400000).toISOString();
-      const { data: roomsToClean } = await supabaseAdmin
-        .from("classroom_sessions")
-        .select("room_code")
-        .eq("is_persistent", false)
-        .or(`status.eq.ended,last_activity.lt.${cutoffDate}`);
-
-      if (roomsToClean && roomsToClean.length > 0) {
-        for (const room of roomsToClean) {
-          void deleteLiveKitRoom(room.room_code);
-        }
-      }
-
-      // 2. Execute DB RPC cleanup
-      const { data: deletedCount } = await supabaseAdmin.rpc("cleanup_old_classroom_sessions", { p_days_old: daysOld });
-      res.json({ success: true, deletedCount: deletedCount ?? 0 });
+    const actor = await requireClassroomAdmin(req, res);
+    if (!actor || !supabaseAdmin) return;
+    const requestedDays = Number((req.body || {}).daysOld ?? 7);
+    if (
+      !Number.isInteger(requestedDays) ||
+      requestedDays < CLASSROOM_CLEANUP_MIN_DAYS ||
+      requestedDays > CLASSROOM_CLEANUP_MAX_DAYS
+    ) {
+      res.status(400).json({ error: "invalid_days_old" });
       return;
     }
 
-    res.status(503).json({ error: "server_config" });
+    const cutoffDate = new Date(Date.now() - requestedDays * 86400000).toISOString();
+    const { data: roomsToClean, error: queryError } = await supabaseAdmin
+      .from("classroom_sessions")
+      .select("room_code")
+      .eq("is_persistent", false)
+      .or(`status.eq.ended,last_activity.lt.${cutoffDate}`);
+    if (queryError) throw queryError;
+
+    const roomCodes = (roomsToClean ?? []).map((room) => room.room_code);
+    await completeClassroomDrawingSessions(roomCodes);
+    await Promise.all(roomCodes.map((roomCode) => deleteLiveKitRoom(roomCode)));
+
+    const { data: deletedCount, error: cleanupError } = await supabaseAdmin.rpc(
+      "cleanup_old_classroom_sessions",
+      { p_days_old: requestedDays }
+    );
+    if (cleanupError) throw cleanupError;
+    logger.info({
+      userId: actor.userId,
+      protocol: "http",
+      message: "Classroom cleanup completed",
+      context: { event: "CLASSROOM_CLEANUP", deletedCount: deletedCount ?? 0, requestedDays }
+    });
+    res.json({ success: true, deletedCount: deletedCount ?? 0 });
   } catch (err: any) {
     res.status(500).json({ error: err.message || "cleanup failed" });
+  }
+});
+
+app.post("/rtc/classroom-promote", async (req, res) => {
+  try {
+    const { roomCode, targetIdentity } = req.body || {};
+    if (
+      typeof roomCode !== "string" ||
+      !roomCode.trim() ||
+      typeof targetIdentity !== "string" ||
+      !targetIdentity.trim() ||
+      targetIdentity.length > 256
+    ) {
+      res.status(400).json({ error: "invalid_promotion_request" });
+      return;
+    }
+    const actor = await requireClassroomManager(req, res);
+    if (!actor || !supabaseAdmin) return;
+
+    const normalizedRoomCode = roomCode.trim();
+    const { data: classroom, error: classroomError } = await supabaseAdmin
+      .from("classroom_sessions")
+      .select("id, settings")
+      .eq("room_code", normalizedRoomCode)
+      .eq("status", "active")
+      .maybeSingle();
+    if (classroomError || !classroom) {
+      res.status(404).json({ error: "classroom_not_found" });
+      return;
+    }
+
+    const settings =
+      classroom.settings && typeof classroom.settings === "object"
+        ? (classroom.settings as Record<string, unknown>)
+        : {};
+    const existingDelegates = Array.isArray(settings.delegatedHostIdentities)
+      ? settings.delegatedHostIdentities.filter((identity): identity is string => typeof identity === "string")
+      : [];
+    const delegatedHostIdentities = Array.from(
+      new Set([...existingDelegates, targetIdentity.trim()])
+    ).slice(-50);
+    await promoteClassroomParticipant(normalizedRoomCode, targetIdentity.trim());
+    const { error: settingsError } = await supabaseAdmin
+      .from("classroom_sessions")
+      .update({
+        settings: { ...settings, delegatedHostIdentities },
+        last_activity: new Date().toISOString()
+      })
+      .eq("id", classroom.id);
+    if (settingsError) throw settingsError;
+    logger.info({
+      userId: actor.userId,
+      protocol: "http",
+      message: "Classroom participant promoted",
+      context: {
+        event: "CLASSROOM_PARTICIPANT_PROMOTED",
+        roomCode: normalizedRoomCode,
+        targetIdentity: targetIdentity.trim()
+      }
+    });
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "promotion failed" });
   }
 });
 
@@ -530,12 +673,11 @@ setInterval(async () => {
       .eq("is_persistent", false)
       .or(`status.eq.ended,last_activity.lt.${cutoffDate}`);
 
-    if (roomsToClean && roomsToClean.length > 0) {
-      for (const r of roomsToClean) {
-        void deleteLiveKitRoom(r.room_code);
-      }
-    }
-    await supabaseAdmin.rpc("cleanup_old_classroom_sessions", { p_days_old: 7 });
+    const roomCodes = (roomsToClean ?? []).map((room) => room.room_code);
+    await completeClassroomDrawingSessions(roomCodes);
+    await Promise.all(roomCodes.map((roomCode) => deleteLiveKitRoom(roomCode)));
+    const { error } = await supabaseAdmin.rpc("cleanup_old_classroom_sessions", { p_days_old: 7 });
+    if (error) throw error;
   } catch (e) {
     console.warn("Background classroom cleanup error:", e);
   }

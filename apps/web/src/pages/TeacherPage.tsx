@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
+import { getVoxelServerUrl } from "@/lib/voxelServerUrl";
 import { useProfile } from "@/hooks/useProfile";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { kidFieldInputClass } from "@/lib/fieldStyles";
@@ -441,7 +442,21 @@ function TeacherClassroomSection({ teacherProfile }: { teacherProfile: any }) {
 
   const endClassroom = async (roomCode: string) => {
     if (!window.confirm("להקפיא/לסגור את השיעור בכיתה זו?")) return;
-    await supabase.rpc("end_classroom_session", { p_room_code: roomCode });
+    const session = (await supabase.auth.getSession()).data.session;
+    if (!session?.access_token) {
+      setNotice("נדרשת התחברות תקפה כדי לסגור שיעור.");
+      return;
+    }
+    const response = await fetch(`${getVoxelServerUrl()}/rtc/classroom-end`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ roomCode })
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      setNotice(body.error || "סגירת השיעור נכשלה.");
+      return;
+    }
     void loadClassrooms();
   };
 
@@ -566,4 +581,3 @@ function TeacherClassroomSection({ teacherProfile }: { teacherProfile: any }) {
     </div>
   );
 }
-

@@ -259,18 +259,18 @@ Teachers bypass capacity; invisible to students (double-channel snapshots). Spec
 
 ### Stack & Infrastructure
 - **Media Engine**: LiveKit SFU (HD video/audio streaming, presentation screen share, reactions, and active speaker highlighting).
-- **Session DB state**: `classroom_sessions` (tracks title, creator, settings, whiteboard deltas, room code, status, persistence, and activity timestamps).
-- **Security Check**: Restricted token endpoints verify user role cache (`admin_profiles` or `kid_profiles`). Client-side URL parameters (`?spectate=...`) are verified against `useIsAdmin()` to prevent unauthorized escalation.
+- **Session DB state**: `classroom_sessions` tracks title, creator, settings, room code, status, persistence, and activity timestamps. The active whiteboard checkpoint lives in the linked drawing `game_sessions.game_state`.
+- **Security Check**: Restricted token endpoints verify `admin_profiles` or `kid_profiles`. Classroom lifecycle and promotion APIs require an authenticated teacher/admin; the database maintenance RPCs are service-role only.
 
 ### Excalidraw Whiteboard Integration & Sync
 - **Whiteboard Engine**: Embedded `DrawingCanvas.tsx` / `DrawingBoard.tsx` (reusing the platform's drawing module).
-- **Delta Broadcasting**: Real-time canvas drawings are broadcast over LiveKit Data Channels.
-- **Late Joiner State Sync**: New participants broadcast `REQUEST_WHITEBOARD_STATE`, and active users reply with `FULL_WHITEBOARD_STATE` containing all current board elements and files.
+- **Delta Broadcasting**: Real-time Yjs canvas deltas flow through the game-server Socket.IO room `class-draw-{roomCode}`. LiveKit Data Channels carry only media-adjacent chat, reactions, hand raises, and host controls.
+- **Late Joiner State Sync**: Socket `ROOM_SNAPSHOT` hydrates the durable checkpoint before mounting the drawing canvas. A monotonic clear revision permits a remote clear without letting an empty late-join state erase an existing board.
 - **Viewport Lock & Refocus**: The host's scroll position and zoom level are synchronized to all student screens. Non-host students are locked to the host's focus area to prevent them from panning/scrolling away.
 
 ### Room Lifecycle & Cleanup
 - **Room Persistence**: Classrooms are either temporary (`⏳ זמנית`) or permanent (`📌 קבועה`). Persistent rooms are protected from automated cleanups.
-- **Stale Room Purging**: 
-  - **Auto Cleanup (Cron)**: A background server interval runs every 6 hours to delete stale temporary rooms and wipe their active LiveKit server memory via `RoomServiceClient.deleteRoom`.
+- **Stale Room Purging**:
+  - **Auto Cleanup (Cron)**: A background server interval runs every 6 hours to remove non-persistent rooms only when ended or stale by `last_activity`, then completes linked drawing sessions and wipes LiveKit memory via `RoomServiceClient.deleteRoom`.
   - **Manual Cleanup**: Administrators can trigger a manual cleanup via the `🧹 ניקוי כיתות ישנות` button in the admin dashboard.
 - **Safe Hardware Init**: Prevents failures or crashes when users lack audio/video devices (`Starting videoinput failed`) by safely wrapping device tracks initialization.

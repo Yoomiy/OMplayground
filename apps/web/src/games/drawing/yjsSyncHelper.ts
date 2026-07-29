@@ -156,10 +156,10 @@ export function replaceYElements(yElements: Y.Array<Y.Map<any>>, elements: any[]
 }
 
 export function replaceYAssets(yAssets: Y.Map<any>, files: Record<string, any>, origin: any = YJS_ORIGIN_SYSTEM) {
-  if (!files) return;
   const doc = yAssets.doc;
   const applyChange = () => {
-    for (const [id, file] of Object.entries(files)) {
+    yAssets.clear();
+    for (const [id, file] of Object.entries(files || {})) {
       if (file && (file as any).id) {
         const existing = yAssets.get(id);
         if (!existing || existing.dataURL !== (file as any).dataURL) {
@@ -172,6 +172,16 @@ export function replaceYAssets(yAssets: Y.Map<any>, files: Record<string, any>, 
     doc.transact(applyChange, origin);
   } else {
     applyChange();
+  }
+}
+
+export function clearYAssets(yAssets: Y.Map<any>, origin: any = YJS_ORIGIN_SYSTEM) {
+  const doc = yAssets.doc;
+  const clear = () => yAssets.clear();
+  if (doc) {
+    doc.transact(clear, origin);
+  } else {
+    clear();
   }
 }
 

@@ -23,7 +23,7 @@ BEGIN
           OR last_activity < (now() - (p_days_old || ' days')::INTERVAL)
           OR created_at < (now() - (p_days_old || ' days')::INTERVAL)
       );
-      
+
     GET DIAGNOSTICS v_deleted_count = ROW_COUNT;
     RETURN v_deleted_count;
 END;

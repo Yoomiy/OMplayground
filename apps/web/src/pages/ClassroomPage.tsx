@@ -86,6 +86,26 @@ interface CustomParticipantInfo {
   audioTrack?: any;
 }
 
+const HOST_CONTROL_MESSAGE_TYPES = new Set([
+  "TOGGLE_BOARD",
+  "KICK",
+  "INDIVIDUAL_MIC_TOGGLE",
+  "INDIVIDUAL_CAM_TOGGLE",
+  "MUTE_ALL",
+  "UNMUTE_ALL",
+  "CLOSE_ALL_CAMS",
+  "OPEN_ALL_CAMS"
+]);
+
+function participantIsHost(participant?: Participant): boolean {
+  if (!participant) return false;
+  try {
+    return JSON.parse(participant.metadata || "{}").isHost === true;
+  } catch {
+    return false;
+  }
+}
+
 export function ClassroomPage() {
   const { roomCode } = useParams<{ roomCode: string }>();
   const [searchParams] = useSearchParams();
@@ -99,6 +119,7 @@ export function ClassroomPage() {
   const isRealAdmin = Boolean(rawSpectateMode && (isAdmin || (profile?.role as string) === "admin"));
   const spectateMode = isRealAdmin ? rawSpectateMode : null;
   const isStealthAdmin = isRealAdmin && spectateMode === "invisible";
+  const canManageClassroom = profile?.role === "teacher" || isAdmin;
 
   // Classroom Session DB metadata
   const [sessionData, setSessionData] = useState<ClassroomSessionData | null>(null);
@@ -118,6 +139,7 @@ export function ClassroomPage() {
 
   // LiveKit Connection & Room state
   const [room, setRoom] = useState<Room | null>(null);
+  const roomRef = useRef<Room | null>(null);
   const [connState, setConnState] = useState<"disconnected" | "connecting" | "connected">("disconnected");
   const [connError, setConnError] = useState<string | null>(null);
   const [localUserId, setLocalUserId] = useState<string | null>(null);
@@ -144,6 +166,7 @@ export function ClassroomPage() {
   // Under-the-hood Draw Game Room (Socket.io) for Whiteboard Syncing
   const [drawSessionId, setDrawSessionId] = useState<string | null>(null);
   const drawSocketRef = useRef<Socket | null>(null);
+  const [drawSocketReady, setDrawSocketReady] = useState(false);
 
   const deltaListenersRef = useRef<Set<(payload: any) => void>>(new Set());
 
@@ -172,7 +195,7 @@ export function ClassroomPage() {
   const [whiteboardState, setWhiteboardState] = useState<any>({
     status: "playing",
     seats: {},
-    canvas: { engine: "excalidraw", version: 1, updatedAt: Date.now(), elements: [], files: {} }
+    canvas: { engine: "excalidraw", version: 0, clearVersion: 0, updatedAt: Date.now(), elements: [], files: {} }
   });
 
   // Fetch or create the under-the-hood drawing game_session for this classroom roomCode
@@ -196,8 +219,9 @@ export function ClassroomPage() {
         return;
       }
 
-      // If user is logged in (e.g. host teacher or student account), attempt creation if not present
-      if (user) {
+      // A classroom board is initialized by an authorized teacher or admin.
+      // Guests and students wait for that canonical session instead of racing to own it.
+      if (user && (profile?.role === "teacher" || isAdmin)) {
         const { data: gameRow } = await supabase
           .from("games")
           .select("id")
@@ -256,10 +280,11 @@ export function ClassroomPage() {
       cancelled = true;
       clearInterval(pollTimer);
     };
-  }, [roomCode, user?.id, profile?.full_name, drawSessionId]);
+  }, [roomCode, user?.id, profile?.full_name, profile?.role, isAdmin, drawSessionId]);
 
   // Connect socket to game-server when drawSessionId is ready and connected to classroom room
   useEffect(() => {
+    setDrawSocketReady(false);
     if (!drawSessionId || connState !== "connected") return;
     let cancelled = false;
     let s: Socket | null = null;
@@ -327,11 +352,13 @@ export function ClassroomPage() {
               },
               "game-server"
             );
+            setConnError("לא ניתן להתחבר ללוח השיעור.");
           }
         });
       });
 
       s.on("connect_error", (err) => {
+        setDrawSocketReady(false);
         reportTelemetry(
           {
             level: "warn",
@@ -351,6 +378,7 @@ export function ClassroomPage() {
         if (cancelled) return;
         if (snapshot?.gameState) {
           setWhiteboardState(snapshot.gameState);
+          setDrawSocketReady(true);
         }
       });
 
@@ -368,12 +396,12 @@ export function ClassroomPage() {
         s.disconnect();
         drawSocketRef.current = null;
       }
+      setDrawSocketReady(false);
     };
   }, [drawSessionId, resolvedDisplayName, roomCode, user?.id, connState, localUserId]);
 
 
-
-  // Fetch classroom session details from Supabase (including initial DB whiteboard snapshot)
+  // Fetch classroom metadata. The drawing session socket is the source of whiteboard state.
   useEffect(() => {
     if (!roomCode) return;
     let cancelled = false;
@@ -402,21 +430,6 @@ export function ClassroomPage() {
       if (data.settings) {
         setRoomSettings((prev) => ({ ...prev, ...data.settings }));
       }
-      
-      // Load initial whiteboard snapshot from DB if exists
-      if (data.whiteboard_data) {
-        setWhiteboardState({
-          status: "playing",
-          canvas: {
-            engine: "excalidraw",
-            version: 1,
-            updatedAt: Date.now(),
-            elements: data.whiteboard_data.elements || [],
-            files: data.whiteboard_data.files || {}
-          }
-        });
-      }
-
       setLoadingSession(false);
     }
 
@@ -443,7 +456,13 @@ export function ClassroomPage() {
           const updated = payload.new as ClassroomSessionData;
           if (updated.status === "ended") {
             setConnError("השיעור הופסק על ידי המורה.");
-            void disconnectFromRoom();
+            roomRef.current?.disconnect();
+            roomRef.current = null;
+            setRoom(null);
+            setConnState("disconnected");
+            setMicOn(false);
+            setCamOn(false);
+            setIsScreenSharing(false);
           } else if (updated.settings) {
             setRoomSettings((prev) => ({ ...prev, ...updated.settings }));
           }
@@ -487,7 +506,7 @@ export function ClassroomPage() {
         sid: local.sid,
         identity: local.identity,
         name: local.name || "אני",
-        isHost: Boolean(localMetadata.isHost || (local.permissions?.canPublishData && (local.permissions as any)?.roomAdmin)),
+        isHost: localMetadata.isHost === true,
         isMe: true,
         isMuted: !local.isMicrophoneEnabled,
         isVideoOff: !local.isCameraEnabled,
@@ -619,24 +638,31 @@ export function ClassroomPage() {
         try {
           const str = new TextDecoder().decode(payload);
           const msg = JSON.parse(str);
+          const senderIsHost = participantIsHost(participant);
+
+          if (HOST_CONTROL_MESSAGE_TYPES.has(msg.type) && !senderIsHost) {
+            return;
+          }
 
           if (msg.type === "CHAT") {
             setChatMessages((prev) => [
               ...prev,
               {
                 id: Math.random().toString(36).substring(2, 9),
-                senderName: msg.senderName,
+                senderName: participant?.name || participant?.identity || "משתתף",
                 text: msg.text,
                 timestamp: Date.now(),
-                isHost: msg.isHost
+                isHost: senderIsHost
               }
             ]);
           } else if (msg.type === "REACTION") {
-            setRecentReaction({ emoji: msg.emoji, name: msg.senderName });
+            setRecentReaction({ emoji: msg.emoji, name: participant?.name || participant?.identity || "משתתף" });
             setTimeout(() => setRecentReaction(null), 3000);
           } else if (msg.type === "HAND_RAISE") {
+            const targetIdentity = participant?.identity;
+            if (!targetIdentity) return;
             setParticipants((prev) =>
-              prev.map((p) => (p.identity === msg.targetIdentity ? { ...p, isHandRaised: Boolean(msg.handRaised) } : p))
+              prev.map((p) => (p.identity === targetIdentity ? { ...p, isHandRaised: Boolean(msg.handRaised) } : p))
             );
           } else if (msg.type === "TOGGLE_BOARD") {
             setShowBoard(Boolean(msg.show));
@@ -644,12 +670,6 @@ export function ClassroomPage() {
             if (participant && lkRoom.localParticipant.identity === msg.targetIdentity) {
               setConnError("הוצאת מהכיתה על ידי המורה.");
               void disconnectFromRoom();
-            }
-          } else if (msg.type === "GRANT_HOST") {
-            if (lkRoom.localParticipant.identity === msg.targetIdentity) {
-              setIsHost(true);
-              void lkRoom.localParticipant.setMetadata(JSON.stringify({ isHost: true })).catch(() => {});
-              updateParticipantList(lkRoom);
             }
           } else if (msg.type === "INDIVIDUAL_MIC_TOGGLE") {
             if (lkRoom.localParticipant.identity === msg.targetIdentity && !isStealthAdmin) {
@@ -695,6 +715,12 @@ export function ClassroomPage() {
       lkRoom.on(RoomEvent.TrackUnsubscribed, () => updateParticipantList(lkRoom));
       lkRoom.on(RoomEvent.TrackMuted, () => updateParticipantList(lkRoom));
       lkRoom.on(RoomEvent.TrackUnmuted, () => updateParticipantList(lkRoom));
+      lkRoom.on(RoomEvent.ParticipantMetadataChanged, (_previousMetadata, participant) => {
+        if (participant.identity === lkRoom.localParticipant.identity) {
+          setIsHost(participantIsHost(participant));
+        }
+        updateParticipantList(lkRoom);
+      });
       lkRoom.on(RoomEvent.ActiveSpeakersChanged, (speakers) => {
         setActiveSpeakers(speakers.map((s) => s.identity));
       });
@@ -706,6 +732,7 @@ export function ClassroomPage() {
       );
 
       await Promise.race([connectPromise, timeoutPromise]);
+      roomRef.current = lkRoom;
       setRoom(lkRoom);
       setConnState("connected");
 
@@ -772,20 +799,18 @@ export function ClassroomPage() {
         "voxel-server"
       );
 
-      if (room) {
-        try { room.disconnect(); } catch {}
-        setRoom(null);
-      }
+      try { roomRef.current?.disconnect(); } catch {}
+      roomRef.current = null;
+      setRoom(null);
       setConnError(err.message || "ההתחברות לשיעור נכשלה (PC Connection Error).");
       setConnState("disconnected");
     }
   };
 
   const disconnectFromRoom = async () => {
-    if (room) {
-      room.disconnect();
-      setRoom(null);
-    }
+    roomRef.current?.disconnect();
+    roomRef.current = null;
+    setRoom(null);
     setConnState("disconnected");
     setMicOn(false);
     setCamOn(false);
@@ -971,8 +996,23 @@ export function ClassroomPage() {
   const grantHostStatus = async (identity: string) => {
     if (!room || !isHost) return;
     if (!window.confirm("להעניק סמכויות מורה/מארח מלאות למשתתף זה?")) return;
-    const payload = JSON.stringify({ type: "GRANT_HOST", targetIdentity: identity });
-    await room.localParticipant.publishData(new TextEncoder().encode(payload), { reliable: true });
+    const { data } = await supabase.auth.getSession();
+    if (!data.session?.access_token) {
+      setConnError("רק משתמש מורשה יכול להעניק סמכויות מארח.");
+      return;
+    }
+    const response = await fetch(`${getVoxelServerUrl()}/rtc/classroom-promote`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${data.session.access_token}`
+      },
+      body: JSON.stringify({ roomCode, participantIdentity: identity })
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      setConnError(body.message || "לא ניתן להעניק סמכויות מארח.");
+    }
   };
 
   // HOST ACTIONS: Global Media Toggles
@@ -995,23 +1035,42 @@ export function ClassroomPage() {
 
   // HOST ACTION: Toggle Room Setting
   const toggleRoomSetting = async (key: keyof typeof roomSettings) => {
-    if (!sessionData || !isHost) return;
+    if (!sessionData || !isHost || !canManageClassroom) return;
     const updated = { ...roomSettings, [key]: !roomSettings[key] };
     setRoomSettings(updated);
-    await supabase
+    const { error } = await supabase
       .from("classroom_sessions")
       .update({ settings: updated })
       .eq("room_code", sessionData.room_code);
+    if (error) {
+      setRoomSettings(roomSettings);
+      setConnError("לא ניתן לעדכן את הגדרות הכיתה.");
+    }
   };
 
   // HOST ACTION: End Class & Destroy Room
   const endClassroomSession = async () => {
-    if (!sessionData || !isHost) return;
+    if (!sessionData || !isHost || !canManageClassroom) return;
     if (!window.confirm("לסיים את השיעור ולסגור את החדר לכל המשתתפים?")) return;
 
-    await supabase.rpc("end_classroom_session", {
-      p_room_code: sessionData.room_code
+    const { data } = await supabase.auth.getSession();
+    if (!data.session?.access_token) {
+      setConnError("סיום השיעור זמין רק למשתמש מורשה.");
+      return;
+    }
+    const response = await fetch(`${getVoxelServerUrl()}/rtc/classroom-end`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${data.session.access_token}`
+      },
+      body: JSON.stringify({ roomCode: sessionData.room_code })
     });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      setConnError(body.message || "לא ניתן לסיים את השיעור.");
+      return;
+    }
 
     void disconnectFromRoom();
     navigate("/teacher");
@@ -1208,7 +1267,7 @@ export function ClassroomPage() {
             
             {/* DYNAMIC CAMERAS CONTAINER & MAIN CONTENT */}
             <div className={cn("flex-1 flex gap-3 overflow-hidden", focusMode && isMainContentActive ? "flex-row" : "flex-col")}>
-              
+
               {/* CAMERAS SECTION: Teacher ALWAYS FIRST in top row / side column */}
               <div
                 className={cn(
@@ -1310,7 +1369,7 @@ export function ClassroomPage() {
               {/* MAIN CONTENT FRAME: EXCALIDRAW BOARD OR SHARED SCREEN */}
               {isMainContentActive && (
                 <div className="flex-1 rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden shadow-2xl flex flex-col relative">
-                  
+
                   {/* SHARED SCREEN PRECEDENCE */}
                   {screenShareParticipant ? (
                     <div className="flex-1 bg-black flex items-center justify-center relative">
@@ -1332,20 +1391,26 @@ export function ClassroomPage() {
                   ) : showBoard ? (
                     /* REUSED APP DRAWINGBOARD COMPONENT */
                     <div className="flex-1 w-full h-full relative overflow-hidden">
-                      <DrawingBoard
-                        gameState={whiteboardState}
-                        mySeat={isHost || roomSettings.allowWhiteboardDraw ? "player" : null}
-                        myUserId={room?.localParticipant.identity || null}
-                        onIntent={handleBoardIntent}
-                        onLiveDelta={handleLocalBoardDelta}
-                        subscribeLiveDeltas={subscribeLiveDeltas}
-                        isHost={isHost}
-                        hideTopBar={true}
-                        players={participants.map((p) => ({
-                          userId: p.identity,
-                          displayName: p.name
-                        }))}
-                      />
+                      {drawSocketReady ? (
+                        <DrawingBoard
+                          gameState={whiteboardState}
+                          mySeat={isHost || roomSettings.allowWhiteboardDraw ? "player" : null}
+                          myUserId={room?.localParticipant.identity || null}
+                          onIntent={handleBoardIntent}
+                          onLiveDelta={handleLocalBoardDelta}
+                          subscribeLiveDeltas={subscribeLiveDeltas}
+                          isHost={isHost}
+                          hideTopBar={true}
+                          players={participants.map((p) => ({
+                            userId: p.identity,
+                            displayName: p.name
+                          }))}
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center bg-slate-950 text-sm text-slate-300">
+                          טוען את לוח השיעור...
+                        </div>
+                      )}
                     </div>
                   ) : null}
                 </div>
@@ -1504,7 +1569,7 @@ export function ClassroomPage() {
                     </button>
                   </div>
 
-                  <div className="flex flex-col gap-1.5 text-[11px] font-bold text-slate-300 mt-2">
+                  {canManageClassroom && <div className="flex flex-col gap-1.5 text-[11px] font-bold text-slate-300 mt-2">
                     <label className="flex items-center justify-between">
                       <span>אפשר צ'אט לתלמידים:</span>
                       <input
@@ -1534,7 +1599,7 @@ export function ClassroomPage() {
                         className="rounded accent-indigo-600"
                       />
                     </label>
-                  </div>
+                  </div>}
 
                   <button
                     onClick={clearWhiteboard}
@@ -1544,12 +1609,12 @@ export function ClassroomPage() {
                     נקה/בטל לוח שרטוט
                   </button>
 
-                  <button
+                  {canManageClassroom && <button
                     onClick={endClassroomSession}
                     className="w-full mt-1 font-black text-xs py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white"
                   >
                     סים שיעור וסגור כיתה
-                  </button>
+                  </button>}
                 </div>
               )}
 
@@ -1563,7 +1628,7 @@ export function ClassroomPage() {
                       {p.isHost && <Crown className="size-3 text-amber-400" />}
                     </div>
 
-                    {isHost && !p.isMe && (
+                    {isHost && canManageClassroom && !p.isMe && (
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => grantHostStatus(p.identity)}

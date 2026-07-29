@@ -47,16 +47,31 @@ export async function getCachedAuth(
     .eq("id", authData.user.id)
     .maybeSingle();
 
-  if (error || !profile || !profile.is_active) {
-    throw new Error("FORBIDDEN");
+  if (profile && !error && profile.is_active) {
+    const result: CachedAuthResult = {
+      userId: profile.id as string,
+      role: profile.role as string,
+      gender: profile.gender as "boy" | "girl",
+      full_name: profile.full_name as string,
+      is_active: profile.is_active as boolean
+    };
+    authCache.set(token, { result, expiresAt: now + AUTH_TTL_MS });
+    return result;
   }
 
+  const { data: admin, error: adminError } = await supabaseAdmin
+    .from("admin_profiles")
+    .select("id, full_name")
+    .eq("id", authData.user.id)
+    .maybeSingle();
+  if (adminError || !admin) throw new Error("FORBIDDEN");
+
   const result: CachedAuthResult = {
-    userId: profile.id as string,
-    role: profile.role as string,
-    gender: profile.gender as "boy" | "girl",
-    full_name: profile.full_name as string,
-    is_active: profile.is_active as boolean
+    userId: admin.id as string,
+    role: "admin",
+    gender: "boy",
+    full_name: admin.full_name as string,
+    is_active: true
   };
 
   authCache.set(token, { result, expiresAt: now + AUTH_TTL_MS });

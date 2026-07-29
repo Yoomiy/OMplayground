@@ -3,6 +3,8 @@ import type { GameModule, GameSeat } from "./registry";
 export interface DrawingCanvasSnapshot {
   engine: "excalidraw";
   version: number;
+  /** Monotonic clear revision; only this permits clients to erase local Yjs state. */
+  clearVersion: number;
   updatedAt: number;
   elements: unknown[];
   files: Record<string, unknown>;
@@ -66,6 +68,7 @@ export const drawingModule: GameModule<DrawingState, DrawingIntent> = {
       canvas: {
         engine: "excalidraw",
         version: 0,
+        clearVersion: 0,
         updatedAt: Date.now(),
         elements: [],
         files: {}
@@ -88,6 +91,7 @@ export const drawingModule: GameModule<DrawingState, DrawingIntent> = {
           canvas: {
             engine: "excalidraw",
             version: state.canvas.version + 1,
+            clearVersion: state.canvas.clearVersion + 1,
             updatedAt: Date.now(),
             elements: [],
             files: {}
@@ -98,15 +102,6 @@ export const drawingModule: GameModule<DrawingState, DrawingIntent> = {
 
     if (intent?.type === "CHECKPOINT") {
       const { version, elements, files } = intent;
-      if (version <= state.canvas.version) {
-        return {
-          ok: false,
-          error: {
-            code: "STALE_VERSION",
-            message: `Version ${version} is stale (current: ${state.canvas.version})`
-          }
-        };
-      }
       if (!isValidCheckpoint(version, elements, files)) {
         return {
           ok: false,
@@ -122,7 +117,9 @@ export const drawingModule: GameModule<DrawingState, DrawingIntent> = {
           ...state,
           canvas: {
             engine: "excalidraw",
-            version,
+            // Keep state authoritative even when a reconnecting client's clock is behind.
+            version: state.canvas.version + 1,
+            clearVersion: state.canvas.clearVersion,
             updatedAt: Date.now(),
             elements,
             files

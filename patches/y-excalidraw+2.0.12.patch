@@ -20,7 +20,7 @@ index 169b24a..90aa211 100644
 +    }).map((x2) => x2.get("el"));
    return x;
  };
- 
+
  // src/diff.ts
  var import_fractional_indexing = require("fractional-indexing");
  var Y = __toESM(require("yjs"), 1);
@@ -378,7 +378,7 @@ index 84ad536..eb820ab 100644
 +    }).map((x2) => x2.get("el"));
    return x;
  };
- 
+
  // src/diff.ts
  import { generateKeyBetween, generateNKeysBetween } from "fractional-indexing";
  import * as Y from "yjs";

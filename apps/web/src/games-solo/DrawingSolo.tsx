@@ -28,6 +28,7 @@ export function DrawingSolo({ save }: { save: SoloGameSaveControls }) {
           canvas: {
             engine: "excalidraw",
             version: (saved.canvas.version as number) || 0,
+            clearVersion: (saved.canvas.clearVersion as number) || 0,
             updatedAt: (saved.canvas.updatedAt as number) || Date.now(),
             elements: (saved.canvas.elements as any[]) || [],
             files: (saved.canvas.files as Record<string, any>) || {}
@@ -42,6 +43,7 @@ export function DrawingSolo({ save }: { save: SoloGameSaveControls }) {
       canvas: {
         engine: "excalidraw",
         version: 0,
+        clearVersion: 0,
         updatedAt: Date.now(),
         elements: [],
         files: {}
@@ -59,6 +61,7 @@ export function DrawingSolo({ save }: { save: SoloGameSaveControls }) {
           canvas: {
             engine: "excalidraw",
             version: s.canvas.version + 1,
+            clearVersion: s.canvas.clearVersion + 1,
             updatedAt: Date.now(),
             elements: [],
             files: {}
@@ -71,6 +74,7 @@ export function DrawingSolo({ save }: { save: SoloGameSaveControls }) {
           canvas: {
             engine: "excalidraw",
             version: intent.version,
+            clearVersion: s.canvas.clearVersion,
             updatedAt: Date.now(),
             elements: intent.elements,
             files: intent.files

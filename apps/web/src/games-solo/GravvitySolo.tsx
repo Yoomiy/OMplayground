@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { SoloGameSaveControls } from "@/lib/soloGameSaves";
+import { isJsonObject, isJsonValue, type SoloGameSaveControls } from "@/lib/soloGameSaves";
 
 export function GravvitySolo({ save }: { save: SoloGameSaveControls }) {
   const sectionRef = useRef<HTMLElement>(null);
@@ -34,7 +34,7 @@ export function GravvitySolo({ save }: { save: SoloGameSaveControls }) {
         source?: string;
         gameKey?: string;
         type?: string;
-        state?: Record<string, unknown>;
+        state?: unknown;
       };
       if (
         data?.source !== "playground-legacy-game" ||
@@ -61,7 +61,7 @@ export function GravvitySolo({ save }: { save: SoloGameSaveControls }) {
       // Checkpoint save (mid-game progress - highscores)
       if (
         data.type === "checkpoint" &&
-        data.state
+        isJsonValue(data.state)
       ) {
         void save.saveState(
           data.state,
@@ -70,7 +70,7 @@ export function GravvitySolo({ save }: { save: SoloGameSaveControls }) {
       }
 
       // Game finished — save high score
-      if (data.type === "finish" && typeof data.state?.score === "number") {
+      if (data.type === "finish" && isJsonValue(data.state) && isJsonObject(data.state) && typeof data.state.score === "number") {
         const key = "gravvity:bestScore";
         void save.mergeBestScores({ [key]: data.state.score });
       }

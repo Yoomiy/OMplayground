@@ -1636,10 +1636,10 @@ function AdminClassroomSection() {
         body: JSON.stringify({ daysOld: 7 })
       });
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "cleanup failed");
       setNotice(`ניקוי הושלם בהצלחה! נוקו ${data.deletedCount ?? 0} כיתות ישנות מ-LiveKit ומהמסד.`);
-    } catch {
-      await supabase.rpc("cleanup_old_classroom_sessions", { p_days_old: 7 });
-      setNotice("ניקוי מסד נתונים הושלם.");
+    } catch (err) {
+      setNotice(err instanceof Error ? `ניקוי נכשל: ${err.message}` : "ניקוי נכשל.");
     }
     setCleaning(false);
     setTimeout(() => setNotice(null), 4000);
@@ -1656,7 +1656,21 @@ function AdminClassroomSection() {
 
   const endClassroom = async (roomCode: string) => {
     if (!window.confirm("להפסיק/לסגור כיתה וירטואלית זו באופן מיידי?")) return;
-    await supabase.rpc("end_classroom_session", { p_room_code: roomCode });
+    const session = (await supabase.auth.getSession()).data.session;
+    if (!session?.access_token) {
+      setNotice("נדרשת התחברות תקפה כדי לסגור כיתה.");
+      return;
+    }
+    const response = await fetch(`${getVoxelServerUrl()}/rtc/classroom-end`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ roomCode })
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      setNotice(body.error || "סגירת הכיתה נכשלה.");
+      return;
+    }
     setNotice("השיעור הופסק והנתונים נוקו.");
     setTimeout(() => setNotice(null), 3000);
     void loadClassrooms();
@@ -1819,6 +1833,7 @@ function AdminClassroomSection() {
                 <td className="p-3 font-bold text-white">{c.title}</td>
                 <td className="p-3 text-white/80 font-semibold">{c.teacher_name}</td>
                 <td className="p-3 font-mono text-xs text-indigo-300 font-bold">{c.room_code}</td>
+                <td className="p-3 text-xs text-white/60">{new Date(c.created_at).toLocaleString("he-IL")}</td>
                 <td className="p-3">
                   <button
                     onClick={() => void togglePersistence(c.room_code, Boolean(c.is_persistent))}
@@ -1879,4 +1894,3 @@ function AdminClassroomSection() {
     </section>
   );
 }
-

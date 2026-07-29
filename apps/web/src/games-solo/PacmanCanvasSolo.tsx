@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { SoloGameSaveControls } from "@/lib/soloGameSaves";
+import { isJsonObject, isJsonValue, type SoloGameSaveControls } from "@/lib/soloGameSaves";
 
 export function PacmanCanvasSolo({ save }: { save: SoloGameSaveControls }) {
   const sectionRef = useRef<HTMLElement>(null);
@@ -34,7 +34,7 @@ export function PacmanCanvasSolo({ save }: { save: SoloGameSaveControls }) {
         source?: string;
         gameKey?: string;
         type?: string;
-        state?: Record<string, unknown>;
+        state?: unknown;
       };
       if (
         data?.source !== "playground-legacy-game" ||
@@ -59,12 +59,12 @@ export function PacmanCanvasSolo({ save }: { save: SoloGameSaveControls }) {
       }
 
       // Checkpoint save (level, score, lives)
-      if (data.type === "checkpoint" && data.state) {
+      if (data.type === "checkpoint" && isJsonValue(data.state)) {
         void save.saveState(data.state, { saveKind: "checkpoint" });
       }
 
       // Game finished — save score
-      if (data.type === "finish" && typeof data.state?.score === "number") {
+      if (data.type === "finish" && isJsonValue(data.state) && isJsonObject(data.state) && typeof data.state.score === "number") {
         const key = "pacman-canvas:bestScore";
         void save.mergeBestScores({ [key]: data.state.score });
       }

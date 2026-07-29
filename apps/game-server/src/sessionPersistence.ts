@@ -166,3 +166,20 @@ export async function persistPlayerLeave(
       .eq("id", sessionId);
   }
 }
+
+/** Drawing checkpoints are durable while a classroom remains active. */
+export async function persistDrawingCheckpoint(
+  supabase: SupabaseClient,
+  sessionId: string,
+  gameState: unknown
+): Promise<void> {
+  const { error } = await supabase
+    .from("game_sessions")
+    .update({
+      game_state: gameState as Record<string, unknown>,
+      last_activity: new Date().toISOString()
+    })
+    .eq("id", sessionId)
+    .in("status", ["waiting", "playing", "paused"]);
+  if (error) throw error;
+}

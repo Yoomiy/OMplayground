@@ -8,6 +8,15 @@ export type JsonValue =
   | JsonValue[]
   | { [key: string]: JsonValue };
 
+export function isJsonValue(value: unknown): value is JsonValue {
+  if (value === null || typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return true;
+  }
+  if (Array.isArray(value)) return value.every(isJsonValue);
+  if (typeof value !== "object") return false;
+  return Object.values(value).every(isJsonValue);
+}
+
 export type SoloSaveKind = "snapshot" | "checkpoint";
 
 export interface SoloGameSave {

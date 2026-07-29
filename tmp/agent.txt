@@ -14,3 +14,41 @@ under the said stuff, at the buttom of this document - create a section in which
 6) if needed i can test stuff manually running a local server.
 
 7) if you're waiting for a question to be answered and you have nothing to do in the meantime - just review the changes again and think of special edge cases that need to be addressed
+
+---
+
+## Review findings (2026-07-29)
+
+1. **Critical - classroom lifecycle is publicly callable.** `end_classroom_session` and `cleanup_old_classroom_sessions` are `SECURITY DEFINER` functions granted to `anon`, and the `/rtc/classroom-end` and `/rtc/classroom-cleanup` APIs do not require a valid authorized caller. An unauthenticated request can end a class or purge temporary classes.
+2. **Critical - a student can self-escalate to host.** Classroom LiveKit tokens write `isHost: true` for every participant, allow every participant to update their own metadata, and the client trusts unverified data-channel control messages. A student can claim host status and send kick, board, or media-control messages.
+3. **Critical - whiteboard checkpoints are not persisted while a class is active.** The host emits a checkpoint every five seconds, but the game server skips the snapshot and never writes that state to `game_sessions`. A game-server restart or room recreation therefore loses the board. The current late-join guard also ignores a real `CLEAR_CANVAS`, so clearing the board no longer propagates.
+4. **High - ending a class does not reliably disconnect its users or clear LiveKit.** The page calls the public DB RPC directly instead of the LiveKit cleanup route. Its realtime listener captures a stale `room` reference, so a remote end can leave the actual media connection alive.
+5. **High - the whiteboard delta size guard is ineffective.** It estimates object payloads by key count, so a multi-megabyte `yjsUpdate` string passes the supposed 1 MB cap. This can bypass the intended resource limit and makes large-state behavior unpredictable.
+6. **High - admins cannot join the drawing socket.** The game-server auth cache supports guest and kid profiles but not `admin_profiles`, unlike the Minecraft server cache. Admin classroom monitoring therefore loses the board connection.
+7. **High - cleanup can delete active rooms.** It treats `created_at` as an expiry condition even when `last_activity` is current, while classroom activity is not refreshed on joins. `daysOld` is not range-checked either.
+8. **Medium - admin/teacher lifecycle UI reports success on failed HTTP responses and falls back to the unsafe public RPC.** The client must use the authenticated server APIs and surface failures instead.
+9. **Medium - the admin classroom table has shifted columns.** It renders the persistence toggle under the “created at” header and omits the actual creation time.
+10. **Medium - the documentation describes LiveKit whiteboard transport and full guest-host delegation, but implementation uses the game-server socket and cannot securely grant database lifecycle authority to a guest.** Documentation needs to match the final behavior.
+11. **Low - `git diff --check` reports trailing whitespace in the classroom/doc changes and the vendored patch.**
+
+## Questions requiring human decision
+
+1. Should any authenticated teacher who opens a classroom link be a host, or should host authority be limited to that classroom's creator and admins? The current behavior makes every teacher a host.
+initialy only authorized users. but they should be able to make unauthorized user hosts too
+2. A promoted unauthenticated guest can be given trusted in-room presentation controls, but cannot safely receive database lifecycle authority (change settings, end a class) without a separate delegated credential design. Is that scope desired, or should those actions remain limited to an authenticated teacher/admin?
+leave it for now - if it's too complicated
+
+
+
+**please document your progress here**
+
+## Progress (2026-07-29)
+
+- Merged `main` into `dev` before the implementation pass.
+- Hardened classroom lifecycle access: `/rtc/classroom-end` requires an authenticated teacher/admin, `/rtc/classroom-cleanup` requires an authenticated admin, and the underlying maintenance RPCs are revoked from browser roles and granted only to `service_role`.
+- Corrected cleanup semantics: active temporary classrooms are retained when `last_activity` is fresh; the threshold is constrained to 1-365 days; joined classrooms refresh activity; cleanup completes linked drawing sessions and removes their LiveKit rooms.
+- Replaced client-trusted host elevation with server-issued LiveKit metadata. Teachers/admins are initial hosts. An authenticated teacher/admin can promote a connected unauthenticated guest; the server records that delegate so the drawing server recognizes it. Guest co-hosts can use in-room controls and the board, but cannot change saved settings, promote others, end classes, or run cleanup.
+- Moved active classroom-board recovery to the drawing game session. Host checkpoints and clears persist in `game_sessions.game_state`; active drawing sessions rehydrate after restart; an explicit monotonic clear revision propagates a clear while an empty late-join snapshot cannot erase existing work.
+- Enforced authoritative classroom board writes, corrected delta byte measurement, added admin-profile socket authentication, repaired lifecycle UI error handling, and fixed the admin classroom table's creation-time column.
+- Updated `docs/virtual_classrooms.md` and `ARCHITECTURE.md` to match the Socket.IO/Yjs board path, lifecycle authorization, cleanup behavior, and guest delegation boundary.
+- Verification: `npm test -w @playground/game-logic -- --runInBand` passes (6 suites, 50 tests); `npm test -w @playground/game-server -- --runInBand` passes (13 suites, 47 tests); `npm run lint -w @playground/web`, `npm run build -w @playground/game-server`, and `npm run lint -w @playground/minecraft-server` pass. `git diff --check` passes for the working tree. The Supabase CLI is not installed locally, so migration-list validation could not run.

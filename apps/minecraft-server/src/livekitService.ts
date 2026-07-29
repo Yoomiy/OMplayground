@@ -2,22 +2,53 @@ import { AccessToken, RoomServiceClient } from "livekit-server-sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCachedAuth } from "./authCache";
 
+function getRoomServiceClient(): RoomServiceClient | null {
+  const host = process.env.LIVEKIT_URL?.trim();
+  const apiKey = process.env.LIVEKIT_API_KEY?.trim();
+  const apiSecret = process.env.LIVEKIT_API_SECRET?.trim();
+  if (!host || !apiKey || !apiSecret) return null;
+
+  const httpHost = host.replace(/^ws:/, "http:").replace(/^wss:/, "https:");
+  return new RoomServiceClient(httpHost, apiKey, apiSecret);
+}
+
+function classroomLiveKitRoom(roomCode: string): string {
+  return `classroom-${roomCode}`;
+}
+
 export async function deleteLiveKitRoom(roomCode: string): Promise<boolean> {
   try {
-    const host = process.env.LIVEKIT_URL;
-    const apiKey = process.env.LIVEKIT_API_KEY;
-    const apiSecret = process.env.LIVEKIT_API_SECRET;
-    if (!host || !apiKey || !apiSecret) return false;
-
-    const httpHost = host.replace(/^ws:/, "http:").replace(/^wss:/, "https:");
-    const roomService = new RoomServiceClient(httpHost, apiKey, apiSecret);
-    const livekitRoom = `classroom-${roomCode}`;
-    await roomService.deleteRoom(livekitRoom);
+    const roomService = getRoomServiceClient();
+    if (!roomService) return false;
+    await roomService.deleteRoom(classroomLiveKitRoom(roomCode));
     return true;
   } catch (err: any) {
     console.warn(`LiveKit room cleanup note for ${roomCode}:`, err?.message || err);
     return false;
   }
+}
+
+export async function promoteClassroomParticipant(
+  roomCode: string,
+  participantIdentity: string
+): Promise<void> {
+  const roomService = getRoomServiceClient();
+  if (!roomService) {
+    throw new LiveKitTokenError("server_config", "LiveKit is not configured on the server.");
+  }
+
+  const roomName = classroomLiveKitRoom(roomCode);
+  const participant = await roomService.getParticipant(roomName, participantIdentity);
+  let metadata: Record<string, unknown> = {};
+  try {
+    metadata = participant.metadata ? JSON.parse(participant.metadata) : {};
+  } catch {
+    metadata = {};
+  }
+
+  await roomService.updateParticipant(roomName, participantIdentity, {
+    metadata: JSON.stringify({ ...metadata, isHost: true })
+  });
 }
 
 export interface GenerateTokenArgs {
@@ -180,13 +211,13 @@ export async function generateClassroomToken(
     }
   }
 
-  const livekitRoom = `classroom-${roomCode}`;
+  const livekitRoom = classroomLiveKitRoom(roomCode);
   const isAdmin = profile?.role === "admin";
   const isTeacher = profile?.role === "teacher" || isAdmin;
   const isCreatorTeacher = profile && classroom.teacher_id === profile.userId;
   const isHost = isTeacher || isCreatorTeacher || isAdmin;
   const role = profile?.role ?? "student";
-  const finalDisplayName = (profile?.full_name ?? displayName ?? "משתתף").trim();
+  const finalDisplayName = (profile?.full_name ?? displayName ?? "משתתף").trim().slice(0, 80) || "משתתף";
   const identity = profile?.userId ?? `guest-${Math.random().toString(36).substring(2, 9)}`;
 
   const isHidden = isAdmin && spectateMode === "invisible";
@@ -197,7 +228,7 @@ export async function generateClassroomToken(
     ttl: "4h",
     metadata: JSON.stringify({
       role,
-      isHost: true,
+      isHost,
       hidden: isHidden,
       spectateMode: spectateMode ?? "none"
     })
@@ -209,10 +240,18 @@ export async function generateClassroomToken(
     canPublish: !isHidden,
     canSubscribe: true,
     canPublishData: true,
-    canUpdateOwnMetadata: true,
     roomAdmin: isHost,
     hidden: isHidden
   });
+
+  const { error: activityError } = await supabaseAdmin
+    .from("classroom_sessions")
+    .update({ last_activity: new Date().toISOString() })
+    .eq("id", classroom.id)
+    .eq("status", "active");
+  if (activityError) {
+    console.warn("Could not refresh classroom activity:", activityError.message);
+  }
 
   const token = await at.toJwt();
   return {
@@ -224,4 +263,3 @@ export async function generateClassroomToken(
     role
   };
 }
-

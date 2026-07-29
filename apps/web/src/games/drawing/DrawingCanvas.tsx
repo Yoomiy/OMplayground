@@ -10,6 +10,7 @@ import {
   populateYAssets,
   replaceYElements,
   replaceYAssets,
+  clearYAssets,
   deduplicateYElements,
   sanitizeExcalidrawElements,
   ExcalidrawBinding,
@@ -127,21 +128,26 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     };
   }, [excalidrawAPI, yjsSession]);
 
-  // Sync state from server on clear canvas or uninitialized doc
+  // A late joiner can have an empty stale checkpoint. Only an authoritative
+  // clear revision is allowed to erase a populated local document.
   const lastVersionRef = useRef<number>(gameState.canvas?.version || 0);
+  const lastClearVersionRef = useRef<number>(gameState.canvas?.clearVersion || 0);
   useEffect(() => {
     if (!gameState.canvas || !yjsSession) return;
     const { yElements, yAssets } = yjsSession;
 
     const serverVersion = gameState.canvas.version ?? 0;
+    const serverClearVersion = gameState.canvas.clearVersion ?? 0;
     if (serverVersion > lastVersionRef.current) {
       lastVersionRef.current = serverVersion;
       const serverElements = gameState.canvas.elements || [];
       const serverFiles = gameState.canvas.files || {};
 
-      // ONLY populate Yjs elements from server snapshot if local yElements is empty AND server snapshot has elements.
-      // Never wipe non-empty local yElements when server elements is empty.
-      if (yElements.length === 0 && serverElements.length > 0) {
+      if (serverClearVersion > lastClearVersionRef.current) {
+        lastClearVersionRef.current = serverClearVersion;
+        replaceYElements(yElements, [], YJS_ORIGIN_SYSTEM);
+        clearYAssets(yAssets, YJS_ORIGIN_SYSTEM);
+      } else if (yElements.length === 0 && serverElements.length > 0) {
         replaceYElements(yElements, serverElements, YJS_ORIGIN_SYSTEM);
         replaceYAssets(yAssets, serverFiles, YJS_ORIGIN_SYSTEM);
       }
