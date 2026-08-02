@@ -510,7 +510,12 @@ export function ClassroomPage() {
     let localAudioTrack: any = null;
 
     local.trackPublications.forEach((pub) => {
-      if (pub.source === Track.Source.ScreenShare && pub.track) {
+      if (
+        pub.source === Track.Source.ScreenShare &&
+        pub.track &&
+        !pub.isMuted &&
+        pub.track.mediaStreamTrack?.readyState !== "ended"
+      ) {
         localScreenTrack = pub.track;
       } else if (pub.source === Track.Source.Camera && pub.track) {
         localVideoTrack = pub.track;
@@ -548,7 +553,12 @@ export function ClassroomPage() {
       let pAudioTrack: any = null;
 
       p.trackPublications.forEach((pub) => {
-        if (pub.source === Track.Source.ScreenShare && pub.track) {
+        if (
+          pub.source === Track.Source.ScreenShare &&
+          pub.track &&
+          !pub.isMuted &&
+          pub.track.mediaStreamTrack?.readyState !== "ended"
+        ) {
           pScreenTrack = pub.track;
         } else if (pub.source === Track.Source.Camera && pub.track) {
           pVideoTrack = pub.track;
@@ -773,8 +783,32 @@ export function ClassroomPage() {
 
       lkRoom.on(RoomEvent.ParticipantConnected, () => updateParticipantList(lkRoom));
       lkRoom.on(RoomEvent.ParticipantDisconnected, () => updateParticipantList(lkRoom));
+      lkRoom.on(RoomEvent.TrackPublished, () => updateParticipantList(lkRoom));
       lkRoom.on(RoomEvent.TrackSubscribed, () => updateParticipantList(lkRoom));
-      lkRoom.on(RoomEvent.TrackUnsubscribed, () => updateParticipantList(lkRoom));
+      lkRoom.on(RoomEvent.TrackUnpublished, (publication, participant) => {
+        if (publication.source === Track.Source.ScreenShare) {
+          setScreenShareParticipant((current) =>
+            current?.identity === participant.identity ? null : current
+          );
+        }
+        window.queueMicrotask(() => updateParticipantList(lkRoom));
+      });
+      lkRoom.on(RoomEvent.TrackUnsubscribed, (_track, publication, participant) => {
+        if (publication.source === Track.Source.ScreenShare) {
+          setScreenShareParticipant((current) =>
+            current?.identity === participant.identity ? null : current
+          );
+        }
+        window.queueMicrotask(() => updateParticipantList(lkRoom));
+      });
+      lkRoom.on(RoomEvent.LocalTrackPublished, () => updateParticipantList(lkRoom));
+      lkRoom.on(RoomEvent.LocalTrackUnpublished, (publication) => {
+        if (publication.source === Track.Source.ScreenShare) {
+          setIsScreenSharing(false);
+          setScreenShareParticipant((current) => current?.isMe ? null : current);
+        }
+        window.queueMicrotask(() => updateParticipantList(lkRoom));
+      });
       lkRoom.on(RoomEvent.TrackMuted, () => updateParticipantList(lkRoom));
       lkRoom.on(RoomEvent.TrackUnmuted, () => updateParticipantList(lkRoom));
       lkRoom.on(RoomEvent.ParticipantMetadataChanged, (_previousMetadata, participant) => {
@@ -1467,11 +1501,15 @@ export function ClassroomPage() {
               </div>
 
               {/* MAIN CONTENT FRAME: EXCALIDRAW BOARD OR SHARED SCREEN */}
-              {isMainContentActive && (
-                <div className="flex-1 rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden shadow-2xl flex flex-col relative">
+              <div
+                className={cn(
+                  "flex-1 rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden shadow-2xl flex flex-col relative",
+                  !isMainContentActive && "hidden"
+                )}
+              >
 
                   {/* SHARED SCREEN PRECEDENCE */}
-                  {screenShareParticipant ? (
+                  {screenShareParticipant && (
                     <div className="flex-1 bg-black flex items-center justify-center relative">
                       <div className="absolute top-2 right-2 bg-slate-950/80 px-3 py-1 rounded-lg text-xs font-bold text-indigo-300 z-10 border border-slate-800 flex items-center gap-1.5">
                         <Monitor className="size-3.5 text-indigo-400" />
@@ -1488,36 +1526,47 @@ export function ClassroomPage() {
                         className="h-full w-full object-contain"
                       />
                     </div>
-                  ) : showBoard ? (
-                    /* REUSED APP DRAWINGBOARD COMPONENT */
-                    <div className="flex-1 w-full h-full relative overflow-hidden">
-                      {drawSocketReady ? (
-                        <DrawingBoard
-                          gameState={whiteboardState}
-                          mySeat={isHost || roomSettings.allowWhiteboardDraw ? "player" : null}
-                          myUserId={room?.localParticipant.identity || null}
-                          onIntent={handleBoardIntent}
-                          onLiveDelta={handleLocalBoardDelta}
-                          subscribeLiveDeltas={subscribeLiveDeltas}
-                          isHost={isHost}
-                          serverAuthoritative={true}
-                          initialYjsUpdate={boardInitialYjsUpdate}
-                          initialYjsSyncToken={boardInitialYjsSyncToken}
-                          hideTopBar={true}
-                          players={participants.map((p) => ({
-                            userId: p.identity,
-                            displayName: p.name
-                          }))}
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center bg-slate-950 text-sm text-slate-300">
-                          טוען את לוח השיעור...
-                        </div>
-                      )}
-                    </div>
-                  ) : null}
+                  )}
+
+                  {/*
+                    Keep the collaborative board mounted while it is hidden or a screen is
+                    being shared. Unmounting it destroys the local Yjs document and drops its
+                    live-delta subscription, causing a later mount to reopen from the older
+                    connection-time snapshot.
+                  */}
+                  <div
+                    className={cn(
+                      "flex-1 w-full h-full relative overflow-hidden",
+                      (!showBoard || screenShareParticipant) && "hidden"
+                    )}
+                    aria-hidden={!showBoard || Boolean(screenShareParticipant)}
+                  >
+                    {drawSocketReady ? (
+                      <DrawingBoard
+                        gameState={whiteboardState}
+                        mySeat={isHost || roomSettings.allowWhiteboardDraw ? "player" : null}
+                        myUserId={room?.localParticipant.identity || null}
+                        onIntent={handleBoardIntent}
+                        onLiveDelta={handleLocalBoardDelta}
+                        subscribeLiveDeltas={subscribeLiveDeltas}
+                        isHost={isHost}
+                        serverAuthoritative={true}
+                        initialYjsUpdate={boardInitialYjsUpdate}
+                        initialYjsSyncToken={boardInitialYjsSyncToken}
+                        hideTopBar={true}
+                        isVisible={showBoard && !screenShareParticipant}
+                        players={participants.map((p) => ({
+                          userId: p.identity,
+                          displayName: p.name
+                        }))}
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center bg-slate-950 text-sm text-slate-300">
+                        טוען את לוח השיעור...
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
             </div>
 
             {/* BOTTOM CONTROL BAR */}

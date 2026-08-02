@@ -49,6 +49,7 @@ export interface DrawingCanvasProps {
   initialYjsUpdate?: string | null;
   initialYjsSyncToken?: string | null;
   players?: { userId: string; displayName: string }[];
+  isVisible?: boolean;
 }
 
 export interface DrawingCanvasRef {
@@ -69,7 +70,8 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   serverAuthoritative = false,
   initialYjsUpdate,
   initialYjsSyncToken,
-  players
+  players,
+  isVisible = true
 }, ref) => {
   const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
   const [excalidrawSceneReady, setExcalidrawSceneReady] = useState(false);
@@ -657,6 +659,20 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
 
     setExcalidrawAPI(api);
   }, []);
+
+  // Excalidraw caches its container's viewport offsets. A board kept mounted
+  // under display:none retains the old offset after the classroom camera area
+  // expands and contracts, so pointer input lands above the cursor. Refresh
+  // once after reveal and again after the 300ms classroom layout transition.
+  useEffect(() => {
+    if (!isVisible || !excalidrawAPI?.refresh) return;
+    const frame = window.requestAnimationFrame(() => excalidrawAPI.refresh());
+    const transitionTimer = window.setTimeout(() => excalidrawAPI.refresh(), 350);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(transitionTimer);
+    };
+  }, [excalidrawAPI, isVisible]);
 
   return (
     <div

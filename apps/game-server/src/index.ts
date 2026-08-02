@@ -799,6 +799,9 @@ io.on("connection", (socket) => {
         await socket.join(`session:${sessionId}`);
         socket.data.sessionId = sessionId;
         socket.data.isSpectator = true;
+        if (classroomRoomCode) {
+          serveCanonicalClassroomDrawing(room, "teacher-spectator-join");
+        }
         emitSnapshot(room);
         const spectateAck = wrapAck("SPECTATE", started, sessionId, ack);
         spectateAck?.({ ok: true, spectator: true });
@@ -896,7 +899,11 @@ io.on("connection", (socket) => {
       const isSyncRequest =
         typeof delta === "object" && delta !== null &&
         (delta as { yjsSyncRequest?: unknown }).yjsSyncRequest === true;
-      if (!room || (!room.players.has(userId) && !isSyncRequest)) return;
+      if (!room) return;
+      // Authorized classroom teachers and delegates may intentionally be
+      // attached as spectators so they do not consume a drawing-game seat.
+      // The classroom policy below remains the authority for their edits.
+      if (!room.players.has(userId) && !isSyncRequest && !isCanonicalClassroomDrawing(room)) return;
 
       if (isCanonicalClassroomDrawing(room)) {
         const typed = typeof delta === "object" && delta !== null ? delta as Record<string, unknown> : null;
@@ -1644,9 +1651,25 @@ io.on("connection", (socket) => {
       return;
     }
     if (socket.data.isSpectator) {
+      const spectatorRoom = getRoom(sessionId);
+      const isClassroomSpectator = spectatorRoom && isCanonicalClassroomDrawing(spectatorRoom);
+      if (spectatorRoom && isClassroomSpectator) {
+        try {
+          await persistLiveClassroomDrawing(spectatorRoom, "teacher-spectator-leave");
+        } catch (err) {
+          logger.error({
+            message: "Classroom drawing spectator leave persistence failed",
+            sessionId,
+            error: err instanceof Error ? err.message : String(err)
+          });
+        }
+      }
       removeSpectatorFromRoom(sessionId, userId);
       const room = getRoom(sessionId);
       if (room) emitSnapshot(room);
+      if (!room && isClassroomSpectator) {
+        classroomDrawingLiveStates.delete(sessionId);
+      }
       await socket.leave(`session:${sessionId}`);
       if (socket.data.sessionId === sessionId) {
         socket.data.sessionId = undefined;
@@ -1655,7 +1678,8 @@ io.on("connection", (socket) => {
       return;
     }
     const before = getRoom(sessionId);
-    if (before && isCanonicalClassroomDrawing(before)) {
+    const classroomHostId = before && isCanonicalClassroomDrawing(before) ? before.hostId : undefined;
+    if (before && classroomHostId) {
       try {
         await persistLiveClassroomDrawing(before, "last-socket-leave");
       } catch (err) {
@@ -1667,6 +1691,14 @@ io.on("connection", (socket) => {
       }
     }
     const result = removePlayerFromRoom(sessionId, userId);
+    if (classroomHostId) {
+      // The drawing room is an implementation detail of the persistent
+      // classroom. Do not transfer its database host to a student merely
+      // because the teacher refreshed or temporarily disconnected.
+      result.newHostId = undefined;
+      const remainingRoom = getRoom(sessionId);
+      if (remainingRoom) remainingRoom.hostId = classroomHostId;
+    }
     if (result.roomEmpty) {
       stats.onRoomDeleted(sessionId);
       classroomDrawingLiveStates.delete(sessionId);

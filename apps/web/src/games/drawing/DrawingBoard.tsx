@@ -17,6 +17,7 @@ export interface DrawingBoardProps {
   initialYjsSyncToken?: string | null;
   players?: { userId: string; displayName: string }[];
   hideTopBar?: boolean;
+  isVisible?: boolean;
 }
 
 export function DrawingBoard({
@@ -32,7 +33,8 @@ export function DrawingBoard({
   initialYjsUpdate,
   initialYjsSyncToken,
   players,
-  hideTopBar = false
+  hideTopBar = false,
+  isVisible = true
 }: DrawingBoardProps) {
   const canvasRef = useRef<DrawingCanvasRef>(null);
   const boardRef = useRef<HTMLDivElement>(null);
@@ -245,6 +247,7 @@ export function DrawingBoard({
           initialYjsUpdate={initialYjsUpdate}
           initialYjsSyncToken={initialYjsSyncToken}
           players={players}
+          isVisible={isVisible}
         />
       </div>
       
