@@ -98,6 +98,7 @@ import {
   promoteClassroomParticipant,
   removeClassroomParticipant,
   sendClassroomDelegateEnrollment,
+  broadcastClassroomData,
   syncClassroomParticipantPermissions,
   LiveKitTokenError
 } from "./livekitService";
@@ -598,6 +599,7 @@ app.post("/rtc/classroom-token", async (req, res) => {
       canPublishMicrophone: result.canPublishMicrophone,
       canPublishCamera: result.canPublishCamera,
       canPublishScreenShare: result.canPublishScreenShare,
+      delegateScopes: delegate?.scopes ?? [],
       delegateGameToken
     });
   } catch (err) {
@@ -747,7 +749,7 @@ app.post("/rtc/classroom-delegate/activate", async (req, res) => {
     }
     const { data: delegate } = await supabaseAdmin
       .from("classroom_host_delegates")
-      .select("id, classroom_id, display_name, is_active")
+      .select("id, classroom_id, display_name, scopes, is_active")
       .eq("id", enrollment.delegate_id)
       .eq("classroom_id", classroom.id)
       .maybeSingle();
@@ -784,6 +786,7 @@ app.post("/rtc/classroom-delegate/activate", async (req, res) => {
     const identity = `delegate:${delegate.id}`;
     res.json({
       success: true,
+      delegateScopes: Array.isArray(delegate.scopes) ? delegate.scopes : [],
       delegateGameToken: createClassroomDelegateGameToken(
         { delegateId: delegate.id, classroomId: classroom.id, roomCode: classroom.room_code, identity },
         SUPABASE_SERVICE_ROLE_KEY
@@ -847,6 +850,62 @@ app.post("/rtc/classroom-settings", async (req, res) => {
     res.json({ success: true, settings: nextSettings, delegated: Boolean(authority.delegate) });
   } catch (err: any) {
     res.status(500).json({ error: err.message || "classroom_settings_failed" });
+  }
+});
+
+app.post("/rtc/classroom-presentation-state", async (req, res) => {
+  try {
+    const { roomCode, action, title, mediaKind, presenterIdentity } = req.body || {};
+    if (
+      typeof roomCode !== "string" ||
+      !roomCode.trim() ||
+      !["started", "stopped"].includes(action) ||
+      (action === "started" && (
+        typeof title !== "string" ||
+        title.length > 100 ||
+        !["pdf", "image", "video", "audio"].includes(mediaKind) ||
+        typeof presenterIdentity !== "string" ||
+        !presenterIdentity.trim() ||
+        presenterIdentity.length > 256
+      ))
+    ) {
+      res.status(400).json({ error: "invalid_presentation_state" });
+      return;
+    }
+    const classroom = await getActiveClassroom(roomCode.trim());
+    if (!classroom) {
+      res.status(404).json({ error: "classroom_not_found" });
+      return;
+    }
+    const authority = await requireClassroomAuthority(
+      req,
+      res,
+      classroom.id,
+      "control_presentation"
+    );
+    if (!authority) return;
+
+    await broadcastClassroomData(classroom.room_code, {
+      type: "PRESENTATION_STATE",
+      action,
+      title: action === "started" ? title.trim() : undefined,
+      mediaKind: action === "started" ? mediaKind : undefined,
+      presenterIdentity: action === "started" ? presenterIdentity.trim() : undefined
+    });
+    logger.info({
+      userId: authority.userId ?? authority.delegate?.delegateId,
+      protocol: "http",
+      message: "Classroom presentation state changed",
+      context: {
+        event: "CLASSROOM_PRESENTATION_STATE",
+        roomCode: classroom.room_code,
+        action,
+        mediaKind: action === "started" ? mediaKind : undefined
+      }
+    });
+    res.json({ success: true, delegated: Boolean(authority.delegate) });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "classroom_presentation_state_failed" });
   }
 });
 

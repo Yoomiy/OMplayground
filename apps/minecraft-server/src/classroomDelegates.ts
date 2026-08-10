@@ -6,6 +6,7 @@ export const CLASSROOM_DELEGATE_SCOPES = [
   "manage_settings",
   "remove_participants",
   "manage_whiteboard",
+  "control_presentation",
   "manage_delegates"
 ] as const;
 

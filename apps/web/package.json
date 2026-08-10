@@ -23,6 +23,8 @@
     "livekit-client": "^2.19.1",
     "lucide-react": "^0.487.0",
     "noa-engine": "^0.33.0",
+    "patch-package": "^8.0.1",
+    "pdfjs-dist": "^5.7.284",
     "react": "^18.3.1",
     "react-chessboard": "^4.7.3",
     "react-dnd": "^16.0.1",
@@ -32,7 +34,6 @@
     "socket.io-client": "^4.8.1",
     "tailwind-merge": "^3.2.0",
     "y-excalidraw": "^2.0.12",
-    "patch-package": "^8.0.1",
     "y-protocols": "^1.0.7",
     "yjs": "^13.6.31"
   },

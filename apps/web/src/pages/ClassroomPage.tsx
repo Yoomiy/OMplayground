@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 import { getVoxelServerUrl } from "@/lib/voxelServerUrl";
 import { reportTelemetry } from "@/utils/telemetry";
 import { DrawingBoard } from "@/games/drawing/DrawingBoard";
+import { ClassroomPresentationPublisher } from "@/components/ClassroomPresentationPublisher";
 
 function gameServerUrl(): string {
   const fromEnv = import.meta.env.VITE_GAME_SERVER_URL?.trim();
@@ -82,6 +83,7 @@ interface CustomParticipantInfo {
   isVideoOff: boolean;
   isHandRaised: boolean;
   screenTrack?: any;
+  screenAudioTrack?: any;
   videoTrack?: any;
   audioTrack?: any;
 }
@@ -147,6 +149,7 @@ export function ClassroomPage() {
   // User Local Media & Permissions state
   const [isHost, setIsHost] = useState(false);
   const [isDelegatedHost, setIsDelegatedHost] = useState(false);
+  const [delegateScopes, setDelegateScopes] = useState<string[]>([]);
   const [delegateGameToken, setDelegateGameToken] = useState<string | null>(null);
   const [micOn, setMicOn] = useState(false);
   const [camOn, setCamOn] = useState(false);
@@ -164,6 +167,8 @@ export function ClassroomPage() {
   const [participants, setParticipants] = useState<CustomParticipantInfo[]>([]);
   const [activeSpeakers, setActiveSpeakers] = useState<string[]>([]);
   const [screenShareParticipant, setScreenShareParticipant] = useState<CustomParticipantInfo | null>(null);
+  const [presentationTitle, setPresentationTitle] = useState<string | null>(null);
+  const [presentationActive, setPresentationActive] = useState(false);
 
   // Under-the-hood Draw Game Room (Socket.io) for Whiteboard Syncing
   const [drawSessionId, setDrawSessionId] = useState<string | null>(null);
@@ -506,6 +511,7 @@ export function ClassroomPage() {
     // Local participant
     const local = lkRoom.localParticipant;
     let localScreenTrack: any = null;
+    let localScreenAudioTrack: any = null;
     let localVideoTrack: any = null;
     let localAudioTrack: any = null;
 
@@ -517,6 +523,8 @@ export function ClassroomPage() {
         pub.track.mediaStreamTrack?.readyState !== "ended"
       ) {
         localScreenTrack = pub.track;
+      } else if (pub.source === Track.Source.ScreenShareAudio && pub.track) {
+        localScreenAudioTrack = pub.track;
       } else if (pub.source === Track.Source.Camera && pub.track) {
         localVideoTrack = pub.track;
       } else if (pub.source === Track.Source.Microphone && pub.track) {
@@ -541,6 +549,7 @@ export function ClassroomPage() {
         isVideoOff: !local.isCameraEnabled,
         isHandRaised: Boolean(localMetadata.handRaised),
         screenTrack: localScreenTrack,
+        screenAudioTrack: localScreenAudioTrack,
         videoTrack: localVideoTrack,
         audioTrack: localAudioTrack
       });
@@ -549,6 +558,7 @@ export function ClassroomPage() {
     // Remote participants
     lkRoom.remoteParticipants.forEach((p) => {
       let pScreenTrack: any = null;
+      let pScreenAudioTrack: any = null;
       let pVideoTrack: any = null;
       let pAudioTrack: any = null;
 
@@ -560,6 +570,8 @@ export function ClassroomPage() {
           pub.track.mediaStreamTrack?.readyState !== "ended"
         ) {
           pScreenTrack = pub.track;
+        } else if (pub.source === Track.Source.ScreenShareAudio && pub.track) {
+          pScreenAudioTrack = pub.track;
         } else if (pub.source === Track.Source.Camera && pub.track) {
           pVideoTrack = pub.track;
         } else if (pub.source === Track.Source.Microphone && pub.track) {
@@ -592,6 +604,7 @@ export function ClassroomPage() {
         isVideoOff: !p.isCameraEnabled,
         isHandRaised: Boolean(pMetadata.handRaised),
         screenTrack: pScreenTrack,
+        screenAudioTrack: pScreenAudioTrack,
         videoTrack: pVideoTrack,
         audioTrack: pAudioTrack
       });
@@ -660,10 +673,12 @@ export function ClassroomPage() {
         isDelegate,
         canPublishMicrophone,
         canPublishCamera,
+        delegateScopes: issuedDelegateScopes,
         delegateGameToken: issuedDelegateGameToken
       } = await response.json();
       setLocalUserId(userId || null);
       setIsDelegatedHost(Boolean(isDelegate));
+      setDelegateScopes(Array.isArray(issuedDelegateScopes) ? issuedDelegateScopes : []);
       setDelegateGameToken(issuedDelegateGameToken || null);
       const isUserHost = Boolean(tokenIsHost || isAdmin || (profile?.role as string) === "admin" || role === "admin");
       setIsHost(isUserHost);
@@ -701,6 +716,7 @@ export function ClassroomPage() {
               })
               .then((result) => {
                 setIsDelegatedHost(true);
+                setDelegateScopes(Array.isArray(result.delegateScopes) ? result.delegateScopes : []);
                 if (drawSocketRef.current && drawSessionId && result.delegateGameToken) {
                   drawSocketRef.current.emit("CLASSROOM_DELEGATE_ACTIVATED", {
                     sessionId: drawSessionId,
@@ -709,6 +725,13 @@ export function ClassroomPage() {
                 }
               })
               .catch(() => setConnError("לא ניתן לשמור את הרשאת המארח."));
+            return;
+          }
+
+          if (msg.type === "PRESENTATION_STATE" && !participant) {
+            const started = msg.action === "started";
+            setPresentationActive(started);
+            setPresentationTitle(started && typeof msg.title === "string" ? msg.title : null);
             return;
           }
 
@@ -787,6 +810,10 @@ export function ClassroomPage() {
       lkRoom.on(RoomEvent.TrackSubscribed, () => updateParticipantList(lkRoom));
       lkRoom.on(RoomEvent.TrackUnpublished, (publication, participant) => {
         if (publication.source === Track.Source.ScreenShare) {
+          if (publication.trackName === "classroom-presentation-video") {
+            setPresentationActive(false);
+            setPresentationTitle(null);
+          }
           setScreenShareParticipant((current) =>
             current?.identity === participant.identity ? null : current
           );
@@ -795,6 +822,10 @@ export function ClassroomPage() {
       });
       lkRoom.on(RoomEvent.TrackUnsubscribed, (_track, publication, participant) => {
         if (publication.source === Track.Source.ScreenShare) {
+          if (publication.trackName === "classroom-presentation-video") {
+            setPresentationActive(false);
+            setPresentationTitle(null);
+          }
           setScreenShareParticipant((current) =>
             current?.identity === participant.identity ? null : current
           );
@@ -804,6 +835,10 @@ export function ClassroomPage() {
       lkRoom.on(RoomEvent.LocalTrackPublished, () => updateParticipantList(lkRoom));
       lkRoom.on(RoomEvent.LocalTrackUnpublished, (publication) => {
         if (publication.source === Track.Source.ScreenShare) {
+          if (publication.trackName === "classroom-presentation-video") {
+            setPresentationActive(false);
+            setPresentationTitle(null);
+          }
           setIsScreenSharing(false);
           setScreenShareParticipant((current) => current?.isMe ? null : current);
         }
@@ -919,9 +954,11 @@ export function ClassroomPage() {
     setMicOn(false);
     setCamOn(false);
     setIsScreenSharing(false);
+    setPresentationActive(false);
+    setPresentationTitle(null);
   };
 
-  const classroomRequest = async (path: string, body: Record<string, unknown>) => {
+  const classroomRequest = useCallback(async (path: string, body: Record<string, unknown>) => {
     const { data } = await supabase.auth.getSession();
     return fetch(`${getVoxelServerUrl()}${path}`, {
       method: "POST",
@@ -932,7 +969,7 @@ export function ClassroomPage() {
       },
       body: JSON.stringify(body)
     });
-  };
+  }, []);
 
   // Broadcast Whiteboard Deltas via Socket.io to under-the-hood drawgame room
   const handleLocalBoardDelta = useCallback(
@@ -996,6 +1033,10 @@ export function ClassroomPage() {
   // Toggle Screen Sharing
   const toggleScreenShare = async () => {
     if (!room || isStealthAdmin) return;
+    if (presentationActive && !isScreenSharing) {
+      setConnError("יש לעצור את מצגת המדיה לפני התחלת שיתוף מסך.");
+      return;
+    }
     const canShare = isHost || roomSettings.allowStudentScreenShare;
     if (!canShare && !isScreenSharing) {
       alert("שיתוף מסך מורשה באישור המורה בלבד.");
@@ -1008,6 +1049,7 @@ export function ClassroomPage() {
       updateParticipantList(room);
     } catch (err) {
       console.error("Screen share toggle failed", err);
+      setConnError("לא ניתן להתחיל שיתוף מסך. בדוק את הרשאות הדפדפן ונסה שוב.");
     }
   };
 
@@ -1312,6 +1354,17 @@ export function ClassroomPage() {
             </button>
           )}
 
+          {connState === "connected" && (isHost || isDelegatedHost) && roomCode && (
+            <ClassroomPresentationPublisher
+              room={room}
+              roomCode={roomCode}
+              canPresent={(isHost || (isDelegatedHost && delegateScopes.includes("control_presentation"))) && (!isScreenSharing || presentationActive)}
+              classroomRequest={classroomRequest}
+              onActiveChange={setPresentationActive}
+              onError={setConnError}
+            />
+          )}
+
           {/* FOCUS MODE TOGGLE BUTTON */}
           {connState === "connected" && isMainContentActive && (
             <button
@@ -1347,6 +1400,14 @@ export function ClassroomPage() {
           )}
         </div>
       </header>
+
+      {connState === "connected" && connError && (
+        <div className="fixed left-4 top-20 z-50 flex max-w-md items-center gap-2 rounded-xl border border-rose-500/40 bg-slate-950/95 px-3 py-2 text-xs font-bold text-rose-200 shadow-xl" role="alert">
+          <AlertCircle className="size-4 shrink-0 text-rose-400" />
+          <p>{connError}</p>
+          <button onClick={() => setConnError(null)} className="mr-1 rounded px-1 text-rose-300 hover:bg-rose-500/20" aria-label="סגור הודעת שגיאה">×</button>
+        </div>
+      )}
 
       {/* DISCONNECTED ENTRY / GUEST FORM */}
       {connState !== "connected" && (
@@ -1503,17 +1564,18 @@ export function ClassroomPage() {
               {/* MAIN CONTENT FRAME: EXCALIDRAW BOARD OR SHARED SCREEN */}
               <div
                 className={cn(
-                  "flex-1 rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden shadow-2xl flex flex-col relative",
+                  "flex-1 rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden shadow-2xl flex relative",
+                  screenShareParticipant && showBoard ? "flex-row gap-px bg-slate-800" : "flex-col",
                   !isMainContentActive && "hidden"
                 )}
               >
 
                   {/* SHARED SCREEN PRECEDENCE */}
                   {screenShareParticipant && (
-                    <div className="flex-1 bg-black flex items-center justify-center relative">
+                    <div className={cn("bg-black flex items-center justify-center relative min-w-0", showBoard ? "basis-3/5" : "flex-1")}>
                       <div className="absolute top-2 right-2 bg-slate-950/80 px-3 py-1 rounded-lg text-xs font-bold text-indigo-300 z-10 border border-slate-800 flex items-center gap-1.5">
                         <Monitor className="size-3.5 text-indigo-400" />
-                        מסך משותף מאת: {screenShareParticipant.name}
+                        {presentationTitle ? `מצגת: ${presentationTitle}` : `מסך משותף מאת: ${screenShareParticipant.name}`}
                       </div>
                       <video
                         ref={(el) => {
@@ -1525,6 +1587,16 @@ export function ClassroomPage() {
                         playsInline
                         className="h-full w-full object-contain"
                       />
+                      {screenShareParticipant.screenAudioTrack && (
+                        <audio
+                          ref={(el) => {
+                            if (el && screenShareParticipant.screenAudioTrack) {
+                              screenShareParticipant.screenAudioTrack.attach(el);
+                            }
+                          }}
+                          autoPlay
+                        />
+                      )}
                     </div>
                   )}
 
@@ -1536,10 +1608,11 @@ export function ClassroomPage() {
                   */}
                   <div
                     className={cn(
-                      "flex-1 w-full h-full relative overflow-hidden",
-                      (!showBoard || screenShareParticipant) && "hidden"
+                      "relative overflow-hidden min-w-0",
+                      screenShareParticipant ? "basis-2/5" : "flex-1",
+                      !showBoard && "hidden"
                     )}
-                    aria-hidden={!showBoard || Boolean(screenShareParticipant)}
+                    aria-hidden={!showBoard}
                   >
                     {drawSocketReady ? (
                       <DrawingBoard
@@ -1554,7 +1627,7 @@ export function ClassroomPage() {
                         initialYjsUpdate={boardInitialYjsUpdate}
                         initialYjsSyncToken={boardInitialYjsSyncToken}
                         hideTopBar={true}
-                        isVisible={showBoard && !screenShareParticipant}
+                        isVisible={showBoard}
                         players={participants.map((p) => ({
                           userId: p.identity,
                           displayName: p.name

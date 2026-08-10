@@ -99,6 +99,22 @@ export async function sendClassroomDelegateEnrollment(
   });
 }
 
+export async function broadcastClassroomData(
+  roomCode: string,
+  message: Record<string, unknown>
+): Promise<void> {
+  const roomService = getRoomServiceClient();
+  if (!roomService) {
+    throw new LiveKitTokenError("server_config", "LiveKit is not configured on the server.");
+  }
+  await roomService.sendData(
+    classroomLiveKitRoom(roomCode),
+    new TextEncoder().encode(JSON.stringify(message)),
+    DataPacket_Kind.RELIABLE,
+    { topic: "classroom-presentation" }
+  );
+}
+
 export async function removeClassroomParticipant(
   roomCode: string,
   participantIdentity: string
