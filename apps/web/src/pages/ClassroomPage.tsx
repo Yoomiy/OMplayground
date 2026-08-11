@@ -1629,7 +1629,7 @@ export function ClassroomPage() {
               className="rounded-xl border border-fuchsia-500/50 bg-fuchsia-500/10 px-3 py-1.5 text-xs font-bold text-fuchsia-100 transition hover:bg-fuchsia-500/20 flex items-center gap-1.5"
               title="הוספת קובץ לספריית חומרי המדיה המקומית"
             >
-              <Upload className="size-3.5" /> הוסף חומר
+              <Upload className="size-3.5" /> הוסף חומרים ללוח המדיה
             </button>
           )}
 

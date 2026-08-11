@@ -10,7 +10,6 @@ import {
   Maximize2,
   Music,
   Presentation,
-  Rabbit,
   RotateCcw,
   Trash2,
   Upload,
@@ -755,7 +754,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
         <button onClick={() => fileInputRef.current?.click()} className="rounded bg-slate-800 px-2 py-1"><Upload className="inline size-3.5" /> הוסף</button>
         <div className="relative">
           <button onClick={() => setMaterialsOpen((value) => !value)} className="rounded bg-slate-800 px-2 py-1"><FolderOpen className="inline size-3.5" /> חומרים ({materials.length})</button>
-          {materialsOpen && <div className="absolute right-0 top-full z-50 mt-2 grid w-80 grid-cols-2 gap-2 rounded-xl border border-slate-700 bg-slate-950 p-2 shadow-2xl">
+          {materialsOpen && <div className="absolute left-0 top-full z-50 mt-2 grid max-h-[min(28rem,calc(100vh-10rem))] w-[min(20rem,calc(100vw-2rem))] grid-cols-2 gap-2 overflow-y-auto rounded-xl border border-slate-700 bg-slate-950 p-2 shadow-2xl">
             {materials.map((material) => {
               return <button key={material.id} onClick={() => { setSelectedId(material.id); setMaterialsOpen(false); }} className={`overflow-hidden rounded-lg border text-right ${material.id === selectedId ? "border-fuchsia-400" : "border-slate-700"}`}>
                 <MaterialThumbnail material={material} />
@@ -808,18 +807,10 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
           onPointerUp={() => { panStartRef.current = null; }}
           onPointerLeave={() => { if (laserMode) { laserRef.current = null; renderVisual(); } }}
         />}
-        {selected.kind === "video" && <video key={selected.id} ref={(element) => { mediaRef.current = element; }} controls playsInline className="h-full w-full object-contain" onTimeUpdate={(event) => updateSelectedState({ currentTime: event.currentTarget.currentTime })} onPlay={() => updateSelectedState({ wasPlaying: true })} onPause={() => updateSelectedState({ wasPlaying: false })} onVolumeChange={(event) => updateSelectedState({ volume: event.currentTarget.volume })} />}
-        {selected.kind === "audio" && <audio key={selected.id} ref={(element) => { mediaRef.current = element; }} controls className="w-full max-w-2xl" onTimeUpdate={(event) => updateSelectedState({ currentTime: event.currentTarget.currentTime })} onPlay={() => updateSelectedState({ wasPlaying: true })} onPause={() => updateSelectedState({ wasPlaying: false })} onVolumeChange={(event) => updateSelectedState({ volume: event.currentTarget.volume })} />}
+        {selected.kind === "video" && <video key={selected.id} ref={(element) => { mediaRef.current = element; }} controls playsInline className="h-full w-full object-contain" onTimeUpdate={(event) => updateSelectedState({ currentTime: event.currentTarget.currentTime })} onPlay={() => updateSelectedState({ wasPlaying: true })} onPause={() => updateSelectedState({ wasPlaying: false })} onVolumeChange={(event) => updateSelectedState({ volume: event.currentTarget.volume })} onRateChange={(event) => updateSelectedState({ playbackRate: event.currentTarget.playbackRate })} />}
+        {selected.kind === "audio" && <audio key={selected.id} ref={(element) => { mediaRef.current = element; }} controls className="w-full max-w-2xl" onTimeUpdate={(event) => updateSelectedState({ currentTime: event.currentTarget.currentTime })} onPlay={() => updateSelectedState({ wasPlaying: true })} onPause={() => updateSelectedState({ wasPlaying: false })} onVolumeChange={(event) => updateSelectedState({ volume: event.currentTarget.volume })} onRateChange={(event) => updateSelectedState({ playbackRate: event.currentTarget.playbackRate })} />}
         {isPreparing && <div className="absolute inset-0 flex items-center justify-center bg-slate-950/80 text-sm font-bold">מכין חומר להצגה...</div>}
       </div>
-      {(selected.kind === "video" || selected.kind === "audio") && <div className="flex items-center justify-center gap-2 border-t border-slate-700 bg-slate-950 px-2 py-1.5 text-xs">
-        <button onClick={() => { if (mediaRef.current) mediaRef.current.currentTime = Math.max(0, mediaRef.current.currentTime - 10); }}>−10 שנ׳</button>
-        <select value={selected.state.playbackRate} onChange={(event) => { const rate = Number(event.target.value); if (mediaRef.current) mediaRef.current.playbackRate = rate; updateSelectedState({ playbackRate: rate }); }} className="rounded bg-slate-800 px-2 py-1">
-          {[0.5, 0.75, 1, 1.25, 1.5, 2].map((rate) => <option key={rate} value={rate}>{rate}×</option>)}
-        </select>
-        <button onClick={() => { if (mediaRef.current) mediaRef.current.currentTime = Math.min(mediaRef.current.duration || Infinity, mediaRef.current.currentTime + 10); }}>+10 שנ׳</button>
-        <Rabbit className="size-4 text-slate-500" />
-      </div>}
     </div>}
     <canvas ref={publishCanvasRef} width={DOCUMENT_WIDTH} height={DOCUMENT_HEIGHT} className="hidden" aria-hidden="true" />
   </>;
