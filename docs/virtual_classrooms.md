@@ -18,6 +18,9 @@ The Virtual Classrooms platform enables dynamic, standalone virtual classrooms b
 - **Microphone & Camera Toggles**: Media controls with visual status indicators.
 - **Robust Hardware Init**: Safely handles missing camera/mic hardware or browser permission blocks (`Starting videoinput failed`) without blocking room connection.
 - **Connection Timeout Race**: WebRTC connection is raced with a 10s timeout to prevent page freezes when PeerConnection negotiation fails.
+- **Exclusive Presenter**: One server-authorized participant publishes the presentation track. The classroom creator starts with ownership, may transfer or reclaim it, and disconnected presenters receive a 15-second reconnect grace period before deterministic host handoff.
+- **Local Material Library**: Presenter files stay in the presenter browser, with a 12-hour IndexedDB recovery cache and a thumbnail material picker. Hiding the room-wide media board retains each item’s page, zoom, pan, time, rate, and volume.
+- **Static Document Conversion**: PDF, PPT, and PPTX files are temporarily converted to page images by the isolated Railway `document-converter` service. Jobs are limited to 50 MB/150 pages and deleted after download or expiry.
 
 ### 3. Integrated Excalidraw Whiteboard
 - **Collaborative Real-time Board**: Each active drawing session (`class-draw-{roomCode}`) has one canonical Yjs document held by the game server. Permitted drawers send deltas to that server, which applies and broadcasts them; LiveKit is reserved for media, chat, and room controls.
@@ -55,6 +58,7 @@ The Virtual Classrooms platform enables dynamic, standalone virtual classrooms b
 | **Database** | `supabase/migrations/` | Schema/RLS for classrooms plus server-only delegate, enrollment, and cookie-session records |
 | **Backend API** | `apps/minecraft-server/src/livekitService.ts` | LiveKit classroom token issuance, permission synchronization, removal, cleanup, and trusted enrollment delivery |
 | **Backend API** | `apps/minecraft-server/src/index.ts` | Classroom token, delegate activation, settings, removal, promotion, lifecycle, and cleanup routes |
+| **Document converter** | `apps/document-converter/` | Ephemeral LibreOffice/Poppler document rasterization and ZIP packaging |
 | **Frontend UI** | `apps/web/src/pages/ClassroomPage.tsx` | Interactive classroom page: authenticated lifecycle calls, server-issued host controls, and Socket.IO board hydration |
 | **Frontend UI** | `apps/web/src/pages/TeacherPage.tsx` | Teacher tab for creating classrooms (scoped to creator `teacher_id`) & copying links |
 | **Frontend UI** | `apps/web/src/pages/AdminPage.tsx` | Admin tab for real-time monitoring, stealth modes, persistence toggles, and manual cleanup |
@@ -64,3 +68,5 @@ The Virtual Classrooms platform enables dynamic, standalone virtual classrooms b
 ## Deployment note
 
 The classroom page must call the RTC service from an allowed `CORS_ORIGIN` with credentials enabled. In production, serve the web app and RTC service from the same site (or a same-site subdomain) so browsers retain the secure delegate cookie. The cookie is `HttpOnly`, `Secure`, `SameSite=None` in production, and is accepted only by delegate endpoints with an allow-listed browser `Origin`.
+
+Deploy `apps/document-converter/Dockerfile` as a separate one-replica Railway service. Set the same `DOCUMENT_CONVERTER_SHARED_SECRET` on it and `minecraft-server`, set `DOCUMENT_CONVERTER_URL` on `minecraft-server`, and allow the Vercel classroom origin through the converter’s `CORS_ORIGIN`. The service needs ephemeral disk only; horizontal replicas require a shared job store and are intentionally unsupported.

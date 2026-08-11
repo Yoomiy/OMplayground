@@ -9,7 +9,9 @@ import { supabase } from "@/lib/supabase";
 import { getVoxelServerUrl } from "@/lib/voxelServerUrl";
 import { reportTelemetry } from "@/utils/telemetry";
 import { DrawingBoard } from "@/games/drawing/DrawingBoard";
-import { ClassroomPresentationPublisher } from "@/components/ClassroomPresentationPublisher";
+import { ClassroomPresentationPublisher, type ClassroomPresentationPublisherHandle } from "@/components/ClassroomPresentationPublisher";
+import { ClassroomPresentationReceiver } from "@/components/ClassroomPresentationReceiver";
+import { clearClassroomLibrary } from "@/lib/classroomMediaLibrary";
 
 function gameServerUrl(): string {
   const fromEnv = import.meta.env.VITE_GAME_SERVER_URL?.trim();
@@ -45,7 +47,8 @@ import {
   Eye,
   EyeOff,
   Sparkles,
-  Trash2
+  Trash2,
+  Upload
 } from "lucide-react";
 
 interface ClassroomSessionData {
@@ -61,6 +64,11 @@ interface ClassroomSessionData {
     allowStudentChat?: boolean;
     allowStudentScreenShare?: boolean;
     allowWhiteboardDraw?: boolean;
+    presentationPercent?: number;
+    presentationPresenterIdentity?: string | null;
+    presentationPresenterEpoch?: number;
+    presentationVisible?: boolean;
+    presentationTitle?: string | null;
   };
   whiteboard_data?: any;
 }
@@ -84,6 +92,8 @@ interface CustomParticipantInfo {
   isHandRaised: boolean;
   screenTrack?: any;
   screenAudioTrack?: any;
+  presentationTrack?: any;
+  presentationAudioTrack?: any;
   videoTrack?: any;
   audioTrack?: any;
 }
@@ -106,6 +116,21 @@ function participantIsHost(participant?: Participant): boolean {
   } catch {
     return false;
   }
+}
+
+function presenterSessionKey(roomCode: string): string {
+  return `classroom-presenter:${roomCode}`;
+}
+
+function readPresenterSessionToken(roomCode: string): string | null {
+  try { return window.sessionStorage.getItem(presenterSessionKey(roomCode)); } catch { return null; }
+}
+
+function writePresenterSessionToken(roomCode: string, token: string | null) {
+  try {
+    if (token) window.sessionStorage.setItem(presenterSessionKey(roomCode), token);
+    else window.sessionStorage.removeItem(presenterSessionKey(roomCode));
+  } catch {}
 }
 
 export function ClassroomPage() {
@@ -149,7 +174,6 @@ export function ClassroomPage() {
   // User Local Media & Permissions state
   const [isHost, setIsHost] = useState(false);
   const [isDelegatedHost, setIsDelegatedHost] = useState(false);
-  const [delegateScopes, setDelegateScopes] = useState<string[]>([]);
   const [delegateGameToken, setDelegateGameToken] = useState<string | null>(null);
   const [micOn, setMicOn] = useState(false);
   const [camOn, setCamOn] = useState(false);
@@ -167,8 +191,25 @@ export function ClassroomPage() {
   const [participants, setParticipants] = useState<CustomParticipantInfo[]>([]);
   const [activeSpeakers, setActiveSpeakers] = useState<string[]>([]);
   const [screenShareParticipant, setScreenShareParticipant] = useState<CustomParticipantInfo | null>(null);
+  const [presentationParticipant, setPresentationParticipant] = useState<CustomParticipantInfo | null>(null);
   const [presentationTitle, setPresentationTitle] = useState<string | null>(null);
   const [presentationActive, setPresentationActive] = useState(false);
+  const [localPresentationLoaded, setLocalPresentationLoaded] = useState(false);
+  const [localPresentationLibraryReady, setLocalPresentationLibraryReady] = useState(false);
+  const [classroomSessionId, setClassroomSessionId] = useState<string | null>(null);
+  const [presenterIdentity, setPresenterIdentity] = useState<string | null>(null);
+  const [presenterEpoch, setPresenterEpoch] = useState(0);
+  const [presenterToken, setPresenterToken] = useState<string | null>(null);
+  const [isClassCreator, setIsClassCreator] = useState(false);
+  const presenterIdentityRef = useRef<string | null>(null);
+  const presenterEpochRef = useRef(0);
+  const presentationPublisherRef = useRef<ClassroomPresentationPublisherHandle>(null);
+  const presenterTokenRef = useRef<string | null>(null);
+  const [stageSplitPercent, setStageSplitPercent] = useState(60);
+
+  useEffect(() => { presenterIdentityRef.current = presenterIdentity; }, [presenterIdentity]);
+  useEffect(() => { presenterEpochRef.current = presenterEpoch; }, [presenterEpoch]);
+  useEffect(() => { presenterTokenRef.current = presenterToken; }, [presenterToken]);
 
   // Under-the-hood Draw Game Room (Socket.io) for Whiteboard Syncing
   const [drawSessionId, setDrawSessionId] = useState<string | null>(null);
@@ -458,6 +499,13 @@ export function ClassroomPage() {
       setSessionData(data as ClassroomSessionData);
       if (data.settings) {
         setRoomSettings((prev) => ({ ...prev, ...data.settings }));
+        if (Number.isFinite(data.settings.presentationPercent)) {
+          setStageSplitPercent(Math.max(30, Math.min(70, Number(data.settings.presentationPercent))));
+        }
+        setPresenterIdentity(typeof data.settings.presentationPresenterIdentity === "string" ? data.settings.presentationPresenterIdentity : null);
+        setPresenterEpoch(Number.isInteger(data.settings.presentationPresenterEpoch) ? Number(data.settings.presentationPresenterEpoch) : 0);
+        setPresentationActive(data.settings.presentationVisible === true);
+        setPresentationTitle(typeof data.settings.presentationTitle === "string" ? data.settings.presentationTitle : null);
       }
       setLoadingSession(false);
     }
@@ -484,6 +532,8 @@ export function ClassroomPage() {
         (payload) => {
           const updated = payload.new as ClassroomSessionData;
           if (updated.status === "ended") {
+            void clearClassroomLibrary(updated.id).catch(() => {});
+            writePresenterSessionToken(roomCode, null);
             setConnError("השיעור הופסק על ידי המורה.");
             roomRef.current?.disconnect();
             roomRef.current = null;
@@ -494,6 +544,10 @@ export function ClassroomPage() {
             setIsScreenSharing(false);
           } else if (updated.settings) {
             setRoomSettings((prev) => ({ ...prev, ...updated.settings }));
+            setPresenterIdentity(typeof updated.settings.presentationPresenterIdentity === "string" ? updated.settings.presentationPresenterIdentity : null);
+            setPresenterEpoch(Number.isInteger(updated.settings.presentationPresenterEpoch) ? Number(updated.settings.presentationPresenterEpoch) : 0);
+            setPresentationActive(updated.settings.presentationVisible === true);
+            setPresentationTitle(typeof updated.settings.presentationTitle === "string" ? updated.settings.presentationTitle : null);
           }
         }
       )
@@ -512,11 +566,17 @@ export function ClassroomPage() {
     const local = lkRoom.localParticipant;
     let localScreenTrack: any = null;
     let localScreenAudioTrack: any = null;
+    let localPresentationTrack: any = null;
+    let localPresentationAudioTrack: any = null;
     let localVideoTrack: any = null;
     let localAudioTrack: any = null;
 
     local.trackPublications.forEach((pub) => {
-      if (
+      if (pub.trackName === "classroom-presentation-video" && pub.track) {
+        localPresentationTrack = pub.track;
+      } else if (pub.trackName === "classroom-presentation-audio" && pub.track) {
+        localPresentationAudioTrack = pub.track;
+      } else if (
         pub.source === Track.Source.ScreenShare &&
         pub.track &&
         !pub.isMuted &&
@@ -550,6 +610,8 @@ export function ClassroomPage() {
         isHandRaised: Boolean(localMetadata.handRaised),
         screenTrack: localScreenTrack,
         screenAudioTrack: localScreenAudioTrack,
+        presentationTrack: localPresentationTrack,
+        presentationAudioTrack: localPresentationAudioTrack,
         videoTrack: localVideoTrack,
         audioTrack: localAudioTrack
       });
@@ -559,11 +621,17 @@ export function ClassroomPage() {
     lkRoom.remoteParticipants.forEach((p) => {
       let pScreenTrack: any = null;
       let pScreenAudioTrack: any = null;
+      let pPresentationTrack: any = null;
+      let pPresentationAudioTrack: any = null;
       let pVideoTrack: any = null;
       let pAudioTrack: any = null;
 
       p.trackPublications.forEach((pub) => {
-        if (
+        if (pub.trackName === "classroom-presentation-video" && pub.track) {
+          pPresentationTrack = pub.track;
+        } else if (pub.trackName === "classroom-presentation-audio" && pub.track) {
+          pPresentationAudioTrack = pub.track;
+        } else if (
           pub.source === Track.Source.ScreenShare &&
           pub.track &&
           !pub.isMuted &&
@@ -605,6 +673,8 @@ export function ClassroomPage() {
         isHandRaised: Boolean(pMetadata.handRaised),
         screenTrack: pScreenTrack,
         screenAudioTrack: pScreenAudioTrack,
+        presentationTrack: pPresentationTrack,
+        presentationAudioTrack: pPresentationAudioTrack,
         videoTrack: pVideoTrack,
         audioTrack: pAudioTrack
       });
@@ -622,6 +692,8 @@ export function ClassroomPage() {
     // Find screen share participant
     const screenSharing = list.find((p) => p.screenTrack != null);
     setScreenShareParticipant(screenSharing || null);
+    const presenting = list.find((p) => p.identity === presenterIdentityRef.current && p.presentationTrack != null);
+    setPresentationParticipant(presenting || null);
   }, [isStealthAdmin]);
 
   // Connect to LiveKit Room
@@ -648,7 +720,8 @@ export function ClassroomPage() {
         body: JSON.stringify({
           roomCode,
           displayName: resolvedDisplayName,
-          spectateMode: spectateMode ?? undefined
+          spectateMode: spectateMode ?? undefined,
+          presenterToken: readPresenterSessionToken(roomCode) ?? undefined
         })
       });
 
@@ -673,13 +746,29 @@ export function ClassroomPage() {
         isDelegate,
         canPublishMicrophone,
         canPublishCamera,
-        delegateScopes: issuedDelegateScopes,
-        delegateGameToken: issuedDelegateGameToken
+        delegateGameToken: issuedDelegateGameToken,
+        classroomSessionId: issuedClassroomSessionId,
+        isClassCreator: issuedIsClassCreator,
+        presenterIdentity: issuedPresenterIdentity,
+        presenterEpoch: issuedPresenterEpoch,
+        presentationVisible: issuedPresentationVisible,
+        presentationTitle: issuedPresentationTitle,
+        presenterToken: issuedPresenterToken
       } = await response.json();
       setLocalUserId(userId || null);
       setIsDelegatedHost(Boolean(isDelegate));
-      setDelegateScopes(Array.isArray(issuedDelegateScopes) ? issuedDelegateScopes : []);
       setDelegateGameToken(issuedDelegateGameToken || null);
+      setClassroomSessionId(issuedClassroomSessionId || sessionData?.id || null);
+      setIsClassCreator(Boolean(issuedIsClassCreator));
+      setPresenterIdentity(typeof issuedPresenterIdentity === "string" ? issuedPresenterIdentity : null);
+      setPresenterEpoch(Number.isInteger(issuedPresenterEpoch) ? issuedPresenterEpoch : 0);
+      setPresentationActive(Boolean(issuedPresentationVisible));
+      setPresentationTitle(typeof issuedPresentationTitle === "string" ? issuedPresentationTitle : null);
+      setPresenterToken(typeof issuedPresenterToken === "string" ? issuedPresenterToken : null);
+      presenterIdentityRef.current = typeof issuedPresenterIdentity === "string" ? issuedPresenterIdentity : null;
+      presenterEpochRef.current = Number.isInteger(issuedPresenterEpoch) ? issuedPresenterEpoch : 0;
+      presenterTokenRef.current = typeof issuedPresenterToken === "string" ? issuedPresenterToken : null;
+      if (typeof issuedPresenterToken === "string") writePresenterSessionToken(roomCode, issuedPresenterToken);
       const isUserHost = Boolean(tokenIsHost || isAdmin || (profile?.role as string) === "admin" || role === "admin");
       setIsHost(isUserHost);
 
@@ -716,7 +805,6 @@ export function ClassroomPage() {
               })
               .then((result) => {
                 setIsDelegatedHost(true);
-                setDelegateScopes(Array.isArray(result.delegateScopes) ? result.delegateScopes : []);
                 if (drawSocketRef.current && drawSessionId && result.delegateGameToken) {
                   drawSocketRef.current.emit("CLASSROOM_DELEGATE_ACTIVATED", {
                     sessionId: drawSessionId,
@@ -732,6 +820,56 @@ export function ClassroomPage() {
             const started = msg.action === "started";
             setPresentationActive(started);
             setPresentationTitle(started && typeof msg.title === "string" ? msg.title : null);
+            if (typeof msg.presenterIdentity === "string") {
+              setPresenterIdentity(msg.presenterIdentity);
+              presenterIdentityRef.current = msg.presenterIdentity;
+            }
+            if (Number.isInteger(msg.presenterEpoch)) {
+              setPresenterEpoch(msg.presenterEpoch);
+              presenterEpochRef.current = msg.presenterEpoch;
+            }
+            return;
+          }
+
+          if (msg.type === "PRESENTATION_VISIBILITY" && !participant) {
+            setPresentationActive(msg.visible === true);
+            if (typeof msg.presenterIdentity === "string") {
+              setPresenterIdentity(msg.presenterIdentity);
+              presenterIdentityRef.current = msg.presenterIdentity;
+            }
+            if (Number.isInteger(msg.presenterEpoch)) {
+              setPresenterEpoch(msg.presenterEpoch);
+              presenterEpochRef.current = msg.presenterEpoch;
+            }
+            return;
+          }
+
+          if (msg.type === "PRESENTER_ASSIGNED" && !participant) {
+            const nextPresenterIdentity = typeof msg.presenterIdentity === "string" ? msg.presenterIdentity : null;
+            setPresenterIdentity(nextPresenterIdentity);
+            presenterIdentityRef.current = nextPresenterIdentity;
+            if (Number.isInteger(msg.presenterEpoch)) {
+              setPresenterEpoch(msg.presenterEpoch);
+              presenterEpochRef.current = msg.presenterEpoch;
+            }
+            setPresentationActive(msg.visible === true);
+            if (msg.presenterIdentity !== lkRoom.localParticipant.identity) {
+              setPresenterToken(null);
+              presenterTokenRef.current = null;
+              writePresenterSessionToken(roomCode, null);
+            }
+            return;
+          }
+
+          if (msg.type === "PRESENTER_CAPABILITY" && !participant) {
+            if (msg.presenterIdentity !== lkRoom.localParticipant.identity || typeof msg.presenterToken !== "string") return;
+            setPresenterIdentity(msg.presenterIdentity);
+            setPresenterEpoch(Number(msg.presenterEpoch) || 0);
+            setPresenterToken(msg.presenterToken);
+            presenterIdentityRef.current = msg.presenterIdentity;
+            presenterEpochRef.current = Number(msg.presenterEpoch) || 0;
+            presenterTokenRef.current = msg.presenterToken;
+            writePresenterSessionToken(roomCode, msg.presenterToken);
             return;
           }
 
@@ -761,6 +899,8 @@ export function ClassroomPage() {
             );
           } else if (msg.type === "TOGGLE_BOARD") {
             setShowBoard(Boolean(msg.show));
+          } else if (msg.type === "STAGE_LAYOUT" && !participant && Number.isFinite(msg.presentationPercent)) {
+            setStageSplitPercent(Math.max(30, Math.min(70, Number(msg.presentationPercent))));
           } else if (msg.type === "KICK") {
             if (participant && lkRoom.localParticipant.identity === msg.targetIdentity) {
               setConnError("הוצאת מהכיתה על ידי המורה.");
@@ -805,30 +945,32 @@ export function ClassroomPage() {
       });
 
       lkRoom.on(RoomEvent.ParticipantConnected, () => updateParticipantList(lkRoom));
-      lkRoom.on(RoomEvent.ParticipantDisconnected, () => updateParticipantList(lkRoom));
+      lkRoom.on(RoomEvent.ParticipantDisconnected, () => {
+        updateParticipantList(lkRoom);
+      });
       lkRoom.on(RoomEvent.TrackPublished, () => updateParticipantList(lkRoom));
       lkRoom.on(RoomEvent.TrackSubscribed, () => updateParticipantList(lkRoom));
       lkRoom.on(RoomEvent.TrackUnpublished, (publication, participant) => {
         if (publication.source === Track.Source.ScreenShare) {
           if (publication.trackName === "classroom-presentation-video") {
-            setPresentationActive(false);
-            setPresentationTitle(null);
+            setPresentationParticipant((current) => current?.identity === participant.identity ? { ...current, presentationTrack: undefined } : current);
+          } else {
+            setScreenShareParticipant((current) =>
+              current?.identity === participant.identity ? null : current
+            );
           }
-          setScreenShareParticipant((current) =>
-            current?.identity === participant.identity ? null : current
-          );
         }
         window.queueMicrotask(() => updateParticipantList(lkRoom));
       });
       lkRoom.on(RoomEvent.TrackUnsubscribed, (_track, publication, participant) => {
         if (publication.source === Track.Source.ScreenShare) {
           if (publication.trackName === "classroom-presentation-video") {
-            setPresentationActive(false);
-            setPresentationTitle(null);
+            setPresentationParticipant((current) => current?.identity === participant.identity ? { ...current, presentationTrack: undefined } : current);
+          } else {
+            setScreenShareParticipant((current) =>
+              current?.identity === participant.identity ? null : current
+            );
           }
-          setScreenShareParticipant((current) =>
-            current?.identity === participant.identity ? null : current
-          );
         }
         window.queueMicrotask(() => updateParticipantList(lkRoom));
       });
@@ -836,11 +978,11 @@ export function ClassroomPage() {
       lkRoom.on(RoomEvent.LocalTrackUnpublished, (publication) => {
         if (publication.source === Track.Source.ScreenShare) {
           if (publication.trackName === "classroom-presentation-video") {
-            setPresentationActive(false);
-            setPresentationTitle(null);
+            setPresentationParticipant((current) => current?.isMe ? { ...current, presentationTrack: undefined } : current);
+          } else {
+            setIsScreenSharing(false);
+            setScreenShareParticipant((current) => current?.isMe ? null : current);
           }
-          setIsScreenSharing(false);
-          setScreenShareParticipant((current) => current?.isMe ? null : current);
         }
         window.queueMicrotask(() => updateParticipantList(lkRoom));
       });
@@ -947,6 +1089,13 @@ export function ClassroomPage() {
   };
 
   const disconnectFromRoom = async () => {
+    if (roomRef.current?.localParticipant.identity === presenterIdentityRef.current && presenterTokenRef.current) {
+      await classroomRequest("/rtc/classroom-presenter-leave", {
+        roomCode,
+        presenterEpoch: presenterEpochRef.current,
+        presenterToken: presenterTokenRef.current
+      }).catch(() => null);
+    }
     roomRef.current?.disconnect();
     roomRef.current = null;
     setRoom(null);
@@ -970,6 +1119,49 @@ export function ClassroomPage() {
       body: JSON.stringify(body)
     });
   }, []);
+
+  const handleLocalPresentationChange = useCallback((snapshot: {
+    ready: boolean;
+    hasMedia: boolean;
+    title: string | null;
+  }) => {
+    setLocalPresentationLibraryReady(snapshot.ready);
+    setLocalPresentationLoaded(snapshot.hasMedia);
+    if (snapshot.hasMedia && room?.localParticipant.identity === presenterIdentity) {
+      setPresentationTitle(snapshot.title);
+    }
+  }, [presenterIdentity, room]);
+
+  const requestMediaHidden = useCallback(() => {
+    if (!presentationActive) return;
+    void classroomRequest("/rtc/classroom-presentation-visibility", { roomCode, visible: false });
+  }, [classroomRequest, presentationActive, roomCode]);
+
+  useEffect(() => {
+    const identity = room?.localParticipant.identity;
+    if (!identity || identity !== presenterIdentity || !presenterToken || !localPresentationLibraryReady) return;
+    void classroomRequest("/rtc/classroom-presenter-ready", {
+      roomCode,
+      presenterEpoch,
+      presenterToken,
+      hasMedia: localPresentationLoaded
+    }).catch(() => {});
+  }, [classroomRequest, localPresentationLibraryReady, localPresentationLoaded, presentationActive, presenterEpoch, presenterIdentity, presenterToken, room, roomCode]);
+
+  useEffect(() => {
+    if (!isHost || !room || !presenterIdentity) return;
+    if (room.localParticipant.identity === presenterIdentity || participants.some((participant) => participant.identity === presenterIdentity)) return;
+    const expectedIdentity = presenterIdentity;
+    const expectedEpoch = presenterEpoch;
+    const timer = window.setTimeout(() => {
+      void classroomRequest("/rtc/classroom-presenter-elect", {
+        roomCode,
+        expectedPresenterIdentity: expectedIdentity,
+        expectedPresenterEpoch: expectedEpoch
+      }).catch(() => {});
+    }, 15_000);
+    return () => window.clearTimeout(timer);
+  }, [classroomRequest, isHost, participants, presenterEpoch, presenterIdentity, room, roomCode]);
 
   // Broadcast Whiteboard Deltas via Socket.io to under-the-hood drawgame room
   const handleLocalBoardDelta = useCallback(
@@ -1136,6 +1328,41 @@ export function ClassroomPage() {
     await room.localParticipant.publishData(new TextEncoder().encode(payload), { reliable: true });
   };
 
+  const toggleMediaBoardVisibility = async () => {
+    if (!isHost || !presenterIdentity) return;
+    if (!presentationActive && screenShareParticipant) {
+      setConnError("יש לעצור את שיתוף המסך לפני הצגת לוח המדיה.");
+      return;
+    }
+    const response = await classroomRequest("/rtc/classroom-presentation-visibility", {
+      roomCode,
+      visible: !presentationActive
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      setConnError(body.error === "presenter_unavailable" ? "אין כרגע מגיש זמין." : "לא ניתן לשנות את תצוגת לוח המדיה.");
+    }
+  };
+
+  const transferPresentation = async (targetIdentity: string) => {
+    const response = await classroomRequest("/rtc/classroom-presenter-transfer", { roomCode, targetIdentity });
+    if (!response.ok) setConnError("לא ניתן להעביר את זכויות ההצגה למשתתף שנבחר.");
+  };
+
+  const updateStageSplit = (presentationPercent: number) => {
+    const next = Math.max(30, Math.min(70, presentationPercent));
+    setStageSplitPercent(next);
+  };
+
+  const publishStageSplit = async (presentationPercent: number) => {
+    if (!isHost) return;
+    const response = await classroomRequest("/rtc/classroom-stage-layout", {
+      roomCode,
+      presentationPercent: Math.max(30, Math.min(70, presentationPercent))
+    });
+    if (!response.ok) setConnError("לא ניתן לעדכן את גודל הלוחות אצל המשתתפים.");
+  };
+
   // HOST ACTION: Individual Mute/Unmute
   const toggleIndividualMic = async (targetIdentity: string, currentMuted: boolean) => {
     if (!room || !isHost) return;
@@ -1248,6 +1475,8 @@ export function ClassroomPage() {
       return;
     }
 
+    if (classroomSessionId) await clearClassroomLibrary(classroomSessionId).catch(() => {});
+    writePresenterSessionToken(roomCode || sessionData.room_code, null);
     void disconnectFromRoom();
     navigate("/teacher");
   };
@@ -1293,7 +1522,31 @@ export function ClassroomPage() {
     );
   }
 
-  const isMainContentActive = screenShareParticipant != null || showBoard;
+  const localIsPresenter = room?.localParticipant.identity === presenterIdentity;
+  const hasPresentationPane = screenShareParticipant != null || presentationActive;
+  const isMainContentActive = hasPresentationPane || showBoard;
+  const beginStageResize = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!isHost || !showBoard) return;
+    const stage = event.currentTarget.parentElement;
+    if (!stage) return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    const updateFromPointer = (clientX: number) => {
+      const rect = stage.getBoundingClientRect();
+      // The classroom uses RTL layout, so the presentation starts at the right edge.
+      updateStageSplit(Math.round(((rect.right - clientX) / rect.width) * 100));
+    };
+    const onMove = (moveEvent: PointerEvent) => updateFromPointer(moveEvent.clientX);
+    const onUp = (upEvent: PointerEvent) => {
+      updateFromPointer(upEvent.clientX);
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      const rect = stage.getBoundingClientRect();
+      void publishStageSplit(Math.round(((rect.right - upEvent.clientX) / rect.width) * 100));
+    };
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp, { once: true });
+  };
 
   return (
     <div className="min-h-screen h-screen bg-slate-950 text-slate-100 flex flex-col font-sans overflow-hidden" dir="rtl">
@@ -1354,15 +1607,53 @@ export function ClassroomPage() {
             </button>
           )}
 
-          {connState === "connected" && (isHost || isDelegatedHost) && roomCode && (
-            <ClassroomPresentationPublisher
-              room={room}
-              roomCode={roomCode}
-              canPresent={(isHost || (isDelegatedHost && delegateScopes.includes("control_presentation"))) && (!isScreenSharing || presentationActive)}
-              classroomRequest={classroomRequest}
-              onActiveChange={setPresentationActive}
-              onError={setConnError}
-            />
+          {isHost && connState === "connected" && presenterIdentity && (
+            <button
+              onClick={() => void toggleMediaBoardVisibility()}
+              disabled={!presentationActive && Boolean(screenShareParticipant)}
+              className={cn(
+                "rounded-xl border px-3 py-1.5 font-bold text-xs flex items-center gap-1.5 transition duration-200",
+                presentationActive
+                  ? "bg-fuchsia-600/80 border-fuchsia-500 text-white"
+                  : "border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-300 disabled:cursor-not-allowed disabled:opacity-40"
+              )}
+            >
+              {presentationActive ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+              {presentationActive ? "הסתר לוח מדיה" : "הצג לוח מדיה"}
+            </button>
+          )}
+
+          {localIsPresenter && connState === "connected" && !isScreenSharing && (
+            <button
+              onClick={() => presentationPublisherRef.current?.openMaterialPicker()}
+              className="rounded-xl border border-fuchsia-500/50 bg-fuchsia-500/10 px-3 py-1.5 text-xs font-bold text-fuchsia-100 transition hover:bg-fuchsia-500/20 flex items-center gap-1.5"
+              title="הוספת קובץ לספריית חומרי המדיה המקומית"
+            >
+              <Upload className="size-3.5" /> הוסף חומר
+            </button>
+          )}
+
+          {isClassCreator && connState === "connected" && room && !localIsPresenter && (
+            <button onClick={() => void transferPresentation(room.localParticipant.identity)} className="rounded-xl border border-amber-500/50 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-200">
+              <Radio className="size-3.5" /> קח בחזרה את ההצגה
+            </button>
+          )}
+
+          {isHost && hasPresentationPane && showBoard && (
+            <label className="hidden items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/60 px-3 py-1.5 text-xs font-bold text-slate-200 lg:flex">
+              גודל מצגת
+              <input
+                type="range"
+                min="30"
+                max="70"
+                value={stageSplitPercent}
+                onChange={(event) => updateStageSplit(Number(event.target.value))}
+                onPointerUp={(event) => void publishStageSplit(Number((event.target as HTMLInputElement).value))}
+                onKeyUp={(event) => void publishStageSplit(Number((event.target as HTMLInputElement).value))}
+                className="w-24 accent-fuchsia-500"
+                aria-label="גודל המצגת ביחס ללוח"
+              />
+            </label>
           )}
 
           {/* FOCUS MODE TOGGLE BUTTON */}
@@ -1554,6 +1845,12 @@ export function ClassroomPage() {
                           >
                             {p.isVideoOff ? <VideoOff className="size-3" /> : <VideoIcon className="size-3" />}
                           </button>
+
+                          {(isClassCreator || (localIsPresenter && isHost)) && (
+                            <button onClick={() => void transferPresentation(p.identity)} title="העבר למשתתף זה את זכויות ההצגה" className="p-1 text-fuchsia-300 hover:bg-fuchsia-500/20 rounded">
+                              <Radio className="size-3" />
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1565,21 +1862,38 @@ export function ClassroomPage() {
               <div
                 className={cn(
                   "flex-1 rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden shadow-2xl flex relative",
-                  screenShareParticipant && showBoard ? "flex-row gap-px bg-slate-800" : "flex-col",
+                  hasPresentationPane && showBoard ? "flex-row gap-px bg-slate-800" : "flex-col",
                   !isMainContentActive && "hidden"
                 )}
               >
+                  {connState === "connected" && roomCode && classroomSessionId && (
+                    <ClassroomPresentationPublisher
+                      ref={presentationPublisherRef}
+                      room={room}
+                      roomCode={roomCode}
+                      sessionId={classroomSessionId}
+                      canPresent={Boolean(localIsPresenter && presenterToken && !isScreenSharing)}
+                      visible={presentationActive}
+                      presenterEpoch={presenterEpoch}
+                      presenterToken={presenterToken}
+                      classroomRequest={classroomRequest}
+                      onPresentationChange={handleLocalPresentationChange}
+                      onRequestHidden={requestMediaHidden}
+                      onError={setConnError}
+                      showBoard={showBoard}
+                      presentationPercent={stageSplitPercent}
+                    />
+                  )}
 
-                  {/* SHARED SCREEN PRECEDENCE */}
                   {screenShareParticipant && (
-                    <div className={cn("bg-black flex items-center justify-center relative min-w-0", showBoard ? "basis-3/5" : "flex-1")}>
+                    <div className={cn("bg-black flex items-center justify-center relative min-w-0", showBoard ? "shrink-0" : "flex-1")} style={showBoard ? { flexBasis: `${stageSplitPercent}%` } : undefined}>
                       <div className="absolute top-2 right-2 bg-slate-950/80 px-3 py-1 rounded-lg text-xs font-bold text-indigo-300 z-10 border border-slate-800 flex items-center gap-1.5">
                         <Monitor className="size-3.5 text-indigo-400" />
-                        {presentationTitle ? `מצגת: ${presentationTitle}` : `מסך משותף מאת: ${screenShareParticipant.name}`}
+                        {`מסך משותף מאת: ${screenShareParticipant.name}`}
                       </div>
                       <video
                         ref={(el) => {
-                          if (el && screenShareParticipant.screenTrack) {
+                          if (el && screenShareParticipant?.screenTrack) {
                             screenShareParticipant.screenTrack.attach(el);
                           }
                         }}
@@ -1587,10 +1901,10 @@ export function ClassroomPage() {
                         playsInline
                         className="h-full w-full object-contain"
                       />
-                      {screenShareParticipant.screenAudioTrack && (
+                      {screenShareParticipant?.screenAudioTrack && !screenShareParticipant.isMe && (
                         <audio
                           ref={(el) => {
-                            if (el && screenShareParticipant.screenAudioTrack) {
+                            if (el && screenShareParticipant?.screenAudioTrack) {
                               screenShareParticipant.screenAudioTrack.attach(el);
                             }
                           }}
@@ -1598,6 +1912,28 @@ export function ClassroomPage() {
                         />
                       )}
                     </div>
+                  )}
+
+                  {presentationActive && !localIsPresenter && !screenShareParticipant && (
+                    <div className={cn("min-w-0 bg-black", showBoard ? "shrink-0" : "flex-1")} style={showBoard ? { flexBasis: `${stageSplitPercent}%` } : undefined}>
+                      <ClassroomPresentationReceiver
+                        videoTrack={presentationParticipant?.presentationTrack}
+                        audioTrack={presentationParticipant?.presentationAudioTrack}
+                        title={presentationTitle}
+                        presenterName={participants.find((participant) => participant.identity === presenterIdentity)?.name ?? null}
+                      />
+                    </div>
+                  )}
+
+                  {isHost && hasPresentationPane && showBoard && (
+                    <div
+                      role="separator"
+                      aria-label="שנה את גודל המצגת ביחס ללוח"
+                      aria-orientation="vertical"
+                      onPointerDown={beginStageResize}
+                      className="absolute inset-y-0 z-40 w-2 -translate-x-1/2 cursor-col-resize bg-transparent hover:bg-fuchsia-400/70 active:bg-fuchsia-300"
+                      style={{ right: `${100 - stageSplitPercent}%` }}
+                    />
                   )}
 
                   {/*
@@ -1609,9 +1945,10 @@ export function ClassroomPage() {
                   <div
                     className={cn(
                       "relative overflow-hidden min-w-0",
-                      screenShareParticipant ? "basis-2/5" : "flex-1",
+                      hasPresentationPane ? "shrink-0" : "flex-1",
                       !showBoard && "hidden"
                     )}
+                    style={hasPresentationPane ? { flexBasis: `${100 - stageSplitPercent}%` } : undefined}
                     aria-hidden={!showBoard}
                   >
                     {drawSocketReady ? (

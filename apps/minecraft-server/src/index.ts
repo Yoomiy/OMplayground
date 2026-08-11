@@ -99,9 +99,17 @@ import {
   removeClassroomParticipant,
   sendClassroomDelegateEnrollment,
   broadcastClassroomData,
+  sendClassroomDataToParticipant,
+  listClassroomParticipants,
+  syncClassroomPresenterPermissions,
   syncClassroomParticipantPermissions,
   LiveKitTokenError
 } from "./livekitService";
+import {
+  createDocumentConversionTicket,
+  createPresenterCapability,
+  readPresenterCapability
+} from "./classroomPresentation";
 import {
   CLASSROOM_DELEGATE_SCOPES,
   createClassroomDelegateGameToken,
@@ -202,6 +210,8 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 const LIVEKIT_URL = process.env.LIVEKIT_URL ?? "";
 const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY ?? "";
 const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET ?? "";
+const DOCUMENT_CONVERTER_URL = (process.env.DOCUMENT_CONVERTER_URL ?? "http://localhost:8082").replace(/\/$/, "");
+const DOCUMENT_CONVERTER_SHARED_SECRET = process.env.DOCUMENT_CONVERTER_SHARED_SECRET ?? "";
 
 const tokenDenialLog = new Map<string, number[]>();
 const TOKEN_DENIAL_WINDOW_MS = 5 * 60_000;
@@ -419,7 +429,7 @@ async function getActiveClassroom(roomCode: string) {
   if (!supabaseAdmin) return null;
   const { data, error } = await supabaseAdmin
     .from("classroom_sessions")
-    .select("id, room_code, settings, status")
+    .select("id, room_code, teacher_id, settings, status")
     .eq("room_code", roomCode)
     .eq("status", "active")
     .maybeSingle();
@@ -429,6 +439,131 @@ async function getActiveClassroom(roomCode: string) {
 
 function classroomSettings(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+}
+
+interface PresentationRoomState {
+  presenterIdentity: string | null;
+  presenterEpoch: number;
+  visible: boolean;
+  title: string | null;
+  mediaKind: "document" | "image" | "video" | "audio" | null;
+}
+
+function presentationRoomState(settings: unknown): PresentationRoomState {
+  const value = classroomSettings(settings);
+  const kind = value.presentationMediaKind;
+  return {
+    presenterIdentity: typeof value.presentationPresenterIdentity === "string" ? value.presentationPresenterIdentity : null,
+    presenterEpoch: Number.isInteger(value.presentationPresenterEpoch) ? Number(value.presentationPresenterEpoch) : 0,
+    visible: value.presentationVisible === true,
+    title: typeof value.presentationTitle === "string" ? value.presentationTitle : null,
+    mediaKind: kind === "document" || kind === "image" || kind === "video" || kind === "audio" ? kind : null
+  };
+}
+
+function withPresentationState(settings: unknown, state: PresentationRoomState): Record<string, unknown> {
+  return {
+    ...classroomSettings(settings),
+    presentationPresenterIdentity: state.presenterIdentity,
+    presentationPresenterEpoch: state.presenterEpoch,
+    presentationVisible: state.visible,
+    presentationTitle: state.title,
+    presentationMediaKind: state.mediaKind
+  };
+}
+
+async function persistPresentationState(classroom: { id: string; settings: unknown }, state: PresentationRoomState) {
+  if (!supabaseAdmin) throw new Error("supabase_not_configured");
+  const settings = withPresentationState(classroom.settings, state);
+  const { error } = await supabaseAdmin
+    .from("classroom_sessions")
+    .update({ settings, last_activity: new Date().toISOString() })
+    .eq("id", classroom.id);
+  if (error) throw error;
+  classroom.settings = settings;
+}
+
+function authorityIdentity(authority: ClassroomAuthority): string | null {
+  if (authority.delegate) return `delegate:${authority.delegate.delegateId}`;
+  return authority.userId ?? null;
+}
+
+function presenterCapabilityFor(roomCode: string, state: PresentationRoomState): string | null {
+  if (!state.presenterIdentity || !SUPABASE_SERVICE_ROLE_KEY) return null;
+  return createPresenterCapability(roomCode, state.presenterIdentity, state.presenterEpoch, SUPABASE_SERVICE_ROLE_KEY);
+}
+
+function requirePresenterCapability(
+  req: express.Request,
+  res: express.Response,
+  classroom: { room_code: string; settings: unknown }
+): { identity: string; epoch: number } | null {
+  const capability = readPresenterCapability(req.body?.presenterToken, SUPABASE_SERVICE_ROLE_KEY);
+  const state = presentationRoomState(classroom.settings);
+  if (
+    !capability ||
+    capability.roomCode !== classroom.room_code ||
+    capability.identity !== state.presenterIdentity ||
+    capability.epoch !== state.presenterEpoch ||
+    Number(req.body?.presenterEpoch) !== state.presenterEpoch
+  ) {
+    res.status(403).json({ error: "presenter_required" });
+    return null;
+  }
+  return { identity: capability.identity, epoch: capability.epoch };
+}
+
+async function assignPresenter(
+  classroom: { id: string; room_code: string; settings: unknown },
+  identity: string | null,
+  keepVisibility = true
+): Promise<PresentationRoomState> {
+  const previous = presentationRoomState(classroom.settings);
+  const next: PresentationRoomState = {
+    ...previous,
+    presenterIdentity: identity,
+    presenterEpoch: previous.presenterEpoch + 1,
+    visible: identity ? keepVisibility && previous.visible : false,
+    title: identity ? previous.title : null,
+    mediaKind: identity ? previous.mediaKind : null
+  };
+  await persistPresentationState(classroom, next);
+  await syncClassroomPresenterPermissions(
+    classroom.room_code,
+    classroomSettings(classroom.settings),
+    previous.presenterIdentity,
+    identity
+  );
+  const token = presenterCapabilityFor(classroom.room_code, next);
+  await broadcastClassroomData(classroom.room_code, {
+    type: "PRESENTER_ASSIGNED",
+    presenterIdentity: identity,
+    presenterEpoch: next.presenterEpoch,
+    visible: next.visible
+  });
+  if (identity && token) {
+    await sendClassroomDataToParticipant(classroom.room_code, identity, {
+      type: "PRESENTER_CAPABILITY",
+      presenterIdentity: identity,
+      presenterEpoch: next.presenterEpoch,
+      presenterToken: token
+    });
+  }
+  return next;
+}
+
+async function electPresenter(
+  classroom: { id: string; room_code: string; teacher_id: string | null; settings: unknown },
+  excludedIdentity?: string
+) {
+  const participants = (await listClassroomParticipants(classroom.room_code))
+    .filter((participant) => participant.identity !== excludedIdentity);
+  const identities = new Set(participants.map((participant) => participant.identity));
+  const current = presentationRoomState(classroom.settings);
+  if (current.presenterIdentity && identities.has(current.presenterIdentity)) return current;
+  const creator = classroom.teacher_id && identities.has(classroom.teacher_id) ? classroom.teacher_id : null;
+  const fallback = participants.filter((participant) => participant.isHost).map((participant) => participant.identity).sort()[0] ?? null;
+  return assignPresenter(classroom, creator || fallback, true);
 }
 
 function setDelegateCookie(
@@ -529,10 +664,11 @@ app.post("/rtc/classroom-token", async (req, res) => {
     .correlationId;
   try {
     const accessToken = req.headers.authorization?.replace(/^Bearer\s+/i, "");
-    const { roomCode, displayName, spectateMode } = req.body as {
+    const { roomCode, displayName, spectateMode, presenterToken: reconnectPresenterToken } = req.body as {
       roomCode?: string;
       displayName?: string;
       spectateMode?: "invisible" | "visible";
+      presenterToken?: string;
     };
 
     if (!roomCode) {
@@ -552,6 +688,14 @@ app.post("/rtc/classroom-token", async (req, res) => {
     const delegate = isTrustedBrowserOrigin(req)
       ? await findClassroomDelegateAuthority(supabaseAdmin, req, classroom.id)
       : null;
+    const reconnectCapability = readPresenterCapability(reconnectPresenterToken, SUPABASE_SERVICE_ROLE_KEY);
+    const reconnectState = presentationRoomState(classroom.settings);
+    const presenterIdentityOverride = reconnectCapability &&
+      reconnectCapability.roomCode === classroom.room_code &&
+      reconnectCapability.identity === reconnectState.presenterIdentity &&
+      reconnectCapability.epoch === reconnectState.presenterEpoch
+        ? reconnectCapability.identity
+        : undefined;
 
     const result = await generateClassroomToken({
       supabaseAdmin,
@@ -559,8 +703,20 @@ app.post("/rtc/classroom-token", async (req, res) => {
       displayName: displayName ?? "משתתף",
       accessToken,
       spectateMode,
-      delegate: delegate ? { id: delegate.delegateId, displayName: delegate.displayName } : null
+      delegate: delegate ? { id: delegate.delegateId, displayName: delegate.displayName } : null,
+      presenterIdentityOverride
     });
+    let presentation = presentationRoomState(classroom.settings);
+    if (!presentation.presenterIdentity && result.isHost && spectateMode !== "invisible") {
+      presentation = {
+        presenterIdentity: result.userId,
+        presenterEpoch: presentation.presenterEpoch + 1,
+        visible: false,
+        title: null,
+        mediaKind: null
+      };
+      await persistPresentationState(classroom, presentation);
+    }
     const delegateGameToken = delegate
       ? createClassroomDelegateGameToken(
           {
@@ -600,7 +756,17 @@ app.post("/rtc/classroom-token", async (req, res) => {
       canPublishCamera: result.canPublishCamera,
       canPublishScreenShare: result.canPublishScreenShare,
       delegateScopes: delegate?.scopes ?? [],
-      delegateGameToken
+      delegateGameToken,
+      classroomSessionId: classroom.id,
+      isClassCreator: classroom.teacher_id === result.userId,
+      presenterIdentity: presentation.presenterIdentity,
+      presenterEpoch: presentation.presenterEpoch,
+      presentationVisible: presentation.visible,
+      presentationTitle: presentation.title,
+      presentationMediaKind: presentation.mediaKind,
+      presenterToken: presentation.presenterIdentity === result.userId
+        ? presenterCapabilityFor(classroom.room_code, presentation)
+        : null
     });
   } catch (err) {
     const reason =
@@ -859,11 +1025,11 @@ app.post("/rtc/classroom-presentation-state", async (req, res) => {
     if (
       typeof roomCode !== "string" ||
       !roomCode.trim() ||
-      !["started", "stopped"].includes(action) ||
+      !["started", "hidden", "stopped"].includes(action) ||
       (action === "started" && (
         typeof title !== "string" ||
         title.length > 100 ||
-        !["pdf", "image", "video", "audio"].includes(mediaKind) ||
+        !["document", "image", "video", "audio"].includes(mediaKind) ||
         typeof presenterIdentity !== "string" ||
         !presenterIdentity.trim() ||
         presenterIdentity.length > 256
@@ -877,23 +1043,32 @@ app.post("/rtc/classroom-presentation-state", async (req, res) => {
       res.status(404).json({ error: "classroom_not_found" });
       return;
     }
-    const authority = await requireClassroomAuthority(
-      req,
-      res,
-      classroom.id,
-      "control_presentation"
-    );
-    if (!authority) return;
+    const presenter = requirePresenterCapability(req, res, classroom);
+    if (!presenter) return;
+    if (action === "started" && presenterIdentity.trim() !== presenter.identity) {
+      res.status(403).json({ error: "presenter_identity_mismatch" });
+      return;
+    }
+
+    const current = presentationRoomState(classroom.settings);
+    const next: PresentationRoomState = {
+      ...current,
+      visible: action === "started",
+      title: action === "started" ? title.trim() : action === "stopped" ? null : current.title,
+      mediaKind: action === "started" ? mediaKind : action === "stopped" ? null : current.mediaKind
+    };
+    await persistPresentationState(classroom, next);
 
     await broadcastClassroomData(classroom.room_code, {
       type: "PRESENTATION_STATE",
       action,
       title: action === "started" ? title.trim() : undefined,
       mediaKind: action === "started" ? mediaKind : undefined,
-      presenterIdentity: action === "started" ? presenterIdentity.trim() : undefined
+      presenterIdentity: next.presenterIdentity,
+      presenterEpoch: next.presenterEpoch
     });
     logger.info({
-      userId: authority.userId ?? authority.delegate?.delegateId,
+      userId: presenter.identity,
       protocol: "http",
       message: "Classroom presentation state changed",
       context: {
@@ -903,9 +1078,206 @@ app.post("/rtc/classroom-presentation-state", async (req, res) => {
         mediaKind: action === "started" ? mediaKind : undefined
       }
     });
-    res.json({ success: true, delegated: Boolean(authority.delegate) });
+    res.json({ success: true, presenterEpoch: next.presenterEpoch });
   } catch (err: any) {
     res.status(500).json({ error: err.message || "classroom_presentation_state_failed" });
+  }
+});
+
+app.post("/rtc/classroom-presentation-visibility", async (req, res) => {
+  try {
+    const { roomCode, visible } = req.body || {};
+    if (typeof roomCode !== "string" || typeof visible !== "boolean") {
+      res.status(400).json({ error: "invalid_presentation_visibility" });
+      return;
+    }
+    const classroom = await getActiveClassroom(roomCode.trim());
+    if (!classroom) return void res.status(404).json({ error: "classroom_not_found" });
+    const authority = await requireClassroomAuthority(req, res, classroom.id, "control_presentation");
+    if (!authority) return;
+    const current = presentationRoomState(classroom.settings);
+    if (visible && !current.presenterIdentity) {
+      res.status(409).json({ error: "presenter_unavailable" });
+      return;
+    }
+    const next = { ...current, visible };
+    await persistPresentationState(classroom, next);
+    await broadcastClassroomData(classroom.room_code, {
+      type: "PRESENTATION_VISIBILITY",
+      visible,
+      presenterIdentity: next.presenterIdentity,
+      presenterEpoch: next.presenterEpoch
+    });
+    res.json({ success: true, visible });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "presentation_visibility_failed" });
+  }
+});
+
+app.post("/rtc/classroom-presenter-ready", async (req, res) => {
+  try {
+    const { roomCode, hasMedia } = req.body || {};
+    if (typeof roomCode !== "string" || typeof hasMedia !== "boolean") {
+      res.status(400).json({ error: "invalid_presenter_readiness" });
+      return;
+    }
+    const classroom = await getActiveClassroom(roomCode.trim());
+    if (!classroom) return void res.status(404).json({ error: "classroom_not_found" });
+    if (!requirePresenterCapability(req, res, classroom)) return;
+    const current = presentationRoomState(classroom.settings);
+    if (!hasMedia && current.visible) {
+      const next = { ...current, visible: false, title: null, mediaKind: null };
+      await persistPresentationState(classroom, next);
+      await broadcastClassroomData(classroom.room_code, {
+        type: "PRESENTATION_VISIBILITY",
+        visible: false,
+        presenterIdentity: next.presenterIdentity,
+        presenterEpoch: next.presenterEpoch
+      });
+    }
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "presenter_readiness_failed" });
+  }
+});
+
+app.post("/rtc/classroom-presenter-transfer", async (req, res) => {
+  try {
+    const { roomCode, targetIdentity } = req.body || {};
+    if (typeof roomCode !== "string" || typeof targetIdentity !== "string" || !targetIdentity.trim()) {
+      res.status(400).json({ error: "invalid_presenter_transfer" });
+      return;
+    }
+    const classroom = await getActiveClassroom(roomCode.trim());
+    if (!classroom) return void res.status(404).json({ error: "classroom_not_found" });
+    const authority = await requireClassroomAuthority(req, res, classroom.id, "control_presentation");
+    if (!authority) return;
+    const actorIdentity = authorityIdentity(authority);
+    const current = presentationRoomState(classroom.settings);
+    const isCreator = Boolean(authority.userId && authority.userId === classroom.teacher_id);
+    if (!isCreator && actorIdentity !== current.presenterIdentity) {
+      res.status(403).json({ error: "presenter_transfer_forbidden" });
+      return;
+    }
+    const participants = await listClassroomParticipants(classroom.room_code);
+    if (!participants.some((participant) => participant.identity === targetIdentity.trim())) {
+      res.status(404).json({ error: "participant_not_found" });
+      return;
+    }
+    const next = await assignPresenter(classroom, targetIdentity.trim(), true);
+    res.json({ success: true, presenterIdentity: next.presenterIdentity, presenterEpoch: next.presenterEpoch });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "presenter_transfer_failed" });
+  }
+});
+
+app.post("/rtc/classroom-presenter-leave", async (req, res) => {
+  try {
+    const { roomCode } = req.body || {};
+    if (typeof roomCode !== "string") return void res.status(400).json({ error: "invalid_presenter_leave" });
+    const classroom = await getActiveClassroom(roomCode.trim());
+    if (!classroom) return void res.status(404).json({ error: "classroom_not_found" });
+    const presenter = requirePresenterCapability(req, res, classroom);
+    if (!presenter) return;
+    const next = await electPresenter(classroom, presenter.identity);
+    res.json({ success: true, presenterIdentity: next.presenterIdentity, presenterEpoch: next.presenterEpoch });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "presenter_leave_failed" });
+  }
+});
+
+app.post("/rtc/classroom-presenter-elect", async (req, res) => {
+  try {
+    const { roomCode, expectedPresenterIdentity, expectedPresenterEpoch } = req.body || {};
+    if (typeof roomCode !== "string" || typeof expectedPresenterIdentity !== "string" || !Number.isInteger(expectedPresenterEpoch)) {
+      res.status(400).json({ error: "invalid_presenter_election" });
+      return;
+    }
+    const classroom = await getActiveClassroom(roomCode.trim());
+    if (!classroom) return void res.status(404).json({ error: "classroom_not_found" });
+    const authority = await requireClassroomAuthority(req, res, classroom.id, "control_presentation");
+    if (!authority) return;
+    const current = presentationRoomState(classroom.settings);
+    if (current.presenterIdentity !== expectedPresenterIdentity || current.presenterEpoch !== expectedPresenterEpoch) {
+      return void res.json({ success: true, stale: true, presenterIdentity: current.presenterIdentity, presenterEpoch: current.presenterEpoch });
+    }
+    const participants = await listClassroomParticipants(classroom.room_code);
+    if (participants.some((participant) => participant.identity === current.presenterIdentity)) {
+      return void res.json({ success: true, reconnected: true });
+    }
+    const next = await electPresenter(classroom);
+    res.json({ success: true, presenterIdentity: next.presenterIdentity, presenterEpoch: next.presenterEpoch });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "presenter_election_failed" });
+  }
+});
+
+app.post("/rtc/classroom-document-conversion-ticket", async (req, res) => {
+  try {
+    const { roomCode, fileName, sizeBytes, sourceFormat } = req.body || {};
+    if (
+      typeof roomCode !== "string" ||
+      typeof fileName !== "string" ||
+      !fileName.trim() ||
+      fileName.length > 180 ||
+      !Number.isInteger(sizeBytes) ||
+      sizeBytes < 1 ||
+      sizeBytes > 50 * 1024 * 1024 ||
+      !["pdf", "ppt", "pptx"].includes(sourceFormat)
+    ) {
+      res.status(400).json({ error: "invalid_conversion_request" });
+      return;
+    }
+    if (!DOCUMENT_CONVERTER_SHARED_SECRET) return void res.status(503).json({ error: "converter_not_configured" });
+    const classroom = await getActiveClassroom(roomCode.trim());
+    if (!classroom) return void res.status(404).json({ error: "classroom_not_found" });
+    if (!requirePresenterCapability(req, res, classroom)) return;
+    const ticket = createDocumentConversionTicket({
+      roomCode: classroom.room_code,
+      fileName: fileName.trim(),
+      sizeBytes,
+      sourceFormat
+    }, DOCUMENT_CONVERTER_SHARED_SECRET);
+    res.json({ converterUrl: DOCUMENT_CONVERTER_URL, ticket, expiresInSeconds: 300 });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "conversion_ticket_failed" });
+  }
+});
+
+app.post("/rtc/classroom-stage-layout", async (req, res) => {
+  try {
+    const { roomCode, presentationPercent } = req.body || {};
+    if (
+      typeof roomCode !== "string" ||
+      !roomCode.trim() ||
+      !Number.isInteger(presentationPercent) ||
+      presentationPercent < 30 ||
+      presentationPercent > 70
+    ) {
+      res.status(400).json({ error: "invalid_stage_layout" });
+      return;
+    }
+    const classroom = await getActiveClassroom(roomCode.trim());
+    if (!classroom) {
+      res.status(404).json({ error: "classroom_not_found" });
+      return;
+    }
+    const authority = await requireClassroomAuthority(req, res, classroom.id, "manage_whiteboard");
+    if (!authority) return;
+    if (!supabaseAdmin) throw new Error("supabase_not_configured");
+    const nextSettings = { ...classroomSettings(classroom.settings), presentationPercent };
+    const { error } = await supabaseAdmin
+      .from("classroom_sessions")
+      .update({ settings: nextSettings, last_activity: new Date().toISOString() })
+      .eq("id", classroom.id);
+    if (error) throw error;
+    await broadcastClassroomData(classroom.room_code, {
+      type: "STAGE_LAYOUT",
+      presentationPercent
+    });
+    res.json({ success: true, presentationPercent });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "classroom_stage_layout_failed" });
   }
 });
 
