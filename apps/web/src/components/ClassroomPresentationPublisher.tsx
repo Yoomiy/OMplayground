@@ -22,6 +22,7 @@ import {
   CLASSROOM_MEDIA_TTL_MS,
   clearClassroomLibrary,
   defaultMaterialViewState,
+  hasClassroomMediaStorageCapacity,
   loadClassroomLibrary,
   purgeExpiredClassroomMedia,
   removeClassroomMaterial,
@@ -81,8 +82,13 @@ const VIDEO_PUBLISH_OPTIONS = {
 
 const DOCUMENT_PUBLISH_OPTIONS = {
   ...VIDEO_PUBLISH_OPTIONS,
-  screenShareEncoding: { maxBitrate: 10_000_000, maxFramerate: 30 }
+  screenShareEncoding: { maxBitrate: 14_000_000, maxFramerate: 30 }
 };
+
+const DOCUMENT_WIDTH = 2560;
+const DOCUMENT_HEIGHT = 1440;
+const VIDEO_WIDTH = 1920;
+const VIDEO_HEIGHT = 1080;
 
 function materialKind(file: File): { kind: ClassroomMediaKind; sourceFormat?: DocumentSourceFormat } | null {
   const name = file.name.toLowerCase();
@@ -115,6 +121,10 @@ function MaterialThumbnail({ material }: { material: ClassroomMaterialRecord }) 
 
 function nextFrame() {
   return new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+}
+
+function requestCanvasFrame(track: MediaStreamTrack | undefined) {
+  (track as (MediaStreamTrack & { requestFrame?: () => void }) | undefined)?.requestFrame?.();
 }
 
 function sleep(milliseconds: number) {
@@ -217,10 +227,17 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
   const documentRef = useRef<RuntimeDocument | null>(null);
   const animationRef = useRef<number | null>(null);
   const publishedTracksRef = useRef<MediaStreamTrack[]>([]);
-  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioGraphRef = useRef<{
+    media: HTMLMediaElement;
+    context: AudioContext;
+    source: MediaElementAudioSourceNode;
+    destination: MediaStreamAudioDestinationNode;
+  } | null>(null);
   const laserRef = useRef<{ x: number; y: number } | null>(null);
   const panStartRef = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
   const persistMaterialTimerRef = useRef<number | null>(null);
+  const preparingRef = useRef(false);
+  const publishingRef = useRef(false);
   const [materials, setMaterials] = useState<ClassroomMaterialRecord[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isPreparing, setIsPreparing] = useState(false);
@@ -238,6 +255,8 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
   }), [isPreparing]);
 
   const selected = useMemo(() => materials.find((material) => material.id === selectedId) ?? null, [materials, selectedId]);
+  const selectedRef = useRef<ClassroomMaterialRecord | null>(null);
+  selectedRef.current = selected;
   const width = showBoard ? `${presentationPercent}%` : "100%";
 
   const persistLibraryState = useCallback((nextSelectedId: string | null, desiredVisible: boolean) => {
@@ -247,7 +266,10 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
       desiredVisible,
       updatedAt: Date.now(),
       expiresAt: Date.now() + CLASSROOM_MEDIA_TTL_MS
-    }).catch(() => setCacheWarning("לא ניתן לשמור את ספריית המדיה לשחזור לאחר רענון."));
+    }).catch((error) => {
+      console.error("Classroom media library state could not be persisted", error);
+      setCacheWarning("לא ניתן לשמור את ספריית המדיה לשחזור לאחר רענון.");
+    });
   }, [sessionId]);
 
   useEffect(() => {
@@ -274,7 +296,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
       title: selected?.title ?? null,
       kind: selected?.kind ?? null
     });
-    persistLibraryState(selectedId, visible);
+    if (libraryReady && materials.some((material) => !material.localOnly)) persistLibraryState(selectedId, visible);
   }, [isPublished, libraryReady, materials.length, onPresentationChange, persistLibraryState, selected?.kind, selected?.title, selectedId, visible]);
 
   const updateSelectedState = useCallback((change: Partial<ClassroomMaterialViewState>) => {
@@ -282,10 +304,16 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
     setMaterials((current) => current.map((material) => {
       if (material.id !== selectedId) return material;
       const next = { ...material, state: { ...material.state, ...change }, expiresAt: Date.now() + CLASSROOM_MEDIA_TTL_MS };
-      if (persistMaterialTimerRef.current !== null) window.clearTimeout(persistMaterialTimerRef.current);
-      persistMaterialTimerRef.current = window.setTimeout(() => {
-        void saveClassroomMaterial(next).catch(() => setCacheWarning("השינוי נשמר בזיכרון בלבד."));
-      }, 500);
+      if (!next.localOnly) {
+        if (persistMaterialTimerRef.current !== null) window.clearTimeout(persistMaterialTimerRef.current);
+        persistMaterialTimerRef.current = window.setTimeout(() => {
+          void saveClassroomMaterial(next).catch((error) => {
+            console.error("Classroom media material could not be persisted", error);
+            setMaterials((items) => items.map((item) => item.id === next.id ? { ...item, localOnly: true } : item));
+            setCacheWarning("החומר יישאר זמין בלשונית זו, אך אין מקום לשמור אותו לשחזור לאחר רענון.");
+          });
+        }, 500);
+      }
       return next;
     }));
   }, [selectedId]);
@@ -299,12 +327,14 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
     setIsPublished(false);
   }, [room]);
 
-  const disposeRuntime = useCallback(async () => {
+  const disposeRuntime = useCallback(async (retireMediaElement = false) => {
     if (animationRef.current !== null) cancelAnimationFrame(animationRef.current);
     animationRef.current = null;
     await removePublishedTracks(true);
-    mediaRef.current?.pause();
-    mediaRef.current = null;
+    const media = mediaRef.current;
+    media?.pause();
+    media?.removeAttribute("src");
+    media?.load();
     if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
     objectUrlRef.current = null;
     if (imageRef.current?.src.startsWith("blob:")) URL.revokeObjectURL(imageRef.current.src);
@@ -312,17 +342,21 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
     if (documentRef.current?.pageUrl) URL.revokeObjectURL(documentRef.current.pageUrl);
     await documentRef.current?.reader.close().catch(() => {});
     documentRef.current = null;
-    await audioContextRef.current?.close().catch(() => {});
-    audioContextRef.current = null;
+    const audioGraph = audioGraphRef.current;
+    if (audioGraph && (retireMediaElement || !mediaRef.current || audioGraph.media !== mediaRef.current)) {
+      await audioGraph.context.close().catch(() => {});
+      audioGraphRef.current = null;
+    }
     laserRef.current = null;
   }, [removePublishedTracks]);
 
   const renderVisual = useCallback(() => {
     const canvas = displayCanvasRef.current;
     const context = canvas?.getContext("2d");
-    if (!canvas || !context || !selected) return;
+    const material = selectedRef.current;
+    if (!canvas || !context || !material) return;
     const image = imageRef.current;
-    if (image) drawContained(context, image, image.naturalWidth, image.naturalHeight, selected.state);
+    if (image) drawContained(context, image, image.naturalWidth, image.naturalHeight, material.state);
     if (laserRef.current) {
       const gradient = context.createRadialGradient(laserRef.current.x, laserRef.current.y, 2, laserRef.current.x, laserRef.current.y, 24);
       gradient.addColorStop(0, "rgba(255,255,255,1)");
@@ -335,8 +369,11 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
     }
     const publishCanvas = publishCanvasRef.current;
     const publishContext = publishCanvas?.getContext("2d");
-    if (publishCanvas && publishContext) publishContext.drawImage(canvas, 0, 0, publishCanvas.width, publishCanvas.height);
-  }, [selected]);
+    if (publishCanvas && publishContext) {
+      publishContext.drawImage(canvas, 0, 0, publishCanvas.width, publishCanvas.height);
+      requestCanvasFrame(publishedTracksRef.current.find((track) => track.kind === "video"));
+    }
+  }, []);
 
   const loadDocumentPage = useCallback(async (material: ClassroomMaterialRecord, runtime: RuntimeDocument) => {
     const manifest = material.documentManifest;
@@ -358,11 +395,16 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
     await disposeRuntime();
     const display = displayCanvasRef.current;
     const publisher = publishCanvasRef.current;
-    if (!display || !publisher) throw new Error("presentation_surface_missing");
-    display.width = 1920;
-    display.height = 1080;
-    publisher.width = 1920;
-    publisher.height = 1080;
+    const visual = material.kind === "document" || material.kind === "image";
+    if (!publisher || (visual && !display)) throw new Error("presentation_surface_missing");
+    const width = visual ? DOCUMENT_WIDTH : VIDEO_WIDTH;
+    const height = visual ? DOCUMENT_HEIGHT : VIDEO_HEIGHT;
+    if (display) {
+      display.width = width;
+      display.height = height;
+    }
+    publisher.width = width;
+    publisher.height = height;
     if (material.kind === "document") {
       const reader = new ZipReader(new BlobReader(material.source));
       const entries = await reader.getEntries();
@@ -392,10 +434,17 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
   useEffect(() => {
     if (!selected || !canPresent || !visible) return;
     let cancelled = false;
+    preparingRef.current = true;
     setIsPreparing(true);
     void prepareSelected(selected)
-      .catch(() => { if (!cancelled) onError("לא ניתן לפתוח את חומר המדיה שנבחר."); })
-      .finally(() => { if (!cancelled) setIsPreparing(false); });
+      .catch((error) => {
+        console.error("Classroom media preparation failed", error);
+        if (!cancelled) onError("לא ניתן לפתוח את חומר המדיה שנבחר.");
+      })
+      .finally(() => {
+        preparingRef.current = false;
+        if (!cancelled) setIsPreparing(false);
+      });
     return () => { cancelled = true; };
   }, [canPresent, onError, prepareSelected, selected?.id, visible]);
 
@@ -409,54 +458,67 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
   }, [renderRevision, renderVisual, selected?.state.zoom, selected?.state.panX, selected?.state.panY]);
 
   const sendPresentationState = useCallback(async (action: "started" | "hidden" | "stopped") => {
+    const material = selectedRef.current;
     const response = await classroomRequest("/rtc/classroom-presentation-state", {
       roomCode,
       action,
       presenterEpoch,
       presenterToken,
-      ...(action === "started" && selected ? {
-        title: selected.title,
-        mediaKind: selected.kind,
+      ...(action === "started" && material ? {
+        title: material.title,
+        mediaKind: material.kind,
         presenterIdentity: room?.localParticipant.identity
       } : {})
     });
     if (!response.ok) throw new Error("presentation_state_rejected");
-  }, [classroomRequest, presenterEpoch, presenterToken, room, roomCode, selected]);
+  }, [classroomRequest, presenterEpoch, presenterToken, room, roomCode]);
 
   const publish = useCallback(async () => {
-    if (!room || !selected || !canPresent || isPreparing || isPublished) return;
+    const material = selectedRef.current;
+    if (!room || !material || !canPresent || isPreparing || preparingRef.current || isPublished || publishingRef.current) return;
+    publishingRef.current = true;
+    try {
     const publisher = publishCanvasRef.current;
     if (!publisher) return;
     if (publishedTracksRef.current.length > 0) {
       for (const track of publishedTracksRef.current) {
         await room.localParticipant.publishTrack(track, {
-          ...(selected.kind === "document" || selected.kind === "image" ? DOCUMENT_PUBLISH_OPTIONS : VIDEO_PUBLISH_OPTIONS),
+          ...(material.kind === "document" || material.kind === "image" ? DOCUMENT_PUBLISH_OPTIONS : VIDEO_PUBLISH_OPTIONS),
           source: track.kind === "audio" ? Track.Source.ScreenShareAudio : Track.Source.ScreenShare,
           name: track.kind === "audio" ? "classroom-presentation-audio" : "classroom-presentation-video"
         });
       }
-      if (selected.state.wasPlaying && mediaRef.current) await mediaRef.current.play().catch(() => {});
+      if (material.state.wasPlaying && mediaRef.current) await mediaRef.current.play().catch(() => {});
       await sendPresentationState("started");
       setIsPublished(true);
       return;
     }
-    const stream = publisher.captureStream(selected.kind === "video" ? 60 : 30);
+    const stream = publisher.captureStream(material.kind === "video" ? 60 : 30);
     const tracks = [...stream.getVideoTracks()];
-    if (selected.kind === "video" || selected.kind === "audio") {
+    if (material.kind === "document" || material.kind === "image") {
+      renderVisual();
+      requestCanvasFrame(tracks[0]);
+    }
+    if (material.kind === "video" || material.kind === "audio") {
       const media = mediaRef.current;
       if (!media) return;
-      const audioContext = new AudioContext();
-      const source = audioContext.createMediaElementSource(media);
-      const destination = audioContext.createMediaStreamDestination();
-      source.connect(destination);
-      source.connect(audioContext.destination);
-      await audioContext.resume();
-      audioContextRef.current = audioContext;
-      tracks.push(...destination.stream.getAudioTracks());
+      let audioGraph = audioGraphRef.current;
+      if (!audioGraph || audioGraph.media !== media || audioGraph.context.state === "closed") {
+        await audioGraph?.context.close().catch(() => {});
+        const context = new AudioContext();
+        const source = context.createMediaElementSource(media);
+        const destination = context.createMediaStreamDestination();
+        source.connect(destination);
+        source.connect(context.destination);
+        audioGraph = { media, context, source, destination };
+        audioGraphRef.current = audioGraph;
+      }
+      await audioGraph.context.resume();
+      tracks.push(...audioGraph.destination.stream.getAudioTracks());
       const draw = () => {
         const context = publisher.getContext("2d");
         if (!context) return;
-        if (selected.kind === "video") {
+        if (material.kind === "video") {
           const video = media as HTMLVideoElement;
           if (video.videoWidth && video.videoHeight) drawContained(context, video, video.videoWidth, video.videoHeight, defaultMaterialViewState());
         } else {
@@ -465,7 +527,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
           context.fillStyle = "#e2e8f0";
           context.font = "bold 48px sans-serif";
           context.textAlign = "center";
-          context.fillText(selected.title, publisher.width / 2, publisher.height / 2);
+          context.fillText(material.title, publisher.width / 2, publisher.height / 2);
         }
         animationRef.current = requestAnimationFrame(draw);
       };
@@ -474,13 +536,13 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
     try {
       for (const track of tracks) {
         await room.localParticipant.publishTrack(track, {
-          ...(selected.kind === "document" || selected.kind === "image" ? DOCUMENT_PUBLISH_OPTIONS : VIDEO_PUBLISH_OPTIONS),
+          ...(material.kind === "document" || material.kind === "image" ? DOCUMENT_PUBLISH_OPTIONS : VIDEO_PUBLISH_OPTIONS),
           source: track.kind === "audio" ? Track.Source.ScreenShareAudio : Track.Source.ScreenShare,
           name: track.kind === "audio" ? "classroom-presentation-audio" : "classroom-presentation-video"
         });
       }
       publishedTracksRef.current = tracks;
-      if (selected.state.wasPlaying && mediaRef.current) await mediaRef.current.play().catch(() => {});
+      if (material.state.wasPlaying && mediaRef.current) await mediaRef.current.play().catch(() => {});
       await sendPresentationState("started");
       setIsPublished(true);
     } catch (error) {
@@ -488,11 +550,19 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
       await removePublishedTracks(true);
       throw error;
     }
-  }, [canPresent, isPreparing, isPublished, removePublishedTracks, room, selected, sendPresentationState]);
+    } finally {
+      publishingRef.current = false;
+    }
+  }, [canPresent, isPreparing, isPublished, removePublishedTracks, renderVisual, room, sendPresentationState]);
 
   useEffect(() => {
     if (!canPresent || !selected) return;
-    if (visible && !isPublished && !isPreparing) void publish().catch(() => onError("לא ניתן לפרסם את לוח המדיה."));
+    if (visible && !isPublished && !isPreparing) {
+      void publish().catch((error) => {
+        console.error("Classroom presentation publish failed", error);
+        onError("לא ניתן לפרסם את לוח המדיה.");
+      });
+    }
     if (!visible && isPublished) {
       if (mediaRef.current) {
         updateSelectedState({ wasPlaying: !mediaRef.current.paused, currentTime: mediaRef.current.currentTime });
@@ -502,7 +572,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
     }
   }, [canPresent, isPreparing, isPublished, onError, publish, removePublishedTracks, selected, sendPresentationState, updateSelectedState, visible]);
 
-  useEffect(() => () => { void disposeRuntime(); }, [disposeRuntime]);
+  useEffect(() => () => { void disposeRuntime(true); }, [disposeRuntime]);
 
   useEffect(() => {
     if (canPresent) return;
@@ -572,7 +642,9 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
   const addFile = useCallback(async (file: File) => {
     const detected = materialKind(file);
     if (!detected) return onError("ניתן להוסיף PDF, PPT, PPTX, תמונה, וידאו או שמע בלבד.");
-    if (file.size > 50 * 1024 * 1024) return onError("גודל הקובץ המרבי הוא 50MB.");
+    if (detected.kind === "document" && file.size > 50 * 1024 * 1024) {
+      return onError("PDF או מצגת יכולים להיות עד 50MB, כדי שההמרה תתבצע בבטחה.");
+    }
     setIsPreparing(true);
     try {
       let source: Blob = file;
@@ -589,6 +661,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
         thumbnail = await makeVideoThumbnail(file);
       }
       const id = crypto.randomUUID();
+      const localOnly = !(await hasClassroomMediaStorageCapacity(source.size));
       const material: ClassroomMaterialRecord = {
         key: `${sessionId}:${id}`,
         sessionId,
@@ -601,11 +674,20 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
         documentManifest,
         state: defaultMaterialViewState(),
         createdAt: Date.now(),
-        expiresAt: Date.now() + CLASSROOM_MEDIA_TTL_MS
+        expiresAt: Date.now() + CLASSROOM_MEDIA_TTL_MS,
+        localOnly
       };
       setMaterials((current) => [...current, material]);
       setSelectedId(id);
-      await saveClassroomMaterial(material).catch(() => setCacheWarning("החומר זמין כעת, אך לא יישמר לאחר רענון."));
+      if (localOnly) {
+        setCacheWarning("החומר יישאר זמין בלשונית זו, אך אין מקום לשמור אותו לשחזור לאחר רענון.");
+      } else {
+        await saveClassroomMaterial(material).catch((error) => {
+          console.error("Classroom media material could not be persisted", error);
+          setMaterials((items) => items.map((item) => item.id === id ? { ...item, localOnly: true } : item));
+          setCacheWarning("החומר יישאר זמין בלשונית זו, אך אין מקום לשמור אותו לשחזור לאחר רענון.");
+        });
+      }
     } catch (error) {
       console.error("Classroom material import failed", error);
       onError("לא ניתן להכין את הקובץ להצגה.");
@@ -616,7 +698,8 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
 
   const removeSelected = useCallback(async () => {
     if (!selected) return;
-    await disposeRuntime();
+    preparingRef.current = true;
+    await disposeRuntime(true);
     const remaining = materials.filter((material) => material.id !== selected.id);
     setMaterials(remaining);
     const nextId = remaining[0]?.id ?? null;
@@ -626,7 +709,8 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
   }, [disposeRuntime, materials, onRequestHidden, selected, sessionId]);
 
   const clearAll = useCallback(async () => {
-    await disposeRuntime();
+    preparingRef.current = true;
+    await disposeRuntime(true);
     setMaterials([]);
     setSelectedId(null);
     await clearClassroomLibrary(sessionId).catch(() => {});
@@ -665,7 +749,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
       event.target.value = "";
       if (file) void addFile(file);
     }} />
-    {visible && selected && <div ref={surfaceRef} className="relative z-30 flex min-w-0 shrink-0 flex-col overflow-hidden bg-black" style={{ width }}>
+    {visible && selected && <div ref={surfaceRef} className={`relative z-30 flex min-h-0 min-w-0 flex-col overflow-hidden bg-black ${showBoard ? "shrink-0" : "flex-1"}`} style={{ width }}>
       <div className="relative z-20 flex flex-wrap items-center gap-1.5 border-b border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-slate-100" dir="rtl">
         <span className="ml-auto flex max-w-48 items-center gap-1 truncate font-bold"><SelectedIcon className="size-3.5" />{selected.title}</span>
         <button onClick={() => fileInputRef.current?.click()} className="rounded bg-slate-800 px-2 py-1"><Upload className="inline size-3.5" /> הוסף</button>
@@ -689,13 +773,13 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
         </>}
         {visual && <>
           <button onClick={() => updateSelectedState({ zoom: Math.max(0.25, selected.state.zoom - 0.15) })} title="הקטן"><ZoomOut className="size-4" /></button>
-          <button onClick={() => updateSelectedState({ zoom: Math.min(5, selected.state.zoom + 0.15) })} title="הגדל"><ZoomIn className="size-4" /></button>
+          <button onClick={() => updateSelectedState({ zoom: Math.min(8, selected.state.zoom + 0.15) })} title="הגדל"><ZoomIn className="size-4" /></button>
           <button onClick={() => updateSelectedState({ zoom: 1, panX: 0, panY: 0 })} title="התאם עמוד">התאם עמוד</button>
           <button onClick={() => {
             const image = imageRef.current;
             if (!image) return;
-            const baseScale = Math.min(1920 / image.naturalWidth, 1080 / image.naturalHeight);
-            updateSelectedState({ zoom: (1920 / image.naturalWidth) / baseScale, panX: 0, panY: 0 });
+            const baseScale = Math.min(DOCUMENT_WIDTH / image.naturalWidth, DOCUMENT_HEIGHT / image.naturalHeight);
+            updateSelectedState({ zoom: (DOCUMENT_WIDTH / image.naturalWidth) / baseScale, panX: 0, panY: 0 });
           }} title="התאם רוחב">התאם רוחב</button>
           <button onClick={() => updateSelectedState({ zoom: 1, panX: 0, panY: 0 })} title="איפוס"><RotateCcw className="size-4" /></button>
           <button onClick={() => { setLaserMode((value) => !value); laserRef.current = null; renderVisual(); }} className={laserMode ? "rounded bg-rose-600 px-2 py-1" : "rounded bg-slate-800 px-2 py-1"}>לייזר</button>
@@ -737,6 +821,6 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
         <Rabbit className="size-4 text-slate-500" />
       </div>}
     </div>}
-    <canvas ref={publishCanvasRef} width={1920} height={1080} className="hidden" aria-hidden="true" />
+    <canvas ref={publishCanvasRef} width={DOCUMENT_WIDTH} height={DOCUMENT_HEIGHT} className="hidden" aria-hidden="true" />
   </>;
 });

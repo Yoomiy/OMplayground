@@ -31,6 +31,8 @@ export interface ClassroomMaterialRecord {
   state: ClassroomMaterialViewState;
   createdAt: number;
   expiresAt: number;
+  /** Present in this tab only when the browser does not have enough durable cache space. */
+  localOnly?: boolean;
 }
 
 export interface ClassroomLibraryState {
@@ -113,6 +115,19 @@ export async function saveClassroomMaterial(material: ClassroomMaterialRecord): 
     await transactionDone(transaction);
   } finally {
     db.close();
+  }
+}
+
+export async function hasClassroomMediaStorageCapacity(bytes: number): Promise<boolean> {
+  if (typeof navigator === "undefined" || !navigator.storage?.estimate) return true;
+  try {
+    const { quota, usage } = await navigator.storage.estimate();
+    if (quota === undefined || usage === undefined) return true;
+    // Leave room for IndexedDB bookkeeping and the rest of the application.
+    return quota - usage >= bytes * 1.25 + 8 * 1024 * 1024;
+  } catch {
+    // A failed estimate should not prevent a material from being presented.
+    return true;
   }
 }
 

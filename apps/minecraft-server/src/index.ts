@@ -461,9 +461,8 @@ function presentationRoomState(settings: unknown): PresentationRoomState {
   };
 }
 
-function withPresentationState(settings: unknown, state: PresentationRoomState): Record<string, unknown> {
+function presentationStatePatch(state: PresentationRoomState): Record<string, unknown> {
   return {
-    ...classroomSettings(settings),
     presentationPresenterIdentity: state.presenterIdentity,
     presentationPresenterEpoch: state.presenterEpoch,
     presentationVisible: state.visible,
@@ -472,15 +471,26 @@ function withPresentationState(settings: unknown, state: PresentationRoomState):
   };
 }
 
-async function persistPresentationState(classroom: { id: string; settings: unknown }, state: PresentationRoomState) {
+async function patchClassroomSettings(
+  classroom: { id: string; settings: unknown },
+  patch: Record<string, unknown>
+): Promise<Record<string, unknown>> {
   if (!supabaseAdmin) throw new Error("supabase_not_configured");
-  const settings = withPresentationState(classroom.settings, state);
-  const { error } = await supabaseAdmin
-    .from("classroom_sessions")
-    .update({ settings, last_activity: new Date().toISOString() })
-    .eq("id", classroom.id);
+  const { data, error } = await supabaseAdmin.rpc("patch_classroom_session_settings", {
+    p_session_id: classroom.id,
+    p_patch: patch
+  });
   if (error) throw error;
+  const settings = Array.isArray(data) ? data[0] : data;
+  if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
+    throw new Error("classroom_settings_patch_failed");
+  }
   classroom.settings = settings;
+  return settings as Record<string, unknown>;
+}
+
+async function persistPresentationState(classroom: { id: string; settings: unknown }, state: PresentationRoomState) {
+  await patchClassroomSettings(classroom, presentationStatePatch(state));
 }
 
 function authorityIdentity(authority: ClassroomAuthority): string | null {
@@ -989,7 +999,6 @@ app.post("/rtc/classroom-settings", async (req, res) => {
     );
     if (!authority || !supabaseAdmin) return;
 
-    const current = classroomSettings(classroom.settings);
     const allowedKeys = [
       "allowStudentChat",
       "allowStudentScreenShare",
@@ -1006,12 +1015,7 @@ app.post("/rtc/classroom-settings", async (req, res) => {
       res.status(400).json({ error: "no_valid_classroom_settings" });
       return;
     }
-    const nextSettings = { ...current, ...changed };
-    const { error } = await supabaseAdmin
-      .from("classroom_sessions")
-      .update({ settings: nextSettings, last_activity: new Date().toISOString() })
-      .eq("id", classroom.id);
-    if (error) throw error;
+    const nextSettings = await patchClassroomSettings(classroom, changed);
     await syncClassroomParticipantPermissions(classroom.room_code, nextSettings);
     res.json({ success: true, settings: nextSettings, delegated: Boolean(authority.delegate) });
   } catch (err: any) {
@@ -1264,13 +1268,7 @@ app.post("/rtc/classroom-stage-layout", async (req, res) => {
     }
     const authority = await requireClassroomAuthority(req, res, classroom.id, "manage_whiteboard");
     if (!authority) return;
-    if (!supabaseAdmin) throw new Error("supabase_not_configured");
-    const nextSettings = { ...classroomSettings(classroom.settings), presentationPercent };
-    const { error } = await supabaseAdmin
-      .from("classroom_sessions")
-      .update({ settings: nextSettings, last_activity: new Date().toISOString() })
-      .eq("id", classroom.id);
-    if (error) throw error;
+    const nextSettings = await patchClassroomSettings(classroom, { presentationPercent });
     await broadcastClassroomData(classroom.room_code, {
       type: "STAGE_LAYOUT",
       presentationPercent
