@@ -4,7 +4,7 @@ COPY package.json package-lock.json tsconfig.json ./
 COPY apps/document-converter/package.json apps/document-converter/package.json
 COPY apps/document-converter/tsconfig.json apps/document-converter/tsconfig.json
 COPY packages/observability/package.json packages/observability/package.json
-RUN npm ci --workspace @playground/document-converter --include-workspace-root --ignore-scripts
+RUN npm ci --workspace @playground/document-converter --workspace @playground/observability --include-workspace-root --ignore-scripts
 COPY apps/document-converter/src apps/document-converter/src
 COPY packages/observability/src packages/observability/src
 COPY packages/observability/tsconfig.json packages/observability/tsconfig.json
@@ -24,6 +24,7 @@ COPY --from=build /app/packages/observability/package.json ./packages/observabil
 COPY --from=build /app/packages/observability/dist ./packages/observability/dist
 COPY --from=build /app/apps/document-converter/package.json ./package.json
 COPY --from=build /app/apps/document-converter/dist ./dist
+ENV NODE_ENV=production
 ENV PORT=8080
 EXPOSE 8080
 CMD ["node", "dist/index.js"]
