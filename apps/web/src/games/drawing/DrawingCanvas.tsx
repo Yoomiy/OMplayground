@@ -33,6 +33,7 @@ const ExcalidrawLazy = React.lazy(() =>
   import("@excalidraw/excalidraw").then((m) => ({ default: m.Excalidraw }))
 );
 const ExcalidrawComponent = ExcalidrawLazy as any;
+const FOLLOW_HOST_VIEWPORT_BODY_CLASS = "classroom-whiteboard-following-host-focus";
 
 export interface DrawingCanvasProps {
   gameState: DrawingState;
@@ -48,6 +49,7 @@ export interface DrawingCanvasProps {
   serverAuthoritative?: boolean;
   initialYjsUpdate?: string | null;
   initialYjsSyncToken?: string | null;
+  initialViewport?: { scrollX: number; scrollY: number; zoom: unknown } | null;
   players?: { userId: string; displayName: string }[];
   isVisible?: boolean;
 }
@@ -70,12 +72,16 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   serverAuthoritative = false,
   initialYjsUpdate,
   initialYjsSyncToken,
+  initialViewport,
   players,
   isVisible = true
 }, ref) => {
   const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
   const [excalidrawSceneReady, setExcalidrawSceneReady] = useState(false);
   const excalidrawSceneReadyRef = useRef(false);
+  const interactionSurfaceRef = useRef<HTMLDivElement>(null);
+  const pendingHostViewportRef = useRef<{ scrollX: number; scrollY: number; zoom: unknown } | null>(null);
+  const hostViewportTimerRef = useRef<number | null>(null);
 
   // User details for awareness
   const myPlayer = players?.find((p) => p.userId === myUserId);
@@ -259,6 +265,24 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
         excalidrawSceneReadyRef.current = true;
         setExcalidrawSceneReady(true);
       }
+      if (serverAuthoritative && isHost && onLiveDelta && _appState) {
+        const zoom = typeof _appState.zoom === "number" ? _appState.zoom : _appState.zoom?.value;
+        if (Number.isFinite(_appState.scrollX) && Number.isFinite(_appState.scrollY) && Number.isFinite(zoom)) {
+          pendingHostViewportRef.current = {
+            scrollX: _appState.scrollX,
+            scrollY: _appState.scrollY,
+            zoom
+          };
+          if (hostViewportTimerRef.current === null) {
+            hostViewportTimerRef.current = window.setTimeout(() => {
+              hostViewportTimerRef.current = null;
+              const viewport = pendingHostViewportRef.current;
+              pendingHostViewportRef.current = null;
+              if (viewport) onLiveDelta({ viewport });
+            }, 80);
+          }
+        }
+      }
       if (!excalidrawAPI || !files || !yjsSession || mySeat === null) return;
       const fileIds = Object.keys(files);
       const activeImageFileIds = new Set<string>();
@@ -337,8 +361,23 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
         }
       }
     },
-    [excalidrawAPI, mySeat, showToast, yjsSession]
+    [excalidrawAPI, isHost, mySeat, onLiveDelta, serverAuthoritative, showToast, yjsSession]
   );
+
+  useEffect(() => () => {
+    if (hostViewportTimerRef.current !== null) window.clearTimeout(hostViewportTimerRef.current);
+  }, []);
+
+  useEffect(() => {
+    interactionSurfaceRef.current?.toggleAttribute("inert", mySeat === null);
+    document.body.classList.toggle(FOLLOW_HOST_VIEWPORT_BODY_CLASS, mySeat === null);
+    if (mySeat !== null) return () => document.body.classList.remove(FOLLOW_HOST_VIEWPORT_BODY_CLASS);
+    const activeElement = document.activeElement;
+    if (activeElement instanceof HTMLElement && interactionSurfaceRef.current?.contains(activeElement)) {
+      activeElement.blur();
+    }
+    return () => document.body.classList.remove(FOLLOW_HOST_VIEWPORT_BODY_CLASS);
+  }, [mySeat]);
 
   // Emit local Yjs updates and Awareness changes
   useEffect(() => {
@@ -486,7 +525,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
       }
 
       // Handle host viewport focus sync
-      if (delta.viewport && !isHost && excalidrawAPI) {
+      if (delta.viewport && mySeat === null && excalidrawAPI) {
         lastHostViewportRef.current = delta.viewport;
         excalidrawAPI.updateScene({
           appState: {
@@ -502,7 +541,20 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     return () => {
       unsubscribe();
     };
-  }, [subscribeLiveDeltas, myUserId, isHost, excalidrawAPI, onLiveDelta, serverAuthoritative, yjsSession]);
+  }, [subscribeLiveDeltas, myUserId, isHost, mySeat, excalidrawAPI, onLiveDelta, serverAuthoritative, yjsSession]);
+
+  useEffect(() => {
+    if (!initialViewport || mySeat !== null || !excalidrawAPI) return;
+    lastHostViewportRef.current = initialViewport;
+    excalidrawAPI.updateScene({
+      appState: {
+        scrollX: initialViewport.scrollX,
+        scrollY: initialViewport.scrollY,
+        zoom: typeof initialViewport.zoom === "number" ? { value: initialViewport.zoom } : initialViewport.zoom
+      },
+      commitToHistory: false
+    });
+  }, [excalidrawAPI, initialViewport, mySeat]);
 
   const publishCheckpoint = useCallback(async () => {
     if (!excalidrawAPI) return;
@@ -702,6 +754,22 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
         .no-board-privileges .dropdown-menu-button {
           display: none !important;
         }
+
+        /* Followers receive the host viewport and must not pan or zoom locally. */
+        .no-board-privileges .excalidraw-interaction-surface {
+          pointer-events: none;
+          touch-action: none;
+          user-select: none;
+        }
+
+        .no-board-privileges .zoom-actions,
+        .${FOLLOW_HOST_VIEWPORT_BODY_CLASS} .zoom-actions,
+        .${FOLLOW_HOST_VIEWPORT_BODY_CLASS} .zoom-in-button,
+        .${FOLLOW_HOST_VIEWPORT_BODY_CLASS} .zoom-out-button,
+        .${FOLLOW_HOST_VIEWPORT_BODY_CLASS} .reset-zoom-button {
+          display: none !important;
+          pointer-events: none !important;
+        }
       `}</style>
 
       <Suspense
@@ -714,26 +782,31 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
           </div>
         }
       >
-        <ExcalidrawComponent
-          excalidrawAPI={setExcalidrawAPISafely}
-          onChange={handleLocalChange}
-          onPointerUpdate={handlePointerUpdate}
-          theme="light"
-          autoFocus={false}
-          handleKeyboardGlobally={false}
-          viewModeEnabled={mySeat === null}
-          initialData={initialData.current}
-          UIOptions={{
-            canvasActions: {
-              changeViewBackgroundColor: false,
-              clearCanvas: false,
-              export: false,
-              loadScene: false,
-              saveToActiveFile: false,
-              toggleTheme: false
-            }
-          }}
-        />
+        <div
+          ref={interactionSurfaceRef}
+          className="excalidraw-interaction-surface h-full w-full"
+        >
+          <ExcalidrawComponent
+            excalidrawAPI={setExcalidrawAPISafely}
+            onChange={handleLocalChange}
+            onPointerUpdate={handlePointerUpdate}
+            theme="light"
+            autoFocus={false}
+            handleKeyboardGlobally={false}
+            viewModeEnabled={mySeat === null}
+            initialData={initialData.current}
+            UIOptions={{
+              canvasActions: {
+                changeViewBackgroundColor: false,
+                clearCanvas: false,
+                export: false,
+                loadScene: false,
+                saveToActiveFile: false,
+                toggleTheme: false
+              }
+            }}
+          />
+        </div>
       </Suspense>
     </div>
   );

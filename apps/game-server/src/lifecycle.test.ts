@@ -16,16 +16,19 @@ function makeMockSupabase() {
   // callers can keep chaining, and the builder resolves on await.
   const builder: {
     eq: jest.Mock;
+    not: jest.Mock;
     lt: jest.Mock;
     then: (
       resolve: (v: { data: null; error: null }) => void
     ) => void;
   } = {
     eq: jest.fn(),
+    not: jest.fn(),
     lt: jest.fn(),
     then: (resolve) => resolve({ data: null, error: null })
   };
   builder.eq.mockReturnValue(builder);
+  builder.not.mockReturnValue(builder);
   builder.lt.mockReturnValue(builder);
   const update = jest.fn().mockReturnValue(builder);
   const from = jest.fn().mockReturnValue({ update });
@@ -36,6 +39,7 @@ function makeMockSupabase() {
     from,
     update,
     eq: builder.eq,
+    not: builder.not,
     lt: builder.lt
   };
 }
@@ -163,6 +167,7 @@ describe("cleanupStalePausedSessions", () => {
     expect(payload.status).toBe("completed");
     expect(payload.ended_at).toBe(now.toISOString());
     expect(m.eq).toHaveBeenCalledWith("status", "paused");
+    expect(m.not).toHaveBeenCalledWith("invitation_code", "like", "class-draw-%");
     expect(m.lt).toHaveBeenCalledWith(
       "last_activity",
       "2026-04-21T12:00:00.000Z"

@@ -68,6 +68,7 @@ interface ClassroomSessionData {
     allowStudentChat?: boolean;
     allowStudentScreenShare?: boolean;
     allowWhiteboardDraw?: boolean;
+    whiteboardVisible?: boolean;
     presentationPercent?: number;
     presentationPresenterIdentity?: string | null;
     presentationPresenterEpoch?: number;
@@ -228,6 +229,7 @@ export function ClassroomPage() {
   const [drawSocketReady, setDrawSocketReady] = useState(false);
   const [boardInitialYjsUpdate, setBoardInitialYjsUpdate] = useState<string | null>(null);
   const [boardInitialYjsSyncToken, setBoardInitialYjsSyncToken] = useState<string | null>(null);
+  const [boardInitialViewport, setBoardInitialViewport] = useState<{ scrollX: number; scrollY: number; zoom: unknown } | null>(null);
 
   const deltaListenersRef = useRef<Set<(payload: any) => void>>(new Set());
 
@@ -244,7 +246,8 @@ export function ClassroomPage() {
     allowStudentScreenShare: false,
     allowStudentMic: true,
     allowStudentCam: true,
-    allowWhiteboardDraw: false // By default only host can draw on board
+    allowWhiteboardDraw: false, // By default only host can draw on board
+    whiteboardVisible: true
   });
 
   // In-Room Chat & Reactions
@@ -348,6 +351,7 @@ export function ClassroomPage() {
     setDrawSocketReady(false);
     setBoardInitialYjsUpdate(null);
     setBoardInitialYjsSyncToken(null);
+    setBoardInitialViewport(null);
     if (!drawSessionId || connState !== "connected") return;
     let cancelled = false;
     let s: Socket | null = null;
@@ -446,10 +450,11 @@ export function ClassroomPage() {
         }
       });
 
-      s.on("CLASSROOM_DRAWING_SYNC", (payload: { sessionId?: string; yjsUpdate?: string; syncToken?: string }) => {
+      s.on("CLASSROOM_DRAWING_SYNC", (payload: { sessionId?: string; yjsUpdate?: string; syncToken?: string; viewport?: { scrollX: number; scrollY: number; zoom: unknown } }) => {
         if (cancelled || payload?.sessionId !== drawSessionId || typeof payload.yjsUpdate !== "string") return;
         setBoardInitialYjsUpdate(payload.yjsUpdate);
         setBoardInitialYjsSyncToken(typeof payload.syncToken === "string" ? payload.syncToken : null);
+        setBoardInitialViewport(payload.viewport ?? null);
         setDrawSocketReady(true);
         deltaListenersRef.current.forEach((cb) => {
           cb({ delta: { yjsServerSync: payload.yjsUpdate, yjsServerSyncToken: payload.syncToken } });
@@ -478,6 +483,7 @@ export function ClassroomPage() {
       setDrawSocketReady(false);
       setBoardInitialYjsUpdate(null);
       setBoardInitialYjsSyncToken(null);
+      setBoardInitialViewport(null);
     };
   }, [drawSessionId, resolvedDisplayName, roomCode, user?.id, connState, localUserId, delegateGameToken]);
 
@@ -510,6 +516,9 @@ export function ClassroomPage() {
       setSessionData(data as ClassroomSessionData);
       if (data.settings) {
         setRoomSettings((prev) => ({ ...prev, ...data.settings }));
+        if (typeof data.settings.whiteboardVisible === "boolean") {
+          setShowBoard(data.settings.whiteboardVisible);
+        }
         if (Number.isFinite(data.settings.presentationPercent)) {
           setStageSplitPercent(Math.max(30, Math.min(70, Number(data.settings.presentationPercent))));
         }
@@ -555,6 +564,9 @@ export function ClassroomPage() {
             setIsScreenSharing(false);
           } else if (updated.settings) {
             setRoomSettings((prev) => ({ ...prev, ...updated.settings }));
+            if (typeof updated.settings.whiteboardVisible === "boolean") {
+              setShowBoard(updated.settings.whiteboardVisible);
+            }
             setPresenterIdentity(typeof updated.settings.presentationPresenterIdentity === "string" ? updated.settings.presentationPresenterIdentity : null);
             setPresenterEpoch(Number.isInteger(updated.settings.presentationPresenterEpoch) ? Number(updated.settings.presentationPresenterEpoch) : 0);
             setPresentationActive(updated.settings.presentationVisible === true);
@@ -1332,9 +1344,20 @@ export function ClassroomPage() {
 
   // HOST ACTION: Toggle Board Visibility
   const toggleBoardVisibility = async () => {
-    if (!room || !isHost) return;
+    if (!room || !sessionData || !isHost || !(canManageClassroom || isDelegatedHost)) return;
     const next = !showBoard;
     setShowBoard(next);
+    setRoomSettings((current) => ({ ...current, whiteboardVisible: next }));
+    const response = await classroomRequest("/rtc/classroom-settings", {
+      roomCode: sessionData.room_code,
+      settings: { whiteboardVisible: next }
+    });
+    if (!response.ok) {
+      setShowBoard(!next);
+      setRoomSettings((current) => ({ ...current, whiteboardVisible: !next }));
+      setConnError("לא ניתן לעדכן את תצוגת לוח השרטוט.");
+      return;
+    }
     const payload = JSON.stringify({ type: "TOGGLE_BOARD", show: next });
     await room.localParticipant.publishData(new TextEncoder().encode(payload), { reliable: true });
   };
@@ -1996,6 +2019,7 @@ export function ClassroomPage() {
                         serverAuthoritative={true}
                         initialYjsUpdate={boardInitialYjsUpdate}
                         initialYjsSyncToken={boardInitialYjsSyncToken}
+                        initialViewport={boardInitialViewport}
                         hideTopBar={true}
                         isVisible={showBoard}
                         players={participants.map((p) => ({

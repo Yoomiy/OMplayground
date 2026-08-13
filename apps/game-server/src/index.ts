@@ -95,6 +95,7 @@ interface ClassroomDrawingPolicy {
 const classroomDrawingPolicies = new Map<string, ClassroomDrawingPolicy>();
 const classroomDrawingPolicyLoads = new Map<string, Promise<ClassroomDrawingPolicy>>();
 const classroomDrawingLiveStates = new Map<string, ClassroomDrawingLiveState>();
+const classroomDrawingViewports = new Map<string, { scrollX: number; scrollY: number; zoom: number }>();
 let classroomDrawingSyncSerial = 0;
 
 function nextClassroomDrawingSyncToken(socketId: string): string {
@@ -541,7 +542,8 @@ io.on("connection", (socket) => {
     socket.emit("CLASSROOM_DRAWING_SYNC", {
       sessionId: room.sessionId,
       yjsUpdate: encodeFullClassroomDrawingState(liveClassroomDrawingState(room)),
-      syncToken
+      syncToken,
+      viewport: classroomDrawingViewports.get(room.sessionId)
     });
     logger.info({
       userId,
@@ -925,6 +927,26 @@ io.on("connection", (socket) => {
         const yjsUpdate = typed.yjsUpdate;
         const yjsAwareness = typed.yjsAwareness;
         const yjsAwarenessRemove = typed.yjsAwarenessRemove;
+        const viewport = typed.viewport;
+        if (viewport && typeof viewport === "object" && !Array.isArray(viewport)) {
+          if (!(await isClassroomDrawingHost(room))) return;
+          const candidate = viewport as Record<string, unknown>;
+          const scrollX = Number(candidate.scrollX);
+          const scrollY = Number(candidate.scrollY);
+          const zoom = Number(candidate.zoom);
+          if (
+            !Number.isFinite(scrollX) || Math.abs(scrollX) > 10_000_000 ||
+            !Number.isFinite(scrollY) || Math.abs(scrollY) > 10_000_000 ||
+            !Number.isFinite(zoom) || zoom < 0.01 || zoom > 30
+          ) return;
+          const nextViewport = { scrollX, scrollY, zoom };
+          classroomDrawingViewports.set(room.sessionId, nextViewport);
+          socket.to(`session:${room.sessionId}`).emit("LIVE_DELTA", {
+            from: userId,
+            delta: { viewport: nextViewport }
+          });
+          return;
+        }
         if (Array.isArray(yjsAwarenessRemove)) {
           const knownClientIds = socket.data.classroomDrawingAwarenessClientIds as number[] | undefined;
           const removedClientIds = yjsAwarenessRemove.filter(
@@ -1702,6 +1724,7 @@ io.on("connection", (socket) => {
     if (result.roomEmpty) {
       stats.onRoomDeleted(sessionId);
       classroomDrawingLiveStates.delete(sessionId);
+      classroomDrawingViewports.delete(sessionId);
     }
     const room = getRoom(sessionId);
     if (supabaseAdmin) {

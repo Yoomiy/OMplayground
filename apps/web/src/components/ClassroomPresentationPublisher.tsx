@@ -132,6 +132,14 @@ function requestCanvasFrame(track: MediaStreamTrack | undefined) {
   (track as (MediaStreamTrack & { requestFrame?: () => void }) | undefined)?.requestFrame?.();
 }
 
+async function requestInitialCanvasFrames(track: MediaStreamTrack | undefined) {
+  requestCanvasFrame(track);
+  await nextFrame();
+  requestCanvasFrame(track);
+  await nextFrame();
+  requestCanvasFrame(track);
+}
+
 function sleep(milliseconds: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
 }
@@ -232,6 +240,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
   const imageRef = useRef<HTMLImageElement | null>(null);
   const documentRef = useRef<RuntimeDocument | null>(null);
   const animationRef = useRef<number | null>(null);
+  const staticFrameTimerRef = useRef<number | null>(null);
   const publishedTracksRef = useRef<MediaStreamTrack[]>([]);
   const audioGraphRef = useRef<{
     media: HTMLMediaElement;
@@ -325,6 +334,10 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
   }, [selectedId]);
 
   const removePublishedTracks = useCallback(async (stopTracks: boolean) => {
+    if (staticFrameTimerRef.current !== null) {
+      window.clearInterval(staticFrameTimerRef.current);
+      staticFrameTimerRef.current = null;
+    }
     for (const track of publishedTracksRef.current) {
       try { await room?.localParticipant.unpublishTrack(track, stopTracks); } catch {}
       if (stopTracks) track.stop();
@@ -380,6 +393,16 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
       requestCanvasFrame(publishedTracksRef.current.find((track) => track.kind === "video"));
     }
   }, []);
+
+  const startStaticFrameHeartbeat = useCallback((track: MediaStreamTrack | undefined) => {
+    if (staticFrameTimerRef.current !== null) window.clearInterval(staticFrameTimerRef.current);
+    const pushFrame = () => {
+      renderVisual();
+      requestCanvasFrame(track);
+    };
+    pushFrame();
+    staticFrameTimerRef.current = window.setInterval(pushFrame, 750);
+  }, [renderVisual]);
 
   const loadDocumentPage = useCallback(async (material: ClassroomMaterialRecord, runtime: RuntimeDocument) => {
     const manifest = material.documentManifest;
@@ -494,6 +517,12 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
           name: track.kind === "audio" ? "classroom-presentation-audio" : "classroom-presentation-video"
         });
       }
+      if (material.kind === "document" || material.kind === "image") {
+        renderVisual();
+        const videoTrack = publishedTracksRef.current.find((track) => track.kind === "video");
+        await requestInitialCanvasFrames(videoTrack);
+        startStaticFrameHeartbeat(videoTrack);
+      }
       if (material.state.wasPlaying && mediaRef.current) await mediaRef.current.play().catch(() => {});
       await sendPresentationState("started");
       setIsPublished(true);
@@ -547,6 +576,12 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
           name: track.kind === "audio" ? "classroom-presentation-audio" : "classroom-presentation-video"
         });
       }
+      if (material.kind === "document" || material.kind === "image") {
+        renderVisual();
+        const videoTrack = tracks.find((track) => track.kind === "video");
+        await requestInitialCanvasFrames(videoTrack);
+        startStaticFrameHeartbeat(videoTrack);
+      }
       publishedTracksRef.current = tracks;
       if (material.state.wasPlaying && mediaRef.current) await mediaRef.current.play().catch(() => {});
       await sendPresentationState("started");
@@ -559,7 +594,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
     } finally {
       publishingRef.current = false;
     }
-  }, [canPresent, isPreparing, isPublished, removePublishedTracks, renderVisual, room, sendPresentationState]);
+  }, [canPresent, isPreparing, isPublished, removePublishedTracks, renderVisual, room, sendPresentationState, startStaticFrameHeartbeat]);
 
   useEffect(() => {
     if (!canPresent || !selected) return;

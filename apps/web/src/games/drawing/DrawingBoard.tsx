@@ -15,6 +15,7 @@ export interface DrawingBoardProps {
   serverAuthoritative?: boolean;
   initialYjsUpdate?: string | null;
   initialYjsSyncToken?: string | null;
+  initialViewport?: { scrollX: number; scrollY: number; zoom: unknown } | null;
   players?: { userId: string; displayName: string }[];
   hideTopBar?: boolean;
   isVisible?: boolean;
@@ -32,6 +33,7 @@ export function DrawingBoard({
   serverAuthoritative,
   initialYjsUpdate,
   initialYjsSyncToken,
+  initialViewport,
   players,
   hideTopBar = false,
   isVisible = true
@@ -246,6 +248,7 @@ export function DrawingBoard({
           serverAuthoritative={serverAuthoritative}
           initialYjsUpdate={initialYjsUpdate}
           initialYjsSyncToken={initialYjsSyncToken}
+          initialViewport={initialViewport}
           players={players}
           isVisible={isVisible}
         />

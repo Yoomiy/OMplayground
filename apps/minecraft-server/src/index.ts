@@ -1004,7 +1004,8 @@ app.post("/rtc/classroom-settings", async (req, res) => {
       "allowStudentScreenShare",
       "allowStudentMic",
       "allowStudentCam",
-      "allowWhiteboardDraw"
+      "allowWhiteboardDraw",
+      "whiteboardVisible"
     ];
     const changed = Object.fromEntries(
       Object.entries(settings).filter(

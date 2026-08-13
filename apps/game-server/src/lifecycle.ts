@@ -164,5 +164,6 @@ export async function cleanupStalePausedSessions(
     .from("game_sessions")
     .update({ status: "completed", ended_at: now.toISOString() })
     .eq("status", "paused")
+    .not("invitation_code", "like", "class-draw-%")
     .lt("last_activity", cutoff);
 }
