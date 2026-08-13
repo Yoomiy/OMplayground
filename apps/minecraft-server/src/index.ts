@@ -390,11 +390,16 @@ function isTrustedBrowserOrigin(req: express.Request): boolean {
   return Boolean(origin && CORS_ORIGIN.split(",").map((value) => value.trim()).includes(origin));
 }
 
-interface ClassroomAuthority {
-  userId?: string;
-  actorKind?: "admin" | "teacher";
-  delegate?: ClassroomDelegateAuthority;
-}
+type ClassroomAuthority =
+  | {
+      kind: "user";
+      userId: string;
+      actorKind: "admin" | "teacher";
+    }
+  | {
+      kind: "delegate";
+      delegate: ClassroomDelegateAuthority;
+    };
 
 async function requireClassroomAuthority(
   req: express.Request,
@@ -407,6 +412,7 @@ async function requireClassroomAuthority(
     const actor = await getCachedAuth(supabaseAdmin, accessToken).catch(() => null);
     if (actor?.role === "teacher" || actor?.role === "admin") {
       return {
+        kind: "user",
         userId: actor.userId,
         actorKind: actor.role === "admin" ? "admin" : "teacher"
       };
@@ -427,7 +433,7 @@ async function requireClassroomAuthority(
     res.status(403).json({ error: "forbidden" });
     return null;
   }
-  return { delegate };
+  return { kind: "delegate", delegate };
 }
 
 async function getActiveClassroom(roomCode: string) {
@@ -499,25 +505,21 @@ async function persistPresentationState(classroom: { id: string; settings: unkno
 }
 
 function authorityIdentity(authority: ClassroomAuthority): string | null {
-  if (authority.delegate) return `delegate:${authority.delegate.delegateId}`;
-  return authority.userId ?? null;
+  return authority.kind === "delegate"
+    ? `delegate:${authority.delegate.delegateId}`
+    : authority.userId;
 }
 
 async function appendClassroomAudit(
   req: express.Request,
   classroom: { id: string; room_code: string },
-  authority: ClassroomAuthority | { userId: string; role: string },
+  authority: ClassroomAuthority,
   action: string,
   metadata: Record<string, unknown> = {}
 ): Promise<void> {
   if (!supabaseAdmin) return;
-  const delegated = "delegate" in authority && Boolean(authority.delegate);
-  const actorId = delegated ? null : authority.userId;
-  const actorKind = delegated
-    ? "delegate"
-    : "actorKind" in authority && authority.actorKind
-      ? authority.actorKind
-      : authority.role === "admin" ? "admin" : "teacher";
+  const actorId = authority.kind === "user" ? authority.userId : null;
+  const actorKind = authority.kind === "user" ? authority.actorKind : "delegate";
   const correlationId = (req as express.Request & { correlationId?: string }).correlationId;
   const { error } = await supabaseAdmin.rpc("append_audit_log", {
     p_actor_id: actorId ?? null,
@@ -875,7 +877,17 @@ app.post("/rtc/classroom-end", async (req, res) => {
 
     await completeClassroomDrawingSessions([normalizedRoomCode]);
     const livekitDeleted = await deleteLiveKitRoom(normalizedRoomCode);
-    await appendClassroomAudit(req, classroom, actor, "classroom_ended", { livekit_deleted: livekitDeleted });
+    await appendClassroomAudit(
+      req,
+      classroom,
+      {
+        kind: "user",
+        userId: actor.userId,
+        actorKind: actor.role === "admin" ? "admin" : "teacher"
+      },
+      "classroom_ended",
+      { livekit_deleted: livekitDeleted }
+    );
     logger.info({
       userId: actor.userId,
       protocol: "http",
@@ -1060,7 +1072,7 @@ app.post("/rtc/classroom-settings", async (req, res) => {
     const nextSettings = await patchClassroomSettings(classroom, changed);
     await syncClassroomParticipantPermissions(classroom.room_code, nextSettings);
     await appendClassroomAudit(req, classroom, authority, "classroom_settings_changed", { changed_keys: Object.keys(changed) });
-    res.json({ success: true, settings: nextSettings, delegated: Boolean(authority.delegate) });
+    res.json({ success: true, settings: nextSettings, delegated: authority.kind === "delegate" });
   } catch (err: any) {
     res.status(500).json({ error: err.message || "classroom_settings_failed" });
   }
@@ -1194,7 +1206,8 @@ app.post("/rtc/classroom-presenter-transfer", async (req, res) => {
     if (!authority) return;
     const actorIdentity = authorityIdentity(authority);
     const current = presentationRoomState(classroom.settings);
-    const isCreator = Boolean(authority.userId && authority.userId === classroom.teacher_id);
+    const isCreator =
+      authority.kind === "user" && authority.userId === classroom.teacher_id;
     if (!isCreator && actorIdentity !== current.presenterIdentity) {
       res.status(403).json({ error: "presenter_transfer_forbidden" });
       return;
@@ -1344,7 +1357,7 @@ app.post("/rtc/classroom-remove-participant", async (req, res) => {
     if (!authority) return;
     await removeClassroomParticipant(classroom.room_code, targetIdentity.trim());
     await appendClassroomAudit(req, classroom, authority, "classroom_participant_removed", { target_identity: targetIdentity.trim() });
-    res.json({ success: true, delegated: Boolean(authority.delegate) });
+    res.json({ success: true, delegated: authority.kind === "delegate" });
   } catch (err: any) {
     res.status(500).json({ error: err.message || "participant_remove_failed" });
   }
@@ -1384,7 +1397,7 @@ app.post("/rtc/classroom-promote", async (req, res) => {
         classroom_id: classroom.id,
         display_name: promoted.displayName.slice(0, 120),
         scopes: CLASSROOM_DELEGATE_SCOPES,
-        created_by: authority.userId ?? null
+        created_by: authority.kind === "user" ? authority.userId : null
       })
       .select("id")
       .single();
@@ -1403,7 +1416,7 @@ app.post("/rtc/classroom-promote", async (req, res) => {
     await sendClassroomDelegateEnrollment(normalizedRoomCode, targetIdentity.trim(), enrollmentCode);
     await appendClassroomAudit(req, classroom, authority, "classroom_participant_promoted", { target_identity: targetIdentity.trim() });
     logger.info({
-      userId: authority.userId ?? authority.delegate?.delegateId,
+      userId: authority.kind === "user" ? authority.userId : authority.delegate.delegateId,
       protocol: "http",
       message: "Classroom participant promoted",
       context: {
@@ -1412,7 +1425,7 @@ app.post("/rtc/classroom-promote", async (req, res) => {
         targetIdentity: targetIdentity.trim()
       }
     });
-    res.json({ success: true, delegated: Boolean(authority.delegate) });
+    res.json({ success: true, delegated: authority.kind === "delegate" });
   } catch (err: any) {
     res.status(500).json({ error: err.message || "promotion failed" });
   }
