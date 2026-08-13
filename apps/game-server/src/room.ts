@@ -155,8 +155,8 @@ export function playersForRematch<S>(
 }
 
 /**
- * Removes a socket/player. If the host disconnects, transfers host to
- * another remaining player.
+ * Removes a socket/player. Active rooms transfer a departing host to another
+ * remaining player; paused rooms retain their host until that player returns.
  */
 export function removePlayerFromRoom(
   sessionId: string,
@@ -172,7 +172,7 @@ export function removePlayerFromRoom(
     }
     return { roomEmpty: true };
   }
-  if (wasHost) {
+  if (wasHost && !r.paused) {
     const nextHost = r.players.keys().next().value as string;
     r.hostId = nextHost;
     return { newHostId: nextHost, roomEmpty: false };
@@ -265,6 +265,32 @@ export function canStopGame<S>(
     return {
       ok: false,
       error: { code: "NOT_HOST", message: "רק המארח יכול לבצע את הפעולה" }
+    };
+  }
+  return { ok: true };
+}
+
+/** A paused game may resume only when its host is present and its configured
+ * minimum number of player seats is occupied. Spectators are not players. */
+export function canResumeGame<S>(
+  room: Room<S>,
+  userId: string
+): { ok: true } | { ok: false; error: { code: string; message: string } } {
+  const hostGuard = canStopGame(room, userId);
+  if (!hostGuard.ok) return hostGuard;
+  if (!room.paused) {
+    return {
+      ok: false,
+      error: { code: "GAME_NOT_PAUSED", message: "המשחק אינו מושהה" }
+    };
+  }
+  if (isRoomIdle(room)) {
+    return {
+      ok: false,
+      error: {
+        code: "NOT_ENOUGH_PLAYERS",
+        message: "אין מספיק שחקנים מחוברים כדי להמשיך את המשחק"
+      }
     };
   }
   return { ok: true };

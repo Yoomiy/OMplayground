@@ -99,6 +99,28 @@ describe("LEAVE_ROOM persistence (mirrors disconnect)", () => {
     expect(m.inGs).toHaveBeenCalledWith("status", ["waiting", "playing", "paused"]);
   });
 
+  it("does not persist a host change when a paused host leaves", async () => {
+    const sessionId = "sess-paused-host-leave";
+    const room = getOrCreateRoom(sessionId, {
+      gameId: "g1",
+      gameKey: tictactoeModule.key,
+      module: tictactoeModule,
+      gender: "girl",
+      hostId: "host-user",
+      paused: true
+    });
+    assignPlayer(room, "host-user", "Host");
+    assignPlayer(room, "guest-user", "Guest");
+    const result = removePlayerFromRoom(sessionId, "host-user");
+
+    const m = makeMockSupabase();
+    await persistPlayerLeave({ supabase: m.supabase, sessionId, result });
+
+    expect(m.from).not.toHaveBeenCalledWith("kid_profiles");
+    const payload = m.updateGs.mock.calls[0][0] as { host_id?: string };
+    expect(payload.host_id).toBeUndefined();
+  });
+
   it("does not downgrade completed rows when the last player leaves (filter excludes completed)", async () => {
     const sessionId = "sess-leave-completed";
     const m = makeMockSupabase();

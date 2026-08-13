@@ -22,6 +22,7 @@ import {
   applyIntent,
   assignPlayer,
   attachSpectator,
+  canResumeGame,
   canStopGame,
   connectedPlayers,
   deleteRoom,
@@ -468,7 +469,7 @@ io.on("connection", (socket) => {
       roster,
       missingPlayers: missingPlayers(room),
       paused: room.paused,
-      canResume: room.paused && roster.length > 0 && roster.length === players.length,
+      canResume: room.paused && !isRoomIdle(room),
       rematch: room.rematch
         ? {
             requestedBy: room.rematch.requestedBy,
@@ -1559,20 +1560,9 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      const guard = canStopGame(room, userId);
+      const guard = canResumeGame(room, userId);
       if (!guard.ok) {
         ack?.({ ok: false, error: guard.error });
-        return;
-      }
-      const missing = missingPlayers(room);
-      if (missing.length > 0) {
-        ack?.({
-          ok: false,
-          error: {
-            code: "PLAYERS_MISSING",
-            message: `ממתינים ל־${missing.map((p) => p.displayName).join(", ")}`
-          }
-        });
         return;
       }
       resumeRoom(room);

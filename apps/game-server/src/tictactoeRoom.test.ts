@@ -12,6 +12,7 @@ import {
 import {
   applyIntent,
   assignPlayer,
+  canResumeGame,
   canStopGame,
   getOrCreateRoom,
   playersForRematch,
@@ -37,6 +38,46 @@ describe("Room / host transfer", () => {
     expect(r.roomEmpty).toBe(false);
     expect(r.newHostId).toBe("guest-user");
     expect(room.hostId).toBe("guest-user");
+  });
+
+  it("preserves the original host when that host leaves a paused game", () => {
+    const room = getOrCreateRoom("sess-paused-host", {
+      gameId: "g1",
+      gameKey: tictactoeModule.key,
+      module: tictactoeModule,
+      gender: "boy",
+      hostId: "host-user",
+      paused: true
+    });
+    assignPlayer(room, "host-user", "Host");
+    assignPlayer(room, "guest-user", "Guest");
+
+    const result = removePlayerFromRoom("sess-paused-host", "host-user");
+    expect(result).toEqual({ roomEmpty: false });
+    expect(room.hostId).toBe("host-user");
+  });
+
+  it("allows the paused host to resume with minPlayers, not the whole roster", () => {
+    const room = getOrCreateRoom("sess-minimum-resume", {
+      gameId: "g1",
+      gameKey: tictactoeModule.key,
+      module: tictactoeModule,
+      gender: "boy",
+      hostId: "host-user",
+      minPlayers: 2,
+      roster: [
+        { userId: "host-user", displayName: "Host" },
+        { userId: "guest-user", displayName: "Guest" },
+        { userId: "absent-user", displayName: "Absent" }
+      ],
+      paused: true
+    });
+    assignPlayer(room, "host-user", "Host");
+    expect(canResumeGame(room, "host-user").ok).toBe(false);
+
+    assignPlayer(room, "guest-user", "Guest");
+    expect(canResumeGame(room, "guest-user").ok).toBe(false);
+    expect(canResumeGame(room, "host-user")).toEqual({ ok: true });
   });
 
   it("does not reset game state when a player leaves and rejoins mid-game", () => {

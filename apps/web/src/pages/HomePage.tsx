@@ -473,7 +473,9 @@ export function HomePage() {
                           מארח: {game.host_name}
                         </p>
                         <p className="truncate text-[10px] font-black text-amber-400 mt-1.5 bg-amber-500/10 px-2 py-0.5 rounded-lg inline-block">
-                          {game.connected_player_names.length > 0
+                          {game.status === "playing"
+                            ? "▶️ המשחק כבר התחיל"
+                            : game.connected_player_names.length > 0
                             ? `👥 בפנים: ${game.connected_player_names.join(", ")}`
                             : "⏳ ממתין לשחקנים"}
                         </p>
@@ -486,14 +488,16 @@ export function HomePage() {
                         >
                           המשך
                         </button>
-                        <button
-                          type="button"
-                          disabled={dismissingPausedId !== null}
-                          onClick={() => void dismissPausedSession(game.id)}
-                          className="rounded-xl bg-rose-500/10 border border-rose-400/30 px-3 py-1.5 text-xs font-black text-rose-400 hover:bg-rose-500 hover:text-white hover:-translate-y-0.5 transition-all disabled:opacity-50"
-                        >
-                          {dismissingPausedId === game.id ? "מסיר…" : "הסר"}
-                        </button>
+                        {game.status === "paused" ? (
+                          <button
+                            type="button"
+                            disabled={dismissingPausedId !== null}
+                            onClick={() => void dismissPausedSession(game.id)}
+                            className="rounded-xl bg-rose-500/10 border border-rose-400/30 px-3 py-1.5 text-xs font-black text-rose-400 hover:bg-rose-500 hover:text-white hover:-translate-y-0.5 transition-all disabled:opacity-50"
+                          >
+                            {dismissingPausedId === game.id ? "מסיר…" : "הסר"}
+                          </button>
+                        ) : null}
                       </div>
                     </div>
                   </li>

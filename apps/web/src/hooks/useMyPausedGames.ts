@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 
 export interface MyPausedGameRow {
   id: string;
+  status: "paused" | "playing";
   host_name: string;
   game_id: string;
   last_activity: string | null;
@@ -12,7 +13,8 @@ export interface MyPausedGameRow {
 }
 
 /**
- * Paused sessions this kid is still listed on (`player_ids`), same gender via RLS.
+ * Active sessions this kid is still listed on but is not currently connected to.
+ * A session can be playing while other roster members have yet to rejoin.
  */
 export function useMyPausedGames(userId: string | undefined, gender: "boy" | "girl" | undefined) {
   const [rows, setRows] = useState<MyPausedGameRow[]>([]);
@@ -33,9 +35,9 @@ export function useMyPausedGames(userId: string | undefined, gender: "boy" | "gi
     const { data, error } = await supabase
       .from("game_sessions")
       .select(
-        "id, host_name, game_id, last_activity, connected_player_ids, connected_player_names, games ( name_he )"
+        "id, status, host_name, game_id, last_activity, connected_player_ids, connected_player_names, games ( name_he )"
       )
-      .eq("status", "paused")
+      .in("status", ["paused", "playing"])
       .contains("player_ids", [userId])
       .order("last_activity", { ascending: false })
       .limit(20);
@@ -43,7 +45,11 @@ export function useMyPausedGames(userId: string | undefined, gender: "boy" | "gi
       console.error(error);
       setRows([]);
     } else {
-      setRows((data ?? []) as unknown as MyPausedGameRow[]);
+      setRows(
+        ((data ?? []) as unknown as MyPausedGameRow[]).filter(
+          (row) => !row.connected_player_ids.includes(userId)
+        )
+      );
     }
     setLoading(false);
   }, [userId]);
@@ -62,7 +68,11 @@ export function useMyPausedGames(userId: string | undefined, gender: "boy" | "gi
       setLoading(true);
     }
 
-    void refetch();
+    const isRejoinableSession = (row: any, currentUserId: string) =>
+      (row.status === "paused" || row.status === "playing") &&
+      Array.isArray(row.player_ids) &&
+      row.player_ids.includes(currentUserId) &&
+      !row.connected_player_ids?.includes(currentUserId);
 
     const handleRealtime = (payload: any) => {
       const currentUserId = userIdRef.current;
@@ -70,7 +80,7 @@ export function useMyPausedGames(userId: string | undefined, gender: "boy" | "gi
 
       if (payload.eventType === "INSERT") {
         const newRow = payload.new;
-        if (newRow.status === "paused" && newRow.player_ids && newRow.player_ids.includes(currentUserId)) {
+        if (isRejoinableSession(newRow, currentUserId)) {
           void refetch();
         }
       } else if (payload.eventType === "DELETE") {
@@ -81,13 +91,13 @@ export function useMyPausedGames(userId: string | undefined, gender: "boy" | "gi
         const exists = rowsRef.current.some(r => r.id === newRow.id);
 
         if (exists) {
-          if (newRow.status !== "paused" || (newRow.player_ids && !newRow.player_ids.includes(currentUserId))) {
+          if (!isRejoinableSession(newRow, currentUserId)) {
             setRows(prev => prev.filter(r => r.id !== newRow.id));
           } else {
             void refetch();
           }
         } else {
-          if (newRow.status === "paused" && newRow.player_ids && newRow.player_ids.includes(currentUserId)) {
+          if (isRejoinableSession(newRow, currentUserId)) {
             void refetch();
           }
         }
@@ -106,7 +116,11 @@ export function useMyPausedGames(userId: string | undefined, gender: "boy" | "gi
         },
         handleRealtime
       )
-      .subscribe();
+      .subscribe((connectionStatus) => {
+        // Fetch after the subscription is active so an update cannot slip
+        // between the initial query and the Realtime listener.
+        if (connectionStatus === "SUBSCRIBED") void refetch();
+      });
 
     return () => {
       void supabase.removeChannel(channel);
