@@ -1128,17 +1128,9 @@ app.post("/rtc/classroom-presenter-ready", async (req, res) => {
     const classroom = await getActiveClassroom(roomCode.trim());
     if (!classroom) return void res.status(404).json({ error: "classroom_not_found" });
     if (!requirePresenterCapability(req, res, classroom)) return;
-    const current = presentationRoomState(classroom.settings);
-    if (!hasMedia && current.visible) {
-      const next = { ...current, visible: false, title: null, mediaKind: null };
-      await persistPresentationState(classroom, next);
-      await broadcastClassroomData(classroom.room_code, {
-        type: "PRESENTATION_VISIBILITY",
-        visible: false,
-        presenterIdentity: next.presenterIdentity,
-        presenterEpoch: next.presenterEpoch
-      });
-    }
+    // A host may intentionally open an empty media board while the presenter
+    // prepares a file. Visibility remains host-controlled; readiness only
+    // confirms that the presenter's local library has finished loading.
     res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message || "presenter_readiness_failed" });

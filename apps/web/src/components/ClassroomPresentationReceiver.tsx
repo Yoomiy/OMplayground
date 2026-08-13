@@ -49,7 +49,7 @@ export function ClassroomPresentationReceiver({ videoTrack, audioTrack, title, p
     <canvas ref={canvasRef} className={`absolute inset-0 h-full w-full object-contain ${videoTrack ? "opacity-0" : "opacity-100"}`} aria-hidden="true" />
     <video ref={videoRef} autoPlay playsInline className={`h-full w-full object-contain ${videoTrack ? "opacity-100" : "opacity-0"}`} />
     {!videoTrack && hasSnapshot && <div className="absolute bottom-3 rounded-full bg-slate-950/80 px-3 py-1 text-xs font-bold text-amber-200">המגיש מתחבר מחדש…</div>}
-    {!videoTrack && !hasSnapshot && <div className="text-sm font-bold text-slate-400">ממתין לשידור המצגת…</div>}
+    {!videoTrack && !hasSnapshot && <div className="text-center text-sm font-bold text-slate-400">{title ? "ממתין לשידור המצגת…" : "לוח המדיה פתוח — המגיש עדיין לא הוסיף חומר."}</div>}
     <audio ref={audioRef} autoPlay />
   </div>;
 }

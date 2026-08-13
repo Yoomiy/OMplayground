@@ -41,6 +41,11 @@ interface PresentationSnapshot {
   kind: ClassroomMediaKind | null;
 }
 
+export interface ClassroomMediaUploadStatus {
+  state: "preparing" | "success" | "error";
+  message: string;
+}
+
 interface Props {
   room: Room | null;
   roomCode: string;
@@ -51,6 +56,7 @@ interface Props {
   presenterToken: string | null;
   classroomRequest: (path: string, body: Record<string, unknown>) => Promise<Response>;
   onPresentationChange: (snapshot: PresentationSnapshot) => void;
+  onUploadStatus: (status: ClassroomMediaUploadStatus) => void;
   onRequestHidden: () => void;
   onError: (message: string) => void;
   showBoard: boolean;
@@ -211,6 +217,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
   presenterToken,
   classroomRequest,
   onPresentationChange,
+  onUploadStatus,
   onRequestHidden,
   onError,
   showBoard,
@@ -640,10 +647,20 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
 
   const addFile = useCallback(async (file: File) => {
     const detected = materialKind(file);
-    if (!detected) return onError("ניתן להוסיף PDF, PPT, PPTX, תמונה, וידאו או שמע בלבד.");
-    if (detected.kind === "document" && file.size > 50 * 1024 * 1024) {
-      return onError("PDF או מצגת יכולים להיות עד 50MB, כדי שההמרה תתבצע בבטחה.");
+    if (!detected) {
+      const message = "ניתן להוסיף PDF, PPT, PPTX, תמונה, וידאו או שמע בלבד.";
+      onUploadStatus({ state: "error", message });
+      return onError(message);
     }
+    if (detected.kind === "document" && file.size > 50 * 1024 * 1024) {
+      const message = "PDF או מצגת יכולים להיות עד 50MB, כדי שההמרה תתבצע בבטחה.";
+      onUploadStatus({ state: "error", message });
+      return onError(message);
+    }
+    onUploadStatus({
+      state: "preparing",
+      message: detected.kind === "document" ? `מעלה וממיר את ${file.name}…` : `מכין את ${file.name} להצגה…`
+    });
     setIsPreparing(true);
     try {
       let source: Blob = file;
@@ -687,13 +704,16 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
           setCacheWarning("החומר יישאר זמין בלשונית זו, אך אין מקום לשמור אותו לשחזור לאחר רענון.");
         });
       }
+      onUploadStatus({ state: "success", message: `${file.name} מוכן להצגה בלוח המדיה.` });
     } catch (error) {
       console.error("Classroom material import failed", error);
-      onError("לא ניתן להכין את הקובץ להצגה.");
+      const message = "לא ניתן להכין את הקובץ להצגה.";
+      onUploadStatus({ state: "error", message });
+      onError(message);
     } finally {
       setIsPreparing(false);
     }
-  }, [convertDocument, onError, sessionId]);
+  }, [convertDocument, onError, onUploadStatus, sessionId]);
 
   const removeSelected = useCallback(async () => {
     if (!selected) return;
@@ -748,8 +768,8 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
       event.target.value = "";
       if (file) void addFile(file);
     }} />
-    {visible && selected && <div ref={surfaceRef} className={`relative z-30 flex min-h-0 min-w-0 flex-col overflow-hidden bg-black ${showBoard ? "shrink-0" : "flex-1"}`} style={{ width }}>
-      <div className="relative z-20 flex flex-wrap items-center gap-1.5 border-b border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-slate-100" dir="rtl">
+    {visible && <div ref={surfaceRef} className={`relative z-30 flex min-h-0 min-w-0 flex-col overflow-hidden bg-black ${showBoard ? "shrink-0" : "flex-1"}`} style={{ width }}>
+      {selected ? <div className="relative z-20 flex flex-wrap items-center gap-1.5 border-b border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-slate-100" dir="rtl">
         <span className="ml-auto flex max-w-48 items-center gap-1 truncate font-bold"><SelectedIcon className="size-3.5" />{selected.title}</span>
         <button onClick={() => fileInputRef.current?.click()} className="rounded bg-slate-800 px-2 py-1"><Upload className="inline size-3.5" /> הוסף</button>
         <div className="relative">
@@ -785,10 +805,14 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
         </>}
         <button onClick={() => document.fullscreenElement ? void document.exitFullscreen() : void surfaceRef.current?.requestFullscreen()} title="מסך מלא"><Maximize2 className="size-4" /></button>
         <button onClick={() => void removeSelected()} title="הסר חומר" className="text-rose-300"><Trash2 className="size-4" /></button>
-      </div>
-      {cacheWarning && <div className="bg-amber-950 px-3 py-1 text-xs text-amber-100">{cacheWarning}</div>}
-      {selected.documentManifest?.warning && <div className="bg-amber-950 px-3 py-1 text-xs text-amber-100">ייתכן שחלק מהגופנים או התוכן העשיר הוחלפו בזמן ההמרה.</div>}
-      <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-black">
+      </div> : <div className="relative z-20 flex items-center justify-between gap-3 border-b border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100" dir="rtl">
+        <span className="flex items-center gap-1.5 font-bold"><Presentation className="size-4" />לוח מדיה</span>
+        <button onClick={() => fileInputRef.current?.click()} disabled={isPreparing} className="rounded bg-slate-800 px-2 py-1 disabled:cursor-wait disabled:opacity-60"><Upload className="inline size-3.5" /> הוסף חומר</button>
+      </div>}
+      {selected ? <>
+        {cacheWarning && <div className="bg-amber-950 px-3 py-1 text-xs text-amber-100">{cacheWarning}</div>}
+        {selected.documentManifest?.warning && <div className="bg-amber-950 px-3 py-1 text-xs text-amber-100">ייתכן שחלק מהגופנים או התוכן העשיר הוחלפו בזמן ההמרה.</div>}
+        <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-black">
         {visual && <canvas
           ref={displayCanvasRef}
           className={`h-full w-full object-contain ${laserMode ? "cursor-crosshair" : selected.state.zoom > 1 ? "cursor-grab" : ""}`}
@@ -810,7 +834,16 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
         {selected.kind === "video" && <video key={selected.id} ref={(element) => { mediaRef.current = element; }} controls playsInline className="h-full w-full object-contain" onTimeUpdate={(event) => updateSelectedState({ currentTime: event.currentTarget.currentTime })} onPlay={() => updateSelectedState({ wasPlaying: true })} onPause={() => updateSelectedState({ wasPlaying: false })} onVolumeChange={(event) => updateSelectedState({ volume: event.currentTarget.volume })} onRateChange={(event) => updateSelectedState({ playbackRate: event.currentTarget.playbackRate })} />}
         {selected.kind === "audio" && <audio key={selected.id} ref={(element) => { mediaRef.current = element; }} controls className="w-full max-w-2xl" onTimeUpdate={(event) => updateSelectedState({ currentTime: event.currentTarget.currentTime })} onPlay={() => updateSelectedState({ wasPlaying: true })} onPause={() => updateSelectedState({ wasPlaying: false })} onVolumeChange={(event) => updateSelectedState({ volume: event.currentTarget.volume })} onRateChange={(event) => updateSelectedState({ playbackRate: event.currentTarget.playbackRate })} />}
         {isPreparing && <div className="absolute inset-0 flex items-center justify-center bg-slate-950/80 text-sm font-bold">מכין חומר להצגה...</div>}
-      </div>
+        </div>
+      </> : <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 bg-slate-950 px-6 text-center" dir="rtl">
+        <Presentation className="size-12 text-fuchsia-300" />
+        <div>
+          <h2 className="text-base font-bold text-slate-100">לוח המדיה מוכן</h2>
+          <p className="mt-1 max-w-sm text-sm text-slate-400">עדיין לא נוסף חומר. בחרו קובץ כדי להכין אותו להצגה.</p>
+        </div>
+        <button onClick={() => fileInputRef.current?.click()} disabled={isPreparing} className="rounded-lg bg-fuchsia-600 px-4 py-2 text-sm font-bold text-white hover:bg-fuchsia-500 disabled:cursor-wait disabled:opacity-60"><Upload className="ml-1 inline size-4" />הוספת חומר</button>
+        {isPreparing && <div className="text-sm font-bold text-fuchsia-200" role="status">מכין את החומר להצגה…</div>}
+      </div>}
     </div>}
     <canvas ref={publishCanvasRef} width={DOCUMENT_WIDTH} height={DOCUMENT_HEIGHT} className="hidden" aria-hidden="true" />
   </>;

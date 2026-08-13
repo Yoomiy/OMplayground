@@ -9,7 +9,11 @@ import { supabase } from "@/lib/supabase";
 import { getVoxelServerUrl } from "@/lib/voxelServerUrl";
 import { reportTelemetry } from "@/utils/telemetry";
 import { DrawingBoard } from "@/games/drawing/DrawingBoard";
-import { ClassroomPresentationPublisher, type ClassroomPresentationPublisherHandle } from "@/components/ClassroomPresentationPublisher";
+import {
+  ClassroomPresentationPublisher,
+  type ClassroomMediaUploadStatus,
+  type ClassroomPresentationPublisherHandle
+} from "@/components/ClassroomPresentationPublisher";
 import { ClassroomPresentationReceiver } from "@/components/ClassroomPresentationReceiver";
 import { clearClassroomLibrary } from "@/lib/classroomMediaLibrary";
 
@@ -196,6 +200,7 @@ export function ClassroomPage() {
   const [presentationActive, setPresentationActive] = useState(false);
   const [localPresentationLoaded, setLocalPresentationLoaded] = useState(false);
   const [localPresentationLibraryReady, setLocalPresentationLibraryReady] = useState(false);
+  const [mediaUploadStatus, setMediaUploadStatus] = useState<ClassroomMediaUploadStatus | null>(null);
   const [classroomSessionId, setClassroomSessionId] = useState<string | null>(null);
   const [presenterIdentity, setPresenterIdentity] = useState<string | null>(null);
   const [presenterEpoch, setPresenterEpoch] = useState(0);
@@ -210,6 +215,12 @@ export function ClassroomPage() {
   useEffect(() => { presenterIdentityRef.current = presenterIdentity; }, [presenterIdentity]);
   useEffect(() => { presenterEpochRef.current = presenterEpoch; }, [presenterEpoch]);
   useEffect(() => { presenterTokenRef.current = presenterToken; }, [presenterToken]);
+
+  useEffect(() => {
+    if (!mediaUploadStatus || mediaUploadStatus.state === "preparing") return;
+    const timer = window.setTimeout(() => setMediaUploadStatus(null), 8000);
+    return () => window.clearTimeout(timer);
+  }, [mediaUploadStatus]);
 
   // Under-the-hood Draw Game Room (Socket.io) for Whiteboard Syncing
   const [drawSessionId, setDrawSessionId] = useState<string | null>(null);
@@ -1626,7 +1637,8 @@ export function ClassroomPage() {
           {localIsPresenter && connState === "connected" && !isScreenSharing && (
             <button
               onClick={() => presentationPublisherRef.current?.openMaterialPicker()}
-              className="rounded-xl border border-fuchsia-500/50 bg-fuchsia-500/10 px-3 py-1.5 text-xs font-bold text-fuchsia-100 transition hover:bg-fuchsia-500/20 flex items-center gap-1.5"
+              disabled={mediaUploadStatus?.state === "preparing"}
+              className="rounded-xl border border-fuchsia-500/50 bg-fuchsia-500/10 px-3 py-1.5 text-xs font-bold text-fuchsia-100 transition hover:bg-fuchsia-500/20 flex items-center gap-1.5 disabled:cursor-wait disabled:opacity-60"
               title="הוספת קובץ לספריית חומרי המדיה המקומית"
             >
               <Upload className="size-3.5" /> הוסף חומרים ללוח המדיה
@@ -1697,6 +1709,26 @@ export function ClassroomPage() {
           <AlertCircle className="size-4 shrink-0 text-rose-400" />
           <p>{connError}</p>
           <button onClick={() => setConnError(null)} className="mr-1 rounded px-1 text-rose-300 hover:bg-rose-500/20" aria-label="סגור הודעת שגיאה">×</button>
+        </div>
+      )}
+
+      {connState === "connected" && mediaUploadStatus && (
+        <div
+          role={mediaUploadStatus.state === "error" ? "alert" : "status"}
+          aria-live="polite"
+          className={cn(
+            "fixed left-4 z-50 flex max-w-md items-center gap-2 rounded-xl border bg-slate-950/95 px-3 py-2 text-xs font-bold shadow-xl transition-all",
+            connError ? "top-32" : "top-20",
+            mediaUploadStatus.state === "error"
+              ? "border-rose-500/40 text-rose-200"
+              : mediaUploadStatus.state === "success"
+                ? "border-emerald-500/40 text-emerald-200"
+                : "border-fuchsia-500/40 text-fuchsia-100"
+          )}
+        >
+          {mediaUploadStatus.state === "error" ? <AlertCircle className="size-4 shrink-0 text-rose-400" /> : mediaUploadStatus.state === "success" ? <Check className="size-4 shrink-0 text-emerald-400" /> : <span className="size-4 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent" />}
+          <p>{mediaUploadStatus.message}</p>
+          <button onClick={() => setMediaUploadStatus(null)} className="mr-1 rounded px-1 hover:bg-white/10" aria-label="סגור הודעת העלאה">×</button>
         </div>
       )}
 
@@ -1878,6 +1910,7 @@ export function ClassroomPage() {
                       presenterToken={presenterToken}
                       classroomRequest={classroomRequest}
                       onPresentationChange={handleLocalPresentationChange}
+                      onUploadStatus={setMediaUploadStatus}
                       onRequestHidden={requestMediaHidden}
                       onError={setConnError}
                       showBoard={showBoard}

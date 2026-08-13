@@ -14,3 +14,4 @@
 28. close class for clients when host clode it
 29. fix the pointers situation - in drawing game and classrooms boards
 30. test audio and docs on the classroom media board
+31. make sure that whitboard's room is alive as long as the classroom is.
