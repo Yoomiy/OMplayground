@@ -30,6 +30,7 @@ import {
   getRoom,
   listRooms,
   missingPlayers,
+  playersForRematch,
   removePlayerFromRoom,
   removeSpectatorFromRoom,
   roomRoster,
@@ -637,8 +638,7 @@ io.on("connection", (socket) => {
   }
 
   function resetForRematch(room: Room<unknown>, rematchPlayers = connectedPlayers(room)) {
-    const orderedPlayers =
-      room.module.key === "chess" ? [...rematchPlayers].reverse() : rematchPlayers;
+    const orderedPlayers = playersForRematch(room, rematchPlayers);
     const seats = orderedPlayers.map((p) => ({
       userId: p.userId,
       displayName: p.displayName

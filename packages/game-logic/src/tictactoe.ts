@@ -163,6 +163,7 @@ export const tictactoeModule: GameModule<TicTacToeState, TicTacToeIntentPayload>
     key: "tictactoe",
     minPlayers: 2,
     maxPlayers: 2,
+    rotateSeatsOnRematch: true,
     initialState(players: GameSeat[]) {
       const seats: Record<string, Player> = {};
       players.forEach((p, i) => {

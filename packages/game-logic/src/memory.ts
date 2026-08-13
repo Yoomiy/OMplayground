@@ -48,6 +48,7 @@ export const memoryModule: GameModule<MemoryState, MemoryIntent> = {
   key: "memory",
   minPlayers: 2,
   maxPlayers: 2,
+  rotateSeatsOnRematch: true,
   initialState(players: GameSeat[]) {
     const seats: Record<string, "p1" | "p2"> = {};
     const scores: Record<string, number> = {};

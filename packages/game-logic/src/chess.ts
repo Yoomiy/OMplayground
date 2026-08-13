@@ -628,6 +628,7 @@ export const chessModule: GameModule<ChessState, unknown> = {
   key: "chess",
   minPlayers: 2,
   maxPlayers: 2,
+  rotateSeatsOnRematch: true,
   initialState(players: GameSeat[], timeControl?: ChessTimeControl) {
     const seats: Record<string, ChessSeat> = {};
     players.forEach((p, i) => {

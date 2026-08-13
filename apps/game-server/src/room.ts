@@ -143,6 +143,18 @@ export function connectedPlayers<S>(room: Room<S>): RoomPlayer[] {
 }
 
 /**
+ * Turn-based modules rotate player order for a rematch so the starting role
+ * (for example X, red, or player one) changes hands. Other game types retain
+ * their current order.
+ */
+export function playersForRematch<S>(
+  room: Room<S>,
+  players = connectedPlayers(room)
+): RoomPlayer[] {
+  return room.module.rotateSeatsOnRematch ? [...players].reverse() : players;
+}
+
+/**
  * Removes a socket/player. If the host disconnects, transfers host to
  * another remaining player.
  */

@@ -1,6 +1,11 @@
 import {
+  breakoutMpModule,
+  chessModule,
+  connectfourModule,
   drawingModule,
+  memoryModule,
   tictactoeModule,
+  type AnyGameModule,
   type DrawingState,
   type TicTacToeState
 } from "@playground/game-logic";
@@ -9,6 +14,7 @@ import {
   assignPlayer,
   canStopGame,
   getOrCreateRoom,
+  playersForRematch,
   removePlayerFromRoom
 } from "./room";
 
@@ -199,5 +205,50 @@ describe("REMATCH room logic (tic-tac-toe)", () => {
     expect((move.state as TicTacToeState).board.filter(Boolean).length).toBe(
       1
     );
+  });
+});
+
+describe("rematch seat rotation", () => {
+  const players = [
+    { userId: "a-user", displayName: "A" },
+    { userId: "b-user", displayName: "B" }
+  ];
+
+  const turnBasedModules: AnyGameModule[] = [
+    chessModule as AnyGameModule,
+    tictactoeModule as AnyGameModule,
+    connectfourModule as AnyGameModule,
+    memoryModule as AnyGameModule
+  ];
+
+  it.each(turnBasedModules)(
+    "rotates starting roles for %s",
+    (module) => {
+      const room = getOrCreateRoom(`sess-rematch-${module.key}`, {
+        gameId: "g1",
+        gameKey: module.key,
+        module,
+        gender: "boy",
+        hostId: "a-user"
+      });
+      assignPlayer(room, "a-user", "A");
+      assignPlayer(room, "b-user", "B");
+
+      expect(playersForRematch(room)).toEqual([...players].reverse());
+    }
+  );
+
+  it("does not rotate roles for real-time Breakout", () => {
+    const room = getOrCreateRoom("sess-rematch-breakout", {
+      gameId: "g1",
+      gameKey: breakoutMpModule.key,
+      module: breakoutMpModule,
+      gender: "boy",
+      hostId: "a-user"
+    });
+    assignPlayer(room, "a-user", "A");
+    assignPlayer(room, "b-user", "B");
+
+    expect(playersForRematch(room)).toEqual(players);
   });
 });

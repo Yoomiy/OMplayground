@@ -159,6 +159,7 @@ export const connectfourModule: GameModule<ConnectFourState, ConnectFourIntent> 
     key: "connectfour",
     minPlayers: 2,
     maxPlayers: 2,
+    rotateSeatsOnRematch: true,
     initialState(players: GameSeat[]) {
       const seats: Record<string, ConnectFourDisc> = {};
       players.forEach((p, i) => {

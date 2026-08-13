@@ -22,6 +22,11 @@ export interface GameModule<State, Intent = unknown> {
   key: string;
   minPlayers: number;
   maxPlayers: number;
+  /**
+   * Whether a rematch should rotate the player order before assigning seats.
+   * Turn-based games use this so each player gets the other starting role.
+   */
+  rotateSeatsOnRematch?: boolean;
   initialState(players: GameSeat[]): State;
   applyIntent(
     state: State,
