@@ -20,6 +20,8 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/packages/observability/package.json ./packages/observability/package.json
+COPY --from=build /app/packages/observability/dist ./packages/observability/dist
 COPY --from=build /app/apps/document-converter/package.json ./package.json
 COPY --from=build /app/apps/document-converter/dist ./dist
 ENV PORT=8080
