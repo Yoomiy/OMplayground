@@ -6,12 +6,8 @@
 19. test fully recess end
 20. check why games aren't shown under resume game immidietly after leaving
 21. don't change host if they leave when game is paused
-23. address ltr bug
-24. add dirty check to drawing board sync
 25. make sure that errors in the drawing board do not kik you out of the room
 26. solve the size limit barrier in the drawing board
 27. when host stops game - others need to stop sending intents
 28. close class for clients when host clode it
-29. fix the pointers situation - in drawing game and classrooms boards
 30. test audio and docs on the classroom media board
-31. make sure that whitboard's room is alive as long as the classroom is.

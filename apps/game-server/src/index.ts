@@ -1200,6 +1200,16 @@ io.on("connection", (socket) => {
         return;
       }
       const normalDelta = delta as Record<string, unknown>;
+      if (typeof normalDelta.yjsAwareness === "string") {
+        // Awareness client IDs belong to a browser/Yjs document, not to a
+        // player. Keep them per socket so an abrupt tab close can remove the
+        // exact remote cursor immediately instead of waiting for Yjs expiry.
+        socket.data.drawingAwarenessClientIds = Array.isArray(normalDelta.yjsAwarenessClientIds)
+          ? normalDelta.yjsAwarenessClientIds.filter(
+              (clientId): clientId is number => Number.isSafeInteger(clientId)
+            )
+          : [];
+      }
       const syncKey = `${socket.id}:${sessionId}`;
       if (normalDelta.yjsSyncRequest === true) {
         const operation = drawingGameSyncOperations.get(syncKey);
@@ -1888,13 +1898,17 @@ io.on("connection", (socket) => {
 
   async function handleLeave(sessionId: string) {
     if (!userId) return;
-    const awarenessClientIds = socket.data.classroomDrawingAwarenessClientIds as number[] | undefined;
+    const awarenessClientIds = [
+      ...(socket.data.classroomDrawingAwarenessClientIds ?? []),
+      ...(socket.data.drawingAwarenessClientIds ?? [])
+    ];
     if (awarenessClientIds?.length) {
       socket.to(`session:${sessionId}`).emit("LIVE_DELTA", {
         from: userId,
-        delta: { yjsAwarenessRemove: awarenessClientIds }
+        delta: { yjsAwarenessRemove: [...new Set(awarenessClientIds)] }
       });
       socket.data.classroomDrawingAwarenessClientIds = undefined;
+      socket.data.drawingAwarenessClientIds = undefined;
     }
     if (await hasConcurrentPlayerSocket(sessionId)) {
       await socket.leave(`session:${sessionId}`);

@@ -1,0 +1,13 @@
+diff --git a/node_modules/@excalidraw/excalidraw/dist/dev/index.js b/node_modules/@excalidraw/excalidraw/dist/dev/index.js
+index 187e109..f8d51a8 100644
+--- a/node_modules/@excalidraw/excalidraw/dist/dev/index.js
++++ b/node_modules/@excalidraw/excalidraw/dist/dev/index.js
+@@ -16542,7 +16542,7 @@
+                       className: "dropdown-menu UserList__collaborators",
+                       placeholder: t("userList.empty"),
+                       children: filteredCollaborators.length > 0 ? [
+-                        /* @__PURE__ */ jsx93("div", { className: "hint", children: t("userList.hint.text") }),
++                        /* @__PURE__ */ jsx93("div", { className: "hint", children: t("userList.hint.text") }, "hint"),
+                         filteredCollaborators.map(
+                           (collaborator) => renderCollaborator({
+                             actionManager,

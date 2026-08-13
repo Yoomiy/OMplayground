@@ -11,6 +11,7 @@ declare module "socket.io" {
     sessionId?: string;
     classroomDrawingSync?: ClassroomDrawingSocketSync;
     classroomDrawingAwarenessClientIds?: number[];
+    drawingAwarenessClientIds?: number[];
     classroomDrawing?: {
       sessionId: string;
       classroomId: string;
