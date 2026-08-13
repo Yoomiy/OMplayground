@@ -1438,7 +1438,7 @@ export function ClassroomPage() {
   // HOST ACTION: Grant Host Status
   const grantHostStatus = async (identity: string) => {
     if (!room || !isHost) return;
-    if (!window.confirm("להעניק סמכויות מורה/מארח מלאות למשתתף זה?")) return;
+    if (!window.confirm("להעניק סמכויות מארח מלאות למשתתף זה?")) return;
     const response = await classroomRequest("/rtc/classroom-promote", { roomCode, targetIdentity: identity });
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
@@ -1604,7 +1604,7 @@ export function ClassroomPage() {
               {sessionData?.title || "כיתה וירטואלית"}
               {isHost && (
                 <span className="rounded-md bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 text-xs font-bold text-amber-300 flex items-center gap-1">
-                  <Crown className="size-3" /> מורה / מארח
+                  <Crown className="size-3" /> מורה 
                 </span>
               )}
               {isStealthAdmin && (
@@ -1766,7 +1766,6 @@ export function ClassroomPage() {
                 <VideoIcon className="size-8" />
               </div>
               <h2 className="text-xl font-black text-white">הצטרפות לכיתה הווירטואלית</h2>
-              <p className="text-xs font-semibold text-slate-400 mt-1">שידור וידאו ואודיו בזמן אמת מבוסס LiveKit</p>
             </div>
 
             {connError && (
@@ -1795,7 +1794,7 @@ export function ClassroomPage() {
               disabled={connState === "connecting" || (!user && !guestName.trim())}
               onClick={connectToRoom}
             >
-              {connState === "connecting" ? "מתחבר לכיתה..." : "הכנס לכיתה כעת 🚀"}
+              {connState === "connecting" ? "מתחבר לכיתה..." : "הכנס לכיתה"}
             </button>
           </div>
         </div>
@@ -2153,7 +2152,7 @@ export function ClassroomPage() {
               {isHost && (
                 <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-3 flex flex-col gap-2">
                   <span className="text-xs font-black text-amber-300 flex items-center gap-1 mb-1">
-                    <Shield className="size-3.5" /> בקרת מורה / מארח
+                    <Shield className="size-3.5" /> בקרת מורים
                   </span>
 
                   <div className="grid grid-cols-2 gap-1.5">
@@ -2253,7 +2252,7 @@ export function ClassroomPage() {
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => grantHostStatus(p.identity)}
-                          title="הפוך למארח מלא (למשל מורה מחליף)"
+                          title="הפוך למארח מלא "
                           className="p-1 rounded bg-amber-500/10 text-amber-400 hover:bg-amber-500/20"
                         >
                           <Crown className="size-3.5" />
