@@ -11,5 +11,11 @@ declare module "socket.io" {
     sessionId?: string;
     classroomDrawingSync?: ClassroomDrawingSocketSync;
     classroomDrawingAwarenessClientIds?: number[];
+    classroomDrawing?: {
+      sessionId: string;
+      classroomId: string;
+      roomCode: string;
+      isHost: boolean;
+    };
   }
 }

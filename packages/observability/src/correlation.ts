@@ -5,6 +5,7 @@ import type { Logger } from "pino";
 import pinoHttp from "pino-http";
 
 const CORRELATION_HEADER = "x-correlation-id";
+const MAX_CORRELATION_ID_LENGTH = 128;
 
 export function newCorrelationId(): string {
   return `c-${uuidv4()}`;
@@ -12,7 +13,12 @@ export function newCorrelationId(): string {
 
 export function readCorrelationId(req: Request): string {
   const fromHeader = req.headers[CORRELATION_HEADER];
-  if (typeof fromHeader === "string" && fromHeader.trim()) {
+  if (
+    typeof fromHeader === "string" &&
+    fromHeader.trim() &&
+    fromHeader.trim().length <= MAX_CORRELATION_ID_LENGTH &&
+    /^[a-zA-Z0-9._:-]+$/.test(fromHeader.trim())
+  ) {
     return fromHeader.trim();
   }
   return newCorrelationId();
@@ -47,7 +53,7 @@ export function createHttpLogger(logger: Logger): RequestHandler {
     serializers: {
       req: (req) => ({
         method: req.method,
-        url: req.url
+        url: req.url?.split("?")[0]
       }),
       res: (res) => ({
         statusCode: res.statusCode
@@ -61,10 +67,13 @@ export function attachSocketCorrelation(io: Server): void {
     const fromAuth = (socket.handshake.auth as { correlationId?: string })
       .correlationId;
     const fromHeader = socket.handshake.headers[CORRELATION_HEADER];
-    const correlationId =
+    const candidate =
       (typeof fromAuth === "string" && fromAuth.trim()) ||
-      (typeof fromHeader === "string" && fromHeader.trim()) ||
-      newCorrelationId();
+      (typeof fromHeader === "string" && fromHeader.trim());
+    const correlationId =
+      candidate && candidate.length <= MAX_CORRELATION_ID_LENGTH && /^[a-zA-Z0-9._:-]+$/.test(candidate)
+        ? candidate
+        : newCorrelationId();
     socket.data.correlationId = correlationId;
     next();
   });

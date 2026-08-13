@@ -6,6 +6,12 @@ import { promises as fs, createWriteStream } from "fs";
 import os from "os";
 import path from "path";
 import { promisify } from "util";
+import {
+  createLogger,
+  correlationMiddleware,
+  createHttpLogger,
+  logError
+} from "@playground/observability";
 
 const execFileAsync = promisify(execFile);
 const PORT = Number(process.env.PORT || 8082);
@@ -26,6 +32,7 @@ interface TicketPayload {
   sourceFormat: "pdf" | "ppt" | "pptx";
   exp: number;
   jti: string;
+  correlationId?: string;
 }
 
 interface ConversionJob {
@@ -40,7 +47,11 @@ interface ConversionJob {
   error?: string;
   warning?: string;
   createdAt: number;
+  roomCode: string;
+  correlationId?: string;
 }
+
+const logger = createLogger("document-converter");
 
 const jobs = new Map<string, ConversionJob>();
 const usedTickets = new Map<string, number>();
@@ -84,7 +95,14 @@ async function run(command: string, args: string[], cwd: string) {
 }
 
 async function convert(job: ConversionJob): Promise<void> {
+  const startedAt = Date.now();
   job.status = "processing";
+  logger.info({
+    correlationId: job.correlationId,
+    protocol: "http",
+    message: "Document conversion started",
+    context: { event: "DOCUMENT_CONVERSION_STARTED", jobId: job.id, roomCode: job.roomCode, sourceFormat: job.sourceFormat }
+  });
   const outputDir = path.join(job.directory, "pages");
   await fs.mkdir(outputDir);
   let pdfPath = job.sourcePath;
@@ -146,6 +164,19 @@ async function convert(job: ConversionJob): Promise<void> {
   job.pageCount = pageCount;
   job.resultPath = resultPath;
   job.status = "ready";
+  logger.info({
+    correlationId: job.correlationId,
+    protocol: "internal",
+    message: "Document conversion completed",
+    context: {
+      event: "DOCUMENT_CONVERSION_COMPLETED",
+      jobId: job.id,
+      roomCode: job.roomCode,
+      sourceFormat: job.sourceFormat,
+      pageCount,
+      duration_ms: Date.now() - startedAt
+    }
+  });
 }
 
 async function pumpQueue() {
@@ -160,6 +191,13 @@ async function pumpQueue() {
   } catch (error) {
     job.status = "failed";
     job.error = error instanceof Error ? error.message : "conversion_failed";
+    logger.error({
+      correlationId: job.correlationId,
+      protocol: "internal",
+      err: logError(error),
+      message: "Document conversion failed",
+      context: { event: "DOCUMENT_CONVERSION_FAILED", jobId: job.id, roomCode: job.roomCode, sourceFormat: job.sourceFormat }
+    });
   } finally {
     workerActive = false;
     void pumpQueue();
@@ -173,6 +211,12 @@ async function removeJob(id: string) {
   const queuedIndex = queue.indexOf(id);
   if (queuedIndex >= 0) queue.splice(queuedIndex, 1);
   await fs.rm(job.directory, { recursive: true, force: true });
+  logger.info({
+    correlationId: job.correlationId,
+    protocol: "http",
+    message: "Document conversion job removed",
+    context: { event: "DOCUMENT_CONVERSION_REMOVED", jobId: job.id, roomCode: job.roomCode }
+  });
 }
 
 setInterval(() => {
@@ -187,7 +231,9 @@ setInterval(() => {
 
 const app = express();
 app.set("trust proxy", 1);
+app.use(correlationMiddleware());
 app.use(cors({ origin: ALLOWED_ORIGINS, credentials: false }));
+app.use(createHttpLogger(logger));
 app.get("/health", (_req, res) => res.json({ ok: true, queued: queue.length, workerActive }));
 
 app.post("/v1/conversions", async (req, res) => {
@@ -234,9 +280,17 @@ app.post("/v1/conversions", async (req, res) => {
       sourcePath,
       sourceFormat: ticket.sourceFormat,
       status: "queued",
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      roomCode: ticket.roomCode,
+      correlationId: ticket.correlationId ?? (req as express.Request & { correlationId?: string }).correlationId
     });
     queue.push(id);
+    logger.info({
+      correlationId: ticket.correlationId ?? (req as express.Request & { correlationId?: string }).correlationId,
+      protocol: "http",
+      message: "Document conversion job accepted",
+      context: { event: "DOCUMENT_CONVERSION_ACCEPTED", jobId: id, roomCode: ticket.roomCode, sourceFormat: ticket.sourceFormat, sizeBytes: ticket.sizeBytes, queueDepth: queue.length }
+    });
     void pumpQueue();
     res.status(202).json({ id, accessToken });
   } catch (error) {
@@ -265,6 +319,7 @@ app.get("/v1/conversions/:id/result", (req, res) => {
   const job = authorizedJob(req, res);
   if (!job) return;
   if (job.status !== "ready" || !job.resultPath) return void res.status(409).json({ error: "conversion_not_ready" });
+  logger.info({ correlationId: job.correlationId, protocol: "http", message: "Document conversion result downloaded", context: { event: "DOCUMENT_CONVERSION_DOWNLOADED", jobId: job.id, roomCode: job.roomCode } });
   res.download(job.resultPath, "presentation-pages.zip");
 });
 
@@ -275,4 +330,4 @@ app.delete("/v1/conversions/:id", async (req, res) => {
   res.status(204).end();
 });
 
-app.listen(PORT, () => console.log(`Document converter listening on ${PORT}`));
+app.listen(PORT, () => logger.info({ protocol: "http", message: `document-converter listening on ${PORT}`, context: { event: "SERVICE_LISTENING" } }));

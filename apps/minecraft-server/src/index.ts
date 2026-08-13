@@ -15,6 +15,7 @@ import {
   initObservability,
   logSocketAuthenticated,
   logSocketEvent,
+  logError,
   correlationMiddleware,
   mountLiveKitWebhook
 } from "@playground/observability";
@@ -391,6 +392,7 @@ function isTrustedBrowserOrigin(req: express.Request): boolean {
 
 interface ClassroomAuthority {
   userId?: string;
+  actorKind?: "admin" | "teacher";
   delegate?: ClassroomDelegateAuthority;
 }
 
@@ -404,7 +406,10 @@ async function requireClassroomAuthority(
   if (accessToken && supabaseAdmin) {
     const actor = await getCachedAuth(supabaseAdmin, accessToken).catch(() => null);
     if (actor?.role === "teacher" || actor?.role === "admin") {
-      return { userId: actor.userId };
+      return {
+        userId: actor.userId,
+        actorKind: actor.role === "admin" ? "admin" : "teacher"
+      };
     }
   }
 
@@ -496,6 +501,41 @@ async function persistPresentationState(classroom: { id: string; settings: unkno
 function authorityIdentity(authority: ClassroomAuthority): string | null {
   if (authority.delegate) return `delegate:${authority.delegate.delegateId}`;
   return authority.userId ?? null;
+}
+
+async function appendClassroomAudit(
+  req: express.Request,
+  classroom: { id: string; room_code: string },
+  authority: ClassroomAuthority | { userId: string; role: string },
+  action: string,
+  metadata: Record<string, unknown> = {}
+): Promise<void> {
+  if (!supabaseAdmin) return;
+  const delegated = "delegate" in authority && Boolean(authority.delegate);
+  const actorId = delegated ? null : authority.userId;
+  const actorKind = delegated
+    ? "delegate"
+    : "actorKind" in authority && authority.actorKind
+      ? authority.actorKind
+      : authority.role === "admin" ? "admin" : "teacher";
+  const correlationId = (req as express.Request & { correlationId?: string }).correlationId;
+  const { error } = await supabaseAdmin.rpc("append_audit_log", {
+    p_actor_id: actorId ?? null,
+    p_actor_kind: actorKind,
+    p_action: action,
+    p_entity_type: "classroom_session",
+    p_entity_id: classroom.id,
+    p_metadata: auditMetadata(correlationId, { room_code: classroom.room_code, ...metadata })
+  });
+  if (error) {
+    logger.error({
+      correlationId,
+      protocol: "internal",
+      err: logError(error),
+      message: "Classroom audit write failed",
+      context: { event: "CLASSROOM_AUDIT_WRITE_FAILED", action, classroomId: classroom.id, roomCode: classroom.room_code }
+    });
+  }
 }
 
 function presenterCapabilityFor(roomCode: string, state: PresentationRoomState): string | null {
@@ -812,7 +852,7 @@ app.post("/rtc/classroom-end", async (req, res) => {
     const normalizedRoomCode = roomCode.trim();
     const { data: classroom, error: classroomError } = await supabaseAdmin
       .from("classroom_sessions")
-      .select("id, settings")
+      .select("id, room_code, settings")
       .eq("room_code", normalizedRoomCode)
       .maybeSingle();
     if (classroomError || !classroom) {
@@ -835,6 +875,7 @@ app.post("/rtc/classroom-end", async (req, res) => {
 
     await completeClassroomDrawingSessions([normalizedRoomCode]);
     const livekitDeleted = await deleteLiveKitRoom(normalizedRoomCode);
+    await appendClassroomAudit(req, classroom, actor, "classroom_ended", { livekit_deleted: livekitDeleted });
     logger.info({
       userId: actor.userId,
       protocol: "http",
@@ -1018,6 +1059,7 @@ app.post("/rtc/classroom-settings", async (req, res) => {
     }
     const nextSettings = await patchClassroomSettings(classroom, changed);
     await syncClassroomParticipantPermissions(classroom.room_code, nextSettings);
+    await appendClassroomAudit(req, classroom, authority, "classroom_settings_changed", { changed_keys: Object.keys(changed) });
     res.json({ success: true, settings: nextSettings, delegated: Boolean(authority.delegate) });
   } catch (err: any) {
     res.status(500).json({ error: err.message || "classroom_settings_failed" });
@@ -1113,6 +1155,7 @@ app.post("/rtc/classroom-presentation-visibility", async (req, res) => {
       presenterIdentity: next.presenterIdentity,
       presenterEpoch: next.presenterEpoch
     });
+    await appendClassroomAudit(req, classroom, authority, "classroom_presentation_visibility_changed", { visible });
     res.json({ success: true, visible });
   } catch (err: any) {
     res.status(500).json({ error: err.message || "presentation_visibility_failed" });
@@ -1162,6 +1205,7 @@ app.post("/rtc/classroom-presenter-transfer", async (req, res) => {
       return;
     }
     const next = await assignPresenter(classroom, targetIdentity.trim(), true);
+    await appendClassroomAudit(req, classroom, authority, "classroom_presenter_transferred", { target_identity: targetIdentity.trim() });
     res.json({ success: true, presenterIdentity: next.presenterIdentity, presenterEpoch: next.presenterEpoch });
   } catch (err: any) {
     res.status(500).json({ error: err.message || "presenter_transfer_failed" });
@@ -1233,7 +1277,8 @@ app.post("/rtc/classroom-document-conversion-ticket", async (req, res) => {
       roomCode: classroom.room_code,
       fileName: fileName.trim(),
       sizeBytes,
-      sourceFormat
+      sourceFormat,
+      correlationId: (req as express.Request & { correlationId?: string }).correlationId
     }, DOCUMENT_CONVERTER_SHARED_SECRET);
     res.json({ converterUrl: DOCUMENT_CONVERTER_URL, ticket, expiresInSeconds: 300 });
   } catch (err: any) {
@@ -1298,6 +1343,7 @@ app.post("/rtc/classroom-remove-participant", async (req, res) => {
     );
     if (!authority) return;
     await removeClassroomParticipant(classroom.room_code, targetIdentity.trim());
+    await appendClassroomAudit(req, classroom, authority, "classroom_participant_removed", { target_identity: targetIdentity.trim() });
     res.json({ success: true, delegated: Boolean(authority.delegate) });
   } catch (err: any) {
     res.status(500).json({ error: err.message || "participant_remove_failed" });
@@ -1355,6 +1401,7 @@ app.post("/rtc/classroom-promote", async (req, res) => {
       });
     if (enrollmentError) throw enrollmentError;
     await sendClassroomDelegateEnrollment(normalizedRoomCode, targetIdentity.trim(), enrollmentCode);
+    await appendClassroomAudit(req, classroom, authority, "classroom_participant_promoted", { target_identity: targetIdentity.trim() });
     logger.info({
       userId: authority.userId ?? authority.delegate?.delegateId,
       protocol: "http",
@@ -1388,7 +1435,12 @@ setInterval(async () => {
     const { error } = await supabaseAdmin.rpc("cleanup_old_classroom_sessions", { p_days_old: 7 });
     if (error) throw error;
   } catch (e) {
-    console.warn("Background classroom cleanup error:", e);
+    logger.warn({
+      protocol: "internal",
+      message: "Background classroom cleanup failed",
+      err: logError(e),
+      context: { event: "CLASSROOM_BACKGROUND_CLEANUP_FAILED" }
+    });
   }
 }, 6 * 3600 * 1000);
 

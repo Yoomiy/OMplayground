@@ -1,4 +1,5 @@
 export { createLogger, type ServiceName } from "./logger";
+export { logError } from "./error";
 export {
   newCorrelationId,
   correlationMiddleware,

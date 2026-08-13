@@ -8,6 +8,7 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { supabase } from "@/lib/supabase";
 import { getVoxelServerUrl } from "@/lib/voxelServerUrl";
 import { reportTelemetry } from "@/utils/telemetry";
+import { getCorrelationId } from "@/utils/correlation";
 import { DrawingBoard } from "@/games/drawing/DrawingBoard";
 import {
   ClassroomPresentationPublisher,
@@ -384,7 +385,7 @@ export function ClassroomPage() {
       );
 
       s = io(gameServerUrl(), {
-        auth: { token },
+        auth: { token, correlationId: getCorrelationId() },
         transports: ["websocket", "polling"]
       });
       drawSocketRef.current = s;
@@ -738,6 +739,7 @@ export function ClassroomPage() {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
+          "x-correlation-id": getCorrelationId(),
           ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
         },
         body: JSON.stringify({

@@ -70,3 +70,5 @@ The Virtual Classrooms platform enables dynamic, standalone virtual classrooms b
 The classroom page must call the RTC service from an allowed `CORS_ORIGIN` with credentials enabled. In production, serve the web app and RTC service from the same site (or a same-site subdomain) so browsers retain the secure delegate cookie. The cookie is `HttpOnly`, `Secure`, `SameSite=None` in production, and is accepted only by delegate endpoints with an allow-listed browser `Origin`.
 
 Deploy `apps/document-converter/Dockerfile` as a separate one-replica Railway service. Set the same `DOCUMENT_CONVERTER_SHARED_SECRET` on it and `minecraft-server`, set `DOCUMENT_CONVERTER_URL` on `minecraft-server`, and allow the Vercel classroom origin through the converter’s `CORS_ORIGIN`. The service needs ephemeral disk only; horizontal replicas require a shared job store and are intentionally unsupported.
+
+The converter propagates the classroom request correlation ID inside its signed ticket. Railway logs identify conversion jobs by job ID, classroom room code, and format, but never record filenames, tickets, result access tokens, or document contents.

@@ -3,8 +3,12 @@ WORKDIR /app
 COPY package.json package-lock.json tsconfig.json ./
 COPY apps/document-converter/package.json apps/document-converter/package.json
 COPY apps/document-converter/tsconfig.json apps/document-converter/tsconfig.json
+COPY packages/observability/package.json packages/observability/package.json
 RUN npm ci --workspace @playground/document-converter --include-workspace-root --ignore-scripts
 COPY apps/document-converter/src apps/document-converter/src
+COPY packages/observability/src packages/observability/src
+COPY packages/observability/tsconfig.json packages/observability/tsconfig.json
+RUN npm run build -w @playground/observability
 RUN npm run build -w @playground/document-converter
 
 FROM node:22-bookworm-slim

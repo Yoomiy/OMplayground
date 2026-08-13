@@ -27,6 +27,10 @@ export interface ClassroomDrawingSocketSync {
   sessionId: string;
   token: string;
   acknowledged: boolean;
+  operationId?: string;
+  startedAt?: number;
+  attempts?: number;
+  reason?: string;
 }
 
 // A full canonical update is base64 encoded for Socket.IO. Keep the binary

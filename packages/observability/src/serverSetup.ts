@@ -3,6 +3,7 @@ import type { Server } from "socket.io";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Logger } from "pino";
 import { createLogger, type ServiceName } from "./logger";
+import { logError } from "./error";
 import {
   correlationMiddleware,
   createHttpLogger,
@@ -78,7 +79,7 @@ export function initObservability(
         } catch (err) {
           logger.error({
             message: "onAdminStatsQuery failed",
-            error: err instanceof Error ? err.message : String(err)
+            err: logError(err)
           });
         }
       }

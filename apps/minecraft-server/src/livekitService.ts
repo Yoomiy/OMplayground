@@ -6,6 +6,9 @@ import {
 } from "livekit-server-sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCachedAuth } from "./authCache";
+import { createLogger, logError } from "@playground/observability";
+
+const logger = createLogger("minecraft-server");
 
 function getRoomServiceClient(): RoomServiceClient | null {
   const host = process.env.LIVEKIT_URL?.trim();
@@ -44,8 +47,13 @@ export async function deleteLiveKitRoom(roomCode: string): Promise<boolean> {
     if (!roomService) return false;
     await roomService.deleteRoom(classroomLiveKitRoom(roomCode));
     return true;
-  } catch (err: any) {
-    console.warn(`LiveKit room cleanup note for ${roomCode}:`, err?.message || err);
+  } catch (err: unknown) {
+    logger.warn({
+      protocol: "webrtc",
+      err: logError(err),
+      message: "LiveKit classroom room cleanup failed",
+      context: { event: "CLASSROOM_LIVEKIT_ROOM_CLEANUP_FAILED", roomCode }
+    });
     return false;
   }
 }
@@ -465,7 +473,12 @@ export async function generateClassroomToken(
     .eq("id", classroom.id)
     .eq("status", "active");
   if (activityError) {
-    console.warn("Could not refresh classroom activity:", activityError.message);
+    logger.warn({
+      protocol: "internal",
+      message: "Could not refresh classroom activity",
+      context: { event: "CLASSROOM_ACTIVITY_REFRESH_FAILED", roomCode },
+      err: logError(activityError)
+    });
   }
 
   const token = await at.toJwt();

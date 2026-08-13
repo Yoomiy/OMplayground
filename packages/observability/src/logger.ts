@@ -1,6 +1,6 @@
 import pino from "pino";
 
-export type ServiceName = "game-server" | "minecraft-server";
+export type ServiceName = "game-server" | "minecraft-server" | "document-converter";
 
 export function createLogger(service: ServiceName) {
   const isProduction = process.env.NODE_ENV === "production";
@@ -15,7 +15,10 @@ export function createLogger(service: ServiceName) {
         "body.password",
         "body.token",
         "context.token",
-        "context.accessToken"
+        "context.accessToken",
+        "context.presenterToken",
+        "context.ticket",
+        "context.accessTokenHash"
       ],
       censor: "[REDACTED]"
     },

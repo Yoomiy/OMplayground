@@ -18,10 +18,11 @@ Operational notes for production. Aligned with `ARCHITECTURE.md` and `tmp/loggin
 
 - **Shared package:** `@playground/observability` — Pino JSON logs, correlation IDs, whitelisted socket event logging (no per-tick spam).
 - **game-server:** `initObservability` wired (replacing raw `morgan` + scattered `console.*`).
-- **minecraft-server:** Package linked; full Pino wiring in progress.
+- **minecraft-server and document-converter:** Package wired with Pino, correlation IDs, and structured lifecycle events.
 - **Production:** Ship stdout to Railway log drains (Axiom / Datadog / BetterStack). Query by `service`, `correlationId`, `level`, `protocol`.
 - **Client crashes:** Buffered telemetry → server `/api/telemetry` → Pino (`protocol: client`).
 - **Do not log:** raw socket payloads, chat bodies, JWTs, LiveKit tokens, per-tick voxel `INPUT`/`SNAPSHOT`.
+- **Drawing boards:** every drawing event carries `boardMode` (`game` or `classroom`). Classroom events also carry the drawing session, classroom UUID, and room code. Log initial/recovery sync completion and failures, clears, and persistence failures; never log Yjs deltas, awareness, viewport movement, or board contents.
 
 ## Health and readiness
 

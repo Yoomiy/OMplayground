@@ -446,6 +446,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
       const yjsSyncRequest = delta.yjsSyncRequest;
       const yjsSyncResponse = delta.yjsSyncResponse;
       const yjsSyncFullState = delta.yjsSyncFullState === true;
+      const drawingSyncOperationId = delta.drawingSyncOperationId;
       const yjsServerSync = delta.yjsServerSync;
       const yjsAwarenessRemove = delta.yjsAwarenessRemove;
       const targetUserId = delta.targetUserId;
@@ -518,6 +519,9 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
           } else {
             Y.applyUpdate(ydoc, bytes, YJS_ORIGIN_REMOTE);
             deduplicateYElements(yElements);
+          }
+          if (typeof drawingSyncOperationId === "string" && onLiveDelta) {
+            onLiveDelta({ yjsSyncApplied: drawingSyncOperationId });
           }
         } catch (err) {
           console.error("Failed to apply Yjs sync response:", err);

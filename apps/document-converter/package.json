@@ -4,12 +4,14 @@
   "private": true,
   "main": "dist/index.js",
   "scripts": {
+    "prebuild": "npm --prefix ../.. run build -w @playground/observability",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@playground/observability": "*",
     "cors": "^2.8.5",
     "express": "^4.21.2"
   },

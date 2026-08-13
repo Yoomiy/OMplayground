@@ -14,6 +14,7 @@ interface ConversionTicketPayload {
   sourceFormat: "pdf" | "ppt" | "pptx";
   exp: number;
   jti: string;
+  correlationId?: string;
 }
 
 function signPayload(payload: object, secret: string): string {
