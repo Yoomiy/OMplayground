@@ -4,7 +4,6 @@ import {
   createYjsCanvasSession,
   uint8ArrayToBase64,
   base64ToUint8Array,
-  encodeYjsStateAsUpdate,
   populateYElements,
   populateYAssets,
   replaceYElements,
@@ -106,8 +105,37 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   const authoritativeDocumentsRef = useRef(new WeakSet<object>());
   const serverSyncReadyRef = useRef(!serverAuthoritative);
   const onLiveDeltaRef = useRef(onLiveDelta);
-  const isHostRef = useRef(Boolean(isHost));
   const yjsDestroyTimersRef = useRef(new Map<object, number>());
+  const appliedInitialSyncTokenRef = useRef(initialYjsSyncToken);
+
+  const discardRemoteAwareness = useCallback((session: AuthoritativeYjsSession) => {
+    const remoteClientIds = [...session.awareness.getStates().keys()].filter(
+      (clientId) => clientId !== session.awareness.clientID
+    );
+    if (remoteClientIds.length > 0) {
+      removeAwarenessStates(session.awareness, remoteClientIds, YJS_ORIGIN_REMOTE);
+    }
+  }, []);
+
+  // DRAWING_SYNC replaces the complete canonical document after a rejected
+  // mutation or clear. It is never merged with a browser-owned checkpoint.
+  useEffect(() => {
+    if (!serverAuthoritative || !initialYjsUpdate || !initialYjsSyncToken) return;
+    if (appliedInitialSyncTokenRef.current === initialYjsSyncToken) return;
+    try {
+      serverSyncReadyRef.current = false;
+      appliedInitialSyncTokenRef.current = initialYjsSyncToken;
+      // Awareness is not part of a Yjs document update. Always discard the
+      // old document's remote cursors before its binding is replaced; this is
+      // also a safe fallback if a stale server-side awareness ID was missed.
+      discardRemoteAwareness(yjsSession);
+      const replacement = createSession(initialYjsUpdate, initialYjsSyncToken);
+      authoritativeDocumentsRef.current.add(replacement.ydoc);
+      setYjsSession(replacement);
+    } catch (err) {
+      console.error("Failed to apply canonical drawing state:", err);
+    }
+  }, [discardRemoteAwareness, initialYjsSyncToken, initialYjsUpdate, serverAuthoritative, yjsSession]);
 
   useEffect(() => {
     onLiveDeltaRef.current = onLiveDelta;
@@ -117,9 +145,6 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     yjsSessionRef.current = yjsSession;
   }, [yjsSession]);
 
-  useEffect(() => {
-    isHostRef.current = Boolean(isHost);
-  }, [isHost]);
 
   // Update Yjs Awareness user info dynamically when the display name changes
   useEffect(() => {
@@ -430,33 +455,21 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     if (!subscribeLiveDeltas || !yjsSession) return;
     const { ydoc, yElements, awareness } = yjsSession;
 
-    // Non-classroom boards retain their peer-sync compatibility path.
-    if (!serverAuthoritative && onLiveDelta && !authoritativeDocumentsRef.current.has(ydoc)) {
-      onLiveDelta({ yjsSyncRequest: true });
-    }
-
     const unsubscribe = subscribeLiveDeltas((payload) => {
       if (!payload) return;
-      const fromSocketId = payload.fromSocketId;
-
       const delta = payload.delta || payload;
 
       const yjsUpdate = delta.yjsUpdate;
       const yjsAwareness = delta.yjsAwareness;
-      const yjsSyncRequest = delta.yjsSyncRequest;
-      const yjsSyncResponse = delta.yjsSyncResponse;
-      const yjsSyncFullState = delta.yjsSyncFullState === true;
-      const drawingSyncOperationId = delta.drawingSyncOperationId;
       const yjsServerSync = delta.yjsServerSync;
       const yjsAwarenessRemove = delta.yjsAwarenessRemove;
-      const targetUserId = delta.targetUserId;
-      const targetSocketId = delta.targetSocketId;
 
       if (serverAuthoritative && typeof yjsServerSync === "string") {
         try {
           if (serverSyncReadyRef.current && onLiveDelta) {
             onLiveDelta({ yjsAwarenessRemove: [yjsSession.awareness.clientID] });
           }
+          discardRemoteAwareness(yjsSession);
           serverSyncReadyRef.current = false;
           const replacement = createSession(yjsServerSync, delta.yjsServerSyncToken);
           authoritativeDocumentsRef.current.add(replacement.ydoc);
@@ -495,39 +508,6 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
         }
       }
 
-      // Handle a late joiner's sync request from the host's current document.
-      // The host is the sole source for a late joiner's Yjs document. A viewer
-      // may have reconstructed an older checkpoint and must not overwrite it.
-      if (!serverAuthoritative && yjsSyncRequest && onLiveDelta && isHost) {
-        const stateUpdate = encodeYjsStateAsUpdate(ydoc);
-        onLiveDelta({
-          targetSocketId: fromSocketId,
-          yjsSyncResponse: stateUpdate,
-          yjsSyncFullState: true
-        });
-      }
-
-      // Handle sync response containing missing Yjs updates
-      if (!serverAuthoritative && yjsSyncResponse && (targetSocketId || targetUserId === myUserId || !targetUserId)) {
-        try {
-          const bytes = base64ToUint8Array(yjsSyncResponse);
-          if (yjsSyncFullState) {
-            const replacement = createYjsCanvasSession("משתתף", "#6366f1");
-            Y.applyUpdate(replacement.ydoc, bytes, YJS_ORIGIN_REMOTE);
-            authoritativeDocumentsRef.current.add(replacement.ydoc);
-            setYjsSession(replacement);
-          } else {
-            Y.applyUpdate(ydoc, bytes, YJS_ORIGIN_REMOTE);
-            deduplicateYElements(yElements);
-          }
-          if (typeof drawingSyncOperationId === "string" && onLiveDelta) {
-            onLiveDelta({ yjsSyncApplied: drawingSyncOperationId });
-          }
-        } catch (err) {
-          console.error("Failed to apply Yjs sync response:", err);
-        }
-      }
-
       // Handle host viewport focus sync
       if (delta.viewport && mySeat === null && excalidrawAPI) {
         lastHostViewportRef.current = delta.viewport;
@@ -545,7 +525,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     return () => {
       unsubscribe();
     };
-  }, [subscribeLiveDeltas, myUserId, isHost, mySeat, excalidrawAPI, onLiveDelta, serverAuthoritative, yjsSession]);
+  }, [discardRemoteAwareness, subscribeLiveDeltas, mySeat, excalidrawAPI, onLiveDelta, serverAuthoritative, yjsSession]);
 
   useEffect(() => {
     if (!initialViewport || mySeat !== null || !excalidrawAPI) return;

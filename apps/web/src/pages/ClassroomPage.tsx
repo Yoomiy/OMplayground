@@ -451,7 +451,7 @@ export function ClassroomPage() {
         }
       });
 
-      s.on("CLASSROOM_DRAWING_SYNC", (payload: { sessionId?: string; yjsUpdate?: string; syncToken?: string; viewport?: { scrollX: number; scrollY: number; zoom: unknown } }) => {
+      s.on("DRAWING_SYNC", (payload: { sessionId?: string; yjsUpdate?: string; syncToken?: string; viewport?: { scrollX: number; scrollY: number; zoom: unknown } }) => {
         if (cancelled || payload?.sessionId !== drawSessionId || typeof payload.yjsUpdate !== "string") return;
         setBoardInitialYjsUpdate(payload.yjsUpdate);
         setBoardInitialYjsSyncToken(typeof payload.syncToken === "string" ? payload.syncToken : null);
@@ -1193,7 +1193,7 @@ export function ClassroomPage() {
     (delta: any) => {
       if (drawSocketRef.current && drawSessionId) {
         if (typeof delta?.yjsCanonicalSyncAck === "string") {
-          drawSocketRef.current.emit("CLASSROOM_DRAWING_SYNC_ACK", {
+          drawSocketRef.current.emit("DRAWING_SYNC_ACK", {
             sessionId: drawSessionId,
             syncToken: delta.yjsCanonicalSyncAck
           });

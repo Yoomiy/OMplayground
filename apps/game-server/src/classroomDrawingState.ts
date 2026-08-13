@@ -27,6 +27,8 @@ export interface ClassroomDrawingSocketSync {
   sessionId: string;
   token: string;
   acknowledged: boolean;
+  /** Canonical revision included in the document this socket was served. */
+  revision?: number;
   operationId?: string;
   startedAt?: number;
   attempts?: number;

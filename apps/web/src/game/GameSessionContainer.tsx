@@ -130,6 +130,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
   const [invitationCode, setInvitationCode] = useState<string | null>(null);
   const [updatingVisibility, setUpdatingVisibility] = useState(false);
   const [inviteFallbackLink, setInviteFallbackLink] = useState<string | null>(null);
+  const [drawingSync, setDrawingSync] = useState<{ update: string; token: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -272,6 +273,11 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
             setToast("משחק חוזר התחיל");
             return;
         }
+      });
+
+      s.on("DRAWING_SYNC", (payload: { sessionId?: string; yjsUpdate?: string; syncToken?: string }) => {
+        if (payload.sessionId !== sessionId || typeof payload.yjsUpdate !== "string" || typeof payload.syncToken !== "string") return;
+        setDrawingSync({ update: payload.yjsUpdate, token: payload.syncToken });
       });
 
       s.on("disconnect", () => {
@@ -497,17 +503,19 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
   );
   const onLiveDelta = useCallback(
     (delta: unknown) => {
-      // Read-only teachers may request the host's current Yjs document, but
-      // must never publish drawing edits or awareness updates.
-      if (isTeacherObserver) {
-        const isSyncRequest =
-          typeof delta === "object" && delta !== null &&
-          (delta as { yjsSyncRequest?: unknown }).yjsSyncRequest === true;
-        if (!isSyncRequest) return;
-      }
-      if (paused) return;
+      const canonicalAck =
+        typeof delta === "object" && delta !== null &&
+        typeof (delta as { yjsCanonicalSyncAck?: unknown }).yjsCanonicalSyncAck === "string"
+          ? (delta as { yjsCanonicalSyncAck: string }).yjsCanonicalSyncAck
+          : null;
+      if (isTeacherObserver && !canonicalAck) return;
       const s = socketRef.current;
       if (!s?.connected) return;
+      if (canonicalAck) {
+        s.emit("DRAWING_SYNC_ACK", { sessionId, syncToken: canonicalAck });
+        return;
+      }
+      if (paused) return;
       s.emit("LIVE_DELTA", { sessionId, delta });
     },
     [sessionId, isTeacherObserver, paused]
@@ -705,7 +713,10 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
                 onGoHome: () =>
                   navigate(isAdmin ? "/admin" : isTeacherObserver ? "/teacher" : "/home"),
                 players: roster.length > 0 ? roster : players,
-                connectedPlayers: players
+                connectedPlayers: players,
+                serverAuthoritative: gameKey === "drawing",
+                initialYjsUpdate: drawingSync?.update ?? null,
+                initialYjsSyncToken: drawingSync?.token ?? null
               }}
             />
           </div>

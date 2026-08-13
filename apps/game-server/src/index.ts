@@ -105,8 +105,6 @@ const classroomDrawingPolicyLoads = new Map<string, Promise<ClassroomDrawingPoli
 const classroomDrawingLiveStates = new Map<string, ClassroomDrawingLiveState>();
 const classroomDrawingViewports = new Map<string, { scrollX: number; scrollY: number; zoom: number }>();
 const classroomDrawingSyncTimers = new Map<string, ReturnType<typeof setTimeout>>();
-const drawingGameSyncOperations = new Map<string, { operationId: string; sessionId: string; startedAt: number; attempts: number }>();
-const drawingGameSyncTimers = new Map<string, ReturnType<typeof setTimeout>>();
 let classroomDrawingSyncSerial = 0;
 
 function nextClassroomDrawingSyncToken(socketId: string): string {
@@ -526,14 +524,20 @@ io.on("connection", (socket) => {
     const classroom = socket.data.classroomDrawing as
       | { sessionId: string; roomCode: string; isHost: boolean }
       | undefined;
-    if (room.gameKey !== "drawing" || !classroom || classroom.sessionId !== room.sessionId) return true;
+    if (room.gameKey !== "drawing") return true;
+    // Teachers are ordinary-game observers even when their account is the
+    // persisted host. Classroom teachers retain their policy-driven access.
+    if (!classroom || classroom.sessionId !== room.sessionId) {
+      return socket.data.role !== "teacher";
+    }
     if (classroom.isHost) return true;
     return classroomDrawingPolicies.get(classroom.roomCode)?.allowWhiteboardDraw === true;
   }
 
   function isCanonicalClassroomDrawing(room: Room<unknown>): boolean {
-    const classroom = socket.data.classroomDrawing as { sessionId?: string } | undefined;
-    return room.gameKey === "drawing" && classroom?.sessionId === room.sessionId;
+    // Every drawing room is server-owned. Classroom policy is an additional
+    // authorization layer, not a different synchronization protocol.
+    return room.gameKey === "drawing";
   }
 
   function drawingLogContext(room: Room<unknown>, operation: string): Record<string, unknown> {
@@ -558,7 +562,7 @@ io.on("connection", (socket) => {
       userId,
       sessionId: room.sessionId,
       protocol: "socket",
-      message: "Canonical classroom drawing state initialized",
+      message: "Canonical drawing state initialized",
       context: {
         ...drawingLogContext(room, "canonical_state_initialize"),
         event: "DRAWING_CANONICAL_STATE_INITIALIZED",
@@ -579,12 +583,13 @@ io.on("connection", (socket) => {
       sessionId: room.sessionId,
       token: syncToken,
       acknowledged: false,
+      revision: liveClassroomDrawingState(room).revision,
       operationId,
       startedAt: Date.now(),
       attempts: (socket.data.classroomDrawingSync?.attempts ?? 0) + 1,
       reason
     };
-    socket.emit("CLASSROOM_DRAWING_SYNC", {
+    socket.emit("DRAWING_SYNC", {
       sessionId: room.sessionId,
       yjsUpdate: encodeFullClassroomDrawingState(liveClassroomDrawingState(room)),
       syncToken,
@@ -866,12 +871,12 @@ io.on("connection", (socket) => {
       // initialize as an editor (and could consume the last available seat).
       // Keep the host exception so a teacher who owns the session can still
       // operate their own board.
-      if (role === "teacher" && hostId !== userId) {
+      if (role === "teacher") {
         attachSpectator(room, userId, displayName);
         await socket.join(`session:${sessionId}`);
         socket.data.sessionId = sessionId;
         socket.data.isSpectator = true;
-        if (classroomRoomCode) {
+        if (gameKey === "drawing") {
           serveCanonicalClassroomDrawing(room, "teacher-spectator-join");
         }
         emitSnapshot(room);
@@ -900,7 +905,7 @@ io.on("connection", (socket) => {
       socket.data.isSpectator = false;
       await socket.join(`session:${sessionId}`);
       socket.data.sessionId = sessionId;
-      if (classroomRoomCode) {
+      if (gameKey === "drawing") {
         serveCanonicalClassroomDrawing(room, "join");
       }
       void persistPlayerJoin({
@@ -935,7 +940,7 @@ io.on("connection", (socket) => {
   );
 
   socket.on(
-    "CLASSROOM_DRAWING_SYNC_ACK",
+    "DRAWING_SYNC_ACK",
     (payload: { sessionId?: string; syncToken?: string }) => {
       const sessionId = payload?.sessionId;
       const room = sessionId ? getRoom(sessionId) : undefined;
@@ -953,6 +958,14 @@ io.on("connection", (socket) => {
       const timer = classroomDrawingSyncTimers.get(timerKey);
       if (timer) clearTimeout(timer);
       classroomDrawingSyncTimers.delete(timerKey);
+      // Deltas can arrive while a browser is mounting the board and before it
+      // has registered its LIVE_DELTA listener. Acknowledge only the exact
+      // revision it bound; otherwise provide a fresh canonical replacement.
+      // This makes a reload converge even while another player is drawing.
+      if (liveClassroomDrawingState(room).revision !== sync.revision) {
+        serveCanonicalClassroomDrawing(room, "changed-during-initial-sync");
+        return;
+      }
       logger.info({
         userId,
         sessionId,
@@ -979,14 +992,11 @@ io.on("connection", (socket) => {
       if (!sessionId || delta === undefined) return;
       if (!boundSessionId || boundSessionId !== sessionId) return;
       const room = getRoom(sessionId);
-      const isSyncRequest =
-        typeof delta === "object" && delta !== null &&
-        (delta as { yjsSyncRequest?: unknown }).yjsSyncRequest === true;
       if (!room) return;
       // Authorized classroom teachers and delegates may intentionally be
       // attached as spectators so they do not consume a drawing-game seat.
       // The classroom policy below remains the authority for their edits.
-      if (!room.players.has(userId) && !isSyncRequest && !isCanonicalClassroomDrawing(room)) return;
+      if (!room.players.has(userId) && !isCanonicalClassroomDrawing(room)) return;
 
       if (isCanonicalClassroomDrawing(room)) {
         const typed = typeof delta === "object" && delta !== null ? delta as Record<string, unknown> : null;
@@ -1009,11 +1019,6 @@ io.on("connection", (socket) => {
             code: "PAYLOAD_TOO_LARGE"
           });
           serveCanonicalClassroomDrawing(room, "payload-too-large");
-          return;
-        }
-
-        if (typed.yjsSyncRequest === true) {
-          serveCanonicalClassroomDrawing(room, "client-request");
           return;
         }
 
@@ -1069,6 +1074,11 @@ io.on("connection", (socket) => {
           return;
         }
         if (Array.isArray(yjsAwarenessRemove)) {
+          // A clear/recovery gives every socket a new document and token.
+          // Do not let teardown or initialization awareness from the old/new
+          // browser document leak into the canonical room before that exact
+          // document has been bound and acknowledged.
+          if (!socket.data.classroomDrawingSync?.acknowledged) return;
           const knownClientIds = socket.data.classroomDrawingAwarenessClientIds as number[] | undefined;
           const removedClientIds = yjsAwarenessRemove.filter(
             (clientId): clientId is number =>
@@ -1086,6 +1096,9 @@ io.on("connection", (socket) => {
           return;
         }
         if (typeof yjsUpdate !== "string" && typeof yjsAwareness !== "string") {
+          return;
+        }
+        if (typeof yjsAwareness === "string" && !socket.data.classroomDrawingSync?.acknowledged) {
           return;
         }
         if (!(await canEditClassroomDrawing(room))) {
@@ -1184,110 +1197,6 @@ io.on("connection", (socket) => {
         return;
       }
 
-      if (estimatePayloadBytes(delta) > MAX_LIVE_DELTA_BYTES) {
-        logger.warn({
-          userId,
-          sessionId,
-          protocol: "socket",
-          message: "Drawing game update rejected for payload size",
-          context: {
-            ...drawingLogContext(room, "relay_delta"),
-            event: "DRAWING_UPDATE_REJECTED",
-            status: "failed",
-            code: "PAYLOAD_TOO_LARGE"
-          }
-        });
-        return;
-      }
-      const normalDelta = delta as Record<string, unknown>;
-      if (typeof normalDelta.yjsAwareness === "string") {
-        // Awareness client IDs belong to a browser/Yjs document, not to a
-        // player. Keep them per socket so an abrupt tab close can remove the
-        // exact remote cursor immediately instead of waiting for Yjs expiry.
-        socket.data.drawingAwarenessClientIds = Array.isArray(normalDelta.yjsAwarenessClientIds)
-          ? normalDelta.yjsAwarenessClientIds.filter(
-              (clientId): clientId is number => Number.isSafeInteger(clientId)
-            )
-          : [];
-      }
-      const syncKey = `${socket.id}:${sessionId}`;
-      if (normalDelta.yjsSyncRequest === true) {
-        const operation = drawingGameSyncOperations.get(syncKey);
-        const nextOperation = {
-          operationId: operation?.operationId ?? `drawing-game-sync:${socket.id}:${Date.now()}`,
-          sessionId,
-          startedAt: operation?.startedAt ?? Date.now(),
-          attempts: (operation?.attempts ?? 0) + 1
-        };
-        drawingGameSyncOperations.set(syncKey, nextOperation);
-        if (!operation) {
-          const timer = setTimeout(() => {
-            const pending = drawingGameSyncOperations.get(syncKey);
-            if (pending?.operationId !== nextOperation.operationId) return;
-            logger.warn({
-              userId,
-              sessionId,
-              protocol: "socket",
-              message: "Drawing game initial sync timed out",
-              context: {
-                ...drawingLogContext(room, "initial_sync"),
-                event: "DRAWING_INITIAL_SYNC_FAILED",
-                status: "failed",
-                code: "PEER_SYNC_TIMEOUT",
-                attempts: pending.attempts,
-                duration_ms: Date.now() - pending.startedAt
-              }
-            });
-            drawingGameSyncOperations.delete(syncKey);
-            drawingGameSyncTimers.delete(syncKey);
-          }, 15_000);
-          timer.unref?.();
-          drawingGameSyncTimers.set(syncKey, timer);
-        }
-      }
-      if (typeof normalDelta.yjsSyncApplied === "string") {
-        const operation = drawingGameSyncOperations.get(syncKey);
-        if (operation?.operationId === normalDelta.yjsSyncApplied) {
-          logger.info({
-            userId,
-            sessionId,
-            protocol: "socket",
-            message: "Drawing game initial sync completed",
-            context: {
-              ...drawingLogContext(room, "initial_sync"),
-              event: "DRAWING_INITIAL_SYNC_COMPLETED",
-              status: "success",
-              attempts: operation.attempts,
-              duration_ms: Date.now() - operation.startedAt
-            }
-          });
-          drawingGameSyncOperations.delete(syncKey);
-          const timer = drawingGameSyncTimers.get(syncKey);
-          if (timer) clearTimeout(timer);
-          drawingGameSyncTimers.delete(syncKey);
-        }
-        return;
-      }
-      const targetSocketId =
-        typeof delta === "object" && delta !== null &&
-        typeof (delta as { targetSocketId?: unknown }).targetSocketId === "string"
-          ? (delta as { targetSocketId: string }).targetSocketId
-          : null;
-      const targetOperation = targetSocketId
-        ? drawingGameSyncOperations.get(`${targetSocketId}:${sessionId}`)
-        : undefined;
-      const outbound = {
-        from: userId,
-        fromSocketId: socket.id,
-        delta: targetOperation && typeof normalDelta.yjsSyncResponse === "string"
-          ? { ...normalDelta, drawingSyncOperationId: targetOperation.operationId }
-          : delta
-      };
-      if (targetSocketId) {
-        io.to(targetSocketId).emit("LIVE_DELTA", outbound);
-      } else {
-        socket.to(`session:${room.sessionId}`).emit("LIVE_DELTA", outbound);
-      }
     }
   );
 
@@ -1295,7 +1204,7 @@ io.on("connection", (socket) => {
     "CLASSROOM_DELEGATE_ACTIVATED",
     (payload: { sessionId?: string; delegateGameToken?: string }) => {
       const classroom = socket.data.classroomDrawing as
-        | { sessionId: string; roomCode: string; isHost: boolean }
+        | { sessionId: string; classroomId: string; roomCode: string; isHost: boolean }
         | undefined;
       const token =
         typeof payload?.delegateGameToken === "string"
@@ -1332,7 +1241,7 @@ io.on("connection", (socket) => {
     (payload: { sessionId?: string; allowWhiteboardDraw?: unknown }) => {
       const sessionId = payload?.sessionId;
       const classroom = socket.data.classroomDrawing as
-        | { sessionId: string; roomCode: string; isHost: boolean }
+        | { sessionId: string; classroomId: string; roomCode: string; isHost: boolean }
         | undefined;
       if (
         !sessionId ||
@@ -1345,7 +1254,7 @@ io.on("connection", (socket) => {
         return;
       }
       classroomDrawingPolicies.set(classroom.roomCode, {
-        ...(classroomDrawingPolicies.get(classroom.roomCode) ?? {}),
+        ...(classroomDrawingPolicies.get(classroom.roomCode) ?? { classroomId: classroom.classroomId }),
         allowWhiteboardDraw: payload.allowWhiteboardDraw
       });
     }
@@ -1396,6 +1305,10 @@ io.on("connection", (socket) => {
       }
       const drawingIntent = payload.intent as { type?: string };
       if (isCanonicalClassroomDrawing(room)) {
+        if (!(await canEditClassroomDrawing(room))) {
+          reply?.({ ok: false, error: { code: "READ_ONLY", message: "Observers cannot change the board" } });
+          return;
+        }
         if (drawingIntent.type === "CHECKPOINT") {
           try {
             await persistLiveClassroomDrawing(room, "explicit-request");
@@ -1420,14 +1333,28 @@ io.on("connection", (socket) => {
           const snapshot = applyLiveClassroomSnapshot(room);
           const recipients = await io.in(`session:${sessionId}`).fetchSockets();
           const yjsUpdate = encodeFullClassroomDrawingState(liveState);
+          const awarenessClientIds = [...new Set(recipients.flatMap((recipient) =>
+            (recipient.data.classroomDrawingAwarenessClientIds as number[] | undefined) ?? []
+          ))];
           for (const recipient of recipients) {
+            // Awareness is scoped to the replaced browser documents. Remove
+            // every old cursor before installing the clear document so no
+            // phantom pointer remains on a peer.
+            if (awarenessClientIds.length > 0) {
+              recipient.emit("LIVE_DELTA", {
+                from: userId,
+                delta: { yjsAwarenessRemove: awarenessClientIds }
+              });
+            }
+            recipient.data.classroomDrawingAwarenessClientIds = undefined;
             const syncToken = nextClassroomDrawingSyncToken(recipient.id);
             recipient.data.classroomDrawingSync = {
               sessionId,
               token: syncToken,
-              acknowledged: false
+              acknowledged: false,
+              revision: liveState.revision
             };
-            recipient.emit("CLASSROOM_DRAWING_SYNC", { sessionId, yjsUpdate, syncToken });
+            recipient.emit("DRAWING_SYNC", { sessionId, yjsUpdate, syncToken });
           }
           try {
             await persistLiveClassroomDrawing(room, "clear");
@@ -2051,31 +1978,6 @@ io.on("connection", (socket) => {
   );
 
   socket.on("disconnect", () => {
-    const gameSyncKey = `${socket.id}:${socket.data.sessionId ?? ""}`;
-    const gameSync = drawingGameSyncOperations.get(gameSyncKey);
-    if (gameSync) {
-      const gameSyncRoom = getRoom(gameSync.sessionId);
-      if (gameSyncRoom) {
-        logger.warn({
-          userId,
-          sessionId: gameSync.sessionId,
-          protocol: "socket",
-          message: "Drawing game initial sync interrupted by disconnect",
-          context: {
-            ...drawingLogContext(gameSyncRoom, "initial_sync"),
-            event: "DRAWING_INITIAL_SYNC_FAILED",
-            status: "failed",
-            code: "DISCONNECTED_BEFORE_SYNC",
-            attempts: gameSync.attempts,
-            duration_ms: Date.now() - gameSync.startedAt
-          }
-        });
-      }
-      drawingGameSyncOperations.delete(gameSyncKey);
-      const timer = drawingGameSyncTimers.get(gameSyncKey);
-      if (timer) clearTimeout(timer);
-      drawingGameSyncTimers.delete(gameSyncKey);
-    }
     const pendingSync = socket.data.classroomDrawingSync;
     if (pendingSync && !pendingSync.acknowledged) {
       const pendingRoom = getRoom(pendingSync.sessionId);

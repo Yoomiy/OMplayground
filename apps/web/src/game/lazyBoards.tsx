@@ -27,6 +27,9 @@ export interface BoardProps {
   paused?: boolean;
   players?: Array<{ userId: string; displayName: string }>;
   connectedPlayers?: Array<{ userId: string; displayName: string }>;
+  serverAuthoritative?: boolean;
+  initialYjsUpdate?: string | null;
+  initialYjsSyncToken?: string | null;
 }
 
 export interface BoardRegistryEntry {
@@ -128,7 +131,10 @@ const BOARD_LOADERS: Record<
         onLiveDelta,
         subscribeLiveDeltas,
         isHost,
-        players
+        players,
+        serverAuthoritative,
+        initialYjsUpdate,
+        initialYjsSyncToken
       }) => (
         <DrawingBoard
           gameState={gameState as DrawingState}
@@ -138,6 +144,9 @@ const BOARD_LOADERS: Record<
           onLiveDelta={onLiveDelta}
           subscribeLiveDeltas={subscribeLiveDeltas}
           isHost={isHost}
+          serverAuthoritative={serverAuthoritative}
+          initialYjsUpdate={initialYjsUpdate}
+          initialYjsSyncToken={initialYjsSyncToken}
           players={players}
         />
       )
