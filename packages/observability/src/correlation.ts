@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction, RequestHandler } from "express";
 import type { Server, Socket } from "socket.io";
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "crypto";
 import type { Logger } from "pino";
 import pinoHttp from "pino-http";
 
@@ -8,7 +8,7 @@ const CORRELATION_HEADER = "x-correlation-id";
 const MAX_CORRELATION_ID_LENGTH = 128;
 
 export function newCorrelationId(): string {
-  return `c-${uuidv4()}`;
+  return `c-${randomUUID()}`;
 }
 
 export function readCorrelationId(req: Request): string {
