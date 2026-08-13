@@ -93,7 +93,7 @@ function Protected({
 export default function App() {
   const { user } = useAuth();
   return (
-    <div className="min-h-screen text-slate-100">
+    <div className="min-h-screen text-slate-100" dir="rtl">
       <PresenceProvider>
         <InboxProvider>
           <PendingChallengeBanner />
