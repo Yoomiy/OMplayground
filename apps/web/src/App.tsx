@@ -40,6 +40,9 @@ const JoinByCodePage = lazy(() =>
 const ClassroomPage = lazy(() =>
   import("@/pages/ClassroomPage").then((m) => ({ default: m.ClassroomPage }))
 );
+const ClassroomEndedPage = lazy(() =>
+  import("@/pages/ClassroomEndedPage").then((m) => ({ default: m.ClassroomEndedPage }))
+);
 const SoloGameContainer = lazy(() => import("@/game/SoloGameContainer"));
 
 function RouteFallback() {
@@ -182,6 +185,7 @@ export default function App() {
                 }
               />
               <Route path="/classroom/:roomCode" element={<ClassroomPage />} />
+              <Route path="/classroom-ended" element={<ClassroomEndedPage />} />
               <Route path="/" element={<Navigate to="/home" replace />} />
             </Routes>
           </Suspense>

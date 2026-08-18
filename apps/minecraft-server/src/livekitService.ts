@@ -58,6 +58,53 @@ export async function deleteLiveKitRoom(roomCode: string): Promise<boolean> {
   }
 }
 
+/**
+ * Disconnect every current classroom attendee and revoke their tokens before
+ * deleting the room. Deleting a room drops the current connection, but does
+ * not invalidate a token that could otherwise be used to reconnect while it
+ * is still valid.
+ */
+export async function evictClassroomParticipants(roomCode: string): Promise<number> {
+  try {
+    const roomService = getRoomServiceClient();
+    if (!roomService) return 0;
+
+    const roomName = classroomLiveKitRoom(roomCode);
+    const participants = await roomService.listParticipants(roomName);
+    if (participants.length === 0) return 0;
+
+    const revokeTokenTs = BigInt(Math.floor(Date.now() / 1000));
+    const results = await Promise.allSettled(
+      participants.map((participant) =>
+        roomService.removeParticipant(roomName, participant.identity, { revokeTokenTs })
+      )
+    );
+    const evictedCount = results.filter((result) => result.status === "fulfilled").length;
+    const failedCount = results.length - evictedCount;
+    if (failedCount > 0) {
+      logger.warn({
+        protocol: "webrtc",
+        message: "Some classroom participants could not be evicted",
+        context: {
+          event: "CLASSROOM_PARTICIPANT_EVICTION_PARTIAL_FAILURE",
+          roomCode,
+          evictedCount,
+          failedCount
+        }
+      });
+    }
+    return evictedCount;
+  } catch (err: unknown) {
+    logger.warn({
+      protocol: "webrtc",
+      err: logError(err),
+      message: "LiveKit classroom participant eviction failed",
+      context: { event: "CLASSROOM_PARTICIPANT_EVICTION_FAILED", roomCode }
+    });
+    return 0;
+  }
+}
+
 export async function promoteClassroomParticipant(
   roomCode: string,
   participantIdentity: string

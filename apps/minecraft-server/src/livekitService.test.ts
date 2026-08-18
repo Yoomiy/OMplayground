@@ -1,5 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { generateLiveKitToken, LiveKitTokenError } from "./livekitService";
+import { RoomServiceClient } from "livekit-server-sdk";
+import {
+  evictClassroomParticipants,
+  generateLiveKitToken,
+  LiveKitTokenError
+} from "./livekitService";
 
 function buildSupabaseMock(handlers: {
   userId?: string;
@@ -53,6 +58,7 @@ describe("generateLiveKitToken roster gate", () => {
 
   afterEach(() => {
     process.env = prevEnv;
+    jest.restoreAllMocks();
   });
 
   it("denies voice token when kid is not in session roster (active session)", async () => {
@@ -105,5 +111,28 @@ describe("generateLiveKitToken roster gate", () => {
         sessionId: "sess-1"
       })
     ).rejects.toMatchObject({ reason: "roster_block" });
+  });
+
+  it("actively removes every attendee and revokes each active classroom token", async () => {
+    const listParticipants = jest
+      .spyOn(RoomServiceClient.prototype, "listParticipants")
+      .mockResolvedValue([
+        { identity: "teacher" },
+        { identity: "student-a" },
+        { identity: "student-b" }
+      ] as never);
+    const removeParticipant = jest
+      .spyOn(RoomServiceClient.prototype, "removeParticipant")
+      .mockResolvedValue({} as never);
+
+    await expect(evictClassroomParticipants("room-123")).resolves.toBe(3);
+
+    expect(listParticipants).toHaveBeenCalledWith("classroom-room-123");
+    expect(removeParticipant).toHaveBeenCalledTimes(3);
+    expect(removeParticipant).toHaveBeenCalledWith(
+      "classroom-room-123",
+      "student-a",
+      expect.objectContaining({ revokeTokenTs: expect.any(BigInt) })
+    );
   });
 });

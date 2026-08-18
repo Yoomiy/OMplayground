@@ -96,6 +96,7 @@ import {
   generateLiveKitToken,
   generateClassroomToken,
   deleteLiveKitRoom,
+  evictClassroomParticipants,
   promoteClassroomParticipant,
   removeClassroomParticipant,
   sendClassroomDelegateEnrollment,
@@ -876,6 +877,7 @@ app.post("/rtc/classroom-end", async (req, res) => {
     }
 
     await completeClassroomDrawingSessions([normalizedRoomCode]);
+    const evictedParticipantCount = await evictClassroomParticipants(normalizedRoomCode);
     const livekitDeleted = await deleteLiveKitRoom(normalizedRoomCode);
     await appendClassroomAudit(
       req,
@@ -886,15 +888,20 @@ app.post("/rtc/classroom-end", async (req, res) => {
         actorKind: actor.role === "admin" ? "admin" : "teacher"
       },
       "classroom_ended",
-      { livekit_deleted: livekitDeleted }
+      { livekit_deleted: livekitDeleted, evicted_participant_count: evictedParticipantCount }
     );
     logger.info({
       userId: actor.userId,
       protocol: "http",
       message: "Classroom ended",
-      context: { event: "CLASSROOM_ENDED", roomCode: normalizedRoomCode, livekitDeleted }
+      context: {
+        event: "CLASSROOM_ENDED",
+        roomCode: normalizedRoomCode,
+        livekitDeleted,
+        evictedParticipantCount
+      }
     });
-    res.json({ success: true, roomCode: normalizedRoomCode, livekitDeleted });
+    res.json({ success: true, roomCode: normalizedRoomCode, livekitDeleted, evictedParticipantCount });
   } catch (err: any) {
     res.status(500).json({ error: err.message || "failed to end classroom" });
   }

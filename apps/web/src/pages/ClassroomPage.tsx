@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { Room, RoomEvent, Participant, Track } from "livekit-client";
+import { DisconnectReason, Room, RoomEvent, Participant, Track } from "livekit-client";
 import { io, type Socket } from "socket.io-client";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -173,6 +173,7 @@ export function ClassroomPage() {
   // LiveKit Connection & Room state
   const [room, setRoom] = useState<Room | null>(null);
   const roomRef = useRef<Room | null>(null);
+  const isEndingClassroomRef = useRef(false);
   const [connState, setConnState] = useState<"disconnected" | "connecting" | "connected">("disconnected");
   const [connError, setConnError] = useState<string | null>(null);
   const [localUserId, setLocalUserId] = useState<string | null>(null);
@@ -509,7 +510,7 @@ export function ClassroomPage() {
         return;
       }
       if (data.status === "ended") {
-        setSessionError("השיעור בכיתה זו כבר הסתיים.");
+        navigate("/classroom-ended", { replace: true });
         setLoadingSession(false);
         return;
       }
@@ -563,6 +564,7 @@ export function ClassroomPage() {
             setMicOn(false);
             setCamOn(false);
             setIsScreenSharing(false);
+            if (!isEndingClassroomRef.current) navigate("/classroom-ended", { replace: true });
           } else if (updated.settings) {
             setRoomSettings((prev) => ({ ...prev, ...updated.settings }));
             if (typeof updated.settings.whiteboardVisible === "boolean") {
@@ -972,6 +974,27 @@ export function ClassroomPage() {
       lkRoom.on(RoomEvent.ParticipantConnected, () => updateParticipantList(lkRoom));
       lkRoom.on(RoomEvent.ParticipantDisconnected, () => {
         updateParticipantList(lkRoom);
+      });
+      lkRoom.on(RoomEvent.Disconnected, (reason?: DisconnectReason) => {
+        if (
+          reason !== DisconnectReason.PARTICIPANT_REMOVED &&
+          reason !== DisconnectReason.ROOM_DELETED
+        ) return;
+
+        roomRef.current = null;
+        setRoom(null);
+        setConnState("disconnected");
+        setMicOn(false);
+        setCamOn(false);
+        setIsScreenSharing(false);
+        setPresentationActive(false);
+        setPresentationTitle(null);
+        writePresenterSessionToken(roomCode, null);
+
+        if (!isEndingClassroomRef.current) {
+          setConnError("השיעור הופסק על ידי המורה.");
+          navigate("/classroom-ended", { replace: true });
+        }
       });
       lkRoom.on(RoomEvent.TrackPublished, () => updateParticipantList(lkRoom));
       lkRoom.on(RoomEvent.TrackSubscribed, () => updateParticipantList(lkRoom));
@@ -1492,20 +1515,31 @@ export function ClassroomPage() {
     if (!sessionData || !isHost || !canManageClassroom) return;
     if (!window.confirm("לסיים את השיעור ולסגור את החדר לכל המשתתפים?")) return;
 
+    isEndingClassroomRef.current = true;
+
     const { data } = await supabase.auth.getSession();
     if (!data.session?.access_token) {
+      isEndingClassroomRef.current = false;
       setConnError("סיום השיעור זמין רק למשתמש מורשה.");
       return;
     }
-    const response = await fetch(`${getVoxelServerUrl()}/rtc/classroom-end`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${data.session.access_token}`
-      },
-      body: JSON.stringify({ roomCode: sessionData.room_code })
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${getVoxelServerUrl()}/rtc/classroom-end`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${data.session.access_token}`
+        },
+        body: JSON.stringify({ roomCode: sessionData.room_code })
+      });
+    } catch {
+      isEndingClassroomRef.current = false;
+      setConnError("לא ניתן לסיים את השיעור. בדוק את החיבור ונסה שוב.");
+      return;
+    }
     if (!response.ok) {
+      isEndingClassroomRef.current = false;
       const body = await response.json().catch(() => ({}));
       setConnError(body.message || "לא ניתן לסיים את השיעור.");
       return;
