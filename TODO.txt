@@ -13,3 +13,4 @@
 28. close class for clients when host clode it
 30. test audio and docs on the classroom media board
 31. remove "copy invitation link" from non host users"
+32. fix media board slides view 

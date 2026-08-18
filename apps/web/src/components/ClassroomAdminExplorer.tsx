@@ -47,7 +47,16 @@ type Detail = {
 const PAGE_SIZE = 50;
 
 function formatDate(value: string | null): string {
-  return value ? new Date(value).toLocaleString("he-IL") : "—";
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString("he-IL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
 }
 
 function formatDuration(seconds: number): string {
@@ -85,7 +94,7 @@ export function ClassroomAdminExplorer() {
 
   useEffect(() => setSearch(appliedSearch), [appliedSearch]);
 
-  const authHeaders = useCallback(async () => {
+  const authHeaders = useCallback(async (): Promise<Record<string, string>> => {
     const session = (await supabase.auth.getSession()).data.session;
     return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
   }, []);
@@ -254,34 +263,132 @@ export function ClassroomAdminExplorer() {
     </div>
 
     <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5">
-      <table className="w-full min-w-[900px] text-right text-sm text-white/80">
-        <thead className="bg-white/10 text-white"><tr><th className="p-3">כיתה</th><th className="p-3">סטטוס</th><th className="p-3">מארח / שותפים</th><th className="p-3">שימוש אחרון</th><th className="p-3">מפגשים</th><th className="p-3">משתתפים</th><th className="p-3">פעולות</th></tr></thead>
+      <table className="w-full text-right text-sm text-white/80">
+        <thead className="bg-white/10 text-white">
+          <tr>
+            <th className="p-3 whitespace-nowrap">כיתה</th>
+            <th className="p-3 whitespace-nowrap">סטטוס</th>
+            <th className="p-3 whitespace-nowrap">מארח / שותפים</th>
+            <th className="p-3 whitespace-nowrap">שימוש אחרון</th>
+            <th className="p-3 text-center whitespace-nowrap">מפגשים</th>
+            <th className="p-3 text-center whitespace-nowrap">משתתפים</th>
+            <th className="p-3 whitespace-nowrap">פעולות</th>
+          </tr>
+        </thead>
         <tbody>{records.map((record) => {
           const occupied = record.status === "active" && record.liveParticipantCount > 0;
-          return <tr key={record.id} className="border-t border-white/5 hover:bg-white/[0.04]">
-            <td className="p-3"><button onClick={() => selectRecord(record.id)} className="text-right font-bold text-white underline-offset-4 hover:text-indigo-200 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-400">{record.title}</button><div className="font-mono text-xs text-indigo-300">{record.room_code}</div></td>
-            <td className="p-3">{record.status === "active" && !record.livePresenceKnown
-              ? <span className="rounded-full border border-slate-500/30 bg-slate-500/10 px-2.5 py-1 text-xs font-bold text-slate-300">סטטוס חי לא זמין</span>
-              : occupied
-              ? <span className="rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-1 text-xs font-bold text-emerald-200">{record.liveParticipantCount} מחוברים</span>
-              : record.status === "active"
-                ? <span className="rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 text-xs font-bold text-amber-200">פעילה · ריקה</span>
-                : <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs text-white/55">נסגרה</span>}
-              {occupied ? <div className="mt-2 text-xs text-white/50">{record.liveHostConnected ? "המארח מחובר" : "המארח לא מחובר"}{record.liveCohostCount ? ` · ${record.liveCohostCount} שותפים מחוברים` : ""}</div> : null}
+          return <tr key={record.id} className="border-t border-white/5 hover:bg-white/[0.04] transition-colors">
+            <td className="p-3">
+              <div className="flex flex-col items-start gap-0.5">
+                <button
+                  type="button"
+                  onClick={() => selectRecord(record.id)}
+                  className="text-right font-bold text-white underline-offset-4 hover:text-indigo-200 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-400 transition-colors"
+                >
+                  {record.title}
+                </button>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-mono text-xs text-indigo-300">{record.room_code}</span>
+                  {record.is_persistent ? (
+                    <span className="rounded bg-amber-500/10 border border-amber-500/25 px-1.5 py-0.2 text-[10px] font-bold text-amber-300">
+                      קבועה
+                    </span>
+                  ) : null}
+                </div>
+              </div>
             </td>
-            <td className="p-3"><div>{record.teacher_name}</div><div className="text-xs text-white/45">{record.cohosts.length ? `שותפים: ${record.cohosts.join(", ")}` : "ללא שותפים"}</div></td>
-            <td className="p-3 text-xs">{formatDate(record.last_activity)}</td>
-            <td className="p-3">{record.sessionCount}</td>
-            <td className="p-3">{record.participantCount}</td>
-            <td className="p-3"><div className="flex flex-wrap gap-1.5">
-              <button onClick={() => selectRecord(record.id)} className="rounded-lg bg-indigo-500/20 px-2.5 py-1.5 text-xs font-bold text-indigo-100 hover:bg-indigo-500/30">פרטים</button>
-              {record.status === "active" ? <>
-                <button onClick={() => navigate(`/classroom/${record.room_code}?spectate=invisible`)} className="rounded-lg bg-white/10 px-2.5 py-1.5 text-xs text-white hover:bg-white/15">צפה בסתר</button>
-                <button onClick={() => navigate(`/classroom/${record.room_code}?spectate=visible`)} className="rounded-lg bg-white/10 px-2.5 py-1.5 text-xs text-white hover:bg-white/15">צפה בגלוי</button>
-                <button onClick={() => void togglePersistent(record)} className="rounded-lg bg-amber-500/15 px-2.5 py-1.5 text-xs text-amber-100 hover:bg-amber-500/25">{record.is_persistent ? "קבועה" : "זמנית"}</button>
-                <button onClick={() => void endClassroom(record.room_code)} className="rounded-lg bg-rose-500/15 px-2.5 py-1.5 text-xs text-rose-100 hover:bg-rose-500/25">סגור כיתה</button>
-              </> : <button onClick={() => void removeRecord(record.id)} className="rounded-lg bg-rose-500/15 px-2.5 py-1.5 text-xs text-rose-100 hover:bg-rose-500/25">מחק רשומה</button>}
-            </div></td>
+            <td className="p-3 whitespace-nowrap">
+              {record.status === "active" && !record.livePresenceKnown ? (
+                <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-slate-500/30 bg-slate-500/10 px-2.5 py-0.5 text-xs font-semibold text-slate-300">
+                  <span className="size-1.5 rounded-full bg-slate-400" />
+                  סטטוס חי לא זמין
+                </span>
+              ) : occupied ? (
+                <div>
+                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-0.5 text-xs font-semibold text-emerald-200">
+                    <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    {record.liveParticipantCount} מחוברים
+                  </span>
+                  <div className="mt-1 text-[11px] text-white/50 whitespace-nowrap">
+                    {record.liveHostConnected ? "המארח מחובר" : "המארח לא מחובר"}
+                    {record.liveCohostCount ? ` · ${record.liveCohostCount} שותפים מחוברים` : ""}
+                  </div>
+                </div>
+              ) : record.status === "active" ? (
+                <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-200">
+                  <span className="size-1.5 rounded-full bg-amber-400" />
+                  פעילה (ריקה)
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs text-white/50">
+                  <span className="size-1.5 rounded-full bg-white/30" />
+                  נסגרה
+                </span>
+              )}
+            </td>
+            <td className="p-3">
+              <div className="font-medium text-white/90">{record.teacher_name}</div>
+              <div className="text-xs text-white/45 truncate max-w-[140px]" title={record.cohosts.length ? `שותפים: ${record.cohosts.join(", ")}` : undefined}>
+                {record.cohosts.length ? `שותפים: ${record.cohosts.join(", ")}` : "ללא שותפים"}
+              </div>
+            </td>
+            <td className="p-3 text-xs text-white/70 whitespace-nowrap">{formatDate(record.last_activity)}</td>
+            <td className="p-3 text-center font-medium text-white/90 whitespace-nowrap">{record.sessionCount}</td>
+            <td className="p-3 text-center font-medium text-white/90 whitespace-nowrap">{record.participantCount}</td>
+            <td className="p-3">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => selectRecord(record.id)}
+                  className="rounded-lg bg-indigo-500/20 px-2.5 py-1 text-xs font-bold text-indigo-100 hover:bg-indigo-500/30 whitespace-nowrap transition-colors"
+                >
+                  פרטים
+                </button>
+                {record.status === "active" ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/classroom/${record.room_code}?spectate=invisible`)}
+                      title="הצטרף כצופה בלתי נראה"
+                      className="rounded-lg bg-white/10 px-2 py-1 text-xs text-white hover:bg-white/15 whitespace-nowrap transition-colors"
+                    >
+                      צפה בסתר
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/classroom/${record.room_code}?spectate=visible`)}
+                      title="הצטרף כצופה עם תג אדמין"
+                      className="rounded-lg bg-white/10 px-2 py-1 text-xs text-white hover:bg-white/15 whitespace-nowrap transition-colors"
+                    >
+                      צפה בגלוי
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void togglePersistent(record)}
+                      title={record.is_persistent ? "כיתה קבועה — לחץ להחלפה לזמנית" : "כיתה זמנית — לחץ להחלפה לקבועה"}
+                      className="rounded-lg bg-amber-500/15 border border-amber-500/20 px-2 py-1 text-xs font-medium text-amber-200 hover:bg-amber-500/25 whitespace-nowrap transition-colors"
+                    >
+                      {record.is_persistent ? "קבועה" : "זמנית"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void endClassroom(record.room_code)}
+                      className="rounded-lg bg-rose-500/15 border border-rose-500/20 px-2 py-1 text-xs font-medium text-rose-200 hover:bg-rose-500/25 whitespace-nowrap transition-colors"
+                    >
+                      סגור כיתה
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => void removeRecord(record.id)}
+                    className="rounded-lg bg-rose-500/15 border border-rose-500/20 px-2 py-1 text-xs font-medium text-rose-200 hover:bg-rose-500/25 whitespace-nowrap transition-colors"
+                  >
+                    מחק רשומה
+                  </button>
+                )}
+              </div>
+            </td>
           </tr>;
         })}</tbody>
       </table>
