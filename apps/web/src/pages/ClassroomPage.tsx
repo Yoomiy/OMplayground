@@ -139,6 +139,23 @@ function writePresenterSessionToken(roomCode: string, token: string | null) {
   } catch {}
 }
 
+function guestAttendanceStorageKey(roomCode: string, displayName: string): string {
+  return `classroom-attendance:${roomCode}:${displayName.trim().toLocaleLowerCase()}`;
+}
+
+function getGuestAttendanceKey(roomCode: string, displayName: string): string {
+  const key = guestAttendanceStorageKey(roomCode, displayName);
+  try {
+    const existing = window.localStorage.getItem(key);
+    if (existing) return existing;
+    const value = crypto.randomUUID();
+    window.localStorage.setItem(key, value);
+    return value;
+  } catch {
+    return crypto.randomUUID();
+  }
+}
+
 export function ClassroomPage() {
   const { roomCode } = useParams<{ roomCode: string }>();
   const [searchParams] = useSearchParams();
@@ -748,7 +765,8 @@ export function ClassroomPage() {
           roomCode,
           displayName: resolvedDisplayName,
           spectateMode: spectateMode ?? undefined,
-          presenterToken: readPresenterSessionToken(roomCode) ?? undefined
+          presenterToken: readPresenterSessionToken(roomCode) ?? undefined,
+          guestAttendanceKey: user ? undefined : getGuestAttendanceKey(roomCode, resolvedDisplayName)
         })
       });
 
@@ -1056,7 +1074,6 @@ export function ClassroomPage() {
       roomRef.current = lkRoom;
       setRoom(lkRoom);
       setConnState("connected");
-
       reportTelemetry(
         {
           level: "info",

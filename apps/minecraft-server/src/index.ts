@@ -105,8 +105,16 @@ import {
   listClassroomParticipants,
   syncClassroomPresenterPermissions,
   syncClassroomParticipantPermissions,
+  type ClassroomLiveAttendance,
   LiveKitTokenError
 } from "./livekitService";
+import {
+  classroomGuestAttendanceKey,
+  finalizeClassroomAttendance,
+  reconcileClassroomAttendance,
+  recordClassroomAttendanceWebhook,
+  summarizeAttendanceVisits
+} from "./classroomAttendance";
 import {
   createDocumentConversionTicket,
   createPresenterCapability,
@@ -300,15 +308,6 @@ app.use(
   })
 );
 app.use(correlationMiddleware());
-if (LIVEKIT_API_KEY && LIVEKIT_API_SECRET) {
-  mountLiveKitWebhook(app, {
-    logger,
-    stats,
-    apiKey: LIVEKIT_API_KEY,
-    apiSecret: LIVEKIT_API_SECRET
-  });
-}
-app.use(express.json());
 
 const httpLimiter = rateLimit({
   windowMs: 60_000,
@@ -333,6 +332,44 @@ const supabaseAdmin =
         auth: { persistSession: false, autoRefreshToken: false }
       })
     : null;
+
+let attendanceReconciliationRunning = false;
+async function reconcileActiveClassroomAttendance(): Promise<void> {
+  if (!supabaseAdmin || attendanceReconciliationRunning) return;
+  attendanceReconciliationRunning = true;
+  try {
+    const { data: classrooms, error } = await supabaseAdmin
+      .from("classroom_sessions")
+      .select("id, room_code")
+      .eq("status", "active");
+    if (error) throw error;
+    await reconcileClassroomAttendance(supabaseAdmin, classrooms ?? []);
+  } catch (err) {
+    logger.warn({
+      protocol: "internal",
+      message: "Classroom attendance reconciliation failed",
+      context: { event: "CLASSROOM_ATTENDANCE_RECONCILIATION_FAILED" },
+      err: logError(err)
+    });
+  } finally {
+    attendanceReconciliationRunning = false;
+  }
+}
+
+if (LIVEKIT_API_KEY && LIVEKIT_API_SECRET) {
+  mountLiveKitWebhook(app, {
+    logger,
+    stats,
+    apiKey: LIVEKIT_API_KEY,
+    apiSecret: LIVEKIT_API_SECRET,
+    onVerifiedEvent: supabaseAdmin
+      ? (event) => recordClassroomAttendanceWebhook(supabaseAdmin, event)
+      : undefined
+  });
+}
+// The signed LiveKit route above must receive the untouched raw request body.
+// Parse JSON only after it has been mounted.
+app.use(express.json());
 
 const CLASSROOM_CLEANUP_MIN_DAYS = 1;
 const CLASSROOM_CLEANUP_MAX_DAYS = 365;
@@ -717,11 +754,12 @@ app.post("/rtc/classroom-token", async (req, res) => {
     .correlationId;
   try {
     const accessToken = req.headers.authorization?.replace(/^Bearer\s+/i, "");
-    const { roomCode, displayName, spectateMode, presenterToken: reconnectPresenterToken } = req.body as {
+    const { roomCode, displayName, spectateMode, presenterToken: reconnectPresenterToken, guestAttendanceKey } = req.body as {
       roomCode?: string;
       displayName?: string;
       spectateMode?: "invisible" | "visible";
       presenterToken?: string;
+      guestAttendanceKey?: string;
     };
 
     if (!roomCode) {
@@ -757,7 +795,8 @@ app.post("/rtc/classroom-token", async (req, res) => {
       accessToken,
       spectateMode,
       delegate: delegate ? { id: delegate.delegateId, displayName: delegate.displayName } : null,
-      presenterIdentityOverride
+      presenterIdentityOverride,
+      guestAttendanceKey: classroomGuestAttendanceKey(roomCode, guestAttendanceKey)
     });
     let presentation = presentationRoomState(classroom.settings);
     if (!presentation.presenterIdentity && result.isHost && spectateMode !== "invisible") {
@@ -855,7 +894,7 @@ app.post("/rtc/classroom-end", async (req, res) => {
     const normalizedRoomCode = roomCode.trim();
     const { data: classroom, error: classroomError } = await supabaseAdmin
       .from("classroom_sessions")
-      .select("id, room_code, settings")
+      .select("id, room_code, settings, status")
       .eq("room_code", normalizedRoomCode)
       .maybeSingle();
     if (classroomError || !classroom) {
@@ -863,13 +902,25 @@ app.post("/rtc/classroom-end", async (req, res) => {
       return;
     }
 
+    const closedAt = new Date().toISOString();
+    try {
+      await reconcileClassroomAttendance(supabaseAdmin, [classroom]);
+    } catch (attendanceError) {
+      logger.warn({
+        protocol: "http",
+        message: "Could not snapshot attendance before classroom close",
+        context: { event: "CLASSROOM_ATTENDANCE_PRE_CLOSE_FAILED", roomCode: normalizedRoomCode },
+        err: logError(attendanceError)
+      });
+    }
+
     const { error: updateError } = await supabaseAdmin
       .from("classroom_sessions")
       .update({
         status: "ended",
-        ended_at: new Date().toISOString(),
+        ended_at: closedAt,
         whiteboard_data: null,
-        last_activity: new Date().toISOString()
+        last_activity: closedAt
       })
       .eq("id", classroom.id);
     if (updateError) {
@@ -879,6 +930,7 @@ app.post("/rtc/classroom-end", async (req, res) => {
     await completeClassroomDrawingSessions([normalizedRoomCode]);
     const evictedParticipantCount = await evictClassroomParticipants(normalizedRoomCode);
     const livekitDeleted = await deleteLiveKitRoom(normalizedRoomCode);
+    await finalizeClassroomAttendance(supabaseAdmin, classroom, closedAt);
     await appendClassroomAudit(
       req,
       classroom,
@@ -924,16 +976,29 @@ app.post("/rtc/classroom-cleanup", async (req, res) => {
     const cutoffDate = new Date(Date.now() - requestedDays * 86400000).toISOString();
     const { data: roomsToClean, error: queryError } = await supabaseAdmin
       .from("classroom_sessions")
-      .select("room_code")
+      .select("id, room_code")
       .eq("is_persistent", false)
-      .or(`status.eq.ended,last_activity.lt.${cutoffDate}`);
+      .eq("status", "active")
+      .lt("last_activity", cutoffDate);
     if (queryError) throw queryError;
 
-    const roomCodes = (roomsToClean ?? []).map((room) => room.room_code);
+    const staleClassrooms = roomsToClean ?? [];
+    try {
+      await reconcileClassroomAttendance(supabaseAdmin, staleClassrooms);
+    } catch (attendanceError) {
+      logger.warn({
+        protocol: "http",
+        message: "Could not snapshot attendance before classroom cleanup",
+        context: { event: "CLASSROOM_ATTENDANCE_PRE_CLEANUP_FAILED" },
+        err: logError(attendanceError)
+      });
+    }
+    const roomCodes = staleClassrooms.map((room) => room.room_code);
     await completeClassroomDrawingSessions(roomCodes);
     await Promise.all(roomCodes.map((roomCode) => deleteLiveKitRoom(roomCode)));
+    await Promise.all(staleClassrooms.map((classroom) => finalizeClassroomAttendance(supabaseAdmin, classroom)));
 
-    const { data: deletedCount, error: cleanupError } = await supabaseAdmin.rpc(
+    const { data: endedCount, error: cleanupError } = await supabaseAdmin.rpc(
       "cleanup_old_classroom_sessions",
       { p_days_old: requestedDays }
     );
@@ -942,11 +1007,213 @@ app.post("/rtc/classroom-cleanup", async (req, res) => {
       userId: actor.userId,
       protocol: "http",
       message: "Classroom cleanup completed",
-      context: { event: "CLASSROOM_CLEANUP", deletedCount: deletedCount ?? 0, requestedDays }
+      context: { event: "CLASSROOM_CLEANUP", endedCount: endedCount ?? 0, requestedDays }
     });
-    res.json({ success: true, deletedCount: deletedCount ?? 0 });
+    res.json({ success: true, endedCount: endedCount ?? 0 });
   } catch (err: any) {
     res.status(500).json({ error: err.message || "cleanup failed" });
+  }
+});
+
+app.get("/rtc/admin/classroom-records", async (req, res) => {
+  try {
+    const actor = await requireClassroomAdmin(req, res);
+    if (!actor || !supabaseAdmin) return;
+    const status = typeof req.query.status === "string" ? req.query.status : "all";
+    const search = typeof req.query.search === "string" ? req.query.search.trim().toLocaleLowerCase() : "";
+    const page = Math.max(1, Number.parseInt(String(req.query.page ?? "1"), 10) || 1);
+    const pageSize = Math.min(100, Math.max(10, Number.parseInt(String(req.query.pageSize ?? "50"), 10) || 50));
+    let matchingClassroomIds: string[] | null = null;
+    if (search) {
+      const { data: matches, error: searchError } = await supabaseAdmin.rpc("find_classroom_record_ids", { p_search: search });
+      if (searchError) throw searchError;
+      const matchedIds = (matches ?? []).map((match: { id: string }) => match.id);
+      if (!matchedIds.length) {
+        res.json({ items: [], page, pageSize, total: 0 });
+        return;
+      }
+      matchingClassroomIds = matchedIds;
+    }
+    let query = supabaseAdmin
+      .from("classroom_sessions")
+      .select("id, title, subject, teacher_name, room_code, status, is_persistent, created_at, ended_at, last_activity", { count: "exact" })
+      .order("last_activity", { ascending: false })
+      .order("id", { ascending: false })
+      .range((page - 1) * pageSize, page * pageSize - 1);
+    if (status === "active" || status === "ended") query = query.eq("status", status);
+    if (matchingClassroomIds) query = query.in("id", matchingClassroomIds);
+    const { data: classroomRows, error: classroomError, count } = await query;
+    if (classroomError) throw classroomError;
+    const classrooms = classroomRows ?? [];
+    let liveAttendanceByRoomCode = new Map<string, ClassroomLiveAttendance | null>();
+    try {
+      liveAttendanceByRoomCode = await reconcileClassroomAttendance(
+        supabaseAdmin,
+        classrooms.filter((classroom) => classroom.status === "active")
+      );
+    } catch (attendanceError) {
+      logger.warn({
+        protocol: "http",
+        message: "Could not refresh live attendance for classroom records",
+        context: { event: "CLASSROOM_ADMIN_LIVE_ATTENDANCE_FAILED" },
+        err: logError(attendanceError)
+      });
+    }
+    const classroomIds = classrooms.map((row) => row.id);
+    const { data: meetings, error: meetingsError } = classroomIds.length
+      ? await supabaseAdmin.from("classroom_meetings").select("id, classroom_id, ended_at").in("classroom_id", classroomIds)
+      : { data: [], error: null };
+    if (meetingsError) throw meetingsError;
+    const meetingIds = (meetings ?? []).map((meeting) => meeting.id);
+    const { data: participants, error: participantsError } = meetingIds.length
+      ? await supabaseAdmin.from("classroom_meeting_participants").select("meeting_id, participant_key, display_name, roles_held").in("meeting_id", meetingIds)
+      : { data: [], error: null };
+    if (participantsError) throw participantsError;
+    const { data: delegates, error: delegatesError } = classroomIds.length
+      ? await supabaseAdmin.from("classroom_host_delegates").select("classroom_id, display_name, is_active").in("classroom_id", classroomIds)
+      : { data: [], error: null };
+    if (delegatesError) throw delegatesError;
+
+    const meetingClassroom = new Map((meetings ?? []).map((meeting) => [meeting.id, meeting.classroom_id]));
+    const summary = new Map<string, { sessionCount: number; participants: Map<string, string>; cohosts: Set<string> }>();
+    for (const classroom of classrooms) summary.set(classroom.id, { sessionCount: 0, participants: new Map(), cohosts: new Set() });
+    for (const meeting of meetings ?? []) {
+      const item = summary.get(meeting.classroom_id);
+      if (item) item.sessionCount += 1;
+    }
+    for (const participant of participants ?? []) {
+      const classroomId = meetingClassroom.get(participant.meeting_id);
+      const item = classroomId ? summary.get(classroomId) : undefined;
+      if (!item) continue;
+      item.participants.set(participant.participant_key, participant.display_name);
+      if ((participant.roles_held ?? []).includes("cohost")) item.cohosts.add(participant.display_name);
+    }
+    for (const delegate of delegates ?? []) {
+      if (delegate.is_active) summary.get(delegate.classroom_id)?.cohosts.add(delegate.display_name);
+    }
+
+    const items = classrooms
+      .map((classroom) => {
+        const item = summary.get(classroom.id)!;
+        const liveParticipants = (liveAttendanceByRoomCode.get(classroom.room_code)?.participants ?? []).flatMap((participant) => {
+          let metadata: Record<string, unknown> = {};
+          try { metadata = participant.metadata ? JSON.parse(participant.metadata) : {}; } catch {}
+          const attendanceRole = typeof metadata.attendanceRole === "string" ? metadata.attendanceRole : "participant";
+          return attendanceRole === "hidden" ? [] : [{ attendanceRole }];
+        });
+        return {
+          ...classroom,
+          sessionCount: item.sessionCount,
+          participantCount: item.participants.size,
+          livePresenceKnown: classroom.status !== "active" || liveAttendanceByRoomCode.has(classroom.room_code),
+          liveParticipantCount: liveParticipants.length,
+          liveHostConnected: liveParticipants.some((participant) => participant.attendanceRole === "host"),
+          liveCohostCount: liveParticipants.filter((participant) => participant.attendanceRole === "cohost").length,
+          cohosts: [...item.cohosts].sort()
+        };
+      });
+    res.json({ items, page, pageSize, total: count ?? 0 });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "classroom_records_failed" });
+  }
+});
+
+app.get("/rtc/admin/classroom-records/:classroomId", async (req, res) => {
+  try {
+    const actor = await requireClassroomAdmin(req, res);
+    if (!actor || !supabaseAdmin) return;
+    const { data: classroom, error: classroomError } = await supabaseAdmin
+      .from("classroom_sessions")
+      .select("id, title, subject, teacher_name, room_code, status, is_persistent, created_at, ended_at, last_activity")
+      .eq("id", req.params.classroomId)
+      .maybeSingle();
+    if (classroomError) throw classroomError;
+    if (!classroom) {
+      res.status(404).json({ error: "classroom_not_found" });
+      return;
+    }
+    let livePresenceKnown = classroom.status !== "active";
+    if (classroom.status === "active") {
+      try {
+        const liveAttendance = await reconcileClassroomAttendance(supabaseAdmin, [classroom]);
+        livePresenceKnown = liveAttendance.has(classroom.room_code);
+      } catch (attendanceError) {
+        logger.warn({
+          protocol: "http",
+          message: "Could not refresh live attendance for classroom detail",
+          context: { event: "CLASSROOM_ADMIN_DETAIL_LIVE_ATTENDANCE_FAILED", roomCode: classroom.room_code },
+          err: logError(attendanceError)
+        });
+      }
+    }
+    const { data: meetings, error: meetingsError } = await supabaseAdmin
+      .from("classroom_meetings")
+      .select("id, started_at, ended_at, close_reason")
+      .eq("classroom_id", classroom.id)
+      .order("started_at", { ascending: false });
+    if (meetingsError) throw meetingsError;
+    const meetingIds = (meetings ?? []).map((meeting) => meeting.id);
+    const { data: participants, error: participantsError } = meetingIds.length
+      ? await supabaseAdmin.from("classroom_meeting_participants").select("id, meeting_id, participant_key, display_name, roles_held, first_joined_at").in("meeting_id", meetingIds)
+      : { data: [], error: null };
+    if (participantsError) throw participantsError;
+    const participantIds = (participants ?? []).map((participant) => participant.id);
+    const { data: visits, error: visitsError } = participantIds.length
+      ? await supabaseAdmin.from("classroom_participant_visits").select("id, participant_id, joined_at, left_at").in("participant_id", participantIds).order("joined_at", { ascending: true })
+      : { data: [], error: null };
+    if (visitsError) throw visitsError;
+    const snapshotAt = new Date().toISOString();
+    const visitsByParticipant = new Map<string, Array<{ id: string; participant_id: string; joined_at: string; left_at: string | null }>>();
+    for (const visit of visits ?? []) {
+      visitsByParticipant.set(visit.participant_id, [...(visitsByParticipant.get(visit.participant_id) ?? []), visit]);
+    }
+    const participantSummaries = (participants ?? []).map((participant) => {
+      const participantVisits = visitsByParticipant.get(participant.id) ?? [];
+      const attendance = summarizeAttendanceVisits(participantVisits, snapshotAt);
+      return {
+        ...participant,
+        connected_now: livePresenceKnown && attendance.connectedNow,
+        current_visit_started_at: attendance.currentVisitStartedAt,
+        total_seconds: attendance.totalSeconds
+      };
+    });
+    const { data: delegates, error: delegatesError } = await supabaseAdmin
+      .from("classroom_host_delegates")
+      .select("display_name, is_active, created_at, last_used_at")
+      .eq("classroom_id", classroom.id)
+      .order("created_at", { ascending: true });
+    if (delegatesError) throw delegatesError;
+    res.json({ classroom, meetings: meetings ?? [], participants: participantSummaries, delegates: delegates ?? [], snapshotAt, livePresenceKnown });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "classroom_record_failed" });
+  }
+});
+
+app.delete("/rtc/admin/classroom-records/:classroomId", async (req, res) => {
+  try {
+    const actor = await requireClassroomAdmin(req, res);
+    if (!actor || !supabaseAdmin) return;
+    const { data: classroom, error: classroomError } = await supabaseAdmin
+      .from("classroom_sessions")
+      .select("id, room_code, status")
+      .eq("id", req.params.classroomId)
+      .maybeSingle();
+    if (classroomError) throw classroomError;
+    if (!classroom) {
+      res.status(404).json({ error: "classroom_not_found" });
+      return;
+    }
+    if (classroom.status === "active") {
+      res.status(409).json({ error: "close_classroom_before_removing_record" });
+      return;
+    }
+    await completeClassroomDrawingSessions([classroom.room_code]);
+    const { error: deleteError } = await supabaseAdmin.from("classroom_sessions").delete().eq("id", classroom.id);
+    if (deleteError) throw deleteError;
+    await appendClassroomAudit(req, classroom, { kind: "user", userId: actor.userId, actorKind: "admin" }, "classroom_record_deleted", {});
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "classroom_record_delete_failed" });
   }
 });
 
@@ -1445,13 +1712,26 @@ setInterval(async () => {
     const cutoffDate = new Date(Date.now() - 7 * 86400000).toISOString();
     const { data: roomsToClean } = await supabaseAdmin
       .from("classroom_sessions")
-      .select("room_code")
+      .select("id, room_code")
       .eq("is_persistent", false)
-      .or(`status.eq.ended,last_activity.lt.${cutoffDate}`);
+      .eq("status", "active")
+      .lt("last_activity", cutoffDate);
 
-    const roomCodes = (roomsToClean ?? []).map((room) => room.room_code);
+    const staleClassrooms = roomsToClean ?? [];
+    try {
+      await reconcileClassroomAttendance(supabaseAdmin, staleClassrooms);
+    } catch (attendanceError) {
+      logger.warn({
+        protocol: "internal",
+        message: "Could not snapshot attendance before background classroom cleanup",
+        context: { event: "CLASSROOM_ATTENDANCE_PRE_BACKGROUND_CLEANUP_FAILED" },
+        err: logError(attendanceError)
+      });
+    }
+    const roomCodes = staleClassrooms.map((room) => room.room_code);
     await completeClassroomDrawingSessions(roomCodes);
     await Promise.all(roomCodes.map((roomCode) => deleteLiveKitRoom(roomCode)));
+    await Promise.all(staleClassrooms.map((classroom) => finalizeClassroomAttendance(supabaseAdmin!, classroom)));
     const { error } = await supabaseAdmin.rpc("cleanup_old_classroom_sessions", { p_days_old: 7 });
     if (error) throw error;
   } catch (e) {
@@ -1463,6 +1743,11 @@ setInterval(async () => {
     });
   }
 }, 6 * 3600 * 1000);
+
+// LiveKit webhooks update this immediately; this independent reconciliation is
+// the durable fallback and also closes visits when a client vanishes abruptly.
+setInterval(() => { void reconcileActiveClassroomAttendance(); }, 30_000);
+void reconcileActiveClassroomAttendance();
 
 app.post("/api/fps-batch", async (req, res) => {
   const correlationId = (req as express.Request & { correlationId?: string }).correlationId;

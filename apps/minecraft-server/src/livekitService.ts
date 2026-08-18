@@ -191,6 +191,7 @@ export async function listClassroomParticipants(roomCode: string): Promise<Array
   identity: string;
   name: string;
   isHost: boolean;
+  attendanceRole: string;
 }>> {
   const roomService = getRoomServiceClient();
   if (!roomService) {
@@ -203,9 +204,79 @@ export async function listClassroomParticipants(roomCode: string): Promise<Array
     return {
       identity: participant.identity,
       name: participant.name || participant.identity,
-      isHost: metadata.isHost === true
+      isHost: metadata.isHost === true,
+      attendanceRole: typeof metadata.attendanceRole === "string" ? metadata.attendanceRole : "participant"
     };
   });
+}
+
+export type ClassroomLiveAttendance = {
+  roomSid: string;
+  startedAt: string;
+  participants: Array<{
+    sid: string;
+    identity: string;
+    name: string;
+    metadata: string;
+    joinedAt: string;
+  }>;
+};
+
+function liveKitTimestamp(milliseconds: bigint | number | undefined, seconds: bigint | number | undefined): string {
+  const millisecondsValue = Number(milliseconds);
+  if (Number.isFinite(millisecondsValue) && millisecondsValue > 0) return new Date(millisecondsValue).toISOString();
+  const secondsValue = Number(seconds);
+  if (Number.isFinite(secondsValue) && secondsValue > 0) return new Date(secondsValue * 1000).toISOString();
+  return new Date().toISOString();
+}
+
+/**
+ * A missing map entry means LiveKit could not read that existing room and the
+ * caller must leave its stored attendance untouched. A null entry means the
+ * room was definitively absent.
+ */
+export async function getClassroomsLiveAttendance(roomCodes: string[]): Promise<Map<string, ClassroomLiveAttendance | null>> {
+  const roomService = getRoomServiceClient();
+  if (!roomService) throw new LiveKitTokenError("server_config", "LiveKit is not configured on the server.");
+  const uniqueCodes = [...new Set(roomCodes)];
+  const roomCodeByName = new Map(uniqueCodes.map((roomCode) => [classroomLiveKitRoom(roomCode), roomCode]));
+  const result = new Map<string, ClassroomLiveAttendance | null>(uniqueCodes.map((roomCode) => [roomCode, null]));
+  const rooms = await roomService.listRooms([...roomCodeByName.keys()]);
+  for (let offset = 0; offset < rooms.length; offset += 8) {
+    await Promise.all(rooms.slice(offset, offset + 8).map(async (room) => {
+      const roomCode = roomCodeByName.get(room.name);
+      if (!roomCode) return;
+      try {
+        const participants = await roomService.listParticipants(room.name);
+        result.set(roomCode, {
+          roomSid: room.sid,
+          startedAt: liveKitTimestamp(room.creationTimeMs, room.creationTime),
+          participants: participants.map((participant) => ({
+            sid: participant.sid,
+            identity: participant.identity,
+            name: participant.name || participant.identity,
+            metadata: participant.metadata,
+            joinedAt: liveKitTimestamp(participant.joinedAtMs, participant.joinedAt)
+          }))
+        });
+      } catch (err) {
+        result.delete(roomCode);
+        logger.warn({
+          protocol: "webrtc",
+          err: logError(err),
+          message: "LiveKit classroom attendance snapshot failed",
+          context: { event: "CLASSROOM_ATTENDANCE_SNAPSHOT_FAILED", roomCode }
+        });
+      }
+    }));
+  }
+  return result;
+}
+
+export async function getClassroomLiveAttendance(roomCode: string): Promise<ClassroomLiveAttendance | null> {
+  const snapshots = await getClassroomsLiveAttendance([roomCode]);
+  if (!snapshots.has(roomCode)) throw new Error("LiveKit classroom snapshot unavailable");
+  return snapshots.get(roomCode) ?? null;
 }
 
 export async function removeClassroomParticipant(
@@ -419,6 +490,7 @@ export interface GenerateClassroomTokenArgs {
   spectateMode?: "invisible" | "visible";
   delegate?: { id: string; displayName: string } | null;
   presenterIdentityOverride?: string;
+  guestAttendanceKey?: string | null;
 }
 
 export async function generateClassroomToken(
@@ -431,9 +503,13 @@ export async function generateClassroomToken(
     canPublishMicrophone: boolean;
     canPublishCamera: boolean;
     canPublishScreenShare: boolean;
+    attendanceKey: string;
+    attendanceRole: string;
+    displayName: string;
+    isHidden: boolean;
   }
 > {
-  const { supabaseAdmin, roomCode, displayName, accessToken, spectateMode, delegate, presenterIdentityOverride } = args;
+  const { supabaseAdmin, roomCode, displayName, accessToken, spectateMode, delegate, presenterIdentityOverride, guestAttendanceKey } = args;
   const serverUrl = process.env.LIVEKIT_URL?.trim() ?? "";
   const apiKey = process.env.LIVEKIT_API_KEY?.trim() ?? "";
   const apiSecret = process.env.LIVEKIT_API_SECRET?.trim() ?? "";
@@ -480,6 +556,18 @@ export async function generateClassroomToken(
   const isPresenter = settings.presentationPresenterIdentity === identity;
 
   const isHidden = isAdmin && spectateMode === "invisible";
+  const attendanceKey = delegate
+    ? `delegate:${delegate.id}`
+    : profile?.userId
+      ? `user:${profile.userId}`
+      : guestAttendanceKey ?? `guest:${roomCode}:${identity}`;
+  const attendanceRole = isHidden
+    ? "hidden"
+    : isCreatorTeacher
+      ? "host"
+      : isDelegate || isTeacher
+        ? "cohost"
+        : "participant";
   const publishSources = isHidden
     ? []
     : isHost
@@ -499,7 +587,9 @@ export async function generateClassroomToken(
       isHost,
       isPresenter,
       hidden: isHidden,
-      spectateMode: spectateMode ?? "none"
+      spectateMode: spectateMode ?? "none",
+      attendanceKey,
+      attendanceRole
     })
   });
 
@@ -514,20 +604,6 @@ export async function generateClassroomToken(
     hidden: isHidden
   });
 
-  const { error: activityError } = await supabaseAdmin
-    .from("classroom_sessions")
-    .update({ last_activity: new Date().toISOString() })
-    .eq("id", classroom.id)
-    .eq("status", "active");
-  if (activityError) {
-    logger.warn({
-      protocol: "internal",
-      message: "Could not refresh classroom activity",
-      context: { event: "CLASSROOM_ACTIVITY_REFRESH_FAILED", roomCode },
-      err: logError(activityError)
-    });
-  }
-
   const token = await at.toJwt();
   return {
     token,
@@ -539,6 +615,10 @@ export async function generateClassroomToken(
     isDelegate,
     canPublishMicrophone: publishSources.includes(TrackSource.MICROPHONE),
     canPublishCamera: publishSources.includes(TrackSource.CAMERA),
-    canPublishScreenShare: publishSources.includes(TrackSource.SCREEN_SHARE)
+    canPublishScreenShare: publishSources.includes(TrackSource.SCREEN_SHARE),
+    attendanceKey,
+    attendanceRole,
+    displayName: finalDisplayName,
+    isHidden
   };
 }

@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { RoomServiceClient } from "livekit-server-sdk";
 import {
   evictClassroomParticipants,
+  getClassroomsLiveAttendance,
   generateLiveKitToken,
   LiveKitTokenError
 } from "./livekitService";
@@ -134,5 +135,29 @@ describe("generateLiveKitToken roster gate", () => {
       "student-a",
       expect.objectContaining({ revokeTokenTs: expect.any(BigInt) })
     );
+  });
+
+  it("lists LiveKit rooms once and fetches participants only for rooms that exist", async () => {
+    const listRooms = jest.spyOn(RoomServiceClient.prototype, "listRooms").mockResolvedValue([{
+      name: "classroom-live-room",
+      sid: "RM_live",
+      creationTime: BigInt(1_700_000_000),
+      creationTimeMs: BigInt(1_700_000_000_000)
+    }] as never);
+    const listParticipants = jest.spyOn(RoomServiceClient.prototype, "listParticipants").mockResolvedValue([{
+      sid: "PA_student",
+      identity: "student",
+      name: "Student",
+      metadata: "{}",
+      joinedAt: BigInt(1_700_000_010),
+      joinedAtMs: BigInt(1_700_000_010_000)
+    }] as never);
+
+    const snapshots = await getClassroomsLiveAttendance(["live-room", "empty-room"]);
+
+    expect(listRooms).toHaveBeenCalledTimes(1);
+    expect(listParticipants).toHaveBeenCalledTimes(1);
+    expect(snapshots.get("live-room")).toMatchObject({ roomSid: "RM_live" });
+    expect(snapshots.get("empty-room")).toBeNull();
   });
 });

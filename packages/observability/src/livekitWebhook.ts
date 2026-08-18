@@ -8,6 +8,13 @@ export interface LiveKitWebhookOptions {
   stats: StatsCollector;
   apiKey: string;
   apiSecret: string;
+  onVerifiedEvent?: (event: {
+    id?: string;
+    event?: string;
+    createdAt?: number | bigint | string;
+    room?: { name?: string; sid?: string };
+    participant?: { sid?: string; identity?: string; name?: string; metadata?: string };
+  }) => Promise<void>;
 }
 
 function sessionIdFromRoomName(roomName: string): string | undefined {
@@ -35,6 +42,7 @@ export function mountLiveKitWebhook(
             ? req.body.toString("utf8")
             : JSON.stringify(req.body ?? {});
       const event = await receiver.receive(body, authHeader);
+      await options.onVerifiedEvent?.(event);
       const livekitRoom = event.room?.name ?? "";
       const sessionId = livekitRoom
         ? sessionIdFromRoomName(livekitRoom)

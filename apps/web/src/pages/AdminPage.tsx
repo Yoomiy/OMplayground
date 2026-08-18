@@ -17,6 +17,7 @@ import { kidFieldInputClass, kidFieldLabelClass } from "@/lib/fieldStyles";
 import { cn } from "@/lib/cn";
 import { AdminStatsSection } from "@/components/AdminStatsSection";
 import { AdminFeedbackSection } from "@/components/AdminFeedbackSection";
+import { ClassroomAdminExplorer } from "@/components/ClassroomAdminExplorer";
 
 function parseGradeInput(raw: string): string {
   const clean = raw.trim().replace(/['"]+/g, "");
@@ -671,7 +672,7 @@ export function AdminPage() {
       </nav>
 
       {activeSection === "classrooms" ? (
-        <AdminClassroomSection />
+        <ClassroomAdminExplorer />
       ) : null}
 
       {activeSection === "moderation" ? (
