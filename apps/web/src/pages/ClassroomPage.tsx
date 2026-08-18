@@ -2017,13 +2017,15 @@ export function ClassroomPage() {
                   )}
 
                   {isHost && hasPresentationPane && showBoard && (
+                    // The presentation is the first flex item in the RTL stage, so it occupies
+                    // `stageSplitPercent` from the physical right edge.
                     <div
                       role="separator"
                       aria-label="שנה את גודל המצגת ביחס ללוח"
                       aria-orientation="vertical"
                       onPointerDown={beginStageResize}
                       className="absolute inset-y-0 z-40 w-2 -translate-x-1/2 cursor-col-resize bg-transparent hover:bg-fuchsia-400/70 active:bg-fuchsia-300"
-                      style={{ right: `${100 - stageSplitPercent}%` }}
+                      style={{ right: `${stageSplitPercent}%` }}
                     />
                   )}
 
