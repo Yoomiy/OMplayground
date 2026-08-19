@@ -52,6 +52,7 @@ export interface DrawingCanvasProps {
 export interface DrawingCanvasRef {
   exportPNG: () => Promise<void>;
   clearCanvas: () => void;
+  insertImage: (source: Blob, title?: string) => Promise<boolean>;
 }
 
 export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
@@ -573,8 +574,82 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
         console.error("Export failed", err);
         showToast("ייצוא הקובץ נכשל");
       }
+    },
+    insertImage: async (source: Blob, title?: string) => {
+      if (!excalidrawAPI || mySeat === null || !serverSyncReadyRef.current) {
+        showToast("לוח השרטוט עדיין אינו מוכן להוספת העמוד");
+        return false;
+      }
+      const currentElements = excalidrawAPI.getSceneElements();
+      const imageCount = currentElements.filter((element: any) => element.type === "image" && !element.isDeleted).length;
+      if (imageCount >= MAX_IMAGES_PER_BOARD) {
+        showToast(`הגעת למגבלת התמונות בלוח (מקסימום ${MAX_IMAGES_PER_BOARD})`);
+        return false;
+      }
+      try {
+        const originalDataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("image_read_failed"));
+          reader.onerror = () => reject(reader.error ?? new Error("image_read_failed"));
+          reader.readAsDataURL(source);
+        });
+        const dataURL = await prepareImageForBoard(originalDataUrl);
+        if (!dataURL) {
+          showToast("לא ניתן להוסיף את העמוד: התמונה גדולה מדי עבור הלוח");
+          return false;
+        }
+        const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const next = new Image();
+          next.onload = () => resolve(next);
+          next.onerror = () => reject(new Error("image_decode_failed"));
+          next.src = dataURL;
+        });
+        const appState = excalidrawAPI.getAppState();
+        const { convertToExcalidrawElements, viewportCoordsToSceneCoords } = await import("@excalidraw/excalidraw");
+        const center = viewportCoordsToSceneCoords({
+          clientX: appState.offsetLeft + appState.width / 2,
+          clientY: appState.offsetTop + appState.height / 2
+        }, appState);
+        const visibleWidth = appState.width / appState.zoom.value;
+        const visibleHeight = appState.height / appState.zoom.value;
+        const scale = Math.min(
+          1,
+          (visibleWidth * 0.75) / image.naturalWidth,
+          (visibleHeight * 0.75) / image.naturalHeight
+        );
+        const width = Math.max(1, Math.round(image.naturalWidth * scale));
+        const height = Math.max(1, Math.round(image.naturalHeight * scale));
+        const fileId = crypto.randomUUID();
+        const [element] = convertToExcalidrawElements([{
+          type: "image",
+          x: center.x - width / 2,
+          y: center.y - height / 2,
+          width,
+          height,
+          fileId: fileId as any,
+          status: "saved"
+        }], { regenerateIds: true });
+        const mimeType = dataURL.slice(5, dataURL.indexOf(";"));
+        excalidrawAPI.addFiles([{
+          id: fileId,
+          dataURL,
+          mimeType,
+          created: Date.now()
+        }]);
+        excalidrawAPI.updateScene({
+          elements: [...currentElements, element],
+          appState: { selectedElementIds: { [element.id]: true } },
+          commitToHistory: true
+        });
+        showToast(title ? `העמוד „${title}” נוסף ללוח` : "העמוד נוסף ללוח");
+        return true;
+      } catch (error) {
+        console.error("Whiteboard image insertion failed", error);
+        showToast("לא ניתן להוסיף את העמוד ללוח השרטוט");
+        return false;
+      }
     }
-  }), [excalidrawAPI, localMode, showToast, yjsSession]);
+  }), [excalidrawAPI, localMode, mySeat, showToast, yjsSession]);
 
   // Handle pointer update from Excalidraw component
   const handlePointerUpdate = useCallback(

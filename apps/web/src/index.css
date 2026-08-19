@@ -90,5 +90,49 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none; /* Chrome, Safari and Opera */
   }
-}
 
+  .presentation-page-navigator {
+    width: 18px;
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+    cursor: ns-resize;
+  }
+
+  .presentation-page-navigator::-webkit-slider-runnable-track {
+    width: 4px;
+    border-radius: 9999px;
+    background: rgba(148, 163, 184, 0.38);
+  }
+
+  .presentation-page-navigator::-webkit-slider-thumb {
+    width: 14px;
+    height: 28px;
+    margin-left: -5px;
+    appearance: none;
+    -webkit-appearance: none;
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    border-radius: 9999px;
+    background: #d946ef;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  }
+
+  .presentation-page-navigator::-moz-range-track {
+    width: 4px;
+    border-radius: 9999px;
+    background: rgba(148, 163, 184, 0.38);
+  }
+
+  .presentation-page-navigator::-moz-range-progress {
+    background: transparent;
+  }
+
+  .presentation-page-navigator::-moz-range-thumb {
+    width: 14px;
+    height: 28px;
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    border-radius: 9999px;
+    background: #d946ef;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  }
+}

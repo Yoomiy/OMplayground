@@ -9,7 +9,7 @@ import { supabase } from "@/lib/supabase";
 import { getVoxelServerUrl } from "@/lib/voxelServerUrl";
 import { reportTelemetry } from "@/utils/telemetry";
 import { getCorrelationId } from "@/utils/correlation";
-import { DrawingBoard } from "@/games/drawing/DrawingBoard";
+import { DrawingBoard, type DrawingBoardHandle } from "@/games/drawing/DrawingBoard";
 import {
   ClassroomPresentationPublisher,
   type ClassroomMediaUploadStatus,
@@ -228,6 +228,7 @@ export function ClassroomPage() {
   const presenterIdentityRef = useRef<string | null>(null);
   const presenterEpochRef = useRef(0);
   const presentationPublisherRef = useRef<ClassroomPresentationPublisherHandle>(null);
+  const drawingBoardRef = useRef<DrawingBoardHandle>(null);
   const presenterTokenRef = useRef<string | null>(null);
   const [stageSplitPercent, setStageSplitPercent] = useState(60);
 
@@ -1403,6 +1404,14 @@ export function ClassroomPage() {
     await room.localParticipant.publishData(new TextEncoder().encode(payload), { reliable: true });
   };
 
+  const sendPresentationPageToWhiteboard = useCallback(async (page: Blob, title: string) => {
+    if (!showBoard && isHost) {
+      await toggleBoardVisibility();
+      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    }
+    return await drawingBoardRef.current?.insertImage(page, title) ?? false;
+  }, [isHost, showBoard, toggleBoardVisibility]);
+
   const toggleMediaBoardVisibility = async () => {
     if (!isHost || !presenterIdentity) return;
     if (!presentationActive && screenShareParticipant) {
@@ -1985,6 +1994,12 @@ export function ClassroomPage() {
                       classroomRequest={classroomRequest}
                       onPresentationChange={handleLocalPresentationChange}
                       onUploadStatus={setMediaUploadStatus}
+                      canSendToWhiteboard={drawSocketReady && (
+                        showBoard
+                          ? isHost || roomSettings.allowWhiteboardDraw
+                          : isHost && (canManageClassroom || isDelegatedHost)
+                      )}
+                      onSendPageToWhiteboard={sendPresentationPageToWhiteboard}
                       onRequestHidden={requestMediaHidden}
                       onError={setConnError}
                       showBoard={showBoard}
@@ -2062,6 +2077,7 @@ export function ClassroomPage() {
                   >
                     {drawSocketReady ? (
                       <DrawingBoard
+                        ref={drawingBoardRef}
                         gameState={whiteboardState}
                         mode={{
                           kind: "canonical",

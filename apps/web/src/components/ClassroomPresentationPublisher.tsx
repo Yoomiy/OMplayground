@@ -11,6 +11,7 @@ import {
   Music,
   Presentation,
   RotateCcw,
+  Send,
   Trash2,
   Upload,
   Video,
@@ -32,6 +33,17 @@ import {
   type ClassroomMediaKind,
   type DocumentSourceFormat
 } from "@/lib/classroomMediaLibrary";
+import {
+  clampDocumentScroll,
+  clampPresentationViewport,
+  documentPageAt,
+  presentationFitHeightZoom,
+  presentationFitWidthZoom,
+  scrollDocumentByPixels,
+  zoomPresentationAt,
+  type PresentationSurfaceDimensions,
+  type PresentationViewport
+} from "./presentationViewport";
 
 interface PresentationSnapshot {
   ready: boolean;
@@ -57,6 +69,8 @@ interface Props {
   classroomRequest: (path: string, body: Record<string, unknown>) => Promise<Response>;
   onPresentationChange: (snapshot: PresentationSnapshot) => void;
   onUploadStatus: (status: ClassroomMediaUploadStatus) => void;
+  canSendToWhiteboard: boolean;
+  onSendPageToWhiteboard: (page: Blob, title: string) => Promise<boolean>;
   onRequestHidden: () => void;
   onError: (message: string) => void;
   showBoard: boolean;
@@ -68,9 +82,11 @@ export interface ClassroomPresentationPublisherHandle {
 }
 
 interface RuntimeDocument {
+  materialId: string;
   reader: ZipReader<Blob>;
   entries: Map<string, Entry>;
-  pageUrl: string | null;
+  pages: Map<number, { image: HTMLImageElement; blob: Blob; url: string; lastUsed: number }>;
+  loadingPages: Map<number, Promise<void>>;
 }
 
 const VIDEO_PUBLISH_OPTIONS = {
@@ -94,6 +110,9 @@ const DOCUMENT_WIDTH = 2560;
 const DOCUMENT_HEIGHT = 1440;
 const VIDEO_WIDTH = 1920;
 const VIDEO_HEIGHT = 1080;
+const DOCUMENT_CELL_SCALE = 0.9;
+const DOCUMENT_PAGE_GAP = 36;
+const DOCUMENT_CACHE_SIZE = 7;
 
 function materialKind(file: File): { kind: ClassroomMediaKind; sourceFormat?: DocumentSourceFormat } | null {
   const name = file.name.toLowerCase();
@@ -166,6 +185,62 @@ function drawContained(
   );
 }
 
+function documentStride(zoom: number) {
+  return (DOCUMENT_HEIGHT * DOCUMENT_CELL_SCALE + DOCUMENT_PAGE_GAP) * zoom;
+}
+
+function drawDocumentStrip(
+  context: CanvasRenderingContext2D,
+  runtime: RuntimeDocument,
+  pageCount: number,
+  viewport: PresentationViewport,
+  scrollPosition: number
+) {
+  const canvas = context.canvas;
+  const cellWidth = canvas.width * DOCUMENT_CELL_SCALE;
+  const cellHeight = canvas.height * DOCUMENT_CELL_SCALE;
+  const stride = documentStride(viewport.zoom);
+  context.fillStyle = "#020617";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  const first = Math.max(0, Math.floor(scrollPosition) - 2);
+  const last = Math.min(pageCount - 1, Math.ceil(scrollPosition) + 2);
+  for (let index = first; index <= last; index += 1) {
+    const centerY = canvas.height / 2 + (index - scrollPosition) * stride;
+    const cached = runtime.pages.get(index + 1);
+    if (!cached) {
+      const placeholderWidth = cellWidth * viewport.zoom;
+      const placeholderHeight = cellHeight * viewport.zoom;
+      context.fillStyle = "#111827";
+      context.fillRect(
+        (canvas.width - placeholderWidth) / 2 + viewport.panX,
+        centerY - placeholderHeight / 2,
+        placeholderWidth,
+        placeholderHeight
+      );
+      context.fillStyle = "#94a3b8";
+      context.font = "bold 34px sans-serif";
+      context.textAlign = "center";
+      context.fillText(`טוען עמוד ${index + 1}…`, canvas.width / 2 + viewport.panX, centerY);
+      continue;
+    }
+    cached.lastUsed = performance.now();
+    const scale = Math.min(cellWidth / cached.image.naturalWidth, cellHeight / cached.image.naturalHeight) * viewport.zoom;
+    const width = cached.image.naturalWidth * scale;
+    const height = cached.image.naturalHeight * scale;
+    const x = (canvas.width - width) / 2 + viewport.panX;
+    const y = centerY - height / 2;
+    context.save();
+    context.shadowColor = "rgba(0,0,0,0.45)";
+    context.shadowBlur = 22;
+    context.shadowOffsetY = 8;
+    context.fillStyle = "#ffffff";
+    context.fillRect(x, y, width, height);
+    context.shadowColor = "transparent";
+    context.drawImage(cached.image, x, y, width, height);
+    context.restore();
+  }
+}
+
 async function imageFromBlob(blob: Blob): Promise<HTMLImageElement> {
   const url = URL.createObjectURL(blob);
   const image = new Image();
@@ -226,6 +301,8 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
   classroomRequest,
   onPresentationChange,
   onUploadStatus,
+  canSendToWhiteboard,
+  onSendPageToWhiteboard,
   onRequestHidden,
   onError,
   showBoard,
@@ -238,6 +315,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
   const mediaRef = useRef<HTMLMediaElement | null>(null);
   const objectUrlRef = useRef<string | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
+  const imageMaterialIdRef = useRef<string | null>(null);
   const documentRef = useRef<RuntimeDocument | null>(null);
   const animationRef = useRef<number | null>(null);
   const staticFrameTimerRef = useRef<number | null>(null);
@@ -249,7 +327,18 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
     destination: MediaStreamAudioDestinationNode;
   } | null>(null);
   const laserRef = useRef<{ x: number; y: number } | null>(null);
-  const panStartRef = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
+  const activePointersRef = useRef(new Map<number, { x: number; y: number }>());
+  const dragRef = useRef<{ x: number; y: number; at: number; velocityX: number; velocityY: number } | null>(null);
+  const pinchRef = useRef<{ distance: number; midpointX: number; midpointY: number } | null>(null);
+  const viewportAnimationRef = useRef<number | null>(null);
+  const viewportAnimationTimeRef = useRef<number | null>(null);
+  const viewportCurrentRef = useRef<PresentationViewport>({ zoom: 1, panX: 0, panY: 0 });
+  const viewportTargetRef = useRef<PresentationViewport>({ zoom: 1, panX: 0, panY: 0 });
+  const viewportVelocityRef = useRef({ x: 0, y: 0, scroll: 0 });
+  const documentScrollCurrentRef = useRef(0);
+  const documentScrollTargetRef = useRef(0);
+  const preloadDocumentWindowRef = useRef<(material: ClassroomMaterialRecord, position: number) => void>(() => {});
+  const reducedMotionRef = useRef(false);
   const persistMaterialTimerRef = useRef<number | null>(null);
   const preparingRef = useRef(false);
   const publishingRef = useRef(false);
@@ -262,6 +351,10 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
   const [cacheWarning, setCacheWarning] = useState<string | null>(null);
   const [renderRevision, setRenderRevision] = useState(0);
   const [libraryReady, setLibraryReady] = useState(false);
+  const [viewportUi, setViewportUi] = useState<PresentationViewport>({ zoom: 1, panX: 0, panY: 0 });
+  const [documentPageUi, setDocumentPageUi] = useState(1);
+  const [documentScrollUi, setDocumentScrollUi] = useState(0);
+  const [isSendingToWhiteboard, setIsSendingToWhiteboard] = useState(false);
 
   useImperativeHandle(ref, () => ({
     openMaterialPicker: () => {
@@ -273,6 +366,34 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
   const selectedRef = useRef<ClassroomMaterialRecord | null>(null);
   selectedRef.current = selected;
   const width = showBoard ? `${presentationPercent}%` : "100%";
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => { reducedMotionRef.current = mediaQuery.matches; };
+    update();
+    mediaQuery.addEventListener?.("change", update);
+    return () => mediaQuery.removeEventListener?.("change", update);
+  }, []);
+
+  useEffect(() => {
+    if (!selected) return;
+    const viewport = {
+      zoom: selected.state.zoom,
+      panX: selected.state.panX,
+      panY: selected.state.panY
+    };
+    viewportCurrentRef.current = viewport;
+    viewportTargetRef.current = viewport;
+    viewportVelocityRef.current = { x: 0, y: 0, scroll: 0 };
+    const documentScroll = Number.isFinite(selected.state.documentScroll)
+      ? selected.state.documentScroll
+      : Math.max(0, selected.state.page - 1);
+    documentScrollCurrentRef.current = documentScroll;
+    documentScrollTargetRef.current = documentScroll;
+    setDocumentPageUi(Math.round(documentScroll) + 1);
+    setDocumentScrollUi(documentScroll);
+    setViewportUi(viewport);
+  }, [selected?.id]);
 
   const persistLibraryState = useCallback((nextSelectedId: string | null, desiredVisible: boolean) => {
     void saveClassroomLibraryState({
@@ -349,6 +470,9 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
   const disposeRuntime = useCallback(async (retireMediaElement = false) => {
     if (animationRef.current !== null) cancelAnimationFrame(animationRef.current);
     animationRef.current = null;
+    if (viewportAnimationRef.current !== null) cancelAnimationFrame(viewportAnimationRef.current);
+    viewportAnimationRef.current = null;
+    viewportAnimationTimeRef.current = null;
     await removePublishedTracks(true);
     const media = mediaRef.current;
     media?.pause();
@@ -358,7 +482,8 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
     objectUrlRef.current = null;
     if (imageRef.current?.src.startsWith("blob:")) URL.revokeObjectURL(imageRef.current.src);
     imageRef.current = null;
-    if (documentRef.current?.pageUrl) URL.revokeObjectURL(documentRef.current.pageUrl);
+    imageMaterialIdRef.current = null;
+    for (const page of documentRef.current?.pages.values() ?? []) URL.revokeObjectURL(page.url);
     await documentRef.current?.reader.close().catch(() => {});
     documentRef.current = null;
     const audioGraph = audioGraphRef.current;
@@ -369,13 +494,58 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
     laserRef.current = null;
   }, [removePublishedTracks]);
 
+  const presentationDimensions = useCallback((): PresentationSurfaceDimensions | null => {
+    const canvas = displayCanvasRef.current;
+    const material = selectedRef.current;
+    if (canvas && material?.kind === "document") {
+      const runtime = documentRef.current;
+      if (!runtime || runtime.materialId !== material.id || !material.documentManifest) return null;
+      const pageNumber = documentPageAt(documentScrollCurrentRef.current, material.documentManifest.pageCount);
+      const page = runtime.pages.get(pageNumber);
+      if (!page) return null;
+      const contentWidth = page.image.naturalWidth;
+      const contentHeight = page.image.naturalHeight;
+      return {
+        canvasWidth: canvas.width,
+        canvasHeight: canvas.height,
+        contentWidth,
+        contentHeight,
+        baseScale: Math.min(
+          (canvas.width * DOCUMENT_CELL_SCALE) / contentWidth,
+          (canvas.height * DOCUMENT_CELL_SCALE) / contentHeight
+        )
+      };
+    }
+    const image = imageRef.current;
+    if (!canvas || material?.kind !== "image" || imageMaterialIdRef.current !== material.id || !image || !image.naturalWidth || !image.naturalHeight) return null;
+    return {
+      canvasWidth: canvas.width,
+      canvasHeight: canvas.height,
+      contentWidth: image.naturalWidth,
+      contentHeight: image.naturalHeight
+    };
+  }, []);
+
   const renderVisual = useCallback(() => {
     const canvas = displayCanvasRef.current;
     const context = canvas?.getContext("2d");
     const material = selectedRef.current;
     if (!canvas || !context || !material) return;
     const image = imageRef.current;
-    if (image) drawContained(context, image, image.naturalWidth, image.naturalHeight, material.state);
+    if (material.kind === "document" && material.documentManifest && documentRef.current?.materialId === material.id) {
+      drawDocumentStrip(
+        context,
+        documentRef.current,
+        material.documentManifest.pageCount,
+        viewportCurrentRef.current,
+        documentScrollCurrentRef.current
+      );
+    } else if (material.kind === "image" && imageMaterialIdRef.current === material.id && image) {
+      drawContained(context, image, image.naturalWidth, image.naturalHeight, {
+        ...material.state,
+        ...viewportCurrentRef.current
+      });
+    }
     if (laserRef.current) {
       const gradient = context.createRadialGradient(laserRef.current.x, laserRef.current.y, 2, laserRef.current.x, laserRef.current.y, 24);
       gradient.addColorStop(0, "rgba(255,255,255,1)");
@@ -394,6 +564,127 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
     }
   }, []);
 
+  const startViewportAnimation = useCallback(() => {
+    if (viewportAnimationRef.current !== null) return;
+    const tick = (now: number) => {
+      const dimensions = presentationDimensions();
+      if (!dimensions) {
+        viewportAnimationRef.current = null;
+        viewportAnimationTimeRef.current = null;
+        return;
+      }
+      const previousAt = viewportAnimationTimeRef.current ?? now;
+      const elapsed = Math.min(32, Math.max(0, now - previousAt));
+      viewportAnimationTimeRef.current = now;
+      const velocity = viewportVelocityRef.current;
+      const material = selectedRef.current;
+      const documentManifest = material?.kind === "document" ? material.documentManifest : undefined;
+      const isDocument = Boolean(documentManifest);
+      if (Math.abs(velocity.x) > 0.01 || Math.abs(velocity.y) > 0.01 || Math.abs(velocity.scroll) > 0.00001) {
+        const before = viewportTargetRef.current;
+        const moved = clampPresentationViewport({
+          ...before,
+          panX: before.panX + velocity.x * elapsed,
+          panY: isDocument ? 0 : before.panY + velocity.y * elapsed
+        }, dimensions);
+        if (moved.panX === before.panX) velocity.x = 0;
+        if (moved.panY === before.panY) velocity.y = 0;
+        viewportTargetRef.current = moved;
+        const damping = Math.exp(-elapsed / 170);
+        velocity.x *= damping;
+        velocity.y *= damping;
+        if (isDocument) {
+          const maxPosition = documentManifest!.pageCount - 1;
+          const beforeScroll = documentScrollTargetRef.current;
+          const nextScroll = clampDocumentScroll(beforeScroll + velocity.scroll * elapsed, maxPosition + 1);
+          if (nextScroll === beforeScroll) velocity.scroll = 0;
+          documentScrollTargetRef.current = nextScroll;
+          velocity.scroll *= damping;
+          setDocumentPageUi(documentPageAt(nextScroll, maxPosition + 1));
+          setDocumentScrollUi(nextScroll);
+          preloadDocumentWindowRef.current(material!, nextScroll);
+        } else {
+          velocity.scroll = 0;
+        }
+        setViewportUi(moved);
+      }
+
+      const target = viewportTargetRef.current;
+      const current = viewportCurrentRef.current;
+      const ease = reducedMotionRef.current ? 1 : 1 - Math.exp(-elapsed / 75);
+      const next = {
+        zoom: current.zoom + (target.zoom - current.zoom) * ease,
+        panX: current.panX + (target.panX - current.panX) * ease,
+        panY: current.panY + (target.panY - current.panY) * ease
+      };
+      viewportCurrentRef.current = next;
+      const scrollTarget = documentScrollTargetRef.current;
+      const scrollCurrent = documentScrollCurrentRef.current;
+      documentScrollCurrentRef.current = scrollCurrent + (scrollTarget - scrollCurrent) * ease;
+      renderVisual();
+
+      const settled = Math.abs(target.zoom - next.zoom) < 0.0005
+        && Math.abs(target.panX - next.panX) < 0.25
+        && Math.abs(target.panY - next.panY) < 0.25
+        && Math.abs(scrollTarget - documentScrollCurrentRef.current) < 0.0005
+        && Math.abs(velocity.x) < 0.01
+        && Math.abs(velocity.y) < 0.01
+        && Math.abs(velocity.scroll) < 0.00001;
+      if (settled) {
+        viewportCurrentRef.current = target;
+        documentScrollCurrentRef.current = scrollTarget;
+        viewportVelocityRef.current = { x: 0, y: 0, scroll: 0 };
+        viewportAnimationRef.current = null;
+        viewportAnimationTimeRef.current = null;
+        renderVisual();
+        updateSelectedState({
+          ...target,
+          ...(isDocument ? { documentScroll: scrollTarget, page: documentPageAt(scrollTarget, documentManifest!.pageCount) } : {})
+        });
+        return;
+      }
+      viewportAnimationRef.current = requestAnimationFrame(tick);
+    };
+    viewportAnimationRef.current = requestAnimationFrame(tick);
+  }, [presentationDimensions, renderVisual, updateSelectedState]);
+
+  const setViewportTarget = useCallback((viewport: PresentationViewport, immediate = false) => {
+    const dimensions = presentationDimensions();
+    if (!dimensions) return;
+    const next = clampPresentationViewport({
+      ...viewport,
+      panY: selectedRef.current?.kind === "document" ? 0 : viewport.panY
+    }, dimensions);
+    viewportTargetRef.current = next;
+    setViewportUi(next);
+    if (immediate || reducedMotionRef.current) {
+      viewportCurrentRef.current = next;
+      viewportVelocityRef.current = { x: 0, y: 0, scroll: 0 };
+      renderVisual();
+      updateSelectedState(next);
+      return;
+    }
+    startViewportAnimation();
+  }, [presentationDimensions, renderVisual, startViewportAnimation, updateSelectedState]);
+
+  const setDocumentScrollTarget = useCallback((position: number, immediate = false) => {
+    const material = selectedRef.current;
+    if (material?.kind !== "document" || !material.documentManifest) return;
+    const next = clampDocumentScroll(position, material.documentManifest.pageCount);
+    documentScrollTargetRef.current = next;
+    setDocumentPageUi(documentPageAt(next, material.documentManifest.pageCount));
+    setDocumentScrollUi(next);
+    preloadDocumentWindowRef.current(material, next);
+    if (immediate || reducedMotionRef.current) {
+      documentScrollCurrentRef.current = next;
+      viewportVelocityRef.current.scroll = 0;
+      renderVisual();
+      updateSelectedState({ documentScroll: next, page: documentPageAt(next, material.documentManifest.pageCount) });
+      return;
+    }
+    startViewportAnimation();
+  }, [renderVisual, startViewportAnimation, updateSelectedState]);
+
   const startStaticFrameHeartbeat = useCallback((track: MediaStreamTrack | undefined) => {
     if (staticFrameTimerRef.current !== null) window.clearInterval(staticFrameTimerRef.current);
     const pushFrame = () => {
@@ -404,21 +695,51 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
     staticFrameTimerRef.current = window.setInterval(pushFrame, 750);
   }, [renderVisual]);
 
-  const loadDocumentPage = useCallback(async (material: ClassroomMaterialRecord, runtime: RuntimeDocument) => {
+  const loadDocumentPage = useCallback(async (material: ClassroomMaterialRecord, runtime: RuntimeDocument, page: number) => {
     const manifest = material.documentManifest;
     if (!manifest) throw new Error("document_manifest_missing");
-    const page = Math.max(1, Math.min(manifest.pageCount, material.state.page));
+    page = Math.max(1, Math.min(manifest.pageCount, page));
+    if (runtime.pages.has(page)) {
+      runtime.pages.get(page)!.lastUsed = performance.now();
+      return;
+    }
+    const existingLoad = runtime.loadingPages.get(page);
+    if (existingLoad) return existingLoad;
     const entry = runtime.entries.get(manifest.pages[page - 1]);
     if (!entry || entry.directory) throw new Error("document_page_missing");
-    const blob = await entry.getData(new BlobWriter(manifest.mimeType));
-    if (runtime.pageUrl) URL.revokeObjectURL(runtime.pageUrl);
-    const image = await imageFromBlob(blob);
-    runtime.pageUrl = image.src;
-    if (imageRef.current?.src.startsWith("blob:")) URL.revokeObjectURL(imageRef.current.src);
-    imageRef.current = image;
-    await nextFrame();
-    renderVisual();
-  }, [renderVisual]);
+    const loading = (async () => {
+      const blob = await entry.getData(new BlobWriter(manifest.mimeType));
+      const image = await imageFromBlob(blob);
+      if (documentRef.current !== runtime) {
+        URL.revokeObjectURL(image.src);
+        return;
+      }
+      runtime.pages.set(page, { image, blob, url: image.src, lastUsed: performance.now() });
+      while (runtime.pages.size > DOCUMENT_CACHE_SIZE) {
+        const center = documentScrollTargetRef.current + 1;
+        const removable = [...runtime.pages.entries()]
+          .filter(([candidate]) => Math.abs(candidate - center) > 2)
+          .sort((left, right) => left[1].lastUsed - right[1].lastUsed)[0];
+        if (!removable) break;
+        URL.revokeObjectURL(removable[1].url);
+        runtime.pages.delete(removable[0]);
+      }
+      setRenderRevision((value) => value + 1);
+    })().finally(() => runtime.loadingPages.delete(page));
+    runtime.loadingPages.set(page, loading);
+    return loading;
+  }, []);
+
+  const preloadDocumentWindow = useCallback((material: ClassroomMaterialRecord, position: number) => {
+    const runtime = documentRef.current;
+    const manifest = material.documentManifest;
+    if (!runtime || runtime.materialId !== material.id || !manifest) return;
+    const center = Math.round(position) + 1;
+    for (let page = Math.max(1, center - 2); page <= Math.min(manifest.pageCount, center + 2); page += 1) {
+      void loadDocumentPage(material, runtime, page).catch(() => {});
+    }
+  }, [loadDocumentPage]);
+  preloadDocumentWindowRef.current = preloadDocumentWindow;
 
   const prepareSelected = useCallback(async (material: ClassroomMaterialRecord) => {
     await disposeRuntime();
@@ -437,11 +758,36 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
     if (material.kind === "document") {
       const reader = new ZipReader(new BlobReader(material.source));
       const entries = await reader.getEntries();
-      const runtime = { reader, entries: new Map(entries.map((entry) => [entry.filename, entry])), pageUrl: null };
+      if (selectedRef.current?.id !== material.id) {
+        await reader.close().catch(() => {});
+        return;
+      }
+      const runtime: RuntimeDocument = {
+        materialId: material.id,
+        reader,
+        entries: new Map(entries.map((entry) => [entry.filename, entry])),
+        pages: new Map(),
+        loadingPages: new Map()
+      };
       documentRef.current = runtime;
-      await loadDocumentPage(material, runtime);
+      const position = Number.isFinite(material.state.documentScroll)
+        ? Math.max(0, Math.min((material.documentManifest?.pageCount ?? 1) - 1, material.state.documentScroll))
+        : Math.max(0, material.state.page - 1);
+      documentScrollCurrentRef.current = position;
+      documentScrollTargetRef.current = position;
+      setDocumentPageUi(Math.round(position) + 1);
+      setDocumentScrollUi(position);
+      await loadDocumentPage(material, runtime, Math.round(position) + 1);
+      preloadDocumentWindow(material, position);
+      renderVisual();
     } else if (material.kind === "image") {
-      imageRef.current = await imageFromBlob(material.source);
+      const image = await imageFromBlob(material.source);
+      if (selectedRef.current?.id !== material.id) {
+        URL.revokeObjectURL(image.src);
+        return;
+      }
+      imageRef.current = image;
+      imageMaterialIdRef.current = material.id;
       renderVisual();
     } else {
       const media = mediaRef.current;
@@ -458,7 +804,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
       media.currentTime = Math.min(material.state.currentTime, Number.isFinite(media.duration) ? media.duration : material.state.currentTime);
     }
     setRenderRevision((value) => value + 1);
-  }, [disposeRuntime, loadDocumentPage, renderVisual]);
+  }, [disposeRuntime, loadDocumentPage, preloadDocumentWindow, renderVisual]);
 
   useEffect(() => {
     if (!selected || !canPresent || !visible) return;
@@ -478,12 +824,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
   }, [canPresent, onError, prepareSelected, selected?.id, visible]);
 
   useEffect(() => {
-    if (!selected || selected.kind !== "document" || !documentRef.current || !canPresent) return;
-    void loadDocumentPage(selected, documentRef.current).catch(() => onError("לא ניתן להציג את העמוד שנבחר."));
-  }, [canPresent, loadDocumentPage, onError, selected?.state.page]);
-
-  useEffect(() => {
-    if ((selected?.kind === "document" || selected?.kind === "image") && imageRef.current) renderVisual();
+    if (selected?.kind === "document" || (selected?.kind === "image" && imageRef.current)) renderVisual();
   }, [renderRevision, renderVisual, selected?.state.zoom, selected?.state.panX, selected?.state.panY]);
 
   const sendPresentationState = useCallback(async (action: "started" | "hidden" | "stopped") => {
@@ -504,7 +845,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
 
   const publish = useCallback(async () => {
     const material = selectedRef.current;
-    if (!room || !material || !canPresent || isPreparing || preparingRef.current || isPublished || publishingRef.current) return;
+    if (!room || !material || !canPresent || preparingRef.current || isPublished || publishingRef.current) return;
     publishingRef.current = true;
     try {
     const publisher = publishCanvasRef.current;
@@ -594,11 +935,11 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
     } finally {
       publishingRef.current = false;
     }
-  }, [canPresent, isPreparing, isPublished, removePublishedTracks, renderVisual, room, sendPresentationState, startStaticFrameHeartbeat]);
+  }, [canPresent, isPublished, removePublishedTracks, renderVisual, room, sendPresentationState, startStaticFrameHeartbeat]);
 
   useEffect(() => {
     if (!canPresent || !selected) return;
-    if (visible && !isPublished && !isPreparing) {
+    if (visible && !isPublished) {
       void publish().catch((error) => {
         console.error("Classroom presentation publish failed", error);
         onError("לא ניתן לפרסם את לוח המדיה.");
@@ -611,7 +952,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
       }
       void removePublishedTracks(false).then(() => sendPresentationState("hidden").catch(() => {}));
     }
-  }, [canPresent, isPreparing, isPublished, onError, publish, removePublishedTracks, selected, sendPresentationState, updateSelectedState, visible]);
+  }, [canPresent, isPublished, onError, publish, removePublishedTracks, selected, sendPresentationState, updateSelectedState, visible]);
 
   useEffect(() => () => { void disposeRuntime(true); }, [disposeRuntime]);
 
@@ -773,22 +1114,230 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
 
   const changePage = (page: number) => {
     if (!selected?.documentManifest) return;
-    updateSelectedState({ page: Math.max(1, Math.min(selected.documentManifest.pageCount, page)), panX: 0, panY: 0 });
+    const nextPage = Math.max(1, Math.min(selected.documentManifest.pageCount, page));
+    viewportVelocityRef.current = { x: 0, y: 0, scroll: 0 };
+    setDocumentScrollTarget(nextPage - 1);
+  };
+
+  const pointOnCanvas = (canvas: HTMLCanvasElement, clientX: number, clientY: number) => {
+    const rect = canvas.getBoundingClientRect();
+    const scale = Math.min(rect.width / canvas.width, rect.height / canvas.height);
+    const renderedWidth = canvas.width * scale;
+    const renderedHeight = canvas.height * scale;
+    const left = rect.left + (rect.width - renderedWidth) / 2;
+    const top = rect.top + (rect.height - renderedHeight) / 2;
+    return {
+      x: Math.max(0, Math.min(canvas.width, ((clientX - left) / renderedWidth) * canvas.width)),
+      y: Math.max(0, Math.min(canvas.height, ((clientY - top) / renderedHeight) * canvas.height))
+    };
   };
 
   const handlePointerMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = event.currentTarget;
-    const rect = canvas.getBoundingClientRect();
-    const x = ((event.clientX - rect.left) / rect.width) * canvas.width;
-    const y = ((event.clientY - rect.top) / rect.height) * canvas.height;
+    const { x, y } = pointOnCanvas(canvas, event.clientX, event.clientY);
     if (laserMode) {
       laserRef.current = { x, y };
       renderVisual();
-    } else if (panStartRef.current) {
-      updateSelectedState({
-        panX: panStartRef.current.panX + x - panStartRef.current.x,
-        panY: panStartRef.current.panY + y - panStartRef.current.y
+      return;
+    }
+    if (!activePointersRef.current.has(event.pointerId)) return;
+    activePointersRef.current.set(event.pointerId, { x, y });
+    const pointers = [...activePointersRef.current.values()];
+    if (pointers.length >= 2) {
+      const [first, second] = pointers;
+      const distance = Math.hypot(second.x - first.x, second.y - first.y);
+      const midpointX = (first.x + second.x) / 2;
+      const midpointY = (first.y + second.y) / 2;
+      const previous = pinchRef.current;
+      if (previous && previous.distance > 0) {
+        const base = viewportTargetRef.current;
+        const isDocument = selected?.kind === "document";
+        const panned = {
+          ...base,
+          panX: base.panX + midpointX - previous.midpointX,
+          panY: isDocument ? 0 : base.panY + midpointY - previous.midpointY
+        };
+        const dimensions = presentationDimensions();
+        if (dimensions) {
+          const zoomed = zoomPresentationAt(
+            panned,
+            base.zoom * (distance / previous.distance),
+            midpointX,
+            midpointY,
+            dimensions
+          );
+          if (isDocument) {
+            const ratio = zoomed.zoom / base.zoom;
+            const anchoredScroll = documentScrollTargetRef.current
+              + ((midpointY - dimensions.canvasHeight / 2) * (ratio - 1)) / documentStride(zoomed.zoom)
+              - (midpointY - previous.midpointY) / documentStride(zoomed.zoom);
+            setDocumentScrollTarget(anchoredScroll);
+            setViewportTarget({ ...zoomed, panY: 0 });
+          } else {
+            setViewportTarget(zoomed);
+          }
+        }
+      }
+      pinchRef.current = { distance, midpointX, midpointY };
+      dragRef.current = null;
+      return;
+    }
+    const drag = dragRef.current;
+    if (drag) {
+      const now = performance.now();
+      const elapsed = Math.max(1, now - drag.at);
+      const deltaX = x - drag.x;
+      const deltaY = y - drag.y;
+      const isDocument = selected?.kind === "document";
+      setViewportTarget({
+        ...viewportTargetRef.current,
+        panX: viewportTargetRef.current.panX + deltaX,
+        panY: isDocument ? 0 : viewportTargetRef.current.panY + deltaY
       });
+      if (isDocument && selected.documentManifest) {
+        setDocumentScrollTarget(scrollDocumentByPixels(
+          documentScrollTargetRef.current,
+          -deltaY,
+          documentStride(viewportTargetRef.current.zoom),
+          selected.documentManifest.pageCount
+        ));
+      }
+      dragRef.current = {
+        x,
+        y,
+        at: now,
+        velocityX: drag.velocityX * 0.55 + (deltaX / elapsed) * 0.45,
+        velocityY: drag.velocityY * 0.55 + (deltaY / elapsed) * 0.45
+      };
+    }
+  };
+
+  const endPointerInteraction = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    activePointersRef.current.delete(event.pointerId);
+    if (activePointersRef.current.size === 0) {
+      const drag = dragRef.current;
+      if (drag) {
+        const isDocument = selected?.kind === "document";
+        viewportVelocityRef.current = {
+          x: Math.max(-3, Math.min(3, drag.velocityX)),
+          y: isDocument ? 0 : Math.max(-3, Math.min(3, drag.velocityY)),
+          scroll: isDocument
+            ? Math.max(-0.003, Math.min(0.003, -drag.velocityY / documentStride(viewportTargetRef.current.zoom)))
+            : 0
+        };
+        startViewportAnimation();
+      }
+      dragRef.current = null;
+      pinchRef.current = null;
+      return;
+    }
+    const remaining = [...activePointersRef.current.values()][0];
+    dragRef.current = { x: remaining.x, y: remaining.y, at: performance.now(), velocityX: 0, velocityY: 0 };
+    pinchRef.current = null;
+  };
+
+  const handleWheel = (event: React.WheelEvent<HTMLCanvasElement>) => {
+    const dimensions = presentationDimensions();
+    if (!dimensions) return;
+    event.preventDefault();
+    const multiplier = event.deltaMode === WheelEvent.DOM_DELTA_LINE
+      ? 16
+      : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
+        ? event.currentTarget.clientHeight
+        : 1;
+    const deltaX = event.deltaX * multiplier;
+    const deltaY = event.deltaY * multiplier;
+    if (event.ctrlKey || event.metaKey) {
+      const point = pointOnCanvas(event.currentTarget, event.clientX, event.clientY);
+      const factor = Math.exp(-deltaY * 0.002);
+      const before = viewportTargetRef.current;
+      const zoomed = zoomPresentationAt(
+        viewportTargetRef.current,
+        viewportTargetRef.current.zoom * factor,
+        point.x,
+        point.y,
+        dimensions
+      );
+      if (selected?.kind === "document") {
+        const ratio = zoomed.zoom / before.zoom;
+        setDocumentScrollTarget(documentScrollTargetRef.current
+          + ((point.y - dimensions.canvasHeight / 2) * (ratio - 1)) / documentStride(zoomed.zoom));
+        setViewportTarget({ ...zoomed, panY: 0 });
+      } else {
+        setViewportTarget(zoomed);
+      }
+      return;
+    }
+
+    const before = viewportTargetRef.current;
+    if (selected?.kind === "document") {
+      setViewportTarget({ ...before, panX: before.panX - deltaX, panY: 0 });
+      setDocumentScrollTarget(scrollDocumentByPixels(
+        documentScrollTargetRef.current,
+        deltaY,
+        documentStride(before.zoom),
+        selected.documentManifest?.pageCount ?? 1
+      ));
+      return;
+    }
+    const next = clampPresentationViewport({
+      ...before,
+      panX: before.panX - deltaX,
+      panY: before.panY - deltaY
+    }, dimensions);
+    setViewportTarget(next);
+  };
+
+  const zoomFromCenter = (factor: number) => {
+    const dimensions = presentationDimensions();
+    if (!dimensions) return;
+    setViewportTarget(zoomPresentationAt(
+      viewportTargetRef.current,
+      viewportTargetRef.current.zoom * factor,
+      dimensions.canvasWidth / 2,
+      dimensions.canvasHeight / 2,
+      dimensions
+    ));
+  };
+
+  const fitHeight = () => {
+    const dimensions = presentationDimensions();
+    if (!dimensions) return;
+    setViewportTarget({ zoom: presentationFitHeightZoom(dimensions), panX: 0, panY: 0 });
+  };
+
+  const fitWidth = () => {
+    const dimensions = presentationDimensions();
+    if (!dimensions) return;
+    setViewportTarget({ zoom: presentationFitWidthZoom(dimensions), panX: 0, panY: 0 });
+  };
+
+  const handlePresentationKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!visual || event.target instanceof HTMLInputElement || event.target instanceof HTMLButtonElement || event.target instanceof HTMLSelectElement || event.target instanceof HTMLTextAreaElement) return;
+    if (event.key === "+" || event.key === "=") zoomFromCenter(1.2);
+    else if (event.key === "-") zoomFromCenter(1 / 1.2);
+    else if (event.key === "0") fitHeight();
+    else if (selected?.kind === "document" && (event.key === "PageDown" || (event.key === " " && !event.shiftKey))) changePage(documentPageUi + 1);
+    else if (selected?.kind === "document" && (event.key === "PageUp" || (event.key === " " && event.shiftKey))) changePage(documentPageUi - 1);
+    else return;
+    event.preventDefault();
+  };
+
+  const sendCurrentPageToWhiteboard = async () => {
+    if (!selected || !canSendToWhiteboard || isSendingToWhiteboard) return;
+    const currentPage = selected.kind === "document" ? Math.round(documentScrollCurrentRef.current) + 1 : 1;
+    setIsSendingToWhiteboard(true);
+    try {
+      const runtime = documentRef.current;
+      if (selected.kind === "document" && runtime) await loadDocumentPage(selected, runtime, currentPage);
+      const page = selected.kind === "image" ? selected.source : runtime?.pages.get(currentPage)?.blob;
+      if (!page) {
+        onError("העמוד הנוכחי עדיין אינו מוכן לשליחה ללוח השרטוט.");
+        return;
+      }
+      await onSendPageToWhiteboard(page, selected.kind === "document" ? `${selected.title} — ${currentPage}` : selected.title);
+    } finally {
+      setIsSendingToWhiteboard(false);
     }
   };
 
@@ -820,23 +1369,20 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
           </div>}
         </div>
         {selected.kind === "document" && <>
-          <button onClick={() => changePage(selected.state.page - 1)} disabled={selected.state.page <= 1}><ChevronRight className="size-4" /></button>
-          <input type="number" min={1} max={selected.documentManifest?.pageCount} value={selected.state.page} onChange={(event) => changePage(Number(event.target.value))} className="w-12 rounded bg-slate-800 px-1 py-1 text-center" />
+          <button onClick={() => changePage(documentPageUi - 1)} disabled={documentPageUi <= 1}><ChevronRight className="size-4" /></button>
+          <input type="number" min={1} max={selected.documentManifest?.pageCount} value={documentPageUi} onChange={(event) => changePage(Number(event.target.value))} className="w-12 rounded bg-slate-800 px-1 py-1 text-center" />
           <span>/ {selected.documentManifest?.pageCount}</span>
-          <button onClick={() => changePage(selected.state.page + 1)} disabled={selected.state.page >= (selected.documentManifest?.pageCount ?? 1)}><ChevronLeft className="size-4" /></button>
+          <button onClick={() => changePage(documentPageUi + 1)} disabled={documentPageUi >= (selected.documentManifest?.pageCount ?? 1)}><ChevronLeft className="size-4" /></button>
         </>}
         {visual && <>
-          <button onClick={() => updateSelectedState({ zoom: Math.max(0.25, selected.state.zoom - 0.15) })} title="הקטן"><ZoomOut className="size-4" /></button>
-          <button onClick={() => updateSelectedState({ zoom: Math.min(8, selected.state.zoom + 0.15) })} title="הגדל"><ZoomIn className="size-4" /></button>
-          <button onClick={() => updateSelectedState({ zoom: 1, panX: 0, panY: 0 })} title="התאם עמוד">התאם עמוד</button>
-          <button onClick={() => {
-            const image = imageRef.current;
-            if (!image) return;
-            const baseScale = Math.min(DOCUMENT_WIDTH / image.naturalWidth, DOCUMENT_HEIGHT / image.naturalHeight);
-            updateSelectedState({ zoom: (DOCUMENT_WIDTH / image.naturalWidth) / baseScale, panX: 0, panY: 0 });
-          }} title="התאם רוחב">התאם רוחב</button>
-          <button onClick={() => updateSelectedState({ zoom: 1, panX: 0, panY: 0 })} title="איפוס"><RotateCcw className="size-4" /></button>
+          <button onClick={() => zoomFromCenter(1 / 1.2)} title="הקטן"><ZoomOut className="size-4" /></button>
+          <button onClick={fitHeight} className="min-w-12 rounded bg-slate-800 px-1 py-1 tabular-nums" title="התאם לגובה">{Math.round(viewportUi.zoom * 100)}%</button>
+          <button onClick={() => zoomFromCenter(1.2)} title="הגדל"><ZoomIn className="size-4" /></button>
+          <button onClick={fitHeight} title="התאם לגובה">התאם גובה</button>
+          <button onClick={fitWidth} title="התאם רוחב">התאם רוחב</button>
+          <button onClick={fitHeight} title="איפוס"><RotateCcw className="size-4" /></button>
           <button onClick={() => { setLaserMode((value) => !value); laserRef.current = null; renderVisual(); }} className={laserMode ? "rounded bg-rose-600 px-2 py-1" : "rounded bg-slate-800 px-2 py-1"}>לייזר</button>
+          {canSendToWhiteboard && <button onClick={() => void sendCurrentPageToWhiteboard()} disabled={isSendingToWhiteboard} className="rounded bg-indigo-700 px-2 py-1 text-indigo-50 disabled:cursor-wait disabled:opacity-60" title="שלח את העמוד המלא כתמונה ניתנת להזזה בלוח השרטוט"><Send className="inline size-3.5" /> {isSendingToWhiteboard ? "שולח…" : "שלח ללוח"}</button>}
         </>}
         <button onClick={() => document.fullscreenElement ? void document.exitFullscreen() : void surfaceRef.current?.requestFullscreen()} title="מסך מלא"><Maximize2 className="size-4" /></button>
         <button onClick={() => void removeSelected()} title="הסר חומר" className="text-rose-300"><Trash2 className="size-4" /></button>
@@ -847,28 +1393,75 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
       {selected ? <>
         {cacheWarning && <div className="bg-amber-950 px-3 py-1 text-xs text-amber-100">{cacheWarning}</div>}
         {selected.documentManifest?.warning && <div className="bg-amber-950 px-3 py-1 text-xs text-amber-100">ייתכן שחלק מהגופנים או התוכן העשיר הוחלפו בזמן ההמרה.</div>}
-        <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-black">
+        <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-black outline-none" tabIndex={visual ? 0 : -1} onKeyDown={handlePresentationKeyDown} aria-label={visual ? "אזור תצוגת מצגת. ניתן לגרור, לגלול ולהשתמש בקיצורי מקלדת." : undefined}>
         {visual && <canvas
           ref={displayCanvasRef}
-          className={`h-full w-full object-contain ${laserMode ? "cursor-crosshair" : selected.state.zoom > 1 ? "cursor-grab" : ""}`}
+          className={`h-full w-full touch-none object-contain ${laserMode ? "cursor-none" : viewportUi.zoom > 1 ? "cursor-grab active:cursor-grabbing" : ""}`}
           onPointerDown={(event) => {
-            if (laserMode) return;
-            const rect = event.currentTarget.getBoundingClientRect();
-            panStartRef.current = {
-              x: ((event.clientX - rect.left) / rect.width) * event.currentTarget.width,
-              y: ((event.clientY - rect.top) / rect.height) * event.currentTarget.height,
-              panX: selected.state.panX,
-              panY: selected.state.panY
-            };
+            const point = pointOnCanvas(event.currentTarget, event.clientX, event.clientY);
+            if (laserMode) {
+              laserRef.current = point;
+              renderVisual();
+              return;
+            }
+            activePointersRef.current.set(event.pointerId, point);
+            viewportVelocityRef.current = { x: 0, y: 0, scroll: 0 };
+            if (activePointersRef.current.size === 1) {
+              dragRef.current = { ...point, at: performance.now(), velocityX: 0, velocityY: 0 };
+            } else {
+              const [first, second] = [...activePointersRef.current.values()];
+              pinchRef.current = {
+                distance: Math.hypot(second.x - first.x, second.y - first.y),
+                midpointX: (first.x + second.x) / 2,
+                midpointY: (first.y + second.y) / 2
+              };
+            }
             event.currentTarget.setPointerCapture(event.pointerId);
           }}
           onPointerMove={handlePointerMove}
-          onPointerUp={() => { panStartRef.current = null; }}
+          onPointerUp={endPointerInteraction}
+          onPointerCancel={endPointerInteraction}
+          onWheel={handleWheel}
+          onDoubleClick={(event) => {
+            const dimensions = presentationDimensions();
+            if (!dimensions) return;
+            const point = pointOnCanvas(event.currentTarget, event.clientX, event.clientY);
+            const before = viewportTargetRef.current;
+            const zoomed = zoomPresentationAt(
+              viewportTargetRef.current,
+              viewportTargetRef.current.zoom > 1.05 ? 1 : 2,
+              point.x,
+              point.y,
+              dimensions
+            );
+            if (selected.kind === "document") {
+              const ratio = zoomed.zoom / before.zoom;
+              setDocumentScrollTarget(documentScrollTargetRef.current
+                + ((point.y - dimensions.canvasHeight / 2) * (ratio - 1)) / documentStride(zoomed.zoom));
+              setViewportTarget({ ...zoomed, panY: 0 });
+            } else {
+              setViewportTarget(zoomed);
+            }
+          }}
           onPointerLeave={() => { if (laserMode) { laserRef.current = null; renderVisual(); } }}
         />}
+        {selected.kind === "document" && (selected.documentManifest?.pageCount ?? 0) > 1 && <div className="absolute inset-y-4 left-2 z-30 flex w-7 flex-col items-center rounded-full border border-white/10 bg-slate-950/70 py-2 shadow-xl backdrop-blur-sm" dir="ltr">
+          <span className="mb-1 text-[9px] font-bold tabular-nums text-slate-300">{documentPageUi}</span>
+          <input
+            type="range"
+            min={0}
+            max={(selected.documentManifest?.pageCount ?? 1) - 1}
+            step={0.001}
+            value={documentScrollUi}
+            onChange={(event) => setDocumentScrollTarget(Number(event.target.value), true)}
+            className="presentation-page-navigator min-h-0 flex-1"
+            style={{ writingMode: "vertical-lr", direction: "ltr" }}
+            aria-label="גלילה רציפה בין עמודי המצגת"
+          />
+          <span className="mt-1 text-[9px] font-bold tabular-nums text-slate-500">{selected.documentManifest?.pageCount}</span>
+        </div>}
         {selected.kind === "video" && <video key={selected.id} ref={(element) => { mediaRef.current = element; }} controls playsInline className="h-full w-full object-contain" onTimeUpdate={(event) => updateSelectedState({ currentTime: event.currentTarget.currentTime })} onPlay={() => updateSelectedState({ wasPlaying: true })} onPause={() => updateSelectedState({ wasPlaying: false })} onVolumeChange={(event) => updateSelectedState({ volume: event.currentTarget.volume })} onRateChange={(event) => updateSelectedState({ playbackRate: event.currentTarget.playbackRate })} />}
         {selected.kind === "audio" && <audio key={selected.id} ref={(element) => { mediaRef.current = element; }} controls className="w-full max-w-2xl" onTimeUpdate={(event) => updateSelectedState({ currentTime: event.currentTarget.currentTime })} onPlay={() => updateSelectedState({ wasPlaying: true })} onPause={() => updateSelectedState({ wasPlaying: false })} onVolumeChange={(event) => updateSelectedState({ volume: event.currentTarget.volume })} onRateChange={(event) => updateSelectedState({ playbackRate: event.currentTarget.playbackRate })} />}
-        {isPreparing && <div className="absolute inset-0 flex items-center justify-center bg-slate-950/80 text-sm font-bold">מכין חומר להצגה...</div>}
         </div>
       </> : <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 bg-slate-950 px-6 text-center" dir="rtl">
         <Presentation className="size-12 text-fuchsia-300" />

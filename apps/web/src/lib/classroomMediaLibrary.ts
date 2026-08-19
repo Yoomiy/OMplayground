@@ -3,6 +3,7 @@ export type DocumentSourceFormat = "pdf" | "ppt" | "pptx";
 
 export interface ClassroomMaterialViewState {
   page: number;
+  documentScroll: number;
   zoom: number;
   panX: number;
   panY: number;
@@ -195,6 +196,7 @@ export async function purgeExpiredClassroomMedia(now = Date.now()): Promise<void
 export function defaultMaterialViewState(): ClassroomMaterialViewState {
   return {
     page: 1,
+    documentScroll: 0,
     zoom: 1,
     panX: 0,
     panY: 0,

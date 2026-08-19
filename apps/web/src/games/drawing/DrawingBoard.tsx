@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, useEffect } from "react";
+import { forwardRef, useRef, useState, useCallback, useEffect, useImperativeHandle } from "react";
 import type { DrawingState } from "@playground/game-logic";
 import { DrawingCanvas, type DrawingCanvasRef } from "./DrawingCanvas";
 import type { DrawingMode } from "./drawingMode";
@@ -14,7 +14,11 @@ export interface DrawingBoardProps {
   isVisible?: boolean;
 }
 
-export function DrawingBoard({
+export interface DrawingBoardHandle {
+  insertImage: (source: Blob, title?: string) => Promise<boolean>;
+}
+
+export const DrawingBoard = forwardRef<DrawingBoardHandle, DrawingBoardProps>(function DrawingBoard({
   gameState,
   mode,
   mySeat,
@@ -22,10 +26,14 @@ export function DrawingBoard({
   players,
   hideTopBar = false,
   isVisible = true
-}: DrawingBoardProps) {
+}: DrawingBoardProps, ref) {
   const canvasRef = useRef<DrawingCanvasRef>(null);
   const boardRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useImperativeHandle(ref, () => ({
+    insertImage: (source, title) => canvasRef.current?.insertImage(source, title) ?? Promise.resolve(false)
+  }), []);
 
   const toggleFullscreen = () => {
     if (!boardRef.current) return;
@@ -251,4 +259,6 @@ export function DrawingBoard({
       )}
     </div>
   );
-}
+});
+
+DrawingBoard.displayName = "DrawingBoard";
