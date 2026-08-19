@@ -3,8 +3,10 @@ import {
   clampDocumentScroll,
   clampPresentationViewport,
   documentPageAt,
+  presentationCanvasSize,
   presentationFitHeightZoom,
   presentationFitWidthZoom,
+  presentationPageStride,
   presentationPanBounds,
   scrollDocumentByPixels,
   zoomPresentationAt
@@ -18,6 +20,12 @@ const dimensions = {
 };
 
 describe("presentation viewport", () => {
+  it("matches the backing canvas to the available presentation area", () => {
+    expect(presentationCanvasSize(800, 800, 2560, 1440)).toEqual({ width: 1440, height: 1440 });
+    expect(presentationCanvasSize(1000, 400, 2560, 1440)).toEqual({ width: 2560, height: 1024 });
+    expect(presentationPageStride(800, 1000, 1600, 900, 1, 0.9, 36)).toBe(441);
+  });
+
   it("clamps zoom and pan to the visible content bounds", () => {
     expect(clampPresentationViewport({ zoom: 20, panX: 20_000, panY: -20_000 }, dimensions)).toEqual({
       zoom: 8,

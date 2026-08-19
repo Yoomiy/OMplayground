@@ -15,6 +15,38 @@ export interface PresentationSurfaceDimensions {
 export const MIN_PRESENTATION_ZOOM = 0.25;
 export const MAX_PRESENTATION_ZOOM = 8;
 
+export function presentationCanvasSize(
+  containerWidth: number,
+  containerHeight: number,
+  maxWidth: number,
+  maxHeight: number
+) {
+  if (containerWidth <= 0 || containerHeight <= 0 || maxWidth <= 0 || maxHeight <= 0) {
+    return { width: Math.max(1, Math.round(maxWidth)), height: Math.max(1, Math.round(maxHeight)) };
+  }
+  const scale = Math.min(maxWidth / containerWidth, maxHeight / containerHeight);
+  return {
+    width: Math.max(1, Math.round(containerWidth * scale)),
+    height: Math.max(1, Math.round(containerHeight * scale))
+  };
+}
+
+export function presentationPageStride(
+  canvasWidth: number,
+  canvasHeight: number,
+  pageWidth: number,
+  pageHeight: number,
+  zoom: number,
+  cellScale: number,
+  gap: number
+) {
+  const scale = Math.min(
+    (canvasWidth * cellScale) / pageWidth,
+    (canvasHeight * cellScale) / pageHeight
+  );
+  return (pageHeight * scale + gap) * zoom;
+}
+
 export function clampPresentationZoom(zoom: number) {
   return Math.max(MIN_PRESENTATION_ZOOM, Math.min(MAX_PRESENTATION_ZOOM, zoom));
 }

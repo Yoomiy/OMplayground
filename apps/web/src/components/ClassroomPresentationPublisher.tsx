@@ -37,8 +37,10 @@ import {
   clampDocumentScroll,
   clampPresentationViewport,
   documentPageAt,
+  presentationCanvasSize,
   presentationFitHeightZoom,
   presentationFitWidthZoom,
+  presentationPageStride,
   scrollDocumentByPixels,
   zoomPresentationAt,
   type PresentationSurfaceDimensions,
@@ -185,8 +187,25 @@ function drawContained(
   );
 }
 
-function documentStride(zoom: number) {
-  return (DOCUMENT_HEIGHT * DOCUMENT_CELL_SCALE + DOCUMENT_PAGE_GAP) * zoom;
+function documentStride(
+  runtime: RuntimeDocument | null,
+  scrollPosition: number,
+  canvasWidth: number,
+  canvasHeight: number,
+  zoom: number
+) {
+  const page = runtime?.pages.get(Math.round(scrollPosition) + 1)
+    ?? runtime?.pages.values().next().value;
+  if (!page) return (canvasHeight * DOCUMENT_CELL_SCALE + DOCUMENT_PAGE_GAP) * zoom;
+  return presentationPageStride(
+    canvasWidth,
+    canvasHeight,
+    page.image.naturalWidth,
+    page.image.naturalHeight,
+    zoom,
+    DOCUMENT_CELL_SCALE,
+    DOCUMENT_PAGE_GAP
+  );
 }
 
 function drawDocumentStrip(
@@ -199,7 +218,7 @@ function drawDocumentStrip(
   const canvas = context.canvas;
   const cellWidth = canvas.width * DOCUMENT_CELL_SCALE;
   const cellHeight = canvas.height * DOCUMENT_CELL_SCALE;
-  const stride = documentStride(viewport.zoom);
+  const stride = documentStride(runtime, scrollPosition, canvas.width, canvas.height, viewport.zoom);
   context.fillStyle = "#020617";
   context.fillRect(0, 0, canvas.width, canvas.height);
   const first = Math.max(0, Math.floor(scrollPosition) - 2);
@@ -310,6 +329,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
 }: Props, ref) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const surfaceRef = useRef<HTMLDivElement>(null);
+  const visualSurfaceRef = useRef<HTMLDivElement>(null);
   const displayCanvasRef = useRef<HTMLCanvasElement>(null);
   const publishCanvasRef = useRef<HTMLCanvasElement>(null);
   const mediaRef = useRef<HTMLMediaElement | null>(null);
@@ -564,6 +584,31 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
     }
   }, []);
 
+  const resizeVisualCanvases = useCallback(() => {
+    const surface = visualSurfaceRef.current;
+    const display = displayCanvasRef.current;
+    const publisher = publishCanvasRef.current;
+    const material = selectedRef.current;
+    if (!surface || !display || !publisher || (material?.kind !== "document" && material?.kind !== "image")) return;
+    const size = presentationCanvasSize(surface.clientWidth, surface.clientHeight, DOCUMENT_WIDTH, DOCUMENT_HEIGHT);
+    if (display.width === size.width && display.height === size.height && publisher.width === size.width && publisher.height === size.height) return;
+    display.width = size.width;
+    display.height = size.height;
+    publisher.width = size.width;
+    publisher.height = size.height;
+    renderVisual();
+  }, [renderVisual]);
+
+  useEffect(() => {
+    if (!visible || (selected?.kind !== "document" && selected?.kind !== "image")) return;
+    const surface = visualSurfaceRef.current;
+    if (!surface) return;
+    const observer = new ResizeObserver(resizeVisualCanvases);
+    observer.observe(surface);
+    resizeVisualCanvases();
+    return () => observer.disconnect();
+  }, [resizeVisualCanvases, selected?.id, selected?.kind, visible]);
+
   const startViewportAnimation = useCallback(() => {
     if (viewportAnimationRef.current !== null) return;
     const tick = (now: number) => {
@@ -747,8 +792,11 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
     const publisher = publishCanvasRef.current;
     const visual = material.kind === "document" || material.kind === "image";
     if (!publisher || (visual && !display)) throw new Error("presentation_surface_missing");
-    const width = visual ? DOCUMENT_WIDTH : VIDEO_WIDTH;
-    const height = visual ? DOCUMENT_HEIGHT : VIDEO_HEIGHT;
+    const visualSize = visual && visualSurfaceRef.current
+      ? presentationCanvasSize(visualSurfaceRef.current.clientWidth, visualSurfaceRef.current.clientHeight, DOCUMENT_WIDTH, DOCUMENT_HEIGHT)
+      : null;
+    const width = visualSize?.width ?? (visual ? DOCUMENT_WIDTH : VIDEO_WIDTH);
+    const height = visualSize?.height ?? (visual ? DOCUMENT_HEIGHT : VIDEO_HEIGHT);
     if (display) {
       display.width = width;
       display.height = height;
@@ -1169,8 +1217,8 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
           if (isDocument) {
             const ratio = zoomed.zoom / base.zoom;
             const anchoredScroll = documentScrollTargetRef.current
-              + ((midpointY - dimensions.canvasHeight / 2) * (ratio - 1)) / documentStride(zoomed.zoom)
-              - (midpointY - previous.midpointY) / documentStride(zoomed.zoom);
+              + ((midpointY - dimensions.canvasHeight / 2) * (ratio - 1)) / documentStride(documentRef.current, documentScrollTargetRef.current, dimensions.canvasWidth, dimensions.canvasHeight, zoomed.zoom)
+              - (midpointY - previous.midpointY) / documentStride(documentRef.current, documentScrollTargetRef.current, dimensions.canvasWidth, dimensions.canvasHeight, zoomed.zoom);
             setDocumentScrollTarget(anchoredScroll);
             setViewportTarget({ ...zoomed, panY: 0 });
           } else {
@@ -1198,7 +1246,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
         setDocumentScrollTarget(scrollDocumentByPixels(
           documentScrollTargetRef.current,
           -deltaY,
-          documentStride(viewportTargetRef.current.zoom),
+          documentStride(documentRef.current, documentScrollTargetRef.current, canvas.width, canvas.height, viewportTargetRef.current.zoom),
           selected.documentManifest.pageCount
         ));
       }
@@ -1222,7 +1270,13 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
           x: Math.max(-3, Math.min(3, drag.velocityX)),
           y: isDocument ? 0 : Math.max(-3, Math.min(3, drag.velocityY)),
           scroll: isDocument
-            ? Math.max(-0.003, Math.min(0.003, -drag.velocityY / documentStride(viewportTargetRef.current.zoom)))
+            ? Math.max(-0.003, Math.min(0.003, -drag.velocityY / documentStride(
+                documentRef.current,
+                documentScrollTargetRef.current,
+                displayCanvasRef.current?.width ?? DOCUMENT_WIDTH,
+                displayCanvasRef.current?.height ?? DOCUMENT_HEIGHT,
+                viewportTargetRef.current.zoom
+              )))
             : 0
         };
         startViewportAnimation();
@@ -1261,7 +1315,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
       if (selected?.kind === "document") {
         const ratio = zoomed.zoom / before.zoom;
         setDocumentScrollTarget(documentScrollTargetRef.current
-          + ((point.y - dimensions.canvasHeight / 2) * (ratio - 1)) / documentStride(zoomed.zoom));
+          + ((point.y - dimensions.canvasHeight / 2) * (ratio - 1)) / documentStride(documentRef.current, documentScrollTargetRef.current, dimensions.canvasWidth, dimensions.canvasHeight, zoomed.zoom));
         setViewportTarget({ ...zoomed, panY: 0 });
       } else {
         setViewportTarget(zoomed);
@@ -1275,7 +1329,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
       setDocumentScrollTarget(scrollDocumentByPixels(
         documentScrollTargetRef.current,
         deltaY,
-        documentStride(before.zoom),
+        documentStride(documentRef.current, documentScrollTargetRef.current, dimensions.canvasWidth, dimensions.canvasHeight, before.zoom),
         selected.documentManifest?.pageCount ?? 1
       ));
       return;
@@ -1303,6 +1357,11 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
   const fitHeight = () => {
     const dimensions = presentationDimensions();
     if (!dimensions) return;
+    const material = selectedRef.current;
+    if (material?.kind === "document" && material.documentManifest) {
+      const currentPage = documentPageAt(documentScrollCurrentRef.current, material.documentManifest.pageCount);
+      setDocumentScrollTarget(currentPage - 1);
+    }
     setViewportTarget({ zoom: presentationFitHeightZoom(dimensions), panX: 0, panY: 0 });
   };
 
@@ -1393,10 +1452,10 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
       {selected ? <>
         {cacheWarning && <div className="bg-amber-950 px-3 py-1 text-xs text-amber-100">{cacheWarning}</div>}
         {selected.documentManifest?.warning && <div className="bg-amber-950 px-3 py-1 text-xs text-amber-100">ייתכן שחלק מהגופנים או התוכן העשיר הוחלפו בזמן ההמרה.</div>}
-        <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-black outline-none" tabIndex={visual ? 0 : -1} onKeyDown={handlePresentationKeyDown} aria-label={visual ? "אזור תצוגת מצגת. ניתן לגרור, לגלול ולהשתמש בקיצורי מקלדת." : undefined}>
+        <div ref={visualSurfaceRef} className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-black outline-none" tabIndex={visual ? 0 : -1} onKeyDown={handlePresentationKeyDown} aria-label={visual ? "אזור תצוגת מצגת. ניתן לגרור, לגלול ולהשתמש בקיצורי מקלדת." : undefined}>
         {visual && <canvas
           ref={displayCanvasRef}
-          className={`h-full w-full touch-none object-contain ${laserMode ? "cursor-none" : viewportUi.zoom > 1 ? "cursor-grab active:cursor-grabbing" : ""}`}
+          className={`h-full w-full touch-none ${laserMode ? "cursor-none" : viewportUi.zoom > 1 ? "cursor-grab active:cursor-grabbing" : ""}`}
           onPointerDown={(event) => {
             const point = pointOnCanvas(event.currentTarget, event.clientX, event.clientY);
             if (laserMode) {
@@ -1437,7 +1496,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
             if (selected.kind === "document") {
               const ratio = zoomed.zoom / before.zoom;
               setDocumentScrollTarget(documentScrollTargetRef.current
-                + ((point.y - dimensions.canvasHeight / 2) * (ratio - 1)) / documentStride(zoomed.zoom));
+                + ((point.y - dimensions.canvasHeight / 2) * (ratio - 1)) / documentStride(documentRef.current, documentScrollTargetRef.current, dimensions.canvasWidth, dimensions.canvasHeight, zoomed.zoom));
               setViewportTarget({ ...zoomed, panY: 0 });
             } else {
               setViewportTarget(zoomed);
