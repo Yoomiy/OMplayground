@@ -1,21 +1,14 @@
 import { useRef, useState, useCallback, useEffect } from "react";
 import type { DrawingState } from "@playground/game-logic";
 import { DrawingCanvas, type DrawingCanvasRef } from "./DrawingCanvas";
+import type { DrawingMode } from "./drawingMode";
 import { cn } from "@/lib/cn";
 
 export interface DrawingBoardProps {
   gameState: DrawingState;
+  mode: DrawingMode;
   mySeat: string | null;
   myUserId: string | null;
-  onIntent: (intent: any) => void;
-  onLiveDelta?: (payload: any) => void;
-  subscribeLiveDeltas?: (cb: (payload: any) => void) => () => void;
-  isHost?: boolean;
-  checkpointSignal?: number;
-  serverAuthoritative?: boolean;
-  initialYjsUpdate?: string | null;
-  initialYjsSyncToken?: string | null;
-  initialViewport?: { scrollX: number; scrollY: number; zoom: unknown } | null;
   players?: { userId: string; displayName: string }[];
   hideTopBar?: boolean;
   isVisible?: boolean;
@@ -23,17 +16,9 @@ export interface DrawingBoardProps {
 
 export function DrawingBoard({
   gameState,
+  mode,
   mySeat,
   myUserId,
-  onIntent,
-  onLiveDelta,
-  subscribeLiveDeltas,
-  isHost,
-  checkpointSignal,
-  serverAuthoritative,
-  initialYjsUpdate,
-  initialYjsSyncToken,
-  initialViewport,
   players,
   hideTopBar = false,
   isVisible = true
@@ -81,10 +66,17 @@ export function DrawingBoard({
     return () => clearTimeout(timer);
   }, [toast]);
 
-  const handleClear = () => {
-    if (window.confirm("האם אתה בטוח שברצונך לנקות את כל לוח הציור עבור כולם?")) {
-      onIntent({ type: "CLEAR_CANVAS" });
-      showToast("הלוח נוקה בהצלחה");
+  const handleClear = async () => {
+    const prompt = mode.kind === "local"
+      ? "האם אתה בטוח שברצונך לנקות את לוח הציור?"
+      : "האם אתה בטוח שברצונך לנקות את כל לוח הציור עבור כולם?";
+    if (window.confirm(prompt)) {
+      if (mode.kind === "local") {
+        canvasRef.current?.clearCanvas();
+        showToast("הלוח נוקה בהצלחה");
+        return;
+      }
+      if (await mode.clear()) showToast("הלוח נוקה בהצלחה");
     }
   };
 
@@ -188,7 +180,7 @@ export function DrawingBoard({
 
           {/* Buttons (Clean, Export, Fullscreen) */}
           <div className="flex items-center gap-2">
-            {!isSpectator && (
+            {!isSpectator && (mode.kind === "local" || mode.canClear) && (
               <button
                 type="button"
                 className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-2 text-xs font-bold text-rose-300 hover:bg-rose-500/20 transition-all hover:scale-105 active:scale-95 duration-200 shadow-sm"
@@ -236,19 +228,11 @@ export function DrawingBoard({
         <DrawingCanvas
           ref={canvasRef}
           gameState={gameState}
+          mode={mode}
           mySeat={mySeat}
           myUserId={myUserId}
-          onIntent={onIntent}
-          onLiveDelta={onLiveDelta}
-          subscribeLiveDeltas={subscribeLiveDeltas}
           showToast={showToast}
           isFullscreen={isFullscreen}
-          isHost={isHost}
-          checkpointSignal={checkpointSignal}
-          serverAuthoritative={serverAuthoritative}
-          initialYjsUpdate={initialYjsUpdate}
-          initialYjsSyncToken={initialYjsSyncToken}
-          initialViewport={initialViewport}
           players={players}
           isVisible={isVisible}
         />

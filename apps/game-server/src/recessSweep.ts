@@ -67,6 +67,9 @@ export async function recessEndSweep(
   const remove = deps.remove ?? deleteRoom;
   const evicted: string[] = [];
   for (const room of rooms) {
+    // Classroom whiteboards share the drawing transport, not the Playground
+    // recess lifecycle. Their teacher-controlled classroom remains authoritative.
+    if (room.drawingContext?.boardMode === "classroom") continue;
     const sessionId = room.sessionId;
     const connected = connectedPlayers(room);
     await persistRecessPause({

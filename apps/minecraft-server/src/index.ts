@@ -130,6 +130,7 @@ import {
   type ClassroomDelegateAuthority,
   type ClassroomDelegateScope
 } from "./classroomDelegates";
+import { createClassroomBoardToken } from "./classroomBoardToken";
 import { getCachedAuth } from "./authCache";
 import { canJoinClosedSession } from "./closedSessionAccess";
 import {
@@ -820,6 +821,17 @@ app.post("/rtc/classroom-token", async (req, res) => {
           SUPABASE_SERVICE_ROLE_KEY
         )
       : undefined;
+    const classroomBoardToken = createClassroomBoardToken(
+      {
+        classroomId: classroom.id,
+        roomCode,
+        identity: result.userId,
+        displayName: result.displayName,
+        role: result.role as "kid" | "student" | "teacher" | "admin" | "classroom_delegate",
+        isHost: result.isHost
+      },
+      SUPABASE_SERVICE_ROLE_KEY
+    );
 
     logger.info({
       correlationId,
@@ -849,6 +861,7 @@ app.post("/rtc/classroom-token", async (req, res) => {
       canPublishScreenShare: result.canPublishScreenShare,
       delegateScopes: delegate?.scopes ?? [],
       delegateGameToken,
+      classroomBoardToken,
       classroomSessionId: classroom.id,
       isClassCreator: classroom.teacher_id === result.userId,
       presenterIdentity: presentation.presenterIdentity,

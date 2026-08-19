@@ -22,7 +22,8 @@ Operational notes for production. Aligned with `ARCHITECTURE.md` and `tmp/loggin
 - **Production:** Ship stdout to Railway log drains (Axiom / Datadog / BetterStack). Query by `service`, `correlationId`, `level`, `protocol`.
 - **Client crashes:** Buffered telemetry → server `/api/telemetry` → Pino (`protocol: client`).
 - **Do not log:** raw socket payloads, chat bodies, JWTs, LiveKit tokens, per-tick voxel `INPUT`/`SNAPSHOT`.
-- **Drawing boards:** every drawing event carries `boardMode` (`game` or `classroom`). Classroom events also carry the drawing session, classroom UUID, and room code. Log initial/recovery sync completion and failures, clears, and persistence failures; never log Yjs deltas, awareness, viewport movement, or board contents.
+- **Drawing boards:** all networked boards use the server-owned canonical Yjs protocol, while `boardMode` (`game` or `classroom`) selects lifecycle and authorization policy. Classroom events also carry the classroom UUID and room code. Log terminal initial/recovery sync results, bounded rejection summaries, clears, and checkpoint results; never log Yjs deltas, snapshots, awareness IDs, viewport coordinates, image/file data, or board contents. Routine solo saves are not logged.
+- **Classroom board capabilities:** only the classroom RTC service may mint the signed capability that bypasses the ordinary child recess connection gate. The game server verifies its classroom, participant identity, expiry, and active status, rejects it for ordinary games, and excludes the matching room from recess-end eviction. Self-declared `guest:*` game-server identities are not accepted; classroom guests receive the same signed, scoped capability as authenticated participants. Never log the capability itself.
 
 ## Health and readiness
 

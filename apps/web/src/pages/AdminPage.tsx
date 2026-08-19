@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { getVoxelServerUrl } from "@/lib/voxelServerUrl";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import {
@@ -14,7 +13,6 @@ import {
 } from "@/lib/profileApi";
 import { KidAvatar } from "@/components/KidAvatar";
 import { kidFieldInputClass, kidFieldLabelClass } from "@/lib/fieldStyles";
-import { cn } from "@/lib/cn";
 import { AdminStatsSection } from "@/components/AdminStatsSection";
 import { AdminFeedbackSection } from "@/components/AdminFeedbackSection";
 import { ClassroomAdminExplorer } from "@/components/ClassroomAdminExplorer";

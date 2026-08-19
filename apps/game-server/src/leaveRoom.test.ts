@@ -1,8 +1,9 @@
-import { tictactoeModule } from "@playground/game-logic";
+import { drawingModule, tictactoeModule } from "@playground/game-logic";
 import { persistPlayerLeave } from "./sessionPersistence";
 import {
   assignPlayer,
   getOrCreateRoom,
+  preservesHostOnDisconnect,
   removePlayerFromRoom
 } from "./room";
 
@@ -132,5 +133,32 @@ describe("LEAVE_ROOM persistence (mirrors disconnect)", () => {
 
     expect(m.updateGs).toHaveBeenCalledTimes(1);
     expect(m.inGs).toHaveBeenCalledWith("status", ["waiting", "playing", "paused"]);
+  });
+
+  it("transfers ordinary drawing hosts but preserves classroom drawing hosts", () => {
+    const gameRoom = getOrCreateRoom("drawing-game-host", {
+      gameId: "drawing",
+      gameKey: drawingModule.key,
+      module: drawingModule,
+      gender: "all",
+      hostId: "host",
+      drawingContext: { boardMode: "game" }
+    });
+    assignPlayer(gameRoom, "host", "Host");
+    assignPlayer(gameRoom, "guest", "Guest");
+    expect(preservesHostOnDisconnect(gameRoom)).toBe(false);
+    expect(removePlayerFromRoom(gameRoom.sessionId, "host").newHostId).toBe("guest");
+
+    const classroomRoom = getOrCreateRoom("drawing-classroom-host", {
+      gameId: "drawing",
+      gameKey: drawingModule.key,
+      module: drawingModule,
+      gender: "all",
+      hostId: "teacher",
+      drawingContext: { boardMode: "classroom", classroomId: "class", roomCode: "ROOM" }
+    });
+    assignPlayer(classroomRoom, "teacher", "Teacher");
+    assignPlayer(classroomRoom, "student", "Student");
+    expect(preservesHostOnDisconnect(classroomRoom)).toBe(true);
   });
 });

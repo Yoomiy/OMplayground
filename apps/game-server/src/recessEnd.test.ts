@@ -215,6 +215,35 @@ describe("recessEndSweep", () => {
     expect(teacherDisconnect).not.toHaveBeenCalled();
   });
 
+  it("does not pause or evict classroom whiteboard rooms", async () => {
+    const { io, emit, disconnect } = buildMockIo();
+    const { supabase, update } = buildMockSupabase();
+    const state = createRecessSweepState();
+    state.activeLastTick = true;
+    const classroomRoom = roomWithState("classroom-board");
+    classroomRoom.drawingContext = {
+      boardMode: "classroom",
+      classroomId: "classroom-1",
+      roomCode: "ROOM"
+    };
+    const removed: string[] = [];
+
+    const result = await recessEndSweep(state, {
+      supabase: supabase as never,
+      loadSchedules: async () => SCHEDULES,
+      io,
+      now: () => new Date("2026-04-16T10:00:00Z"),
+      rooms: () => [classroomRoom],
+      remove: (id) => removed.push(id)
+    });
+
+    expect(result.evictedSessionIds).toEqual([]);
+    expect(update).not.toHaveBeenCalled();
+    expect(emit).not.toHaveBeenCalled();
+    expect(disconnect).not.toHaveBeenCalled();
+    expect(removed).toEqual([]);
+  });
+
   it("preserves sweep state when schedule loading fails", async () => {
     const { io, emit } = buildMockIo();
     const { supabase, update } = buildMockSupabase();

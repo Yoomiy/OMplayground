@@ -8,121 +8,54 @@ function init() {
 }
 
 describe("Drawing rules (Excalidraw)", () => {
-  it("starts with empty canvas and seats players", () => {
-    const s = init();
-    expect(s.canvas.elements).toEqual([]);
-    expect(s.canvas.files).toEqual({});
-    expect(s.canvas.version).toBe(0);
-    expect(s.canvas.clearVersion).toBe(0);
-    expect(s.seats?.[P1.userId]).toBe("p1");
-    expect(s.seats?.[P2.userId]).toBe("p2");
-    expect(drawingModule.isTerminal(s)).toBe(false);
+  it("starts with an empty recovery snapshot and seats players", () => {
+    const state = init();
+    expect(state.canvas.elements).toEqual([]);
+    expect(state.canvas.files).toEqual({});
+    expect(state.canvas.version).toBe(0);
+    expect(state.canvas.clearVersion).toBe(0);
+    expect(state.seats?.[P1.userId]).toBe("p1");
+    expect(state.seats?.[P2.userId]).toBe("p2");
   });
 
-  it("accepts CHECKPOINT with newer version from any seated player", () => {
-    let s = init();
-    const r = drawingModule.applyIntent(s, P2.userId, {
-      type: "CHECKPOINT",
-      version: 1,
-      elements: [{ id: "el1", type: "rectangle" }],
-      files: {}
-    });
-    expect(r.ok).toBe(true);
-    if (!r.ok) return;
-    s = r.state as DrawingState;
-    expect(s.canvas.version).toBe(1);
-    expect(s.canvas.elements.length).toBe(1);
-  });
-
-  it("advances server revisions for valid checkpoints regardless of client clock", () => {
-    let s = init();
-    // Advance version to 2
-    const r1 = drawingModule.applyIntent(s, P1.userId, {
-      type: "CHECKPOINT",
-      version: 2,
-      elements: [],
-      files: {}
-    });
-    expect(r1.ok).toBe(true);
-    if (!r1.ok) return;
-    s = r1.state as DrawingState;
-
-    // An older client timestamp must not make the server revision go backwards.
-    const r2 = drawingModule.applyIntent(s, P2.userId, {
-      type: "CHECKPOINT",
-      version: 1,
-      elements: [],
-      files: {}
-    });
-    expect(r2.ok).toBe(true);
-    if (!r2.ok) return;
-    expect((r2.state as DrawingState).canvas.version).toBe(2);
-  });
-
-  it("rejects CHECKPOINT exceeding element limits", () => {
-    const s = init();
-    const tooManyElements = Array.from({ length: 5001 }, (_, i) => ({ id: `el${i}`, type: "point" }));
-    const r = drawingModule.applyIntent(s, P1.userId, {
-      type: "CHECKPOINT",
-      version: 1,
-      elements: tooManyElements,
-      files: {}
-    });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      expect(r.error.code).toBe("BAD_CHECKPOINT");
-    }
-  });
-
-  it("rejects CHECKPOINT with files exceeding byte size limits", () => {
-    const s = init();
-    const largeFileContent = "a".repeat(1200 * 1024); // 1.2MB (limit is 1MB)
-    const r = drawingModule.applyIntent(s, P1.userId, {
-      type: "CHECKPOINT",
-      version: 1,
-      elements: [],
-      files: {
-        file1: largeFileContent
+  it("accepts CLEAR_CANVAS from a seated player", () => {
+    const state: DrawingState = {
+      ...init(),
+      canvas: {
+        engine: "excalidraw",
+        version: 4,
+        clearVersion: 1,
+        updatedAt: 1,
+        elements: [{ id: "el1" }],
+        files: { image: { id: "image" } }
       }
-    });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      expect(r.error.code).toBe("BAD_CHECKPOINT");
-    }
-  });
+    };
 
-  it("accepts CLEAR_CANVAS from any player and clears elements/files", () => {
-    let s = init();
-    // Setup some data
-    const r1 = drawingModule.applyIntent(s, P1.userId, {
-      type: "CHECKPOINT",
-      version: 1,
-      elements: [{ id: "el1" }],
+    const result = drawingModule.applyIntent(state, P2.userId, { type: "CLEAR_CANVAS" });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect((result.state as DrawingState).canvas).toMatchObject({
+      version: 5,
+      clearVersion: 2,
+      elements: [],
       files: {}
     });
-    expect(r1.ok).toBe(true);
-    if (!r1.ok) return;
-    s = r1.state as DrawingState;
-
-    // Clear from P2
-    const r2 = drawingModule.applyIntent(s, P2.userId, { type: "CLEAR_CANVAS" });
-    expect(r2.ok).toBe(true);
-    if (!r2.ok) return;
-    s = r2.state as DrawingState;
-    expect(s.canvas.elements).toEqual([]);
-    expect(s.canvas.files).toEqual({});
-    expect(s.canvas.version).toBe(2);
-    expect(s.canvas.clearVersion).toBe(1);
   });
 
-  it("rejects intent from non-player stranger", () => {
-    const s = init();
-    const r = drawingModule.applyIntent(s, "stranger", {
-      type: "CLEAR_CANVAS"
-    });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      expect(r.error.code).toBe("NOT_IN_ROOM");
-    }
+  it("rejects an intent from a non-player", () => {
+    const result = drawingModule.applyIntent(init(), "stranger", { type: "CLEAR_CANVAS" });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("NOT_IN_ROOM");
+  });
+
+  it("rejects obsolete checkpoint intents", () => {
+    const result = drawingModule.applyIntent(
+      init(),
+      P1.userId,
+      { type: "CHECKPOINT" } as never
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("BAD_INTENT");
   });
 });

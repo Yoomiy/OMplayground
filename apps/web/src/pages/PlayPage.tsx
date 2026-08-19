@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, Navigate, useParams } from "react-router-dom";
 import { GameSessionContainer } from "@/game/GameSessionContainer";
 import { MinecraftSessionContainer } from "@/game/MinecraftSessionContainer";
 import { KidDesktopShell } from "@/components/KidDesktopShell";
 import { supabase } from "@/lib/supabase";
 import { useProfile } from "@/hooks/useProfile";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { classroomDrawingRoomCode } from "@/lib/drawingSessionScope";
 
 function PlayPage() {
   const { sessionId } = useParams();
@@ -13,21 +14,31 @@ function PlayPage() {
   const { isAdmin } = useIsAdmin();
   const [gameName, setGameName] = useState<string>("");
   const [gameUrl, setGameUrl] = useState<string | null>(null);
+  const [classroomRoomCode, setClassroomRoomCode] = useState<string | null>(null);
+  const [sessionResolved, setSessionResolved] = useState(false);
 
   useEffect(() => {
     if (!sessionId) return;
     let cancelled = false;
+    setSessionResolved(false);
+    setClassroomRoomCode(null);
     void (async () => {
       const { data } = await supabase
         .from("game_sessions")
-        .select("games ( name_he, game_url )")
+        .select("invitation_code, games ( name_he, game_url )")
         .eq("id", sessionId)
         .maybeSingle();
       if (cancelled) return;
+      setClassroomRoomCode(
+        classroomDrawingRoomCode(
+          (data as { invitation_code?: unknown } | null)?.invitation_code
+        )
+      );
       const games =
         (data as { games?: { name_he?: string; game_url?: string } | null } | null)?.games;
       setGameName(games?.name_he ?? "");
       setGameUrl(games?.game_url ?? null);
+      setSessionResolved(true);
     })();
     return () => {
       cancelled = true;
@@ -50,6 +61,14 @@ function PlayPage() {
         חסר מזהה מפגש
       </p>
     );
+  }
+
+  if (!sessionResolved) {
+    return <p className="p-6 text-center text-sm font-bold text-white/60">טוען חדר…</p>;
+  }
+
+  if (classroomRoomCode) {
+    return <Navigate to={`/classroom/${encodeURIComponent(classroomRoomCode)}`} replace />;
   }
 
   // Voxel game bypasses the desktop chrome — `MinecraftSessionContainer` is

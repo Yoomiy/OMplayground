@@ -21,21 +21,6 @@ export async function getCachedAuth(
     return cached.result;
   }
 
-  if (token.startsWith("guest:")) {
-    const parts = token.split(":");
-    const userId = parts[1] || `guest-${Math.random().toString(36).substring(2, 9)}`;
-    const displayName = parts[2] ? decodeURIComponent(parts[2]) : "משתתף";
-    const result: CachedAuthResult = {
-      userId,
-      role: "student",
-      gender: "boy",
-      full_name: displayName,
-      is_active: true
-    };
-    authCache.set(token, { result, expiresAt: now + AUTH_TTL_MS });
-    return result;
-  }
-
   const { data: authData, error: authErr } = await supabaseAdmin.auth.getUser(token);
   if (authErr || !authData?.user?.id) {
     throw new Error("UNAUTHORIZED");

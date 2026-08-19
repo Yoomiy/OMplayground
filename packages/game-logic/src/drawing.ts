@@ -16,42 +16,12 @@ export interface DrawingState {
   canvas: DrawingCanvasSnapshot;
 }
 
-export type DrawingIntent =
-  | { type: "CHECKPOINT"; version: number; elements: unknown[]; files: Record<string, unknown> }
-  | { type: "CLEAR_CANVAS" };
+export type DrawingIntent = { type: "CLEAR_CANVAS" };
 
 export const MAX_ELEMENTS = 5000;
 export const MAX_FILES = 50;
 export const MAX_FILE_BYTES = 1024 * 1024; // 1MB per file
 export const MAX_STATE_BYTES = 5 * 1024 * 1024; // 5MB total state JSON
-
-function byteLength(val: unknown): number {
-  return Buffer.byteLength(JSON.stringify(val));
-}
-
-function isValidCheckpoint(
-  version: number,
-  elements: unknown[],
-  files: Record<string, unknown>
-): boolean {
-  if (typeof version !== "number" || !Number.isInteger(version) || version < 0) return false;
-  if (!Array.isArray(elements) || elements.length > MAX_ELEMENTS) return false;
-  if (!files || typeof files !== "object") return false;
-  
-  const fileKeys = Object.keys(files);
-  if (fileKeys.length > MAX_FILES) return false;
-  
-  // check each file size
-  for (const key of fileKeys) {
-    const fileData = files[key];
-    if (byteLength(fileData) > MAX_FILE_BYTES) return false;
-  }
-  
-  // check total JSON serialization size
-  if (byteLength({ elements, files }) > MAX_STATE_BYTES) return false;
-  
-  return true;
-}
 
 export const drawingModule: GameModule<DrawingState, DrawingIntent> = {
   key: "drawing",
@@ -95,34 +65,6 @@ export const drawingModule: GameModule<DrawingState, DrawingIntent> = {
             updatedAt: Date.now(),
             elements: [],
             files: {}
-          }
-        }
-      };
-    }
-
-    if (intent?.type === "CHECKPOINT") {
-      const { version, elements, files } = intent;
-      if (!isValidCheckpoint(version, elements, files)) {
-        return {
-          ok: false,
-          error: {
-            code: "BAD_CHECKPOINT",
-            message: "Checkpoint exceeds size or element limits"
-          }
-        };
-      }
-      return {
-        ok: true,
-        state: {
-          ...state,
-          canvas: {
-            engine: "excalidraw",
-            // Keep state authoritative even when a reconnecting client's clock is behind.
-            version: state.canvas.version + 1,
-            clearVersion: state.canvas.clearVersion,
-            updatedAt: Date.now(),
-            elements,
-            files
           }
         }
       };

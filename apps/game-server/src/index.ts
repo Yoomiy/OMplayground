@@ -32,9 +32,11 @@ import {
   listRooms,
   missingPlayers,
   playersForRematch,
+  preservesHostOnDisconnect,
   removePlayerFromRoom,
   removeSpectatorFromRoom,
   roomRoster,
+  type DrawingRoomContext,
   type Room
 } from "./room";
 import {
@@ -55,15 +57,22 @@ import { getCachedAuth } from "./authCache";
 import { canJoinClosedSession } from "./closedSessionAccess";
 import { verifyClassroomDelegateGameToken } from "./classroomDelegateToken";
 import {
-  applyClassroomDrawingSocketUpdate,
-  canvasFromDoc,
-  clearClassroomDrawingState,
-  createClassroomDrawingState,
-  encodeFullClassroomDrawingState,
-  markClassroomDrawingPersisted,
-  snapshotClassroomDrawingState,
-  type ClassroomDrawingLiveState
-} from "./classroomDrawingState";
+  matchesClassroomBoardCapability,
+  shouldEnforceRecessForSocket,
+  verifyClassroomBoardToken
+} from "./classroomBoardToken";
+import {
+  applyCanonicalDrawingSocketUpdate,
+  clearCanonicalDrawingState,
+  createCanonicalDrawingState,
+  encodeFullCanonicalDrawingState,
+  isCanonicalDrawingDirty,
+  markCanonicalDrawingPersisted,
+  snapshotCanonicalDrawingState,
+  type CanonicalDrawingLiveState
+} from "./canonicalDrawingState";
+import { drawingLogContext, drawingSyncPhase } from "./drawingObservability";
+import { KeyedSingleFlight } from "./keyedSingleFlight";
 
 import { recordLaunch, flushLaunches } from "./launchTracker";
 
@@ -99,18 +108,20 @@ const MAX_LIVE_DELTA_BYTES = 8 * 1024 * 1024;
 interface ClassroomDrawingPolicy {
   classroomId: string;
   allowWhiteboardDraw: boolean;
+  active: boolean;
 }
 
 const classroomDrawingPolicies = new Map<string, ClassroomDrawingPolicy>();
 const classroomDrawingPolicyLoads = new Map<string, Promise<ClassroomDrawingPolicy>>();
-const classroomDrawingLiveStates = new Map<string, ClassroomDrawingLiveState>();
+const canonicalDrawingLiveStates = new Map<string, CanonicalDrawingLiveState>();
+const canonicalDrawingPersistence = new KeyedSingleFlight();
 const classroomDrawingViewports = new Map<string, { scrollX: number; scrollY: number; zoom: number }>();
-const classroomDrawingSyncTimers = new Map<string, ReturnType<typeof setTimeout>>();
-let classroomDrawingSyncSerial = 0;
+const canonicalDrawingSyncTimers = new Map<string, ReturnType<typeof setTimeout>>();
+let canonicalDrawingSyncSerial = 0;
 
-function nextClassroomDrawingSyncToken(socketId: string): string {
-  classroomDrawingSyncSerial += 1;
-  return `${socketId}:${Date.now()}:${classroomDrawingSyncSerial}`;
+function nextCanonicalDrawingSyncToken(socketId: string): string {
+  canonicalDrawingSyncSerial += 1;
+  return `${socketId}:${Date.now()}:${canonicalDrawingSyncSerial}`;
 }
 
 async function loadClassroomDrawingPolicy(roomCode: string): Promise<ClassroomDrawingPolicy> {
@@ -120,7 +131,7 @@ async function loadClassroomDrawingPolicy(roomCode: string): Promise<ClassroomDr
   if (pending) return pending;
 
   const load = (async () => {
-    if (!supabaseAdmin) return { classroomId: "unknown", allowWhiteboardDraw: false };
+    if (!supabaseAdmin) return { classroomId: "unknown", allowWhiteboardDraw: false, active: false };
     const { data, error } = await supabaseAdmin
       .from("classroom_sessions")
       .select("id, settings, status")
@@ -129,6 +140,7 @@ async function loadClassroomDrawingPolicy(roomCode: string): Promise<ClassroomDr
     if (error) throw error;
     const policy = {
       classroomId: String(data?.id ?? "unknown"),
+      active: data?.status === "active",
       allowWhiteboardDraw:
         data?.status === "active" &&
         (data.settings as { allowWhiteboardDraw?: unknown } | null)?.allowWhiteboardDraw === true
@@ -227,35 +239,79 @@ const observability = initObservability(app, io, {
 logger = observability.logger;
 stats = observability.stats;
 
-const CLASSROOM_DRAWING_CHECKPOINT_MS = 60_000;
+interface DrawingPersistenceActor {
+  correlationId?: string;
+  userId?: string;
+}
+
+async function persistCanonicalDrawing(
+  room: Room<unknown>,
+  reason: string,
+  actor: DrawingPersistenceActor = {},
+  flushLatest = false
+): Promise<void> {
+  const state = canonicalDrawingLiveStates.get(room.sessionId);
+  if (!state || !supabaseAdmin || !isCanonicalDrawingDirty(state)) return;
+
+  const flight = canonicalDrawingPersistence.run(room.sessionId, async () => {
+    if (!isCanonicalDrawingDirty(state)) return;
+    const persistedRevision = state.revision;
+    const seats = (room.state as { seats?: Record<string, string> } | null)?.seats;
+    const snapshot = snapshotCanonicalDrawingState(state, seats);
+    room.state = snapshot;
+    try {
+      await persistDrawingCheckpoint(supabaseAdmin, room.sessionId, snapshot);
+      markCanonicalDrawingPersisted(state, persistedRevision);
+      logger.info({
+        correlationId: actor.correlationId,
+        userId: actor.userId,
+        sessionId: room.sessionId,
+        protocol: "internal",
+        message: "Canonical drawing checkpoint persisted",
+        context: {
+          ...drawingLogContext(room, "checkpoint_persist"),
+          event: "DRAWING_CHECKPOINT_PERSISTED",
+          status: "success",
+          reason,
+          revision: persistedRevision,
+          newerRevisionPending: isCanonicalDrawingDirty(state)
+        }
+      });
+    } catch (err) {
+      logger.error({
+        correlationId: actor.correlationId,
+        userId: actor.userId,
+        sessionId: room.sessionId,
+        protocol: "internal",
+        message: "Canonical drawing checkpoint persistence failed",
+        context: {
+          ...drawingLogContext(room, "checkpoint_persist"),
+          event: "DRAWING_CHECKPOINT_PERSIST_FAILED",
+          status: "failed",
+          reason,
+          revision: persistedRevision
+        },
+        err: logError(err)
+      });
+      throw err;
+    }
+  });
+  await flight.promise;
+  if (flushLatest && isCanonicalDrawingDirty(state)) {
+    await persistCanonicalDrawing(room, reason, actor, true);
+  }
+}
+
+const DRAWING_CHECKPOINT_MS = 60_000;
 setInterval(() => {
   if (!supabaseAdmin) return;
-  for (const [sessionId, state] of classroomDrawingLiveStates) {
-    if (!state.dirty) continue;
+  for (const [sessionId, state] of canonicalDrawingLiveStates) {
+    if (!isCanonicalDrawingDirty(state)) continue;
     const room = getRoom(sessionId);
     if (!room) continue;
-    const seats = (room.state as { seats?: Record<string, string> } | null)?.seats;
-    const snapshot = snapshotClassroomDrawingState(state, seats);
-    room.state = snapshot;
-    void persistDrawingCheckpoint(supabaseAdmin, sessionId, snapshot)
-      .then(() => {
-        markClassroomDrawingPersisted(state);
-        logger.info({
-          sessionId,
-          protocol: "socket",
-          message: "Classroom drawing checkpoint persisted",
-          context: { event: "CLASSROOM_DRAWING_CHECKPOINT_PERSISTED", reason: "interval" }
-        });
-      })
-      .catch((err) => {
-        logger.error({
-          message: "Classroom drawing checkpoint persistence failed",
-          sessionId,
-          error: err instanceof Error ? err.message : String(err)
-        });
-      });
+    void persistCanonicalDrawing(room, "interval").catch(() => {});
   }
-}, CLASSROOM_DRAWING_CHECKPOINT_MS);
+}, DRAWING_CHECKPOINT_MS);
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "playground-game-server" });
@@ -305,6 +361,20 @@ io.use(async (socket, next) => {
       next(new Error("SERVER_CONFIG"));
       return;
     }
+    const classroomBoardCapability = token.startsWith("classroom-board:")
+      ? verifyClassroomBoardToken(
+          token.slice("classroom-board:".length),
+          SUPABASE_SERVICE_ROLE_KEY
+        )
+      : null;
+    if (token.startsWith("classroom-board:") && !classroomBoardCapability) {
+      logger.warn({
+        message: "Classroom board socket token rejected",
+        context: { event: "CLASSROOM_BOARD_SOCKET_DENIED", code: "INVALID_CAPABILITY" }
+      });
+      next(new Error("UNAUTHORIZED"));
+      return;
+    }
     const classroomDelegate = token.startsWith("classroom-delegate:")
       ? verifyClassroomDelegateGameToken(
           token.slice("classroom-delegate:".length),
@@ -321,7 +391,27 @@ io.use(async (socket, next) => {
     }
 
     let profile;
-    if (classroomDelegate) {
+    if (classroomBoardCapability) {
+      const { data: classroom } = await supabaseAdmin
+        .from("classroom_sessions")
+        .select("id")
+        .eq("id", classroomBoardCapability.classroomId)
+        .eq("room_code", classroomBoardCapability.roomCode)
+        .eq("status", "active")
+        .maybeSingle();
+      if (!classroom) {
+        next(new Error("FORBIDDEN"));
+        return;
+      }
+      profile = {
+        userId: classroomBoardCapability.identity,
+        role: classroomBoardCapability.role,
+        gender: "boy" as const,
+        full_name: classroomBoardCapability.displayName,
+        is_active: true
+      };
+      socket.data.classroomBoardCapability = classroomBoardCapability;
+    } else if (classroomDelegate) {
       const { data: delegate } = await supabaseAdmin
         .from("classroom_host_delegates")
         .select("id, classroom_id, display_name, is_active")
@@ -350,7 +440,7 @@ io.use(async (socket, next) => {
     } else {
       profile = await getCachedAuth(supabaseAdmin, token);
     }
-    if (profile.role === "kid") {
+    if (shouldEnforceRecessForSocket(profile.role, classroomBoardCapability)) {
       try {
         const schedules = await loadRecessSchedules();
         if (!isWithinRecess(new Date(), schedules)) {
@@ -385,7 +475,14 @@ io.use(async (socket, next) => {
 io.on("connection", (socket) => {
   const originalOn = socket.on.bind(socket);
   const HOT_SOCKET_EVENTS = new Set(["LIVE_DELTA"]);
-  let lastWhiteboardRejectionAt = 0;
+  const lastDrawingRejectionAt = new Map<string, number>();
+  const shouldLogDrawingRejection = (code: string): boolean => {
+    const now = Date.now();
+    const previous = lastDrawingRejectionAt.get(code) ?? 0;
+    if (now - previous < 10_000) return false;
+    lastDrawingRejectionAt.set(code, now);
+    return true;
+  };
   socket.on = (event: string, listener: (...args: any[]) => void | Promise<void>) => {
     if (HOT_SOCKET_EVENTS.has(event)) {
       return originalOn(event, listener);
@@ -498,7 +595,6 @@ io.on("connection", (socket) => {
   function shouldSkipFullSnapshot(gameKey: string, intent: unknown): boolean {
     if (!intent || typeof intent !== "object") return false;
     const typed = intent as { type?: string; kind?: string };
-    if (gameKey === "drawing" && typed.type === "CHECKPOINT") return true;
     if (gameKey === "breakout" && typed.kind === "save-snapshot") return true;
     return false;
   }
@@ -511,55 +607,41 @@ io.on("connection", (socket) => {
     }
   }
 
-  async function isClassroomDrawingHost(room: Room<unknown>): Promise<boolean> {
+  async function canClearDrawing(room: Room<unknown>): Promise<boolean> {
     const classroom = socket.data.classroomDrawing as
       | { sessionId: string; roomCode: string; isHost: boolean }
       | undefined;
-    if (room.gameKey !== "drawing" || !classroom || classroom.sessionId !== room.sessionId) return true;
-    // Regular drawing games intentionally remain collaborative. The host-only
-    // rule is the classroom policy, identified by its reserved invite code.
-    return classroom.isHost;
+    if (room.gameKey !== "drawing") return false;
+    if (room.drawingContext?.boardMode !== "classroom") return room.players.has(userId);
+    return classroom?.sessionId === room.sessionId && classroom.isHost;
   }
 
-  async function canEditClassroomDrawing(room: Room<unknown>): Promise<boolean> {
+  async function canEditDrawing(room: Room<unknown>): Promise<boolean> {
     const classroom = socket.data.classroomDrawing as
       | { sessionId: string; roomCode: string; isHost: boolean }
       | undefined;
     if (room.gameKey !== "drawing") return true;
-    // Teachers are ordinary-game observers even when their account is the
-    // persisted host. Classroom teachers retain their policy-driven access.
-    if (!classroom || classroom.sessionId !== room.sessionId) {
-      return socket.data.role !== "teacher";
+    if (room.drawingContext?.boardMode !== "classroom") {
+      return socket.data.role !== "teacher" && room.players.has(userId);
     }
+    if (!classroom || classroom.sessionId !== room.sessionId) return false;
     if (classroom.isHost) return true;
     return classroomDrawingPolicies.get(classroom.roomCode)?.allowWhiteboardDraw === true;
   }
 
-  function isCanonicalClassroomDrawing(room: Room<unknown>): boolean {
+  function isCanonicalDrawingRoom(room: Room<unknown>): boolean {
     // Every drawing room is server-owned. Classroom policy is an additional
     // authorization layer, not a different synchronization protocol.
     return room.gameKey === "drawing";
   }
 
-  function drawingLogContext(room: Room<unknown>, operation: string): Record<string, unknown> {
-    const classroom = socket.data.classroomDrawing;
-    return classroom?.sessionId === room.sessionId
-      ? {
-          component: "drawing-board",
-          boardMode: "classroom",
-          operation,
-          classroomId: classroom.classroomId,
-          roomCode: classroom.roomCode
-        }
-      : { component: "drawing-board", boardMode: "game", operation };
-  }
-
-  function liveClassroomDrawingState(room: Room<unknown>): ClassroomDrawingLiveState {
-    const existing = classroomDrawingLiveStates.get(room.sessionId);
+  function liveCanonicalDrawingState(room: Room<unknown>): CanonicalDrawingLiveState {
+    const existing = canonicalDrawingLiveStates.get(room.sessionId);
     if (existing) return existing;
-    const created = createClassroomDrawingState(room.state as any);
-    classroomDrawingLiveStates.set(room.sessionId, created);
+    const created = createCanonicalDrawingState(room.state as any);
+    canonicalDrawingLiveStates.set(room.sessionId, created);
     logger.info({
+      correlationId: socket.data.correlationId,
       userId,
       sessionId: room.sessionId,
       protocol: "socket",
@@ -574,39 +656,43 @@ io.on("connection", (socket) => {
     return created;
   }
 
-  function serveCanonicalClassroomDrawing(room: Room<unknown>, reason: string): void {
-    const syncToken = nextClassroomDrawingSyncToken(socket.id);
+  function serveCanonicalDrawing(room: Room<unknown>, reason: string): void {
+    const syncToken = nextCanonicalDrawingSyncToken(socket.id);
     const operationId = `drawing-sync:${socket.id}:${Date.now()}`;
     const timerKey = `${socket.id}:${room.sessionId}`;
-    const priorTimer = classroomDrawingSyncTimers.get(timerKey);
+    const priorTimer = canonicalDrawingSyncTimers.get(timerKey);
     if (priorTimer) clearTimeout(priorTimer);
-    socket.data.classroomDrawingSync = {
+    socket.data.canonicalDrawingSync = {
       sessionId: room.sessionId,
       token: syncToken,
       acknowledged: false,
-      revision: liveClassroomDrawingState(room).revision,
+      revision: liveCanonicalDrawingState(room).revision,
       operationId,
       startedAt: Date.now(),
-      attempts: (socket.data.classroomDrawingSync?.attempts ?? 0) + 1,
+      attempts: (socket.data.canonicalDrawingSync?.attempts ?? 0) + 1,
       reason
     };
     socket.emit("DRAWING_SYNC", {
       sessionId: room.sessionId,
-      yjsUpdate: encodeFullClassroomDrawingState(liveClassroomDrawingState(room)),
+      yjsUpdate: encodeFullCanonicalDrawingState(liveCanonicalDrawingState(room)),
       syncToken,
-      viewport: classroomDrawingViewports.get(room.sessionId)
+      viewport: room.drawingContext?.boardMode === "classroom"
+        ? classroomDrawingViewports.get(room.sessionId)
+        : undefined
     });
     const timer = setTimeout(() => {
-      const pending = socket.data.classroomDrawingSync;
+      const pending = socket.data.canonicalDrawingSync;
       if (pending?.operationId !== operationId || pending.acknowledged) return;
+      const phase = drawingSyncPhase(reason);
       logger.warn({
+        correlationId: socket.data.correlationId,
         userId,
         sessionId: room.sessionId,
         protocol: "socket",
-        message: "Classroom drawing initial sync timed out",
+        message: "Canonical drawing sync timed out",
         context: {
-          ...drawingLogContext(room, "initial_sync"),
-          event: "DRAWING_INITIAL_SYNC_FAILED",
+          ...drawingLogContext(room, phase),
+          event: phase === "initial_sync" ? "DRAWING_INITIAL_SYNC_FAILED" : "DRAWING_RECOVERY_SYNC_FAILED",
           status: "failed",
           code: "SYNC_ACK_TIMEOUT",
           reason,
@@ -616,23 +702,15 @@ io.on("connection", (socket) => {
       });
     }, 15_000);
     timer.unref?.();
-    classroomDrawingSyncTimers.set(timerKey, timer);
+    canonicalDrawingSyncTimers.set(timerKey, timer);
   }
 
-  function applyLiveClassroomSnapshot(room: Room<unknown>): unknown {
-    const state = liveClassroomDrawingState(room);
+  function applyLiveCanonicalSnapshot(room: Room<unknown>): unknown {
+    const state = liveCanonicalDrawingState(room);
     const seats = (room.state as { seats?: Record<string, string> } | null)?.seats;
-    const snapshot = snapshotClassroomDrawingState(state, seats);
+    const snapshot = snapshotCanonicalDrawingState(state, seats);
     room.state = snapshot;
     return snapshot;
-  }
-
-  async function persistLiveClassroomDrawing(room: Room<unknown>, reason: string): Promise<void> {
-    const state = classroomDrawingLiveStates.get(room.sessionId);
-    if (!state?.dirty || !supabaseAdmin) return;
-    const snapshot = applyLiveClassroomSnapshot(room);
-    await persistDrawingCheckpoint(supabaseAdmin, room.sessionId, snapshot);
-    markClassroomDrawingPersisted(state);
   }
 
   function connectedPayload(room: Room<unknown>) {
@@ -740,10 +818,14 @@ io.on("connection", (socket) => {
         gameKey === "drawing" && String(session.invitation_code ?? "").startsWith("class-draw-")
           ? String(session.invitation_code).slice("class-draw-".length)
           : null;
+      let drawingContext: DrawingRoomContext | undefined = gameKey === "drawing"
+        ? { boardMode: "game" }
+        : undefined;
       if (classroomRoomCode) {
         let policy: ClassroomDrawingPolicy = {
           classroomId: "unknown",
-          allowWhiteboardDraw: false
+          allowWhiteboardDraw: false,
+          active: false
         };
         try {
           policy = await loadClassroomDrawingPolicy(classroomRoomCode);
@@ -757,6 +839,19 @@ io.on("connection", (socket) => {
         const delegate = socket.data.classroomDelegate as
           | { roomCode: string; identity: string }
           | undefined;
+        const boardCapability = socket.data.classroomBoardCapability;
+        const hasMatchingBoardCapability = matchesClassroomBoardCapability(
+          boardCapability,
+          { classroomId: policy.classroomId, roomCode: classroomRoomCode },
+          userId
+        );
+        if (!policy.active || (!hasMatchingBoardCapability && !delegate)) {
+          reply?.({
+            ok: false,
+            error: { code: "CLASSROOM_ACCESS_REQUIRED", message: "נדרשת כניסה דרך הכיתה" }
+          });
+          return;
+        }
         socket.data.classroomDrawing = {
           sessionId,
           classroomId: policy.classroomId,
@@ -765,9 +860,16 @@ io.on("connection", (socket) => {
             role === "teacher" ||
             role === "admin" ||
             hostId === userId ||
+            (hasMatchingBoardCapability && boardCapability?.isHost === true) ||
             (delegate?.roomCode === classroomRoomCode && delegate.identity === userId)
         };
+        drawingContext = {
+          boardMode: "classroom",
+          classroomId: policy.classroomId,
+          roomCode: classroomRoomCode
+        };
         logger.info({
+          correlationId: socket.data.correlationId,
           userId,
           sessionId,
           protocol: "socket",
@@ -784,9 +886,17 @@ io.on("connection", (socket) => {
           }
         });
       } else {
+        if (socket.data.classroomBoardCapability) {
+          reply?.({
+            ok: false,
+            error: { code: "CLASSROOM_SCOPE_MISMATCH", message: "Classroom capability cannot join a game" }
+          });
+          return;
+        }
         socket.data.classroomDrawing = undefined;
         if (gameKey === "drawing") {
           logger.info({
+            correlationId: socket.data.correlationId,
             userId,
             sessionId,
             protocol: "socket",
@@ -852,6 +962,7 @@ io.on("connection", (socket) => {
       const room = getOrCreateRoom(sessionId, {
         gameId: session.game_id as string,
         gameKey,
+        drawingContext,
         module: gameModule,
         gender: (session.gender as "boy" | "girl" | "all") || gender,
         hostId: session.host_id as string,
@@ -878,7 +989,7 @@ io.on("connection", (socket) => {
         socket.data.sessionId = sessionId;
         socket.data.isSpectator = true;
         if (gameKey === "drawing") {
-          serveCanonicalClassroomDrawing(room, "teacher-spectator-join");
+          serveCanonicalDrawing(room, "teacher-spectator-join");
         }
         emitSnapshot(room);
         const spectateAck = wrapAck("SPECTATE", started, sessionId, ack);
@@ -907,7 +1018,7 @@ io.on("connection", (socket) => {
       await socket.join(`session:${sessionId}`);
       socket.data.sessionId = sessionId;
       if (gameKey === "drawing") {
-        serveCanonicalClassroomDrawing(room, "join");
+        serveCanonicalDrawing(room, "join");
       }
       void persistPlayerJoin({
         supabase: supabaseAdmin,
@@ -945,10 +1056,10 @@ io.on("connection", (socket) => {
     (payload: { sessionId?: string; syncToken?: string }) => {
       const sessionId = payload?.sessionId;
       const room = sessionId ? getRoom(sessionId) : undefined;
-      const sync = socket.data.classroomDrawingSync;
+      const sync = socket.data.canonicalDrawingSync;
       if (
         !room ||
-        !isCanonicalClassroomDrawing(room) ||
+        !isCanonicalDrawingRoom(room) ||
         sync?.sessionId !== sessionId ||
         sync.token !== payload?.syncToken
       ) {
@@ -956,25 +1067,26 @@ io.on("connection", (socket) => {
       }
       sync.acknowledged = true;
       const timerKey = `${socket.id}:${sessionId}`;
-      const timer = classroomDrawingSyncTimers.get(timerKey);
+      const timer = canonicalDrawingSyncTimers.get(timerKey);
       if (timer) clearTimeout(timer);
-      classroomDrawingSyncTimers.delete(timerKey);
+      canonicalDrawingSyncTimers.delete(timerKey);
       // Deltas can arrive while a browser is mounting the board and before it
       // has registered its LIVE_DELTA listener. Acknowledge only the exact
       // revision it bound; otherwise provide a fresh canonical replacement.
       // This makes a reload converge even while another player is drawing.
-      if (liveClassroomDrawingState(room).revision !== sync.revision) {
-        serveCanonicalClassroomDrawing(room, "changed-during-initial-sync");
+      if (liveCanonicalDrawingState(room).revision !== sync.revision) {
+        serveCanonicalDrawing(room, "changed-during-initial-sync");
         return;
       }
       logger.info({
+        correlationId: socket.data.correlationId,
         userId,
         sessionId,
         protocol: "socket",
-        message: "Classroom drawing sync completed",
+        message: "Canonical drawing sync completed",
         context: {
-          ...drawingLogContext(room, sync.reason === "join" || sync.reason === "teacher-spectator-join" ? "initial_sync" : "recovery_sync"),
-          event: sync.reason === "join" || sync.reason === "teacher-spectator-join" ? "DRAWING_INITIAL_SYNC_COMPLETED" : "DRAWING_RECOVERY_SYNC_COMPLETED",
+          ...drawingLogContext(room, drawingSyncPhase(sync.reason)),
+          event: drawingSyncPhase(sync.reason) === "initial_sync" ? "DRAWING_INITIAL_SYNC_COMPLETED" : "DRAWING_RECOVERY_SYNC_COMPLETED",
           status: "success",
           reason: sync.reason,
           attempts: sync.attempts,
@@ -997,29 +1109,32 @@ io.on("connection", (socket) => {
       // Authorized classroom teachers and delegates may intentionally be
       // attached as spectators so they do not consume a drawing-game seat.
       // The classroom policy below remains the authority for their edits.
-      if (!room.players.has(userId) && !isCanonicalClassroomDrawing(room)) return;
+      if (!room.players.has(userId) && !isCanonicalDrawingRoom(room)) return;
 
-      if (isCanonicalClassroomDrawing(room)) {
+      if (isCanonicalDrawingRoom(room)) {
         const typed = typeof delta === "object" && delta !== null ? delta as Record<string, unknown> : null;
         if (!typed) return;
         if (estimatePayloadBytes(delta) > MAX_LIVE_DELTA_BYTES) {
-          logger.warn({
-            userId,
-            sessionId,
-            protocol: "socket",
-            message: "Classroom drawing update rejected for payload size",
-            context: {
-              ...drawingLogContext(room, "apply_delta"),
-              event: "DRAWING_UPDATE_REJECTED",
-              status: "failed",
-              code: "PAYLOAD_TOO_LARGE"
-            }
-          });
+          if (shouldLogDrawingRejection("PAYLOAD_TOO_LARGE")) {
+            logger.warn({
+              correlationId: socket.data.correlationId,
+              userId,
+              sessionId,
+              protocol: "socket",
+              message: "Canonical drawing update rejected for payload size",
+              context: {
+                ...drawingLogContext(room, "apply_delta"),
+                event: "DRAWING_UPDATE_REJECTED",
+                status: "failed",
+                code: "PAYLOAD_TOO_LARGE"
+              }
+            });
+          }
           socket.emit("LIVE_DELTA_REJECTED", {
             sessionId,
             code: "PAYLOAD_TOO_LARGE"
           });
-          serveCanonicalClassroomDrawing(room, "payload-too-large");
+          serveCanonicalDrawing(room, "payload-too-large");
           return;
         }
 
@@ -1028,19 +1143,23 @@ io.on("connection", (socket) => {
         const yjsAwarenessRemove = typed.yjsAwarenessRemove;
         const viewport = typed.viewport;
         if (viewport && typeof viewport === "object" && !Array.isArray(viewport)) {
-          if (!(await isClassroomDrawingHost(room))) {
-            logger.warn({
-              userId,
-              sessionId,
-              protocol: "socket",
-              message: "Classroom drawing viewport update denied",
-              context: {
-                ...drawingLogContext(room, "viewport_update"),
-                event: "DRAWING_VIEWPORT_REJECTED",
-                status: "failed",
-                code: "WHITEBOARD_HOST_REQUIRED"
-              }
-            });
+          if (room.drawingContext?.boardMode !== "classroom") return;
+          if (!(await canClearDrawing(room))) {
+            if (shouldLogDrawingRejection("WHITEBOARD_HOST_REQUIRED")) {
+              logger.warn({
+                correlationId: socket.data.correlationId,
+                userId,
+                sessionId,
+                protocol: "socket",
+                message: "Classroom drawing viewport update denied",
+                context: {
+                  ...drawingLogContext(room, "viewport_update"),
+                  event: "DRAWING_VIEWPORT_REJECTED",
+                  status: "failed",
+                  code: "WHITEBOARD_HOST_REQUIRED"
+                }
+              });
+            }
             return;
           }
           const candidate = viewport as Record<string, unknown>;
@@ -1052,18 +1171,21 @@ io.on("connection", (socket) => {
             !Number.isFinite(scrollY) || Math.abs(scrollY) > 10_000_000 ||
             !Number.isFinite(zoom) || zoom < 0.01 || zoom > 30
           ) {
-            logger.warn({
-              userId,
-              sessionId,
-              protocol: "socket",
-              message: "Classroom drawing viewport rejected",
-              context: {
-                ...drawingLogContext(room, "viewport_update"),
-                event: "DRAWING_VIEWPORT_REJECTED",
-                status: "failed",
-                code: "INVALID_VIEWPORT"
-              }
-            });
+            if (shouldLogDrawingRejection("INVALID_VIEWPORT")) {
+              logger.warn({
+                correlationId: socket.data.correlationId,
+                userId,
+                sessionId,
+                protocol: "socket",
+                message: "Classroom drawing viewport rejected",
+                context: {
+                  ...drawingLogContext(room, "viewport_update"),
+                  event: "DRAWING_VIEWPORT_REJECTED",
+                  status: "failed",
+                  code: "INVALID_VIEWPORT"
+                }
+              });
+            }
             return;
           }
           const nextViewport = { scrollX, scrollY, zoom };
@@ -1079,14 +1201,14 @@ io.on("connection", (socket) => {
           // Do not let teardown or initialization awareness from the old/new
           // browser document leak into the canonical room before that exact
           // document has been bound and acknowledged.
-          if (!socket.data.classroomDrawingSync?.acknowledged) return;
-          const knownClientIds = socket.data.classroomDrawingAwarenessClientIds as number[] | undefined;
+          if (!socket.data.canonicalDrawingSync?.acknowledged) return;
+          const knownClientIds = socket.data.canonicalDrawingAwarenessClientIds as number[] | undefined;
           const removedClientIds = yjsAwarenessRemove.filter(
             (clientId): clientId is number =>
               Number.isSafeInteger(clientId) && knownClientIds?.includes(clientId) === true
           );
           if (removedClientIds.length > 0) {
-            socket.data.classroomDrawingAwarenessClientIds = knownClientIds?.filter(
+            socket.data.canonicalDrawingAwarenessClientIds = knownClientIds?.filter(
               (clientId) => !removedClientIds.includes(clientId)
             );
             socket.to(`session:${room.sessionId}`).emit("LIVE_DELTA", {
@@ -1099,17 +1221,17 @@ io.on("connection", (socket) => {
         if (typeof yjsUpdate !== "string" && typeof yjsAwareness !== "string") {
           return;
         }
-        if (typeof yjsAwareness === "string" && !socket.data.classroomDrawingSync?.acknowledged) {
+        if (typeof yjsAwareness === "string" && !socket.data.canonicalDrawingSync?.acknowledged) {
           return;
         }
-        if (!(await canEditClassroomDrawing(room))) {
-          if (Date.now() - lastWhiteboardRejectionAt >= 10_000) {
-            lastWhiteboardRejectionAt = Date.now();
+        if (!(await canEditDrawing(room))) {
+          if (shouldLogDrawingRejection("WHITEBOARD_EDIT_FORBIDDEN")) {
             logger.warn({
+              correlationId: socket.data.correlationId,
               userId,
               sessionId,
               protocol: "socket",
-              message: "Classroom drawing update rejected",
+              message: "Canonical drawing update rejected",
               context: {
                 ...drawingLogContext(room, "apply_delta"),
                 event: "DRAWING_UPDATE_REJECTED",
@@ -1122,63 +1244,55 @@ io.on("connection", (socket) => {
             sessionId,
             code: "WHITEBOARD_EDIT_FORBIDDEN"
           });
-          serveCanonicalClassroomDrawing(room, "permission-rejected");
+          serveCanonicalDrawing(room, "permission-rejected");
           return;
         }
 
         if (typeof yjsUpdate === "string") {
-          const liveState = liveClassroomDrawingState(room);
-          const elementCountBefore = canvasFromDoc(liveState.doc).elements.length;
-          const result = applyClassroomDrawingSocketUpdate(
+          const liveState = liveCanonicalDrawingState(room);
+          const result = applyCanonicalDrawingSocketUpdate(
             liveState,
-            socket.data.classroomDrawingSync,
+            socket.data.canonicalDrawingSync,
             sessionId,
             yjsUpdate
           );
           if (!result.ok) {
             if (result.code === "SYNC_NOT_ACKNOWLEDGED") {
+              if (shouldLogDrawingRejection("SYNC_NOT_ACKNOWLEDGED")) {
+                logger.warn({
+                  correlationId: socket.data.correlationId,
+                  userId,
+                  sessionId,
+                  protocol: "socket",
+                  message: "Ignored drawing update before canonical sync acknowledgement",
+                  context: {
+                    ...drawingLogContext(room, "apply_delta"),
+                    event: "DRAWING_UPDATE_REJECTED",
+                    status: "failed",
+                    code: "SYNC_NOT_ACKNOWLEDGED"
+                  }
+                });
+              }
+              serveCanonicalDrawing(room, "update-before-sync");
+              return;
+            }
+            if (shouldLogDrawingRejection(result.code)) {
               logger.warn({
+                correlationId: socket.data.correlationId,
                 userId,
                 sessionId,
                 protocol: "socket",
-                message: "Ignored classroom drawing update before canonical sync acknowledgement",
-              context: {
-                ...drawingLogContext(room, "apply_delta"),
-                event: "DRAWING_UPDATE_REJECTED",
-                status: "failed",
-                code: "SYNC_NOT_ACKNOWLEDGED"
-              }
+                message: "Canonical drawing Yjs update rejected",
+                context: {
+                  ...drawingLogContext(room, "apply_delta"),
+                  event: "DRAWING_UPDATE_REJECTED",
+                  status: "failed",
+                  code: result.code
+                }
               });
-              serveCanonicalClassroomDrawing(room, "update-before-sync");
-              return;
             }
-            logger.warn({
-              userId,
-              sessionId,
-              protocol: "socket",
-              message: "Classroom drawing Yjs update rejected",
-              context: {
-                ...drawingLogContext(room, "apply_delta"),
-                event: "DRAWING_UPDATE_REJECTED",
-                status: "failed",
-                code: result.code
-              }
-            });
-            serveCanonicalClassroomDrawing(room, "invalid-update");
+            serveCanonicalDrawing(room, "invalid-update");
             return;
-          }
-          const elementCountAfter = canvasFromDoc(liveState.doc).elements.length;
-          if (elementCountBefore > 0 && elementCountAfter === 0) {
-            logger.warn({
-              userId,
-              sessionId,
-              protocol: "socket",
-              message: "Classroom drawing delta emptied the canonical board",
-              context: {
-                event: "CLASSROOM_DRAWING_DOCUMENT_EMPTIED_BY_DELTA",
-                elementCountBefore
-              }
-            });
           }
           socket.to(`session:${room.sessionId}`).emit("LIVE_DELTA", {
             from: userId,
@@ -1190,7 +1304,7 @@ io.on("connection", (socket) => {
         const awarenessClientIds = Array.isArray(typed.yjsAwarenessClientIds)
           ? typed.yjsAwarenessClientIds.filter((clientId): clientId is number => Number.isSafeInteger(clientId))
           : [];
-        socket.data.classroomDrawingAwarenessClientIds = awarenessClientIds;
+        socket.data.canonicalDrawingAwarenessClientIds = awarenessClientIds;
         socket.to(`session:${room.sessionId}`).emit("LIVE_DELTA", {
           from: userId,
           delta: { yjsAwareness }
@@ -1255,7 +1369,10 @@ io.on("connection", (socket) => {
         return;
       }
       classroomDrawingPolicies.set(classroom.roomCode, {
-        ...(classroomDrawingPolicies.get(classroom.roomCode) ?? { classroomId: classroom.classroomId }),
+        ...(classroomDrawingPolicies.get(classroom.roomCode) ?? {
+          classroomId: classroom.classroomId,
+          active: true
+        }),
         allowWhiteboardDraw: payload.allowWhiteboardDraw
       });
     }
@@ -1305,37 +1422,23 @@ io.on("connection", (socket) => {
         return;
       }
       const drawingIntent = payload.intent as { type?: string };
-      if (isCanonicalClassroomDrawing(room)) {
-        if (!(await canEditClassroomDrawing(room))) {
+      if (isCanonicalDrawingRoom(room)) {
+        if (!(await canEditDrawing(room))) {
           reply?.({ ok: false, error: { code: "READ_ONLY", message: "Observers cannot change the board" } });
           return;
         }
-        if (drawingIntent.type === "CHECKPOINT") {
-          try {
-            await persistLiveClassroomDrawing(room, "explicit-request");
-            reply?.({ ok: true, gameState: room.state });
-          } catch (err) {
-            logger.error({
-              message: "Classroom drawing checkpoint persistence failed",
-              sessionId,
-              error: err instanceof Error ? err.message : String(err)
-            });
-            reply?.({ ok: false, error: { code: "PERSIST_FAILED", message: "Could not save board" } });
-          }
-          return;
-        }
         if (drawingIntent.type === "CLEAR_CANVAS") {
-          if (!(await isClassroomDrawingHost(room))) {
+          if (!(await canClearDrawing(room))) {
             reply?.({ ok: false, error: { code: "UNAUTHORIZED", message: "Only a classroom host can clear the board" } });
             return;
           }
-          const liveState = liveClassroomDrawingState(room);
-          clearClassroomDrawingState(liveState);
-          const snapshot = applyLiveClassroomSnapshot(room);
+          const liveState = liveCanonicalDrawingState(room);
+          clearCanonicalDrawingState(liveState);
+          const snapshot = applyLiveCanonicalSnapshot(room);
           const recipients = await io.in(`session:${sessionId}`).fetchSockets();
-          const yjsUpdate = encodeFullClassroomDrawingState(liveState);
+          const yjsUpdate = encodeFullCanonicalDrawingState(liveState);
           const awarenessClientIds = [...new Set(recipients.flatMap((recipient) =>
-            (recipient.data.classroomDrawingAwarenessClientIds as number[] | undefined) ?? []
+            (recipient.data.canonicalDrawingAwarenessClientIds as number[] | undefined) ?? []
           ))];
           for (const recipient of recipients) {
             // Awareness is scoped to the replaced browser documents. Remove
@@ -1347,30 +1450,58 @@ io.on("connection", (socket) => {
                 delta: { yjsAwarenessRemove: awarenessClientIds }
               });
             }
-            recipient.data.classroomDrawingAwarenessClientIds = undefined;
-            const syncToken = nextClassroomDrawingSyncToken(recipient.id);
-            recipient.data.classroomDrawingSync = {
+            recipient.data.canonicalDrawingAwarenessClientIds = undefined;
+            const syncToken = nextCanonicalDrawingSyncToken(recipient.id);
+            const operationId = `drawing-sync:${recipient.id}:${Date.now()}`;
+            const timerKey = `${recipient.id}:${sessionId}`;
+            const priorTimer = canonicalDrawingSyncTimers.get(timerKey);
+            if (priorTimer) clearTimeout(priorTimer);
+            recipient.data.canonicalDrawingSync = {
               sessionId,
               token: syncToken,
               acknowledged: false,
-              revision: liveState.revision
+              revision: liveState.revision,
+              operationId,
+              startedAt: Date.now(),
+              attempts: 1,
+              reason: "clear"
             };
             recipient.emit("DRAWING_SYNC", { sessionId, yjsUpdate, syncToken });
+            const timer = setTimeout(() => {
+              const pending = recipient.data.canonicalDrawingSync;
+              if (pending?.operationId !== operationId || pending.acknowledged) return;
+              logger.warn({
+                correlationId: recipient.data.correlationId,
+                userId: recipient.data.userId,
+                sessionId,
+                protocol: "socket",
+                message: "Canonical drawing recovery sync timed out",
+                context: {
+                  ...drawingLogContext(room, "recovery_sync"),
+                  event: "DRAWING_RECOVERY_SYNC_FAILED",
+                  status: "failed",
+                  code: "SYNC_ACK_TIMEOUT",
+                  reason: "clear",
+                  attempts: 1,
+                  duration_ms: 15_000
+                }
+              });
+            }, 15_000);
+            timer.unref?.();
+            canonicalDrawingSyncTimers.set(timerKey, timer);
           }
-          try {
-            await persistLiveClassroomDrawing(room, "clear");
-          } catch (err) {
-            logger.error({
-              message: "Classroom drawing clear persistence failed",
-              sessionId,
-              error: err instanceof Error ? err.message : String(err)
-            });
-          }
+          await persistCanonicalDrawing(
+            room,
+            "clear",
+            { correlationId: socket.data.correlationId, userId },
+            true
+          ).catch(() => {});
           logger.info({
+            correlationId: socket.data.correlationId,
             userId,
             sessionId,
             protocol: "socket",
-            message: "Classroom drawing board cleared",
+            message: "Canonical drawing board cleared",
             context: {
               ...drawingLogContext(room, "clear"),
               event: "DRAWING_BOARD_CLEARED",
@@ -1383,17 +1514,6 @@ io.on("connection", (socket) => {
           return;
         }
       }
-      if (
-        room.gameKey === "drawing" &&
-        (drawingIntent.type === "CHECKPOINT" || drawingIntent.type === "CLEAR_CANVAS") &&
-        !(await isClassroomDrawingHost(room))
-      ) {
-        reply?.({
-          ok: false,
-          error: { code: "UNAUTHORIZED", message: "Only a classroom host can change the board" }
-        });
-        return;
-      }
       const res = applyIntent(room, userId, payload.intent);
       if (!res.ok) {
         reply?.({ ok: false, error: res.error });
@@ -1402,19 +1522,6 @@ io.on("connection", (socket) => {
       const skipSnapshot = shouldSkipFullSnapshot(room.gameKey, payload.intent);
       if (!skipSnapshot) {
         emitSnapshot(room);
-      }
-      if (
-        room.gameKey === "drawing" &&
-        (drawingIntent.type === "CHECKPOINT" || drawingIntent.type === "CLEAR_CANVAS") &&
-        supabaseAdmin
-      ) {
-        void persistDrawingCheckpoint(supabaseAdmin, sessionId, res.state).catch((err) => {
-          logger.error({
-            message: "Drawing checkpoint persistence failed",
-            sessionId,
-            error: err instanceof Error ? err.message : String(err)
-          });
-        });
       }
       if (res.outcome) {
         io.to(`session:${sessionId}`).emit("ROOM_EVENT", {
@@ -1816,16 +1923,14 @@ io.on("connection", (socket) => {
   async function handleLeave(sessionId: string) {
     if (!userId) return;
     const awarenessClientIds = [
-      ...(socket.data.classroomDrawingAwarenessClientIds ?? []),
-      ...(socket.data.drawingAwarenessClientIds ?? [])
+      ...(socket.data.canonicalDrawingAwarenessClientIds ?? [])
     ];
     if (awarenessClientIds?.length) {
       socket.to(`session:${sessionId}`).emit("LIVE_DELTA", {
         from: userId,
         delta: { yjsAwarenessRemove: [...new Set(awarenessClientIds)] }
       });
-      socket.data.classroomDrawingAwarenessClientIds = undefined;
-      socket.data.drawingAwarenessClientIds = undefined;
+      socket.data.canonicalDrawingAwarenessClientIds = undefined;
     }
     if (await hasConcurrentPlayerSocket(sessionId)) {
       await socket.leave(`session:${sessionId}`);
@@ -1836,23 +1941,20 @@ io.on("connection", (socket) => {
     }
     if (socket.data.isSpectator) {
       const spectatorRoom = getRoom(sessionId);
-      const isClassroomSpectator = spectatorRoom && isCanonicalClassroomDrawing(spectatorRoom);
+      const isClassroomSpectator = spectatorRoom?.drawingContext?.boardMode === "classroom";
       if (spectatorRoom && isClassroomSpectator) {
-        try {
-          await persistLiveClassroomDrawing(spectatorRoom, "teacher-spectator-leave");
-        } catch (err) {
-          logger.error({
-            message: "Classroom drawing spectator leave persistence failed",
-            sessionId,
-            error: err instanceof Error ? err.message : String(err)
-          });
-        }
+        await persistCanonicalDrawing(
+          spectatorRoom,
+          "teacher-spectator-leave",
+          { correlationId: socket.data.correlationId, userId },
+          true
+        ).catch(() => {});
       }
       removeSpectatorFromRoom(sessionId, userId);
       const room = getRoom(sessionId);
       if (room) emitSnapshot(room);
       if (!room && isClassroomSpectator) {
-        classroomDrawingLiveStates.delete(sessionId);
+        canonicalDrawingLiveStates.delete(sessionId);
       }
       await socket.leave(`session:${sessionId}`);
       if (socket.data.sessionId === sessionId) {
@@ -1862,17 +1964,16 @@ io.on("connection", (socket) => {
       return;
     }
     const before = getRoom(sessionId);
-    const classroomHostId = before && isCanonicalClassroomDrawing(before) ? before.hostId : undefined;
-    if (before && classroomHostId) {
-      try {
-        await persistLiveClassroomDrawing(before, "last-socket-leave");
-      } catch (err) {
-        logger.error({
-          message: "Classroom drawing leave persistence failed",
-          sessionId,
-          error: err instanceof Error ? err.message : String(err)
-        });
-      }
+    const classroomHostId = before && preservesHostOnDisconnect(before)
+      ? before.hostId
+      : undefined;
+    if (before && isCanonicalDrawingRoom(before)) {
+      await persistCanonicalDrawing(
+        before,
+        "last-socket-leave",
+        { correlationId: socket.data.correlationId, userId },
+        true
+      ).catch(() => {});
     }
     const result = removePlayerFromRoom(sessionId, userId);
     if (classroomHostId) {
@@ -1883,9 +1984,9 @@ io.on("connection", (socket) => {
       const remainingRoom = getRoom(sessionId);
       if (remainingRoom) remainingRoom.hostId = classroomHostId;
     }
-    if (result.roomEmpty) {
+    if (result.roomDeleted) {
       stats.onRoomDeleted(sessionId);
-      classroomDrawingLiveStates.delete(sessionId);
+      canonicalDrawingLiveStates.delete(sessionId);
       classroomDrawingViewports.delete(sessionId);
     }
     const room = getRoom(sessionId);
@@ -1968,18 +2069,20 @@ io.on("connection", (socket) => {
   );
 
   socket.on("disconnect", () => {
-    const pendingSync = socket.data.classroomDrawingSync;
+    const pendingSync = socket.data.canonicalDrawingSync;
     if (pendingSync && !pendingSync.acknowledged) {
       const pendingRoom = getRoom(pendingSync.sessionId);
-      if (pendingRoom && isCanonicalClassroomDrawing(pendingRoom)) {
+      if (pendingRoom && isCanonicalDrawingRoom(pendingRoom)) {
+        const phase = drawingSyncPhase(pendingSync.reason);
         logger.warn({
+          correlationId: socket.data.correlationId,
           userId,
           sessionId: pendingSync.sessionId,
           protocol: "socket",
-          message: "Classroom drawing sync interrupted by disconnect",
+          message: "Canonical drawing sync interrupted by disconnect",
           context: {
-            ...drawingLogContext(pendingRoom, "initial_sync"),
-            event: "DRAWING_INITIAL_SYNC_FAILED",
+            ...drawingLogContext(pendingRoom, phase),
+            event: phase === "initial_sync" ? "DRAWING_INITIAL_SYNC_FAILED" : "DRAWING_RECOVERY_SYNC_FAILED",
             status: "failed",
             code: "DISCONNECTED_BEFORE_ACK",
             reason: pendingSync.reason,
@@ -1987,9 +2090,9 @@ io.on("connection", (socket) => {
           }
         });
       }
-      const timer = classroomDrawingSyncTimers.get(`${socket.id}:${pendingSync.sessionId}`);
+      const timer = canonicalDrawingSyncTimers.get(`${socket.id}:${pendingSync.sessionId}`);
       if (timer) clearTimeout(timer);
-      classroomDrawingSyncTimers.delete(`${socket.id}:${pendingSync.sessionId}`);
+      canonicalDrawingSyncTimers.delete(`${socket.id}:${pendingSync.sessionId}`);
     }
     const sessionId = socket.data.sessionId as string | undefined;
     if (sessionId && userId) {

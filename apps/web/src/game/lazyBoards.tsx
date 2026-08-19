@@ -7,6 +7,7 @@ import type {
   MemoryState,
   TicTacToeState
 } from "@playground/game-logic";
+import type { CanonicalDrawingMode } from "@/games/drawing/drawingMode";
 
 export interface BoardProps {
   gameState: unknown;
@@ -27,9 +28,7 @@ export interface BoardProps {
   paused?: boolean;
   players?: Array<{ userId: string; displayName: string }>;
   connectedPlayers?: Array<{ userId: string; displayName: string }>;
-  serverAuthoritative?: boolean;
-  initialYjsUpdate?: string | null;
-  initialYjsSyncToken?: string | null;
+  drawingMode?: CanonicalDrawingMode;
 }
 
 export interface BoardRegistryEntry {
@@ -127,29 +126,19 @@ const BOARD_LOADERS: Record<
         gameState,
         mySymbol,
         myUserId,
-        onIntent,
-        onLiveDelta,
-        subscribeLiveDeltas,
-        isHost,
         players,
-        serverAuthoritative,
-        initialYjsUpdate,
-        initialYjsSyncToken
-      }) => (
-        <DrawingBoard
-          gameState={gameState as DrawingState}
-          mySeat={mySymbol}
-          myUserId={myUserId}
-          onIntent={(intent) => onIntent(intent)}
-          onLiveDelta={onLiveDelta}
-          subscribeLiveDeltas={subscribeLiveDeltas}
-          isHost={isHost}
-          serverAuthoritative={serverAuthoritative}
-          initialYjsUpdate={initialYjsUpdate}
-          initialYjsSyncToken={initialYjsSyncToken}
-          players={players}
-        />
-      )
+        drawingMode
+      }) => drawingMode ? (
+          <DrawingBoard
+            gameState={gameState as DrawingState}
+            mode={drawingMode}
+            mySeat={mySymbol}
+            myUserId={myUserId}
+            players={players}
+          />
+        ) : (
+          <div className="p-4 text-center text-rose-300">Drawing synchronization is unavailable.</div>
+        )
     };
   },
   breakout: async () => {

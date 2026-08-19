@@ -7,14 +7,14 @@ import {
 } from "@playground/game-logic";
 import * as Y from "yjs";
 
-export interface ClassroomDrawingLiveState {
+export interface CanonicalDrawingLiveState {
   doc: Y.Doc;
   revision: number;
+  persistedRevision: number;
   clearRevision: number;
-  dirty: boolean;
 }
 
-export interface ClassroomDrawingCanvas {
+export interface CanonicalDrawingCanvas {
   elements: unknown[];
   files: Record<string, unknown>;
 }
@@ -23,7 +23,7 @@ export interface ClassroomDrawingCanvas {
  * Per-socket initialization state. A client must acknowledge the exact
  * canonical document it was served before its Yjs mutations are accepted.
  */
-export interface ClassroomDrawingSocketSync {
+export interface CanonicalDrawingSocketSync {
   sessionId: string;
   token: string;
   acknowledged: boolean;
@@ -74,7 +74,7 @@ function byteLength(value: unknown): number {
   return Buffer.byteLength(JSON.stringify(value), "utf8");
 }
 
-function isValidCanvas(canvas: ClassroomDrawingCanvas): boolean {
+function isValidCanvas(canvas: CanonicalDrawingCanvas): boolean {
   if (canvas.elements.length > MAX_ELEMENTS || Object.keys(canvas.files).length > MAX_FILES) {
     return false;
   }
@@ -89,7 +89,7 @@ function roots(doc: Y.Doc) {
   };
 }
 
-function seedCanvas(doc: Y.Doc, canvas: ClassroomDrawingCanvas) {
+function seedCanvas(doc: Y.Doc, canvas: CanonicalDrawingCanvas) {
   const { elements, assets } = roots(doc);
   const sourceElements = Array.isArray(canvas.elements) ? canvas.elements : [];
   doc.transact(() => {
@@ -109,7 +109,7 @@ function seedCanvas(doc: Y.Doc, canvas: ClassroomDrawingCanvas) {
   }, "server-hydrate");
 }
 
-export function canvasFromDoc(doc: Y.Doc): ClassroomDrawingCanvas {
+export function canvasFromDoc(doc: Y.Doc): CanonicalDrawingCanvas {
   const { elements, assets } = roots(doc);
   return {
     elements: elements
@@ -120,13 +120,13 @@ export function canvasFromDoc(doc: Y.Doc): ClassroomDrawingCanvas {
   };
 }
 
-export function createClassroomDrawingState(savedState: DrawingState | null | undefined): ClassroomDrawingLiveState {
+export function createCanonicalDrawingState(savedState: DrawingState | null | undefined): CanonicalDrawingLiveState {
   const canvas = savedState?.canvas;
-  const state: ClassroomDrawingLiveState = {
+  const state: CanonicalDrawingLiveState = {
     doc: new Y.Doc(),
     revision: canvas?.version ?? 0,
+    persistedRevision: canvas?.version ?? 0,
     clearRevision: canvas?.clearVersion ?? 0,
-    dirty: false
   };
   if (canvas && (canvas.elements.length || Object.keys(canvas.files).length)) {
     seedCanvas(state.doc, { elements: canvas.elements, files: canvas.files });
@@ -134,25 +134,25 @@ export function createClassroomDrawingState(savedState: DrawingState | null | un
   return state;
 }
 
-export function encodeFullClassroomDrawingState(state: ClassroomDrawingLiveState): string {
+export function encodeFullCanonicalDrawingState(state: CanonicalDrawingLiveState): string {
   return encode(Y.encodeStateAsUpdate(state.doc));
 }
 
-export function canApplyClassroomDrawingSocketUpdate(
-  sync: ClassroomDrawingSocketSync | undefined,
+export function canApplyCanonicalDrawingSocketUpdate(
+  sync: CanonicalDrawingSocketSync | undefined,
   sessionId: string
 ): boolean {
   return sync?.sessionId === sessionId && sync.acknowledged;
 }
 
-export type ClassroomDrawingUpdateResult =
+export type CanonicalDrawingUpdateResult =
   | { ok: true }
   | { ok: false; code: "BAD_YJS_UPDATE" | "BOARD_LIMIT_EXCEEDED" };
 
-export function applyClassroomDrawingUpdate(
-  state: ClassroomDrawingLiveState,
+export function applyCanonicalDrawingUpdate(
+  state: CanonicalDrawingLiveState,
   encodedUpdate: string
-): ClassroomDrawingUpdateResult {
+): CanonicalDrawingUpdateResult {
   let update: Uint8Array;
   try {
     update = decode(encodedUpdate);
@@ -180,23 +180,22 @@ export function applyClassroomDrawingUpdate(
   state.doc.destroy();
   state.doc = candidate;
   state.revision += 1;
-  state.dirty = true;
   return { ok: true };
 }
 
-export function applyClassroomDrawingSocketUpdate(
-  state: ClassroomDrawingLiveState,
-  sync: ClassroomDrawingSocketSync | undefined,
+export function applyCanonicalDrawingSocketUpdate(
+  state: CanonicalDrawingLiveState,
+  sync: CanonicalDrawingSocketSync | undefined,
   sessionId: string,
   encodedUpdate: string
-): ClassroomDrawingUpdateResult | { ok: false; code: "SYNC_NOT_ACKNOWLEDGED" } {
-  if (!canApplyClassroomDrawingSocketUpdate(sync, sessionId)) {
+): CanonicalDrawingUpdateResult | { ok: false; code: "SYNC_NOT_ACKNOWLEDGED" } {
+  if (!canApplyCanonicalDrawingSocketUpdate(sync, sessionId)) {
     return { ok: false, code: "SYNC_NOT_ACKNOWLEDGED" };
   }
-  return applyClassroomDrawingUpdate(state, encodedUpdate);
+  return applyCanonicalDrawingUpdate(state, encodedUpdate);
 }
 
-export function clearClassroomDrawingState(state: ClassroomDrawingLiveState): void {
+export function clearCanonicalDrawingState(state: CanonicalDrawingLiveState): void {
   const { elements, assets } = roots(state.doc);
   state.doc.transact(() => {
     elements.delete(0, elements.length);
@@ -204,11 +203,10 @@ export function clearClassroomDrawingState(state: ClassroomDrawingLiveState): vo
   }, "server-clear");
   state.revision += 1;
   state.clearRevision += 1;
-  state.dirty = true;
 }
 
-export function snapshotClassroomDrawingState(
-  state: ClassroomDrawingLiveState,
+export function snapshotCanonicalDrawingState(
+  state: CanonicalDrawingLiveState,
   seats: DrawingState["seats"]
 ): DrawingState {
   const canvas = canvasFromDoc(state.doc);
@@ -226,6 +224,16 @@ export function snapshotClassroomDrawingState(
   };
 }
 
-export function markClassroomDrawingPersisted(state: ClassroomDrawingLiveState): void {
-  state.dirty = false;
+export function isCanonicalDrawingDirty(state: CanonicalDrawingLiveState): boolean {
+  return state.revision > state.persistedRevision;
+}
+
+export function markCanonicalDrawingPersisted(
+  state: CanonicalDrawingLiveState,
+  persistedRevision: number
+): void {
+  state.persistedRevision = Math.max(
+    state.persistedRevision,
+    Math.min(persistedRevision, state.revision)
+  );
 }

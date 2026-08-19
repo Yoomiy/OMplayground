@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { isClassroomDrawingSession } from "@/lib/drawingSessionScope";
 
 export interface MyPausedGameRow {
   id: string;
@@ -9,6 +10,7 @@ export interface MyPausedGameRow {
   last_activity: string | null;
   connected_player_ids: string[];
   connected_player_names: string[];
+  invitation_code: string;
   games: { name_he: string } | null;
 }
 
@@ -35,10 +37,11 @@ export function useMyPausedGames(userId: string | undefined, gender: "boy" | "gi
     const { data, error } = await supabase
       .from("game_sessions")
       .select(
-        "id, status, host_name, game_id, last_activity, connected_player_ids, connected_player_names, games ( name_he )"
+        "id, status, host_name, game_id, last_activity, invitation_code, connected_player_ids, connected_player_names, games ( name_he )"
       )
       .in("status", ["paused", "playing"])
       .contains("player_ids", [userId])
+      .not("invitation_code", "like", "class-draw-%")
       .order("last_activity", { ascending: false })
       .limit(20);
     if (error) {
@@ -47,7 +50,9 @@ export function useMyPausedGames(userId: string | undefined, gender: "boy" | "gi
     } else {
       setRows(
         ((data ?? []) as unknown as MyPausedGameRow[]).filter(
-          (row) => !row.connected_player_ids.includes(userId)
+          (row) =>
+            !isClassroomDrawingSession(row.invitation_code) &&
+            !row.connected_player_ids.includes(userId)
         )
       );
     }
@@ -72,6 +77,7 @@ export function useMyPausedGames(userId: string | undefined, gender: "boy" | "gi
       (row.status === "paused" || row.status === "playing") &&
       Array.isArray(row.player_ids) &&
       row.player_ids.includes(currentUserId) &&
+      !isClassroomDrawingSession(row.invitation_code) &&
       !row.connected_player_ids?.includes(currentUserId);
 
     const handleRealtime = (payload: any) => {

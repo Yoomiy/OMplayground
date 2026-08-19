@@ -193,12 +193,11 @@ export function ClassroomPage() {
   const isEndingClassroomRef = useRef(false);
   const [connState, setConnState] = useState<"disconnected" | "connecting" | "connected">("disconnected");
   const [connError, setConnError] = useState<string | null>(null);
-  const [localUserId, setLocalUserId] = useState<string | null>(null);
 
   // User Local Media & Permissions state
   const [isHost, setIsHost] = useState(false);
   const [isDelegatedHost, setIsDelegatedHost] = useState(false);
-  const [delegateGameToken, setDelegateGameToken] = useState<string | null>(null);
+  const [classroomBoardToken, setClassroomBoardToken] = useState<string | null>(null);
   const [micOn, setMicOn] = useState(false);
   const [camOn, setCamOn] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
@@ -371,20 +370,11 @@ export function ClassroomPage() {
     setBoardInitialYjsUpdate(null);
     setBoardInitialYjsSyncToken(null);
     setBoardInitialViewport(null);
-    if (!drawSessionId || connState !== "connected") return;
+    if (!drawSessionId || connState !== "connected" || !classroomBoardToken) return;
     let cancelled = false;
     let s: Socket | null = null;
 
     void (async () => {
-      const { data } = await supabase.auth.getSession();
-      const authToken = data.session?.access_token;
-
-      // Guest fallback token using the stable localUserId issued by the server
-      const guestId = user?.id || localUserId || `guest-${Math.random().toString(36).substring(2, 9)}`;
-      const token = delegateGameToken
-        ? `classroom-delegate:${delegateGameToken}`
-        : authToken || `guest:${guestId}:${encodeURIComponent(resolvedDisplayName || "משתתף")}`;
-
       if (cancelled) return;
 
       reportTelemetry(
@@ -396,20 +386,22 @@ export function ClassroomPage() {
             appArea: "classroom",
             event: "CLASSROOM_DRAW_SOCKET_CONNECTING",
             roomCode,
-            isGuest: !authToken
+            isGuest: !user?.id
           }
         },
         "game-server"
       );
 
       s = io(gameServerUrl(), {
-        auth: { token, correlationId: getCorrelationId() },
+        auth: { token: `classroom-board:${classroomBoardToken}`, correlationId: getCorrelationId() },
         transports: ["websocket", "polling"]
       });
       drawSocketRef.current = s;
 
       s.on("connect", () => {
         if (cancelled) return;
+        setBoardInitialYjsUpdate(null);
+        setBoardInitialYjsSyncToken(null);
         reportTelemetry(
           {
             level: "info",
@@ -475,9 +467,12 @@ export function ClassroomPage() {
         setBoardInitialYjsSyncToken(typeof payload.syncToken === "string" ? payload.syncToken : null);
         setBoardInitialViewport(payload.viewport ?? null);
         setDrawSocketReady(true);
-        deltaListenersRef.current.forEach((cb) => {
-          cb({ delta: { yjsServerSync: payload.yjsUpdate, yjsServerSyncToken: payload.syncToken } });
-        });
+      });
+
+      s.on("disconnect", () => {
+        if (cancelled) return;
+        setBoardInitialYjsUpdate(null);
+        setBoardInitialYjsSyncToken(null);
       });
 
       s.on("LIVE_DELTA", (payload: { from?: string; delta?: any }) => {
@@ -504,7 +499,7 @@ export function ClassroomPage() {
       setBoardInitialYjsSyncToken(null);
       setBoardInitialViewport(null);
     };
-  }, [drawSessionId, resolvedDisplayName, roomCode, user?.id, connState, localUserId, delegateGameToken]);
+  }, [classroomBoardToken, connState, drawSessionId, roomCode, user?.id]);
 
 
   // Fetch classroom metadata. The drawing session socket is the source of whiteboard state.
@@ -787,11 +782,10 @@ export function ClassroomPage() {
         serverUrl,
         isHost: tokenIsHost,
         role,
-        userId,
         isDelegate,
         canPublishMicrophone,
         canPublishCamera,
-        delegateGameToken: issuedDelegateGameToken,
+        classroomBoardToken: issuedClassroomBoardToken,
         classroomSessionId: issuedClassroomSessionId,
         isClassCreator: issuedIsClassCreator,
         presenterIdentity: issuedPresenterIdentity,
@@ -800,9 +794,10 @@ export function ClassroomPage() {
         presentationTitle: issuedPresentationTitle,
         presenterToken: issuedPresenterToken
       } = await response.json();
-      setLocalUserId(userId || null);
       setIsDelegatedHost(Boolean(isDelegate));
-      setDelegateGameToken(issuedDelegateGameToken || null);
+      setClassroomBoardToken(
+        typeof issuedClassroomBoardToken === "string" ? issuedClassroomBoardToken : null
+      );
       setClassroomSessionId(issuedClassroomSessionId || sessionData?.id || null);
       setIsClassCreator(Boolean(issuedIsClassCreator));
       setPresenterIdentity(typeof issuedPresenterIdentity === "string" ? issuedPresenterIdentity : null);
@@ -1232,13 +1227,6 @@ export function ClassroomPage() {
   const handleLocalBoardDelta = useCallback(
     (delta: any) => {
       if (drawSocketRef.current && drawSessionId) {
-        if (typeof delta?.yjsCanonicalSyncAck === "string") {
-          drawSocketRef.current.emit("DRAWING_SYNC_ACK", {
-            sessionId: drawSessionId,
-            syncToken: delta.yjsCanonicalSyncAck
-          });
-          return;
-        }
         drawSocketRef.current.emit("LIVE_DELTA", {
           sessionId: drawSessionId,
           delta
@@ -1248,18 +1236,29 @@ export function ClassroomPage() {
     [drawSessionId]
   );
 
-  // Handle board intent (such as CLEAR_CANVAS or CHECKPOINT from DrawingBoard component)
-  const handleBoardIntent = useCallback(
-    (intent: any) => {
-      if (drawSocketRef.current && drawSessionId) {
-        drawSocketRef.current.emit("INTENT_GAME", {
-          sessionId: drawSessionId,
-          intent
-        });
+  const acknowledgeBoardSync = useCallback((syncToken: string) => {
+    if (!drawSocketRef.current || !drawSessionId) return;
+    drawSocketRef.current.emit("DRAWING_SYNC_ACK", {
+      sessionId: drawSessionId,
+      syncToken
+    });
+  }, [drawSessionId]);
+
+  // Clearing is a host-authorized canonical drawing operation.
+  const clearBoard = useCallback(() => new Promise<boolean>((resolve) => {
+    if (!drawSocketRef.current || !drawSessionId || !isHost) {
+      resolve(false);
+      return;
+    }
+    drawSocketRef.current.emit(
+      "INTENT_GAME",
+      { sessionId: drawSessionId, intent: { type: "CLEAR_CANVAS" } },
+      (ack: { ok?: boolean; error?: { message?: string } }) => {
+        if (!ack?.ok) setConnError(ack?.error?.message ?? "ניקוי הלוח נכשל");
+        resolve(ack?.ok === true);
       }
-    },
-    [drawSessionId]
-  );
+    );
+  }), [drawSessionId, isHost]);
 
   // Toggle Microphone
   const toggleMic = async () => {
@@ -2064,16 +2063,25 @@ export function ClassroomPage() {
                     {drawSocketReady ? (
                       <DrawingBoard
                         gameState={whiteboardState}
+                        mode={{
+                          kind: "canonical",
+                          initialSync: boardInitialYjsUpdate && boardInitialYjsSyncToken
+                            ? { update: boardInitialYjsUpdate, token: boardInitialYjsSyncToken }
+                            : null,
+                          initialViewport: boardInitialViewport,
+                          viewportRole: isHost
+                            ? "publish"
+                            : roomSettings.allowWhiteboardDraw
+                              ? "independent"
+                              : "follow",
+                          canClear: isHost,
+                          sendDelta: handleLocalBoardDelta,
+                          acknowledgeSync: acknowledgeBoardSync,
+                          subscribe: subscribeLiveDeltas,
+                          clear: clearBoard
+                        }}
                         mySeat={isHost || roomSettings.allowWhiteboardDraw ? "player" : null}
                         myUserId={room?.localParticipant.identity || null}
-                        onIntent={handleBoardIntent}
-                        onLiveDelta={handleLocalBoardDelta}
-                        subscribeLiveDeltas={subscribeLiveDeltas}
-                        isHost={isHost}
-                        serverAuthoritative={true}
-                        initialYjsUpdate={boardInitialYjsUpdate}
-                        initialYjsSyncToken={boardInitialYjsSyncToken}
-                        initialViewport={boardInitialViewport}
                         hideTopBar={true}
                         isVisible={showBoard}
                         players={participants.map((p) => ({

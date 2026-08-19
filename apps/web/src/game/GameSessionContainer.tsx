@@ -163,6 +163,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
       socketRef.current = s;
 
       s.on("connect", () => {
+        setDrawingSync(null);
         setStatus("מחובר");
         s.emit(
           "JOIN_ROOM",
@@ -503,18 +504,9 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
   );
   const onLiveDelta = useCallback(
     (delta: unknown) => {
-      const canonicalAck =
-        typeof delta === "object" && delta !== null &&
-        typeof (delta as { yjsCanonicalSyncAck?: unknown }).yjsCanonicalSyncAck === "string"
-          ? (delta as { yjsCanonicalSyncAck: string }).yjsCanonicalSyncAck
-          : null;
-      if (isTeacherObserver && !canonicalAck) return;
+      if (isTeacherObserver) return;
       const s = socketRef.current;
       if (!s?.connected) return;
-      if (canonicalAck) {
-        s.emit("DRAWING_SYNC_ACK", { sessionId, syncToken: canonicalAck });
-        return;
-      }
       if (paused) return;
       s.emit("LIVE_DELTA", { sessionId, delta });
     },
@@ -535,6 +527,52 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
     },
     []
   );
+
+  const acknowledgeDrawingSync = useCallback((syncToken: string) => {
+    const s = socketRef.current;
+    if (!s?.connected) return;
+    s.emit("DRAWING_SYNC_ACK", { sessionId, syncToken });
+  }, [sessionId]);
+
+  const clearDrawing = useCallback(() => new Promise<boolean>((resolve) => {
+    if (isTeacherObserver || paused) {
+      resolve(false);
+      return;
+    }
+    const s = socketRef.current;
+    if (!s?.connected) {
+      setStatus("אין חיבור פעיל");
+      resolve(false);
+      return;
+    }
+    s.emit(
+      "INTENT_GAME",
+      { sessionId, intent: { type: "CLEAR_CANVAS" } },
+      (ack: { ok?: boolean; error?: { message?: string } }) => {
+        if (!ack?.ok) setStatus(ack?.error?.message ?? "ניקוי הלוח נכשל");
+        resolve(ack?.ok === true);
+      }
+    );
+  }), [isTeacherObserver, paused, sessionId]);
+
+  const drawingMode = useMemo(() => ({
+    kind: "canonical" as const,
+    initialSync: drawingSync,
+    viewportRole: "independent" as const,
+    canClear: !isTeacherObserver && !paused,
+    sendDelta: onLiveDelta,
+    acknowledgeSync: acknowledgeDrawingSync,
+    subscribe: subscribeLiveDeltas,
+    clear: clearDrawing
+  }), [
+    acknowledgeDrawingSync,
+    clearDrawing,
+    drawingSync,
+    isTeacherObserver,
+    onLiveDelta,
+    paused,
+    subscribeLiveDeltas
+  ]);
 
   /** Derived from authoritative state so clients never diverge on seat order. */
   const mySymbol = useMemo<string | null>(() => {
@@ -687,7 +725,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
 
           <div
             className={
-              isTeacherObserver || paused
+              paused || (isTeacherObserver && gameKey !== "drawing")
                 ? "pointer-events-none mx-auto max-w-5xl opacity-60"
                 : "mx-auto max-w-5xl"
             }
@@ -714,9 +752,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
                   navigate(isAdmin ? "/admin" : isTeacherObserver ? "/teacher" : "/home"),
                 players: roster.length > 0 ? roster : players,
                 connectedPlayers: players,
-                serverAuthoritative: gameKey === "drawing",
-                initialYjsUpdate: drawingSync?.update ?? null,
-                initialYjsSyncToken: drawingSync?.token ?? null
+                drawingMode: gameKey === "drawing" ? drawingMode : undefined
               }}
             />
           </div>

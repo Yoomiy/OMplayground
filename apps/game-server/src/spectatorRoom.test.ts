@@ -22,6 +22,7 @@ describe("teacher spectators (same-gender observers, not players)", () => {
 
     const result = removePlayerFromRoom(sessionId, "host-user");
     expect(result.roomEmpty).toBe(true);
+    expect(result.roomDeleted).toBe(false);
     const r2 = getOrCreateRoom(sessionId, {
       gameId: "g1",
       gameKey: tictactoeModule.key,
@@ -50,7 +51,10 @@ describe("teacher spectators (same-gender observers, not players)", () => {
       hostId: "h"
     });
     assignPlayer(room, "h", "H");
-    removePlayerFromRoom(sessionId, "h");
+    expect(removePlayerFromRoom(sessionId, "h")).toEqual({
+      roomEmpty: true,
+      roomDeleted: true
+    });
     const r2 = getOrCreateRoom(sessionId, {
       gameId: "g1",
       gameKey: tictactoeModule.key,

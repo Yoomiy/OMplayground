@@ -15,10 +15,23 @@ export interface RoomPlayer {
   displayName: string;
 }
 
+export interface RemovePlayerResult {
+  newHostId?: string;
+  /** No active players remain; persistence may pause the game session. */
+  roomEmpty: boolean;
+  /** The in-memory room no longer exists; room-scoped live state may be released. */
+  roomDeleted: boolean;
+}
+
+export type DrawingRoomContext =
+  | { boardMode: "game" }
+  | { boardMode: "classroom"; classroomId: string; roomCode: string };
+
 export interface Room<State = unknown> {
   sessionId: string;
   gameId: string;
   gameKey: string;
+  drawingContext?: DrawingRoomContext;
   gender: "boy" | "girl" | "all";
   /** Authoritative host for disconnect transfer (from game_sessions.host_id). */
   hostId: string;
@@ -64,6 +77,7 @@ export function getOrCreateRoom<State>(
   meta: {
     gameId: string;
     gameKey: string;
+    drawingContext?: DrawingRoomContext;
     module: GameModule<State, unknown>;
     gender: "boy" | "girl" | "all";
     hostId: string;
@@ -77,6 +91,7 @@ export function getOrCreateRoom<State>(
 ): Room<State> {
   const existing = rooms.get(sessionId) as Room<State> | undefined;
   if (existing) {
+    if (meta.drawingContext) existing.drawingContext = meta.drawingContext;
     existing.paused = existing.paused || meta.paused === true;
     if (meta.roster) {
       existing.roster = meta.roster;
@@ -88,6 +103,7 @@ export function getOrCreateRoom<State>(
     sessionId,
     gameId: meta.gameId,
     gameKey: meta.gameKey,
+    drawingContext: meta.drawingContext,
     gender: meta.gender,
     hostId: meta.hostId,
     minPlayers: meta.minPlayers ?? meta.module.minPlayers,
@@ -142,6 +158,10 @@ export function connectedPlayers<S>(room: Room<S>): RoomPlayer[] {
   return Array.from(room.players.values());
 }
 
+export function preservesHostOnDisconnect<S>(room: Room<S>): boolean {
+  return room.drawingContext?.boardMode === "classroom";
+}
+
 /**
  * Turn-based modules rotate player order for a rematch so the starting role
  * (for example X, red, or player one) changes hands. Other game types retain
@@ -161,23 +181,24 @@ export function playersForRematch<S>(
 export function removePlayerFromRoom(
   sessionId: string,
   userId: string
-): { newHostId?: string; roomEmpty: boolean } {
+): RemovePlayerResult {
   const r = rooms.get(sessionId);
-  if (!r) return { roomEmpty: true };
+  if (!r) return { roomEmpty: true, roomDeleted: true };
   const wasHost = r.hostId === userId;
   r.players.delete(userId);
   if (r.players.size === 0) {
-    if (r.spectators.size === 0) {
+    const roomDeleted = r.spectators.size === 0;
+    if (roomDeleted) {
       rooms.delete(sessionId);
     }
-    return { roomEmpty: true };
+    return { roomEmpty: true, roomDeleted };
   }
   if (wasHost && !r.paused) {
     const nextHost = r.players.keys().next().value as string;
     r.hostId = nextHost;
-    return { newHostId: nextHost, roomEmpty: false };
+    return { newHostId: nextHost, roomEmpty: false, roomDeleted: false };
   }
-  return { roomEmpty: false };
+  return { roomEmpty: false, roomDeleted: false };
 }
 
 /**

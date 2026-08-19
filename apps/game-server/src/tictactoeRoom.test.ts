@@ -53,7 +53,7 @@ describe("Room / host transfer", () => {
     assignPlayer(room, "guest-user", "Guest");
 
     const result = removePlayerFromRoom("sess-paused-host", "host-user");
-    expect(result).toEqual({ roomEmpty: false });
+    expect(result).toEqual({ roomEmpty: false, roomDeleted: false });
     expect(room.hostId).toBe("host-user");
   });
 
@@ -137,31 +137,30 @@ describe("Room / host transfer", () => {
     expect(state.seats?.["a-user"]).toBe("p1");
     expect(state.seats?.["b-user"]).toBe("p2");
 
-    const move = applyIntent(room, "b-user", {
-      type: "CHECKPOINT",
-      version: 1,
-      elements: [],
-      files: {}
-    });
-    expect(move.ok).toBe(true);
   });
 
-  it("preserves drawing canvas elements when a new player joins", () => {
+  it("preserves a drawing recovery snapshot when a new player joins", () => {
+    const saved: DrawingState = {
+      status: "playing",
+      canvas: {
+        engine: "excalidraw",
+        version: 1,
+        clearVersion: 0,
+        updatedAt: 1,
+        elements: [{ id: "elem1", type: "rectangle" }],
+        files: {}
+      },
+      seats: { "user-1": "p1" }
+    };
     const room = getOrCreateRoom("sess-drawing-preserve-canvas", {
       gameId: "g-drawing",
       gameKey: drawingModule.key,
       module: drawingModule,
       gender: "boy",
-      hostId: "user-1"
+      hostId: "user-1",
+      resumedState: saved
     });
     assignPlayer(room, "user-1", "User 1");
-    applyIntent(room, "user-1", {
-      type: "CHECKPOINT",
-      version: 1,
-      elements: [{ id: "elem1", type: "rectangle" }],
-      files: {}
-    });
-
     assignPlayer(room, "user-2", "User 2");
     const state = room.state as DrawingState;
     expect(state.canvas.elements).toHaveLength(1);

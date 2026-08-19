@@ -1,7 +1,6 @@
-import { useState } from "react";
-import type { DrawingState } from "@playground/game-logic";
+import { useCallback, useMemo, useState } from "react";
+import type { DrawingCanvasSnapshot, DrawingState } from "@playground/game-logic";
 import { DrawingBoard } from "@/games/DrawingBoard";
-import { useSoloAutoSave } from "@/hooks/useSoloAutoSave";
 import {
   isJsonObject,
   type JsonValue,
@@ -51,39 +50,20 @@ export function DrawingSolo({ save }: { save: SoloGameSaveControls }) {
     };
   });
 
-  useSoloAutoSave(save, gameState as unknown as JsonValue);
+  const persistSnapshot = useCallback(async (canvas: DrawingCanvasSnapshot) => {
+    const next: DrawingState = {
+      status: "playing",
+      seats: { solo: "p1" },
+      canvas
+    };
+    setGameState(next);
+    await save.saveState(next as unknown as JsonValue);
+  }, [save]);
 
-  const handleIntent = (intent: any) => {
-    setGameState((s) => {
-      if (intent.type === "CLEAR_CANVAS") {
-        return {
-          ...s,
-          canvas: {
-            engine: "excalidraw",
-            version: s.canvas.version + 1,
-            clearVersion: s.canvas.clearVersion + 1,
-            updatedAt: Date.now(),
-            elements: [],
-            files: {}
-          }
-        };
-      }
-      if (intent.type === "CHECKPOINT") {
-        return {
-          ...s,
-          canvas: {
-            engine: "excalidraw",
-            version: intent.version,
-            clearVersion: s.canvas.clearVersion,
-            updatedAt: Date.now(),
-            elements: intent.elements,
-            files: intent.files
-          }
-        };
-      }
-      return s;
-    });
-  };
+  const drawingMode = useMemo(() => ({
+    kind: "local" as const,
+    persistSnapshot
+  }), [persistSnapshot]);
 
   return (
     <div className="space-y-4">
@@ -102,9 +82,9 @@ export function DrawingSolo({ save }: { save: SoloGameSaveControls }) {
       
       <DrawingBoard
         gameState={gameState}
+        mode={drawingMode}
         mySeat="p1"
         myUserId="solo"
-        onIntent={handleIntent}
       />
     </div>
   );

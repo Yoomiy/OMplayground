@@ -1,4 +1,5 @@
-import type { ClassroomDrawingSocketSync } from "./classroomDrawingState";
+import type { CanonicalDrawingSocketSync } from "./canonicalDrawingState";
+import type { ClassroomBoardTokenPayload } from "./classroomBoardToken";
 
 export {};
 
@@ -9,9 +10,9 @@ declare module "socket.io" {
     role?: string;
     gender?: "boy" | "girl";
     sessionId?: string;
-    classroomDrawingSync?: ClassroomDrawingSocketSync;
-    classroomDrawingAwarenessClientIds?: number[];
-    drawingAwarenessClientIds?: number[];
+    canonicalDrawingSync?: CanonicalDrawingSocketSync;
+    canonicalDrawingAwarenessClientIds?: number[];
+    classroomBoardCapability?: ClassroomBoardTokenPayload;
     classroomDrawing?: {
       sessionId: string;
       classroomId: string;

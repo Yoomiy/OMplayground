@@ -1,22 +1,24 @@
 import * as Y from "yjs";
 import {
-  applyClassroomDrawingUpdate,
-  applyClassroomDrawingSocketUpdate,
-  canApplyClassroomDrawingSocketUpdate,
+  applyCanonicalDrawingUpdate,
+  applyCanonicalDrawingSocketUpdate,
+  canApplyCanonicalDrawingSocketUpdate,
   canvasFromDoc,
-  clearClassroomDrawingState,
-  createClassroomDrawingState,
-  encodeFullClassroomDrawingState,
-  snapshotClassroomDrawingState
-} from "./classroomDrawingState";
+  clearCanonicalDrawingState,
+  createCanonicalDrawingState,
+  encodeFullCanonicalDrawingState,
+  isCanonicalDrawingDirty,
+  markCanonicalDrawingPersisted,
+  snapshotCanonicalDrawingState
+} from "./canonicalDrawingState";
 
 function decode(update: string) {
   return new Uint8Array(Buffer.from(update, "base64"));
 }
 
-describe("classroom drawing live state", () => {
+describe("canonical drawing live state", () => {
   it("hydrates from a checkpoint and serves the canonical document to a late joiner", () => {
-    const server = createClassroomDrawingState({
+    const server = createCanonicalDrawingState({
       status: "playing",
       seats: { host: "p1" },
       canvas: {
@@ -30,7 +32,7 @@ describe("classroom drawing live state", () => {
     });
     const lateJoiner = new Y.Doc();
 
-    Y.applyUpdate(lateJoiner, decode(encodeFullClassroomDrawingState(server)));
+    Y.applyUpdate(lateJoiner, decode(encodeFullCanonicalDrawingState(server)));
 
     expect(canvasFromDoc(lateJoiner).elements).toEqual([
       { id: "persisted", type: "rectangle" }
@@ -38,9 +40,9 @@ describe("classroom drawing live state", () => {
   });
 
   it("accepts a client delta into the server document and rejects over-limit state", () => {
-    const server = createClassroomDrawingState(undefined);
+    const server = createCanonicalDrawingState(undefined);
     const client = new Y.Doc();
-    Y.applyUpdate(client, decode(encodeFullClassroomDrawingState(server)));
+    Y.applyUpdate(client, decode(encodeFullCanonicalDrawingState(server)));
     const elements = client.getArray<Y.Map<unknown>>("elements");
     const element = new Y.Map<unknown>();
     element.set("el", { id: "live", type: "ellipse" });
@@ -48,14 +50,14 @@ describe("classroom drawing live state", () => {
     elements.push([element]);
 
     const update = Y.encodeStateAsUpdate(client, Y.encodeStateVector(server.doc));
-    expect(applyClassroomDrawingUpdate(server, Buffer.from(update).toString("base64"))).toEqual({ ok: true });
+    expect(applyCanonicalDrawingUpdate(server, Buffer.from(update).toString("base64"))).toEqual({ ok: true });
     expect(canvasFromDoc(server.doc).elements).toEqual([{ id: "live", type: "ellipse" }]);
   });
 
   it("rejects an oversized image asset without changing the canonical board", () => {
-    const server = createClassroomDrawingState(undefined);
+    const server = createCanonicalDrawingState(undefined);
     const client = new Y.Doc();
-    Y.applyUpdate(client, decode(encodeFullClassroomDrawingState(server)));
+    Y.applyUpdate(client, decode(encodeFullCanonicalDrawingState(server)));
     client.getMap("assets").set("large-image", {
       id: "large-image",
       mimeType: "image/png",
@@ -63,7 +65,7 @@ describe("classroom drawing live state", () => {
     });
 
     const update = Y.encodeStateAsUpdate(client, Y.encodeStateVector(server.doc));
-    expect(applyClassroomDrawingUpdate(server, Buffer.from(update).toString("base64"))).toEqual({
+    expect(applyCanonicalDrawingUpdate(server, Buffer.from(update).toString("base64"))).toEqual({
       ok: false,
       code: "BOARD_LIMIT_EXCEEDED"
     });
@@ -71,7 +73,7 @@ describe("classroom drawing live state", () => {
   });
 
   it("clears the canonical document and advances its durable revision", () => {
-    const state = createClassroomDrawingState({
+    const state = createCanonicalDrawingState({
       status: "playing",
       seats: { host: "p1" },
       canvas: {
@@ -84,9 +86,9 @@ describe("classroom drawing live state", () => {
       }
     });
 
-    clearClassroomDrawingState(state);
+    clearCanonicalDrawingState(state);
 
-    expect(snapshotClassroomDrawingState(state, { host: "p1" }).canvas).toMatchObject({
+    expect(snapshotCanonicalDrawingState(state, { host: "p1" }).canvas).toMatchObject({
       version: 3,
       clearVersion: 2,
       elements: []
@@ -94,7 +96,7 @@ describe("classroom drawing live state", () => {
   });
 
   it("hydrates checkpoint elements with valid appendable ordering keys", () => {
-    const state = createClassroomDrawingState({
+    const state = createCanonicalDrawingState({
       status: "playing",
       seats: { host: "p1" },
       canvas: {
@@ -114,7 +116,7 @@ describe("classroom drawing live state", () => {
   });
 
   it("does not consider a socket writable until it acknowledges its canonical sync", () => {
-    const server = createClassroomDrawingState({
+    const server = createCanonicalDrawingState({
       status: "playing",
       seats: { host: "p1" },
       canvas: {
@@ -127,7 +129,7 @@ describe("classroom drawing live state", () => {
       }
     });
     const joiningClient = new Y.Doc();
-    Y.applyUpdate(joiningClient, decode(encodeFullClassroomDrawingState(server)));
+    Y.applyUpdate(joiningClient, decode(encodeFullCanonicalDrawingState(server)));
     joiningClient.getArray<Y.Map<unknown>>("elements").delete(0, 1);
     const destructiveUpdate = Buffer.from(
       Y.encodeStateAsUpdate(joiningClient, Y.encodeStateVector(server.doc))
@@ -138,18 +140,33 @@ describe("classroom drawing live state", () => {
       acknowledged: false
     };
 
-    expect(canApplyClassroomDrawingSocketUpdate(sync, "classroom-session")).toBe(false);
+    expect(canApplyCanonicalDrawingSocketUpdate(sync, "classroom-session")).toBe(false);
     expect(
-      applyClassroomDrawingSocketUpdate(server, sync, "classroom-session", destructiveUpdate)
+      applyCanonicalDrawingSocketUpdate(server, sync, "classroom-session", destructiveUpdate)
     ).toEqual({ ok: false, code: "SYNC_NOT_ACKNOWLEDGED" });
     expect(canvasFromDoc(server.doc).elements).toEqual([{ id: "canonical", type: "rectangle" }]);
 
     sync.acknowledged = true;
-    expect(canApplyClassroomDrawingSocketUpdate(sync, "classroom-session")).toBe(true);
-    expect(canApplyClassroomDrawingSocketUpdate(sync, "another-session")).toBe(false);
+    expect(canApplyCanonicalDrawingSocketUpdate(sync, "classroom-session")).toBe(true);
+    expect(canApplyCanonicalDrawingSocketUpdate(sync, "another-session")).toBe(false);
     expect(
-      applyClassroomDrawingSocketUpdate(server, sync, "classroom-session", destructiveUpdate)
+      applyCanonicalDrawingSocketUpdate(server, sync, "classroom-session", destructiveUpdate)
     ).toEqual({ ok: true });
     expect(canvasFromDoc(server.doc).elements).toEqual([]);
+  });
+
+  it("keeps a newer revision dirty when an older persistence write completes", () => {
+    const state = createCanonicalDrawingState(undefined);
+    clearCanonicalDrawingState(state);
+    const firstRevision = state.revision;
+    clearCanonicalDrawingState(state);
+
+    markCanonicalDrawingPersisted(state, firstRevision);
+
+    expect(state.persistedRevision).toBe(firstRevision);
+    expect(state.revision).toBe(firstRevision + 1);
+    expect(isCanonicalDrawingDirty(state)).toBe(true);
+    markCanonicalDrawingPersisted(state, state.revision);
+    expect(isCanonicalDrawingDirty(state)).toBe(false);
   });
 });
