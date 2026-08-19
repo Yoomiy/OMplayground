@@ -4,13 +4,13 @@
 17. improve stats saving
 18. access profiles from friends page
 19. test fully recess end
-20. check why games aren't shown under resume game immidietly after leaving (as long as other players are connected?)
-21. don't change host if they leave when game is paused
-22. make sure that observers (teachers) aren't becoming hosts if pleyers leave
-25. make sure that errors in the drawing board do not kik you out of the room
-26. solve the size limit barrier in the drawing board
+21. don't change host if they leave when game is paused (fixed. stashed fix for voxel?)
+25. make sure that errors in the drawing board do not kick you out of the room
 27. when host stops game - others need to stop sending intents
-28. close class for clients when host clode it
 30. test audio and docs on the classroom media board
-31. remove "copy invitation link" from non host users"
+31. remove "copy invitation link" from non host users
 32. fix media board slides view 
+33. we might want to be able to lock a classroom (when a host is not attended?)
+34. find out why ereasers and laser pointers point down of their real place
+35. add per class recess schedule
+36. logs coverage for things like recess end

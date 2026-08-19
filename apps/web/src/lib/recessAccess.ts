@@ -22,7 +22,7 @@ export const RECESS_ACCESS_CACHE_MS = 60_000;
 export const RECESS_RECHECK_MS = 30_000;
 
 const RECESS_DENIED_MESSAGE =
-  "כרגע אין הפסקה פעילה — לא ניתן להתחבר (מורים יכולים להתחבר בכל עת).";
+  "לא ניתן להתחבר מחוץ לשעות ההפסקה";
 
 let scheduleCache:
   | { rows: RecessWindowRow[]; expiresAt: number }
