@@ -12,6 +12,7 @@
     "test": "jest --config jest.config.cjs"
   },
   "dependencies": {
+    "@playground/game-logic": "*",
     "@playground/observability": "^0.0.1",
     "@playground/voxel-content": "0.0.1",
     "@supabase/supabase-js": "^2.49.1",

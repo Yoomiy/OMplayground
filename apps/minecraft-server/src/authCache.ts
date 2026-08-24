@@ -4,6 +4,7 @@ export interface CachedAuthResult {
   userId: string;
   role: string;
   gender: "boy" | "girl";
+  grade: string | null;
   full_name: string;
   is_active: boolean;
 }
@@ -29,7 +30,7 @@ export async function getCachedAuth(
   // 1. Check kid_profiles table
   const { data: profile } = await supabaseAdmin
     .from("kid_profiles")
-    .select("id, role, gender, full_name, is_active")
+    .select("id, role, gender, grade, full_name, is_active")
     .eq("id", authData.user.id)
     .maybeSingle();
 
@@ -38,6 +39,7 @@ export async function getCachedAuth(
       userId: profile.id as string,
       role: profile.role as string,
       gender: profile.gender as "boy" | "girl",
+      grade: profile.grade as string,
       full_name: profile.full_name as string,
       is_active: profile.is_active as boolean
     };
@@ -57,6 +59,7 @@ export async function getCachedAuth(
       userId: adminProfile.id as string,
       role: "admin",
       gender: "boy",
+      grade: null,
       full_name: (adminProfile.full_name as string) || "מנהל מערכת (אדמין)",
       is_active: true
     };

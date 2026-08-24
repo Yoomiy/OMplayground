@@ -1,97 +1,54 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { isWithinRecess, type RecessWindowRow } from "./recess";
-import {
-  connectedPlayers,
-  deleteRoom,
-  listRooms,
-  snapshotPersistedState,
-  type VoxelRoom
-} from "./room";
-import { persistRecessPause } from "./sessionPersistence";
+import { listRooms, type VoxelRoom } from "./room";
 
-/**
- * Recess-end sweep — adapted from apps/game-server/src/recessSweep.ts. The
- * shape is identical so tests can stay close to the existing pattern; the
- * only difference is the gameState payload is the voxel snapshot.
- */
+export interface RecessSocketData {
+  role?: string;
+  grade?: string | null;
+  gender?: "boy" | "girl";
+  userId?: string;
+}
 
 export interface RecessIoShape {
-  to(room: string): {
-    emit(event: string, payload: unknown): unknown;
-  };
   in(room: string): {
-    fetchSockets(): Promise<
-      { data: { role?: string }; disconnect(close: boolean): void }[]
-    >;
+    fetchSockets(): Promise<{
+      data: RecessSocketData;
+      emit(event: string, payload: unknown): unknown;
+      disconnect(close: boolean): void;
+    }[]>;
   };
 }
 
 export interface RecessEndSweepDeps {
-  supabase: SupabaseClient | null;
-  loadSchedules: () => Promise<RecessWindowRow[]>;
   io: RecessIoShape;
-  now?: () => Date;
+  isKidAllowed: (grade: string, gender: "boy" | "girl") => Promise<boolean>;
   rooms?: () => VoxelRoom[];
-  remove?: (sessionId: string) => void;
   logError?: (message: string, err: unknown) => void;
 }
 
-export interface RecessSweepState {
-  activeLastTick: boolean | null;
-}
+export interface RecessSweepState {}
 
 export function createRecessSweepState(): RecessSweepState {
-  return { activeLastTick: null };
+  return {};
 }
 
 export async function recessEndSweep(
-  state: RecessSweepState,
+  _state: RecessSweepState,
   deps: RecessEndSweepDeps
-): Promise<{ evictedSessionIds: string[] }> {
-  if (!deps.supabase) return { evictedSessionIds: [] };
-  let schedules: RecessWindowRow[];
-  try {
-    schedules = await deps.loadSchedules();
-  } catch (err) {
-    deps.logError?.(
-      "recess sweep failed to load schedules",
-      err instanceof Error ? err.message : err
-    );
-    return { evictedSessionIds: [] };
-  }
-  const now = (deps.now ?? (() => new Date()))();
-  const active = schedules.length > 0 && isWithinRecess(now, schedules);
-  const flippedToInactive = state.activeLastTick === true && !active;
-  state.activeLastTick = active;
-  if (!flippedToInactive) return { evictedSessionIds: [] };
-
-  const iso = now.toISOString();
-  const rooms = (deps.rooms ?? listRooms)();
-  const remove = deps.remove ?? deleteRoom;
-  const evicted: string[] = [];
-  for (const room of rooms) {
-    const sessionId = room.sessionId;
-    const connected = connectedPlayers(room);
-    await persistRecessPause({
-      supabase: deps.supabase,
-      sessionId,
-      gameState: snapshotPersistedState(room),
-      connectedPlayerIds: connected.map((p) => p.userId),
-      connectedPlayerNames: connected.map((p) => p.displayName),
-      now: iso
-    });
-    deps.io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
-      sessionId,
-      kind: "RECESS_ENDED"
-    });
-    const sockets = await deps.io.in(`voxel:${sessionId}`).fetchSockets();
-    for (const s of sockets) {
-      if (s.data.role === "kid") {
-        s.disconnect(true);
+): Promise<{ evictedUserIds: string[] }> {
+  const evictedUserIds: string[] = [];
+  for (const room of (deps.rooms ?? listRooms)()) {
+    const sockets = await deps.io.in(`voxel:${room.sessionId}`).fetchSockets();
+    for (const socket of sockets) {
+      const { role, grade, gender, userId } = socket.data;
+      if (role !== "kid" || !grade || (gender !== "boy" && gender !== "girl")) continue;
+      try {
+        if (await deps.isKidAllowed(grade, gender)) continue;
+        socket.emit("ROOM_EVENT", { sessionId: room.sessionId, kind: "RECESS_ENDED" });
+        socket.disconnect(true);
+        if (userId) evictedUserIds.push(userId);
+      } catch (error) {
+        deps.logError?.("recess sweep failed to evaluate class schedule", error);
       }
     }
-    remove(sessionId);
-    evicted.push(sessionId);
   }
-  return { evictedSessionIds: evicted };
+  return { evictedUserIds };
 }

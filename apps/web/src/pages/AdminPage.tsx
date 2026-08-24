@@ -12,10 +12,12 @@ import {
   type AdminNewProfile
 } from "@/lib/profileApi";
 import { KidAvatar } from "@/components/KidAvatar";
+import { cn } from "@/lib/cn";
 import { kidFieldInputClass, kidFieldLabelClass } from "@/lib/fieldStyles";
 import { AdminStatsSection } from "@/components/AdminStatsSection";
 import { AdminFeedbackSection } from "@/components/AdminFeedbackSection";
 import { ClassroomAdminExplorer } from "@/components/ClassroomAdminExplorer";
+import { buildEffectiveDaySchedule } from "@playground/game-logic";
 
 function parseGradeInput(raw: string): string {
   const clean = raw.trim().replace(/['"]+/g, "");
@@ -71,7 +73,20 @@ interface RecessScheduleRow {
   is_active: boolean;
 }
 
+interface ClassRecessSettingRow {
+  grade: string;
+  gender: "boy" | "girl";
+  override_enabled: boolean;
+}
+
+interface ClassRecessExceptionRow extends RecessScheduleRow {
+  grade: string;
+  gender: "boy" | "girl";
+  mode: "recess" | "class_time";
+}
+
 type ScheduleDraft = Omit<RecessScheduleRow, "id"> & { id: string | null };
+type ClassScheduleDraft = Omit<ClassRecessExceptionRow, "id" | "grade" | "gender"> & { id: string | null };
 
 const RECESS_DAY_LABELS_HE = [
   "יום ראשון",
@@ -82,6 +97,7 @@ const RECESS_DAY_LABELS_HE = [
   "יום שישי",
   "שבת"
 ] as const;
+const CLASS_GRADES = ["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח"] as const;
 
 function normalizeRecessTime(t: string): string {
   const s = t.trim();
@@ -138,9 +154,14 @@ export function AdminPage() {
   const [recessSchedules, setRecessSchedules] = useState<RecessScheduleRow[]>(
     []
   );
+  const [classRecessSettings, setClassRecessSettings] = useState<ClassRecessSettingRow[]>([]);
+  const [classRecessExceptions, setClassRecessExceptions] = useState<ClassRecessExceptionRow[]>([]);
   const [scheduleDraft, setScheduleDraft] = useState<ScheduleDraft | null>(
     null
   );
+  const [classScheduleDraft, setClassScheduleDraft] = useState<ClassScheduleDraft | null>(null);
+  const [selectedScheduleGrade, setSelectedScheduleGrade] = useState<string>("א");
+  const [selectedScheduleGender, setSelectedScheduleGender] = useState<"boy" | "girl">("boy");
   const [avatarPresets, setAvatarPresets] = useState<AvatarPreset[]>([]);
   const [reports, setReports] = useState<ReportRow[]>([]);
   const [audit, setAudit] = useState<
@@ -188,7 +209,7 @@ export function AdminPage() {
 
     const reload = useCallback(async () => {
     if (!user || !isAdmin) return;
-    const [g, k, rs, r, a] = await Promise.all([
+    const [g, k, rs, classSettings, classExceptions, r, a] = await Promise.all([
       (async () => {
         let query = supabase
           .from("games")
@@ -228,6 +249,14 @@ export function AdminPage() {
         .select("id, day_of_week, start_time, end_time, name_he, is_active")
         .order("day_of_week", { ascending: true })
         .order("start_time", { ascending: true }),
+      supabase
+        .from("class_recess_schedule_settings")
+        .select("grade, gender, override_enabled"),
+      supabase
+        .from("class_recess_schedule_exceptions")
+        .select("id, grade, gender, day_of_week, start_time, end_time, name_he, is_active, mode")
+        .order("day_of_week", { ascending: true })
+        .order("start_time", { ascending: true }),
       (async () => {
         let query = supabase
           .from("moderation_reports")
@@ -256,6 +285,8 @@ export function AdminPage() {
     if (!g.error) setGames((g.data ?? []) as GameRow[]);
     if (!k.error) setKids((k.data ?? []) as KidRow[]);
     if (!rs.error) setRecessSchedules((rs.data ?? []) as RecessScheduleRow[]);
+    if (!classSettings.error) setClassRecessSettings((classSettings.data ?? []) as ClassRecessSettingRow[]);
+    if (!classExceptions.error) setClassRecessExceptions((classExceptions.data ?? []) as ClassRecessExceptionRow[]);
     if (!r.error) setReports((r.data ?? []) as ReportRow[]);
     if (!a.error) setAudit((a.data ?? []) as typeof audit);
   }, [user, isAdmin, reportStatusFilter, reportReporterSearch, reportReportedSearch, userSearch, userRoleFilter, userGenderFilter, userGradeFilter, gameSearch]);
@@ -341,8 +372,8 @@ export function AdminPage() {
     const start = normalizeRecessTime(scheduleDraft.start_time);
     const end = normalizeRecessTime(scheduleDraft.end_time);
     const dur = recessDurationMinutes(start, end);
-    if (dur === null || dur <= 0) {
-      setErr("שעות התחלה וסיום לא תקינות");
+    if (dur === null || dur <= 0 || end <= start) {
+      setErr("שעות התחלה וסיום חייבות להיות באותו יום ובסדר תקין");
       return;
     }
     const payload = {
@@ -390,6 +421,131 @@ export function AdminPage() {
       else {
         setMsg("חלון ההפסקה נמחק");
         setScheduleDraft((d) => (d?.id === id ? null : d));
+      }
+      void reload();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const selectedClassSetting = classRecessSettings.find(
+    (setting) => setting.grade === selectedScheduleGrade && setting.gender === selectedScheduleGender
+  );
+  const selectedClassOverrideEnabled = selectedClassSetting?.override_enabled ?? false;
+  const selectedClassExceptions = classRecessExceptions.filter(
+    (exception) => exception.grade === selectedScheduleGrade && exception.gender === selectedScheduleGender
+  );
+
+  function openNewClassScheduleDraft(mode: "recess" | "class_time") {
+    setClassScheduleDraft({
+      id: null,
+      day_of_week: 0,
+      start_time: "08:00",
+      end_time: "08:15",
+      name_he: mode === "recess" ? "הפסקה מיוחדת" : "זמן שיעור",
+      is_active: true,
+      mode
+    });
+  }
+
+  function openEditClassScheduleRow(row: ClassRecessExceptionRow) {
+    setClassScheduleDraft({
+      id: row.id,
+      day_of_week: row.day_of_week,
+      start_time: normalizeRecessTime(row.start_time),
+      end_time: normalizeRecessTime(row.end_time),
+      name_he: row.name_he,
+      is_active: row.is_active,
+      mode: row.mode
+    });
+  }
+
+  async function toggleClassScheduleOverride() {
+    setBusy(true);
+    setErr(null);
+    setMsg(null);
+    try {
+      const { error } = await supabase.from("class_recess_schedule_settings").upsert({
+        grade: selectedScheduleGrade,
+        gender: selectedScheduleGender,
+        override_enabled: !selectedClassOverrideEnabled
+      }, { onConflict: "grade,gender" });
+      if (error) setErr(error.message);
+      else setMsg(!selectedClassOverrideEnabled ? "הלוח המיוחד הופעל" : "הכיתה חזרה ללוח ברירת המחדל");
+      void reload();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveClassRecessException() {
+    if (!classScheduleDraft) return;
+    const start = normalizeRecessTime(classScheduleDraft.start_time);
+    const end = normalizeRecessTime(classScheduleDraft.end_time);
+    if (!classScheduleDraft.name_he.trim() || recessDurationMinutes(start, end) == null || end <= start) {
+      setErr("יש למלא שם ושעות תקינות באותו יום");
+      return;
+    }
+    setBusy(true);
+    setErr(null);
+    setMsg(null);
+    const payload = {
+      grade: selectedScheduleGrade,
+      gender: selectedScheduleGender,
+      day_of_week: classScheduleDraft.day_of_week,
+      start_time: start,
+      end_time: end,
+      name_he: classScheduleDraft.name_he.trim(),
+      is_active: classScheduleDraft.is_active,
+      mode: classScheduleDraft.mode
+    };
+    try {
+      const result = classScheduleDraft.id
+        ? await supabase.from("class_recess_schedule_exceptions").update(payload).eq("id", classScheduleDraft.id)
+        : await supabase.from("class_recess_schedule_exceptions").insert(payload);
+      if (result.error) {
+        setErr(result.error.message.includes("may not overlap") ? "חריגי הכיתה אינם יכולים לחפוף" : result.error.message);
+        return;
+      }
+      setClassScheduleDraft(null);
+      setMsg("חריג לוח הכיתה נשמר");
+      void reload();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function deleteClassRecessException(id: string) {
+    if (!window.confirm("למחוק את חריג לוח הכיתה?")) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      const { error } = await supabase.from("class_recess_schedule_exceptions").delete().eq("id", id);
+      if (error) setErr(error.message);
+      else {
+        setClassScheduleDraft((draft) => draft?.id === id ? null : draft);
+        setMsg("חריג לוח הכיתה נמחק");
+      }
+      void reload();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function clearClassRecessExceptions() {
+    if (!selectedClassExceptions.length || !window.confirm("למחוק את כל חריגי לוח הכיתה?")) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      const { error } = await supabase
+        .from("class_recess_schedule_exceptions")
+        .delete()
+        .eq("grade", selectedScheduleGrade)
+        .eq("gender", selectedScheduleGender);
+      if (error) setErr(error.message);
+      else {
+        setClassScheduleDraft(null);
+        setMsg("כל חריגי לוח הכיתה נמחקו");
       }
       void reload();
     } finally {
@@ -989,6 +1145,73 @@ export function AdminPage() {
               )}
             </div>
           ))}
+        </div>
+
+        <div className="space-y-4 border-t border-white/15 pt-6">
+          <div>
+            <h3 className="text-base font-bold text-white">לוח מיוחד לפי כיתה</h3>
+            <p className="mt-1 text-xs text-white/50">כיתה מוגדרת לפי שכבה ומגדר. חריגי הכיתה גוברים על לוח ברירת המחדל; מחוץ להפסקה זהו זמן שיעור.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {CLASS_GRADES.map((grade) => (
+              <button key={grade} type="button" onClick={() => setSelectedScheduleGrade(grade)} className={cn("h-9 min-w-9 rounded-lg px-3 text-sm font-bold", selectedScheduleGrade === grade ? "bg-indigo-600 text-white" : "bg-white/10 text-white/70 hover:bg-white/15")}>
+                {grade}
+              </button>
+            ))}
+            <span className="mx-1 h-9 border-s border-white/15" />
+            <button type="button" onClick={() => setSelectedScheduleGender("boy")} className={cn("h-9 rounded-lg px-3 text-sm font-bold", selectedScheduleGender === "boy" ? "bg-sky-600 text-white" : "bg-white/10 text-white/70 hover:bg-white/15")}>בנים</button>
+            <button type="button" onClick={() => setSelectedScheduleGender("girl")} className={cn("h-9 rounded-lg px-3 text-sm font-bold", selectedScheduleGender === "girl" ? "bg-pink-600 text-white" : "bg-white/10 text-white/70 hover:bg-white/15")}>בנות</button>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div>
+              <p className="font-semibold text-white">כיתה {selectedScheduleGrade} · {selectedScheduleGender === "boy" ? "בנים" : "בנות"}</p>
+              <p className="text-xs text-white/55">{selectedClassOverrideEnabled ? "לוח מיוחד פעיל — החריגים שלהלן מיושמים." : "משתמשת כעת בלוח ברירת המחדל. החריגים השמורים אינם מיושמים."}</p>
+            </div>
+            <button type="button" disabled={busy} onClick={() => void toggleClassScheduleOverride()} className={cn("rounded-xl px-4 py-2 text-sm font-bold disabled:opacity-50", selectedClassOverrideEnabled ? "bg-amber-500 text-slate-950 hover:bg-amber-400" : "bg-indigo-600 text-white hover:bg-indigo-500")}>
+              {selectedClassOverrideEnabled ? "חזור לברירת המחדל" : "הפעל לוח מיוחד"}
+            </button>
+          </div>
+
+          {selectedClassOverrideEnabled ? (
+            <div className="space-y-3">
+              <div className="flex flex-wrap gap-2">
+                <button type="button" disabled={busy} onClick={() => openNewClassScheduleDraft("recess")} className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-500 disabled:opacity-50">+ הוסף הפסקה</button>
+                <button type="button" disabled={busy} onClick={() => openNewClassScheduleDraft("class_time")} className="rounded-lg bg-amber-500 px-3 py-2 text-xs font-bold text-slate-950 hover:bg-amber-400 disabled:opacity-50">+ הוסף זמן שיעור</button>
+                {selectedClassExceptions.length ? <button type="button" disabled={busy} onClick={() => void clearClassRecessExceptions()} className="rounded-lg bg-rose-600/80 px-3 py-2 text-xs font-bold text-white hover:bg-rose-600 disabled:opacity-50">נקה את כל החריגים</button> : null}
+                {classScheduleDraft ? <button type="button" onClick={() => setClassScheduleDraft(null)} className="rounded-lg bg-white/10 px-3 py-2 text-xs font-bold text-white/70 hover:bg-white/15">בטל עריכה</button> : null}
+              </div>
+              {classScheduleDraft ? <div className="space-y-3 rounded-2xl border border-indigo-400/30 bg-indigo-500/10 p-4">
+                <h4 className="text-sm font-bold text-white">{classScheduleDraft.id ? "עריכת חריג" : "חריג חדש"}</h4>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className={`flex flex-col gap-2 ${kidFieldLabelClass}`}>סוג
+                    <select className={kidFieldInputClass} value={classScheduleDraft.mode} onChange={(e) => setClassScheduleDraft((draft) => draft ? { ...draft, mode: e.target.value as "recess" | "class_time" } : draft)}><option value="recess">הפסקה</option><option value="class_time">זמן שיעור</option></select>
+                  </label>
+                  <label className={`flex flex-col gap-2 ${kidFieldLabelClass}`}>יום בשבוע
+                    <select className={kidFieldInputClass} value={classScheduleDraft.day_of_week} onChange={(e) => setClassScheduleDraft((draft) => draft ? { ...draft, day_of_week: Number(e.target.value) } : draft)}>{RECESS_DAY_LABELS_HE.map((label, index) => <option key={label} value={index}>{label}</option>)}</select>
+                  </label>
+                  <label className={`flex flex-col gap-2 ${kidFieldLabelClass}`}>שם<input className={kidFieldInputClass} value={classScheduleDraft.name_he} onChange={(e) => setClassScheduleDraft((draft) => draft ? { ...draft, name_he: e.target.value } : draft)} /></label>
+                  <label className={`flex flex-col gap-2 ${kidFieldLabelClass}`}>התחלה<input className={kidFieldInputClass} type="time" value={classScheduleDraft.start_time} onChange={(e) => setClassScheduleDraft((draft) => draft ? { ...draft, start_time: e.target.value } : draft)} /></label>
+                  <label className={`flex flex-col gap-2 ${kidFieldLabelClass}`}>סיום<input className={kidFieldInputClass} type="time" value={classScheduleDraft.end_time} onChange={(e) => setClassScheduleDraft((draft) => draft ? { ...draft, end_time: e.target.value } : draft)} /></label>
+                </div>
+                <label className="flex items-center gap-2 text-sm text-white/80"><input type="checkbox" checked={classScheduleDraft.is_active} onChange={(e) => setClassScheduleDraft((draft) => draft ? { ...draft, is_active: e.target.checked } : draft)} />פעיל</label>
+                <button type="button" disabled={busy} onClick={() => void saveClassRecessException()} className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-500 disabled:opacity-50">שמור חריג</button>
+              </div> : null}
+            </div>
+          ) : null}
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="space-y-3 rounded-2xl border border-white/10 bg-black/15 p-4">
+              <h4 className="text-sm font-bold text-white">לוח אפקטיבי</h4>
+              {RECESS_DAY_LABELS_HE.map((label, day) => {
+                const recesses = buildEffectiveDaySchedule(day, { defaultWindows: recessSchedules, classSchedule: { overrideEnabled: selectedClassOverrideEnabled, exceptions: selectedClassExceptions } }).filter((segment) => segment.mode === "recess");
+                return <div key={label} className="flex gap-2 text-xs"><span className="w-20 shrink-0 text-white/55">{label}</span><span className="text-emerald-300">{recesses.length ? recesses.map((segment) => `${segment.start_time}–${segment.end_time}`).join(", ") : "אין הפסקה"}</span></div>;
+              })}
+            </div>
+            <div className="space-y-3 rounded-2xl border border-white/10 bg-black/15 p-4">
+              <h4 className="text-sm font-bold text-white">חריגים שמורים</h4>
+              {selectedClassExceptions.length === 0 ? <p className="text-xs text-white/50">אין חריגים; גם לוח מיוחד פעיל יתנהג כברירת המחדל.</p> : <ul className="space-y-2">{selectedClassExceptions.map((row) => <li key={row.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white/5 px-3 py-2 text-xs"><span><b className={row.mode === "recess" ? "text-emerald-300" : "text-amber-300"}>{row.mode === "recess" ? "הפסקה" : "זמן שיעור"}</b><span className="mx-1 text-white/50">·</span>{RECESS_DAY_LABELS_HE[row.day_of_week]} · {normalizeRecessTime(row.start_time)}–{normalizeRecessTime(row.end_time)} · {row.name_he}</span>{selectedClassOverrideEnabled ? <span className="flex gap-2"><button type="button" onClick={() => openEditClassScheduleRow(row)} className="text-white/70 hover:text-white">ערוך</button><button type="button" onClick={() => void deleteClassRecessException(row.id)} className="text-rose-300 hover:text-rose-200">מחק</button></span> : null}</li>)}</ul>}
+            </div>
+          </div>
         </div>
       </section>
       ) : null}

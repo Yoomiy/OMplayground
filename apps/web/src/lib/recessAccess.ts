@@ -1,5 +1,10 @@
 import { supabase } from "@/lib/supabase";
-import { isWithinRecess, type RecessWindowRow } from "@/lib/recess";
+import {
+  isWithinEffectiveRecess,
+  type ClassRecessException,
+  type ClassRecessSchedule,
+  type RecessWindow
+} from "@playground/game-logic";
 
 export type PlaygroundRole = "kid" | "teacher" | "admin";
 
@@ -18,20 +23,19 @@ export type PlaygroundAccessResult =
       message: string;
     };
 
-export const RECESS_ACCESS_CACHE_MS = 60_000;
+export const RECESS_ACCESS_CACHE_MS = 30_000;
 export const RECESS_RECHECK_MS = 30_000;
 
 const RECESS_DENIED_MESSAGE =
   "לא ניתן להתחבר מחוץ לשעות ההפסקה";
 
-let scheduleCache:
-  | { rows: RecessWindowRow[]; expiresAt: number }
-  | null = null;
+let defaultScheduleCache: { rows: RecessWindow[]; expiresAt: number } | null = null;
+const classScheduleCache = new Map<string, { schedule: ClassRecessSchedule | null; expiresAt: number }>();
 
-async function loadActiveRecessSchedules(): Promise<RecessWindowRow[]> {
+async function loadActiveDefaultRecessSchedules(): Promise<RecessWindow[]> {
   const now = Date.now();
-  if (scheduleCache && scheduleCache.expiresAt > now) {
-    return scheduleCache.rows;
+  if (defaultScheduleCache && defaultScheduleCache.expiresAt > now) {
+    return defaultScheduleCache.rows;
   }
 
   const { data, error } = await supabase
@@ -43,16 +47,50 @@ async function loadActiveRecessSchedules(): Promise<RecessWindowRow[]> {
     throw new Error(error.message);
   }
 
-  const rows = (data ?? []) as RecessWindowRow[];
-  scheduleCache = { rows, expiresAt: now + RECESS_ACCESS_CACHE_MS };
+  const rows = (data ?? []) as RecessWindow[];
+  defaultScheduleCache = { rows, expiresAt: now + RECESS_ACCESS_CACHE_MS };
   return rows;
 }
 
 export function isKidAllowedByRecess(
-  schedules: RecessWindowRow[],
+  schedules: RecessWindow[],
   now = new Date()
 ): boolean {
-  return schedules.length > 0 && isWithinRecess(now, schedules);
+  return isWithinEffectiveRecess(now, { defaultWindows: schedules });
+}
+
+async function loadClassRecessSchedule(grade: string, gender: "boy" | "girl"): Promise<ClassRecessSchedule | null> {
+  const cacheKey = `${grade}:${gender}`;
+  const now = Date.now();
+  const cached = classScheduleCache.get(cacheKey);
+  if (cached && cached.expiresAt > now) return cached.schedule;
+
+  const { data: setting, error: settingError } = await supabase
+    .from("class_recess_schedule_settings")
+    .select("override_enabled")
+    .eq("grade", grade)
+    .eq("gender", gender)
+    .maybeSingle();
+  if (settingError) throw new Error(settingError.message);
+
+  if (!setting) {
+    classScheduleCache.set(cacheKey, { schedule: null, expiresAt: now + RECESS_ACCESS_CACHE_MS });
+    return null;
+  }
+
+  const { data: exceptions, error: exceptionsError } = await supabase
+    .from("class_recess_schedule_exceptions")
+    .select("day_of_week, start_time, end_time, mode, is_active")
+    .eq("grade", grade)
+    .eq("gender", gender);
+  if (exceptionsError) throw new Error(exceptionsError.message);
+
+  const schedule: ClassRecessSchedule = {
+    overrideEnabled: Boolean(setting.override_enabled),
+    exceptions: (exceptions ?? []) as ClassRecessException[]
+  };
+  classScheduleCache.set(cacheKey, { schedule, expiresAt: now + RECESS_ACCESS_CACHE_MS });
+  return schedule;
 }
 
 export async function getPlaygroundAccessForUser(
@@ -79,7 +117,7 @@ export async function getPlaygroundAccessForUser(
 
   const { data: profile, error: profileError } = await supabase
     .from("kid_profiles")
-    .select("role, is_active")
+    .select("role, is_active, grade, gender")
     .eq("id", userId)
     .maybeSingle();
 
@@ -123,8 +161,15 @@ export async function getPlaygroundAccessForUser(
   }
 
   try {
-    const schedules = await loadActiveRecessSchedules();
-    if (isKidAllowedByRecess(schedules, now)) {
+    const profileData = profile as { grade?: string; gender?: "boy" | "girl" };
+    if (!profileData.grade || (profileData.gender !== "boy" && profileData.gender !== "girl")) {
+      throw new Error("missing_class_profile");
+    }
+    const [schedules, classSchedule] = await Promise.all([
+      loadActiveDefaultRecessSchedules(),
+      loadClassRecessSchedule(profileData.grade, profileData.gender)
+    ]);
+    if (isWithinEffectiveRecess(now, { defaultWindows: schedules, classSchedule })) {
       return { allowed: true, role: "kid" };
     }
   } catch {
@@ -145,5 +190,6 @@ export async function getPlaygroundAccessForUser(
 }
 
 export function clearRecessScheduleCacheForTests(): void {
-  scheduleCache = null;
+  defaultScheduleCache = null;
+  classScheduleCache.clear();
 }

@@ -8,6 +8,7 @@ import type {
   TicTacToeState
 } from "@playground/game-logic";
 import type { CanonicalDrawingMode } from "@/games/drawing/drawingMode";
+import { lazyImportWithRetry } from "@/lib/lazyImport";
 
 export interface BoardProps {
   gameState: unknown;
@@ -40,7 +41,7 @@ const BOARD_LOADERS: Record<
   () => Promise<BoardRegistryEntry>
 > = {
   chess: async () => {
-    const { ChessBoard } = await import("@/games/ChessBoard");
+    const { ChessBoard } = await lazyImportWithRetry(() => import("@/games/ChessBoard"));
     return {
       component: ({
         gameState,
@@ -84,7 +85,7 @@ const BOARD_LOADERS: Record<
     };
   },
   tictactoe: async () => {
-    const { TicTacToeBoard } = await import("@/games/TicTacToeBoard");
+    const { TicTacToeBoard } = await lazyImportWithRetry(() => import("@/games/TicTacToeBoard"));
     return {
       component: ({ gameState, mySymbol, onIntent }) => (
         <TicTacToeBoard
@@ -96,7 +97,7 @@ const BOARD_LOADERS: Record<
     };
   },
   connectfour: async () => {
-    const { ConnectFourBoard } = await import("@/games/ConnectFourBoard");
+    const { ConnectFourBoard } = await lazyImportWithRetry(() => import("@/games/ConnectFourBoard"));
     return {
       component: ({ gameState, mySymbol, onIntent }) => (
         <ConnectFourBoard
@@ -108,7 +109,7 @@ const BOARD_LOADERS: Record<
     };
   },
   memory: async () => {
-    const { MemoryBoard } = await import("@/games/MemoryBoard");
+    const { MemoryBoard } = await lazyImportWithRetry(() => import("@/games/MemoryBoard"));
     return {
       component: ({ gameState, myUserId, onIntent }) => (
         <MemoryBoard
@@ -120,7 +121,7 @@ const BOARD_LOADERS: Record<
     };
   },
   drawing: async () => {
-    const { DrawingBoard } = await import("@/games/DrawingBoard");
+    const { DrawingBoard } = await lazyImportWithRetry(() => import("@/games/DrawingBoard"));
     return {
       component: ({
         gameState,
@@ -142,7 +143,7 @@ const BOARD_LOADERS: Record<
     };
   },
   breakout: async () => {
-    const { BreakoutMpBoard } = await import("@/games/BreakoutMpBoard");
+    const { BreakoutMpBoard } = await lazyImportWithRetry(() => import("@/games/BreakoutMpBoard"));
     return {
       component: ({
         gameState,

@@ -16,8 +16,13 @@ import {
 } from "@playground/observability";
 import { Server } from "socket.io";
 import { createClient } from "@supabase/supabase-js";
-import { isWithinRecess } from "./recess";
-import { getGameModule } from "@playground/game-logic";
+import {
+  getGameModule,
+  isWithinEffectiveRecess,
+  type ClassRecessException,
+  type ClassRecessSchedule,
+  type RecessWindow
+} from "@playground/game-logic";
 import {
   applyIntent,
   assignPlayer,
@@ -331,26 +336,48 @@ app.get("/ready", (_req, res) => {
 });
 
 let recessCache: {
-  rows: { day_of_week: number; start_time: string; end_time: string; is_active: boolean }[];
+  defaultWindows: RecessWindow[];
+  settings: { grade: string; gender: "boy" | "girl"; override_enabled: boolean }[];
+  exceptions: (ClassRecessException & { grade: string; gender: "boy" | "girl" })[];
   fetchedAt: number;
-} = { rows: [], fetchedAt: 0 };
+} = { defaultWindows: [], settings: [], exceptions: [], fetchedAt: 0 };
 
-async function loadRecessSchedules() {
+async function loadRecessScheduleData() {
   if (!supabaseAdmin) throw new Error("missing_supabase_admin");
   const now = Date.now();
-  if (now - recessCache.fetchedAt < 60_000) {
-    return recessCache.rows;
+  if (now - recessCache.fetchedAt < 30_000) {
+    return recessCache;
   }
-  const { data, error } = await supabaseAdmin
-    .from("recess_schedules")
-    .select("day_of_week, start_time, end_time, is_active")
-    .eq("is_active", true);
+  const [defaults, settings, exceptions] = await Promise.all([
+    supabaseAdmin.from("recess_schedules").select("day_of_week, start_time, end_time, is_active").eq("is_active", true),
+    supabaseAdmin.from("class_recess_schedule_settings").select("grade, gender, override_enabled"),
+    supabaseAdmin.from("class_recess_schedule_exceptions").select("grade, gender, day_of_week, start_time, end_time, mode, is_active").eq("is_active", true)
+  ]);
+  const error = defaults.error ?? settings.error ?? exceptions.error;
   if (error) {
-    logger.error({ message: "recess_schedules fetch failed", error: error.message });
+    logger.error({ message: "recess schedule fetch failed", error: error.message });
     throw new Error("recess_schedules_unavailable");
   }
-  recessCache = { rows: data ?? [], fetchedAt: now };
-  return recessCache.rows;
+  recessCache = {
+    defaultWindows: (defaults.data ?? []) as RecessWindow[],
+    settings: (settings.data ?? []) as typeof recessCache.settings,
+    exceptions: (exceptions.data ?? []) as typeof recessCache.exceptions,
+    fetchedAt: now
+  };
+  return recessCache;
+}
+
+async function isProfileWithinRecess(profile: { grade: string | null; gender: "boy" | "girl" }): Promise<boolean> {
+  if (!profile.grade) return false;
+  const data = await loadRecessScheduleData();
+  const setting = data.settings.find((row) => row.grade === profile.grade && row.gender === profile.gender);
+  const classSchedule: ClassRecessSchedule | null = setting
+    ? {
+        overrideEnabled: setting.override_enabled,
+        exceptions: data.exceptions.filter((row) => row.grade === profile.grade && row.gender === profile.gender)
+      }
+    : null;
+  return isWithinEffectiveRecess(new Date(), { defaultWindows: data.defaultWindows, classSchedule });
 }
 
 io.use(async (socket, next) => {
@@ -395,7 +422,14 @@ io.use(async (socket, next) => {
       return;
     }
 
-    let profile;
+    let profile: {
+      userId: string;
+      role: string;
+      gender: "boy" | "girl";
+      grade: string | null;
+      full_name: string;
+      is_active: boolean;
+    };
     if (classroomBoardCapability) {
       const { data: classroom } = await supabaseAdmin
         .from("classroom_sessions")
@@ -412,6 +446,7 @@ io.use(async (socket, next) => {
         userId: classroomBoardCapability.identity,
         role: classroomBoardCapability.role,
         gender: "boy" as const,
+        grade: null,
         full_name: classroomBoardCapability.displayName,
         is_active: true
       };
@@ -438,6 +473,7 @@ io.use(async (socket, next) => {
         userId: classroomDelegate.identity,
         role: "classroom_delegate",
         gender: "boy" as const,
+        grade: null,
         full_name: delegate.display_name,
         is_active: true
       };
@@ -447,8 +483,7 @@ io.use(async (socket, next) => {
     }
     if (shouldEnforceRecessForSocket(profile.role, classroomBoardCapability)) {
       try {
-        const schedules = await loadRecessSchedules();
-        if (!isWithinRecess(new Date(), schedules)) {
+        if (!await isProfileWithinRecess(profile)) {
           next(new Error("RECESS_DENIED"));
           return;
         }
@@ -465,6 +500,7 @@ io.use(async (socket, next) => {
     socket.data.displayName = profile.full_name;
     socket.data.role = profile.role;
     socket.data.gender = profile.gender;
+    socket.data.grade = profile.grade;
     logSocketAuthenticated(logger, socket);
     next();
   } catch (err) {
@@ -2149,9 +2185,8 @@ const RECESS_TICK_MS = 30_000;
 const recessSweepState = createRecessSweepState();
 const recessTimer = setInterval(() => {
   void recessEndSweep(recessSweepState, {
-    supabase: supabaseAdmin,
-    loadSchedules: loadRecessSchedules,
     io,
+    isKidAllowed: (grade, gender) => isProfileWithinRecess({ grade, gender }),
     logError: (message, err) =>
       logger.error({
         message,

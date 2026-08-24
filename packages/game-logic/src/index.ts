@@ -4,6 +4,7 @@ export * from "./tictactoe";
 export * from "./connectfour";
 export * from "./memory";
 export * from "./drawing";
+export * from "./recessSchedule";
 export * from "./breakoutMp";
 
 import type { AnyGameModule } from "./registry";

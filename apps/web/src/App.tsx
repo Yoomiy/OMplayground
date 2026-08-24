@@ -10,40 +10,41 @@ import { supabase } from "@/lib/supabase";
 import type { PlaygroundRole } from "@/lib/recessAccess";
 import { LoginPage } from "@/pages/LoginPage";
 import { HomePage } from "@/pages/HomePage";
+import { lazyImportWithRetry } from "@/lib/lazyImport";
 
 const FriendsDeprecatedPage = lazy(() =>
-  import("@/pages/FriendsDeprecatedPage").then((m) => ({
+  lazyImportWithRetry(() => import("@/pages/FriendsDeprecatedPage")).then((m) => ({
     default: m.FriendsDeprecatedPage
   }))
 );
 const InboxPage = lazy(() =>
-  import("@/pages/InboxPage").then((m) => ({ default: m.InboxPage }))
+  lazyImportWithRetry(() => import("@/pages/InboxPage")).then((m) => ({ default: m.InboxPage }))
 );
 const ProfilePage = lazy(() =>
-  import("@/pages/ProfilePage").then((m) => ({ default: m.ProfilePage }))
+  lazyImportWithRetry(() => import("@/pages/ProfilePage")).then((m) => ({ default: m.ProfilePage }))
 );
 const PublicProfilePage = lazy(() =>
-  import("@/pages/PublicProfilePage").then((m) => ({
+  lazyImportWithRetry(() => import("@/pages/PublicProfilePage")).then((m) => ({
     default: m.PublicProfilePage
   }))
 );
-const PlayPage = lazy(() => import("@/pages/PlayPage"));
+const PlayPage = lazy(() => lazyImportWithRetry(() => import("@/pages/PlayPage")));
 const TeacherPage = lazy(() =>
-  import("@/pages/TeacherPage").then((m) => ({ default: m.TeacherPage }))
+  lazyImportWithRetry(() => import("@/pages/TeacherPage")).then((m) => ({ default: m.TeacherPage }))
 );
 const AdminPage = lazy(() =>
-  import("@/pages/AdminPage").then((m) => ({ default: m.AdminPage }))
+  lazyImportWithRetry(() => import("@/pages/AdminPage")).then((m) => ({ default: m.AdminPage }))
 );
 const JoinByCodePage = lazy(() =>
-  import("@/pages/JoinByCodePage").then((m) => ({ default: m.JoinByCodePage }))
+  lazyImportWithRetry(() => import("@/pages/JoinByCodePage")).then((m) => ({ default: m.JoinByCodePage }))
 );
 const ClassroomPage = lazy(() =>
-  import("@/pages/ClassroomPage").then((m) => ({ default: m.ClassroomPage }))
+  lazyImportWithRetry(() => import("@/pages/ClassroomPage")).then((m) => ({ default: m.ClassroomPage }))
 );
 const ClassroomEndedPage = lazy(() =>
-  import("@/pages/ClassroomEndedPage").then((m) => ({ default: m.ClassroomEndedPage }))
+  lazyImportWithRetry(() => import("@/pages/ClassroomEndedPage")).then((m) => ({ default: m.ClassroomEndedPage }))
 );
-const SoloGameContainer = lazy(() => import("@/game/SoloGameContainer"));
+const SoloGameContainer = lazy(() => lazyImportWithRetry(() => import("@/game/SoloGameContainer")));
 
 function RouteFallback() {
   return (

@@ -1,301 +1,68 @@
-import {
-  createRecessSweepState,
-  recessEndSweep,
-  type RecessIoShape
-} from "./recessSweep";
+import { createRecessSweepState, recessEndSweep, type RecessIoShape } from "./recessSweep";
 import type { Room } from "./room";
 import { initialTicTacToeState, tictactoeModule } from "@playground/game-logic";
 
-/**
- * Milestone A — recess-end eviction.
- * We pin the clock at a known recess window and then flip it outside, and
- * assert:
- *   - on the flip tick, persistRecessPause was called per live room with
- *     status='paused' + game_state preserved,
- *   - ROOM_EVENT { kind: 'RECESS_ENDED' } was emitted to each room,
- *   - kid sockets got disconnect(true),
- *   - the room was removed from the in-memory map.
- */
-const SCHEDULES = [
-  {
-    day_of_week: 0,
-    start_time: "00:00",
-    end_time: "23:59",
-    is_active: true
-  },
-  {
-    day_of_week: 1,
-    start_time: "00:00",
-    end_time: "23:59",
-    is_active: true
-  },
-  {
-    day_of_week: 2,
-    start_time: "00:00",
-    end_time: "23:59",
-    is_active: true
-  },
-  {
-    day_of_week: 3,
-    start_time: "00:00",
-    end_time: "23:59",
-    is_active: true
-  },
-  {
-    day_of_week: 4,
-    start_time: "10:00",
-    end_time: "10:15",
-    is_active: true
-  },
-  {
-    day_of_week: 5,
-    start_time: "00:00",
-    end_time: "23:59",
-    is_active: true
-  },
-  {
-    day_of_week: 6,
-    start_time: "00:00",
-    end_time: "23:59",
-    is_active: true
-  }
-];
-
-function buildMockIo() {
-  const emit = jest.fn();
-  const disconnect = jest.fn();
-  const fetchSockets = jest
-    .fn<
-      Promise<
-        { data: { role?: string }; disconnect(close: boolean): void }[]
-      >,
-      []
-    >()
-    .mockResolvedValue([{ data: { role: "kid" }, disconnect }]);
-  const io: RecessIoShape = {
-    to: jest.fn().mockReturnValue({ emit }),
-    in: jest.fn().mockReturnValue({ fetchSockets })
-  };
-  return { io, emit, disconnect, fetchSockets };
-}
-
-function buildMockSupabase() {
-  const eq = jest.fn().mockResolvedValue({ data: null, error: null });
-  const update = jest.fn().mockReturnValue({ eq });
-  const from = jest.fn().mockReturnValue({ update });
-  const supabase = { from } as unknown;
-  return { supabase, from, update, eq };
-}
-
-function roomWithState(sessionId: string): Room<unknown> {
+function room(sessionId: string): Room<unknown> {
   return {
-    sessionId,
-    gameId: "g1",
-    gameKey: tictactoeModule.key,
-    module: tictactoeModule as unknown as Room<unknown>["module"],
-    gender: "boy",
-    hostId: "host-user",
-    minPlayers: 2,
-    state: initialTicTacToeState(),
-    roster: [],
-    players: new Map(),
-    spectators: new Map(),
-    hasBeenActive: false,
-    paused: false,
-    peakPlayerCount: 0
+    sessionId, gameId: "g1", gameKey: tictactoeModule.key,
+    module: tictactoeModule as unknown as Room<unknown>["module"], gender: "boy", hostId: "host",
+    minPlayers: 2, state: initialTicTacToeState(), roster: [], players: new Map(), spectators: new Map(),
+    hasBeenActive: false, paused: false, peakPlayerCount: 0
   };
 }
 
 describe("recessEndSweep", () => {
-  it("no-ops on a single tick while recess is still active", async () => {
-    const { io, emit } = buildMockIo();
-    const { supabase, update } = buildMockSupabase();
-    const state = createRecessSweepState();
-
-    const room = roomWithState("sess-r1");
-    const removed: string[] = [];
-
-    const inRecess = new Date("2026-04-19T09:00:00Z"); // Sun 12:00 Jerusalem, inside full-day window
-    const { evictedSessionIds } = await recessEndSweep(state, {
-      supabase: supabase as never,
-      loadSchedules: async () => SCHEDULES,
-      io,
-      now: () => inRecess,
-      rooms: () => [room],
-      remove: (id) => removed.push(id)
-    });
-
-    expect(evictedSessionIds).toEqual([]);
-    expect(update).not.toHaveBeenCalled();
-    expect(emit).not.toHaveBeenCalled();
-    expect(removed).toEqual([]);
-  });
-
-  it("evicts rooms + persists pause + closes kid sockets on the flip tick", async () => {
-    const { io, emit, disconnect } = buildMockIo();
-    const { supabase, update, eq } = buildMockSupabase();
-    const state = createRecessSweepState();
-
-    const room = roomWithState("sess-r2");
-    const removed: string[] = [];
-
-    // Tick 1: inside a full-day window for Sun (day_of_week 0), Jerusalem time.
-    const tick1 = new Date("2026-04-19T09:00:00Z"); // Sun Jerusalem 12:00
-    await recessEndSweep(state, {
-      supabase: supabase as never,
-      loadSchedules: async () => SCHEDULES,
-      io,
-      now: () => tick1,
-      rooms: () => [room],
-      remove: (id) => removed.push(id)
-    });
-    expect(state.activeLastTick).toBe(true);
-
-    // Tick 2: Thursday 13:00 Jerusalem — outside the 10:00-10:15 window.
-    const tick2 = new Date("2026-04-16T10:00:00Z"); // Thu 13:00 Jerusalem, outside window
-    const { evictedSessionIds } = await recessEndSweep(state, {
-      supabase: supabase as never,
-      loadSchedules: async () => SCHEDULES,
-      io,
-      now: () => tick2,
-      rooms: () => [room],
-      remove: (id) => removed.push(id)
-    });
-
-    expect(evictedSessionIds).toEqual(["sess-r2"]);
-    const payload = update.mock.calls[0][0] as {
-      status: string;
-      game_state: unknown;
-      last_activity: string;
-    };
-    expect(payload.status).toBe("paused");
-    expect(payload.game_state).toEqual(room.state);
-    expect(payload.last_activity).toBe(tick2.toISOString());
-    expect(eq).toHaveBeenCalledWith("id", "sess-r2");
-
-    expect(io.to).toHaveBeenCalledWith("session:sess-r2");
-    expect(emit).toHaveBeenCalledWith(
-      "ROOM_EVENT",
-      expect.objectContaining({
-        sessionId: "sess-r2",
-        kind: "RECESS_ENDED"
-      })
-    );
-    expect(disconnect).toHaveBeenCalledWith(true);
-    expect(removed).toEqual(["sess-r2"]);
-  });
-
-  it("skips disconnecting non-kid sockets (teachers stay connected)", async () => {
-    const emit = jest.fn();
-    const kidDisconnect = jest.fn();
-    const teacherDisconnect = jest.fn();
-    const fetchSockets = jest.fn().mockResolvedValue([
-      { data: { role: "kid" }, disconnect: kidDisconnect },
-      { data: { role: "teacher" }, disconnect: teacherDisconnect }
-    ]);
+  it("evicts only the class whose recess ended in a mixed room", async () => {
+    const endedEmit = jest.fn();
+    const endedDisconnect = jest.fn();
+    const allowedEmit = jest.fn();
+    const allowedDisconnect = jest.fn();
     const io: RecessIoShape = {
-      to: jest.fn().mockReturnValue({ emit }),
-      in: jest.fn().mockReturnValue({ fetchSockets })
+      in: jest.fn().mockReturnValue({ fetchSockets: jest.fn().mockResolvedValue([
+        { data: { role: "kid", grade: "א", gender: "boy", userId: "ended" }, emit: endedEmit, disconnect: endedDisconnect },
+        { data: { role: "kid", grade: "ב", gender: "boy", userId: "allowed" }, emit: allowedEmit, disconnect: allowedDisconnect },
+        { data: { role: "teacher", userId: "teacher" }, emit: jest.fn(), disconnect: jest.fn() }
+      ]) })
     };
-    const { supabase } = buildMockSupabase();
-    const state = createRecessSweepState();
-    state.activeLastTick = true; // shortcut: already in-recess last tick.
-
-    const tick = new Date("2026-04-16T10:00:00Z"); // Thu 13:00 Jerusalem, outside window
-    await recessEndSweep(state, {
-      supabase: supabase as never,
-      loadSchedules: async () => SCHEDULES,
+    const result = await recessEndSweep(createRecessSweepState(), {
       io,
-      now: () => tick,
-      rooms: () => [roomWithState("sess-r3")],
-      remove: () => {}
+      isKidAllowed: async (grade) => grade === "ב",
+      rooms: () => [room("mixed")]
     });
-
-    expect(kidDisconnect).toHaveBeenCalledWith(true);
-    expect(teacherDisconnect).not.toHaveBeenCalled();
+    expect(result.evictedUserIds).toEqual(["ended"]);
+    expect(endedEmit).toHaveBeenCalledWith("ROOM_EVENT", { sessionId: "mixed", kind: "RECESS_ENDED" });
+    expect(endedDisconnect).toHaveBeenCalledWith(true);
+    expect(allowedDisconnect).not.toHaveBeenCalled();
   });
 
-  it("does not pause or evict classroom whiteboard rooms", async () => {
-    const { io, emit, disconnect } = buildMockIo();
-    const { supabase, update } = buildMockSupabase();
-    const state = createRecessSweepState();
-    state.activeLastTick = true;
-    const classroomRoom = roomWithState("classroom-board");
-    classroomRoom.drawingContext = {
-      boardMode: "classroom",
-      classroomId: "classroom-1",
-      roomCode: "ROOM"
-    };
-    const removed: string[] = [];
-
-    const result = await recessEndSweep(state, {
-      supabase: supabase as never,
-      loadSchedules: async () => SCHEDULES,
+  it("does not touch classroom drawing rooms", async () => {
+    const disconnect = jest.fn();
+    const io: RecessIoShape = { in: jest.fn() };
+    const classroom = room("classroom");
+    classroom.drawingContext = { boardMode: "classroom", classroomId: "id", roomCode: "code" };
+    const result = await recessEndSweep(createRecessSweepState(), {
       io,
-      now: () => new Date("2026-04-16T10:00:00Z"),
-      rooms: () => [classroomRoom],
-      remove: (id) => removed.push(id)
+      isKidAllowed: async () => false,
+      rooms: () => [classroom]
     });
-
-    expect(result.evictedSessionIds).toEqual([]);
-    expect(update).not.toHaveBeenCalled();
-    expect(emit).not.toHaveBeenCalled();
+    expect(result.evictedUserIds).toEqual([]);
+    expect(io.in).not.toHaveBeenCalled();
     expect(disconnect).not.toHaveBeenCalled();
-    expect(removed).toEqual([]);
   });
 
-  it("preserves sweep state when schedule loading fails", async () => {
-    const { io, emit } = buildMockIo();
-    const { supabase, update } = buildMockSupabase();
-    const state = createRecessSweepState();
-    state.activeLastTick = true;
-    const consoleError = jest.spyOn(console, "error").mockImplementation();
-
-    try {
-      const { evictedSessionIds } = await recessEndSweep(state, {
-        supabase: supabase as never,
-        loadSchedules: async () => {
-          throw new Error("network");
-        },
-        io,
-        now: () => new Date("2026-04-16T10:00:00Z"),
-        rooms: () => [roomWithState("sess-r4")],
-        remove: () => {}
-      });
-
-      expect(evictedSessionIds).toEqual([]);
-      expect(state.activeLastTick).toBe(true);
-      expect(update).not.toHaveBeenCalled();
-      expect(emit).not.toHaveBeenCalled();
-    } finally {
-      consoleError.mockRestore();
-    }
-  });
-
-  it("treats an empty schedule set as inactive on a clean load", async () => {
-    const { io, emit, disconnect } = buildMockIo();
-    const { supabase, update } = buildMockSupabase();
-    const state = createRecessSweepState();
-    state.activeLastTick = true;
-    const removed: string[] = [];
-
-    const { evictedSessionIds } = await recessEndSweep(state, {
-      supabase: supabase as never,
-      loadSchedules: async () => [],
+  it("keeps players connected when schedule evaluation is temporarily unavailable", async () => {
+    const disconnect = jest.fn();
+    const io: RecessIoShape = {
+      in: jest.fn().mockReturnValue({ fetchSockets: jest.fn().mockResolvedValue([
+        { data: { role: "kid", grade: "א", gender: "girl", userId: "kid" }, emit: jest.fn(), disconnect }
+      ]) })
+    };
+    const result = await recessEndSweep(createRecessSweepState(), {
       io,
-      now: () => new Date("2026-04-16T10:00:00Z"),
-      rooms: () => [roomWithState("sess-r5")],
-      remove: (id) => removed.push(id)
+      isKidAllowed: async () => { throw new Error("temporary"); },
+      rooms: () => [room("safe")]
     });
-
-    expect(evictedSessionIds).toEqual(["sess-r5"]);
-    expect(state.activeLastTick).toBe(false);
-    expect(update).toHaveBeenCalled();
-    expect(emit).toHaveBeenCalledWith(
-      "ROOM_EVENT",
-      expect.objectContaining({ kind: "RECESS_ENDED" })
-    );
-    expect(disconnect).toHaveBeenCalledWith(true);
-    expect(removed).toEqual(["sess-r5"]);
+    expect(result.evictedUserIds).toEqual([]);
+    expect(disconnect).not.toHaveBeenCalled();
   });
 });
