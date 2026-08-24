@@ -12,3 +12,4 @@
 36. logs coverage for things like recess end
 40. you still need to manipulate the pic before the media board shows it
 41. make sure that DB audit_log events are logged in the server too
+42. see why admin is marked as connected in the classrooms dashboard after disconnection.

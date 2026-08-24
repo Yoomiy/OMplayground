@@ -4,11 +4,13 @@
   "private": true,
   "main": "dist/index.js",
   "scripts": {
-    "prebuild": "npm --prefix ../.. run build -w @playground/observability",
+    "prebuild": "npm --prefix ../.. run build -w @playground/observability && npm --prefix ../.. run build -w @playground/game-logic && npm --prefix ../.. run build -w @playground/voxel-content",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
+    "predev": "npm --prefix ../.. run build -w @playground/observability && npm --prefix ../.. run build -w @playground/game-logic && npm --prefix ../.. run build -w @playground/voxel-content",
     "dev": "tsx watch src/index.ts",
     "lint": "tsc --noEmit",
+    "pretest": "npm --prefix ../.. run build -w @playground/game-logic && npm --prefix ../.. run build -w @playground/voxel-content",
     "test": "jest --config jest.config.cjs"
   },
   "dependencies": {
