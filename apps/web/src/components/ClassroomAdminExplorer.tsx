@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { getVoxelServerUrl } from "@/lib/voxelServerUrl";
 import { cn } from "@/lib/cn";
 import { kidFieldInputClass } from "@/lib/fieldStyles";
+import { formatClassroomActivity, formatClassroomFullDate } from "@/lib/classroomActivityTime";
 
 type RecordRow = {
   id: string;
@@ -47,16 +48,7 @@ type Detail = {
 const PAGE_SIZE = 50;
 
 function formatDate(value: string | null): string {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleString("he-IL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
-  });
+  return formatClassroomFullDate(value);
 }
 
 function formatDuration(seconds: number): string {
@@ -332,7 +324,7 @@ export function ClassroomAdminExplorer() {
                 {record.cohosts.length ? `שותפים: ${record.cohosts.join(", ")}` : "ללא שותפים"}
               </div>
             </td>
-            <td className="p-3 text-xs text-white/70 whitespace-nowrap">{formatDate(record.last_activity)}</td>
+            <td className="p-3 text-xs text-white/70 whitespace-nowrap">{formatClassroomActivity(record.last_activity)}</td>
             <td className="p-3 text-center font-medium text-white/90 whitespace-nowrap">{record.sessionCount}</td>
             <td className="p-3 text-center font-medium text-white/90 whitespace-nowrap">{record.participantCount}</td>
             <td className="p-3">
@@ -413,10 +405,10 @@ export function ClassroomAdminExplorer() {
             const connectedCount = people.filter((person) => person.connected_now).length;
             return <div key={meeting.id} className={cn("rounded-xl border p-3", !meeting.ended_at ? "border-emerald-500/30 bg-emerald-500/[0.06]" : "border-white/10 bg-white/[0.03]")}>
               <button onClick={() => setOpenMeeting(expanded ? null : meeting.id)} className="flex w-full items-center justify-between gap-3 text-right focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-400">
-                <span className="font-bold text-white">מפגש {formatDate(meeting.started_at)}</span>
-                <span className="text-xs text-white/60">{people.length} משתתפים{connectedCount ? ` · ${connectedCount} מחוברים` : ""} · {meeting.ended_at ? `הסתיים ${formatDate(meeting.ended_at)}` : "פעיל כעת"}</span>
+                <span className="font-bold text-white">מפגש {formatClassroomActivity(meeting.started_at)}</span>
+                <span className="text-xs text-white/60">{people.length} משתתפים{connectedCount ? ` · ${connectedCount} מחוברים` : ""} · {meeting.ended_at ? `הסתיים ${formatClassroomActivity(meeting.ended_at)}` : "פעיל כעת"}</span>
               </button>
-              {expanded ? <div className="mt-3 space-y-2 border-t border-white/10 pt-3">{people.map((person) => <div key={person.id} className={cn("rounded-lg p-2 text-sm", person.connected_now ? "border border-emerald-500/25 bg-emerald-500/10" : "bg-white/5")}>
+              {expanded ? <div className="mt-3 space-y-2 border-t border-white/10 pt-3"><p className="text-xs text-white/50">התחיל: {formatDate(meeting.started_at)}{meeting.ended_at ? ` · הסתיים: ${formatDate(meeting.ended_at)}` : " · עדיין פעיל"}</p>{people.map((person) => <div key={person.id} className={cn("rounded-lg p-2 text-sm", person.connected_now ? "border border-emerald-500/25 bg-emerald-500/10" : "bg-white/5")}>
                 <div className="flex flex-wrap items-center justify-between gap-2"><span className="font-bold text-white">{person.display_name} <span className="text-xs font-normal text-indigo-200">{roleLabel(person.roles_held)}</span></span><div className="flex items-center gap-2">{person.connected_now ? <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-bold text-emerald-200">● מחובר/ת</span> : <span className="text-xs text-white/40">לא מחובר/ת</span>}<span className="font-mono text-white/80">{formatDuration(person.total_seconds)}</span></div></div>
               </div>)}{!people.length ? <p className="text-sm text-white/45">אין משתתפים במפגש זה.</p> : null}</div> : null}
             </div>;
