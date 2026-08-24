@@ -1768,13 +1768,15 @@ export function ClassroomPage() {
             </button>
           )}
 
-          <button
-            onClick={copyInviteLink}
-            className="rounded-xl border border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-200 font-bold text-xs px-3 py-1.5 flex items-center gap-1.5"
-          >
-            {inviteCopied ? <Check className="size-3.5 text-emerald-400" /> : <Copy className="size-3.5" />}
-            {inviteCopied ? "קישור הועתק!" : "העתק קישור להזמנה"}
-          </button>
+          {isHost && (
+            <button
+              onClick={copyInviteLink}
+              className="rounded-xl border border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-200 font-bold text-xs px-3 py-1.5 flex items-center gap-1.5"
+            >
+              {inviteCopied ? <Check className="size-3.5 text-emerald-400" /> : <Copy className="size-3.5" />}
+              {inviteCopied ? "קישור הועתק!" : "העתק קישור להזמנה"}
+            </button>
+          )}
 
           {connState === "connected" && (
             <button
