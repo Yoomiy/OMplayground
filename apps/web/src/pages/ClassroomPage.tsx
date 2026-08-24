@@ -1635,20 +1635,26 @@ export function ClassroomPage() {
     if (!sessionData || !isHost || !(canManageClassroom || isDelegatedHost)) return;
     const updated = { ...roomSettings, [key]: !roomSettings[key] };
     setRoomSettings(updated);
+    if (key === "allowWhiteboardDraw" && drawSocketRef.current && drawSessionId) {
+      drawSocketRef.current.emit("CLASSROOM_WHITEBOARD_POLICY", {
+        sessionId: drawSessionId,
+        allowWhiteboardDraw: updated.allowWhiteboardDraw
+      });
+    }
     const response = await classroomRequest("/rtc/classroom-settings", {
       roomCode: sessionData.room_code,
       settings: { [key]: updated[key] }
     });
     if (!response.ok) {
       setRoomSettings(roomSettings);
+      if (key === "allowWhiteboardDraw" && drawSocketRef.current && drawSessionId) {
+        drawSocketRef.current.emit("CLASSROOM_WHITEBOARD_POLICY", {
+          sessionId: drawSessionId,
+          allowWhiteboardDraw: roomSettings.allowWhiteboardDraw
+        });
+      }
       setConnError("לא ניתן לעדכן את הגדרות הכיתה.");
       return;
-    }
-    if (key === "allowWhiteboardDraw" && drawSocketRef.current && drawSessionId) {
-      drawSocketRef.current.emit("CLASSROOM_WHITEBOARD_POLICY", {
-        sessionId: drawSessionId,
-        allowWhiteboardDraw: updated.allowWhiteboardDraw
-      });
     }
   };
 

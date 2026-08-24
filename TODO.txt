@@ -10,4 +10,5 @@
 30. test audio and docs on the classroom media board
 33. we might want to be able to lock a classroom (when a host is not attended?)
 36. logs coverage for things like recess end
-39. solve the unable to draw toast when drawing is actually permited
+40. you still need to manipulate the pic before the media board shows it
+41. make sure that DB audit_log events are logged in the server too

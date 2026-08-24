@@ -635,7 +635,8 @@ async function appendClassroomAudit(
     p_action: action,
     p_entity_type: "classroom_session",
     p_entity_id: classroom.id,
-    p_metadata: auditMetadata(correlationId, { room_code: classroom.room_code, ...metadata })
+    p_metadata: auditMetadata(correlationId, { room_code: classroom.room_code, ...metadata }),
+    p_correlation_id: correlationId ?? null
   });
   if (error) {
     logger.error({

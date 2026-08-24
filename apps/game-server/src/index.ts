@@ -132,12 +132,15 @@ function nextCanonicalDrawingSyncToken(socketId: string): string {
 
 async function loadClassroomDrawingPolicy(
   roomCode: string,
-  expectedClassroomId?: string
+  expectedClassroomId?: string,
+  forceRefresh = false
 ): Promise<ClassroomDrawingPolicy> {
-  const cached = classroomDrawingPolicies.get(roomCode);
-  if (cached) return cached;
-  const pending = classroomDrawingPolicyLoads.get(roomCode);
-  if (pending) return pending;
+  if (!forceRefresh) {
+    const cached = classroomDrawingPolicies.get(roomCode);
+    if (cached) return cached;
+    const pending = classroomDrawingPolicyLoads.get(roomCode);
+    if (pending) return pending;
+  }
 
   const load = (async () => {
     if (!supabaseAdmin) return { classroomId: "unknown", allowWhiteboardDraw: false, active: false };
@@ -668,7 +671,7 @@ io.on("connection", (socket) => {
 
   async function canEditDrawing(room: Room<unknown>): Promise<boolean> {
     const classroom = socket.data.classroomDrawing as
-      | { sessionId: string; roomCode: string; isHost: boolean }
+      | { sessionId: string; classroomId: string; roomCode: string; isHost: boolean }
       | undefined;
     if (room.gameKey !== "drawing") return true;
     if (room.drawingContext?.boardMode !== "classroom") {
@@ -676,7 +679,15 @@ io.on("connection", (socket) => {
     }
     if (!classroom || classroom.sessionId !== room.sessionId) return false;
     if (classroom.isHost) return true;
-    return classroomDrawingPolicies.get(classroom.roomCode)?.allowWhiteboardDraw === true;
+    if (classroomDrawingPolicies.get(classroom.roomCode)?.allowWhiteboardDraw === true) {
+      return true;
+    }
+    try {
+      const freshPolicy = await loadClassroomDrawingPolicy(classroom.roomCode, classroom.classroomId, true);
+      return freshPolicy?.allowWhiteboardDraw === true;
+    } catch {
+      return false;
+    }
   }
 
   function isCanonicalDrawingRoom(room: Room<unknown>): boolean {
@@ -1275,31 +1286,32 @@ io.on("connection", (socket) => {
         if (typeof yjsAwareness === "string" && !socket.data.canonicalDrawingSync?.acknowledged) {
           return;
         }
-        if (!(await canEditDrawing(room))) {
-          if (shouldLogDrawingRejection("WHITEBOARD_EDIT_FORBIDDEN")) {
-            logger.warn({
-              correlationId: socket.data.correlationId,
-              userId,
-              sessionId,
-              protocol: "socket",
-              message: "Canonical drawing update rejected",
-              context: {
-                ...drawingLogContext(room, "apply_delta"),
-                event: "DRAWING_UPDATE_REJECTED",
-                status: "failed",
-                code: "WHITEBOARD_EDIT_FORBIDDEN"
-              }
-            });
-          }
-          socket.emit("LIVE_DELTA_REJECTED", {
-            sessionId,
-            code: "WHITEBOARD_EDIT_FORBIDDEN"
-          });
-          serveCanonicalDrawing(room, "permission-rejected");
-          return;
-        }
 
         if (typeof yjsUpdate === "string") {
+          if (!(await canEditDrawing(room))) {
+            if (shouldLogDrawingRejection("WHITEBOARD_EDIT_FORBIDDEN")) {
+              logger.warn({
+                correlationId: socket.data.correlationId,
+                userId,
+                sessionId,
+                protocol: "socket",
+                message: "Canonical drawing update rejected",
+                context: {
+                  ...drawingLogContext(room, "apply_delta"),
+                  event: "DRAWING_UPDATE_REJECTED",
+                  status: "failed",
+                  code: "WHITEBOARD_EDIT_FORBIDDEN"
+                }
+              });
+            }
+            socket.emit("LIVE_DELTA_REJECTED", {
+              sessionId,
+              code: "WHITEBOARD_EDIT_FORBIDDEN"
+            });
+            serveCanonicalDrawing(room, "permission-rejected");
+            return;
+          }
+
           const liveState = liveCanonicalDrawingState(room);
           const validationStarted = Date.now();
           const result = applyCanonicalDrawingSocketUpdate(
