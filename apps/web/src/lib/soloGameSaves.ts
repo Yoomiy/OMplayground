@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import type { SoloDrawingDraftStore } from "@/lib/soloDrawingDraftStore";
 
 export type JsonValue =
   | string
@@ -38,6 +39,7 @@ export interface UpsertSoloGameSaveInput {
 
 export interface SoloGameSaveControls {
   savedState: JsonValue | null;
+  drawingDraftStore?: SoloDrawingDraftStore;
   saveState: (
     state: JsonValue,
     options?: { stateVersion?: number; saveKind?: SoloSaveKind }

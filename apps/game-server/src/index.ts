@@ -65,6 +65,7 @@ import {
   applyCanonicalDrawingSocketUpdate,
   clearCanonicalDrawingState,
   createCanonicalDrawingState,
+  destroyCanonicalDrawingState,
   encodeFullCanonicalDrawingState,
   isCanonicalDrawingDirty,
   markCanonicalDrawingPersisted,
@@ -124,7 +125,10 @@ function nextCanonicalDrawingSyncToken(socketId: string): string {
   return `${socketId}:${Date.now()}:${canonicalDrawingSyncSerial}`;
 }
 
-async function loadClassroomDrawingPolicy(roomCode: string): Promise<ClassroomDrawingPolicy> {
+async function loadClassroomDrawingPolicy(
+  roomCode: string,
+  expectedClassroomId?: string
+): Promise<ClassroomDrawingPolicy> {
   const cached = classroomDrawingPolicies.get(roomCode);
   if (cached) return cached;
   const pending = classroomDrawingPolicyLoads.get(roomCode);
@@ -136,6 +140,7 @@ async function loadClassroomDrawingPolicy(roomCode: string): Promise<ClassroomDr
       .from("classroom_sessions")
       .select("id, settings, status")
       .eq("room_code", roomCode)
+      .match(expectedClassroomId ? { id: expectedClassroomId } : {})
       .maybeSingle();
     if (error) throw error;
     const policy = {
@@ -599,12 +604,21 @@ io.on("connection", (socket) => {
     return false;
   }
 
-  function estimatePayloadBytes(value: unknown): number {
-    try {
-      return Buffer.byteLength(JSON.stringify(value), "utf8");
-    } catch {
-      return Number.POSITIVE_INFINITY;
+  function estimateCanonicalPayloadBytes(value: Record<string, unknown>): number {
+    const kinds = [
+      typeof value.yjsUpdate === "string",
+      typeof value.yjsAwareness === "string",
+      Array.isArray(value.yjsAwarenessRemove),
+      value.viewport !== null && typeof value.viewport === "object" && !Array.isArray(value.viewport)
+    ].filter(Boolean).length;
+    if (kinds !== 1) return Number.POSITIVE_INFINITY;
+    if (typeof value.yjsUpdate === "string") return Buffer.byteLength(value.yjsUpdate, "utf8");
+    if (typeof value.yjsAwareness === "string") {
+      return Buffer.byteLength(value.yjsAwareness, "utf8") +
+        (Array.isArray(value.yjsAwarenessClientIds) ? value.yjsAwarenessClientIds.length * 16 : 0);
     }
+    if (Array.isArray(value.yjsAwarenessRemove)) return value.yjsAwarenessRemove.length * 16;
+    return 128;
   }
 
   async function canClearDrawing(room: Room<unknown>): Promise<boolean> {
@@ -781,7 +795,7 @@ io.on("connection", (socket) => {
       const { data: session, error } = await supabaseAdmin
         .from("game_sessions")
         .select(
-          "id, game_id, gender, player_ids, player_names, host_id, status, game_state, is_open, invitation_code, peak_player_count, games ( game_url, min_players )"
+          "id, game_id, classroom_id, gender, player_ids, player_names, host_id, status, game_state, is_open, invitation_code, peak_player_count, games ( game_url, min_players )"
         )
         .eq("id", sessionId)
         .maybeSingle();
@@ -812,10 +826,11 @@ io.on("connection", (socket) => {
       const playerIds = ((session.player_ids as string[]) ?? []).map(String);
       const playerNames = ((session.player_names as string[]) ?? []).map(String);
       const role = socket.data.role as string;
-      const hostId = String(session.host_id ?? "");
+      const hostId = session.host_id ? String(session.host_id) : null;
       const isOpen = (session as { is_open?: boolean }).is_open !== false;
+      const classroomId = session.classroom_id ? String(session.classroom_id) : null;
       const classroomRoomCode =
-        gameKey === "drawing" && String(session.invitation_code ?? "").startsWith("class-draw-")
+        gameKey === "drawing" && classroomId && String(session.invitation_code ?? "").startsWith("class-draw-")
           ? String(session.invitation_code).slice("class-draw-".length)
           : null;
       let drawingContext: DrawingRoomContext | undefined = gameKey === "drawing"
@@ -828,7 +843,7 @@ io.on("connection", (socket) => {
           active: false
         };
         try {
-          policy = await loadClassroomDrawingPolicy(classroomRoomCode);
+          policy = await loadClassroomDrawingPolicy(classroomRoomCode, classroomId ?? undefined);
         } catch (err) {
           logger.warn({
             message: "Classroom drawing policy load failed",
@@ -965,7 +980,7 @@ io.on("connection", (socket) => {
         drawingContext,
         module: gameModule,
         gender: (session.gender as "boy" | "girl" | "all") || gender,
-        hostId: session.host_id as string,
+        hostId,
         minPlayers: gameRow?.min_players ?? gameModule.minPlayers,
         roster: playerIds.map((id, i) => ({
           userId: id,
@@ -1114,7 +1129,7 @@ io.on("connection", (socket) => {
       if (isCanonicalDrawingRoom(room)) {
         const typed = typeof delta === "object" && delta !== null ? delta as Record<string, unknown> : null;
         if (!typed) return;
-        if (estimatePayloadBytes(delta) > MAX_LIVE_DELTA_BYTES) {
+        if (estimateCanonicalPayloadBytes(typed) > MAX_LIVE_DELTA_BYTES) {
           if (shouldLogDrawingRejection("PAYLOAD_TOO_LARGE")) {
             logger.warn({
               correlationId: socket.data.correlationId,
@@ -1250,12 +1265,31 @@ io.on("connection", (socket) => {
 
         if (typeof yjsUpdate === "string") {
           const liveState = liveCanonicalDrawingState(room);
+          const validationStarted = Date.now();
           const result = applyCanonicalDrawingSocketUpdate(
             liveState,
             socket.data.canonicalDrawingSync,
             sessionId,
             yjsUpdate
           );
+          const validationDurationMs = Date.now() - validationStarted;
+          if (validationDurationMs >= 25 && shouldLogDrawingRejection("SLOW_VALIDATION")) {
+            logger.warn({
+              correlationId: socket.data.correlationId,
+              userId,
+              sessionId,
+              protocol: "socket",
+              message: "Canonical drawing validation was slow",
+              context: {
+                ...drawingLogContext(room, "apply_delta"),
+                event: "DRAWING_VALIDATION_SLOW",
+                status: result.ok ? "success" : "failed",
+                duration_ms: validationDurationMs,
+                update_bytes: Buffer.byteLength(yjsUpdate, "utf8"),
+                revision: liveState.revision
+              }
+            });
+          }
           if (!result.ok) {
             if (result.code === "SYNC_NOT_ACKNOWLEDGED") {
               if (shouldLogDrawingRejection("SYNC_NOT_ACKNOWLEDGED")) {
@@ -1954,7 +1988,10 @@ io.on("connection", (socket) => {
       const room = getRoom(sessionId);
       if (room) emitSnapshot(room);
       if (!room && isClassroomSpectator) {
+        const liveState = canonicalDrawingLiveStates.get(sessionId);
+        if (liveState) destroyCanonicalDrawingState(liveState);
         canonicalDrawingLiveStates.delete(sessionId);
+        classroomDrawingViewports.delete(sessionId);
       }
       await socket.leave(`session:${sessionId}`);
       if (socket.data.sessionId === sessionId) {
@@ -1986,6 +2023,8 @@ io.on("connection", (socket) => {
     }
     if (result.roomDeleted) {
       stats.onRoomDeleted(sessionId);
+      const liveState = canonicalDrawingLiveStates.get(sessionId);
+      if (liveState) destroyCanonicalDrawingState(liveState);
       canonicalDrawingLiveStates.delete(sessionId);
       classroomDrawingViewports.delete(sessionId);
     }

@@ -22,7 +22,13 @@ import {
 } from "./yjsSyncHelper";
 import { isImageDataUrl, MAX_IMAGES_PER_BOARD, prepareImageForBoard } from "./drawingImages";
 import { cn } from "@/lib/cn";
-import type { DrawingMode } from "./drawingMode";
+import type { DrawingMode, DrawingViewport } from "./drawingMode";
+import {
+  DrawingViewportPublisher,
+  VIEWPORT_HEARTBEAT_INTERVAL_MS,
+  drawingViewportFromAppState,
+  sameDrawingViewport
+} from "./drawingViewportSync";
 import {
   createLocalDrawingSnapshot,
   LocalDrawingPersistenceQueue
@@ -78,8 +84,6 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   const [canonicalReady, setCanonicalReady] = useState(mode.kind === "local");
   const excalidrawSceneReadyRef = useRef(false);
   const interactionSurfaceRef = useRef<HTMLDivElement>(null);
-  const pendingHostViewportRef = useRef<{ scrollX: number; scrollY: number; zoom: unknown } | null>(null);
-  const hostViewportTimerRef = useRef<number | null>(null);
 
   // User details for awareness
   const myPlayer = players?.find((p) => p.userId === myUserId);
@@ -89,16 +93,23 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     canonicalSyncToken?: string;
   };
 
-  const createSession = (update?: string | null, syncToken?: string | null): AuthoritativeYjsSession => {
+  const createSession = (
+    update?: string | null,
+    syncToken?: string | null,
+    localUpdates: Uint8Array[] = []
+  ): AuthoritativeYjsSession => {
     const session = createYjsCanvasSession("משתתף", "#6366f1");
     if (update) {
       Y.applyUpdate(session.ydoc, base64ToUint8Array(update), YJS_ORIGIN_REMOTE);
+    }
+    for (const localUpdate of localUpdates) {
+      Y.applyUpdate(session.ydoc, localUpdate, YJS_ORIGIN_SYSTEM);
     }
     return { ...session, canonicalSyncToken: syncToken ?? undefined };
   };
 
   const [yjsSession, setYjsSession] = useState<AuthoritativeYjsSession>(() =>
-    createSession(initialYjsUpdate, initialYjsSyncToken)
+    createSession(initialYjsUpdate, initialYjsSyncToken, localMode?.initialUpdates)
   );
   const yjsSessionRef = useRef(yjsSession);
   const authoritativeDocumentsRef = useRef(new WeakSet<object>());
@@ -198,6 +209,12 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
         viewBackgroundColor: "#ffffff"
       }
     };
+  } else if (!initialData.current && localMode?.initialUpdates?.length) {
+    initialData.current = {
+      elements: sanitizeExcalidrawElements(yjsToExcalidraw(yjsSession.yElements)),
+      files: Object.fromEntries(yjsSession.yAssets.entries()),
+      appState: { viewBackgroundColor: "#ffffff" }
+    };
   } else if (!initialData.current && gameState.canvas) {
     initialData.current = {
       elements: sanitizeExcalidrawElements(gameState.canvas.elements || []),
@@ -266,35 +283,16 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
 
   // Image compression & file count guards
   const processingFileIdsRef = useRef(new WeakMap<object, Map<string, string>>());
+  const observedFileIdsRef = useRef(new WeakMap<object, Set<string>>());
+  const imageReconcileTimerRef = useRef<number | null>(null);
+  const latestImageChangeRef = useRef<{ elements: readonly any[]; files: any } | null>(null);
   const rejectedImageElementIdsRef = useRef(new Set<string>());
   const localClearVersionRef = useRef(gameState.canvas.clearVersion);
   const localPersistenceRef = useRef(new LocalDrawingPersistenceQueue());
+  const draftWarningShownRef = useRef(false);
 
-  const handleLocalChange = useCallback(
-    async (_elements: readonly any[], _appState: any, files: any) => {
-      if (!excalidrawSceneReadyRef.current) {
-        excalidrawSceneReadyRef.current = true;
-        setExcalidrawSceneReady(true);
-      }
-      if (viewportRole === "publish" && _appState) {
-        const zoom = typeof _appState.zoom === "number" ? _appState.zoom : _appState.zoom?.value;
-        if (Number.isFinite(_appState.scrollX) && Number.isFinite(_appState.scrollY) && Number.isFinite(zoom)) {
-          pendingHostViewportRef.current = {
-            scrollX: _appState.scrollX,
-            scrollY: _appState.scrollY,
-            zoom
-          };
-          if (hostViewportTimerRef.current === null) {
-            hostViewportTimerRef.current = window.setTimeout(() => {
-              hostViewportTimerRef.current = null;
-              const viewport = pendingHostViewportRef.current;
-              pendingHostViewportRef.current = null;
-              if (viewport) sendDeltaRef.current?.({ viewport });
-            }, 80);
-          }
-        }
-      }
-      if (!excalidrawAPI || !files || !yjsSession || mySeat === null) return;
+  const reconcileImageAssets = useCallback(
+    (_elements: readonly any[], files: any) => {
       const fileIds = Object.keys(files);
       const activeImageFileIds = new Set<string>();
       const rejectedImageFileIds = new Set<string>();
@@ -372,12 +370,80 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
         }
       }
     },
-    [excalidrawAPI, mySeat, showToast, viewportRole, yjsSession]
+    [excalidrawAPI, showToast, yjsSession]
+  );
+
+  const handleLocalChange = useCallback(
+    (_elements: readonly any[], _appState: any, files: any) => {
+      if (!excalidrawSceneReadyRef.current) {
+        excalidrawSceneReadyRef.current = true;
+        setExcalidrawSceneReady(true);
+      }
+      if (!excalidrawAPI || !files || !yjsSession || mySeat === null) return;
+      const fileIds = Object.keys(files);
+      if (fileIds.length === 0 && yjsSession.yAssets.size === 0) return;
+
+      latestImageChangeRef.current = { elements: _elements, files };
+      const previousFileIds = observedFileIdsRef.current.get(yjsSession.ydoc) ?? new Set<string>();
+      const hasNewFile = fileIds.some((id) => !previousFileIds.has(id));
+      observedFileIdsRef.current.set(yjsSession.ydoc, new Set(fileIds));
+
+      if (imageReconcileTimerRef.current !== null) {
+        window.clearTimeout(imageReconcileTimerRef.current);
+        imageReconcileTimerRef.current = null;
+      }
+      if (hasNewFile) {
+        reconcileImageAssets(_elements, files);
+        return;
+      }
+      imageReconcileTimerRef.current = window.setTimeout(() => {
+        imageReconcileTimerRef.current = null;
+        const latest = latestImageChangeRef.current;
+        if (latest) reconcileImageAssets(latest.elements, latest.files);
+      }, 250);
+    },
+    [excalidrawAPI, mySeat, reconcileImageAssets, yjsSession]
   );
 
   useEffect(() => () => {
-    if (hostViewportTimerRef.current !== null) window.clearTimeout(hostViewportTimerRef.current);
-  }, []);
+    if (imageReconcileTimerRef.current !== null) {
+      window.clearTimeout(imageReconcileTimerRef.current);
+      imageReconcileTimerRef.current = null;
+    }
+    latestImageChangeRef.current = null;
+  }, [yjsSession]);
+
+  useEffect(() => {
+    if (!excalidrawAPI || viewportRole !== "publish" || !canonicalReady) return;
+    const publisher = new DrawingViewportPublisher((viewport) => {
+      sendDeltaRef.current?.({ viewport });
+    });
+    const publishCurrent = (heartbeat: boolean) => {
+      const viewport = drawingViewportFromAppState(excalidrawAPI.getAppState());
+      if (!viewport) return;
+      if (heartbeat) publisher.heartbeat(viewport);
+      else publisher.update(viewport);
+    };
+    const unsubscribe = excalidrawAPI.onScrollChange(
+      (scrollX: number, scrollY: number, zoom: unknown) => {
+        const viewport = drawingViewportFromAppState({ scrollX, scrollY, zoom });
+        if (viewport) publisher.update(viewport);
+      }
+    );
+
+    // Seed/reseed the server cache after initial binding, reconnect, or a
+    // publisher-role change. The sync token dependency makes this explicit.
+    publishCurrent(true);
+    const heartbeat = window.setInterval(
+      () => publishCurrent(true),
+      VIEWPORT_HEARTBEAT_INTERVAL_MS
+    );
+    return () => {
+      window.clearInterval(heartbeat);
+      unsubscribe();
+      publisher.dispose();
+    };
+  }, [canonicalReady, excalidrawAPI, initialYjsSyncToken, viewportRole]);
 
   useEffect(() => {
     const blockInteraction = viewportRole === "follow" || (modeKind === "canonical" && !canonicalReady);
@@ -395,11 +461,25 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   useEffect(() => {
     if (!yjsSession || mySeat === null) return;
     const { ydoc, awareness } = yjsSession;
+    if (modeKind === "local" && localMode?.draftStore && !localMode.initialUpdates?.length) {
+      void localMode.draftStore.replaceWithSnapshot(Y.encodeStateAsUpdate(ydoc)).catch(() => {
+        if (!draftWarningShownRef.current) {
+          draftWarningShownRef.current = true;
+          showToast("שמירת החירום המקומית אינה זמינה; השמירה המקוונת תמשיך לפעול");
+        }
+      });
+    }
 
     const handleDocUpdate = (update: Uint8Array, origin: any) => {
       if (modeKind === "canonical" && !serverSyncReadyRef.current) return;
       if (modeKind === "local" && origin !== YJS_ORIGIN_SYSTEM && origin !== YJS_ORIGIN_REMOTE) {
         localPersistenceRef.current.markDirty();
+        void localMode?.draftStore?.append(update).catch(() => {
+          if (!draftWarningShownRef.current) {
+            draftWarningShownRef.current = true;
+            showToast("שמירת החירום המקומית אינה זמינה; השמירה המקוונת תמשיך לפעול");
+          }
+        });
       }
       // Only broadcast local user drawing edits (skip remote updates and system initializations)
       if (modeKind === "canonical" && origin !== YJS_ORIGIN_REMOTE && origin !== YJS_ORIGIN_SYSTEM) {
@@ -433,10 +513,10 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
       ydoc.off("update", handleDocUpdate);
       awareness.off("update", handleAwarenessUpdate);
     };
-  }, [modeKind, mySeat, yjsSession]);
+  }, [localMode?.draftStore, localMode?.initialUpdates, modeKind, mySeat, showToast, yjsSession]);
 
   // Subscribe to remote live deltas and Yjs sync messages
-  const lastHostViewportRef = useRef<{ scrollX: number; scrollY: number; zoom: any } | null>(null);
+  const lastHostViewportRef = useRef<DrawingViewport | null>(null);
 
   useEffect(() => {
     if (!subscribeCanonical || !yjsSession) return;
@@ -480,12 +560,14 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
 
       // Handle host viewport focus sync
       if (delta.viewport && viewportRole === "follow" && excalidrawAPI) {
-        lastHostViewportRef.current = delta.viewport;
+        const viewport = drawingViewportFromAppState(delta.viewport);
+        if (!viewport || sameDrawingViewport(lastHostViewportRef.current, viewport)) return;
+        lastHostViewportRef.current = viewport;
         excalidrawAPI.updateScene({
           appState: {
-            scrollX: delta.viewport.scrollX,
-            scrollY: delta.viewport.scrollY,
-            zoom: typeof delta.viewport.zoom === "number" ? { value: delta.viewport.zoom } : delta.viewport.zoom
+            scrollX: viewport.scrollX,
+            scrollY: viewport.scrollY,
+            zoom: { value: viewport.zoom }
           },
           commitToHistory: false
         });
@@ -504,7 +586,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
       appState: {
         scrollX: initialViewport.scrollX,
         scrollY: initialViewport.scrollY,
-        zoom: typeof initialViewport.zoom === "number" ? { value: initialViewport.zoom } : initialViewport.zoom
+        zoom: { value: initialViewport.zoom }
       },
       commitToHistory: false
     });
@@ -518,7 +600,12 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
         Object.fromEntries(yjsSession.yAssets.entries()),
         localClearVersionRef.current
       ),
-      (snapshot) => persistSnapshotRef.current?.(snapshot)
+      async (snapshot) => {
+        await persistSnapshotRef.current?.(snapshot);
+        if (localMode?.draftStore) {
+          await localMode.draftStore.replaceWithSnapshot(Y.encodeStateAsUpdate(yjsSession.ydoc));
+        }
+      }
     ).catch(() => {
         showToast("שמירת הלוח נכשלה; ננסה שוב אוטומטית");
       });

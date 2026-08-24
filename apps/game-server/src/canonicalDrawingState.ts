@@ -9,6 +9,12 @@ import * as Y from "yjs";
 
 export interface CanonicalDrawingLiveState {
   doc: Y.Doc;
+  /**
+   * A synchronized shadow document used to validate untrusted updates before
+   * they mutate the authoritative document. Invalid updates may corrupt this
+   * copy, so it is rebuilt from `doc` after every rejection.
+   */
+  validationDoc: Y.Doc;
   revision: number;
   persistedRevision: number;
   clearRevision: number;
@@ -109,6 +115,17 @@ function seedCanvas(doc: Y.Doc, canvas: CanonicalDrawingCanvas) {
   }, "server-hydrate");
 }
 
+function cloneDoc(source: Y.Doc): Y.Doc {
+  const clone = new Y.Doc();
+  Y.applyUpdate(clone, Y.encodeStateAsUpdate(source));
+  return clone;
+}
+
+function resetValidationDoc(state: CanonicalDrawingLiveState): void {
+  state.validationDoc.destroy();
+  state.validationDoc = cloneDoc(state.doc);
+}
+
 export function canvasFromDoc(doc: Y.Doc): CanonicalDrawingCanvas {
   const { elements, assets } = roots(doc);
   return {
@@ -122,16 +139,23 @@ export function canvasFromDoc(doc: Y.Doc): CanonicalDrawingCanvas {
 
 export function createCanonicalDrawingState(savedState: DrawingState | null | undefined): CanonicalDrawingLiveState {
   const canvas = savedState?.canvas;
+  const doc = new Y.Doc();
+  if (canvas && (canvas.elements.length || Object.keys(canvas.files).length)) {
+    seedCanvas(doc, { elements: canvas.elements, files: canvas.files });
+  }
   const state: CanonicalDrawingLiveState = {
-    doc: new Y.Doc(),
+    doc,
+    validationDoc: cloneDoc(doc),
     revision: canvas?.version ?? 0,
     persistedRevision: canvas?.version ?? 0,
     clearRevision: canvas?.clearVersion ?? 0,
   };
-  if (canvas && (canvas.elements.length || Object.keys(canvas.files).length)) {
-    seedCanvas(state.doc, { elements: canvas.elements, files: canvas.files });
-  }
   return state;
+}
+
+export function destroyCanonicalDrawingState(state: CanonicalDrawingLiveState): void {
+  state.doc.destroy();
+  state.validationDoc.destroy();
 }
 
 export function encodeFullCanonicalDrawingState(state: CanonicalDrawingLiveState): string {
@@ -160,25 +184,29 @@ export function applyCanonicalDrawingUpdate(
     return { ok: false, code: "BAD_YJS_UPDATE" };
   }
 
-  const candidate = new Y.Doc();
   try {
-    Y.applyUpdate(candidate, Y.encodeStateAsUpdate(state.doc));
-    Y.applyUpdate(candidate, update);
+    Y.applyUpdate(state.validationDoc, update);
   } catch {
-    candidate.destroy();
+    resetValidationDoc(state);
     return { ok: false, code: "BAD_YJS_UPDATE" };
   }
 
   if (
-    Y.encodeStateAsUpdate(candidate).byteLength > MAX_YJS_DOCUMENT_BYTES ||
-    !isValidCanvas(canvasFromDoc(candidate))
+    Y.encodeStateAsUpdate(state.validationDoc).byteLength > MAX_YJS_DOCUMENT_BYTES ||
+    !isValidCanvas(canvasFromDoc(state.validationDoc))
   ) {
-    candidate.destroy();
+    resetValidationDoc(state);
     return { ok: false, code: "BOARD_LIMIT_EXCEEDED" };
   }
 
-  state.doc.destroy();
-  state.doc = candidate;
+  try {
+    Y.applyUpdate(state.doc, update);
+  } catch {
+    // Both documents started from the same state, so this is defensive. Keep
+    // the authoritative document as the source of truth if Yjs ever diverges.
+    resetValidationDoc(state);
+    return { ok: false, code: "BAD_YJS_UPDATE" };
+  }
   state.revision += 1;
   return { ok: true };
 }
@@ -196,11 +224,13 @@ export function applyCanonicalDrawingSocketUpdate(
 }
 
 export function clearCanonicalDrawingState(state: CanonicalDrawingLiveState): void {
-  const { elements, assets } = roots(state.doc);
-  state.doc.transact(() => {
-    elements.delete(0, elements.length);
-    assets.clear();
-  }, "server-clear");
+  for (const doc of [state.doc, state.validationDoc]) {
+    const { elements, assets } = roots(doc);
+    doc.transact(() => {
+      elements.delete(0, elements.length);
+      assets.clear();
+    }, "server-clear");
+  }
   state.revision += 1;
   state.clearRevision += 1;
 }

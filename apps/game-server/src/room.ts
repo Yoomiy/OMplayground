@@ -34,7 +34,7 @@ export interface Room<State = unknown> {
   drawingContext?: DrawingRoomContext;
   gender: "boy" | "girl" | "all";
   /** Authoritative host for disconnect transfer (from game_sessions.host_id). */
-  hostId: string;
+  hostId: string | null;
   /** Minimum players required before the session transitions out of "waiting". */
   minPlayers: number;
   module: GameModule<State, unknown>;
@@ -80,7 +80,7 @@ export function getOrCreateRoom<State>(
     drawingContext?: DrawingRoomContext;
     module: GameModule<State, unknown>;
     gender: "boy" | "girl" | "all";
-    hostId: string;
+    hostId: string | null;
     minPlayers?: number;
     roster?: RoomPlayer[];
     paused?: boolean;

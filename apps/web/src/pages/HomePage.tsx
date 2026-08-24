@@ -36,6 +36,7 @@ const GAME_METADATA: Record<
   connectfour: { emoji: "🔴", gradient: "from-red-400 to-rose-600", glowColor: "shadow-rose-500/40", badgeGradient: "from-red-400 to-rose-500" },
   memory: { emoji: "🃏", gradient: "from-amber-400 to-orange-600", glowColor: "shadow-amber-500/40", badgeGradient: "from-amber-400 to-orange-500" },
   drawing: { emoji: "🎨", gradient: "from-emerald-400 to-teal-600", glowColor: "shadow-emerald-500/40", badgeGradient: "from-emerald-400 to-teal-500" },
+  "drawing-solo": { emoji: "🎨", gradient: "from-violet-400 to-fuchsia-600", glowColor: "shadow-violet-500/40", badgeGradient: "from-violet-400 to-fuchsia-500" },
   snake: { emoji: "🐍", gradient: "from-green-400 to-emerald-600", glowColor: "shadow-green-500/40", badgeGradient: "from-green-400 to-emerald-500" },
   simon: { emoji: "🔴", gradient: "from-blue-400 to-indigo-600", glowColor: "shadow-indigo-500/40", badgeGradient: "from-blue-400 to-indigo-500" },
   whackamole: { emoji: "🔨", gradient: "from-yellow-400 to-amber-600", glowColor: "shadow-yellow-500/40", badgeGradient: "from-yellow-400 to-amber-500" },

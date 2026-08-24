@@ -6,6 +6,7 @@ import {
   canvasFromDoc,
   clearCanonicalDrawingState,
   createCanonicalDrawingState,
+  destroyCanonicalDrawingState,
   encodeFullCanonicalDrawingState,
   isCanonicalDrawingDirty,
   markCanonicalDrawingPersisted,
@@ -70,6 +71,18 @@ describe("canonical drawing live state", () => {
       code: "BOARD_LIMIT_EXCEEDED"
     });
     expect(canvasFromDoc(server.doc)).toEqual({ elements: [], files: {} });
+    expect(canvasFromDoc(server.validationDoc)).toEqual({ elements: [], files: {} });
+
+    const recoveryClient = new Y.Doc();
+    Y.applyUpdate(recoveryClient, decode(encodeFullCanonicalDrawingState(server)));
+    const recoveryElement = new Y.Map<unknown>();
+    recoveryElement.set("el", { id: "after-rejection", type: "rectangle" });
+    recoveryElement.set("pos", "a0");
+    recoveryClient.getArray<Y.Map<unknown>>("elements").push([recoveryElement]);
+    const recoveryUpdate = Y.encodeStateAsUpdate(recoveryClient, Y.encodeStateVector(server.doc));
+
+    expect(applyCanonicalDrawingUpdate(server, Buffer.from(recoveryUpdate).toString("base64"))).toEqual({ ok: true });
+    expect(canvasFromDoc(server.validationDoc)).toEqual(canvasFromDoc(server.doc));
   });
 
   it("clears the canonical document and advances its durable revision", () => {
@@ -93,6 +106,26 @@ describe("canonical drawing live state", () => {
       clearVersion: 2,
       elements: []
     });
+    expect(canvasFromDoc(state.validationDoc)).toEqual({ elements: [], files: {} });
+  });
+
+  it("keeps the validation mirror synchronized across repeated accepted updates", () => {
+    const server = createCanonicalDrawingState(undefined);
+
+    for (let index = 0; index < 3; index += 1) {
+      const client = new Y.Doc();
+      Y.applyUpdate(client, decode(encodeFullCanonicalDrawingState(server)));
+      const element = new Y.Map<unknown>();
+      element.set("el", { id: `element-${index}`, type: "line" });
+      element.set("pos", `a${index}`);
+      client.getArray<Y.Map<unknown>>("elements").push([element]);
+      const update = Y.encodeStateAsUpdate(client, Y.encodeStateVector(server.doc));
+
+      expect(applyCanonicalDrawingUpdate(server, Buffer.from(update).toString("base64"))).toEqual({ ok: true });
+      expect(canvasFromDoc(server.validationDoc)).toEqual(canvasFromDoc(server.doc));
+    }
+
+    destroyCanonicalDrawingState(server);
   });
 
   it("hydrates checkpoint elements with valid appendable ordering keys", () => {

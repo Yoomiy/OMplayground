@@ -1,9 +1,10 @@
 import type { DrawingCanvasSnapshot } from "@playground/game-logic";
+import type { SoloDrawingDraftStore } from "@/lib/soloDrawingDraftStore";
 
 export interface DrawingViewport {
   scrollX: number;
   scrollY: number;
-  zoom: unknown;
+  zoom: number;
 }
 
 export type DrawingViewportRole = "publish" | "follow" | "independent";
@@ -39,6 +40,8 @@ export interface CanonicalDrawingMode {
 export interface LocalDrawingMode {
   kind: "local";
   persistSnapshot: (snapshot: DrawingCanvasSnapshot) => void | Promise<void>;
+  draftStore?: SoloDrawingDraftStore;
+  initialUpdates?: Uint8Array[];
 }
 
 export type DrawingMode = CanonicalDrawingMode | LocalDrawingMode;

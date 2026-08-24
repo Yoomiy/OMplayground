@@ -1,4 +1,4 @@
-import { forwardRef, useRef, useState, useCallback, useEffect, useImperativeHandle } from "react";
+import { forwardRef, memo, useRef, useState, useCallback, useEffect, useImperativeHandle } from "react";
 import type { DrawingState } from "@playground/game-logic";
 import { DrawingCanvas, type DrawingCanvasRef } from "./DrawingCanvas";
 import type { DrawingMode } from "./drawingMode";
@@ -18,7 +18,7 @@ export interface DrawingBoardHandle {
   insertImage: (source: Blob, title?: string) => Promise<boolean>;
 }
 
-export const DrawingBoard = forwardRef<DrawingBoardHandle, DrawingBoardProps>(function DrawingBoard({
+export const DrawingBoard = memo(forwardRef<DrawingBoardHandle, DrawingBoardProps>(function DrawingBoard({
   gameState,
   mode,
   mySeat,
@@ -259,6 +259,6 @@ export const DrawingBoard = forwardRef<DrawingBoardHandle, DrawingBoardProps>(fu
       )}
     </div>
   );
-});
+}));
 
 DrawingBoard.displayName = "DrawingBoard";

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { DrawingCanvasSnapshot, DrawingState } from "@playground/game-logic";
 import { DrawingBoard } from "@/games/DrawingBoard";
 import {
@@ -9,9 +9,10 @@ import {
 
 /**
  * Solo drawing using the high-performance Excalidraw whiteboard.
- * State is managed locally and autosaved in browser/localStorage/DB.
+ * State is journaled in browser IndexedDB and checkpointed to Supabase.
  */
 export function DrawingSolo({ save }: { save: SoloGameSaveControls }) {
+  const [initialDraftUpdates, setInitialDraftUpdates] = useState<Uint8Array[] | null>(null);
   const [showNotice, setShowNotice] = useState(() => {
     // Show warning notice if old SVG stroke format drawings exist
     return isJsonObject(save.savedState) && Array.isArray(save.savedState.drawings);
@@ -60,10 +61,32 @@ export function DrawingSolo({ save }: { save: SoloGameSaveControls }) {
     await save.saveState(next as unknown as JsonValue);
   }, [save]);
 
+  useEffect(() => {
+    let cancelled = false;
+    if (!save.drawingDraftStore) {
+      setInitialDraftUpdates([]);
+      return;
+    }
+    void save.drawingDraftStore.load()
+      .then((updates) => {
+        if (!cancelled) setInitialDraftUpdates(updates);
+      })
+      .catch(() => {
+        if (!cancelled) setInitialDraftUpdates([]);
+      });
+    return () => { cancelled = true; };
+  }, [save.drawingDraftStore]);
+
   const drawingMode = useMemo(() => ({
     kind: "local" as const,
-    persistSnapshot
-  }), [persistSnapshot]);
+    persistSnapshot,
+    draftStore: save.drawingDraftStore,
+    initialUpdates: initialDraftUpdates ?? []
+  }), [initialDraftUpdates, persistSnapshot, save.drawingDraftStore]);
+
+  if (initialDraftUpdates === null) {
+    return <div className="flex min-h-[320px] items-center justify-center text-sm font-medium text-white/40">טוען טיוטת ציור…</div>;
+  }
 
   return (
     <div className="space-y-4">

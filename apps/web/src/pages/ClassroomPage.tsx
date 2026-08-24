@@ -248,7 +248,7 @@ export function ClassroomPage() {
   const [drawSocketReady, setDrawSocketReady] = useState(false);
   const [boardInitialYjsUpdate, setBoardInitialYjsUpdate] = useState<string | null>(null);
   const [boardInitialYjsSyncToken, setBoardInitialYjsSyncToken] = useState<string | null>(null);
-  const [boardInitialViewport, setBoardInitialViewport] = useState<{ scrollX: number; scrollY: number; zoom: unknown } | null>(null);
+  const [boardInitialViewport, setBoardInitialViewport] = useState<{ scrollX: number; scrollY: number; zoom: number } | null>(null);
 
   const deltaListenersRef = useRef<Set<(payload: any) => void>>(new Set());
 
@@ -280,90 +280,6 @@ export function ClassroomPage() {
     seats: {},
     canvas: { engine: "excalidraw", version: 0, clearVersion: 0, updatedAt: Date.now(), elements: [], files: {} }
   });
-
-  // Fetch or create the under-the-hood drawing game_session for this classroom roomCode
-  useEffect(() => {
-    if (!roomCode) return;
-    let cancelled = false;
-
-    async function initDrawSession() {
-      const drawCode = `class-draw-${roomCode}`;
-
-      // 1. Try fetching existing drawing session
-      const { data: existing } = await supabase
-        .from("game_sessions")
-        .select("id")
-        .eq("invitation_code", drawCode)
-        .maybeSingle();
-
-      if (cancelled) return;
-      if (existing?.id) {
-        setDrawSessionId(existing.id);
-        return;
-      }
-
-      // A classroom board is initialized by an authorized teacher or admin.
-      // Guests and students wait for that canonical session instead of racing to own it.
-      if (user && (profile?.role === "teacher" || isAdmin)) {
-        const { data: gameRow } = await supabase
-          .from("games")
-          .select("id")
-          .eq("game_url", "drawing")
-          .maybeSingle();
-
-        if (cancelled || !gameRow?.id) return;
-
-        const { data: created, error } = await supabase
-          .from("game_sessions")
-          .insert({
-            game_id: gameRow.id,
-            host_id: user.id,
-            host_name: profile?.full_name || "מורה",
-            player_ids: [user.id],
-            player_names: [profile?.full_name || "משתתף"],
-            status: "playing",
-            is_open: true,
-            invitation_code: drawCode,
-            gender: "all"
-          })
-          .select("id")
-          .maybeSingle();
-
-        if (cancelled) return;
-        if (created?.id) {
-          setDrawSessionId(created.id);
-          return;
-        } else if (error) {
-          console.warn("Classroom draw session insert notice:", error.message);
-        }
-      }
-
-      // Refetch if race condition occurred or created by host
-      const { data: refetched } = await supabase
-        .from("game_sessions")
-        .select("id")
-        .eq("invitation_code", drawCode)
-        .maybeSingle();
-
-      if (!cancelled && refetched?.id) {
-        setDrawSessionId(refetched.id);
-      }
-    }
-
-    void initDrawSession();
-
-    // Polling retry for guest students waiting for session creation by host
-    const pollTimer = setInterval(() => {
-      if (!drawSessionId) {
-        void initDrawSession();
-      }
-    }, 2500);
-
-    return () => {
-      cancelled = true;
-      clearInterval(pollTimer);
-    };
-  }, [roomCode, user?.id, profile?.full_name, profile?.role, isAdmin, drawSessionId]);
 
   // Connect socket to game-server when drawSessionId is ready and connected to classroom room
   useEffect(() => {
@@ -462,7 +378,7 @@ export function ClassroomPage() {
         }
       });
 
-      s.on("DRAWING_SYNC", (payload: { sessionId?: string; yjsUpdate?: string; syncToken?: string; viewport?: { scrollX: number; scrollY: number; zoom: unknown } }) => {
+      s.on("DRAWING_SYNC", (payload: { sessionId?: string; yjsUpdate?: string; syncToken?: string; viewport?: { scrollX: number; scrollY: number; zoom: number } }) => {
         if (cancelled || payload?.sessionId !== drawSessionId || typeof payload.yjsUpdate !== "string") return;
         setBoardInitialYjsUpdate(payload.yjsUpdate);
         setBoardInitialYjsSyncToken(typeof payload.syncToken === "string" ? payload.syncToken : null);
@@ -740,6 +656,8 @@ export function ClassroomPage() {
     if (!roomCode) return;
     setConnState("connecting");
     setConnError(null);
+    setDrawSessionId(null);
+    setClassroomBoardToken(null);
 
     if (!resolvedDisplayName) {
       setConnError("נא להזין שם תצוגה לפני ההתחברות.");
@@ -788,6 +706,7 @@ export function ClassroomPage() {
         canPublishCamera,
         classroomBoardToken: issuedClassroomBoardToken,
         classroomSessionId: issuedClassroomSessionId,
+        drawingSessionId: issuedDrawingSessionId,
         isClassCreator: issuedIsClassCreator,
         presenterIdentity: issuedPresenterIdentity,
         presenterEpoch: issuedPresenterEpoch,
@@ -799,6 +718,7 @@ export function ClassroomPage() {
       setClassroomBoardToken(
         typeof issuedClassroomBoardToken === "string" ? issuedClassroomBoardToken : null
       );
+      setDrawSessionId(typeof issuedDrawingSessionId === "string" ? issuedDrawingSessionId : null);
       setClassroomSessionId(issuedClassroomSessionId || sessionData?.id || null);
       setIsClassCreator(Boolean(issuedIsClassCreator));
       setPresenterIdentity(typeof issuedPresenterIdentity === "string" ? issuedPresenterIdentity : null);
@@ -1260,6 +1180,39 @@ export function ClassroomPage() {
       }
     );
   }), [drawSessionId, isHost]);
+
+  const drawingPlayers = useMemo(() => participants.map((participant) => ({
+    userId: participant.identity,
+    displayName: participant.name
+  })), [participants]);
+
+  const drawingMode = useMemo(() => ({
+    kind: "canonical" as const,
+    initialSync: boardInitialYjsUpdate && boardInitialYjsSyncToken
+      ? { update: boardInitialYjsUpdate, token: boardInitialYjsSyncToken }
+      : null,
+    initialViewport: boardInitialViewport,
+    viewportRole: isHost
+      ? "publish" as const
+      : roomSettings.allowWhiteboardDraw
+        ? "independent" as const
+        : "follow" as const,
+    canClear: isHost,
+    sendDelta: handleLocalBoardDelta,
+    acknowledgeSync: acknowledgeBoardSync,
+    subscribe: subscribeLiveDeltas,
+    clear: clearBoard
+  }), [
+    acknowledgeBoardSync,
+    boardInitialViewport,
+    boardInitialYjsSyncToken,
+    boardInitialYjsUpdate,
+    clearBoard,
+    handleLocalBoardDelta,
+    isHost,
+    roomSettings.allowWhiteboardDraw,
+    subscribeLiveDeltas
+  ]);
 
   // Toggle Microphone
   const toggleMic = async () => {
@@ -2081,31 +2034,12 @@ export function ClassroomPage() {
                       <DrawingBoard
                         ref={drawingBoardRef}
                         gameState={whiteboardState}
-                        mode={{
-                          kind: "canonical",
-                          initialSync: boardInitialYjsUpdate && boardInitialYjsSyncToken
-                            ? { update: boardInitialYjsUpdate, token: boardInitialYjsSyncToken }
-                            : null,
-                          initialViewport: boardInitialViewport,
-                          viewportRole: isHost
-                            ? "publish"
-                            : roomSettings.allowWhiteboardDraw
-                              ? "independent"
-                              : "follow",
-                          canClear: isHost,
-                          sendDelta: handleLocalBoardDelta,
-                          acknowledgeSync: acknowledgeBoardSync,
-                          subscribe: subscribeLiveDeltas,
-                          clear: clearBoard
-                        }}
+                        mode={drawingMode}
                         mySeat={isHost || roomSettings.allowWhiteboardDraw ? "player" : null}
                         myUserId={room?.localParticipant.identity || null}
                         hideTopBar={true}
                         isVisible={showBoard}
-                        players={participants.map((p) => ({
-                          userId: p.identity,
-                          displayName: p.name
-                        }))}
+                        players={drawingPlayers}
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center bg-slate-950 text-sm text-slate-300">

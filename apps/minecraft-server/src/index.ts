@@ -131,6 +131,11 @@ import {
   type ClassroomDelegateScope
 } from "./classroomDelegates";
 import { createClassroomBoardToken } from "./classroomBoardToken";
+import {
+  classroomDrawingSessionInsert,
+  isPostgresUniqueViolation,
+  type ClassroomDrawingOwner
+} from "./classroomDrawingSession";
 import { getCachedAuth } from "./authCache";
 import { canJoinClosedSession } from "./closedSessionAccess";
 import {
@@ -379,7 +384,13 @@ const CLASSROOM_DELEGATE_SESSION_MS = 365 * 24 * 60 * 60_000;
 
 async function completeClassroomDrawingSessions(roomCodes: string[]): Promise<void> {
   if (!supabaseAdmin || roomCodes.length === 0) return;
-  const invitationCodes = roomCodes.map((roomCode) => `class-draw-${roomCode}`);
+  const { data: classrooms, error: classroomError } = await supabaseAdmin
+    .from("classroom_sessions")
+    .select("id")
+    .in("room_code", roomCodes);
+  if (classroomError) throw classroomError;
+  const classroomIds = (classrooms ?? []).map((classroom) => classroom.id);
+  if (classroomIds.length === 0) return;
   const { error } = await supabaseAdmin
     .from("game_sessions")
     .update({
@@ -389,7 +400,7 @@ async function completeClassroomDrawingSessions(roomCodes: string[]): Promise<vo
       connected_player_names: [],
       last_activity: new Date().toISOString()
     })
-    .in("invitation_code", invitationCodes)
+    .in("classroom_id", classroomIds)
     .in("status", ["waiting", "playing", "paused"]);
   if (error) throw error;
 }
@@ -479,12 +490,63 @@ async function getActiveClassroom(roomCode: string) {
   if (!supabaseAdmin) return null;
   const { data, error } = await supabaseAdmin
     .from("classroom_sessions")
-    .select("id, room_code, teacher_id, settings, status")
+    .select("id, room_code, teacher_id, teacher_name, settings, status")
     .eq("room_code", roomCode)
     .eq("status", "active")
     .maybeSingle();
   if (error) throw error;
   return data;
+}
+
+let drawingGameIdPromise: Promise<string> | null = null;
+
+async function classroomDrawingGameId(): Promise<string> {
+  if (!supabaseAdmin) throw new Error("server_config");
+  if (drawingGameIdPromise) return drawingGameIdPromise;
+  const pending = (async () => {
+    const { data, error } = await supabaseAdmin
+      .from("games")
+      .select("id")
+      .eq("game_url", "drawing")
+      .maybeSingle();
+    if (error || !data?.id) throw error ?? new Error("drawing_game_not_found");
+    return String(data.id);
+  })();
+  drawingGameIdPromise = pending;
+  try {
+    return await pending;
+  } catch (error) {
+    drawingGameIdPromise = null;
+    throw error;
+  }
+}
+
+async function ensureClassroomDrawingSession(classroom: ClassroomDrawingOwner): Promise<string> {
+  if (!supabaseAdmin) throw new Error("server_config");
+  const findExisting = async () => {
+    const { data, error } = await supabaseAdmin
+      .from("game_sessions")
+      .select("id")
+      .eq("classroom_id", classroom.id)
+      .maybeSingle();
+    if (error) throw error;
+    return data?.id ? String(data.id) : null;
+  };
+  const existing = await findExisting();
+  if (existing) return existing;
+
+  const gameId = await classroomDrawingGameId();
+  const { data: created, error } = await supabaseAdmin
+    .from("game_sessions")
+    .insert(classroomDrawingSessionInsert(classroom, gameId))
+    .select("id")
+    .maybeSingle();
+  if (created?.id) return String(created.id);
+  if (isPostgresUniqueViolation(error)) {
+    const raced = await findExisting();
+    if (raced) return raced;
+  }
+  throw error ?? new Error("classroom_drawing_session_create_failed");
 }
 
 function classroomSettings(value: unknown): Record<string, unknown> {
@@ -777,6 +839,24 @@ app.post("/rtc/classroom-token", async (req, res) => {
       res.status(404).json({ error: "classroom_not_found" });
       return;
     }
+    let drawingSessionId: string;
+    try {
+      drawingSessionId = await ensureClassroomDrawingSession(classroom);
+    } catch (error) {
+      logger.error({
+        correlationId,
+        roomCode,
+        protocol: "http",
+        message: "Classroom drawing session provisioning failed",
+        context: { event: "CLASSROOM_DRAWING_SESSION_PROVISION_FAILED", status: "failed" },
+        err: logError(error)
+      });
+      res.status(503).json({
+        error: "classroom_board_unavailable",
+        message: "לוח הכיתה אינו זמין כרגע; נסו להתחבר שוב."
+      });
+      return;
+    }
     const delegate = isTrustedBrowserOrigin(req)
       ? await findClassroomDelegateAuthority(supabaseAdmin, req, classroom.id)
       : null;
@@ -863,6 +943,7 @@ app.post("/rtc/classroom-token", async (req, res) => {
       delegateGameToken,
       classroomBoardToken,
       classroomSessionId: classroom.id,
+      drawingSessionId,
       isClassCreator: classroom.teacher_id === result.userId,
       presenterIdentity: presentation.presenterIdentity,
       presenterEpoch: presentation.presenterEpoch,

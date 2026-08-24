@@ -12,11 +12,13 @@ import {
   type SoloGameSave,
   type SoloGameSaveControls
 } from "@/lib/soloGameSaves";
+import { IndexedDbSoloDrawingDraftStore } from "@/lib/soloDrawingDraftStore";
 
 type SoloGameComponent = (props: { save: SoloGameSaveControls }) => ReactNode;
 
 const SOLO_LOADERS: Record<string, () => Promise<{ default: SoloGameComponent }>> = {
   drawing: () => import("@/games-solo/DrawingSolo").then((m) => ({ default: m.DrawingSolo })),
+  "drawing-solo": () => import("@/games-solo/DrawingSolo").then((m) => ({ default: m.DrawingSolo })),
   snake: () => import("@/games-solo/SnakeSolo").then((m) => ({ default: m.SnakeSolo })),
   simon: () => import("@/games-solo/SimonSolo").then((m) => ({ default: m.SimonSolo })),
   whackamole: () =>
@@ -95,6 +97,12 @@ export default function SoloGameContainer() {
   const [hasStarted, setHasStarted] = useState(false);
   const [resumeState, setResumeState] = useState<JsonValue | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const drawingDraftStore = useMemo(
+    () => user?.id && (gameKey === "drawing" || gameKey === "drawing-solo")
+      ? new IndexedDbSoloDrawingDraftStore(`${user.id}:${gameKey}`)
+      : undefined,
+    [gameKey, user?.id]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -159,8 +167,9 @@ export default function SoloGameContainer() {
 
   const clearSave = useCallback(async () => {
     await deleteSoloGameSave(user?.id, gameKey);
+    await drawingDraftStore?.clear();
     setSave(null);
-  }, [gameKey, user?.id]);
+  }, [drawingDraftStore, gameKey, user?.id]);
 
   const mergeBestScores = useCallback(
     async (updates: Record<string, number>, preferLowerKeys?: string[]) => {
@@ -173,11 +182,12 @@ export default function SoloGameContainer() {
   const saveControls = useMemo<SoloGameSaveControls>(
     () => ({
       savedState: useSavedState ? resumeState : null,
+      drawingDraftStore,
       saveState,
       clearSave,
       mergeBestScores
     }),
-    [clearSave, mergeBestScores, resumeState, saveState, useSavedState]
+    [clearSave, drawingDraftStore, mergeBestScores, resumeState, saveState, useSavedState]
   );
 
   async function startNewGame() {
