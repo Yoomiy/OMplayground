@@ -113,7 +113,11 @@ export const DrawingBoard = memo(forwardRef<DrawingBoardHandle, DrawingBoardProp
     <div
       ref={boardRef}
       className={cn(
-        "relative mx-auto w-full backdrop-blur-md",
+        // Excalidraw's laser and eraser trails live in a viewport-fixed SVG
+        // layer. backdrop-filter would make this wrapper their containing
+        // block, so their already viewport-relative coordinates are offset a
+        // second time.
+        "relative mx-auto w-full",
         hideTopBar
           ? "h-full flex flex-col p-0 space-y-0 bg-transparent shadow-none border-none rounded-none"
           : "space-y-4 rounded-3xl border border-white/10 bg-white/5 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.5)]",
