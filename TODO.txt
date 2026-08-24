@@ -8,10 +8,7 @@
 25. make sure that errors in the drawing board do not kick you out of the room
 27. when host stops game - others need to stop sending intents
 30. test audio and docs on the classroom media board
-31. remove "copy invitation link" from non host users
-32. fix media board slides view 
 33. we might want to be able to lock a classroom (when a host is not attended?)
 34. find out why ereasers and laser pointers point down of their real place
-35. add per class recess schedule
 36. logs coverage for things like recess end
-38. blocked kicked-out students from rejoining a class
+39. solve the unable to draw toast when drawing is actually permited

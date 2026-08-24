@@ -190,6 +190,8 @@ export function ClassroomPage() {
   const [connState, setConnState] = useState<"disconnected" | "connecting" | "connected">("disconnected");
   const [connError, setConnError] = useState<string | null>(null);
   const [classroomNotice, setClassroomNotice] = useState<{ text: string; type: "info" | "success" | "warn" } | null>(null);
+  const [kickTarget, setKickTarget] = useState<CustomParticipantInfo | null>(null);
+  const [isKicking, setIsKicking] = useState(false);
 
   useEffect(() => {
     if (!classroomNotice) return;
@@ -990,8 +992,12 @@ export function ClassroomPage() {
         writePresenterSessionToken(roomCode, null);
 
         if (!isEndingClassroomRef.current) {
-          setConnError("השיעור הופסק על ידי המורה.");
-          navigate("/classroom-ended", { replace: true });
+          const wasRemoved = reason === DisconnectReason.PARTICIPANT_REMOVED;
+          setConnError(wasRemoved ? "הוסרת מהכיתה על ידי המורה." : "השיעור הופסק על ידי המורה.");
+          navigate("/classroom-ended", {
+            replace: true,
+            state: wasRemoved ? { reason: "removed", roomCode } : undefined
+          });
         }
       });
       lkRoom.on(RoomEvent.TrackPublished, () => updateParticipantList(lkRoom));
@@ -1521,16 +1527,29 @@ export function ClassroomPage() {
   };
 
   // HOST ACTION: Kick Participant
-  const kickParticipant = async (identity: string) => {
-    if (!room || !isHost) return;
-    if (!window.confirm("להוציא משתתף זה מהכיתה?")) return;
-    const response = await classroomRequest("/rtc/classroom-remove-participant", {
-      roomCode,
-      targetIdentity: identity
-    });
-    if (!response.ok) {
-      const body = await response.json().catch(() => ({}));
-      setConnError(body.message || "לא ניתן להוציא את המשתתף.");
+  const kickParticipant = async (blockRejoin: boolean) => {
+    if (!room || !isHost || !kickTarget || isKicking) return;
+    setIsKicking(true);
+    try {
+      const response = await classroomRequest("/rtc/classroom-remove-participant", {
+        roomCode,
+        targetIdentity: kickTarget.identity,
+        blockRejoin
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        setConnError(body.message || "לא ניתן להוציא את המשתתף.");
+        return;
+      }
+      setKickTarget(null);
+      setClassroomNotice({
+        type: "success",
+        text: blockRejoin
+          ? `${kickTarget.name} הוצא/ה מהכיתה ולא יוכל/תוכל להצטרף מחדש.`
+          : `${kickTarget.name} הוצא/ה מהכיתה ויכול/ה להצטרף מחדש.`
+      });
+    } finally {
+      setIsKicking(false);
     }
   };
 
@@ -2470,7 +2489,7 @@ export function ClassroomPage() {
                         </button>
 
                         <button
-                          onClick={() => kickParticipant(p.identity)}
+                          onClick={() => setKickTarget(p)}
                           title="הוצא מהכיתה"
                           className="p-1 rounded bg-rose-500/10 text-rose-400 hover:bg-rose-500/20"
                         >
@@ -2535,6 +2554,54 @@ export function ClassroomPage() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {kickTarget && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="kick-participant-title"
+          onClick={() => !isKicking && setKickTarget(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border border-slate-700 bg-slate-900 p-5 text-right shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 id="kick-participant-title" className="text-base font-black text-white">
+              להוציא את {kickTarget.name} מהכיתה
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-300">
+              בחרו אם זו הוצאה זמנית או חסימה מהצטרפות מחדש לכיתה זו.
+            </p>
+            <div className="mt-5 flex flex-col gap-2">
+              <button
+                type="button"
+                disabled={isKicking}
+                onClick={() => void kickParticipant(false)}
+                className="rounded-xl border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-100 transition hover:bg-amber-500/20 disabled:cursor-wait disabled:opacity-60"
+              >
+                הוצאה זמנית — אפשר להצטרף שוב
+              </button>
+              <button
+                type="button"
+                disabled={isKicking}
+                onClick={() => void kickParticipant(true)}
+                className="rounded-xl bg-rose-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-rose-500 disabled:cursor-wait disabled:opacity-60"
+              >
+                הוצאה וחסימה מהצטרפות מחדש
+              </button>
+              <button
+                type="button"
+                disabled={isKicking}
+                onClick={() => setKickTarget(null)}
+                className="px-4 py-2 text-sm font-bold text-slate-400 transition hover:text-white disabled:opacity-60"
+              >
+                ביטול
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

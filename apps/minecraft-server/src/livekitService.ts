@@ -7,6 +7,11 @@ import {
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCachedAuth } from "./authCache";
 import { createLogger, logError } from "@playground/observability";
+import {
+  classroomParticipantKeyFromMetadata,
+  isClassroomParticipantBlocked,
+  type ClassroomParticipantBlockTarget
+} from "./classroomParticipantBlocks";
 
 const logger = createLogger("minecraft-server");
 
@@ -292,6 +297,38 @@ export async function removeClassroomParticipant(
   });
 }
 
+export async function getClassroomParticipantBlockTarget(
+  roomCode: string,
+  participantIdentity: string
+): Promise<ClassroomParticipantBlockTarget> {
+  const roomService = getRoomServiceClient();
+  if (!roomService) {
+    throw new LiveKitTokenError("server_config", "LiveKit is not configured on the server.");
+  }
+  const participant = await roomService.getParticipant(
+    classroomLiveKitRoom(roomCode),
+    participantIdentity
+  );
+  let metadata: Record<string, unknown> = {};
+  try {
+    metadata = participant.metadata ? JSON.parse(participant.metadata) : {};
+  } catch {
+    metadata = {};
+  }
+  if (metadata.isHost === true) {
+    throw new Error("cannot_block_classroom_host");
+  }
+  const participantKey = classroomParticipantKeyFromMetadata(metadata, participant.identity);
+  if (!participantKey) {
+    throw new Error("participant_admission_key_missing");
+  }
+  return {
+    participantKey,
+    identity: participant.identity,
+    displayName: participant.name || participant.identity
+  };
+}
+
 export async function syncClassroomParticipantPermissions(
   roomCode: string,
   settings: Record<string, unknown>
@@ -377,6 +414,7 @@ export type LiveKitDenialReason =
   | "paused_roster_block"
   | "roster_block"
   | "session_completed"
+  | "classroom_blocked"
   | "server_config";
 
 export class LiveKitTokenError extends Error {
@@ -568,6 +606,29 @@ export async function generateClassroomToken(
       : isDelegate || isTeacher
         ? "cohost"
         : "participant";
+  if (!isHost) {
+    let isBlocked: boolean;
+    try {
+      isBlocked = await isClassroomParticipantBlocked(supabaseAdmin, classroom.id, attendanceKey);
+    } catch (error) {
+      logger.error({
+        protocol: "http",
+        message: "Classroom participant admission check failed",
+        context: { event: "CLASSROOM_PARTICIPANT_BLOCK_CHECK_FAILED", roomCode },
+        err: logError(error)
+      });
+      throw new LiveKitTokenError(
+        "server_config",
+        "לא ניתן לבדוק כרגע את הרשאת הכניסה לכיתה."
+      );
+    }
+    if (isBlocked) {
+      throw new LiveKitTokenError(
+        "classroom_blocked",
+        "הוצאת מהכיתה ולא ניתן להצטרף אליה שוב."
+      );
+    }
+  }
   const publishSources = isHidden
     ? []
     : isHost

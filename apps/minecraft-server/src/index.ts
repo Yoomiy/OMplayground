@@ -103,6 +103,7 @@ import {
   deleteLiveKitRoom,
   evictClassroomParticipants,
   promoteClassroomParticipant,
+  getClassroomParticipantBlockTarget,
   removeClassroomParticipant,
   sendClassroomDelegateEnrollment,
   broadcastClassroomData,
@@ -120,6 +121,7 @@ import {
   recordClassroomAttendanceWebhook,
   summarizeAttendanceVisits
 } from "./classroomAttendance";
+import { blockClassroomParticipant } from "./classroomParticipantBlocks";
 import {
   createDocumentConversionTicket,
   createPresenterCapability,
@@ -972,7 +974,7 @@ app.post("/rtc/classroom-token", async (req, res) => {
         status: "failed"
       }
     });
-    const status = reason === "server_config" ? 503 : 400;
+    const status = reason === "server_config" ? 503 : reason === "classroom_blocked" ? 403 : 400;
     res.status(status).json({
       error: reason,
       message: err instanceof Error ? err.message : "token generation failed"
@@ -1705,13 +1707,14 @@ app.post("/rtc/classroom-stage-layout", async (req, res) => {
 
 app.post("/rtc/classroom-remove-participant", async (req, res) => {
   try {
-    const { roomCode, targetIdentity } = req.body || {};
+    const { roomCode, targetIdentity, blockRejoin = false } = req.body || {};
     if (
       typeof roomCode !== "string" ||
       !roomCode.trim() ||
       typeof targetIdentity !== "string" ||
       !targetIdentity.trim() ||
-      targetIdentity.length > 256
+      targetIdentity.length > 256 ||
+      typeof blockRejoin !== "boolean"
     ) {
       res.status(400).json({ error: "invalid_remove_request" });
       return;
@@ -1727,10 +1730,20 @@ app.post("/rtc/classroom-remove-participant", async (req, res) => {
       classroom.id,
       "remove_participants"
     );
-    if (!authority) return;
+    if (!authority || !supabaseAdmin) return;
+    if (blockRejoin) {
+      const target = await getClassroomParticipantBlockTarget(
+        classroom.room_code,
+        targetIdentity.trim()
+      );
+      await blockClassroomParticipant(supabaseAdmin, classroom.id, target);
+    }
     await removeClassroomParticipant(classroom.room_code, targetIdentity.trim());
-    await appendClassroomAudit(req, classroom, authority, "classroom_participant_removed", { target_identity: targetIdentity.trim() });
-    res.json({ success: true, delegated: authority.kind === "delegate" });
+    await appendClassroomAudit(req, classroom, authority, "classroom_participant_removed", {
+      target_identity: targetIdentity.trim(),
+      block_rejoin: blockRejoin
+    });
+    res.json({ success: true, delegated: authority.kind === "delegate", blockRejoin });
   } catch (err: any) {
     res.status(500).json({ error: err.message || "participant_remove_failed" });
   }

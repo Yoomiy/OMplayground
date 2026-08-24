@@ -2,6 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { RoomServiceClient } from "livekit-server-sdk";
 import {
   evictClassroomParticipants,
+  generateClassroomToken,
+  getClassroomParticipantBlockTarget,
   getClassroomsLiveAttendance,
   generateLiveKitToken,
   LiveKitTokenError
@@ -114,6 +116,41 @@ describe("generateLiveKitToken roster gate", () => {
     ).rejects.toMatchObject({ reason: "roster_block" });
   });
 
+  it("denies a new classroom token after that participant was kicked", async () => {
+    const classroomChain = {
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      maybeSingle: jest.fn().mockResolvedValue({
+        data: {
+          id: "classroom-1",
+          room_code: "room-123",
+          teacher_id: "teacher-1",
+          teacher_name: "Teacher",
+          status: "active",
+          settings: {}
+        },
+        error: null
+      })
+    };
+    const blockChain = {
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      maybeSingle: jest.fn().mockResolvedValue({ data: { id: "block-1" }, error: null })
+    };
+    const supabase = {
+      from: jest.fn((table: string) => (
+        table === "classroom_participant_blocks" ? blockChain : classroomChain
+      ))
+    } as unknown as SupabaseClient;
+
+    await expect(generateClassroomToken({
+      supabaseAdmin: supabase,
+      roomCode: "room-123",
+      displayName: "Student",
+      guestAttendanceKey: "guest:room-123:11111111-1111-4111-8111-111111111111"
+    })).rejects.toMatchObject({ reason: "classroom_blocked" });
+  });
+
   it("actively removes every attendee and revokes each active classroom token", async () => {
     const listParticipants = jest
       .spyOn(RoomServiceClient.prototype, "listParticipants")
@@ -135,6 +172,37 @@ describe("generateLiveKitToken roster gate", () => {
       "student-a",
       expect.objectContaining({ revokeTokenTs: expect.any(BigInt) })
     );
+  });
+
+  it("reads the durable participant key before kicking a student", async () => {
+    jest.spyOn(RoomServiceClient.prototype, "getParticipant").mockResolvedValue({
+      identity: "student-a",
+      name: "Student A",
+      metadata: JSON.stringify({
+        attendanceKey: "guest:room-123:11111111-1111-4111-8111-111111111111",
+        isHost: false
+      })
+    } as never);
+
+    await expect(
+      getClassroomParticipantBlockTarget("room-123", "student-a")
+    ).resolves.toEqual({
+      participantKey: "guest:room-123:11111111-1111-4111-8111-111111111111",
+      identity: "student-a",
+      displayName: "Student A"
+    });
+  });
+
+  it("refuses to put a classroom host on the kick block list", async () => {
+    jest.spyOn(RoomServiceClient.prototype, "getParticipant").mockResolvedValue({
+      identity: "teacher-a",
+      name: "Teacher A",
+      metadata: JSON.stringify({ attendanceKey: "user:teacher-a", isHost: true })
+    } as never);
+
+    await expect(
+      getClassroomParticipantBlockTarget("room-123", "teacher-a")
+    ).rejects.toThrow("cannot_block_classroom_host");
   });
 
   it("lists LiveKit rooms once and fetches participants only for rooms that exist", async () => {
