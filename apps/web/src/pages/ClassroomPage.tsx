@@ -43,8 +43,6 @@ import {
   Check,
   Crown,
   UserX,
-  VolumeX,
-  Volume2,
   AlertCircle,
   Radio,
   Maximize2,
@@ -96,6 +94,8 @@ interface CustomParticipantInfo {
   isMuted: boolean;
   isVideoOff: boolean;
   isHandRaised: boolean;
+  canUseMic: boolean;
+  canUseCam: boolean;
   screenTrack?: any;
   screenAudioTrack?: any;
   presentationTrack?: any;
@@ -107,12 +107,8 @@ interface CustomParticipantInfo {
 const HOST_CONTROL_MESSAGE_TYPES = new Set([
   "TOGGLE_BOARD",
   "KICK",
-  "INDIVIDUAL_MIC_TOGGLE",
-  "INDIVIDUAL_CAM_TOGGLE",
-  "MUTE_ALL",
-  "UNMUTE_ALL",
-  "CLOSE_ALL_CAMS",
-  "OPEN_ALL_CAMS"
+  "SET_PARTICIPANT_PERMISSIONS",
+  "SET_ALL_PERMISSIONS"
 ]);
 
 function participantIsHost(participant?: Participant): boolean {
@@ -193,6 +189,13 @@ export function ClassroomPage() {
   const isEndingClassroomRef = useRef(false);
   const [connState, setConnState] = useState<"disconnected" | "connecting" | "connected">("disconnected");
   const [connError, setConnError] = useState<string | null>(null);
+  const [classroomNotice, setClassroomNotice] = useState<{ text: string; type: "info" | "success" | "warn" } | null>(null);
+
+  useEffect(() => {
+    if (!classroomNotice) return;
+    const timer = window.setTimeout(() => setClassroomNotice(null), 4500);
+    return () => window.clearTimeout(timer);
+  }, [classroomNotice]);
 
   // User Local Media & Permissions state
   const [isHost, setIsHost] = useState(false);
@@ -200,8 +203,16 @@ export function ClassroomPage() {
   const [classroomBoardToken, setClassroomBoardToken] = useState<string | null>(null);
   const [micOn, setMicOn] = useState(false);
   const [camOn, setCamOn] = useState(false);
+  const [canUseMic, setCanUseMic] = useState(true);
+  const [canUseCam, setCanUseCam] = useState(true);
+  const [individualPermissions, setIndividualPermissions] = useState<Record<string, { allowMic: boolean; allowCam: boolean }>>({});
+  const individualPermissionsRef = useRef<Record<string, { allowMic: boolean; allowCam: boolean }>>({});
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [isHandRaised, setIsHandRaised] = useState(false);
+
+  useEffect(() => {
+    individualPermissionsRef.current = individualPermissions;
+  }, [individualPermissions]);
 
   // Layout & Visibility Options
   const [focusMode, setFocusMode] = useState(false); // Vertical cameras layout on side
@@ -554,15 +565,19 @@ export function ClassroomPage() {
 
     // Skip stealth invisible admin from participant list & grid
     if (!localMetadata.hidden && !isStealthAdmin) {
+      const localIsHost = localMetadata.isHost === true;
+      const localPerm = individualPermissionsRef.current[local.identity] ?? { allowMic: true, allowCam: true };
       list.push({
         sid: local.sid,
         identity: local.identity,
         name: local.name || "אני",
-        isHost: localMetadata.isHost === true,
+        isHost: localIsHost,
         isMe: true,
         isMuted: !local.isMicrophoneEnabled,
         isVideoOff: !local.isCameraEnabled,
         isHandRaised: Boolean(localMetadata.handRaised),
+        canUseMic: localIsHost || localPerm.allowMic !== false,
+        canUseCam: localIsHost || localPerm.allowCam !== false,
         screenTrack: localScreenTrack,
         screenAudioTrack: localScreenAudioTrack,
         presentationTrack: localPresentationTrack,
@@ -617,15 +632,19 @@ export function ClassroomPage() {
         return;
       }
 
+      const pIsHost = Boolean(pMetadata.isHost);
+      const pPerm = individualPermissionsRef.current[p.identity] ?? { allowMic: true, allowCam: true };
       list.push({
         sid: p.sid,
         identity: p.identity,
         name: p.name || p.identity,
-        isHost: Boolean(pMetadata.isHost),
+        isHost: pIsHost,
         isMe: false,
         isMuted: !p.isMicrophoneEnabled,
         isVideoOff: !p.isCameraEnabled,
         isHandRaised: Boolean(pMetadata.handRaised),
+        canUseMic: pIsHost || pPerm.allowMic !== false,
+        canUseCam: pIsHost || pPerm.allowCam !== false,
         screenTrack: pScreenTrack,
         screenAudioTrack: pScreenAudioTrack,
         presentationTrack: pPresentationTrack,
@@ -867,38 +886,83 @@ export function ClassroomPage() {
               setConnError("הוצאת מהכיתה על ידי המורה.");
               void disconnectFromRoom();
             }
-          } else if (msg.type === "INDIVIDUAL_MIC_TOGGLE") {
-            if (lkRoom.localParticipant.identity === msg.targetIdentity && !isStealthAdmin) {
-              const nextState = Boolean(msg.enable);
-              void lkRoom.localParticipant.setMicrophoneEnabled(nextState).catch(() => {});
-              setMicOn(nextState);
+          } else if (msg.type === "SET_PARTICIPANT_PERMISSIONS") {
+            if (typeof msg.targetIdentity === "string") {
+              const current = individualPermissionsRef.current[msg.targetIdentity] ?? { allowMic: true, allowCam: true };
+              const next = {
+                allowMic: typeof msg.allowMic === "boolean" ? msg.allowMic : current.allowMic,
+                allowCam: typeof msg.allowCam === "boolean" ? msg.allowCam : current.allowCam
+              };
+              const updatedRecord = { ...individualPermissionsRef.current, [msg.targetIdentity]: next };
+              individualPermissionsRef.current = updatedRecord;
+              setIndividualPermissions(updatedRecord);
+
+              if (lkRoom.localParticipant.identity === msg.targetIdentity && !isStealthAdmin) {
+                if (typeof msg.allowMic === "boolean") {
+                  setCanUseMic(msg.allowMic);
+                  if (!msg.allowMic) {
+                    void lkRoom.localParticipant.setMicrophoneEnabled(false).catch(() => {});
+                    setMicOn(false);
+                    setClassroomNotice({ text: "המיקרופון שלך נחסם על ידי המורה.", type: "warn" });
+                  } else {
+                    setClassroomNotice({ text: "המורה אישר/ה לך להשתמש במיקרופון.", type: "success" });
+                  }
+                }
+                if (typeof msg.allowCam === "boolean") {
+                  setCanUseCam(msg.allowCam);
+                  if (!msg.allowCam) {
+                    void lkRoom.localParticipant.setCameraEnabled(false).catch(() => {});
+                    setCamOn(false);
+                    setClassroomNotice({ text: "המצלמה שלך נחסמה על ידי המורה.", type: "warn" });
+                  } else {
+                    setClassroomNotice({ text: "המורה אישר/ה לך לפתוח מצלמה.", type: "success" });
+                  }
+                }
+              }
+              window.queueMicrotask(() => updateParticipantList(lkRoom));
             }
-          } else if (msg.type === "INDIVIDUAL_CAM_TOGGLE") {
-            if (lkRoom.localParticipant.identity === msg.targetIdentity && !isStealthAdmin) {
-              const nextState = Boolean(msg.enable);
-              void lkRoom.localParticipant.setCameraEnabled(nextState).catch(() => {});
-              setCamOn(nextState);
+          } else if (msg.type === "SET_ALL_PERMISSIONS") {
+            const updatedRecord = { ...individualPermissionsRef.current };
+            lkRoom.remoteParticipants.forEach((p) => {
+              const current = updatedRecord[p.identity] ?? { allowMic: true, allowCam: true };
+              updatedRecord[p.identity] = {
+                allowMic: typeof msg.allowMic === "boolean" ? msg.allowMic : current.allowMic,
+                allowCam: typeof msg.allowCam === "boolean" ? msg.allowCam : current.allowCam
+              };
+            });
+            const localId = lkRoom.localParticipant.identity;
+            const currentLocal = updatedRecord[localId] ?? { allowMic: true, allowCam: true };
+            updatedRecord[localId] = {
+              allowMic: typeof msg.allowMic === "boolean" ? msg.allowMic : currentLocal.allowMic,
+              allowCam: typeof msg.allowCam === "boolean" ? msg.allowCam : currentLocal.allowCam
+            };
+            individualPermissionsRef.current = updatedRecord;
+            setIndividualPermissions(updatedRecord);
+
+            const isLocalHost = participantIsHost(lkRoom.localParticipant) || tokenIsHost || isUserHost;
+            if (!isLocalHost && !isStealthAdmin) {
+              if (typeof msg.allowMic === "boolean") {
+                setCanUseMic(msg.allowMic);
+                if (!msg.allowMic) {
+                  void lkRoom.localParticipant.setMicrophoneEnabled(false).catch(() => {});
+                  setMicOn(false);
+                  setClassroomNotice({ text: "המיקרופונים בכיתה נחסמו על ידי המורה.", type: "warn" });
+                } else {
+                  setClassroomNotice({ text: "המיקרופונים בכיתה אושרו על ידי המורה.", type: "success" });
+                }
+              }
+              if (typeof msg.allowCam === "boolean") {
+                setCanUseCam(msg.allowCam);
+                if (!msg.allowCam) {
+                  void lkRoom.localParticipant.setCameraEnabled(false).catch(() => {});
+                  setCamOn(false);
+                  setClassroomNotice({ text: "המצלמות בכיתה נחסמו על ידי המורה.", type: "warn" });
+                } else {
+                  setClassroomNotice({ text: "המצלמות בכיתה אושרו על ידי המורה.", type: "success" });
+                }
+              }
             }
-          } else if (msg.type === "MUTE_ALL") {
-            if (!tokenIsHost && !isUserHost) {
-              void lkRoom.localParticipant.setMicrophoneEnabled(false).catch(() => {});
-              setMicOn(false);
-            }
-          } else if (msg.type === "UNMUTE_ALL") {
-            if (!tokenIsHost && !isUserHost && !isStealthAdmin) {
-              void lkRoom.localParticipant.setMicrophoneEnabled(true).catch(() => {});
-              setMicOn(true);
-            }
-          } else if (msg.type === "CLOSE_ALL_CAMS") {
-            if (!tokenIsHost && !isUserHost) {
-              void lkRoom.localParticipant.setCameraEnabled(false).catch(() => {});
-              setCamOn(false);
-            }
-          } else if (msg.type === "OPEN_ALL_CAMS") {
-            if (!tokenIsHost && !isUserHost && !isStealthAdmin) {
-              void lkRoom.localParticipant.setCameraEnabled(true).catch(() => {});
-              setCamOn(true);
-            }
+            window.queueMicrotask(() => updateParticipantList(lkRoom));
           }
         } catch (e) {
           console.error("Data channel parse error", e);
@@ -1217,27 +1281,39 @@ export function ClassroomPage() {
   // Toggle Microphone
   const toggleMic = async () => {
     if (!room || isStealthAdmin) return;
-    if (!isHost && !roomSettings.allowStudentMic) {
-      setConnError("המיקרופון סגור כעת על ידי המורה.");
+    if (!isHost && !canUseMic) {
+      setConnError("המיקרופון חסום כעת על ידי המורה.");
       return;
     }
     const nextState = !micOn;
-    await room.localParticipant.setMicrophoneEnabled(nextState);
-    setMicOn(nextState);
-    updateParticipantList(room);
+    try {
+      await room.localParticipant.setMicrophoneEnabled(nextState);
+      setMicOn(nextState);
+      updateParticipantList(room);
+    } catch (err) {
+      console.warn("Could not toggle microphone", err);
+      setMicOn(room.localParticipant.isMicrophoneEnabled);
+      updateParticipantList(room);
+    }
   };
 
   // Toggle Camera
   const toggleCam = async () => {
     if (!room || isStealthAdmin) return;
-    if (!isHost && !roomSettings.allowStudentCam) {
-      setConnError("המצלמה סגורה כעת על ידי המורה.");
+    if (!isHost && !canUseCam) {
+      setConnError("המצלמה חסומה כעת על ידי המורה.");
       return;
     }
     const nextState = !camOn;
-    await room.localParticipant.setCameraEnabled(nextState);
-    setCamOn(nextState);
-    updateParticipantList(room);
+    try {
+      await room.localParticipant.setCameraEnabled(nextState);
+      setCamOn(nextState);
+      updateParticipantList(room);
+    } catch (err) {
+      console.warn("Could not toggle camera", err);
+      setCamOn(room.localParticipant.isCameraEnabled);
+      updateParticipantList(room);
+    }
   };
 
   // Toggle Screen Sharing
@@ -1400,24 +1476,46 @@ export function ClassroomPage() {
     if (!response.ok) setConnError("לא ניתן לעדכן את גודל הלוחות אצל המשתתפים.");
   };
 
-  // HOST ACTION: Individual Mute/Unmute
-  const toggleIndividualMic = async (targetIdentity: string, currentMuted: boolean) => {
+  // HOST ACTION: Individual Mic Permission Toggle
+  const toggleIndividualMicPermission = async (targetIdentity: string, currentAllowed: boolean) => {
     if (!room || !isHost) return;
+    const nextAllow = !currentAllowed;
+    const current = individualPermissionsRef.current[targetIdentity] ?? { allowMic: true, allowCam: true };
+    const updatedRecord = {
+      ...individualPermissionsRef.current,
+      [targetIdentity]: { ...current, allowMic: nextAllow }
+    };
+    individualPermissionsRef.current = updatedRecord;
+    setIndividualPermissions(updatedRecord);
+    setParticipants((prev) =>
+      prev.map((p) => (p.identity === targetIdentity ? { ...p, canUseMic: nextAllow } : p))
+    );
     const payload = JSON.stringify({
-      type: "INDIVIDUAL_MIC_TOGGLE",
+      type: "SET_PARTICIPANT_PERMISSIONS",
       targetIdentity,
-      enable: currentMuted // if currently muted, enable mic
+      allowMic: nextAllow
     });
     await room.localParticipant.publishData(new TextEncoder().encode(payload), { reliable: true });
   };
 
-  // HOST ACTION: Individual Cam Toggle
-  const toggleIndividualCam = async (targetIdentity: string, currentOff: boolean) => {
+  // HOST ACTION: Individual Cam Permission Toggle
+  const toggleIndividualCamPermission = async (targetIdentity: string, currentAllowed: boolean) => {
     if (!room || !isHost) return;
+    const nextAllow = !currentAllowed;
+    const current = individualPermissionsRef.current[targetIdentity] ?? { allowMic: true, allowCam: true };
+    const updatedRecord = {
+      ...individualPermissionsRef.current,
+      [targetIdentity]: { ...current, allowCam: nextAllow }
+    };
+    individualPermissionsRef.current = updatedRecord;
+    setIndividualPermissions(updatedRecord);
+    setParticipants((prev) =>
+      prev.map((p) => (p.identity === targetIdentity ? { ...p, canUseCam: nextAllow } : p))
+    );
     const payload = JSON.stringify({
-      type: "INDIVIDUAL_CAM_TOGGLE",
+      type: "SET_PARTICIPANT_PERMISSIONS",
       targetIdentity,
-      enable: currentOff // if currently off, enable cam
+      allowCam: nextAllow
     });
     await room.localParticipant.publishData(new TextEncoder().encode(payload), { reliable: true });
   };
@@ -1448,10 +1546,46 @@ export function ClassroomPage() {
     }
   };
 
-  // HOST ACTIONS: Global Media Toggles
-  const triggerGlobalAction = async (type: "MUTE_ALL" | "UNMUTE_ALL" | "CLOSE_ALL_CAMS" | "OPEN_ALL_CAMS") => {
+  // HOST ACTIONS: Class-wide Media Permission Toggles
+  const setClassWideMicPermission = async (allow: boolean) => {
     if (!room || !isHost) return;
-    const payload = JSON.stringify({ type });
+    const updatedRecord: Record<string, { allowMic: boolean; allowCam: boolean }> = { ...individualPermissionsRef.current };
+    participants.forEach((p) => {
+      if (!p.isHost) {
+        const current = updatedRecord[p.identity] ?? { allowMic: true, allowCam: true };
+        updatedRecord[p.identity] = { ...current, allowMic: allow };
+      }
+    });
+    individualPermissionsRef.current = updatedRecord;
+    setIndividualPermissions(updatedRecord);
+    setParticipants((prev) =>
+      prev.map((p) => (p.isHost ? p : { ...p, canUseMic: allow }))
+    );
+    const payload = JSON.stringify({
+      type: "SET_ALL_PERMISSIONS",
+      allowMic: allow
+    });
+    await room.localParticipant.publishData(new TextEncoder().encode(payload), { reliable: true });
+  };
+
+  const setClassWideCamPermission = async (allow: boolean) => {
+    if (!room || !isHost) return;
+    const updatedRecord: Record<string, { allowMic: boolean; allowCam: boolean }> = { ...individualPermissionsRef.current };
+    participants.forEach((p) => {
+      if (!p.isHost) {
+        const current = updatedRecord[p.identity] ?? { allowMic: true, allowCam: true };
+        updatedRecord[p.identity] = { ...current, allowCam: allow };
+      }
+    });
+    individualPermissionsRef.current = updatedRecord;
+    setIndividualPermissions(updatedRecord);
+    setParticipants((prev) =>
+      prev.map((p) => (p.isHost ? p : { ...p, canUseCam: allow }))
+    );
+    const payload = JSON.stringify({
+      type: "SET_ALL_PERMISSIONS",
+      allowCam: allow
+    });
     await room.localParticipant.publishData(new TextEncoder().encode(payload), { reliable: true });
   };
 
@@ -1751,6 +1885,32 @@ export function ClassroomPage() {
         </div>
       )}
 
+      {connState === "connected" && classroomNotice && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={cn(
+            "fixed left-4 z-50 flex max-w-md items-center gap-2 rounded-xl border bg-slate-950/95 px-3.5 py-2.5 text-xs font-bold shadow-xl transition-all",
+            connError ? "top-32" : "top-20",
+            classroomNotice.type === "warn"
+              ? "border-amber-500/50 text-amber-200"
+              : classroomNotice.type === "success"
+              ? "border-emerald-500/50 text-emerald-200"
+              : "border-indigo-500/50 text-indigo-200"
+          )}
+        >
+          {classroomNotice.type === "warn" ? (
+            <AlertCircle className="size-4 shrink-0 text-amber-400" />
+          ) : classroomNotice.type === "success" ? (
+            <Check className="size-4 shrink-0 text-emerald-400" />
+          ) : (
+            <Sparkles className="size-4 shrink-0 text-indigo-400" />
+          )}
+          <p>{classroomNotice.text}</p>
+          <button onClick={() => setClassroomNotice(null)} className="mr-1 rounded px-1 text-slate-400 hover:bg-slate-800" aria-label="סגור הודעה">×</button>
+        </div>
+      )}
+
       {connState === "connected" && mediaUploadStatus && (
         <div
           role={mediaUploadStatus.state === "error" ? "alert" : "status"}
@@ -1878,13 +2038,13 @@ export function ClassroomPage() {
                         />
                       )}
 
-                      {/* Top Name Badge */}
-                      <div className="absolute top-1.5 right-1.5 left-1.5 flex items-center justify-between gap-1 pointer-events-none">
+                      {/* Top Name & Live Mic Status Badge */}
+                      <div className="absolute top-1.5 right-1.5 flex items-center gap-1 pointer-events-none z-10">
                         <span className="rounded-md bg-slate-950/80 px-2 py-0.5 text-[10px] font-bold text-slate-200 backdrop-blur-md flex items-center gap-1">
                           {p.name} {p.isHost && <Crown className="size-3 text-amber-400 inline" />}
                         </span>
 
-                        <span className={cn("rounded-md p-0.5 text-xs", p.isMuted ? "bg-rose-500/20 text-rose-400" : "bg-emerald-500/20 text-emerald-400")}>
+                        <span className={cn("rounded-md p-0.5 text-xs backdrop-blur-md", p.isMuted ? "bg-rose-500/20 text-rose-400" : "bg-emerald-500/20 text-emerald-400")}>
                           {p.isMuted ? <MicOff className="size-3" /> : <Mic className="size-3" />}
                         </span>
                       </div>
@@ -1897,23 +2057,23 @@ export function ClassroomPage() {
                         </div>
                       )}
 
-                      {/* INDIVIDUAL TEACHER CONTROLS OVERLAY */}
+                      {/* INDIVIDUAL TEACHER PERMISSION CONTROLS OVERLAY */}
                       {isHost && !p.isMe && (
-                        <div className="absolute top-1.5 left-1.5 flex items-center gap-1 bg-slate-950/80 p-1 rounded-lg border border-slate-700 backdrop-blur-md">
+                        <div className="absolute top-1.5 left-1.5 flex items-center gap-1 bg-slate-950/85 p-1 rounded-lg border border-slate-700/80 backdrop-blur-md z-20 shadow-md">
                           <button
-                            onClick={() => toggleIndividualMic(p.identity, p.isMuted)}
-                            title={p.isMuted ? "ביטול השתקה לתלמיד זה" : "השתק תלמיד זה"}
-                            className={cn("p-1 rounded text-xs", p.isMuted ? "text-rose-400 hover:bg-rose-500/20" : "text-emerald-400 hover:bg-emerald-500/20")}
+                            onClick={() => toggleIndividualMicPermission(p.identity, p.canUseMic)}
+                            title={p.canUseMic ? "הרשאת מיקרופון פעילה - לחץ לחסימה" : "מיקרופון חסום - לחץ להרשאה"}
+                            className={cn("p-1 rounded text-xs transition duration-150", p.canUseMic ? "text-emerald-400 hover:bg-emerald-500/20" : "text-rose-400 hover:bg-rose-500/20")}
                           >
-                            {p.isMuted ? <VolumeX className="size-3" /> : <Volume2 className="size-3" />}
+                            {p.canUseMic ? <Mic className="size-3" /> : <MicOff className="size-3" />}
                           </button>
 
                           <button
-                            onClick={() => toggleIndividualCam(p.identity, p.isVideoOff)}
-                            title={p.isVideoOff ? "פתח מצלמה לתלמיד זה" : "סגור מצלמה לתלמיד זה"}
-                            className={cn("p-1 rounded text-xs", p.isVideoOff ? "text-rose-400 hover:bg-rose-500/20" : "text-emerald-400 hover:bg-emerald-500/20")}
+                            onClick={() => toggleIndividualCamPermission(p.identity, p.canUseCam)}
+                            title={p.canUseCam ? "הרשאת מצלמה פעילה - לחץ לחסימה" : "מצלמה חסומה - לחץ להרשאה"}
+                            className={cn("p-1 rounded text-xs transition duration-150", p.canUseCam ? "text-emerald-400 hover:bg-emerald-500/20" : "text-rose-400 hover:bg-rose-500/20")}
                           >
-                            {p.isVideoOff ? <VideoOff className="size-3" /> : <VideoIcon className="size-3" />}
+                            {p.canUseCam ? <VideoIcon className="size-3" /> : <VideoOff className="size-3" />}
                           </button>
 
                           {(isClassCreator || (localIsPresenter && isHost)) && (
@@ -2057,27 +2217,49 @@ export function ClassroomPage() {
               <div className="flex items-center gap-2">
                 {!isStealthAdmin ? (
                   <>
-                    <button
-                      onClick={toggleMic}
-                      className={cn(
-                        "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
-                        micOn ? "bg-emerald-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                      )}
-                    >
-                      {micOn ? <Mic className="size-3.5" /> : <MicOff className="size-3.5" />}
-                      {micOn ? "מיקרופון פעיל" : "מיקרופון כבוי"}
-                    </button>
+                    {canUseMic || isHost ? (
+                      <button
+                        onClick={toggleMic}
+                        className={cn(
+                          "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
+                          micOn ? "bg-emerald-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                        )}
+                      >
+                        {micOn ? <Mic className="size-3.5" /> : <MicOff className="size-3.5" />}
+                        {micOn ? "מיקרופון פעיל" : "מיקרופון כבוי"}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setConnError("המיקרופון חסום כעת על ידי המורה.")}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800/60 text-slate-400 border border-slate-700/50 hover:bg-slate-800 transition duration-200"
+                        title="המיקרופון חסום על ידי המורה"
+                      >
+                        <MicOff className="size-3.5 text-rose-400" />
+                        <span>מיקרופון חסום</span>
+                      </button>
+                    )}
 
-                    <button
-                      onClick={toggleCam}
-                      className={cn(
-                        "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
-                        camOn ? "bg-emerald-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                      )}
-                    >
-                      {camOn ? <VideoIcon className="size-3.5" /> : <VideoOff className="size-3.5" />}
-                      {camOn ? "מצלמה פעילה" : "מצלמה כבויה"}
-                    </button>
+                    {canUseCam || isHost ? (
+                      <button
+                        onClick={toggleCam}
+                        className={cn(
+                          "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
+                          camOn ? "bg-emerald-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                        )}
+                      >
+                        {camOn ? <VideoIcon className="size-3.5" /> : <VideoOff className="size-3.5" />}
+                        {camOn ? "מצלמה פעילה" : "מצלמה כבויה"}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setConnError("המצלמה חסומה כעת על ידי המורה.")}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800/60 text-slate-400 border border-slate-700/50 hover:bg-slate-800 transition duration-200"
+                        title="המצלמה חסומה על ידי המורה"
+                      >
+                        <VideoOff className="size-3.5 text-rose-400" />
+                        <span>מצלמה חסומה</span>
+                      </button>
+                    )}
 
                     <button
                       onClick={toggleScreenShare}
@@ -2170,35 +2352,35 @@ export function ClassroomPage() {
 
                   <div className="grid grid-cols-2 gap-1.5">
                     <button
-                      onClick={() => triggerGlobalAction("MUTE_ALL")}
+                      onClick={() => void setClassWideMicPermission(false)}
                       className="py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold flex items-center gap-1 justify-center"
                     >
-                      <VolumeX className="size-3 text-rose-400" />
-                      השתק הכל
+                      <MicOff className="size-3 text-rose-400" />
+                      חסום מיקרופונים
                     </button>
 
                     <button
-                      onClick={() => triggerGlobalAction("UNMUTE_ALL")}
+                      onClick={() => void setClassWideMicPermission(true)}
                       className="py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold flex items-center gap-1 justify-center"
                     >
-                      <Volume2 className="size-3 text-emerald-400" />
-                      בטל השתקה
+                      <Mic className="size-3 text-emerald-400" />
+                      אפשר מיקרופונים
                     </button>
 
                     <button
-                      onClick={() => triggerGlobalAction("CLOSE_ALL_CAMS")}
+                      onClick={() => void setClassWideCamPermission(false)}
                       className="py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold flex items-center gap-1 justify-center"
                     >
                       <VideoOff className="size-3 text-rose-400" />
-                      סגור מצלמות
+                      חסום מצלמות
                     </button>
 
                     <button
-                      onClick={() => triggerGlobalAction("OPEN_ALL_CAMS")}
+                      onClick={() => void setClassWideCamPermission(true)}
                       className="py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold flex items-center gap-1 justify-center"
                     >
                       <VideoIcon className="size-3 text-emerald-400" />
-                      פתח מצלמות
+                      אפשר מצלמות
                     </button>
                   </div>
 
@@ -2263,6 +2445,22 @@ export function ClassroomPage() {
 
                     {isHost && (canManageClassroom || isDelegatedHost) && !p.isMe && (
                       <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => toggleIndividualMicPermission(p.identity, p.canUseMic)}
+                          title={p.canUseMic ? "הרשאת מיקרופון פעילה - לחץ לחסימה" : "מיקרופון חסום - לחץ להרשאה"}
+                          className={cn("p-1 rounded", p.canUseMic ? "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20" : "bg-rose-500/10 text-rose-400 hover:bg-rose-500/20")}
+                        >
+                          {p.canUseMic ? <Mic className="size-3.5" /> : <MicOff className="size-3.5" />}
+                        </button>
+
+                        <button
+                          onClick={() => toggleIndividualCamPermission(p.identity, p.canUseCam)}
+                          title={p.canUseCam ? "הרשאת מצלמה פעילה - לחץ לחסימה" : "מצלמה חסומה - לחץ להרשאה"}
+                          className={cn("p-1 rounded", p.canUseCam ? "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20" : "bg-rose-500/10 text-rose-400 hover:bg-rose-500/20")}
+                        >
+                          {p.canUseCam ? <VideoIcon className="size-3.5" /> : <VideoOff className="size-3.5" />}
+                        </button>
+
                         <button
                           onClick={() => grantHostStatus(p.identity)}
                           title="הפוך למארח מלא "

@@ -14,3 +14,4 @@
 34. find out why ereasers and laser pointers point down of their real place
 35. add per class recess schedule
 36. logs coverage for things like recess end
+38. blocked kicked-out students from rejoining a class
