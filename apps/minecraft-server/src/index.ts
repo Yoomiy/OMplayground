@@ -1028,6 +1028,20 @@ app.post("/rtc/classroom-end", async (req, res) => {
       throw updateError;
     }
 
+    // LiveKit uses PARTICIPANT_REMOVED for this deliberate class-wide eviction
+    // too. Send a reliable server message first so clients preserve the actual
+    // cause when their disconnect event arrives.
+    try {
+      await broadcastClassroomData(normalizedRoomCode, { type: "CLASSROOM_ENDED" });
+      await new Promise((resolve) => setTimeout(resolve, 150));
+    } catch (broadcastError) {
+      logger.warn({
+        protocol: "webrtc",
+        message: "Could not announce classroom closure before eviction",
+        context: { event: "CLASSROOM_END_ANNOUNCEMENT_FAILED", roomCode: normalizedRoomCode },
+        err: logError(broadcastError)
+      });
+    }
     await completeClassroomDrawingSessions([normalizedRoomCode]);
     const evictedParticipantCount = await evictClassroomParticipants(normalizedRoomCode);
     const livekitDeleted = await deleteLiveKitRoom(normalizedRoomCode);

@@ -187,6 +187,7 @@ export function ClassroomPage() {
   const [room, setRoom] = useState<Room | null>(null);
   const roomRef = useRef<Room | null>(null);
   const isEndingClassroomRef = useRef(false);
+  const classroomEndedByHostRef = useRef(false);
   const [connState, setConnState] = useState<"disconnected" | "connecting" | "connected">("disconnected");
   const [connError, setConnError] = useState<string | null>(null);
   const [classroomNotice, setClassroomNotice] = useState<{ text: string; type: "info" | "success" | "warn" } | null>(null);
@@ -496,6 +497,7 @@ export function ClassroomPage() {
         (payload) => {
           const updated = payload.new as ClassroomSessionData;
           if (updated.status === "ended") {
+            classroomEndedByHostRef.current = true;
             void clearClassroomLibrary(updated.id).catch(() => {});
             writePresenterSessionToken(roomCode, null);
             setConnError("השיעור הופסק על ידי המורה.");
@@ -506,7 +508,9 @@ export function ClassroomPage() {
             setMicOn(false);
             setCamOn(false);
             setIsScreenSharing(false);
-            if (!isEndingClassroomRef.current) navigate("/classroom-ended", { replace: true });
+            if (!isEndingClassroomRef.current) {
+              navigate("/classroom-ended", { replace: true });
+            }
           } else if (updated.settings) {
             setRoomSettings((prev) => ({ ...prev, ...updated.settings }));
             if (typeof updated.settings.whiteboardVisible === "boolean") {
@@ -855,6 +859,11 @@ export function ClassroomPage() {
             return;
           }
 
+          if (msg.type === "CLASSROOM_ENDED" && !participant) {
+            classroomEndedByHostRef.current = true;
+            return;
+          }
+
           if (HOST_CONTROL_MESSAGE_TYPES.has(msg.type) && !senderIsHost) {
             return;
           }
@@ -992,7 +1001,9 @@ export function ClassroomPage() {
         writePresenterSessionToken(roomCode, null);
 
         if (!isEndingClassroomRef.current) {
-          const wasRemoved = reason === DisconnectReason.PARTICIPANT_REMOVED;
+          const classroomEnded =
+            classroomEndedByHostRef.current || reason === DisconnectReason.ROOM_DELETED;
+          const wasRemoved = !classroomEnded && reason === DisconnectReason.PARTICIPANT_REMOVED;
           setConnError(wasRemoved ? "הוסרת מהכיתה על ידי המורה." : "השיעור הופסק על ידי המורה.");
           navigate("/classroom-ended", {
             replace: true,
