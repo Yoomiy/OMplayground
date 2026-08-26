@@ -12,8 +12,9 @@ export function ClassroomEndedPage() {
   const dashboardPath = isAdmin ? "/admin" : "/teacher";
   const isClassroomManager = isAdmin || profile?.role === "teacher";
   const userDetailsLoading = profileLoading || adminLoading;
-  const removalState = location.state as { reason?: string; roomCode?: string } | null;
+  const removalState = location.state as { reason?: "removed" | "left"; roomCode?: string } | null;
   const wasRemoved = removalState?.reason === "removed";
+  const leftClassroom = removalState?.reason === "left";
   const removedRoomPath = removalState?.roomCode
     ? `/classroom/${encodeURIComponent(removalState.roomCode)}`
     : null;
@@ -24,17 +25,21 @@ export function ClassroomEndedPage() {
         <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-500/15 text-indigo-300">
           <DoorOpen className="h-8 w-8" aria-hidden="true" />
         </div>
-        <h1 className="text-2xl font-bold">{wasRemoved ? "הוסרת מהכיתה" : "השיעור הסתיים"}</h1>
+        <h1 className="text-2xl font-bold">
+          {wasRemoved ? "הוסרת מהכיתה" : leftClassroom ? "יצאת מהכיתה" : "השיעור הסתיים"}
+        </h1>
         <p className="mt-3 leading-7 text-slate-300">
           {wasRemoved
             ? "המורה הוציא אותך מהכיתה"
+            : leftClassroom
+              ? "אפשר לחזור לכיתה בכל עת."
             : "החדר נסגר על ידי המארח. תודה שהשתתפתם."}
         </p>
 
         <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-center">
           {userDetailsLoading ? (
             <span className="text-sm text-slate-400">טוען אפשרויות…</span>
-          ) : wasRemoved && removedRoomPath ? (
+          ) : (wasRemoved || leftClassroom) && removedRoomPath ? (
             <Link
               to={removedRoomPath}
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 font-bold text-white transition hover:bg-indigo-500"

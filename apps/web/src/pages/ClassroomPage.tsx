@@ -1169,6 +1169,20 @@ export function ClassroomPage() {
     setPresentationTitle(null);
   };
 
+  const leaveClassroom = async () => {
+    await disconnectFromRoom();
+
+    if (canManageClassroom) {
+      navigate(isAdmin ? "/admin" : "/teacher");
+      return;
+    }
+
+    navigate("/classroom-ended", {
+      replace: true,
+      state: { reason: "left", roomCode }
+    });
+  };
+
   const classroomRequest = useCallback(async (path: string, body: Record<string, unknown>) => {
     const { data } = await supabase.auth.getSession();
     return fetch(`${getVoxelServerUrl()}${path}`, {
@@ -1696,7 +1710,7 @@ export function ClassroomPage() {
     if (classroomSessionId) await clearClassroomLibrary(classroomSessionId).catch(() => {});
     writePresenterSessionToken(roomCode || sessionData.room_code, null);
     void disconnectFromRoom();
-    navigate("/teacher");
+    navigate(isAdmin ? "/admin" : "/teacher");
   };
 
   // Copy Invite Link
@@ -1903,7 +1917,7 @@ export function ClassroomPage() {
 
           {connState === "connected" && (
             <button
-              onClick={disconnectFromRoom}
+              onClick={() => void leaveClassroom()}
               className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs px-3 py-1.5 flex items-center gap-1.5"
             >
               <LogOut className="size-3.5" />
