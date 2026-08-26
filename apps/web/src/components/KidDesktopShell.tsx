@@ -9,9 +9,13 @@ import { discardMySoloWaitingSessions } from "@/lib/pausedSessionActions";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/cn";
 
-export function desktopPanelClass(className?: string) {
+export function desktopPanelClass(
+  className?: string,
+  { backdropBlur = true }: { backdropBlur?: boolean } = {}
+) {
   return cn(
-    "rounded-2xl border border-white/10 bg-white/5 shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md",
+    "rounded-2xl border border-white/10 bg-white/5 shadow-[0_4px_24px_rgba(0,0,0,0.4)]",
+    backdropBlur && "backdrop-blur-md",
     className
   );
 }

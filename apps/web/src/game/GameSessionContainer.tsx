@@ -711,7 +711,10 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
           </div>
         </div>
 
-        <section className={desktopPanelClass("min-h-[560px] p-4")}>
+        <section className={desktopPanelClass(
+          "min-h-[560px] p-4",
+          { backdropBlur: gameKey !== "drawing" }
+        )}>
           {paused ? (
             <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-300">
               <p className="font-bold">המשחק מושהה ונשמר להמשך.</p>
