@@ -21,6 +21,7 @@ type RoomEvent =
   | { kind: "GAME_RESUMED" }
   | { kind: "HOST_LEFT"; newHostId?: string }
   | { kind: "RECESS_ENDED" }
+  | { kind: "ROOM_FULL" }
   | { kind: "PLAYER_JOINED"; player?: RoomPlayer }
   | { kind: "PLAYER_LEFT"; player?: RoomPlayer }
   | { kind: "REMATCH_REQUESTED"; requestedBy: string }
@@ -43,15 +44,18 @@ type EndOverlay =
   | { kind: "draw" }
   | { kind: "stopped" };
 
+type ParticipationMode = "joining" | "player" | "spectator";
+
 function endOverlayHeadline(
   overlay: EndOverlay,
   mySymbol: string | null,
-  isTeacherObserver: boolean
+  isObserver: boolean,
+  winnerName: string | null
 ): string {
-  if (isTeacherObserver) {
+  if (isObserver) {
     if (overlay.kind === "draw") return "תיקו!";
     if (overlay.kind === "stopped") return "המשחק נעצר";
-    return "המשחק הסתיים";
+    return winnerName ? `המנצח/ת: ${winnerName}` : "המשחק הסתיים";
   }
   if (overlay.kind === "draw") return "תיקו!";
   if (overlay.kind === "stopped") return "המארח עצר את המשחק";
@@ -105,11 +109,15 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
   const { profile } = useProfile();
   const { isAdmin } = useIsAdmin();
   const isTeacherObserver = profile?.role === "teacher";
+  const [participationMode, setParticipationMode] = useState<ParticipationMode>(
+    isTeacherObserver ? "spectator" : "joining"
+  );
+  const isChildSpectator = !isTeacherObserver && participationMode === "spectator";
   const teacherChat = useTeacherSessionChat(
     isTeacherObserver ? sessionId : undefined
   );
   const kidChat = usePersistedSessionChat(
-    !isTeacherObserver ? sessionId : undefined
+    !isTeacherObserver && participationMode !== "joining" ? sessionId : undefined
   );
   const socketRef = useRef<Socket | null>(null);
   const recessEndedRef = useRef(false);
@@ -119,6 +127,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
   const [hostId, setHostId] = useState<string | null>(null);
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [players, setPlayers] = useState<RoomPlayer[]>([]);
+  const [spectators, setSpectators] = useState<RoomPlayer[]>([]);
   const [roster, setRoster] = useState<RoomPlayer[]>([]);
   const [missingPlayers, setMissingPlayers] = useState<RoomPlayer[]>([]);
   const [paused, setPaused] = useState(false);
@@ -165,11 +174,16 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
 
       s.on("connect", () => {
         setDrawingSync(null);
+        setParticipationMode("joining");
         setStatus("מחובר");
         s.emit(
           "JOIN_ROOM",
           { sessionId, ...(inviteCode ? { invitationCode: inviteCode } : {}) },
-          (ack: { ok?: boolean; error?: { code?: string; message?: string } }) => {
+          (ack: {
+            ok?: boolean;
+            spectator?: boolean;
+            error?: { code?: string; message?: string };
+          }) => {
             if (!ack?.ok) {
               reportTelemetry(
                 {
@@ -185,7 +199,9 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
                 "game-server"
               );
               setStatus(ack?.error?.message ?? "הצטרפות לחדר נכשלה");
+              return;
             }
+            setParticipationMode(ack?.spectator ? "spectator" : "player");
           }
         );
       });
@@ -197,6 +213,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
           gameState?: unknown;
           hostId?: string;
           players?: RoomPlayer[];
+          spectators?: RoomPlayer[];
           roster?: RoomPlayer[];
           missingPlayers?: RoomPlayer[];
           paused?: boolean;
@@ -218,6 +235,9 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
           }
           if (payload?.players) {
             setPlayers(payload.players);
+          }
+          if (payload?.spectators) {
+            setSpectators(payload.spectators);
           }
           if (payload?.roster) {
             setRoster(payload.roster);
@@ -257,6 +277,9 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
           case "RECESS_ENDED":
             recessEndedRef.current = true;
             setToast("ההפסקה הסתיימה");
+            return;
+          case "ROOM_FULL":
+            setToast("החדר מלא — אפשר להפוך אותו לפרטי דרך ניהול החדר");
             return;
           case "PLAYER_JOINED":
             setToast(`${ev.player?.displayName ?? "שחקן"} הצטרף לחדר`);
@@ -511,7 +534,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
 
   const onIntent = useCallback(
     (intent: unknown) => {
-      if (isTeacherObserver) return;
+      if (isTeacherObserver || isChildSpectator || participationMode !== "player") return;
       if (paused) {
         setStatus("המשחק מושהה");
         return;
@@ -531,17 +554,17 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         }
       );
     },
-    [sessionId, isTeacherObserver, paused]
+    [sessionId, isTeacherObserver, isChildSpectator, participationMode, paused]
   );
   const onLiveDelta = useCallback(
     (delta: unknown) => {
-      if (isTeacherObserver) return;
+      if (isTeacherObserver || isChildSpectator || participationMode !== "player") return;
       const s = socketRef.current;
       if (!s?.connected) return;
       if (paused) return;
       s.emit("LIVE_DELTA", { sessionId, delta });
     },
-    [sessionId, isTeacherObserver, paused]
+    [sessionId, isTeacherObserver, isChildSpectator, participationMode, paused]
   );
 
   const subscribeLiveDeltas = useCallback(
@@ -566,7 +589,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
   }, [sessionId]);
 
   const clearDrawing = useCallback(() => new Promise<boolean>((resolve) => {
-    if (isTeacherObserver || paused) {
+    if (isTeacherObserver || isChildSpectator || participationMode !== "player" || paused) {
       resolve(false);
       return;
     }
@@ -584,13 +607,13 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         resolve(ack?.ok === true);
       }
     );
-  }), [isTeacherObserver, paused, sessionId]);
+  }), [isTeacherObserver, isChildSpectator, participationMode, paused, sessionId]);
 
   const drawingMode = useMemo(() => ({
     kind: "canonical" as const,
     initialSync: drawingSync,
     viewportRole: "independent" as const,
-    canClear: !isTeacherObserver && !paused,
+    canClear: !isTeacherObserver && !isChildSpectator && participationMode === "player" && !paused,
     sendDelta: onLiveDelta,
     acknowledgeSync: acknowledgeDrawingSync,
     subscribe: subscribeLiveDeltas,
@@ -600,6 +623,8 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
     clearDrawing,
     drawingSync,
     isTeacherObserver,
+    isChildSpectator,
+    participationMode,
     onLiveDelta,
     paused,
     subscribeLiveDeltas
@@ -613,12 +638,27 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
     return seats[myUserId] ?? null;
   }, [gameState, myUserId]);
 
+  const winnerName = useMemo<string | null>(() => {
+    if (endOverlay?.kind !== "won" || endOverlay.winner === "both") return null;
+    const seats = (gameState as { seats?: Record<string, string> } | null)?.seats;
+    const winnerId = Object.entries(seats ?? {}).find(
+      ([, seat]) => seat === endOverlay.winner
+    )?.[0];
+    if (!winnerId) return null;
+    return (
+      roster.find((player) => player.userId === winnerId)?.displayName ??
+      players.find((player) => player.userId === winnerId)?.displayName ??
+      null
+    );
+  }, [endOverlay, gameState, players, roster]);
+
   if (!gameState || !gameKey) {
     return <p className="text-sm text-white/50">{status}</p>;
   }
 
   const iAmHost =
     !isTeacherObserver &&
+    participationMode === "player" &&
     myUserId != null &&
     hostId != null &&
     myUserId === hostId;
@@ -627,6 +667,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
   const refusedRematch = myUserId ? rematch?.refused.includes(myUserId) : false;
   const canVoteRematch =
     !isTeacherObserver &&
+    participationMode === "player" &&
     !!endOverlay &&
     endOverlay.kind !== "stopped" &&
     !!rematch &&
@@ -720,7 +761,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         <div className={desktopPanelClass("flex flex-wrap items-center justify-between gap-3 px-4 py-3")}>
           <div className="flex items-center gap-3">
             <p className="text-sm font-bold text-white/80">
-              {isTeacherObserver ? "צפייה בלבד (מורה) · " : ""}
+              {isTeacherObserver ? "צפייה בלבד (מורה) · " : isChildSpectator ? "צפייה בלבד · " : ""}
               {status}
             </p>
             {toast ? (
@@ -759,7 +800,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
 
           <div
             className={
-              paused || (isTeacherObserver && gameKey !== "drawing")
+              paused || ((isTeacherObserver || isChildSpectator) && gameKey !== "drawing")
                 ? "pointer-events-none mx-auto max-w-5xl opacity-60"
                 : "mx-auto max-w-5xl"
             }
@@ -795,7 +836,12 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         {endOverlay && gameKey !== "chess" ? (
           <div role="alertdialog" aria-label="המשחק הסתיים" className={desktopPanelClass("p-4 text-center")}>
             <p className="text-lg font-black text-white">
-              {endOverlayHeadline(endOverlay, mySymbol, isTeacherObserver)}
+              {endOverlayHeadline(
+                endOverlay,
+                mySymbol,
+                isTeacherObserver || isChildSpectator,
+                winnerName
+              )}
             </p>
             {rematch && endOverlay.kind !== "stopped" ? (
               <p className="mt-2 text-sm font-semibold text-white/60">
@@ -860,6 +906,23 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
               ))}
             </div>
           </section>
+
+          {spectators.length > 0 ? (
+            <section className={desktopPanelClass("p-4 text-sm")}>
+              <h2 className="font-black text-white/95">צופים</h2>
+              <div className="mt-3 space-y-2">
+                {spectators.map((spectator) => (
+                  <div
+                    key={spectator.userId}
+                    className="rounded-xl border border-indigo-500/20 bg-indigo-500/10 px-3 py-2 font-semibold text-indigo-200"
+                  >
+                    {spectator.displayName}
+                    <span className="block text-xs text-indigo-300/70">צופה</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           {paused && iAmHost ? (
             <section className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-300 shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md">

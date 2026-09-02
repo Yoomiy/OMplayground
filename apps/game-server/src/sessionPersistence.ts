@@ -79,6 +79,22 @@ export async function persistPlayerJoin(
   return true;
 }
 
+/**
+ * Child overflow viewers are active chat participants, but deliberately never
+ * become game-session players. This presence list is only for chat RLS.
+ */
+export async function persistChildSpectatorPresence(args: {
+  supabase: SupabaseClient;
+  sessionId: string;
+  userIds: string[];
+}): Promise<void> {
+  const { error } = await args.supabase
+    .from("game_sessions")
+    .update({ connected_observer_ids: args.userIds })
+    .eq("id", args.sessionId);
+  if (error) throw error;
+}
+
 export interface LeaveResult {
   newHostId?: string;
   roomEmpty: boolean;

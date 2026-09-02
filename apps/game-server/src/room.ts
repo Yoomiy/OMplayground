@@ -44,6 +44,8 @@ export interface Room<State = unknown> {
   players: Map<string, RoomPlayer>;
   /** Teachers observing the same-gender session (not in player_ids / DB join list). */
   spectators: Map<string, RoomPlayer>;
+  /** Child overflow viewers, kept separate from teacher observers and player seats. */
+  childSpectatorIds: Set<string>;
   /**
    * After the room has ever had `minPlayers` seated, do not re-run `initialState`
    * when `players` dips below `minPlayers` (e.g. one kid refreshes).
@@ -114,6 +116,7 @@ export function getOrCreateRoom<State>(
     roster: meta.roster ?? [],
     players: new Map(),
     spectators: new Map(),
+    childSpectatorIds: new Set(),
     hasBeenActive: resumed,
     paused: meta.paused === true,
     peakPlayerCount: meta.peakPlayerCount ?? 0
@@ -207,14 +210,17 @@ export function removePlayerFromRoom(
 export function attachSpectator<S>(
   room: Room<S>,
   userId: string,
-  displayName: string
+  displayName: string,
+  options?: { childSpectator?: boolean }
 ): { spectator: RoomPlayer } {
   const existing = room.spectators.get(userId);
   if (existing) {
+    if (options?.childSpectator) room.childSpectatorIds.add(userId);
     return { spectator: existing };
   }
   const spectator: RoomPlayer = { userId, displayName };
   room.spectators.set(userId, spectator);
+  if (options?.childSpectator) room.childSpectatorIds.add(userId);
   return { spectator };
 }
 
@@ -222,6 +228,7 @@ export function removeSpectatorFromRoom(sessionId: string, userId: string): void
   const r = rooms.get(sessionId);
   if (!r) return;
   r.spectators.delete(userId);
+  r.childSpectatorIds.delete(userId);
   if (r.players.size === 0 && r.spectators.size === 0) {
     rooms.delete(sessionId);
   }

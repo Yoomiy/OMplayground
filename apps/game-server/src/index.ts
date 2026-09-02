@@ -47,7 +47,8 @@ import {
 import {
   persistPlayerJoin,
   persistPlayerLeave,
-  persistDrawingCheckpoint
+  persistDrawingCheckpoint,
+  persistChildSpectatorPresence
 } from "./sessionPersistence";
 import {
   cleanupStalePausedSessions,
@@ -608,6 +609,12 @@ io.on("connection", (socket) => {
       hostId: room.hostId,
       gameState: room.state,
       players,
+      // Teacher observers remain connected for their existing sync and voice
+      // behavior, but are intentionally invisible in the child-facing viewer
+      // roster. Only children who overflowed player capacity are shown.
+      spectators: Array.from(room.spectators.values()).filter((spectator) =>
+        room.childSpectatorIds.has(spectator.userId)
+      ),
       roster,
       missingPlayers: missingPlayers(room),
       paused: room.paused,
@@ -633,8 +640,17 @@ io.on("connection", (socket) => {
         peer.id !== socket.id &&
         peer.data.userId === userId &&
         peer.data.sessionId === sessionId &&
-        peer.data.isSpectator !== true
+        peer.data.isSpectator === (socket.data.isSpectator === true)
     );
+  }
+
+  async function persistChildSpectators(room: Room<unknown>): Promise<void> {
+    if (!supabaseAdmin) return;
+    await persistChildSpectatorPresence({
+      supabase: supabaseAdmin,
+      sessionId: room.sessionId,
+      userIds: Array.from(room.childSpectatorIds)
+    });
   }
 
   function shouldSkipFullSnapshot(gameKey: string, intent: unknown): boolean {
@@ -1136,8 +1152,37 @@ io.on("connection", (socket) => {
         return;
       }
       const wasIdle = isRoomIdle(room);
+      const playerCountBeforeJoin = room.players.size;
       const assigned = assignPlayer(room, userId, displayName);
       if ("error" in assigned) {
+        // Only a child who overflowed an otherwise joinable shared game gets
+        // spectator mode. Teachers keep their established branch above, and
+        // every other join rejection keeps its existing behavior.
+        if (assigned.error.code === "ROOM_FULL" && role === "kid") {
+          attachSpectator(room, userId, displayName, { childSpectator: true });
+          try {
+            await persistChildSpectators(room);
+          } catch (error) {
+            removeSpectatorFromRoom(sessionId, userId);
+            reply?.({
+              ok: false,
+              error: {
+                code: "PERSIST_FAILED",
+                message: error instanceof Error ? error.message : "לא ניתן לחבר צופה לצ׳אט"
+              }
+            });
+            return;
+          }
+          await socket.join(`session:${sessionId}`);
+          socket.data.sessionId = sessionId;
+          socket.data.isSpectator = true;
+          if (gameKey === "drawing") {
+            serveCanonicalDrawing(room, "child-spectator-join");
+          }
+          emitSnapshot(room);
+          reply?.({ ok: true, spectator: true });
+          return;
+        }
         reply?.({ ok: false, error: assigned.error });
         return;
       }
@@ -1182,6 +1227,18 @@ io.on("connection", (socket) => {
         kind: "PLAYER_JOINED",
         player: assigned.player
       });
+      if (
+        isOpen &&
+        playerCountBeforeJoin < room.module.maxPlayers &&
+        room.players.size === room.module.maxPlayers
+      ) {
+        const peers = await io.in(`session:${sessionId}`).fetchSockets();
+        for (const peer of peers) {
+          if (peer.data.userId === room.hostId) {
+            peer.emit("ROOM_EVENT", { sessionId, kind: "ROOM_FULL" });
+          }
+        }
+      }
       if (room.paused && missingPlayers(room).length === 0) {
         resumeRoom(room);
       }
@@ -1245,6 +1302,7 @@ io.on("connection", (socket) => {
       if (!boundSessionId || boundSessionId !== sessionId) return;
       const room = getRoom(sessionId);
       if (!room) return;
+      if (socket.data.isSpectator === true && socket.data.role !== "teacher") return;
       // Authorized classroom teachers and delegates may intentionally be
       // attached as spectators so they do not consume a drawing-game seat.
       // The classroom policy below remains the authority for their edits.
@@ -1564,6 +1622,16 @@ io.on("connection", (socket) => {
       const room = getRoom(sessionId);
       if (!room) {
         reply?.({ ok: false, error: { code: "NOT_FOUND", message: "Room not loaded" } });
+        return;
+      }
+      // Child overflow viewers never get a gameplay path. Keep teacher
+      // observers out of this guard: classroom drawing has its own existing
+      // teacher/delegate authorization in canEditDrawing().
+      if (socket.data.isSpectator === true && socket.data.role !== "teacher") {
+        reply?.({
+          ok: false,
+          error: { code: "READ_ONLY", message: "צופים לא יכולים לבצע מהלכים" }
+        });
         return;
       }
       if (room.paused) {
@@ -2044,7 +2112,9 @@ io.on("connection", (socket) => {
         return;
       }
       const room = getRoom(sessionId);
-      if (!room || !room.players.has(userId)) {
+      const canChildSpectatorChat =
+        socket.data.role !== "teacher" && room?.childSpectatorIds.has(userId) === true;
+      if (!room || (!room.players.has(userId) && !canChildSpectatorChat)) {
         ack?.({
           ok: false,
           error: { code: "NOT_IN_ROOM", message: "לא בחדר" }
@@ -2101,6 +2171,7 @@ io.on("connection", (socket) => {
     if (socket.data.isSpectator) {
       const spectatorRoom = getRoom(sessionId);
       const isClassroomSpectator = spectatorRoom?.drawingContext?.boardMode === "classroom";
+      const wasChildSpectator = spectatorRoom?.childSpectatorIds.has(userId) === true;
       if (spectatorRoom && isClassroomSpectator) {
         await persistCanonicalDrawing(
           spectatorRoom,
@@ -2110,6 +2181,21 @@ io.on("connection", (socket) => {
         ).catch(() => {});
       }
       removeSpectatorFromRoom(sessionId, userId);
+      if (wasChildSpectator && supabaseAdmin) {
+        await persistChildSpectatorPresence({
+          supabase: supabaseAdmin,
+          sessionId,
+          userIds: spectatorRoom ? Array.from(spectatorRoom.childSpectatorIds) : []
+        }).catch((error) => {
+          logger.warn({
+            userId,
+            sessionId,
+            protocol: "socket",
+            message: "Child spectator presence cleanup failed",
+            error: error instanceof Error ? error.message : String(error)
+          });
+        });
+      }
       const room = getRoom(sessionId);
       if (room) emitSnapshot(room);
       if (!room && isClassroomSpectator) {

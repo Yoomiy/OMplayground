@@ -6,7 +6,7 @@ function room(sessionId: string): Room<unknown> {
   return {
     sessionId, gameId: "g1", gameKey: tictactoeModule.key,
     module: tictactoeModule as unknown as Room<unknown>["module"], gender: "boy", hostId: "host",
-    minPlayers: 2, state: initialTicTacToeState(), roster: [], players: new Map(), spectators: new Map(),
+    minPlayers: 2, state: initialTicTacToeState(), roster: [], players: new Map(), spectators: new Map(), childSpectatorIds: new Set(),
     hasBeenActive: false, paused: false, peakPlayerCount: 0
   };
 }

@@ -15,7 +15,7 @@ export interface OpenGameRow {
   invitation_code: string;
   host_grade: string | null;
   created_at: string;
-  games: { name_he: string } | null;
+  games: { name_he: string; game_url: string; max_players: number } | null;
 }
 
 const OPEN_GAMES_REFETCH_MS = 400;
@@ -47,16 +47,21 @@ export function useOpenGames(userId: string | undefined, gender: "boy" | "girl" 
       const { data } = await supabase
         .from("game_sessions")
         .select(
-          "id, game_id, host_id, host_name, player_ids, player_names, connected_player_names, status, is_open, gender, invitation_code, host_grade, created_at, games ( name_he )"
+          "id, game_id, host_id, host_name, player_ids, player_names, connected_player_names, status, is_open, gender, invitation_code, host_grade, created_at, games ( name_he, game_url, max_players )"
         )
         .eq("is_open", true)
         .in("status", ["waiting", "playing"])
         .order("created_at", { ascending: false })
         .limit(40);
       if (cancelled) return;
-      const filtered = ((data ?? []) as unknown as OpenGameRow[]).filter(
-        (r) => !r.player_ids.includes(userId)
-      );
+      const filtered = ((data ?? []) as unknown as OpenGameRow[]).filter((r) => {
+        if (r.player_ids.includes(userId)) return false;
+        const isFull =
+          (r.connected_player_names?.length ?? 0) >= (r.games?.max_players ?? Number.MAX_SAFE_INTEGER);
+        // Minecraft keeps its dedicated join behavior, so a full voxel room
+        // must not advertise the shared-game spectator route.
+        return !(r.games?.game_url === "minecraft" && isFull);
+      });
       setRows(filtered);
       setLoading(false);
     };
@@ -148,4 +153,3 @@ export function useOpenGames(userId: string | undefined, gender: "boy" | "girl" 
 
   return { rows, loading };
 }
-

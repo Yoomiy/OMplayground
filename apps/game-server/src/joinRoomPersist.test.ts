@@ -1,4 +1,4 @@
-import { persistPlayerJoin } from "./sessionPersistence";
+import { persistChildSpectatorPresence, persistPlayerJoin } from "./sessionPersistence";
 
 /**
  * Layer 2 — verifies game_sessions row persistence on JOIN_ROOM.
@@ -185,5 +185,18 @@ describe("persistPlayerJoin", () => {
       connected_player_ids: string[];
     };
     expect(payload.connected_player_ids).toEqual(["host-1", "guest-1"]);
+  });
+
+  it("persists child observers separately from game players", async () => {
+    const m = makeMockSupabase();
+    await persistChildSpectatorPresence({
+      supabase: m.supabase,
+      sessionId: "sess-observers",
+      userIds: ["viewer-1", "viewer-2"]
+    });
+    expect(m.update).toHaveBeenCalledWith({
+      connected_observer_ids: ["viewer-1", "viewer-2"]
+    });
+    expect(m.eq).toHaveBeenCalledWith("id", "sess-observers");
   });
 });

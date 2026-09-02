@@ -586,7 +586,9 @@ export function HomePage() {
                   </div>
                 ) : (
                   <ul className="space-y-3">
-                    {filteredOpenGames.map((game) => (
+                    {filteredOpenGames.map((game) => {
+                      const isFull = game.connected_player_names.length >= (game.games?.max_players ?? Number.MAX_SAFE_INTEGER);
+                      return (
                       <li key={game.id} className="rounded-2xl border border-violet-400/20 bg-violet-500/10 p-3.5 transition hover:-translate-y-0.5 hover:border-violet-400/40">
                         <div className="flex items-center justify-between gap-3">
                           <div className="min-w-0 flex-1">
@@ -615,12 +617,13 @@ export function HomePage() {
                               onClick={() => navigate(`/play/${game.id}`)}
                               className="rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 border border-violet-400/50 px-4 py-1.5 text-xs font-black text-white shadow-[0_4px_12px_rgba(139,92,246,0.4)] hover:shadow-[0_4px_16px_rgba(139,92,246,0.6)] hover:-translate-y-0.5 transition-all shrink-0"
                             >
-                              הצטרף! 🚀
+                              {isFull ? "צפה 👀" : "הצטרף! 🚀"}
                             </button>
                           </div>
                         </div>
                       </li>
-                    ))}
+                      );
+                    })}
                   </ul>
                 )}
               </div>

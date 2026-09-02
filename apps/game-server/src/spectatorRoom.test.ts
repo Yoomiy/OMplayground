@@ -64,4 +64,21 @@ describe("teacher spectators (same-gender observers, not players)", () => {
     });
     expect(r2.players.size).toBe(0);
   });
+
+  it("tracks child overflow viewers separately from teacher observers", () => {
+    const room = getOrCreateRoom("sess-child-spec", {
+      gameId: "g1",
+      gameKey: tictactoeModule.key,
+      module: tictactoeModule,
+      gender: "boy",
+      hostId: "h"
+    });
+    attachSpectator(room, "teacher-1", "Teacher");
+    attachSpectator(room, "kid-1", "Kid", { childSpectator: true });
+
+    expect(Array.from(room.childSpectatorIds)).toEqual(["kid-1"]);
+    removeSpectatorFromRoom("sess-child-spec", "kid-1");
+    expect(room.spectators.has("teacher-1")).toBe(true);
+    expect(room.childSpectatorIds.size).toBe(0);
+  });
 });
