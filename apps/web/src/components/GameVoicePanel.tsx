@@ -1,11 +1,42 @@
+import { useState } from "react";
 import { Mic, MicOff, Volume2 } from "lucide-react";
 import { desktopPanelClass } from "@/components/KidDesktopShell";
 import { useGameVoiceChat } from "@/hooks/useGameVoiceChat";
 
-export function GameVoicePanel(props: {
+interface GameVoicePanelProps {
   sessionId: string;
   requestToken: () => Promise<{ token: string; serverUrl: string }>;
-}) {
+  manualJoin?: boolean;
+}
+
+export function GameVoicePanel({ manualJoin = false, ...voiceProps }: GameVoicePanelProps) {
+  const [joined, setJoined] = useState(!manualJoin);
+
+  if (!joined) {
+    return (
+      <section className={desktopPanelClass("space-y-3 p-4 text-sm")} aria-label="צ׳אט קולי">
+        <div>
+          <h2 className="font-black text-white/95">צ׳אט קולי</h2>
+          <p className="mt-1 text-xs text-white/50">
+            ההאזנה והמיקרופון כבויים עד שתבחר להצטרף.
+          </p>
+        </div>
+        <button
+          type="button"
+          className="inline-flex w-full min-h-10 items-center justify-center gap-2 rounded-xl border border-sky-500/30 bg-sky-500/10 px-3 py-2 font-bold text-sky-300 transition hover:bg-sky-500/20"
+          onClick={() => setJoined(true)}
+        >
+          <Mic size={17} />
+          הצטרף לצ׳אט הקולי
+        </button>
+      </section>
+    );
+  }
+
+  return <ConnectedGameVoicePanel {...voiceProps} />;
+}
+
+function ConnectedGameVoicePanel(props: Omit<GameVoicePanelProps, "manualJoin">) {
   const voice = useGameVoiceChat(props);
 
   return (

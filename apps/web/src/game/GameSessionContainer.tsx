@@ -834,7 +834,11 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
       </main>
 
       <aside className="space-y-4">
-          <GameVoicePanel sessionId={sessionId} requestToken={requestVoiceToken} />
+          <GameVoicePanel
+            sessionId={sessionId}
+            requestToken={requestVoiceToken}
+            manualJoin={isTeacherObserver}
+          />
 
           <section className={desktopPanelClass("p-4 text-sm")}>
             <h2 className="font-black text-white/95">שחקנים בחדר</h2>
