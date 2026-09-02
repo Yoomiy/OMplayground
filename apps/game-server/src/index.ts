@@ -79,6 +79,7 @@ import {
 } from "./canonicalDrawingState";
 import { drawingLogContext, drawingSyncPhase } from "./drawingObservability";
 import { KeyedSingleFlight } from "./keyedSingleFlight";
+import { createGameVoiceToken, GameVoiceConfigError } from "./gameVoiceToken";
 
 import { recordLaunch, flushLaunches } from "./launchTracker";
 
@@ -817,6 +818,82 @@ io.on("connection", (socket) => {
       kind: "GAME_RESUMED"
     });
   }
+
+  socket.on(
+    "VOICE_TOKEN",
+    async (
+      payload: { sessionId?: string },
+      ack?: (result: {
+        ok: boolean;
+        token?: string;
+        serverUrl?: string;
+        error?: { code: string; message: string };
+      }) => void
+    ) => {
+      const started = Date.now();
+      const sessionId = payload?.sessionId;
+      const reply = wrapAck("VOICE_TOKEN", started, sessionId, ack);
+      const room = sessionId ? getRoom(sessionId) : undefined;
+      const joinedSessionId = socket.data.sessionId as string | undefined;
+      const isCurrentParticipant =
+        room &&
+        joinedSessionId === sessionId &&
+        (room.players.has(userId) || room.spectators.has(userId));
+      if (!sessionId || !room || !isCurrentParticipant) {
+        reply?.({
+          ok: false,
+          error: { code: "NOT_IN_ROOM", message: "Join the game before connecting voice chat." }
+        });
+        return;
+      }
+      if (room.drawingContext?.boardMode === "classroom") {
+        reply?.({
+          ok: false,
+          error: { code: "CLASSROOM_VOICE", message: "Classroom audio uses the classroom voice room." }
+        });
+        return;
+      }
+      try {
+        const voice = await createGameVoiceToken({ sessionId, userId, displayName });
+        logger.info({
+          correlationId: socket.data.correlationId,
+          userId,
+          sessionId,
+          protocol: "socket",
+          message: "Game voice token issued",
+          context: {
+            event: "GAME_VOICE_TOKEN_ISSUED",
+            livekitRoom: voice.livekitRoom,
+            status: "success"
+          }
+        });
+        reply?.({ ok: true, token: voice.token, serverUrl: voice.serverUrl });
+      } catch (err) {
+        const configError = err instanceof GameVoiceConfigError;
+        logger.warn({
+          correlationId: socket.data.correlationId,
+          userId,
+          sessionId,
+          protocol: "socket",
+          message: "Game voice token denied",
+          context: {
+            event: "GAME_VOICE_TOKEN_DENIED",
+            reason: configError ? "server_config" : "token_generation_failed",
+            status: "failed"
+          }
+        });
+        reply?.({
+          ok: false,
+          error: {
+            code: configError ? "SERVER_CONFIG" : "VOICE_TOKEN_FAILED",
+            message: configError
+              ? "Voice chat is not configured."
+              : "Could not connect voice chat."
+          }
+        });
+      }
+    }
+  );
 
   socket.on(
     "JOIN_ROOM",

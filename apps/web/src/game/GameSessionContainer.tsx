@@ -8,6 +8,7 @@ import { useTeacherSessionChat } from "@/hooks/useTeacherSessionChat";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { LazyGameBoard } from "@/game/lazyBoards";
 import { desktopPanelClass } from "@/components/KidDesktopShell";
+import { GameVoicePanel } from "@/components/GameVoicePanel";
 import { reportTelemetry } from "@/utils/telemetry";
 
 type RoomEvent =
@@ -478,6 +479,36 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
     }
   }, [invitationCode]);
 
+  const requestVoiceToken = useCallback(() => {
+    return new Promise<{ token: string; serverUrl: string }>((resolve, reject) => {
+      const socket = socketRef.current;
+      if (!socket?.connected) {
+        reject(new Error("אין חיבור פעיל לשרת המשחק."));
+        return;
+      }
+      const timer = window.setTimeout(() => {
+        reject(new Error("החיבור לצ׳אט הקולי ארך זמן רב מדי."));
+      }, 10_000);
+      socket.emit(
+        "VOICE_TOKEN",
+        { sessionId },
+        (response: {
+          ok?: boolean;
+          token?: string;
+          serverUrl?: string;
+          error?: { message?: string };
+        }) => {
+          window.clearTimeout(timer);
+          if (response?.ok && response.token && response.serverUrl) {
+            resolve({ token: response.token, serverUrl: response.serverUrl });
+            return;
+          }
+          reject(new Error(response?.error?.message ?? "לא ניתן להתחבר לצ׳אט הקולי."));
+        }
+      );
+    });
+  }, [sessionId]);
+
   const onIntent = useCallback(
     (intent: unknown) => {
       if (isTeacherObserver) return;
@@ -803,6 +834,8 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
       </main>
 
       <aside className="space-y-4">
+          <GameVoicePanel sessionId={sessionId} requestToken={requestVoiceToken} />
+
           <section className={desktopPanelClass("p-4 text-sm")}>
             <h2 className="font-black text-white/95">שחקנים בחדר</h2>
             <div className="mt-3 space-y-2">

@@ -70,7 +70,7 @@ Key frontend entry points: `GameSessionContainer` + `BOARD_REGISTRY`, `Minecraft
 |---------|--------|
 | `VITE_GAME_SERVER_URL` | `apps/game-server` |
 | `VITE_VOXEL_SERVER_URL` | `apps/minecraft-server` |
-| `LIVEKIT_URL` / `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` | minecraft-server |
+| `LIVEKIT_URL` / `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` | `apps/game-server` and `apps/minecraft-server` |
 
 ---
 
