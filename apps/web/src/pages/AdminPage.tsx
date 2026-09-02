@@ -17,6 +17,7 @@ import { kidFieldInputClass, kidFieldLabelClass } from "@/lib/fieldStyles";
 import { AdminStatsSection } from "@/components/AdminStatsSection";
 import { AdminFeedbackSection } from "@/components/AdminFeedbackSection";
 import { ClassroomAdminExplorer } from "@/components/ClassroomAdminExplorer";
+import { GameSessionInspector } from "@/components/GameSessionInspector";
 import { buildEffectiveDaySchedule } from "@playground/game-logic";
 
 function parseGradeInput(raw: string): string {
@@ -119,6 +120,7 @@ function recessDurationMinutes(start: string, end: string): number | null {
 
 type AdminSection =
   | "classrooms"
+  | "sessions"
   | "moderation"
   | "users"
   | "import"
@@ -131,10 +133,11 @@ type AdminSection =
 
 const adminSections: { id: AdminSection; label: string }[] = [
   { id: "classrooms", label: "כיתות וירטואליות 🪐" },
+  { id: "sessions", label: "מפגשי משחק 🎮" },
   { id: "moderation", label: "מודרציה" },
   { id: "users", label: "משתמשים" },
   { id: "import", label: "ייבוא" },
-  { id: "games", label: "משחקים" },
+  { id: "games", label: "קטלוג משחקים" },
   { id: "schedule", label: "לוח הפסקות" },
   { id: "stats", label: "סטטיסטיקות" },
   { id: "feedback", label: "משובי בטא 🐛" },
@@ -828,6 +831,8 @@ export function AdminPage() {
       {activeSection === "classrooms" ? (
         <ClassroomAdminExplorer />
       ) : null}
+
+      {activeSection === "sessions" ? <GameSessionInspector scope="admin" /> : null}
 
       {activeSection === "moderation" ? (
         <section className="space-y-3">

@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useVoxelSocket } from "@/hooks/useVoxelSocket";
 import { useTeacherSessionChat } from "@/hooks/useTeacherSessionChat";
 import { MinecraftClient } from "@/games/MinecraftClient";
@@ -71,7 +72,8 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
   const inviteCode = searchParams.get("invite") ?? undefined;
   const { user } = useAuth();
   const { profile } = useProfile();
-  const isTeacherObserver = profile?.role === "teacher";
+  const { isAdmin } = useIsAdmin();
+  const isStaffObserver = isAdmin || profile?.role === "teacher";
   const myUserId = user?.id ?? null;
 
   const [paused, setPaused] = useState(false);
@@ -88,7 +90,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
 
   const [chatExpanded, setChatExpanded] = useState(false);
   const teacherChat = useTeacherSessionChat(sessionId);
-  const canSendChat = !isTeacherObserver;
+  const canSendChat = !isStaffObserver;
 
   const {
     connected,
@@ -267,7 +269,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     };
   }, [sessionId]);
 
-  const iAmHost = !isTeacherObserver && myUserId !== null && myUserId === hostId;
+  const iAmHost = !isStaffObserver && myUserId !== null && myUserId === hostId;
 
   const handlePlaceBlock = useCallback(
     (pos: Vec3, blockId: number) => {
@@ -397,8 +399,8 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
 
   const handleExit = useCallback(async () => {
     await leave();
-    navigate(isTeacherObserver ? "/teacher" : "/home");
-  }, [leave, navigate, isTeacherObserver]);
+    navigate(isAdmin ? "/admin" : isStaffObserver ? "/teacher" : "/home");
+  }, [leave, navigate, isAdmin, isStaffObserver]);
 
   const toggleRoomVisibility = useCallback(async () => {
     if (!myUserId || !hostId || myUserId !== hostId || roomIsOpen === null) return;
@@ -479,10 +481,10 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         initialDeltas={joinAck.deltas}
         mySpawn={joinAck.spawn}
         paused={paused || endOverlay !== null}
-        isTeacher={isTeacherObserver}
+        inspectorKind={isAdmin ? "admin" : isStaffObserver ? "teacher" : null}
         onSwitchTeacherMode={switchTeacherMode}
-        onSoftDeleteChatMessage={isTeacherObserver ? teacherChat.softDelete : undefined}
-        onClearSessionChat={isTeacherObserver ? teacherChat.clearSession : undefined}
+        onSoftDeleteChatMessage={isStaffObserver ? teacherChat.softDelete : undefined}
+        onClearSessionChat={isStaffObserver ? teacherChat.clearSession : undefined}
         roster={joinAck.roster}
         myUserId={myUserId}
         sessionId={sessionId}
@@ -662,7 +664,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
               onClick={() => void handleExit()}
               className="mt-4 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-500 border border-violet-400/50 px-4 py-2 text-sm font-bold text-white hover:shadow-[0_0_12px_rgba(139,92,246,0.3)] transition duration-200"
             >
-              {isTeacherObserver ? "חזרה ללוח המורה" : "חזרה הביתה"}
+              {isAdmin ? "חזרה לניהול" : isStaffObserver ? "חזרה ללוח המורה" : "חזרה הביתה"}
             </button>
           </div>
         </div>

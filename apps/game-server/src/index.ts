@@ -113,6 +113,10 @@ const SUPABASE_URL = process.env.SUPABASE_URL ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 const MAX_LIVE_DELTA_BYTES = 8 * 1024 * 1024;
 
+function isGameInspectorRole(role: unknown): role is "teacher" | "admin" {
+  return role === "teacher" || role === "admin";
+}
+
 interface ClassroomDrawingPolicy {
   classroomId: string;
   allowWhiteboardDraw: boolean;
@@ -692,7 +696,7 @@ io.on("connection", (socket) => {
       | undefined;
     if (room.gameKey !== "drawing") return true;
     if (room.drawingContext?.boardMode !== "classroom") {
-      return socket.data.role !== "teacher" && room.players.has(userId);
+      return !isGameInspectorRole(socket.data.role) && room.players.has(userId);
     }
     if (!classroom || classroom.sessionId !== room.sessionId) return false;
     if (classroom.isHost) return true;
@@ -954,7 +958,7 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      if (session.gender && session.gender !== "all" && (session.gender as string) !== gender) {
+      if (!isGameInspectorRole(socket.data.role) && session.gender && session.gender !== "all" && (session.gender as string) !== gender) {
         reply?.({
           ok: false,
           error: { code: "GENDER_MISMATCH", message: "Wrong gender partition" }
@@ -1066,7 +1070,7 @@ io.on("connection", (socket) => {
       }
       if (
         !isOpen &&
-        role !== "teacher" &&
+        !isGameInspectorRole(role) &&
         !playerIds.includes(userId) &&
         hostId !== userId
       ) {
@@ -1138,7 +1142,7 @@ io.on("connection", (socket) => {
       // initialize as an editor (and could consume the last available seat).
       // Keep the host exception so a teacher who owns the session can still
       // operate their own board.
-      if (role === "teacher") {
+      if (isGameInspectorRole(role)) {
         attachSpectator(room, userId, displayName);
         await socket.join(`session:${sessionId}`);
         socket.data.sessionId = sessionId;
@@ -1302,7 +1306,7 @@ io.on("connection", (socket) => {
       if (!boundSessionId || boundSessionId !== sessionId) return;
       const room = getRoom(sessionId);
       if (!room) return;
-      if (socket.data.isSpectator === true && socket.data.role !== "teacher") return;
+      if (socket.data.isSpectator === true && !isGameInspectorRole(socket.data.role)) return;
       // Authorized classroom teachers and delegates may intentionally be
       // attached as spectators so they do not consume a drawing-game seat.
       // The classroom policy below remains the authority for their edits.
@@ -1627,7 +1631,7 @@ io.on("connection", (socket) => {
       // Child overflow viewers never get a gameplay path. Keep teacher
       // observers out of this guard: classroom drawing has its own existing
       // teacher/delegate authorization in canEditDrawing().
-      if (socket.data.isSpectator === true && socket.data.role !== "teacher") {
+      if (socket.data.isSpectator === true && !isGameInspectorRole(socket.data.role)) {
         reply?.({
           ok: false,
           error: { code: "READ_ONLY", message: "צופים לא יכולים לבצע מהלכים" }
@@ -1641,7 +1645,7 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      if (socket.data.role === "teacher" && room.gameKey !== "drawing") {
+      if (isGameInspectorRole(socket.data.role) && room.gameKey !== "drawing") {
         reply?.({
           ok: false,
           error: { code: "READ_ONLY", message: "Observers cannot send moves" }
@@ -1925,7 +1929,7 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      if (socket.data.role === "teacher") {
+      if (isGameInspectorRole(socket.data.role)) {
         reply?.({
           ok: false,
           error: { code: "READ_ONLY", message: "צופים לא יכולים לבקש משחק חוזר" }
@@ -1992,7 +1996,7 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      if (socket.data.role === "teacher") {
+      if (isGameInspectorRole(socket.data.role)) {
         ack?.({
           ok: false,
           error: { code: "READ_ONLY", message: "צופים לא יכולים להשתתף במשחק חוזר" }
@@ -2097,7 +2101,7 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      if (socket.data.role === "teacher") {
+      if (isGameInspectorRole(socket.data.role)) {
         ack?.({
           ok: false,
           error: { code: "READ_ONLY", message: "Observers cannot chat here" }
@@ -2113,7 +2117,7 @@ io.on("connection", (socket) => {
       }
       const room = getRoom(sessionId);
       const canChildSpectatorChat =
-        socket.data.role !== "teacher" && room?.childSpectatorIds.has(userId) === true;
+        !isGameInspectorRole(socket.data.role) && room?.childSpectatorIds.has(userId) === true;
       if (!room || (!room.players.has(userId) && !canChildSpectatorChat)) {
         ack?.({
           ok: false,

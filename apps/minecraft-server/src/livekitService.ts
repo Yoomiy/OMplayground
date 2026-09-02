@@ -477,15 +477,15 @@ export async function generateLiveKitToken(
   if (!session) {
     throw new LiveKitTokenError("session_not_found", "Session not found.");
   }
-  if ((session.gender as string) !== (profile.gender as string)) {
+  const isGameInspector = profile.role === "teacher" || profile.role === "admin";
+  if (!isGameInspector && (session.gender as string) !== (profile.gender as string)) {
     throw new LiveKitTokenError(
       "gender_mismatch",
       "Gender partition mismatch."
     );
   }
   const playerIds = ((session.player_ids as string[]) ?? []).map(String);
-  const isTeacher = profile.role === "teacher";
-  if (!isTeacher && !playerIds.includes(profile.userId)) {
+  if (!isGameInspector && !playerIds.includes(profile.userId)) {
     throw new LiveKitTokenError(
       "roster_block",
       "Not in session roster."

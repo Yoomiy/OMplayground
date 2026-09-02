@@ -968,7 +968,7 @@ export interface MinecraftClientProps {
   ) => () => void;
   onSendChatMessage: (message: string) => Promise<SimpleAck>;
   onChatExpandedChange?: (expanded: boolean) => void;
-  isTeacher?: boolean;
+  inspectorKind?: "teacher" | "admin" | null;
   onSwitchTeacherMode?: (observer: boolean) => Promise<SimpleAck>;
   onSoftDeleteChatMessage?: (messageId: string) => Promise<void>;
   onClearSessionChat?: () => Promise<void>;
@@ -1032,7 +1032,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     canSendChat,
     onSendChatMessage,
     onChatExpandedChange,
-    isTeacher = false,
+    inspectorKind = null,
     onSwitchTeacherMode,
     onSoftDeleteChatMessage,
     onClearSessionChat,
@@ -1044,12 +1044,13 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
   } = props;
 
   const [survivalSlot, setSurvivalSlot] = useState(0);
-  const [isTeacherSpectator, setIsTeacherSpectator] = useState(isTeacher);
-  const isTeacherSpectatorRef = useRef(isTeacher);
+  const isInspector = inspectorKind !== null;
+  const [isTeacherSpectator, setIsTeacherSpectator] = useState(isInspector);
+  const isTeacherSpectatorRef = useRef(isInspector);
   useEffect(() => {
-    setIsTeacherSpectator(isTeacher);
-    isTeacherSpectatorRef.current = isTeacher;
-  }, [isTeacher]);
+    setIsTeacherSpectator(isInspector);
+    isTeacherSpectatorRef.current = isInspector;
+  }, [isInspector]);
   useEffect(() => {
     isTeacherSpectatorRef.current = isTeacherSpectator;
   }, [isTeacherSpectator]);
@@ -1900,7 +1901,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         for (const [userId, p] of Object.entries(snap.players)) {
           if (userId === selfId) {
             if (p.vitals) setLocalVitals(p.vitals);
-            if (isTeacher && p.isTeacherObserver !== undefined && p.isTeacherObserver !== isTeacherSpectatorRef.current) {
+            if (isInspector && p.isTeacherObserver !== undefined && p.isTeacherObserver !== isTeacherSpectatorRef.current) {
               setIsTeacherSpectator(p.isTeacherObserver);
             }
             continue;
@@ -4392,7 +4393,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
   const teacherDashboard = (
     <TeacherDashboard
-      isTeacher={isTeacher}
+      inspectorKind={inspectorKind}
       isTeacherSpectator={isTeacherSpectator}
       setIsTeacherSpectator={setIsTeacherSpectator}
       playersList={playersList}

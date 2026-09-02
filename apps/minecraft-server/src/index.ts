@@ -93,6 +93,7 @@ import {
   persistPlayerJoin,
   persistPlayerLeave
 } from "./sessionPersistence";
+
 import {
   createRecessSweepState,
   recessEndSweep
@@ -235,6 +236,10 @@ const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY ?? "";
 const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET ?? "";
 const DOCUMENT_CONVERTER_URL = (process.env.DOCUMENT_CONVERTER_URL ?? "http://localhost:8082").replace(/\/$/, "");
 const DOCUMENT_CONVERTER_SHARED_SECRET = process.env.DOCUMENT_CONVERTER_SHARED_SECRET ?? "";
+
+function isGameInspectorRole(role: unknown): role is "teacher" | "admin" {
+  return role === "teacher" || role === "admin";
+}
 
 const tokenDenialLog = new Map<string, number[]>();
 const TOKEN_DENIAL_WINDOW_MS = 5 * 60_000;
@@ -2561,7 +2566,7 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      if ((session.gender as string) !== gender) {
+      if (!isGameInspectorRole(socket.data.role) && (session.gender as string) !== gender) {
         reply?.({
           ok: false,
           error: { code: "GENDER_MISMATCH", message: "Wrong gender partition" }
@@ -2595,7 +2600,7 @@ io.on("connection", (socket) => {
       const isOpen = (session as { is_open?: boolean }).is_open !== false;
       if (
         !isOpen &&
-        joinRole !== "teacher" &&
+        !isGameInspectorRole(joinRole) &&
         !playerIds.includes(userId) &&
         hostId !== userId
       ) {
@@ -2659,17 +2664,17 @@ io.on("connection", (socket) => {
         stats.onRoomCreated(sessionId, "voxel");
       }
       const wasAlreadyInRoom = room.players.has(userId);
-      const assigned = assignPlayer(room, userId, displayName, socket.data.role === "teacher");
+      const assigned = assignPlayer(room, userId, displayName, isGameInspectorRole(socket.data.role));
       if ("error" in assigned) {
         reply?.({ ok: false, error: assigned.error });
         return;
       }
-      if (socket.data.role !== "teacher" && !wasAlreadyInRoom) {
+      if (!isGameInspectorRole(socket.data.role) && !wasAlreadyInRoom) {
         recordLaunch(sessionId, userId, "minecraft");
       }
       await socket.join(`voxel:${sessionId}`);
       await socket.join(`voxel-user:${userId}:${sessionId}`);
-      if (socket.data.role === "teacher") {
+      if (isGameInspectorRole(socket.data.role)) {
         await socket.join(`voxel-snapshot-teacher:${sessionId}`);
       } else {
         await socket.join(`voxel-snapshot:${sessionId}`);
@@ -3893,10 +3898,10 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      if (socket.data.role !== "teacher") {
+      if (!isGameInspectorRole(socket.data.role)) {
         ack?.({
           ok: false,
-          error: { code: "FORBIDDEN", message: "רק מורה יכול לשנות מצב צפייה" }
+          error: { code: "FORBIDDEN", message: "רק מורה או מנהל יכולים לשנות מצב צפייה" }
         });
         return;
       }
@@ -4190,7 +4195,7 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      if (socket.data.role === "teacher") {
+      if (isGameInspectorRole(socket.data.role)) {
         ack?.({
           ok: false,
           error: { code: "READ_ONLY", message: "Observers cannot chat here" }

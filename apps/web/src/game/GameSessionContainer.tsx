@@ -108,16 +108,16 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
   const inviteCode = searchParams.get("invite") ?? undefined;
   const { profile } = useProfile();
   const { isAdmin } = useIsAdmin();
-  const isTeacherObserver = profile?.role === "teacher";
+  const isStaffObserver = isAdmin || profile?.role === "teacher";
   const [participationMode, setParticipationMode] = useState<ParticipationMode>(
-    isTeacherObserver ? "spectator" : "joining"
+    isStaffObserver ? "spectator" : "joining"
   );
-  const isChildSpectator = !isTeacherObserver && participationMode === "spectator";
+  const isChildSpectator = !isStaffObserver && participationMode === "spectator";
   const teacherChat = useTeacherSessionChat(
-    isTeacherObserver ? sessionId : undefined
+    isStaffObserver ? sessionId : undefined
   );
   const kidChat = usePersistedSessionChat(
-    !isTeacherObserver && participationMode !== "joining" ? sessionId : undefined
+    !isStaffObserver && participationMode !== "joining" ? sessionId : undefined
   );
   const socketRef = useRef<Socket | null>(null);
   const recessEndedRef = useRef(false);
@@ -534,7 +534,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
 
   const onIntent = useCallback(
     (intent: unknown) => {
-      if (isTeacherObserver || isChildSpectator || participationMode !== "player") return;
+      if (isStaffObserver || isChildSpectator || participationMode !== "player") return;
       if (paused) {
         setStatus("המשחק מושהה");
         return;
@@ -554,17 +554,17 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         }
       );
     },
-    [sessionId, isTeacherObserver, isChildSpectator, participationMode, paused]
+    [sessionId, isStaffObserver, isChildSpectator, participationMode, paused]
   );
   const onLiveDelta = useCallback(
     (delta: unknown) => {
-      if (isTeacherObserver || isChildSpectator || participationMode !== "player") return;
+      if (isStaffObserver || isChildSpectator || participationMode !== "player") return;
       const s = socketRef.current;
       if (!s?.connected) return;
       if (paused) return;
       s.emit("LIVE_DELTA", { sessionId, delta });
     },
-    [sessionId, isTeacherObserver, isChildSpectator, participationMode, paused]
+    [sessionId, isStaffObserver, isChildSpectator, participationMode, paused]
   );
 
   const subscribeLiveDeltas = useCallback(
@@ -589,7 +589,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
   }, [sessionId]);
 
   const clearDrawing = useCallback(() => new Promise<boolean>((resolve) => {
-    if (isTeacherObserver || isChildSpectator || participationMode !== "player" || paused) {
+    if (isStaffObserver || isChildSpectator || participationMode !== "player" || paused) {
       resolve(false);
       return;
     }
@@ -607,13 +607,13 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         resolve(ack?.ok === true);
       }
     );
-  }), [isTeacherObserver, isChildSpectator, participationMode, paused, sessionId]);
+  }), [isStaffObserver, isChildSpectator, participationMode, paused, sessionId]);
 
   const drawingMode = useMemo(() => ({
     kind: "canonical" as const,
     initialSync: drawingSync,
     viewportRole: "independent" as const,
-    canClear: !isTeacherObserver && !isChildSpectator && participationMode === "player" && !paused,
+    canClear: !isStaffObserver && !isChildSpectator && participationMode === "player" && !paused,
     sendDelta: onLiveDelta,
     acknowledgeSync: acknowledgeDrawingSync,
     subscribe: subscribeLiveDeltas,
@@ -622,7 +622,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
     acknowledgeDrawingSync,
     clearDrawing,
     drawingSync,
-    isTeacherObserver,
+    isStaffObserver,
     isChildSpectator,
     participationMode,
     onLiveDelta,
@@ -657,7 +657,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
   }
 
   const iAmHost =
-    !isTeacherObserver &&
+    !isStaffObserver &&
     participationMode === "player" &&
     myUserId != null &&
     hostId != null &&
@@ -666,7 +666,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
   const acceptedRematch = myUserId ? rematch?.accepted.includes(myUserId) : false;
   const refusedRematch = myUserId ? rematch?.refused.includes(myUserId) : false;
   const canVoteRematch =
-    !isTeacherObserver &&
+    !isStaffObserver &&
     participationMode === "player" &&
     !!endOverlay &&
     endOverlay.kind !== "stopped" &&
@@ -674,10 +674,10 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
     !!myUserId &&
     roster.some((p) => p.userId === myUserId);
 
-  const chatPanel = isTeacherObserver ? (
+  const chatPanel = isStaffObserver ? (
     <section className={desktopPanelClass("space-y-2 p-3")}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-black text-white">צ׳אט (ניהול מורה)</h2>
+        <h2 className="text-sm font-black text-white">צ׳אט (ניהול)</h2>
         <button
           type="button"
           className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-xs font-semibold text-amber-300 hover:bg-amber-500/20 transition duration-200"
@@ -761,7 +761,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         <div className={desktopPanelClass("flex flex-wrap items-center justify-between gap-3 px-4 py-3")}>
           <div className="flex items-center gap-3">
             <p className="text-sm font-bold text-white/80">
-              {isTeacherObserver ? "צפייה בלבד (מורה) · " : isChildSpectator ? "צפייה בלבד · " : ""}
+              {isStaffObserver ? `צפייה בלבד (${isAdmin ? "מנהל" : "מורה"}) · ` : isChildSpectator ? "צפייה בלבד · " : ""}
               {status}
             </p>
             {toast ? (
@@ -775,10 +775,10 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
               type="button"
               className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
               onClick={() =>
-                navigate(isAdmin ? "/admin" : isTeacherObserver ? "/teacher" : "/home")
+                navigate(isAdmin ? "/admin" : isStaffObserver ? "/teacher" : "/home")
               }
             >
-              {isAdmin ? "חזרה לניהול" : isTeacherObserver ? "חזרה ללוח המורה" : "יציאה"}
+              {isAdmin ? "חזרה לניהול" : isStaffObserver ? "חזרה ללוח המורה" : "יציאה"}
             </button>
           </div>
         </div>
@@ -800,7 +800,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
 
           <div
             className={
-              paused || ((isTeacherObserver || isChildSpectator) && gameKey !== "drawing")
+              paused || ((isStaffObserver || isChildSpectator) && gameKey !== "drawing")
                 ? "pointer-events-none mx-auto max-w-5xl opacity-60"
                 : "mx-auto max-w-5xl"
             }
@@ -824,7 +824,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
                 subscribeLiveDeltas,
                 paused,
                 onGoHome: () =>
-                  navigate(isAdmin ? "/admin" : isTeacherObserver ? "/teacher" : "/home"),
+                  navigate(isAdmin ? "/admin" : isStaffObserver ? "/teacher" : "/home"),
                 players: roster.length > 0 ? roster : players,
                 connectedPlayers: players,
                 drawingMode: gameKey === "drawing" ? drawingMode : undefined
@@ -839,7 +839,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
               {endOverlayHeadline(
                 endOverlay,
                 mySymbol,
-                isTeacherObserver || isChildSpectator,
+                isStaffObserver || isChildSpectator,
                 winnerName
               )}
             </p>
@@ -869,10 +869,10 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
                 type="button"
                 className="rounded-lg bg-gradient-to-r from-violet-500 to-indigo-500 border border-violet-400/50 px-3.5 py-2 text-sm font-bold text-white hover:shadow-[0_0_12px_rgba(139,92,246,0.3)] transition duration-200"
                 onClick={() =>
-                  navigate(isAdmin ? "/admin" : isTeacherObserver ? "/teacher" : "/home")
+                  navigate(isAdmin ? "/admin" : isStaffObserver ? "/teacher" : "/home")
                 }
               >
-                {isAdmin ? "חזרה לניהול" : isTeacherObserver ? "חזרה ללוח המורה" : "חזרה הביתה"}
+                {isAdmin ? "חזרה לניהול" : isStaffObserver ? "חזרה ללוח המורה" : "חזרה הביתה"}
               </button>
             </div>
           </div>
@@ -883,7 +883,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
           <GameVoicePanel
             sessionId={sessionId}
             requestToken={requestVoiceToken}
-            manualJoin={isTeacherObserver}
+            manualJoin={isStaffObserver}
           />
 
           <section className={desktopPanelClass("p-4 text-sm")}>

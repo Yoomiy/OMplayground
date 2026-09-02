@@ -2,7 +2,7 @@ import React from "react";
 import type { SimpleAck } from "@/lib/voxelProtocol";
 
 export interface TeacherDashboardProps {
-  isTeacher: boolean;
+  inspectorKind: "teacher" | "admin" | null;
   isTeacherSpectator: boolean;
   setIsTeacherSpectator: (val: boolean) => void;
   playersList: Array<{ userId: string; displayName: string; pos: [number, number, number] }>;
@@ -11,19 +11,19 @@ export interface TeacherDashboardProps {
 }
 
 export const TeacherDashboard = React.memo(function TeacherDashboard({
-  isTeacher,
+  inspectorKind,
   isTeacherSpectator,
   setIsTeacherSpectator,
   playersList,
   onTeleport,
   onSwitchTeacherMode,
 }: TeacherDashboardProps): JSX.Element | null {
-  if (!isTeacher) return null;
+  if (!inspectorKind) return null;
 
   return (
     <div className="absolute right-4 top-16 z-30 flex flex-col gap-3 rounded-lg border border-indigo-500/20 bg-slate-900/90 p-4 text-white font-sans shadow-lg max-w-sm" dir="rtl">
       <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-2">
-        <h3 className="font-bold text-sm text-indigo-400">📋 לוח בקרת מורה</h3>
+        <h3 className="font-bold text-sm text-indigo-400">📋 לוח בקרת {inspectorKind === "admin" ? "מנהל" : "מורה"}</h3>
         <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${isTeacherSpectator ? "bg-amber-600/80 text-amber-100" : "bg-emerald-600/80 text-emerald-100"}`}>
           {isTeacherSpectator ? "מצב תצפית" : "מצב שחקן"}
         </span>
@@ -84,7 +84,7 @@ export const TeacherDashboard = React.memo(function TeacherDashboard({
             : "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500"
         }`}
       >
-        {isTeacherSpectator ? "🎮 היכנס למשחק כשחקן" : "📋 חזור למצב תצפית מורה"}
+        {isTeacherSpectator ? "🎮 היכנס למשחק כשחקן" : `📋 חזור למצב תצפית ${inspectorKind === "admin" ? "מנהל" : "מורה"}`}
       </button>
     </div>
   );

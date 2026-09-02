@@ -16,7 +16,7 @@ export function useTeacherSessionChat(sessionId: string | undefined) {
   const softDelete = useCallback(
     async (messageId: string) => {
       const { error: rpcErr } = await supabase.rpc(
-        "teacher_soft_delete_chat_message",
+        "moderator_soft_delete_chat_message",
         { p_message_id: messageId }
       );
       if (rpcErr) throw rpcErr;
@@ -27,7 +27,7 @@ export function useTeacherSessionChat(sessionId: string | undefined) {
 
   const clearSession = useCallback(async () => {
     if (!sessionId) return;
-    const { error: rpcErr } = await supabase.rpc("teacher_clear_session_chat", {
+    const { error: rpcErr } = await supabase.rpc("moderator_clear_session_chat", {
       p_session_id: sessionId
     });
     if (rpcErr) throw rpcErr;
