@@ -11,6 +11,7 @@ describe("classroom board capability verification", () => {
     classroomId: "0d6f48a0-3af0-4145-8462-21a8c97f4ef5",
     roomCode: "weekly-teacher",
     identity: "kid-1",
+    participantKey: "user:kid-1",
     displayName: "Student",
     role: "kid",
     isHost: false,

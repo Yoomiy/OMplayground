@@ -31,19 +31,47 @@ function classroomLiveKitRoom(roomCode: string): string {
 
 const HOST_PUBLISH_SOURCES = [
   TrackSource.MICROPHONE,
-  TrackSource.CAMERA,
-  TrackSource.SCREEN_SHARE,
-  TrackSource.SCREEN_SHARE_AUDIO
+  TrackSource.CAMERA
 ];
 
 export function classroomParticipantPublishSources(settings: Record<string, unknown>): TrackSource[] {
   const sources: TrackSource[] = [];
   if (settings.allowStudentMic !== false) sources.push(TrackSource.MICROPHONE);
   if (settings.allowStudentCam !== false) sources.push(TrackSource.CAMERA);
-  if (settings.allowStudentScreenShare === true) {
-    sources.push(TrackSource.SCREEN_SHARE, TrackSource.SCREEN_SHARE_AUDIO);
-  }
   return sources;
+}
+
+function addPresenterPublishSources(sources: TrackSource[], isPresenter: boolean): TrackSource[] {
+  const next = [...sources];
+  if (isPresenter) next.push(TrackSource.SCREEN_SHARE, TrackSource.SCREEN_SHARE_AUDIO);
+  return next;
+}
+
+export function classroomPublishSourcesForRole(
+  settings: Record<string, unknown>,
+  isHost: boolean,
+  isPresenter: boolean
+): TrackSource[] {
+  return addPresenterPublishSources(
+    isHost ? HOST_PUBLISH_SOURCES : classroomParticipantPublishSources(settings),
+    isPresenter
+  );
+}
+
+async function classroomWhiteboardAllowed(
+  supabaseAdmin: SupabaseClient,
+  classroomId: string,
+  participantKey: string,
+  baseline: boolean
+): Promise<boolean> {
+  const { data, error } = await supabaseAdmin
+    .from("classroom_whiteboard_permissions")
+    .select("allowed")
+    .eq("classroom_id", classroomId)
+    .eq("participant_key", participantKey)
+    .maybeSingle();
+  if (error) throw error;
+  return typeof data?.allowed === "boolean" ? data.allowed : baseline;
 }
 
 export async function deleteLiveKitRoom(roomCode: string): Promise<boolean> {
@@ -128,13 +156,14 @@ export async function promoteClassroomParticipant(
     metadata = {};
   }
 
+  const isPresenter = metadata.isPresenter === true;
   await roomService.updateParticipant(roomName, participantIdentity, {
     metadata: JSON.stringify({ ...metadata, isHost: true }),
     permission: {
       canSubscribe: true,
       canPublish: true,
       canPublishData: true,
-      canPublishSources: HOST_PUBLISH_SOURCES,
+      canPublishSources: addPresenterPublishSources(HOST_PUBLISH_SOURCES, isPresenter),
       canUpdateMetadata: false
     }
   });
@@ -329,9 +358,52 @@ export async function getClassroomParticipantBlockTarget(
   };
 }
 
+export async function setClassroomWhiteboardPermission(
+  supabaseAdmin: SupabaseClient,
+  classroom: { id: string; room_code: string },
+  participantIdentity: string,
+  allowed: boolean
+): Promise<{ participantKey: string; identity: string; allowed: boolean }> {
+  const roomService = getRoomServiceClient();
+  if (!roomService) {
+    throw new LiveKitTokenError("server_config", "LiveKit is not configured on the server.");
+  }
+  const roomName = classroomLiveKitRoom(classroom.room_code);
+  const participant = await roomService.getParticipant(roomName, participantIdentity);
+  let metadata: Record<string, unknown> = {};
+  try { metadata = participant.metadata ? JSON.parse(participant.metadata) : {}; } catch {}
+  if (metadata.isHost === true) throw new Error("cannot_restrict_classroom_host");
+  const participantKey = classroomParticipantKeyFromMetadata(metadata, participant.identity);
+  if (!participantKey) throw new Error("participant_permission_key_missing");
+
+  const { error } = await supabaseAdmin
+    .from("classroom_whiteboard_permissions")
+    .upsert({
+      classroom_id: classroom.id,
+      participant_key: participantKey,
+      participant_identity: participant.identity,
+      display_name: participant.name || participant.identity,
+      allowed,
+      updated_at: new Date().toISOString()
+    }, { onConflict: "classroom_id,participant_key" });
+  if (error) throw error;
+
+  await roomService.updateParticipant(roomName, participant.identity, {
+    metadata: JSON.stringify({ ...metadata, canDrawWhiteboard: allowed })
+  });
+  await broadcastClassroomData(classroom.room_code, {
+    type: "WHITEBOARD_PERMISSION_CHANGED",
+    targetIdentity: participant.identity,
+    allowed
+  });
+  return { participantKey, identity: participant.identity, allowed };
+}
+
 export async function syncClassroomParticipantPermissions(
   roomCode: string,
-  settings: Record<string, unknown>
+  settings: Record<string, unknown>,
+  supabaseAdmin?: SupabaseClient,
+  classroomId?: string
 ): Promise<void> {
   const roomService = getRoomServiceClient();
   if (!roomService) {
@@ -339,17 +411,33 @@ export async function syncClassroomParticipantPermissions(
   }
   const roomName = classroomLiveKitRoom(roomCode);
   const participants = await roomService.listParticipants(roomName);
-  const sources = classroomParticipantPublishSources(settings);
+  const participantRows = participants.map((participant) => {
+    let metadata: Record<string, unknown> = {};
+    try { metadata = participant.metadata ? JSON.parse(participant.metadata) : {}; } catch {}
+    return { participant, metadata, participantKey: classroomParticipantKeyFromMetadata(metadata, participant.identity) };
+  });
+  const overrideByKey = new Map<string, boolean>();
+  const participantKeys = participantRows.flatMap(({ participantKey }) => participantKey ? [participantKey] : []);
+  if (supabaseAdmin && classroomId && participantKeys.length > 0) {
+    const { data, error } = await supabaseAdmin
+      .from("classroom_whiteboard_permissions")
+      .select("participant_key, allowed")
+      .eq("classroom_id", classroomId)
+      .in("participant_key", participantKeys);
+    if (error) throw error;
+    for (const row of data ?? []) overrideByKey.set(String(row.participant_key), row.allowed === true);
+  }
+  const baseline = settings.allowWhiteboardDraw === true;
   await Promise.all(
-    participants.map(async (participant) => {
-      let metadata: Record<string, unknown> = {};
-      try {
-        metadata = participant.metadata ? JSON.parse(participant.metadata) : {};
-      } catch {
-        metadata = {};
-      }
+    participantRows.map(async ({ participant, metadata, participantKey }) => {
       if (metadata.isHost === true) return;
+      const isPresenter = metadata.isPresenter === true;
+      const sources = classroomPublishSourcesForRole(settings, false, isPresenter);
+      const canDrawWhiteboard = participantKey && overrideByKey.has(participantKey)
+        ? overrideByKey.get(participantKey) === true
+        : baseline;
       await roomService.updateParticipant(roomName, participant.identity, {
+        metadata: JSON.stringify({ ...metadata, canDrawWhiteboard }),
         permission: {
           canSubscribe: true,
           canPublish: true,
@@ -372,21 +460,14 @@ export async function syncClassroomPresenterPermissions(
   if (!roomService) {
     throw new LiveKitTokenError("server_config", "LiveKit is not configured on the server.");
   }
-  const identities = [...new Set([previousIdentity, presenterIdentity].filter((value): value is string => Boolean(value)))];
-  await Promise.all(identities.map(async (identity) => {
+  const updateIdentity = async (identity: string) => {
     let participant;
     try { participant = await roomService.getParticipant(classroomLiveKitRoom(roomCode), identity); } catch { return; }
     let metadata: Record<string, unknown> = {};
     try { metadata = participant.metadata ? JSON.parse(participant.metadata) : {}; } catch {}
     const isHost = metadata.isHost === true;
     const isPresenter = identity === presenterIdentity;
-    const sources = isHost
-      ? HOST_PUBLISH_SOURCES
-      : classroomParticipantPublishSources(settings);
-    if (isPresenter) {
-      if (!sources.includes(TrackSource.SCREEN_SHARE)) sources.push(TrackSource.SCREEN_SHARE);
-      if (!sources.includes(TrackSource.SCREEN_SHARE_AUDIO)) sources.push(TrackSource.SCREEN_SHARE_AUDIO);
-    }
+    const sources = classroomPublishSourcesForRole(settings, isHost, isPresenter);
     await roomService.updateParticipant(classroomLiveKitRoom(roomCode), identity, {
       metadata: JSON.stringify({ ...metadata, isPresenter }),
       permission: {
@@ -397,7 +478,11 @@ export async function syncClassroomPresenterPermissions(
         canUpdateMetadata: false
       }
     });
-  }));
+  };
+  // Revoke the old presenter's screen source before granting it to the next
+  // presenter so there is never a server-authorized overlap window.
+  if (previousIdentity && previousIdentity !== presenterIdentity) await updateIdentity(previousIdentity);
+  if (presenterIdentity) await updateIdentity(presenterIdentity);
 }
 
 export interface GenerateTokenArgs {
@@ -542,6 +627,7 @@ export async function generateClassroomToken(
     canPublishMicrophone: boolean;
     canPublishCamera: boolean;
     canPublishScreenShare: boolean;
+    canDrawWhiteboard: boolean;
     attendanceKey: string;
     attendanceRole: string;
     displayName: string;
@@ -631,15 +717,13 @@ export async function generateClassroomToken(
       );
     }
   }
-  const publishSources = isHidden
-    ? []
-    : isHost
-      ? HOST_PUBLISH_SOURCES
-      : classroomParticipantPublishSources(settings);
-  if (isPresenter && !isHidden) {
-    if (!publishSources.includes(TrackSource.SCREEN_SHARE)) publishSources.push(TrackSource.SCREEN_SHARE);
-    if (!publishSources.includes(TrackSource.SCREEN_SHARE_AUDIO)) publishSources.push(TrackSource.SCREEN_SHARE_AUDIO);
-  }
+  const publishSources = isHidden ? [] : classroomPublishSourcesForRole(settings, isHost, isPresenter);
+  const canDrawWhiteboard = isHost || await classroomWhiteboardAllowed(
+    supabaseAdmin,
+    classroom.id,
+    attendanceKey,
+    settings.allowWhiteboardDraw === true
+  );
 
   const at = new AccessToken(apiKey, apiSecret, {
     identity,
@@ -652,7 +736,8 @@ export async function generateClassroomToken(
       hidden: isHidden,
       spectateMode: spectateMode ?? "none",
       attendanceKey,
-      attendanceRole
+      attendanceRole,
+      canDrawWhiteboard
     })
   });
 
@@ -679,6 +764,7 @@ export async function generateClassroomToken(
     canPublishMicrophone: publishSources.includes(TrackSource.MICROPHONE),
     canPublishCamera: publishSources.includes(TrackSource.CAMERA),
     canPublishScreenShare: publishSources.includes(TrackSource.SCREEN_SHARE),
+    canDrawWhiteboard,
     attendanceKey,
     attendanceRole,
     displayName: finalDisplayName,

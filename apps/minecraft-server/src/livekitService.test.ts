@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { RoomServiceClient } from "livekit-server-sdk";
+import { RoomServiceClient, TrackSource } from "livekit-server-sdk";
 import {
+  classroomPublishSourcesForRole,
   evictClassroomParticipants,
   generateClassroomToken,
   getClassroomParticipantBlockTarget,
@@ -8,6 +9,15 @@ import {
   generateLiveKitToken,
   LiveKitTokenError
 } from "./livekitService";
+
+describe("classroom presenter publishing", () => {
+  it("grants screen sharing only to the designated presenter", () => {
+    const legacySettings = { allowStudentMic: true, allowStudentCam: true, allowStudentScreenShare: true };
+    expect(classroomPublishSourcesForRole(legacySettings, true, false)).not.toContain(TrackSource.SCREEN_SHARE);
+    expect(classroomPublishSourcesForRole(legacySettings, false, false)).not.toContain(TrackSource.SCREEN_SHARE);
+    expect(classroomPublishSourcesForRole(legacySettings, false, true)).toContain(TrackSource.SCREEN_SHARE);
+  });
+});
 
 function buildSupabaseMock(handlers: {
   userId?: string;

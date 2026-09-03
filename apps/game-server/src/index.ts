@@ -124,6 +124,7 @@ function isGameInspectorRole(role: unknown): role is "teacher" | "admin" {
 interface ClassroomDrawingPolicy {
   classroomId: string;
   allowWhiteboardDraw: boolean;
+  whiteboardOverrides: Record<string, boolean>;
   active: boolean;
 }
 
@@ -153,7 +154,7 @@ async function loadClassroomDrawingPolicy(
   }
 
   const load = (async () => {
-    if (!supabaseAdmin) return { classroomId: "unknown", allowWhiteboardDraw: false, active: false };
+    if (!supabaseAdmin) return { classroomId: "unknown", allowWhiteboardDraw: false, whiteboardOverrides: {}, active: false };
     const { data, error } = await supabaseAdmin
       .from("classroom_sessions")
       .select("id, settings, status")
@@ -161,12 +162,24 @@ async function loadClassroomDrawingPolicy(
       .match(expectedClassroomId ? { id: expectedClassroomId } : {})
       .maybeSingle();
     if (error) throw error;
+    const classroomId = String(data?.id ?? "unknown");
+    const { data: permissionRows, error: permissionError } = data?.id
+      ? await supabaseAdmin
+          .from("classroom_whiteboard_permissions")
+          .select("participant_key, allowed")
+          .eq("classroom_id", data.id)
+      : { data: [], error: null };
+    if (permissionError) throw permissionError;
+    const whiteboardOverrides = Object.fromEntries(
+      (permissionRows ?? []).map((row) => [String(row.participant_key), row.allowed === true])
+    );
     const policy = {
-      classroomId: String(data?.id ?? "unknown"),
+      classroomId,
       active: data?.status === "active",
       allowWhiteboardDraw:
         data?.status === "active" &&
-        (data.settings as { allowWhiteboardDraw?: unknown } | null)?.allowWhiteboardDraw === true
+        (data.settings as { allowWhiteboardDraw?: unknown } | null)?.allowWhiteboardDraw === true,
+      whiteboardOverrides
     };
     classroomDrawingPolicies.set(roomCode, policy);
     return policy;
@@ -678,12 +691,16 @@ io.on("connection", (socket) => {
     }
     if (!classroom || classroom.sessionId !== room.sessionId) return false;
     if (classroom.isHost) return true;
-    if (classroomDrawingPolicies.get(classroom.roomCode)?.allowWhiteboardDraw === true) {
-      return true;
+    const participantKey = socket.data.classroomBoardCapability?.participantKey as string | undefined;
+    const cachedPolicy = classroomDrawingPolicies.get(classroom.roomCode);
+    if (cachedPolicy) {
+      const override = participantKey ? cachedPolicy.whiteboardOverrides[participantKey] : undefined;
+      return typeof override === "boolean" ? override : cachedPolicy.allowWhiteboardDraw;
     }
     try {
       const freshPolicy = await loadClassroomDrawingPolicy(classroom.roomCode, classroom.classroomId, true);
-      return freshPolicy?.allowWhiteboardDraw === true;
+      const override = participantKey ? freshPolicy.whiteboardOverrides[participantKey] : undefined;
+      return typeof override === "boolean" ? override : freshPolicy.allowWhiteboardDraw;
     } catch {
       return false;
     }
@@ -781,6 +798,16 @@ io.on("connection", (socket) => {
     };
   }
 
+  /**
+   * Classroom boards are infrastructure owned by `classroom_sessions`, rather
+   * than an ordinary multiplayer roster. In particular, guests have transient
+   * `guest-*` identities which must never reach the UUID[] player/presence
+   * columns on `game_sessions`.
+   */
+  function isClassroomDrawingRoom(room: Room<unknown>): boolean {
+    return room.gameKey === "drawing" && room.drawingContext?.boardMode === "classroom";
+  }
+
   function resetForRematch(room: Room<unknown>, rematchPlayers = connectedPlayers(room)) {
     const orderedPlayers = playersForRematch(room, rematchPlayers);
     const seats = orderedPlayers.map((p) => ({
@@ -804,7 +831,7 @@ io.on("connection", (socket) => {
 
   async function resumeRoom(room: Room<unknown>) {
     room.paused = false;
-    if (supabaseAdmin) {
+    if (supabaseAdmin && !isClassroomDrawingRoom(room)) {
       await persistGameResumed({
         supabase: supabaseAdmin,
         sessionId: room.sessionId,
@@ -962,6 +989,7 @@ io.on("connection", (socket) => {
         let policy: ClassroomDrawingPolicy = {
           classroomId: "unknown",
           allowWhiteboardDraw: false,
+          whiteboardOverrides: {},
           active: false
         };
         try {
@@ -1171,7 +1199,7 @@ io.on("connection", (socket) => {
       if (room.paused && classroomRoomCode) {
         await resumeRoom(room);
       }
-      if (!isRoomIdle(room)) {
+      if (!classroomRoomCode && !isRoomIdle(room)) {
         if (wasIdle) {
           for (const p of room.players.values()) {
             recordLaunch(sessionId, p.userId, room.gameKey);
@@ -1186,24 +1214,26 @@ io.on("connection", (socket) => {
       if (gameKey === "drawing") {
         serveCanonicalDrawing(room, "join");
       }
-      await persistPlayerJoin({
-        supabase: supabaseAdmin,
-        sessionId,
-        session: {
-          player_ids: (session.player_ids as string[]) ?? [],
-          player_names: (session.player_names as string[]) ?? [],
-          status: session.status as
-            | "waiting"
-            | "playing"
-            | "paused"
-            | "completed"
-        },
-        userId,
-        displayName,
-        ...connectedPayload(room),
-        roomStatusIsIdle: isRoomIdle(room),
-        peakPlayerCount: room.peakPlayerCount
-      });
+      if (!isClassroomDrawingRoom(room)) {
+        await persistPlayerJoin({
+          supabase: supabaseAdmin,
+          sessionId,
+          session: {
+            player_ids: (session.player_ids as string[]) ?? [],
+            player_names: (session.player_names as string[]) ?? [],
+            status: session.status as
+              | "waiting"
+              | "playing"
+              | "paused"
+              | "completed"
+          },
+          userId,
+          displayName,
+          ...connectedPayload(room),
+          roomStatusIsIdle: isRoomIdle(room),
+          peakPlayerCount: room.peakPlayerCount
+        });
+      }
       io.to(`session:${sessionId}`).emit("ROOM_EVENT", {
         sessionId,
         kind: "PLAYER_JOINED",
@@ -1403,6 +1433,10 @@ io.on("connection", (socket) => {
         if (typeof yjsAwareness === "string" && !socket.data.canonicalDrawingSync?.acknowledged) {
           return;
         }
+        if (typeof yjsAwareness === "string" && !(await canEditDrawing(room))) {
+          socket.emit("LIVE_DELTA_REJECTED", { sessionId, code: "WHITEBOARD_EDIT_FORBIDDEN" });
+          return;
+        }
 
         if (typeof yjsUpdate === "string") {
           if (!(await canEditDrawing(room))) {
@@ -1570,6 +1604,7 @@ io.on("connection", (socket) => {
       classroomDrawingPolicies.set(classroom.roomCode, {
         ...(classroomDrawingPolicies.get(classroom.roomCode) ?? {
           classroomId: classroom.classroomId,
+          whiteboardOverrides: {},
           active: true
         }),
         allowWhiteboardDraw: payload.allowWhiteboardDraw
@@ -1587,6 +1622,90 @@ io.on("connection", (socket) => {
           status: "success"
         }
       });
+    }
+  );
+
+  socket.on(
+    "CLASSROOM_WHITEBOARD_POLICY_REFRESH",
+    async (payload: { sessionId?: string; targetIdentity?: string }) => {
+      const started = Date.now();
+      const sessionId = payload?.sessionId;
+      const targetIdentity = payload?.targetIdentity;
+      const classroom = socket.data.classroomDrawing as
+        | { sessionId: string; classroomId: string; roomCode: string; isHost: boolean }
+        | undefined;
+      if (
+        !sessionId ||
+        typeof targetIdentity !== "string" ||
+        socket.data.sessionId !== sessionId ||
+        !classroom ||
+        classroom.sessionId !== sessionId ||
+        !classroom.isHost
+      ) return;
+      try {
+        const policy = await loadClassroomDrawingPolicy(classroom.roomCode, classroom.classroomId, true);
+        const recipients = await io.in(`session:${sessionId}`).fetchSockets();
+        for (const recipient of recipients) {
+          if (recipient.data.userId !== targetIdentity) continue;
+          const capability = recipient.data.classroomBoardCapability;
+          const participantKey = capability?.participantKey as string | undefined;
+          const override = participantKey ? policy.whiteboardOverrides[participantKey] : undefined;
+          const allowed = recipient.data.classroomDrawing?.isHost === true ||
+            (typeof override === "boolean" ? override : policy.allowWhiteboardDraw);
+          recipient.emit("CLASSROOM_WHITEBOARD_PERMISSION", { sessionId, allowed });
+          if (!allowed) {
+            const awarenessClientIds = recipient.data.canonicalDrawingAwarenessClientIds as number[] | undefined;
+            if (awarenessClientIds?.length) {
+              io.to(`session:${sessionId}`).except(recipient.id).emit("LIVE_DELTA", {
+                from: targetIdentity,
+                delta: { yjsAwarenessRemove: awarenessClientIds }
+              });
+            }
+            recipient.data.canonicalDrawingAwarenessClientIds = undefined;
+            const room = getRoom(sessionId);
+            if (room) {
+              const syncToken = nextCanonicalDrawingSyncToken(recipient.id);
+              recipient.data.canonicalDrawingSync = {
+                sessionId,
+                token: syncToken,
+                acknowledged: false,
+                revision: liveCanonicalDrawingState(room).revision,
+                operationId: `drawing-sync:${recipient.id}:${Date.now()}`,
+                startedAt: Date.now(),
+                attempts: 1,
+                reason: "permission-revoked"
+              };
+              recipient.emit("DRAWING_SYNC", {
+                sessionId,
+                yjsUpdate: encodeFullCanonicalDrawingState(liveCanonicalDrawingState(room)),
+                syncToken,
+                viewport: classroomDrawingViewports.get(sessionId)
+              });
+            }
+          }
+        }
+        logSocketEvent(logger, stats, "game-server", socket, "CLASSROOM_WHITEBOARD_POLICY_REFRESH", {
+          ok: true,
+          sessionId,
+          durationMs: Date.now() - started
+        });
+      } catch (err) {
+        logger.warn({
+          correlationId: socket.data.correlationId,
+          userId,
+          sessionId,
+          protocol: "socket",
+          message: "Classroom whiteboard permission refresh failed",
+          err: logError(err),
+          context: { event: "CLASSROOM_WHITEBOARD_PERMISSION_REFRESH_FAILED", status: "failed" }
+        });
+        logSocketEvent(logger, stats, "game-server", socket, "CLASSROOM_WHITEBOARD_POLICY_REFRESH", {
+          ok: false,
+          code: "POLICY_REFRESH_FAILED",
+          sessionId,
+          durationMs: Date.now() - started
+        });
+      }
     }
   );
 
@@ -2273,7 +2392,8 @@ io.on("connection", (socket) => {
       classroomDrawingViewports.delete(sessionId);
     }
     const room = getRoom(sessionId);
-    if (supabaseAdmin) {
+    const classroomOwnedBoard = (before ?? room)?.drawingContext?.boardMode === "classroom";
+    if (supabaseAdmin && !classroomOwnedBoard) {
       const connected = room
         ? connectedPayload(room)
         : { connectedPlayerIds: [], connectedPlayerNames: [] };

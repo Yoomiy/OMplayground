@@ -14,6 +14,7 @@ export interface ClassroomBoardTokenPayload {
   classroomId: string;
   roomCode: string;
   identity: string;
+  participantKey: string;
   displayName: string;
   role: ClassroomBoardTokenRole;
   isHost: boolean;
@@ -39,6 +40,7 @@ export function verifyClassroomBoardToken(
       typeof payload.classroomId !== "string" ||
       typeof payload.roomCode !== "string" ||
       typeof payload.identity !== "string" ||
+      typeof payload.participantKey !== "string" ||
       typeof payload.displayName !== "string" ||
       !CLASSROOM_BOARD_TOKEN_ROLES.includes(payload.role) ||
       typeof payload.isHost !== "boolean" ||
@@ -46,6 +48,7 @@ export function verifyClassroomBoardToken(
       payload.classroomId.length > 128 ||
       payload.roomCode.length > 64 ||
       payload.identity.length > 160 ||
+      payload.participantKey.length > 256 ||
       payload.displayName.length > 80 ||
       payload.exp <= Math.floor(Date.now() / 1000)
     ) {

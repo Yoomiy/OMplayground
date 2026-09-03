@@ -65,7 +65,6 @@ interface ClassroomSessionData {
     allowStudentMic?: boolean;
     allowStudentCam?: boolean;
     allowStudentChat?: boolean;
-    allowStudentScreenShare?: boolean;
     allowWhiteboardDraw?: boolean;
     whiteboardVisible?: boolean;
     presentationPercent?: number;
@@ -96,6 +95,7 @@ interface CustomParticipantInfo {
   isHandRaised: boolean;
   canUseMic: boolean;
   canUseCam: boolean;
+  canDrawWhiteboard: boolean;
   screenTrack?: any;
   screenAudioTrack?: any;
   presentationTrack?: any;
@@ -152,6 +152,24 @@ function getGuestAttendanceKey(roomCode: string, displayName: string): string {
   }
 }
 
+const classroomDisplayNameStorageKey = "classroom-display-name";
+
+function readStoredClassroomDisplayName(): string {
+  try {
+    return window.localStorage.getItem(classroomDisplayNameStorageKey)?.trim().slice(0, 80) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function storeClassroomDisplayName(displayName: string): void {
+  const normalized = displayName.trim().slice(0, 80);
+  if (!normalized) return;
+  try {
+    window.localStorage.setItem(classroomDisplayNameStorageKey, normalized);
+  } catch {}
+}
+
 export function ClassroomPage() {
   useEffect(() => setShellTelemetryTarget("voxel-server"), []);
   const { roomCode } = useParams<{ roomCode: string }>();
@@ -173,8 +191,11 @@ export function ClassroomPage() {
   const [loadingSession, setLoadingSession] = useState(true);
   const [sessionError, setSessionError] = useState<string | null>(null);
 
-  // Guest name input state if unauthenticated
-  const [guestName, setGuestName] = useState("");
+  // A remembered classroom identity is treated like an authenticated profile:
+  // it bypasses the guest-name form entirely.
+  const [storedGuestName] = useState(readStoredClassroomDisplayName);
+  const [guestName, setGuestName] = useState(storedGuestName);
+  const guestNameLocked = Boolean(storedGuestName);
 
   // Auto-fill display name if user is logged in
   const resolvedDisplayName = useMemo(() => {
@@ -183,6 +204,15 @@ export function ClassroomPage() {
     }
     return guestName.trim();
   }, [user, profile, guestName]);
+
+  // A recess logout turns a child into the same unauthenticated classroom
+  // entry flow as a guest. Remember their last known classroom name locally
+  // so they do not have to enter it again.
+  useEffect(() => {
+    if (user && (profile?.role === "kid" || profile?.role === "student")) {
+      storeClassroomDisplayName(resolvedDisplayName);
+    }
+  }, [user, profile?.role, resolvedDisplayName]);
 
   // LiveKit Connection & Room state
   const [room, setRoom] = useState<Room | null>(null);
@@ -209,6 +239,7 @@ export function ClassroomPage() {
   const [camOn, setCamOn] = useState(false);
   const [canUseMic, setCanUseMic] = useState(true);
   const [canUseCam, setCanUseCam] = useState(true);
+  const [canUseWhiteboard, setCanUseWhiteboard] = useState(false);
   const [individualPermissions, setIndividualPermissions] = useState<Record<string, { allowMic: boolean; allowCam: boolean }>>({});
   const individualPermissionsRef = useRef<Record<string, { allowMic: boolean; allowCam: boolean }>>({});
   const [isScreenSharing, setIsScreenSharing] = useState(false);
@@ -222,6 +253,8 @@ export function ClassroomPage() {
   const [focusMode, setFocusMode] = useState(false); // Vertical cameras layout on side
   const [showBoard, setShowBoard] = useState(true); // Toggle board visibility
   const [showChat, setShowChat] = useState(false);
+  const showChatRef = useRef(false);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [showParticipants, setShowParticipants] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
 
@@ -277,7 +310,6 @@ export function ClassroomPage() {
   // Room Level Dynamic Settings (Controlled by Host)
   const [roomSettings, setRoomSettings] = useState({
     allowStudentChat: true,
-    allowStudentScreenShare: false,
     allowStudentMic: true,
     allowStudentCam: true,
     allowWhiteboardDraw: false, // By default only host can draw on board
@@ -288,6 +320,11 @@ export function ClassroomPage() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [recentReaction, setRecentReaction] = useState<{ emoji: string; name: string } | null>(null);
+
+  useEffect(() => {
+    showChatRef.current = showChat;
+    if (showChat) setUnreadChatCount(0);
+  }, [showChat]);
 
   // Ephemeral Whiteboard State (Using drawingModule structure)
   const [whiteboardState, setWhiteboardState] = useState<any>({
@@ -417,6 +454,10 @@ export function ClassroomPage() {
       s.on("LIVE_DELTA_REJECTED", (payload: { code?: string }) => {
         if (cancelled || payload?.code !== "WHITEBOARD_EDIT_FORBIDDEN") return;
         setConnError("הציור בלוח אינו מורשה עבור משתמש זה.");
+      });
+      s.on("CLASSROOM_WHITEBOARD_PERMISSION", (payload: { sessionId?: string; allowed?: boolean }) => {
+        if (cancelled || payload?.sessionId !== drawSessionId || typeof payload.allowed !== "boolean") return;
+        setCanUseWhiteboard(payload.allowed);
       });
     })();
 
@@ -585,6 +626,7 @@ export function ClassroomPage() {
         isHandRaised: Boolean(localMetadata.handRaised),
         canUseMic: localIsHost || localPerm.allowMic !== false,
         canUseCam: localIsHost || localPerm.allowCam !== false,
+        canDrawWhiteboard: localIsHost || localMetadata.canDrawWhiteboard === true,
         screenTrack: localScreenTrack,
         screenAudioTrack: localScreenAudioTrack,
         presentationTrack: localPresentationTrack,
@@ -652,6 +694,7 @@ export function ClassroomPage() {
         isHandRaised: Boolean(pMetadata.handRaised),
         canUseMic: pIsHost || pPerm.allowMic !== false,
         canUseCam: pIsHost || pPerm.allowCam !== false,
+        canDrawWhiteboard: pIsHost || pMetadata.canDrawWhiteboard === true,
         screenTrack: pScreenTrack,
         screenAudioTrack: pScreenAudioTrack,
         presentationTrack: pPresentationTrack,
@@ -730,6 +773,7 @@ export function ClassroomPage() {
         isDelegate,
         canPublishMicrophone,
         canPublishCamera,
+        canDrawWhiteboard: issuedCanDrawWhiteboard,
         classroomBoardToken: issuedClassroomBoardToken,
         classroomSessionId: issuedClassroomSessionId,
         drawingSessionId: issuedDrawingSessionId,
@@ -741,6 +785,7 @@ export function ClassroomPage() {
         presenterToken: issuedPresenterToken
       } = await response.json();
       setIsDelegatedHost(Boolean(isDelegate));
+      setCanUseWhiteboard(Boolean(issuedCanDrawWhiteboard));
       setClassroomBoardToken(
         typeof issuedClassroomBoardToken === "string" ? issuedClassroomBoardToken : null
       );
@@ -865,11 +910,27 @@ export function ClassroomPage() {
             return;
           }
 
+          if (msg.type === "WHITEBOARD_PERMISSION_CHANGED" && !participant) {
+            if (typeof msg.targetIdentity !== "string" || typeof msg.allowed !== "boolean") return;
+            setParticipants((current) => current.map((entry) =>
+              entry.identity === msg.targetIdentity ? { ...entry, canDrawWhiteboard: msg.allowed } : entry
+            ));
+            if (lkRoom.localParticipant.identity === msg.targetIdentity) {
+              setCanUseWhiteboard(msg.allowed);
+              setClassroomNotice({
+                text: msg.allowed ? "המורה אישר/ה לך לצייר בלוח." : "הרשאת הציור שלך הוסרה.",
+                type: msg.allowed ? "success" : "warn"
+              });
+            }
+            return;
+          }
+
           if (HOST_CONTROL_MESSAGE_TYPES.has(msg.type) && !senderIsHost) {
             return;
           }
 
           if (msg.type === "CHAT") {
+            if (!showChatRef.current) setUnreadChatCount((current) => current + 1);
             setChatMessages((prev) => [
               ...prev,
               {
@@ -1055,6 +1116,10 @@ export function ClassroomPage() {
       lkRoom.on(RoomEvent.ParticipantMetadataChanged, (_previousMetadata, participant) => {
         if (participant.identity === lkRoom.localParticipant.identity) {
           setIsHost(participantIsHost(participant));
+          try {
+            const metadata = JSON.parse(participant.metadata || "{}");
+            setCanUseWhiteboard(metadata.isHost === true || metadata.canDrawWhiteboard === true);
+          } catch {}
         }
         updateParticipantList(lkRoom);
       });
@@ -1290,7 +1355,7 @@ export function ClassroomPage() {
     initialViewport: boardInitialViewport,
     viewportRole: isHost
       ? "publish" as const
-      : roomSettings.allowWhiteboardDraw
+      : canUseWhiteboard
         ? "independent" as const
         : "follow" as const,
     canClear: isHost,
@@ -1306,7 +1371,7 @@ export function ClassroomPage() {
     clearBoard,
     handleLocalBoardDelta,
     isHost,
-    roomSettings.allowWhiteboardDraw,
+    canUseWhiteboard,
     subscribeLiveDeltas
   ]);
 
@@ -1355,9 +1420,9 @@ export function ClassroomPage() {
       setConnError("יש לעצור את מצגת המדיה לפני התחלת שיתוף מסך.");
       return;
     }
-    const canShare = isHost || roomSettings.allowStudentScreenShare;
+    const canShare = room.localParticipant.identity === presenterIdentity && Boolean(presenterToken);
     if (!canShare && !isScreenSharing) {
-      alert("שיתוף מסך מורשה באישור המורה בלבד.");
+      setConnError("שיתוף מסך זמין רק למגיש/ה הנוכחי/ת.");
       return;
     }
     try {
@@ -1550,6 +1615,27 @@ export function ClassroomPage() {
       allowCam: nextAllow
     });
     await room.localParticipant.publishData(new TextEncoder().encode(payload), { reliable: true });
+  };
+
+  const toggleIndividualWhiteboardPermission = async (targetIdentity: string, currentAllowed: boolean) => {
+    if (!room || !isHost || !drawSessionId) return;
+    const allowed = !currentAllowed;
+    const response = await classroomRequest("/rtc/classroom-whiteboard-permission", {
+      roomCode,
+      targetIdentity,
+      allowed
+    });
+    if (!response.ok) {
+      setConnError("לא ניתן לעדכן את הרשאת הלוח למשתתף.");
+      return;
+    }
+    setParticipants((current) => current.map((entry) =>
+      entry.identity === targetIdentity ? { ...entry, canDrawWhiteboard: allowed } : entry
+    ));
+    drawSocketRef.current?.emit("CLASSROOM_WHITEBOARD_POLICY_REFRESH", {
+      sessionId: drawSessionId,
+      targetIdentity
+    });
   };
 
   // HOST ACTION: Kick Participant
@@ -1867,12 +1953,6 @@ export function ClassroomPage() {
             </button>
           )}
 
-          {isClassCreator && connState === "connected" && room && !localIsPresenter && (
-            <button onClick={() => void transferPresentation(room.localParticipant.identity)} className="rounded-xl border border-amber-500/50 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-200">
-              <Radio className="size-3.5" /> קח בחזרה את ההצגה
-            </button>
-          )}
-
           {isHost && hasPresentationPane && showBoard && (
             <label className="hidden items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/60 px-3 py-1.5 text-xs font-bold text-slate-200 lg:flex">
               גודל מצגת
@@ -2000,7 +2080,7 @@ export function ClassroomPage() {
               </div>
             )}
 
-            {!user && (
+            {!user && !guestNameLocked && (
               <div className="flex flex-col gap-2 mb-4 text-right">
                 <label className="text-xs font-bold text-slate-300">שם תצוגה להצטרפות (תלמיד/אורח):</label>
                 <input
@@ -2008,7 +2088,11 @@ export function ClassroomPage() {
                   required
                   placeholder="הכנס שם מלא (למשל: דניאל כהן)"
                   value={guestName}
-                  onChange={(e) => setGuestName(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setGuestName(value);
+                    storeClassroomDisplayName(value);
+                  }}
                   className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm font-bold text-white focus:border-indigo-500 focus:outline-none"
                 />
               </div>
@@ -2027,13 +2111,13 @@ export function ClassroomPage() {
 
       {/* CONNECTED CLASSROOM MAIN VIEW */}
       {connState === "connected" && (
-        <div className="flex-1 flex overflow-hidden relative">
+        <div className="flex-1 min-h-0 min-w-0 flex flex-row-reverse overflow-hidden relative">
           
           {/* MAIN CLASSROOM WORKSPACE */}
-          <div className="flex-1 flex flex-col overflow-hidden bg-slate-950/90 p-3 gap-3">
+          <div className="flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden bg-slate-950/90 p-3 gap-3">
             
             {/* DYNAMIC CAMERAS CONTAINER & MAIN CONTENT */}
-            <div className={cn("flex-1 flex gap-3 overflow-hidden", focusMode && isMainContentActive ? "flex-row" : "flex-col")}>
+            <div className={cn("flex-1 min-h-0 min-w-0 flex gap-3 overflow-hidden", focusMode && isMainContentActive ? "flex-row" : "flex-col")}>
 
               {/* CAMERAS SECTION: Teacher ALWAYS FIRST in top row / side column */}
               <div
@@ -2058,7 +2142,7 @@ export function ClassroomPage() {
                           : isMainContentActive
                           ? "h-36 min-w-[190px]"
                           : "h-48 w-72", // Larger solo video tile when board is hidden
-                        p.isHost ? "border-amber-500/60 ring-2 ring-amber-500/20" : isSpeaking ? "border-emerald-500 ring-2 ring-emerald-500/20" : "border-slate-800"
+                        isSpeaking ? "border-emerald-400 ring-2 ring-emerald-400/40" : p.isHost ? "border-amber-500/60 ring-2 ring-amber-500/20" : "border-slate-800"
                       )}
                     >
                       {/* Video Element */}
@@ -2091,6 +2175,7 @@ export function ClassroomPage() {
 
                       {/* Top Name & Live Mic Status Badge */}
                       <div className="absolute top-1.5 right-1.5 flex items-center gap-1 pointer-events-none z-10">
+                        {isSpeaking && <span className="relative flex size-3"><span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-60" /><span className="relative inline-flex size-3 rounded-full bg-emerald-400" /></span>}
                         <span className="rounded-md bg-slate-950/80 px-2 py-0.5 text-[10px] font-bold text-slate-200 backdrop-blur-md flex items-center gap-1">
                           {p.name} {p.isHost && <Crown className="size-3 text-amber-400 inline" />}
                         </span>
@@ -2127,11 +2212,6 @@ export function ClassroomPage() {
                             {p.canUseCam ? <VideoIcon className="size-3" /> : <VideoOff className="size-3" />}
                           </button>
 
-                          {(isClassCreator || (localIsPresenter && isHost)) && (
-                            <button onClick={() => void transferPresentation(p.identity)} title="העבר למשתתף זה את זכויות ההצגה" className="p-1 text-fuchsia-300 hover:bg-fuchsia-500/20 rounded">
-                              <Radio className="size-3" />
-                            </button>
-                          )}
                         </div>
                       )}
                     </div>
@@ -2142,7 +2222,7 @@ export function ClassroomPage() {
               {/* MAIN CONTENT FRAME: EXCALIDRAW BOARD OR SHARED SCREEN */}
               <div
                 className={cn(
-                  "flex-1 rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden shadow-2xl flex relative",
+                  "flex-1 min-h-0 min-w-0 rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden shadow-2xl flex relative",
                   hasPresentationPane && showBoard ? "flex-row gap-px bg-slate-800" : "flex-col",
                   !isMainContentActive && "hidden"
                 )}
@@ -2162,7 +2242,7 @@ export function ClassroomPage() {
                       onUploadStatus={setMediaUploadStatus}
                       canSendToWhiteboard={drawSocketReady && (
                         showBoard
-                          ? isHost || roomSettings.allowWhiteboardDraw
+                          ? isHost || canUseWhiteboard
                           : isHost && (canManageClassroom || isDelegatedHost)
                       )}
                       onSendPageToWhiteboard={sendPresentationPageToWhiteboard}
@@ -2174,7 +2254,7 @@ export function ClassroomPage() {
                   )}
 
                   {screenShareParticipant && (
-                    <div className={cn("bg-black flex items-center justify-center relative min-w-0", showBoard ? "shrink-0" : "flex-1")} style={showBoard ? { flexBasis: `${stageSplitPercent}%` } : undefined}>
+                    <div className={cn("h-full min-h-0 min-w-0 overflow-hidden bg-black flex items-center justify-center relative", showBoard ? "shrink-0" : "flex-1")} style={showBoard ? { flexBasis: `${stageSplitPercent}%` } : undefined}>
                       <div className="absolute top-2 right-2 bg-slate-950/80 px-3 py-1 rounded-lg text-xs font-bold text-indigo-300 z-10 border border-slate-800 flex items-center gap-1.5">
                         <Monitor className="size-3.5 text-indigo-400" />
                         {`מסך משותף מאת: ${screenShareParticipant.name}`}
@@ -2187,7 +2267,7 @@ export function ClassroomPage() {
                         }}
                         autoPlay
                         playsInline
-                        className="h-full w-full object-contain"
+                        className="block max-h-full max-w-full object-contain"
                       />
                       {screenShareParticipant?.screenAudioTrack && !screenShareParticipant.isMe && (
                         <audio
@@ -2246,7 +2326,7 @@ export function ClassroomPage() {
                         ref={drawingBoardRef}
                         gameState={whiteboardState}
                         mode={drawingMode}
-                        mySeat={isHost || roomSettings.allowWhiteboardDraw ? "player" : null}
+                        mySeat={isHost || canUseWhiteboard ? "player" : null}
                         myUserId={room?.localParticipant.identity || null}
                         hideTopBar={true}
                         isVisible={showBoard}
@@ -2264,6 +2344,36 @@ export function ClassroomPage() {
             {/* BOTTOM CONTROL BAR */}
             <div className="border-t border-slate-800 bg-slate-900/90 rounded-2xl p-2.5 flex items-center justify-between flex-wrap gap-2 shrink-0 backdrop-blur-md">
               
+              {/* Side Panels Toggles — first in RTL flex layout, so they stay on the right. */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowParticipants(!showParticipants)}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
+                    showParticipants ? "bg-indigo-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  )}
+                >
+                  <Users className="size-3.5" />
+                  משתתפים ({participants.length})
+                </button>
+
+                <button
+                  onClick={() => setShowChat(!showChat)}
+                  className={cn(
+                    "relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
+                    showChat ? "bg-indigo-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  )}
+                >
+                  <MessageSquare className="size-3.5" />
+                  צ'אט
+                  {unreadChatCount > 0 && !showChat && (
+                    <span className="flex min-w-5 h-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-black text-white" aria-label={`${unreadChatCount} הודעות חדשות`}>
+                      {unreadChatCount > 99 ? "99+" : unreadChatCount}
+                    </span>
+                  )}
+                </button>
+              </div>
+
               {/* Media Toggles */}
               <div className="flex items-center gap-2">
                 {!isStealthAdmin ? (
@@ -2312,16 +2422,18 @@ export function ClassroomPage() {
                       </button>
                     )}
 
-                    <button
-                      onClick={toggleScreenShare}
-                      className={cn(
-                        "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
-                        isScreenSharing ? "bg-indigo-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                      )}
-                    >
-                      {isScreenSharing ? <MonitorOff className="size-3.5" /> : <Monitor className="size-3.5" />}
-                      {isScreenSharing ? "עצור שיתוף" : "שתף מסך"}
-                    </button>
+                    {localIsPresenter && presenterToken && (
+                      <button
+                        onClick={toggleScreenShare}
+                        className={cn(
+                          "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
+                          isScreenSharing ? "bg-indigo-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                        )}
+                      >
+                        {isScreenSharing ? <MonitorOff className="size-3.5" /> : <Monitor className="size-3.5" />}
+                        {isScreenSharing ? "עצור שיתוף" : "שתף מסך"}
+                      </button>
+                    )}
 
                     <button
                       onClick={toggleHandRaise}
@@ -2356,36 +2468,12 @@ export function ClassroomPage() {
                 </div>
               )}
 
-              {/* Side Panels Toggles */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setShowParticipants(!showParticipants)}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
-                    showParticipants ? "bg-indigo-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                  )}
-                >
-                  <Users className="size-3.5" />
-                  משתתפים ({participants.length})
-                </button>
-
-                <button
-                  onClick={() => setShowChat(!showChat)}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
-                    showChat ? "bg-indigo-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                  )}
-                >
-                  <MessageSquare className="size-3.5" />
-                  צ'אט
-                </button>
-              </div>
             </div>
           </div>
 
           {/* SIDE PANEL 1: PARTICIPANTS & HOST GLOBAL CONTROLS */}
           {showParticipants && (
-            <div className="w-full lg:w-80 border-r border-slate-800 bg-slate-900/95 p-4 flex flex-col gap-4 overflow-y-auto shrink-0">
+            <div className="w-full lg:w-80 border-l border-slate-800 bg-slate-900/95 p-4 flex flex-col gap-4 overflow-y-auto shrink-0">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h3 className="text-sm font-black text-white flex items-center gap-2">
                   <Users className="size-4 text-indigo-400" />
@@ -2447,16 +2535,6 @@ export function ClassroomPage() {
                     </label>
 
                     <label className="flex items-center justify-between">
-                      <span>אפשר שיתוף מסך למשתתפים:</span>
-                      <input
-                        type="checkbox"
-                        checked={roomSettings.allowStudentScreenShare}
-                        onChange={() => toggleRoomSetting("allowStudentScreenShare")}
-                        className="rounded accent-indigo-600"
-                      />
-                    </label>
-
-                    <label className="flex items-center justify-between">
                       <span>אפשר לתלמידים לצייר בלוח:</span>
                       <input
                         type="checkbox"
@@ -2486,13 +2564,29 @@ export function ClassroomPage() {
 
               {/* PARTICIPANTS LIST */}
               <div className="flex flex-col gap-2 overflow-y-auto">
-                {participants.map((p) => (
-                  <div key={p.sid} className="flex items-center justify-between rounded-xl bg-slate-950/60 p-2 border border-slate-800 text-xs font-bold">
+                {participants.map((p) => {
+                  const isSpeaking = activeSpeakers.includes(p.identity);
+                  return (
+                  <div key={p.sid} className={cn("flex items-center justify-between rounded-xl bg-slate-950/60 p-2 border text-xs font-bold", isSpeaking ? "border-emerald-400/70 bg-emerald-950/20" : "border-slate-800")}>
                     <div className="flex items-center gap-1.5">
-                      <span className="size-2 rounded-full bg-emerald-500" />
+                      <span className="relative flex size-2 rounded-full bg-emerald-500">
+                        {isSpeaking && <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400" />}
+                      </span>
                       <span className="text-slate-200">{p.name}</span>
                       {p.isHost && <Crown className="size-3 text-amber-400" />}
+                      {p.identity === presenterIdentity && <span className="rounded bg-fuchsia-500/15 px-1.5 py-0.5 text-[9px] text-fuchsia-300">מגיש/ה</span>}
                     </div>
+
+                    <div className="flex items-center gap-1">
+                    {(isClassCreator || (localIsPresenter && isHost)) && p.identity !== presenterIdentity && (
+                      <button
+                        onClick={() => void transferPresentation(p.identity)}
+                        title={p.isMe ? "קח/י בחזרה את זכויות ההצגה" : "העבר/י למשתתף זה את זכויות ההצגה"}
+                        className="p-1 rounded bg-fuchsia-500/10 text-fuchsia-300 hover:bg-fuchsia-500/20"
+                      >
+                        <Radio className="size-3.5" />
+                      </button>
+                    )}
 
                     {isHost && (canManageClassroom || isDelegatedHost) && !p.isMe && (
                       <div className="flex items-center gap-1">
@@ -2502,6 +2596,14 @@ export function ClassroomPage() {
                           className={cn("p-1 rounded", p.canUseMic ? "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20" : "bg-rose-500/10 text-rose-400 hover:bg-rose-500/20")}
                         >
                           {p.canUseMic ? <Mic className="size-3.5" /> : <MicOff className="size-3.5" />}
+                        </button>
+
+                        <button
+                          onClick={() => void toggleIndividualWhiteboardPermission(p.identity, p.canDrawWhiteboard)}
+                          title={p.canDrawWhiteboard ? "הרשאת לוח פעילה - לחץ להסרה" : "הלוח חסום - לחץ להרשאה"}
+                          className={cn("p-1 rounded", p.canDrawWhiteboard ? "bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20" : "bg-rose-500/10 text-rose-400 hover:bg-rose-500/20")}
+                        >
+                          {p.canDrawWhiteboard ? <Eye className="size-3.5" /> : <EyeOff className="size-3.5" />}
                         </button>
 
                         <button
@@ -2529,15 +2631,17 @@ export function ClassroomPage() {
                         </button>
                       </div>
                     )}
+                    </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
 
           {/* SIDE PANEL 2: CHAT (SCROLLABLE & NEVER STRETCHES SCREEN DOWN) */}
           {showChat && (
-            <div className="w-full lg:w-80 border-r border-slate-800 bg-slate-900/95 p-4 flex flex-col h-full overflow-hidden shrink-0">
+            <div className="w-full lg:w-80 border-l border-slate-800 bg-slate-900/95 p-4 flex flex-col h-full overflow-hidden shrink-0">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3 shrink-0">
                 <h3 className="text-sm font-black text-white flex items-center gap-2">
                   <MessageSquare className="size-4 text-indigo-400" />

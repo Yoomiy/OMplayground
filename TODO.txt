@@ -19,3 +19,4 @@
 50. only allow 1 person to share screen
 51. allow indeviduals to use the whitboard
 52. make kidsHome lighter
+53. fix raise hand behavior

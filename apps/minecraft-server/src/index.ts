@@ -117,6 +117,7 @@ import {
   listClassroomParticipants,
   syncClassroomPresenterPermissions,
   syncClassroomParticipantPermissions,
+  setClassroomWhiteboardPermission,
   type ClassroomLiveAttendance,
   LiveKitTokenError
 } from "./livekitService";
@@ -898,7 +899,7 @@ app.post("/rtc/classroom-token", async (req, res) => {
         ? reconnectCapability.identity
         : undefined;
 
-    const result = await generateClassroomToken({
+    let result = await generateClassroomToken({
       supabaseAdmin,
       roomCode,
       displayName: displayName ?? "משתתף",
@@ -918,6 +919,16 @@ app.post("/rtc/classroom-token", async (req, res) => {
         mediaKind: null
       };
       await persistPresentationState(classroom, presentation);
+      result = await generateClassroomToken({
+        supabaseAdmin,
+        roomCode,
+        displayName: displayName ?? "משתתף",
+        accessToken,
+        spectateMode,
+        delegate: delegate ? { id: delegate.delegateId, displayName: delegate.displayName } : null,
+        presenterIdentityOverride: result.userId,
+        guestAttendanceKey: classroomGuestAttendanceKey(roomCode, guestAttendanceKey)
+      });
     }
     const delegateGameToken = delegate
       ? createClassroomDelegateGameToken(
@@ -935,6 +946,7 @@ app.post("/rtc/classroom-token", async (req, res) => {
         classroomId: classroom.id,
         roomCode,
         identity: result.userId,
+        participantKey: result.attendanceKey,
         displayName: result.displayName,
         role: result.role as "kid" | "student" | "teacher" | "admin" | "classroom_delegate",
         isHost: result.isHost
@@ -968,6 +980,7 @@ app.post("/rtc/classroom-token", async (req, res) => {
       canPublishMicrophone: result.canPublishMicrophone,
       canPublishCamera: result.canPublishCamera,
       canPublishScreenShare: result.canPublishScreenShare,
+      canDrawWhiteboard: result.canDrawWhiteboard,
       delegateScopes: delegate?.scopes ?? [],
       delegateGameToken,
       classroomBoardToken,
@@ -1474,7 +1487,6 @@ app.post("/rtc/classroom-settings", async (req, res) => {
 
     const allowedKeys = [
       "allowStudentChat",
-      "allowStudentScreenShare",
       "allowStudentMic",
       "allowStudentCam",
       "allowWhiteboardDraw",
@@ -1490,11 +1502,58 @@ app.post("/rtc/classroom-settings", async (req, res) => {
       return;
     }
     const nextSettings = await patchClassroomSettings(classroom, changed);
-    await syncClassroomParticipantPermissions(classroom.room_code, nextSettings);
+    await syncClassroomParticipantPermissions(classroom.room_code, nextSettings, supabaseAdmin, classroom.id);
     await appendClassroomAudit(req, classroom, authority, "classroom_settings_changed", { changed_keys: Object.keys(changed) });
     res.json({ success: true, settings: nextSettings, delegated: authority.kind === "delegate" });
   } catch (err) {
     logHttpFailure(logger, req, err, "CLASSROOM_SETTINGS_UPDATE_FAILED");
+    res.status(500).json({ error: "internal_server_error" });
+  }
+});
+
+app.post("/rtc/classroom-whiteboard-permission", async (req, res) => {
+  try {
+    const { roomCode, targetIdentity, allowed } = req.body || {};
+    if (
+      typeof roomCode !== "string" ||
+      !roomCode.trim() ||
+      typeof targetIdentity !== "string" ||
+      !targetIdentity.trim() ||
+      typeof allowed !== "boolean"
+    ) {
+      res.status(400).json({ error: "invalid_whiteboard_permission" });
+      return;
+    }
+    const classroom = await getActiveClassroom(roomCode.trim());
+    if (!classroom) return void res.status(404).json({ error: "classroom_not_found" });
+    const authority = await requireClassroomAuthority(req, res, classroom.id, "manage_settings");
+    if (!authority || !supabaseAdmin) return;
+    const updated = await setClassroomWhiteboardPermission(
+      supabaseAdmin,
+      classroom,
+      targetIdentity.trim(),
+      allowed
+    );
+    await appendClassroomAudit(req, classroom, authority, "classroom_whiteboard_permission_changed", {
+      target_identity: updated.identity,
+      allowed
+    });
+    logger.info({
+      correlationId: (req as express.Request & { correlationId?: string }).correlationId,
+      userId: authorityIdentity(authority) ?? undefined,
+      sessionId: classroom.id,
+      protocol: "http",
+      message: "Classroom whiteboard permission changed",
+      context: {
+        event: "CLASSROOM_WHITEBOARD_PERMISSION_CHANGED",
+        status: "success",
+        roomCode: classroom.room_code,
+        allowed
+      }
+    });
+    res.json({ success: true, targetIdentity: updated.identity, allowed });
+  } catch (err) {
+    logHttpFailure(logger, req, err, "CLASSROOM_WHITEBOARD_PERMISSION_FAILED");
     res.status(500).json({ error: "internal_server_error" });
   }
 });
