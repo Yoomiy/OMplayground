@@ -157,7 +157,7 @@ export function InboxPage() {
         note: reportDraft.note.trim() || undefined
       });
       setReportDraft(null);
-      setErr("הדיווח נשלח לצוות");
+      setErr("הדיווח נשלח");
     } catch (e) {
       setErr(e instanceof Error ? e.message : "דיווח נכשל");
     } finally {
@@ -319,7 +319,7 @@ export function InboxPage() {
                             })
                           }
                         >
-                          🚩 דווח לצוות
+                          🚩 דווח
                         </button>
                       )
                     ) : null}

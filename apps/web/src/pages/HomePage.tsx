@@ -246,7 +246,7 @@ export function HomePage() {
             </div>
             <div className="text-center sm:text-right flex-1">
               <h2 className="text-2xl sm:text-3xl font-black tracking-wide drop-shadow-sm">
-                היי, {profile.full_name}! 👋
+                שלום, {profile.full_name}! 👋
               </h2>
               <p className="mt-1 text-sm sm:text-base font-bold text-white/85">
                 מוכן להרפתקה? יש {catalog.length} משחקים מדהימים שמחכים לך! 🚀
