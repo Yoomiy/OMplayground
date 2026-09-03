@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type"
+    "authorization, x-client-info, apikey, content-type, x-correlation-id"
 };
 
 function syntheticEmail(username: string): string {
@@ -11,6 +11,10 @@ function syntheticEmail(username: string): string {
 }
 
 Deno.serve(async (req) => {
+  const suppliedCorrelationId = req.headers.get("x-correlation-id")?.trim();
+  const correlationId = suppliedCorrelationId && suppliedCorrelationId.length <= 128 && /^[A-Za-z0-9._:-]+$/.test(suppliedCorrelationId)
+    ? suppliedCorrelationId
+    : `c-${crypto.randomUUID()}`;
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -23,6 +27,7 @@ Deno.serve(async (req) => {
 
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) {
+    console.warn(JSON.stringify({ event: "BULK_IMPORT_UNAUTHORIZED", correlationId, reason: "missing_authorization" }));
     return json({ error: "no auth" }, 401);
   }
 
@@ -30,6 +35,7 @@ Deno.serve(async (req) => {
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
   if (!supabaseUrl || !serviceKey || !anonKey) {
+    console.error(JSON.stringify({ event: "BULK_IMPORT_CONFIG_MISSING", correlationId }));
     return json({ error: "server_misconfigured" }, 503);
   }
 
@@ -42,18 +48,20 @@ Deno.serve(async (req) => {
     error: userErr
   } = await userClient.auth.getUser();
   if (userErr || !user) {
+    console.warn(JSON.stringify({ event: "BULK_IMPORT_UNAUTHORIZED", correlationId, code: userErr?.code }));
     return json({ error: "unauthorized" }, 401);
   }
 
   const adminClient = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false }
   });
-  const { data: ap } = await adminClient
+  const { data: ap, error: adminError } = await adminClient
     .from("admin_profiles")
     .select("id")
     .eq("id", user.id)
     .maybeSingle();
-  if (!ap) {
+  if (adminError || !ap) {
+    console.warn(JSON.stringify({ event: "BULK_IMPORT_FORBIDDEN", correlationId, code: adminError?.code }));
     return json({ error: "forbidden" }, 403);
   }
 
@@ -61,6 +69,7 @@ Deno.serve(async (req) => {
   try {
     body = await req.json();
   } catch {
+    console.warn(JSON.stringify({ event: "BULK_IMPORT_REJECTED", correlationId, reason: "invalid_json" }));
     return json({ error: "invalid json" }, 400);
   }
 
@@ -95,10 +104,10 @@ Deno.serve(async (req) => {
       await adminClient.auth.admin.createUser({
         email,
         password,
-        email_confirm: true,
-        user_metadata: { username, full_name }
+        email_confirm: true
       });
     if (createErr || !created.user) {
+      console.warn(JSON.stringify({ event: "BULK_IMPORT_USER_CREATE_FAILED", correlationId, row: results.length, code: createErr?.code }));
       results.push({
         username,
         ok: false,
@@ -116,25 +125,36 @@ Deno.serve(async (req) => {
       role
     });
     if (profErr) {
-      await adminClient.auth.admin.deleteUser(created.user.id);
+      console.error(JSON.stringify({ event: "BULK_IMPORT_PROFILE_CREATE_FAILED", correlationId, row: results.length, userId: created.user.id, code: profErr.code }));
+      const { error: cleanupError } = await adminClient.auth.admin.deleteUser(created.user.id);
+      if (cleanupError) {
+        console.error(JSON.stringify({ event: "BULK_IMPORT_COMPENSATION_FAILED", correlationId, userId: created.user.id, code: cleanupError.code }));
+      }
       results.push({ username, ok: false, error: profErr.message });
       continue;
     }
     results.push({ username, ok: true });
   }
 
-  await adminClient.from("audit_log").insert({
+  const successful = results.filter((r) => r.ok).length;
+  const failed = results.length - successful;
+  const { error: auditError } = await adminClient.from("audit_log").insert({
     actor_id: user.id,
     actor_kind: "admin",
     action: "bulk_import_kids",
     entity_type: "system",
     entity_id: null,
     metadata: {
-      ok: results.filter((r) => r.ok).length,
-      failed: results.filter((r) => !r.ok).length,
-      results
+      correlation_id: correlationId,
+      requested: rows.length,
+      ok: successful,
+      failed
     }
   });
+  if (auditError) {
+    console.error(JSON.stringify({ event: "BULK_IMPORT_AUDIT_FAILED", correlationId, code: auditError.code }));
+  }
+  console.log(JSON.stringify({ event: "BULK_IMPORT_COMPLETED", correlationId, requested: rows.length, successful, failed }));
 
   return json({ results });
 });

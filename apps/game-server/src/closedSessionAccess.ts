@@ -12,13 +12,14 @@ export async function canJoinClosedSession(args: {
     return true;
   }
 
-  const { data } = await args.supabase
+  const { data, error } = await args.supabase
     .from("game_challenges")
     .select("id")
     .eq("session_id", args.sessionId)
     .eq("to_kid_id", args.userId)
     .eq("status", "accepted")
     .maybeSingle();
+  if (error) throw error;
 
   return !!data;
 }

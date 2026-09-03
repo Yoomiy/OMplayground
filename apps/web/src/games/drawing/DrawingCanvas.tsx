@@ -22,6 +22,7 @@ import {
 } from "./yjsSyncHelper";
 import { isImageDataUrl, MAX_IMAGES_PER_BOARD, prepareImageForBoard } from "./drawingImages";
 import { cn } from "@/lib/cn";
+import { reportCaughtError } from "@/utils/telemetry";
 import type { DrawingMode, DrawingViewport } from "./drawingMode";
 import {
   DrawingViewportPublisher,
@@ -147,6 +148,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
       setYjsSession(replacement);
     } catch (err) {
       console.error("Failed to apply canonical drawing state:", err);
+      reportCaughtError("Canonical drawing state apply failed", err, { appArea: "drawing", operation: "canonical-state-apply" });
     }
   }, [discardRemoteAwareness, initialYjsSyncToken, initialYjsUpdate, modeKind, yjsSession]);
 
@@ -354,6 +356,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
           })
           .catch((err) => {
             console.error("Image preparation failed", err);
+            reportCaughtError("Drawing image preparation failed", err, { appArea: "drawing", operation: "image-prepare" });
             showToast("לא ניתן לעבד את התמונה");
           });
       }
@@ -538,6 +541,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
           deduplicateYElements(yElements);
         } catch (err) {
           console.error("Failed to apply remote Yjs update:", err);
+          reportCaughtError("Remote drawing update apply failed", err, { appArea: "drawing", operation: "yjs-update" });
         }
       }
 
@@ -548,6 +552,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
           applyAwarenessUpdate(awareness, bytes, YJS_ORIGIN_REMOTE);
         } catch (err) {
           console.error("Failed to apply remote Yjs awareness:", err);
+          reportCaughtError("Remote drawing awareness apply failed", err, { appArea: "drawing", operation: "yjs-awareness" });
         }
       }
 
@@ -659,6 +664,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
         showToast("הקובץ יוצא בהצלחה!");
       } catch (err) {
         console.error("Export failed", err);
+        reportCaughtError("Drawing export failed", err, { appArea: "drawing", operation: "export" });
         showToast("ייצוא הקובץ נכשל");
       }
     },
@@ -732,6 +738,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
         return true;
       } catch (error) {
         console.error("Whiteboard image insertion failed", error);
+        reportCaughtError("Whiteboard image insertion failed", error, { appArea: "drawing", operation: "image-insert" });
         showToast("לא ניתן להוסיף את העמוד ללוח השרטוט");
         return false;
       }

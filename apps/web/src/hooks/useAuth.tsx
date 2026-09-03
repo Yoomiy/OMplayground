@@ -8,6 +8,7 @@ import {
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import { reportCaughtError } from "@/utils/telemetry";
 
 type AuthContextValue = {
   session: Session | null;
@@ -27,11 +28,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     void supabase.auth
       .getSession()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) throw error;
         if (!cancelled) {
           setSession(data.session ?? null);
           setUser(data.session?.user ?? null);
         }
+      })
+      .catch((error) => {
+        reportCaughtError("Authentication session lookup failed", error, { appArea: "auth", operation: "get-session" });
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

@@ -2,6 +2,8 @@ import { StatsCollector } from "../statsCollector";
 import { newCorrelationId } from "../correlation";
 import { redactSensitive } from "../telemetryIngest";
 import { auditMetadata } from "../auditMetadata";
+import { liveKitRoomContext } from "../livekitWebhook";
+import { shouldLogSocketEvent } from "../socketLifecycle";
 
 describe("Observability Package", () => {
   describe("Correlation ID Utility", () => {
@@ -65,22 +67,22 @@ describe("Observability Package", () => {
       expect(snap.rooms[0].sessionId).toBe("room-1");
     });
 
-    it("should track intent processed rates and average latency", () => {
-      collector.recordIntentProcessed(50);
-      collector.recordIntentProcessed(150);
+    it("should track socket event rates and average latency", () => {
+      collector.recordSocketEventProcessed(50);
+      collector.recordSocketEventProcessed(150);
 
       const snap = collector.snapshot(() => []);
-      expect(snap.averageIntentLatencyMs).toBe(100);
-      // Throughput for 2 intents in 5s rate window = 2 / 5 = 0.4 intents/sec
-      expect(snap.intentsPerSecond).toBe(0.4);
+      expect(snap.averageSocketEventLatencyMs).toBe(100);
+      // Throughput for 2 events in a 5s rate window = 2 / 5 = 0.4 events/sec
+      expect(snap.socketEventsPerSecond).toBe(0.4);
     });
 
-    it("should track intent failure rates within 5 minute window", () => {
-      collector.recordIntentFailed();
-      collector.recordIntentFailed();
+    it("should track socket event failures within 5 minute window", () => {
+      collector.recordSocketEventFailed();
+      collector.recordSocketEventFailed();
 
       const snap = collector.snapshot(() => []);
-      expect(snap.intentFailuresLast5Min).toBe(2);
+      expect(snap.socketEventFailuresLast5Min).toBe(2);
     });
   });
 
@@ -132,6 +134,25 @@ describe("Observability Package", () => {
 
     it("should return empty object if no arguments are provided", () => {
       expect(auditMetadata()).toEqual({});
+    });
+  });
+
+  describe("LiveKit room classification", () => {
+    it("keeps classroom room codes separate from game session ids", () => {
+      expect(liveKitRoomContext("voxel-session-v1")).toEqual({ roomKind: "voxel-session", sessionId: "v1" });
+      expect(liveKitRoomContext("game-session-g1")).toEqual({ roomKind: "game-session", sessionId: "g1" });
+      expect(liveKitRoomContext("classroom-ABC123")).toEqual({ roomKind: "classroom", roomCode: "ABC123" });
+      expect(liveKitRoomContext("misc-room")).toEqual({ roomKind: "unknown" });
+    });
+  });
+
+  describe("socket event policy", () => {
+    it("includes lifecycle mutations and excludes hot gameplay traffic", () => {
+      expect(shouldLogSocketEvent("game-server", "PAUSE_GAME")).toBe(true);
+      expect(shouldLogSocketEvent("game-server", "VOICE_TOKEN")).toBe(true);
+      expect(shouldLogSocketEvent("minecraft-server", "SET_GAME_MODE")).toBe(true);
+      expect(shouldLogSocketEvent("minecraft-server", "INPUT")).toBe(false);
+      expect(shouldLogSocketEvent("minecraft-server", "BLOCK_DELTA")).toBe(false);
     });
   });
 });

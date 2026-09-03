@@ -101,6 +101,7 @@ import { BlockHotbarHud } from "@/games/voxel/hud/BlockHotbarHud";
 import { ChatOverlay } from "@/games/voxel/hud/ChatOverlay";
 import { TeacherDashboard } from "@/games/voxel/hud/TeacherDashboard";
 import { VoiceWidget } from "@/games/voxel/hud/VoiceWidget";
+import { reportCaughtError, reportTelemetry } from "@/utils/telemetry";
 
 const INV_DRAG_MIME = "application/x-playground-voxel-inv";
 
@@ -1266,6 +1267,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
       const res = await onSendChatMessage(text);
       if (!res.ok) {
         console.warn("failed to send chat message:", res.error);
+        reportTelemetry({ level: "warn", message: "Voxel chat send failed", context: { appArea: "voxel-chat", code: res.error?.code } }, "voxel-server");
       }
     }
   };
@@ -1426,6 +1428,31 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         chunkRemoveDistance: [12, 10],
         engineOptions: { preserveDrawingBuffer: true }
       } as Record<string, unknown>);
+
+      const canvas = hostRef.current.querySelector("canvas");
+      if (canvas) {
+        const onContextLost = (event: Event) => {
+          event.preventDefault();
+          reportTelemetry({
+            level: "error",
+            message: "Voxel WebGL context lost",
+            context: { appArea: "voxel-renderer" }
+          }, "voxel-server");
+        };
+        const onContextRestored = () => {
+          reportTelemetry({
+            level: "info",
+            message: "Voxel WebGL context restored",
+            context: { appArea: "voxel-renderer" }
+          }, "voxel-server");
+        };
+        canvas.addEventListener("webglcontextlost", onContextLost);
+        canvas.addEventListener("webglcontextrestored", onContextRestored);
+        cleanupFns.push(() => {
+          canvas.removeEventListener("webglcontextlost", onContextLost);
+          canvas.removeEventListener("webglcontextrestored", onContextRestored);
+        });
+      }
       
       // noa's built-in ObjectMesher uses global thin instances with manual rebase math;
       // plants jump on origin rebase. Per-chunk thin instances were tried (Phase 3) but
@@ -1758,6 +1785,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
         voxelAvatarsEnabled = true;
       } catch (err) {
         console.warn("voxel avatars: fallback to boxes", err);
+        reportCaughtError("Voxel avatar assets failed to load", err, { appArea: "voxel-renderer", operation: "avatar-preload" }, "voxel-server", "warn");
       }
 
       /** Local third-person body mesh (noa `mesh` component); null if voxel load failed. */
@@ -1779,6 +1807,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
           }
         } catch (err) {
           console.warn("voxel avatars: local body failed", err);
+          reportCaughtError("Local voxel avatar initialization failed", err, { appArea: "voxel-renderer", operation: "local-avatar" }, "voxel-server", "warn");
           localPlayerVoxelRoot = null;
           localRig = null;
         }

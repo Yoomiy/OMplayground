@@ -16,9 +16,12 @@ export interface TelemetryEntry {
 }
 
 const MAX_BATCH = 10;
+const MAX_BUFFER = 100;
 const FLUSH_MS = 5_000;
+const MAX_RETRY_MS = 60_000;
 
 type FlushTarget = "game-server" | "voxel-server";
+let shellTarget: FlushTarget = "game-server";
 
 const buffers: Record<FlushTarget, TelemetryEntry[]> = {
   "game-server": [],
@@ -26,6 +29,9 @@ const buffers: Record<FlushTarget, TelemetryEntry[]> = {
 };
 
 const flushTimers: Partial<Record<FlushTarget, ReturnType<typeof setTimeout>>> = {};
+const flushing: Partial<Record<FlushTarget, boolean>> = {};
+const retryCounts: Record<FlushTarget, number> = { "game-server": 0, "voxel-server": 0 };
+const recentFingerprints = new Map<string, number>();
 
 function gameServerUrl(): string {
   const fromEnv = import.meta.env.VITE_GAME_SERVER_URL?.trim();
@@ -37,7 +43,16 @@ function gameServerUrl(): string {
 }
 
 function resolveFlushTarget(target: TelemetryTarget): FlushTarget {
-  return target === "voxel-server" ? "voxel-server" : "game-server";
+  if (target === "shell") return shellTarget;
+  return target;
+}
+
+export function setShellTelemetryTarget(target: FlushTarget): () => void {
+  const previous = shellTarget;
+  shellTarget = target;
+  return () => {
+    if (shellTarget === target) shellTarget = previous;
+  };
 }
 
 function targetBaseUrl(flushTarget: FlushTarget): string {
@@ -45,12 +60,12 @@ function targetBaseUrl(flushTarget: FlushTarget): string {
   return gameServerUrl();
 }
 
-function scheduleFlush(flushTarget: FlushTarget): void {
+function scheduleFlush(flushTarget: FlushTarget, delayMs = FLUSH_MS): void {
   if (flushTimers[flushTarget]) return;
   flushTimers[flushTarget] = setTimeout(() => {
     flushTimers[flushTarget] = undefined;
     void flushTelemetry(flushTarget === "voxel-server" ? "voxel-server" : "game-server");
-  }, FLUSH_MS);
+  }, delayMs);
 }
 
 export function reportTelemetry(
@@ -60,7 +75,7 @@ export function reportTelemetry(
   target: TelemetryTarget = "shell"
 ): void {
   const flushTarget = resolveFlushTarget(target);
-  buffers[flushTarget].push({
+  const normalized = {
     timestamp: new Date().toISOString(),
     correlationId: entry.correlationId ?? getCorrelationId(),
     level: entry.level,
@@ -69,7 +84,16 @@ export function reportTelemetry(
     message: entry.message,
     context: entry.context,
     stack: entry.stack?.slice(0, 2000)
-  });
+  } satisfies TelemetryEntry;
+  const fingerprint = `${flushTarget}:${normalized.level}:${normalized.message}:${normalized.sessionId ?? ""}`;
+  const now = Date.now();
+  if (now - (recentFingerprints.get(fingerprint) ?? 0) < 3_000) return;
+  recentFingerprints.set(fingerprint, now);
+  if (recentFingerprints.size > 200) {
+    for (const [key, at] of recentFingerprints) if (now - at > 60_000) recentFingerprints.delete(key);
+  }
+  buffers[flushTarget].push(normalized);
+  if (buffers[flushTarget].length > MAX_BUFFER) buffers[flushTarget].splice(0, buffers[flushTarget].length - MAX_BUFFER);
   if (buffers[flushTarget].length >= MAX_BATCH) {
     void flushTelemetry(target);
     return;
@@ -77,35 +101,71 @@ export function reportTelemetry(
   scheduleFlush(flushTarget);
 }
 
+export function reportCaughtError(
+  message: string,
+  error: unknown,
+  context: Record<string, unknown>,
+  target: TelemetryTarget = "shell",
+  level: "warn" | "error" = "error"
+): void {
+  reportTelemetry({
+    level,
+    message,
+    stack: error instanceof Error ? error.stack : undefined,
+    context
+  }, target);
+}
+
 export async function flushTelemetry(
   target: TelemetryTarget = "shell"
 ): Promise<void> {
   const flushTarget = resolveFlushTarget(target);
   const buffer = buffers[flushTarget];
-  if (buffer.length === 0) return;
-  const batch = buffer.splice(0, MAX_BATCH);
+  if (buffer.length === 0 || flushing[flushTarget]) return;
+  flushing[flushTarget] = true;
+  const batch = buffer.slice(0, MAX_BATCH);
   const base = targetBaseUrl(flushTarget);
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "x-correlation-id": getCorrelationId()
   };
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-  if (token) headers.Authorization = `Bearer ${token}`;
-
   try {
-    await fetch(`${base}/api/telemetry`, {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const response = await fetch(`${base}/api/telemetry`, {
       method: "POST",
       headers,
       body: JSON.stringify({ logs: batch }),
       keepalive: true
     });
+    if (!response.ok) throw new Error(`telemetry_http_${response.status}`);
+    buffer.splice(0, batch.length);
+    retryCounts[flushTarget] = 0;
   } catch {
-    // Best-effort only; never throw into UI.
+    retryCounts[flushTarget] += 1;
+  } finally {
+    flushing[flushTarget] = false;
   }
 
   if (buffer.length > 0) {
-    scheduleFlush(flushTarget);
+    const retryDelay = Math.min(MAX_RETRY_MS, FLUSH_MS * 2 ** Math.min(retryCounts[flushTarget], 4));
+    scheduleFlush(flushTarget, retryCounts[flushTarget] ? retryDelay + Math.floor(Math.random() * 1_000) : FLUSH_MS);
+  }
+}
+
+function flushWithBeacon(flushTarget: FlushTarget): void {
+  if (typeof navigator === "undefined" || typeof navigator.sendBeacon !== "function") return;
+  // A fetch owns the head of this queue until it settles. Sending that same
+  // batch by beacon would make the fetch's positional removal discard entries
+  // appended while it was in flight.
+  if (flushing[flushTarget]) return;
+  const buffer = buffers[flushTarget];
+  if (buffer.length === 0) return;
+  const batch = buffer.slice(0, MAX_BATCH);
+  const body = new Blob([JSON.stringify({ logs: batch })], { type: "text/plain;charset=UTF-8" });
+  if (navigator.sendBeacon(`${targetBaseUrl(flushTarget)}/api/telemetry-beacon`, body)) {
+    buffer.splice(0, batch.length);
   }
 }
 
@@ -129,5 +189,10 @@ export function installGlobalTelemetry(): void {
       stack: reason instanceof Error ? reason.stack : undefined,
       context: { appArea: "global", kind: "unhandledrejection" }
     });
+  });
+
+  window.addEventListener("pagehide", () => {
+    flushWithBeacon("game-server");
+    flushWithBeacon("voxel-server");
   });
 }

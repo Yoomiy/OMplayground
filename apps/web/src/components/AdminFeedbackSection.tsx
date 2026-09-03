@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { reportCaughtError } from "@/utils/telemetry";
 
 interface Report {
   id: string;
@@ -108,6 +109,7 @@ export function AdminFeedbackSection() {
       }
     } catch (err) {
       console.error("Failed to load reports:", err);
+      reportCaughtError("Admin feedback query failed", err, { appArea: "admin-feedback", operation: "list" });
     } finally {
       setLoading(false);
     }
@@ -132,6 +134,7 @@ export function AdminFeedbackSection() {
       }
     } catch (err) {
       console.error("Failed to update status:", err);
+      reportCaughtError("Admin feedback status update failed", err, { appArea: "admin-feedback", operation: "status-update" });
     }
   };
 

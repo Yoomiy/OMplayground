@@ -13,6 +13,7 @@ import {
   type SoloGameSaveControls
 } from "@/lib/soloGameSaves";
 import { IndexedDbSoloDrawingDraftStore } from "@/lib/soloDrawingDraftStore";
+import { reportCaughtError } from "@/utils/telemetry";
 
 type SoloGameComponent = (props: { save: SoloGameSaveControls }) => ReactNode;
 
@@ -139,9 +140,11 @@ export default function SoloGameContainer() {
           const { error } = await supabase.rpc("increment_game_launch", { p_game_url: gameKey });
           if (error) {
             console.error("Failed to increment game launch stats:", error);
+            reportCaughtError("Solo game launch statistic failed", error, { appArea: "solo-game", operation: "launch-stat" });
           }
         } catch (e) {
           console.error("Failed to increment game launch stats:", e);
+          reportCaughtError("Solo game launch statistic failed", e, { appArea: "solo-game", operation: "launch-stat" });
         }
       })();
     }

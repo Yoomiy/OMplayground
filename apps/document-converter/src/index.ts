@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { execFile } from "child_process";
 import cors from "cors";
 import express from "express";
+import http from "http";
 import { promises as fs, createWriteStream } from "fs";
 import os from "os";
 import path from "path";
@@ -10,7 +11,10 @@ import {
   createLogger,
   correlationMiddleware,
   createHttpLogger,
-  logError
+  installProcessLifecycle,
+  logError,
+  logHttpFailure,
+  observeBackgroundTask
 } from "@playground/observability";
 
 const execFileAsync = promisify(execFile);
@@ -86,7 +90,34 @@ function safeEqualToken(token: string, expectedHash: string): boolean {
   return crypto.timingSafeEqual(Buffer.from(actual), Buffer.from(expectedHash));
 }
 
-async function run(command: string, args: string[], cwd: string) {
+async function run(command: string, args: string[], cwd: string, job: ConversionJob, stage: string) {
+  const startedAt = Date.now();
+  try {
+    const result = await execFileAsync(command, args, {
+      cwd,
+      timeout: CONVERSION_TIMEOUT_MS,
+      maxBuffer: 4 * 1024 * 1024
+    });
+    logger.info({
+      correlationId: job.correlationId,
+      protocol: "internal",
+      message: "Document conversion stage completed",
+      context: { event: "DOCUMENT_CONVERSION_STAGE_COMPLETED", jobId: job.id, stage, duration_ms: Date.now() - startedAt }
+    });
+    return result;
+  } catch (err) {
+    logger.error({
+      correlationId: job.correlationId,
+      protocol: "internal",
+      message: "Document conversion stage failed",
+      context: { event: "DOCUMENT_CONVERSION_STAGE_FAILED", jobId: job.id, stage, duration_ms: Date.now() - startedAt },
+      err: logError(err)
+    });
+    throw err;
+  }
+}
+
+function runUnlogged(command: string, args: string[], cwd: string) {
   return execFileAsync(command, args, {
     cwd,
     timeout: CONVERSION_TIMEOUT_MS,
@@ -117,20 +148,20 @@ async function convert(job: ConversionJob): Promise<void> {
       "--outdir",
       job.directory,
       job.sourcePath
-    ], job.directory);
+    ], job.directory, job, "office_to_pdf");
     pdfPath = path.join(job.directory, `${path.basename(job.sourcePath, path.extname(job.sourcePath))}.pdf`);
     await fs.access(pdfPath);
     if (result.stderr.trim()) job.warning = "PowerPoint fonts or rich content may have been substituted during conversion.";
   }
 
-  const info = await run("pdfinfo", [pdfPath], job.directory);
+  const info = await run("pdfinfo", [pdfPath], job.directory, job, "pdf_info");
   const pageMatch = info.stdout.match(/^Pages:\s+(\d+)$/m);
   const pageCount = Number(pageMatch?.[1] || 0);
   if (!pageCount) throw new Error("document_has_no_pages");
   if (pageCount > MAX_PAGES) throw new Error("document_page_limit");
 
   const prefix = path.join(outputDir, "page");
-  await run("pdftocairo", ["-png", "-scale-to", "2560", pdfPath, prefix], job.directory);
+  await run("pdftocairo", ["-png", "-scale-to", "2560", pdfPath, prefix], job.directory, job, "rasterize");
   const pngFiles = (await fs.readdir(outputDir))
     .filter((name) => name.endsWith(".png"))
     .sort((left, right) => Number(left.match(/(\d+)\.png$/)?.[1]) - Number(right.match(/(\d+)\.png$/)?.[1]));
@@ -138,18 +169,25 @@ async function convert(job: ConversionJob): Promise<void> {
 
   const pageFiles: string[] = [];
   let useWebp = true;
-  try { await run("cwebp", ["-version"], job.directory); } catch { useWebp = false; }
+  try { await runUnlogged("cwebp", ["-version"], job.directory); } catch { useWebp = false; }
+  const encodeStartedAt = Date.now();
   for (let index = 0; index < pngFiles.length; index += 1) {
     const source = path.join(outputDir, pngFiles[index]);
     const fileName = `page-${String(index + 1).padStart(4, "0")}.${useWebp ? "webp" : "png"}`;
     if (useWebp) {
-      await run("cwebp", ["-quiet", "-q", "92", "-m", "4", source, "-o", path.join(outputDir, fileName)], job.directory);
+      await runUnlogged("cwebp", ["-quiet", "-q", "92", "-m", "4", source, "-o", path.join(outputDir, fileName)], job.directory);
       await fs.unlink(source);
     } else {
       await fs.rename(source, path.join(outputDir, fileName));
     }
     pageFiles.push(fileName);
   }
+  logger.info({
+    correlationId: job.correlationId,
+    protocol: "internal",
+    message: "Document conversion stage completed",
+    context: { event: "DOCUMENT_CONVERSION_STAGE_COMPLETED", jobId: job.id, stage: "image_encode", pageCount, duration_ms: Date.now() - encodeStartedAt }
+  });
 
   const manifest = {
     version: 1,
@@ -160,7 +198,7 @@ async function convert(job: ConversionJob): Promise<void> {
   };
   await fs.writeFile(path.join(outputDir, "manifest.json"), JSON.stringify(manifest));
   const resultPath = path.join(job.directory, "result.zip");
-  await run("zip", ["-q", "-j", resultPath, "manifest.json", ...pageFiles], outputDir);
+  await run("zip", ["-q", "-j", resultPath, "manifest.json", ...pageFiles], outputDir, job, "archive");
   job.pageCount = pageCount;
   job.resultPath = resultPath;
   job.status = "ready";
@@ -207,10 +245,10 @@ async function pumpQueue() {
 async function removeJob(id: string) {
   const job = jobs.get(id);
   if (!job) return;
-  jobs.delete(id);
   const queuedIndex = queue.indexOf(id);
   if (queuedIndex >= 0) queue.splice(queuedIndex, 1);
   await fs.rm(job.directory, { recursive: true, force: true });
+  jobs.delete(id);
   logger.info({
     correlationId: job.correlationId,
     protocol: "http",
@@ -219,15 +257,18 @@ async function removeJob(id: string) {
   });
 }
 
-setInterval(() => {
+const cleanupTimer = setInterval(() => {
   const cutoff = Date.now() - JOB_TTL_MS;
   for (const [id, job] of jobs) {
-    if (job.createdAt < cutoff) void removeJob(id);
+    if (job.createdAt < cutoff && job.status !== "processing") {
+      observeBackgroundTask(logger, removeJob(id), "DOCUMENT_CONVERSION_TTL_CLEANUP_FAILED", { jobId: id });
+    }
   }
   for (const [jti, expiresAt] of usedTickets) {
     if (expiresAt < Date.now()) usedTickets.delete(jti);
   }
-}, 60_000).unref();
+}, 60_000);
+cleanupTimer.unref();
 
 const app = express();
 app.set("trust proxy", 1);
@@ -235,6 +276,10 @@ app.use(correlationMiddleware());
 app.use(cors({ origin: ALLOWED_ORIGINS, credentials: false }));
 app.use(createHttpLogger(logger));
 app.get("/health", (_req, res) => res.json({ ok: true, queued: queue.length, workerActive }));
+app.get("/ready", (_req, res) => {
+  if (!SHARED_SECRET) return void res.status(503).json({ ok: false, reason: "missing_env" });
+  res.json({ ok: true });
+});
 
 app.post("/v1/conversions", async (req, res) => {
   let directory: string | null = null;
@@ -294,8 +339,15 @@ app.post("/v1/conversions", async (req, res) => {
     void pumpQueue();
     res.status(202).json({ id, accessToken });
   } catch (error) {
-    if (directory) await fs.rm(directory, { recursive: true, force: true }).catch(() => {});
-    if (!res.headersSent) res.status(400).json({ error: error instanceof Error ? error.message : "upload_failed" });
+    logHttpFailure(logger, req, error, "DOCUMENT_CONVERSION_UPLOAD_REJECTED", {}, "warn");
+    if (directory) {
+      try {
+        await fs.rm(directory, { recursive: true, force: true });
+      } catch (cleanupError) {
+        logHttpFailure(logger, req, cleanupError, "DOCUMENT_CONVERSION_UPLOAD_CLEANUP_FAILED");
+      }
+    }
+    if (!res.headersSent) res.status(400).json({ error: "upload_rejected" });
   }
 });
 
@@ -319,15 +371,44 @@ app.get("/v1/conversions/:id/result", (req, res) => {
   const job = authorizedJob(req, res);
   if (!job) return;
   if (job.status !== "ready" || !job.resultPath) return void res.status(409).json({ error: "conversion_not_ready" });
-  logger.info({ correlationId: job.correlationId, protocol: "http", message: "Document conversion result downloaded", context: { event: "DOCUMENT_CONVERSION_DOWNLOADED", jobId: job.id, roomCode: job.roomCode } });
-  res.download(job.resultPath, "presentation-pages.zip");
+  res.download(job.resultPath, "presentation-pages.zip", (err) => {
+    if (err) {
+      logHttpFailure(logger, req, err, "DOCUMENT_CONVERSION_DOWNLOAD_FAILED", { jobId: job.id });
+      return;
+    }
+    logger.info({ correlationId: job.correlationId, protocol: "http", message: "Document conversion result downloaded", context: { event: "DOCUMENT_CONVERSION_DOWNLOADED", jobId: job.id, roomCode: job.roomCode } });
+  });
 });
 
 app.delete("/v1/conversions/:id", async (req, res) => {
   const job = authorizedJob(req, res);
   if (!job) return;
-  await removeJob(job.id);
-  res.status(204).end();
+  if (job.status === "processing") return void res.status(409).json({ error: "conversion_in_progress" });
+  try {
+    await removeJob(job.id);
+    res.status(204).end();
+  } catch (err) {
+    logHttpFailure(logger, req, err, "DOCUMENT_CONVERSION_DELETE_FAILED", { jobId: job.id });
+    res.status(500).json({ error: "internal_server_error" });
+  }
 });
 
-app.listen(PORT, () => logger.info({ protocol: "http", message: `document-converter listening on ${PORT}`, context: { event: "SERVICE_LISTENING" } }));
+const server = http.createServer(app);
+server.listen(PORT, () => logger.info({ protocol: "http", message: "document-converter listening", context: { event: "SERVICE_LISTENING", port: PORT } }));
+
+installProcessLifecycle({
+  logger,
+  shutdown: async () => {
+    clearInterval(cleanupTimer);
+    await new Promise<void>((resolve, reject) => server.close((err) => err ? reject(err) : resolve()));
+    if (queue.length > 0) {
+      logger.warn({
+        message: "Queued conversions will not start during shutdown",
+        context: { event: "DOCUMENT_CONVERSION_SHUTDOWN_QUEUE_DROPPED", queuedJobs: queue.length }
+      });
+    }
+    while (workerActive) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+  }
+});

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { isClassroomDrawingSession } from "@/lib/drawingSessionScope";
+import { reportCaughtError } from "@/utils/telemetry";
 
 export interface MyPausedGameRow {
   id: string;
@@ -46,6 +47,7 @@ export function useMyPausedGames(userId: string | undefined, gender: "boy" | "gi
       .limit(20);
     if (error) {
       console.error(error);
+      reportCaughtError("Paused games query failed", error, { appArea: "paused-games", operation: "list" });
       setRows([]);
     } else {
       setRows(

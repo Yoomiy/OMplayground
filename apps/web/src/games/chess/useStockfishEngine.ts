@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { reportCaughtError } from "@/utils/telemetry";
 
 export interface DifficultyConfig {
   label: string;
@@ -67,6 +68,7 @@ export function useStockfishEngine() {
       worker.postMessage("isready");
     } catch (err) {
       console.error("Failed to initialize Stockfish worker:", err);
+      reportCaughtError("Stockfish worker initialization failed", err, { appArea: "stockfish", operation: "worker-init" });
     }
   }, []);
 

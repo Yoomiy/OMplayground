@@ -209,4 +209,20 @@ describe("lifecycle persistence", () => {
     expect(payload.is_open).toBe(false);
     expect(payload.ended_at).toBe("2026-04-21T12:00:00.000Z");
   });
+
+  it("rejects when a lifecycle update returns an error", async () => {
+    const dbError = { code: "XX000", message: "write failed" };
+    const builder = {
+      eq: jest.fn(),
+      then: (resolve: (value: { data: null; error: typeof dbError }) => void) => resolve({ data: null, error: dbError })
+    };
+    builder.eq.mockReturnValue(builder);
+    const supabase = { from: () => ({ update: () => builder }) } as unknown as Parameters<typeof persistGameResumed>[0]["supabase"];
+    await expect(persistGameResumed({
+      supabase,
+      sessionId: "sess-failed",
+      connectedPlayerIds: [],
+      connectedPlayerNames: []
+    })).rejects.toBe(dbError);
+  });
 });

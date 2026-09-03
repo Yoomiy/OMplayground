@@ -17,10 +17,28 @@ export interface LiveKitWebhookOptions {
   }) => Promise<void>;
 }
 
-function sessionIdFromRoomName(roomName: string): string | undefined {
-  const prefix = "voxel-session-";
-  if (!roomName.startsWith(prefix)) return undefined;
-  return roomName.slice(prefix.length);
+export interface LiveKitRoomContext {
+  roomKind: "voxel-session" | "game-session" | "classroom" | "unknown";
+  sessionId?: string;
+  roomCode?: string;
+}
+
+export function liveKitRoomContext(roomName: string): LiveKitRoomContext {
+  for (const [prefix, roomKind] of [
+    ["voxel-session-", "voxel-session"],
+    ["game-session-", "game-session"]
+  ] as const) {
+    if (roomName.startsWith(prefix)) {
+      const sessionId = roomName.slice(prefix.length);
+      return { roomKind, ...(sessionId ? { sessionId } : {}) };
+    }
+  }
+  const classroomPrefix = "classroom-";
+  if (roomName.startsWith(classroomPrefix)) {
+    const roomCode = roomName.slice(classroomPrefix.length);
+    return { roomKind: "classroom", ...(roomCode ? { roomCode } : {}) };
+  }
+  return { roomKind: "unknown" };
 }
 
 export function mountLiveKitWebhook(
@@ -33,6 +51,7 @@ export function mountLiveKitWebhook(
     "/webhooks/livekit",
     express.raw({ type: "application/webhook+json" }),
     async (req: Request, res: Response) => {
+    let event: Awaited<ReturnType<WebhookReceiver["receive"]>>;
     try {
       const authHeader = req.get("Authorization") ?? "";
       const body =
@@ -41,12 +60,23 @@ export function mountLiveKitWebhook(
           : Buffer.isBuffer(req.body)
             ? req.body.toString("utf8")
             : JSON.stringify(req.body ?? {});
-      const event = await receiver.receive(body, authHeader);
+      event = await receiver.receive(body, authHeader);
+    } catch (err) {
+      options.logger.warn({
+        protocol: "livekit-webhook",
+        message: "LiveKit webhook verification failed",
+        context: { status: "failed" },
+        err
+      });
+      res.status(400).json({ error: "invalid_webhook" });
+      return;
+    }
+
+    const livekitRoom = event.room?.name ?? "";
+    const roomContext = liveKitRoomContext(livekitRoom);
+    try {
       await options.onVerifiedEvent?.(event);
-      const livekitRoom = event.room?.name ?? "";
-      const sessionId = livekitRoom
-        ? sessionIdFromRoomName(livekitRoom)
-        : undefined;
+      const { sessionId, roomCode, roomKind } = roomContext;
       const isDev = process.env.NODE_ENV !== "production";
 
       switch (event.event) {
@@ -55,7 +85,7 @@ export function mountLiveKitWebhook(
             protocol: "livekit-webhook",
             sessionId,
             message: "LiveKit room started",
-            context: { event: event.event, livekitRoom, status: "success" }
+            context: { event: event.event, livekitRoom, roomCode, roomKind, status: "success" }
           });
           break;
         case "room_finished":
@@ -63,7 +93,7 @@ export function mountLiveKitWebhook(
             protocol: "livekit-webhook",
             sessionId,
             message: "LiveKit room finished",
-            context: { event: event.event, livekitRoom, status: "success" }
+            context: { event: event.event, livekitRoom, roomCode, roomKind, status: "success" }
           });
           break;
         case "participant_joined":
@@ -76,6 +106,8 @@ export function mountLiveKitWebhook(
             context: {
               event: event.event,
               livekitRoom,
+              roomCode,
+              roomKind,
               participantIdentity: event.participant?.identity,
               status: "success"
             }
@@ -91,6 +123,8 @@ export function mountLiveKitWebhook(
             context: {
               event: event.event,
               livekitRoom,
+              roomCode,
+              roomKind,
               participantIdentity: event.participant?.identity,
               status: "success"
             }
@@ -106,7 +140,9 @@ export function mountLiveKitWebhook(
               context: {
                 event: event.event,
                 livekitRoom,
-                trackKind: "audio",
+                roomCode,
+                roomKind,
+                trackKind: event.track?.type,
                 status: "success"
               }
             });
@@ -118,7 +154,7 @@ export function mountLiveKitWebhook(
               protocol: "livekit-webhook",
               sessionId,
               message: `LiveKit ${event.event}`,
-              context: { event: event.event, livekitRoom, status: "success" }
+              context: { event: event.event, livekitRoom, roomCode, roomKind, status: "success" }
             });
           }
           break;
@@ -126,13 +162,21 @@ export function mountLiveKitWebhook(
 
       res.json({ ok: true });
     } catch (err) {
-      options.logger.warn({
+      options.logger.error({
         protocol: "livekit-webhook",
-        message: "LiveKit webhook verification failed",
-        context: { status: "failed" },
-        error: err instanceof Error ? err.message : String(err)
+        sessionId: roomContext.sessionId,
+        message: "LiveKit webhook processing failed",
+        context: {
+          event: event.event,
+          livekitRoom,
+          roomCode: roomContext.roomCode,
+          roomKind: roomContext.roomKind,
+          status: "failed"
+        },
+        err
       });
-      res.status(400).json({ error: "invalid_webhook" });
+      // A 5xx allows LiveKit to retry a verified event that failed downstream.
+      res.status(500).json({ error: "webhook_processing_failed" });
     }
   }
   );

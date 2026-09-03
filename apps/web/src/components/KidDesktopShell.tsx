@@ -8,6 +8,7 @@ import { KidAvatar } from "@/components/KidAvatar";
 import { discardMySoloWaitingSessions } from "@/lib/pausedSessionActions";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/cn";
+import { reportCaughtError } from "@/utils/telemetry";
 
 export function desktopPanelClass(
   className?: string,
@@ -51,7 +52,10 @@ export function KidDesktopShell({
 
   async function logout() {
     const { error } = await discardMySoloWaitingSessions();
-    if (error) console.error(error);
+    if (error) {
+      console.error(error);
+      reportCaughtError("Solo waiting-session cleanup failed", error, { appArea: "kid-shell", operation: "logout-cleanup" });
+    }
     await supabase.auth.signOut();
     navigate("/login", { replace: true });
   }

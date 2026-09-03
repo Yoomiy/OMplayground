@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { kidFieldInputClass } from "@/lib/fieldStyles";
 import { cn } from "@/lib/cn";
+import { reportCaughtError } from "@/utils/telemetry";
 import {
   matchesTeacherStatusFilter,
   type TeacherSessionStatusFilter
@@ -43,6 +44,7 @@ export function GameSessionInspector({ scope, teacherGender }: GameSessionInspec
     const { data, error } = await query;
     if (error) {
       console.error(error);
+      reportCaughtError("Session inspector query failed", error, { appArea: "session-inspector", operation: "list" });
       setRows([]);
     } else {
       setRows((data ?? []) as unknown as SessionRow[]);

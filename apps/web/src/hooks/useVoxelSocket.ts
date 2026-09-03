@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 import { supabase } from "@/lib/supabase";
 import { getVoxelServerUrl } from "@/lib/voxelServerUrl";
+import { reportTelemetry } from "@/utils/telemetry";
 import type {
   ArmSwingPayload,
   BlockDelta,
@@ -223,7 +224,15 @@ export function useVoxelSocket(
     lastSentAtRef.current = 0;
     mergedPlayersRef.current = {};
     void (async () => {
-      const { data } = await supabase.auth.getSession();
+      const { data, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        reportTelemetry({
+          level: "error",
+          message: "Voxel session lookup failed",
+          sessionId,
+          context: { appArea: "voxel-socket", code: sessionError.code }
+        }, "voxel-server");
+      }
       const token = data.session?.access_token;
       if (!token) {
         setStatus("אין סשן — התחבר מחדש.");
@@ -249,6 +258,12 @@ export function useVoxelSocket(
         })) as JoinRoomAck;
         if (!ack?.ok) {
           setStatus(ack?.error?.message ?? "הצטרפות לחדר נכשלה");
+          reportTelemetry({
+            level: "warn",
+            message: "Voxel room join failed",
+            sessionId,
+            context: { appArea: "voxel-socket", code: ack?.error?.code }
+          }, "voxel-server");
           return;
         }
         setJoinAck(ack);
@@ -366,8 +381,16 @@ export function useVoxelSocket(
         for (const cb of roomEventListeners.current) cb(payload);
       });
 
-      s.on("disconnect", () => {
+      s.on("disconnect", (reason) => {
         setConnected(false);
+        if (!cancelled && reason !== "io client disconnect") {
+          reportTelemetry({
+            level: "warn",
+            message: "Voxel socket disconnected",
+            sessionId,
+            context: { appArea: "voxel-socket", reason }
+          }, "voxel-server");
+        }
       });
 
       s.on("MUTE_ALL", (payload: { mutedBy: string }) => {
@@ -376,6 +399,13 @@ export function useVoxelSocket(
 
       s.on("connect_error", (err: Error) => {
         setStatus(`שגיאת חיבור: ${err.message}`);
+        reportTelemetry({
+          level: "error",
+          message: "Voxel socket connection failed",
+          sessionId,
+          stack: err.stack,
+          context: { appArea: "voxel-socket" }
+        }, "voxel-server");
       });
     })();
 

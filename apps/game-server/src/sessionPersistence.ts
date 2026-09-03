@@ -45,7 +45,7 @@ export async function persistPlayerJoin(
     peakPlayerCount
   } = args;
   if (session.player_ids.includes(userId)) {
-    await supabase
+    const { error } = await supabase
       .from("game_sessions")
       .update({
         connected_player_ids: connectedPlayerIds,
@@ -54,6 +54,7 @@ export async function persistPlayerJoin(
         ...(peakPlayerCount !== undefined ? { peak_player_count: peakPlayerCount } : {})
       })
       .eq("id", sessionId);
+    if (error) throw error;
     return false;
   }
   const nextPlayerIds = Array.from(new Set([...session.player_ids, userId]));
@@ -64,7 +65,7 @@ export async function persistPlayerJoin(
       : roomStatusIsIdle
         ? session.status
         : "playing";
-  await supabase
+  const { error } = await supabase
     .from("game_sessions")
     .update({
       player_ids: nextPlayerIds,
@@ -76,6 +77,7 @@ export async function persistPlayerJoin(
       ...(peakPlayerCount !== undefined ? { peak_player_count: peakPlayerCount } : {})
     })
     .eq("id", sessionId);
+  if (error) throw error;
   return true;
 }
 
@@ -127,12 +129,13 @@ export async function persistPlayerLeave(
     peakPlayerCount
   } = args;
   if (result.newHostId) {
-    const { data: kp } = await supabase
+    const { data: kp, error: profileError } = await supabase
       .from("kid_profiles")
       .select("grade, full_name")
       .eq("id", result.newHostId)
       .maybeSingle();
-    await supabase
+    if (profileError) throw profileError;
+    const { error } = await supabase
       .from("game_sessions")
       .update({
         host_id: result.newHostId,
@@ -144,6 +147,7 @@ export async function persistPlayerLeave(
         ...(peakPlayerCount !== undefined ? { peak_player_count: peakPlayerCount } : {})
       })
       .eq("id", sessionId);
+    if (error) throw error;
   }
   if (result.roomEmpty) {
     const payload: {
@@ -165,13 +169,14 @@ export async function persistPlayerLeave(
     if (peakPlayerCount !== undefined) {
       payload.peak_player_count = peakPlayerCount;
     }
-    await supabase
+    const { error } = await supabase
       .from("game_sessions")
       .update(payload)
       .eq("id", sessionId)
       .in("status", ["waiting", "playing", "paused"]);
+    if (error) throw error;
   } else if (!result.newHostId) {
-    await supabase
+    const { error } = await supabase
       .from("game_sessions")
       .update({
         connected_player_ids: connectedPlayerIds,
@@ -180,6 +185,7 @@ export async function persistPlayerLeave(
         ...(peakPlayerCount !== undefined ? { peak_player_count: peakPlayerCount } : {})
       })
       .eq("id", sessionId);
+    if (error) throw error;
   }
 }
 

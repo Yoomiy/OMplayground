@@ -1,4 +1,5 @@
 import { proceduralVoxelID } from "@playground/voxel-content";
+import { reportTelemetry } from "@/utils/telemetry";
 
 export interface ChunkRequest {
   chunkId: string;
@@ -187,6 +188,14 @@ export class WorldgenWorkerPool {
         req.onComplete(voxels);
       } catch (fallbackErr) {
         console.error(`Failed synchronous fallback for chunk ${req.chunkId}:`, fallbackErr);
+        reportTelemetry({
+          level: "error",
+          message: "Voxel world generation fallback failed",
+          stack: fallbackErr instanceof Error ? fallbackErr.stack : undefined,
+          context: { appArea: "voxel-worldgen", workerIndex }
+        }, "voxel-server");
+        // Complete the request so the engine does not leave the chunk pending forever.
+        req.onComplete(new Uint16Array(req.sx * req.sy * req.sz));
       }
     }
     

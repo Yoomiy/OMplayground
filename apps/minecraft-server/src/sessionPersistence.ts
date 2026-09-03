@@ -41,7 +41,7 @@ export async function persistPlayerJoin(
     peakPlayerCount
   } = args;
   if (session.player_ids.includes(userId)) {
-    await supabase
+    const { error } = await supabase
       .from("game_sessions")
       .update({
         connected_player_ids: connectedPlayerIds,
@@ -50,6 +50,7 @@ export async function persistPlayerJoin(
         ...(peakPlayerCount !== undefined ? { peak_player_count: peakPlayerCount } : {})
       })
       .eq("id", sessionId);
+    if (error) throw error;
     return false;
   }
   const nextPlayerIds = Array.from(new Set([...session.player_ids, userId]));
@@ -60,7 +61,7 @@ export async function persistPlayerJoin(
       : roomStatusIsIdle
         ? session.status
         : "playing";
-  await supabase
+  const { error } = await supabase
     .from("game_sessions")
     .update({
       player_ids: nextPlayerIds,
@@ -72,6 +73,7 @@ export async function persistPlayerJoin(
       ...(peakPlayerCount !== undefined ? { peak_player_count: peakPlayerCount } : {})
     })
     .eq("id", sessionId);
+  if (error) throw error;
   return true;
 }
 
@@ -104,12 +106,13 @@ export async function persistPlayerLeave(
     peakPlayerCount
   } = args;
   if (result.newHostId) {
-    const { data: kp } = await supabase
+    const { data: kp, error: profileError } = await supabase
       .from("kid_profiles")
       .select("grade, full_name")
       .eq("id", result.newHostId)
       .maybeSingle();
-    await supabase
+    if (profileError) throw profileError;
+    const { error } = await supabase
       .from("game_sessions")
       .update({
         host_id: result.newHostId,
@@ -121,6 +124,7 @@ export async function persistPlayerLeave(
         ...(peakPlayerCount !== undefined ? { peak_player_count: peakPlayerCount } : {})
       })
       .eq("id", sessionId);
+    if (error) throw error;
   }
   if (result.roomEmpty) {
     const payload: {
@@ -142,13 +146,14 @@ export async function persistPlayerLeave(
     if (peakPlayerCount !== undefined) {
       payload.peak_player_count = peakPlayerCount;
     }
-    await supabase
+    const { error } = await supabase
       .from("game_sessions")
       .update(payload)
       .eq("id", sessionId)
       .in("status", ["waiting", "playing", "paused"]);
+    if (error) throw error;
   } else if (!result.newHostId) {
-    await supabase
+    const { error } = await supabase
       .from("game_sessions")
       .update({
         connected_player_ids: connectedPlayerIds,
@@ -157,6 +162,7 @@ export async function persistPlayerLeave(
         ...(peakPlayerCount !== undefined ? { peak_player_count: peakPlayerCount } : {})
       })
       .eq("id", sessionId);
+    if (error) throw error;
   }
 }
 
@@ -173,7 +179,7 @@ export async function persistGamePaused(
   args: PersistGamePausedArgs
 ): Promise<void> {
   const now = args.now ?? new Date().toISOString();
-  await args.supabase
+  const { error } = await args.supabase
     .from("game_sessions")
     .update({
       status: "paused",
@@ -183,6 +189,7 @@ export async function persistGamePaused(
       last_activity: now
     })
     .eq("id", args.sessionId);
+  if (error) throw error;
 }
 
 /** Recess sweep uses the same payload shape; alias mirrors game-server. */
@@ -200,7 +207,7 @@ export async function persistGameResumed(
   args: PersistGameResumedArgs
 ): Promise<void> {
   const now = args.now ?? new Date().toISOString();
-  await args.supabase
+  const { error } = await args.supabase
     .from("game_sessions")
     .update({
       status: "playing",
@@ -209,6 +216,7 @@ export async function persistGameResumed(
       last_activity: now
     })
     .eq("id", args.sessionId);
+  if (error) throw error;
 }
 
 export interface PersistGameStoppedArgs {
@@ -224,7 +232,7 @@ export async function persistGameStopped(
   args: PersistGameStoppedArgs
 ): Promise<void> {
   const endedAt = args.endedAt ?? new Date().toISOString();
-  await args.supabase
+  const { error } = await args.supabase
     .from("game_sessions")
     .update({
       status: "completed",
@@ -237,6 +245,7 @@ export async function persistGameStopped(
       last_activity: endedAt
     })
     .eq("id", args.sessionId);
+  if (error) throw error;
 }
 
 export interface PersistGameAutosaveArgs {
@@ -248,7 +257,7 @@ export interface PersistGameAutosaveArgs {
 export async function persistGameAutosave(
   args: PersistGameAutosaveArgs
 ): Promise<void> {
-  await args.supabase
+  const { error } = await args.supabase
     .from("game_sessions")
     .update({
       game_state: args.gameState as unknown as Record<string, unknown>,
@@ -256,5 +265,5 @@ export async function persistGameAutosave(
     })
     .eq("id", args.sessionId)
     .in("status", ["playing", "waiting"]);
+  if (error) throw error;
 }
-

@@ -62,6 +62,10 @@ export function createHttpLogger(logger: Logger): RequestHandler {
   });
 }
 
+export function requestCorrelationId(req: Request): string | undefined {
+  return (req as Request & { correlationId?: string }).correlationId;
+}
+
 export function attachSocketCorrelation(io: Server): void {
   io.use((socket, next) => {
     const fromAuth = (socket.handshake.auth as { correlationId?: string })

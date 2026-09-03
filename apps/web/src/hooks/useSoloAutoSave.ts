@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { JsonValue, SoloGameSaveControls } from "@/lib/soloGameSaves";
+import { reportTelemetry } from "@/utils/telemetry";
 
 export function useSoloAutoSave(
   save: SoloGameSaveControls,
@@ -20,7 +21,15 @@ export function useSoloAutoSave(
     const persist = () => {
       if (!dirtyRef.current) return;
       dirtyRef.current = false;
-      void save.saveState(latestRef.current);
+      void save.saveState(latestRef.current).catch((err) => {
+        dirtyRef.current = true;
+        reportTelemetry({
+          level: "error",
+          message: "Solo game autosave failed",
+          stack: err instanceof Error ? err.stack : undefined,
+          context: { appArea: "solo-autosave" }
+        });
+      });
     };
     const id = window.setInterval(persist, intervalMs);
     return () => {

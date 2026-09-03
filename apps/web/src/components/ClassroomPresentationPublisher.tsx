@@ -1,6 +1,7 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { BlobReader, BlobWriter, TextWriter, ZipReader, type Entry } from "@zip.js/zip.js";
 import { Track, VideoPreset, type Room } from "livekit-client";
+import { reportCaughtError } from "@/utils/telemetry";
 import {
   ChevronLeft,
   ChevronRight,
@@ -424,6 +425,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
       expiresAt: Date.now() + CLASSROOM_MEDIA_TTL_MS
     }).catch((error) => {
       console.error("Classroom media library state could not be persisted", error);
+      reportCaughtError("Classroom media library state persistence failed", error, { appArea: "classroom-presentation", operation: "library-state", roomCode }, "voxel-server");
       setCacheWarning("לא ניתן לשמור את ספריית המדיה לשחזור לאחר רענון.");
     });
   }, [sessionId]);
@@ -465,6 +467,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
         persistMaterialTimerRef.current = window.setTimeout(() => {
           void saveClassroomMaterial(next).catch((error) => {
             console.error("Classroom media material could not be persisted", error);
+            reportCaughtError("Classroom media material persistence failed", error, { appArea: "classroom-presentation", operation: "material-save", roomCode }, "voxel-server");
             setMaterials((items) => items.map((item) => item.id === next.id ? { ...item, localOnly: true } : item));
             setCacheWarning("החומר יישאר זמין בלשונית זו, אך אין מקום לשמור אותו לשחזור לאחר רענון.");
           });
@@ -862,6 +865,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
     void prepareSelected(selected)
       .catch((error) => {
         console.error("Classroom media preparation failed", error);
+        reportCaughtError("Classroom media preparation failed", error, { appArea: "classroom-presentation", operation: "prepare", roomCode }, "voxel-server");
         if (!cancelled) onError("לא ניתן לפתוח את חומר המדיה שנבחר.");
       })
       .finally(() => {
@@ -990,6 +994,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
     if (visible && !isPublished) {
       void publish().catch((error) => {
         console.error("Classroom presentation publish failed", error);
+        reportCaughtError("Classroom presentation publish failed", error, { appArea: "classroom-presentation", operation: "publish", roomCode }, "voxel-server");
         onError("לא ניתן לפרסם את לוח המדיה.");
       });
     }
@@ -1124,6 +1129,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
       } else {
         await saveClassroomMaterial(material).catch((error) => {
           console.error("Classroom media material could not be persisted", error);
+          reportCaughtError("Classroom media material persistence failed", error, { appArea: "classroom-presentation", operation: "material-save", roomCode }, "voxel-server");
           setMaterials((items) => items.map((item) => item.id === id ? { ...item, localOnly: true } : item));
           setCacheWarning("החומר יישאר זמין בלשונית זו, אך אין מקום לשמור אותו לשחזור לאחר רענון.");
         });
@@ -1131,6 +1137,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
       onUploadStatus({ state: "success", message: `${file.name} מוכן להצגה בלוח המדיה.` });
     } catch (error) {
       console.error("Classroom material import failed", error);
+      reportCaughtError("Classroom material import failed", error, { appArea: "classroom-presentation", operation: "import", roomCode }, "voxel-server");
       const message = "לא ניתן להכין את הקובץ להצגה.";
       onUploadStatus({ state: "error", message });
       onError(message);

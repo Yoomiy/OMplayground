@@ -7,7 +7,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { supabase } from "@/lib/supabase";
 import { getVoxelServerUrl } from "@/lib/voxelServerUrl";
-import { reportTelemetry } from "@/utils/telemetry";
+import { reportTelemetry, setShellTelemetryTarget } from "@/utils/telemetry";
 import { getCorrelationId } from "@/utils/correlation";
 import { DrawingBoard, type DrawingBoardHandle } from "@/games/drawing/DrawingBoard";
 import {
@@ -153,6 +153,7 @@ function getGuestAttendanceKey(roomCode: string, displayName: string): string {
 }
 
 export function ClassroomPage() {
+  useEffect(() => setShellTelemetryTarget("voxel-server"), []);
   const { roomCode } = useParams<{ roomCode: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();

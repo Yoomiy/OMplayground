@@ -19,7 +19,7 @@ export async function persistGameEnded(
   args: PersistGameEndedArgs
 ): Promise<void> {
   const endedAt = args.endedAt ?? new Date().toISOString();
-  await args.supabase
+  const { error } = await args.supabase
     .from("game_sessions")
     .update({
       status: "completed",
@@ -30,6 +30,7 @@ export async function persistGameEnded(
       last_activity: endedAt
     })
     .eq("id", args.sessionId);
+  if (error) throw error;
 }
 
 export interface PersistGameStoppedArgs {
@@ -44,7 +45,7 @@ export async function persistGameStopped(
   args: PersistGameStoppedArgs
 ): Promise<void> {
   const endedAt = args.endedAt ?? new Date().toISOString();
-  await args.supabase
+  const { error } = await args.supabase
     .from("game_sessions")
     .update({
       status: "completed",
@@ -57,6 +58,7 @@ export async function persistGameStopped(
       last_activity: endedAt
     })
     .eq("id", args.sessionId);
+  if (error) throw error;
 }
 
 export interface PersistGameRematchArgs {
@@ -74,7 +76,7 @@ export async function persistGameRematch(
   args: PersistGameRematchArgs
 ): Promise<void> {
   const now = args.now ?? new Date().toISOString();
-  await args.supabase
+  const { error } = await args.supabase
     .from("game_sessions")
     .update({
       status: "playing",
@@ -88,6 +90,7 @@ export async function persistGameRematch(
       last_activity: now
     })
     .eq("id", args.sessionId);
+  if (error) throw error;
 }
 
 export interface PersistRecessPauseArgs {
@@ -107,7 +110,7 @@ export async function persistRecessPause(
   args: PersistRecessPauseArgs
 ): Promise<void> {
   const now = args.now ?? new Date().toISOString();
-  await args.supabase
+  const { error } = await args.supabase
     .from("game_sessions")
     .update({
       status: "paused",
@@ -117,6 +120,7 @@ export async function persistRecessPause(
       last_activity: now
     })
     .eq("id", args.sessionId);
+  if (error) throw error;
 }
 
 export const persistGamePaused = persistRecessPause;
@@ -133,7 +137,7 @@ export async function persistGameResumed(
   args: PersistGameResumedArgs
 ): Promise<void> {
   const now = args.now ?? new Date().toISOString();
-  await args.supabase
+  const { error } = await args.supabase
     .from("game_sessions")
     .update({
       status: "playing",
@@ -142,6 +146,7 @@ export async function persistGameResumed(
       last_activity: now
     })
     .eq("id", args.sessionId);
+  if (error) throw error;
 }
 
 export interface CleanupStalePausedArgs {
@@ -160,10 +165,11 @@ export async function cleanupStalePausedSessions(
 ): Promise<void> {
   const now = args.now ?? new Date();
   const cutoff = new Date(now.getTime() - args.olderThanMs).toISOString();
-  await args.supabase
+  const { error } = await args.supabase
     .from("game_sessions")
     .update({ status: "completed", ended_at: now.toISOString() })
     .eq("status", "paused")
     .not("invitation_code", "like", "class-draw-%")
     .lt("last_activity", cutoff);
+  if (error) throw error;
 }

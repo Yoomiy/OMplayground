@@ -16,9 +16,9 @@ export interface ServiceStats {
   service: ServiceName;
   activeConnections: number;
   activeRoomsCount: number;
-  intentsPerSecond: number;
-  averageIntentLatencyMs: number;
-  intentFailuresLast5Min: number;
+  socketEventsPerSecond: number;
+  averageSocketEventLatencyMs: number;
+  socketEventFailuresLast5Min: number;
   rooms: RoomStat[];
   voice?: VoiceStats;
 }
@@ -28,7 +28,7 @@ interface RoomMeta {
   createdAt: number;
 }
 
-interface IntentSample {
+interface SocketEventSample {
   at: number;
   durationMs: number;
 }
@@ -39,8 +39,8 @@ const RATE_WINDOW_MS = 5_000;
 export class StatsCollector {
   private connections = 0;
   private roomMeta = new Map<string, RoomMeta>();
-  private intentSamples: IntentSample[] = [];
-  private intentFailures: number[] = [];
+  private socketEventSamples: SocketEventSample[] = [];
+  private socketEventFailures: number[] = [];
   private voiceParticipants = 0;
 
   constructor(private readonly service: ServiceName) {}
@@ -63,14 +63,14 @@ export class StatsCollector {
     this.roomMeta.delete(sessionId);
   }
 
-  recordIntentProcessed(durationMs: number): void {
+  recordSocketEventProcessed(durationMs: number): void {
     const now = Date.now();
-    this.intentSamples.push({ at: now, durationMs });
-    this.pruneIntentSamples(now);
+    this.socketEventSamples.push({ at: now, durationMs });
+    this.pruneSocketEventSamples(now);
   }
 
-  recordIntentFailed(): void {
-    this.intentFailures.push(Date.now());
+  recordSocketEventFailed(): void {
+    this.socketEventFailures.push(Date.now());
     this.pruneFailures(Date.now());
   }
 
@@ -91,7 +91,7 @@ export class StatsCollector {
     voice?: VoiceStats
   ): ServiceStats {
     const now = Date.now();
-    this.pruneIntentSamples(now);
+    this.pruneSocketEventSamples(now);
     this.pruneFailures(now);
 
     const rooms = listRooms().map((r) => {
@@ -117,37 +117,37 @@ export class StatsCollector {
       }
     }
 
-    const recentIntents = this.intentSamples.filter(
+    const recentSocketEvents = this.socketEventSamples.filter(
       (s) => now - s.at <= RATE_WINDOW_MS
     );
-    const intentsPerSecond =
-      recentIntents.length / (RATE_WINDOW_MS / 1000);
-    const averageIntentLatencyMs =
-      recentIntents.length === 0
+    const socketEventsPerSecond =
+      recentSocketEvents.length / (RATE_WINDOW_MS / 1000);
+    const averageSocketEventLatencyMs =
+      recentSocketEvents.length === 0
         ? 0
-        : recentIntents.reduce((sum, s) => sum + s.durationMs, 0) /
-          recentIntents.length;
+        : recentSocketEvents.reduce((sum, s) => sum + s.durationMs, 0) /
+          recentSocketEvents.length;
 
     return {
       service: this.service,
       activeConnections: this.connections,
       activeRoomsCount: rooms.length,
-      intentsPerSecond: Math.round(intentsPerSecond * 100) / 100,
-      averageIntentLatencyMs: Math.round(averageIntentLatencyMs * 10) / 10,
-      intentFailuresLast5Min: this.intentFailures.length,
+      socketEventsPerSecond: Math.round(socketEventsPerSecond * 100) / 100,
+      averageSocketEventLatencyMs: Math.round(averageSocketEventLatencyMs * 10) / 10,
+      socketEventFailuresLast5Min: this.socketEventFailures.length,
       rooms,
       ...(voice ? { voice } : {})
     };
   }
 
-  private pruneIntentSamples(now: number): void {
-    this.intentSamples = this.intentSamples.filter(
+  private pruneSocketEventSamples(now: number): void {
+    this.socketEventSamples = this.socketEventSamples.filter(
       (s) => now - s.at <= FIVE_MIN_MS
     );
   }
 
   private pruneFailures(now: number): void {
-    this.intentFailures = this.intentFailures.filter(
+    this.socketEventFailures = this.socketEventFailures.filter(
       (t) => now - t <= FIVE_MIN_MS
     );
   }

@@ -10,6 +10,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
 import type { PublicKidProfile } from "@/hooks/useOnlineKids";
+import { reportCaughtError, reportTelemetry } from "@/utils/telemetry";
 
 export interface PrivateMessageRow {
   id: string;
@@ -42,7 +43,7 @@ type InboxContextValue = {
 const InboxContext = createContext<InboxContextValue | null>(null);
 
 async function loadMessages(userId: string): Promise<PrivateMessageRow[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("private_messages")
     .select(
       "id, from_kid_id, is_from_admin, from_display_name, to_kid_id, to_display_name, content, is_read, created_at"
@@ -50,6 +51,7 @@ async function loadMessages(userId: string): Promise<PrivateMessageRow[]> {
     .or(`to_kid_id.eq.${userId},from_kid_id.eq.${userId}`)
     .order("created_at", { ascending: false })
     .limit(200);
+  if (error) throw error;
   return (data ?? []) as PrivateMessageRow[];
 }
 
@@ -57,12 +59,13 @@ async function loadPartners(
   partnerIds: string[]
 ): Promise<Map<string, PublicKidProfile>> {
   if (partnerIds.length === 0) return new Map();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("public_kid_profiles")
     .select(
       "id, username, full_name, gender, grade, avatar_color, avatar_preset_id, avatar_url, role"
     )
     .in("id", partnerIds);
+  if (error) throw error;
   return new Map(
     ((data ?? []) as PublicKidProfile[]).map((p) => [p.id, p])
   );
@@ -119,16 +122,21 @@ function useInboxState(userId: string | undefined): InboxContextValue {
       return;
     }
     setLoading(true);
-    const msgs = await loadMessages(userId);
-    const partnerIds = new Set<string>();
-    for (const m of msgs) {
-      const other = m.from_kid_id === userId ? m.to_kid_id : m.from_kid_id;
-      if (other) partnerIds.add(other);
+    try {
+      const msgs = await loadMessages(userId);
+      const partnerIds = new Set<string>();
+      for (const m of msgs) {
+        const other = m.from_kid_id === userId ? m.to_kid_id : m.from_kid_id;
+        if (other) partnerIds.add(other);
+      }
+      const profs = await loadPartners(Array.from(partnerIds));
+      setMessages(msgs);
+      setPartners(profs);
+    } catch (error) {
+      reportCaughtError("Inbox refresh failed", error, { appArea: "inbox", operation: "refresh" });
+    } finally {
+      setLoading(false);
     }
-    const profs = await loadPartners(Array.from(partnerIds));
-    setMessages(msgs);
-    setPartners(profs);
-    setLoading(false);
   }, [userId]);
 
   const appendMessage = useCallback(
@@ -149,7 +157,7 @@ function useInboxState(userId: string | undefined): InboxContextValue {
               for (const [id, profile] of next) merged.set(id, profile);
               return merged;
             });
-          });
+          }).catch((error) => reportCaughtError("Inbox partner lookup failed", error, { appArea: "inbox", operation: "partner-lookup" }));
           return prev;
         });
       }
@@ -206,7 +214,11 @@ function useInboxState(userId: string | undefined): InboxContextValue {
           );
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          reportTelemetry({ level: "warn", message: "Inbox realtime channel failed", context: { appArea: "inbox", status } });
+        }
+      });
 
     return () => {
       void supabase.removeChannel(channel);

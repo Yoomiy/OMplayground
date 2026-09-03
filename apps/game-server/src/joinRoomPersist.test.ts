@@ -199,4 +199,18 @@ describe("persistPlayerJoin", () => {
     });
     expect(m.eq).toHaveBeenCalledWith("id", "sess-observers");
   });
+
+  it("rejects when Supabase returns an update error", async () => {
+    const dbError = { code: "42501", message: "permission denied" };
+    const eq = jest.fn().mockResolvedValue({ data: null, error: dbError });
+    const supabase = { from: () => ({ update: () => ({ eq }) }) } as unknown as Parameters<typeof persistPlayerJoin>[0]["supabase"];
+    await expect(persistPlayerJoin({
+      supabase,
+      sessionId: "sess-failed",
+      session: { player_ids: [], player_names: [], status: "waiting" },
+      userId: "kid",
+      displayName: "Kid",
+      roomStatusIsIdle: true
+    })).rejects.toBe(dbError);
+  });
 });

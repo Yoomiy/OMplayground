@@ -468,11 +468,12 @@ export async function generateLiveKitToken(
     );
   }
 
-  const { data: session } = await supabaseAdmin
+  const { data: session, error: sessionError } = await supabaseAdmin
     .from("game_sessions")
     .select("gender, player_ids, status")
     .eq("id", sessionId)
     .maybeSingle();
+  if (sessionError) throw sessionError;
 
   if (!session) {
     throw new LiveKitTokenError("session_not_found", "Session not found.");
@@ -558,11 +559,12 @@ export async function generateClassroomToken(
     );
   }
 
-  const { data: classroom } = await supabaseAdmin
+  const { data: classroom, error: classroomError } = await supabaseAdmin
     .from("classroom_sessions")
     .select("id, room_code, teacher_id, teacher_name, status, settings")
     .eq("room_code", roomCode)
     .maybeSingle();
+  if (classroomError) throw classroomError;
 
   if (!classroom || classroom.status !== "active") {
     throw new LiveKitTokenError("session_completed", "Classroom session not active.");

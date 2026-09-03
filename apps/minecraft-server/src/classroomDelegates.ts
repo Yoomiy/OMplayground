@@ -70,21 +70,23 @@ export async function findClassroomDelegateAuthority(
     const [sessionId, secret] = value.split(".", 2);
     if (!sessionId || !secret) continue;
 
-    const { data: session } = await supabase
+    const { data: session, error: sessionError } = await supabase
       .from("classroom_delegate_sessions")
       .select("id, delegate_id, expires_at, revoked_at")
       .eq("id", sessionId)
       .eq("delegate_id", delegateId)
       .eq("token_hash", secretHash(secret))
       .maybeSingle();
+    if (sessionError) throw sessionError;
     if (!session || session.revoked_at || new Date(session.expires_at).getTime() <= Date.now()) continue;
 
-    const { data: delegate } = await supabase
+    const { data: delegate, error: delegateError } = await supabase
       .from("classroom_host_delegates")
       .select("id, classroom_id, display_name, scopes, is_active")
       .eq("id", delegateId)
       .eq("classroom_id", classroomId)
       .maybeSingle<DelegateRow>();
+    if (delegateError) throw delegateError;
     if (!delegate?.is_active) continue;
 
     const scopes = (delegate.scopes ?? []).filter((scope): scope is ClassroomDelegateScope =>

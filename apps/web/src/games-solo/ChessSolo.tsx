@@ -4,6 +4,7 @@ import { kidFieldLabelClass } from "@/lib/fieldStyles";
 import { isJsonObject, type JsonValue, type SoloGameSaveControls } from "@/lib/soloGameSaves";
 import { ChessBoard } from "@/games/ChessBoard";
 import { useStockfishEngine, DIFFICULTY_LEVELS } from "@/games/chess/useStockfishEngine";
+import { reportCaughtError, reportTelemetry } from "@/utils/telemetry";
 import {
   initialChessState,
   applyChessIntent,
@@ -120,6 +121,7 @@ export function ChessSolo({ save }: { save: SoloGameSaveControls }) {
 
         if (res.error) {
           console.error("Engine move error:", res.error);
+          reportTelemetry({ level: "warn", message: "Stockfish move rejected", context: { appArea: "stockfish", operation: "apply-move", code: res.error.code } });
           const fallback = randomLegalMove(gameState.fen);
           if (!fallback) {
             setEngineError("המנוע לא מצא מהלך חוקי");
@@ -146,6 +148,7 @@ export function ChessSolo({ save }: { save: SoloGameSaveControls }) {
       .catch((err) => {
         if (!active) return;
         console.error("Engine move computation failed:", err);
+        reportCaughtError("Stockfish move computation failed", err, { appArea: "stockfish", operation: "compute-move" });
         setEngineThinking(false);
         setEngineError("המנוע נכשל — נסה לרענן את הדף");
       });

@@ -8,6 +8,7 @@ import { useVoxelSocket } from "@/hooks/useVoxelSocket";
 import { useTeacherSessionChat } from "@/hooks/useTeacherSessionChat";
 import { MinecraftClient } from "@/games/MinecraftClient";
 import { getVoxelServerUrl } from "@/lib/voxelServerUrl";
+import { reportCaughtError, reportTelemetry, setShellTelemetryTarget } from "@/utils/telemetry";
 import type {
   CraftingGridSlot,
   GameMode,
@@ -67,6 +68,7 @@ export interface MinecraftSessionContainerProps {
  */
 export function MinecraftSessionContainer(props: MinecraftSessionContainerProps): JSX.Element {
   const { sessionId } = props;
+  useEffect(() => setShellTelemetryTarget("voxel-server"), []);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const inviteCode = searchParams.get("invite") ?? undefined;
@@ -166,6 +168,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         console.log(`Game mode successfully set to: ${mode}`);
       } else {
         console.error(`Failed to set game mode: ${ack.error?.message ?? "unknown error"}`);
+        reportTelemetry({ level: "warn", message: "Voxel game mode update failed", sessionId, context: { appArea: "voxel-session", code: ack.error?.code } }, "voxel-server");
       }
     };
 
@@ -176,6 +179,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         console.log(`Game mode toggled to: ${nextMode}`);
       } else {
         console.error(`Failed to toggle game mode: ${ack.error?.message ?? "unknown error"}`);
+        reportTelemetry({ level: "warn", message: "Voxel game mode toggle failed", sessionId, context: { appArea: "voxel-session", code: ack.error?.code } }, "voxel-server");
       }
     };
 
@@ -450,7 +454,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         if (!token) return;
 
         const url = `${getVoxelServerUrl()}/api/fps-batch`;
-        await fetch(url, {
+        const response = await fetch(url, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -459,8 +463,10 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
           body: JSON.stringify({ sessionId, phase, avgFps, sampleCount }),
           keepalive: true
         });
+        if (!response.ok) throw new Error(`fps_batch_http_${response.status}`);
       } catch (e) {
         console.error("Failed to report FPS stats:", e);
+        reportCaughtError("Voxel FPS batch report failed", e, { appArea: "voxel-session", operation: "fps-batch" }, "voxel-server");
       }
     },
     [sessionId]

@@ -63,12 +63,16 @@ const _orig = {
 function _buffer(level: string, args: unknown[]) {
   const msg = args
     .map((a) => {
-      if (typeof a === "object") {
-        try { return JSON.stringify(a); } catch { return String(a); }
-      }
-      return String(a);
+      if (a instanceof Error) return `${a.name}: ${a.message}`;
+      if (typeof a === "string") return a;
+      if (typeof a === "number" || typeof a === "boolean" || a == null) return String(a);
+      if (typeof a === "object") return `[Object keys=${Object.keys(a).slice(0, 12).join(",")}]`;
+      return `[${typeof a}]`;
     })
-    .join(" ");
+    .join(" ")
+    .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, "Bearer [REDACTED]")
+    .replace(/[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{16,}/g, "[REDACTED_JWT]")
+    .slice(0, 500);
 
   const key = `${level}:${msg}`;
   const now = Date.now();
@@ -104,7 +108,8 @@ function _buffer(level: string, args: unknown[]) {
   }
 }
 
-console.log   = (...args) => { _buffer("info",  args); _orig.log.apply(console,   args); };
+// Informational console output is often gameplay/user content; do not retain it.
+console.log   = (...args) => { _orig.log.apply(console, args); };
 console.warn  = (...args) => { _buffer("warn",  args); _orig.warn.apply(console,  args); };
 console.error = (...args) => { _buffer("error", args); _orig.error.apply(console, args); };
 

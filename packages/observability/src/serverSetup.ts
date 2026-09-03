@@ -48,6 +48,7 @@ export function initObservability(
     logger?: Logger;
     stats?: StatsCollector;
     skipCorrelation?: boolean;
+    skipHttpLogger?: boolean;
     livekitWebhook?: { apiKey: string; apiSecret: string };
   }
 ): ObservabilityContext {
@@ -66,7 +67,9 @@ export function initObservability(
       apiSecret: options.livekitWebhook.apiSecret
     });
   }
-  app.use(createHttpLogger(logger));
+  if (!options.skipHttpLogger) {
+    app.use(createHttpLogger(logger));
+  }
   mountTelemetryRoutes(app, { logger, supabaseAdmin: options.supabaseAdmin });
 
   app.get(

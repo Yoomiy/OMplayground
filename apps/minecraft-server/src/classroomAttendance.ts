@@ -1,9 +1,7 @@
 import crypto from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { createLogger, logError } from "@playground/observability";
 import { getClassroomsLiveAttendance, type ClassroomLiveAttendance } from "./livekitService";
 
-const logger = createLogger("minecraft-server");
 const CLASSROOM_ROOM_PREFIX = "classroom-";
 
 type LiveKitWebhookEvent = {
@@ -54,15 +52,7 @@ export async function recordClassroomAttendanceWebhook(
     p_participant_metadata: parseMetadata(event.participant?.metadata),
     p_occurred_at: occurredAt(event.createdAt)
   });
-  if (error) {
-    logger.error({
-      protocol: "livekit-webhook",
-      message: "Could not persist classroom attendance event",
-      context: { event: "CLASSROOM_ATTENDANCE_WRITE_FAILED", livekitEvent: event.event, roomName },
-      err: logError(error)
-    });
-    throw error;
-  }
+  if (error) throw error;
 }
 
 export function classroomGuestAttendanceKey(roomCode: string, key: unknown): string | null {

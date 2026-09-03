@@ -28,11 +28,12 @@ export async function getCachedAuth(
   }
 
   // 1. Check kid_profiles table
-  const { data: profile } = await supabaseAdmin
+  const { data: profile, error: profileError } = await supabaseAdmin
     .from("kid_profiles")
     .select("id, role, gender, grade, full_name, is_active")
     .eq("id", authData.user.id)
     .maybeSingle();
+  if (profileError) throw profileError;
 
   if (profile && profile.is_active) {
     const result: CachedAuthResult = {
@@ -48,11 +49,12 @@ export async function getCachedAuth(
   }
 
   // 2. Check admin_profiles table (Admins are stored in admin_profiles!)
-  const { data: adminProfile } = await supabaseAdmin
+  const { data: adminProfile, error: adminProfileError } = await supabaseAdmin
     .from("admin_profiles")
     .select("id, full_name")
     .eq("id", authData.user.id)
     .maybeSingle();
+  if (adminProfileError) throw adminProfileError;
 
   if (adminProfile) {
     const result: CachedAuthResult = {

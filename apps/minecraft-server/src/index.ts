@@ -16,8 +16,13 @@ import {
   logSocketAuthenticated,
   logSocketEvent,
   logError,
+  logHttpFailure,
+  observeBackgroundTask,
   correlationMiddleware,
-  mountLiveKitWebhook
+  createHttpLogger,
+  mountLiveKitWebhook,
+  installProcessLifecycle,
+  installSocketExceptionGuard
 } from "@playground/observability";
 import { Server } from "socket.io";
 import { createClient } from "@supabase/supabase-js";
@@ -278,16 +283,17 @@ async function persistLaunches(supabase: any, sessionId: string, keepSession = f
   const records = flushLaunches(sessionId, keepSession);
   for (const record of records) {
     try {
-      await supabase.rpc("increment_game_launch_server", {
+      const { error } = await supabase.rpc("increment_game_launch_server", {
         p_kid_id: record.userId,
         p_game_url: record.gameUrl,
         p_amount: record.count
       });
+      if (error) throw error;
     } catch (e) {
       logger.error({
         message: "Failed to persist launch stats for user",
         userId: record.userId,
-        error: e instanceof Error ? e.message : String(e)
+        err: logError(e)
       });
     }
   }
@@ -297,7 +303,7 @@ async function persistFps(supabase: any, sessionId: string, keepSession = false)
   const records = flushFps(sessionId, keepSession);
   for (const record of records) {
     try {
-      await supabase.from("minecraft_fps_stats").upsert({
+      const { error } = await supabase.from("minecraft_fps_stats").upsert({
         kid_id: record.userId,
         session_id: sessionId,
         loading_avg_fps: record.loadingAvg,
@@ -306,11 +312,12 @@ async function persistFps(supabase: any, sessionId: string, keepSession = false)
         runtime_sample_count: record.runtimeCount,
         recorded_at: new Date().toISOString()
       });
+      if (error) throw error;
     } catch (e) {
       logger.error({
         message: "Failed to persist FPS stats for user",
         userId: record.userId,
-        error: e instanceof Error ? e.message : String(e)
+        err: logError(e)
       });
     }
   }
@@ -326,6 +333,7 @@ app.use(
   })
 );
 app.use(correlationMiddleware());
+app.use(createHttpLogger(logger));
 
 const httpLimiter = rateLimit({
   windowMs: 60_000,
@@ -808,14 +816,22 @@ app.post("/rtc/token", async (req, res) => {
       }
     });
     if (abuse && supabaseAdmin && sessionId) {
-      void supabaseAdmin.from("audit_log").insert({
-        actor_id: null,
-        actor_kind: "system",
-        action: "rtc_token_abuse",
-        entity_type: "game_session",
-        entity_id: sessionId,
-        metadata: auditMetadata(correlationId, { reason, ip: req.ip })
-      });
+      observeBackgroundTask(
+        logger,
+        (async () => {
+          const { error } = await supabaseAdmin.from("audit_log").insert({
+            actor_id: null,
+            actor_kind: "system",
+            action: "rtc_token_abuse",
+            entity_type: "game_session",
+            entity_id: sessionId,
+            metadata: auditMetadata(correlationId, { reason })
+          });
+          if (error) throw error;
+        })(),
+        "RTC_TOKEN_ABUSE_AUDIT_FAILED",
+        { sessionId }
+      );
     }
     const status = reason === "server_config" ? 503 : 401;
     res.status(status).json({
@@ -1075,8 +1091,9 @@ app.post("/rtc/classroom-end", async (req, res) => {
       }
     });
     res.json({ success: true, roomCode: normalizedRoomCode, livekitDeleted, evictedParticipantCount });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message || "failed to end classroom" });
+  } catch (err) {
+    logHttpFailure(logger, req, err, "CLASSROOM_END_FAILED");
+    res.status(500).json({ error: "internal_server_error" });
   }
 });
 
@@ -1131,8 +1148,9 @@ app.post("/rtc/classroom-cleanup", async (req, res) => {
       context: { event: "CLASSROOM_CLEANUP", endedCount: endedCount ?? 0, requestedDays }
     });
     res.json({ success: true, endedCount: endedCount ?? 0 });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message || "cleanup failed" });
+  } catch (err) {
+    logHttpFailure(logger, req, err, "CLASSROOM_CLEANUP_FAILED");
+    res.status(500).json({ error: "internal_server_error" });
   }
 });
 
@@ -1234,8 +1252,9 @@ app.get("/rtc/admin/classroom-records", async (req, res) => {
         };
       });
     res.json({ items, page, pageSize, total: count ?? 0 });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message || "classroom_records_failed" });
+  } catch (err) {
+    logHttpFailure(logger, req, err, "CLASSROOM_RECORDS_QUERY_FAILED");
+    res.status(500).json({ error: "internal_server_error" });
   }
 });
 
@@ -1305,8 +1324,9 @@ app.get("/rtc/admin/classroom-records/:classroomId", async (req, res) => {
       .order("created_at", { ascending: true });
     if (delegatesError) throw delegatesError;
     res.json({ classroom, meetings: meetings ?? [], participants: participantSummaries, delegates: delegates ?? [], snapshotAt, livePresenceKnown });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message || "classroom_record_failed" });
+  } catch (err) {
+    logHttpFailure(logger, req, err, "CLASSROOM_RECORD_QUERY_FAILED");
+    res.status(500).json({ error: "internal_server_error" });
   }
 });
 
@@ -1333,8 +1353,9 @@ app.delete("/rtc/admin/classroom-records/:classroomId", async (req, res) => {
     if (deleteError) throw deleteError;
     await appendClassroomAudit(req, classroom, { kind: "user", userId: actor.userId, actorKind: "admin" }, "classroom_record_deleted", {});
     res.json({ success: true });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message || "classroom_record_delete_failed" });
+  } catch (err) {
+    logHttpFailure(logger, req, err, "CLASSROOM_RECORD_DELETE_FAILED");
+    res.status(500).json({ error: "internal_server_error" });
   }
 });
 
@@ -1358,11 +1379,12 @@ app.post("/rtc/classroom-delegate/activate", async (req, res) => {
       res.status(404).json({ error: "classroom_not_found" });
       return;
     }
-    const { data: enrollment } = await supabaseAdmin
+    const { data: enrollment, error: enrollmentError } = await supabaseAdmin
       .from("classroom_delegate_enrollments")
       .select("id, delegate_id, expires_at, used_at")
       .eq("code_hash", secretHash(enrollmentCode))
       .maybeSingle();
+    if (enrollmentError) throw enrollmentError;
     if (
       !enrollment ||
       enrollment.used_at ||
@@ -1371,23 +1393,25 @@ app.post("/rtc/classroom-delegate/activate", async (req, res) => {
       res.status(401).json({ error: "delegate_enrollment_expired" });
       return;
     }
-    const { data: delegate } = await supabaseAdmin
+    const { data: delegate, error: delegateError } = await supabaseAdmin
       .from("classroom_host_delegates")
       .select("id, classroom_id, display_name, scopes, is_active")
       .eq("id", enrollment.delegate_id)
       .eq("classroom_id", classroom.id)
       .maybeSingle();
+    if (delegateError) throw delegateError;
     if (!delegate?.is_active) {
       res.status(403).json({ error: "delegate_not_active" });
       return;
     }
-    const { data: consumed } = await supabaseAdmin
+    const { data: consumed, error: consumeError } = await supabaseAdmin
       .from("classroom_delegate_enrollments")
       .update({ used_at: new Date().toISOString() })
       .eq("id", enrollment.id)
       .is("used_at", null)
       .select("id")
       .maybeSingle();
+    if (consumeError) throw consumeError;
     if (!consumed) {
       res.status(409).json({ error: "delegate_enrollment_already_used" });
       return;
@@ -1416,8 +1440,9 @@ app.post("/rtc/classroom-delegate/activate", async (req, res) => {
         SUPABASE_SERVICE_ROLE_KEY
       )
     });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message || "delegate_activation_failed" });
+  } catch (err) {
+    logHttpFailure(logger, req, err, "CLASSROOM_DELEGATE_ACTIVATION_FAILED");
+    res.status(500).json({ error: "internal_server_error" });
   }
 });
 
@@ -1468,8 +1493,9 @@ app.post("/rtc/classroom-settings", async (req, res) => {
     await syncClassroomParticipantPermissions(classroom.room_code, nextSettings);
     await appendClassroomAudit(req, classroom, authority, "classroom_settings_changed", { changed_keys: Object.keys(changed) });
     res.json({ success: true, settings: nextSettings, delegated: authority.kind === "delegate" });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message || "classroom_settings_failed" });
+  } catch (err) {
+    logHttpFailure(logger, req, err, "CLASSROOM_SETTINGS_UPDATE_FAILED");
+    res.status(500).json({ error: "internal_server_error" });
   }
 });
 
@@ -1533,8 +1559,9 @@ app.post("/rtc/classroom-presentation-state", async (req, res) => {
       }
     });
     res.json({ success: true, presenterEpoch: next.presenterEpoch });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message || "classroom_presentation_state_failed" });
+  } catch (err) {
+    logHttpFailure(logger, req, err, "CLASSROOM_PRESENTATION_STATE_FAILED");
+    res.status(500).json({ error: "internal_server_error" });
   }
 });
 
@@ -1564,8 +1591,9 @@ app.post("/rtc/classroom-presentation-visibility", async (req, res) => {
     });
     await appendClassroomAudit(req, classroom, authority, "classroom_presentation_visibility_changed", { visible });
     res.json({ success: true, visible });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message || "presentation_visibility_failed" });
+  } catch (err) {
+    logHttpFailure(logger, req, err, "CLASSROOM_PRESENTATION_VISIBILITY_FAILED");
+    res.status(500).json({ error: "internal_server_error" });
   }
 });
 
@@ -1583,8 +1611,9 @@ app.post("/rtc/classroom-presenter-ready", async (req, res) => {
     // prepares a file. Visibility remains host-controlled; readiness only
     // confirms that the presenter's local library has finished loading.
     res.json({ success: true });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message || "presenter_readiness_failed" });
+  } catch (err) {
+    logHttpFailure(logger, req, err, "CLASSROOM_PRESENTER_READINESS_FAILED");
+    res.status(500).json({ error: "internal_server_error" });
   }
 });
 
@@ -1615,8 +1644,9 @@ app.post("/rtc/classroom-presenter-transfer", async (req, res) => {
     const next = await assignPresenter(classroom, targetIdentity.trim(), true);
     await appendClassroomAudit(req, classroom, authority, "classroom_presenter_transferred", { target_identity: targetIdentity.trim() });
     res.json({ success: true, presenterIdentity: next.presenterIdentity, presenterEpoch: next.presenterEpoch });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message || "presenter_transfer_failed" });
+  } catch (err) {
+    logHttpFailure(logger, req, err, "CLASSROOM_PRESENTER_TRANSFER_FAILED");
+    res.status(500).json({ error: "internal_server_error" });
   }
 });
 
@@ -1630,8 +1660,9 @@ app.post("/rtc/classroom-presenter-leave", async (req, res) => {
     if (!presenter) return;
     const next = await electPresenter(classroom, presenter.identity);
     res.json({ success: true, presenterIdentity: next.presenterIdentity, presenterEpoch: next.presenterEpoch });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message || "presenter_leave_failed" });
+  } catch (err) {
+    logHttpFailure(logger, req, err, "CLASSROOM_PRESENTER_LEAVE_FAILED");
+    res.status(500).json({ error: "internal_server_error" });
   }
 });
 
@@ -1656,8 +1687,9 @@ app.post("/rtc/classroom-presenter-elect", async (req, res) => {
     }
     const next = await electPresenter(classroom);
     res.json({ success: true, presenterIdentity: next.presenterIdentity, presenterEpoch: next.presenterEpoch });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message || "presenter_election_failed" });
+  } catch (err) {
+    logHttpFailure(logger, req, err, "CLASSROOM_PRESENTER_ELECTION_FAILED");
+    res.status(500).json({ error: "internal_server_error" });
   }
 });
 
@@ -1689,8 +1721,9 @@ app.post("/rtc/classroom-document-conversion-ticket", async (req, res) => {
       correlationId: (req as express.Request & { correlationId?: string }).correlationId
     }, DOCUMENT_CONVERTER_SHARED_SECRET);
     res.json({ converterUrl: DOCUMENT_CONVERTER_URL, ticket, expiresInSeconds: 300 });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message || "conversion_ticket_failed" });
+  } catch (err) {
+    logHttpFailure(logger, req, err, "CLASSROOM_CONVERSION_TICKET_FAILED");
+    res.status(500).json({ error: "internal_server_error" });
   }
 });
 
@@ -1720,8 +1753,9 @@ app.post("/rtc/classroom-stage-layout", async (req, res) => {
       presentationPercent
     });
     res.json({ success: true, presentationPercent });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message || "classroom_stage_layout_failed" });
+  } catch (err) {
+    logHttpFailure(logger, req, err, "CLASSROOM_STAGE_LAYOUT_FAILED");
+    res.status(500).json({ error: "internal_server_error" });
   }
 });
 
@@ -1764,8 +1798,9 @@ app.post("/rtc/classroom-remove-participant", async (req, res) => {
       block_rejoin: blockRejoin
     });
     res.json({ success: true, delegated: authority.kind === "delegate", blockRejoin });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message || "participant_remove_failed" });
+  } catch (err) {
+    logHttpFailure(logger, req, err, "CLASSROOM_PARTICIPANT_REMOVE_FAILED");
+    res.status(500).json({ error: "internal_server_error" });
   }
 });
 
@@ -1832,8 +1867,9 @@ app.post("/rtc/classroom-promote", async (req, res) => {
       }
     });
     res.json({ success: true, delegated: authority.kind === "delegate" });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message || "promotion failed" });
+  } catch (err) {
+    logHttpFailure(logger, req, err, "CLASSROOM_PARTICIPANT_PROMOTION_FAILED");
+    res.status(500).json({ error: "internal_server_error" });
   }
 });
 
@@ -1842,12 +1878,13 @@ setInterval(async () => {
   if (!supabaseAdmin) return;
   try {
     const cutoffDate = new Date(Date.now() - 7 * 86400000).toISOString();
-    const { data: roomsToClean } = await supabaseAdmin
+    const { data: roomsToClean, error: roomsQueryError } = await supabaseAdmin
       .from("classroom_sessions")
       .select("id, room_code")
       .eq("is_persistent", false)
       .eq("status", "active")
       .lt("last_activity", cutoffDate);
+    if (roomsQueryError) throw roomsQueryError;
 
     const staleClassrooms = roomsToClean ?? [];
     try {
@@ -1914,7 +1951,7 @@ app.post("/api/fps-batch", async (req, res) => {
     logger.error({
       correlationId,
       message: "Failed to ingest FPS batch",
-      error: err instanceof Error ? err.message : String(err)
+      err: logError(err)
     });
     res.status(500).json({ error: "internal_server_error" });
   }
@@ -1926,6 +1963,7 @@ const wiredObservability = initObservability(app, io, {
   logger,
   stats,
   skipCorrelation: true,
+  skipHttpLogger: true,
   listRooms: () =>
     listRooms().map((room) => ({
       sessionId: room.sessionId,
@@ -1979,7 +2017,7 @@ async function loadRecessScheduleData() {
   ]);
   const error = defaults.error ?? settings.error ?? exceptions.error;
   if (error) {
-    logger.error({ message: "recess schedule fetch failed", error: error.message });
+    logger.error({ message: "recess schedule fetch failed", err: logError(error) });
     throw new Error("recess_schedules_unavailable");
   }
   recessCache = {
@@ -2027,7 +2065,7 @@ io.use(async (socket, next) => {
       } catch (err) {
         logger.warn({
           message: "recess gate failed",
-          error: err instanceof Error ? err.message : String(err)
+          err: logError(err)
         });
         next(new Error("RECESS_DENIED"));
         return;
@@ -2045,6 +2083,15 @@ io.use(async (socket, next) => {
     if (msg === "FORBIDDEN") {
       next(new Error("FORBIDDEN"));
     } else {
+      if (msg !== "UNAUTHORIZED") {
+        logger.error({
+          correlationId: socket.data.correlationId,
+          protocol: "socket",
+          message: "Socket authentication failed internally",
+          context: { event: "SOCKET_AUTH_INTERNAL_FAILED", status: "failed" },
+          err: logError(err)
+        });
+      }
       next(new Error("UNAUTHORIZED"));
     }
   }
@@ -2461,46 +2508,8 @@ async function emitInventoryToSurvivalPlayers(
 }
 
 io.on("connection", (socket) => {
-  const originalOn = socket.on.bind(socket);
   const HOT_SOCKET_EVENTS = new Set(["INPUT", "ARM_SWING"]);
-  socket.on = (event: string, listener: (...args: any[]) => void | Promise<void>) => {
-    if (HOT_SOCKET_EVENTS.has(event)) {
-      return originalOn(event, listener);
-    }
-    return originalOn(event, async (...args: any[]) => {
-      const started = Date.now();
-      const ack = typeof args[args.length - 1] === "function" ? args[args.length - 1] : undefined;
-      try {
-        const result = listener(...args);
-        if (result instanceof Promise) {
-          await result;
-        }
-      } catch (err) {
-        const sessionId = (args[0] as { sessionId?: string })?.sessionId ?? (socket.data.sessionId as string | undefined);
-        logger.error({
-          correlationId: socket.data.correlationId,
-          userId: socket.data.userId,
-          sessionId,
-          protocol: "socket",
-          message: `Socket handler ${event} threw`,
-          context: {
-            event,
-            status: "failed",
-            duration_ms: Date.now() - started
-          },
-          error: err instanceof Error ? err.message : String(err)
-        });
-        stats.recordIntentFailed();
-        if (ack) {
-          try {
-            ack({ ok: false, error: { code: "INTERNAL", message: "Internal server error" } });
-          } catch {
-            // ignore
-          }
-        }
-      }
-    });
-  };
+  installSocketExceptionGuard(logger, stats, socket, HOT_SOCKET_EVENTS);
 
   const userId = socket.data.userId as string;
   const displayName = socket.data.displayName as string;
@@ -2680,7 +2689,7 @@ io.on("connection", (socket) => {
         await socket.join(`voxel-snapshot:${sessionId}`);
       }
       socket.data.sessionId = sessionId;
-      void persistPlayerJoin({
+      await persistPlayerJoin({
         supabase: supabaseAdmin,
         sessionId,
         session: {
@@ -3777,10 +3786,12 @@ io.on("connection", (socket) => {
   socket.on(
     "SET_GAME_MODE",
     async (payload: SetGameModeReq, ack?: (r: SimpleAck) => void) => {
+      const started = Date.now();
       const sessionId =
         payload?.sessionId ?? (socket.data.sessionId as string | undefined);
+      const reply = wrapAck("SET_GAME_MODE", started, sessionId, ack);
       if (!sessionId || !payload || !isGameMode(payload.gameMode)) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "BAD_REQUEST", message: "חסר מצב משחק" }
         });
@@ -3788,45 +3799,27 @@ io.on("connection", (socket) => {
       }
       const room = getRoom(sessionId);
       if (!room) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "NOT_FOUND", message: "Room not loaded" }
         });
         return;
       }
       if (room.hostId !== userId) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "NOT_HOST", message: "רק המארח יכול לשנות מצב" }
         });
         return;
       }
       if (room.paused) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "GAME_PAUSED", message: "המשחק מושהה" }
         });
         return;
       }
       const next = payload.gameMode;
-      const callerPlayer = room.players.get(userId);
-      const callerName = callerPlayer?.displayName ?? userId;
-      const playerNames = Array.from(room.players.values()).map(p => p.displayName).join(", ");
-      logger.info({
-        correlationId: socket.data.correlationId,
-        userId,
-        sessionId,
-        protocol: "socket",
-        message: "Game mode changed",
-        context: {
-          event: "SET_GAME_MODE",
-          gameMode: next,
-          gameId: room.gameId,
-          callerName,
-          playerCount: room.players.size,
-          status: "success"
-        }
-      });
       if (next === "survival") {
         room.gameMode = "survival";
         for (const p of room.players.values()) {
@@ -3879,7 +3872,7 @@ io.on("connection", (socket) => {
         gameMode: next
       });
       await emitInventoryToSurvivalPlayers(sessionId, room);
-      ack?.({ ok: true });
+      reply?.({ ok: true });
     }
   );
 
@@ -3889,17 +3882,19 @@ io.on("connection", (socket) => {
       payload: { sessionId: string; observer: boolean },
       ack?: (r: SimpleAck) => void
     ) => {
+      const started = Date.now();
       const sessionId = payload?.sessionId ?? (socket.data.sessionId as string | undefined);
+      const reply = wrapAck("SWITCH_TEACHER", started, sessionId, ack);
       const observer = !!payload?.observer;
       if (!sessionId) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "BAD_REQUEST", message: "sessionId required" }
         });
         return;
       }
       if (!isGameInspectorRole(socket.data.role)) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "FORBIDDEN", message: "רק מורה או מנהל יכולים לשנות מצב צפייה" }
         });
@@ -3907,7 +3902,7 @@ io.on("connection", (socket) => {
       }
       const room = getRoom(sessionId);
       if (!room) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "NOT_FOUND", message: "Room not loaded" }
         });
@@ -3915,7 +3910,7 @@ io.on("connection", (socket) => {
       }
       const player = room.players.get(userId);
       if (!player) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "NOT_FOUND", message: "Player not in room" }
         });
@@ -3928,7 +3923,7 @@ io.on("connection", (socket) => {
           (p) => !p.isTeacherObserver && p.userId !== userId
         ).length;
         if (activeKidsCount >= room.maxPlayers) {
-          ack?.({
+          reply?.({
             ok: false,
             error: {
               code: "ROOM_FULL",
@@ -3949,20 +3944,22 @@ io.on("connection", (socket) => {
         observer
       });
 
-      ack?.({ ok: true });
+      reply?.({ ok: true });
     }
   );
 
   socket.on(
     "PAUSE_GAME",
-    (
+    async (
       payload: { sessionId?: string } | undefined,
       ack?: (r: SimpleAck) => void
     ) => {
+      const started = Date.now();
       const sessionId =
         payload?.sessionId ?? (socket.data.sessionId as string | undefined);
+      const reply = wrapAck("PAUSE_GAME", started, sessionId, ack);
       if (!sessionId) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "BAD_REQUEST", message: "sessionId required" }
         });
@@ -3970,7 +3967,7 @@ io.on("connection", (socket) => {
       }
       const room = getRoom(sessionId);
       if (!room) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "NOT_FOUND", message: "Room not loaded" }
         });
@@ -3978,38 +3975,60 @@ io.on("connection", (socket) => {
       }
       const guard = canStopGame(room, userId);
       if (!guard.ok) {
-        ack?.({ ok: false, error: guard.error });
+        reply?.({ ok: false, error: guard.error });
         return;
       }
+      const wasPaused = room.paused;
       room.paused = true;
-      if (supabaseAdmin) {
-        const connected = connectedPlayers(room);
-        void persistGamePaused({
-          supabase: supabaseAdmin,
+      try {
+        if (supabaseAdmin) {
+          const connected = connectedPlayers(room);
+          await persistGamePaused({
+            supabase: supabaseAdmin,
+            sessionId,
+            gameState: snapshotPersistedState(room),
+            connectedPlayerIds: connected.map((p) => p.userId),
+            connectedPlayerNames: connected.map((p) => p.displayName)
+          });
+        }
+      } catch (err) {
+        // Keep the server's live state aligned with the failed acknowledgement.
+        room.paused = wasPaused;
+        logger.error({
+          correlationId: socket.data.correlationId,
+          userId,
           sessionId,
-          gameState: snapshotPersistedState(room),
-          connectedPlayerIds: connected.map((p) => p.userId),
-          connectedPlayerNames: connected.map((p) => p.displayName)
+          protocol: "socket",
+          message: "Voxel game pause persistence failed",
+          context: { event: "PAUSE_GAME_PERSIST_FAILED", status: "failed" },
+          err: logError(err)
         });
+        reply?.({
+          ok: false,
+          error: { code: "PERSIST_FAILED", message: "Could not pause the game" }
+        });
+        return;
       }
       io.to(`voxel:${sessionId}`).emit("ROOM_EVENT", {
         sessionId,
         kind: "GAME_PAUSED"
       });
-      ack?.({ ok: true });
+      reply?.({ ok: true });
     }
   );
 
   socket.on(
     "RESUME_GAME",
-    (
+    async (
       payload: { sessionId?: string } | undefined,
       ack?: (r: SimpleAck) => void
     ) => {
+      const started = Date.now();
       const sessionId =
         payload?.sessionId ?? (socket.data.sessionId as string | undefined);
+      const reply = wrapAck("RESUME_GAME", started, sessionId, ack);
       if (!sessionId) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "BAD_REQUEST", message: "sessionId required" }
         });
@@ -4017,7 +4036,7 @@ io.on("connection", (socket) => {
       }
       const room = getRoom(sessionId);
       if (!room) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "NOT_FOUND", message: "Room not loaded" }
         });
@@ -4025,7 +4044,7 @@ io.on("connection", (socket) => {
       }
       const guard = canStopGame(room, userId);
       if (!guard.ok) {
-        ack?.({ ok: false, error: guard.error });
+        reply?.({ ok: false, error: guard.error });
         return;
       }
       room.paused = false;
@@ -4036,7 +4055,7 @@ io.on("connection", (socket) => {
       }
       if (supabaseAdmin) {
         const connected = connectedPlayers(room);
-        void persistGameResumed({
+        await persistGameResumed({
           supabase: supabaseAdmin,
           sessionId,
           connectedPlayerIds: connected.map((p) => p.userId),
@@ -4047,13 +4066,13 @@ io.on("connection", (socket) => {
         sessionId,
         kind: "GAME_RESUMED"
       });
-      ack?.({ ok: true });
+      reply?.({ ok: true });
     }
   );
 
   socket.on(
     "STOP_GAME",
-    (
+    async (
       payload: { sessionId?: string } | undefined,
       ack?: (r: SimpleAck) => void
     ) => {
@@ -4087,7 +4106,7 @@ io.on("connection", (socket) => {
         stoppedBy: userId
       });
       if (supabaseAdmin) {
-        void persistGameStopped({
+        await persistGameStopped({
           supabase: supabaseAdmin,
           sessionId,
           stoppedBy: userId,
@@ -4112,7 +4131,7 @@ io.on("connection", (socket) => {
     const room = getRoom(sessionId);
     if (supabaseAdmin && before) {
       const connected = room ? connectedPlayers(room) : [];
-      void persistPlayerLeave({
+      await persistPlayerLeave({
         supabase: supabaseAdmin,
         sessionId,
         result,
@@ -4232,9 +4251,18 @@ io.on("connection", (socket) => {
         is_system: false
       });
       if (insErr) {
+        logger.error({
+          correlationId: socket.data.correlationId,
+          userId,
+          sessionId,
+          protocol: "socket",
+          message: "Chat message persistence failed",
+          context: { event: "CHAT_MESSAGE_PERSIST_FAILED", status: "failed" },
+          err: logError(insErr)
+        });
         ack?.({
           ok: false,
-          error: { code: "PERSIST_FAILED", message: insErr.message }
+          error: { code: "PERSIST_FAILED", message: "message_not_saved" }
         });
         return;
       }
@@ -4245,7 +4273,7 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     const sessionId = socket.data.sessionId as string | undefined;
     if (sessionId && userId) {
-      void handleLeave(sessionId);
+      observeBackgroundTask(logger, handleLeave(sessionId), "SOCKET_DISCONNECT_LEAVE_FAILED", { sessionId });
     }
   });
 });
@@ -4265,7 +4293,7 @@ async function insertSystemChatMessage(sessionId: string, message: string): Prom
   if (error) {
     logger.error({
       message: "failed to insert system chat message",
-      error: error.message
+      err: logError(error)
     });
   }
 }
@@ -4281,7 +4309,7 @@ const recessTimer = setInterval(() => {
     logError: (message, err) =>
       logger.error({
         message,
-        error: err instanceof Error ? err.message : String(err)
+        err: logError(err)
       })
   });
 }, RECESS_TICK_MS);
@@ -4379,13 +4407,13 @@ startTickLoop({
   onError: (message, err) =>
     logger.error({
       message,
-      error: err instanceof Error ? err.message : String(err)
+      err: logError(err)
     })
 });
 
 const AUTOSAVE_INTERVAL_MS = 2 * 60_000; // 2 minutes
 
-setInterval(() => {
+const autosaveTimer = setInterval(() => {
   if (!supabaseAdmin) return;
   const activeRooms = listRooms().filter((room) => !room.paused && room.players.size > 0);
   for (const room of activeRooms) {
@@ -4397,12 +4425,34 @@ setInterval(() => {
     }).catch((err) => {
       logger.error({
         message: `Autosave failed for session ${room.sessionId}`,
-        error: err instanceof Error ? err.message : String(err)
+        err: logError(err)
       });
     });
   }
 }, AUTOSAVE_INTERVAL_MS);
+autosaveTimer.unref();
 
 server.listen(PORT, () => {
-  logger.info({ message: `minecraft-server listening on ${PORT}`, protocol: "http" });
+  logger.info({ message: "minecraft-server listening", protocol: "http", context: { event: "SERVICE_LISTENING", port: PORT } });
+});
+
+installProcessLifecycle({
+  logger,
+  shutdown: async () => {
+    clearInterval(autosaveTimer);
+    if (supabaseAdmin) {
+      const flushes = await Promise.allSettled(listRooms().map(async (room) => {
+        await persistGameAutosave({
+          supabase: supabaseAdmin,
+          sessionId: room.sessionId,
+          gameState: snapshotPersistedState(room)
+        });
+        await persistLaunches(supabaseAdmin, room.sessionId, true);
+        await persistFps(supabaseAdmin, room.sessionId, true);
+      }));
+      const failed = flushes.filter((result) => result.status === "rejected").length;
+      if (failed) logger.error({ message: "Shutdown persistence flush incomplete", context: { event: "SHUTDOWN_FLUSH_FAILED", failedRooms: failed } });
+    }
+    await new Promise<void>((resolve) => io.close(() => resolve()));
+  }
 });

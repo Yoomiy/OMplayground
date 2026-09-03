@@ -15,3 +15,11 @@
 42. see why admin is marked as connected in the classrooms dashboard after disconnection.
 43. decide what happens when kid joins a full game-room
 44. give admin teacher game inspection capabilities
+45. add light theme
+46. fix hebrew rtl awareness cursor bug
+47. allow classroom chat at default
+48. allow teachers to participate in all games
+49. look into presentor rights transfare bug (and add it to the side-dashboard)
+50. only allow 1 person to share screen
+51. allow indeviduals to use the whitboard
+52. make kidsHome lighter

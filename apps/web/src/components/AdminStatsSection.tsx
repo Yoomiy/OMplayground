@@ -148,17 +148,17 @@ export function AdminStatsSection() {
         <StatCard label="משתתפי קול (LiveKit)" value={voiceParticipants} />
         <StatCard
           label="קצב Intent — game-server"
-          value={game?.intentsPerSecond ?? "—"}
+          value={game?.socketEventsPerSecond ?? "—"}
         />
         <StatCard
           label="קצב Intent — voxel"
-          value={voxel?.intentsPerSecond ?? "—"}
+          value={voxel?.socketEventsPerSecond ?? "—"}
         />
         <StatCard
           label="כשלונות Intent (5 דק׳)"
           value={
-            (game?.intentFailuresLast5Min ?? 0) +
-            (voxel?.intentFailuresLast5Min ?? 0)
+            (game?.socketEventFailuresLast5Min ?? 0) +
+            (voxel?.socketEventFailuresLast5Min ?? 0)
           }
         />
       </div>
@@ -167,14 +167,14 @@ export function AdminStatsSection() {
         {game ? (
           <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white/80">
             <p className="font-medium text-white">game-server</p>
-            <p>Latency ממוצעת: {game.averageIntentLatencyMs} ms</p>
+            <p>Latency ממוצעת: {game.averageSocketEventLatencyMs} ms</p>
             <p>חיבורים: {game.activeConnections}</p>
           </div>
         ) : null}
         {voxel ? (
           <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white/80">
             <p className="font-medium text-white">minecraft-server</p>
-            <p>Latency ממוצעת: {voxel.averageIntentLatencyMs} ms</p>
+            <p>Latency ממוצעת: {voxel.averageSocketEventLatencyMs} ms</p>
             <p>חיבורים: {voxel.activeConnections}</p>
             {voxel.voice ? (
               <p>

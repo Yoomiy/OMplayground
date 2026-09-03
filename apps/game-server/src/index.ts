@@ -12,7 +12,10 @@ import {
   initObservability,
   logSocketAuthenticated,
   logSocketEvent,
-  logError
+  logError,
+  installProcessLifecycle,
+  observeBackgroundTask,
+  installSocketExceptionGuard
 } from "@playground/observability";
 import { Server } from "socket.io";
 import { createClient } from "@supabase/supabase-js";
@@ -88,11 +91,12 @@ async function persistLaunches(supabase: any, sessionId: string, keepSession = f
   const records = flushLaunches(sessionId, keepSession);
   for (const record of records) {
     try {
-      await supabase.rpc("increment_game_launch_server", {
+      const { error } = await supabase.rpc("increment_game_launch_server", {
         p_kid_id: record.userId,
         p_game_url: record.gameUrl,
         p_amount: record.count
       });
+      if (error) throw error;
     } catch (e) {
       logger.error({
         message: "Failed to persist launch stats for user",
@@ -364,7 +368,7 @@ async function loadRecessScheduleData() {
   ]);
   const error = defaults.error ?? settings.error ?? exceptions.error;
   if (error) {
-    logger.error({ message: "recess schedule fetch failed", error: error.message });
+    logger.error({ message: "recess schedule fetch failed", err: logError(error) });
     throw new Error("recess_schedules_unavailable");
   }
   recessCache = {
@@ -440,13 +444,14 @@ io.use(async (socket, next) => {
       is_active: boolean;
     };
     if (classroomBoardCapability) {
-      const { data: classroom } = await supabaseAdmin
+      const { data: classroom, error: classroomError } = await supabaseAdmin
         .from("classroom_sessions")
         .select("id")
         .eq("id", classroomBoardCapability.classroomId)
         .eq("room_code", classroomBoardCapability.roomCode)
         .eq("status", "active")
         .maybeSingle();
+      if (classroomError) throw classroomError;
       if (!classroom) {
         next(new Error("FORBIDDEN"));
         return;
@@ -461,19 +466,21 @@ io.use(async (socket, next) => {
       };
       socket.data.classroomBoardCapability = classroomBoardCapability;
     } else if (classroomDelegate) {
-      const { data: delegate } = await supabaseAdmin
+      const { data: delegate, error: delegateError } = await supabaseAdmin
         .from("classroom_host_delegates")
         .select("id, classroom_id, display_name, is_active")
         .eq("id", classroomDelegate.delegateId)
         .eq("classroom_id", classroomDelegate.classroomId)
         .maybeSingle();
-      const { data: classroom } = await supabaseAdmin
+      if (delegateError) throw delegateError;
+      const { data: classroom, error: classroomError } = await supabaseAdmin
         .from("classroom_sessions")
         .select("id")
         .eq("id", classroomDelegate.classroomId)
         .eq("room_code", classroomDelegate.roomCode)
         .eq("status", "active")
         .maybeSingle();
+      if (classroomError) throw classroomError;
       if (!delegate?.is_active || !classroom) {
         next(new Error("FORBIDDEN"));
         return;
@@ -499,7 +506,7 @@ io.use(async (socket, next) => {
       } catch (err) {
         logger.warn({
           message: "recess gate failed",
-          error: err instanceof Error ? err.message : String(err)
+          err: logError(err)
         });
         next(new Error("RECESS_DENIED"));
         return;
@@ -517,13 +524,21 @@ io.use(async (socket, next) => {
     if (msg === "FORBIDDEN") {
       next(new Error("FORBIDDEN"));
     } else {
+      if (msg !== "UNAUTHORIZED") {
+        logger.error({
+          correlationId: socket.data.correlationId,
+          protocol: "socket",
+          message: "Socket authentication failed internally",
+          context: { event: "SOCKET_AUTH_INTERNAL_FAILED", status: "failed" },
+          err: logError(err)
+        });
+      }
       next(new Error("UNAUTHORIZED"));
     }
   }
 });
 
 io.on("connection", (socket) => {
-  const originalOn = socket.on.bind(socket);
   const HOT_SOCKET_EVENTS = new Set(["LIVE_DELTA"]);
   const lastDrawingRejectionAt = new Map<string, number>();
   const shouldLogDrawingRejection = (code: string): boolean => {
@@ -533,44 +548,7 @@ io.on("connection", (socket) => {
     lastDrawingRejectionAt.set(code, now);
     return true;
   };
-  socket.on = (event: string, listener: (...args: any[]) => void | Promise<void>) => {
-    if (HOT_SOCKET_EVENTS.has(event)) {
-      return originalOn(event, listener);
-    }
-    return originalOn(event, async (...args: any[]) => {
-      const started = Date.now();
-      const ack = typeof args[args.length - 1] === "function" ? args[args.length - 1] : undefined;
-      try {
-        const result = listener(...args);
-        if (result instanceof Promise) {
-          await result;
-        }
-      } catch (err) {
-        const sessionId = (args[0] as { sessionId?: string })?.sessionId ?? (socket.data.sessionId as string | undefined);
-        logger.error({
-          correlationId: socket.data.correlationId,
-          userId: socket.data.userId,
-          sessionId,
-          protocol: "socket",
-          message: `Socket handler ${event} threw`,
-          context: {
-            event,
-            status: "failed",
-            duration_ms: Date.now() - started
-          },
-          error: err instanceof Error ? err.message : String(err)
-        });
-        stats.recordIntentFailed();
-        if (ack) {
-          try {
-            ack({ ok: false, error: { code: "INTERNAL", message: "Internal server error" } });
-          } catch {
-            // ignore
-          }
-        }
-      }
-    });
-  };
+  installSocketExceptionGuard(logger, stats, socket, HOT_SOCKET_EVENTS);
 
   const userId = socket.data.userId as string;
   const displayName = socket.data.displayName as string;
@@ -824,10 +802,10 @@ io.on("connection", (socket) => {
     room.rematch = undefined;
   }
 
-  function resumeRoom(room: Room<unknown>) {
+  async function resumeRoom(room: Room<unknown>) {
     room.paused = false;
     if (supabaseAdmin) {
-      void persistGameResumed({
+      await persistGameResumed({
         supabase: supabaseAdmin,
         sessionId: room.sessionId,
         ...connectedPayload(room)
@@ -992,7 +970,7 @@ io.on("connection", (socket) => {
           logger.warn({
             message: "Classroom drawing policy load failed",
             sessionId,
-            error: err instanceof Error ? err.message : String(err)
+            err: logError(err)
           });
         }
         const delegate = socket.data.classroomDelegate as
@@ -1191,7 +1169,7 @@ io.on("connection", (socket) => {
         return;
       }
       if (room.paused && classroomRoomCode) {
-        resumeRoom(room);
+        await resumeRoom(room);
       }
       if (!isRoomIdle(room)) {
         if (wasIdle) {
@@ -1208,7 +1186,7 @@ io.on("connection", (socket) => {
       if (gameKey === "drawing") {
         serveCanonicalDrawing(room, "join");
       }
-      void persistPlayerJoin({
+      await persistPlayerJoin({
         supabase: supabaseAdmin,
         sessionId,
         session: {
@@ -1244,7 +1222,7 @@ io.on("connection", (socket) => {
         }
       }
       if (room.paused && missingPlayers(room).length === 0) {
-        resumeRoom(room);
+        await resumeRoom(room);
       }
       emitSnapshot(room);
       reply?.({ ok: true, player: assigned.player });
@@ -1596,6 +1574,19 @@ io.on("connection", (socket) => {
         }),
         allowWhiteboardDraw: payload.allowWhiteboardDraw
       });
+      logger.info({
+        correlationId: socket.data.correlationId,
+        userId,
+        sessionId,
+        protocol: "socket",
+        message: "Classroom whiteboard policy applied",
+        context: {
+          event: "CLASSROOM_WHITEBOARD_POLICY",
+          roomCode: classroom.roomCode,
+          allowWhiteboardDraw: payload.allowWhiteboardDraw,
+          status: "success"
+        }
+      });
     }
   );
 
@@ -1726,7 +1717,7 @@ io.on("connection", (socket) => {
             "clear",
             { correlationId: socket.data.correlationId, userId },
             true
-          ).catch(() => {});
+          );
           logger.info({
             correlationId: socket.data.correlationId,
             userId,
@@ -1761,7 +1752,7 @@ io.on("connection", (socket) => {
           outcome: res.outcome
         });
         if (supabaseAdmin) {
-          void persistGameEnded({
+          await persistGameEnded({
             supabase: supabaseAdmin,
             sessionId,
             gameState: res.state,
@@ -1814,7 +1805,7 @@ io.on("connection", (socket) => {
         stoppedBy: userId
       });
       if (supabaseAdmin) {
-        void persistGameStopped({
+        await persistGameStopped({
           supabase: supabaseAdmin,
           sessionId,
           stoppedBy: userId,
@@ -1834,10 +1825,12 @@ io.on("connection", (socket) => {
       payload: { sessionId?: string } | undefined,
       ack?: (r: unknown) => void
     ) => {
+      const started = Date.now();
       const sessionId =
         payload?.sessionId ?? (socket.data.sessionId as string | undefined);
+      const reply = wrapAck("PAUSE_GAME", started, sessionId, ack);
       if (!sessionId) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "BAD_REQUEST", message: "sessionId required" }
         });
@@ -1845,7 +1838,7 @@ io.on("connection", (socket) => {
       }
       const room = getRoom(sessionId);
       if (!room) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "NOT_FOUND", message: "Room not loaded" }
         });
@@ -1853,25 +1846,48 @@ io.on("connection", (socket) => {
       }
       const guard = canStopGame(room, userId);
       if (!guard.ok) {
-        ack?.({ ok: false, error: guard.error });
+        reply?.({ ok: false, error: guard.error });
         return;
       }
+      const wasPaused = room.paused;
+      const previousRematch = room.rematch;
       room.paused = true;
       room.rematch = undefined;
-      if (supabaseAdmin) {
-        void persistGamePaused({
-          supabase: supabaseAdmin,
+      try {
+        if (supabaseAdmin) {
+          await persistGamePaused({
+            supabase: supabaseAdmin,
+            sessionId,
+            gameState: room.state,
+            ...connectedPayload(room)
+          });
+        }
+      } catch (err) {
+        // Do not leave the live room paused when its durable pause failed and
+        // the caller is about to receive a failed acknowledgement.
+        room.paused = wasPaused;
+        room.rematch = previousRematch;
+        logger.error({
+          correlationId: socket.data.correlationId,
+          userId,
           sessionId,
-          gameState: room.state,
-          ...connectedPayload(room)
+          protocol: "socket",
+          message: "Game pause persistence failed",
+          context: { event: "PAUSE_GAME_PERSIST_FAILED", status: "failed" },
+          err: logError(err)
         });
+        reply?.({
+          ok: false,
+          error: { code: "PERSIST_FAILED", message: "Could not pause the game" }
+        });
+        return;
       }
       io.to(`session:${sessionId}`).emit("ROOM_EVENT", {
         sessionId,
         kind: "GAME_PAUSED"
       });
       emitSnapshot(room);
-      ack?.({ ok: true });
+      reply?.({ ok: true });
     }
   );
 
@@ -1881,10 +1897,12 @@ io.on("connection", (socket) => {
       payload: { sessionId?: string } | undefined,
       ack?: (r: unknown) => void
     ) => {
+      const started = Date.now();
       const sessionId =
         payload?.sessionId ?? (socket.data.sessionId as string | undefined);
+      const reply = wrapAck("RESUME_GAME", started, sessionId, ack);
       if (!sessionId) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "BAD_REQUEST", message: "sessionId required" }
         });
@@ -1892,7 +1910,7 @@ io.on("connection", (socket) => {
       }
       const room = getRoom(sessionId);
       if (!room) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "NOT_FOUND", message: "Room not loaded" }
         });
@@ -1900,15 +1918,15 @@ io.on("connection", (socket) => {
       }
       const guard = canResumeGame(room, userId);
       if (!guard.ok) {
-        ack?.({ ok: false, error: guard.error });
+        reply?.({ ok: false, error: guard.error });
         return;
       }
-      resumeRoom(room);
+      await resumeRoom(room);
       for (const p of room.players.values()) {
         recordLaunch(sessionId, p.userId, room.gameKey);
       }
       emitSnapshot(room);
-      ack?.({ ok: true });
+      reply?.({ ok: true });
     }
   );
 
@@ -1983,21 +2001,23 @@ io.on("connection", (socket) => {
 
   socket.on(
     "REMATCH_RESPONSE",
-    (
+    async (
       payload: { sessionId?: string; accept?: boolean } | undefined,
       ack?: (r: unknown) => void
     ) => {
+      const started = Date.now();
       const sessionId =
         payload?.sessionId ?? (socket.data.sessionId as string | undefined);
+      const reply = wrapAck("REMATCH_RESPONSE", started, sessionId, ack);
       if (!sessionId || typeof payload?.accept !== "boolean") {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "BAD_REQUEST", message: "חסרים פרטי תגובה למשחק חוזר" }
         });
         return;
       }
       if (isGameInspectorRole(socket.data.role)) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "READ_ONLY", message: "צופים לא יכולים להשתתף במשחק חוזר" }
         });
@@ -2005,28 +2025,28 @@ io.on("connection", (socket) => {
       }
       const room = getRoom(sessionId);
       if (!room) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "NOT_FOUND", message: "Room not loaded" }
         });
         return;
       }
       if (room.gameKey === "breakout") {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "NO_REMATCH", message: "משחק חוזר לא נתמך במשחק זה" }
         });
         return;
       }
       if (!room.rematch || !room.module.isTerminal(room.state)) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "NO_REMATCH", message: "אין בקשת משחק חוזר פעילה" }
         });
         return;
       }
       if (!roomRoster(room).some((p) => p.userId === userId)) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "NOT_IN_ROOM", message: "השחקן לא נמצא בחדר" }
         });
@@ -2051,7 +2071,7 @@ io.on("connection", (socket) => {
           kind: "REMATCH_CANCELLED"
         });
         emitSnapshot(room);
-        ack?.({ ok: true });
+        reply?.({ ok: true });
         return;
       }
 
@@ -2067,7 +2087,7 @@ io.on("connection", (socket) => {
       if (everyoneAnswered && acceptedConnected.length >= room.minPlayers) {
         resetForRematch(room, acceptedConnected);
         if (supabaseAdmin) {
-          void persistGameRematch({
+          await persistGameRematch({
             supabase: supabaseAdmin,
             sessionId,
             gameState: room.state,
@@ -2082,7 +2102,7 @@ io.on("connection", (socket) => {
         });
       }
       emitSnapshot(room);
-      ack?.({ ok: true });
+      reply?.({ ok: true });
     }
   );
 
@@ -2145,7 +2165,16 @@ io.on("connection", (socket) => {
         is_system: false
       });
       if (insErr) {
-        ack?.({ ok: false, error: { code: "PERSIST_FAILED", message: insErr.message } });
+        logger.error({
+          correlationId: socket.data.correlationId,
+          userId,
+          sessionId,
+          protocol: "socket",
+          message: "Chat message persistence failed",
+          context: { event: "CHAT_MESSAGE_PERSIST_FAILED", status: "failed" },
+          err: logError(insErr)
+        });
+        ack?.({ ok: false, error: { code: "PERSIST_FAILED", message: "message_not_saved" } });
         return;
       }
       // Chat UI uses Supabase + Realtime only (stays in sync with teacher moderation).
@@ -2196,7 +2225,7 @@ io.on("connection", (socket) => {
             sessionId,
             protocol: "socket",
             message: "Child spectator presence cleanup failed",
-            error: error instanceof Error ? error.message : String(error)
+            err: logError(error)
           });
         });
       }
@@ -2308,17 +2337,19 @@ io.on("connection", (socket) => {
       payload: { sessionId?: string } | undefined,
       ack?: (r: unknown) => void
     ) => {
+      const started = Date.now();
       const sessionId =
         payload?.sessionId ?? (socket.data.sessionId as string | undefined);
+      const reply = wrapAck("LEAVE_ROOM", started, sessionId, ack);
       if (!sessionId) {
-        ack?.({
+        reply?.({
           ok: false,
           error: { code: "BAD_REQUEST", message: "sessionId required" }
         });
         return;
       }
       await handleLeave(sessionId);
-      ack?.({ ok: true });
+      reply?.({ ok: true });
     }
   );
 
@@ -2350,7 +2381,7 @@ io.on("connection", (socket) => {
     }
     const sessionId = socket.data.sessionId as string | undefined;
     if (sessionId && userId) {
-      void handleLeave(sessionId);
+      observeBackgroundTask(logger, handleLeave(sessionId), "SOCKET_DISCONNECT_LEAVE_FAILED", { sessionId });
     }
   });
 });
@@ -2369,7 +2400,7 @@ const recessTimer = setInterval(() => {
     logError: (message, err) =>
       logger.error({
         message,
-        error: err instanceof Error ? err.message : String(err)
+        err: logError(err)
       })
   });
 }, RECESS_TICK_MS);
@@ -2380,13 +2411,37 @@ const STALE_PAUSE_MS = 24 * 60 * 60 * 1000;
 const CLEANUP_TICK_MS = 60 * 60 * 1000;
 const cleanupTimer = setInterval(() => {
   if (!supabaseAdmin) return;
-  void cleanupStalePausedSessions({
-    supabase: supabaseAdmin,
-    olderThanMs: STALE_PAUSE_MS
-  });
+  observeBackgroundTask(
+    logger,
+    cleanupStalePausedSessions({
+      supabase: supabaseAdmin,
+      olderThanMs: STALE_PAUSE_MS
+    }),
+    "STALE_PAUSED_SESSION_CLEANUP_FAILED"
+  );
 }, CLEANUP_TICK_MS);
 cleanupTimer.unref?.();
 
 server.listen(PORT, () => {
-  logger.info({ message: `game-server listening on ${PORT}`, protocol: "http" });
+  logger.info({ message: "game-server listening", protocol: "http", context: { event: "SERVICE_LISTENING", port: PORT } });
+});
+
+installProcessLifecycle({
+  logger,
+  shutdown: async () => {
+    clearInterval(recessTimer);
+    clearInterval(cleanupTimer);
+    if (supabaseAdmin) {
+      const flushes = await Promise.allSettled(listRooms().map(async (room) => {
+        // The persistence helper is a no-op for rooms without canonical
+        // drawing state, so the shutdown path does not need socket-local
+        // drawing predicates.
+        await persistCanonicalDrawing(room, "shutdown", {}, true);
+        await persistLaunches(supabaseAdmin, room.sessionId, true);
+      }));
+      const failed = flushes.filter((result) => result.status === "rejected").length;
+      if (failed) logger.error({ message: "Shutdown persistence flush incomplete", context: { event: "SHUTDOWN_FLUSH_FAILED", failedRooms: failed } });
+    }
+    await new Promise<void>((resolve) => io.close(() => resolve()));
+  }
 });

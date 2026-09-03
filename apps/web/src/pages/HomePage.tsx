@@ -15,6 +15,7 @@ import { cn } from "@/lib/cn";
 import { useOnlinePresence } from "@/hooks/usePresence";
 import { useInbox } from "@/hooks/useInbox";
 import { KidAvatar } from "@/components/KidAvatar";
+import { reportCaughtError } from "@/utils/telemetry";
 
 interface GameCatalogRow {
   id: string;
@@ -127,6 +128,7 @@ export function HomePage() {
       })
       .catch((error: Error) => {
         console.error(error);
+        reportCaughtError("Solo save catalog query failed", error, { appArea: "home", operation: "solo-save-keys" });
         if (!cancelled) setSoloSaveKeys(new Set());
       });
     return () => {

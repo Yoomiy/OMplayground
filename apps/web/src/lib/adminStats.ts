@@ -9,9 +9,9 @@ export interface ServiceStats {
   service: "game-server" | "minecraft-server";
   activeConnections: number;
   activeRoomsCount: number;
-  intentsPerSecond: number;
-  averageIntentLatencyMs: number;
-  intentFailuresLast5Min: number;
+  socketEventsPerSecond: number;
+  averageSocketEventLatencyMs: number;
+  socketEventFailuresLast5Min: number;
   rooms: RoomStat[];
   voice?: { activeRooms: number; totalParticipants: number };
 }
