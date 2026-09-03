@@ -5,6 +5,7 @@ import { getVoxelServerUrl } from "@/lib/voxelServerUrl";
 import { useProfile } from "@/hooks/useProfile";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { cn } from "@/lib/cn";
+import { kidFieldInputClass } from "@/lib/fieldStyles";
 import { GameSessionInspector } from "@/components/GameSessionInspector";
 
 export function TeacherPage() {
