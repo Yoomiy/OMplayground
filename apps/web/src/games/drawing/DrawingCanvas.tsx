@@ -842,6 +842,20 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
           display: none !important;
         }
 
+        /* Canvas cursor labels use text-align: start. Keep their anchor LTR
+           even though the application shell is RTL, so a Hebrew name stays
+           inside the left-anchored label drawn beside its cursor. */
+        .excalidraw canvas {
+          direction: ltr;
+        }
+
+        /* Excalidraw does not expose a UI option for these social-menu links. */
+        .excalidraw a[href="https://github.com/excalidraw/excalidraw"],
+        .excalidraw a[href="https://x.com/excalidraw"],
+        .excalidraw a[href="https://discord.gg/UexuTaE"] {
+          display: none !important;
+        }
+
         /* Remove .dropdown-menu-button for participants without board privileges */
         .drawing-read-only .dropdown-menu-button {
           display: none !important;
