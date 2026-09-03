@@ -8,13 +8,9 @@
 25. make sure that errors in the drawing board do not kick you out of the room
 27. when host stops game - others need to stop sending intents
 30. test audio and docs on the classroom media board
-33. we might want to be able to lock a classroom (when a host is not attended?)
-36. logs coverage for things like recess end
 40. you still need to manipulate the pic before the media board shows it
 41. make sure that DB audit_log events are logged in the server too
 42. see why admin is marked as connected in the classrooms dashboard after disconnection.
-43. decide what happens when kid joins a full game-room
-44. give admin teacher game inspection capabilities
 45. add light theme
 46. fix hebrew rtl awareness cursor bug
 47. allow classroom chat at default

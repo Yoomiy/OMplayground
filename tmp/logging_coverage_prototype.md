@@ -1,5 +1,9 @@
 # Logging and Statistics Coverage — OMplayground
 
+> Historical design document. For the maintained contributor contract and the
+> checklist required when adding a feature or process, use
+> [`docs/LOGGING.md`](../docs/LOGGING.md).
+
 Technical specification for unified structured logging and live statistics across OMplayground. Covers client telemetry, both Node game servers, LiveKit voice, durable Supabase audit events, and an Admin stats view.
 
 **Status:** implemented (June 2026) — both Railway services, client telemetry, Admin **סטטיסטיקות** tab. Remaining gap: `packages/observability` Jest suite. Last revised for dual-server + LiveKit topology.

@@ -225,7 +225,9 @@ Supabase JWT; gender checks on join + LiveKit tokens; server-authoritative game 
 - **Live Admin Flushing**: When an admin loads or refreshes the stats page, the server intercepts the stats request and invokes a non-destructive flush (`onAdminStatsQuery` hook) of all active game rooms. This flushes active launch/FPS metrics to the database without deleting active session keys from memory.
 - **Polling Optimization**: The Admin Stats UI dashboard tab (`AdminStatsSection`) monitors tab visibility via the Page Visibility API. It pauses stats polling requests immediately when the browser tab is hidden to conserve network bandwidth and backend server CPU cycles.
 
-`GET /health`, `GET /ready`, rate limits. Details: `docs/HARDENING.md`.
+`GET /health`, `GET /ready`, rate limits. Production operations are documented
+in `docs/HARDENING.md`; required logging practices for every new feature and
+process are documented in `docs/LOGGING.md`.
 
 ---
 

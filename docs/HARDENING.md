@@ -16,6 +16,9 @@ Operational notes for production. Aligned with `ARCHITECTURE.md` and `tmp/loggin
 
 ## Logs and metrics
 
+Contributor requirements and the new-feature checklist live in
+[`LOGGING.md`](LOGGING.md).
+
 - **Shared package:** `@playground/observability` — Pino JSON logs, correlation IDs, whitelisted socket event logging (no per-tick spam).
 - **game-server:** `initObservability` wired (replacing raw `morgan` + scattered `console.*`).
 - **minecraft-server and document-converter:** Package wired with Pino, correlation IDs, and structured lifecycle events.
