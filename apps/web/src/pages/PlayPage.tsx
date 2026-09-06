@@ -57,14 +57,14 @@ function PlayPage() {
 
   if (!sessionId) {
     return (
-      <p className="p-6 text-sm font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-2xl max-w-md mx-auto mt-10 text-center">
+      <p className="p-6 text-sm font-bold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/30 rounded-2xl max-w-md mx-auto mt-10 text-center shadow-sm">
         חסר מזהה מפגש
       </p>
     );
   }
 
   if (!sessionResolved) {
-    return <p className="p-6 text-center text-sm font-bold text-white/60">טוען חדר…</p>;
+    return <p className="p-6 text-center text-sm font-bold text-slate-600 dark:text-white/60">טוען חדר…</p>;
   }
 
   if (classroomRoomCode) {
@@ -84,7 +84,7 @@ function PlayPage() {
       actions={
         <Link
           to={backHref}
-          className="rounded-xl bg-white/10 border border-white/20 hover:bg-white/15 px-4 py-2 text-xs font-black text-white hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 flex items-center justify-center min-h-10 shadow-sm"
+          className="rounded-xl bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/20 hover:bg-slate-200 dark:hover:bg-white/15 px-4 py-2 text-xs font-black text-slate-800 dark:text-white hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 flex items-center justify-center min-h-10 shadow-sm"
         >
           {backLabel}
         </Link>

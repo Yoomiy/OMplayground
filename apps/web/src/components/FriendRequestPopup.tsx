@@ -56,7 +56,7 @@ export function FriendRequestPopup() {
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))] animate-slide-up">
       <div
-        className="pointer-events-auto w-full max-w-md rounded-3xl border border-white/10 bg-[#150d32]/95 p-5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-md"
+        className="pointer-events-auto w-full max-w-md rounded-3xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#150d32]/95 p-5 shadow-[0_8px_32px_rgba(0,0,0,0.15)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-md"
         role="dialog"
         aria-modal="true"
         aria-labelledby="friend-req-title"
@@ -66,11 +66,11 @@ export function FriendRequestPopup() {
         </div>
         <p
           id="friend-req-title"
-          className="text-base font-black leading-snug text-white"
+          className="text-base font-black leading-snug text-slate-900 dark:text-white"
         >
           {fromName ?? "מישהו"} רוצה להיות חבר/ה שלך
         </p>
-        <p className="mt-2 text-xs font-bold text-white/50">
+        <p className="mt-2 text-xs font-bold text-slate-500 dark:text-white/50">
           רוצה לאשר את הבקשה?
         </p>
         <div className="mt-5 flex flex-col gap-3 sm:flex-row-reverse sm:justify-stretch">
@@ -83,7 +83,7 @@ export function FriendRequestPopup() {
             כן, בואו נהיה חברים
           </button>
           <button
-            className="flex-1 rounded-2xl border border-white/10 bg-white/5 py-3 text-sm font-black text-white/70 hover:bg-white/10 hover:text-white transition duration-200 disabled:opacity-50"
+            className="flex-1 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 py-3 text-sm font-black text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200 disabled:opacity-50"
             type="button"
             disabled={busy}
             onClick={() => void onDecline()}

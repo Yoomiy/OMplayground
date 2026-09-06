@@ -79,7 +79,7 @@ function LazySoloGame({
 
   if (!Game) {
     return (
-      <div className="flex min-h-[320px] items-center justify-center text-sm font-medium text-white/40">
+      <div className="flex min-h-[320px] items-center justify-center text-sm font-medium text-slate-500 dark:text-white/40">
         טוען משחק…
       </div>
     );
@@ -213,7 +213,7 @@ export default function SoloGameContainer() {
         <button
           type="button"
           onClick={() => navigate("/home")}
-          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-black text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-4 py-2 text-xs font-black text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200"
         >
           חזרה הביתה
         </button>
@@ -222,21 +222,21 @@ export default function SoloGameContainer() {
     >
       {err ? (
         <p
-          className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-300"
+          className="mb-4 rounded-xl border border-amber-400/40 dark:border-amber-500/30 bg-amber-500/15 dark:bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-800 dark:text-amber-300"
           role="alert"
         >
           {err}
         </p>
       ) : null}
       {loadingSave ? (
-        <p className={desktopPanelClass("px-4 py-3 text-sm font-bold text-white/50")}>
+        <p className={desktopPanelClass("px-4 py-3 text-sm font-bold text-slate-600 dark:text-white/50")}>
           טוען שמירה…
         </p>
       ) : save && !hasStarted ? (
-        <section className="mx-auto mt-20 flex max-w-md flex-col gap-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 text-right shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-md">
+        <section className="mx-auto mt-20 flex max-w-md flex-col gap-4 rounded-2xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-5 text-right shadow-xl dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-md">
           <div className="space-y-1">
-            <h1 className="text-xl font-black text-amber-300">נמצא משחק שמור</h1>
-            <p className="text-sm font-semibold text-amber-200/80">
+            <h1 className="text-xl font-black text-amber-900 dark:text-amber-300">נמצא משחק שמור</h1>
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-200/80">
               אפשר להמשיך מהמקום שבו עצרת או להתחיל משחק חדש.
             </p>
           </div>
@@ -255,7 +255,7 @@ export default function SoloGameContainer() {
             <button
               type="button"
               onClick={() => void startNewGame()}
-              className="rounded-xl border border-white/10 bg-white/5 px-5 py-2 text-sm font-bold text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+              className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-5 py-2 text-sm font-bold text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200"
             >
               משחק חדש
             </button>
@@ -268,7 +268,7 @@ export default function SoloGameContainer() {
           </div>
         </section>
       ) : (
-        <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-300" role="alert">
+        <p className="rounded-xl border border-amber-400/40 dark:border-amber-500/30 bg-amber-500/15 dark:bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-800 dark:text-amber-300" role="alert">
           משחק לא זמין: {gameKey ?? "?"}
         </p>
       )}

@@ -35,21 +35,21 @@ export function MemoryBoard({ gameState, myUserId, onIntent }: MemoryBoardProps)
     scoreEntries.find(([id]) => id !== myUserId)?.[1] ?? 0;
 
   return (
-    <div className="mx-auto max-w-md space-y-4 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-md p-4 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
-      <div className="flex items-center justify-between text-sm font-medium text-white/70">
+    <div className="mx-auto max-w-md space-y-4 rounded-3xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/5 backdrop-blur-md p-4 shadow-xl dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+      <div className="flex items-center justify-between text-sm font-medium text-slate-600 dark:text-white/70">
         <span>
-          אני: <strong className="text-white font-bold">{meScore}</strong>
+          אני: <strong className="text-slate-900 dark:text-white font-bold">{meScore}</strong>
         </span>
         <span>
-          יריב: <strong className="text-white font-bold">{opponentScore}</strong>
+          יריב: <strong className="text-slate-900 dark:text-white font-bold">{opponentScore}</strong>
         </span>
         <span
           className={
             isMyTurn
-              ? "text-emerald-400 font-bold"
+              ? "text-emerald-500 dark:text-emerald-400 font-bold"
               : gameState.status !== "playing"
-                ? "text-white/40"
-                : "text-amber-400 font-bold"
+                ? "text-slate-400 dark:text-white/40"
+                : "text-amber-500 dark:text-amber-400 font-bold"
           }
         >
           {gameState.status === "playing"
@@ -75,7 +75,7 @@ export function MemoryBoard({ gameState, myUserId, onIntent }: MemoryBoardProps)
               className={
                 shown
                   ? "flex aspect-square items-center justify-center rounded-2xl border-2 border-emerald-500/30 bg-emerald-500/10 text-3xl shadow-[0_0_12px_rgba(16,185,129,0.2)] text-white"
-                  : "flex aspect-square items-center justify-center rounded-2xl border-2 border-white/10 bg-white/5 text-2xl font-black text-violet-400/80 shadow-sm transition hover:border-violet-500/50 hover:bg-white/10 hover:text-violet-300 disabled:cursor-not-allowed disabled:opacity-30"
+                  : "flex aspect-square items-center justify-center rounded-2xl border-2 border-slate-200 dark:border-white/10 bg-white/70 dark:bg-white/5 text-2xl font-black text-violet-500 dark:text-violet-400/80 shadow-sm transition hover:border-violet-500/50 hover:bg-white dark:hover:bg-white/10 hover:text-violet-600 dark:hover:text-violet-300 disabled:cursor-not-allowed disabled:opacity-30"
               }
               onClick={() => onIntent({ cardIndex: index })}
             >

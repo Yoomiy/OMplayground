@@ -20,15 +20,15 @@ export function ClassroomEndedPage() {
     : null;
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-950 px-4 py-8 text-slate-100">
-      <section className="w-full max-w-lg rounded-3xl border border-slate-700/70 bg-slate-900 p-8 text-center shadow-2xl shadow-black/30">
-        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-500/15 text-indigo-300">
+    <main className="flex min-h-screen items-center justify-center bg-slate-100 dark:bg-slate-950 px-4 py-8 text-slate-800 dark:text-slate-100" dir="rtl">
+      <section className="w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-700/70 bg-white/95 dark:bg-slate-900 p-8 text-center shadow-2xl shadow-black/10 dark:shadow-black/30 backdrop-blur-md">
+        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">
           <DoorOpen className="h-8 w-8" aria-hidden="true" />
         </div>
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-2xl font-black text-slate-900 dark:text-white">
           {wasRemoved ? "הוסרת מהכיתה" : leftClassroom ? "יצאת מהכיתה" : "השיעור הסתיים"}
         </h1>
-        <p className="mt-3 leading-7 text-slate-300">
+        <p className="mt-3 leading-7 text-slate-600 dark:text-slate-300">
           {wasRemoved
             ? "המורה הוציא אותך מהכיתה"
             : leftClassroom
@@ -38,11 +38,11 @@ export function ClassroomEndedPage() {
 
         <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-center">
           {userDetailsLoading ? (
-            <span className="text-sm text-slate-400">טוען אפשרויות…</span>
+            <span className="text-sm text-slate-500 dark:text-slate-400">טוען אפשרויות…</span>
           ) : (wasRemoved || leftClassroom) && removedRoomPath ? (
             <Link
               to={removedRoomPath}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 font-bold text-white transition hover:bg-indigo-500"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 font-bold text-white transition hover:bg-indigo-500 shadow-sm"
             >
               <DoorOpen className="h-5 w-5" />
               חזרה לכיתה
@@ -50,12 +50,19 @@ export function ClassroomEndedPage() {
           ) : user && isClassroomManager ? (
             <Link
               to={dashboardPath}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 font-bold text-white transition hover:bg-indigo-500"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 font-bold text-white transition hover:bg-indigo-500 shadow-sm"
             >
               {isAdmin ? <ShieldCheck className="h-5 w-5" /> : <GraduationCap className="h-5 w-5" />}
               ללוח הכיתות שלי
             </Link>
-          ) : null}
+          ) : (
+            <Link
+              to="/home"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 font-bold text-white transition hover:bg-indigo-500 shadow-sm"
+            >
+              חזרה לבית 🏠
+            </Link>
+          )}
         </div>
       </section>
     </main>

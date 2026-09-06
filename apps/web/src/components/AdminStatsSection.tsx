@@ -7,9 +7,9 @@ import {
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 p-4 shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
-      <p className="text-xs text-white/50">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-white">{value}</p>
+    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5 dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
+      <p className="text-xs text-slate-500 dark:text-white/50">{label}</p>
+      <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">{value}</p>
     </div>
   );
 }
@@ -129,18 +129,18 @@ export function AdminStatsSection() {
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg font-black text-white">סטטיסטיקות חיות</h2>
+        <h2 className="text-lg font-black text-slate-900 dark:text-white">סטטיסטיקות חיות</h2>
         <button
           type="button"
           disabled={loading}
           onClick={() => void refresh()}
-          className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white/70 hover:bg-white/10 hover:text-white transition duration-200 disabled:opacity-50"
+          className="rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-white/70 dark:hover:bg-white/10 dark:hover:text-white transition duration-200 disabled:opacity-50 shadow-sm"
         >
           {loading ? "מרענן…" : "רענון"}
         </button>
       </div>
 
-      {err ? <p className="text-sm text-rose-400">{err}</p> : null}
+      {err ? <p className="text-sm text-rose-600 dark:text-rose-400">{err}</p> : null}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard label="חיבורי Socket פעילים" value={totalConnections} />
@@ -165,15 +165,15 @@ export function AdminStatsSection() {
 
       <div className="grid gap-3 md:grid-cols-2">
         {game ? (
-          <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white/80">
-            <p className="font-medium text-white">game-server</p>
+          <div className="rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5 p-3 text-sm text-slate-700 dark:text-white/80 shadow-sm">
+            <p className="font-medium text-slate-900 dark:text-white">game-server</p>
             <p>Latency ממוצעת: {game.averageSocketEventLatencyMs} ms</p>
             <p>חיבורים: {game.activeConnections}</p>
           </div>
         ) : null}
         {voxel ? (
-          <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white/80">
-            <p className="font-medium text-white">minecraft-server</p>
+          <div className="rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5 p-3 text-sm text-slate-700 dark:text-white/80 shadow-sm">
+            <p className="font-medium text-slate-900 dark:text-white">minecraft-server</p>
             <p>Latency ממוצעת: {voxel.averageSocketEventLatencyMs} ms</p>
             <p>חיבורים: {voxel.activeConnections}</p>
             {voxel.voice ? (
@@ -187,10 +187,10 @@ export function AdminStatsSection() {
       </div>
 
       <div className="space-y-2">
-        <h3 className="text-sm font-black text-white/80">חדרים פעילים</h3>
-        <div className="overflow-x-auto rounded-xl border border-white/10 bg-white/5">
-          <table className="min-w-full text-left text-xs text-white/80">
-            <thead className="bg-white/5 text-white/60">
+        <h3 className="text-sm font-black text-slate-800 dark:text-white/80">חדרים פעילים</h3>
+        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5 shadow-sm">
+          <table className="min-w-full text-left text-xs text-slate-700 dark:text-white/80">
+            <thead className="bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-white/60">
               <tr>
                 <th className="px-3 py-2">sessionId</th>
                 <th className="px-3 py-2">gameType</th>
@@ -202,13 +202,13 @@ export function AdminStatsSection() {
             <tbody>
               {allRooms.length === 0 ? (
                 <tr>
-                  <td className="px-3 py-3 text-white/40" colSpan={5}>
+                  <td className="px-3 py-3 text-slate-500 dark:text-white/40" colSpan={5}>
                     אין חדרים פעילים כרגע
                   </td>
                 </tr>
               ) : (
                 allRooms.map((room) => (
-                  <tr key={`${room.server}-${room.sessionId}`} className="border-t border-white/10 hover:bg-white/5">
+                  <tr key={`${room.server}-${room.sessionId}`} className="border-t border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5">
                     <td className="px-3 py-2 font-mono">{room.sessionId}</td>
                     <td className="px-3 py-2">{room.gameType}</td>
                     <td className="px-3 py-2">{room.server}</td>
@@ -223,10 +223,10 @@ export function AdminStatsSection() {
       </div>
 
       <div className="space-y-2">
-        <h3 className="text-sm font-black text-white/80">לוחות בקרה (תשתית)</h3>
+        <h3 className="text-sm font-black text-slate-800 dark:text-white/80">לוחות בקרה (תשתית)</h3>
         <div className="flex flex-wrap gap-2 text-sm">
           <a
-            className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+            className="rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white shadow-sm transition duration-200"
             href="https://railway.app"
             target="_blank"
             rel="noreferrer"
@@ -234,7 +234,7 @@ export function AdminStatsSection() {
             Railway — game-server / minecraft-server
           </a>
           <a
-            className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+            className="rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white shadow-sm transition duration-200"
             href="https://cloud.livekit.io"
             target="_blank"
             rel="noreferrer"
@@ -242,7 +242,7 @@ export function AdminStatsSection() {
             LiveKit dashboard
           </a>
           <a
-            className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+            className="rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white shadow-sm transition duration-200"
             href="https://vercel.com"
             target="_blank"
             rel="noreferrer"
@@ -250,7 +250,7 @@ export function AdminStatsSection() {
             Vercel — web
           </a>
           <a
-            className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+            className="rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white shadow-sm transition duration-200"
             href="https://supabase.com/dashboard"
             target="_blank"
             rel="noreferrer"
@@ -260,28 +260,28 @@ export function AdminStatsSection() {
         </div>
       </div>
 
-      <hr className="my-6 border-white/10" />
+      <hr className="my-6 border-slate-200 dark:border-white/10" />
 
       <div className="space-y-6 text-right">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-lg font-black text-white">סטטיסטיקות היסטוריות מהמסד</h2>
+          <h2 className="text-lg font-black text-slate-900 dark:text-white">סטטיסטיקות היסטוריות מהמסד</h2>
           <button
             type="button"
             disabled={loadingHistorical}
             onClick={() => void refreshHistorical()}
-            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white/70 hover:bg-white/10 hover:text-white transition duration-200 disabled:opacity-50"
+            className="rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-white/70 dark:hover:bg-white/10 dark:hover:text-white transition duration-200 disabled:opacity-50 shadow-sm"
           >
             {loadingHistorical ? "מרענן היסטוריה…" : "רענן היסטוריה"}
           </button>
         </div>
 
-        {historicalErr ? <p className="text-sm text-rose-400">{historicalErr}</p> : null}
+        {historicalErr ? <p className="text-sm text-rose-600 dark:text-rose-400">{historicalErr}</p> : null}
 
         {/* Game Launches Grid */}
         <div className="space-y-3">
-          <h3 className="text-sm font-black text-white/80">סטטיסטיקות הפעלת משחקים</h3>
+          <h3 className="text-sm font-black text-slate-800 dark:text-white/80">סטטיסטיקות הפעלת משחקים</h3>
           {gamesList.length === 0 ? (
-            <p className="text-sm text-white/40">אין נתוני משחקים טעונים.</p>
+            <p className="text-sm text-slate-500 dark:text-white/40">אין נתוני משחקים טעונים.</p>
           ) : (
             <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {gamesList.map((game) => {
@@ -293,26 +293,26 @@ export function AdminStatsSection() {
                     key={game.id}
                     type="button"
                     onClick={() => setSelectedGame(game)}
-                    className="group relative flex flex-col justify-between p-4 rounded-xl border border-white/10 bg-white/5 hover:border-indigo-500/50 hover:bg-white/10 hover:shadow-lg transition-all duration-200 text-right w-full"
+                    className="group relative flex flex-col justify-between p-4 rounded-xl border border-slate-200 bg-white hover:border-indigo-500/50 hover:bg-slate-50 hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 dark:hover:shadow-lg transition-all duration-200 text-right w-full shadow-sm"
                   >
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                           game.is_multiplayer
-                            ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"
-                            : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                            ? "bg-indigo-100 text-indigo-800 border border-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-500/20"
+                            : "bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20"
                         }`}>
                           {game.is_multiplayer ? "רב משתתפים" : "שחקן יחיד"}
                         </span>
                       </div>
-                      <h4 className="text-sm font-bold text-white group-hover:text-indigo-400 transition-colors leading-tight">
+                      <h4 className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 dark:text-white dark:group-hover:text-indigo-400 transition-colors leading-tight">
                         {game.name_he}
                       </h4>
-                      <p className="text-[10px] text-white/40 font-mono mt-1 truncate">{game.game_url}</p>
+                      <p className="text-[10px] text-slate-400 dark:text-white/40 font-mono mt-1 truncate">{game.game_url}</p>
                     </div>
-                    <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between w-full">
-                      <span className="text-[11px] text-white/55">הפעלות:</span>
-                      <span className="text-base font-extrabold text-indigo-400 group-hover:text-indigo-300 transition-colors">
+                    <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-between w-full">
+                      <span className="text-[11px] text-slate-500 dark:text-white/55">הפעלות:</span>
+                      <span className="text-base font-extrabold text-indigo-600 group-hover:text-indigo-700 dark:text-indigo-400 dark:group-hover:text-indigo-300 transition-colors">
                         {total}
                       </span>
                     </div>
@@ -325,11 +325,11 @@ export function AdminStatsSection() {
 
         {/* Minecraft FPS Table */}
         <div className="space-y-2 pt-4">
-          <h3 className="text-sm font-black text-white/80">ביצועי FPS – מיינקראפט (200 אחרונים)</h3>
-          <div className="max-h-[350px] overflow-auto rounded-xl border border-white/10 bg-white/5">
-            <table className="min-w-full text-right text-xs text-white/80">
-              <thead className="bg-white/10 text-white/60 sticky top-0">
-                <tr className="border-b border-white/10">
+          <h3 className="text-sm font-black text-slate-800 dark:text-white/80">ביצועי FPS – מיינקראפט (200 אחרונים)</h3>
+          <div className="max-h-[350px] overflow-auto rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5 shadow-sm">
+            <table className="min-w-full text-right text-xs text-slate-700 dark:text-white/80">
+              <thead className="bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-white/60 sticky top-0 border-b border-slate-200 dark:border-white/10">
+                <tr>
                   <th className="px-3 py-2 text-right">שם הילד</th>
                   <th className="px-3 py-2 text-right">סשן (sessionId)</th>
                   <th className="px-3 py-2 text-right">FPS ממוצע (טעינה)</th>
@@ -337,34 +337,26 @@ export function AdminStatsSection() {
                   <th className="px-3 py-2 text-right">תאריך</th>
                 </tr>
               </thead>
-              <tbody>
-                {historicalFps.length === 0 ? (
-                  <tr>
-                    <td className="px-3 py-3 text-white/40 text-center" colSpan={5}>
-                      אין נתוני FPS
+              <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                {historicalFps.map((row, i) => (
+                  <tr key={`${row.session_id}-${i}`} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                    <td className="px-3 py-2 font-medium text-slate-900 dark:text-white">{row.kid_profiles?.full_name ?? "—"}</td>
+                    <td className="px-3 py-2 font-mono truncate max-w-[120px] text-slate-500 dark:text-white/40">{row.session_id}</td>
+                    <td className="px-3 py-2 font-mono font-bold text-slate-700 dark:text-white/80">
+                      {row.loading_avg_fps
+                        ? `${row.loading_avg_fps.toFixed(1)} (${row.loading_sample_count})`
+                        : "—"}
+                    </td>
+                    <td className="px-3 py-2 font-mono font-bold text-slate-700 dark:text-white/80">
+                      {row.runtime_avg_fps
+                        ? `${row.runtime_avg_fps.toFixed(1)} (${row.runtime_sample_count})`
+                        : "—"}
+                    </td>
+                    <td className="px-3 py-2 text-slate-500 dark:text-white/55">
+                      {new Date(row.recorded_at).toLocaleString("he-IL")}
                     </td>
                   </tr>
-                ) : (
-                  historicalFps.map((row, i) => (
-                    <tr key={`${row.session_id}-${i}`} className="border-t border-white/10 hover:bg-white/5">
-                      <td className="px-3 py-2 font-medium">{row.kid_profiles?.full_name ?? "—"}</td>
-                      <td className="px-3 py-2 font-mono truncate max-w-[120px]">{row.session_id}</td>
-                      <td className="px-3 py-2">
-                        {row.loading_avg_fps
-                          ? `${row.loading_avg_fps.toFixed(1)} (${row.loading_sample_count})`
-                          : "—"}
-                      </td>
-                      <td className="px-3 py-2">
-                        {row.runtime_avg_fps
-                          ? `${row.runtime_avg_fps.toFixed(1)} (${row.runtime_sample_count})`
-                          : "—"}
-                      </td>
-                      <td className="px-3 py-2 text-white/55">
-                        {new Date(row.recorded_at).toLocaleString("he-IL")}
-                      </td>
-                    </tr>
-                  ))
-                )}
+                ))}
               </tbody>
             </table>
           </div>
@@ -374,7 +366,7 @@ export function AdminStatsSection() {
       {/* Detail Modal Dialog */}
       {selectedGame && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" dir="rtl">
-          <div className="bg-slate-900 border border-white/10 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
+          <div className="dark bg-slate-900 border border-white/10 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
             {/* Header */}
             <div className="p-6 border-b border-white/10 flex items-center justify-between">
               <div>

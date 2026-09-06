@@ -141,9 +141,9 @@ export function AdminFeedbackSection() {
   // Helper to render Category Badges
   const renderCategory = (cat: string) => {
     const styles = {
-      bug: "bg-rose-500/20 text-rose-300 border-rose-500/30",
-      suggestion: "bg-sky-500/20 text-sky-300 border-sky-500/30",
-      other: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
+      bug: "bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/30",
+      suggestion: "bg-sky-100 text-sky-800 border-sky-300 dark:bg-sky-500/20 dark:text-sky-300 dark:border-sky-500/30",
+      other: "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30",
     };
     const labels = { bug: "באג 🐛", suggestion: "הצעה 💡", other: "אחר 💬" };
     const key = cat as keyof typeof styles;
@@ -155,18 +155,18 @@ export function AdminFeedbackSection() {
   };
 
   return (
-    <div className="flex gap-6 h-[calc(100vh-12rem)] text-white" dir="rtl">
+    <div className="flex gap-6 h-[calc(100vh-12rem)] text-slate-900 dark:text-white" dir="rtl">
       {/* Master View: List Panel (Right) */}
-      <div className="w-80 flex flex-col bg-[#150d32]/95 border border-white/10 rounded-2xl overflow-hidden shrink-0">
+      <div className="w-80 flex flex-col bg-white dark:bg-[#150d32]/95 border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden shrink-0 shadow-sm">
         {/* Filters */}
-        <div className="p-4 border-b border-white/10 space-y-3 bg-[#0d0724]">
+        <div className="p-4 border-b border-slate-200 dark:border-white/10 space-y-3 bg-slate-50 dark:bg-[#0d0724]">
           <div className="flex gap-2">
             <button
               onClick={() => setFilterStatus("pending")}
               className={`flex-1 text-xs py-1.5 px-2 rounded-lg font-bold transition-all border ${
                 filterStatus === "pending"
                   ? "bg-violet-600 border-violet-400 text-white shadow-lg"
-                  : "bg-white/5 border-white/5 text-white/60 hover:bg-white/10"
+                  : "bg-white dark:bg-white/5 border-slate-200 dark:border-white/5 text-slate-700 dark:text-white/60 hover:bg-slate-100 dark:hover:bg-white/10"
               }`}
             >
               ממתין
@@ -176,7 +176,7 @@ export function AdminFeedbackSection() {
               className={`flex-1 text-xs py-1.5 px-2 rounded-lg font-bold transition-all border ${
                 filterStatus === "resolved"
                   ? "bg-emerald-600 border-emerald-400 text-white shadow-lg"
-                  : "bg-white/5 border-white/5 text-white/60 hover:bg-white/10"
+                  : "bg-white dark:bg-white/5 border-slate-200 dark:border-white/5 text-slate-700 dark:text-white/60 hover:bg-slate-100 dark:hover:bg-white/10"
               }`}
             >
               טופל
@@ -185,8 +185,8 @@ export function AdminFeedbackSection() {
               onClick={() => setFilterStatus("all")}
               className={`flex-1 text-xs py-1.5 px-2 rounded-lg font-bold transition-all border ${
                 filterStatus === "all"
-                  ? "bg-white/20 border-white/10 text-white"
-                  : "bg-white/5 border-white/5 text-white/60 hover:bg-white/10"
+                  ? "bg-slate-200 dark:bg-white/20 border-slate-300 dark:border-white/10 text-slate-900 dark:text-white"
+                  : "bg-white dark:bg-white/5 border-slate-200 dark:border-white/5 text-slate-700 dark:text-white/60 hover:bg-slate-100 dark:hover:bg-white/10"
               }`}
             >
               הכל
@@ -196,7 +196,7 @@ export function AdminFeedbackSection() {
           <select
             value={filterCategory}
             onChange={(e: any) => setFilterCategory(e.target.value)}
-            className="w-full text-xs rounded-xl border border-white/10 p-2 bg-[#1b1240] text-white focus:outline-none focus:border-violet-500"
+            className="w-full text-xs rounded-xl border border-slate-300 dark:border-white/10 p-2 bg-white dark:bg-[#1b1240] text-slate-900 dark:text-white focus:outline-none focus:border-violet-500 shadow-sm"
           >
             <option value="all">כל הקטגוריות</option>
             <option value="bug">באגים 🐛</option>
@@ -208,9 +208,9 @@ export function AdminFeedbackSection() {
         {/* Reports List */}
         <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
           {loading ? (
-            <div className="text-center py-8 text-white/40 text-xs">טוען דיווחים...</div>
+            <div className="text-center py-8 text-slate-400 dark:text-white/40 text-xs">טוען דיווחים...</div>
           ) : reports.length === 0 ? (
-            <div className="text-center py-8 text-white/40 text-xs">אין דיווחים להצגה</div>
+            <div className="text-center py-8 text-slate-400 dark:text-white/40 text-xs">אין דיווחים להצגה</div>
           ) : (
             reports.map((r) => (
               <button
@@ -218,22 +218,22 @@ export function AdminFeedbackSection() {
                 onClick={() => setSelectedReport(r)}
                 className={`w-full text-right p-3 rounded-xl border transition-all duration-200 block ${
                   selectedReport?.id === r.id
-                    ? "bg-violet-600/30 border-violet-500/50 shadow-md"
-                    : "bg-white/5 border-white/5 hover:bg-white/10"
+                    ? "bg-violet-50 border-violet-300 dark:bg-violet-600/30 dark:border-violet-500/50 shadow-sm"
+                    : "bg-slate-50 hover:bg-slate-100 border-slate-200 dark:bg-white/5 dark:border-white/5 dark:hover:bg-white/10"
                 }`}
               >
                 <div className="flex justify-between items-start gap-2 mb-1.5">
-                  <span className="text-xs font-black text-white truncate max-w-[120px]">
+                  <span className="text-xs font-black text-slate-900 dark:text-white truncate max-w-[120px]">
                     {r.reporter?.full_name || "משתמש לא ידוע"}
                   </span>
                   {renderCategory(r.category)}
                 </div>
-                <p className="text-xs text-white/65 line-clamp-2 leading-relaxed mb-1.5">
+                <p className="text-xs text-slate-600 dark:text-white/65 line-clamp-2 leading-relaxed mb-1.5">
                   {r.user_message}
                 </p>
-                <div className="flex justify-between items-center text-[10px] text-white/40">
+                <div className="flex justify-between items-center text-[10px] text-slate-400 dark:text-white/40">
                   <span>{new Date(r.created_at).toLocaleDateString("he-IL")}</span>
-                  {r.status === "resolved" && <span className="text-emerald-400 font-bold">✓ טופל</span>}
+                  {r.status === "resolved" && <span className="text-emerald-600 dark:text-emerald-400 font-bold">✓ טופל</span>}
                 </div>
               </button>
             ))
@@ -242,16 +242,16 @@ export function AdminFeedbackSection() {
       </div>
 
       {/* Detail View Panel (Left) */}
-      <div className="flex-1 bg-[#150d32]/95 border border-white/10 rounded-2xl overflow-y-auto custom-scrollbar p-6">
+      <div className="flex-1 bg-white dark:bg-[#150d32]/95 border border-slate-200 dark:border-white/10 rounded-2xl overflow-y-auto custom-scrollbar p-6 shadow-sm">
         {selectedReport ? (
           <div className="space-y-6">
             {/* Header Details */}
-            <div className="flex justify-between items-start border-b border-white/10 pb-4">
+            <div className="flex justify-between items-start border-b border-slate-200 dark:border-white/10 pb-4">
               <div>
-                <h3 className="text-lg font-black text-white">
+                <h3 className="text-lg font-black text-slate-900 dark:text-white">
                   דיווח מאת: {selectedReport.reporter?.full_name || "לא ידוע"} (@{selectedReport.reporter?.username || "unknown"})
                 </h3>
-                <p className="text-xs text-white/50 mt-1">
+                <p className="text-xs text-slate-500 dark:text-white/50 mt-1">
                   תאריך דיווח: {new Date(selectedReport.created_at).toLocaleString("he-IL")} | מזהה: {selectedReport.id}
                 </p>
               </div>
@@ -272,8 +272,8 @@ export function AdminFeedbackSection() {
 
             {/* Message Body */}
             <div>
-              <h4 className="text-xs font-bold text-white/40 mb-1.5">ההודעה:</h4>
-              <div className="bg-white/5 border border-white/5 rounded-2xl p-4 text-sm leading-relaxed whitespace-pre-wrap">
+              <h4 className="text-xs font-bold text-slate-500 dark:text-white/40 mb-1.5">ההודעה:</h4>
+              <div className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-2xl p-4 text-sm leading-relaxed whitespace-pre-wrap text-slate-800 dark:text-white">
                 {selectedReport.user_message}
               </div>
             </div>
@@ -281,14 +281,14 @@ export function AdminFeedbackSection() {
             {/* Screenshots View */}
             {(signedScreenshot || signedCanvasScreenshot) && (
               <div>
-                <h4 className="text-xs font-bold text-white/40 mb-2">צילומי מסך מצורפים (לחץ להגדלה):</h4>
+                <h4 className="text-xs font-bold text-slate-500 dark:text-white/40 mb-2">צילומי מסך מצורפים (לחץ להגדלה):</h4>
                 <div className="flex gap-4">
                   {signedScreenshot && (
                     <div className="flex-1 max-w-[240px] space-y-1">
-                      <span className="block text-[10px] text-white/50 font-bold">צילום מסך מלא:</span>
+                      <span className="block text-[10px] text-slate-500 dark:text-white/50 font-bold">צילום מסך מלא:</span>
                       <div 
                         onClick={() => setActiveImageModal(signedScreenshot)}
-                        className="relative cursor-pointer border border-white/10 rounded-2xl overflow-hidden aspect-video bg-black/40 hover:border-violet-500 transition duration-200"
+                        className="relative cursor-pointer border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden aspect-video bg-slate-100 dark:bg-black/40 hover:border-violet-500 transition duration-200 shadow-sm"
                       >
                         <img
                           src={signedScreenshot}
@@ -300,10 +300,10 @@ export function AdminFeedbackSection() {
                   )}
                   {signedCanvasScreenshot && (
                     <div className="flex-1 max-w-[240px] space-y-1">
-                      <span className="block text-[10px] text-white/50 font-bold">צילום משחק (נקי):</span>
+                      <span className="block text-[10px] text-slate-500 dark:text-white/50 font-bold">צילום משחק (נקי):</span>
                       <div 
                         onClick={() => setActiveImageModal(signedCanvasScreenshot)}
-                        className="relative cursor-pointer border border-white/10 rounded-2xl overflow-hidden aspect-video bg-black/40 hover:border-violet-500 transition duration-200"
+                        className="relative cursor-pointer border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden aspect-video bg-slate-100 dark:bg-black/40 hover:border-violet-500 transition duration-200 shadow-sm"
                       >
                         <img
                           src={signedCanvasScreenshot}
@@ -320,33 +320,33 @@ export function AdminFeedbackSection() {
             {/* Diagnostic Specs Grid */}
             <div className="grid grid-cols-2 gap-4">
               {/* Browser Specs */}
-              <div className="bg-white/5 border border-white/5 rounded-2xl p-4">
-                <h4 className="text-xs font-bold text-violet-300 border-b border-white/5 pb-1.5 mb-2.5">
+              <div className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-2xl p-4 shadow-sm">
+                <h4 className="text-xs font-bold text-violet-700 dark:text-violet-300 border-b border-slate-200 dark:border-white/5 pb-1.5 mb-2.5">
                   🌐 דפדפן ומערכת הפעלה
                 </h4>
-                <div className="space-y-1.5 text-xs">
-                  <div className="flex justify-between"><span className="text-white/40">נתיב:</span> <span className="font-mono text-white/80">{selectedReport.browser_info.pathname}</span></div>
-                  <div className="flex justify-between"><span className="text-white/40">רזולוציה:</span> <span className="font-mono text-white/80">{selectedReport.browser_info.screenWidth}x{selectedReport.browser_info.screenHeight}</span></div>
-                  <div className="flex justify-between"><span className="text-white/40">חלון תצוגה:</span> <span className="font-mono text-white/80">{selectedReport.browser_info.viewportWidth}x{selectedReport.browser_info.viewportHeight}</span></div>
-                  <div className="flex justify-between"><span className="text-white/40">יחס פיקסלים:</span> <span className="font-mono text-white/80">{selectedReport.browser_info.devicePixelRatio}</span></div>
-                  <div className="flex justify-between"><span className="text-white/40">שפה:</span> <span className="font-mono text-white/80">{selectedReport.browser_info.language}</span></div>
-                  <div className="text-[10px] text-white/35 mt-2 break-all font-mono leading-normal border-t border-white/5 pt-2">
+                <div className="space-y-1.5 text-xs text-slate-700 dark:text-white">
+                  <div className="flex justify-between"><span className="text-slate-500 dark:text-white/40">נתיב:</span> <span className="font-mono text-slate-800 dark:text-white/80">{selectedReport.browser_info.pathname}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500 dark:text-white/40">רזולוציה:</span> <span className="font-mono text-slate-800 dark:text-white/80">{selectedReport.browser_info.screenWidth}x{selectedReport.browser_info.screenHeight}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500 dark:text-white/40">חלון תצוגה:</span> <span className="font-mono text-slate-800 dark:text-white/80">{selectedReport.browser_info.viewportWidth}x{selectedReport.browser_info.viewportHeight}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500 dark:text-white/40">יחס פיקסלים:</span> <span className="font-mono text-slate-800 dark:text-white/80">{selectedReport.browser_info.devicePixelRatio}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500 dark:text-white/40">שפה:</span> <span className="font-mono text-slate-800 dark:text-white/80">{selectedReport.browser_info.language}</span></div>
+                  <div className="text-[10px] text-slate-500 dark:text-white/35 mt-2 break-all font-mono leading-normal border-t border-slate-200 dark:border-white/5 pt-2">
                     {selectedReport.browser_info.userAgent}
                   </div>
                 </div>
               </div>
 
               {/* Hardware Specs */}
-              <div className="bg-white/5 border border-white/5 rounded-2xl p-4">
-                <h4 className="text-xs font-bold text-violet-300 border-b border-white/5 pb-1.5 mb-2.5">
+              <div className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-2xl p-4 shadow-sm">
+                <h4 className="text-xs font-bold text-violet-700 dark:text-violet-300 border-b border-slate-200 dark:border-white/5 pb-1.5 mb-2.5">
                   💻 חומרה ומעבד גרפי
                 </h4>
-                <div className="space-y-1.5 text-xs">
-                  <div className="flex justify-between"><span className="text-white/40">ליבות מעבד (CPU):</span> <span className="font-mono text-white/80">{selectedReport.hardware_info.cpuCores}</span></div>
-                  <div className="flex justify-between"><span className="text-white/40">זיכרון מערכת:</span> <span className="font-mono text-white/80">{selectedReport.hardware_info.deviceMemory}</span></div>
-                  <div className="border-t border-white/5 pt-2.5 mt-2">
-                    <span className="block text-[10px] text-white/45 mb-1">מעבד גרפי (GPU):</span>
-                    <span className="block font-mono text-[10px] text-white/70 leading-normal break-words bg-black/20 p-2 rounded-lg">
+                <div className="space-y-1.5 text-xs text-slate-700 dark:text-white">
+                  <div className="flex justify-between"><span className="text-slate-500 dark:text-white/40">ליבות מעבד (CPU):</span> <span className="font-mono text-slate-800 dark:text-white/80">{selectedReport.hardware_info.cpuCores}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500 dark:text-white/40">זיכרון מערכת:</span> <span className="font-mono text-slate-800 dark:text-white/80">{selectedReport.hardware_info.deviceMemory}</span></div>
+                  <div className="border-t border-slate-200 dark:border-white/5 pt-2.5 mt-2">
+                    <span className="block text-[10px] text-slate-500 dark:text-white/45 mb-1">מעבד גרפי (GPU):</span>
+                    <span className="block font-mono text-[10px] text-slate-800 dark:text-white/70 leading-normal break-words bg-slate-100 dark:bg-black/20 p-2 rounded-lg border border-slate-200 dark:border-white/5">
                       {selectedReport.hardware_info.gpu || "Unknown"}
                     </span>
                   </div>
@@ -356,31 +356,31 @@ export function AdminFeedbackSection() {
 
             {/* Console Log Interceptions */}
             <div>
-              <h4 className="text-xs font-bold text-white/40 mb-1.5">יומן פעולות קונסול (Console Logs):</h4>
-              <div className="bg-[#0b071e] border border-white/10 rounded-2xl p-4 font-mono text-xs overflow-y-auto max-h-72 custom-scrollbar space-y-1.5 leading-relaxed" dir="ltr">
+              <h4 className="text-xs font-bold text-slate-500 dark:text-white/40 mb-1.5">יומן פעולות קונסול (Console Logs):</h4>
+              <div className="bg-slate-50 dark:bg-[#0b071e] border border-slate-200 dark:border-white/10 rounded-2xl p-4 font-mono text-xs overflow-y-auto max-h-72 custom-scrollbar space-y-1.5 leading-relaxed text-slate-800 dark:text-slate-200 shadow-sm" dir="ltr">
                 {selectedReport.console_logs && selectedReport.console_logs.length > 0 ? (
                   selectedReport.console_logs.map((log, index) => {
                     const colors = {
-                      error: "text-rose-400 bg-rose-500/5",
-                      warn: "text-amber-400 bg-amber-500/5",
-                      info: "text-white/80",
+                      error: "text-rose-700 bg-rose-50 dark:text-rose-400 dark:bg-rose-500/5",
+                      warn: "text-amber-800 bg-amber-50 dark:text-amber-400 dark:bg-amber-500/5",
+                      info: "text-slate-800 dark:text-white/80",
                     };
                     const badgeColors = {
-                      error: "text-rose-300 border-rose-500/40 bg-rose-500/20",
-                      warn: "text-amber-300 border-amber-500/40 bg-amber-500/20",
-                      info: "text-white/50 border-white/10 bg-white/5",
+                      error: "text-rose-700 border-rose-300 bg-rose-100 dark:text-rose-300 dark:border-rose-500/40 dark:bg-rose-500/20",
+                      warn: "text-amber-800 border-amber-300 bg-amber-100 dark:text-amber-300 dark:border-amber-500/40 dark:bg-amber-500/20",
+                      info: "text-slate-600 border-slate-300 bg-slate-100 dark:text-white/50 dark:border-white/10 dark:bg-white/5",
                     };
                     const lvl = log.level as keyof typeof colors;
                     return (
                       <div key={index} className={`flex items-start gap-2.5 p-1 rounded ${colors[lvl] || ""}`}>
-                        <span className="text-white/30 shrink-0 select-none font-mono text-[10px]">
+                        <span className="text-slate-400 dark:text-white/30 shrink-0 select-none font-mono text-[10px]">
                           {new Date(log.time).toLocaleTimeString()}
                         </span>
                         <span className={`text-[9px] font-black uppercase px-1 py-px rounded border shrink-0 font-mono ${badgeColors[lvl] || ""}`}>
                           {log.level}
                         </span>
                         {log.count > 1 && (
-                          <span className="text-[10px] font-black text-violet-400 bg-violet-500/20 border border-violet-500/30 px-1 rounded shrink-0 select-none">
+                          <span className="text-[10px] font-black text-violet-700 bg-violet-100 border border-violet-300 dark:text-violet-400 dark:bg-violet-500/20 dark:border-violet-500/30 px-1 rounded shrink-0 select-none">
                             x{log.count}
                           </span>
                         )}
@@ -391,13 +391,13 @@ export function AdminFeedbackSection() {
                     );
                   })
                 ) : (
-                  <div className="text-center py-4 text-white/30 text-xs">לא הוקלטו לוגים בדיווח זה</div>
+                  <div className="text-center py-4 text-slate-400 dark:text-white/30 text-xs">לא הוקלטו לוגים בדיווח זה</div>
                 )}
               </div>
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-white/40 text-xs py-12">
+          <div className="flex flex-col items-center justify-center h-full text-slate-500 dark:text-white/40 text-xs py-12">
             <span>בחר דיווח מהרשימה מימין כדי להציג את הפרטים המלאים שלו</span>
           </div>
         )}

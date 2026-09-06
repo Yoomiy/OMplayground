@@ -247,25 +247,25 @@ export function ChessSolo({ save }: { save: SoloGameSaveControls }) {
               type="button"
               className={`rounded-2xl border p-4 text-center font-bold transition duration-200 backdrop-blur-sm ${
                 selectedSeat === "w"
-                  ? "border-indigo-400 bg-indigo-500/20 text-white shadow-[0_0_12px_rgba(129,140,248,0.3)]"
-                  : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:border-white/20 hover:text-white"
+                  ? "border-indigo-400 bg-indigo-500/20 text-indigo-900 dark:text-white shadow-[0_0_12px_rgba(129,140,248,0.3)]"
+                  : "border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/20 hover:text-slate-900 dark:hover:text-white shadow-sm"
               }`}
               onClick={() => setSelectedSeat("w")}
             >
               <div className="text-xl">לבן ⚪</div>
-              <div className="text-xs text-white/40 font-semibold mt-1">אתה מתחיל ראשון</div>
+              <div className="text-xs text-slate-500 dark:text-white/40 font-semibold mt-1">אתה מתחיל ראשון</div>
             </button>
             <button
               type="button"
               className={`rounded-2xl border p-4 text-center font-bold transition duration-200 backdrop-blur-sm ${
                 selectedSeat === "b"
-                  ? "border-indigo-400 bg-indigo-500/20 text-white shadow-[0_0_12px_rgba(129,140,248,0.3)]"
-                  : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:border-white/20 hover:text-white"
+                  ? "border-indigo-400 bg-indigo-500/20 text-indigo-900 dark:text-white shadow-[0_0_12px_rgba(129,140,248,0.3)]"
+                  : "border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/20 hover:text-slate-900 dark:hover:text-white shadow-sm"
               }`}
               onClick={() => setSelectedSeat("b")}
             >
               <div className="text-xl">שחור ⚫</div>
-              <div className="text-xs text-white/40 font-semibold mt-1">המחשב מתחיל ראשון</div>
+              <div className="text-xs text-slate-500 dark:text-white/40 font-semibold mt-1">המחשב מתחיל ראשון</div>
             </button>
           </div>
         </div>
@@ -280,13 +280,13 @@ export function ChessSolo({ save }: { save: SoloGameSaveControls }) {
                 type="button"
                 className={`rounded-xl border py-2.5 text-center text-xs font-black transition duration-200 backdrop-blur-sm ${
                   selectedDifficulty === lvl
-                    ? "border-indigo-400 bg-indigo-500/20 text-white shadow-[0_0_12px_rgba(129,140,248,0.3)]"
-                    : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:border-white/20 hover:text-white"
+                    ? "border-indigo-400 bg-indigo-500/20 text-indigo-900 dark:text-white shadow-[0_0_12px_rgba(129,140,248,0.3)]"
+                    : "border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/20 hover:text-slate-900 dark:hover:text-white shadow-sm"
                 }`}
                 onClick={() => setSelectedDifficulty(lvl)}
               >
                 <div>{DIFFICULTY_LEVELS[lvl].label}</div>
-                <div className="text-[10px] text-white/40 font-bold mt-0.5">רמה {lvl}</div>
+                <div className="text-[10px] text-slate-500 dark:text-white/40 font-bold mt-0.5">רמה {lvl}</div>
               </button>
             ))}
           </div>
@@ -300,8 +300,8 @@ export function ChessSolo({ save }: { save: SoloGameSaveControls }) {
               type="button"
               className={`rounded-xl border py-2 text-center text-xs font-bold transition duration-200 backdrop-blur-sm ${
                 timeMode === "none"
-                  ? "border-indigo-400 bg-indigo-500/20 text-white shadow-[0_0_12px_rgba(129,140,248,0.3)]"
-                  : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:border-white/20 hover:text-white"
+                  ? "border-indigo-400 bg-indigo-500/20 text-indigo-900 dark:text-white shadow-[0_0_12px_rgba(129,140,248,0.3)]"
+                  : "border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/20 hover:text-slate-900 dark:hover:text-white shadow-sm"
               }`}
               onClick={() => setTimeMode("none")}
             >
@@ -311,8 +311,8 @@ export function ChessSolo({ save }: { save: SoloGameSaveControls }) {
               type="button"
               className={`rounded-xl border py-2 text-center text-xs font-bold transition duration-200 backdrop-blur-sm ${
                 timeMode === "timed" && minsInput === "10" && incInput === "0"
-                  ? "border-indigo-400 bg-indigo-500/20 text-white shadow-[0_0_12px_rgba(129,140,248,0.3)]"
-                  : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:border-white/20 hover:text-white"
+                  ? "border-indigo-400 bg-indigo-500/20 text-indigo-900 dark:text-white shadow-[0_0_12px_rgba(129,140,248,0.3)]"
+                  : "border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/20 hover:text-slate-900 dark:hover:text-white shadow-sm"
               }`}
               onClick={() => {
                 setTimeMode("timed");
@@ -326,8 +326,8 @@ export function ChessSolo({ save }: { save: SoloGameSaveControls }) {
               type="button"
               className={`rounded-xl border py-2 text-center text-xs font-bold transition duration-200 backdrop-blur-sm ${
                 timeMode === "timed" && (minsInput !== "10" || incInput !== "0")
-                  ? "border-indigo-400 bg-indigo-500/20 text-white shadow-[0_0_12px_rgba(129,140,248,0.3)]"
-                  : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:border-white/20 hover:text-white"
+                  ? "border-indigo-400 bg-indigo-500/20 text-indigo-900 dark:text-white shadow-[0_0_12px_rgba(129,140,248,0.3)]"
+                  : "border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/20 hover:text-slate-900 dark:hover:text-white shadow-sm"
               }`}
               onClick={() => {
                 setTimeMode("timed");
@@ -340,27 +340,27 @@ export function ChessSolo({ save }: { save: SoloGameSaveControls }) {
           </div>
 
           {timeMode === "timed" && (
-            <div className="flex flex-wrap items-center gap-4 bg-white/5 p-3 rounded-2xl border border-white/10 mt-2 shadow-inner">
+            <div className="flex flex-wrap items-center gap-4 bg-slate-100/70 dark:bg-white/5 p-3 rounded-2xl border border-slate-200 dark:border-white/10 mt-2 shadow-inner">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-white/70">דקות להתחלה:</span>
+                <span className="text-xs font-bold text-slate-700 dark:text-white/70">דקות להתחלה:</span>
                 <input
                   type="number"
                   min="1"
                   max="180"
                   value={minsInput}
                   onChange={(e) => setMinsInput(e.target.value)}
-                  className="w-16 rounded-xl border border-white/10 bg-white/5 text-white px-2 py-1 text-center text-xs font-bold focus:outline-none focus:border-indigo-400/50 focus:ring-2 focus:ring-indigo-400/20"
+                  className="w-16 rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white px-2 py-1 text-center text-xs font-bold focus:outline-none focus:border-indigo-400/50 focus:ring-2 focus:ring-indigo-400/20 shadow-sm"
                 />
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-white/70">שניות תוספת למסע:</span>
+                <span className="text-xs font-bold text-slate-700 dark:text-white/70">שניות תוספת למסע:</span>
                 <input
                   type="number"
                   min="0"
                   max="60"
                   value={incInput}
                   onChange={(e) => setIncInput(e.target.value)}
-                  className="w-16 rounded-xl border border-white/10 bg-white/5 text-white px-2 py-1 text-center text-xs font-bold focus:outline-none focus:border-indigo-400/50 focus:ring-2 focus:ring-indigo-400/20"
+                  className="w-16 rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white px-2 py-1 text-center text-xs font-bold focus:outline-none focus:border-indigo-400/50 focus:ring-2 focus:ring-indigo-400/20 shadow-sm"
                 />
               </div>
             </div>
@@ -385,7 +385,7 @@ export function ChessSolo({ save }: { save: SoloGameSaveControls }) {
       <div className="flex items-center justify-between" dir="rtl">
         <button
           type="button"
-          className="rounded-xl border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-bold text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+          className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-4 py-1.5 text-xs font-bold text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200"
           onClick={() => {
             if (window.confirm("האם ברצונך לצאת? המשחק יישמר אוטומטית.")) {
               setScreen("setup");
@@ -395,16 +395,16 @@ export function ChessSolo({ save }: { save: SoloGameSaveControls }) {
           חזרה להגדרות ↩
         </button>
         <div className="flex items-center gap-2.5">
-          <span className="text-xs font-black text-white/60">
+          <span className="text-xs font-black text-slate-600 dark:text-white/60">
             רמה: {DIFFICULTY_LEVELS[difficulty].label}
           </span>
           {engineThinking && (
-            <span className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-black text-amber-300 animate-pulse">
+            <span className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-2.5 py-1 text-xs font-black text-amber-800 dark:text-amber-300 animate-pulse">
               <span>המחשב חושב...</span>
             </span>
           )}
           {engineError && (
-            <span className="inline-flex items-center rounded-xl border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-xs font-black text-rose-300">
+            <span className="inline-flex items-center rounded-xl border border-rose-300 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 px-2.5 py-1 text-xs font-black text-rose-700 dark:text-rose-300">
               {engineError}
             </span>
           )}

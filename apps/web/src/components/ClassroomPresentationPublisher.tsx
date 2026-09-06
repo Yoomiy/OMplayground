@@ -1418,48 +1418,48 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
       event.target.value = "";
       if (file) void addFile(file);
     }} />
-    {visible && <div ref={surfaceRef} className={`relative z-30 flex min-h-0 min-w-0 flex-col overflow-hidden bg-black ${showBoard ? "shrink-0" : "flex-1"}`} style={{ width }}>
-      {selected ? <div className="relative z-20 flex flex-wrap items-center gap-1.5 border-b border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-slate-100" dir="rtl">
+    {visible && <div ref={surfaceRef} className={`relative z-30 flex min-h-0 min-w-0 flex-col overflow-hidden bg-slate-100 dark:bg-black ${showBoard ? "shrink-0" : "flex-1"}`} style={{ width }}>
+      {selected ? <div className="relative z-20 flex flex-wrap items-center gap-1.5 border-b border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-950 px-2 py-1.5 text-xs text-slate-800 dark:text-slate-100 shadow-sm" dir="rtl">
         <span className="ml-auto flex max-w-48 items-center gap-1 truncate font-bold"><SelectedIcon className="size-3.5" />{selected.title}</span>
-        <button onClick={() => fileInputRef.current?.click()} className="rounded bg-slate-800 px-2 py-1"><Upload className="inline size-3.5" /> הוסף</button>
+        <button onClick={() => fileInputRef.current?.click()} className="rounded border border-slate-200 dark:border-transparent bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-white px-2 py-1 shadow-sm"><Upload className="inline size-3.5" /> הוסף</button>
         <div className="relative">
-          <button onClick={() => setMaterialsOpen((value) => !value)} className="rounded bg-slate-800 px-2 py-1"><FolderOpen className="inline size-3.5" /> חומרים ({materials.length})</button>
-          {materialsOpen && <div className="absolute left-0 top-full z-50 mt-2 grid max-h-[min(28rem,calc(100vh-10rem))] w-[min(20rem,calc(100vw-2rem))] grid-cols-2 gap-2 overflow-y-auto rounded-xl border border-slate-700 bg-slate-950 p-2 shadow-2xl">
+          <button onClick={() => setMaterialsOpen((value) => !value)} className="rounded border border-slate-200 dark:border-transparent bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-white px-2 py-1 shadow-sm"><FolderOpen className="inline size-3.5" /> חומרים ({materials.length})</button>
+          {materialsOpen && <div className="absolute left-0 top-full z-50 mt-2 grid max-h-[min(28rem,calc(100vh-10rem))] w-[min(20rem,calc(100vw-2rem))] grid-cols-2 gap-2 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 p-2 shadow-2xl">
             {materials.map((material) => {
-              return <button key={material.id} onClick={() => { setSelectedId(material.id); setMaterialsOpen(false); }} className={`overflow-hidden rounded-lg border text-right ${material.id === selectedId ? "border-fuchsia-400" : "border-slate-700"}`}>
+              return <button key={material.id} onClick={() => { setSelectedId(material.id); setMaterialsOpen(false); }} className={`overflow-hidden rounded-lg border text-right shadow-sm ${material.id === selectedId ? "border-fuchsia-500 bg-fuchsia-50 dark:bg-fuchsia-950/40 text-fuchsia-900 dark:text-white" : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200"}`}>
                 <MaterialThumbnail material={material} />
-                <div className="truncate px-2 py-1 text-[11px]">{material.title}</div>
+                <div className="truncate px-2 py-1 text-[11px] font-bold">{material.title}</div>
               </button>;
             })}
-            <button onClick={() => void clearAll()} className="col-span-2 rounded bg-rose-950 px-2 py-1 text-rose-200"><Trash2 className="inline size-3.5" /> נקה את כל החומרים</button>
+            <button onClick={() => void clearAll()} className="col-span-2 rounded bg-rose-50 hover:bg-rose-100 dark:bg-rose-950 px-2 py-1 text-rose-700 dark:text-rose-200 border border-rose-200 dark:border-transparent font-bold text-xs"><Trash2 className="inline size-3.5" /> נקה את כל החומרים</button>
           </div>}
         </div>
         {selected.kind === "document" && <>
-          <button onClick={() => changePage(documentPageUi - 1)} disabled={documentPageUi <= 1}><ChevronRight className="size-4" /></button>
-          <input type="number" min={1} max={selected.documentManifest?.pageCount} value={documentPageUi} onChange={(event) => changePage(Number(event.target.value))} className="w-12 rounded bg-slate-800 px-1 py-1 text-center" />
-          <span>/ {selected.documentManifest?.pageCount}</span>
-          <button onClick={() => changePage(documentPageUi + 1)} disabled={documentPageUi >= (selected.documentManifest?.pageCount ?? 1)}><ChevronLeft className="size-4" /></button>
+          <button onClick={() => changePage(documentPageUi - 1)} disabled={documentPageUi <= 1} className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"><ChevronRight className="size-4" /></button>
+          <input type="number" min={1} max={selected.documentManifest?.pageCount} value={documentPageUi} onChange={(event) => changePage(Number(event.target.value))} className="w-12 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-1 py-1 text-center font-bold text-slate-900 dark:text-white" />
+          <span className="text-slate-600 dark:text-slate-400">/ {selected.documentManifest?.pageCount}</span>
+          <button onClick={() => changePage(documentPageUi + 1)} disabled={documentPageUi >= (selected.documentManifest?.pageCount ?? 1)} className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"><ChevronLeft className="size-4" /></button>
         </>}
         {visual && <>
-          <button onClick={() => zoomFromCenter(1 / 1.2)} title="הקטן"><ZoomOut className="size-4" /></button>
-          <button onClick={fitHeight} className="min-w-12 rounded bg-slate-800 px-1 py-1 tabular-nums" title="התאם לגובה">{Math.round(viewportUi.zoom * 100)}%</button>
-          <button onClick={() => zoomFromCenter(1.2)} title="הגדל"><ZoomIn className="size-4" /></button>
-          <button onClick={fitHeight} title="התאם לגובה">התאם גובה</button>
-          <button onClick={fitWidth} title="התאם רוחב">התאם רוחב</button>
-          <button onClick={fitHeight} title="איפוס"><RotateCcw className="size-4" /></button>
-          <button onClick={() => { setLaserMode((value) => !value); laserRef.current = null; renderVisual(); }} className={laserMode ? "rounded bg-rose-600 px-2 py-1" : "rounded bg-slate-800 px-2 py-1"}>לייזר</button>
-          {canSendToWhiteboard && <button onClick={() => void sendCurrentPageToWhiteboard()} disabled={isSendingToWhiteboard} className="rounded bg-indigo-700 px-2 py-1 text-indigo-50 disabled:cursor-wait disabled:opacity-60" title="שלח את העמוד המלא כתמונה ניתנת להזזה בלוח השרטוט"><Send className="inline size-3.5" /> {isSendingToWhiteboard ? "שולח…" : "שלח ללוח"}</button>}
+          <button onClick={() => zoomFromCenter(1 / 1.2)} title="הקטן" className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"><ZoomOut className="size-4" /></button>
+          <button onClick={fitHeight} className="min-w-12 rounded border border-slate-200 dark:border-transparent bg-slate-100 dark:bg-slate-800 px-1 py-1 tabular-nums font-bold text-slate-700 dark:text-slate-200" title="התאם לגובה">{Math.round(viewportUi.zoom * 100)}%</button>
+          <button onClick={() => zoomFromCenter(1.2)} title="הגדל" className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"><ZoomIn className="size-4" /></button>
+          <button onClick={fitHeight} title="התאם לגובה" className="rounded px-2 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium">התאם גובה</button>
+          <button onClick={fitWidth} title="התאם רוחב" className="rounded px-2 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium">התאם רוחב</button>
+          <button onClick={fitHeight} title="איפוס" className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"><RotateCcw className="size-4" /></button>
+          <button onClick={() => { setLaserMode((value) => !value); laserRef.current = null; renderVisual(); }} className={laserMode ? "rounded bg-rose-600 px-2 py-1 text-white shadow-sm font-bold" : "rounded border border-slate-200 dark:border-transparent bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-2 py-1 shadow-sm font-medium"}>לייזר</button>
+          {canSendToWhiteboard && <button onClick={() => void sendCurrentPageToWhiteboard()} disabled={isSendingToWhiteboard} className="rounded bg-indigo-600 hover:bg-indigo-500 px-2.5 py-1 text-white shadow-sm font-bold disabled:cursor-wait disabled:opacity-60" title="שלח את העמוד המלא כתמונה ניתנת להזזה בלוח השרטוט"><Send className="inline size-3.5" /> {isSendingToWhiteboard ? "שולח…" : "שלח ללוח"}</button>}
         </>}
-        <button onClick={() => document.fullscreenElement ? void document.exitFullscreen() : void surfaceRef.current?.requestFullscreen()} title="מסך מלא"><Maximize2 className="size-4" /></button>
-        <button onClick={() => void removeSelected()} title="הסר חומר" className="text-rose-300"><Trash2 className="size-4" /></button>
-      </div> : <div className="relative z-20 flex items-center justify-between gap-3 border-b border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100" dir="rtl">
-        <span className="flex items-center gap-1.5 font-bold"><Presentation className="size-4" />לוח מדיה</span>
-        <button onClick={() => fileInputRef.current?.click()} disabled={isPreparing} className="rounded bg-slate-800 px-2 py-1 disabled:cursor-wait disabled:opacity-60"><Upload className="inline size-3.5" /> הוסף חומר</button>
+        <button onClick={() => document.fullscreenElement ? void document.exitFullscreen() : void surfaceRef.current?.requestFullscreen()} title="מסך מלא" className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"><Maximize2 className="size-4" /></button>
+        <button onClick={() => void removeSelected()} title="הסר חומר" className="text-rose-600 hover:text-rose-700 dark:text-rose-300 p-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/30"><Trash2 className="size-4" /></button>
+      </div> : <div className="relative z-20 flex items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-950 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 shadow-sm" dir="rtl">
+        <span className="flex items-center gap-1.5 font-bold"><Presentation className="size-4 text-fuchsia-600 dark:text-fuchsia-400" />לוח מדיה</span>
+        <button onClick={() => fileInputRef.current?.click()} disabled={isPreparing} className="rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1 font-bold shadow-sm disabled:cursor-wait disabled:opacity-60"><Upload className="inline size-3.5" /> הוסף חומר</button>
       </div>}
       {selected ? <>
-        {cacheWarning && <div className="bg-amber-950 px-3 py-1 text-xs text-amber-100">{cacheWarning}</div>}
-        {selected.documentManifest?.warning && <div className="bg-amber-950 px-3 py-1 text-xs text-amber-100">ייתכן שחלק מהגופנים או התוכן העשיר הוחלפו בזמן ההמרה.</div>}
-        <div ref={visualSurfaceRef} className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-black outline-none" tabIndex={visual ? 0 : -1} onKeyDown={handlePresentationKeyDown} aria-label={visual ? "אזור תצוגת מצגת. ניתן לגרור, לגלול ולהשתמש בקיצורי מקלדת." : undefined}>
+        {cacheWarning && <div className="bg-amber-100 dark:bg-amber-950 px-3 py-1 text-xs font-bold text-amber-800 dark:text-amber-100 border-b border-amber-200 dark:border-transparent">{cacheWarning}</div>}
+        {selected.documentManifest?.warning && <div className="bg-amber-100 dark:bg-amber-950 px-3 py-1 text-xs font-bold text-amber-800 dark:text-amber-100 border-b border-amber-200 dark:border-transparent">ייתכן שחלק מהגופנים או התוכן העשיר הוחלפו בזמן ההמרה.</div>}
+        <div ref={visualSurfaceRef} className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-slate-200/70 dark:bg-black outline-none" tabIndex={visual ? 0 : -1} onKeyDown={handlePresentationKeyDown} aria-label={visual ? "אזור תצוגת מצגת. ניתן לגרור, לגלול ולהשתמש בקיצורי מקלדת." : undefined}>
         {visual && <canvas
           ref={displayCanvasRef}
           className={`h-full w-full touch-none ${laserMode ? "cursor-none" : viewportUi.zoom > 1 ? "cursor-grab active:cursor-grabbing" : ""}`}
@@ -1511,8 +1511,8 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
           }}
           onPointerLeave={() => { if (laserMode) { laserRef.current = null; renderVisual(); } }}
         />}
-        {selected.kind === "document" && (selected.documentManifest?.pageCount ?? 0) > 1 && <div className="absolute inset-y-4 left-2 z-30 flex w-7 flex-col items-center rounded-full border border-white/10 bg-slate-950/70 py-2 shadow-xl backdrop-blur-sm" dir="ltr">
-          <span className="mb-1 text-[9px] font-bold tabular-nums text-slate-300">{documentPageUi}</span>
+        {selected.kind === "document" && (selected.documentManifest?.pageCount ?? 0) > 1 && <div className="absolute inset-y-4 left-2 z-30 flex w-7 flex-col items-center rounded-full border border-slate-300 dark:border-white/10 bg-white/90 dark:bg-slate-950/70 py-2 shadow-xl backdrop-blur-sm" dir="ltr">
+          <span className="mb-1 text-[9px] font-bold tabular-nums text-slate-700 dark:text-slate-300">{documentPageUi}</span>
           <input
             type="range"
             min={0}
@@ -1524,19 +1524,19 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
             style={{ writingMode: "vertical-lr", direction: "ltr" }}
             aria-label="גלילה רציפה בין עמודי המצגת"
           />
-          <span className="mt-1 text-[9px] font-bold tabular-nums text-slate-500">{selected.documentManifest?.pageCount}</span>
+          <span className="mt-1 text-[9px] font-bold tabular-nums text-slate-500 dark:text-slate-500">{selected.documentManifest?.pageCount}</span>
         </div>}
         {selected.kind === "video" && <video key={selected.id} ref={(element) => { mediaRef.current = element; }} controls playsInline className="h-full w-full object-contain" onTimeUpdate={(event) => updateSelectedState({ currentTime: event.currentTarget.currentTime })} onPlay={() => updateSelectedState({ wasPlaying: true })} onPause={() => updateSelectedState({ wasPlaying: false })} onVolumeChange={(event) => updateSelectedState({ volume: event.currentTarget.volume })} onRateChange={(event) => updateSelectedState({ playbackRate: event.currentTarget.playbackRate })} />}
         {selected.kind === "audio" && <audio key={selected.id} ref={(element) => { mediaRef.current = element; }} controls className="w-full max-w-2xl" onTimeUpdate={(event) => updateSelectedState({ currentTime: event.currentTarget.currentTime })} onPlay={() => updateSelectedState({ wasPlaying: true })} onPause={() => updateSelectedState({ wasPlaying: false })} onVolumeChange={(event) => updateSelectedState({ volume: event.currentTarget.volume })} onRateChange={(event) => updateSelectedState({ playbackRate: event.currentTarget.playbackRate })} />}
         </div>
-      </> : <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 bg-slate-950 px-6 text-center" dir="rtl">
-        <Presentation className="size-12 text-fuchsia-300" />
+      </> : <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 bg-slate-50 dark:bg-slate-950 px-6 text-center" dir="rtl">
+        <Presentation className="size-12 text-fuchsia-600 dark:text-fuchsia-300" />
         <div>
-          <h2 className="text-base font-bold text-slate-100">לוח המדיה מוכן</h2>
-          <p className="mt-1 max-w-sm text-sm text-slate-400">עדיין לא נוסף חומר. בחרו קובץ כדי להכין אותו להצגה.</p>
+          <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">לוח המדיה מוכן</h2>
+          <p className="mt-1 max-w-sm text-sm text-slate-600 dark:text-slate-400">עדיין לא נוסף חומר. בחרו קובץ כדי להכין אותו להצגה.</p>
         </div>
-        <button onClick={() => fileInputRef.current?.click()} disabled={isPreparing} className="rounded-lg bg-fuchsia-600 px-4 py-2 text-sm font-bold text-white hover:bg-fuchsia-500 disabled:cursor-wait disabled:opacity-60"><Upload className="ml-1 inline size-4" />הוספת חומר</button>
-        {isPreparing && <div className="text-sm font-bold text-fuchsia-200" role="status">מכין את החומר להצגה…</div>}
+        <button onClick={() => fileInputRef.current?.click()} disabled={isPreparing} className="rounded-xl bg-fuchsia-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-fuchsia-500 shadow-sm disabled:cursor-wait disabled:opacity-60"><Upload className="ml-1 inline size-4" />הוספת חומר</button>
+        {isPreparing && <div className="text-sm font-bold text-fuchsia-600 dark:text-fuchsia-200" role="status">מכין את החומר להצגה…</div>}
       </div>}
     </div>}
     <canvas ref={publishCanvasRef} width={DOCUMENT_WIDTH} height={DOCUMENT_HEIGHT} className="hidden" aria-hidden="true" />

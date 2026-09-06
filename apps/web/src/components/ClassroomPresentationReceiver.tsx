@@ -65,16 +65,16 @@ export function ClassroomPresentationReceiver({ videoTrack, audioTrack, title, p
     return () => window.clearInterval(interval);
   }, [hasLiveFrame, videoTrack]);
 
-  return <div className="relative flex h-full w-full items-center justify-center bg-black">
-    <div className="absolute right-2 top-2 z-10 flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-950/80 px-3 py-1 text-xs font-bold text-indigo-300">
-      <Monitor className="size-3.5 text-indigo-400" />
+  return <div className="relative flex h-full w-full items-center justify-center bg-slate-100 dark:bg-black">
+    <div className="absolute right-2 top-2 z-10 flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-950/80 px-3 py-1 text-xs font-bold text-indigo-700 dark:text-indigo-300 shadow-sm backdrop-blur-sm">
+      <Monitor className="size-3.5 text-indigo-600 dark:text-indigo-400" />
       {title ? `מצגת: ${title}` : presenterName ? `מצגת מאת: ${presenterName}` : "מצגת"}
     </div>
     <canvas ref={canvasRef} className={`absolute inset-0 h-full w-full object-contain ${!videoTrack && hasSnapshot ? "opacity-100" : "opacity-0"}`} aria-hidden="true" />
     <video ref={videoRef} autoPlay playsInline className={`h-full w-full object-contain ${videoTrack && hasLiveFrame ? "opacity-100" : "opacity-0"}`} />
-    {videoTrack && !hasLiveFrame && <div className="text-center text-sm font-bold text-slate-400">ממתין לשידור המצגת…</div>}
-    {!videoTrack && hasSnapshot && <div className="absolute bottom-3 rounded-full bg-slate-950/80 px-3 py-1 text-xs font-bold text-amber-200">המגיש מתחבר מחדש…</div>}
-    {!videoTrack && !hasSnapshot && <div className="text-center text-sm font-bold text-slate-400">{title ? "ממתין לשידור המצגת…" : "לוח המדיה פתוח — המגיש עדיין לא הוסיף חומר."}</div>}
+    {videoTrack && !hasLiveFrame && <div className="text-center text-sm font-bold text-slate-500 dark:text-slate-400">ממתין לשידור המצגת…</div>}
+    {!videoTrack && hasSnapshot && <div className="absolute bottom-3 rounded-full border border-amber-200 dark:border-transparent bg-amber-50 dark:bg-slate-950/80 px-3 py-1 text-xs font-bold text-amber-800 dark:text-amber-200 shadow-sm">המגיש מתחבר מחדש…</div>}
+    {!videoTrack && !hasSnapshot && <div className="text-center text-sm font-bold text-slate-500 dark:text-slate-400">{title ? "ממתין לשידור המצגת…" : "לוח המדיה פתוח — המגיש עדיין לא הוסיף חומר."}</div>}
     <audio ref={audioRef} autoPlay />
   </div>;
 }

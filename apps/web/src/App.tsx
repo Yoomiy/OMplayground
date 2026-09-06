@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { usePlaygroundAccess } from "@/hooks/usePlaygroundAccess";
 import { PresenceProvider } from "@/hooks/usePresence";
 import { InboxProvider } from "@/hooks/useInbox";
+import { ThemeProvider } from "@/context/ThemeContext";
 import { PendingChallengeBanner } from "@/components/PendingChallengeBanner";
 import { FeedbackTrigger } from "@/components/FeedbackTrigger";
 import { supabase } from "@/lib/supabase";
@@ -97,8 +98,9 @@ function Protected({
 export default function App() {
   const { user } = useAuth();
   return (
-    <div className="min-h-screen text-slate-100" dir="rtl">
-      <PresenceProvider>
+    <ThemeProvider>
+      <div className="min-h-screen text-slate-800 dark:text-slate-100 transition-colors duration-200" dir="rtl">
+        <PresenceProvider>
         <InboxProvider>
           <PendingChallengeBanner />
           {user && <FeedbackTrigger />}
@@ -192,6 +194,7 @@ export default function App() {
           </Suspense>
         </InboxProvider>
       </PresenceProvider>
-    </div>
+      </div>
+    </ThemeProvider>
   );
 }

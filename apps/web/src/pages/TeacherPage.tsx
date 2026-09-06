@@ -6,6 +6,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { cn } from "@/lib/cn";
 import { kidFieldInputClass } from "@/lib/fieldStyles";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { GameSessionInspector } from "@/components/GameSessionInspector";
 
 export function TeacherPage() {
@@ -21,30 +22,30 @@ export function TeacherPage() {
   }, [isAdmin, navigate]);
 
   if (adminLoading) {
-    return <p className="p-6 text-sm text-white/50">טוען…</p>;
+    return <p className="p-6 text-sm font-bold text-slate-500 dark:text-white/50">טוען…</p>;
   }
 
   if (isAdmin) {
     return (
-      <div className="mx-auto max-w-lg p-6 text-sm text-white/50">
+      <div className="mx-auto max-w-lg p-6 text-sm font-bold text-slate-500 dark:text-white/50">
         מעביר לניהול…
       </div>
     );
   }
 
   if (loading) {
-    return <p className="p-6 text-sm text-white/50">טוען…</p>;
+    return <p className="p-6 text-sm font-bold text-slate-500 dark:text-white/50">טוען…</p>;
   }
 
   if (profile && profile.role !== "teacher") {
     return (
       <div className="p-6">
-        <p className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 font-medium text-amber-300">
+        <p className="rounded-2xl border border-amber-400/40 dark:border-amber-500/30 bg-amber-500/15 dark:bg-amber-500/10 px-4 py-3 font-medium text-amber-800 dark:text-amber-300">
           דף זה מיועד למורים בלבד.
         </p>
         <Link
           to="/home"
-          className="mt-4 inline-flex min-h-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+          className="mt-4 inline-flex min-h-10 items-center justify-center rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-2 text-sm font-bold text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white shadow-sm transition duration-200"
         >
           בית
         </Link>
@@ -60,25 +61,26 @@ export function TeacherPage() {
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6 p-6">
       <header className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-semibold text-white">מורה — אזור ניהול</h1>
-        <div className="flex gap-2">
+        <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">מורה — אזור ניהול</h1>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
           {isAdmin ? (
             <Link
               to="/admin"
-              className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+              className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-2 text-sm font-bold text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white shadow-sm transition duration-200"
             >
               ניהול
             </Link>
           ) : null}
           <Link
             to="/home"
-            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+            className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-2 text-sm font-bold text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white shadow-sm transition duration-200"
           >
             בית
           </Link>
           <button
             type="button"
-            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+            className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-2 text-sm font-bold text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white shadow-sm transition duration-200"
             onClick={() => void logout()}
           >
             התנתק
@@ -87,14 +89,14 @@ export function TeacherPage() {
       </header>
 
       {/* TAB SWITCHER */}
-      <div className="flex gap-2 rounded-2xl border border-white/10 bg-white/5 p-1.5 backdrop-blur-md">
+      <div className="flex gap-2 rounded-2xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/5 p-1.5 backdrop-blur-md shadow-sm">
         <button
           onClick={() => setActiveTab("classrooms")}
           className={cn(
             "flex-1 rounded-xl py-2.5 text-sm font-bold transition duration-200",
             activeTab === "classrooms"
               ? "bg-indigo-600 text-white shadow-md"
-              : "text-white/70 hover:bg-white/5 hover:text-white"
+              : "text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
           )}
         >
           כיתות וירטואליות 🪐
@@ -105,7 +107,7 @@ export function TeacherPage() {
             "flex-1 rounded-xl py-2.5 text-sm font-bold transition duration-200",
             activeTab === "games"
               ? "bg-indigo-600 text-white shadow-md"
-              : "text-white/70 hover:bg-white/5 hover:text-white"
+              : "text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
           )}
         >
           מפגשי משחק 🎮
@@ -118,7 +120,7 @@ export function TeacherPage() {
 
       {activeTab === "games" && profile && (
         <>
-          <p className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70 shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md">
+          <p className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3 text-sm text-slate-700 dark:text-white/70 shadow-sm dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md">
             מוצגים מפגשים באותו מגדר כמו פרופיל המורה (מדיניות RLS). דירוג כיתה
             לפי כיתת המארח.
           </p>
@@ -238,8 +240,8 @@ function TeacherClassroomSection({ teacherProfile }: { teacherProfile: any }) {
 
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-bold text-white">כיתות וירטואליות פעילות</h2>
-          <p className="text-xs text-white/50">תלמידים ומורים מחליפים יכולים להצטרף מיידית דרך קישור החדר (ללא צורך בהתחברות)</p>
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white">כיתות וירטואליות פעילות</h2>
+          <p className="text-xs text-slate-500 dark:text-white/50">תלמידים ומורים מחליפים יכולים להצטרף מיידית דרך קישור החדר (ללא צורך בהתחברות)</p>
         </div>
 
         <button
@@ -253,10 +255,10 @@ function TeacherClassroomSection({ teacherProfile }: { teacherProfile: any }) {
       {/* CREATE MODAL */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl space-y-4 text-right">
-            <h3 className="text-lg font-black text-white">צור כיתה וירטואלית חדשה</h3>
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 p-6 shadow-2xl space-y-4 text-right">
+            <h3 className="text-lg font-black text-slate-900 dark:text-white">צור כיתה וירטואלית חדשה</h3>
             <form onSubmit={createClassroom} className="space-y-4 text-sm">
-              <label className="flex flex-col gap-1 font-bold text-white/80">
+              <label className="flex flex-col gap-1 font-bold text-slate-700 dark:text-white/80">
                 שם השיעור:
                 <input
                   type="text"
@@ -264,7 +266,7 @@ function TeacherClassroomSection({ teacherProfile }: { teacherProfile: any }) {
                   placeholder="למשל: שיעור חשבון - כיתה ד'"
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  className={cn(kidFieldInputClass, "py-2 bg-white/5 text-white border-white/10 rounded-xl")}
+                  className={cn(kidFieldInputClass, "py-2 bg-slate-50 dark:bg-white/5 text-slate-900 dark:text-white border-slate-300 dark:border-white/10 rounded-xl")}
                 />
               </label>
 
@@ -272,7 +274,7 @@ function TeacherClassroomSection({ teacherProfile }: { teacherProfile: any }) {
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white/70 hover:bg-white/10"
+                  className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-2 text-xs font-bold text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white shadow-sm"
                 >
                   ביטול
                 </button>
@@ -290,9 +292,9 @@ function TeacherClassroomSection({ teacherProfile }: { teacherProfile: any }) {
       )}
 
       {/* CLASSROOMS LIST TABLE */}
-      <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5 shadow-lg backdrop-blur-md">
-        <table className="w-full text-right text-sm text-white/80">
-          <thead className="border-b border-white/10 bg-white/10 text-white/90">
+      <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm backdrop-blur-md">
+        <table className="w-full text-right text-sm text-slate-700 dark:text-white/80">
+          <thead className="border-b border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-white/90">
             <tr>
               <th className="p-3">שם השיעור</th>
               <th className="p-3">קוד חדר</th>
@@ -302,11 +304,11 @@ function TeacherClassroomSection({ teacherProfile }: { teacherProfile: any }) {
           </thead>
           <tbody>
             {classrooms.map((c) => (
-              <tr key={c.id} className="border-b border-white/5 hover:bg-white/5">
-                <td className="p-3 font-bold text-white">{c.title}</td>
-                <td className="p-3 font-mono text-xs text-indigo-300 font-bold">{c.room_code}</td>
+              <tr key={c.id} className="border-b border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5">
+                <td className="p-3 font-bold text-slate-900 dark:text-white">{c.title}</td>
+                <td className="p-3 font-mono text-xs text-indigo-600 dark:text-indigo-300 font-bold">{c.room_code}</td>
                 <td className="p-3">
-                  <span className={cn("px-2 py-0.5 rounded-full text-xs font-bold", c.status === "active" ? "bg-emerald-500/20 text-emerald-300" : "bg-slate-700 text-slate-400")}>
+                  <span className={cn("px-2 py-0.5 rounded-full text-xs font-bold", c.status === "active" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30" : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400")}>
                     {c.status === "active" ? "פעיל בלייב" : "הסתיים"}
                   </span>
                 </td>
@@ -322,20 +324,20 @@ function TeacherClassroomSection({ teacherProfile }: { teacherProfile: any }) {
 
                       <button
                         onClick={() => void copyInviteLink(c.room_code)}
-                        className="rounded-lg border border-white/10 bg-white/5 px-3 py-1 text-xs font-bold text-white/70 hover:bg-white/10"
+                        className="rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-1 text-xs font-bold text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white shadow-sm"
                       >
                         העתק קישור
                       </button>
 
                       <button
                         onClick={() => void endClassroom(c.room_code)}
-                        className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-xs font-bold text-rose-300 hover:bg-rose-500/20"
+                        className="rounded-lg border border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 px-3 py-1 text-xs font-bold text-rose-600 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-500/20"
                       >
                         סגור שיעור
                       </button>
                     </>
                   ) : (
-                    <span className="text-xs text-white/40">השיעור הסתיים</span>
+                    <span className="text-xs text-slate-400 dark:text-white/40">השיעור הסתיים</span>
                   )}
                 </td>
               </tr>
@@ -344,7 +346,7 @@ function TeacherClassroomSection({ teacherProfile }: { teacherProfile: any }) {
         </table>
       </div>
       {classrooms.length === 0 && !loading && (
-        <p className="text-sm text-white/50 text-center py-4">אין כיתות וירטואליות קיימות. לחץ "+ צור כיתה וירטואלית חדשה" כדי להתחיל.</p>
+        <p className="text-sm text-slate-500 dark:text-white/50 text-center py-4">אין כיתות וירטואליות קיימות. לחץ "+ צור כיתה וירטואלית חדשה" כדי להתחיל.</p>
       )}
     </div>
   );

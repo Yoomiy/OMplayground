@@ -13,6 +13,7 @@ import {
 import { KidAvatar } from "@/components/KidAvatar";
 import { KidDesktopShell, desktopPanelClass } from "@/components/KidDesktopShell";
 import { kidFieldInputClass, kidFieldLabelClass } from "@/lib/fieldStyles";
+import { useTheme } from "@/context/ThemeContext";
 import { cn } from "@/lib/cn";
 
 const COLORS = [
@@ -29,6 +30,7 @@ const COLORS = [
 export function ProfilePage() {
   const { user } = useAuth();
   const { profile, loading, error, refetch } = useProfile();
+  const { theme, setTheme } = useTheme();
   const [presets, setPresets] = useState<AvatarPreset[]>([]);
   const [fullName, setFullName] = useState("");
   const [avatarColor, setAvatarColor] = useState(COLORS[0]);
@@ -147,12 +149,12 @@ export function ProfilePage() {
   if (!profile || !draftProfile) {
     return (
       <div className="mx-auto max-w-lg p-6">
-        <p className="rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-300">
+        <p className="rounded-2xl border border-amber-400/40 dark:border-amber-400/30 bg-amber-500/15 dark:bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-800 dark:text-amber-300">
           ⚠️ {error ?? "לא נמצא פרופיל"}
         </p>
         <Link
           to="/home"
-          className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-black text-white/70 hover:bg-white/10 hover:text-white hover:-translate-y-0.5 transition-all duration-200"
+          className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-5 py-2.5 text-sm font-black text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white hover:-translate-y-0.5 transition-all duration-200 shadow-sm"
         >
           בית 🏠
         </Link>
@@ -173,25 +175,25 @@ export function ProfilePage() {
             presets={presets}
             className="size-32 min-h-32 min-w-32 rounded-2xl text-5xl"
           />
-          <h2 className="mt-4 text-2xl font-black text-white">
+          <h2 className="mt-4 text-2xl font-black text-slate-900 dark:text-white">
             {fullName || profile.full_name}
           </h2>
-          <p className="text-sm font-bold text-white/50">
+          <p className="text-sm font-bold text-slate-500 dark:text-white/50">
             @{profile.username}
           </p>
-          <p className="mt-1.5 rounded-full bg-indigo-500/25 border border-indigo-400/20 px-3 py-1 text-sm font-black text-indigo-300">
+          <p className="mt-1.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200 dark:bg-indigo-500/25 dark:text-indigo-300 dark:border-indigo-400/20 px-3 py-1 text-sm font-black">
             כיתה {profile.grade}
           </p>
         </div>
       </aside>
 
       {err ? (
-        <p className="xl:col-span-3 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-300">
+        <p className="xl:col-span-3 rounded-2xl border border-amber-400/40 dark:border-amber-400/30 bg-amber-500/15 dark:bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-800 dark:text-amber-300">
           ⚠️ {err}
         </p>
       ) : null}
       {msg ? (
-        <p className="xl:col-span-3 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm font-bold text-emerald-300">
+        <p className="xl:col-span-3 rounded-2xl border border-emerald-400/40 dark:border-emerald-400/30 bg-emerald-500/15 dark:bg-emerald-500/10 px-4 py-3 text-sm font-bold text-emerald-800 dark:text-emerald-300">
           ✅ {msg}
         </p>
       ) : null}
@@ -244,7 +246,7 @@ export function ProfilePage() {
                 disabled={busy !== null}
                 onChange={(e) => void handleFile(e.target.files?.[0])}
               />
-              <span className="text-xs font-bold text-white/40">
+              <span className="text-xs font-bold text-slate-500 dark:text-white/40">
                 התמונה תידחס אוטומטית עד 512KB
               </span>
             </label>
@@ -252,7 +254,7 @@ export function ProfilePage() {
             {avatarUrl ? (
               <button
                 type="button"
-                className="rounded-2xl bg-rose-500/10 border border-rose-500/20 px-4 py-2 text-xs font-black text-rose-400 hover:bg-rose-500 hover:text-white hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 shrink-0"
+                className="rounded-2xl bg-rose-500/10 border border-rose-500/20 px-4 py-2 text-xs font-black text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 shrink-0"
                 disabled={busy !== null}
                 onClick={() => setAvatarUrl(null)}
               >
@@ -262,10 +264,10 @@ export function ProfilePage() {
           </div>
         </div>
 
-        <div className="mt-5 space-y-3 border-t border-white/10 pt-5">
-          <h2 className="text-lg font-black text-white">אווטארים מוכנים</h2>
+        <div className="mt-5 space-y-3 border-t border-slate-200 dark:border-white/10 pt-5">
+          <h2 className="text-lg font-black text-slate-900 dark:text-white">אווטארים מוכנים</h2>
           {presets.length === 0 ? (
-            <p className="text-sm font-bold text-white/50">אין אווטארים מוגדרים כרגע.</p>
+            <p className="text-sm font-bold text-slate-500 dark:text-white/50">אין אווטארים מוגדרים כרגע.</p>
           ) : (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
               {presets.map((preset) => (
@@ -273,10 +275,10 @@ export function ProfilePage() {
                   key={preset.id}
                   type="button"
                   className={cn(
-                    "rounded-2xl border bg-white/5 px-3 py-2.5 text-sm font-black text-white transition-all duration-200",
+                    "rounded-2xl border px-3 py-2.5 text-sm font-black transition-all duration-200",
                     avatarPresetId === preset.key
-                      ? "border-violet-400 bg-violet-500/20 text-violet-300 shadow-[0_0_12px_rgba(139,92,246,0.3)]"
-                      : "border-white/10 text-white/70 hover:border-white/20 hover:bg-white/10"
+                      ? "border-violet-500 bg-violet-100 text-violet-900 shadow-sm dark:border-violet-400 dark:bg-violet-500/20 dark:text-violet-300"
+                      : "border-slate-200 bg-white/70 text-slate-700 hover:border-slate-300 hover:bg-white dark:border-white/10 dark:bg-white/5 dark:text-white/70 dark:hover:border-white/20 dark:hover:bg-white/10"
                   )}
                   onClick={() => {
                     setAvatarPresetId(preset.key);
@@ -305,7 +307,40 @@ export function ProfilePage() {
 
       <aside className="space-y-4">
         <section className={desktopPanelClass("p-5")}>
-          <h2 className="text-lg font-black text-white">קיצורים</h2>
+          <h2 className="text-lg font-black text-slate-900 dark:text-white">ערכת נושא</h2>
+          <p className="mt-1 text-xs font-bold text-slate-500 dark:text-white/50">בחרו את מראה האתר המועדף עליכם</p>
+          <div className="mt-3 grid grid-cols-2 gap-2.5">
+            <button
+              type="button"
+              onClick={() => setTheme("light")}
+              className={cn(
+                "flex flex-col items-center gap-2 rounded-2xl p-3 text-center border transition-all duration-200",
+                theme === "light"
+                  ? "border-amber-400 bg-amber-500/20 text-amber-950 dark:text-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.3)] scale-[1.02]"
+                  : "border-slate-200 dark:border-white/10 bg-white/50 dark:bg-white/5 hover:border-amber-300/50"
+              )}
+            >
+              <span className="text-2xl" aria-hidden>☀️</span>
+              <span className="text-xs font-black">מצב יום</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setTheme("dark")}
+              className={cn(
+                "flex flex-col items-center gap-2 rounded-2xl p-3 text-center border transition-all duration-200",
+                theme === "dark"
+                  ? "border-violet-400 bg-violet-500/20 text-white shadow-[0_0_12px_rgba(139,92,246,0.3)] scale-[1.02]"
+                  : "border-slate-200 dark:border-white/10 bg-white/50 dark:bg-white/5 hover:border-violet-400/50"
+              )}
+            >
+              <span className="text-2xl" aria-hidden>🌙</span>
+              <span className="text-xs font-black">מצב לילה</span>
+            </button>
+          </div>
+        </section>
+
+        <section className={desktopPanelClass("p-5")}>
+          <h2 className="text-lg font-black text-slate-900 dark:text-white">קיצורים</h2>
           <Link
             to="/inbox"
             className="mt-4 w-full flex items-center justify-center rounded-2xl bg-gradient-to-r from-violet-500 to-indigo-500 border border-violet-400/50 py-3.5 text-sm font-black text-white shadow-[0_4px_12px_rgba(139,92,246,0.3)] hover:shadow-[0_4px_16px_rgba(139,92,246,0.5)] hover:-translate-y-0.5 transition-all duration-200"
@@ -362,7 +397,7 @@ export function ProfilePage() {
         </div>
         <button
           type="button"
-          className="mt-4 rounded-2xl bg-white/10 border border-white/20 hover:bg-white/15 px-6 py-2.5 text-xs font-black text-white hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:opacity-50"
+          className="mt-4 rounded-2xl bg-slate-900 text-white hover:bg-slate-800 border border-slate-800 dark:bg-white/10 dark:border-white/20 dark:hover:bg-white/15 dark:text-white px-6 py-2.5 text-xs font-black hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:opacity-50"
           disabled={busy !== null || !password || !confirmPassword}
           onClick={() => void changePassword()}
         >

@@ -14,6 +14,7 @@ import {
 import { KidAvatar } from "@/components/KidAvatar";
 import { cn } from "@/lib/cn";
 import { kidFieldInputClass, kidFieldLabelClass } from "@/lib/fieldStyles";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { AdminStatsSection } from "@/components/AdminStatsSection";
 import { AdminFeedbackSection } from "@/components/AdminFeedbackSection";
 import { ClassroomAdminExplorer } from "@/components/ClassroomAdminExplorer";
@@ -753,18 +754,18 @@ export function AdminPage() {
   }
 
   if (adminLoading) {
-    return <p className="p-6 text-sm text-white/50">טוען…</p>;
+    return <p className="p-6 text-sm font-bold text-slate-500 dark:text-white/50">טוען…</p>;
   }
 
   if (!isAdmin) {
     return (
       <div className="mx-auto max-w-lg p-6">
-        <p className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 font-medium text-amber-300">
+        <p className="rounded-2xl border border-amber-400/40 dark:border-amber-500/30 bg-amber-500/15 dark:bg-amber-500/10 px-4 py-3 font-medium text-amber-800 dark:text-amber-300">
           אין הרשאה — חשבון מנהל נדרש.
         </p>
         <Link
           to="/home"
-          className="mt-4 inline-flex h-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+          className="mt-4 inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white shadow-sm transition duration-200"
         >
           בית
         </Link>
@@ -775,17 +776,18 @@ export function AdminPage() {
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-8 p-6">
       <header className="flex items-center justify-between gap-2">
-        <h1 className="text-2xl font-semibold text-white">ניהול</h1>
-        <div className="flex gap-2">
+        <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">ניהול</h1>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
           <Link
             to="/home"
-            className="inline-flex h-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+            className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white shadow-sm transition duration-200"
           >
             בית
           </Link>
           <button
             type="button"
-            className="inline-flex h-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+            className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white shadow-sm transition duration-200"
             onClick={() => void logout()}
           >
             התנתק
@@ -794,18 +796,18 @@ export function AdminPage() {
       </header>
 
       {err ? (
-        <p className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm font-medium text-amber-300" role="alert">
+        <p className="rounded-2xl border border-amber-400/40 dark:border-amber-500/30 bg-amber-500/15 dark:bg-amber-500/10 px-4 py-3 text-sm font-medium text-amber-800 dark:text-amber-300" role="alert">
           {err}
         </p>
       ) : null}
       {msg ? (
-        <p className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm font-medium text-emerald-300" role="status">
+        <p className="rounded-2xl border border-emerald-300 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 px-4 py-3 text-sm font-medium text-emerald-800 dark:text-emerald-300" role="status">
           {msg}
         </p>
       ) : null}
 
       <nav
-        className="flex gap-2 overflow-x-auto rounded-2xl border border-white/10 bg-white/5 shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md p-2"
+        className="flex gap-2 overflow-x-auto rounded-2xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/5 shadow-sm dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md p-2"
         aria-label="מדורי ניהול"
       >
         {adminSections.map((section) => {
@@ -818,7 +820,7 @@ export function AdminPage() {
               className={`min-h-[40px] whitespace-nowrap rounded-xl px-4 text-sm font-semibold transition-all duration-200 ${
                 isActive
                   ? "bg-gradient-to-r from-violet-500 to-indigo-500 text-white shadow-sm"
-                  : "text-white/70 hover:bg-white/10 hover:text-white"
+                  : "text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
               }`}
               onClick={() => setActiveSection(section.id)}
             >
@@ -836,8 +838,8 @@ export function AdminPage() {
 
       {activeSection === "moderation" ? (
         <section className="space-y-3">
-          <h2 className="text-lg font-medium text-white">דיווחי ניהול (מודרציה)</h2>
-          <p className="text-xs text-white/50">
+          <h2 className="text-lg font-medium text-slate-900 dark:text-white">דיווחי ניהול (מודרציה)</h2>
+          <p className="text-xs text-slate-500 dark:text-white/50">
             תוכן ההודעה המדווחת והערת המדווח; עדכון סטטוס נשמר ב-RLS.
           </p>
           <div className="flex gap-2">
@@ -873,16 +875,16 @@ export function AdminPage() {
           {reports.map((r) => (
             <li
               key={r.id}
-              className="rounded-2xl border border-white/10 bg-white/5 shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md px-4 py-3"
+              className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md px-4 py-3"
             >
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="space-y-1">
-                  <p className="font-medium text-white">
+                  <p className="font-medium text-slate-900 dark:text-white">
                     {r.reporter_kid_name} מדווח על {r.reported_kid_name}
                   </p>
-                  <p className="text-xs text-white/50">
+                  <p className="text-xs text-slate-500 dark:text-white/50">
                     {new Date(r.created_at).toLocaleString("he-IL")} · סטטוס:{" "}
-                    <span className="text-white/80">{r.status}</span>
+                    <span className="text-slate-700 dark:text-white/80">{r.status}</span>
                   </p>
                 </div>
                 <div className="flex shrink-0 gap-2">
@@ -890,7 +892,7 @@ export function AdminPage() {
                     <button
                       type="button"
                       disabled={busy}
-                      className="inline-flex h-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 px-3 text-xs font-semibold text-white/70 hover:bg-white/10 hover:text-white transition duration-200 disabled:opacity-50"
+                      className="inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-3 text-xs font-semibold text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200 disabled:opacity-50 shadow-sm"
                       onClick={() => void updateReportStatus(r.id, "reviewed")}
                     >
                       סמן כנבדק
@@ -899,7 +901,7 @@ export function AdminPage() {
                     <button
                       type="button"
                       disabled={busy}
-                      className="inline-flex h-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 px-3 text-xs font-semibold text-white/70 hover:bg-white/10 hover:text-white transition duration-200 disabled:opacity-50"
+                      className="inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-3 text-xs font-semibold text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200 disabled:opacity-50 shadow-sm"
                       onClick={() => void updateReportStatus(r.id, "pending")}
                     >
                       החזר ל־pending
@@ -907,17 +909,17 @@ export function AdminPage() {
                   )}
                 </div>
               </div>
-              <div className="mt-2 space-y-1 rounded-xl border border-white/5 bg-black/20 p-3 text-right">
-                <p className="text-xs font-semibold uppercase tracking-wide text-white/50">תוכן מדווח</p>
-                <p className="whitespace-pre-wrap text-white/80">
+              <div className="mt-2 space-y-1 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-black/20 p-3 text-right">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-white/50">תוכן מדווח</p>
+                <p className="whitespace-pre-wrap text-slate-800 dark:text-white/80">
                   {r.message_content}
                 </p>
                 {r.reporter_note ? (
                   <>
-                    <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-white/50">
+                    <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-white/50">
                       הערת מדווח
                     </p>
-                    <p className="whitespace-pre-wrap text-white/80">
+                    <p className="whitespace-pre-wrap text-slate-800 dark:text-white/80">
                       {r.reporter_note}
                     </p>
                   </>
@@ -927,14 +929,14 @@ export function AdminPage() {
           ))}
         </ul>
         {reports.length === 0 ? (
-          <p className="text-sm text-white/50">אין דיווחים.</p>
+          <p className="text-sm text-slate-500 dark:text-white/50">אין דיווחים.</p>
         ) : null}
       </section>
       ) : null}
 
       {activeSection === "games" ? (
       <section className="space-y-2">
-        <h2 className="text-lg font-medium text-white">משחקים</h2>
+        <h2 className="text-lg font-medium text-slate-900 dark:text-white">משחקים</h2>
         <input
           className={kidFieldInputClass}
           type="search"
@@ -946,16 +948,16 @@ export function AdminPage() {
           {games.map((g) => (
             <li
               key={g.id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/5 shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md px-3 py-2"
+              className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md px-3 py-2"
             >
-              <span className="text-white/80">
+              <span className="text-slate-800 dark:text-white/80 font-medium">
                 {g.name_he}{" "}
-                <span className="text-white/50">({g.game_url})</span>
+                <span className="text-slate-500 dark:text-white/50 font-normal">({g.game_url})</span>
               </span>
               <button
                 type="button"
                 disabled={busy}
-                className="inline-flex h-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 px-3 text-xs font-semibold text-white/70 hover:bg-white/10 hover:text-white transition duration-200 disabled:opacity-50"
+                className="inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-3 text-xs font-semibold text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200 disabled:opacity-50 shadow-sm"
                 onClick={() => void toggleGameActive(g)}
               >
                 {g.is_active ? "השבת" : "הפעל"}
@@ -968,15 +970,15 @@ export function AdminPage() {
 
       {activeSection === "schedule" ? (
       <section className="space-y-4">
-        <h2 className="text-lg font-medium text-white">לוח הפסקות</h2>
-        <p className="text-xs text-white/50">
+        <h2 className="text-lg font-medium text-slate-900 dark:text-white">לוח הפסקות</h2>
+        <p className="text-xs text-slate-500 dark:text-white/50">
           זמנים ביחס ל־Asia/Jerusalem; יום ראשון = 0. חלונות לא פעילים אינם נכללים בבדיקת שרת.
         </p>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
             disabled={busy}
-            className="inline-flex h-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white/70 hover:bg-white/10 hover:text-white transition duration-200 disabled:opacity-50"
+            className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200 disabled:opacity-50 shadow-sm"
             onClick={() => openNewScheduleDraft()}
           >
             הוסף חלון
@@ -985,7 +987,7 @@ export function AdminPage() {
             <button
               type="button"
               disabled={busy}
-              className="inline-flex h-10 items-center justify-center rounded-xl border border-transparent bg-transparent px-4 py-2 text-sm font-semibold text-white/50 hover:bg-white/5 hover:text-white/80 transition duration-200 disabled:opacity-50"
+              className="inline-flex h-10 items-center justify-center rounded-xl border border-transparent bg-transparent px-4 py-2 text-sm font-semibold text-slate-500 dark:text-white/50 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-800 dark:hover:text-white/80 transition duration-200 disabled:opacity-50"
               onClick={() => setScheduleDraft(null)}
             >
               בטל עריכה
@@ -993,8 +995,8 @@ export function AdminPage() {
           ) : null}
         </div>
         {scheduleDraft ? (
-          <div className="space-y-3 rounded-2xl border border-white/10 bg-white/5 shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md p-4">
-            <h3 className="text-sm font-semibold text-white">
+          <div className="space-y-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md p-4">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
               {scheduleDraft.id ? "עריכת חלון" : "חלון חדש"}
             </h3>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -1056,7 +1058,7 @@ export function AdminPage() {
                 />
               </label>
             </div>
-            <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-white/80">
+            <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-700 dark:text-white/80">
               <input
                 type="checkbox"
                 checked={scheduleDraft.is_active}
@@ -1068,7 +1070,7 @@ export function AdminPage() {
               />
               פעיל
             </label>
-            <p className="text-xs text-white/50">
+            <p className="text-xs text-slate-500 dark:text-white/50">
               משך משוער:{" "}
               {recessDurationMinutes(
                 scheduleDraft.start_time,
@@ -1089,11 +1091,11 @@ export function AdminPage() {
         <div className="space-y-6">
           {recessByDay.map((rows, day) => (
             <div key={RECESS_DAY_LABELS_HE[day]}>
-              <h3 className="mb-2 border-b border-white/10 pb-1 text-sm font-semibold text-white/90">
+              <h3 className="mb-2 border-b border-slate-200 dark:border-white/10 pb-1 text-sm font-semibold text-slate-900 dark:text-white/90">
                 {RECESS_DAY_LABELS_HE[day]} ({day})
               </h3>
               {rows.length === 0 ? (
-                <p className="text-xs text-white/50">אין חלונות</p>
+                <p className="text-xs text-slate-500 dark:text-white/50">אין חלונות</p>
               ) : (
                 <ul className="space-y-2">
                   {rows.map((row) => {
@@ -1104,13 +1106,13 @@ export function AdminPage() {
                     return (
                       <li
                         key={row.id}
-                        className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/5 shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md px-3 py-2 text-sm"
+                        className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md px-3 py-2 text-sm"
                       >
                         <div>
-                          <span className="font-medium text-white">
+                          <span className="font-medium text-slate-900 dark:text-white">
                             {row.name_he}
                           </span>{" "}
-                          <span className="text-white/70">
+                          <span className="text-slate-600 dark:text-white/70">
                             {normalizeRecessTime(row.start_time)} –{" "}
                             {normalizeRecessTime(row.end_time)}
                             {mins != null ? ` · ${mins} דק׳` : ""}
@@ -1118,8 +1120,8 @@ export function AdminPage() {
                           <span
                             className={
                               row.is_active
-                                ? " me-2 text-emerald-400"
-                                : " me-2 text-white/40"
+                                ? " me-2 font-semibold text-emerald-600 dark:text-emerald-400"
+                                : " me-2 text-slate-400 dark:text-white/40"
                             }
                           >
                             {row.is_active ? "פעיל" : "כבוי"}
@@ -1129,7 +1131,7 @@ export function AdminPage() {
                           <button
                             type="button"
                             disabled={busy}
-                            className="inline-flex h-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 px-3 text-xs font-semibold text-white/70 hover:bg-white/10 hover:text-white transition duration-200 disabled:opacity-50"
+                            className="inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-3 text-xs font-semibold text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200 disabled:opacity-50 shadow-sm"
                             onClick={() => openEditScheduleRow(row)}
                           >
                             ערוך
@@ -1137,7 +1139,7 @@ export function AdminPage() {
                           <button
                             type="button"
                             disabled={busy}
-                            className="inline-flex h-8 items-center justify-center rounded-lg bg-rose-600 border border-rose-500 px-3 text-xs font-semibold text-white hover:bg-rose-700 transition duration-200 disabled:opacity-50"
+                            className="inline-flex h-8 items-center justify-center rounded-lg bg-rose-600 border border-rose-500 px-3 text-xs font-semibold text-white hover:bg-rose-700 transition duration-200 disabled:opacity-50 shadow-sm"
                             onClick={() => void deleteRecessSchedule(row.id)}
                           >
                             מחק
@@ -1152,27 +1154,27 @@ export function AdminPage() {
           ))}
         </div>
 
-        <div className="space-y-4 border-t border-white/15 pt-6">
+        <div className="space-y-4 border-t border-slate-200 dark:border-white/15 pt-6">
           <div>
-            <h3 className="text-base font-bold text-white">לוח מיוחד לפי כיתה</h3>
-            <p className="mt-1 text-xs text-white/50">כיתה מוגדרת לפי שכבה ומגדר. חריגי הכיתה גוברים על לוח ברירת המחדל; מחוץ להפסקה זהו זמן שיעור.</p>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">לוח מיוחד לפי כיתה</h3>
+            <p className="mt-1 text-xs text-slate-500 dark:text-white/50">כיתה מוגדרת לפי שכבה ומגדר. חריגי הכיתה גוברים על לוח ברירת המחדל; מחוץ להפסקה זהו זמן שיעור.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             {CLASS_GRADES.map((grade) => (
-              <button key={grade} type="button" onClick={() => setSelectedScheduleGrade(grade)} className={cn("h-9 min-w-9 rounded-lg px-3 text-sm font-bold", selectedScheduleGrade === grade ? "bg-indigo-600 text-white" : "bg-white/10 text-white/70 hover:bg-white/15")}>
+              <button key={grade} type="button" onClick={() => setSelectedScheduleGrade(grade)} className={cn("h-9 min-w-9 rounded-lg px-3 text-sm font-bold shadow-sm transition-colors", selectedScheduleGrade === grade ? "bg-indigo-600 text-white" : "border border-slate-200 dark:border-transparent bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/15")}>
                 {grade}
               </button>
             ))}
-            <span className="mx-1 h-9 border-s border-white/15" />
-            <button type="button" onClick={() => setSelectedScheduleGender("boy")} className={cn("h-9 rounded-lg px-3 text-sm font-bold", selectedScheduleGender === "boy" ? "bg-sky-600 text-white" : "bg-white/10 text-white/70 hover:bg-white/15")}>בנים</button>
-            <button type="button" onClick={() => setSelectedScheduleGender("girl")} className={cn("h-9 rounded-lg px-3 text-sm font-bold", selectedScheduleGender === "girl" ? "bg-pink-600 text-white" : "bg-white/10 text-white/70 hover:bg-white/15")}>בנות</button>
+            <span className="mx-1 h-9 border-s border-slate-200 dark:border-white/15" />
+            <button type="button" onClick={() => setSelectedScheduleGender("boy")} className={cn("h-9 rounded-lg px-3 text-sm font-bold shadow-sm transition-colors", selectedScheduleGender === "boy" ? "bg-sky-600 text-white" : "border border-slate-200 dark:border-transparent bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/15")}>בנים</button>
+            <button type="button" onClick={() => setSelectedScheduleGender("girl")} className={cn("h-9 rounded-lg px-3 text-sm font-bold shadow-sm transition-colors", selectedScheduleGender === "girl" ? "bg-pink-600 text-white" : "border border-slate-200 dark:border-transparent bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/15")}>בנות</button>
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 p-4 shadow-sm">
             <div>
-              <p className="font-semibold text-white">כיתה {selectedScheduleGrade} · {selectedScheduleGender === "boy" ? "בנים" : "בנות"}</p>
-              <p className="text-xs text-white/55">{selectedClassOverrideEnabled ? "לוח מיוחד פעיל — החריגים שלהלן מיושמים." : "משתמשת כעת בלוח ברירת המחדל. החריגים השמורים אינם מיושמים."}</p>
+              <p className="font-semibold text-slate-900 dark:text-white">כיתה {selectedScheduleGrade} · {selectedScheduleGender === "boy" ? "בנים" : "בנות"}</p>
+              <p className="text-xs text-slate-500 dark:text-white/55">{selectedClassOverrideEnabled ? "לוח מיוחד פעיל — החריגים שלהלן מיושמים." : "משתמשת כעת בלוח ברירת המחדל. החריגים השמורים אינם מיושמים."}</p>
             </div>
-            <button type="button" disabled={busy} onClick={() => void toggleClassScheduleOverride()} className={cn("rounded-xl px-4 py-2 text-sm font-bold disabled:opacity-50", selectedClassOverrideEnabled ? "bg-amber-500 text-slate-950 hover:bg-amber-400" : "bg-indigo-600 text-white hover:bg-indigo-500")}>
+            <button type="button" disabled={busy} onClick={() => void toggleClassScheduleOverride()} className={cn("rounded-xl px-4 py-2 text-sm font-bold shadow-sm disabled:opacity-50 transition-colors", selectedClassOverrideEnabled ? "bg-amber-500 text-slate-950 hover:bg-amber-400" : "bg-indigo-600 text-white hover:bg-indigo-500")}>
               {selectedClassOverrideEnabled ? "חזור לברירת המחדל" : "הפעל לוח מיוחד"}
             </button>
           </div>
@@ -1180,13 +1182,13 @@ export function AdminPage() {
           {selectedClassOverrideEnabled ? (
             <div className="space-y-3">
               <div className="flex flex-wrap gap-2">
-                <button type="button" disabled={busy} onClick={() => openNewClassScheduleDraft("recess")} className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-500 disabled:opacity-50">+ הוסף הפסקה</button>
-                <button type="button" disabled={busy} onClick={() => openNewClassScheduleDraft("class_time")} className="rounded-lg bg-amber-500 px-3 py-2 text-xs font-bold text-slate-950 hover:bg-amber-400 disabled:opacity-50">+ הוסף זמן שיעור</button>
-                {selectedClassExceptions.length ? <button type="button" disabled={busy} onClick={() => void clearClassRecessExceptions()} className="rounded-lg bg-rose-600/80 px-3 py-2 text-xs font-bold text-white hover:bg-rose-600 disabled:opacity-50">נקה את כל החריגים</button> : null}
-                {classScheduleDraft ? <button type="button" onClick={() => setClassScheduleDraft(null)} className="rounded-lg bg-white/10 px-3 py-2 text-xs font-bold text-white/70 hover:bg-white/15">בטל עריכה</button> : null}
+                <button type="button" disabled={busy} onClick={() => openNewClassScheduleDraft("recess")} className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-500 disabled:opacity-50 shadow-sm">+ הוסף הפסקה</button>
+                <button type="button" disabled={busy} onClick={() => openNewClassScheduleDraft("class_time")} className="rounded-lg bg-amber-500 px-3 py-2 text-xs font-bold text-slate-950 hover:bg-amber-400 disabled:opacity-50 shadow-sm">+ הוסף זמן שיעור</button>
+                {selectedClassExceptions.length ? <button type="button" disabled={busy} onClick={() => void clearClassRecessExceptions()} className="rounded-lg bg-rose-600/80 px-3 py-2 text-xs font-bold text-white hover:bg-rose-600 disabled:opacity-50 shadow-sm">נקה את כל החריגים</button> : null}
+                {classScheduleDraft ? <button type="button" onClick={() => setClassScheduleDraft(null)} className="rounded-lg border border-slate-200 dark:border-transparent bg-slate-100 dark:bg-white/10 px-3 py-2 text-xs font-bold text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/15">בטל עריכה</button> : null}
               </div>
-              {classScheduleDraft ? <div className="space-y-3 rounded-2xl border border-indigo-400/30 bg-indigo-500/10 p-4">
-                <h4 className="text-sm font-bold text-white">{classScheduleDraft.id ? "עריכת חריג" : "חריג חדש"}</h4>
+              {classScheduleDraft ? <div className="space-y-3 rounded-2xl border border-indigo-200 dark:border-indigo-400/30 bg-indigo-50 dark:bg-indigo-500/10 p-4 shadow-sm">
+                <h4 className="text-sm font-bold text-indigo-900 dark:text-white">{classScheduleDraft.id ? "עריכת חריג" : "חריג חדש"}</h4>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className={`flex flex-col gap-2 ${kidFieldLabelClass}`}>סוג
                     <select className={kidFieldInputClass} value={classScheduleDraft.mode} onChange={(e) => setClassScheduleDraft((draft) => draft ? { ...draft, mode: e.target.value as "recess" | "class_time" } : draft)}><option value="recess">הפסקה</option><option value="class_time">זמן שיעור</option></select>
@@ -1198,23 +1200,23 @@ export function AdminPage() {
                   <label className={`flex flex-col gap-2 ${kidFieldLabelClass}`}>התחלה<input className={kidFieldInputClass} type="time" value={classScheduleDraft.start_time} onChange={(e) => setClassScheduleDraft((draft) => draft ? { ...draft, start_time: e.target.value } : draft)} /></label>
                   <label className={`flex flex-col gap-2 ${kidFieldLabelClass}`}>סיום<input className={kidFieldInputClass} type="time" value={classScheduleDraft.end_time} onChange={(e) => setClassScheduleDraft((draft) => draft ? { ...draft, end_time: e.target.value } : draft)} /></label>
                 </div>
-                <label className="flex items-center gap-2 text-sm text-white/80"><input type="checkbox" checked={classScheduleDraft.is_active} onChange={(e) => setClassScheduleDraft((draft) => draft ? { ...draft, is_active: e.target.checked } : draft)} />פעיל</label>
-                <button type="button" disabled={busy} onClick={() => void saveClassRecessException()} className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-500 disabled:opacity-50">שמור חריג</button>
+                <label className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-white/80"><input type="checkbox" checked={classScheduleDraft.is_active} onChange={(e) => setClassScheduleDraft((draft) => draft ? { ...draft, is_active: e.target.checked } : draft)} />פעיל</label>
+                <button type="button" disabled={busy} onClick={() => void saveClassRecessException()} className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-500 disabled:opacity-50 shadow-sm">שמור חריג</button>
               </div> : null}
             </div>
           ) : null}
 
           <div className="grid gap-4 lg:grid-cols-2">
-            <div className="space-y-3 rounded-2xl border border-white/10 bg-black/15 p-4">
-              <h4 className="text-sm font-bold text-white">לוח אפקטיבי</h4>
+            <div className="space-y-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-black/15 p-4 shadow-sm">
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white">לוח אפקטיבי</h4>
               {RECESS_DAY_LABELS_HE.map((label, day) => {
                 const recesses = buildEffectiveDaySchedule(day, { defaultWindows: recessSchedules, classSchedule: { overrideEnabled: selectedClassOverrideEnabled, exceptions: selectedClassExceptions } }).filter((segment) => segment.mode === "recess");
-                return <div key={label} className="flex gap-2 text-xs"><span className="w-20 shrink-0 text-white/55">{label}</span><span className="text-emerald-300">{recesses.length ? recesses.map((segment) => `${segment.start_time}–${segment.end_time}`).join(", ") : "אין הפסקה"}</span></div>;
+                return <div key={label} className="flex gap-2 text-xs"><span className="w-20 shrink-0 text-slate-600 dark:text-white/55">{label}</span><span className="font-semibold text-emerald-700 dark:text-emerald-300">{recesses.length ? recesses.map((segment) => `${segment.start_time}–${segment.end_time}`).join(", ") : "אין הפסקה"}</span></div>;
               })}
             </div>
-            <div className="space-y-3 rounded-2xl border border-white/10 bg-black/15 p-4">
-              <h4 className="text-sm font-bold text-white">חריגים שמורים</h4>
-              {selectedClassExceptions.length === 0 ? <p className="text-xs text-white/50">אין חריגים; גם לוח מיוחד פעיל יתנהג כברירת המחדל.</p> : <ul className="space-y-2">{selectedClassExceptions.map((row) => <li key={row.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white/5 px-3 py-2 text-xs"><span><b className={row.mode === "recess" ? "text-emerald-300" : "text-amber-300"}>{row.mode === "recess" ? "הפסקה" : "זמן שיעור"}</b><span className="mx-1 text-white/50">·</span>{RECESS_DAY_LABELS_HE[row.day_of_week]} · {normalizeRecessTime(row.start_time)}–{normalizeRecessTime(row.end_time)} · {row.name_he}</span>{selectedClassOverrideEnabled ? <span className="flex gap-2"><button type="button" onClick={() => openEditClassScheduleRow(row)} className="text-white/70 hover:text-white">ערוך</button><button type="button" onClick={() => void deleteClassRecessException(row.id)} className="text-rose-300 hover:text-rose-200">מחק</button></span> : null}</li>)}</ul>}
+            <div className="space-y-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-black/15 p-4 shadow-sm">
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white">חריגים שמורים</h4>
+              {selectedClassExceptions.length === 0 ? <p className="text-xs text-slate-500 dark:text-white/50">אין חריגים; גם לוח מיוחד פעיל יתנהג כברירת המחדל.</p> : <ul className="space-y-2">{selectedClassExceptions.map((row) => <li key={row.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-100 dark:border-transparent bg-slate-50 dark:bg-white/5 px-3 py-2 text-xs"><span><b className={row.mode === "recess" ? "text-emerald-700 dark:text-emerald-300" : "text-amber-700 dark:text-amber-300"}>{row.mode === "recess" ? "הפסקה" : "זמן שיעור"}</b><span className="mx-1 text-slate-400 dark:text-white/50">·</span><span className="text-slate-700 dark:text-white/80">{RECESS_DAY_LABELS_HE[row.day_of_week]} · {normalizeRecessTime(row.start_time)}–{normalizeRecessTime(row.end_time)} · {row.name_he}</span></span>{selectedClassOverrideEnabled ? <span className="flex gap-2"><button type="button" onClick={() => openEditClassScheduleRow(row)} className="font-semibold text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white">ערוך</button><button type="button" onClick={() => void deleteClassRecessException(row.id)} className="font-semibold text-rose-600 dark:text-rose-300 hover:text-rose-700 dark:hover:text-rose-200">מחק</button></span> : null}</li>)}</ul>}
             </div>
           </div>
         </div>
@@ -1224,7 +1226,7 @@ export function AdminPage() {
       {activeSection === "users" ? (
         <section className="space-y-2">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="text-lg font-medium text-white">ילדים / משתמשים</h2>
+            <h2 className="text-lg font-medium text-slate-900 dark:text-white">ילדים / משתמשים</h2>
             <button
               type="button"
               className="inline-flex h-10 items-center justify-center rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 border border-violet-400/50 px-4 py-2 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(139,92,246,0.3)] hover:-translate-y-0.5 transition duration-200"
@@ -1273,12 +1275,12 @@ export function AdminPage() {
             />
           </div>
           {addingNewUser ? (
-            <div className="mb-4 rounded-3xl border border-white/10 bg-white/5 shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md p-5">
+            <div className="mb-4 rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md p-5">
               <div className="flex flex-wrap items-start justify-between gap-4">
-                <h3 className="text-xl font-bold text-white">הוספת משתמש חדש</h3>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">הוספת משתמש חדש</h3>
                 <button
                   type="button"
-                  className="inline-flex h-10 items-center justify-center rounded-xl border border-transparent bg-transparent px-4 py-2 text-sm font-semibold text-white/50 hover:bg-white/5 hover:text-white/80 transition duration-200"
+                  className="inline-flex h-10 items-center justify-center rounded-xl border border-transparent bg-transparent px-4 py-2 text-sm font-semibold text-slate-500 dark:text-white/50 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-800 dark:hover:text-white/80 transition duration-200"
                   onClick={() => setAddingNewUser(false)}
                 >
                   סגור
@@ -1427,7 +1429,7 @@ export function AdminPage() {
             </div>
           ) : null}
         {editingKid ? (
-          <div className="mb-4 rounded-3xl border border-white/10 bg-white/5 shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md p-5">
+          <div className="mb-4 rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md p-5">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex items-center gap-4">
                 <KidAvatar
@@ -1441,14 +1443,14 @@ export function AdminPage() {
                   className="size-16 min-h-[64px] min-w-[64px] text-2xl"
                 />
                 <div>
-                  <h3 className="text-xl font-bold text-white">
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white">
                     עריכת {editingKid.full_name}
                   </h3>
-                  <p className="text-xs text-white/50">
+                  <p className="text-xs text-slate-500 dark:text-white/50">
                     נוצר: {new Date(editingKid.created_at).toLocaleString("he-IL")} · עודכן:{" "}
                     {new Date(editingKid.updated_at).toLocaleString("he-IL")}
                   </p>
-                  <p className="text-xs text-white/50">
+                  <p className="text-xs text-slate-500 dark:text-white/50">
                     נראה לאחרונה:{" "}
                     {editingKid.last_seen
                       ? new Date(editingKid.last_seen).toLocaleString("he-IL")
@@ -1458,7 +1460,7 @@ export function AdminPage() {
               </div>
               <button
                 type="button"
-                className="inline-flex h-10 items-center justify-center rounded-xl border border-transparent bg-transparent px-4 py-2 text-sm font-semibold text-white/50 hover:bg-white/5 hover:text-white/80 transition duration-200"
+                className="inline-flex h-10 items-center justify-center rounded-xl border border-transparent bg-transparent px-4 py-2 text-sm font-semibold text-slate-500 dark:text-white/50 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-800 dark:hover:text-white/80 transition duration-200"
                 onClick={() => setEditingKid(null)}
               >
                 סגור
@@ -1627,19 +1629,19 @@ export function AdminPage() {
               </button>
               <Link
                 to={`/profile/${editingKid.id}`}
-                className="inline-flex h-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+                className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200 shadow-sm"
               >
                 פתח פרופיל ציבורי
               </Link>
             </div>
-            <p className="mt-3 text-xs text-white/50">
+            <p className="mt-3 text-xs text-slate-500 dark:text-white/50">
               איפוס סיסמה נשאר פעולה נפרדת דרך Supabase Auth Admin / Edge Function מאובטחת.
             </p>
           </div>
         ) : null}
-        <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5 shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md">
+        <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/5 shadow-sm dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md">
           <table className="w-full text-right text-sm">
-            <thead className="bg-white/10 text-white">
+            <thead className="bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-white">
               <tr>
                 <th className="p-2">שם משתמש</th>
                 <th className="p-2">שם</th>
@@ -1650,9 +1652,9 @@ export function AdminPage() {
                 <th className="p-2">פעולות</th>
               </tr>
             </thead>
-            <tbody className="text-white/80">
+            <tbody className="text-slate-700 dark:text-white/80">
               {kids.map((k) => (
-                <tr key={k.id} className="border-t border-white/10 hover:bg-white/5">
+                <tr key={k.id} className="border-t border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5">
                   <td className="p-2">{k.username}</td>
                   <td className="p-2">{k.full_name}</td>
                   <td className="p-2">{k.role}</td>
@@ -1662,21 +1664,21 @@ export function AdminPage() {
                   <td className="p-2 space-x-2 space-x-reverse">
                     <button
                       type="button"
-                      className="font-semibold text-indigo-400 underline decoration-2 underline-offset-2 hover:text-indigo-300"
+                      className="font-semibold text-indigo-600 dark:text-indigo-400 underline decoration-2 underline-offset-2 hover:text-indigo-500 dark:hover:text-indigo-300"
                       onClick={() => startEditKid(k)}
                     >
                       ערוך
                     </button>
                     <button
                       type="button"
-                      className="font-semibold text-indigo-400 underline decoration-2 underline-offset-2 hover:text-indigo-300"
+                      className="font-semibold text-indigo-600 dark:text-indigo-400 underline decoration-2 underline-offset-2 hover:text-indigo-500 dark:hover:text-indigo-300"
                       onClick={() => void toggleKidActive(k)}
                     >
                       חסום/שחזר
                     </button>
                     <button
                       type="button"
-                      className="font-semibold text-rose-400 underline decoration-2 underline-offset-2 hover:text-rose-300"
+                      className="font-semibold text-rose-600 dark:text-rose-400 underline decoration-2 underline-offset-2 hover:text-rose-700 dark:hover:text-rose-300"
                       onClick={() => void deleteKid(k.id)}
                     >
                       מחק
@@ -1692,8 +1694,8 @@ export function AdminPage() {
 
       {activeSection === "import" ? (
       <section className="space-y-2">
-        <h2 className="text-lg font-medium text-white">ייבוא CSV (ילדים)</h2>
-        <p className="text-xs text-white/50">
+        <h2 className="text-lg font-medium text-slate-900 dark:text-white">ייבוא CSV (ילדים)</h2>
+        <p className="text-xs text-slate-500 dark:text-white/50">
           שורת כותרת: username,password,full_name,gender,grade,role — פונקציית Edge
           import-bulk-kids (מפתח שירות בשרת בלבד).
         </p>
@@ -1718,12 +1720,12 @@ export function AdminPage() {
 
       {activeSection === "operations" ? (
       <section className="space-y-2">
-        <h2 className="text-lg font-medium text-white">תפעול</h2>
+        <h2 className="text-lg font-medium text-slate-900 dark:text-white">תפעול</h2>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
             disabled={busy}
-            className="inline-flex h-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white/70 hover:bg-white/10 hover:text-white transition duration-200 disabled:opacity-50"
+            className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white shadow-sm transition duration-200 disabled:opacity-50"
             onClick={() =>
               void runRpc("admin_evict_stale_players", { p_idle_minutes: 30 })
             }
@@ -1733,7 +1735,7 @@ export function AdminPage() {
           <button
             type="button"
             disabled={busy}
-            className="inline-flex h-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white/70 hover:bg-white/10 hover:text-white transition duration-200 disabled:opacity-50"
+            className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white shadow-sm transition duration-200 disabled:opacity-50"
             onClick={() =>
               void runRpc("admin_expire_old_sessions", { p_hours: 24 })
             }
@@ -1743,7 +1745,7 @@ export function AdminPage() {
           <button
             type="button"
             disabled={busy}
-            className="inline-flex h-10 items-center justify-center rounded-xl bg-rose-600 border border-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 transition duration-200 disabled:opacity-50"
+            className="inline-flex h-10 items-center justify-center rounded-xl bg-rose-600 border border-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 transition duration-200 disabled:opacity-50 shadow-sm"
             onClick={() => {
               if (
                 !window.confirm(
@@ -1763,8 +1765,8 @@ export function AdminPage() {
 
       {activeSection === "audit" ? (
       <section className="space-y-2">
-        <h2 className="text-lg font-medium text-white">יומן ביקורת (אחרונים)</h2>
-        <ul className="space-y-1 font-mono text-xs text-white/50">
+        <h2 className="text-lg font-medium text-slate-900 dark:text-white">יומן ביקורת (אחרונים)</h2>
+        <ul className="space-y-1 font-mono text-xs text-slate-600 dark:text-white/50">
           {audit.map((a) => (
             <li key={a.id}>
               {new Date(a.created_at).toLocaleString("he-IL")} — {a.action}{" "}

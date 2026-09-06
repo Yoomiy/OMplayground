@@ -28,16 +28,16 @@ function KidRow({
       />
       <div className="min-w-0">
         <div className="flex min-w-0 items-center gap-1.5">
-          <span className="truncate text-sm font-black text-white leading-none">
+          <span className="truncate text-sm font-black text-slate-900 dark:text-white leading-none">
             {kid.full_name}
           </span>
           {sameGrade ? (
-            <span className="shrink-0 rounded-full bg-emerald-500/25 px-2 py-0.5 text-[9px] font-black text-emerald-400 leading-none border border-emerald-500/25">
+            <span className="shrink-0 rounded-full bg-emerald-500/25 px-2 py-0.5 text-[9px] font-black text-emerald-600 dark:text-emerald-400 leading-none border border-emerald-500/25">
               הכיתה שלי
             </span>
           ) : null}
         </div>
-        <p className="truncate text-[10px] font-black text-white/40 mt-1">
+        <p className="truncate text-[10px] font-black text-slate-500 dark:text-white/40 mt-1">
           @{kid.username} · כיתה {kid.grade}
         </p>
       </div>
@@ -47,7 +47,7 @@ function KidRow({
           onClick={onInvite}
           className={cn(
             buttonStyleBase,
-            "bg-emerald-500/10 border-emerald-400/30 text-emerald-400 hover:bg-emerald-500 hover:text-white hover:border-emerald-400 hover:shadow-[0_0_12px_rgba(52,211,153,0.4)]"
+            "bg-emerald-500/10 border-emerald-400/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500 hover:text-white hover:border-emerald-400 hover:shadow-[0_0_12px_rgba(52,211,153,0.4)]"
           )}
           aria-label={`הזמן את ${kid.full_name}`}
           title="להזמין למשחק"
@@ -59,7 +59,7 @@ function KidRow({
           onClick={() => navigate(`/inbox?kidId=${kid.id}`)}
           className={cn(
             buttonStyleBase,
-            "bg-sky-500/10 border-sky-400/30 text-sky-400 hover:bg-sky-500 hover:text-white hover:border-sky-400 hover:shadow-[0_0_12px_rgba(56,189,248,0.4)]"
+            "bg-sky-500/10 border-sky-400/30 text-sky-600 dark:text-sky-400 hover:bg-sky-500 hover:text-white hover:border-sky-400 hover:shadow-[0_0_12px_rgba(56,189,248,0.4)]"
           )}
           aria-label={`שלח הודעה אל ${kid.full_name}`}
           title="לשלוח הודעה"
@@ -71,7 +71,7 @@ function KidRow({
           onClick={() => navigate(`/profile/${kid.id}`)}
           className={cn(
             buttonStyleBase,
-            "bg-white/10 border-white/10 text-white/50 hover:bg-white/20 hover:text-white hover:border-white/30"
+            "bg-slate-100 dark:bg-white/10 border-slate-200 dark:border-white/10 text-slate-500 dark:text-white/50 hover:bg-slate-200 dark:hover:bg-white/20 hover:text-slate-800 dark:hover:text-white"
           )}
           aria-label={`צפה בפרופיל ${kid.full_name}`}
           title="לצפות בפרופיל"
@@ -113,20 +113,20 @@ export function OnlineKids({ className }: { className?: string }) {
   return (
     <section
       className={cn(
-        "rounded-3xl border border-emerald-400/25 bg-emerald-500/5 p-5 shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md flex min-h-0 flex-1 flex-col",
+        "rounded-3xl border border-emerald-300/40 dark:border-emerald-400/25 bg-white/80 dark:bg-emerald-500/5 p-5 shadow-sm dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md flex min-h-0 flex-1 flex-col",
         className
       )}
     >
-      <div className="mb-4 flex items-center justify-between gap-3 border-b border-white/10 pb-3">
+      <div className="mb-4 flex items-center justify-between gap-3 border-b border-slate-200 dark:border-white/10 pb-3">
         <div>
-          <h2 className="text-base font-black text-white flex items-center gap-2">
+          <h2 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
             <span className="relative flex size-3">
               <span className="absolute inline-flex size-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
               <span className="relative inline-flex size-3 rounded-full bg-emerald-400" />
             </span>
             חברים מחוברים
           </h2>
-          <p className="text-xs font-bold text-white/50 mt-0.5">
+          <p className="text-xs font-bold text-slate-500 dark:text-white/50 mt-0.5">
             {kids.length} חברים זמינים עכשיו
           </p>
         </div>
@@ -134,11 +134,11 @@ export function OnlineKids({ className }: { className?: string }) {
 
       <label className="relative mb-4 block">
         <Search
-          className="pointer-events-none absolute right-3.5 top-1/2 size-4 -translate-y-1/2 text-white/40"
+          className="pointer-events-none absolute right-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400 dark:text-white/40"
           aria-hidden
         />
         <input
-          className="min-h-11 w-full rounded-2xl border border-white/10 bg-white/10 py-2 pl-3 pr-10 text-xs font-bold text-white outline-none transition placeholder:text-white/40 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
+          className="min-h-11 w-full rounded-2xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/10 py-2 pl-3 pr-10 text-xs font-bold text-slate-900 dark:text-white outline-none transition placeholder:text-slate-400 dark:placeholder:text-white/40 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 shadow-sm dark:shadow-none"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="חפשו חבר..."
@@ -147,18 +147,18 @@ export function OnlineKids({ className }: { className?: string }) {
 
       <div className="min-h-0 flex-1 overflow-y-auto pr-1 scrollbar-hide">
         {loading && kids.length === 0 ? (
-          <p className="text-xs font-bold text-white/50 py-4 text-center">טוען חברים…</p>
+          <p className="text-xs font-bold text-slate-500 dark:text-white/50 py-4 text-center">טוען חברים…</p>
         ) : filtered.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-white/15 bg-white/5 px-3 py-6 text-center">
+          <div className="rounded-2xl border border-dashed border-slate-300 dark:border-white/15 bg-white/5 px-3 py-6 text-center">
             <span className="text-3xl block mb-2">👀</span>
-            <p className="text-xs font-bold text-white/40">
+            <p className="text-xs font-bold text-slate-500 dark:text-white/40">
               לא מצאנו אף חבר מחובר כרגע.
             </p>
           </div>
         ) : (
           <div className="space-y-4">
             <div className="space-y-2">
-              <h3 className="text-[10px] font-black uppercase tracking-wider text-white/30 flex items-center gap-1.5">
+              <h3 className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-white/30 flex items-center gap-1.5">
                 <span>🏫</span> הכיתה שלי
               </h3>
               {sameGrade.length > 0 ? (
@@ -173,8 +173,8 @@ export function OnlineKids({ className }: { className?: string }) {
                   ))}
                 </ul>
               ) : (
-                <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 px-3 py-4 text-center">
-                  <p className="text-xs font-bold text-white/30">
+                <div className="rounded-2xl border border-dashed border-slate-300 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 px-3 py-4 text-center">
+                  <p className="text-xs font-bold text-slate-500 dark:text-white/30">
                     אין כרגע חברים מהכיתה שלך.
                   </p>
                 </div>
@@ -183,7 +183,7 @@ export function OnlineKids({ className }: { className?: string }) {
 
             {otherKids.length > 0 ? (
               <div className="space-y-2">
-                <h3 className="text-[10px] font-black uppercase tracking-wider text-white/30 flex items-center gap-1.5">
+                <h3 className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-white/30 flex items-center gap-1.5">
                   <span>🌍</span> שאר המחוברים
                 </h3>
                 <ul className="space-y-2">

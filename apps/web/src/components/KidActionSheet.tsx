@@ -95,7 +95,7 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
   return (
     <>
       <div
-        className="fixed inset-0 z-40 flex items-end justify-center bg-slate-950/60 p-4 backdrop-blur-md sm:items-center animate-slide-up"
+        className="fixed inset-0 z-40 flex items-end justify-center bg-slate-950/40 dark:bg-slate-950/60 p-4 backdrop-blur-md sm:items-center animate-slide-up"
         role="dialog"
         aria-modal="true"
         aria-labelledby="kid-action-title"
@@ -104,10 +104,10 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
         }}
       >
         <div
-          className="max-h-[90vh] w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-[#150d32]/95 shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
+          className="max-h-[90vh] w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#150d32]/95 shadow-[0_8px_32px_rgba(0,0,0,0.15)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
           onClick={(e) => e.stopPropagation()}
         >
-          <header className="flex items-start gap-4 border-b border-white/10 bg-white/5 p-5">
+          <header className="flex items-start gap-4 border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-5">
             <KidAvatar
               profile={kid}
               className="size-14 min-h-[56px] min-w-[56px] shrink-0 text-xl"
@@ -115,15 +115,15 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
             <div className="min-w-0 flex-1 pt-0.5">
               <h3
                 id="kid-action-title"
-                className="text-xl font-black text-white"
+                className="text-xl font-black text-slate-900 dark:text-white"
               >
                 {kid.full_name}
               </h3>
-              <p className="truncate text-sm font-bold text-white/50">@{kid.username}</p>
+              <p className="truncate text-sm font-bold text-slate-500 dark:text-white/50">@{kid.username}</p>
             </div>
             <button
               type="button"
-              className="shrink-0 rounded-xl px-3 py-2 text-sm font-bold text-white/60 hover:bg-white/10"
+              className="shrink-0 rounded-xl px-3 py-2 text-sm font-bold text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:text-white/60 dark:hover:bg-white/10 dark:hover:text-white"
               onClick={onClose}
             >
               ✕
@@ -133,7 +133,7 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
           <div className="max-h-[min(60vh,420px)] space-y-5 overflow-y-auto p-5 custom-scrollbar">
             {err ? (
               <p
-                className="rounded-2xl border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-sm font-bold text-amber-300"
+                className="rounded-2xl border border-amber-400/40 dark:border-amber-400/30 bg-amber-500/15 dark:bg-amber-500/10 px-3 py-2 text-sm font-bold text-amber-850 dark:text-amber-300"
                 role="alert"
               >
                 ⚠️ {err}
@@ -141,7 +141,7 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
             ) : null}
             {info ? (
               <p
-                className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-3 py-2 text-sm font-bold text-emerald-300"
+                className="rounded-2xl border border-emerald-400/40 dark:border-emerald-400/30 bg-emerald-500/15 dark:bg-emerald-500/10 px-3 py-2 text-sm font-bold text-emerald-800 dark:text-emerald-300"
                 role="status"
               >
                 ✅ {info}
@@ -149,11 +149,11 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
             ) : null}
 
             <section className="space-y-2">
-              <h4 className="text-xs font-bold uppercase tracking-wide text-white/40">
+              <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-white/40">
                 נשחק ביחד
               </h4>
               {catalog.length === 0 ? (
-                <p className="text-sm font-bold text-white/50">
+                <p className="text-sm font-bold text-slate-600 dark:text-white/50">
                   אין משחקים זמינים לאתגר
                 </p>
               ) : (
@@ -177,13 +177,13 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
               )}
             </section>
 
-            <section className="space-y-2 border-t border-white/10 pt-4">
-              <h4 className="text-xs font-bold uppercase tracking-wide text-white/40">
+            <section className="space-y-2 border-t border-slate-200 dark:border-white/10 pt-4">
+              <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-white/40">
                 פעולות
               </h4>
               <div className="flex flex-col gap-2">
                 <button
-                  className="w-full text-center rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-black text-white/70 hover:bg-white/10 hover:text-white transition duration-200 disabled:opacity-50"
+                  className="w-full text-center rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-4 py-3 text-sm font-black text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200 disabled:opacity-50"
                   type="button"
                   disabled={busy !== null}
                   onClick={() => {
@@ -194,7 +194,7 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
                   צפה בפרופיל 👀
                 </button>
                 <button
-                  className="w-full text-center rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-black text-white/70 hover:bg-white/10 hover:text-white transition duration-200 disabled:opacity-50"
+                  className="w-full text-center rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-4 py-3 text-sm font-black text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200 disabled:opacity-50"
                   type="button"
                   disabled={busy !== null}
                   onClick={() => setComposing(true)}
@@ -205,10 +205,10 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
             </section>
 
             <section className="space-y-2 border-t border-rose-500/25 pt-4 rounded-2xl bg-rose-500/5 p-3">
-              <h4 className="text-xs font-bold uppercase tracking-wide text-rose-400">
+              <h4 className="text-xs font-bold uppercase tracking-wide text-rose-600 dark:text-rose-400">
                 בטיחות
               </h4>
-              <p className="text-xs font-bold text-rose-300/80">
+              <p className="text-xs font-bold text-rose-700 dark:text-rose-300/80">
                 חסימה מסתירה את המשתמש ממך.
               </p>
               <button
@@ -222,9 +222,9 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
             </section>
           </div>
 
-          <div className="border-t border-white/10 bg-white/5 p-4">
+          <div className="border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
             <button
-              className="w-full rounded-2xl border border-white/10 bg-white/5 py-3 text-sm font-black text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+              className="w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 py-3 text-sm font-black text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200"
               type="button"
               onClick={onClose}
             >

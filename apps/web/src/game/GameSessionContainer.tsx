@@ -653,7 +653,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
   }, [endOverlay, gameState, players, roster]);
 
   if (!gameState || !gameKey) {
-    return <p className="text-sm text-white/50">{status}</p>;
+    return <p className="text-sm text-slate-500 dark:text-white/50">{status}</p>;
   }
 
   const iAmHost =
@@ -677,10 +677,10 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
   const chatPanel = isStaffObserver ? (
     <section className={desktopPanelClass("space-y-2 p-3")}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-black text-white">צ׳אט (ניהול)</h2>
+        <h2 className="text-sm font-black text-slate-900 dark:text-white">צ׳אט (ניהול)</h2>
         <button
           type="button"
-          className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-xs font-semibold text-amber-300 hover:bg-amber-500/20 transition duration-200"
+          className="rounded-lg border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 text-xs font-semibold text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-500/20 transition duration-200"
           onClick={() => {
             if (!window.confirm("למחוק את כל ההודעות במפגש זה?")) return;
             void teacherChat.clearSession().catch((e: Error) => setStatus(e.message));
@@ -690,19 +690,19 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         </button>
       </div>
       {teacherChat.error ? (
-        <p className="text-xs font-medium text-amber-300">{teacherChat.error}</p>
+        <p className="text-xs font-medium text-amber-800 dark:text-amber-300">{teacherChat.error}</p>
       ) : null}
-      <ul className="max-h-64 space-y-2 overflow-y-auto text-sm text-white/80">
+      <ul className="max-h-64 space-y-2 overflow-y-auto text-sm text-slate-700 dark:text-white/80">
         {teacherChat.lines.map((line) => (
-          <li key={line.id} className="flex items-start justify-between gap-2 border-b border-white/10 pb-1">
+          <li key={line.id} className="flex items-start justify-between gap-2 border-b border-slate-200 dark:border-white/10 pb-1">
             <span>
-              <span className="text-white/40">{line.sender_name}:</span>{" "}
+              <span className="text-slate-500 dark:text-white/40">{line.sender_name}:</span>{" "}
               {line.message}
             </span>
             {!line.is_system ? (
               <button
                 type="button"
-                className="shrink-0 text-xs text-rose-400 hover:text-rose-300 underline transition duration-200"
+                className="shrink-0 text-xs text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-300 underline transition duration-200"
                 onClick={() =>
                   void teacherChat.softDelete(line.id).catch((e: Error) =>
                     setStatus(e.message)
@@ -718,21 +718,21 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
     </section>
   ) : (
     <section className={desktopPanelClass("space-y-2 p-3")}>
-      <h2 className="text-sm font-black text-white">צ׳אט במשחק</h2>
+      <h2 className="text-sm font-black text-slate-900 dark:text-white">צ׳אט במשחק</h2>
       {kidChat.error ? (
-        <p className="text-xs font-medium text-amber-300">{kidChat.error}</p>
+        <p className="text-xs font-medium text-amber-800 dark:text-amber-300">{kidChat.error}</p>
       ) : null}
-      <ul className="max-h-56 space-y-1 overflow-y-auto text-sm text-white/80">
+      <ul className="max-h-56 space-y-1 overflow-y-auto text-sm text-slate-700 dark:text-white/80">
         {kidChat.lines.map((line) => (
           <li key={line.id}>
-            <span className="text-white/40">{line.sender_name}:</span>{" "}
+            <span className="text-slate-500 dark:text-white/40">{line.sender_name}:</span>{" "}
             {line.message}
           </li>
         ))}
       </ul>
       <div className="flex gap-2">
         <input
-          className="min-h-10 flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none placeholder:text-white/40 focus:border-indigo-400/50 focus:ring-4 focus:ring-indigo-500/20 transition"
+          className="min-h-10 flex-1 rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm text-slate-900 dark:text-white outline-none placeholder:text-slate-400 dark:placeholder:text-white/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 shadow-sm transition"
           value={chatDraft}
           onChange={(e) => setChatDraft(e.target.value)}
           onKeyDown={(e) => {
@@ -760,12 +760,12 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
       <main className="min-w-0 space-y-4">
         <div className={desktopPanelClass("flex flex-wrap items-center justify-between gap-3 px-4 py-3")}>
           <div className="flex items-center gap-3">
-            <p className="text-sm font-bold text-white/80">
+            <p className="text-sm font-bold text-slate-700 dark:text-white/80">
               {isStaffObserver ? `צפייה בלבד (${isAdmin ? "מנהל" : "מורה"}) · ` : isChildSpectator ? "צפייה בלבד · " : ""}
               {status}
             </p>
             {toast ? (
-              <div role="status" className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm font-bold text-amber-200">
+              <div role="status" className="rounded-xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-3 py-2 text-sm font-bold text-amber-800 dark:text-amber-200">
                 {toast}
               </div>
             ) : null}
@@ -773,7 +773,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+              className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200"
               onClick={() =>
                 navigate(isAdmin ? "/admin" : isStaffObserver ? "/teacher" : "/home")
               }
@@ -788,7 +788,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
           { backdropBlur: gameKey !== "drawing" }
         )}>
           {paused ? (
-            <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-300">
+            <div className="mb-4 rounded-xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-300">
               <p className="font-bold">המשחק מושהה ונשמר להמשך.</p>
               <p className="mt-1">
                 {missingPlayers.length > 0
@@ -835,7 +835,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
 
         {endOverlay && gameKey !== "chess" ? (
           <div role="alertdialog" aria-label="המשחק הסתיים" className={desktopPanelClass("p-4 text-center")}>
-            <p className="text-lg font-black text-white">
+            <p className="text-lg font-black text-slate-900 dark:text-white">
               {endOverlayHeadline(
                 endOverlay,
                 mySymbol,
@@ -844,7 +844,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
               )}
             </p>
             {rematch && endOverlay.kind !== "stopped" ? (
-              <p className="mt-2 text-sm font-semibold text-white/60">
+              <p className="mt-2 text-sm font-semibold text-slate-600 dark:text-white/60">
                 משחק חוזר: {rematch.accepted.length} אישרו
                 {rematch.refused.length > 0 ? ` · ${rematch.refused.length} סירבו` : ""}
               </p>
@@ -860,7 +860,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
                   <button type="button" className="rounded-lg bg-emerald-600 border border-emerald-500/50 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-500 disabled:opacity-50 transition duration-200" disabled={acceptedRematch} onClick={() => respondToRematch(true)}>
                     {acceptedRematch ? "אישרת משחק חוזר" : "אני רוצה משחק חוזר"}
                   </button>
-                  <button type="button" className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm font-bold text-white/70 hover:bg-white/10 hover:text-white disabled:opacity-50 transition duration-200" disabled={refusedRematch} onClick={() => respondToRematch(false)}>
+                  <button type="button" className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-3 py-2 text-sm font-bold text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white disabled:opacity-50 transition duration-200" disabled={refusedRematch} onClick={() => respondToRematch(false)}>
                     {refusedRematch ? "סירבת" : "לא עכשיו"}
                   </button>
                 </>
@@ -872,7 +872,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
                   navigate(isAdmin ? "/admin" : isStaffObserver ? "/teacher" : "/home")
                 }
               >
-                {isAdmin ? "חזרה לניהול" : isStaffObserver ? "חזרה ללוח המורה" : "חזרה הביתה"}
+                חזרה לדף הבית
               </button>
             </div>
           </div>
@@ -887,15 +887,15 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
           />
 
           <section className={desktopPanelClass("p-4 text-sm")}>
-            <h2 className="font-black text-white/95">שחקנים בחדר</h2>
+            <h2 className="font-black text-slate-900 dark:text-white/95">שחקנים בחדר</h2>
             <div className="mt-3 space-y-2">
               {(roster.length > 0 ? roster : players).map((player) => (
                 <div
                   key={player.userId}
                   className={
                     connectedIds.has(player.userId)
-                      ? "rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 font-bold text-emerald-300"
-                      : "rounded-xl border border-white/5 bg-white/5 px-3 py-2 font-semibold text-white/50"
+                      ? "rounded-xl border border-emerald-300 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-2 font-bold text-emerald-800 dark:text-emerald-300"
+                      : "rounded-xl border border-slate-200 dark:border-white/5 bg-slate-100 dark:bg-white/5 px-3 py-2 font-semibold text-slate-600 dark:text-white/50"
                   }
                 >
                   {player.displayName}
@@ -909,15 +909,15 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
 
           {spectators.length > 0 ? (
             <section className={desktopPanelClass("p-4 text-sm")}>
-              <h2 className="font-black text-white/95">צופים</h2>
+              <h2 className="font-black text-slate-900 dark:text-white/95">צופים</h2>
               <div className="mt-3 space-y-2">
                 {spectators.map((spectator) => (
                   <div
                     key={spectator.userId}
-                    className="rounded-xl border border-indigo-500/20 bg-indigo-500/10 px-3 py-2 font-semibold text-indigo-200"
+                    className="rounded-xl border border-indigo-200 dark:border-indigo-500/20 bg-indigo-50 dark:bg-indigo-500/10 px-3 py-2 font-semibold text-indigo-800 dark:text-indigo-200"
                   >
                     {spectator.displayName}
-                    <span className="block text-xs text-indigo-300/70">צופה</span>
+                    <span className="block text-xs text-indigo-600 dark:text-indigo-300/70">צופה</span>
                   </div>
                 ))}
               </div>
@@ -925,7 +925,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
           ) : null}
 
           {paused && iAmHost ? (
-            <section className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-300 shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md">
+            <section className="rounded-2xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-4 text-sm text-amber-800 dark:text-amber-300 shadow-sm backdrop-blur-md">
               <p className="font-bold">אפשר לחדש כשהשחקנים חזרו.</p>
               <button
                 type="button"
@@ -940,7 +940,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
 
           {iAmHost && !endOverlay ? (
             <section className={desktopPanelClass("space-y-3 p-4")}>
-              <h2 className="text-sm font-black text-white/95">ניהול חדר</h2>
+              <h2 className="text-sm font-black text-slate-900 dark:text-white/95">ניהול חדר</h2>
               <div className="flex flex-wrap gap-2">
                 <button type="button" className="rounded-lg bg-amber-600 border border-amber-500/50 px-3 py-2 text-sm font-bold text-white hover:bg-amber-500 disabled:opacity-50 transition duration-200" disabled={paused} onClick={() => pauseGame()}>
                   השהה
@@ -949,21 +949,21 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
                   סיים
                 </button>
               </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-                <p className="text-sm font-black text-white">
+              <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">
+                <p className="text-sm font-black text-slate-800 dark:text-white">
                   {roomIsOpen === null ? "טוען פרטיות…" : roomIsOpen ? "חדר פתוח" : "חדר פרטי"}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  <button type="button" className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm font-bold text-white/70 hover:bg-white/10 hover:text-white disabled:opacity-50 transition duration-200" disabled={updatingVisibility || roomIsOpen === null} onClick={() => void toggleRoomVisibility()}>
+                  <button type="button" className="rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm font-bold text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white disabled:opacity-50 transition duration-200 shadow-sm" disabled={updatingVisibility || roomIsOpen === null} onClick={() => void toggleRoomVisibility()}>
                     {updatingVisibility ? "מעדכן…" : roomIsOpen ? "הפוך לפרטי" : "הפוך לפתוח"}
                   </button>
-                  <button type="button" className="rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-3 py-2 text-sm font-bold text-indigo-300 hover:bg-indigo-500/20 disabled:opacity-50 transition duration-200" disabled={!invitationCode} onClick={() => void copyInviteLink()}>
+                  <button type="button" className="rounded-lg border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 px-3 py-2 text-sm font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 disabled:opacity-50 transition duration-200 shadow-sm" disabled={!invitationCode} onClick={() => void copyInviteLink()}>
                     העתק הזמנה
                   </button>
                 </div>
               </div>
               {inviteFallbackLink ? (
-                <p className="break-all rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3 py-2 text-xs text-indigo-300">
+                <p className="break-all rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 px-3 py-2 text-xs text-indigo-800 dark:text-indigo-300">
                   {inviteFallbackLink}
                 </p>
               ) : null}

@@ -123,21 +123,21 @@ const ChessClock = memo(function ChessClock({
   const isBlack = seat === "b";
   const shell = isBlack
     ? active
-      ? "border-indigo-500/40 bg-gradient-to-br from-indigo-950/20 to-slate-900/20 text-white shadow-[0_0_12px_rgba(99,102,241,0.2)] ring-2 ring-indigo-400/25"
-      : "border-white/10 bg-white/5 text-white/50"
+      ? "border-indigo-500/40 bg-indigo-50 dark:bg-gradient-to-br dark:from-indigo-950/20 dark:to-slate-900/20 text-indigo-950 dark:text-white shadow-sm ring-2 ring-indigo-400/25"
+      : "border-slate-200 dark:border-white/10 bg-slate-100/90 dark:bg-white/5 text-slate-700 dark:text-white/50"
     : active
-      ? "border-amber-500/40 bg-gradient-to-br from-amber-500/10 to-orange-500/20 text-white shadow-[0_0_12px_rgba(251,191,36,0.2)] ring-2 ring-amber-400/25"
-      : "border-white/10 bg-white/5 text-white/80";
+      ? "border-amber-500/40 bg-amber-50 dark:bg-gradient-to-br dark:from-amber-500/10 dark:to-orange-500/20 text-amber-950 dark:text-white shadow-sm ring-2 ring-amber-400/25"
+      : "border-slate-200 dark:border-white/10 bg-slate-100/90 dark:bg-white/5 text-slate-700 dark:text-white/80";
 
   return (
     <div
       className={`min-w-[7.5rem] rounded-2xl border px-4 py-2.5 text-center shadow-md transition-all ${shell} ${
         isMine ? "md:scale-[1.03]" : ""
-      } ${low ? "border-rose-400 !text-rose-300" : ""}`}
+      } ${low ? "border-rose-500 dark:border-rose-400 !text-rose-600 dark:!text-rose-300" : ""}`}
     >
       <div
         className={`text-[10px] font-black uppercase tracking-widest ${
-          active ? "text-white/80" : "text-white/40"
+          active ? "text-slate-800 dark:text-white/80" : "text-slate-400 dark:text-white/40"
         }`}
       >
         {label}
@@ -389,7 +389,7 @@ export function ChessBoard({
   }
 
   const boardBlock = (
-    <div className="relative min-w-0 flex-1 overflow-hidden rounded-3xl border border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
+    <div className="relative min-w-0 flex-1 overflow-hidden rounded-3xl border border-slate-200 dark:border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.15)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
       <Chessboard
         position={activeFen}
         boardOrientation={orientation}
@@ -454,10 +454,10 @@ export function ChessBoard({
         <div
           role="alertdialog"
           aria-label="המשחק הסתיים"
-          className="absolute inset-0 z-20 flex items-center justify-center rounded-3xl bg-black/60 backdrop-blur-md"
+          className="absolute inset-0 z-20 flex items-center justify-center rounded-3xl bg-black/50 backdrop-blur-md"
         >
-          <div className="mx-4 max-w-sm rounded-3xl border border-white/10 bg-black/80 p-6 text-center shadow-[0_8px_32px_rgba(0,0,0,0.7)] backdrop-blur-lg" dir="rtl">
-            <p className="text-2xl font-black text-white">
+          <div className="mx-4 max-w-sm rounded-3xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-black/80 p-6 text-center shadow-2xl backdrop-blur-lg" dir="rtl">
+            <p className="text-2xl font-black text-slate-900 dark:text-white">
               {sessionEnd?.kind === "stopped"
                 ? isHost
                   ? "המשחק נעצר"
@@ -465,7 +465,7 @@ export function ChessBoard({
                 : gameOverHeadline(gameState, mySeat)}
             </p>
             {gameState.status === "draw" && gameState.drawReason ? (
-              <p className="mt-1 text-sm font-semibold text-white/50">
+              <p className="mt-1 text-sm font-semibold text-slate-500 dark:text-white/50">
                 {gameState.drawReason === "stalemate"
                   ? "פט"
                   : gameState.drawReason === "draw_by_agreement"
@@ -504,7 +504,7 @@ export function ChessBoard({
                   <button
                     type="button"
                     disabled={refusedRematch}
-                    className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-white/70 hover:bg-white/10 hover:text-white disabled:opacity-50 transition duration-200"
+                    className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-4 py-2 text-sm font-bold text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white disabled:opacity-50 transition duration-200"
                     onClick={() => onRespondRematch?.(false)}
                   >
                     {refusedRematch ? "סירבת" : "לא עכשיו"}
@@ -513,7 +513,7 @@ export function ChessBoard({
               ) : null}
               <button
                 type="button"
-                className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+                className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-4 py-2 text-sm font-bold text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200"
                 onClick={() => setViewBoardAfterEnd(true)}
               >
                 צפה בלוח
@@ -530,7 +530,7 @@ export function ChessBoard({
               {onExit ? (
                 <button
                   type="button"
-                  className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+                  className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-4 py-2 text-sm font-bold text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200"
                   onClick={onExit}
                 >
                   חזרה להגדרות
@@ -553,60 +553,60 @@ export function ChessBoard({
   );
 
   return (
-    <div className="space-y-3 rounded-3xl border border-white/10 bg-white/5 p-3 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-md">
+    <div className="space-y-3 rounded-3xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/5 p-3 shadow-xl dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-md">
       {/* Time Control Panel - shown only before the first move */}
       {gameState.history.length === 0 && gameState.status === "playing" && (
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-3.5 space-y-3" dir="rtl">
+        <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3.5 space-y-3" dir="rtl">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <span className="text-sm font-black text-white/80">בקרת זמן פעילה:</span>
-            <span className="text-sm font-bold text-indigo-300 bg-indigo-500/10 border border-indigo-500/30 px-3 py-1 rounded-xl">
+            <span className="text-sm font-black text-slate-800 dark:text-white/80">בקרת זמן פעילה:</span>
+            <span className="text-sm font-bold text-indigo-600 dark:text-indigo-300 bg-indigo-500/10 border border-indigo-500/30 px-3 py-1 rounded-xl">
               {getTimeControlDescription(gameState.timeControl)}
             </span>
           </div>
 
           {isHost && (
-            <div className="space-y-3 pt-2 border-t border-white/10">
-              <p className="text-xs font-bold text-white/50">שינוי בקרת זמן (מארח):</p>
+            <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-white/10">
+              <p className="text-xs font-bold text-slate-500 dark:text-white/50">שינוי בקרת זמן (מארח):</p>
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+                  className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white shadow-sm transition duration-200"
                   onClick={() => onIntent({ type: "set_time_control", timeControl: { mode: "none" } })}
                 >
                   ללא שעון
                 </button>
                 <button
                   type="button"
-                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+                  className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white shadow-sm transition duration-200"
                   onClick={() => onIntent({ type: "set_time_control", timeControl: { mode: "timed", initialMs: 1 * 60000, incrementMs: 0 } })}
                 >
                   1 דקה (קליע)
                 </button>
                 <button
                   type="button"
-                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+                  className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white shadow-sm transition duration-200"
                   onClick={() => onIntent({ type: "set_time_control", timeControl: { mode: "timed", initialMs: 3 * 60000, incrementMs: 0 } })}
                 >
                   3 דקות (בליץ)
                 </button>
                 <button
                   type="button"
-                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+                  className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white shadow-sm transition duration-200"
                   onClick={() => onIntent({ type: "set_time_control", timeControl: { mode: "timed", initialMs: 5 * 60000, incrementMs: 0 } })}
                 >
                   5 דקות (בליץ)
                 </button>
                 <button
                   type="button"
-                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+                  className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white shadow-sm transition duration-200"
                   onClick={() => onIntent({ type: "set_time_control", timeControl: { mode: "timed", initialMs: 10 * 60000, incrementMs: 0 } })}
                 >
                   10 דקות (מהיר)
                 </button>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 bg-white/5 p-2.5 rounded-xl border border-white/10">
-                <span className="text-xs font-bold text-white/80">מותאם אישית:</span>
+              <div className="flex flex-wrap items-center gap-3 bg-slate-100 dark:bg-white/5 p-2.5 rounded-xl border border-slate-200 dark:border-white/10">
+                <span className="text-xs font-bold text-slate-800 dark:text-white/80">מותאם אישית:</span>
                 <div className="flex items-center gap-1.5">
                   <input
                     type="number"
@@ -614,9 +614,9 @@ export function ChessBoard({
                     max="180"
                     value={customMins}
                     onChange={(e) => setCustomMins(e.target.value)}
-                    className="w-12 rounded-lg border border-white/10 bg-white/5 text-white p-1 text-center text-xs font-bold focus:bg-white/10 focus:outline-none"
+                    className="w-12 rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white p-1 text-center text-xs font-bold focus:outline-none"
                   />
-                  <span className="text-xs text-white/40">דקות</span>
+                  <span className="text-xs text-slate-500 dark:text-white/40">דקות</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <input
@@ -625,9 +625,9 @@ export function ChessBoard({
                     max="60"
                     value={customInc}
                     onChange={(e) => setCustomInc(e.target.value)}
-                    className="w-12 rounded-lg border border-white/10 bg-white/5 text-white p-1 text-center text-xs font-bold focus:bg-white/10 focus:outline-none"
+                    className="w-12 rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white p-1 text-center text-xs font-bold focus:outline-none"
                   />
-                  <span className="text-xs text-white/40">שניות תוספת</span>
+                  <span className="text-xs text-slate-500 dark:text-white/40">שניות תוספת</span>
                 </div>
                 <button
                   type="button"
@@ -654,7 +654,7 @@ export function ChessBoard({
       )}
 
       {gameState.status === "playing" ? (
-        <p className="text-center text-sm font-semibold text-white/80" dir="rtl">
+        <p className="text-center text-sm font-semibold text-slate-700 dark:text-white/80" dir="rtl">
           {gameState.next === mySeat ? "תורך!" : gameState.next === "w" ? "תור לבן" : "תור שחור"}
         </p>
       ) : null}
@@ -662,13 +662,13 @@ export function ChessBoard({
       {/* LTR: keeps files a..h and capture trays matching the board; avoids RTL mirroring the grid */}
       <div dir="ltr" className="space-y-3">
         {inActiveGame && drawOfferFrom === mySeat && (
-          <p className="text-end text-sm font-medium text-amber-400" dir="rtl">
+          <p className="text-end text-sm font-medium text-amber-600 dark:text-amber-400" dir="rtl">
             הצעת תיקו ממתינה לתגובה
           </p>
         )}
 
         {inActiveGame && drawOfferFrom && drawOfferFrom !== mySeat && (
-          <p className="text-end text-sm font-medium text-amber-400" dir="rtl">
+          <p className="text-end text-sm font-medium text-amber-600 dark:text-amber-400" dir="rtl">
             היריב הציע תיקו
           </p>
         )}
@@ -676,14 +676,14 @@ export function ChessBoard({
         <div className="flex min-h-[2.75rem] flex-col justify-center">
           {pendingPromotion && (
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-medium text-white/70" dir="rtl">
+              <span className="text-sm font-medium text-slate-700 dark:text-white/70" dir="rtl">
                 הפיכה — בחר כלי:
               </span>
               {PROMOTIONS.map((p) => (
                 <button
                   key={p}
                   type="button"
-                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 shadow-sm hover:bg-white/10 transition duration-200"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm hover:bg-slate-100 dark:hover:bg-white/10 transition duration-200"
                   onClick={() => {
                     sendMove(pendingPromotion.from, pendingPromotion.to, p);
                     setPendingPromotion(null);
@@ -699,7 +699,7 @@ export function ChessBoard({
               ))}
               <button
                 type="button"
-                className="text-sm font-medium text-white/50 underline hover:text-white/80 transition duration-200"
+                className="text-sm font-medium text-slate-500 dark:text-white/50 underline hover:text-slate-800 dark:hover:text-white/80 transition duration-200"
                 dir="rtl"
                 onClick={() => setPendingPromotion(null)}
               >
@@ -749,11 +749,11 @@ export function ChessBoard({
 
         {/* History Replay Navigation Controls */}
         {gameState.history.length > 0 && (
-          <div className="flex flex-col items-center gap-2 rounded-2xl bg-white/5 border border-white/10 p-2" dir="rtl">
+          <div className="flex flex-col items-center gap-2 rounded-2xl bg-slate-100/80 dark:bg-white/5 border border-slate-200 dark:border-white/10 p-2" dir="rtl">
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                className="flex h-8 px-2.5 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-xs font-black text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+                className="flex h-8 px-2.5 items-center justify-center rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs font-black text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200"
                 onClick={() => setViewIndex(0)}
                 title="תחילת המשחק"
               >
@@ -761,7 +761,7 @@ export function ChessBoard({
               </button>
               <button
                 type="button"
-                className="flex h-8 px-3.5 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-xs font-black text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+                className="flex h-8 px-3.5 items-center justify-center rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs font-black text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200"
                 onClick={() =>
                   setViewIndex((prev) =>
                     prev === -1 ? Math.max(0, gameState.history.length - 1) : Math.max(0, prev - 1)
@@ -771,14 +771,14 @@ export function ChessBoard({
               >
                 &lt;
               </button>
-              <span className="min-w-[6rem] text-center text-xs font-black text-white/60">
+              <span className="min-w-[6rem] text-center text-xs font-black text-slate-600 dark:text-white/60">
                 {viewIndex === -1
                   ? `מהלך ${gameState.history.length}/${gameState.history.length}`
                   : `מהלך ${viewIndex}/${gameState.history.length}`}
               </span>
               <button
                 type="button"
-                className="flex h-8 px-3.5 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-xs font-black text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+                className="flex h-8 px-3.5 items-center justify-center rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs font-black text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200"
                 onClick={() =>
                   setViewIndex((prev) =>
                     prev === -1 ? -1 : prev >= gameState.history.length - 1 ? -1 : prev + 1
@@ -790,21 +790,19 @@ export function ChessBoard({
               </button>
               <button
                 type="button"
-                className="flex h-8 px-2.5 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-xs font-black text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+                className="flex h-8 px-2.5 items-center justify-center rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs font-black text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200"
                 onClick={() => setViewIndex(-1)}
-                title="חזור למשחק"
+                title="סוף המשחק (נוכחי)"
               >
                 &gt;&gt;|
               </button>
             </div>
             {viewIndex !== -1 && (
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-semibold text-amber-400">
-                  צופה בהיסטוריית המהלכים.
-                </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] text-amber-700 dark:text-amber-300 font-bold">מצב צפייה בהיסטוריה</span>
                 <button
                   type="button"
-                  className="text-xs font-black text-indigo-400 underline hover:text-indigo-300 transition duration-200"
+                  className="rounded-lg bg-amber-500 hover:bg-amber-600 px-2.5 py-1 text-xs font-black text-white transition duration-200"
                   onClick={() => setViewIndex(-1)}
                 >
                   חזור למשחק
@@ -817,10 +815,10 @@ export function ChessBoard({
         {(gameState.status !== "playing" || sessionEnd?.kind === "stopped") &&
           (viewBoardAfterEnd || viewIndex !== -1) && (
             <div
-              className="flex flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-3 text-center"
+              className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100/80 dark:bg-white/5 p-3 text-center"
               dir="rtl"
             >
-              <span className="text-sm font-bold text-white">
+              <span className="text-sm font-bold text-slate-800 dark:text-white">
                 המשחק הסתיים ({gameOverHeadline(gameState, mySeat)}). 
               </span>
               <button
@@ -849,7 +847,7 @@ export function ChessBoard({
                 </button>
                 <button
                   type="button"
-                  className="rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-sm font-semibold text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+                  className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-3.5 py-2 text-sm font-semibold text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200"
                   onClick={() => onIntent({ type: "decline_draw" })}
                 >
                   דחה
@@ -860,7 +858,7 @@ export function ChessBoard({
               <button
                 type="button"
                 disabled={!!(drawOfferFrom && drawOfferFrom === mySeat)}
-                className="rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-sm font-semibold text-white/70 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 transition duration-200"
+                className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-3.5 py-2 text-sm font-semibold text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white disabled:cursor-not-allowed disabled:opacity-50 transition duration-200"
                 onClick={() => onIntent({ type: "offer_draw" })}
               >
                 {drawOfferFrom === mySeat ? "הצעה נשלחה" : "הצע תיקו"}
@@ -874,8 +872,8 @@ export function ChessBoard({
               הכנע
             </button>
             {confirmResign ? (
-              <div className="flex w-full flex-wrap items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2">
-                <span className="text-sm font-bold text-rose-200">לוודא שברצונך להיכנע?</span>
+              <div className="flex w-full flex-wrap items-center gap-2 rounded-xl border border-rose-300 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 px-3 py-2">
+                <span className="text-sm font-bold text-rose-700 dark:text-rose-200">לוודא שברצונך להיכנע?</span>
                 <button
                   type="button"
                   className="rounded-lg bg-rose-600 border border-rose-500 px-3 py-1.5 text-sm font-bold text-white hover:bg-rose-500 transition duration-250"
@@ -888,7 +886,7 @@ export function ChessBoard({
                 </button>
                 <button
                   type="button"
-                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm font-bold text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+                  className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-3 py-1.5 text-sm font-bold text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200"
                   onClick={() => setConfirmResign(false)}
                 >
                   ביטול

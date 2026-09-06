@@ -880,10 +880,10 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
 
       <Suspense
         fallback={
-          <div className="flex h-full w-full items-center justify-center bg-slate-950/40 backdrop-blur-md">
+          <div className="flex h-full w-full items-center justify-center bg-slate-50 dark:bg-slate-950/40">
             <div className="flex flex-col items-center gap-3">
               <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent" />
-              <p className="text-sm font-semibold text-white/55">טוען לוח ציור...</p>
+              <p className="text-sm font-semibold text-slate-600 dark:text-white/55">טוען לוח ציור...</p>
             </div>
           </div>
         }

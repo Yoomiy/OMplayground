@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { usernameToSyntheticEmail } from "@/lib/username";
 import { getPlaygroundAccessForUser } from "@/lib/recessAccess";
 import { kidFieldInputClass, kidFieldLabelClass } from "@/lib/fieldStyles";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -56,13 +57,16 @@ export function LoginPage() {
 
   return (
     <div className="mx-auto flex max-w-md flex-col gap-6 px-4 py-20 sm:px-6">
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md sm:p-8">
+      <div className="flex justify-end">
+        <ThemeToggle showLabel />
+      </div>
+      <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white/90 dark:bg-white/5 p-6 shadow-xl dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md sm:p-8">
         <div className="mb-8 text-center">
           <span className="text-5xl leading-none" aria-hidden>
             🛝
           </span>
-          <h1 className="mt-4 text-3xl font-black text-white">ברוכים הבאים</h1>
-          <p className="mt-2 text-sm font-bold text-white/60">
+          <h1 className="mt-4 text-3xl font-black text-slate-900 dark:text-white">ברוכים הבאים</h1>
+          <p className="mt-2 text-sm font-bold text-slate-600 dark:text-white/60">
             התחברו כדי להמשיך למשחק
           </p>
         </div>
@@ -93,7 +97,7 @@ export function LoginPage() {
           </label>
           {error ? (
             <p
-              className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-300"
+              className="rounded-2xl border border-amber-400/40 dark:border-amber-500/30 bg-amber-500/15 dark:bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-800 dark:text-amber-300 shadow-sm"
               role="alert"
             >
               ⚠️ {error}

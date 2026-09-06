@@ -32,32 +32,32 @@ function ThreadRow({
       className={cn(
         "grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border px-3 py-3 text-right transition-all duration-200",
         active
-          ? "border-violet-400 bg-violet-500/20 text-white shadow-[0_0_12px_rgba(139,92,246,0.3)]"
-          : "border-white/10 bg-white/5 text-white/80 hover:bg-white/10 hover:border-white/20"
+          ? "border-violet-400 bg-violet-500/20 text-slate-900 dark:text-white shadow-[0_0_12px_rgba(139,92,246,0.3)]"
+          : "border-slate-200 dark:border-white/10 bg-white/70 dark:bg-white/5 text-slate-700 dark:text-white/80 hover:bg-white hover:border-slate-300 dark:hover:bg-white/10 dark:hover:border-white/20"
       )}
     >
       {thread.partner ? (
         <KidAvatar
           profile={thread.partner}
-          className="size-10 min-h-10 min-w-10 rounded-xl text-sm border border-white/10"
+          className="size-10 min-h-10 min-w-10 rounded-xl text-sm border border-slate-200 dark:border-white/10"
         />
       ) : (
-        <span className="flex size-10 items-center justify-center rounded-xl bg-white/10 text-sm font-black text-white/60">
+        <span className="flex size-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/10 text-sm font-black text-slate-600 dark:text-white/60">
           צוות
         </span>
       )}
       <span className="min-w-0">
         <span className="flex items-center gap-2">
-          <span className={cn("truncate text-sm font-black transition-colors", active ? "text-violet-300" : "text-white")}>
+          <span className={cn("truncate text-sm font-black transition-colors", active ? "text-violet-600 dark:text-violet-300" : "text-slate-900 dark:text-white")}>
             {thread.partner?.full_name ?? thread.lastMessage.from_display_name}
           </span>
           {thread.partner?.grade ? (
-            <span className={cn("shrink-0 text-[11px] font-bold", active ? "text-violet-300/60" : "text-white/40")}>
+            <span className={cn("shrink-0 text-[11px] font-bold", active ? "text-violet-600/70 dark:text-violet-300/60" : "text-slate-400 dark:text-white/40")}>
               כיתה {thread.partner.grade}
             </span>
           ) : null}
         </span>
-        <span className={cn("block truncate text-xs font-semibold mt-0.5", active ? "text-white/70" : "text-white/40")}>
+        <span className={cn("block truncate text-xs font-semibold mt-0.5", active ? "text-slate-600 dark:text-white/70" : "text-slate-500 dark:text-white/40")}>
           {preview}
         </span>
       </span>
@@ -191,9 +191,9 @@ export function InboxPage() {
           {loading ? (
             <p className="text-sm font-bold text-white/50">טוען…</p>
           ) : filteredThreads.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-white/15 bg-white/5 p-4 text-sm font-bold text-white/50 text-center">
+            <div className="rounded-2xl border border-dashed border-slate-300 dark:border-white/15 bg-slate-50/50 dark:bg-white/5 p-4 text-sm font-bold text-slate-500 dark:text-white/50 text-center">
               <p>אין שיחות מתאימות.</p>
-              <Link className="mt-2 inline-block text-violet-400 underline decoration-2 underline-offset-4 hover:text-violet-300" to="/home">
+              <Link className="mt-2 inline-block text-violet-600 underline decoration-2 underline-offset-4 hover:text-violet-800 dark:text-violet-400 dark:hover:text-violet-300" to="/home">
                 מצאו חברים מחוברים 🚀
               </Link>
             </div>
@@ -215,7 +215,7 @@ export function InboxPage() {
 
       <section className={desktopPanelClass("flex min-h-[560px] flex-col p-4")}>
         {err ? (
-          <p className="mb-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm font-bold text-amber-300" role="alert">
+          <p className="mb-3 rounded-xl border border-amber-400/40 dark:border-amber-500/30 bg-amber-500/15 dark:bg-amber-500/10 px-3 py-2 text-sm font-bold text-amber-800 dark:text-amber-300" role="alert">
             {err}
           </p>
         ) : null}
@@ -223,8 +223,8 @@ export function InboxPage() {
         {!active ? (
           <div className="m-auto max-w-sm text-center">
             <span className="text-5xl block mb-3 animate-kid-float">💬</span>
-            <p className="text-lg font-black text-white">בחרו שיחה</p>
-            <p className="mt-1 text-sm font-bold text-white/50">
+            <p className="text-lg font-black text-slate-900 dark:text-white">בחרו שיחה</p>
+            <p className="mt-1 text-sm font-bold text-slate-500 dark:text-white/50">
               או חזרו ללוח כדי למצוא חבר מחובר.
             </p>
             <Link
@@ -236,19 +236,19 @@ export function InboxPage() {
           </div>
         ) : (
           <>
-            <header className="mb-3 flex items-center gap-3 border-b border-white/10 pb-3">
+            <header className="mb-3 flex items-center gap-3 border-b border-slate-200 dark:border-white/10 pb-3">
               {active.partner ? (
                 <KidAvatar
                   profile={active.partner}
-                  className="size-11 min-h-11 min-w-11 rounded-xl text-sm border border-white/10"
+                  className="size-11 min-h-11 min-w-11 rounded-xl text-sm border border-slate-200 dark:border-white/10 shadow-sm"
                 />
               ) : null}
               <div className="min-w-0">
-                <h3 className="truncate text-lg font-black text-white">
+                <h3 className="truncate text-lg font-black text-slate-900 dark:text-white">
                   {active.partner?.full_name ?? active.partnerId.slice(0, 8)}
                 </h3>
                 {active.partner ? (
-                  <p className="text-xs font-bold text-white/50">
+                  <p className="text-xs font-bold text-slate-500 dark:text-white/50">
                     @{active.partner.username} · כיתה {active.partner.grade}
                   </p>
                 ) : null}
@@ -265,7 +265,7 @@ export function InboxPage() {
                       "max-w-[72%] rounded-2xl px-4 py-2.5 text-sm",
                       mine
                         ? "mr-auto rounded-br-sm bg-gradient-to-r from-violet-500 to-indigo-500 text-white shadow-[0_4px_12px_rgba(139,92,246,0.3)]"
-                        : "ml-auto rounded-bl-sm bg-white/10 border border-white/5 text-white"
+                        : "ml-auto rounded-bl-sm bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/5 text-slate-800 dark:text-white"
                     )}
                   >
                     <span className="block whitespace-pre-wrap break-words">
@@ -273,7 +273,7 @@ export function InboxPage() {
                     </span>
                     {!mine && active.partner ? (
                       reportDraft?.messageId === message.id ? (
-                        <div className="mt-3 w-full space-y-2.5 rounded-2xl border border-rose-500/25 bg-rose-500/10 p-3 text-right text-white shadow-md">
+                        <div className="mt-3 w-full space-y-2.5 rounded-2xl border border-rose-300 dark:border-rose-500/25 bg-rose-50 dark:bg-rose-500/10 p-3 text-right text-rose-950 dark:text-white shadow-md">
                           <textarea
                             className={cn(kidFieldInputClass, "min-h-[74px] resize-none text-xs")}
                             maxLength={REPORT_NOTE_MAX_LENGTH}
@@ -284,13 +284,13 @@ export function InboxPage() {
                             placeholder="מה קרה בהודעה הזאת?"
                           />
                           <div className="flex flex-wrap items-center justify-between gap-2">
-                            <span className="text-[10px] font-bold text-white/40">
+                            <span className="text-[10px] font-bold text-rose-700/70 dark:text-white/40">
                               {reportDraft.note.length}/{REPORT_NOTE_MAX_LENGTH}
                             </span>
                             <div className="flex gap-2">
                               <button
                                 type="button"
-                                className="rounded-xl px-3 py-1 text-xs font-bold text-white/60 hover:bg-white/10 transition-colors"
+                                className="rounded-xl px-3 py-1 text-xs font-bold text-rose-700 hover:bg-rose-100 dark:text-white/60 dark:hover:bg-white/10 transition-colors"
                                 disabled={reportBusy}
                                 onClick={() => setReportDraft(null)}
                               >
@@ -310,7 +310,7 @@ export function InboxPage() {
                       ) : (
                         <button
                           type="button"
-                          className="mt-2 block text-[10px] font-black text-rose-400/80 hover:text-rose-300 underline decoration-2 underline-offset-2 transition-colors"
+                          className="mt-2 block text-[10px] font-black text-rose-600 hover:text-rose-800 dark:text-rose-400/80 dark:hover:text-rose-300 underline decoration-2 underline-offset-2 transition-colors"
                           onClick={() =>
                             setReportDraft({
                               messageId: message.id,
@@ -328,7 +328,7 @@ export function InboxPage() {
               })}
             </ul>
 
-            <div className="mt-3 flex gap-2 border-t border-white/10 pt-3">
+            <div className="mt-3 flex gap-2 border-t border-slate-200 dark:border-white/10 pt-3">
               <input
                 className={cn(kidFieldInputClass, "min-h-11 flex-1")}
                 maxLength={300}
@@ -356,31 +356,31 @@ export function InboxPage() {
       </section>
 
       <aside className={desktopPanelClass("hidden p-4 xl:block")}>
-        <h2 className="text-base font-black text-white">פרטי שיחה</h2>
+        <h2 className="text-base font-black text-slate-900 dark:text-white">פרטי שיחה</h2>
         {active?.partner ? (
           <div className="mt-4 space-y-4">
             <KidAvatar
               profile={active.partner}
-              className="size-24 min-h-24 min-w-24 rounded-2xl text-3xl border-2 border-white/20"
+              className="size-24 min-h-24 min-w-24 rounded-2xl text-3xl border-2 border-slate-200 dark:border-white/20 shadow-sm"
             />
             <div>
-              <p className="text-lg font-black text-white">{active.partner.full_name}</p>
-              <p className="text-sm font-bold text-white/50">
+              <p className="text-lg font-black text-slate-900 dark:text-white">{active.partner.full_name}</p>
+              <p className="text-sm font-bold text-slate-500 dark:text-white/50">
                 @{active.partner.username}
               </p>
-              <p className="mt-1 text-sm font-bold text-white/50">
+              <p className="mt-1 text-sm font-bold text-slate-500 dark:text-white/50">
                 כיתה {active.partner.grade}
               </p>
             </div>
             <Link
               to={`/profile/${active.partner.id}`}
-              className="mt-4 w-full flex items-center justify-center rounded-2xl bg-white/10 border border-white/20 py-3 text-xs font-black text-white hover:bg-white/15 hover:-translate-y-0.5 transition-all duration-200"
+              className="mt-4 w-full flex items-center justify-center rounded-2xl bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/20 py-3 text-xs font-black text-slate-800 dark:text-white hover:bg-slate-200 dark:hover:bg-white/15 hover:-translate-y-0.5 transition-all duration-200"
             >
               צפה בפרופיל 👤
             </Link>
           </div>
         ) : (
-          <p className="mt-4 text-sm font-bold text-white/40">
+          <p className="mt-4 text-sm font-bold text-slate-500 dark:text-white/40">
             בחרו שיחה כדי לראות פרטים.
           </p>
         )}

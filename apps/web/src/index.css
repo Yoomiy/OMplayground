@@ -18,10 +18,25 @@
 
   html {
     @apply antialiased;
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
   }
 
   body {
-    @apply min-h-screen;
+    @apply min-h-screen transition-colors duration-200;
+    color: #1e293b;
+    background-color: #f8fafc;
+    background-image:
+      radial-gradient(ellipse at 20% 50%, rgba(139, 92, 246, 0.10) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(56, 189, 248, 0.10) 0%, transparent 50%),
+      radial-gradient(ellipse at 60% 80%, rgba(244, 114, 182, 0.08) 0%, transparent 50%),
+      linear-gradient(160deg, #f8faff 0%, #f1f5f9 50%, #e2e8f0 100%);
+  }
+
+  html.dark body {
     color: #f1f5f9;
     background-color: #0f0a1e;
     background-image:
@@ -32,6 +47,11 @@
   }
 
   select option {
+    background-color: #ffffff;
+    color: #0f172a;
+  }
+
+  html.dark select option {
     background-color: #0f0a1e;
     color: #ffffff;
   }
@@ -136,3 +156,219 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
   }
 }
+
+/* ==========================================================================
+   Light Theme System Overrides
+   ========================================================================== */
+
+/* Glass surfaces in light mode */
+html:not(.dark) .bg-white\/5 {
+  background-color: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+}
+
+html:not(.dark) .bg-white\/10 {
+  background-color: rgba(255, 255, 255, 0.95);
+}
+
+html:not(.dark) .bg-white\/15,
+html:not(.dark) .bg-white\/20 {
+  background-color: #ffffff;
+}
+
+/* Preserve frosted badges inside gradients */
+html:not(.dark) [class*="bg-gradient-"] .bg-white\/10 {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+}
+html:not(.dark) [class*="bg-gradient-"] .bg-white\/15 {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+html:not(.dark) [class*="bg-gradient-"] .bg-white\/20 {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+}
+html:not(.dark) [class*="bg-gradient-"] .bg-white\/25 {
+  background-color: rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+}
+html:not(.dark) [class*="bg-gradient-"] .bg-white\/30 {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+  color: #ffffff !important;
+}
+
+html:not(.dark) .hover\:bg-white\/5:hover {
+  background-color: rgba(248, 250, 252, 0.95);
+}
+
+html:not(.dark) .hover\:bg-white\/10:hover {
+  background-color: rgba(241, 245, 249, 0.95);
+}
+
+html:not(.dark) .hover\:bg-white\/15:hover,
+html:not(.dark) .hover\:bg-white\/20:hover {
+  background-color: #ffffff;
+}
+
+html:not(.dark) .border-white\/10 {
+  border-color: rgba(226, 232, 240, 0.9);
+}
+
+html:not(.dark) .border-white\/15 {
+  border-color: rgba(203, 213, 225, 0.9);
+}
+
+html:not(.dark) .border-white\/20 {
+  border-color: rgba(203, 213, 225, 0.95);
+}
+
+html:not(.dark) .border-white\/30 {
+  border-color: rgba(148, 163, 184, 0.8);
+}
+
+html:not(.dark) .divide-white\/10 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(226, 232, 240, 0.9);
+}
+
+html:not(.dark) .divide-white\/5 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(241, 245, 249, 0.9);
+}
+
+/* Modal and dialog cards */
+html:not(.dark) [class*="bg-[#150d32]"] {
+  background-color: rgba(255, 255, 255, 0.98) !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.12) !important;
+}
+
+html:not(.dark) dialog#feedback-modal-dialog {
+  background-color: rgba(255, 255, 255, 0.98) !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.15) !important;
+}
+
+html:not(.dark) dialog textarea,
+html:not(.dark) dialog input:not([type="checkbox"]):not([type="radio"]) {
+  background-color: #ffffff;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+/* Light theme text mappings */
+/* Light theme text mappings for uncolored surfaces */
+html:not(.dark) h1.text-white,
+html:not(.dark) h2.text-white,
+html:not(.dark) h3.text-white,
+html:not(.dark) h4.text-white {
+  color: #0f172a;
+}
+
+/* Base text-white mapping: only when not on saturated buttons or dark containers */
+html:not(.dark) .text-white:not([class*="bg-gradient-"]):not([class*="bg-violet-500"]):not([class*="bg-violet-600"]):not([class*="bg-indigo-500"]):not([class*="bg-indigo-600"]):not([class*="bg-emerald-500"]):not([class*="bg-emerald-600"]):not([class*="bg-rose-500"]):not([class*="bg-rose-600"]):not([class*="bg-red-500"]):not([class*="bg-red-600"]):not([class*="bg-sky-500"]):not([class*="bg-sky-600"]):not([class*="bg-blue-500"]):not([class*="bg-blue-600"]):not([class*="bg-amber-500"]):not([class*="bg-amber-600"]):not(.bg-slate-900):not(.bg-slate-950):not(.bg-black) {
+  color: #0f172a;
+}
+
+/* Opacity variants mapped to high-contrast slate text */
+html:not(.dark) .text-white\/95,
+html:not(.dark) .text-white\/90 {
+  color: #1e293b;
+}
+html:not(.dark) .text-white\/80 {
+  color: #334155;
+}
+html:not(.dark) .text-white\/70,
+html:not(.dark) .text-white\/65 {
+  color: #475569;
+}
+html:not(.dark) .text-white\/60,
+html:not(.dark) .text-white\/55 {
+  color: #475569;
+}
+html:not(.dark) .text-white\/50,
+html:not(.dark) .text-white\/45 {
+  color: #64748b;
+}
+html:not(.dark) .text-white\/40,
+html:not(.dark) .text-white\/35 {
+  color: #64748b;
+}
+html:not(.dark) .text-white\/30,
+html:not(.dark) .text-white\/20 {
+  color: #94a3b8;
+}
+
+/* In light mode, map neutral button hover states so text doesn't turn white */
+html:not(.dark) .hover\:text-white:hover:not([class*="bg-gradient-"]):not([class*="bg-violet-600"]):not([class*="bg-indigo-600"]):not([class*="bg-emerald-600"]):not([class*="bg-rose-600"]):not([class*="bg-sky-600"]):not([class*="bg-blue-600"]) {
+  color: #0f172a !important;
+}
+html:not(.dark) .hover\:bg-white\/5:hover,
+html:not(.dark) .hover\:bg-white\/10:hover,
+html:not(.dark) .hover\:bg-white\/15:hover,
+html:not(.dark) .hover\:bg-white\/20:hover {
+  background-color: rgba(226, 232, 240, 0.9) !important;
+}
+
+/* In light mode, turn dark translucent patches into soft slate cards */
+html:not(.dark) .bg-black\/20 {
+  background-color: rgba(241, 245, 249, 0.9) !important;
+}
+html:not(.dark) .bg-black\/30 {
+  background-color: rgba(226, 232, 240, 0.85) !important;
+}
+
+/* In light mode, ensure pastel text on tinted cards has proper contrast */
+html:not(.dark) [class*="bg-amber-500/"] .text-amber-300,
+html:not(.dark) [class*="bg-amber-500/"] .text-amber-200 {
+  color: #92400e !important;
+}
+html:not(.dark) [class*="bg-emerald-500/"] .text-emerald-300,
+html:not(.dark) [class*="bg-emerald-500/"] .text-emerald-200 {
+  color: #065f46 !important;
+}
+html:not(.dark) [class*="bg-rose-500/"] .text-rose-300,
+html:not(.dark) [class*="bg-rose-500/"] .text-rose-200 {
+  color: #9f1239 !important;
+}
+html:not(.dark) [class*="bg-indigo-500/"] .text-indigo-300,
+html:not(.dark) [class*="bg-indigo-500/"] .text-indigo-200 {
+  color: #3730a3 !important;
+}
+html:not(.dark) [class*="bg-violet-500/"] .text-violet-300,
+html:not(.dark) [class*="bg-violet-500/"] .text-violet-200 {
+  color: #5b21b6 !important;
+}
+html:not(.dark) [class*="bg-sky-500/"] .text-sky-300,
+html:not(.dark) [class*="bg-sky-500/"] .text-sky-200 {
+  color: #075985 !important;
+}
+
+/* Saturated buttons strictly retain pure white text */
+html:not(.dark) [class*="bg-gradient-"] .text-white,
+html:not(.dark) .text-white[class*="bg-gradient-"],
+html:not(.dark) .text-white.bg-indigo-600,
+html:not(.dark) .text-white.bg-violet-600,
+html:not(.dark) .text-white.bg-emerald-600,
+html:not(.dark) .text-white.bg-rose-500,
+html:not(.dark) .text-white.bg-rose-600,
+html:not(.dark) .text-white.bg-amber-500 {
+  color: #ffffff !important;
+}
+
+/* Soften dark glow shadows in light mode */
+html:not(.dark) [class*="shadow-[0_4px_24px_rgba(0,0,0"],
+html:not(.dark) [class*="shadow-[0_8px_32px_rgba(0,0,0"],
+html:not(.dark) [class*="shadow-[0_12px_32px_rgba(0,0,0"] {
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04) !important;
+}
+
+/* Light scrollbars */
+html:not(.dark) .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.15);
+}
+html:not(.dark) .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 23, 42, 0.28);
+}
+

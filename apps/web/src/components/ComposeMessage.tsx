@@ -52,23 +52,26 @@ export function ComposeMessage(props: ComposeMessageProps) {
       }}
     >
       <div
-        className="w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-[#150d32]/95 shadow-2xl"
+        className="w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#150d32]/95 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="border-b border-white/10 bg-white/5 px-5 py-4">
+        <div className="border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-5 py-4">
           <h3
             id="compose-msg-title"
-            className="text-lg font-black text-white"
+            className="text-lg font-black text-slate-900 dark:text-white"
           >
             הודעה ל־{props.toDisplayName}
           </h3>
-          <p className="mt-1 text-xs font-bold text-white/50">עד 300 תווים</p>
+          <p className="mt-1 text-xs font-bold text-slate-500 dark:text-white/50">עד 300 תווים</p>
         </div>
         <div className="p-5">
           <textarea
             className={cn(
-              "min-h-[7.5rem] w-full resize-none rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-base font-bold text-white outline-none transition placeholder:text-white/40",
-              "focus:border-violet-400 focus:ring-4 focus:ring-violet-500/20"
+              "min-h-[7.5rem] w-full resize-none rounded-2xl px-4 py-3 text-base font-bold outline-none transition",
+              "border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 shadow-sm",
+              "focus:border-violet-500 focus:ring-4 focus:ring-violet-500/15",
+              "dark:border-white/10 dark:bg-white/10 dark:text-white dark:placeholder:text-white/40 dark:shadow-none",
+              "dark:focus:border-violet-400 dark:focus:ring-violet-500/20"
             )}
             maxLength={300}
             value={text}
@@ -82,7 +85,7 @@ export function ComposeMessage(props: ComposeMessageProps) {
               }
             }}
           />
-          <div className="mt-2 flex items-center justify-between text-xs font-bold text-white/40">
+          <div className="mt-2 flex items-center justify-between text-xs font-bold text-slate-400 dark:text-white/40">
             <span>{text.length} / 300</span>
             <span>Enter לשליחה</span>
           </div>
@@ -96,7 +99,7 @@ export function ComposeMessage(props: ComposeMessageProps) {
           ) : null}
           <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <button
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-black text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-5 py-2.5 text-sm font-black text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200"
               type="button"
               onClick={props.onClose}
             >

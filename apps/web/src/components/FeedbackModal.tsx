@@ -171,9 +171,9 @@ export function FeedbackModal({ onClose }: Props) {
       ref={dialogRef}
       {...({ closedby: "any" } as any)}
       id="feedback-modal-dialog"
-      className="rounded-3xl p-6 max-w-md w-full border border-white/10 bg-[#150d32]/95 text-white
-                 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-md
-                 backdrop:bg-black/60 backdrop:backdrop-blur-sm animate-slide-up outline-none"
+      className="rounded-3xl p-6 max-w-md w-full border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#150d32]/95 text-slate-900 dark:text-white
+                 shadow-2xl backdrop-blur-md
+                 backdrop:bg-black/50 backdrop:backdrop-blur-sm animate-slide-up outline-none"
       aria-labelledby="feedback-title"
     >
       <h2 id="feedback-title" className="text-xl font-black mb-4 text-right flex items-center justify-between">
@@ -181,7 +181,7 @@ export function FeedbackModal({ onClose }: Props) {
         <button
           type="button"
           onClick={() => dialogRef.current?.close()}
-          className="text-white/40 hover:text-white transition duration-200"
+          className="text-slate-400 hover:text-slate-700 dark:text-white/40 dark:hover:text-white transition duration-200"
           aria-label="סגור"
         >
           ✕
@@ -191,21 +191,21 @@ export function FeedbackModal({ onClose }: Props) {
       {status === "success" ? (
         <div className="text-center py-8">
           <div className="text-4xl mb-3">✅</div>
-          <p className="text-lg font-black text-emerald-400">
+          <p className="text-lg font-black text-emerald-500 dark:text-emerald-400">
             תודה! המשוב נשלח בהצלחה.
           </p>
-          <p className="text-xs text-white/50 mt-1">
+          <p className="text-xs text-slate-500 dark:text-white/50 mt-1">
             הקבוצה מעריכה את העזרה שלך בשיפור המשחק!
           </p>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4" dir="rtl">
           <div>
-            <label className="block text-xs font-bold text-white/70 mb-1">סוג המשוב:</label>
+            <label className="block text-xs font-bold text-slate-700 dark:text-white/70 mb-1">סוג המשוב:</label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full rounded-2xl border border-white/10 p-3 bg-[#1e1545]/90 text-white focus:outline-none focus:border-violet-500 transition duration-200"
+              className="w-full rounded-2xl border border-slate-300 dark:border-white/10 p-3 bg-white dark:bg-[#1e1545]/90 text-slate-900 dark:text-white focus:outline-none focus:border-violet-500 transition duration-200"
             >
               <option value="bug">תקלה / באג 🐛</option>
               <option value="suggestion">הצעה לשיפור 💡</option>
@@ -214,7 +214,7 @@ export function FeedbackModal({ onClose }: Props) {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-white/70 mb-1">
+            <label className="block text-xs font-bold text-slate-700 dark:text-white/70 mb-1">
               מה קרה? (פרט ככל הניתן):
             </label>
             <textarea
@@ -223,7 +223,7 @@ export function FeedbackModal({ onClose }: Props) {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="למשל: לא הצלחתי לשבור בלוקים במשחק הווקסל או שהכפתור לא עבד..."
-              className="w-full rounded-2xl border border-white/10 p-3 bg-white/5 text-white placeholder-white/30 focus:outline-none focus:border-violet-500 transition duration-200 resize-none text-sm"
+              className="w-full rounded-2xl border border-slate-300 dark:border-white/10 p-3 bg-white dark:bg-white/5 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder-white/30 focus:outline-none focus:border-violet-500 transition duration-200 resize-none text-sm"
             />
           </div>
 
@@ -238,7 +238,7 @@ export function FeedbackModal({ onClose }: Props) {
               />
               <label
                 htmlFor="feedback-include-logs"
-                className="text-xs font-bold text-white/50 select-none cursor-pointer"
+                className="text-xs font-bold text-slate-600 dark:text-white/50 select-none cursor-pointer"
               >
                 צרף נתוני מערכת ויומן פעולות (מסייע בפתרון תקלות)
               </label>
@@ -251,11 +251,11 @@ export function FeedbackModal({ onClose }: Props) {
                 checked={fullScreenshot}
                 disabled={capturingScreen}
                 onChange={(e) => handleFullScreenshotToggle(e.target.checked)}
-                className="w-4 h-4 rounded border-white/10 bg-white/5 text-violet-500 focus:ring-violet-500 focus:ring-offset-[#150d32]"
+                className="w-4 h-4 rounded border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 text-violet-500 focus:ring-violet-500 focus:ring-offset-white dark:focus:ring-offset-[#150d32]"
               />
               <label
                 htmlFor="feedback-full-screenshot"
-                className="text-xs font-bold text-white/50 select-none cursor-pointer"
+                className="text-xs font-bold text-slate-600 dark:text-white/50 select-none cursor-pointer"
               >
                 {capturingScreen ? "מצלם מסך..." : "צרף צילום מסך של כל החלון (מצריך אישור)"}
               </label>
@@ -264,7 +264,7 @@ export function FeedbackModal({ onClose }: Props) {
 
           {screenshot && (
             <div>
-              <span className="block text-xs font-bold text-white/70 mb-1">צילום מסך מצורף:</span>
+              <span className="block text-xs font-bold text-slate-700 dark:text-white/70 mb-1">צילום מסך מצורף:</span>
               <div className="relative border border-white/10 rounded-2xl overflow-hidden aspect-video bg-black/40">
                 <img
                   src={screenshot}
@@ -283,7 +283,7 @@ export function FeedbackModal({ onClose }: Props) {
             <button
               type="button"
               onClick={() => dialogRef.current?.close()}
-              className="flex-1 rounded-2xl border border-white/10 bg-white/5 py-3 text-sm font-black text-white/70 hover:bg-white/10 hover:text-white transition duration-200"
+              className="flex-1 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 py-3 text-sm font-black text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200"
             >
               ביטול
             </button>

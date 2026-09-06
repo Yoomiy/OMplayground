@@ -150,12 +150,12 @@ export function PublicProfilePage() {
     return (
       <KidDesktopShell title="פרופיל לא זמין" subtitle="שגיאה בטעינת הפרופיל">
         <div className="mx-auto max-w-lg p-6 flex flex-col gap-4">
-          <p className="rounded-2xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-300">
+          <p className="rounded-2xl border border-amber-300 dark:border-amber-400/40 bg-amber-50 dark:bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-800 dark:text-amber-300">
             {err ?? "הפרופיל לא זמין. ייתכן שהוא חסום או לא באותו מגדר."}
           </p>
           <Link
             to="/home"
-            className="w-full flex items-center justify-center rounded-2xl bg-white/10 border border-white/20 py-3 text-xs font-black text-white hover:bg-white/15 hover:-translate-y-0.5 transition-all duration-200"
+            className="w-full flex items-center justify-center rounded-2xl bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/20 py-3 text-xs font-black text-slate-800 dark:text-white hover:bg-slate-200 dark:hover:bg-white/15 hover:-translate-y-0.5 transition-all duration-200 shadow-sm"
           >
             חזרה ללוח המשחקים 🎮
           </Link>
@@ -175,31 +175,31 @@ export function PublicProfilePage() {
           <KidAvatar
             profile={profile}
             presets={presets}
-            className="mx-auto size-28 min-h-[112px] min-w-[112px] rounded-3xl text-5xl border-4 border-white/20 shadow-lg"
+            className="mx-auto size-28 min-h-[112px] min-w-[112px] rounded-3xl text-5xl border-4 border-slate-200 dark:border-white/20 shadow-lg"
           />
-          <h1 className="mt-4 text-2xl font-black text-white leading-tight">
+          <h1 className="mt-4 text-2xl font-black text-slate-900 dark:text-white leading-tight">
             {profile.full_name}
           </h1>
-          <p className="mt-1 text-xs font-bold text-white/50">
+          <p className="mt-1 text-xs font-bold text-slate-500 dark:text-white/50">
             @{profile.username} · כיתה {profile.grade}
           </p>
         </header>
 
         {err && (
-          <p className="rounded-2xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-300 shadow-sm" role="alert">
+          <p className="rounded-2xl border border-amber-300 dark:border-amber-400/40 bg-amber-50 dark:bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-800 dark:text-amber-300 shadow-sm" role="alert">
             ⚠️ {err}
           </p>
         )}
         {msg && (
-          <p className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm font-bold text-emerald-400 shadow-sm" role="alert">
+          <p className="rounded-2xl border border-emerald-300 dark:border-emerald-400/30 bg-emerald-50 dark:bg-emerald-500/10 px-4 py-3 text-sm font-bold text-emerald-800 dark:text-emerald-400 shadow-sm" role="alert">
             ✅ {msg}
           </p>
         )}
 
         <section className={desktopPanelClass("p-5")}>
-          <h2 className="text-base font-black text-white">הזמן למשחק</h2>
+          <h2 className="text-base font-black text-slate-900 dark:text-white">הזמן למשחק</h2>
           {catalog.length === 0 ? (
-            <p className="mt-3 text-xs font-bold text-white/50">אין משחקים זמינים לאתגר.</p>
+            <p className="mt-3 text-xs font-bold text-slate-500 dark:text-white/50">אין משחקים זמינים לאתגר.</p>
           ) : (
             <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
               {catalog.map((game) => (
@@ -211,7 +211,7 @@ export function PublicProfilePage() {
                     className="w-full flex items-center justify-between rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 border border-violet-400/50 py-3 px-4 text-xs font-black text-white shadow-[0_4px_12px_rgba(139,92,246,0.3)] hover:shadow-[0_4px_16px_rgba(139,92,246,0.5)] hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50"
                   >
                     <span>{game.name_he}</span>
-                    <span className="rounded-lg bg-white/20 px-2 py-0.5 text-[10px] font-black">
+                    <span className="rounded-lg bg-white/20 px-2 py-0.5 text-[10px] font-black text-white">
                       {busy === `challenge:${game.id}` ? "שולח…" : "אתגר ⚔️"}
                     </span>
                   </button>
@@ -224,11 +224,11 @@ export function PublicProfilePage() {
 
       <aside className="space-y-4 w-full">
         <section className={desktopPanelClass("p-5")}>
-          <h2 className="text-base font-black text-white">פעולות</h2>
+          <h2 className="text-base font-black text-slate-900 dark:text-white">פעולות</h2>
           <div className="mt-4 flex flex-col gap-2.5">
             <button
               type="button"
-              className="w-full rounded-2xl bg-white/10 border border-white/20 hover:bg-white/15 py-3 text-xs font-black text-white hover:-translate-y-0.5 transition-all duration-200"
+              className="w-full rounded-2xl bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/20 hover:bg-slate-200 dark:hover:bg-white/15 py-3 text-xs font-black text-slate-800 dark:text-white hover:-translate-y-0.5 transition-all duration-200 shadow-sm"
               disabled={busy !== null}
               onClick={() => setComposing(true)}
             >
@@ -242,7 +242,7 @@ export function PublicProfilePage() {
             </Link>
             <button
               type="button"
-              className="w-full rounded-2xl bg-rose-500/10 border border-rose-400/30 hover:bg-rose-500 hover:text-white py-3 text-xs font-black text-rose-400 hover:-translate-y-0.5 transition-all duration-200"
+              className="w-full rounded-2xl bg-rose-50 dark:bg-rose-500/10 border border-rose-300 dark:border-rose-400/30 hover:bg-rose-500 hover:text-white py-3 text-xs font-black text-rose-600 dark:text-rose-400 hover:-translate-y-0.5 transition-all duration-200 shadow-sm"
               disabled={busy !== null}
               onClick={() => void block()}
             >

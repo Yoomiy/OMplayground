@@ -17,6 +17,7 @@ import {
 } from "@/components/ClassroomPresentationPublisher";
 import { ClassroomPresentationReceiver } from "@/components/ClassroomPresentationReceiver";
 import { clearClassroomLibrary } from "@/lib/classroomMediaLibrary";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 function gameServerUrl(): string {
   const fromEnv = import.meta.env.VITE_GAME_SERVER_URL?.trim();
@@ -1814,10 +1815,10 @@ export function ClassroomPage() {
 
   if (loadingSession) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-white">
         <div className="flex flex-col items-center gap-3">
           <div className="size-10 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent" />
-          <p className="text-sm font-bold text-slate-300">טוען נתוני כיתה וירטואלית…</p>
+          <p className="text-sm font-bold text-slate-600 dark:text-slate-300">טוען נתוני כיתה וירטואלית…</p>
         </div>
       </div>
     );
@@ -1825,16 +1826,16 @@ export function ClassroomPage() {
 
   if (sessionError) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950 p-6">
-        <div className="max-w-md rounded-2xl border border-rose-500/30 bg-rose-500/10 p-6 text-center shadow-2xl backdrop-blur-md">
-          <AlertCircle className="mx-auto mb-3 size-12 text-rose-400" />
-          <h2 className="text-xl font-black text-rose-200">לא ניתן להתחבר לכיתה</h2>
-          <p className="mt-2 text-sm text-rose-300/80">{sessionError}</p>
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 p-6">
+        <div className="max-w-md rounded-2xl border border-rose-300 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 p-6 text-center shadow-2xl backdrop-blur-md">
+          <AlertCircle className="mx-auto mb-3 size-12 text-rose-600 dark:text-rose-400" />
+          <h2 className="text-xl font-black text-rose-800 dark:text-rose-200">לא ניתן להתחבר לכיתה</h2>
+          <p className="mt-2 text-sm text-rose-700/90 dark:text-rose-300/80">{sessionError}</p>
           <button
-            className="mt-6 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 font-bold text-white text-xs"
+            className="mt-6 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 font-bold text-white text-xs shadow-sm"
             onClick={() => navigate("/home")}
           >
-            חזרה לחמש
+            חזרה ללוח המשחקים
           </button>
         </div>
       </div>
@@ -1868,7 +1869,7 @@ export function ClassroomPage() {
   };
 
   return (
-    <div className="min-h-screen h-screen bg-slate-950 text-slate-100 flex flex-col font-sans overflow-hidden" dir="rtl">
+    <div className="min-h-screen h-screen bg-slate-100 text-slate-800 dark:bg-slate-950 dark:text-slate-100 flex flex-col font-sans overflow-hidden" dir="rtl">
       <style>{`
         #feedback-trigger-btn,
         button#feedback-trigger-btn {
@@ -1877,34 +1878,34 @@ export function ClassroomPage() {
       `}</style>
       
       {/* HEADER BAR */}
-      <header className="flex items-center justify-between border-b border-slate-800/80 bg-slate-900/60 px-6 py-2.5 backdrop-blur-md shrink-0">
+      <header className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/60 px-6 py-2.5 backdrop-blur-md shrink-0 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="size-9 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+          <div className="size-9 rounded-xl bg-indigo-50 border border-indigo-200 dark:bg-indigo-600/20 dark:border-indigo-500/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-sm">
             <Radio className="size-4 animate-pulse" />
           </div>
           <div>
-            <h1 className="text-base font-black text-white flex items-center gap-2">
+            <h1 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
               {sessionData?.title || "כיתה וירטואלית"}
               {isHost && (
-                <span className="rounded-md bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 text-xs font-bold text-amber-300 flex items-center gap-1">
+                <span className="rounded-md bg-amber-100 dark:bg-amber-500/20 border border-amber-300 dark:border-amber-500/30 px-2 py-0.5 text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1">
                   <Crown className="size-3" /> מורה 
                 </span>
               )}
               {isStealthAdmin && (
-                <span className="rounded-md bg-indigo-500/20 border border-indigo-500/30 px-2 py-0.5 text-xs font-bold text-indigo-300">
+                <span className="rounded-md bg-indigo-100 dark:bg-indigo-500/20 border border-indigo-300 dark:border-indigo-500/30 px-2 py-0.5 text-xs font-bold text-indigo-800 dark:text-indigo-300">
                   🕵️ צופה בסתר
                 </span>
               )}
             </h1>
-            <p className="text-xs font-semibold text-slate-400">
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
               מורה: {sessionData?.teacher_name}
             </p>
           </div>
         </div>
 
         {recentReaction && (
-          <div className="flex items-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-xs font-bold text-indigo-300 animate-bounce">
-            <Sparkles className="size-3.5 text-indigo-400" />
+          <div className="flex items-center gap-2 rounded-xl border border-indigo-300 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 px-3 py-1 text-xs font-bold text-indigo-800 dark:text-indigo-300 animate-bounce shadow-sm">
+            <Sparkles className="size-3.5 text-indigo-500 dark:text-indigo-400" />
             <span>{recentReaction.name}: {recentReaction.emoji}</span>
           </div>
         )}
@@ -1915,10 +1916,10 @@ export function ClassroomPage() {
             <button
               onClick={toggleBoardVisibility}
               className={cn(
-                "rounded-xl border px-3 py-1.5 font-bold text-xs flex items-center gap-1.5 transition duration-200",
+                "rounded-xl border px-3 py-1.5 font-bold text-xs flex items-center gap-1.5 transition duration-200 shadow-sm",
                 showBoard
-                  ? "bg-indigo-600/80 border-indigo-500 text-white"
-                  : "border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-400"
+                  ? "bg-indigo-600/90 border-indigo-500 text-white"
+                  : "border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-400"
               )}
             >
               {showBoard ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
@@ -1931,10 +1932,10 @@ export function ClassroomPage() {
               onClick={() => void toggleMediaBoardVisibility()}
               disabled={!presentationActive && Boolean(screenShareParticipant)}
               className={cn(
-                "rounded-xl border px-3 py-1.5 font-bold text-xs flex items-center gap-1.5 transition duration-200",
+                "rounded-xl border px-3 py-1.5 font-bold text-xs flex items-center gap-1.5 transition duration-200 shadow-sm",
                 presentationActive
-                  ? "bg-fuchsia-600/80 border-fuchsia-500 text-white"
-                  : "border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-300 disabled:cursor-not-allowed disabled:opacity-40"
+                  ? "bg-fuchsia-600/90 border-fuchsia-500 text-white"
+                  : "border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 disabled:cursor-not-allowed disabled:opacity-40"
               )}
             >
               {presentationActive ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
@@ -1946,7 +1947,7 @@ export function ClassroomPage() {
             <button
               onClick={() => presentationPublisherRef.current?.openMaterialPicker()}
               disabled={mediaUploadStatus?.state === "preparing"}
-              className="rounded-xl border border-fuchsia-500/50 bg-fuchsia-500/10 px-3 py-1.5 text-xs font-bold text-fuchsia-100 transition hover:bg-fuchsia-500/20 flex items-center gap-1.5 disabled:cursor-wait disabled:opacity-60"
+              className="rounded-xl border border-fuchsia-300 dark:border-fuchsia-500/50 bg-fuchsia-50 dark:bg-fuchsia-500/10 px-3 py-1.5 text-xs font-bold text-fuchsia-800 dark:text-fuchsia-100 transition hover:bg-fuchsia-100 dark:hover:bg-fuchsia-500/20 flex items-center gap-1.5 disabled:cursor-wait disabled:opacity-60 shadow-sm"
               title="הוספת קובץ לספריית חומרי המדיה המקומית"
             >
               <Upload className="size-3.5" /> הוסף חומרים ללוח המדיה
@@ -1954,7 +1955,7 @@ export function ClassroomPage() {
           )}
 
           {isHost && hasPresentationPane && showBoard && (
-            <label className="hidden items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/60 px-3 py-1.5 text-xs font-bold text-slate-200 lg:flex">
+            <label className="hidden items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/60 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 lg:flex shadow-sm">
               גודל מצגת
               <input
                 type="range"
@@ -1975,10 +1976,10 @@ export function ClassroomPage() {
             <button
               onClick={() => setFocusMode(!focusMode)}
               className={cn(
-                "rounded-xl border px-3 py-1.5 font-bold text-xs flex items-center gap-1.5 transition duration-200",
+                "rounded-xl border px-3 py-1.5 font-bold text-xs flex items-center gap-1.5 transition duration-200 shadow-sm",
                 focusMode
                   ? "bg-indigo-600 border-indigo-500 text-white"
-                  : "border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-300"
+                  : "border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
               )}
             >
               {focusMode ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
@@ -1989,17 +1990,19 @@ export function ClassroomPage() {
           {isHost && (
             <button
               onClick={copyInviteLink}
-              className="rounded-xl border border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-200 font-bold text-xs px-3 py-1.5 flex items-center gap-1.5"
+              className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs px-3 py-1.5 flex items-center gap-1.5 shadow-sm"
             >
-              {inviteCopied ? <Check className="size-3.5 text-emerald-400" /> : <Copy className="size-3.5" />}
+              {inviteCopied ? <Check className="size-3.5 text-emerald-600 dark:text-emerald-400" /> : <Copy className="size-3.5" />}
               {inviteCopied ? "קישור הועתק!" : "העתק קישור להזמנה"}
             </button>
           )}
 
+          <ThemeToggle />
+
           {connState === "connected" && (
             <button
               onClick={() => void leaveClassroom()}
-              className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs px-3 py-1.5 flex items-center gap-1.5"
+              className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs px-3 py-1.5 flex items-center gap-1.5 shadow-sm"
             >
               <LogOut className="size-3.5" />
               יציאה מהכיתה
@@ -2009,10 +2012,10 @@ export function ClassroomPage() {
       </header>
 
       {connState === "connected" && connError && (
-        <div className="fixed left-4 top-20 z-50 flex max-w-md items-center gap-2 rounded-xl border border-rose-500/40 bg-slate-950/95 px-3 py-2 text-xs font-bold text-rose-200 shadow-xl" role="alert">
-          <AlertCircle className="size-4 shrink-0 text-rose-400" />
+        <div className="fixed left-4 top-20 z-50 flex max-w-md items-center gap-2 rounded-xl border border-rose-300 dark:border-rose-500/40 bg-white/95 dark:bg-slate-950/95 px-3 py-2 text-xs font-bold text-rose-700 dark:text-rose-200 shadow-xl backdrop-blur-md" role="alert">
+          <AlertCircle className="size-4 shrink-0 text-rose-500 dark:text-rose-400" />
           <p>{connError}</p>
-          <button onClick={() => setConnError(null)} className="mr-1 rounded px-1 text-rose-300 hover:bg-rose-500/20" aria-label="סגור הודעת שגיאה">×</button>
+          <button onClick={() => setConnError(null)} className="mr-1 rounded px-1 text-rose-600 hover:bg-rose-100 dark:text-rose-300 dark:hover:bg-rose-500/20" aria-label="סגור הודעת שגיאה">×</button>
         </div>
       )}
 
@@ -2021,24 +2024,24 @@ export function ClassroomPage() {
           role="status"
           aria-live="polite"
           className={cn(
-            "fixed left-4 z-50 flex max-w-md items-center gap-2 rounded-xl border bg-slate-950/95 px-3.5 py-2.5 text-xs font-bold shadow-xl transition-all",
+            "fixed left-4 z-50 flex max-w-md items-center gap-2 rounded-xl border bg-white/95 dark:bg-slate-950/95 px-3.5 py-2.5 text-xs font-bold shadow-xl transition-all backdrop-blur-md",
             connError ? "top-32" : "top-20",
             classroomNotice.type === "warn"
-              ? "border-amber-500/50 text-amber-200"
+              ? "border-amber-300 dark:border-amber-500/50 text-amber-800 dark:text-amber-200"
               : classroomNotice.type === "success"
-              ? "border-emerald-500/50 text-emerald-200"
-              : "border-indigo-500/50 text-indigo-200"
+              ? "border-emerald-300 dark:border-emerald-500/50 text-emerald-800 dark:text-emerald-200"
+              : "border-indigo-300 dark:border-indigo-500/50 text-indigo-800 dark:text-indigo-200"
           )}
         >
           {classroomNotice.type === "warn" ? (
-            <AlertCircle className="size-4 shrink-0 text-amber-400" />
+            <AlertCircle className="size-4 shrink-0 text-amber-500 dark:text-amber-400" />
           ) : classroomNotice.type === "success" ? (
-            <Check className="size-4 shrink-0 text-emerald-400" />
+            <Check className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
           ) : (
-            <Sparkles className="size-4 shrink-0 text-indigo-400" />
+            <Sparkles className="size-4 shrink-0 text-indigo-600 dark:text-indigo-400" />
           )}
           <p>{classroomNotice.text}</p>
-          <button onClick={() => setClassroomNotice(null)} className="mr-1 rounded px-1 text-slate-400 hover:bg-slate-800" aria-label="סגור הודעה">×</button>
+          <button onClick={() => setClassroomNotice(null)} className="mr-1 rounded px-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="סגור הודעה">×</button>
         </div>
       )}
 
@@ -2047,42 +2050,42 @@ export function ClassroomPage() {
           role={mediaUploadStatus.state === "error" ? "alert" : "status"}
           aria-live="polite"
           className={cn(
-            "fixed left-4 z-50 flex max-w-md items-center gap-2 rounded-xl border bg-slate-950/95 px-3 py-2 text-xs font-bold shadow-xl transition-all",
+            "fixed left-4 z-50 flex max-w-md items-center gap-2 rounded-xl border bg-white/95 dark:bg-slate-950/95 px-3 py-2 text-xs font-bold shadow-xl transition-all backdrop-blur-md",
             connError ? "top-32" : "top-20",
             mediaUploadStatus.state === "error"
-              ? "border-rose-500/40 text-rose-200"
+              ? "border-rose-300 dark:border-rose-500/40 text-rose-800 dark:text-rose-200"
               : mediaUploadStatus.state === "success"
-                ? "border-emerald-500/40 text-emerald-200"
-                : "border-fuchsia-500/40 text-fuchsia-100"
+                ? "border-emerald-300 dark:border-emerald-500/40 text-emerald-800 dark:text-emerald-200"
+                : "border-fuchsia-300 dark:border-fuchsia-500/40 text-fuchsia-800 dark:text-fuchsia-100"
           )}
         >
-          {mediaUploadStatus.state === "error" ? <AlertCircle className="size-4 shrink-0 text-rose-400" /> : mediaUploadStatus.state === "success" ? <Check className="size-4 shrink-0 text-emerald-400" /> : <span className="size-4 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent" />}
+          {mediaUploadStatus.state === "error" ? <AlertCircle className="size-4 shrink-0 text-rose-500 dark:text-rose-400" /> : mediaUploadStatus.state === "success" ? <Check className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" /> : <span className="size-4 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent" />}
           <p>{mediaUploadStatus.message}</p>
-          <button onClick={() => setMediaUploadStatus(null)} className="mr-1 rounded px-1 hover:bg-white/10" aria-label="סגור הודעת העלאה">×</button>
+          <button onClick={() => setMediaUploadStatus(null)} className="mr-1 rounded px-1 hover:bg-slate-100 dark:hover:bg-white/10" aria-label="סגור הודעת העלאה">×</button>
         </div>
       )}
 
       {/* DISCONNECTED ENTRY / GUEST FORM */}
       {connState !== "connected" && (
         <div className="flex-1 flex items-center justify-center p-6">
-          <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900/80 p-8 shadow-2xl backdrop-blur-xl">
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/80 p-8 shadow-xl backdrop-blur-xl">
             <div className="text-center mb-6">
-              <div className="size-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto mb-3 text-indigo-400">
+              <div className="size-16 rounded-2xl bg-indigo-50 border border-indigo-200 dark:bg-indigo-500/10 dark:border-indigo-500/20 flex items-center justify-center mx-auto mb-3 text-indigo-600 dark:text-indigo-400 shadow-sm">
                 <VideoIcon className="size-8" />
               </div>
-              <h2 className="text-xl font-black text-white">הצטרפות לכיתה הווירטואלית</h2>
+              <h2 className="text-xl font-black text-slate-900 dark:text-white">הצטרפות לכיתה הווירטואלית</h2>
             </div>
 
             {connError && (
-              <div className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs font-bold text-rose-300 flex items-center gap-2">
-                <AlertCircle className="size-4 shrink-0 text-rose-400" />
+              <div className="mb-4 rounded-xl border border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 p-3 text-xs font-bold text-rose-700 dark:text-rose-300 flex items-center gap-2">
+                <AlertCircle className="size-4 shrink-0 text-rose-500 dark:text-rose-400" />
                 <p>{connError}</p>
               </div>
             )}
 
             {!user && !guestNameLocked && (
               <div className="flex flex-col gap-2 mb-4 text-right">
-                <label className="text-xs font-bold text-slate-300">שם תצוגה להצטרפות (תלמיד/אורח):</label>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">שם תצוגה להצטרפות (תלמיד/אורח):</label>
                 <input
                   type="text"
                   required
@@ -2093,7 +2096,7 @@ export function ClassroomPage() {
                     setGuestName(value);
                     storeClassroomDisplayName(value);
                   }}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm font-bold text-white focus:border-indigo-500 focus:outline-none"
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-4 py-3 text-sm font-bold text-slate-900 dark:text-white focus:border-indigo-500 focus:outline-none shadow-sm"
                 />
               </div>
             )}
@@ -2114,7 +2117,7 @@ export function ClassroomPage() {
         <div className="flex-1 min-h-0 min-w-0 flex flex-row-reverse overflow-hidden relative">
           
           {/* MAIN CLASSROOM WORKSPACE */}
-          <div className="flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden bg-slate-950/90 p-3 gap-3">
+          <div className="flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden bg-slate-50/70 dark:bg-slate-950/90 p-3 gap-3">
             
             {/* DYNAMIC CAMERAS CONTAINER & MAIN CONTENT */}
             <div className={cn("flex-1 min-h-0 min-w-0 flex gap-3 overflow-hidden", focusMode && isMainContentActive ? "flex-row" : "flex-col")}>
@@ -2122,7 +2125,7 @@ export function ClassroomPage() {
               {/* CAMERAS SECTION: Teacher ALWAYS FIRST in top row / side column */}
               <div
                 className={cn(
-                  "flex gap-2 overflow-x-auto overflow-y-auto shrink-0 transition-all duration-300 p-1.5 bg-slate-900/40 rounded-2xl border border-slate-800/60",
+                  "flex gap-2 overflow-x-auto overflow-y-auto shrink-0 transition-all duration-300 p-1.5 bg-slate-200/50 dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800/60 shadow-sm",
                   focusMode && isMainContentActive
                     ? "w-64 flex-col justify-start max-h-full" // Vertical column in focus mode
                     : isMainContentActive
@@ -2136,13 +2139,13 @@ export function ClassroomPage() {
                     <div
                       key={p.sid}
                       className={cn(
-                        "relative aspect-video rounded-xl border bg-slate-900 overflow-hidden shadow-sm flex flex-col items-center justify-center shrink-0 transition duration-200",
+                        "relative aspect-video rounded-xl border bg-slate-100 dark:bg-slate-900 overflow-hidden shadow-sm flex flex-col items-center justify-center shrink-0 transition duration-200",
                         focusMode && isMainContentActive
                           ? "w-full"
                           : isMainContentActive
                           ? "h-36 min-w-[190px]"
                           : "h-48 w-72", // Larger solo video tile when board is hidden
-                        isSpeaking ? "border-emerald-400 ring-2 ring-emerald-400/40" : p.isHost ? "border-amber-500/60 ring-2 ring-amber-500/20" : "border-slate-800"
+                        isSpeaking ? "border-emerald-400 ring-2 ring-emerald-400/40" : p.isHost ? "border-amber-500/60 ring-2 ring-amber-500/20" : "border-slate-200 dark:border-slate-800"
                       )}
                     >
                       {/* Video Element */}
@@ -2156,8 +2159,8 @@ export function ClassroomPage() {
                           className="h-full w-full object-cover"
                         />
                       ) : (
-                        <div className="flex flex-col items-center gap-1.5 text-slate-500">
-                          <div className="size-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center font-black text-slate-300 text-base">
+                        <div className="flex flex-col items-center gap-1.5 text-slate-400 dark:text-slate-500">
+                          <div className="size-10 rounded-xl bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 flex items-center justify-center font-black text-slate-700 dark:text-slate-300 text-base shadow-sm">
                             {p.name.charAt(0)}
                           </div>
                         </div>
@@ -2176,11 +2179,11 @@ export function ClassroomPage() {
                       {/* Top Name & Live Mic Status Badge */}
                       <div className="absolute top-1.5 right-1.5 flex items-center gap-1 pointer-events-none z-10">
                         {isSpeaking && <span className="relative flex size-3"><span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-60" /><span className="relative inline-flex size-3 rounded-full bg-emerald-400" /></span>}
-                        <span className="rounded-md bg-slate-950/80 px-2 py-0.5 text-[10px] font-bold text-slate-200 backdrop-blur-md flex items-center gap-1">
-                          {p.name} {p.isHost && <Crown className="size-3 text-amber-400 inline" />}
+                        <span className="rounded-md bg-white/90 dark:bg-slate-950/80 px-2 py-0.5 text-[10px] font-bold text-slate-800 dark:text-slate-200 border border-slate-200/80 dark:border-transparent backdrop-blur-md flex items-center gap-1 shadow-sm">
+                          {p.name} {p.isHost && <Crown className="size-3 text-amber-500 dark:text-amber-400 inline" />}
                         </span>
 
-                        <span className={cn("rounded-md p-0.5 text-xs backdrop-blur-md", p.isMuted ? "bg-rose-500/20 text-rose-400" : "bg-emerald-500/20 text-emerald-400")}>
+                        <span className={cn("rounded-md p-0.5 text-xs backdrop-blur-md shadow-sm", p.isMuted ? "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400")}>
                           {p.isMuted ? <MicOff className="size-3" /> : <Mic className="size-3" />}
                         </span>
                       </div>
@@ -2195,11 +2198,11 @@ export function ClassroomPage() {
 
                       {/* INDIVIDUAL TEACHER PERMISSION CONTROLS OVERLAY */}
                       {isHost && !p.isMe && (
-                        <div className="absolute top-1.5 left-1.5 flex items-center gap-1 bg-slate-950/85 p-1 rounded-lg border border-slate-700/80 backdrop-blur-md z-20 shadow-md">
+                        <div className="absolute top-1.5 left-1.5 flex items-center gap-1 bg-white/95 dark:bg-slate-950/85 p-1 rounded-lg border border-slate-200 dark:border-slate-700/80 backdrop-blur-md z-20 shadow-md">
                           <button
                             onClick={() => toggleIndividualMicPermission(p.identity, p.canUseMic)}
                             title={p.canUseMic ? "הרשאת מיקרופון פעילה - לחץ לחסימה" : "מיקרופון חסום - לחץ להרשאה"}
-                            className={cn("p-1 rounded text-xs transition duration-150", p.canUseMic ? "text-emerald-400 hover:bg-emerald-500/20" : "text-rose-400 hover:bg-rose-500/20")}
+                            className={cn("p-1 rounded text-xs transition duration-150", p.canUseMic ? "text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-500/20" : "text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/20")}
                           >
                             {p.canUseMic ? <Mic className="size-3" /> : <MicOff className="size-3" />}
                           </button>
@@ -2207,7 +2210,7 @@ export function ClassroomPage() {
                           <button
                             onClick={() => toggleIndividualCamPermission(p.identity, p.canUseCam)}
                             title={p.canUseCam ? "הרשאת מצלמה פעילה - לחץ לחסימה" : "מצלמה חסומה - לחץ להרשאה"}
-                            className={cn("p-1 rounded text-xs transition duration-150", p.canUseCam ? "text-emerald-400 hover:bg-emerald-500/20" : "text-rose-400 hover:bg-rose-500/20")}
+                            className={cn("p-1 rounded text-xs transition duration-150", p.canUseCam ? "text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-500/20" : "text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/20")}
                           >
                             {p.canUseCam ? <VideoIcon className="size-3" /> : <VideoOff className="size-3" />}
                           </button>
@@ -2222,8 +2225,8 @@ export function ClassroomPage() {
               {/* MAIN CONTENT FRAME: EXCALIDRAW BOARD OR SHARED SCREEN */}
               <div
                 className={cn(
-                  "flex-1 min-h-0 min-w-0 rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden shadow-2xl flex relative",
-                  hasPresentationPane && showBoard ? "flex-row gap-px bg-slate-800" : "flex-col",
+                  "flex-1 min-h-0 min-w-0 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-sm flex relative",
+                  hasPresentationPane && showBoard ? "flex-row gap-px bg-slate-200 dark:bg-slate-800" : "flex-col",
                   !isMainContentActive && "hidden"
                 )}
               >
@@ -2255,7 +2258,7 @@ export function ClassroomPage() {
 
                   {screenShareParticipant && (
                     <div className={cn("h-full min-h-0 min-w-0 overflow-hidden bg-black flex items-center justify-center relative", showBoard ? "shrink-0" : "flex-1")} style={showBoard ? { flexBasis: `${stageSplitPercent}%` } : undefined}>
-                      <div className="absolute top-2 right-2 bg-slate-950/80 px-3 py-1 rounded-lg text-xs font-bold text-indigo-300 z-10 border border-slate-800 flex items-center gap-1.5">
+                      <div className="absolute top-2 right-2 bg-white/90 dark:bg-slate-950/80 px-3 py-1 rounded-lg text-xs font-bold text-indigo-700 dark:text-indigo-300 z-10 border border-slate-200 dark:border-slate-800 flex items-center gap-1.5 shadow-sm backdrop-blur-sm">
                         <Monitor className="size-3.5 text-indigo-400" />
                         {`מסך משותף מאת: ${screenShareParticipant.name}`}
                       </div>
@@ -2283,7 +2286,7 @@ export function ClassroomPage() {
                   )}
 
                   {presentationActive && !localIsPresenter && !screenShareParticipant && (
-                    <div className={cn("min-w-0 bg-black", showBoard ? "shrink-0" : "flex-1")} style={showBoard ? { flexBasis: `${stageSplitPercent}%` } : undefined}>
+                    <div className={cn("min-w-0 bg-slate-100 dark:bg-black", showBoard ? "shrink-0" : "flex-1")} style={showBoard ? { flexBasis: `${stageSplitPercent}%` } : undefined}>
                       <ClassroomPresentationReceiver
                         videoTrack={presentationParticipant?.presentationTrack}
                         audioTrack={presentationParticipant?.presentationAudioTrack}
@@ -2314,7 +2317,7 @@ export function ClassroomPage() {
                   */}
                   <div
                     className={cn(
-                      "relative overflow-hidden min-w-0",
+                      "relative overflow-hidden min-w-0 bg-white",
                       hasPresentationPane ? "shrink-0" : "flex-1",
                       !showBoard && "hidden"
                     )}
@@ -2333,7 +2336,7 @@ export function ClassroomPage() {
                         players={drawingPlayers}
                       />
                     ) : (
-                      <div className="flex h-full items-center justify-center bg-slate-950 text-sm text-slate-300">
+                      <div className="flex h-full items-center justify-center bg-slate-50 dark:bg-slate-950 text-sm text-slate-600 dark:text-slate-300">
                         טוען את לוח השיעור...
                       </div>
                     )}
@@ -2342,15 +2345,17 @@ export function ClassroomPage() {
             </div>
 
             {/* BOTTOM CONTROL BAR */}
-            <div className="border-t border-slate-800 bg-slate-900/90 rounded-2xl p-2.5 flex items-center justify-between flex-wrap gap-2 shrink-0 backdrop-blur-md">
+            <div className="border-t border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 rounded-2xl p-2.5 flex items-center justify-between flex-wrap gap-2 shrink-0 backdrop-blur-md shadow-sm">
               
               {/* Side Panels Toggles — first in RTL flex layout, so they stay on the right. */}
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowParticipants(!showParticipants)}
                   className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
-                    showParticipants ? "bg-indigo-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200 shadow-sm",
+                    showParticipants
+                      ? "bg-indigo-600 text-white"
+                      : "border border-slate-200 dark:border-transparent bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                   )}
                 >
                   <Users className="size-3.5" />
@@ -2360,8 +2365,10 @@ export function ClassroomPage() {
                 <button
                   onClick={() => setShowChat(!showChat)}
                   className={cn(
-                    "relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
-                    showChat ? "bg-indigo-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                    "relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200 shadow-sm",
+                    showChat
+                      ? "bg-indigo-600 text-white"
+                      : "border border-slate-200 dark:border-transparent bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                   )}
                 >
                   <MessageSquare className="size-3.5" />
@@ -2382,8 +2389,10 @@ export function ClassroomPage() {
                       <button
                         onClick={toggleMic}
                         className={cn(
-                          "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
-                          micOn ? "bg-emerald-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                          "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200 shadow-sm",
+                          micOn
+                            ? "bg-emerald-600 text-white"
+                            : "border border-slate-200 dark:border-transparent bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                         )}
                       >
                         {micOn ? <Mic className="size-3.5" /> : <MicOff className="size-3.5" />}
@@ -2392,10 +2401,10 @@ export function ClassroomPage() {
                     ) : (
                       <button
                         onClick={() => setConnError("המיקרופון חסום כעת על ידי המורה.")}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800/60 text-slate-400 border border-slate-700/50 hover:bg-slate-800 transition duration-200"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-800 transition duration-200 shadow-sm"
                         title="המיקרופון חסום על ידי המורה"
                       >
-                        <MicOff className="size-3.5 text-rose-400" />
+                        <MicOff className="size-3.5 text-rose-500 dark:text-rose-400" />
                         <span>מיקרופון חסום</span>
                       </button>
                     )}
@@ -2404,8 +2413,10 @@ export function ClassroomPage() {
                       <button
                         onClick={toggleCam}
                         className={cn(
-                          "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
-                          camOn ? "bg-emerald-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                          "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200 shadow-sm",
+                          camOn
+                            ? "bg-emerald-600 text-white"
+                            : "border border-slate-200 dark:border-transparent bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                         )}
                       >
                         {camOn ? <VideoIcon className="size-3.5" /> : <VideoOff className="size-3.5" />}
@@ -2414,10 +2425,10 @@ export function ClassroomPage() {
                     ) : (
                       <button
                         onClick={() => setConnError("המצלמה חסומה כעת על ידי המורה.")}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800/60 text-slate-400 border border-slate-700/50 hover:bg-slate-800 transition duration-200"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-800 transition duration-200 shadow-sm"
                         title="המצלמה חסומה על ידי המורה"
                       >
-                        <VideoOff className="size-3.5 text-rose-400" />
+                        <VideoOff className="size-3.5 text-rose-500 dark:text-rose-400" />
                         <span>מצלמה חסומה</span>
                       </button>
                     )}
@@ -2426,8 +2437,10 @@ export function ClassroomPage() {
                       <button
                         onClick={toggleScreenShare}
                         className={cn(
-                          "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
-                          isScreenSharing ? "bg-indigo-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                          "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200 shadow-sm",
+                          isScreenSharing
+                            ? "bg-indigo-600 text-white"
+                            : "border border-slate-200 dark:border-transparent bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                         )}
                       >
                         {isScreenSharing ? <MonitorOff className="size-3.5" /> : <Monitor className="size-3.5" />}
@@ -2438,8 +2451,10 @@ export function ClassroomPage() {
                     <button
                       onClick={toggleHandRaise}
                       className={cn(
-                        "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200",
-                        isHandRaised ? "bg-amber-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                        "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200 shadow-sm",
+                        isHandRaised
+                          ? "bg-amber-600 text-white"
+                          : "border border-slate-200 dark:border-transparent bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                       )}
                     >
                       <Hand className="size-3.5" />
@@ -2447,7 +2462,7 @@ export function ClassroomPage() {
                     </button>
                   </>
                 ) : (
-                  <div className="px-3 py-1.5 rounded-xl bg-slate-800 text-indigo-300 text-xs font-bold flex items-center gap-1.5">
+                  <div className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 text-xs font-bold flex items-center gap-1.5 border border-slate-200 dark:border-transparent shadow-sm">
                     🕵️ מצב צפייה בסתר בלבד (ללא מיקרופון/מצלמה)
                   </div>
                 )}
@@ -2455,12 +2470,12 @@ export function ClassroomPage() {
 
               {/* Emoji Quick Reactions */}
               {!isStealthAdmin && (
-                <div className="flex items-center gap-1 border-x border-slate-800 px-3">
+                <div className="flex items-center gap-1 border-x border-slate-200 dark:border-slate-800 px-3">
                   {["👏", "👍", "❤️", "❓", "😊"].map((emoji) => (
                     <button
                       key={emoji}
                       onClick={() => sendReaction(emoji)}
-                      className="p-1 rounded-lg hover:bg-slate-800 text-sm transition duration-150"
+                      className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm transition duration-150"
                     >
                       {emoji}
                     </button>
@@ -2473,57 +2488,57 @@ export function ClassroomPage() {
 
           {/* SIDE PANEL 1: PARTICIPANTS & HOST GLOBAL CONTROLS */}
           {showParticipants && (
-            <div className="w-full lg:w-80 border-l border-slate-800 bg-slate-900/95 p-4 flex flex-col gap-4 overflow-y-auto shrink-0">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 className="text-sm font-black text-white flex items-center gap-2">
-                  <Users className="size-4 text-indigo-400" />
+            <div className="w-full lg:w-80 border-l border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 p-4 flex flex-col gap-4 overflow-y-auto shrink-0 shadow-sm">
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <Users className="size-4 text-indigo-600 dark:text-indigo-400" />
                   משתתפי הכיתה
                 </h3>
-                <button onClick={() => setShowParticipants(false)} className="text-slate-400 hover:text-white text-xs font-bold">✕</button>
+                <button onClick={() => setShowParticipants(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white text-xs font-bold">✕</button>
               </div>
 
               {/* HOST GLOBAL ACTIONS PANEL */}
               {isHost && (
-                <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-3 flex flex-col gap-2">
-                  <span className="text-xs font-black text-amber-300 flex items-center gap-1 mb-1">
+                <div className="rounded-2xl border border-amber-300 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/5 p-3 flex flex-col gap-2 shadow-sm">
+                  <span className="text-xs font-black text-amber-800 dark:text-amber-300 flex items-center gap-1 mb-1">
                     <Shield className="size-3.5" /> בקרת מורים
                   </span>
 
                   <div className="grid grid-cols-2 gap-1.5">
                     <button
                       onClick={() => void setClassWideMicPermission(false)}
-                      className="py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold flex items-center gap-1 justify-center"
+                      className="py-1.5 px-2 rounded-xl bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-transparent text-slate-700 dark:text-slate-200 text-[11px] font-bold flex items-center gap-1 justify-center shadow-sm"
                     >
-                      <MicOff className="size-3 text-rose-400" />
+                      <MicOff className="size-3 text-rose-500 dark:text-rose-400" />
                       חסום מיקרופונים
                     </button>
 
                     <button
                       onClick={() => void setClassWideMicPermission(true)}
-                      className="py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold flex items-center gap-1 justify-center"
+                      className="py-1.5 px-2 rounded-xl bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-transparent text-slate-700 dark:text-slate-200 text-[11px] font-bold flex items-center gap-1 justify-center shadow-sm"
                     >
-                      <Mic className="size-3 text-emerald-400" />
+                      <Mic className="size-3 text-emerald-600 dark:text-emerald-400" />
                       אפשר מיקרופונים
                     </button>
 
                     <button
                       onClick={() => void setClassWideCamPermission(false)}
-                      className="py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold flex items-center gap-1 justify-center"
+                      className="py-1.5 px-2 rounded-xl bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-transparent text-slate-700 dark:text-slate-200 text-[11px] font-bold flex items-center gap-1 justify-center shadow-sm"
                     >
-                      <VideoOff className="size-3 text-rose-400" />
+                      <VideoOff className="size-3 text-rose-500 dark:text-rose-400" />
                       חסום מצלמות
                     </button>
 
                     <button
                       onClick={() => void setClassWideCamPermission(true)}
-                      className="py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold flex items-center gap-1 justify-center"
+                      className="py-1.5 px-2 rounded-xl bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-transparent text-slate-700 dark:text-slate-200 text-[11px] font-bold flex items-center gap-1 justify-center shadow-sm"
                     >
-                      <VideoIcon className="size-3 text-emerald-400" />
+                      <VideoIcon className="size-3 text-emerald-600 dark:text-emerald-400" />
                       אפשר מצלמות
                     </button>
                   </div>
 
-                  {(canManageClassroom || isDelegatedHost) && <div className="flex flex-col gap-1.5 text-[11px] font-bold text-slate-300 mt-2">
+                  {(canManageClassroom || isDelegatedHost) && <div className="flex flex-col gap-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300 mt-2">
                     <label className="flex items-center justify-between">
                       <span>אפשר צ'אט לתלמידים:</span>
                       <input
@@ -2547,7 +2562,7 @@ export function ClassroomPage() {
 
                   <button
                     onClick={clearWhiteboard}
-                    className="w-full py-1.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-300 text-xs font-bold flex items-center gap-1.5 justify-center"
+                    className="w-full py-1.5 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-slate-800 dark:hover:bg-slate-700 border border-rose-200 dark:border-transparent text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-1.5 justify-center shadow-sm"
                   >
                     <Trash2 className="size-3.5" />
                     נקה/בטל לוח שרטוט
@@ -2555,9 +2570,9 @@ export function ClassroomPage() {
 
                   {canManageClassroom && <button
                     onClick={endClassroomSession}
-                    className="w-full mt-1 font-black text-xs py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white"
+                    className="w-full mt-1 font-black text-xs py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white shadow-sm"
                   >
-                    סים שיעור וסגור כיתה
+                    סיים שיעור וסגור כיתה
                   </button>}
                 </div>
               )}
@@ -2567,14 +2582,14 @@ export function ClassroomPage() {
                 {participants.map((p) => {
                   const isSpeaking = activeSpeakers.includes(p.identity);
                   return (
-                  <div key={p.sid} className={cn("flex items-center justify-between rounded-xl bg-slate-950/60 p-2 border text-xs font-bold", isSpeaking ? "border-emerald-400/70 bg-emerald-950/20" : "border-slate-800")}>
+                  <div key={p.sid} className={cn("flex items-center justify-between rounded-xl bg-slate-50 dark:bg-slate-950/60 p-2 border text-xs font-bold shadow-sm", isSpeaking ? "border-emerald-400/70 bg-emerald-50 dark:bg-emerald-950/20" : "border-slate-200 dark:border-slate-800")}>
                     <div className="flex items-center gap-1.5">
                       <span className="relative flex size-2 rounded-full bg-emerald-500">
                         {isSpeaking && <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400" />}
                       </span>
-                      <span className="text-slate-200">{p.name}</span>
-                      {p.isHost && <Crown className="size-3 text-amber-400" />}
-                      {p.identity === presenterIdentity && <span className="rounded bg-fuchsia-500/15 px-1.5 py-0.5 text-[9px] text-fuchsia-300">מגיש/ה</span>}
+                      <span className="text-slate-800 dark:text-slate-200">{p.name}</span>
+                      {p.isHost && <Crown className="size-3 text-amber-500 dark:text-amber-400" />}
+                      {p.identity === presenterIdentity && <span className="rounded bg-fuchsia-100 dark:bg-fuchsia-500/15 px-1.5 py-0.5 text-[9px] font-bold text-fuchsia-800 dark:text-fuchsia-300">מגיש/ה</span>}
                     </div>
 
                     <div className="flex items-center gap-1">
@@ -2582,7 +2597,7 @@ export function ClassroomPage() {
                       <button
                         onClick={() => void transferPresentation(p.identity)}
                         title={p.isMe ? "קח/י בחזרה את זכויות ההצגה" : "העבר/י למשתתף זה את זכויות ההצגה"}
-                        className="p-1 rounded bg-fuchsia-500/10 text-fuchsia-300 hover:bg-fuchsia-500/20"
+                        className="p-1 rounded bg-fuchsia-100 dark:bg-fuchsia-500/10 text-fuchsia-700 dark:text-fuchsia-300 hover:bg-fuchsia-200 dark:hover:bg-fuchsia-500/20"
                       >
                         <Radio className="size-3.5" />
                       </button>
@@ -2593,7 +2608,7 @@ export function ClassroomPage() {
                         <button
                           onClick={() => toggleIndividualMicPermission(p.identity, p.canUseMic)}
                           title={p.canUseMic ? "הרשאת מיקרופון פעילה - לחץ לחסימה" : "מיקרופון חסום - לחץ להרשאה"}
-                          className={cn("p-1 rounded", p.canUseMic ? "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20" : "bg-rose-500/10 text-rose-400 hover:bg-rose-500/20")}
+                          className={cn("p-1 rounded", p.canUseMic ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20" : "bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:hover:bg-rose-500/20")}
                         >
                           {p.canUseMic ? <Mic className="size-3.5" /> : <MicOff className="size-3.5" />}
                         </button>
@@ -2601,7 +2616,7 @@ export function ClassroomPage() {
                         <button
                           onClick={() => void toggleIndividualWhiteboardPermission(p.identity, p.canDrawWhiteboard)}
                           title={p.canDrawWhiteboard ? "הרשאת לוח פעילה - לחץ להסרה" : "הלוח חסום - לחץ להרשאה"}
-                          className={cn("p-1 rounded", p.canDrawWhiteboard ? "bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20" : "bg-rose-500/10 text-rose-400 hover:bg-rose-500/20")}
+                          className={cn("p-1 rounded", p.canDrawWhiteboard ? "bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-300 dark:hover:bg-indigo-500/20" : "bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:hover:bg-rose-500/20")}
                         >
                           {p.canDrawWhiteboard ? <Eye className="size-3.5" /> : <EyeOff className="size-3.5" />}
                         </button>
@@ -2609,7 +2624,7 @@ export function ClassroomPage() {
                         <button
                           onClick={() => toggleIndividualCamPermission(p.identity, p.canUseCam)}
                           title={p.canUseCam ? "הרשאת מצלמה פעילה - לחץ לחסימה" : "מצלמה חסומה - לחץ להרשאה"}
-                          className={cn("p-1 rounded", p.canUseCam ? "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20" : "bg-rose-500/10 text-rose-400 hover:bg-rose-500/20")}
+                          className={cn("p-1 rounded", p.canUseCam ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20" : "bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:hover:bg-rose-500/20")}
                         >
                           {p.canUseCam ? <VideoIcon className="size-3.5" /> : <VideoOff className="size-3.5" />}
                         </button>
@@ -2617,7 +2632,7 @@ export function ClassroomPage() {
                         <button
                           onClick={() => grantHostStatus(p.identity)}
                           title="הפוך למארח מלא "
-                          className="p-1 rounded bg-amber-500/10 text-amber-400 hover:bg-amber-500/20"
+                          className="p-1 rounded bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500/20"
                         >
                           <Crown className="size-3.5" />
                         </button>
@@ -2625,7 +2640,7 @@ export function ClassroomPage() {
                         <button
                           onClick={() => setKickTarget(p)}
                           title="הוצא מהכיתה"
-                          className="p-1 rounded bg-rose-500/10 text-rose-400 hover:bg-rose-500/20"
+                          className="p-1 rounded bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:hover:bg-rose-500/20"
                         >
                           <UserX className="size-3.5" />
                         </button>
@@ -2641,13 +2656,13 @@ export function ClassroomPage() {
 
           {/* SIDE PANEL 2: CHAT (SCROLLABLE & NEVER STRETCHES SCREEN DOWN) */}
           {showChat && (
-            <div className="w-full lg:w-80 border-l border-slate-800 bg-slate-900/95 p-4 flex flex-col h-full overflow-hidden shrink-0">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3 shrink-0">
-                <h3 className="text-sm font-black text-white flex items-center gap-2">
-                  <MessageSquare className="size-4 text-indigo-400" />
+            <div className="w-full lg:w-80 border-l border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 p-4 flex flex-col h-full overflow-hidden shrink-0 shadow-sm">
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 shrink-0">
+                <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <MessageSquare className="size-4 text-indigo-600 dark:text-indigo-400" />
                   צ'אט כיתתי
                 </h3>
-                <button onClick={() => setShowChat(false)} className="text-slate-400 hover:text-white text-xs font-bold">✕</button>
+                <button onClick={() => setShowChat(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white text-xs font-bold">✕</button>
               </div>
 
               {/* MESSAGES LIST: SCROLLABLE CONTAINER */}
@@ -2656,21 +2671,21 @@ export function ClassroomPage() {
                   <p className="text-xs text-slate-500 text-center py-6">אין הודעות בצ'אט עדיין.</p>
                 ) : (
                   chatMessages.map((msg) => (
-                    <div key={msg.id} className="rounded-xl bg-slate-950/80 p-2.5 border border-slate-800/80 flex flex-col gap-1 shrink-0">
-                      <div className="flex items-center justify-between text-[11px] font-bold text-slate-400">
-                        <span className="text-indigo-300 flex items-center gap-1">
-                          {msg.senderName} {msg.isHost && <Crown className="size-3 text-amber-400 inline" />}
+                    <div key={msg.id} className="rounded-xl bg-slate-50 dark:bg-slate-950/80 p-2.5 border border-slate-200 dark:border-slate-800/80 flex flex-col gap-1 shrink-0 shadow-sm">
+                      <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                        <span className="text-indigo-600 dark:text-indigo-300 flex items-center gap-1 font-bold">
+                          {msg.senderName} {msg.isHost && <Crown className="size-3 text-amber-500 dark:text-amber-400 inline" />}
                         </span>
                         <span>{new Date(msg.timestamp).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}</span>
                       </div>
-                      <p className="text-xs font-semibold text-slate-200 leading-relaxed">{msg.text}</p>
+                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-relaxed">{msg.text}</p>
                     </div>
                   ))
                 )}
               </div>
 
               {/* CHAT INPUT FORM */}
-              <div className="flex items-center gap-2 pt-2 border-t border-slate-800 shrink-0">
+              <div className="flex items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800 shrink-0">
                 <input
                   type="text"
                   placeholder={isHost || roomSettings.allowStudentChat ? "רשום הודעה..." : "הצ'אט נעול למשתתפים"}
@@ -2678,12 +2693,12 @@ export function ClassroomPage() {
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && sendChatMessage()}
-                  className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-indigo-500 disabled:opacity-50"
+                  className="flex-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 disabled:opacity-50 shadow-sm"
                 />
                 <button
                   disabled={(!isHost && !roomSettings.allowStudentChat) || !chatInput.trim()}
                   onClick={sendChatMessage}
-                  className="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white disabled:opacity-50"
+                  className="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white disabled:opacity-50 shadow-sm"
                 >
                   שלח
                 </button>
@@ -2702,13 +2717,13 @@ export function ClassroomPage() {
           onClick={() => !isKicking && setKickTarget(null)}
         >
           <div
-            className="w-full max-w-sm rounded-2xl border border-slate-700 bg-slate-900 p-5 text-right shadow-2xl"
+            className="w-full max-w-sm rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5 text-right shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >
-            <h2 id="kick-participant-title" className="text-base font-black text-white">
+            <h2 id="kick-participant-title" className="text-base font-black text-slate-900 dark:text-white">
               להוציא את {kickTarget.name} מהכיתה
             </h2>
-            <p className="mt-2 text-sm leading-6 text-slate-300">
+            <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
               בחרו אם זו הוצאה זמנית או חסימה מהצטרפות מחדש לכיתה זו.
             </p>
             <div className="mt-5 flex flex-col gap-2">
@@ -2716,7 +2731,7 @@ export function ClassroomPage() {
                 type="button"
                 disabled={isKicking}
                 onClick={() => void kickParticipant(false)}
-                className="rounded-xl border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-100 transition hover:bg-amber-500/20 disabled:cursor-wait disabled:opacity-60"
+                className="rounded-xl border border-amber-300 dark:border-amber-500/50 bg-amber-50 dark:bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-800 dark:text-amber-100 transition hover:bg-amber-100 dark:hover:bg-amber-500/20 disabled:cursor-wait disabled:opacity-60 shadow-sm"
               >
                 הוצאה זמנית — אפשר להצטרף שוב
               </button>
@@ -2724,7 +2739,7 @@ export function ClassroomPage() {
                 type="button"
                 disabled={isKicking}
                 onClick={() => void kickParticipant(true)}
-                className="rounded-xl bg-rose-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-rose-500 disabled:cursor-wait disabled:opacity-60"
+                className="rounded-xl bg-rose-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-rose-500 disabled:cursor-wait disabled:opacity-60 shadow-sm"
               >
                 הוצאה וחסימה מהצטרפות מחדש
               </button>
@@ -2732,7 +2747,7 @@ export function ClassroomPage() {
                 type="button"
                 disabled={isKicking}
                 onClick={() => setKickTarget(null)}
-                className="px-4 py-2 text-sm font-bold text-slate-400 transition hover:text-white disabled:opacity-60"
+                className="px-4 py-2 text-sm font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition disabled:opacity-60"
               >
                 ביטול
               </button>

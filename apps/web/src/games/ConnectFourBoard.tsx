@@ -32,12 +32,12 @@ export function ConnectFourBoard({
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-2 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-md p-3 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+      <div className="grid grid-cols-7 gap-2 rounded-3xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/5 backdrop-blur-md p-3 shadow-xl dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
         {gameState.board.map((row, rowIndex) =>
           row.map((cell, colIndex) => (
             <div
               key={`${rowIndex}-${colIndex}`}
-              className="flex aspect-square w-full items-center justify-center rounded-full bg-black/40 shadow-inner ring-1 ring-white/10"
+              className="flex aspect-square w-full items-center justify-center rounded-full bg-slate-200/80 dark:bg-black/40 shadow-inner ring-1 ring-slate-300 dark:ring-white/10"
             >
               <span
                 className={
@@ -45,7 +45,7 @@ export function ConnectFourBoard({
                     ? "h-4/5 w-4/5 rounded-full bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.6)]"
                     : cell === "Y"
                       ? "h-4/5 w-4/5 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.6)]"
-                      : "h-4/5 w-4/5 rounded-full bg-white/5"
+                      : "h-4/5 w-4/5 rounded-full bg-slate-300/60 dark:bg-white/5"
                 }
               />
             </div>

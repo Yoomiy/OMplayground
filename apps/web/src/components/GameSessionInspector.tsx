@@ -95,41 +95,41 @@ export function GameSessionInspector({ scope, teacherGender }: GameSessionInspec
     }
   }, []);
 
-  if (loading) return <p className="text-sm text-white/50">טוען…</p>;
+  if (loading) return <p className="text-sm font-bold text-slate-500 dark:text-white/50">טוען…</p>;
 
   return (
     <div className="space-y-4">
-      {copyNotice ? <p className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm font-bold text-emerald-300" role="status">{copyNotice}</p> : null}
-      <div className="flex flex-wrap items-end gap-3 text-sm text-white/80">
+      {copyNotice ? <p className="rounded-xl border border-emerald-300 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-2 text-sm font-bold text-emerald-800 dark:text-emerald-300 shadow-sm" role="status">{copyNotice}</p> : null}
+      <div className="flex flex-wrap items-end gap-3 text-sm font-bold text-slate-700 dark:text-white/80">
         <label className="flex flex-col gap-1">סטטוס
-          <select className={cn(kidFieldInputClass, "py-1 px-3 text-sm min-h-10 w-auto bg-white/5 border-white/10 text-white rounded-xl")} value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as TeacherSessionStatusFilter)}>
-            <option className="bg-slate-900 text-white" value="all">הכל</option><option className="bg-slate-900 text-white" value="waiting">ממתין</option><option className="bg-slate-900 text-white" value="playing">במשחק</option><option className="bg-slate-900 text-white" value="paused">מושהה</option><option className="bg-slate-900 text-white" value="completed">הושלם</option>
+          <select className={cn(kidFieldInputClass, "py-1 px-3 text-sm min-h-10 w-auto bg-white dark:bg-white/5 border-slate-300 dark:border-white/10 text-slate-900 dark:text-white rounded-xl shadow-sm")} value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as TeacherSessionStatusFilter)}>
+            <option className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white" value="all">הכל</option><option className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white" value="waiting">ממתין</option><option className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white" value="playing">במשחק</option><option className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white" value="paused">מושהה</option><option className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white" value="completed">הושלם</option>
           </select>
         </label>
         {scope === "admin" ? <label className="flex flex-col gap-1">מגדר
-          <select className={cn(kidFieldInputClass, "py-1 px-3 text-sm min-h-10 w-auto bg-white/5 border-white/10 text-white rounded-xl")} value={genderFilter} onChange={(event) => setGenderFilter(event.target.value as "" | "boy" | "girl")}>
-            <option className="bg-slate-900 text-white" value="">הכל</option><option className="bg-slate-900 text-white" value="boy">בנים</option><option className="bg-slate-900 text-white" value="girl">בנות</option>
+          <select className={cn(kidFieldInputClass, "py-1 px-3 text-sm min-h-10 w-auto bg-white dark:bg-white/5 border-slate-300 dark:border-white/10 text-slate-900 dark:text-white rounded-xl shadow-sm")} value={genderFilter} onChange={(event) => setGenderFilter(event.target.value as "" | "boy" | "girl")}>
+            <option className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white" value="">הכל</option><option className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white" value="boy">בנים</option><option className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white" value="girl">בנות</option>
           </select>
         </label> : null}
         <label className="flex flex-col gap-1">משחק
-          <select className={cn(kidFieldInputClass, "py-1 px-3 text-sm min-h-10 w-auto bg-white/5 border-white/10 text-white rounded-xl")} value={gameIdFilter} onChange={(event) => setGameIdFilter(event.target.value)}>
-            <option className="bg-slate-900 text-white" value="">כל המשחקים</option>{gameOptions.map(([id, name]) => <option className="bg-slate-900 text-white" key={id} value={id}>{name}</option>)}
+          <select className={cn(kidFieldInputClass, "py-1 px-3 text-sm min-h-10 w-auto bg-white dark:bg-white/5 border-slate-300 dark:border-white/10 text-slate-900 dark:text-white rounded-xl shadow-sm")} value={gameIdFilter} onChange={(event) => setGameIdFilter(event.target.value)}>
+            <option className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white" value="">כל המשחקים</option>{gameOptions.map(([id, name]) => <option className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white" key={id} value={id}>{name}</option>)}
           </select>
         </label>
         <label className="flex flex-col gap-1">כיתת מארח
-          <input className={cn(kidFieldInputClass, "py-1 px-3 text-sm min-h-10 w-20 bg-white/5 border-white/10 text-white rounded-xl")} value={gradeFilter} onChange={(event) => setGradeFilter(event.target.value)} />
+          <input className={cn(kidFieldInputClass, "py-1 px-3 text-sm min-h-10 w-20 bg-white dark:bg-white/5 border-slate-300 dark:border-white/10 text-slate-900 dark:text-white rounded-xl shadow-sm")} value={gradeFilter} onChange={(event) => setGradeFilter(event.target.value)} />
         </label>
       </div>
-      <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5 shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md">
-        <table className="w-full text-right text-sm text-white/80"><thead className="border-b border-white/10 bg-white/10 text-white/90"><tr>
+      <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm backdrop-blur-md">
+        <table className="w-full text-right text-sm text-slate-700 dark:text-white/80"><thead className="border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/10 text-slate-800 dark:text-white/90"><tr>
           <th className="p-2">משחק</th><th className="p-2">סטטוס</th><th className="p-2">מארח</th>{scope === "admin" ? <th className="p-2">מגדר</th> : null}<th className="p-2">כיתה</th><th className="p-2">פעילות אחרונה</th><th className="p-2">צפייה</th><th className="p-2">המשך</th>
-        </tr></thead><tbody>{filtered.map((row) => <tr key={row.id} className="border-b border-white/5 hover:bg-white/5">
-          <td className="p-2">{row.games?.name_he ?? "—"}</td><td className="p-2">{row.status}</td><td className="p-2">{row.host_name}</td>{scope === "admin" ? <td className="p-2">{row.gender === "boy" ? "בנים" : row.gender === "girl" ? "בנות" : "מעורב"}</td> : null}<td className="p-2">{row.host_grade ?? "—"}</td><td className="p-2 font-mono text-xs text-white/55">{row.last_activity ? new Date(row.last_activity).toLocaleString("he-IL") : "—"}</td>
-          <td className="p-2">{row.status === "waiting" || row.status === "playing" ? <Link className="font-semibold text-violet-400 underline decoration-2 underline-offset-2 hover:text-violet-300" to={`/play/${row.id}?observe=1`}>צפה</Link> : "—"}</td>
-          <td className="p-2">{row.status === "paused" ? <button type="button" className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-bold text-white/70 hover:bg-white/10 hover:text-white transition duration-200" onClick={() => void copyResumeLink(row.id)}>העתק קישור לילדים</button> : "—"}</td>
+        </tr></thead><tbody>{filtered.map((row) => <tr key={row.id} className="border-b border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5">
+          <td className="p-2 font-bold text-slate-900 dark:text-white">{row.games?.name_he ?? "—"}</td><td className="p-2">{row.status}</td><td className="p-2 font-medium">{row.host_name}</td>{scope === "admin" ? <td className="p-2">{row.gender === "boy" ? "בנים" : row.gender === "girl" ? "בנות" : "מעורב"}</td> : null}<td className="p-2">{row.host_grade ?? "—"}</td><td className="p-2 font-mono text-xs text-slate-500 dark:text-white/55">{row.last_activity ? new Date(row.last_activity).toLocaleString("he-IL") : "—"}</td>
+          <td className="p-2">{row.status === "waiting" || row.status === "playing" ? <Link className="font-bold text-violet-600 dark:text-violet-400 underline decoration-2 underline-offset-2 hover:text-violet-500 dark:hover:text-violet-300" to={`/play/${row.id}?observe=1`}>צפה</Link> : "—"}</td>
+          <td className="p-2">{row.status === "paused" ? <button type="button" className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-2.5 py-1 text-xs font-bold text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200 shadow-sm" onClick={() => void copyResumeLink(row.id)}>העתק קישור לילדים</button> : "—"}</td>
         </tr>)}</tbody></table>
       </div>
-      {filtered.length === 0 ? <p className="text-sm text-white/50">אין מפגשים לפי המסננים.</p> : null}
+      {filtered.length === 0 ? <p className="text-sm font-bold text-slate-500 dark:text-white/50">אין מפגשים לפי המסננים.</p> : null}
     </div>
   );
 }

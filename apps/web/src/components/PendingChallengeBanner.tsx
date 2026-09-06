@@ -70,10 +70,10 @@ export function PendingChallengeBanner() {
             🎮
           </span>
           <div>
-            <p className="text-base font-black text-amber-300">
+            <p className="text-base font-black text-amber-700 dark:text-amber-300">
               אתגר מ-{fromName ?? "חבר"}!
             </p>
-            <p className="text-sm text-white/70">
+            <p className="text-sm font-semibold text-slate-700 dark:text-white/70">
               מישהו מזמין אותך למשחק — רוצה להצטרף? 🚀
             </p>
           </div>
@@ -91,7 +91,7 @@ export function PendingChallengeBanner() {
             type="button"
             disabled={busy}
             onClick={() => void onDecline()}
-            className="rounded-2xl bg-white/10 border border-white/20 px-6 py-2.5 text-sm font-black text-white/70 hover:bg-white/20 hover:text-white transition-all disabled:opacity-50"
+            className="rounded-2xl bg-slate-200/90 dark:bg-white/10 border border-slate-300/80 dark:border-white/20 px-6 py-2.5 text-sm font-black text-slate-700 dark:text-white/70 hover:bg-slate-300/90 hover:text-slate-900 dark:hover:bg-white/20 dark:hover:text-white transition-all disabled:opacity-50"
           >
             אולי אחר כך
           </button>
