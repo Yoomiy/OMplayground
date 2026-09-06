@@ -8,6 +8,7 @@ Canonical product + architecture guide: **[`ARCHITECTURE.md`](../ARCHITECTURE.md
 |-----|---------|
 | [`HARDENING.md`](HARDENING.md) | Production checklist — rate limits, health, logging, scaling |
 | [`LOGGING.md`](LOGGING.md) | Contributor contract for logging, audit events, telemetry, privacy, and new processes |
+| [`THEMING_AND_COMPONENTS.md`](THEMING_AND_COMPONENTS.md) | Contributor rules for switchable themes, color contrast, and future UI components |
 | [`adr/001-websocket-socket-io.md`](adr/001-websocket-socket-io.md) | Why Socket.io; room naming |
 | [`friends-deprecation.md`](friends-deprecation.md) | Friends UI temporarily disabled |
 | [`DATA_MIGRATION.md`](DATA_MIGRATION.md) | Legacy Base44 → Supabase import runbook (if still needed) |
