@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { KidDesktopShell, desktopPanelClass } from "@/components/KidDesktopShell";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,7 +13,14 @@ import {
   type SoloGameSaveControls
 } from "@/lib/soloGameSaves";
 import { IndexedDbSoloDrawingDraftStore } from "@/lib/soloDrawingDraftStore";
-import { reportCaughtError } from "@/utils/telemetry";
+import {
+  LEGACY_WASM_GAME_KEYS,
+  createLegacyWasmExitGuard,
+  teardownLegacyWasmIframe,
+  teardownLegacyWasmIframeSync,
+  type LegacyWasmTeardownResult
+} from "@/game/legacyWasmTeardown";
+import { reportCaughtError, reportTelemetry } from "@/utils/telemetry";
 
 type SoloGameComponent = (props: { save: SoloGameSaveControls }) => ReactNode;
 
@@ -98,6 +105,9 @@ export default function SoloGameContainer() {
   const [hasStarted, setHasStarted] = useState(false);
   const [resumeState, setResumeState] = useState<JsonValue | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const exitGuardRef = useRef(createLegacyWasmExitGuard());
   const drawingDraftStore = useMemo(
     () => user?.id && (gameKey === "drawing" || gameKey === "drawing-solo")
       ? new IndexedDbSoloDrawingDraftStore(`${user.id}:${gameKey}`)
@@ -193,6 +203,104 @@ export default function SoloGameContainer() {
     [clearSave, drawingDraftStore, mergeBestScores, resumeState, saveState, useSavedState]
   );
 
+  const findLegacyWasmIframe = useCallback(() => {
+    if (!gameKey || !LEGACY_WASM_GAME_KEYS.has(gameKey)) return null;
+    const iframe = contentRef.current?.querySelector<HTMLIFrameElement>(
+      "iframe[data-playground-wasm-game]"
+    );
+    return iframe?.dataset.playgroundWasmGame === gameKey ? iframe : null;
+  }, [gameKey]);
+
+  const reportCleanupOutcome = useCallback((result: LegacyWasmTeardownResult) => {
+    if (!gameKey) return;
+    const context = {
+      appArea: "solo-game",
+      operation: "wasm-teardown",
+      gameKey,
+      acknowledgment: result.acknowledgment,
+      fallbackOutcome: result.fallback
+    };
+    if (result.error) {
+      reportCaughtError("WASM solo game cleanup failed", result.error, context, "game-server", "warn");
+    } else if (
+      result.acknowledgment === "timed-out" ||
+      result.fallback === "blank-timed-out"
+    ) {
+      reportTelemetry(
+        { level: "warn", message: "WASM solo game cleanup timed out", context },
+        "game-server"
+      );
+    }
+  }, [gameKey]);
+
+  const exitFullscreenBestEffort = useCallback(() => {
+    if (!document.fullscreenElement) return;
+    try {
+      void document.exitFullscreen().catch((error) => {
+        reportCaughtError("WASM solo game fullscreen exit failed", error, {
+          appArea: "solo-game",
+          operation: "wasm-teardown",
+          gameKey,
+          fallbackOutcome: "navigation-continues"
+        }, "game-server", "warn");
+      });
+    } catch (error) {
+      reportCaughtError("WASM solo game fullscreen exit failed", error, {
+        appArea: "solo-game",
+        operation: "wasm-teardown",
+        gameKey,
+        fallbackOutcome: "navigation-continues"
+      }, "game-server", "warn");
+    }
+  }, [gameKey]);
+
+  const handleHome = useCallback(() => {
+    if (!exitGuardRef.current.tryStart()) return;
+    setIsLeaving(true);
+    exitFullscreenBestEffort();
+    const iframe = findLegacyWasmIframe();
+    void (async () => {
+      try {
+        reportCleanupOutcome(await teardownLegacyWasmIframe(iframe, gameKey ?? ""));
+      } catch (error) {
+        reportCaughtError("WASM solo game cleanup failed", error, {
+          appArea: "solo-game",
+          operation: "wasm-teardown",
+          gameKey,
+          fallbackOutcome: "navigation-continues"
+        }, "game-server", "warn");
+      } finally {
+        navigate("/home");
+      }
+    })();
+  }, [exitFullscreenBestEffort, findLegacyWasmIframe, gameKey, navigate, reportCleanupOutcome]);
+
+  useEffect(() => {
+    exitGuardRef.current = createLegacyWasmExitGuard();
+    setIsLeaving(false);
+  }, [gameKey]);
+
+  useEffect(() => {
+    const mountedContent = contentRef.current;
+    const teardownFallback = () => {
+      if (!gameKey || !LEGACY_WASM_GAME_KEYS.has(gameKey) || !exitGuardRef.current.tryStart()) return;
+      const iframe = mountedContent?.querySelector<HTMLIFrameElement>(
+        "iframe[data-playground-wasm-game]"
+      );
+      const matchingIframe = iframe?.dataset.playgroundWasmGame === gameKey ? iframe : null;
+      const result = teardownLegacyWasmIframeSync(matchingIframe, gameKey);
+      if (result.error) reportCleanupOutcome(result);
+    };
+    const onPageHide = () => teardownFallback();
+    window.addEventListener("pagehide", onPageHide);
+    return () => {
+      window.removeEventListener("pagehide", onPageHide);
+      // StrictMode replays effects without detaching the DOM. Only a detached
+      // content root represents an actual route/component unmount.
+      if (!mountedContent?.isConnected) teardownFallback();
+    };
+  }, [gameKey, reportCleanupOutcome]);
+
   async function startNewGame() {
     setErr(null);
     try {
@@ -212,7 +320,8 @@ export default function SoloGameContainer() {
       actions={
         <button
           type="button"
-          onClick={() => navigate("/home")}
+          onClick={handleHome}
+          disabled={isLeaving}
           className="inline-flex min-h-10 items-center justify-center gap-2 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-4 py-2 text-xs font-black text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200"
         >
           חזרה הביתה
@@ -220,6 +329,7 @@ export default function SoloGameContainer() {
       }
       contentClassName="min-h-[calc(100vh-136px)]"
     >
+      <div ref={contentRef}>
       {err ? (
         <p
           className="mb-4 rounded-xl border border-amber-400/40 dark:border-amber-500/30 bg-amber-500/15 dark:bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-800 dark:text-amber-300"
@@ -272,6 +382,7 @@ export default function SoloGameContainer() {
           משחק לא זמין: {gameKey ?? "?"}
         </p>
       )}
+      </div>
     </KidDesktopShell>
   );
 }

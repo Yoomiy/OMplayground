@@ -115,6 +115,20 @@ This script inserts a `<script>` tag just before `</body>` that:
 - Exposes `window.__playgroundBridge.checkpoint(state)` and
   `window.__playgroundBridge.finish(state)` functions that the game code
   can call (or that can be wired to existing game-over callbacks).
+- Handles the parent `{ source: "playground-board", gameKey, type: "teardown" }`
+  message idempotently. It calls `engine.requestQuit()` when available,
+  releases the canvas WebGL context with `WEBGL_lose_context` when available,
+  then posts `{ source: "playground-legacy-game", gameKey,
+  type: "teardown-complete" }`.
+- Refreshes an existing generated bridge when the helper is run again, so
+  already-exported games receive bridge fixes without re-exporting assets.
+
+For Godot/WASM solo games that use the bounded cleanup flow, the React wrapper
+must mark the iframe with `data-playground-wasm-game="<gameKey>"`. The parent
+waits up to 200 ms for `teardown-complete`, navigates the iframe to
+`about:blank`, waits up to another 300 ms for its load, and then performs the
+SPA navigation regardless of either timeout. Unexpected unmounts use a
+synchronous best-effort teardown and blanking fallback.
 
 > If the game already has its own score/progress callbacks, wire them to call
 > `window.__playgroundBridge.finish({ score })` or

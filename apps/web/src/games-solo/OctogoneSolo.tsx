@@ -114,6 +114,7 @@ export function OctogoneSolo({ save }: { save: SoloGameSaveControls }) {
       >
         <iframe
           ref={iframeRef}
+          data-playground-wasm-game="octogone"
           title="Octogone"
           src="/legacy/octogone/index.html"
           className="h-full w-full"

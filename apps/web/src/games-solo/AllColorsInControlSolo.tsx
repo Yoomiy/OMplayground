@@ -114,6 +114,7 @@ export function AllColorsInControlSolo({ save }: { save: SoloGameSaveControls })
       >
         <iframe
           ref={iframeRef}
+          data-playground-wasm-game="all-colors-in-control"
           title="AllColorsInControl"
           src="/legacy/all-colors-in-control/index.html"
           className="h-full w-full"

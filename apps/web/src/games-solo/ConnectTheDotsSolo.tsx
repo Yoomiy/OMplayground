@@ -114,6 +114,7 @@ export function ConnectTheDotsSolo({ save }: { save: SoloGameSaveControls }) {
       >
         <iframe
           ref={iframeRef}
+          data-playground-wasm-game="connect-the-dots"
           title="ConnectTheDots"
           src="/legacy/connect-the-dots/index.html"
           className="h-full w-full"

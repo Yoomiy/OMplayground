@@ -114,6 +114,7 @@ export function SuperTuxClassicSolo({ save }: { save: SoloGameSaveControls }) {
       >
         <iframe
           ref={iframeRef}
+          data-playground-wasm-game="supertux-classic"
           title="SuperTuxClassic"
           src="/legacy/supertux-classic/index.html"
           className="h-full w-full"

@@ -114,6 +114,7 @@ export function Ball2BoxSolo({ save }: { save: SoloGameSaveControls }) {
       >
         <iframe
           ref={iframeRef}
+          data-playground-wasm-game="ball2box"
           title="Ball2Box"
           src="/legacy/ball2box/index.html"
           className="h-full w-full"

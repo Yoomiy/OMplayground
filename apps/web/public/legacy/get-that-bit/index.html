@@ -228,8 +228,10 @@ const engine = new Engine(GODOT_CONFIG);
 
   function postToParent(type, state) {
     if (!window.parent || window.parent === window) return;
+    var payload = { source: "playground-legacy-game", gameKey: GAME_KEY, type: type };
+    if (state !== undefined) payload.state = state;
     window.parent.postMessage(
-      { source: "playground-legacy-game", gameKey: GAME_KEY, type: type, state: state || {} },
+      payload,
       ORIGIN
     );
   }
@@ -255,12 +257,32 @@ const engine = new Engine(GODOT_CONFIG);
     postToParent("finish", state);
   }
 
+  var teardownPromise;
+  function teardown() {
+    if (teardownPromise) return teardownPromise;
+    teardownPromise = Promise.resolve().then(function () {
+      if (typeof engine !== "undefined" && engine && typeof engine.requestQuit === "function") {
+        return engine.requestQuit();
+      }
+    }).catch(function () {
+      // The parent still blanks the iframe; continue with local WebGL cleanup.
+    }).then(function () {
+      var canvas = document.getElementById("canvas");
+      if (!canvas || typeof canvas.getContext !== "function") return;
+      var gl = canvas.getContext("webgl2") || canvas.getContext("webgl");
+      var loseContext = gl && gl.getExtension("WEBGL_lose_context");
+      if (loseContext) loseContext.loseContext();
+    });
+    return teardownPromise;
+  }
+
   // Expose globally so game code (C via EM_ASM, Godot via JavaScriptBridge,
   // Rust via wasm-bindgen, or plain JS) can call these.
   window.__playgroundBridge = {
     checkpoint: checkpoint,
     finish: finish,
     postToParent: postToParent,
+    teardown: teardown,
   };
 
   // --- Inbound: parent → game ---
@@ -277,6 +299,12 @@ const engine = new Engine(GODOT_CONFIG);
       window.dispatchEvent(
         new CustomEvent("playground-restore", { detail: data.snapshot })
       );
+    }
+
+    if (data.type === "teardown") {
+      teardown().then(function () {
+        postToParent("teardown-complete");
+      });
     }
   });
 

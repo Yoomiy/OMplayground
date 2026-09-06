@@ -11,8 +11,6 @@
 40. you still need to manipulate the pic before the media board shows it
 41. make sure that DB audit_log events are logged in the server too
 42. see why admin is marked as connected in the classrooms dashboard after disconnection.
-45. add light theme
-48. allow teachers to participate in all games
 49. look into presentor rights transfare bug (and add it to the side-dashboard)
 52. make kidsHome lighter (it turns out that wasm games somtimes keep clogging the page after leave)
 53. fix raise hand behavior

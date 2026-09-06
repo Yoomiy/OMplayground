@@ -19,6 +19,8 @@
  *        functions that the game code can call.
  *      - Listens for "restore-snapshot" messages from the parent to restore
  *        game state on resume.
+ *      - Handles idempotent teardown, requests engine shutdown, releases the
+ *        WebGL context, and acknowledges completion.
  */
 
 import { readFileSync, writeFileSync } from "node:fs";
@@ -34,12 +36,6 @@ if (!htmlPath || !gameKey) {
 const absPath = resolve(htmlPath);
 let html = readFileSync(absPath, "utf-8");
 
-// Check if bridge is already injected
-if (html.includes("__playgroundBridge")) {
-  console.log(`⚠ Bridge already present in ${absPath} — skipping.`);
-  process.exit(0);
-}
-
 const bridgeScript = `
 <!-- Playground postMessage Bridge (auto-injected) -->
 <script>
@@ -53,8 +49,10 @@ const bridgeScript = `
 
   function postToParent(type, state) {
     if (!window.parent || window.parent === window) return;
+    var payload = { source: "playground-legacy-game", gameKey: GAME_KEY, type: type };
+    if (state !== undefined) payload.state = state;
     window.parent.postMessage(
-      { source: "playground-legacy-game", gameKey: GAME_KEY, type: type, state: state || {} },
+      payload,
       ORIGIN
     );
   }
@@ -80,12 +78,32 @@ const bridgeScript = `
     postToParent("finish", state);
   }
 
+  var teardownPromise;
+  function teardown() {
+    if (teardownPromise) return teardownPromise;
+    teardownPromise = Promise.resolve().then(function () {
+      if (typeof engine !== "undefined" && engine && typeof engine.requestQuit === "function") {
+        return engine.requestQuit();
+      }
+    }).catch(function () {
+      // The parent still blanks the iframe; continue with local WebGL cleanup.
+    }).then(function () {
+      var canvas = document.getElementById("canvas");
+      if (!canvas || typeof canvas.getContext !== "function") return;
+      var gl = canvas.getContext("webgl2") || canvas.getContext("webgl");
+      var loseContext = gl && gl.getExtension("WEBGL_lose_context");
+      if (loseContext) loseContext.loseContext();
+    });
+    return teardownPromise;
+  }
+
   // Expose globally so game code (C via EM_ASM, Godot via JavaScriptBridge,
   // Rust via wasm-bindgen, or plain JS) can call these.
   window.__playgroundBridge = {
     checkpoint: checkpoint,
     finish: finish,
     postToParent: postToParent,
+    teardown: teardown,
   };
 
   // --- Inbound: parent → game ---
@@ -103,6 +121,12 @@ const bridgeScript = `
         new CustomEvent("playground-restore", { detail: data.snapshot })
       );
     }
+
+    if (data.type === "teardown") {
+      teardown().then(function () {
+        postToParent("teardown-complete");
+      });
+    }
   });
 
   // Signal ready once the page has loaded.
@@ -115,12 +139,16 @@ const bridgeScript = `
 </script>
 `;
 
-// Inject before </body> if present, otherwise append to end.
-if (html.includes("</body>")) {
+const existingBridge = /<!-- Playground postMessage Bridge \(auto-injected\) -->\s*<script>[\s\S]*?<\/script>/;
+
+// Refresh an existing generated bridge, otherwise inject a new one.
+if (existingBridge.test(html)) {
+  html = html.replace(existingBridge, bridgeScript.trim());
+} else if (html.includes("</body>")) {
   html = html.replace("</body>", bridgeScript + "\n</body>");
 } else {
   html += "\n" + bridgeScript;
 }
 
 writeFileSync(absPath, html, "utf-8");
-console.log(`✓ Bridge injected into ${absPath} for gameKey="${gameKey}"`);
+console.log(`✓ Bridge updated in ${absPath} for gameKey="${gameKey}"`);

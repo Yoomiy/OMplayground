@@ -322,7 +322,7 @@ export function HomePage() {
               className={cn(kidFieldInputClass, "min-h-12 py-3 pl-4 pr-12")}
               value={gameSearch}
               onChange={(event) => setGameSearch(event.target.value)}
-              placeholder="איזה משחק בא לכם לשחק עכשיו?"
+              placeholder="איזה משחק תרצו לשחק עכשיו?"
             />
           </label>
 
@@ -664,7 +664,7 @@ export function HomePage() {
               <span>🎮</span>
               {pendingGame.name_he}
             </h3>
-            <p className="mt-2 text-sm font-bold text-slate-500 dark:text-white/60">איך בא לכם ליצור את החדר?</p>
+            <p className="mt-2 text-sm font-bold text-slate-500 dark:text-white/60">איך תרצו ליצור את החדר?</p>
             <div className="mt-6 grid gap-3">
               <button
                 type="button"

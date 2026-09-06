@@ -114,6 +114,7 @@ export function GravvitySolo({ save }: { save: SoloGameSaveControls }) {
       >
         <iframe
           ref={iframeRef}
+          data-playground-wasm-game="gravvity"
           title="Gravvity"
           src="/legacy/gravvity/index.html"
           className="h-full w-full"

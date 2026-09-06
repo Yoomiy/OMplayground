@@ -114,6 +114,7 @@ export function GetThatBitSolo({ save }: { save: SoloGameSaveControls }) {
       >
         <iframe
           ref={iframeRef}
+          data-playground-wasm-game="get-that-bit"
           title="GetThatBit"
           src="/legacy/get-that-bit/index.html"
           className="h-full w-full"

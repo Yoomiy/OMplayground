@@ -114,6 +114,7 @@ export function ChromavescenceSolo({ save }: { save: SoloGameSaveControls }) {
       >
         <iframe
           ref={iframeRef}
+          data-playground-wasm-game="chromavescence"
           title="Chromavescence"
           src="/legacy/chromavescence/index.html"
           className="h-full w-full"
