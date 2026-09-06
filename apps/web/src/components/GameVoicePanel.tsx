@@ -10,7 +10,8 @@ interface GameVoicePanelProps {
 }
 
 export function GameVoicePanel({ manualJoin = false, ...voiceProps }: GameVoicePanelProps) {
-  const [joined, setJoined] = useState(!manualJoin);
+  const [manuallyJoinedSessionId, setManuallyJoinedSessionId] = useState<string | null>(null);
+  const joined = !manualJoin || manuallyJoinedSessionId === voiceProps.sessionId;
 
   if (!joined) {
     return (
@@ -24,7 +25,7 @@ export function GameVoicePanel({ manualJoin = false, ...voiceProps }: GameVoiceP
         <button
           type="button"
           className="inline-flex w-full min-h-10 items-center justify-center gap-2 rounded-xl border border-sky-300 dark:border-sky-500/30 bg-sky-50 dark:bg-sky-500/10 px-3 py-2 font-bold text-sky-700 dark:text-sky-300 transition hover:bg-sky-100 dark:hover:bg-sky-500/20 shadow-sm"
-          onClick={() => setJoined(true)}
+          onClick={() => setManuallyJoinedSessionId(voiceProps.sessionId)}
         >
           <Mic size={17} />
           הצטרף לצ׳אט הקולי
