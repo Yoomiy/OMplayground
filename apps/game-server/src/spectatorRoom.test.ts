@@ -8,6 +8,21 @@ import {
 } from "./room";
 
 describe("teacher spectators (same-gender observers, not players)", () => {
+  it("marks an explicitly seated teacher without turning them into a spectator", () => {
+    const room = getOrCreateRoom("teacher-player", {
+      gameId: "g-teacher",
+      gameKey: tictactoeModule.key,
+      module: tictactoeModule,
+      gender: "boy",
+      hostId: "teacher-1"
+    });
+    const assigned = assignPlayer(room, "teacher-1", "Teacher", { isTeacher: true });
+
+    expect("player" in assigned).toBe(true);
+    expect(room.players.get("teacher-1")?.isTeacher).toBe(true);
+    expect(room.spectators.has("teacher-1")).toBe(false);
+  });
+
   it("keeps the room in memory when the last player leaves but a spectator remains", () => {
     const sessionId = "sess-spec-1";
     const room = getOrCreateRoom(sessionId, {

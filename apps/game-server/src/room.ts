@@ -13,6 +13,7 @@ import {
 export interface RoomPlayer {
   userId: string;
   displayName: string;
+  isTeacher?: boolean;
 }
 
 export interface RemovePlayerResult {
@@ -42,7 +43,7 @@ export interface Room<State = unknown> {
   /** Persisted participant roster for resumed/paused games. */
   roster: RoomPlayer[];
   players: Map<string, RoomPlayer>;
-  /** Teachers observing the same-gender session (not in player_ids / DB join list). */
+  /** Seatless staff observers; teachers who explicitly play live in `players`. */
   spectators: Map<string, RoomPlayer>;
   /** Child overflow viewers, kept separate from teacher observers and player seats. */
   childSpectatorIds: Set<string>;
@@ -244,7 +245,8 @@ export function removeSpectatorFromRoom(sessionId: string, userId: string): void
 export function assignPlayer<S>(
   room: Room<S>,
   userId: string,
-  displayName: string
+  displayName: string,
+  options?: { isTeacher?: boolean }
 ): { player: RoomPlayer } | { error: { code: string; message: string } } {
   if (room.players.has(userId)) {
     return { player: room.players.get(userId)! };
@@ -255,7 +257,11 @@ export function assignPlayer<S>(
     };
   }
   const wasIdle = isRoomIdle(room);
-  const player: RoomPlayer = { userId, displayName };
+  const player: RoomPlayer = {
+    userId,
+    displayName,
+    ...(options?.isTeacher ? { isTeacher: true } : {})
+  };
   room.players.set(userId, player);
   room.peakPlayerCount = Math.max(room.peakPlayerCount || 0, room.players.size);
   if (!room.roster.some((p) => p.userId === userId)) {

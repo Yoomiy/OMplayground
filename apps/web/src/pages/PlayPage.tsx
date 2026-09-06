@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { GameSessionContainer } from "@/game/GameSessionContainer";
 import { MinecraftSessionContainer } from "@/game/MinecraftSessionContainer";
 import { KidDesktopShell } from "@/components/KidDesktopShell";
@@ -10,6 +10,7 @@ import { classroomDrawingRoomCode } from "@/lib/drawingSessionScope";
 
 function PlayPage() {
   const { sessionId } = useParams();
+  const [searchParams] = useSearchParams();
   const { profile } = useProfile();
   const { isAdmin } = useIsAdmin();
   const [gameName, setGameName] = useState<string>("");
@@ -50,10 +51,12 @@ function PlayPage() {
       return { backHref: "/admin", backLabel: "ניהול" };
     }
     if (profile?.role === "teacher") {
-      return { backHref: "/teacher", backLabel: "לוח מורה" };
+      return searchParams.get("mode") === "player"
+        ? { backHref: "/home", backLabel: "מגרש המשחקים" }
+        : { backHref: "/teacher", backLabel: "לוח מורה" };
     }
     return { backHref: "/home", backLabel: "בית" };
-  }, [isAdmin, profile?.role]);
+  }, [isAdmin, profile?.role, searchParams]);
 
   if (!sessionId) {
     return (

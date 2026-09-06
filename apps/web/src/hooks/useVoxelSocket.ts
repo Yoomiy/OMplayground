@@ -114,6 +114,8 @@ export interface UseVoxelSocketArgs {
   sessionId: string;
   /** Invitation code from `/join/:code` — required to enter a private room. */
   invitationCode?: string;
+  /** Explicit staff participation choice. Ignored for child accounts. */
+  participationMode?: "player" | "observer";
   /** When true, INPUT is not sent (paused room, teacher observer, etc.). */
   suppressInputEmit?: boolean;
 }
@@ -180,7 +182,7 @@ function emitWithAck<T>(socket: Socket, event: string, payload: unknown): Promis
 export function useVoxelSocket(
   args: UseVoxelSocketArgs
 ): UseVoxelSocketReturn {
-  const { sessionId, invitationCode, suppressInputEmit = false } = args;
+  const { sessionId, invitationCode, participationMode, suppressInputEmit = false } = args;
   const suppressInputRef = useRef(suppressInputEmit);
   suppressInputRef.current = suppressInputEmit;
   const socketRef = useRef<Socket | null>(null);
@@ -254,6 +256,7 @@ export function useVoxelSocket(
         setStatus("מחובר");
         const ack = (await emitWithAck<JoinRoomAck>(s, "JOIN_ROOM", {
           sessionId,
+          ...(participationMode ? { participationMode } : {}),
           ...(invitationCode ? { invitationCode } : {})
         })) as JoinRoomAck;
         if (!ack?.ok) {
@@ -429,7 +432,7 @@ export function useVoxelSocket(
       socketRef.current?.disconnect();
       socketRef.current = null;
     };
-  }, [sessionId, invitationCode]);
+  }, [sessionId, invitationCode, participationMode]);
 
   function sendInput(input: InputReq): void {
     lastInputRef.current = input;

@@ -3,11 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { usePendingChallenge } from "@/hooks/usePendingChallenge";
-
+import { reportCaughtError } from "@/utils/telemetry";
 
 /**
- * Global incoming-challenge banner — appears on any page when another kid
- * challenges the current user. Accepting navigates both players into the
+ * Global incoming-challenge banner — appears on any page when another kid or
+ * a teacher challenges the current user. Accepting navigates both players into the
  * shared session.
  */
 export function PendingChallengeBanner() {
@@ -15,22 +15,44 @@ export function PendingChallengeBanner() {
   const navigate = useNavigate();
   const { challenge, accept, decline } = usePendingChallenge(user?.id);
   const [fromName, setFromName] = useState<string | null>(null);
+  const [fromRole, setFromRole] = useState<"kid" | "teacher" | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     if (!challenge) {
       setFromName(null);
+      setFromRole(null);
       return;
     }
     void (async () => {
-      const { data } = await supabase
-        .from("public_kid_profiles")
-        .select("full_name")
-        .eq("id", challenge.from_kid_id)
-        .maybeSingle();
+      const { data, error } = await supabase.rpc("get_game_challenge_sender", {
+        p_challenge_id: challenge.id
+      });
+      if (error) {
+        reportCaughtError(
+          "Challenge sender lookup failed",
+          error,
+          { appArea: "game-challenge", operation: "sender-lookup" },
+          "shell",
+          "warn"
+        );
+      }
       if (!cancelled) {
-        setFromName((data?.full_name as string | undefined) ?? null);
+        const sender = data as {
+          display_name?: unknown;
+          role?: unknown;
+        } | null;
+        setFromName(
+          typeof sender?.display_name === "string"
+            ? sender.display_name
+            : null
+        );
+        setFromRole(
+          sender?.role === "kid" || sender?.role === "teacher"
+            ? sender.role
+            : null
+        );
       }
     })();
     return () => {
@@ -71,10 +93,14 @@ export function PendingChallengeBanner() {
           </span>
           <div>
             <p className="text-base font-black text-amber-700 dark:text-amber-300">
-              אתגר מ-{fromName ?? "חבר"}!
+              {fromRole === "teacher"
+                ? "אתגר מהמורה " + (fromName ?? "") + "!"
+                : "אתגר מ-" + (fromName ?? "חבר") + "!"}
             </p>
             <p className="text-sm font-semibold text-slate-700 dark:text-white/70">
-              מישהו מזמין אותך למשחק — רוצה להצטרף? 🚀
+              {fromRole === "teacher"
+                ? "המורה מזמין אותך למשחק — רוצה להצטרף? 🚀"
+                : "מישהו מזמין אותך למשחק — רוצה להצטרף? 🚀"}
             </p>
           </div>
         </div>

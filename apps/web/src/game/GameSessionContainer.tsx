@@ -31,6 +31,7 @@ type RoomEvent =
 export interface RoomPlayer {
   userId: string;
   displayName: string;
+  isTeacher?: boolean;
 }
 
 interface RematchState {
@@ -106,18 +107,21 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const inviteCode = searchParams.get("invite") ?? undefined;
+  const requestedParticipationMode =
+    searchParams.get("mode") === "player" ? "player" : "observer";
   const { profile } = useProfile();
   const { isAdmin } = useIsAdmin();
-  const isStaffObserver = isAdmin || profile?.role === "teacher";
+  const isStaff = isAdmin || profile?.role === "teacher";
   const [participationMode, setParticipationMode] = useState<ParticipationMode>(
-    isStaffObserver ? "spectator" : "joining"
+    "joining"
   );
-  const isChildSpectator = !isStaffObserver && participationMode === "spectator";
+  const isStaffObserver = isStaff && participationMode !== "player";
+  const isChildSpectator = !isStaff && participationMode === "spectator";
   const teacherChat = useTeacherSessionChat(
-    isStaffObserver ? sessionId : undefined
+    isStaff ? sessionId : undefined
   );
   const kidChat = usePersistedSessionChat(
-    !isStaffObserver && participationMode !== "joining" ? sessionId : undefined
+    !isStaff && participationMode !== "joining" ? sessionId : undefined
   );
   const socketRef = useRef<Socket | null>(null);
   const recessEndedRef = useRef(false);
@@ -178,10 +182,15 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         setStatus("מחובר");
         s.emit(
           "JOIN_ROOM",
-          { sessionId, ...(inviteCode ? { invitationCode: inviteCode } : {}) },
+          {
+            sessionId,
+            participationMode: requestedParticipationMode,
+            ...(inviteCode ? { invitationCode: inviteCode } : {})
+          },
           (ack: {
             ok?: boolean;
             spectator?: boolean;
+            fallbackReason?: "ROOM_FULL";
             error?: { code?: string; message?: string };
           }) => {
             if (!ack?.ok) {
@@ -202,6 +211,9 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
               return;
             }
             setParticipationMode(ack?.spectator ? "spectator" : "player");
+            if (ack?.fallbackReason === "ROOM_FULL") {
+              setToast("החדר מלא — הצטרפת במצב צפייה וניהול");
+            }
           }
         );
       });
@@ -330,7 +342,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
       socketRef.current?.disconnect();
       socketRef.current = null;
     };
-  }, [sessionId, inviteCode, navigate]);
+  }, [sessionId, inviteCode, navigate, requestedParticipationMode]);
 
   useEffect(() => {
     let cancelled = false;
@@ -674,7 +686,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
     !!myUserId &&
     roster.some((p) => p.userId === myUserId);
 
-  const chatPanel = isStaffObserver ? (
+  const chatPanel = isStaff ? (
     <section className={desktopPanelClass("space-y-2 p-3")}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-black text-slate-900 dark:text-white">צ׳אט (ניהול)</h2>
@@ -715,6 +727,30 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
           </li>
         ))}
       </ul>
+      {participationMode === "player" && !isAdmin ? (
+        <div className="flex gap-2">
+          <input
+            className="min-h-10 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-400 transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-white/40"
+            value={chatDraft}
+            onChange={(event) => setChatDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                sendChat();
+              }
+            }}
+            placeholder="הודעה כמורה…"
+            maxLength={500}
+          />
+          <button
+            type="button"
+            className="rounded-lg bg-gradient-to-r from-violet-500 to-indigo-500 border border-violet-400/50 px-3.5 py-1 text-sm font-bold text-white"
+            onClick={() => sendChat()}
+          >
+            שלח
+          </button>
+        </div>
+      ) : null}
     </section>
   ) : (
     <section className={desktopPanelClass("space-y-2 p-3")}>
@@ -761,7 +797,13 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         <div className={desktopPanelClass("flex flex-wrap items-center justify-between gap-3 px-4 py-3")}>
           <div className="flex items-center gap-3">
             <p className="text-sm font-bold text-slate-700 dark:text-white/80">
-              {isStaffObserver ? `צפייה בלבד (${isAdmin ? "מנהל" : "מורה"}) · ` : isChildSpectator ? "צפייה בלבד · " : ""}
+              {isStaffObserver
+                ? `צפייה בלבד (${isAdmin ? "מנהל" : "מורה"}) · `
+                : isStaff
+                  ? "משחק/ת כמורה · "
+                  : isChildSpectator
+                    ? "צפייה בלבד · "
+                    : ""}
               {status}
             </p>
             {toast ? (
@@ -899,6 +941,11 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
                   }
                 >
                   {player.displayName}
+                  {player.isTeacher ? (
+                    <span className="mr-2 rounded-full border border-sky-300 bg-sky-50 px-2 py-0.5 text-[10px] font-black text-sky-700 dark:border-sky-400/30 dark:bg-sky-500/15 dark:text-sky-200">
+                      מורה
+                    </span>
+                  ) : null}
                   <span className="block text-xs">
                     {connectedIds.has(player.userId) ? "מחובר" : "חסר"}
                   </span>

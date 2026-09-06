@@ -115,6 +115,7 @@ export interface JoinRoomAckOk {
   spawn: Vec3;
   paused: boolean;
   gameMode: GameMode;
+  teacherObserver?: boolean;
   /** Survival: authoritative hotbar. Creative: empty slots (UI ignores). */
   inventory: HotbarSlot[];
   /** Survival: non-placeable items (27 storage). Creative: empty. */

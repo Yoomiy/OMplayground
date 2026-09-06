@@ -61,14 +61,15 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
     setInfo(null);
     try {
       const { sessionId } = await sendChallenge({
-        meId: user.id,
-        meDisplayName: profile.full_name,
-        meGender: profile.gender,
         toId: kid.id,
         gameId
       });
       onClose();
-      navigate(`/play/${sessionId}`);
+      navigate(
+        profile.role === "teacher"
+          ? `/play/${sessionId}?mode=player`
+          : `/play/${sessionId}`
+      );
     } catch (e) {
       setErr(e instanceof Error ? e.message : "אתגר נכשל");
     } finally {
@@ -133,7 +134,7 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
           <div className="max-h-[min(60vh,420px)] space-y-5 overflow-y-auto p-5 custom-scrollbar">
             {err ? (
               <p
-                className="rounded-2xl border border-amber-400/40 dark:border-amber-400/30 bg-amber-500/15 dark:bg-amber-500/10 px-3 py-2 text-sm font-bold text-amber-850 dark:text-amber-300"
+                className="rounded-2xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-800 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-300"
                 role="alert"
               >
                 ⚠️ {err}
@@ -177,49 +178,53 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
               )}
             </section>
 
-            <section className="space-y-2 border-t border-slate-200 dark:border-white/10 pt-4">
-              <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-white/40">
-                פעולות
-              </h4>
-              <div className="flex flex-col gap-2">
-                <button
-                  className="w-full text-center rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-4 py-3 text-sm font-black text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200 disabled:opacity-50"
-                  type="button"
-                  disabled={busy !== null}
-                  onClick={() => {
-                    onClose();
-                    navigate(`/profile/${kid.id}`);
-                  }}
-                >
-                  צפה בפרופיל 👀
-                </button>
-                <button
-                  className="w-full text-center rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-4 py-3 text-sm font-black text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200 disabled:opacity-50"
-                  type="button"
-                  disabled={busy !== null}
-                  onClick={() => setComposing(true)}
-                >
-                  שלח הודעה ✉️
-                </button>
-              </div>
-            </section>
+            {profile.role === "kid" ? (
+              <section className="space-y-2 border-t border-slate-200 pt-4 dark:border-white/10">
+                <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-white/40">
+                  פעולות
+                </h4>
+                <div className="flex flex-col gap-2">
+                  <button
+                    className="w-full text-center rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-4 py-3 text-sm font-black text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200 disabled:opacity-50"
+                    type="button"
+                    disabled={busy !== null}
+                    onClick={() => {
+                      onClose();
+                      navigate(`/profile/${kid.id}`);
+                    }}
+                  >
+                    צפה בפרופיל 👀
+                  </button>
+                  <button
+                    className="w-full text-center rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-4 py-3 text-sm font-black text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200 disabled:opacity-50"
+                    type="button"
+                    disabled={busy !== null}
+                    onClick={() => setComposing(true)}
+                  >
+                    שלח הודעה ✉️
+                  </button>
+                </div>
+              </section>
+            ) : null}
 
-            <section className="space-y-2 border-t border-rose-500/25 pt-4 rounded-2xl bg-rose-500/5 p-3">
-              <h4 className="text-xs font-bold uppercase tracking-wide text-rose-600 dark:text-rose-400">
-                בטיחות
-              </h4>
-              <p className="text-xs font-bold text-rose-700 dark:text-rose-300/80">
-                חסימה מסתירה את המשתמש ממך.
-              </p>
-              <button
-                className="w-full text-center rounded-2xl bg-rose-600 border border-rose-500/50 py-3 text-sm font-black text-white hover:bg-rose-700 transition duration-200 disabled:opacity-50"
-                type="button"
-                disabled={busy !== null}
-                onClick={() => void block()}
-              >
-                {busy === "block" ? "חוסם…" : "חסום משתמש 🚫"}
-              </button>
-            </section>
+            {profile.role === "kid" ? (
+              <section className="space-y-2 rounded-2xl border border-rose-300 bg-rose-50 p-3 pt-4 dark:border-rose-500/25 dark:bg-rose-500/5">
+                <h4 className="text-xs font-bold uppercase tracking-wide text-rose-600 dark:text-rose-400">
+                  בטיחות
+                </h4>
+                <p className="text-xs font-bold text-rose-700 dark:text-rose-300/80">
+                  חסימה מסתירה את המשתמש ממך.
+                </p>
+                <button
+                  className="w-full text-center rounded-2xl bg-rose-600 border border-rose-500/50 py-3 text-sm font-black text-white hover:bg-rose-700 transition duration-200 disabled:opacity-50"
+                  type="button"
+                  disabled={busy !== null}
+                  onClick={() => void block()}
+                >
+                  {busy === "block" ? "חוסם…" : "חסום משתמש 🚫"}
+                </button>
+              </section>
+            ) : null}
           </div>
 
           <div className="border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
@@ -233,15 +238,17 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
           </div>
         </div>
       </div>
-      <ComposeMessage
-        open={composing}
-        onClose={() => setComposing(false)}
-        fromId={user.id}
-        fromDisplayName={profile.full_name}
-        senderGender={profile.gender}
-        toId={kid.id}
-        toDisplayName={kid.full_name}
-      />
+      {profile.role === "kid" ? (
+        <ComposeMessage
+          open={composing}
+          onClose={() => setComposing(false)}
+          fromId={user.id}
+          fromDisplayName={profile.full_name}
+          senderGender={profile.gender}
+          toId={kid.id}
+          toDisplayName={kid.full_name}
+        />
+      ) : null}
     </>
   );
 }

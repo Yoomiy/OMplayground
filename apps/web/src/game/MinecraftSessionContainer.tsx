@@ -75,7 +75,10 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
   const { user } = useAuth();
   const { profile } = useProfile();
   const { isAdmin } = useIsAdmin();
-  const isStaffObserver = isAdmin || profile?.role === "teacher";
+  const isStaff = isAdmin || profile?.role === "teacher";
+  const requestedParticipationMode =
+    searchParams.get("mode") === "player" ? "player" : "observer";
+  const [isTeacherObserver, setIsTeacherObserver] = useState(isStaff);
   const myUserId = user?.id ?? null;
 
   const [paused, setPaused] = useState(false);
@@ -92,7 +95,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
 
   const [chatExpanded, setChatExpanded] = useState(false);
   const teacherChat = useTeacherSessionChat(sessionId);
-  const canSendChat = !isStaffObserver;
+  const canSendChat = !isStaff || !isTeacherObserver;
 
   const {
     connected,
@@ -147,7 +150,8 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
   } = useVoxelSocket({
     sessionId,
     invitationCode: inviteCode,
-    suppressInputEmit: paused
+    participationMode: requestedParticipationMode,
+    suppressInputEmit: paused || (isStaff && isTeacherObserver)
   });
 
   useEffect(() => {
@@ -155,6 +159,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     setPaused(joinAck.paused);
     setHostId(joinAck.hostId);
     setLiveGameMode(joinAck.gameMode);
+    setIsTeacherObserver(joinAck.teacherObserver === true);
   }, [joinAck]);
 
   useEffect(() => {
@@ -273,7 +278,13 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
     };
   }, [sessionId]);
 
-  const iAmHost = !isStaffObserver && myUserId !== null && myUserId === hostId;
+  const iAmHost = !isTeacherObserver && myUserId !== null && myUserId === hostId;
+
+  const handleSwitchTeacherMode = useCallback(async (observer: boolean) => {
+    const ack = await switchTeacherMode(observer);
+    if (ack.ok) setIsTeacherObserver(observer);
+    return ack;
+  }, [switchTeacherMode]);
 
   const handlePlaceBlock = useCallback(
     (pos: Vec3, blockId: number) => {
@@ -403,8 +414,8 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
 
   const handleExit = useCallback(async () => {
     await leave();
-    navigate(isAdmin ? "/admin" : isStaffObserver ? "/teacher" : "/home");
-  }, [leave, navigate, isAdmin, isStaffObserver]);
+    navigate(isAdmin ? "/admin" : isTeacherObserver ? "/teacher" : "/home");
+  }, [leave, navigate, isAdmin, isTeacherObserver]);
 
   const toggleRoomVisibility = useCallback(async () => {
     if (!myUserId || !hostId || myUserId !== hostId || roomIsOpen === null) return;
@@ -487,10 +498,11 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
         initialDeltas={joinAck.deltas}
         mySpawn={joinAck.spawn}
         paused={paused || endOverlay !== null}
-        inspectorKind={isAdmin ? "admin" : isStaffObserver ? "teacher" : null}
-        onSwitchTeacherMode={switchTeacherMode}
-        onSoftDeleteChatMessage={isStaffObserver ? teacherChat.softDelete : undefined}
-        onClearSessionChat={isStaffObserver ? teacherChat.clearSession : undefined}
+        inspectorKind={isAdmin ? "admin" : isStaff ? "teacher" : null}
+        initialTeacherObserver={isTeacherObserver}
+        onSwitchTeacherMode={handleSwitchTeacherMode}
+        onSoftDeleteChatMessage={isStaff ? teacherChat.softDelete : undefined}
+        onClearSessionChat={isStaff ? teacherChat.clearSession : undefined}
         roster={joinAck.roster}
         myUserId={myUserId}
         sessionId={sessionId}
@@ -670,7 +682,7 @@ export function MinecraftSessionContainer(props: MinecraftSessionContainerProps)
               onClick={() => void handleExit()}
               className="mt-4 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-500 border border-violet-400/50 px-4 py-2 text-sm font-bold text-white hover:shadow-[0_0_12px_rgba(139,92,246,0.3)] transition duration-200"
             >
-              {isAdmin ? "חזרה לניהול" : isStaffObserver ? "חזרה ללוח המורה" : "חזרה הביתה"}
+              {isAdmin ? "חזרה לניהול" : isTeacherObserver ? "חזרה ללוח המורה" : "חזרה הביתה"}
             </button>
           </div>
         </div>

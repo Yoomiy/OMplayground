@@ -970,6 +970,7 @@ export interface MinecraftClientProps {
   onSendChatMessage: (message: string) => Promise<SimpleAck>;
   onChatExpandedChange?: (expanded: boolean) => void;
   inspectorKind?: "teacher" | "admin" | null;
+  initialTeacherObserver?: boolean;
   onSwitchTeacherMode?: (observer: boolean) => Promise<SimpleAck>;
   onSoftDeleteChatMessage?: (messageId: string) => Promise<void>;
   onClearSessionChat?: () => Promise<void>;
@@ -1034,6 +1035,7 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
     onSendChatMessage,
     onChatExpandedChange,
     inspectorKind = null,
+    initialTeacherObserver,
     onSwitchTeacherMode,
     onSoftDeleteChatMessage,
     onClearSessionChat,
@@ -1046,12 +1048,15 @@ export function MinecraftClient(props: MinecraftClientProps): JSX.Element {
 
   const [survivalSlot, setSurvivalSlot] = useState(0);
   const isInspector = inspectorKind !== null;
-  const [isTeacherSpectator, setIsTeacherSpectator] = useState(isInspector);
-  const isTeacherSpectatorRef = useRef(isInspector);
+  const [isTeacherSpectator, setIsTeacherSpectator] = useState(
+    initialTeacherObserver ?? isInspector
+  );
+  const isTeacherSpectatorRef = useRef(initialTeacherObserver ?? isInspector);
   useEffect(() => {
-    setIsTeacherSpectator(isInspector);
-    isTeacherSpectatorRef.current = isInspector;
-  }, [isInspector]);
+    const next = initialTeacherObserver ?? isInspector;
+    setIsTeacherSpectator(next);
+    isTeacherSpectatorRef.current = next;
+  }, [initialTeacherObserver, isInspector]);
   useEffect(() => {
     isTeacherSpectatorRef.current = isTeacherSpectator;
   }, [isTeacherSpectator]);

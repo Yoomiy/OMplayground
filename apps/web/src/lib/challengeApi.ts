@@ -1,4 +1,6 @@
 import { supabase } from "@/lib/supabase";
+import { getCorrelationId } from "@/utils/correlation";
+import { reportCaughtError } from "@/utils/telemetry";
 
 export interface GameChallengeRow {
   id: string;
@@ -11,56 +13,43 @@ export interface GameChallengeRow {
   expires_at: string;
 }
 
-function makeInvitationCode(): string {
-  return crypto.randomUUID().replace(/-/g, "").slice(0, 12);
-}
-
 /**
- * Creates a `game_sessions` row owned by the sender, then inserts a
- * `game_challenges` row addressed to `toId`. Returns the new session id so the
- * caller can navigate to `/play/:sessionId` to wait.
+ * Creates the private game session and challenge atomically. Role-direction
+ * validation and the teacher audit entry are owned by the database function.
  */
 export async function sendChallenge(args: {
-  meId: string;
-  meDisplayName: string;
-  meGender: "boy" | "girl";
   toId: string;
   gameId: string;
 }): Promise<{ sessionId: string; challengeId: string }> {
-  const { data: session, error: sessErr } = await supabase
-    .from("game_sessions")
-    .insert({
-      game_id: args.gameId,
-      host_id: args.meId,
-      host_name: args.meDisplayName,
-      player_ids: [args.meId],
-      player_names: [args.meDisplayName],
-      status: "waiting",
-      is_open: false,
-      invitation_code: makeInvitationCode(),
-      gender: args.meGender
-    })
-    .select("id")
-    .maybeSingle();
-  if (sessErr || !session?.id) {
-    throw new Error(sessErr?.message ?? "FAILED_TO_CREATE_SESSION");
+  const { data, error } = await supabase.rpc("create_game_challenge", {
+    p_to_id: args.toId,
+    p_game_id: args.gameId,
+    p_correlation_id: getCorrelationId()
+  });
+  if (error) {
+    reportCaughtError(
+      "Game challenge creation failed",
+      error,
+      { appArea: "game-challenge", operation: "create" }
+    );
+    throw new Error(error.message);
   }
 
-  const { data: challenge, error: chErr } = await supabase
-    .from("game_challenges")
-    .insert({
-      from_kid_id: args.meId,
-      to_kid_id: args.toId,
-      session_id: session.id,
-      game_id: args.gameId
-    })
-    .select("id")
-    .maybeSingle();
-  if (chErr || !challenge?.id) {
-    throw new Error(chErr?.message ?? "FAILED_TO_CREATE_CHALLENGE");
+  const result = data as {
+    session_id?: unknown;
+    challenge_id?: unknown;
+  } | null;
+  if (
+    typeof result?.session_id !== "string" ||
+    typeof result.challenge_id !== "string"
+  ) {
+    throw new Error("FAILED_TO_CREATE_CHALLENGE");
   }
 
-  return { sessionId: session.id as string, challengeId: challenge.id as string };
+  return {
+    sessionId: result.session_id,
+    challengeId: result.challenge_id
+  };
 }
 
 export async function acceptChallenge(c: GameChallengeRow): Promise<void> {

@@ -2596,7 +2596,11 @@ io.on("connection", (socket) => {
   socket.on(
     "JOIN_ROOM",
     async (
-      payload: { sessionId: string; invitationCode?: string },
+      payload: {
+        sessionId: string;
+        invitationCode?: string;
+        participationMode?: "player" | "observer";
+      },
       ack?: (r: JoinRoomAck) => void
     ) => {
       const started = Date.now();
@@ -2634,7 +2638,10 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      if (!isGameInspectorRole(socket.data.role) && (session.gender as string) !== gender) {
+      const joinRole = socket.data.role as string;
+      const requestedTeacherPlayer =
+        joinRole === "teacher" && payload?.participationMode === "player";
+      if ((requestedTeacherPlayer || !isGameInspectorRole(joinRole)) && (session.gender as string) !== gender) {
         reply?.({
           ok: false,
           error: { code: "GENDER_MISMATCH", message: "Wrong gender partition" }
@@ -2663,12 +2670,11 @@ io.on("connection", (socket) => {
       const playerNames = ((session.player_names as string[]) ?? []).map(
         String
       );
-      const joinRole = socket.data.role as string;
       const hostId = String(session.host_id ?? "");
       const isOpen = (session as { is_open?: boolean }).is_open !== false;
       if (
         !isOpen &&
-        !isGameInspectorRole(joinRole) &&
+        (requestedTeacherPlayer || !isGameInspectorRole(joinRole)) &&
         !playerIds.includes(userId) &&
         hostId !== userId
       ) {
@@ -2732,12 +2738,31 @@ io.on("connection", (socket) => {
         stats.onRoomCreated(sessionId, "voxel");
       }
       const wasAlreadyInRoom = room.players.has(userId);
+      if (requestedTeacherPlayer && !wasAlreadyInRoom) {
+        const seatedPlayers = Array.from(room.players.values()).filter(
+          (player) => !player.isTeacherObserver
+        ).length;
+        if (seatedPlayers >= room.maxPlayers) {
+          reply?.({
+            ok: false,
+            error: { code: "ROOM_FULL", message: "המשחק מלא — ניתן להצטרף במצב צפייה" }
+          });
+          return;
+        }
+      }
       const assigned = assignPlayer(room, userId, displayName, isGameInspectorRole(socket.data.role));
       if ("error" in assigned) {
         reply?.({ ok: false, error: assigned.error });
         return;
       }
-      if (!isGameInspectorRole(socket.data.role) && !wasAlreadyInRoom) {
+      if (requestedTeacherPlayer) {
+        assigned.player.isTeacherObserver = false;
+        const seatedPlayers = Array.from(room.players.values()).filter(
+          (player) => !player.isTeacherObserver
+        ).length;
+        room.peakPlayerCount = Math.max(room.peakPlayerCount, seatedPlayers);
+      }
+      if ((!isGameInspectorRole(socket.data.role) || requestedTeacherPlayer) && !wasAlreadyInRoom) {
         recordLaunch(sessionId, userId, "minecraft");
       }
       await socket.join(`voxel:${sessionId}`);
@@ -2781,6 +2806,7 @@ io.on("connection", (socket) => {
         spawn: spawnFor(room, userId),
         paused: room.paused,
         gameMode: effectiveMode,
+        teacherObserver: assigned.player.isTeacherObserver === true,
         inventory:
           effectiveMode === "survival" && assigned.player.inventory
             ? cloneHotbar(assigned.player.inventory)
@@ -4273,7 +4299,9 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      if (isGameInspectorRole(socket.data.role)) {
+      const room = getRoom(sessionId);
+      const chatPlayer = room?.players.get(userId);
+      if (isGameInspectorRole(socket.data.role) && chatPlayer?.isTeacherObserver !== false) {
         ack?.({
           ok: false,
           error: { code: "READ_ONLY", message: "Observers cannot chat here" }

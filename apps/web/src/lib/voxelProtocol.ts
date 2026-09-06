@@ -111,6 +111,7 @@ export interface JoinRoomAckOk {
   spawn: Vec3;
   paused: boolean;
   gameMode: GameMode;
+  teacherObserver?: boolean;
   inventory: HotbarSlot[];
   itemInventory: ItemSlot[];
   equipmentSlots: ItemSlot[];

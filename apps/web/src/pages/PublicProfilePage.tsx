@@ -109,13 +109,14 @@ export function PublicProfilePage() {
     setMsg(null);
     try {
       const { sessionId } = await sendChallenge({
-        meId: user.id,
-        meDisplayName: me.full_name,
-        meGender: me.gender,
         toId: profile.id,
         gameId
       });
-      navigate(`/play/${sessionId}`);
+      navigate(
+        me.role === "teacher"
+          ? `/play/${sessionId}?mode=player`
+          : `/play/${sessionId}`
+      );
     } catch (e) {
       setErr(e instanceof Error ? e.message : "שליחת אתגר נכשלה");
     } finally {

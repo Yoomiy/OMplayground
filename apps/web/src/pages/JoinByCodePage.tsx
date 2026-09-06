@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
+import { useProfile } from "@/hooks/useProfile";
 
 export function JoinByCodePage() {
   const { code } = useParams();
   const navigate = useNavigate();
+  const { profile, loading: profileLoading } = useProfile();
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
+    if (profileLoading) return;
     if (!code) {
       setErr("חסר קוד הזמנה");
       return;
@@ -24,12 +27,14 @@ export function JoinByCodePage() {
         setErr("קוד הזמנה לא נמצא");
         return;
       }
-      navigate(`/play/${data.id}?invite=${encodeURIComponent(code)}`, { replace: true });
+      const params = new URLSearchParams({ invite: code });
+      if (profile?.role === "teacher") params.set("mode", "player");
+      navigate(`/play/${data.id}?${params.toString()}`, { replace: true });
     })();
     return () => {
       cancelled = true;
     };
-  }, [code, navigate]);
+  }, [code, navigate, profile?.role, profileLoading]);
 
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-20 sm:px-6">

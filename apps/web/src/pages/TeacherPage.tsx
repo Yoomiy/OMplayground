@@ -74,9 +74,9 @@ export function TeacherPage() {
           ) : null}
           <Link
             to="/home"
-            className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-2 text-sm font-bold text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white shadow-sm transition duration-200"
+            className="rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-800 shadow-sm transition duration-200 hover:bg-emerald-100 hover:text-emerald-950 dark:border-emerald-400/40 dark:bg-emerald-500/15 dark:text-emerald-200 dark:hover:bg-emerald-500/25 dark:hover:text-white"
           >
-            בית
+            כניסה למגרש המשחקים 🎮
           </Link>
           <button
             type="button"

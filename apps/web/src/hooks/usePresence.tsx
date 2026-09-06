@@ -12,9 +12,9 @@ import { useProfile } from "@/hooks/useProfile";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 /**
- * Global Realtime presence — one channel keyed on the kid's gender so
- * same-gender kids see each other. Mounted once above the router so it
- * survives navigation (no remount / no blank-flash).
+ * Global Realtime presence — one channel keyed on gender. Kids publish their
+ * presence; teachers only subscribe, so they can see connected kids without
+ * appearing as challenge targets themselves.
  */
 interface PresenceContextValue {
   onlineUserIds: Set<string>;
@@ -32,18 +32,18 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
   const { isAdmin } = useIsAdmin();
   const userId = user?.id;
   const gender = profile?.gender;
-  /** Only same-gender kids count as "online" for the playground presence channel. */
-  const shouldTrackPresence =
+  const shouldSubscribeToPresence =
     Boolean(userId && gender) &&
-    profile?.role === "kid" &&
+    (profile?.role === "kid" || profile?.role === "teacher") &&
     !isAdmin;
+  const shouldPublishPresence = profile?.role === "kid";
 
   const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(
     () => new Set<string>()
   );
 
   useEffect(() => {
-    if (!shouldTrackPresence || !userId || !gender) {
+    if (!shouldSubscribeToPresence || !userId || !gender) {
       setOnlineUserIds(new Set());
       return;
     }
@@ -81,17 +81,19 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
       .on("presence", { event: "leave" }, recompute)
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
-          await channel.track({
-            userId,
-            online_at: new Date().toISOString()
-          });
+          if (shouldPublishPresence) {
+            await channel.track({
+              userId,
+              online_at: new Date().toISOString()
+            });
+          }
         }
       });
 
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [userId, gender, shouldTrackPresence]);
+  }, [userId, gender, shouldSubscribeToPresence, shouldPublishPresence]);
 
   const value = useMemo<PresenceContextValue>(
     () => ({

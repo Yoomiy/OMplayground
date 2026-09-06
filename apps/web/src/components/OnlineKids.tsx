@@ -10,10 +10,12 @@ import { cn } from "@/lib/cn";
 function KidRow({
   kid,
   sameGrade,
+  challengeOnly,
   onInvite
 }: {
   kid: PublicKidProfile;
   sameGrade: boolean;
+  challengeOnly: boolean;
   onInvite: () => void;
 }) {
   const navigate = useNavigate();
@@ -21,7 +23,7 @@ function KidRow({
     "rounded-2xl size-11 flex items-center justify-center border transition-all hover:scale-105 active:scale-95 font-bold text-sm shrink-0";
 
   return (
-    <li className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-2.5 transition hover:-translate-y-0.5 hover:bg-white/10 hover:border-white/20">
+    <li className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border border-slate-200 bg-white p-2.5 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:shadow-none dark:hover:border-white/20 dark:hover:bg-white/10">
       <KidAvatar
         profile={kid}
         className="size-10 min-h-10 min-w-10 rounded-xl text-sm shadow-inner border border-white/10"
@@ -54,30 +56,34 @@ function KidRow({
         >
           <Gamepad2 className="size-4" aria-hidden />
         </button>
-        <button
-          type="button"
-          onClick={() => navigate(`/inbox?kidId=${kid.id}`)}
-          className={cn(
-            buttonStyleBase,
-            "bg-sky-500/10 border-sky-400/30 text-sky-600 dark:text-sky-400 hover:bg-sky-500 hover:text-white hover:border-sky-400 hover:shadow-[0_0_12px_rgba(56,189,248,0.4)]"
-          )}
-          aria-label={`שלח הודעה אל ${kid.full_name}`}
-          title="לשלוח הודעה"
-        >
-          <MessageCircle className="size-4" aria-hidden />
-        </button>
-        <button
-          type="button"
-          onClick={() => navigate(`/profile/${kid.id}`)}
-          className={cn(
-            buttonStyleBase,
-            "bg-slate-100 dark:bg-white/10 border-slate-200 dark:border-white/10 text-slate-500 dark:text-white/50 hover:bg-slate-200 dark:hover:bg-white/20 hover:text-slate-800 dark:hover:text-white"
-          )}
-          aria-label={`צפה בפרופיל ${kid.full_name}`}
-          title="לצפות בפרופיל"
-        >
-          <UserRound className="size-4" aria-hidden />
-        </button>
+        {!challengeOnly ? (
+          <>
+            <button
+              type="button"
+              onClick={() => navigate(`/inbox?kidId=${kid.id}`)}
+              className={cn(
+                buttonStyleBase,
+                "bg-sky-500/10 border-sky-400/30 text-sky-600 dark:text-sky-400 hover:bg-sky-500 hover:text-white hover:border-sky-400 hover:shadow-[0_0_12px_rgba(56,189,248,0.4)]"
+              )}
+              aria-label={`שלח הודעה אל ${kid.full_name}`}
+              title="לשלוח הודעה"
+            >
+              <MessageCircle className="size-4" aria-hidden />
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate(`/profile/${kid.id}`)}
+              className={cn(
+                buttonStyleBase,
+                "bg-slate-100 dark:bg-white/10 border-slate-200 dark:border-white/10 text-slate-500 dark:text-white/50 hover:bg-slate-200 dark:hover:bg-white/20 hover:text-slate-800 dark:hover:text-white"
+              )}
+              aria-label={`צפה בפרופיל ${kid.full_name}`}
+              title="לצפות בפרופיל"
+            >
+              <UserRound className="size-4" aria-hidden />
+            </button>
+          </>
+        ) : null}
       </div>
     </li>
   );
@@ -85,6 +91,7 @@ function KidRow({
 
 export function OnlineKids({ className }: { className?: string }) {
   const { profile } = useProfile();
+  const challengeOnly = profile?.role === "teacher";
   const { kids, loading } = useOnlineKids(true);
   const [selected, setSelected] = useState<PublicKidProfile | null>(null);
   const [query, setQuery] = useState("");
@@ -124,10 +131,10 @@ export function OnlineKids({ className }: { className?: string }) {
               <span className="absolute inline-flex size-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
               <span className="relative inline-flex size-3 rounded-full bg-emerald-400" />
             </span>
-            חברים מחוברים
+            {challengeOnly ? "ילדים מחוברים" : "חברים מחוברים"}
           </h2>
           <p className="text-xs font-bold text-slate-500 dark:text-white/50 mt-0.5">
-            {kids.length} חברים זמינים עכשיו
+            {kids.length} {challengeOnly ? "ילדים" : "חברים"} זמינים עכשיו
           </p>
         </div>
       </div>
@@ -141,18 +148,22 @@ export function OnlineKids({ className }: { className?: string }) {
           className="min-h-11 w-full rounded-2xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/10 py-2 pl-3 pr-10 text-xs font-bold text-slate-900 dark:text-white outline-none transition placeholder:text-slate-400 dark:placeholder:text-white/40 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 shadow-sm dark:shadow-none"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="חפשו חבר..."
+          placeholder={challengeOnly ? "חפשו ילד..." : "חפשו חבר..."}
         />
       </label>
 
       <div className="min-h-0 flex-1 overflow-y-auto pr-1 scrollbar-hide">
         {loading && kids.length === 0 ? (
-          <p className="text-xs font-bold text-slate-500 dark:text-white/50 py-4 text-center">טוען חברים…</p>
+          <p className="py-4 text-center text-xs font-bold text-slate-500 dark:text-white/50">
+            {challengeOnly ? "טוען ילדים…" : "טוען חברים…"}
+          </p>
         ) : filtered.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-300 dark:border-white/15 bg-white/5 px-3 py-6 text-center">
             <span className="text-3xl block mb-2">👀</span>
             <p className="text-xs font-bold text-slate-500 dark:text-white/40">
-              לא מצאנו אף חבר מחובר כרגע.
+              {challengeOnly
+                ? "לא מצאנו ילדים מחוברים כרגע."
+                : "לא מצאנו אף חבר מחובר כרגע."}
             </p>
           </div>
         ) : (
@@ -168,6 +179,7 @@ export function OnlineKids({ className }: { className?: string }) {
                       key={kid.id}
                       kid={kid}
                       sameGrade
+                      challengeOnly={challengeOnly}
                       onInvite={() => setSelected(kid)}
                     />
                   ))}
@@ -192,6 +204,7 @@ export function OnlineKids({ className }: { className?: string }) {
                       key={kid.id}
                       kid={kid}
                       sameGrade={false}
+                      challengeOnly={challengeOnly}
                       onInvite={() => setSelected(kid)}
                     />
                   ))}

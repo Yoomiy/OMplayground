@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
-import { LogOut, Mail, UserRound, Home } from "lucide-react";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { GraduationCap, Home, LogOut, Mail, UserRound } from "lucide-react";
 import { useInbox } from "@/hooks/useInbox";
 import { useOnlinePresence } from "@/hooks/usePresence";
 import { useProfile } from "@/hooks/useProfile";
@@ -49,6 +49,7 @@ export function KidDesktopShell({
   const navigate = useNavigate();
   const location = useLocation();
   const { profile } = useProfile();
+  const isTeacher = profile?.role === "teacher";
   const { onlineUserIds } = useOnlinePresence();
   const { unreadTotal } = useInbox();
 
@@ -101,7 +102,12 @@ export function KidDesktopShell({
                 <Home className="size-4" aria-hidden />
                 <span>בית</span>
               </NavLink>
-              <NavLink to="/inbox" className={navClass}>
+              {isTeacher ? (
+                <NavLink to="/teacher" className={navClass}>
+                  <GraduationCap className="size-4" aria-hidden />
+                  <span>כלי מורה</span>
+                </NavLink>
+              ) : <NavLink to="/inbox" className={navClass}>
                 <Mail className="size-4" aria-hidden />
                 <span>הודעות</span>
                 {unreadTotal > 0 ? (
@@ -109,11 +115,13 @@ export function KidDesktopShell({
                     {unreadTotal}
                   </span>
                 ) : null}
-              </NavLink>
-              <NavLink to="/profile" className={navClass}>
-                <UserRound className="size-4" aria-hidden />
-                <span>פרופיל</span>
-              </NavLink>
+              </NavLink>}
+              {!isTeacher ? (
+                <NavLink to="/profile" className={navClass}>
+                  <UserRound className="size-4" aria-hidden />
+                  <span>פרופיל</span>
+                </NavLink>
+              ) : null}
               <ThemeToggle />
               <button
                 type="button"
@@ -125,6 +133,15 @@ export function KidDesktopShell({
               </button>
             </nav>
           </div>
+
+          {isTeacher ? (
+            <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800 dark:border-emerald-400/25 dark:bg-emerald-500/10 dark:text-emerald-200">
+              <span>מצב משחק של מורה · הזהות וכלי הניהול שלך נשארים פעילים</span>
+              <Link className="underline decoration-2 underline-offset-4 hover:text-emerald-950 dark:hover:text-white" to="/teacher">
+                לאזור הניהול
+              </Link>
+            </div>
+          ) : null}
 
           {/* Online count strip */}
           <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 dark:border-white/10 pt-2.5 text-xs font-bold text-slate-500 dark:text-white/50">

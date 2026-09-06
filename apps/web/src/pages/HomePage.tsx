@@ -87,6 +87,7 @@ export function HomePage() {
   const [gameSearch, setGameSearch] = useState("");
   const [soloSaveKeys, setSoloSaveKeys] = useState<Set<string>>(new Set());
   const [sidebarTab, setSidebarTab] = useState<"kids" | "rooms">("kids");
+  const isTeacher = profile?.role === "teacher";
 
   const { onlineUserIds } = useOnlinePresence();
   const { unreadTotal } = useInbox();
@@ -116,10 +117,6 @@ export function HomePage() {
   useEffect(() => {
     if (isAdmin) navigate("/admin", { replace: true });
   }, [isAdmin, navigate]);
-
-  useEffect(() => {
-    if (profile?.role === "teacher") navigate("/teacher", { replace: true });
-  }, [profile?.role, navigate]);
 
   useEffect(() => {
     let cancelled = false;
@@ -196,7 +193,7 @@ export function HomePage() {
       }
     }
     setBusyGameId(null);
-    navigate(`/play/${data.id}`);
+    navigate(`/play/${data.id}${isTeacher ? "?mode=player" : ""}`);
   }
 
   async function dismissPausedSession(sessionId: string) {
@@ -259,7 +256,7 @@ export function HomePage() {
                 <span className="rounded-full bg-white/20 px-4 py-1.5 text-xs font-black backdrop-blur-sm border border-white/20 shadow-sm text-white">
                   🟢 {onlineUserIds.size} מחוברים
                 </span>
-                {unreadTotal > 0 && (
+                {!isTeacher && unreadTotal > 0 && (
                   <span className="rounded-full bg-rose-500 px-4 py-1.5 text-xs font-black border border-rose-400 shadow-[0_0_12px_rgba(239,68,68,0.5)] animate-pulse text-white">
                     ✉️ {unreadTotal} הודעות חדשות!
                   </span>
@@ -523,7 +520,7 @@ export function HomePage() {
               onClick={() => setSidebarTab("kids")}
             >
               <span>🟢</span>
-              חברים מחוברים
+              {isTeacher ? "ילדים מחוברים" : "חברים מחוברים"}
             </button>
             <button
               type="button"
@@ -615,13 +612,30 @@ export function HomePage() {
                             )}>
                               {game.status === "waiting" ? "ממתין" : "פעיל"}
                             </span>
-                            <button
+                            {isTeacher ? (
+                              <div className="flex flex-col gap-1.5">
+                                {!isFull ? <button
+                                  type="button"
+                                  onClick={() => navigate(`/play/${game.id}?mode=player`)}
+                                  className="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 border border-emerald-400/50 px-3 py-1.5 text-xs font-black text-white transition hover:-translate-y-0.5"
+                                >
+                                  שחק/י 🎮
+                                </button> : null}
+                                <button
+                                  type="button"
+                                  onClick={() => navigate(`/play/${game.id}?mode=observer`)}
+                                  className="rounded-xl border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-700 transition hover:bg-slate-200 hover:text-slate-900 dark:border-white/20 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
+                                >
+                                  צפייה 👀
+                                </button>
+                              </div>
+                            ) : <button
                               type="button"
                               onClick={() => navigate(`/play/${game.id}`)}
                               className="rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 border border-violet-400/50 px-4 py-1.5 text-xs font-black text-white shadow-[0_4px_12px_rgba(139,92,246,0.4)] hover:shadow-[0_4px_16px_rgba(139,92,246,0.6)] hover:-translate-y-0.5 transition-all shrink-0"
                             >
                               {isFull ? "צפה 👀" : "הצטרף! 🚀"}
-                            </button>
+                            </button>}
                           </div>
                         </div>
                       </li>

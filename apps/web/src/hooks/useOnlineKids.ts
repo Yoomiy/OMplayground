@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnlinePresence } from "@/hooks/usePresence";
+import { reportCaughtError } from "@/utils/telemetry";
 
 export interface PublicKidProfile {
   id: string;
@@ -62,6 +63,14 @@ export function useOnlineKids(excludeSelf = true) {
         for (const row of data as PublicKidProfile[]) {
           cache.set(row.id, row);
         }
+      } else if (error) {
+        reportCaughtError(
+          "Online kid profile lookup failed",
+          error,
+          { appArea: "presence", operation: "profile-lookup" },
+          "shell",
+          "warn"
+        );
       }
       setKids(
         wantedIds
