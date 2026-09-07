@@ -15,6 +15,7 @@ import { KidDesktopShell, desktopPanelClass } from "@/components/KidDesktopShell
 import { kidFieldInputClass, kidFieldLabelClass } from "@/lib/fieldStyles";
 import { useTheme } from "@/context/ThemeContext";
 import { cn } from "@/lib/cn";
+import { PasswordInput } from "@/components/PasswordInput";
 
 const COLORS = [
   "#3B82F6",
@@ -378,20 +379,18 @@ export function ProfilePage() {
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <label className={`flex flex-col gap-2 ${kidFieldLabelClass}`}>
             סיסמה חדשה
-            <input
-              className={kidFieldInputClass}
-              type="password"
+            <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
             />
           </label>
           <label className={`flex flex-col gap-2 ${kidFieldLabelClass}`}>
             אימות סיסמה
-            <input
-              className={kidFieldInputClass}
-              type="password"
+            <PasswordInput
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
+              autoComplete="new-password"
             />
           </label>
         </div>

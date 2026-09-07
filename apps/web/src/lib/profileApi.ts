@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { getCorrelationId } from "@/utils/correlation";
 import type { KidProfileRow } from "@/hooks/useProfile";
 import type { PublicKidProfile } from "@/hooks/useOnlineKids";
 
@@ -107,6 +108,16 @@ export async function adminCreateNewKidProfile(profile: AdminNewProfile) {
   });
   if (error) throw new Error(error.message);
   return data;
+}
+
+export async function adminResetUserPassword(userId: string, password: string) {
+  const { data, error } = await supabase.functions.invoke("admin-reset-password", {
+    body: { userId, password },
+    headers: { "x-correlation-id": getCorrelationId() }
+  });
+  if (error || !data?.success) {
+    throw new Error("איפוס הסיסמה נכשל. נסו שוב.");
+  }
 }
 
 

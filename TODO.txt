@@ -14,3 +14,8 @@
 49. look into presentor rights transfare bug (and add it to the side-dashboard)
 52. make kidsHome lighter (it turns out that wasm games somtimes keep clogging the page after leave)
 53. fix raise hand behavior
+54. add reset password in admin dashboard
+55. add show button when typing password
+56. add teacher-student privet chat in classrooms
+57. when the media baord's width is < silde's width - you can't get fuul screen slide. (add a full screen, single slide mode)
+58. there's too much noice in the converter logs

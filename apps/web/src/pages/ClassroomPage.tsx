@@ -17,6 +17,13 @@ import {
 } from "@/components/ClassroomPresentationPublisher";
 import { ClassroomPresentationReceiver } from "@/components/ClassroomPresentationReceiver";
 import { clearClassroomLibrary } from "@/lib/classroomMediaLibrary";
+import {
+  classroomChatStorageKey,
+  clearClassroomChatCache,
+  loadClassroomChatCache,
+  storePrivateClassroomChatMessage,
+  storePublicClassroomChatMessage
+} from "@/lib/classroomChatStorage";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 function gameServerUrl(): string {
@@ -88,6 +95,8 @@ interface ChatMessage {
 interface CustomParticipantInfo {
   sid: string;
   identity: string;
+  participantKey: string;
+  role: string;
   name: string;
   isHost: boolean;
   isMe: boolean;
@@ -119,6 +128,19 @@ function participantIsHost(participant?: Participant): boolean {
   } catch {
     return false;
   }
+}
+
+function classroomParticipantKey(participant?: Participant): string | null {
+  if (!participant) return null;
+  try {
+    const key = JSON.parse(participant.metadata || "{}").attendanceKey;
+    if (typeof key === "string" && key.length > 0 && key.length <= 256) return key;
+  } catch {}
+  return `identity:${participant.identity}`;
+}
+
+function validChatText(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0 && value.trim().length <= 1000;
 }
 
 function presenterSessionKey(roomCode: string): string {
@@ -210,7 +232,7 @@ export function ClassroomPage() {
   // entry flow as a guest. Remember their last known classroom name locally
   // so they do not have to enter it again.
   useEffect(() => {
-    if (user && (profile?.role === "kid" || profile?.role === "student")) {
+    if (user && profile?.role === "kid") {
       storeClassroomDisplayName(resolvedDisplayName);
     }
   }, [user, profile?.role, resolvedDisplayName]);
@@ -270,6 +292,7 @@ export function ClassroomPage() {
   const [localPresentationLibraryReady, setLocalPresentationLibraryReady] = useState(false);
   const [mediaUploadStatus, setMediaUploadStatus] = useState<ClassroomMediaUploadStatus | null>(null);
   const [classroomSessionId, setClassroomSessionId] = useState<string | null>(null);
+  const [classroomAttendanceKey, setClassroomAttendanceKey] = useState<string | null>(null);
   const [presenterIdentity, setPresenterIdentity] = useState<string | null>(null);
   const [presenterEpoch, setPresenterEpoch] = useState(0);
   const [presenterToken, setPresenterToken] = useState<string | null>(null);
@@ -320,12 +343,94 @@ export function ClassroomPage() {
   // In-Room Chat & Reactions
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
+  const [privateChatMessages, setPrivateChatMessages] = useState<Record<string, ChatMessage[]>>({});
+  const [privateChatInput, setPrivateChatInput] = useState("");
+  const [chatTab, setChatTab] = useState<"public" | "private">("public");
+  const [selectedPrivateThread, setSelectedPrivateThread] = useState<string | null>(null);
+  const [unreadPrivateCounts, setUnreadPrivateCounts] = useState<Record<string, number>>({});
+  const chatTabRef = useRef<"public" | "private">("public");
+  const selectedPrivateThreadRef = useRef<string | null>(null);
+  const chatCacheKey = useMemo(
+    () => classroomSessionId && classroomAttendanceKey
+      ? classroomChatStorageKey(classroomSessionId, classroomAttendanceKey)
+      : null,
+    [classroomAttendanceKey, classroomSessionId]
+  );
+  const chatCacheKeyRef = useRef<string | null>(null);
   const [recentReaction, setRecentReaction] = useState<{ emoji: string; name: string } | null>(null);
+
+  const appendPublicChatMessage = useCallback((message: ChatMessage) => {
+    if (
+      chatCacheKeyRef.current &&
+      !storePublicClassroomChatMessage(chatCacheKeyRef.current, message)
+    ) {
+      reportTelemetry({
+        level: "warn",
+        message: "Classroom public chat cache write failed",
+        sessionId: roomCode,
+        context: { appArea: "classroom", event: "CLASSROOM_PUBLIC_CHAT_CACHE_FAILED", roomCode }
+      }, "voxel-server");
+    }
+    setChatMessages((current) => {
+      if (current.some((entry) => entry.id === message.id)) return current;
+      return [...current, message].slice(-100);
+    });
+  }, [roomCode]);
+
+  const appendPrivateChatMessage = useCallback((threadKey: string, message: ChatMessage) => {
+    if (
+      chatCacheKeyRef.current &&
+      !storePrivateClassroomChatMessage(chatCacheKeyRef.current, threadKey, message)
+    ) {
+      reportTelemetry({
+        level: "warn",
+        message: "Classroom private chat cache write failed",
+        sessionId: roomCode,
+        context: { appArea: "classroom", event: "CLASSROOM_PRIVATE_CHAT_CACHE_FAILED", roomCode }
+      }, "voxel-server");
+    }
+    setPrivateChatMessages((current) => {
+      const existing = current[threadKey] ?? [];
+      if (existing.some((entry) => entry.id === message.id)) return current;
+      return { ...current, [threadKey]: [...existing, message].slice(-100) };
+    });
+  }, [roomCode]);
+
+  useEffect(() => {
+    chatCacheKeyRef.current = chatCacheKey;
+    if (!chatCacheKey) return;
+    const cache = loadClassroomChatCache(chatCacheKey);
+    setChatMessages(cache.publicMessages);
+    setPrivateChatMessages(cache.privateThreads);
+    setUnreadChatCount(0);
+    setUnreadPrivateCounts({});
+  }, [chatCacheKey]);
+
+  const clearCachedClassroomChats = useCallback(() => {
+    if (chatCacheKeyRef.current) clearClassroomChatCache(chatCacheKeyRef.current);
+    setChatMessages([]);
+    setPrivateChatMessages({});
+    setUnreadChatCount(0);
+    setUnreadPrivateCounts({});
+    setSelectedPrivateThread(null);
+    setPrivateChatInput("");
+  }, []);
 
   useEffect(() => {
     showChatRef.current = showChat;
     if (showChat) setUnreadChatCount(0);
   }, [showChat]);
+
+  useEffect(() => {
+    chatTabRef.current = chatTab;
+    if (chatTab === "private" && selectedPrivateThread) {
+      setUnreadPrivateCounts((current) => ({ ...current, [selectedPrivateThread]: 0 }));
+    }
+  }, [chatTab, selectedPrivateThread]);
+
+  useEffect(() => {
+    selectedPrivateThreadRef.current = selectedPrivateThread;
+  }, [selectedPrivateThread]);
 
   // Ephemeral Whiteboard State (Using drawingModule structure)
   const [whiteboardState, setWhiteboardState] = useState<any>({
@@ -541,6 +646,7 @@ export function ClassroomPage() {
           const updated = payload.new as ClassroomSessionData;
           if (updated.status === "ended") {
             classroomEndedByHostRef.current = true;
+            clearCachedClassroomChats();
             void clearClassroomLibrary(updated.id).catch(() => {});
             writePresenterSessionToken(roomCode, null);
             setConnError("השיעור הופסק על ידי המורה.");
@@ -571,7 +677,7 @@ export function ClassroomPage() {
     return () => {
       void supabase.removeChannel(ch);
     };
-  }, [roomCode]);
+  }, [clearCachedClassroomChats, roomCode]);
 
   // Handle participant updates in room (TEACHER ALWAYS FIRST)
   const updateParticipantList = useCallback((lkRoom: Room) => {
@@ -619,6 +725,8 @@ export function ClassroomPage() {
       list.push({
         sid: local.sid,
         identity: local.identity,
+        participantKey: typeof localMetadata.attendanceKey === "string" ? localMetadata.attendanceKey : `identity:${local.identity}`,
+        role: typeof localMetadata.role === "string" ? localMetadata.role : "student",
         name: local.name || "אני",
         isHost: localIsHost,
         isMe: true,
@@ -687,6 +795,8 @@ export function ClassroomPage() {
       list.push({
         sid: p.sid,
         identity: p.identity,
+        participantKey: typeof pMetadata.attendanceKey === "string" ? pMetadata.attendanceKey : `identity:${p.identity}`,
+        role: typeof pMetadata.role === "string" ? pMetadata.role : "student",
         name: p.name || p.identity,
         isHost: pIsHost,
         isMe: false,
@@ -720,6 +830,19 @@ export function ClassroomPage() {
     const presenting = list.find((p) => p.identity === presenterIdentityRef.current && p.presentationTrack != null);
     setPresentationParticipant(presenting || null);
   }, [isStealthAdmin]);
+
+  const privateChatRecipients = useMemo(
+    () => participants.filter((participant) =>
+      !participant.isMe && (isHost ? !participant.isHost : participant.isHost)
+    ),
+    [isHost, participants]
+  );
+  const selectedPrivateRecipient = useMemo(
+    () => privateChatRecipients.find((participant) => participant.participantKey === selectedPrivateThread) ?? null,
+    [privateChatRecipients, selectedPrivateThread]
+  );
+  const selectedPrivateMessages = selectedPrivateThread ? privateChatMessages[selectedPrivateThread] ?? [] : [];
+  const totalUnreadChatCount = unreadChatCount + Object.values(unreadPrivateCounts).reduce((sum, count) => sum + count, 0);
 
   // Connect to LiveKit Room
   const connectToRoom = async () => {
@@ -771,6 +894,7 @@ export function ClassroomPage() {
         serverUrl,
         isHost: tokenIsHost,
         role,
+        attendanceKey: issuedAttendanceKey,
         isDelegate,
         canPublishMicrophone,
         canPublishCamera,
@@ -791,7 +915,20 @@ export function ClassroomPage() {
         typeof issuedClassroomBoardToken === "string" ? issuedClassroomBoardToken : null
       );
       setDrawSessionId(typeof issuedDrawingSessionId === "string" ? issuedDrawingSessionId : null);
-      setClassroomSessionId(issuedClassroomSessionId || sessionData?.id || null);
+      const resolvedClassroomSessionId = issuedClassroomSessionId || sessionData?.id || null;
+      const resolvedAttendanceKey = typeof issuedAttendanceKey === "string" ? issuedAttendanceKey : null;
+      setClassroomSessionId(resolvedClassroomSessionId);
+      setClassroomAttendanceKey(resolvedAttendanceKey);
+      chatCacheKeyRef.current = resolvedClassroomSessionId && resolvedAttendanceKey
+        ? classroomChatStorageKey(resolvedClassroomSessionId, resolvedAttendanceKey)
+        : null;
+      if (chatCacheKeyRef.current) {
+        const cachedChat = loadClassroomChatCache(chatCacheKeyRef.current);
+        setChatMessages(cachedChat.publicMessages);
+        setPrivateChatMessages(cachedChat.privateThreads);
+        setUnreadChatCount(0);
+        setUnreadPrivateCounts({});
+      }
       setIsClassCreator(Boolean(issuedIsClassCreator));
       setPresenterIdentity(typeof issuedPresenterIdentity === "string" ? issuedPresenterIdentity : null);
       setPresenterEpoch(Number.isInteger(issuedPresenterEpoch) ? issuedPresenterEpoch : 0);
@@ -931,17 +1068,38 @@ export function ClassroomPage() {
           }
 
           if (msg.type === "CHAT") {
+            if (!validChatText(msg.text)) return;
             if (!showChatRef.current) setUnreadChatCount((current) => current + 1);
-            setChatMessages((prev) => [
-              ...prev,
-              {
-                id: Math.random().toString(36).substring(2, 9),
-                senderName: participant?.name || participant?.identity || "משתתף",
-                text: msg.text,
-                timestamp: Date.now(),
-                isHost: senderIsHost
-              }
-            ]);
+            appendPublicChatMessage({
+              id: typeof msg.messageId === "string" && msg.messageId.length <= 128 ? msg.messageId : crypto.randomUUID(),
+              senderName: participant?.name || participant?.identity || "משתתף",
+              text: msg.text.trim(),
+              timestamp: Number.isFinite(msg.timestamp) ? Number(msg.timestamp) : Date.now(),
+              isHost: senderIsHost
+            });
+          } else if (msg.type === "PRIVATE_CHAT") {
+            if (isStealthAdmin || !participant || !validChatText(msg.text)) return;
+            const localIsHost = participantIsHost(lkRoom.localParticipant) || Boolean(tokenIsHost);
+            if ((localIsHost && senderIsHost) || (!localIsHost && !senderIsHost)) return;
+            const senderKey = classroomParticipantKey(participant);
+            if (!senderKey) return;
+            appendPrivateChatMessage(senderKey, {
+              id: typeof msg.messageId === "string" && msg.messageId.length <= 128 ? msg.messageId : crypto.randomUUID(),
+              senderName: participant.name || participant.identity,
+              text: msg.text.trim(),
+              timestamp: Number.isFinite(msg.timestamp) ? Number(msg.timestamp) : Date.now(),
+              isHost: senderIsHost
+            });
+            if (
+              !showChatRef.current ||
+              chatTabRef.current !== "private" ||
+              selectedPrivateThreadRef.current !== senderKey
+            ) {
+              setUnreadPrivateCounts((current) => ({
+                ...current,
+                [senderKey]: (current[senderKey] ?? 0) + 1
+              }));
+            }
           } else if (msg.type === "REACTION") {
             setRecentReaction({ emoji: msg.emoji, name: participant?.name || participant?.identity || "משתתף" });
             setTimeout(() => setRecentReaction(null), 3000);
@@ -1226,6 +1384,7 @@ export function ClassroomPage() {
       }).catch(() => null);
     }
     roomRef.current?.disconnect();
+    clearCachedClassroomChats();
     roomRef.current = null;
     setRoom(null);
     setConnState("disconnected");
@@ -1234,6 +1393,7 @@ export function ClassroomPage() {
     setIsScreenSharing(false);
     setPresentationActive(false);
     setPresentationTitle(null);
+    setClassroomAttendanceKey(null);
   };
 
   const leaveClassroom = async () => {
@@ -1464,36 +1624,82 @@ export function ClassroomPage() {
 
   // Send In-Room Chat Message
   const sendChatMessage = async () => {
-    if (!room || !chatInput.trim()) return;
+    const text = chatInput.trim();
+    if (!room || !text) return;
     const canChat = isHost || roomSettings.allowStudentChat;
     if (!canChat) {
-      alert("הצ'אט סגור כעת על ידי המורה.");
+      setClassroomNotice({ text: "הצ'אט הכיתתי סגור כעת על ידי המורה.", type: "warn" });
+      return;
+    }
+    if (text.length > 1000) {
+      setClassroomNotice({ text: "הודעת הצ'אט ארוכה מדי.", type: "warn" });
       return;
     }
 
+    const message: ChatMessage = {
+      id: crypto.randomUUID(),
+      senderName: room.localParticipant.name || "אני",
+      text,
+      timestamp: Date.now(),
+      isHost
+    };
     const payload = JSON.stringify({
       type: "CHAT",
-      senderName: room.localParticipant.name || "משתתף",
-      text: chatInput.trim(),
+      messageId: message.id,
+      text: message.text,
+      timestamp: message.timestamp
+    });
+
+    try {
+      await room.localParticipant.publishData(new TextEncoder().encode(payload), { reliable: true });
+      appendPublicChatMessage(message);
+      setChatInput("");
+    } catch {
+      reportTelemetry({
+        level: "warn",
+        message: "Classroom public chat delivery failed",
+        sessionId: roomCode,
+        context: { appArea: "classroom", event: "CLASSROOM_PUBLIC_CHAT_SEND_FAILED", roomCode }
+      }, "voxel-server");
+      setClassroomNotice({ text: "לא ניתן לשלוח את ההודעה כרגע.", type: "warn" });
+    }
+  };
+
+  const sendPrivateChatMessage = async () => {
+    const text = privateChatInput.trim();
+    if (isStealthAdmin || !room || !selectedPrivateRecipient || !text) return;
+    if (text.length > 1000) {
+      setClassroomNotice({ text: "הודעת הצ'אט ארוכה מדי.", type: "warn" });
+      return;
+    }
+    const message: ChatMessage = {
+      id: crypto.randomUUID(),
+      senderName: room.localParticipant.name || "אני",
+      text,
+      timestamp: Date.now(),
       isHost
-    });
-
-    await room.localParticipant.publishData(new TextEncoder().encode(payload), {
-      reliable: true
-    });
-
-    setChatMessages((prev) => [
-      ...prev,
-      {
-        id: Math.random().toString(36).substring(2, 9),
-        senderName: room.localParticipant.name || "אני",
-        text: chatInput.trim(),
-        timestamp: Date.now(),
-        isHost
-      }
-    ]);
-
-    setChatInput("");
+    };
+    try {
+      await room.localParticipant.publishData(
+        new TextEncoder().encode(JSON.stringify({
+          type: "PRIVATE_CHAT",
+          messageId: message.id,
+          text: message.text,
+          timestamp: message.timestamp
+        })),
+        { reliable: true, topic: "classroom-private-chat", destinationIdentities: [selectedPrivateRecipient.identity] }
+      );
+      appendPrivateChatMessage(selectedPrivateRecipient.participantKey, message);
+      setPrivateChatInput("");
+    } catch {
+      reportTelemetry({
+        level: "warn",
+        message: "Classroom private chat delivery failed",
+        sessionId: roomCode,
+        context: { appArea: "classroom", event: "CLASSROOM_PRIVATE_CHAT_SEND_FAILED", roomCode }
+      }, "voxel-server");
+      setClassroomNotice({ text: "לא ניתן לשלוח את ההודעה הפרטית כרגע.", type: "warn" });
+    }
   };
 
   // Send Emoji Reaction
@@ -2373,9 +2579,9 @@ export function ClassroomPage() {
                 >
                   <MessageSquare className="size-3.5" />
                   צ'אט
-                  {unreadChatCount > 0 && !showChat && (
-                    <span className="flex min-w-5 h-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-black text-white" aria-label={`${unreadChatCount} הודעות חדשות`}>
-                      {unreadChatCount > 99 ? "99+" : unreadChatCount}
+                  {totalUnreadChatCount > 0 && !showChat && (
+                    <span className="flex min-w-5 h-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-black text-white" aria-label={`${totalUnreadChatCount} הודעות חדשות`}>
+                      {totalUnreadChatCount > 99 ? "99+" : totalUnreadChatCount}
                     </span>
                   )}
                 </button>
@@ -2660,49 +2866,145 @@ export function ClassroomPage() {
               <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 shrink-0">
                 <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
                   <MessageSquare className="size-4 text-indigo-600 dark:text-indigo-400" />
-                  צ'אט כיתתי
+                  צ'אט
                 </h3>
                 <button onClick={() => setShowChat(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white text-xs font-bold">✕</button>
               </div>
-
-              {/* MESSAGES LIST: SCROLLABLE CONTAINER */}
-              <div className="flex-1 min-h-0 overflow-y-auto p-1 py-3 flex flex-col gap-2">
-                {chatMessages.length === 0 ? (
-                  <p className="text-xs text-slate-500 text-center py-6">אין הודעות בצ'אט עדיין.</p>
-                ) : (
-                  chatMessages.map((msg) => (
-                    <div key={msg.id} className="rounded-xl bg-slate-50 dark:bg-slate-950/80 p-2.5 border border-slate-200 dark:border-slate-800/80 flex flex-col gap-1 shrink-0 shadow-sm">
-                      <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                        <span className="text-indigo-600 dark:text-indigo-300 flex items-center gap-1 font-bold">
-                          {msg.senderName} {msg.isHost && <Crown className="size-3 text-amber-500 dark:text-amber-400 inline" />}
-                        </span>
-                        <span>{new Date(msg.timestamp).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}</span>
-                      </div>
-                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-relaxed">{msg.text}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {/* CHAT INPUT FORM */}
-              <div className="flex items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800 shrink-0">
-                <input
-                  type="text"
-                  placeholder={isHost || roomSettings.allowStudentChat ? "רשום הודעה..." : "הצ'אט נעול למשתתפים"}
-                  disabled={!isHost && !roomSettings.allowStudentChat}
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && sendChatMessage()}
-                  className="flex-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 disabled:opacity-50 shadow-sm"
-                />
+              <div className="mt-3 grid grid-cols-2 gap-2 shrink-0">
                 <button
-                  disabled={(!isHost && !roomSettings.allowStudentChat) || !chatInput.trim()}
-                  onClick={sendChatMessage}
-                  className="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white disabled:opacity-50 shadow-sm"
+                  type="button"
+                  onClick={() => setChatTab("public")}
+                  className={cn(
+                    "rounded-xl px-2 py-2 text-xs font-black transition",
+                    chatTab === "public"
+                      ? "bg-indigo-600 text-white"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                  )}
                 >
-                  שלח
+                  כיתתי {unreadChatCount > 0 ? `(${unreadChatCount})` : ""}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChatTab("private")}
+                  className={cn(
+                    "rounded-xl px-2 py-2 text-xs font-black transition",
+                    chatTab === "private"
+                      ? "bg-indigo-600 text-white"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                  )}
+                >
+                  פרטי {Object.values(unreadPrivateCounts).reduce((sum, count) => sum + count, 0) > 0 ? `(${Object.values(unreadPrivateCounts).reduce((sum, count) => sum + count, 0)})` : ""}
                 </button>
               </div>
+
+              {chatTab === "public" ? (
+                <>
+                  <div className="flex-1 min-h-0 overflow-y-auto p-1 py-3 flex flex-col gap-2">
+                    {chatMessages.length === 0 ? (
+                      <p className="text-xs text-slate-500 text-center py-6">אין הודעות בצ'אט עדיין.</p>
+                    ) : chatMessages.map((msg) => (
+                      <div key={msg.id} className="rounded-xl bg-slate-50 dark:bg-slate-950/80 p-2.5 border border-slate-200 dark:border-slate-800/80 flex flex-col gap-1 shrink-0 shadow-sm">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                          <span className="text-indigo-600 dark:text-indigo-300 flex items-center gap-1 font-bold">
+                            {msg.senderName} {msg.isHost && <Crown className="size-3 text-amber-500 dark:text-amber-400 inline" />}
+                          </span>
+                          <span>{new Date(msg.timestamp).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}</span>
+                        </div>
+                        <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-relaxed">{msg.text}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800 shrink-0">
+                    <input
+                      type="text"
+                      maxLength={1000}
+                      placeholder={isHost || roomSettings.allowStudentChat ? "רשום הודעה..." : "הצ'אט נעול למשתתפים"}
+                      disabled={!isHost && !roomSettings.allowStudentChat}
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && void sendChatMessage()}
+                      className="flex-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 disabled:opacity-50 shadow-sm"
+                    />
+                    <button
+                      disabled={(!isHost && !roomSettings.allowStudentChat) || !chatInput.trim()}
+                      onClick={() => void sendChatMessage()}
+                      className="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white disabled:opacity-50 shadow-sm"
+                    >
+                      שלח
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="mt-3 shrink-0">
+                    <p className="mb-2 text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                      {isHost ? "בחרו תלמיד/ה לשיחה פרטית" : "בחרו איש צוות לשיחה פרטית"}
+                    </p>
+                    <div className="max-h-28 space-y-1 overflow-y-auto">
+                      {privateChatRecipients.map((participant) => (
+                        <button
+                          key={participant.participantKey}
+                          type="button"
+                          onClick={() => {
+                            setSelectedPrivateThread(participant.participantKey);
+                            setUnreadPrivateCounts((current) => ({ ...current, [participant.participantKey]: 0 }));
+                          }}
+                          className={cn(
+                            "flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-right text-xs font-bold transition",
+                            selectedPrivateThread === participant.participantKey
+                              ? "bg-indigo-100 text-indigo-900 dark:bg-indigo-500/20 dark:text-indigo-100"
+                              : "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10"
+                          )}
+                        >
+                          <span>{participant.name}{participant.isHost ? " · צוות" : ""}</span>
+                          {unreadPrivateCounts[participant.participantKey] ? (
+                            <span className="rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] text-white">{unreadPrivateCounts[participant.participantKey]}</span>
+                          ) : null}
+                        </button>
+                      ))}
+                      {privateChatRecipients.length === 0 ? (
+                        <p className="rounded-xl bg-slate-50 px-3 py-3 text-center text-xs font-semibold text-slate-500 dark:bg-slate-950/60 dark:text-slate-400">
+                          {isHost ? "אין משתתפים זמינים כרגע." : "אין איש צוות זמין כרגע."}
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div className="flex-1 min-h-0 overflow-y-auto p-1 py-3 flex flex-col gap-2">
+                    {!selectedPrivateThread ? (
+                      <p className="text-xs text-slate-500 text-center py-6">בחרו נמען כדי לפתוח שיחה פרטית.</p>
+                    ) : selectedPrivateMessages.length === 0 ? (
+                      <p className="text-xs text-slate-500 text-center py-6">אין הודעות פרטיות עדיין.</p>
+                    ) : selectedPrivateMessages.map((msg) => (
+                      <div key={msg.id} className="rounded-xl border border-violet-200 bg-violet-50 p-2.5 dark:border-violet-400/20 dark:bg-violet-500/10">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-violet-700 dark:text-violet-200">
+                          <span>{msg.senderName}</span>
+                          <span>{new Date(msg.timestamp).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}</span>
+                        </div>
+                        <p className="mt-1 text-xs font-semibold leading-relaxed text-slate-800 dark:text-slate-100">{msg.text}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800 shrink-0">
+                    <input
+                      type="text"
+                      maxLength={1000}
+                      placeholder={selectedPrivateRecipient ? `הודעה פרטית ל${selectedPrivateRecipient.name}...` : "בחרו נמען מחובר"}
+                      disabled={!selectedPrivateRecipient}
+                      value={privateChatInput}
+                      onChange={(e) => setPrivateChatInput(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && void sendPrivateChatMessage()}
+                      className="flex-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 disabled:opacity-50 shadow-sm"
+                    />
+                    <button
+                      disabled={!selectedPrivateRecipient || !privateChatInput.trim()}
+                      onClick={() => void sendPrivateChatMessage()}
+                      className="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white disabled:opacity-50 shadow-sm"
+                    >
+                      שלח
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>

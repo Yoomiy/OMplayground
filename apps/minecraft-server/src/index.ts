@@ -974,6 +974,7 @@ app.post("/rtc/classroom-token", async (req, res) => {
       serverUrl: result.serverUrl,
       livekitRoom: result.livekitRoom,
       userId: result.userId,
+      attendanceKey: result.attendanceKey,
       isHost: result.isHost,
       role: result.role,
       isDelegate: result.isDelegate,

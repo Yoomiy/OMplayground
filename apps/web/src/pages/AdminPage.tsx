@@ -9,6 +9,7 @@ import {
   type AdminProfileUpdates,
   type AvatarPreset,
   adminCreateNewKidProfile,
+  adminResetUserPassword,
   type AdminNewProfile
 } from "@/lib/profileApi";
 import { KidAvatar } from "@/components/KidAvatar";
@@ -19,6 +20,7 @@ import { AdminStatsSection } from "@/components/AdminStatsSection";
 import { AdminFeedbackSection } from "@/components/AdminFeedbackSection";
 import { ClassroomAdminExplorer } from "@/components/ClassroomAdminExplorer";
 import { GameSessionInspector } from "@/components/GameSessionInspector";
+import { PasswordInput } from "@/components/PasswordInput";
 import { buildEffectiveDaySchedule } from "@playground/game-logic";
 
 function parseGradeInput(raw: string): string {
@@ -186,6 +188,8 @@ export function AdminPage() {
   const [userGradeFilter, setUserGradeFilter] = useState<"all" | string>("all");
   const [gameSearch, setGameSearch] = useState("");
   const [addingNewUser, setAddingNewUser] = useState(false);
+  const [resetPassword, setResetPassword] = useState("");
+  const [resetPasswordConfirmation, setResetPasswordConfirmation] = useState("");
   const [editForm, setEditForm] = useState({
     username: "",
     full_name: "",
@@ -585,6 +589,8 @@ export function AdminPage() {
   function startEditKid(kid: KidRow) {
     setActiveSection("users");
     setEditingKid(kid);
+    setResetPassword("");
+    setResetPasswordConfirmation("");
     setEditForm({
       username: kid.username,
       full_name: kid.full_name,
@@ -668,6 +674,31 @@ export function AdminPage() {
       await reload();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "יצירת משתמש נכשלה");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function resetKidPassword() {
+    if (!editingKid) return;
+    setErr(null);
+    setMsg(null);
+    if (resetPassword.length < 6) {
+      setErr("הסיסמה צריכה להכיל לפחות 6 תווים");
+      return;
+    }
+    if (resetPassword !== resetPasswordConfirmation) {
+      setErr("אימות הסיסמה לא תואם");
+      return;
+    }
+    setBusy(true);
+    try {
+      await adminResetUserPassword(editingKid.id, resetPassword);
+      setResetPassword("");
+      setResetPasswordConfirmation("");
+      setMsg(`הסיסמה עבור ${editingKid.username} אופסה`);
+    } catch (error) {
+      setErr(error instanceof Error ? error.message : "איפוס הסיסמה נכשל");
     } finally {
       setBusy(false);
     }
@@ -1299,12 +1330,12 @@ export function AdminPage() {
                 </label>
                 <label className={`flex flex-col gap-2 ${kidFieldLabelClass}`}>
                   סיסמה (אם ריק, תיווצר סיסמה אקראית)
-                  <input
-                    className={kidFieldInputClass}
+                  <PasswordInput
                     value={newKidForm.password}
                     onChange={(e) =>
                       setNewKidForm((f) => ({ ...f, password: e.target.value }))
                     }
+                    autoComplete="new-password"
                   />
                 </label>
                 <label
@@ -1634,9 +1665,38 @@ export function AdminPage() {
                 פתח פרופיל ציבורי
               </Link>
             </div>
-            <p className="mt-3 text-xs text-slate-500 dark:text-white/50">
-              איפוס סיסמה נשאר פעולה נפרדת דרך Supabase Auth Admin / Edge Function מאובטחת.
-            </p>
+            <section className="mt-5 rounded-2xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-4">
+              <h4 className="text-sm font-black text-amber-900 dark:text-amber-200">איפוס סיסמה</h4>
+              <p className="mt-1 text-xs font-semibold text-amber-800 dark:text-amber-300">
+                הסיסמה החדשה תיכנס לתוקף בכניסה הבאה. חיבורים קיימים לא ינותקו.
+              </p>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <label className={`flex flex-col gap-2 ${kidFieldLabelClass}`}>
+                  סיסמה חדשה
+                  <PasswordInput
+                    value={resetPassword}
+                    onChange={(event) => setResetPassword(event.target.value)}
+                    autoComplete="new-password"
+                  />
+                </label>
+                <label className={`flex flex-col gap-2 ${kidFieldLabelClass}`}>
+                  אימות סיסמה
+                  <PasswordInput
+                    value={resetPasswordConfirmation}
+                    onChange={(event) => setResetPasswordConfirmation(event.target.value)}
+                    autoComplete="new-password"
+                  />
+                </label>
+              </div>
+              <button
+                type="button"
+                disabled={busy || !resetPassword || !resetPasswordConfirmation}
+                onClick={() => void resetKidPassword()}
+                className="mt-3 inline-flex h-10 items-center justify-center rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-700 disabled:opacity-50"
+              >
+                {busy ? "מאפס…" : "אפס סיסמה"}
+              </button>
+            </section>
           </div>
         ) : null}
         <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/5 shadow-sm dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md">

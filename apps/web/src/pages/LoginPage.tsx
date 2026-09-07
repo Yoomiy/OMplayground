@@ -5,6 +5,7 @@ import { usernameToSyntheticEmail } from "@/lib/username";
 import { getPlaygroundAccessForUser } from "@/lib/recessAccess";
 import { kidFieldInputClass, kidFieldLabelClass } from "@/lib/fieldStyles";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { PasswordInput } from "@/components/PasswordInput";
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -86,9 +87,7 @@ export function LoginPage() {
           </label>
           <label className={`flex flex-col gap-2 ${kidFieldLabelClass}`}>
             סיסמה
-            <input
-              type="password"
-              className={kidFieldInputClass}
+            <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
