@@ -111,6 +111,24 @@ export function presentationFitHeightZoom(dimensions: PresentationSurfaceDimensi
   return clampPresentationZoom((dimensions.canvasHeight / dimensions.contentHeight) / baseScale);
 }
 
+/**
+ * Scale content to the largest size that remains completely visible in the
+ * presentation surface. This differs from fit-height and fit-width, which
+ * intentionally allow the other axis (or neighbouring document pages) to
+ * extend beyond the surface.
+ */
+export function presentationFitPageZoom(dimensions: PresentationSurfaceDimensions) {
+  const baseScale = dimensions.baseScale ?? Math.min(
+    dimensions.canvasWidth / dimensions.contentWidth,
+    dimensions.canvasHeight / dimensions.contentHeight
+  );
+  const containScale = Math.min(
+    dimensions.canvasWidth / dimensions.contentWidth,
+    dimensions.canvasHeight / dimensions.contentHeight
+  );
+  return clampPresentationZoom(containScale / baseScale);
+}
+
 export function clampDocumentScroll(position: number, pageCount: number) {
   return Math.max(0, Math.min(Math.max(0, pageCount - 1), position));
 }

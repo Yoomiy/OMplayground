@@ -40,6 +40,7 @@ import {
   documentPageAt,
   presentationCanvasSize,
   presentationFitHeightZoom,
+  presentationFitPageZoom,
   presentationFitWidthZoom,
   presentationPageStride,
   scrollDocumentByPixels,
@@ -214,7 +215,8 @@ function drawDocumentStrip(
   runtime: RuntimeDocument,
   pageCount: number,
   viewport: PresentationViewport,
-  scrollPosition: number
+  scrollPosition: number,
+  slideFocus: boolean
 ) {
   const canvas = context.canvas;
   const cellWidth = canvas.width * DOCUMENT_CELL_SCALE;
@@ -222,10 +224,13 @@ function drawDocumentStrip(
   const stride = documentStride(runtime, scrollPosition, canvas.width, canvas.height, viewport.zoom);
   context.fillStyle = "#020617";
   context.fillRect(0, 0, canvas.width, canvas.height);
-  const first = Math.max(0, Math.floor(scrollPosition) - 2);
-  const last = Math.min(pageCount - 1, Math.ceil(scrollPosition) + 2);
+  const focusedIndex = documentPageAt(scrollPosition, pageCount) - 1;
+  const first = slideFocus ? focusedIndex : Math.max(0, Math.floor(scrollPosition) - 2);
+  const last = slideFocus ? focusedIndex : Math.min(pageCount - 1, Math.ceil(scrollPosition) + 2);
   for (let index = first; index <= last; index += 1) {
-    const centerY = canvas.height / 2 + (index - scrollPosition) * stride;
+    const centerY = slideFocus
+      ? canvas.height / 2
+      : canvas.height / 2 + (index - scrollPosition) * stride;
     const cached = runtime.pages.get(index + 1);
     if (!cached) {
       const placeholderWidth = cellWidth * viewport.zoom;
@@ -356,6 +361,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
   const viewportCurrentRef = useRef<PresentationViewport>({ zoom: 1, panX: 0, panY: 0 });
   const viewportTargetRef = useRef<PresentationViewport>({ zoom: 1, panX: 0, panY: 0 });
   const viewportVelocityRef = useRef({ x: 0, y: 0, scroll: 0 });
+  const slideFocusRef = useRef(false);
   const documentScrollCurrentRef = useRef(0);
   const documentScrollTargetRef = useRef(0);
   const preloadDocumentWindowRef = useRef<(material: ClassroomMaterialRecord, position: number) => void>(() => {});
@@ -373,6 +379,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
   const [renderRevision, setRenderRevision] = useState(0);
   const [libraryReady, setLibraryReady] = useState(false);
   const [viewportUi, setViewportUi] = useState<PresentationViewport>({ zoom: 1, panX: 0, panY: 0 });
+  const [slideFocus, setSlideFocus] = useState(false);
   const [documentPageUi, setDocumentPageUi] = useState(1);
   const [documentScrollUi, setDocumentScrollUi] = useState(0);
   const [isSendingToWhiteboard, setIsSendingToWhiteboard] = useState(false);
@@ -397,6 +404,8 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
   }, []);
 
   useEffect(() => {
+    slideFocusRef.current = false;
+    setSlideFocus(false);
     if (!selected) return;
     const viewport = {
       zoom: selected.state.zoom,
@@ -415,6 +424,11 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
     setDocumentScrollUi(documentScroll);
     setViewportUi(viewport);
   }, [selected?.id]);
+
+  const setSlideFocusMode = (focused: boolean) => {
+    slideFocusRef.current = focused;
+    setSlideFocus(focused);
+  };
 
   const persistLibraryState = useCallback((nextSelectedId: string | null, desiredVisible: boolean) => {
     void saveClassroomLibraryState({
@@ -561,7 +575,8 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
         documentRef.current,
         material.documentManifest.pageCount,
         viewportCurrentRef.current,
-        documentScrollCurrentRef.current
+        documentScrollCurrentRef.current,
+        slideFocusRef.current
       );
     } else if (material.kind === "image" && imageMaterialIdRef.current === material.id && image) {
       drawContained(context, image, image.naturalWidth, image.naturalHeight, {
@@ -1301,6 +1316,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
     const dimensions = presentationDimensions();
     if (!dimensions) return;
     event.preventDefault();
+    setSlideFocusMode(false);
     const multiplier = event.deltaMode === WheelEvent.DOM_DELTA_LINE
       ? 16
       : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
@@ -1352,6 +1368,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
   const zoomFromCenter = (factor: number) => {
     const dimensions = presentationDimensions();
     if (!dimensions) return;
+    setSlideFocusMode(false);
     setViewportTarget(zoomPresentationAt(
       viewportTargetRef.current,
       viewportTargetRef.current.zoom * factor,
@@ -1364,6 +1381,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
   const fitHeight = () => {
     const dimensions = presentationDimensions();
     if (!dimensions) return;
+    setSlideFocusMode(false);
     const material = selectedRef.current;
     if (material?.kind === "document" && material.documentManifest) {
       const currentPage = documentPageAt(documentScrollCurrentRef.current, material.documentManifest.pageCount);
@@ -1375,7 +1393,28 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
   const fitWidth = () => {
     const dimensions = presentationDimensions();
     if (!dimensions) return;
+    setSlideFocusMode(false);
     setViewportTarget({ zoom: presentationFitWidthZoom(dimensions), panX: 0, panY: 0 });
+  };
+
+  const focusSlide = () => {
+    const material = selectedRef.current;
+    const dimensions = presentationDimensions();
+    if (material?.kind !== "document" || !material.documentManifest || !dimensions) return;
+    viewportVelocityRef.current = { x: 0, y: 0, scroll: 0 };
+    setSlideFocusMode(true);
+    const currentPage = documentPageAt(documentScrollCurrentRef.current, material.documentManifest.pageCount);
+    setDocumentScrollTarget(currentPage - 1, true);
+    setViewportTarget({ zoom: presentationFitPageZoom(dimensions), panX: 0, panY: 0 }, true);
+  };
+
+  const toggleSlideFocus = () => {
+    if (!slideFocusRef.current) {
+      focusSlide();
+      return;
+    }
+    setSlideFocusMode(false);
+    renderVisual();
   };
 
   const handlePresentationKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -1439,6 +1478,14 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
           <input type="number" min={1} max={selected.documentManifest?.pageCount} value={documentPageUi} onChange={(event) => changePage(Number(event.target.value))} className="w-12 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-1 py-1 text-center font-bold text-slate-900 dark:text-white" />
           <span className="text-slate-600 dark:text-slate-400">/ {selected.documentManifest?.pageCount}</span>
           <button onClick={() => changePage(documentPageUi + 1)} disabled={documentPageUi >= (selected.documentManifest?.pageCount ?? 1)} className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"><ChevronLeft className="size-4" /></button>
+          <button
+            onClick={toggleSlideFocus}
+            aria-pressed={slideFocus}
+            title="הצג את השקופית הנוכחית במלואה, ללא הצצה לשקופיות סמוכות"
+            className={slideFocus
+              ? "rounded bg-indigo-600 px-2 py-1 font-bold text-white shadow-sm hover:bg-indigo-500"
+              : "rounded border border-slate-200 dark:border-transparent bg-slate-100 px-2 py-1 font-medium text-slate-700 shadow-sm hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"}
+          >מיקוד שקופית</button>
         </>}
         {visual && <>
           <button onClick={() => zoomFromCenter(1 / 1.2)} title="הקטן" className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"><ZoomOut className="size-4" /></button>
@@ -1470,6 +1517,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
               renderVisual();
               return;
             }
+            setSlideFocusMode(false);
             activePointersRef.current.set(event.pointerId, point);
             viewportVelocityRef.current = { x: 0, y: 0, scroll: 0 };
             if (activePointersRef.current.size === 1) {
@@ -1491,6 +1539,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
           onDoubleClick={(event) => {
             const dimensions = presentationDimensions();
             if (!dimensions) return;
+            setSlideFocusMode(false);
             const point = pointOnCanvas(event.currentTarget, event.clientX, event.clientY);
             const before = viewportTargetRef.current;
             const zoomed = zoomPresentationAt(

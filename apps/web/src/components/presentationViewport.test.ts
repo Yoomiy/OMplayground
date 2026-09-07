@@ -5,6 +5,7 @@ import {
   documentPageAt,
   presentationCanvasSize,
   presentationFitHeightZoom,
+  presentationFitPageZoom,
   presentationFitWidthZoom,
   presentationPageStride,
   presentationPanBounds,
@@ -50,6 +51,7 @@ describe("presentation viewport", () => {
   it("computes fit-width zoom relative to fit-page", () => {
     expect(presentationFitWidthZoom(dimensions)).toBeCloseTo(8 / 3);
     expect(presentationFitHeightZoom(dimensions)).toBe(1);
+    expect(presentationFitPageZoom(dimensions)).toBe(1);
     expect(presentationPanBounds(dimensions, 1)).toEqual({ x: 0, y: 0 });
   });
 
@@ -58,6 +60,17 @@ describe("presentation viewport", () => {
     expect(presentationPanBounds(strip, 1)).toEqual({ x: 0, y: 0 });
     expect(presentationFitWidthZoom(strip)).toBeCloseTo(10 / 9);
     expect(presentationFitHeightZoom(strip)).toBeCloseTo(10 / 9);
+  });
+
+  it("fits a document-strip page fully without using the strip's 90% cell scale", () => {
+    const strip = {
+      canvasWidth: 1600,
+      canvasHeight: 900,
+      contentWidth: 1440,
+      contentHeight: 810,
+      baseScale: 1
+    };
+    expect(presentationFitPageZoom(strip)).toBeCloseTo(10 / 9);
   });
 
   it("scrolls continuously through pages without threshold jumps", () => {
