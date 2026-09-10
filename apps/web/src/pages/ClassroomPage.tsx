@@ -25,6 +25,17 @@ import {
   storePublicClassroomChatMessage
 } from "@/lib/classroomChatStorage";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import {
+  DEFAULT_CAMERA_TILE_HEIGHT,
+  MIN_CAMERA_TILE_HEIGHT,
+  cameraRailBounds,
+  clampCameraRailSize,
+  clampNoBoardTileHeight,
+  resolveBoardCameraLayout,
+  resolveNoBoardCameraLayout,
+  resolveSideCameraLayout,
+  type CameraRailOrientation
+} from "@/lib/classroomLayout";
 
 function gameServerUrl(): string {
   const fromEnv = import.meta.env.VITE_GAME_SERVER_URL?.trim();
@@ -59,7 +70,8 @@ import {
   EyeOff,
   Sparkles,
   Trash2,
-  Upload
+  Upload,
+  Grip
 } from "lucide-react";
 
 interface ClassroomSessionData {
@@ -283,6 +295,14 @@ export function ClassroomPage() {
   const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [showParticipants, setShowParticipants] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
+  const [customCameraRailSize, setCustomCameraRailSize] = useState<number | null>(null);
+  const [noBoardTileHeight, setNoBoardTileHeight] = useState(DEFAULT_CAMERA_TILE_HEIGHT);
+  const cameraStageRef = useRef<HTMLDivElement>(null);
+  const [cameraStageSize, setCameraStageSize] = useState({ width: 0, height: 0 });
+  const [viewportSize, setViewportSize] = useState(() => ({
+    width: typeof window === "undefined" ? 1280 : window.innerWidth,
+    height: typeof window === "undefined" ? 800 : window.innerHeight
+  }));
 
   // Participants & Data Stream state
   const [participants, setParticipants] = useState<CustomParticipantInfo[]>([]);
@@ -305,6 +325,35 @@ export function ClassroomPage() {
   const drawingBoardRef = useRef<DrawingBoardHandle>(null);
   const presenterTokenRef = useRef<string | null>(null);
   const [stageSplitPercent, setStageSplitPercent] = useState(60);
+
+  useEffect(() => {
+    const updateViewportSize = () => setViewportSize({ width: window.innerWidth, height: window.innerHeight });
+    window.addEventListener("resize", updateViewportSize);
+    return () => window.removeEventListener("resize", updateViewportSize);
+  }, []);
+
+  useEffect(() => {
+    const stage = cameraStageRef.current;
+    if (!stage || typeof ResizeObserver === "undefined") return;
+    const updateStageSize = () => {
+      const next = { width: stage.clientWidth, height: stage.clientHeight };
+      setCameraStageSize((current) => current.width === next.width && current.height === next.height ? current : next);
+    };
+    updateStageSize();
+    const observer = new ResizeObserver(updateStageSize);
+    observer.observe(stage);
+    return () => observer.disconnect();
+  }, [connState]);
+
+  const mainContentActiveForLayout = showBoard || presentationActive || screenShareParticipant != null;
+  const previousMainContentActiveRef = useRef(mainContentActiveForLayout);
+  useEffect(() => {
+    if (mainContentActiveForLayout && !previousMainContentActiveRef.current) {
+      setNoBoardTileHeight(DEFAULT_CAMERA_TILE_HEIGHT);
+      setCustomCameraRailSize(null);
+    }
+    previousMainContentActiveRef.current = mainContentActiveForLayout;
+  }, [mainContentActiveForLayout]);
 
   useEffect(() => { presenterIdentityRef.current = presenterIdentity; }, [presenterIdentity]);
   useEffect(() => { presenterEpochRef.current = presenterEpoch; }, [presenterEpoch]);
@@ -2083,8 +2132,105 @@ export function ClassroomPage() {
     document.addEventListener("pointerup", onUp, { once: true });
   };
 
+  const cameraOrientation: CameraRailOrientation = focusMode && isMainContentActive ? "side" : "top";
+  const cameraStageWidth = cameraStageSize.width || viewportSize.width;
+  const cameraStageHeight = cameraStageSize.height || viewportSize.height;
+  const cameraLayout = !isMainContentActive
+    ? resolveNoBoardCameraLayout({
+        availableWidth: cameraStageWidth,
+        availableHeight: cameraStageHeight,
+        participantCount: participants.length,
+        requestedTileHeight: noBoardTileHeight
+      })
+    : cameraOrientation === "side"
+      ? resolveSideCameraLayout({
+          availableWidth: cameraStageWidth,
+          participantCount: participants.length,
+          requestedWidth: customCameraRailSize
+        })
+      : resolveBoardCameraLayout({
+          availableWidth: cameraStageWidth,
+          availableHeight: cameraStageHeight,
+          participantCount: participants.length,
+          requestedHeight: customCameraRailSize
+        });
+  const cameraRailAvailable = cameraOrientation === "side" ? cameraStageWidth : cameraStageHeight;
+  const cameraRailSize = cameraLayout.gridSize;
+  const cameraRailLimits = cameraRailBounds(cameraRailAvailable, cameraOrientation);
+
+  const resetCameraRailSize = () => setCustomCameraRailSize(null);
+
+  const setCameraRailFromPointer = (clientX: number, clientY: number) => {
+    const stage = cameraStageRef.current;
+    if (!stage) return;
+    const rect = stage.getBoundingClientRect();
+    const available = cameraOrientation === "side" ? rect.width : rect.height;
+    const requested = cameraOrientation === "side" ? rect.right - clientX : clientY - rect.top;
+    setCustomCameraRailSize(clampCameraRailSize(requested, available, cameraOrientation));
+  };
+
+  const beginCameraResize = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!isMainContentActive) return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    setCameraRailFromPointer(event.clientX, event.clientY);
+    const onMove = (moveEvent: PointerEvent) => setCameraRailFromPointer(moveEvent.clientX, moveEvent.clientY);
+    const onUp = () => {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+    };
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp, { once: true });
+  };
+
+  const resizeCameraWithKeyboard = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const decreaseKey = cameraOrientation === "side" ? "ArrowRight" : "ArrowUp";
+    const increaseKey = cameraOrientation === "side" ? "ArrowLeft" : "ArrowDown";
+    if (event.key !== decreaseKey && event.key !== increaseKey) return;
+    event.preventDefault();
+    const step = event.shiftKey ? 24 : 8;
+    const direction = event.key === increaseKey ? 1 : -1;
+    setCustomCameraRailSize(clampCameraRailSize(cameraRailSize + direction * step, cameraRailAvailable, cameraOrientation));
+  };
+
+  const beginNoBoardTileResize = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (isMainContentActive) return;
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    const startX = event.clientX;
+    const startHeight = cameraLayout.tileHeight;
+    const updateFromPointer = (clientX: number) => {
+      const horizontalDelta = startX - clientX;
+      setNoBoardTileHeight(clampNoBoardTileHeight(
+        startHeight + horizontalDelta * 9 / 16,
+        cameraStageHeight,
+        cameraStageWidth
+      ));
+    };
+    const onMove = (moveEvent: PointerEvent) => updateFromPointer(moveEvent.clientX);
+    const onUp = () => {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+    };
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp, { once: true });
+  };
+
+  const resizeNoBoardTileWithKeyboard = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
+    event.preventDefault();
+    const step = event.shiftKey ? 24 : 8;
+    const increase = event.key === "ArrowLeft" || event.key === "ArrowUp";
+    setNoBoardTileHeight((current) => clampNoBoardTileHeight(
+      current + (increase ? step : -step),
+      cameraStageHeight,
+      cameraStageWidth
+    ));
+  };
+
   return (
-    <div className="min-h-screen h-screen bg-slate-100 text-slate-800 dark:bg-slate-950 dark:text-slate-100 flex flex-col font-sans overflow-hidden" dir="rtl">
+    <div className="min-h-screen h-screen supports-[height:100dvh]:h-dvh bg-slate-100 text-slate-800 dark:bg-slate-950 dark:text-slate-100 flex flex-col font-sans overflow-hidden" dir="rtl">
       <style>{`
         #feedback-trigger-btn,
         button#feedback-trigger-btn {
@@ -2093,13 +2239,13 @@ export function ClassroomPage() {
       `}</style>
       
       {/* HEADER BAR */}
-      <header className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/60 px-6 py-2.5 backdrop-blur-md shrink-0 shadow-sm">
-        <div className="flex items-center gap-3">
+      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/60 px-3 py-2.5 sm:px-4 backdrop-blur-md shrink-0 shadow-sm">
+        <div className="flex min-w-0 items-center gap-3">
           <div className="size-9 rounded-xl bg-indigo-50 border border-indigo-200 dark:bg-indigo-600/20 dark:border-indigo-500/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-sm">
             <Radio className="size-4 animate-pulse" />
           </div>
           <div>
-            <h1 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <h1 className="flex max-w-[15rem] items-center gap-2 truncate text-base font-black text-slate-900 dark:text-white sm:max-w-[24rem]">
               {sessionData?.title || "כיתה וירטואלית"}
               {isHost && (
                 <span className="rounded-md bg-amber-100 dark:bg-amber-500/20 border border-amber-300 dark:border-amber-500/30 px-2 py-0.5 text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1">
@@ -2125,7 +2271,7 @@ export function ClassroomPage() {
           </div>
         )}
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           {/* HOST BOARD VISIBILITY TOGGLE BUTTON */}
           {isHost && connState === "connected" && (
             <button
@@ -2335,33 +2481,41 @@ export function ClassroomPage() {
           <div className="flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden bg-slate-50/70 dark:bg-slate-950/90 p-3 gap-3">
             
             {/* DYNAMIC CAMERAS CONTAINER & MAIN CONTENT */}
-            <div className={cn("flex-1 min-h-0 min-w-0 flex gap-3 overflow-hidden", focusMode && isMainContentActive ? "flex-row" : "flex-col")}>
+            <div ref={cameraStageRef} className={cn("flex-1 min-h-0 min-w-0 flex gap-3 overflow-hidden", focusMode && isMainContentActive ? "flex-row" : "flex-col")}>
 
               {/* CAMERAS SECTION: Teacher ALWAYS FIRST in top row / side column */}
               <div
                 className={cn(
-                  "flex gap-2 overflow-x-auto overflow-y-auto shrink-0 transition-all duration-300 p-1.5 bg-slate-200/50 dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800/60 shadow-sm",
+                  "min-h-0 min-w-0 shrink-0 gap-2 overflow-x-hidden overflow-y-auto bg-slate-200/50 p-1.5 shadow-sm transition-[flex-basis] duration-200 dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800/60",
                   focusMode && isMainContentActive
-                    ? "w-64 flex-col justify-start max-h-full" // Vertical column in focus mode
-                    : isMainContentActive
-                    ? "w-full flex-row justify-start max-h-44" // Compact row on top when board/screen is active
-                    : "w-full flex-row flex-wrap justify-center items-center flex-1 max-h-full" // Expanded grid when no board/screen
+                    ? "flex flex-col justify-start"
+                    : "grid content-start items-start [justify-content:start]",
+                  !isMainContentActive && "flex-1"
                 )}
+                style={focusMode && isMainContentActive
+                  ? { flexBasis: `${cameraRailSize}px` }
+                  : {
+                      flexBasis: isMainContentActive ? `${cameraRailSize}px` : undefined,
+                      gridTemplateColumns: `repeat(auto-fill, ${cameraLayout.tileWidth}px)`,
+                      gridAutoRows: `${cameraLayout.tileHeight}px`
+                    }}
               >
-                {participants.map((p) => {
+                {participants.map((p, participantIndex) => {
                   const isSpeaking = activeSpeakers.includes(p.identity);
                   return (
                     <div
                       key={p.sid}
                       className={cn(
-                        "relative aspect-video rounded-xl border bg-slate-100 dark:bg-slate-900 overflow-hidden shadow-sm flex flex-col items-center justify-center shrink-0 transition duration-200",
+                        "relative aspect-video rounded-xl border bg-slate-100 dark:bg-slate-900 overflow-hidden shadow-sm flex flex-col items-center justify-center transition duration-200",
                         focusMode && isMainContentActive
-                          ? "w-full"
-                          : isMainContentActive
-                          ? "h-36 min-w-[190px]"
-                          : "h-48 w-72", // Larger solo video tile when board is hidden
+                          ? "w-full shrink-0"
+                          : "w-full", // Grid fills rows before vertical overflow.
                         isSpeaking ? "border-emerald-400 ring-2 ring-emerald-400/40" : p.isHost ? "border-amber-500/60 ring-2 ring-amber-500/20" : "border-slate-200 dark:border-slate-800"
                       )}
+                      style={{
+                        width: `${cameraLayout.tileWidth}px`,
+                        height: `${cameraLayout.tileHeight}px`
+                      }}
                     >
                       {/* Video Element */}
                       {!p.isVideoOff && p.videoTrack ? (
@@ -2432,10 +2586,57 @@ export function ClassroomPage() {
 
                         </div>
                       )}
+
+                      {!isMainContentActive && participantIndex === 0 && (
+                        <div
+                          role="slider"
+                          tabIndex={0}
+                          aria-label="שנה את גודל אריחי המצלמות"
+                          aria-valuemin={MIN_CAMERA_TILE_HEIGHT}
+                          aria-valuemax={clampNoBoardTileHeight(
+                            Number.MAX_SAFE_INTEGER,
+                            cameraStageHeight,
+                            cameraStageWidth
+                          )}
+                          aria-valuenow={Math.round(cameraLayout.tileHeight)}
+                          onPointerDown={beginNoBoardTileResize}
+                          onKeyDown={resizeNoBoardTileWithKeyboard}
+                          onDoubleClick={() => setNoBoardTileHeight(DEFAULT_CAMERA_TILE_HEIGHT)}
+                          title="גררו לשינוי גודל כל המצלמות. לחיצה כפולה מחזירה לברירת המחדל."
+                          className="absolute bottom-0 left-0 z-30 flex size-8 touch-none select-none cursor-nesw-resize items-end justify-start rounded-tr-xl bg-white/90 p-1 text-slate-600 shadow-sm outline-none transition hover:bg-indigo-50 hover:text-indigo-700 focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-slate-950/85 dark:text-slate-300 dark:hover:bg-indigo-500/20 dark:hover:text-indigo-200"
+                        >
+                          <Grip className="size-4 -rotate-45" />
+                        </div>
+                      )}
                     </div>
                   );
                 })}
               </div>
+
+              {isMainContentActive && (
+                <div
+                  role="separator"
+                  tabIndex={0}
+                  aria-label="שנה את גודל אזור המצלמות"
+                  aria-orientation={cameraOrientation === "side" ? "vertical" : "horizontal"}
+                  aria-valuemin={cameraRailLimits.min}
+                  aria-valuemax={cameraRailLimits.max}
+                  aria-valuenow={cameraRailSize}
+                  onPointerDown={beginCameraResize}
+                  onKeyDown={resizeCameraWithKeyboard}
+                  onDoubleClick={resetCameraRailSize}
+                  title="גררו לשינוי גודל המצלמות. לחיצה כפולה מחזירה לגודל אוטומטי."
+                  className={cn(
+                    "group flex shrink-0 touch-none select-none items-center justify-center rounded-full outline-none transition focus-visible:ring-2 focus-visible:ring-indigo-500",
+                    cameraOrientation === "side" ? "w-3 cursor-col-resize" : "h-3 cursor-row-resize"
+                  )}
+                >
+                  <span className={cn(
+                    "block rounded-full bg-slate-300 transition group-hover:bg-indigo-400 dark:bg-slate-700 dark:group-hover:bg-indigo-400",
+                    cameraOrientation === "side" ? "h-10 w-1" : "h-1 w-10"
+                  )} />
+                </div>
+              )}
 
               {/* MAIN CONTENT FRAME: EXCALIDRAW BOARD OR SHARED SCREEN */}
               <div
@@ -2565,7 +2766,10 @@ export function ClassroomPage() {
               {/* Side Panels Toggles — first in RTL flex layout, so they stay on the right. */}
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setShowParticipants(!showParticipants)}
+                  onClick={() => {
+                    setShowParticipants((current) => !current);
+                    setShowChat(false);
+                  }}
                   className={cn(
                     "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200 shadow-sm",
                     showParticipants
@@ -2578,7 +2782,10 @@ export function ClassroomPage() {
                 </button>
 
                 <button
-                  onClick={() => setShowChat(!showChat)}
+                  onClick={() => {
+                    setShowChat((current) => !current);
+                    setShowParticipants(false);
+                  }}
                   className={cn(
                     "relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200 shadow-sm",
                     showChat
@@ -2703,7 +2910,7 @@ export function ClassroomPage() {
 
           {/* SIDE PANEL 1: PARTICIPANTS & HOST GLOBAL CONTROLS */}
           {showParticipants && (
-            <div className="w-full lg:w-80 border-l border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 p-4 flex flex-col gap-4 overflow-y-auto shrink-0 shadow-sm">
+            <div className="w-80 max-w-[min(20rem,100%)] border-l border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 p-4 flex flex-col gap-4 overflow-y-auto shrink-0 shadow-sm">
               <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
                 <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
                   <Users className="size-4 text-indigo-600 dark:text-indigo-400" />
@@ -2881,7 +3088,7 @@ export function ClassroomPage() {
 
           {/* SIDE PANEL 2: CHAT (SCROLLABLE & NEVER STRETCHES SCREEN DOWN) */}
           {showChat && (
-            <div className="w-full lg:w-80 border-l border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 p-4 flex flex-col h-full overflow-hidden shrink-0 shadow-sm">
+            <div className="w-80 max-w-[min(20rem,100%)] border-l border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 p-4 flex flex-col h-full overflow-hidden shrink-0 shadow-sm">
               <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 shrink-0">
                 <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
                   <MessageSquare className="size-4 text-indigo-600 dark:text-indigo-400" />

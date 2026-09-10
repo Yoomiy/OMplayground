@@ -52,6 +52,7 @@ export interface DrawingCanvasProps {
   myUserId: string | null;
   showToast: (msg: string) => void;
   isFullscreen?: boolean;
+  fillAvailableHeight?: boolean;
   players?: { userId: string; displayName: string }[];
   isVisible?: boolean;
 }
@@ -69,6 +70,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   myUserId,
   showToast,
   isFullscreen,
+  fillAvailableHeight = false,
   players,
   isVisible = true
 }, ref) => {
@@ -817,11 +819,35 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     };
   }, [excalidrawAPI, isVisible]);
 
+  // Classroom camera rails and side panels can resize the mounted board without
+  // toggling visibility. Excalidraw caches its container geometry, so refresh
+  // after a real container resize as well as after the hide/show transition.
+  useEffect(() => {
+    const surface = interactionSurfaceRef.current;
+    if (!surface || !excalidrawAPI?.refresh || typeof ResizeObserver === "undefined") return;
+    let frame = 0;
+    let settledTimer: number | null = null;
+    const refresh = () => excalidrawAPI.refresh();
+    const scheduleRefresh = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(refresh);
+      if (settledTimer !== null) window.clearTimeout(settledTimer);
+      settledTimer = window.setTimeout(refresh, 220);
+    };
+    const observer = new ResizeObserver(scheduleRefresh);
+    observer.observe(surface);
+    return () => {
+      observer.disconnect();
+      window.cancelAnimationFrame(frame);
+      if (settledTimer !== null) window.clearTimeout(settledTimer);
+    };
+  }, [excalidrawAPI]);
+
   return (
     <div
       className={cn(
         "relative w-full overflow-hidden rounded-2xl border border-white/10 bg-slate-950/20 shadow-inner",
-        isFullscreen ? "h-full" : "h-[650px]",
+        isFullscreen || fillAvailableHeight ? "h-full" : "h-[650px]",
         mySeat === null && "drawing-read-only",
         (viewportRole === "follow" || (modeKind === "canonical" && !canonicalReady)) && "drawing-interaction-blocked"
       )}

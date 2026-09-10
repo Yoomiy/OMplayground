@@ -16,3 +16,4 @@
 53. fix raise hand behavior
 58. there's too much noice in the converter logs
 59. allow cam tiles resize in classrooms
+60. solve whiboard popup error after permission revoke (race with the awareness?)

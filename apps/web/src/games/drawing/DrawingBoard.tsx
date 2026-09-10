@@ -245,6 +245,7 @@ export const DrawingBoard = memo(forwardRef<DrawingBoardHandle, DrawingBoardProp
           myUserId={myUserId}
           showToast={showToast}
           isFullscreen={isFullscreen}
+          fillAvailableHeight={hideTopBar}
           players={players}
           isVisible={isVisible}
         />
