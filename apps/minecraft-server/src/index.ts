@@ -108,6 +108,8 @@ import {
   generateClassroomToken,
   deleteLiveKitRoom,
   evictClassroomParticipants,
+  classroomDelegateCandidate,
+  demoteClassroomDelegateParticipant,
   promoteClassroomParticipant,
   getClassroomParticipantBlockTarget,
   removeClassroomParticipant,
@@ -507,6 +509,24 @@ async function requireClassroomAuthority(
   return { kind: "delegate", delegate };
 }
 
+async function requireClassroomCreator(
+  req: express.Request,
+  res: express.Response,
+  classroom: { id: string; teacher_id: string | null }
+): Promise<ClassroomAuthority | null> {
+  const accessToken = req.headers.authorization?.replace(/^Bearer\s+/i, "");
+  if (!accessToken || !supabaseAdmin || !classroom.teacher_id) {
+    res.status(403).json({ error: "creator_required" });
+    return null;
+  }
+  const actor = await getCachedAuth(supabaseAdmin, accessToken).catch(() => null);
+  if (!actor || actor.userId !== classroom.teacher_id) {
+    res.status(403).json({ error: "creator_required" });
+    return null;
+  }
+  return { kind: "user", userId: actor.userId, actorKind: actor.role === "admin" ? "admin" : "teacher" };
+}
+
 async function getActiveClassroom(roomCode: string) {
   if (!supabaseAdmin) return null;
   const { data, error } = await supabaseAdmin
@@ -727,20 +747,6 @@ async function assignPresenter(
   return next;
 }
 
-async function electPresenter(
-  classroom: { id: string; room_code: string; teacher_id: string | null; settings: unknown },
-  excludedIdentity?: string
-) {
-  const participants = (await listClassroomParticipants(classroom.room_code))
-    .filter((participant) => participant.identity !== excludedIdentity);
-  const identities = new Set(participants.map((participant) => participant.identity));
-  const current = presentationRoomState(classroom.settings);
-  if (current.presenterIdentity && identities.has(current.presenterIdentity)) return current;
-  const creator = classroom.teacher_id && identities.has(classroom.teacher_id) ? classroom.teacher_id : null;
-  const fallback = participants.filter((participant) => participant.isHost).map((participant) => participant.identity).sort()[0] ?? null;
-  return assignPresenter(classroom, creator || fallback, true);
-}
-
 function setDelegateCookie(
   res: express.Response,
   delegateId: string,
@@ -910,15 +916,10 @@ app.post("/rtc/classroom-token", async (req, res) => {
       guestAttendanceKey: classroomGuestAttendanceKey(roomCode, guestAttendanceKey)
     });
     let presentation = presentationRoomState(classroom.settings);
-    if (!presentation.presenterIdentity && result.isHost && spectateMode !== "invisible") {
-      presentation = {
-        presenterIdentity: result.userId,
-        presenterEpoch: presentation.presenterEpoch + 1,
-        visible: false,
-        title: null,
-        mediaKind: null
-      };
-      await persistPresentationState(classroom, presentation);
+    // The classroom creator is the only automatic presenter. Other hosts and
+    // cohosts may claim or assign presentation explicitly after joining.
+    if (!presentation.presenterIdentity && classroom.teacher_id === result.userId && spectateMode !== "invisible") {
+      presentation = await assignPresenter(classroom, result.userId, false);
       result = await generateClassroomToken({
         supabaseAdmin,
         roomCode,
@@ -1395,12 +1396,12 @@ app.post("/rtc/classroom-delegate/activate", async (req, res) => {
     }
     const { data: enrollment, error: enrollmentError } = await supabaseAdmin
       .from("classroom_delegate_enrollments")
-      .select("id, delegate_id, expires_at, used_at")
+      .select("id, delegate_id, expires_at, used_at, revoked_at")
       .eq("code_hash", secretHash(enrollmentCode))
       .maybeSingle();
     if (enrollmentError) throw enrollmentError;
     if (
-      !enrollment ||
+      !enrollment || enrollment.revoked_at ||
       enrollment.used_at ||
       new Date(enrollment.expires_at).getTime() <= Date.now()
     ) {
@@ -1409,7 +1410,7 @@ app.post("/rtc/classroom-delegate/activate", async (req, res) => {
     }
     const { data: delegate, error: delegateError } = await supabaseAdmin
       .from("classroom_host_delegates")
-      .select("id, classroom_id, display_name, scopes, is_active")
+      .select("id, classroom_id, display_name, participant_key, scopes, is_active")
       .eq("id", enrollment.delegate_id)
       .eq("classroom_id", classroom.id)
       .maybeSingle();
@@ -1527,7 +1528,7 @@ app.post("/rtc/classroom-whiteboard-permission", async (req, res) => {
     }
     const classroom = await getActiveClassroom(roomCode.trim());
     if (!classroom) return void res.status(404).json({ error: "classroom_not_found" });
-    const authority = await requireClassroomAuthority(req, res, classroom.id, "manage_settings");
+    const authority = await requireClassroomAuthority(req, res, classroom.id, "manage_whiteboard");
     if (!authority || !supabaseAdmin) return;
     const updated = await setClassroomWhiteboardPermission(
       supabaseAdmin,
@@ -1688,14 +1689,6 @@ app.post("/rtc/classroom-presenter-transfer", async (req, res) => {
     if (!classroom) return void res.status(404).json({ error: "classroom_not_found" });
     const authority = await requireClassroomAuthority(req, res, classroom.id, "control_presentation");
     if (!authority) return;
-    const actorIdentity = authorityIdentity(authority);
-    const current = presentationRoomState(classroom.settings);
-    const isCreator =
-      authority.kind === "user" && authority.userId === classroom.teacher_id;
-    if (!isCreator && actorIdentity !== current.presenterIdentity) {
-      res.status(403).json({ error: "presenter_transfer_forbidden" });
-      return;
-    }
     const participants = await listClassroomParticipants(classroom.room_code);
     if (!participants.some((participant) => participant.identity === targetIdentity.trim())) {
       res.status(404).json({ error: "participant_not_found" });
@@ -1718,7 +1711,7 @@ app.post("/rtc/classroom-presenter-leave", async (req, res) => {
     if (!classroom) return void res.status(404).json({ error: "classroom_not_found" });
     const presenter = requirePresenterCapability(req, res, classroom);
     if (!presenter) return;
-    const next = await electPresenter(classroom, presenter.identity);
+    const next = await assignPresenter(classroom, null);
     res.json({ success: true, presenterIdentity: next.presenterIdentity, presenterEpoch: next.presenterEpoch });
   } catch (err) {
     logHttpFailure(logger, req, err, "CLASSROOM_PRESENTER_LEAVE_FAILED");
@@ -1745,7 +1738,7 @@ app.post("/rtc/classroom-presenter-elect", async (req, res) => {
     if (participants.some((participant) => participant.identity === current.presenterIdentity)) {
       return void res.json({ success: true, reconnected: true });
     }
-    const next = await electPresenter(classroom);
+    const next = await assignPresenter(classroom, null);
     res.json({ success: true, presenterIdentity: next.presenterIdentity, presenterEpoch: next.presenterEpoch });
   } catch (err) {
     logHttpFailure(logger, req, err, "CLASSROOM_PRESENTER_ELECTION_FAILED");
@@ -1891,12 +1884,13 @@ app.post("/rtc/classroom-promote", async (req, res) => {
     );
     if (!authority || !supabaseAdmin) return;
 
-    const promoted = await promoteClassroomParticipant(normalizedRoomCode, targetIdentity.trim());
+    const candidate = await classroomDelegateCandidate(normalizedRoomCode, targetIdentity.trim());
     const { data: delegate, error: delegateError } = await supabaseAdmin
       .from("classroom_host_delegates")
       .insert({
         classroom_id: classroom.id,
-        display_name: promoted.displayName.slice(0, 120),
+        display_name: candidate.displayName.slice(0, 120),
+        participant_key: candidate.participantKey,
         scopes: CLASSROOM_DELEGATE_SCOPES,
         created_by: authority.kind === "user" ? authority.userId : null
       })
@@ -1914,7 +1908,21 @@ app.post("/rtc/classroom-promote", async (req, res) => {
         expires_at: new Date(Date.now() + CLASSROOM_DELEGATE_ENROLLMENT_MS).toISOString()
       });
     if (enrollmentError) throw enrollmentError;
-    await sendClassroomDelegateEnrollment(normalizedRoomCode, targetIdentity.trim(), enrollmentCode);
+    try {
+      await promoteClassroomParticipant(normalizedRoomCode, targetIdentity.trim(), delegate.id);
+      await sendClassroomDelegateEnrollment(normalizedRoomCode, targetIdentity.trim(), enrollmentCode);
+    } catch (promotionError) {
+      await supabaseAdmin
+        .from("classroom_host_delegates")
+        .update({ is_active: false })
+        .eq("id", delegate.id);
+      await supabaseAdmin
+        .from("classroom_delegate_enrollments")
+        .update({ revoked_at: new Date().toISOString() })
+        .eq("delegate_id", delegate.id)
+        .is("used_at", null);
+      throw promotionError;
+    }
     await appendClassroomAudit(req, classroom, authority, "classroom_participant_promoted", { target_identity: targetIdentity.trim() });
     logger.info({
       userId: authority.kind === "user" ? authority.userId : authority.delegate.delegateId,
@@ -1929,6 +1937,49 @@ app.post("/rtc/classroom-promote", async (req, res) => {
     res.json({ success: true, delegated: authority.kind === "delegate" });
   } catch (err) {
     logHttpFailure(logger, req, err, "CLASSROOM_PARTICIPANT_PROMOTION_FAILED");
+    res.status(500).json({ error: "internal_server_error" });
+  }
+});
+
+app.post("/rtc/classroom-cohost/revoke", async (req, res) => {
+  try {
+    const { roomCode, delegateId } = req.body || {};
+    if (typeof roomCode !== "string" || !roomCode.trim() || typeof delegateId !== "string" || !delegateId.trim()) {
+      res.status(400).json({ error: "invalid_cohost_revocation" });
+      return;
+    }
+    const classroom = await getActiveClassroom(roomCode.trim());
+    if (!classroom || !supabaseAdmin) return void res.status(404).json({ error: "classroom_not_found" });
+    const authority = await requireClassroomCreator(req, res, classroom);
+    if (!authority) return;
+    const { data: delegate, error: delegateError } = await supabaseAdmin
+      .from("classroom_host_delegates")
+      .select("id")
+      .eq("id", delegateId.trim())
+      .eq("classroom_id", classroom.id)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (delegateError) throw delegateError;
+    if (!delegate) return void res.status(404).json({ error: "active_delegate_not_found" });
+    const now = new Date().toISOString();
+    const { error: deactivateError } = await supabaseAdmin
+      .from("classroom_host_delegates")
+      .update({ is_active: false })
+      .eq("id", delegate.id);
+    if (deactivateError) throw deactivateError;
+    const [{ error: sessionsError }, { error: enrollmentsError }] = await Promise.all([
+      supabaseAdmin.from("classroom_delegate_sessions").update({ revoked_at: now }).eq("delegate_id", delegate.id).is("revoked_at", null),
+      supabaseAdmin.from("classroom_delegate_enrollments").update({ revoked_at: now }).eq("delegate_id", delegate.id).is("used_at", null)
+    ]);
+    if (sessionsError) throw sessionsError;
+    if (enrollmentsError) throw enrollmentsError;
+    const demoted = await demoteClassroomDelegateParticipant(classroom.room_code, delegate.id, classroomSettings(classroom.settings));
+    await syncClassroomParticipantPermissions(classroom.room_code, classroomSettings(classroom.settings), supabaseAdmin, classroom.id);
+    await broadcastClassroomData(classroom.room_code, { type: "CLASSROOM_COHOST_REVOKED", delegateId: delegate.id });
+    await appendClassroomAudit(req, classroom, authority, "classroom_cohost_revoked", { delegate_id: delegate.id });
+    res.json({ success: true, delegateId: delegate.id, demoted });
+  } catch (err) {
+    logHttpFailure(logger, req, err, "CLASSROOM_COHOST_REVOCATION_FAILED");
     res.status(500).json({ error: "internal_server_error" });
   }
 });

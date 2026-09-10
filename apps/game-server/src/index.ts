@@ -125,6 +125,8 @@ interface ClassroomDrawingPolicy {
   classroomId: string;
   allowWhiteboardDraw: boolean;
   whiteboardOverrides: Record<string, boolean>;
+  delegateParticipantKeys: Record<string, boolean>;
+  delegateIds: Record<string, boolean>;
   active: boolean;
 }
 
@@ -154,7 +156,7 @@ async function loadClassroomDrawingPolicy(
   }
 
   const load = (async () => {
-    if (!supabaseAdmin) return { classroomId: "unknown", allowWhiteboardDraw: false, whiteboardOverrides: {}, active: false };
+    if (!supabaseAdmin) return { classroomId: "unknown", allowWhiteboardDraw: false, whiteboardOverrides: {}, delegateParticipantKeys: {}, delegateIds: {}, active: false };
     const { data, error } = await supabaseAdmin
       .from("classroom_sessions")
       .select("id, settings, status")
@@ -173,6 +175,14 @@ async function loadClassroomDrawingPolicy(
     const whiteboardOverrides = Object.fromEntries(
       (permissionRows ?? []).map((row) => [String(row.participant_key), row.allowed === true])
     );
+    const { data: delegates, error: delegatesError } = data?.id
+      ? await supabaseAdmin
+          .from("classroom_host_delegates")
+          .select("id, participant_key")
+          .eq("classroom_id", data.id)
+          .eq("is_active", true)
+      : { data: [], error: null };
+    if (delegatesError) throw delegatesError;
     const policy = {
       classroomId,
       active: data?.status === "active",
@@ -180,6 +190,10 @@ async function loadClassroomDrawingPolicy(
         data?.status === "active" &&
         (data.settings as { allowWhiteboardDraw?: unknown } | null)?.allowWhiteboardDraw === true,
       whiteboardOverrides
+      ,delegateParticipantKeys: Object.fromEntries((delegates ?? []).flatMap((delegate) =>
+        typeof delegate.participant_key === "string" && delegate.participant_key ? [[delegate.participant_key, true] as const] : []
+      )),
+      delegateIds: Object.fromEntries((delegates ?? []).map((delegate) => [String(delegate.id), true] as const))
     };
     classroomDrawingPolicies.set(roomCode, policy);
     return policy;
@@ -678,33 +692,48 @@ io.on("connection", (socket) => {
 
   async function canClearDrawing(room: Room<unknown>): Promise<boolean> {
     const classroom = socket.data.classroomDrawing as
-      | { sessionId: string; roomCode: string; isHost: boolean }
+      | { sessionId: string; classroomId: string; roomCode: string; isHost: boolean; isStaffHost?: boolean }
       | undefined;
     if (room.gameKey !== "drawing") return false;
     if (room.drawingContext?.boardMode !== "classroom") return room.players.has(userId);
-    return classroom?.sessionId === room.sessionId && classroom.isHost;
+    if (!classroom || classroom.sessionId !== room.sessionId) return false;
+    const policy = await loadClassroomDrawingPolicy(classroom.roomCode, classroom.classroomId, true);
+    return Boolean(classroom.isStaffHost || classroomDelegateAllowed(policy));
+  }
+
+  function classroomDelegateAllowed(policy: ClassroomDrawingPolicy): boolean {
+    const participantKey = socket.data.classroomBoardCapability?.participantKey;
+    if (participantKey && policy.delegateParticipantKeys[participantKey]) return true;
+    const delegateId = userId.startsWith("delegate:") ? userId.slice("delegate:".length) : null;
+    return Boolean(delegateId && policy.delegateIds[delegateId]);
+  }
+
+  function classroomDrawingAllowed(policy: ClassroomDrawingPolicy): boolean {
+    const classroom = socket.data.classroomDrawing;
+    if (!classroom || !policy.active) return false;
+    if (classroom.isStaffHost || classroomDelegateAllowed(policy)) return true;
+    const participantKey = socket.data.classroomBoardCapability?.participantKey;
+    const override = participantKey ? policy.whiteboardOverrides[participantKey] : undefined;
+    return typeof override === "boolean" ? override : policy.allowWhiteboardDraw;
   }
 
   async function canEditDrawing(room: Room<unknown>): Promise<boolean> {
     const classroom = socket.data.classroomDrawing as
-      | { sessionId: string; classroomId: string; roomCode: string; isHost: boolean }
+      | { sessionId: string; classroomId: string; roomCode: string; isHost: boolean; isStaffHost?: boolean }
       | undefined;
     if (room.gameKey !== "drawing") return true;
     if (room.drawingContext?.boardMode !== "classroom") {
       return room.players.has(userId) && !isCurrentStaffObserver();
     }
     if (!classroom || classroom.sessionId !== room.sessionId) return false;
-    if (classroom.isHost) return true;
-    const participantKey = socket.data.classroomBoardCapability?.participantKey as string | undefined;
+    if (classroom.isStaffHost) return true;
     const cachedPolicy = classroomDrawingPolicies.get(classroom.roomCode);
     if (cachedPolicy) {
-      const override = participantKey ? cachedPolicy.whiteboardOverrides[participantKey] : undefined;
-      return typeof override === "boolean" ? override : cachedPolicy.allowWhiteboardDraw;
+      return classroomDrawingAllowed(cachedPolicy);
     }
     try {
       const freshPolicy = await loadClassroomDrawingPolicy(classroom.roomCode, classroom.classroomId, true);
-      const override = participantKey ? freshPolicy.whiteboardOverrides[participantKey] : undefined;
-      return typeof override === "boolean" ? override : freshPolicy.allowWhiteboardDraw;
+      return classroomDrawingAllowed(freshPolicy);
     } catch {
       return false;
     }
@@ -1000,6 +1029,8 @@ io.on("connection", (socket) => {
           classroomId: "unknown",
           allowWhiteboardDraw: false,
           whiteboardOverrides: {},
+          delegateParticipantKeys: {},
+          delegateIds: {},
           active: false
         };
         try {
@@ -1035,8 +1066,13 @@ io.on("connection", (socket) => {
             role === "teacher" ||
             role === "admin" ||
             hostId === userId ||
-            (hasMatchingBoardCapability && boardCapability?.isHost === true) ||
+            (hasMatchingBoardCapability && boardCapability?.isHost === true && boardCapability?.role !== "classroom_delegate") ||
             (delegate?.roomCode === classroomRoomCode && delegate.identity === userId)
+          ,isStaffHost:
+            role === "teacher" ||
+            role === "admin" ||
+            hostId === userId ||
+            (hasMatchingBoardCapability && boardCapability?.isHost === true && boardCapability?.role !== "classroom_delegate")
         };
         drawingContext = {
           boardMode: "classroom",
@@ -1572,115 +1608,54 @@ io.on("connection", (socket) => {
   );
 
   socket.on(
-    "CLASSROOM_DELEGATE_ACTIVATED",
-    (payload: { sessionId?: string; delegateGameToken?: string }) => {
-      const classroom = socket.data.classroomDrawing as
-        | { sessionId: string; classroomId: string; roomCode: string; isHost: boolean }
-        | undefined;
-      const token =
-        typeof payload?.delegateGameToken === "string"
-          ? verifyClassroomDelegateGameToken(payload.delegateGameToken, SUPABASE_SERVICE_ROLE_KEY)
-          : null;
-      if (
-        !classroom ||
-        payload?.sessionId !== classroom.sessionId ||
-        !token ||
-        token.roomCode !== classroom.roomCode
-      ) {
-        logger.warn({
-          userId,
-          sessionId: payload?.sessionId,
-          protocol: "socket",
-          message: "Classroom delegate activation rejected",
-          context: { event: "CLASSROOM_DELEGATE_ACTIVATION_REJECTED" }
-        });
-        return;
-      }
-      classroom.isHost = true;
-      logger.info({
-        userId,
-        sessionId: classroom.sessionId,
-        protocol: "socket",
-        message: "Classroom delegate activated on current board socket",
-        context: { event: "CLASSROOM_DELEGATE_SOCKET_ACTIVATED", roomCode: classroom.roomCode }
-      });
-    }
-  );
-
-  socket.on(
-    "CLASSROOM_WHITEBOARD_POLICY",
-    (payload: { sessionId?: string; allowWhiteboardDraw?: unknown }) => {
-      const sessionId = payload?.sessionId;
-      const classroom = socket.data.classroomDrawing as
-        | { sessionId: string; classroomId: string; roomCode: string; isHost: boolean }
-        | undefined;
-      if (
-        !sessionId ||
-        socket.data.sessionId !== sessionId ||
-        !classroom ||
-        classroom.sessionId !== sessionId ||
-        !classroom.isHost ||
-        typeof payload.allowWhiteboardDraw !== "boolean"
-      ) {
-        return;
-      }
-      classroomDrawingPolicies.set(classroom.roomCode, {
-        ...(classroomDrawingPolicies.get(classroom.roomCode) ?? {
-          classroomId: classroom.classroomId,
-          whiteboardOverrides: {},
-          active: true
-        }),
-        allowWhiteboardDraw: payload.allowWhiteboardDraw
-      });
-      logger.info({
-        correlationId: socket.data.correlationId,
-        userId,
-        sessionId,
-        protocol: "socket",
-        message: "Classroom whiteboard policy applied",
-        context: {
-          event: "CLASSROOM_WHITEBOARD_POLICY",
-          roomCode: classroom.roomCode,
-          allowWhiteboardDraw: payload.allowWhiteboardDraw,
-          status: "success"
-        }
-      });
-    }
-  );
-
-  socket.on(
     "CLASSROOM_WHITEBOARD_POLICY_REFRESH",
-    async (payload: { sessionId?: string; targetIdentity?: string }) => {
+    async (payload: { sessionId?: string }, reply?: (result: { ok: boolean; error?: string }) => void) => {
       const started = Date.now();
       const sessionId = payload?.sessionId;
-      const targetIdentity = payload?.targetIdentity;
       const classroom = socket.data.classroomDrawing as
         | { sessionId: string; classroomId: string; roomCode: string; isHost: boolean }
         | undefined;
       if (
         !sessionId ||
-        typeof targetIdentity !== "string" ||
         socket.data.sessionId !== sessionId ||
         !classroom ||
-        classroom.sessionId !== sessionId ||
-        !classroom.isHost
-      ) return;
+        classroom.sessionId !== sessionId
+      ) {
+        reply?.({ ok: false, error: "CLASSROOM_ACCESS_REQUIRED" });
+        return;
+      }
       try {
+        const previousPolicy = classroomDrawingPolicies.get(classroom.roomCode);
         const policy = await loadClassroomDrawingPolicy(classroom.roomCode, classroom.classroomId, true);
         const recipients = await io.in(`session:${sessionId}`).fetchSockets();
         for (const recipient of recipients) {
-          if (recipient.data.userId !== targetIdentity) continue;
-          const capability = recipient.data.classroomBoardCapability;
-          const participantKey = capability?.participantKey as string | undefined;
-          const override = participantKey ? policy.whiteboardOverrides[participantKey] : undefined;
-          const allowed = recipient.data.classroomDrawing?.isHost === true ||
-            (typeof override === "boolean" ? override : policy.allowWhiteboardDraw);
+          const recipientClassroom = recipient.data.classroomDrawing;
+          if (!recipientClassroom || recipientClassroom.sessionId !== sessionId) continue;
+          const recipientCapability = recipient.data.classroomBoardCapability;
+          const recipientKey = recipientCapability?.participantKey;
+          const recipientDelegateId = recipient.data.userId?.startsWith("delegate:")
+            ? recipient.data.userId.slice("delegate:".length)
+            : null;
+          const allowed = recipientClassroom.isStaffHost === true ||
+            Boolean(recipientKey && policy.delegateParticipantKeys[recipientKey]) ||
+            Boolean(recipientDelegateId && policy.delegateIds[recipientDelegateId]) ||
+            (typeof (recipientKey ? policy.whiteboardOverrides[recipientKey] : undefined) === "boolean"
+              ? policy.whiteboardOverrides[recipientKey!]
+              : policy.allowWhiteboardDraw);
+          const previouslyAllowed = previousPolicy
+            ? recipientClassroom.isStaffHost === true ||
+              Boolean(recipientKey && previousPolicy.delegateParticipantKeys[recipientKey]) ||
+              Boolean(recipientDelegateId && previousPolicy.delegateIds[recipientDelegateId]) ||
+              (typeof (recipientKey ? previousPolicy.whiteboardOverrides[recipientKey] : undefined) === "boolean"
+                ? previousPolicy.whiteboardOverrides[recipientKey!]
+                : previousPolicy.allowWhiteboardDraw)
+            : allowed;
           recipient.emit("CLASSROOM_WHITEBOARD_PERMISSION", { sessionId, allowed });
-          if (!allowed) {
+          if (previouslyAllowed && !allowed) {
             const awarenessClientIds = recipient.data.canonicalDrawingAwarenessClientIds as number[] | undefined;
             if (awarenessClientIds?.length) {
               io.to(`session:${sessionId}`).except(recipient.id).emit("LIVE_DELTA", {
-                from: targetIdentity,
+                from: recipient.data.userId,
                 delta: { yjsAwarenessRemove: awarenessClientIds }
               });
             }
@@ -1712,6 +1687,7 @@ io.on("connection", (socket) => {
           sessionId,
           durationMs: Date.now() - started
         });
+        reply?.({ ok: true });
       } catch (err) {
         logger.warn({
           correlationId: socket.data.correlationId,
@@ -1728,6 +1704,7 @@ io.on("connection", (socket) => {
           sessionId,
           durationMs: Date.now() - started
         });
+        reply?.({ ok: false, error: "POLICY_REFRESH_FAILED" });
       }
     }
   );

@@ -138,10 +138,34 @@ export async function evictClassroomParticipants(roomCode: string): Promise<numb
   }
 }
 
-export async function promoteClassroomParticipant(
+export async function classroomDelegateCandidate(
   roomCode: string,
   participantIdentity: string
-): Promise<{ displayName: string }> {
+): Promise<{ displayName: string; participantKey: string }> {
+  const roomService = getRoomServiceClient();
+  if (!roomService) {
+    throw new LiveKitTokenError("server_config", "LiveKit is not configured on the server.");
+  }
+
+  const roomName = classroomLiveKitRoom(roomCode);
+  const participant = await roomService.getParticipant(roomName, participantIdentity);
+  let metadata: Record<string, unknown> = {};
+  try {
+    metadata = participant.metadata ? JSON.parse(participant.metadata) : {};
+  } catch {
+    metadata = {};
+  }
+
+  const participantKey = classroomParticipantKeyFromMetadata(metadata, participant.identity);
+  if (!participantKey) throw new LiveKitTokenError("session_not_found", "Classroom participant identity is unavailable.");
+  return { displayName: participant.name || participantIdentity, participantKey };
+}
+
+export async function promoteClassroomParticipant(
+  roomCode: string,
+  participantIdentity: string,
+  delegateId: string
+): Promise<void> {
   const roomService = getRoomServiceClient();
   if (!roomService) {
     throw new LiveKitTokenError("server_config", "LiveKit is not configured on the server.");
@@ -158,7 +182,7 @@ export async function promoteClassroomParticipant(
 
   const isPresenter = metadata.isPresenter === true;
   await roomService.updateParticipant(roomName, participantIdentity, {
-    metadata: JSON.stringify({ ...metadata, isHost: true }),
+    metadata: JSON.stringify({ ...metadata, isHost: true, classroomHostKind: "delegate", classroomDelegateId: delegateId }),
     permission: {
       canSubscribe: true,
       canPublish: true,
@@ -167,7 +191,37 @@ export async function promoteClassroomParticipant(
       canUpdateMetadata: false
     }
   });
-  return { displayName: participant.name || participantIdentity };
+}
+
+export async function demoteClassroomDelegateParticipant(
+  roomCode: string,
+  delegateId: string,
+  settings: Record<string, unknown>
+): Promise<boolean> {
+  const roomService = getRoomServiceClient();
+  if (!roomService) throw new LiveKitTokenError("server_config", "LiveKit is not configured on the server.");
+  const roomName = classroomLiveKitRoom(roomCode);
+  const participants = await roomService.listParticipants(roomName);
+  const target = participants.find((participant) => {
+    if (participant.identity === `delegate:${delegateId}`) return true;
+    try { return JSON.parse(participant.metadata || "{}").classroomDelegateId === delegateId; } catch { return false; }
+  });
+  if (!target) return false;
+  let metadata: Record<string, unknown> = {};
+  try { metadata = target.metadata ? JSON.parse(target.metadata) : {}; } catch {}
+  const { classroomHostKind: _hostKind, classroomDelegateId: _delegateId, ...ordinaryMetadata } = metadata;
+  const isPresenter = metadata.isPresenter === true;
+  await roomService.updateParticipant(roomName, target.identity, {
+    metadata: JSON.stringify({ ...ordinaryMetadata, isHost: false }),
+    permission: {
+      canSubscribe: true,
+      canPublish: true,
+      canPublishData: true,
+      canPublishSources: classroomPublishSourcesForRole(settings, false, isPresenter),
+      canUpdateMetadata: false
+    }
+  });
+  return true;
 }
 
 export async function sendClassroomDelegateEnrollment(
@@ -737,6 +791,8 @@ export async function generateClassroomToken(
       spectateMode: spectateMode ?? "none",
       attendanceKey,
       attendanceRole,
+      classroomHostKind: isDelegate ? "delegate" : isHost ? "staff" : undefined,
+      classroomDelegateId: delegate?.id,
       canDrawWhiteboard
     })
   });

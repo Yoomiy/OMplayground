@@ -18,6 +18,7 @@ declare module "socket.io" {
       classroomId: string;
       roomCode: string;
       isHost: boolean;
+      isStaffHost?: boolean;
     };
   }
 }

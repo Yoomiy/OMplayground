@@ -97,6 +97,8 @@ interface CustomParticipantInfo {
   identity: string;
   participantKey: string;
   role: string;
+  cohostKind?: "delegate" | "staff" | "creator";
+  delegateId?: string;
   name: string;
   isHost: boolean;
   isMe: boolean;
@@ -316,6 +318,8 @@ export function ClassroomPage() {
 
   // Under-the-hood Draw Game Room (Socket.io) for Whiteboard Syncing
   const [drawSessionId, setDrawSessionId] = useState<string | null>(null);
+  const drawSessionIdRef = useRef<string | null>(null);
+  useEffect(() => { drawSessionIdRef.current = drawSessionId; }, [drawSessionId]);
   const drawSocketRef = useRef<Socket | null>(null);
   const [drawSocketReady, setDrawSocketReady] = useState(false);
   const [boardInitialYjsUpdate, setBoardInitialYjsUpdate] = useState<string | null>(null);
@@ -729,6 +733,8 @@ export function ClassroomPage() {
         role: typeof localMetadata.role === "string" ? localMetadata.role : "student",
         name: local.name || "אני",
         isHost: localIsHost,
+        cohostKind: localMetadata.classroomHostKind === "delegate" ? "delegate" : localIsHost ? "staff" : undefined,
+        delegateId: typeof localMetadata.classroomDelegateId === "string" ? localMetadata.classroomDelegateId : undefined,
         isMe: true,
         isMuted: !local.isMicrophoneEnabled,
         isVideoOff: !local.isCameraEnabled,
@@ -799,6 +805,8 @@ export function ClassroomPage() {
         role: typeof pMetadata.role === "string" ? pMetadata.role : "student",
         name: p.name || p.identity,
         isHost: pIsHost,
+        cohostKind: pMetadata.classroomHostKind === "delegate" ? "delegate" : pIsHost ? "staff" : undefined,
+        delegateId: typeof pMetadata.classroomDelegateId === "string" ? pMetadata.classroomDelegateId : undefined,
         isMe: false,
         isMuted: !p.isMicrophoneEnabled,
         isVideoOff: !p.isCameraEnabled,
@@ -973,13 +981,11 @@ export function ClassroomPage() {
                 if (!response.ok) throw new Error("delegate activation failed");
                 return response.json();
               })
-              .then((result) => {
+              .then(() => {
                 setIsDelegatedHost(true);
-                if (drawSocketRef.current && drawSessionId && result.delegateGameToken) {
-                  drawSocketRef.current.emit("CLASSROOM_DELEGATE_ACTIVATED", {
-                    sessionId: drawSessionId,
-                    delegateGameToken: result.delegateGameToken
-                  });
+                const currentSessionId = drawSessionIdRef.current;
+                if (drawSocketRef.current && currentSessionId) {
+                  drawSocketRef.current.emit("CLASSROOM_WHITEBOARD_POLICY_REFRESH", { sessionId: currentSessionId });
                 }
               })
               .catch(() => setConnError("לא ניתן לשמור את הרשאת המארח."));
@@ -1277,7 +1283,7 @@ export function ClassroomPage() {
           setIsHost(participantIsHost(participant));
           try {
             const metadata = JSON.parse(participant.metadata || "{}");
-            setCanUseWhiteboard(metadata.isHost === true || metadata.canDrawWhiteboard === true);
+            setCanUseWhiteboard(metadata.canDrawWhiteboard === true);
           } catch {}
         }
         updateParticipantList(lkRoom);
@@ -1840,8 +1846,7 @@ export function ClassroomPage() {
       entry.identity === targetIdentity ? { ...entry, canDrawWhiteboard: allowed } : entry
     ));
     drawSocketRef.current?.emit("CLASSROOM_WHITEBOARD_POLICY_REFRESH", {
-      sessionId: drawSessionId,
-      targetIdentity
+      sessionId: drawSessionId
     });
   };
 
@@ -1881,6 +1886,21 @@ export function ClassroomPage() {
       const body = await response.json().catch(() => ({}));
       setConnError(body.message || "לא ניתן להעניק סמכויות מארח.");
       return;
+    }
+    if (drawSocketRef.current && drawSessionId) {
+      drawSocketRef.current.emit("CLASSROOM_WHITEBOARD_POLICY_REFRESH", { sessionId: drawSessionId });
+    }
+  };
+
+  const revokeDelegatedCohost = async (delegateId: string) => {
+    if (!isClassCreator || !window.confirm("להסיר את הרשאות המארח-השותף? המשתתף/ת יישאר/תישאר בכיתה.")) return;
+    const response = await classroomRequest("/rtc/classroom-cohost/revoke", { roomCode, delegateId });
+    if (!response.ok) {
+      setConnError("לא ניתן להסיר את הרשאות המארח-השותף.");
+      return;
+    }
+    if (drawSocketRef.current && drawSessionId) {
+      drawSocketRef.current.emit("CLASSROOM_WHITEBOARD_POLICY_REFRESH", { sessionId: drawSessionId });
     }
   };
 
@@ -1943,26 +1963,17 @@ export function ClassroomPage() {
     if (!sessionData || !isHost || !(canManageClassroom || isDelegatedHost)) return;
     const updated = { ...roomSettings, [key]: !roomSettings[key] };
     setRoomSettings(updated);
-    if (key === "allowWhiteboardDraw" && drawSocketRef.current && drawSessionId) {
-      drawSocketRef.current.emit("CLASSROOM_WHITEBOARD_POLICY", {
-        sessionId: drawSessionId,
-        allowWhiteboardDraw: updated.allowWhiteboardDraw
-      });
-    }
     const response = await classroomRequest("/rtc/classroom-settings", {
       roomCode: sessionData.room_code,
       settings: { [key]: updated[key] }
     });
     if (!response.ok) {
       setRoomSettings(roomSettings);
-      if (key === "allowWhiteboardDraw" && drawSocketRef.current && drawSessionId) {
-        drawSocketRef.current.emit("CLASSROOM_WHITEBOARD_POLICY", {
-          sessionId: drawSessionId,
-          allowWhiteboardDraw: roomSettings.allowWhiteboardDraw
-        });
-      }
       setConnError("לא ניתן לעדכן את הגדרות הכיתה.");
       return;
+    }
+    if (key === "allowWhiteboardDraw" && drawSocketRef.current && drawSessionId) {
+      drawSocketRef.current.emit("CLASSROOM_WHITEBOARD_POLICY_REFRESH", { sessionId: drawSessionId });
     }
   };
 
@@ -2451,7 +2462,7 @@ export function ClassroomPage() {
                       onUploadStatus={setMediaUploadStatus}
                       canSendToWhiteboard={drawSocketReady && (
                         showBoard
-                          ? isHost || canUseWhiteboard
+                          ? canUseWhiteboard
                           : isHost && (canManageClassroom || isDelegatedHost)
                       )}
                       onSendPageToWhiteboard={sendPresentationPageToWhiteboard}
@@ -2535,7 +2546,7 @@ export function ClassroomPage() {
                         ref={drawingBoardRef}
                         gameState={whiteboardState}
                         mode={drawingMode}
-                        mySeat={isHost || canUseWhiteboard ? "player" : null}
+                        mySeat={canUseWhiteboard ? "player" : null}
                         myUserId={room?.localParticipant.identity || null}
                         hideTopBar={true}
                         isVisible={showBoard}
@@ -2799,10 +2810,10 @@ export function ClassroomPage() {
                     </div>
 
                     <div className="flex items-center gap-1">
-                    {(isClassCreator || (localIsPresenter && isHost)) && p.identity !== presenterIdentity && (
+                    {isHost && p.identity !== presenterIdentity && (
                       <button
                         onClick={() => void transferPresentation(p.identity)}
-                        title={p.isMe ? "קח/י בחזרה את זכויות ההצגה" : "העבר/י למשתתף זה את זכויות ההצגה"}
+                        title={p.isMe ? "קח/י זכויות הצגה" : "הפוך/י משתתף זה למגיש/ה"}
                         className="p-1 rounded bg-fuchsia-100 dark:bg-fuchsia-500/10 text-fuchsia-700 dark:text-fuchsia-300 hover:bg-fuchsia-200 dark:hover:bg-fuchsia-500/20"
                       >
                         <Radio className="size-3.5" />
@@ -2819,13 +2830,13 @@ export function ClassroomPage() {
                           {p.canUseMic ? <Mic className="size-3.5" /> : <MicOff className="size-3.5" />}
                         </button>
 
-                        <button
+                        {!p.isHost && <button
                           onClick={() => void toggleIndividualWhiteboardPermission(p.identity, p.canDrawWhiteboard)}
                           title={p.canDrawWhiteboard ? "הרשאת לוח פעילה - לחץ להסרה" : "הלוח חסום - לחץ להרשאה"}
                           className={cn("p-1 rounded", p.canDrawWhiteboard ? "bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-300 dark:hover:bg-indigo-500/20" : "bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:hover:bg-rose-500/20")}
                         >
                           {p.canDrawWhiteboard ? <Eye className="size-3.5" /> : <EyeOff className="size-3.5" />}
-                        </button>
+                        </button>}
 
                         <button
                           onClick={() => toggleIndividualCamPermission(p.identity, p.canUseCam)}
@@ -2835,13 +2846,23 @@ export function ClassroomPage() {
                           {p.canUseCam ? <VideoIcon className="size-3.5" /> : <VideoOff className="size-3.5" />}
                         </button>
 
-                        <button
-                          onClick={() => grantHostStatus(p.identity)}
-                          title="הפוך למארח מלא "
-                          className="p-1 rounded bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500/20"
-                        >
-                          <Crown className="size-3.5" />
-                        </button>
+                        {isClassCreator && (p.cohostKind === "delegate" && p.delegateId ? (
+                          <button
+                            onClick={() => void revokeDelegatedCohost(p.delegateId)}
+                            title="הסר הרשאות מארח-שותף"
+                            className="p-1 rounded bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:hover:bg-rose-500/20"
+                          >
+                            <Crown className="size-3.5" />
+                          </button>
+                        ) : !p.isHost ? (
+                          <button
+                            onClick={() => void grantHostStatus(p.identity)}
+                            title="הענק הרשאות מארח-שותף"
+                            className="p-1 rounded bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500/20"
+                          >
+                            <Crown className="size-3.5" />
+                          </button>
+                        ) : null)}
 
                         <button
                           onClick={() => setKickTarget(p)}

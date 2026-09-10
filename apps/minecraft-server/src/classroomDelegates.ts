@@ -16,6 +16,7 @@ export interface ClassroomDelegateAuthority {
   delegateId: string;
   classroomId: string;
   displayName: string;
+  participantKey: string | null;
   scopes: ClassroomDelegateScope[];
 }
 
@@ -23,6 +24,7 @@ interface DelegateRow {
   id: string;
   classroom_id: string;
   display_name: string;
+  participant_key: string | null;
   scopes: string[] | null;
   is_active: boolean;
 }
@@ -82,7 +84,7 @@ export async function findClassroomDelegateAuthority(
 
     const { data: delegate, error: delegateError } = await supabase
       .from("classroom_host_delegates")
-      .select("id, classroom_id, display_name, scopes, is_active")
+    .select("id, classroom_id, display_name, participant_key, scopes, is_active")
       .eq("id", delegateId)
       .eq("classroom_id", classroomId)
       .maybeSingle<DelegateRow>();
@@ -107,6 +109,7 @@ export async function findClassroomDelegateAuthority(
       delegateId: delegate.id,
       classroomId: delegate.classroom_id,
       displayName: delegate.display_name,
+      participantKey: delegate.participant_key,
       scopes
     };
   }
