@@ -509,24 +509,6 @@ async function requireClassroomAuthority(
   return { kind: "delegate", delegate };
 }
 
-async function requireClassroomCreator(
-  req: express.Request,
-  res: express.Response,
-  classroom: { id: string; teacher_id: string | null }
-): Promise<ClassroomAuthority | null> {
-  const accessToken = req.headers.authorization?.replace(/^Bearer\s+/i, "");
-  if (!accessToken || !supabaseAdmin || !classroom.teacher_id) {
-    res.status(403).json({ error: "creator_required" });
-    return null;
-  }
-  const actor = await getCachedAuth(supabaseAdmin, accessToken).catch(() => null);
-  if (!actor || actor.userId !== classroom.teacher_id) {
-    res.status(403).json({ error: "creator_required" });
-    return null;
-  }
-  return { kind: "user", userId: actor.userId, actorKind: actor.role === "admin" ? "admin" : "teacher" };
-}
-
 async function getActiveClassroom(roomCode: string) {
   if (!supabaseAdmin) return null;
   const { data, error } = await supabaseAdmin
@@ -988,7 +970,6 @@ app.post("/rtc/classroom-token", async (req, res) => {
       classroomBoardToken,
       classroomSessionId: classroom.id,
       drawingSessionId,
-      isClassCreator: classroom.teacher_id === result.userId,
       presenterIdentity: presentation.presenterIdentity,
       presenterEpoch: presentation.presenterEpoch,
       presentationVisible: presentation.visible,
@@ -1950,7 +1931,12 @@ app.post("/rtc/classroom-cohost/revoke", async (req, res) => {
     }
     const classroom = await getActiveClassroom(roomCode.trim());
     if (!classroom || !supabaseAdmin) return void res.status(404).json({ error: "classroom_not_found" });
-    const authority = await requireClassroomCreator(req, res, classroom);
+    const authority = await requireClassroomAuthority(
+      req,
+      res,
+      classroom.id,
+      "manage_delegates"
+    );
     if (!authority) return;
     const { data: delegate, error: delegateError } = await supabaseAdmin
       .from("classroom_host_delegates")

@@ -259,6 +259,7 @@ export function ClassroomPage() {
   // User Local Media & Permissions state
   const [isHost, setIsHost] = useState(false);
   const [isDelegatedHost, setIsDelegatedHost] = useState(false);
+  const canManageCohosts = isHost && (canManageClassroom || isDelegatedHost);
   const [classroomBoardToken, setClassroomBoardToken] = useState<string | null>(null);
   const [micOn, setMicOn] = useState(false);
   const [camOn, setCamOn] = useState(false);
@@ -298,7 +299,6 @@ export function ClassroomPage() {
   const [presenterIdentity, setPresenterIdentity] = useState<string | null>(null);
   const [presenterEpoch, setPresenterEpoch] = useState(0);
   const [presenterToken, setPresenterToken] = useState<string | null>(null);
-  const [isClassCreator, setIsClassCreator] = useState(false);
   const presenterIdentityRef = useRef<string | null>(null);
   const presenterEpochRef = useRef(0);
   const presentationPublisherRef = useRef<ClassroomPresentationPublisherHandle>(null);
@@ -910,7 +910,6 @@ export function ClassroomPage() {
         classroomBoardToken: issuedClassroomBoardToken,
         classroomSessionId: issuedClassroomSessionId,
         drawingSessionId: issuedDrawingSessionId,
-        isClassCreator: issuedIsClassCreator,
         presenterIdentity: issuedPresenterIdentity,
         presenterEpoch: issuedPresenterEpoch,
         presentationVisible: issuedPresentationVisible,
@@ -937,7 +936,6 @@ export function ClassroomPage() {
         setUnreadChatCount(0);
         setUnreadPrivateCounts({});
       }
-      setIsClassCreator(Boolean(issuedIsClassCreator));
       setPresenterIdentity(typeof issuedPresenterIdentity === "string" ? issuedPresenterIdentity : null);
       setPresenterEpoch(Number.isInteger(issuedPresenterEpoch) ? issuedPresenterEpoch : 0);
       setPresentationActive(Boolean(issuedPresentationVisible));
@@ -1879,7 +1877,7 @@ export function ClassroomPage() {
 
   // HOST ACTION: Grant Host Status
   const grantHostStatus = async (identity: string) => {
-    if (!room || !isHost) return;
+    if (!room || !canManageCohosts) return;
     if (!window.confirm("להעניק סמכויות מארח מלאות למשתתף זה?")) return;
     const response = await classroomRequest("/rtc/classroom-promote", { roomCode, targetIdentity: identity });
     if (!response.ok) {
@@ -1893,7 +1891,7 @@ export function ClassroomPage() {
   };
 
   const revokeDelegatedCohost = async (delegateId: string) => {
-    if (!isClassCreator || !window.confirm("להסיר את הרשאות המארח-השותף? המשתתף/ת יישאר/תישאר בכיתה.")) return;
+    if (!canManageCohosts || !window.confirm("להסיר את הרשאות המארח-השותף? המשתתף/ת יישאר/תישאר בכיתה.")) return;
     const response = await classroomRequest("/rtc/classroom-cohost/revoke", { roomCode, delegateId });
     if (!response.ok) {
       setConnError("לא ניתן להסיר את הרשאות המארח-השותף.");
@@ -2846,9 +2844,9 @@ export function ClassroomPage() {
                           {p.canUseCam ? <VideoIcon className="size-3.5" /> : <VideoOff className="size-3.5" />}
                         </button>
 
-                        {isClassCreator && (p.cohostKind === "delegate" && p.delegateId ? (
+                        {canManageCohosts && (p.cohostKind === "delegate" && p.delegateId ? (
                           <button
-                            onClick={() => void revokeDelegatedCohost(p.delegateId)}
+                            onClick={() => void revokeDelegatedCohost(p.delegateId!)}
                             title="הסר הרשאות מארח-שותף"
                             className="p-1 rounded bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:hover:bg-rose-500/20"
                           >
