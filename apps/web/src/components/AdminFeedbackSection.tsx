@@ -78,38 +78,65 @@ export function AdminFeedbackSection() {
   const fetchReports = async () => {
     setLoading(true);
     try {
-      let query = supabase
-        .from("feedback_reports")
-        .select(`
-          *,
-          reporter:kid_profiles!reporter_id (
-            username,
-            full_name,
-            role
-          )
-        `)
-        .order("created_at", { ascending: false });
+      const { data, error } = await supabase.rpc("get_feedback_reports", {
+        p_status: filterStatus === "all" ? null : filterStatus,
+        p_category: filterCategory === "all" ? null : filterCategory,
+      });
 
-      if (filterStatus !== "all") {
-        query = query.eq("status", filterStatus);
-      }
-      if (filterCategory !== "all") {
-        query = query.eq("category", filterCategory);
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
-      setReports(data || []);
+      setReports((data as Report[]) || []);
       
       // Auto-select the first report if none is selected
       if (data && data.length > 0) {
-        setSelectedReport(data[0]);
+        setSelectedReport((data as Report[])[0]);
       } else {
         setSelectedReport(null);
       }
     } catch (err) {
-      console.error("Failed to load reports:", err);
-      reportCaughtError("Admin feedback query failed", err, { appArea: "admin-feedback", operation: "list" });
+      console.warn("Failed to load reports via RPC, attempting fallback query:", err);
+      try {
+        let query = supabase
+          .from("feedback_reports")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (filterStatus !== "all") {
+          query = query.eq("status", filterStatus);
+        }
+        if (filterCategory !== "all") {
+          query = query.eq("category", filterCategory);
+        }
+
+        const { data, error: fallbackError } = await query;
+        if (fallbackError) throw fallbackError;
+
+        const reporterIds = Array.from(
+          new Set(((data as Report[]) || []).map((r) => r.reporter_id).filter(Boolean))
+        );
+
+        const reportersMap = new Map<string, { username: string; full_name: string; role: string }>();
+        if (reporterIds.length > 0) {
+          const { data: kids } = await supabase
+            .from("kid_profiles")
+            .select("id, username, full_name, role")
+            .in("id", reporterIds);
+
+          kids?.forEach((k: any) =>
+            reportersMap.set(k.id, { username: k.username, full_name: k.full_name, role: k.role })
+          );
+        }
+
+        const enriched = ((data as Report[]) || []).map((r) => ({
+          ...r,
+          reporter: r.reporter_id ? reportersMap.get(r.reporter_id) : undefined,
+        }));
+
+        setReports(enriched);
+        setSelectedReport(enriched.length > 0 ? enriched[0] : null);
+      } catch (fallbackErr) {
+        console.error("Failed to load reports:", fallbackErr);
+        reportCaughtError("Admin feedback query failed", fallbackErr, { appArea: "admin-feedback", operation: "list" });
+      }
     } finally {
       setLoading(false);
     }
@@ -118,12 +145,16 @@ export function AdminFeedbackSection() {
   const toggleStatus = async (report: Report) => {
     const nextStatus = report.status === "pending" ? "resolved" : "pending";
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("feedback_reports")
         .update({ status: nextStatus })
-        .eq("id", report.id);
+        .eq("id", report.id)
+        .select();
 
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("לא נמצא דיווח לעדכון או שאין הרשאת עדכון");
+      }
 
       // Update local state
       setReports((prev) =>
@@ -248,8 +279,18 @@ export function AdminFeedbackSection() {
             {/* Header Details */}
             <div className="flex justify-between items-start border-b border-slate-200 dark:border-white/10 pb-4">
               <div>
-                <h3 className="text-lg font-black text-slate-900 dark:text-white">
-                  דיווח מאת: {selectedReport.reporter?.full_name || "לא ידוע"} (@{selectedReport.reporter?.username || "unknown"})
+                <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2 flex-wrap">
+                  <span>דיווח מאת: {selectedReport.reporter?.full_name || "לא ידוע"} (@{selectedReport.reporter?.username || "unknown"})</span>
+                  {selectedReport.reporter?.role === "admin" && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/30">
+                      מנהל מערכת
+                    </span>
+                  )}
+                  {selectedReport.reporter?.role === "teacher" && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-300 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/30">
+                      מורה
+                    </span>
+                  )}
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-white/50 mt-1">
                   תאריך דיווח: {new Date(selectedReport.created_at).toLocaleString("he-IL")} | מזהה: {selectedReport.id}
