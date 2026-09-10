@@ -137,6 +137,11 @@ import {
   readPresenterCapability
 } from "./classroomPresentation";
 import {
+  commitPresenterAssignment,
+  type PresentationRoomState,
+  type PresenterAssignmentDelivery
+} from "./classroomPresenterAssignment";
+import {
   CLASSROOM_DELEGATE_SCOPES,
   createClassroomDelegateGameToken,
   delegateCookieName,
@@ -576,14 +581,6 @@ function classroomSettings(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
 }
 
-interface PresentationRoomState {
-  presenterIdentity: string | null;
-  presenterEpoch: number;
-  visible: boolean;
-  title: string | null;
-  mediaKind: "document" | "image" | "video" | "audio" | null;
-}
-
 function presentationRoomState(settings: unknown): PresentationRoomState {
   const value = classroomSettings(settings);
   const kind = value.presentationMediaKind;
@@ -693,40 +690,36 @@ function requirePresenterCapability(
 async function assignPresenter(
   classroom: { id: string; room_code: string; settings: unknown },
   identity: string | null,
-  keepVisibility = true
+  keepVisibility = true,
+  delivery: PresenterAssignmentDelivery = "synchronize-room"
 ): Promise<PresentationRoomState> {
   const previous = presentationRoomState(classroom.settings);
-  const next: PresentationRoomState = {
-    ...previous,
-    presenterIdentity: identity,
-    presenterEpoch: previous.presenterEpoch + 1,
-    visible: identity ? keepVisibility && previous.visible : false,
-    title: identity ? previous.title : null,
-    mediaKind: identity ? previous.mediaKind : null
-  };
-  await persistPresentationState(classroom, next);
-  await syncClassroomPresenterPermissions(
-    classroom.room_code,
-    classroomSettings(classroom.settings),
-    previous.presenterIdentity,
-    identity
-  );
-  const token = presenterCapabilityFor(classroom.room_code, next);
-  await broadcastClassroomData(classroom.room_code, {
-    type: "PRESENTER_ASSIGNED",
-    presenterIdentity: identity,
-    presenterEpoch: next.presenterEpoch,
-    visible: next.visible
-  });
-  if (identity && token) {
-    await sendClassroomDataToParticipant(classroom.room_code, identity, {
-      type: "PRESENTER_CAPABILITY",
-      presenterIdentity: identity,
+  return commitPresenterAssignment(previous, identity, keepVisibility, delivery, {
+    persist: (next) => persistPresentationState(classroom, next),
+    synchronizePermissions: (prior, next) => syncClassroomPresenterPermissions(
+      classroom.room_code,
+      classroomSettings(classroom.settings),
+      prior.presenterIdentity,
+      next.presenterIdentity
+    ),
+    createCapability: (next) => presenterCapabilityFor(classroom.room_code, next),
+    broadcast: (next) => broadcastClassroomData(classroom.room_code, {
+      type: "PRESENTER_ASSIGNED",
+      presenterIdentity: next.presenterIdentity,
       presenterEpoch: next.presenterEpoch,
-      presenterToken: token
-    });
-  }
-  return next;
+      visible: next.visible
+    }),
+    sendCapability: (targetIdentity, capability, next) => sendClassroomDataToParticipant(
+      classroom.room_code,
+      targetIdentity,
+      {
+        type: "PRESENTER_CAPABILITY",
+        presenterIdentity: targetIdentity,
+        presenterEpoch: next.presenterEpoch,
+        presenterToken: capability
+      }
+    )
+  });
 }
 
 function setDelegateCookie(
@@ -833,6 +826,9 @@ app.post("/rtc/token", async (req, res) => {
 app.post("/rtc/classroom-token", async (req, res) => {
   const correlationId = (req as express.Request & { correlationId?: string })
     .correlationId;
+  const requestedRoomCode = typeof req.body?.roomCode === "string"
+    ? req.body.roomCode.trim().slice(0, 80)
+    : undefined;
   try {
     const accessToken = req.headers.authorization?.replace(/^Bearer\s+/i, "");
     const { roomCode, displayName, spectateMode, presenterToken: reconnectPresenterToken, guestAttendanceKey } = req.body as {
@@ -901,7 +897,10 @@ app.post("/rtc/classroom-token", async (req, res) => {
     // The classroom creator is the only automatic presenter. Other hosts and
     // cohosts may claim or assign presentation explicitly after joining.
     if (!presentation.presenterIdentity && classroom.teacher_id === result.userId && spectateMode !== "invisible") {
-      presentation = await assignPresenter(classroom, result.userId, false);
+      // The token is what allows the first participant to create the LiveKit
+      // room. Persist bootstrap authority now; the response and Supabase
+      // realtime carry this state without calling room-scoped LiveKit APIs.
+      presentation = await assignPresenter(classroom, result.userId, false, "persist-only");
       result = await generateClassroomToken({
         supabaseAdmin,
         roomCode,
@@ -980,22 +979,33 @@ app.post("/rtc/classroom-token", async (req, res) => {
         : null
     });
   } catch (err) {
-    const reason =
-      err instanceof LiveKitTokenError ? err.reason : "unauthorized";
-    logger.warn({
-      correlationId,
-      protocol: "http",
-      message: "Classroom LiveKit token denied",
-      context: {
-        event: "CLASSROOM_RTC_TOKEN_DENIED",
-        reason,
-        status: "failed"
-      }
-    });
-    const status = reason === "server_config" ? 503 : reason === "classroom_blocked" ? 403 : 400;
-    res.status(status).json({
-      error: reason,
-      message: err instanceof Error ? err.message : "token generation failed"
+    if (err instanceof LiveKitTokenError) {
+      const reason = err.reason;
+      logger.warn({
+        correlationId,
+        protocol: "http",
+        message: "Classroom LiveKit token denied",
+        context: {
+          event: "CLASSROOM_RTC_TOKEN_DENIED",
+          reason,
+          status: "failed"
+        }
+      });
+      const status = reason === "server_config" ? 503 : reason === "classroom_blocked" ? 403 : 400;
+      res.status(status).json({ error: reason, message: err.message });
+      return;
+    }
+
+    logHttpFailure(
+      logger,
+      req,
+      err,
+      "CLASSROOM_RTC_TOKEN_FAILED",
+      requestedRoomCode ? { roomCode: requestedRoomCode } : {}
+    );
+    res.status(500).json({
+      error: "internal_server_error",
+      message: "לא ניתן להתחבר לכיתה כרגע. נסו שוב."
     });
   }
 });

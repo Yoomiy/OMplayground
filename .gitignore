@@ -12,4 +12,4 @@ sourceCode/
 *.har
 Godot_v3.5.3-stable_x11.64
 Godot_v4.4-stable_linux.x86_64
-
+.worktrees/
