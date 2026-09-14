@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_CAMERA_TILE_HEIGHT,
   MIN_CAMERA_TILE_HEIGHT,
+  boardCameraRailBounds,
   cameraRailBounds,
   clampNoBoardTileHeight,
   resolveBoardCameraLayout,
@@ -21,6 +22,7 @@ describe("classroom camera layout", () => {
     expect(layout.visibleRows).toBe(2);
     expect(layout.tileHeight).toBe(MIN_CAMERA_TILE_HEIGHT);
     expect(layout.gridSize).toBe(214);
+    expect(layout.columns).toBe(3);
   });
 
   it("keeps one row when a short viewport cannot safely fit two", () => {
@@ -34,15 +36,58 @@ describe("classroom camera layout", () => {
       availableWidth: 1000,
       availableHeight: 900,
       participantCount: 10,
-      requestedHeight: 330
+      requestedHeight: 435
     });
     expect(layout.visibleRows).toBe(3);
-    expect(layout.tileHeight).toBeCloseTo(100);
-    expect(layout.gridSize).toBeCloseTo(330);
+    expect(layout.tileHeight).toBeCloseTo(135);
+    expect(layout.gridSize).toBeCloseTo(435);
   });
 
   it("caps manual camera space while preserving the board floor", () => {
     expect(cameraRailBounds(600, "top").max).toBe(344);
+  });
+
+  it("limits a sparse board rail to the full-width size of one useful row", () => {
+    const bounds = boardCameraRailBounds({
+      availableWidth: 1000,
+      availableHeight: 900,
+      participantCount: 2
+    });
+    const layout = resolveBoardCameraLayout({
+      availableWidth: 1000,
+      availableHeight: 900,
+      participantCount: 2,
+      requestedHeight: 500
+    });
+    expect(bounds.max).toBeCloseTo(289.0625);
+    expect(layout.visibleRows).toBe(1);
+    expect(layout.tileHeight).toBeCloseTo(275.0625);
+    expect(layout.gridSize).toBeCloseTo(289.0625);
+    expect(layout.columns).toBe(2);
+  });
+
+  it("allows another complete row when the participants can use it", () => {
+    const bounds = boardCameraRailBounds({
+      availableWidth: 1000,
+      availableHeight: 900,
+      participantCount: 4
+    });
+    const layout = resolveBoardCameraLayout({
+      availableWidth: 1000,
+      availableHeight: 900,
+      participantCount: 4,
+      requestedHeight: 500
+    });
+    expect(bounds.max).toBe(540);
+    expect(layout.visibleRows).toBe(2);
+    expect(layout.tileHeight).toBe(239);
+    expect(layout.gridSize).toBe(500);
+    expect(layout.columns).toBe(2);
+    expect(boardCameraRailBounds({
+      availableWidth: 1000,
+      availableHeight: 1200,
+      participantCount: 1
+    }).max).toBeCloseTo(568.625);
   });
 
   it("clamps no-board resizing and uses vertical grid capacity", () => {

@@ -28,7 +28,9 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   DEFAULT_CAMERA_TILE_HEIGHT,
   MIN_CAMERA_TILE_HEIGHT,
+  boardCameraRailBounds,
   cameraRailBounds,
+  clampBoardCameraRailSize,
   clampCameraRailSize,
   clampNoBoardTileHeight,
   resolveBoardCameraLayout,
@@ -363,6 +365,19 @@ export function ClassroomPage() {
     }
     previousMainContentActiveRef.current = mainContentActiveForLayout;
   }, [mainContentActiveForLayout]);
+
+  useEffect(() => {
+    if (!mainContentActiveForLayout || focusMode) return;
+    const availableWidth = cameraStageSize.width || viewportSize.width;
+    const availableHeight = cameraStageSize.height || viewportSize.height;
+    setCustomCameraRailSize((current) => current == null
+      ? null
+      : clampBoardCameraRailSize(current, {
+          availableWidth,
+          availableHeight,
+          participantCount: participants.length
+        }));
+  }, [cameraStageSize.height, cameraStageSize.width, focusMode, mainContentActiveForLayout, participants.length, viewportSize.height, viewportSize.width]);
 
   useEffect(() => { presenterIdentityRef.current = presenterIdentity; }, [presenterIdentity]);
   useEffect(() => { presenterEpochRef.current = presenterEpoch; }, [presenterEpoch]);
@@ -2165,7 +2180,13 @@ export function ClassroomPage() {
         });
   const cameraRailAvailable = cameraOrientation === "side" ? cameraStageWidth : cameraStageHeight;
   const cameraRailSize = cameraLayout.gridSize;
-  const cameraRailLimits = cameraRailBounds(cameraRailAvailable, cameraOrientation);
+  const cameraRailLimits = cameraOrientation === "side"
+    ? cameraRailBounds(cameraRailAvailable, "side")
+    : boardCameraRailBounds({
+        availableWidth: cameraStageWidth,
+        availableHeight: cameraStageHeight,
+        participantCount: participants.length
+      });
 
   const resetCameraRailSize = () => setCustomCameraRailSize(null);
 
@@ -2197,7 +2218,13 @@ export function ClassroomPage() {
     const available = cameraOrientation === "side" ? rect.width : rect.height;
     const requested = cameraOrientation === "side" ? rect.right - clientX : clientY - rect.top;
     queueCameraResizeUpdate(() => {
-      setCustomCameraRailSize(clampCameraRailSize(requested, available, cameraOrientation));
+      setCustomCameraRailSize(cameraOrientation === "side"
+        ? clampCameraRailSize(requested, available, "side")
+        : clampBoardCameraRailSize(requested, {
+            availableWidth: rect.width,
+            availableHeight: rect.height,
+            participantCount: participants.length
+          }));
     });
   };
 
@@ -2227,7 +2254,14 @@ export function ClassroomPage() {
     event.preventDefault();
     const step = event.shiftKey ? 24 : 8;
     const direction = event.key === increaseKey ? 1 : -1;
-    setCustomCameraRailSize(clampCameraRailSize(cameraRailSize + direction * step, cameraRailAvailable, cameraOrientation));
+    const requested = cameraRailSize + direction * step;
+    setCustomCameraRailSize(cameraOrientation === "side"
+      ? clampCameraRailSize(requested, cameraRailAvailable, "side")
+      : clampBoardCameraRailSize(requested, {
+          availableWidth: cameraStageWidth,
+          availableHeight: cameraStageHeight,
+          participantCount: participants.length
+        }));
   };
 
   const beginNoBoardTileResize = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -2540,7 +2574,7 @@ export function ClassroomPage() {
                   ? { flexBasis: `${cameraRailSize}px` }
                   : {
                       flexBasis: isMainContentActive ? `${cameraRailSize}px` : undefined,
-                      gridTemplateColumns: `repeat(auto-fill, ${cameraLayout.tileWidth}px)`,
+                      gridTemplateColumns: `repeat(${cameraLayout.columns}, ${cameraLayout.tileWidth}px)`,
                       gridAutoRows: `${cameraLayout.tileHeight}px`
                     }}
               >

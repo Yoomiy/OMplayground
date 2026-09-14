@@ -37,13 +37,15 @@ function topLayout(width: number, gridSize: number, rows: number, participantCou
     MIN_CAMERA_TILE_HEIGHT,
     (innerHeight - CAMERA_GRID_GAP * (rows - 1)) / rows
   );
-  const maximumWidthBoundHeight = Math.max(
-    MIN_CAMERA_TILE_HEIGHT,
-    (width - CAMERA_GRID_CHROME) / CAMERA_ASPECT_RATIO
-  );
+  const participantColumns = Math.max(1, Math.ceil(Math.max(1, participantCount) / rows));
+  const innerWidth = Math.max(1, width - CAMERA_GRID_CHROME);
+  const maximumWidthBoundHeight = Math.max(MIN_CAMERA_TILE_HEIGHT, (
+    innerWidth - CAMERA_GRID_GAP * (participantColumns - 1)
+  ) / participantColumns / CAMERA_ASPECT_RATIO);
   const tileHeight = Math.min(requestedTileHeight, maximumWidthBoundHeight);
   const tileWidth = tileHeight * CAMERA_ASPECT_RATIO;
-  const columns = columnsFor(width, tileWidth);
+  const availableColumns = columnsFor(width, tileWidth);
+  const columns = Math.min(availableColumns, participantColumns);
   const capacity = rows * columns;
   return {
     visibleRows: rows,
@@ -64,13 +66,67 @@ export function cameraRailBounds(available: number, orientation: CameraRailOrien
   }
 
   const min = outerGridHeight(MIN_CAMERA_TILE_HEIGHT, 1);
-  const fiveRows = outerGridHeight(MIN_CAMERA_TILE_HEIGHT, MAX_VISIBLE_CAMERA_ROWS);
-  const max = Math.max(min, Math.min(fiveRows, Math.floor(available * 0.6), available - MIN_BOARD_HEIGHT - CAMERA_STAGE_SEPARATOR_SPACE));
+  const max = Math.max(min, Math.min(Math.floor(available * 0.6), available - MIN_BOARD_HEIGHT - CAMERA_STAGE_SEPARATOR_SPACE));
   return { min, max };
 }
 
 export function clampCameraRailSize(size: number, available: number, orientation: CameraRailOrientation): number {
   const { min, max } = cameraRailBounds(available, orientation);
+  return Math.min(max, Math.max(min, Math.round(size)));
+}
+
+function resolveManualBoardCameraLayout(
+  availableWidth: number,
+  participantCount: number,
+  gridSize: number
+): CameraGridLayout {
+  const innerHeight = gridSize - CAMERA_GRID_CHROME;
+  const participantRows = Math.max(1, Math.min(MAX_VISIBLE_CAMERA_ROWS, participantCount));
+  const supportedRows = Math.max(1, Math.min(
+    participantRows,
+    Math.floor((innerHeight + CAMERA_GRID_GAP) / (MIN_CAMERA_TILE_HEIGHT + CAMERA_GRID_GAP))
+  ));
+
+  let bestLayout: CameraGridLayout | null = null;
+  for (let rows = 1; rows <= supportedRows; rows += 1) {
+    const candidate = topLayout(availableWidth, gridSize, rows, participantCount);
+    if (candidate.overflow) continue;
+    if (
+      bestLayout == null ||
+      candidate.tileHeight > bestLayout.tileHeight ||
+      (candidate.tileHeight === bestLayout.tileHeight && candidate.visibleRows < bestLayout.visibleRows)
+    ) {
+      bestLayout = candidate;
+    }
+  }
+
+  return bestLayout ?? topLayout(availableWidth, gridSize, supportedRows, participantCount);
+}
+
+export function boardCameraRailBounds(args: {
+  availableWidth: number;
+  availableHeight: number;
+  participantCount: number;
+}): { min: number; max: number } {
+  const { availableWidth, availableHeight, participantCount } = args;
+  const viewportBounds = cameraRailBounds(availableHeight, "top");
+  const maximumUsefulLayout = resolveManualBoardCameraLayout(
+    availableWidth,
+    participantCount,
+    viewportBounds.max
+  );
+  return {
+    min: viewportBounds.min,
+    max: Math.max(viewportBounds.min, maximumUsefulLayout.gridSize)
+  };
+}
+
+export function clampBoardCameraRailSize(size: number, args: {
+  availableWidth: number;
+  availableHeight: number;
+  participantCount: number;
+}): number {
+  const { min, max } = boardCameraRailBounds(args);
   return Math.min(max, Math.max(min, Math.round(size)));
 }
 
@@ -97,18 +153,12 @@ export function resolveBoardCameraLayout(args: {
     return oneRow;
   }
 
-  const gridSize = clampCameraRailSize(requestedHeight, availableHeight, "top");
-  const innerHeight = gridSize - CAMERA_GRID_CHROME;
-  const supportedRows = Math.max(1, Math.min(
-    MAX_VISIBLE_CAMERA_ROWS,
-    Math.floor((innerHeight + CAMERA_GRID_GAP) / (MIN_CAMERA_TILE_HEIGHT + CAMERA_GRID_GAP))
-  ));
-
-  for (let rows = 1; rows <= supportedRows; rows += 1) {
-    const candidate = topLayout(availableWidth, gridSize, rows, participantCount);
-    if (candidate.capacity >= participantCount) return candidate;
-  }
-  return topLayout(availableWidth, gridSize, supportedRows, participantCount);
+  const gridSize = clampBoardCameraRailSize(requestedHeight, {
+    availableWidth,
+    availableHeight,
+    participantCount
+  });
+  return resolveManualBoardCameraLayout(availableWidth, participantCount, gridSize);
 }
 
 export function resolveSideCameraLayout(args: {
