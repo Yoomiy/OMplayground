@@ -297,7 +297,10 @@ export function ClassroomPage() {
   const [inviteCopied, setInviteCopied] = useState(false);
   const [customCameraRailSize, setCustomCameraRailSize] = useState<number | null>(null);
   const [noBoardTileHeight, setNoBoardTileHeight] = useState(DEFAULT_CAMERA_TILE_HEIGHT);
+  const [isCameraResizing, setIsCameraResizing] = useState(false);
   const cameraStageRef = useRef<HTMLDivElement>(null);
+  const cameraResizeFrameRef = useRef<number | null>(null);
+  const pendingCameraResizeRef = useRef<(() => void) | null>(null);
   const [cameraStageSize, setCameraStageSize] = useState({ width: 0, height: 0 });
   const [viewportSize, setViewportSize] = useState(() => ({
     width: typeof window === "undefined" ? 1280 : window.innerWidth,
@@ -330,6 +333,12 @@ export function ClassroomPage() {
     const updateViewportSize = () => setViewportSize({ width: window.innerWidth, height: window.innerHeight });
     window.addEventListener("resize", updateViewportSize);
     return () => window.removeEventListener("resize", updateViewportSize);
+  }, []);
+
+  useEffect(() => () => {
+    if (cameraResizeFrameRef.current !== null) {
+      window.cancelAnimationFrame(cameraResizeFrameRef.current);
+    }
   }, []);
 
   useEffect(() => {
@@ -2160,27 +2169,55 @@ export function ClassroomPage() {
 
   const resetCameraRailSize = () => setCustomCameraRailSize(null);
 
+  const queueCameraResizeUpdate = (update: () => void) => {
+    pendingCameraResizeRef.current = update;
+    if (cameraResizeFrameRef.current !== null) return;
+    cameraResizeFrameRef.current = window.requestAnimationFrame(() => {
+      cameraResizeFrameRef.current = null;
+      const pendingUpdate = pendingCameraResizeRef.current;
+      pendingCameraResizeRef.current = null;
+      pendingUpdate?.();
+    });
+  };
+
+  const flushCameraResizeUpdate = () => {
+    if (cameraResizeFrameRef.current !== null) {
+      window.cancelAnimationFrame(cameraResizeFrameRef.current);
+      cameraResizeFrameRef.current = null;
+    }
+    const pendingUpdate = pendingCameraResizeRef.current;
+    pendingCameraResizeRef.current = null;
+    pendingUpdate?.();
+  };
+
   const setCameraRailFromPointer = (clientX: number, clientY: number) => {
     const stage = cameraStageRef.current;
     if (!stage) return;
     const rect = stage.getBoundingClientRect();
     const available = cameraOrientation === "side" ? rect.width : rect.height;
     const requested = cameraOrientation === "side" ? rect.right - clientX : clientY - rect.top;
-    setCustomCameraRailSize(clampCameraRailSize(requested, available, cameraOrientation));
+    queueCameraResizeUpdate(() => {
+      setCustomCameraRailSize(clampCameraRailSize(requested, available, cameraOrientation));
+    });
   };
 
   const beginCameraResize = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!isMainContentActive) return;
     event.preventDefault();
     event.currentTarget.setPointerCapture?.(event.pointerId);
+    setIsCameraResizing(true);
     setCameraRailFromPointer(event.clientX, event.clientY);
     const onMove = (moveEvent: PointerEvent) => setCameraRailFromPointer(moveEvent.clientX, moveEvent.clientY);
-    const onUp = () => {
+    const onEnd = () => {
+      flushCameraResizeUpdate();
+      setIsCameraResizing(false);
       document.removeEventListener("pointermove", onMove);
-      document.removeEventListener("pointerup", onUp);
+      document.removeEventListener("pointerup", onEnd);
+      document.removeEventListener("pointercancel", onEnd);
     };
     document.addEventListener("pointermove", onMove);
-    document.addEventListener("pointerup", onUp, { once: true });
+    document.addEventListener("pointerup", onEnd, { once: true });
+    document.addEventListener("pointercancel", onEnd, { once: true });
   };
 
   const resizeCameraWithKeyboard = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -2198,23 +2235,29 @@ export function ClassroomPage() {
     event.preventDefault();
     event.stopPropagation();
     event.currentTarget.setPointerCapture?.(event.pointerId);
+    setIsCameraResizing(true);
     const startX = event.clientX;
     const startHeight = cameraLayout.tileHeight;
     const updateFromPointer = (clientX: number) => {
       const horizontalDelta = startX - clientX;
-      setNoBoardTileHeight(clampNoBoardTileHeight(
+      const nextHeight = clampNoBoardTileHeight(
         startHeight + horizontalDelta * 9 / 16,
         cameraStageHeight,
         cameraStageWidth
-      ));
+      );
+      queueCameraResizeUpdate(() => setNoBoardTileHeight(nextHeight));
     };
     const onMove = (moveEvent: PointerEvent) => updateFromPointer(moveEvent.clientX);
-    const onUp = () => {
+    const onEnd = () => {
+      flushCameraResizeUpdate();
+      setIsCameraResizing(false);
       document.removeEventListener("pointermove", onMove);
-      document.removeEventListener("pointerup", onUp);
+      document.removeEventListener("pointerup", onEnd);
+      document.removeEventListener("pointercancel", onEnd);
     };
     document.addEventListener("pointermove", onMove);
-    document.addEventListener("pointerup", onUp, { once: true });
+    document.addEventListener("pointerup", onEnd, { once: true });
+    document.addEventListener("pointercancel", onEnd, { once: true });
   };
 
   const resizeNoBoardTileWithKeyboard = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -2486,7 +2529,8 @@ export function ClassroomPage() {
               {/* CAMERAS SECTION: Teacher ALWAYS FIRST in top row / side column */}
               <div
                 className={cn(
-                  "min-h-0 min-w-0 shrink-0 gap-2 overflow-x-hidden overflow-y-auto bg-slate-200/50 p-1.5 shadow-sm transition-[flex-basis] duration-200 dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800/60",
+                  "min-h-0 min-w-0 shrink-0 gap-2 overflow-x-hidden overflow-y-auto bg-slate-200/50 p-1.5 shadow-sm dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800/60",
+                  !isCameraResizing && "transition-[flex-basis] duration-200",
                   focusMode && isMainContentActive
                     ? "flex flex-col justify-start"
                     : "grid content-start items-start [justify-content:start]",
@@ -2749,6 +2793,7 @@ export function ClassroomPage() {
                         myUserId={room?.localParticipant.identity || null}
                         hideTopBar={true}
                         isVisible={showBoard}
+                        isContainerResizing={isCameraResizing}
                         players={drawingPlayers}
                       />
                     ) : (

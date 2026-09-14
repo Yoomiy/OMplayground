@@ -12,6 +12,7 @@ export interface DrawingBoardProps {
   players?: { userId: string; displayName: string }[];
   hideTopBar?: boolean;
   isVisible?: boolean;
+  isContainerResizing?: boolean;
 }
 
 export interface DrawingBoardHandle {
@@ -25,7 +26,8 @@ export const DrawingBoard = memo(forwardRef<DrawingBoardHandle, DrawingBoardProp
   myUserId,
   players,
   hideTopBar = false,
-  isVisible = true
+  isVisible = true,
+  isContainerResizing = false
 }: DrawingBoardProps, ref) {
   const canvasRef = useRef<DrawingCanvasRef>(null);
   const boardRef = useRef<HTMLDivElement>(null);
@@ -246,6 +248,7 @@ export const DrawingBoard = memo(forwardRef<DrawingBoardHandle, DrawingBoardProp
           showToast={showToast}
           isFullscreen={isFullscreen}
           fillAvailableHeight={hideTopBar}
+          isContainerResizing={isContainerResizing}
           players={players}
           isVisible={isVisible}
         />

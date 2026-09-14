@@ -53,6 +53,7 @@ export interface DrawingCanvasProps {
   showToast: (msg: string) => void;
   isFullscreen?: boolean;
   fillAvailableHeight?: boolean;
+  isContainerResizing?: boolean;
   players?: { userId: string; displayName: string }[];
   isVisible?: boolean;
 }
@@ -71,6 +72,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   showToast,
   isFullscreen,
   fillAvailableHeight = false,
+  isContainerResizing = false,
   players,
   isVisible = true
 }, ref) => {
@@ -87,6 +89,9 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   const [canonicalReady, setCanonicalReady] = useState(mode.kind === "local");
   const excalidrawSceneReadyRef = useRef(false);
   const interactionSurfaceRef = useRef<HTMLDivElement>(null);
+  const containerResizingRef = useRef(isContainerResizing);
+  const wasContainerResizingRef = useRef(isContainerResizing);
+  containerResizingRef.current = isContainerResizing;
 
   // User details for awareness
   const myPlayer = players?.find((p) => p.userId === myUserId);
@@ -829,6 +834,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     let settledTimer: number | null = null;
     const refresh = () => excalidrawAPI.refresh();
     const scheduleRefresh = () => {
+      if (containerResizingRef.current) return;
       window.cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(refresh);
       if (settledTimer !== null) window.clearTimeout(settledTimer);
@@ -842,6 +848,14 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
       if (settledTimer !== null) window.clearTimeout(settledTimer);
     };
   }, [excalidrawAPI]);
+
+  useEffect(() => {
+    const resizeJustEnded = wasContainerResizingRef.current && !isContainerResizing;
+    wasContainerResizingRef.current = isContainerResizing;
+    if (!resizeJustEnded || !isVisible || !excalidrawAPI?.refresh) return;
+    const frame = window.requestAnimationFrame(() => excalidrawAPI.refresh());
+    return () => window.cancelAnimationFrame(frame);
+  }, [excalidrawAPI, isContainerResizing, isVisible]);
 
   return (
     <div
