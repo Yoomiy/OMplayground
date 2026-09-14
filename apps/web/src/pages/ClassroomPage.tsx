@@ -16,6 +16,10 @@ import {
   type ClassroomPresentationPublisherHandle
 } from "@/components/ClassroomPresentationPublisher";
 import { ClassroomPresentationReceiver } from "@/components/ClassroomPresentationReceiver";
+import {
+  ClassroomCameraRail,
+  type ClassroomCameraParticipant
+} from "@/components/ClassroomCameraRail";
 import { clearClassroomLibrary } from "@/lib/classroomMediaLibrary";
 import {
   classroomChatStorageKey,
@@ -25,19 +29,6 @@ import {
   storePublicClassroomChatMessage
 } from "@/lib/classroomChatStorage";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import {
-  DEFAULT_CAMERA_TILE_HEIGHT,
-  MIN_CAMERA_TILE_HEIGHT,
-  boardCameraRailBounds,
-  cameraRailBounds,
-  clampBoardCameraRailSize,
-  clampCameraRailSize,
-  clampNoBoardTileHeight,
-  resolveBoardCameraLayout,
-  resolveNoBoardCameraLayout,
-  resolveSideCameraLayout,
-  type CameraRailOrientation
-} from "@/lib/classroomLayout";
 
 function gameServerUrl(): string {
   const fromEnv = import.meta.env.VITE_GAME_SERVER_URL?.trim();
@@ -73,7 +64,6 @@ import {
   Sparkles,
   Trash2,
   Upload,
-  Grip
 } from "lucide-react";
 
 interface ClassroomSessionData {
@@ -106,28 +96,16 @@ interface ChatMessage {
   isHost?: boolean;
 }
 
-interface CustomParticipantInfo {
-  sid: string;
-  identity: string;
+interface CustomParticipantInfo extends ClassroomCameraParticipant {
   participantKey: string;
   role: string;
   cohostKind?: "delegate" | "staff" | "creator";
   delegateId?: string;
-  name: string;
-  isHost: boolean;
-  isMe: boolean;
-  isMuted: boolean;
-  isVideoOff: boolean;
-  isHandRaised: boolean;
-  canUseMic: boolean;
-  canUseCam: boolean;
   canDrawWhiteboard: boolean;
   screenTrack?: any;
   screenAudioTrack?: any;
   presentationTrack?: any;
   presentationAudioTrack?: any;
-  videoTrack?: any;
-  audioTrack?: any;
 }
 
 const HOST_CONTROL_MESSAGE_TYPES = new Set([
@@ -297,12 +275,8 @@ export function ClassroomPage() {
   const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [showParticipants, setShowParticipants] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
-  const [customCameraRailSize, setCustomCameraRailSize] = useState<number | null>(null);
-  const [noBoardTileHeight, setNoBoardTileHeight] = useState(DEFAULT_CAMERA_TILE_HEIGHT);
   const [isCameraResizing, setIsCameraResizing] = useState(false);
   const cameraStageRef = useRef<HTMLDivElement>(null);
-  const cameraResizeFrameRef = useRef<number | null>(null);
-  const pendingCameraResizeRef = useRef<(() => void) | null>(null);
   const [cameraStageSize, setCameraStageSize] = useState({ width: 0, height: 0 });
   const [viewportSize, setViewportSize] = useState(() => ({
     width: typeof window === "undefined" ? 1280 : window.innerWidth,
@@ -312,6 +286,7 @@ export function ClassroomPage() {
   // Participants & Data Stream state
   const [participants, setParticipants] = useState<CustomParticipantInfo[]>([]);
   const [activeSpeakers, setActiveSpeakers] = useState<string[]>([]);
+  const activeSpeakerIdentities = useMemo(() => new Set(activeSpeakers), [activeSpeakers]);
   const [screenShareParticipant, setScreenShareParticipant] = useState<CustomParticipantInfo | null>(null);
   const [presentationParticipant, setPresentationParticipant] = useState<CustomParticipantInfo | null>(null);
   const [presentationTitle, setPresentationTitle] = useState<string | null>(null);
@@ -337,12 +312,6 @@ export function ClassroomPage() {
     return () => window.removeEventListener("resize", updateViewportSize);
   }, []);
 
-  useEffect(() => () => {
-    if (cameraResizeFrameRef.current !== null) {
-      window.cancelAnimationFrame(cameraResizeFrameRef.current);
-    }
-  }, []);
-
   useEffect(() => {
     const stage = cameraStageRef.current;
     if (!stage || typeof ResizeObserver === "undefined") return;
@@ -355,29 +324,6 @@ export function ClassroomPage() {
     observer.observe(stage);
     return () => observer.disconnect();
   }, [connState]);
-
-  const mainContentActiveForLayout = showBoard || presentationActive || screenShareParticipant != null;
-  const previousMainContentActiveRef = useRef(mainContentActiveForLayout);
-  useEffect(() => {
-    if (mainContentActiveForLayout && !previousMainContentActiveRef.current) {
-      setNoBoardTileHeight(DEFAULT_CAMERA_TILE_HEIGHT);
-      setCustomCameraRailSize(null);
-    }
-    previousMainContentActiveRef.current = mainContentActiveForLayout;
-  }, [mainContentActiveForLayout]);
-
-  useEffect(() => {
-    if (!mainContentActiveForLayout || focusMode) return;
-    const availableWidth = cameraStageSize.width || viewportSize.width;
-    const availableHeight = cameraStageSize.height || viewportSize.height;
-    setCustomCameraRailSize((current) => current == null
-      ? null
-      : clampBoardCameraRailSize(current, {
-          availableWidth,
-          availableHeight,
-          participantCount: participants.length
-        }));
-  }, [cameraStageSize.height, cameraStageSize.width, focusMode, mainContentActiveForLayout, participants.length, viewportSize.height, viewportSize.width]);
 
   useEffect(() => { presenterIdentityRef.current = presenterIdentity; }, [presenterIdentity]);
   useEffect(() => { presenterEpochRef.current = presenterEpoch; }, [presenterEpoch]);
@@ -1858,7 +1804,7 @@ export function ClassroomPage() {
   };
 
   // HOST ACTION: Individual Mic Permission Toggle
-  const toggleIndividualMicPermission = async (targetIdentity: string, currentAllowed: boolean) => {
+  const toggleIndividualMicPermission = useCallback(async (targetIdentity: string, currentAllowed: boolean) => {
     if (!room || !isHost) return;
     const nextAllow = !currentAllowed;
     const current = individualPermissionsRef.current[targetIdentity] ?? { allowMic: true, allowCam: true };
@@ -1877,10 +1823,10 @@ export function ClassroomPage() {
       allowMic: nextAllow
     });
     await room.localParticipant.publishData(new TextEncoder().encode(payload), { reliable: true });
-  };
+  }, [isHost, room]);
 
   // HOST ACTION: Individual Cam Permission Toggle
-  const toggleIndividualCamPermission = async (targetIdentity: string, currentAllowed: boolean) => {
+  const toggleIndividualCamPermission = useCallback(async (targetIdentity: string, currentAllowed: boolean) => {
     if (!room || !isHost) return;
     const nextAllow = !currentAllowed;
     const current = individualPermissionsRef.current[targetIdentity] ?? { allowMic: true, allowCam: true };
@@ -1899,7 +1845,7 @@ export function ClassroomPage() {
       allowCam: nextAllow
     });
     await room.localParticipant.publishData(new TextEncoder().encode(payload), { reliable: true });
-  };
+  }, [isHost, room]);
 
   const toggleIndividualWhiteboardPermission = async (targetIdentity: string, currentAllowed: boolean) => {
     if (!room || !isHost || !drawSessionId) return;
@@ -2156,155 +2102,8 @@ export function ClassroomPage() {
     document.addEventListener("pointerup", onUp, { once: true });
   };
 
-  const cameraOrientation: CameraRailOrientation = focusMode && isMainContentActive ? "side" : "top";
   const cameraStageWidth = cameraStageSize.width || viewportSize.width;
   const cameraStageHeight = cameraStageSize.height || viewportSize.height;
-  const cameraLayout = !isMainContentActive
-    ? resolveNoBoardCameraLayout({
-        availableWidth: cameraStageWidth,
-        availableHeight: cameraStageHeight,
-        participantCount: participants.length,
-        requestedTileHeight: noBoardTileHeight
-      })
-    : cameraOrientation === "side"
-      ? resolveSideCameraLayout({
-          availableWidth: cameraStageWidth,
-          participantCount: participants.length,
-          requestedWidth: customCameraRailSize
-        })
-      : resolveBoardCameraLayout({
-          availableWidth: cameraStageWidth,
-          availableHeight: cameraStageHeight,
-          participantCount: participants.length,
-          requestedHeight: customCameraRailSize
-        });
-  const cameraRailAvailable = cameraOrientation === "side" ? cameraStageWidth : cameraStageHeight;
-  const cameraRailSize = cameraLayout.gridSize;
-  const cameraRailLimits = cameraOrientation === "side"
-    ? cameraRailBounds(cameraRailAvailable, "side")
-    : boardCameraRailBounds({
-        availableWidth: cameraStageWidth,
-        availableHeight: cameraStageHeight,
-        participantCount: participants.length
-      });
-
-  const resetCameraRailSize = () => setCustomCameraRailSize(null);
-
-  const queueCameraResizeUpdate = (update: () => void) => {
-    pendingCameraResizeRef.current = update;
-    if (cameraResizeFrameRef.current !== null) return;
-    cameraResizeFrameRef.current = window.requestAnimationFrame(() => {
-      cameraResizeFrameRef.current = null;
-      const pendingUpdate = pendingCameraResizeRef.current;
-      pendingCameraResizeRef.current = null;
-      pendingUpdate?.();
-    });
-  };
-
-  const flushCameraResizeUpdate = () => {
-    if (cameraResizeFrameRef.current !== null) {
-      window.cancelAnimationFrame(cameraResizeFrameRef.current);
-      cameraResizeFrameRef.current = null;
-    }
-    const pendingUpdate = pendingCameraResizeRef.current;
-    pendingCameraResizeRef.current = null;
-    pendingUpdate?.();
-  };
-
-  const setCameraRailFromPointer = (clientX: number, clientY: number) => {
-    const stage = cameraStageRef.current;
-    if (!stage) return;
-    const rect = stage.getBoundingClientRect();
-    const available = cameraOrientation === "side" ? rect.width : rect.height;
-    const requested = cameraOrientation === "side" ? rect.right - clientX : clientY - rect.top;
-    queueCameraResizeUpdate(() => {
-      setCustomCameraRailSize(cameraOrientation === "side"
-        ? clampCameraRailSize(requested, available, "side")
-        : clampBoardCameraRailSize(requested, {
-            availableWidth: rect.width,
-            availableHeight: rect.height,
-            participantCount: participants.length
-          }));
-    });
-  };
-
-  const beginCameraResize = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!isMainContentActive) return;
-    event.preventDefault();
-    event.currentTarget.setPointerCapture?.(event.pointerId);
-    setIsCameraResizing(true);
-    setCameraRailFromPointer(event.clientX, event.clientY);
-    const onMove = (moveEvent: PointerEvent) => setCameraRailFromPointer(moveEvent.clientX, moveEvent.clientY);
-    const onEnd = () => {
-      flushCameraResizeUpdate();
-      setIsCameraResizing(false);
-      document.removeEventListener("pointermove", onMove);
-      document.removeEventListener("pointerup", onEnd);
-      document.removeEventListener("pointercancel", onEnd);
-    };
-    document.addEventListener("pointermove", onMove);
-    document.addEventListener("pointerup", onEnd, { once: true });
-    document.addEventListener("pointercancel", onEnd, { once: true });
-  };
-
-  const resizeCameraWithKeyboard = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    const decreaseKey = cameraOrientation === "side" ? "ArrowRight" : "ArrowUp";
-    const increaseKey = cameraOrientation === "side" ? "ArrowLeft" : "ArrowDown";
-    if (event.key !== decreaseKey && event.key !== increaseKey) return;
-    event.preventDefault();
-    const step = event.shiftKey ? 24 : 8;
-    const direction = event.key === increaseKey ? 1 : -1;
-    const requested = cameraRailSize + direction * step;
-    setCustomCameraRailSize(cameraOrientation === "side"
-      ? clampCameraRailSize(requested, cameraRailAvailable, "side")
-      : clampBoardCameraRailSize(requested, {
-          availableWidth: cameraStageWidth,
-          availableHeight: cameraStageHeight,
-          participantCount: participants.length
-        }));
-  };
-
-  const beginNoBoardTileResize = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (isMainContentActive) return;
-    event.preventDefault();
-    event.stopPropagation();
-    event.currentTarget.setPointerCapture?.(event.pointerId);
-    setIsCameraResizing(true);
-    const startX = event.clientX;
-    const startHeight = cameraLayout.tileHeight;
-    const updateFromPointer = (clientX: number) => {
-      const horizontalDelta = startX - clientX;
-      const nextHeight = clampNoBoardTileHeight(
-        startHeight + horizontalDelta * 9 / 16,
-        cameraStageHeight,
-        cameraStageWidth
-      );
-      queueCameraResizeUpdate(() => setNoBoardTileHeight(nextHeight));
-    };
-    const onMove = (moveEvent: PointerEvent) => updateFromPointer(moveEvent.clientX);
-    const onEnd = () => {
-      flushCameraResizeUpdate();
-      setIsCameraResizing(false);
-      document.removeEventListener("pointermove", onMove);
-      document.removeEventListener("pointerup", onEnd);
-      document.removeEventListener("pointercancel", onEnd);
-    };
-    document.addEventListener("pointermove", onMove);
-    document.addEventListener("pointerup", onEnd, { once: true });
-    document.addEventListener("pointercancel", onEnd, { once: true });
-  };
-
-  const resizeNoBoardTileWithKeyboard = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
-    event.preventDefault();
-    const step = event.shiftKey ? 24 : 8;
-    const increase = event.key === "ArrowLeft" || event.key === "ArrowUp";
-    setNoBoardTileHeight((current) => clampNoBoardTileHeight(
-      current + (increase ? step : -step),
-      cameraStageHeight,
-      cameraStageWidth
-    ));
-  };
 
   return (
     <div className="min-h-screen h-screen supports-[height:100dvh]:h-dvh bg-slate-100 text-slate-800 dark:bg-slate-950 dark:text-slate-100 flex flex-col font-sans overflow-hidden" dir="rtl">
@@ -2560,161 +2359,19 @@ export function ClassroomPage() {
             {/* DYNAMIC CAMERAS CONTAINER & MAIN CONTENT */}
             <div ref={cameraStageRef} className={cn("flex-1 min-h-0 min-w-0 flex gap-3 overflow-hidden", focusMode && isMainContentActive ? "flex-row" : "flex-col")}>
 
-              {/* CAMERAS SECTION: Teacher ALWAYS FIRST in top row / side column */}
-              <div
-                className={cn(
-                  "min-h-0 min-w-0 shrink-0 gap-2 overflow-x-hidden overflow-y-auto bg-slate-200/50 p-1.5 shadow-sm dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800/60",
-                  !isCameraResizing && "transition-[flex-basis] duration-200",
-                  focusMode && isMainContentActive
-                    ? "flex flex-col justify-start"
-                    : "grid content-start items-start [justify-content:start]",
-                  !isMainContentActive && "flex-1"
-                )}
-                style={focusMode && isMainContentActive
-                  ? { flexBasis: `${cameraRailSize}px` }
-                  : {
-                      flexBasis: isMainContentActive ? `${cameraRailSize}px` : undefined,
-                      gridTemplateColumns: `repeat(${cameraLayout.columns}, ${cameraLayout.tileWidth}px)`,
-                      gridAutoRows: `${cameraLayout.tileHeight}px`
-                    }}
-              >
-                {participants.map((p, participantIndex) => {
-                  const isSpeaking = activeSpeakers.includes(p.identity);
-                  return (
-                    <div
-                      key={p.sid}
-                      className={cn(
-                        "relative aspect-video rounded-xl border bg-slate-100 dark:bg-slate-900 overflow-hidden shadow-sm flex flex-col items-center justify-center transition duration-200",
-                        focusMode && isMainContentActive
-                          ? "w-full shrink-0"
-                          : "w-full", // Grid fills rows before vertical overflow.
-                        isSpeaking ? "border-emerald-400 ring-2 ring-emerald-400/40" : p.isHost ? "border-amber-500/60 ring-2 ring-amber-500/20" : "border-slate-200 dark:border-slate-800"
-                      )}
-                      style={{
-                        width: `${cameraLayout.tileWidth}px`,
-                        height: `${cameraLayout.tileHeight}px`
-                      }}
-                    >
-                      {/* Video Element */}
-                      {!p.isVideoOff && p.videoTrack ? (
-                        <video
-                          ref={(el) => {
-                            if (el && p.videoTrack) p.videoTrack.attach(el);
-                          }}
-                          autoPlay
-                          playsInline
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex flex-col items-center gap-1.5 text-slate-400 dark:text-slate-500">
-                          <div className="size-10 rounded-xl bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 flex items-center justify-center font-black text-slate-700 dark:text-slate-300 text-base shadow-sm">
-                            {p.name.charAt(0)}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Audio Element */}
-                      {!p.isMe && p.audioTrack && (
-                        <audio
-                          ref={(el) => {
-                            if (el && p.audioTrack) p.audioTrack.attach(el);
-                          }}
-                          autoPlay
-                        />
-                      )}
-
-                      {/* Top Name & Live Mic Status Badge */}
-                      <div className="absolute top-1.5 right-1.5 flex items-center gap-1 pointer-events-none z-10">
-                        {isSpeaking && <span className="relative flex size-3"><span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-60" /><span className="relative inline-flex size-3 rounded-full bg-emerald-400" /></span>}
-                        <span className="rounded-md bg-white/90 dark:bg-slate-950/80 px-2 py-0.5 text-[10px] font-bold text-slate-800 dark:text-slate-200 border border-slate-200/80 dark:border-transparent backdrop-blur-md flex items-center gap-1 shadow-sm">
-                          {p.name} {p.isHost && <Crown className="size-3 text-amber-500 dark:text-amber-400 inline" />}
-                        </span>
-
-                        <span className={cn("rounded-md p-0.5 text-xs backdrop-blur-md shadow-sm", p.isMuted ? "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400")}>
-                          {p.isMuted ? <MicOff className="size-3" /> : <Mic className="size-3" />}
-                        </span>
-                      </div>
-
-                      {/* RAISED HAND BADGE (AT THE BOTTOM OF THE CAMERA TILE UNTIL DROPPED) */}
-                      {p.isHandRaised && (
-                        <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 bg-amber-500 text-slate-950 px-2.5 py-0.5 rounded-full font-black text-[10px] flex items-center justify-center gap-1 shadow-lg animate-bounce z-10 pointer-events-none">
-                          <Hand className="size-3 fill-slate-950" />
-                          <span>הרם/ה יד ✋</span>
-                        </div>
-                      )}
-
-                      {/* INDIVIDUAL TEACHER PERMISSION CONTROLS OVERLAY */}
-                      {isHost && !p.isMe && (
-                        <div className="absolute top-1.5 left-1.5 flex items-center gap-1 bg-white/95 dark:bg-slate-950/85 p-1 rounded-lg border border-slate-200 dark:border-slate-700/80 backdrop-blur-md z-20 shadow-md">
-                          <button
-                            onClick={() => toggleIndividualMicPermission(p.identity, p.canUseMic)}
-                            title={p.canUseMic ? "הרשאת מיקרופון פעילה - לחץ לחסימה" : "מיקרופון חסום - לחץ להרשאה"}
-                            className={cn("p-1 rounded text-xs transition duration-150", p.canUseMic ? "text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-500/20" : "text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/20")}
-                          >
-                            {p.canUseMic ? <Mic className="size-3" /> : <MicOff className="size-3" />}
-                          </button>
-
-                          <button
-                            onClick={() => toggleIndividualCamPermission(p.identity, p.canUseCam)}
-                            title={p.canUseCam ? "הרשאת מצלמה פעילה - לחץ לחסימה" : "מצלמה חסומה - לחץ להרשאה"}
-                            className={cn("p-1 rounded text-xs transition duration-150", p.canUseCam ? "text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-500/20" : "text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/20")}
-                          >
-                            {p.canUseCam ? <VideoIcon className="size-3" /> : <VideoOff className="size-3" />}
-                          </button>
-
-                        </div>
-                      )}
-
-                      {!isMainContentActive && participantIndex === 0 && (
-                        <div
-                          role="slider"
-                          tabIndex={0}
-                          aria-label="שנה את גודל אריחי המצלמות"
-                          aria-valuemin={MIN_CAMERA_TILE_HEIGHT}
-                          aria-valuemax={clampNoBoardTileHeight(
-                            Number.MAX_SAFE_INTEGER,
-                            cameraStageHeight,
-                            cameraStageWidth
-                          )}
-                          aria-valuenow={Math.round(cameraLayout.tileHeight)}
-                          onPointerDown={beginNoBoardTileResize}
-                          onKeyDown={resizeNoBoardTileWithKeyboard}
-                          onDoubleClick={() => setNoBoardTileHeight(DEFAULT_CAMERA_TILE_HEIGHT)}
-                          title="גררו לשינוי גודל כל המצלמות. לחיצה כפולה מחזירה לברירת המחדל."
-                          className="absolute bottom-0 left-0 z-30 flex size-8 touch-none select-none cursor-nesw-resize items-end justify-start rounded-tr-xl bg-white/90 p-1 text-slate-600 shadow-sm outline-none transition hover:bg-indigo-50 hover:text-indigo-700 focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-slate-950/85 dark:text-slate-300 dark:hover:bg-indigo-500/20 dark:hover:text-indigo-200"
-                        >
-                          <Grip className="size-4 -rotate-45" />
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {isMainContentActive && (
-                <div
-                  role="separator"
-                  tabIndex={0}
-                  aria-label="שנה את גודל אזור המצלמות"
-                  aria-orientation={cameraOrientation === "side" ? "vertical" : "horizontal"}
-                  aria-valuemin={cameraRailLimits.min}
-                  aria-valuemax={cameraRailLimits.max}
-                  aria-valuenow={cameraRailSize}
-                  onPointerDown={beginCameraResize}
-                  onKeyDown={resizeCameraWithKeyboard}
-                  onDoubleClick={resetCameraRailSize}
-                  title="גררו לשינוי גודל המצלמות. לחיצה כפולה מחזירה לגודל אוטומטי."
-                  className={cn(
-                    "group flex shrink-0 touch-none select-none items-center justify-center rounded-full outline-none transition focus-visible:ring-2 focus-visible:ring-indigo-500",
-                    cameraOrientation === "side" ? "w-3 cursor-col-resize" : "h-3 cursor-row-resize"
-                  )}
-                >
-                  <span className={cn(
-                    "block rounded-full bg-slate-300 transition group-hover:bg-indigo-400 dark:bg-slate-700 dark:group-hover:bg-indigo-400",
-                    cameraOrientation === "side" ? "h-10 w-1" : "h-1 w-10"
-                  )} />
-                </div>
-              )}
+              <ClassroomCameraRail
+                participants={participants}
+                activeSpeakerIdentities={activeSpeakerIdentities}
+                focusMode={focusMode}
+                isMainContentActive={isMainContentActive}
+                stageRef={cameraStageRef}
+                stageWidth={cameraStageWidth}
+                stageHeight={cameraStageHeight}
+                viewerIsHost={isHost}
+                onToggleMicPermission={toggleIndividualMicPermission}
+                onToggleCamPermission={toggleIndividualCamPermission}
+                onResizingChange={setIsCameraResizing}
+              />
 
               {/* MAIN CONTENT FRAME: EXCALIDRAW BOARD OR SHARED SCREEN */}
               <div
