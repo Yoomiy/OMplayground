@@ -145,7 +145,10 @@ import {
   CLASSROOM_DELEGATE_SCOPES,
   createClassroomDelegateGameToken,
   delegateCookieName,
+  ensureActiveClassroomDelegate,
+  findActiveClassroomDelegateByParticipantKey,
   findClassroomDelegateAuthority,
+  hasClassroomDelegateCookie,
   newOpaqueSecret,
   secretHash,
   type ClassroomDelegateAuthority,
@@ -871,9 +874,47 @@ app.post("/rtc/classroom-token", async (req, res) => {
       });
       return;
     }
-    const delegate = isTrustedBrowserOrigin(req)
+    const trustedBrowserOrigin = isTrustedBrowserOrigin(req);
+    const guestParticipantKey = classroomGuestAttendanceKey(roomCode, guestAttendanceKey);
+    const delegate = trustedBrowserOrigin
       ? await findClassroomDelegateAuthority(supabaseAdmin, req, classroom.id)
       : null;
+    if (!delegate && trustedBrowserOrigin && guestParticipantKey) {
+      try {
+        const expectedDelegate = await findActiveClassroomDelegateByParticipantKey(
+          supabaseAdmin,
+          classroom.id,
+          guestParticipantKey
+        );
+        if (expectedDelegate) {
+          const delegateCookiePresent = hasClassroomDelegateCookie(req, expectedDelegate.id);
+          logger.warn({
+            correlationId,
+            roomCode,
+            protocol: "http",
+            message: "Active classroom delegate reconnected without valid delegate authority",
+            context: {
+              event: "CLASSROOM_DELEGATE_RECONNECT_AUTH_MISSING",
+              status: "failed",
+              reason: delegateCookiePresent ? "delegate_session_invalid" : "delegate_cookie_missing",
+              delegateCookiePresent
+            }
+          });
+        }
+      } catch (diagnosticError) {
+        logger.warn({
+          correlationId,
+          roomCode,
+          protocol: "http",
+          message: "Could not inspect classroom delegate reconnect authority",
+          context: {
+            event: "CLASSROOM_DELEGATE_RECONNECT_DIAGNOSTIC_FAILED",
+            status: "failed"
+          },
+          err: logError(diagnosticError)
+        });
+      }
+    }
     const reconnectCapability = readPresenterCapability(reconnectPresenterToken, SUPABASE_SERVICE_ROLE_KEY);
     const reconnectState = presentationRoomState(classroom.settings);
     const presenterIdentityOverride = reconnectCapability &&
@@ -891,7 +932,7 @@ app.post("/rtc/classroom-token", async (req, res) => {
       spectateMode,
       delegate: delegate ? { id: delegate.delegateId, displayName: delegate.displayName } : null,
       presenterIdentityOverride,
-      guestAttendanceKey: classroomGuestAttendanceKey(roomCode, guestAttendanceKey)
+      guestAttendanceKey: guestParticipantKey
     });
     let presentation = presentationRoomState(classroom.settings);
     // The classroom creator is the only automatic presenter. Other hosts and
@@ -1876,56 +1917,66 @@ app.post("/rtc/classroom-promote", async (req, res) => {
     if (!authority || !supabaseAdmin) return;
 
     const candidate = await classroomDelegateCandidate(normalizedRoomCode, targetIdentity.trim());
-    const { data: delegate, error: delegateError } = await supabaseAdmin
-      .from("classroom_host_delegates")
-      .insert({
-        classroom_id: classroom.id,
-        display_name: candidate.displayName.slice(0, 120),
-        participant_key: candidate.participantKey,
-        scopes: CLASSROOM_DELEGATE_SCOPES,
-        created_by: authority.kind === "user" ? authority.userId : null
-      })
-      .select("id")
-      .single();
-    if (delegateError || !delegate) throw delegateError ?? new Error("delegate_create_failed");
+    const delegate = await ensureActiveClassroomDelegate(supabaseAdmin, {
+      classroomId: classroom.id,
+      displayName: candidate.displayName.slice(0, 120),
+      participantKey: candidate.participantKey,
+      scopes: CLASSROOM_DELEGATE_SCOPES,
+      createdBy: authority.kind === "user" ? authority.userId : null
+    });
 
     const enrollmentCode = newOpaqueSecret();
-    const { error: enrollmentError } = await supabaseAdmin
-      .from("classroom_delegate_enrollments")
-      .insert({
-        delegate_id: delegate.id,
-        code_hash: secretHash(enrollmentCode),
-        target_livekit_identity: targetIdentity.trim(),
-        expires_at: new Date(Date.now() + CLASSROOM_DELEGATE_ENROLLMENT_MS).toISOString()
-      });
-    if (enrollmentError) throw enrollmentError;
+    const enrollmentCodeHash = secretHash(enrollmentCode);
+    let enrollmentCreated = false;
     try {
+      const { error: enrollmentError } = await supabaseAdmin
+        .from("classroom_delegate_enrollments")
+        .insert({
+          delegate_id: delegate.id,
+          code_hash: enrollmentCodeHash,
+          target_livekit_identity: targetIdentity.trim(),
+          expires_at: new Date(Date.now() + CLASSROOM_DELEGATE_ENROLLMENT_MS).toISOString()
+        });
+      if (enrollmentError) throw enrollmentError;
+      enrollmentCreated = true;
       await promoteClassroomParticipant(normalizedRoomCode, targetIdentity.trim(), delegate.id);
       await sendClassroomDelegateEnrollment(normalizedRoomCode, targetIdentity.trim(), enrollmentCode);
     } catch (promotionError) {
-      await supabaseAdmin
-        .from("classroom_host_delegates")
-        .update({ is_active: false })
-        .eq("id", delegate.id);
-      await supabaseAdmin
-        .from("classroom_delegate_enrollments")
-        .update({ revoked_at: new Date().toISOString() })
-        .eq("delegate_id", delegate.id)
-        .is("used_at", null);
+      if (delegate.created) {
+        await supabaseAdmin
+          .from("classroom_host_delegates")
+          .update({ is_active: false })
+          .eq("id", delegate.id);
+      }
+      if (enrollmentCreated) {
+        await supabaseAdmin
+          .from("classroom_delegate_enrollments")
+          .update({ revoked_at: new Date().toISOString() })
+          .eq("code_hash", enrollmentCodeHash)
+          .is("used_at", null);
+      }
       throw promotionError;
     }
     await appendClassroomAudit(req, classroom, authority, "classroom_participant_promoted", { target_identity: targetIdentity.trim() });
     logger.info({
+      correlationId: (req as express.Request & { correlationId?: string }).correlationId,
       userId: authority.kind === "user" ? authority.userId : authority.delegate.delegateId,
       protocol: "http",
       message: "Classroom participant promoted",
       context: {
         event: "CLASSROOM_PARTICIPANT_PROMOTED",
+        status: "success",
         roomCode: normalizedRoomCode,
-        targetIdentity: targetIdentity.trim()
+        targetIdentity: targetIdentity.trim(),
+        reusedActiveDelegate: !delegate.created
       }
     });
-    res.json({ success: true, delegated: authority.kind === "delegate" });
+    res.json({
+      success: true,
+      delegated: authority.kind === "delegate",
+      delegateId: delegate.id,
+      reusedActiveDelegate: !delegate.created
+    });
   } catch (err) {
     logHttpFailure(logger, req, err, "CLASSROOM_PARTICIPANT_PROMOTION_FAILED");
     res.status(500).json({ error: "internal_server_error" });

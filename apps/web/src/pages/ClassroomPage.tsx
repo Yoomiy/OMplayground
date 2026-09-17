@@ -241,6 +241,7 @@ export function ClassroomPage() {
   const [classroomNotice, setClassroomNotice] = useState<{ text: string; type: "info" | "success" | "warn" } | null>(null);
   const [kickTarget, setKickTarget] = useState<CustomParticipantInfo | null>(null);
   const [isKicking, setIsKicking] = useState(false);
+  const [cohostGrantPendingIdentity, setCohostGrantPendingIdentity] = useState<string | null>(null);
 
   useEffect(() => {
     if (!classroomNotice) return;
@@ -1896,16 +1897,42 @@ export function ClassroomPage() {
 
   // HOST ACTION: Grant Host Status
   const grantHostStatus = async (identity: string) => {
-    if (!room || !canManageCohosts) return;
+    if (!room || !canManageCohosts || cohostGrantPendingIdentity) return;
     if (!window.confirm("להעניק סמכויות מארח מלאות למשתתף זה?")) return;
-    const response = await classroomRequest("/rtc/classroom-promote", { roomCode, targetIdentity: identity });
-    if (!response.ok) {
+    setCohostGrantPendingIdentity(identity);
+    try {
+      const response = await classroomRequest("/rtc/classroom-promote", { roomCode, targetIdentity: identity });
       const body = await response.json().catch(() => ({}));
-      setConnError(body.message || "לא ניתן להעניק סמכויות מארח.");
-      return;
-    }
-    if (drawSocketRef.current && drawSessionId) {
-      drawSocketRef.current.emit("CLASSROOM_WHITEBOARD_POLICY_REFRESH", { sessionId: drawSessionId });
+      if (!response.ok || typeof body.delegateId !== "string") {
+        setConnError(body.message || "לא ניתן להעניק סמכויות מארח.");
+        return;
+      }
+      setParticipants((current) => current.map((participant) =>
+        participant.identity === identity
+          ? {
+              ...participant,
+              isHost: true,
+              cohostKind: "delegate",
+              delegateId: body.delegateId,
+              canUseMic: true,
+              canUseCam: true,
+              canDrawWhiteboard: true
+            }
+          : participant
+      ));
+      setClassroomNotice({
+        type: "success",
+        text: body.reusedActiveDelegate
+          ? "הרשאת המארח-השותף שוחזרה בהצלחה."
+          : "הרשאת המארח-השותף הוענקה בהצלחה."
+      });
+      if (drawSocketRef.current && drawSessionId) {
+        drawSocketRef.current.emit("CLASSROOM_WHITEBOARD_POLICY_REFRESH", { sessionId: drawSessionId });
+      }
+    } catch {
+      setConnError("לא ניתן להעניק סמכויות מארח.");
+    } finally {
+      setCohostGrantPendingIdentity(null);
     }
   };
 
@@ -2798,8 +2825,9 @@ export function ClassroomPage() {
                         ) : !p.isHost ? (
                           <button
                             onClick={() => void grantHostStatus(p.identity)}
+                            disabled={cohostGrantPendingIdentity === p.identity}
                             title="הענק הרשאות מארח-שותף"
-                            className="p-1 rounded bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500/20"
+                            className="p-1 rounded bg-amber-100 text-amber-700 hover:bg-amber-200 disabled:cursor-wait disabled:opacity-60 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500/20"
                           >
                             <Crown className="size-3.5" />
                           </button>

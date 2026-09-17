@@ -29,6 +29,74 @@ interface DelegateRow {
   is_active: boolean;
 }
 
+export interface ActiveClassroomDelegate {
+  id: string;
+  created: boolean;
+}
+
+interface EnsureActiveClassroomDelegateInput {
+  classroomId: string;
+  displayName: string;
+  participantKey: string;
+  scopes: readonly ClassroomDelegateScope[];
+  createdBy: string | null;
+}
+
+export async function findActiveClassroomDelegateByParticipantKey(
+  supabase: SupabaseClient,
+  classroomId: string,
+  participantKey: string
+): Promise<{ id: string } | null> {
+  const { data, error } = await supabase
+    .from("classroom_host_delegates")
+    .select("id")
+    .eq("classroom_id", classroomId)
+    .eq("participant_key", participantKey)
+    .eq("is_active", true)
+    .maybeSingle<{ id: string }>();
+  if (error) throw error;
+  return data;
+}
+
+export async function ensureActiveClassroomDelegate(
+  supabase: SupabaseClient,
+  input: EnsureActiveClassroomDelegateInput
+): Promise<ActiveClassroomDelegate> {
+  const existing = await findActiveClassroomDelegateByParticipantKey(
+    supabase,
+    input.classroomId,
+    input.participantKey
+  );
+  if (existing) return { id: existing.id, created: false };
+
+  const { data: inserted, error: insertError } = await supabase
+    .from("classroom_host_delegates")
+    .insert({
+      classroom_id: input.classroomId,
+      display_name: input.displayName,
+      participant_key: input.participantKey,
+      scopes: [...input.scopes],
+      created_by: input.createdBy
+    })
+    .select("id")
+    .single<{ id: string }>();
+
+  if (!insertError && inserted) return { id: inserted.id, created: true };
+  if (insertError?.code !== "23505") {
+    throw insertError ?? new Error("delegate_create_failed");
+  }
+
+  // A concurrent request may have inserted the same active participant after
+  // our initial read. Resolve the winner instead of surfacing a false 500.
+  const concurrent = await findActiveClassroomDelegateByParticipantKey(
+    supabase,
+    input.classroomId,
+    input.participantKey
+  );
+  if (!concurrent) throw insertError;
+  return { id: concurrent.id, created: false };
+}
+
 function sha256(value: string): string {
   return createHash("sha256").update(value).digest("hex");
 }
@@ -46,6 +114,10 @@ function parseCookies(header: string | undefined): Record<string, string> {
 
 export function delegateCookieName(delegateId: string): string {
   return `classroom_delegate_${delegateId}`;
+}
+
+export function hasClassroomDelegateCookie(req: Request, delegateId: string): boolean {
+  return Boolean(parseCookies(req.headers.cookie)[delegateCookieName(delegateId)]);
 }
 
 export function newOpaqueSecret(): string {
