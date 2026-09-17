@@ -2,6 +2,7 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRe
 import { BlobReader, BlobWriter, TextWriter, ZipReader, type Entry } from "@zip.js/zip.js";
 import { Track, VideoPreset, type Room } from "livekit-client";
 import { reportCaughtError } from "@/utils/telemetry";
+import { shouldPublishClassroomMaterial } from "@/lib/classroomLifecycle";
 import {
   ChevronLeft,
   ChevronRight,
@@ -372,6 +373,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
   const [materials, setMaterials] = useState<ClassroomMaterialRecord[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isPreparing, setIsPreparing] = useState(false);
+  const [preparedMaterialId, setPreparedMaterialId] = useState<string | null>(null);
   const [isPublished, setIsPublished] = useState(false);
   const [materialsOpen, setMaterialsOpen] = useState(false);
   const [laserMode, setLaserMode] = useState(false);
@@ -877,7 +879,11 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
     let cancelled = false;
     preparingRef.current = true;
     setIsPreparing(true);
+    setPreparedMaterialId(null);
     void prepareSelected(selected)
+      .then(() => {
+        if (!cancelled && selectedRef.current?.id === selected.id) setPreparedMaterialId(selected.id);
+      })
       .catch((error) => {
         console.error("Classroom media preparation failed", error);
         reportCaughtError("Classroom media preparation failed", error, { appArea: "classroom-presentation", operation: "prepare", roomCode }, "voxel-server");
@@ -1006,7 +1012,14 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
 
   useEffect(() => {
     if (!canPresent || !selected) return;
-    if (visible && !isPublished) {
+    if (shouldPublishClassroomMaterial({
+      canPresent,
+      visible,
+      isPublished,
+      isPreparing,
+      selectedMaterialId: selected.id,
+      preparedMaterialId
+    })) {
       void publish().catch((error) => {
         console.error("Classroom presentation publish failed", error);
         reportCaughtError("Classroom presentation publish failed", error, { appArea: "classroom-presentation", operation: "publish", roomCode }, "voxel-server");
@@ -1020,7 +1033,7 @@ export const ClassroomPresentationPublisher = forwardRef<ClassroomPresentationPu
       }
       void removePublishedTracks(false).then(() => sendPresentationState("hidden").catch(() => {}));
     }
-  }, [canPresent, isPublished, onError, publish, removePublishedTracks, selected, sendPresentationState, updateSelectedState, visible]);
+  }, [canPresent, isPreparing, isPublished, onError, preparedMaterialId, publish, removePublishedTracks, selected, sendPresentationState, updateSelectedState, visible]);
 
   useEffect(() => () => { void disposeRuntime(true); }, [disposeRuntime]);
 

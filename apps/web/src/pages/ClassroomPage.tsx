@@ -1078,7 +1078,6 @@ export function ClassroomPage() {
               entry.identity === msg.targetIdentity ? { ...entry, canDrawWhiteboard: msg.allowed } : entry
             ));
             if (lkRoom.localParticipant.identity === msg.targetIdentity) {
-              setCanUseWhiteboard(msg.allowed);
               setClassroomNotice({
                 text: msg.allowed ? "המורה אישר/ה לך לצייר בלוח." : "הרשאת הציור שלך הוסרה.",
                 type: msg.allowed ? "success" : "warn"
@@ -1299,10 +1298,6 @@ export function ClassroomPage() {
       lkRoom.on(RoomEvent.ParticipantMetadataChanged, (_previousMetadata, participant) => {
         if (participant.identity === lkRoom.localParticipant.identity) {
           setIsHost(participantIsHost(participant));
-          try {
-            const metadata = JSON.parse(participant.metadata || "{}");
-            setCanUseWhiteboard(metadata.canDrawWhiteboard === true);
-          } catch {}
         }
         updateParticipantList(lkRoom);
       });
@@ -2421,11 +2416,7 @@ export function ClassroomPage() {
                       classroomRequest={classroomRequest}
                       onPresentationChange={handleLocalPresentationChange}
                       onUploadStatus={setMediaUploadStatus}
-                      canSendToWhiteboard={drawSocketReady && (
-                        showBoard
-                          ? canUseWhiteboard
-                          : isHost && (canManageClassroom || isDelegatedHost)
-                      )}
+                      canSendToWhiteboard={drawSocketReady && canUseWhiteboard}
                       onSendPageToWhiteboard={sendPresentationPageToWhiteboard}
                       onRequestHidden={requestMediaHidden}
                       onError={setConnError}
