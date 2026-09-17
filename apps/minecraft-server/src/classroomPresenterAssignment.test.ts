@@ -1,5 +1,7 @@
 import {
   commitPresenterAssignment,
+  selectDefaultClassroomPresenter,
+  shouldBootstrapClassroomPresenter,
   type PresentationRoomState
 } from "./classroomPresenterAssignment";
 
@@ -82,5 +84,44 @@ describe("commitPresenterAssignment", () => {
     expect(assignmentEffects.synchronizePermissions).not.toHaveBeenCalled();
     expect(assignmentEffects.broadcast).not.toHaveBeenCalled();
     expect(assignmentEffects.sendCapability).not.toHaveBeenCalled();
+  });
+});
+
+describe("shouldBootstrapClassroomPresenter", () => {
+  it("selects the first visible host when the presenter slot is empty", () => {
+    expect(shouldBootstrapClassroomPresenter(null, true, undefined)).toBe(true);
+  });
+
+  it("does not replace an existing presenter", () => {
+    expect(shouldBootstrapClassroomPresenter("teacher-1", true, undefined)).toBe(false);
+  });
+
+  it("does not select students or invisible hosts", () => {
+    expect(shouldBootstrapClassroomPresenter(null, false, undefined)).toBe(false);
+    expect(shouldBootstrapClassroomPresenter(null, true, "invisible")).toBe(false);
+  });
+});
+
+describe("selectDefaultClassroomPresenter", () => {
+  const participants = [
+    { identity: "student-1", isHost: false },
+    { identity: "cohost-1", isHost: true },
+    { identity: "creator-1", isHost: true }
+  ];
+
+  it("prefers the connected classroom creator", () => {
+    expect(selectDefaultClassroomPresenter(participants, "creator-1")).toBe("creator-1");
+  });
+
+  it("falls back to the first connected host", () => {
+    expect(selectDefaultClassroomPresenter(participants, "missing-creator")).toBe("cohost-1");
+  });
+
+  it("excludes a departing presenter and returns null without another host", () => {
+    expect(selectDefaultClassroomPresenter(participants, "creator-1", "creator-1")).toBe("cohost-1");
+    expect(selectDefaultClassroomPresenter([
+      { identity: "student-1", isHost: false },
+      { identity: "creator-1", isHost: true }
+    ], "creator-1", "creator-1")).toBeNull();
   });
 });

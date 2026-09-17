@@ -138,6 +138,8 @@ import {
 } from "./classroomPresentation";
 import {
   commitPresenterAssignment,
+  selectDefaultClassroomPresenter,
+  shouldBootstrapClassroomPresenter,
   type PresentationRoomState,
   type PresenterAssignmentDelivery
 } from "./classroomPresenterAssignment";
@@ -935,9 +937,9 @@ app.post("/rtc/classroom-token", async (req, res) => {
       guestAttendanceKey: guestParticipantKey
     });
     let presentation = presentationRoomState(classroom.settings);
-    // The classroom creator is the only automatic presenter. Other hosts and
-    // cohosts may claim or assign presentation explicitly after joining.
-    if (!presentation.presenterIdentity && classroom.teacher_id === result.userId && spectateMode !== "invisible") {
+    // The creator is normally first, but any first visible host can bootstrap
+    // an empty presenter slot so the classroom always has one viewport source.
+    if (shouldBootstrapClassroomPresenter(presentation.presenterIdentity, result.isHost, spectateMode)) {
       // The token is what allows the first participant to create the LiveKit
       // room. Persist bootstrap authority now; the response and Supabase
       // realtime carry this state without calling room-scoped LiveKit APIs.
@@ -1743,7 +1745,13 @@ app.post("/rtc/classroom-presenter-leave", async (req, res) => {
     if (!classroom) return void res.status(404).json({ error: "classroom_not_found" });
     const presenter = requirePresenterCapability(req, res, classroom);
     if (!presenter) return;
-    const next = await assignPresenter(classroom, null);
+    const participants = await listClassroomParticipants(classroom.room_code);
+    const fallbackIdentity = selectDefaultClassroomPresenter(
+      participants,
+      classroom.teacher_id ? String(classroom.teacher_id) : null,
+      presenter.identity
+    );
+    const next = await assignPresenter(classroom, fallbackIdentity);
     res.json({ success: true, presenterIdentity: next.presenterIdentity, presenterEpoch: next.presenterEpoch });
   } catch (err) {
     logHttpFailure(logger, req, err, "CLASSROOM_PRESENTER_LEAVE_FAILED");
@@ -1770,7 +1778,12 @@ app.post("/rtc/classroom-presenter-elect", async (req, res) => {
     if (participants.some((participant) => participant.identity === current.presenterIdentity)) {
       return void res.json({ success: true, reconnected: true });
     }
-    const next = await assignPresenter(classroom, null);
+    const fallbackIdentity = selectDefaultClassroomPresenter(
+      participants,
+      classroom.teacher_id ? String(classroom.teacher_id) : null,
+      current.presenterIdentity
+    );
+    const next = await assignPresenter(classroom, fallbackIdentity);
     res.json({ success: true, presenterIdentity: next.presenterIdentity, presenterEpoch: next.presenterEpoch });
   } catch (err) {
     logHttpFailure(logger, req, err, "CLASSROOM_PRESENTER_ELECTION_FAILED");

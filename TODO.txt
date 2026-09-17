@@ -18,3 +18,4 @@
 59. allow cam tiles resize in classrooms
 60. solve whiboard popup error after permission revoke (race with the awareness?)
 61. class-wide whitboard permission should override personal one
+62. remove GET requsest from the logs

@@ -21,6 +21,7 @@ import {
   type ClassroomCameraParticipant
 } from "@/components/ClassroomCameraRail";
 import { clearClassroomLibrary } from "@/lib/classroomMediaLibrary";
+import { classroomDrawingViewportRole } from "@/lib/classroomDrawingViewport";
 import {
   classroomChatStorageKey,
   clearClassroomChatCache,
@@ -1533,11 +1534,12 @@ export function ClassroomPage() {
       ? { update: boardInitialYjsUpdate, token: boardInitialYjsSyncToken }
       : null,
     initialViewport: boardInitialViewport,
-    viewportRole: isHost
-      ? "publish" as const
-      : canUseWhiteboard
-        ? "independent" as const
-        : "follow" as const,
+    viewportRole: classroomDrawingViewportRole({
+      isHost,
+      canUseWhiteboard,
+      localIdentity: room?.localParticipant.identity,
+      presenterIdentity
+    }),
     canClear: isHost,
     sendDelta: handleLocalBoardDelta,
     acknowledgeSync: acknowledgeBoardSync,
@@ -1552,6 +1554,8 @@ export function ClassroomPage() {
     handleLocalBoardDelta,
     isHost,
     canUseWhiteboard,
+    presenterIdentity,
+    room,
     subscribeLiveDeltas
   ]);
 
