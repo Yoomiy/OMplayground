@@ -274,7 +274,11 @@ const app = express();
 app.set("trust proxy", 1);
 app.use(correlationMiddleware());
 app.use(cors({ origin: ALLOWED_ORIGINS, credentials: false }));
-app.use(createHttpLogger(logger));
+app.use(createHttpLogger(logger, {
+  // The browser polls this endpoint once a second while a conversion runs.
+  // Lifecycle and failure logs retain the meaningful conversion evidence.
+  suppressSuccessfulRequest: (path) => /^\/v1\/conversions\/[^/]+$/.test(path)
+}));
 app.get("/health", (_req, res) => res.json({ ok: true, queued: queue.length, workerActive }));
 app.get("/ready", (_req, res) => {
   if (!SHARED_SECRET) return void res.status(503).json({ ok: false, reason: "missing_env" });

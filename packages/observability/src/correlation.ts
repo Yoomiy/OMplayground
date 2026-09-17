@@ -33,15 +33,24 @@ export function correlationMiddleware(): RequestHandler {
   };
 }
 
-export function createHttpLogger(logger: Logger): RequestHandler {
+export interface HttpLoggerOptions {
+  /** Suppress only successful access logs for known high-frequency request paths. */
+  suppressSuccessfulRequest?: (path: string) => boolean;
+}
+
+export function createHttpLogger(
+  logger: Logger,
+  options: HttpLoggerOptions = {}
+): RequestHandler {
   const isProduction = process.env.NODE_ENV === "production";
   return pinoHttp({
     logger,
     customLogLevel: (_req, res, err) => {
       if (err || res.statusCode >= 500) return "error";
       if (res.statusCode >= 400) return "warn";
+      const path = _req.url?.split("?")[0] ?? "";
+      if (options.suppressSuccessfulRequest?.(path)) return "silent";
       if (isProduction) {
-        const path = _req.url?.split("?")[0] ?? "";
         if (path === "/health" || path === "/ready") return "silent";
       }
       return "info";
