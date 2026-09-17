@@ -4,8 +4,16 @@ import { redactSensitive } from "../telemetryIngest";
 import { auditMetadata } from "../auditMetadata";
 import { liveKitRoomContext } from "../livekitWebhook";
 import { shouldLogSocketEvent } from "../socketLifecycle";
+import { formatLogLevelLabel } from "../logger";
 
 describe("Observability Package", () => {
+  describe("Railway log levels", () => {
+    it("emits Pino severity labels as strings", () => {
+      expect(formatLogLevelLabel("error")).toEqual({ level: "error" });
+      expect(formatLogLevelLabel("warn")).toEqual({ level: "warn" });
+    });
+  });
+
   describe("Correlation ID Utility", () => {
     it("should generate a correlation ID prefixed with c-", () => {
       const id = newCorrelationId();
