@@ -10,12 +10,8 @@
 30. test audio and docs on the classroom media board
 40. you still need to manipulate the pic before the media board shows it
 41. make sure that DB audit_log events are logged in the server too
-42. see why admin is marked as connected in the classrooms dashboard after disconnection.
-49. look into presentor rights transfare bug (and add it to the side-dashboard)
 52. make kidsHome lighter (it turns out that wasm games somtimes keep clogging the page after leave)
 53. fix raise hand behavior
-58. there's too much noice in the converter logs
-59. allow cam tiles resize in classrooms
 60. solve whiboard popup error after permission revoke (race with the awareness?)
 61. class-wide whitboard permission should override personal one
 62. remove GET requsest from the logs
