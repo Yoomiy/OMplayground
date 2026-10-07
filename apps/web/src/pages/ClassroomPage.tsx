@@ -7,7 +7,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { supabase } from "@/lib/supabase";
 import { getVoxelServerUrl } from "@/lib/voxelServerUrl";
-import { reportTelemetry, setShellTelemetryTarget } from "@/utils/telemetry";
+import { reportCaughtError, reportTelemetry, setShellTelemetryTarget } from "@/utils/telemetry";
 import { getCorrelationId } from "@/utils/correlation";
 import { DrawingBoard, type DrawingBoardHandle } from "@/games/drawing/DrawingBoard";
 import {
@@ -21,6 +21,7 @@ import {
   type ClassroomCameraParticipant
 } from "@/components/ClassroomCameraRail";
 import { clearClassroomLibrary } from "@/lib/classroomMediaLibrary";
+import { receiveClassroomHandMessage, requestClassroomHandStates } from "@/lib/classroomHands";
 import { classroomDrawingViewportRole } from "@/lib/classroomDrawingViewport";
 import {
   classroomChatStorageKey,
@@ -264,6 +265,33 @@ export function ClassroomPage() {
   const individualPermissionsRef = useRef<Record<string, { allowMic: boolean; allowCam: boolean }>>({});
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [isHandRaised, setIsHandRaised] = useState(false);
+  const handStateRef = useRef(new Map<string, boolean>());
+  const handSendPendingRef = useRef(false);
+  const [handSendPending, setHandSendPending] = useState(false);
+
+  const reportHandFailure = useCallback((error: unknown, operation: string) => {
+    reportCaughtError("Classroom hand message failed", error, {
+      appArea: "classroom", event: "CLASSROOM_HAND_MESSAGE_FAILED", roomCode, operation
+    }, "voxel-server");
+  }, [roomCode]);
+
+  const sendHandMessage = useCallback(async (lkRoom: Room, message: object, destination?: string) => {
+    await lkRoom.localParticipant.publishData(new TextEncoder().encode(JSON.stringify(message)), {
+      reliable: true,
+      ...(destination ? { destinationIdentities: [destination] } : {})
+    });
+  }, []);
+
+  const cancelHandSyncRef = useRef<(() => void) | null>(null);
+  const requestHandStates = useCallback((lkRoom: Room) => {
+    cancelHandSyncRef.current?.();
+    cancelHandSyncRef.current = requestClassroomHandStates(
+      () => sendHandMessage(lkRoom, { type: "HAND_STATE_REQUEST" }),
+      (error) => reportHandFailure(error, "sync-request")
+    );
+  }, [reportHandFailure, sendHandMessage]);
+
+  useEffect(() => () => cancelHandSyncRef.current?.(), []);
 
   useEffect(() => {
     individualPermissionsRef.current = individualPermissions;
@@ -759,7 +787,7 @@ export function ClassroomPage() {
         isMe: true,
         isMuted: !local.isMicrophoneEnabled,
         isVideoOff: !local.isCameraEnabled,
-        isHandRaised: Boolean(localMetadata.handRaised),
+        isHandRaised: handStateRef.current.get(local.identity) === true,
         canUseMic: localIsHost || localPerm.allowMic !== false,
         canUseCam: localIsHost || localPerm.allowCam !== false,
         canDrawWhiteboard: localIsHost || localMetadata.canDrawWhiteboard === true,
@@ -831,7 +859,7 @@ export function ClassroomPage() {
         isMe: false,
         isMuted: !p.isMicrophoneEnabled,
         isVideoOff: !p.isCameraEnabled,
-        isHandRaised: Boolean(pMetadata.handRaised),
+        isHandRaised: handStateRef.current.get(p.identity) === true,
         canUseMic: pIsHost || pPerm.allowMic !== false,
         canUseCam: pIsHost || pPerm.allowCam !== false,
         canDrawWhiteboard: pIsHost || pMetadata.canDrawWhiteboard === true,
@@ -876,6 +904,9 @@ export function ClassroomPage() {
   // Connect to LiveKit Room
   const connectToRoom = async () => {
     if (!roomCode) return;
+    cancelHandSyncRef.current?.();
+    handStateRef.current.clear();
+    setIsHandRaised(false);
     setConnState("connecting");
     setConnError(null);
     setDrawSessionId(null);
@@ -1127,12 +1158,16 @@ export function ClassroomPage() {
           } else if (msg.type === "REACTION") {
             setRecentReaction({ emoji: msg.emoji, name: participant?.name || participant?.identity || "משתתף" });
             setTimeout(() => setRecentReaction(null), 3000);
-          } else if (msg.type === "HAND_RAISE") {
-            const targetIdentity = participant?.identity;
-            if (!targetIdentity) return;
-            setParticipants((prev) =>
-              prev.map((p) => (p.identity === targetIdentity ? { ...p, isHandRaised: Boolean(msg.handRaised) } : p))
+          } else if (msg.type === "HAND_STATE_REQUEST" || msg.type === "HAND_RAISE") {
+            if (isStealthAdmin && msg.type === "HAND_STATE_REQUEST") return;
+            const changed = receiveClassroomHandMessage(
+              handStateRef.current, msg, participant?.identity, lkRoom.localParticipant.identity,
+              (message, destination) => {
+                void sendHandMessage(lkRoom, message, destination)
+                  .catch((error) => reportHandFailure(error, "sync-response"));
+              }
             );
+            if (changed) updateParticipantList(lkRoom);
           } else if (msg.type === "TOGGLE_BOARD") {
             setShowBoard(Boolean(msg.show));
           } else if (msg.type === "STAGE_LAYOUT" && !participant && Number.isFinite(msg.presentationPercent)) {
@@ -1225,11 +1260,37 @@ export function ClassroomPage() {
         }
       });
 
-      lkRoom.on(RoomEvent.ParticipantConnected, () => updateParticipantList(lkRoom));
-      lkRoom.on(RoomEvent.ParticipantDisconnected, () => {
+      lkRoom.on(RoomEvent.ParticipantConnected, (participant) => {
+        updateParticipantList(lkRoom);
+        if (isStealthAdmin) return;
+        // Push as well as answer requests: joining peers may miss the first exchange.
+        void sendHandMessage(lkRoom, {
+          type: "HAND_RAISE",
+          handRaised: handStateRef.current.get(lkRoom.localParticipant.identity) === true
+        }, participant.identity).catch((error) => reportHandFailure(error, "join-sync"));
+      });
+      lkRoom.on(RoomEvent.ParticipantDisconnected, (participant) => {
+        handStateRef.current.delete(participant.identity);
         updateParticipantList(lkRoom);
       });
+      lkRoom.on(RoomEvent.Reconnected, () => {
+        // Republish our own state, then hydrate peers, including anyone who joined while offline.
+        const localIdentity = lkRoom.localParticipant.identity;
+        for (const identity of handStateRef.current.keys()) {
+          if (identity !== localIdentity) handStateRef.current.delete(identity);
+        }
+        updateParticipantList(lkRoom);
+        void sendHandMessage(lkRoom, {
+          type: "HAND_RAISE",
+          handRaised: handStateRef.current.get(lkRoom.localParticipant.identity) === true
+        }).catch((error) => reportHandFailure(error, "reconnect"));
+        requestHandStates(lkRoom);
+      });
       lkRoom.on(RoomEvent.Disconnected, (reason?: DisconnectReason) => {
+        cancelHandSyncRef.current?.();
+        handStateRef.current.clear();
+        setIsHandRaised(false);
+        updateParticipantList(lkRoom);
         if (
           reason !== DisconnectReason.PARTICIPANT_REMOVED &&
           reason !== DisconnectReason.ROOM_DELETED
@@ -1316,6 +1377,7 @@ export function ClassroomPage() {
       roomRef.current = lkRoom;
       setRoom(lkRoom);
       setConnState("connected");
+      requestHandStates(lkRoom);
       reportTelemetry(
         {
           level: "info",
@@ -1396,6 +1458,9 @@ export function ClassroomPage() {
   };
 
   const disconnectFromRoom = async () => {
+    cancelHandSyncRef.current?.();
+    handStateRef.current.clear();
+    setIsHandRaised(false);
     if (roomRef.current?.localParticipant.identity === presenterIdentityRef.current && presenterTokenRef.current) {
       await classroomRequest("/rtc/classroom-presenter-leave", {
         roomCode,
@@ -1620,29 +1685,29 @@ export function ClassroomPage() {
     }
   };
 
-  // Raise / Lower Hand (Safe metadata update + Data Channel broadcast)
+  // Keep hand state independent of media and protected participant metadata.
   const toggleHandRaise = async () => {
-    if (!room || isStealthAdmin) return;
-    const next = !isHandRaised;
-    setIsHandRaised(next);
-
+    if (!room || isStealthAdmin || handSendPendingRef.current || connState !== "connected") return;
+    const currentRoom = room;
+    const identity = room.localParticipant.identity;
+    const next = handStateRef.current.get(identity) !== true;
+    handSendPendingRef.current = true;
+    setHandSendPending(true);
     try {
-      let meta: any = {};
-      try {
-        meta = JSON.parse(room.localParticipant.metadata || "{}");
-      } catch {}
-      meta.handRaised = next;
-      await room.localParticipant.setMetadata(JSON.stringify(meta)).catch(() => {});
-    } catch {}
-
-    const payload = JSON.stringify({
-      type: "HAND_RAISE",
-      targetIdentity: room.localParticipant.identity,
-      handRaised: next
-    });
-    await room.localParticipant.publishData(new TextEncoder().encode(payload), { reliable: true });
-
-    updateParticipantList(room);
+      await sendHandMessage(room, { type: "HAND_RAISE", handRaised: next });
+      if (roomRef.current !== currentRoom) return;
+      handStateRef.current.set(identity, next);
+      setIsHandRaised(next);
+      updateParticipantList(room);
+    } catch (error) {
+      reportHandFailure(error, "toggle");
+      if (roomRef.current === currentRoom) {
+        setClassroomNotice({ text: "לא ניתן לעדכן את היד. נסה שוב.", type: "warn" });
+      }
+    } finally {
+      handSendPendingRef.current = false;
+      setHandSendPending(false);
+    }
   };
 
   // Send In-Room Chat Message
@@ -2630,8 +2695,11 @@ export function ClassroomPage() {
 
                     <button
                       onClick={toggleHandRaise}
+                      disabled={handSendPending || connState !== "connected"}
+                      aria-pressed={isHandRaised}
+                      aria-busy={handSendPending}
                       className={cn(
-                        "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200 shadow-sm",
+                        "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition duration-200 shadow-sm disabled:opacity-50 disabled:cursor-wait",
                         isHandRaised
                           ? "bg-amber-600 text-white"
                           : "border border-slate-200 dark:border-transparent bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"

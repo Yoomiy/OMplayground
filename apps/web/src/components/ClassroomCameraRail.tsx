@@ -10,7 +10,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type RefObject
 } from "react";
-import { Crown, Grip, Hand, Mic, MicOff, Video as VideoIcon, VideoOff } from "lucide-react";
+import { Crown, Grip, Mic, MicOff, Video as VideoIcon, VideoOff } from "lucide-react";
 import { cn } from "@/lib/cn";
 import {
   DEFAULT_CAMERA_TILE_HEIGHT,
@@ -173,10 +173,14 @@ const CameraTile = memo(function CameraTile({
       </div>
 
       {participant.isHandRaised && (
-        <div className="pointer-events-none absolute bottom-1.5 left-1/2 z-10 flex -translate-x-1/2 animate-bounce items-center justify-center gap-1 rounded-full bg-amber-500 px-2.5 py-0.5 text-[10px] font-black text-slate-950 shadow-lg">
-          <Hand className="size-3 fill-slate-950" />
-          <span>הרם/ה יד ✋</span>
-        </div>
+        <span
+          role="img"
+          aria-label="הרם/ה יד"
+          title="הרם/ה יד"
+          className="pointer-events-none absolute bottom-1.5 right-1.5 z-10 text-2xl leading-none drop-shadow-md"
+        >
+          ✋
+        </span>
       )}
 
       {viewerIsHost && !participant.isMe && (
