@@ -15,3 +15,7 @@ Godot_v4.4-stable_linux.x86_64
 .worktrees/
 tmp/emsdk/
 AGENTS.md
+experiments/
+
+# Environment-local VPS hosting configuration
+ops/
