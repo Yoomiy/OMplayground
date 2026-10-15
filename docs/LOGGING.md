@@ -200,7 +200,8 @@ Never pass these values to Pino, Edge logs, telemetry, or audit metadata:
 
 - authorization headers, cookies, passwords, JWTs, access/refresh tokens,
   LiveKit tokens, presenter capabilities, conversion tickets, or secret hashes;
-- chat/private-message bodies, feedback text, document contents, filenames,
+- chat/private-message bodies, feedback text, document contents, filenames
+  (except document names in the document-converter's conversion lifecycle logs),
   screenshots, drawing/Yjs state, awareness IDs, viewport coordinates, or raw
   socket/request payloads;
 - full game-state blobs, inventory dumps, audio/video data, or WebRTC packets;

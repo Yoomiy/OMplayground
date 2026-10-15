@@ -41,6 +41,7 @@ interface TicketPayload {
 
 interface ConversionJob {
   id: string;
+  documentName: string;
   accessTokenHash: string;
   directory: string;
   sourcePath: string;
@@ -102,7 +103,7 @@ async function run(command: string, args: string[], cwd: string, job: Conversion
       correlationId: job.correlationId,
       protocol: "internal",
       message: "Document conversion stage completed",
-      context: { event: "DOCUMENT_CONVERSION_STAGE_COMPLETED", jobId: job.id, stage, duration_ms: Date.now() - startedAt }
+      context: { event: "DOCUMENT_CONVERSION_STAGE_COMPLETED", jobId: job.id, documentName: job.documentName, stage, duration_ms: Date.now() - startedAt }
     });
     return result;
   } catch (err) {
@@ -110,7 +111,7 @@ async function run(command: string, args: string[], cwd: string, job: Conversion
       correlationId: job.correlationId,
       protocol: "internal",
       message: "Document conversion stage failed",
-      context: { event: "DOCUMENT_CONVERSION_STAGE_FAILED", jobId: job.id, stage, duration_ms: Date.now() - startedAt },
+      context: { event: "DOCUMENT_CONVERSION_STAGE_FAILED", jobId: job.id, documentName: job.documentName, stage, duration_ms: Date.now() - startedAt },
       err: logError(err)
     });
     throw err;
@@ -132,7 +133,7 @@ async function convert(job: ConversionJob): Promise<void> {
     correlationId: job.correlationId,
     protocol: "http",
     message: "Document conversion started",
-    context: { event: "DOCUMENT_CONVERSION_STARTED", jobId: job.id, roomCode: job.roomCode, sourceFormat: job.sourceFormat }
+    context: { event: "DOCUMENT_CONVERSION_STARTED", jobId: job.id, documentName: job.documentName, roomCode: job.roomCode, sourceFormat: job.sourceFormat }
   });
   const outputDir = path.join(job.directory, "pages");
   await fs.mkdir(outputDir);
@@ -186,7 +187,7 @@ async function convert(job: ConversionJob): Promise<void> {
     correlationId: job.correlationId,
     protocol: "internal",
     message: "Document conversion stage completed",
-    context: { event: "DOCUMENT_CONVERSION_STAGE_COMPLETED", jobId: job.id, stage: "image_encode", pageCount, duration_ms: Date.now() - encodeStartedAt }
+    context: { event: "DOCUMENT_CONVERSION_STAGE_COMPLETED", jobId: job.id, documentName: job.documentName, stage: "image_encode", pageCount, duration_ms: Date.now() - encodeStartedAt }
   });
 
   const manifest = {
@@ -209,6 +210,7 @@ async function convert(job: ConversionJob): Promise<void> {
     context: {
       event: "DOCUMENT_CONVERSION_COMPLETED",
       jobId: job.id,
+      documentName: job.documentName,
       roomCode: job.roomCode,
       sourceFormat: job.sourceFormat,
       pageCount,
@@ -234,7 +236,7 @@ async function pumpQueue() {
       protocol: "internal",
       err: logError(error),
       message: "Document conversion failed",
-      context: { event: "DOCUMENT_CONVERSION_FAILED", jobId: job.id, roomCode: job.roomCode, sourceFormat: job.sourceFormat }
+      context: { event: "DOCUMENT_CONVERSION_FAILED", jobId: job.id, documentName: job.documentName, roomCode: job.roomCode, sourceFormat: job.sourceFormat }
     });
   } finally {
     workerActive = false;
@@ -253,7 +255,7 @@ async function removeJob(id: string) {
     correlationId: job.correlationId,
     protocol: "http",
     message: "Document conversion job removed",
-    context: { event: "DOCUMENT_CONVERSION_REMOVED", jobId: job.id, roomCode: job.roomCode }
+    context: { event: "DOCUMENT_CONVERSION_REMOVED", jobId: job.id, documentName: job.documentName, roomCode: job.roomCode }
   });
 }
 
@@ -324,6 +326,7 @@ app.post("/v1/conversions", async (req, res) => {
     const accessToken = base64url(crypto.randomBytes(32));
     jobs.set(id, {
       id,
+      documentName: ticket.fileName,
       accessTokenHash: crypto.createHash("sha256").update(accessToken).digest("hex"),
       directory,
       sourcePath,
@@ -338,7 +341,7 @@ app.post("/v1/conversions", async (req, res) => {
       correlationId: ticket.correlationId ?? (req as express.Request & { correlationId?: string }).correlationId,
       protocol: "http",
       message: "Document conversion job accepted",
-      context: { event: "DOCUMENT_CONVERSION_ACCEPTED", jobId: id, roomCode: ticket.roomCode, sourceFormat: ticket.sourceFormat, sizeBytes: ticket.sizeBytes, queueDepth: queue.length }
+      context: { event: "DOCUMENT_CONVERSION_ACCEPTED", jobId: id, documentName: ticket.fileName, roomCode: ticket.roomCode, sourceFormat: ticket.sourceFormat, sizeBytes: ticket.sizeBytes, queueDepth: queue.length }
     });
     void pumpQueue();
     res.status(202).json({ id, accessToken });
@@ -380,7 +383,7 @@ app.get("/v1/conversions/:id/result", (req, res) => {
       logHttpFailure(logger, req, err, "DOCUMENT_CONVERSION_DOWNLOAD_FAILED", { jobId: job.id });
       return;
     }
-    logger.info({ correlationId: job.correlationId, protocol: "http", message: "Document conversion result downloaded", context: { event: "DOCUMENT_CONVERSION_DOWNLOADED", jobId: job.id, roomCode: job.roomCode } });
+    logger.info({ correlationId: job.correlationId, protocol: "http", message: "Document conversion result downloaded", context: { event: "DOCUMENT_CONVERSION_DOWNLOADED", jobId: job.id, documentName: job.documentName, roomCode: job.roomCode } });
   });
 });
 
