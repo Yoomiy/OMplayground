@@ -205,13 +205,61 @@ Never pass these values to Pino, Edge logs, telemetry, or audit metadata:
   screenshots, drawing/Yjs state, awareness IDs, viewport coordinates, or raw
   socket/request payloads;
 - full game-state blobs, inventory dumps, audio/video data, or WebRTC packets;
-- usernames, display names, full names, email addresses, or raw IP addresses
+- usernames, display names, full names, or email addresses
   unless a documented security requirement explicitly needs them and access,
-  retention, and redaction have been reviewed.
+  retention, and redaction have been reviewed;
+- raw IP addresses outside the school access-security policy below.
 
 Prefer opaque IDs, counts, enums, booleans, durations, error codes, and bounded
 reason categories. Review new context objects field by field; nested objects can
 accidentally carry sensitive values.
+
+### School access-security policy
+
+The school operates online, with students normally connecting from home
+networks. School staff need evidence to investigate unauthorized account use
+and unknown people entering classrooms through guest access. For this purpose,
+server-side security records may include the full client IP address alongside
+the existing identity and correlation fields. Opaque IDs alone do not provide
+the network evidence needed for these investigations.
+
+- **Covered events:** successful and rejected account authentication and
+  classroom entry attempts, including guest entry and access-token issuance or
+  rejection. Distinguish token issuance from actual entry; a token being issued
+  does not prove the person joined a class.
+- **Record shape:** include timestamp, stable event name, client IP when
+  reliably available, verified account ID or server-issued guest participant
+  key when available, classroom identifier when relevant, authentication method,
+  outcome, bounded rejection reason, and correlation ID. Preserve identity
+  fields alongside the IP. For unauthenticated attempts, leave verified identity
+  absent rather than treating a submitted account ID as verified.
+- **Trusted source:** derive the IP at the server boundary using the deployed
+  platform's documented proxy configuration. Accept forwarding headers only
+  through trusted proxies. Never use a browser-submitted IP or an arbitrary
+  forwarded-header value as authoritative evidence. If a client IP cannot be
+  established reliably, omit it and record that limitation instead of presenting
+  a proxy address as the visitor's IP.
+- **Interpretation:** siblings or other household members may share a public
+  IP, and addresses can change or be shared through VPNs and other networks.
+  Correlate IPs with identities, times, and classrooms. An IP match is evidence
+  for staff investigation, not proof of a specific person's identity or grounds
+  for automatic exclusion by itself.
+- **Access and use:** these records are for authorized school staff conducting
+  school access and account-security investigations. Restrict both application
+  access and hosting/log-drain access accordingly. Any search results or exports
+  containing these fields must have the same access restrictions.
+- **Retention:** the retention duration and deletion mechanism must be documented
+  for each destination before IP collection is enabled. The duration is not yet
+  selected by this policy; collection must not silently become indefinite.
+- **Scope:** this exception permits IPs in the covered server-side security
+  events, including durable security audit records where appropriate. It does
+  not enable blanket HTTP access logging of IPs, browser IP telemetry, or IP
+  logging in the document converter. MAC address collection is outside scope.
+  Credentials, tokens, and user content remain prohibited.
+
+This section defines the approved purpose and scope. It does not imply that IP
+collection, proxy validation, staff access restrictions, or retention enforcement
+have already been implemented or verified.
 
 ## 7. Failure and acknowledgement contract
 
