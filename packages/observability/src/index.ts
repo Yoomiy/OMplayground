@@ -1,5 +1,7 @@
 export { createLogger, type ServiceName } from "./logger";
 export { logError } from "./error";
+export { readSecurityClientIp, type ClientIpSource } from "./clientIp";
+export { classroomAdmissionIps, ClassroomAdmissionIpCache } from "./classroomAdmissionIp";
 export {
   newCorrelationId,
   correlationMiddleware,
@@ -25,7 +27,7 @@ export {
 } from "./socketLifecycle";
 export { mountTelemetryRoutes } from "./telemetryIngest";
 export { auditMetadata } from "./auditMetadata";
-export { mountLiveKitWebhook, liveKitRoomContext, type LiveKitRoomContext } from "./livekitWebhook";
+export { mountLiveKitWebhook, liveKitRoomContext, classroomVisitEvidence, type LiveKitRoomContext } from "./livekitWebhook";
 export { fetchLiveKitVoiceStats } from "./livekitVoiceStats";
 export { logHttpFailure, observeBackgroundTask } from "./operational";
 export { installProcessLifecycle, type ProcessLifecycleOptions } from "./processLifecycle";

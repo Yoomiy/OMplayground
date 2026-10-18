@@ -248,9 +248,9 @@ the network evidence needed for these investigations.
   school access and account-security investigations. Restrict both application
   access and hosting/log-drain access accordingly. Any search results or exports
   containing these fields must have the same access restrictions.
-- **Retention:** the retention duration and deletion mechanism must be documented
-  for each destination before IP collection is enabled. The duration is not yet
-  selected by this policy; collection must not silently become indefinite.
+- **Retention:** the hosting platform and configured log destinations manage
+  retention and deletion. Classroom IP evidence stays in operational logs;
+  do not create a database copy with a separate retention lifecycle.
 - **Scope:** this exception permits IPs in the covered server-side security
   events, including durable security audit records where appropriate. It does
   not enable blanket HTTP access logging of IPs, browser IP telemetry, or IP
@@ -260,6 +260,84 @@ the network evidence needed for these investigations.
 This section defines the approved purpose and scope. It does not imply that IP
 collection, proxy validation, staff access restrictions, or retention enforcement
 have already been implemented or verified.
+
+### Classroom security event contract
+
+Account login IPs are already available in Supabase. The application records
+classroom admission and connection evidence through the shared Pino logger.
+
+- `CLASSROOM_RTC_TOKEN_ISSUED`, `CLASSROOM_RTC_TOKEN_DENIED`, and
+  `CLASSROOM_RTC_TOKEN_FAILED`: one terminal admission record per POST request,
+  including rate-limit/body-parser rejection and connection closure. Fields:
+  `context.admissionId`, `clientIp` when available, `ipSource`, `ipStatus`,
+  `httpStatus`, `reason`, `duration_ms`, `accountTokenProvided`, and resolved
+  identity when available. `roomCode` and `correlationId` are top-level fields.
+  Requests rejected before body parsing may have no room or identity.
+  Classroom body-parser failures use bounded reasons such as `invalid_json` or
+  `body_too_large`; never log the parser error itself, which can contain submitted
+  content. The outcome record replaces Express's default parser-error reporting
+  for these requests.
+- Resolved identity fields: `context.accountId` is a verified account identifier;
+  `participantIdentity` is the LiveKit identity; `participantKey` is the attendance
+  key; `authenticationMethod` is `account`, `guest`, or `delegate`. Also retain
+  `role` and `isHost`. `accountTokenOutcome` distinguishes `absent`, `accepted`,
+  and `unverified`. The last includes invalid credentials and authentication
+  lookup failures: it must not be interpreted as proof of a bad password.
+  Existing guest fallback behavior is preserved and visible in these fields.
+- Guest attendance keys can be supplied by the browser and reset. They are
+  correlation hints, not verified personal or device identities.
+- `CLASSROOM_PARTICIPANT_JOINED` and `CLASSROOM_PARTICIPANT_LEFT`: LiveKit
+  presence evidence with `context.evidenceSource` (`webhook` or `reconciliation`),
+  `context.admissionId`, `participantIdentity`,
+  `participantKey`, `roomSid`, `participantSid`, `webhookEventId`, and `occurredAt`.
+  The admission ID is server-generated and placed in issued token metadata;
+  IPs and credentials are never put there. It links to the IP observed when the
+  token was requested, not a measurement of the later media connection's IP.
+  Existing tokens may have no admission ID (`admissionLink: unavailable`).
+  Webhook retries can repeat records; deduplicate by `webhookEventId`. Verified
+  connection evidence is logged before attendance persistence so a database
+  failure does not hide the connection.
+  The independent 30-second reconciliation also logs observed transitions,
+  including departures when the last participant or the whole room disappears.
+  It emits no per-poll logs for unchanged participants and does not interpret
+  failed LiveKit reads as departures. Reconciliation evidence is logged before
+  attendance database access, so database failures do not hide observations.
+  For departures recovered from stored open visits after a restart, only room
+  and participant SIDs may be available. Follow earlier logs by those SIDs.
+  Reconciliation departure `occurredAt`/`observedAt` is detection time
+  (`timeAccuracy: detection_time`), not an exact departure timestamp. Observed
+  joins use LiveKit's join time. Different sources may report the same visit;
+  correlate by room SID, participant SID, and event type. A visit entirely
+  between polls can be missed if no webhook arrived and no visit was recorded.
+  Webhook delivery is required for complete coverage of short visits.
+  Join/leave records also repeat `context.clientIp`, `ipSource`, and `ipStatus`
+  from the matching admission, with `ipObservation: admission`. This is the
+  address seen at token issuance, not a new measurement at disconnect or the
+  webhook sender's address. The association is held only in server memory,
+  bound to admission ID, classroom and participant identity. It is limited to
+  10,000 entries, expires after five hours of inactivity, and is refreshed by
+  observed activity. After a restart, expiry, eviction or when an admission ID
+  is missing, leave records explicitly report `ipStatus: unavailable` and
+  `ipUnavailableReason: admission_not_cached`; earlier retained admission logs
+  can still be searched. IPs are never copied into participant metadata or
+  attendance tables.
+  These records belong to `service=minecraft-server`; a drawing socket's
+  `DISCONNECT` record in `game-server` is not a classroom departure.
+- `CLASSROOM_PARTICIPANT_BLOCKED` and `CLASSROOM_PARTICIPANT_REMOVED`: successful
+  moderation boundaries, with actor and target identities, classroom and
+  correlation IDs. Block records also include the durable target participant
+  key. A block can succeed even if the subsequent removal fails; each completed
+  boundary remains visible. Existing durable moderation audits continue.
+
+Investigate by filtering `context.clientIp` plus a time range, then following
+`context.admissionId` to connection events. Filter `context.accountId` for an
+account, `context.participantKey` for attendance continuity, or `roomCode` for a
+classroom. Use `context.participantSid` to distinguish individual connections.
+Token issuance alone does not establish attendance. No automatic IP blocking is
+introduced by this logging contract.
+
+For deployment configuration and manual IP verification, see the classroom
+deployment notes in `docs/virtual_classrooms.md`.
 
 ## 7. Failure and acknowledgement contract
 

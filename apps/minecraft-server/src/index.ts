@@ -20,10 +20,12 @@ import {
   observeBackgroundTask,
   correlationMiddleware,
   createHttpLogger,
+  type ClientIpSource,
   mountLiveKitWebhook,
   installProcessLifecycle,
   installSocketExceptionGuard
 } from "@playground/observability";
+import { classroomAdmissionLogger, classroomAdmissionEvidence, classroomAdmissionBodyError } from "./classroomSecurity";
 import { Server } from "socket.io";
 import { createClient } from "@supabase/supabase-js";
 import {
@@ -338,6 +340,17 @@ async function persistFps(supabase: any, sessionId: string, keepSession = false)
 
 const app = express();
 app.set("trust proxy", 1);
+const classroomIpSource = process.env.CLASSROOM_CLIENT_IP_SOURCE ?? "unavailable";
+if (!["railway", "direct", "unavailable"].includes(classroomIpSource)) {
+  throw new Error("Invalid CLASSROOM_CLIENT_IP_SOURCE");
+}
+app.use(correlationMiddleware());
+app.use(classroomAdmissionLogger(logger, classroomIpSource as ClientIpSource));
+logger[classroomIpSource === "unavailable" ? "warn" : "info"]({
+  protocol: "internal",
+  message: "Classroom security IP source configured",
+  context: { event: "CLASSROOM_SECURITY_IP_CONFIGURED", ipSource: classroomIpSource }
+});
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(
   cors({
@@ -345,7 +358,6 @@ app.use(
     credentials: true
   })
 );
-app.use(correlationMiddleware());
 app.use(createHttpLogger(logger));
 
 const httpLimiter = rateLimit({
@@ -409,6 +421,7 @@ if (LIVEKIT_API_KEY && LIVEKIT_API_SECRET) {
 // The signed LiveKit route above must receive the untouched raw request body.
 // Parse JSON only after it has been mounted.
 app.use(express.json());
+app.use(classroomAdmissionBodyError);
 
 const CLASSROOM_CLEANUP_MIN_DAYS = 1;
 const CLASSROOM_CLEANUP_MAX_DAYS = 365;
@@ -829,14 +842,16 @@ app.post("/rtc/token", async (req, res) => {
 });
 
 app.post("/rtc/classroom-token", async (req, res) => {
+  const evidence = classroomAdmissionEvidence(res);
   const correlationId = (req as express.Request & { correlationId?: string })
     .correlationId;
   const requestedRoomCode = typeof req.body?.roomCode === "string"
     ? req.body.roomCode.trim().slice(0, 80)
     : undefined;
+  evidence.roomCode = requestedRoomCode;
   try {
     const accessToken = req.headers.authorization?.replace(/^Bearer\s+/i, "");
-    const { roomCode, displayName, spectateMode, presenterToken: reconnectPresenterToken, guestAttendanceKey } = req.body as {
+    const { roomCode, displayName, spectateMode, presenterToken: reconnectPresenterToken, guestAttendanceKey } = (req.body ?? {}) as {
       roomCode?: string;
       displayName?: string;
       spectateMode?: "invisible" | "visible";
@@ -844,17 +859,21 @@ app.post("/rtc/classroom-token", async (req, res) => {
       guestAttendanceKey?: string;
     };
 
-    if (!roomCode) {
+    if (typeof roomCode !== "string" || !roomCode.trim() || roomCode.length > 80 ||
+        (displayName !== undefined && typeof displayName !== "string")) {
+      evidence.reason = "invalid_request";
       res.status(400).json({ error: "missing_room_code" });
       return;
     }
     if (!supabaseAdmin) {
+      evidence.reason = "server_config";
       res.status(503).json({ error: "server_config" });
       return;
     }
 
     const classroom = await getActiveClassroom(roomCode);
     if (!classroom) {
+      evidence.reason = "classroom_not_found";
       res.status(404).json({ error: "classroom_not_found" });
       return;
     }
@@ -862,6 +881,7 @@ app.post("/rtc/classroom-token", async (req, res) => {
     try {
       drawingSessionId = await ensureClassroomDrawingSession(classroom);
     } catch (error) {
+      evidence.reason = "classroom_board_unavailable";
       logger.error({
         correlationId,
         roomCode,
@@ -934,7 +954,9 @@ app.post("/rtc/classroom-token", async (req, res) => {
       spectateMode,
       delegate: delegate ? { id: delegate.delegateId, displayName: delegate.displayName } : null,
       presenterIdentityOverride,
-      guestAttendanceKey: guestParticipantKey
+      guestAttendanceKey: guestParticipantKey,
+      admissionId: evidence.admissionId,
+      onSecurityIdentity: (identity) => { evidence.identity = identity; }
     });
     let presentation = presentationRoomState(classroom.settings);
     // The creator is normally first, but any first visible host can bootstrap
@@ -952,7 +974,9 @@ app.post("/rtc/classroom-token", async (req, res) => {
         spectateMode,
         delegate: delegate ? { id: delegate.delegateId, displayName: delegate.displayName } : null,
         presenterIdentityOverride: result.userId,
-        guestAttendanceKey: classroomGuestAttendanceKey(roomCode, guestAttendanceKey)
+        guestAttendanceKey: classroomGuestAttendanceKey(roomCode, guestAttendanceKey),
+        admissionId: evidence.admissionId,
+        onSecurityIdentity: (identity) => { evidence.identity = identity; }
       });
     }
     const delegateGameToken = delegate
@@ -979,20 +1003,7 @@ app.post("/rtc/classroom-token", async (req, res) => {
       SUPABASE_SERVICE_ROLE_KEY
     );
 
-    logger.info({
-      correlationId,
-      userId: result.userId,
-      roomCode,
-      protocol: "http",
-      message: "Classroom LiveKit token issued",
-      context: {
-        event: "CLASSROOM_RTC_TOKEN_ISSUED",
-        livekitRoom: result.livekitRoom,
-        isHost: result.isHost,
-        role: result.role,
-        status: "success"
-      }
-    });
+    evidence.issued = true;
 
     res.json({
       token: result.token,
@@ -1024,26 +1035,18 @@ app.post("/rtc/classroom-token", async (req, res) => {
   } catch (err) {
     if (err instanceof LiveKitTokenError) {
       const reason = err.reason;
-      logger.warn({
-        correlationId,
-        protocol: "http",
-        message: "Classroom LiveKit token denied",
-        context: {
-          event: "CLASSROOM_RTC_TOKEN_DENIED",
-          reason,
-          status: "failed"
-        }
-      });
+      evidence.reason = reason;
       const status = reason === "server_config" ? 503 : reason === "classroom_blocked" ? 403 : 400;
       res.status(status).json({ error: reason, message: err.message });
       return;
     }
 
+    evidence.reason = "internal_server_error";
     logHttpFailure(
       logger,
       req,
       err,
-      "CLASSROOM_RTC_TOKEN_FAILED",
+      "CLASSROOM_RTC_TOKEN_INTERNAL_FAILED",
       requestedRoomCode ? { roomCode: requestedRoomCode } : {}
     );
     res.status(500).json({
@@ -1889,8 +1892,29 @@ app.post("/rtc/classroom-remove-participant", async (req, res) => {
         targetIdentity.trim()
       );
       await blockClassroomParticipant(supabaseAdmin, classroom.id, target);
+      logger.info({
+        correlationId: (req as express.Request & { correlationId?: string }).correlationId,
+        roomCode: classroom.room_code,
+        protocol: "http",
+        message: "Classroom participant re-entry blocked",
+        context: {
+          event: "CLASSROOM_PARTICIPANT_BLOCKED", status: "success",
+          actorIdentity: authorityIdentity(authority),
+          participantIdentity: target.identity, participantKey: target.participantKey
+        }
+      });
     }
     await removeClassroomParticipant(classroom.room_code, targetIdentity.trim());
+    logger.info({
+      correlationId: (req as express.Request & { correlationId?: string }).correlationId,
+      roomCode: classroom.room_code,
+      protocol: "http",
+      message: "Classroom participant removed",
+      context: {
+        event: "CLASSROOM_PARTICIPANT_REMOVED", status: "success",
+        actorIdentity: authorityIdentity(authority), participantIdentity: targetIdentity.trim(), blockRejoin
+      }
+    });
     await appendClassroomAudit(req, classroom, authority, "classroom_participant_removed", {
       target_identity: targetIdentity.trim(),
       block_rejoin: blockRejoin

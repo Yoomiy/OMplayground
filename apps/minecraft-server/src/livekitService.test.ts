@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { RoomServiceClient, TrackSource } from "livekit-server-sdk";
+import * as authCache from "./authCache";
 import {
   classroomPublishSourcesForRole,
   evictClassroomParticipants,
@@ -127,6 +128,7 @@ describe("generateLiveKitToken roster gate", () => {
   });
 
   it("denies a new classroom token after that participant was kicked", async () => {
+    const onSecurityIdentity = jest.fn();
     const classroomChain = {
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
@@ -157,9 +159,51 @@ describe("generateLiveKitToken roster gate", () => {
       supabaseAdmin: supabase,
       roomCode: "room-123",
       displayName: "Student",
-      guestAttendanceKey: "guest:room-123:11111111-1111-4111-8111-111111111111"
+      guestAttendanceKey: "guest:room-123:11111111-1111-4111-8111-111111111111",
+      onSecurityIdentity
     })).rejects.toMatchObject({ reason: "classroom_blocked" });
+    expect(onSecurityIdentity).toHaveBeenCalledWith(expect.objectContaining({
+      participantKey: "guest:room-123:11111111-1111-4111-8111-111111111111",
+      authenticationMethod: "guest", accountTokenOutcome: "absent"
+    }));
   });
+
+  it.each(["guest", "account", "unverified", "delegate"])(
+    "links issued tokens to admission evidence for %s access without putting IPs in metadata",
+    async (kind) => {
+      const profile = { userId: "account-1", role: "kid", gender: "boy" as const,
+        grade: null, full_name: "Student", is_active: true };
+      const auth = jest.spyOn(authCache, "getCachedAuth");
+      if (kind === "account") auth.mockResolvedValue(profile);
+      else auth.mockRejectedValue(new Error("UNAUTHORIZED"));
+      const classroom = { id: "classroom-1", room_code: "room-123", teacher_id: "teacher-1", status: "active", settings: {} };
+      const supabase = {
+        from: jest.fn((table: string) => ({
+          select: jest.fn().mockReturnThis(), eq: jest.fn().mockReturnThis(),
+          maybeSingle: jest.fn().mockResolvedValue({ data: table === "classroom_sessions" ? classroom : null, error: null })
+        }))
+      } as unknown as SupabaseClient;
+      const onSecurityIdentity = jest.fn();
+      const admissionId = "11111111-1111-4111-8111-111111111111";
+      const result = await generateClassroomToken({
+        supabaseAdmin: supabase, roomCode: "room-123", displayName: "Student",
+        accessToken: ["account", "unverified"].includes(kind) ? "credential" : undefined,
+        delegate: kind === "delegate" ? { id: "delegate-1", displayName: "Delegate" } : null,
+        guestAttendanceKey: "guest:room-123:browser-key", admissionId, onSecurityIdentity
+      });
+      expect(onSecurityIdentity).toHaveBeenCalledWith(expect.objectContaining({
+        accountId: kind === "account" ? "account-1" : undefined,
+        authenticationMethod: kind === "account" ? "account" : kind === "delegate" ? "delegate" : "guest",
+        accountTokenOutcome: kind === "account" ? "accepted" : kind === "unverified" ? "unverified" : "absent"
+      }));
+      const payload = JSON.parse(Buffer.from(result.token.split(".")[1], "base64url").toString("utf8"));
+      const metadata = JSON.parse(payload.metadata);
+      expect(metadata.admissionId).toEqual(admissionId);
+      expect(metadata.attendanceKey).toEqual(result.attendanceKey);
+      expect(metadata.clientIp).toBeUndefined();
+      expect(metadata.accessToken).toBeUndefined();
+    }
+  );
 
   it("actively removes every attendee and revokes each active classroom token", async () => {
     const listParticipants = jest
