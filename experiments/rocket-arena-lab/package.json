@@ -1,0 +1,32 @@
+{
+  "name": "rocket-arena",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Authoritative browser multiplayer car-ball game, 3v3 Quick Match and up to 4v4 Custom Rooms (Rocket League-style)",
+  "workspaces": [
+    "shared",
+    "simulation",
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "test:network": "tsx --conditions=development scripts/playtest-smoke.mts",
+    "dev": "concurrently -n server,client -c blue,green \"npm run dev -w server\" \"npm run dev -w client\"",
+    "dev:server": "npm run dev -w server",
+    "dev:client": "npm run dev -w client",
+    "build": "tsc -b shared simulation && npm run build -w server && npm run build -w client",
+    "build:app": "node scripts/build-app.mjs",
+    "test:app": "tsx --conditions=development scripts/check-app-integration.mts",
+    "typecheck": "tsc -b",
+    "test": "tsx --conditions=development --test \"shared/tests/*.test.ts\" \"server/src/**/*.test.ts\" \"client/tests/*.test.ts\"",
+    "test:physics": "tsx --conditions=development server/src/physics/test-ball.ts && tsx --conditions=development server/src/physics/test-car.ts && tsx --conditions=development server/src/physics/test-controller.ts && tsx --conditions=development server/src/physics/test-goal-tunnel.ts && tsx --conditions=development server/src/physics/test-grounding.ts && tsx --conditions=development server/src/physics/test-impact.ts && tsx --conditions=development server/src/physics/test-jump-sequence.ts",
+    "dev:lab": "concurrently -k -n server,client \"env NODE_ENV=production ROCKET_ARENA_DEV_CONTROLS=false npm run dev:server\" \"npm run dev:client\"",
+    "test:lab": "tsx --conditions=development --test \"simulation/tests/*.test.ts\" \"server/src/rooms/lab-*.test.ts\" \"client/tests/lab-*.test.ts\" && node --test scripts/bot-fleet.test.mjs",
+    "lab": "concurrently -k -n server,client \"env NODE_ENV=production ROCKET_ARENA_DEV_CONTROLS=false npm run start -w server\" \"npm run preview -w client\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

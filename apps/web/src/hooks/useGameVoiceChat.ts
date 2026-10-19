@@ -105,7 +105,7 @@ export function useGameVoiceChat(args: {
         const voiceToken = await requestToken();
         if (!active) return;
         await room.connect(voiceToken.serverUrl, voiceToken.token);
-        if (!active) return;
+        if (!active) { await room.disconnect(); return; }
         setConnectionState("connected");
         setCanPlaybackAudio(room.canPlaybackAudio);
         refreshParticipants();

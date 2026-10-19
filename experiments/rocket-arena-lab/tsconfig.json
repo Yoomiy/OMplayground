@@ -1,0 +1,17 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "./shared"
+    },
+    {
+      "path": "./simulation"
+    },
+    {
+      "path": "./server"
+    },
+    {
+      "path": "./client"
+    }
+  ]
+}

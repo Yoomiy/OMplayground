@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="he" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/src/assets/generated/rocket-arena-favicon.png" />
+  <meta name="theme-color" content="#04070d" />
+  <title>רוקט ארנה</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #04070d;
+      font-family: system-ui, "Segoe UI", Arial, "Noto Sans Hebrew", "DejaVu Sans", sans-serif;
+    }
+    /* Hebrew needs normal word spacing; Latin display tracking hurts readability. */
+    html[lang="he"] :is(#hud, #lobby, #pause-menu, #game-over, #driving-lab) :is(h2, h3, button, span, p, label, output, strong) {
+      letter-spacing: normal;
+    }
+    #app {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <!--
+    THESIS: Rocket Arena is an orbital foundry built around readable competitive motion, refusing the generic neon-box prototype.
+    OWN-WORLD: Cold aerospace alloys, dark structural ribs, restrained blue/orange team light, faceted mechanical panels, and collider-aligned containment.
+    STORY: Players read team territory, locate the ball and goals instantly, then feel speed through stable framing and synchronized vehicle motion.
+    FIRST VIEWPORT: A full enclosed stadium orbits behind the lobby; during play, the car owns the lower frame while goals, stands, and trusses establish depth.
+    FORM: Brief-pinned procedural night stadium; direction 1 of 1; seed VISUAL-MODELING-1.
+    FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+  -->
+  <div id="app"></div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

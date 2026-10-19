@@ -6,6 +6,8 @@ Canonical product + architecture guide: **[`ARCHITECTURE.md`](../ARCHITECTURE.md
 
 | Doc | Purpose |
 |-----|---------|
+| [`multiplayer-game-integration.md`](multiplayer-game-integration.md) | Agent guide for open-source multiplayer imports: runtime decisions, integration contract, pipeline, acceptance and hosting |
+| [`multiplayer-experiment-workflow.md`](multiplayer-experiment-workflow.md) | Environment-specific multiplayer labs on the Oracle dev VPS only |
 | [`HARDENING.md`](HARDENING.md) | Production checklist — rate limits, health, logging, scaling |
 | [`LOGGING.md`](LOGGING.md) | Contributor contract for logging, audit events, telemetry, privacy, and new processes |
 | [`THEMING_AND_COMPONENTS.md`](THEMING_AND_COMPONENTS.md) | Contributor rules for switchable themes, color contrast, and future UI components |
@@ -25,3 +27,5 @@ Canonical product + architecture guide: **[`ARCHITECTURE.md`](../ARCHITECTURE.md
 ## Agent skills (not duplicated here)
 
 Game and voxel how-tos live in `.cursor/skills/` — e.g. `playground-add-game`, `playground-voxel-blocks`.
+
+For the Oracle dev VPS only: [`.agents/skills/playground-multiplayer-lab/SKILL.md`](../.agents/skills/playground-multiplayer-lab/SKILL.md). This skill does not apply to other checkouts or production deployments.
