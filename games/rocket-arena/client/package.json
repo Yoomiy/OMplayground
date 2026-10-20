@@ -1,0 +1,19 @@
+{
+  "name": "@rocket-arena/client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@rocket-arena/shared": "*",
+    "colyseus.js": "^0.15.28",
+    "three": "^0.170.0",
+    "@rocket-arena/simulation": "*"
+  },
+  "devDependencies": {
+    "@types/three": "^0.170.0",
+    "vite": "^6.0.7"
+  }
+}

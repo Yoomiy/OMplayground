@@ -53,11 +53,11 @@ Published releases must not read a changing development source tree. Keep develo
 
 App reservations: 8080 for the main game server, 8081 for the voxel server. Forwarded 5173/3000 are development entry points. Choose unoccupied loopback backend ports in the 19000–19999 range for new published labs; record allocations before launching. Caddy uses public 80/443, so a static client needs no additional listener. Full HTTP applications may need another loopback port.
 
-Rocket Arena's existing configuration defaults and running overrides differ:
+Historical Rocket Arena lab inventory (the lab source is no longer part of the integrated game):
 
 | Item | Observed state on 2026-10-12 |
 | --- | --- |
-| Source | `experiments/rocket-arena-lab/` |
+| Integrated source | [`games/rocket-arena/`](../games/rocket-arena/README.md), authenticated app service |
 | Default development | client 5173, backend 2567 |
 | Default preview | client 3000 |
 | Published backend | `127.0.0.1:19001`, `playground-lab-rocket.service` |
@@ -67,7 +67,7 @@ Rocket Arena's existing configuration defaults and running overrides differ:
 | Releases | `/srv/playground-labs/rocket/releases/`; snapshot hashes and active release in its `LAB.md` |
 | Superseded test | Transient backend 2568, preview 8081 and Cloudflare tunnel; retired after direct-host verification |
 
-Reinspect listeners and service definitions before using this inventory. Do not kill an unfamiliar process or replace another agent's service to free a port. `PORT` and `LAB_SERVER_PORT` must agree when using that lab's development/preview proxy. Its full development and preview commands share a backend by default. Rocket's persistent unit source is `ops/labs/rocket.service`; its Caddy hostname block is deployed.
+The production integration has no standalone lobby or lab deployment tooling. Use its [deployment guide](../games/rocket-arena/DEPLOYMENT.md) for app development and Railway; the inventory above records older VPS services only. Reinspect listeners and service definitions before using this inventory. Do not kill an unfamiliar process or replace another agent's service to free a port. `PORT` and `LAB_SERVER_PORT` must agree when using that lab's development/preview proxy. Its full development and preview commands share a backend by default. Rocket's persistent unit source is `ops/labs/rocket.service`; its Caddy hostname block is deployed.
 
 ## Publishing a game
 

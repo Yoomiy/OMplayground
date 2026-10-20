@@ -6,23 +6,33 @@ import { parseEnv } from 'node:util';
 import { createServer } from 'node:net';
 
 const repo = new URL('../', import.meta.url);
-const rocket = new URL('experiments/rocket-arena-lab/', repo);
-async function readEnv(path) {
+const rocket = new URL('games/rocket-arena/', repo);
+async function readEnv(path, fallback) {
   try { return parseEnv(await readFile(new URL(path, repo), 'utf8')); }
-  catch (error) { if (error.code === 'ENOENT') return {}; throw error; }
+  catch (error) {
+    if (error.code === 'ENOENT') return fallback ? readEnv(fallback) : {};
+    throw error;
+  }
 }
 
 // Reuse only Supabase credentials from the main server, never its port/CORS.
 // Rocket-specific overrides stay in a gitignored, server-only file.
 const serverEnv = await readEnv('apps/game-server/.env');
-const localEnv = await readEnv('experiments/rocket-arena-lab/.env.app.local');
+const localEnv = await readEnv('games/rocket-arena/.env.app.local', 'experiments/rocket-arena-lab/.env.app.local');
 const settings = { ...localEnv, ...process.env };
 // Saved matches must remain verifiable across local dev restarts too.
 async function localTicketSecret() {
   const directory = new URL('.run/', rocket);
   const path = new URL('app-ticket-secret', directory);
   await mkdir(directory, { recursive: true });
-  try { await writeFile(path, randomBytes(32).toString('hex'), { flag: 'wx', mode: 0o600 }); }
+  try { return (await readFile(path, 'utf8')).trim(); }
+  catch (error) { if (error.code !== 'ENOENT') throw error; }
+  // Preserve existing local saves when switching from the former source layout.
+  let secret;
+  try { secret = (await readFile(new URL('experiments/rocket-arena-lab/.run/app-ticket-secret', repo), 'utf8')).trim(); }
+  catch (error) { if (error.code !== 'ENOENT') throw error; secret = randomBytes(32).toString('hex'); }
+  if (secret.length < 32) throw new Error('Existing local Rocket signing secret is invalid');
+  try { await writeFile(path, secret, { flag: 'wx', mode: 0o600 }); }
   catch (error) { if (error.code !== 'EEXIST') throw error; }
   return (await readFile(path, 'utf8')).trim();
 }
@@ -38,17 +48,15 @@ const env = {
   ROCKET_TICKET_SECRET: settings.ROCKET_TICKET_SECRET ?? await localTicketSecret(),
   APP_ORIGINS: settings.APP_ORIGINS ?? 'http://localhost:5173,http://127.0.0.1:5173',
   ROCKET_MAX_ROOMS: settings.ROCKET_MAX_ROOMS ?? '2',
-  ROCKET_MODE: 'app',
   NODE_ENV: 'production',
-  ROCKET_ARENA_DEV_CONTROLS: 'false',
+  ROCKET_TEST_HOOKS: '0',
   HOST: '127.0.0.1',
   PORT: String(port),
 };
 // Don't inherit deployment/client overrides that could serve a mismatched build.
 delete env.ROCKET_CLIENT_DIR;
-delete env.VITE_SERVER_URL;
 if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error('Set Supabase credentials in apps/game-server/.env or experiments/rocket-arena-lab/.env.app.local');
+  throw new Error('Set Supabase credentials in apps/game-server/.env or games/rocket-arena/.env.app.local');
 }
 
 // Background jobs survive restarting the foreground web command. Never hide
@@ -98,7 +106,7 @@ catch {
   await run('npm', ['ci', '--include=dev', '--no-audit', '--no-fund']);
 }
 console.log('[rocket] Building matching app client and server…');
-await run('npm', ['run', 'build:app']);
+await run('npm', ['run', 'build']);
 console.log(`[rocket] Local app service: http://localhost:${port} (forward port ${port})`);
 console.log(`[rocket] Allowed app origins: ${env.APP_ORIGINS}`);
 // Keep the app artifact optimized, but use the same readable dev logger as the other services.

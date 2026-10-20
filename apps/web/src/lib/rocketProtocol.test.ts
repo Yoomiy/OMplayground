@@ -7,7 +7,8 @@ describe('Rocket frame boundary', () => {
     for (const value of [null, {}, { protocol: 1, capabilities: 'lobby-controls' }, { protocol: 2, capabilities: ['lobby-controls', 'session-chat', 'voice'] }]) {
       expect(isRocketServiceCompatible(value)).toBe(false);
     }
-    expect(isRocketServiceCompatible({ protocol: 1, capabilities: ['lobby-controls', 'session-chat', 'voice', 'retained-matches', 'queued-roster', 'rematch', 'save-outcomes'], release: 'app-build' })).toBe(true);
+    expect(isRocketServiceCompatible({ protocol: 1, capabilities: ['lobby-controls', 'session-chat', 'voice', 'retained-matches', 'queued-roster', 'rematch', 'save-outcomes', 'platform-only'], release: 'app-build' })).toBe(true);
+    expect(isRocketServiceCompatible({ protocol: 1, capabilities: ['lobby-controls', 'session-chat', 'voice', 'retained-matches', 'queued-roster', 'rematch', 'save-outcomes'] })).toBe(false);
     expect(isRocketServiceCompatible({ protocol: 1, capabilities: ['lobby-controls', 'session-chat', 'voice', 'retained-matches', 'queued-roster', 'rematch'] })).toBe(false);
     expect(isRocketServiceCompatible({ protocol: 1, capabilities: ['lobby-controls', 'session-chat', 'voice', 'retained-matches', 'queued-roster'] })).toBe(false);
     expect(rocketError('SERVICE_OUTDATED')).toContain('להפעיל מחדש');

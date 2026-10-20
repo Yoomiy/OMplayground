@@ -107,5 +107,5 @@ export function isRocketServiceCompatible(value: unknown): boolean {
   const config = value as { protocol?: unknown; capabilities?: unknown };
   const capabilities = config.capabilities;
   return config.protocol === 1 && Array.isArray(capabilities)
-    && ['lobby-controls', 'session-chat', 'voice', 'retained-matches', 'queued-roster', 'rematch', 'save-outcomes'].every(capability => capabilities.includes(capability));
+    && ['lobby-controls', 'session-chat', 'voice', 'retained-matches', 'queued-roster', 'rematch', 'save-outcomes', 'platform-only'].every(capability => capabilities.includes(capability));
 }
