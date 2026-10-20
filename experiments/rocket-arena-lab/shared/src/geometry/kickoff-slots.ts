@@ -462,7 +462,7 @@ function validateSlotShape(
   }
   seenIds.add(expectedId);
 
-  const position = finiteTuple(
+  finiteTuple(
     candidate.position,
     3,
     `${expectedId} position`,

@@ -331,6 +331,9 @@ and two-device voice acceptance still needs a user playtest.
 
 ### Dependency review, 2026-10-19
 
+The 2026-10-20 cleanup below supersedes these counts and removes the unused
+authentication/Redis dependency branches without changing the Colyseus version.
+
 Compatible lockfile updates move Express to 4.22.3, body-parser to 1.20.8,
 proxy-addr to 2.0.8 and qs to 6.16.1. The production audit drops from 16 findings
 (including one critical) to 12: zero critical, one high, nine moderate and two low.
@@ -379,3 +382,64 @@ Focused-worktree evidence: `.run/app-clean-build.log`, `app-clean-integration.lo
 functional rather than performance evidence. Real-device microphone delivery,
 real Supabase policy/trigger acceptance, Railway setup and the dependency review
 above remain production acceptance items. The Docker image itself was not built.
+
+### Dependency and dead-code cleanup, 2026-10-20
+
+The server now imports `@colyseus/core` 0.15.57 and explicitly declares
+`@colyseus/ws-transport` 0.15.3. These are the same versions as before; replacing
+the `colyseus` umbrella removes unused authentication, OAuth and Redis packages
+without a framework/protocol upgrade. All remaining locked package versions are
+unchanged. Production dependency entries across the workspaces fall from 174 to
+51. The production audit now reports three package entries: Nano ID high, plus
+its core/transport dependents at moderate; zero critical or low entries remain.
+The fixed-size Nano ID exposure assessment above is unchanged.
+
+The Docker runtime installs only the server workspace and its shared/simulation
+dependencies. Three.js and the browser SDKs are bundled into the client build;
+they are no longer separately installed into the server image. The isolated
+runtime check verifies those exclusions and successfully boots/stops the compiled
+service. Its installed dependency files total 25,056,622 bytes. Docker itself was
+not available, so this is runtime-content verification rather than an image build.
+
+The app build selects `client/src/app.ts` before Vite processes HTML. Standalone
+play uses `main.ts` and `mountStandaloneClient`, supplying the lobby, comparison
+panel and results UI to the shared engine mount. The frame's React parent owns
+those screens in app mode. This excludes the standalone module graph and artwork
+from app output without asynchronous initialization or changes to physics,
+prediction, interpolation, ceiling defaults or telemetry.
+
+| App build output | Before | After |
+| --- | ---: | ---: |
+| Main JavaScript, minified bytes | 951,987 | 926,213 |
+| Prediction worker bytes | 2,282,779 | 2,282,779 |
+| Emitted asset bytes, total | 4,075,572 | 3,334,694 |
+
+Most of the 740,878-byte output reduction is the two unused lobby images
+(715,104 bytes). Embedded gameplay did not fetch those images previously; this
+is not a 741 KB reduction in the actual in-game network transfer. The smaller
+main JavaScript is the direct browser-code reduction. This cleanup does not
+claim an FPS or correction improvement.
+
+Removed 16 unreachable old stadium functions and their unused glyph/instance
+state (about 800 source lines), the unreferenced timer compatibility entry and
+duplicate constants barrel, unused imports/locals, obsolete task comments and
+the Rocket-specific chat re-export. Geometry validation calls remain intact.
+The shared chat component is used directly. TypeScript now rejects unused locals
+and parameters in the game workspaces.
+
+Verification: 474 engine/client tests; game/project type checks; web type check;
+app build; full HTTP/physics and actual two-client React/game browser fixtures;
+and a fresh server-only production install/compiled-runtime check passed. Local
+artifact: `app-cda7e44ef45c291b`. Evidence is in `.run/cleanup-tests.log`,
+`cleanup-typecheck.log`, `cleanup-app-build.log`, `cleanup-app-browser.log`,
+`cleanup-runtime.log`, `cleanup-size-report.json` and `app-browser-report.json`.
+Standalone development lifecycle checks passed three mount/join/dispose cycles,
+disconnect/rejoin, stale-room UI rejection, page-cache suspension and cancellation
+during matchmaking. Game workers, render loops, intervals and observers return
+to zero; the Vite-owned listener/interval baseline stays stable. A separate
+standalone production build also passed cache suspension, fresh gameplay/return
+to lobby and disposal while joining. Evidence: `cleanup-standalone-report.json`,
+`cleanup-standalone-production-report.json` and their corresponding logs in
+`.run/`. The first cold development attempt encountered Vite's dependency
+optimization reload; the stable-cache check passed without page errors.
+No real DB writes, SQL application, publication or live service restart was performed.

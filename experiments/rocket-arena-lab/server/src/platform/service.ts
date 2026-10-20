@@ -1,4 +1,4 @@
-import colyseus from 'colyseus';
+import * as colyseus from '@colyseus/core';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';

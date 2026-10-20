@@ -19,8 +19,15 @@ with tempfile.TemporaryDirectory(prefix='rocket-app-runtime-') as temporary:
         (target / workspace).mkdir()
         shutil.copy2(root / workspace / 'package.json', target / workspace / 'package.json')
         shutil.copytree(root / workspace / 'dist', target / workspace / 'dist')
-    subprocess.run(['npm', 'ci', '--omit=dev', '--ignore-scripts'], cwd=target, check=True,
+    subprocess.run(['npm', 'ci', '--omit=dev', '--workspace=@rocket-arena/server',
+                    '--include-workspace-root=false', '--ignore-scripts'], cwd=target, check=True,
                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    # Browser libraries are already bundled in client/dist. The runtime only
+    # needs the server and its shared/simulation dependencies.
+    for unused in ('three', 'colyseus.js', '@colyseus/auth', '@colyseus/redis-driver', '@colyseus/redis-presence'):
+        assert not (target / 'node_modules' / unused).exists(), unused
+    dependency_bytes = sum(path.stat().st_size for path in (target / 'node_modules').rglob('*')
+                           if path.is_file() and not path.is_symlink())
     env = {**os.environ, 'NODE_ENV': 'production', 'ROCKET_MODE': 'app', 'HOST': '127.0.0.1',
            'PORT': '19009', 'SUPABASE_URL': 'http://127.0.0.1:19007',
            'SUPABASE_SERVICE_ROLE_KEY': 'fixture-service-key',
@@ -61,7 +68,8 @@ with tempfile.TemporaryDirectory(prefix='rocket-app-runtime-') as temporary:
     assert process.returncode == 0, log.read_text()
     lines = [json.loads(line) for line in log.read_text().splitlines() if line.startswith('{')]
     assert any(line.get('service') == 'rocket-server' and line.get('context', {}).get('event') == 'ROCKET_SERVICE_READY' for line in lines)
-    report = {'status': 'PASS', 'productionInstall': True, 'compiledEntrypoint': True,
+    report = {'status': 'PASS', 'productionInstall': True, 'serverOnlyDependencies': True,
+              'installedDependencyBytes': dependency_bytes, 'compiledEntrypoint': True,
               'canonicalPlatformLogger': True, 'staticFramePolicy': True,
               'anonymousMatchmakingDenied': True, 'gracefulShutdown': True,
               'dockerImageBuilt': False}

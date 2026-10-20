@@ -637,7 +637,6 @@ function createGoalPresentation(
   const topY = bottomY + goal.opening.height;
   const depth = Math.abs(goal.backWallZ - goal.goalLineZ);
   const centerZ = (goal.goalLineZ + goal.backWallZ) / 2;
-  const frameThickness = 0.2;
   const frameDepth = 0.32;
   const fieldFaceZ = goal.goalLineZ - goal.zDirection * (frameDepth / 2 + 0.012);
 

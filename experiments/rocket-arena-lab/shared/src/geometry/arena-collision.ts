@@ -3,9 +3,6 @@ import {
   validateArenaGeometrySpec,
   type ArenaGeometrySpec,
   type ArenaSurfaceDescriptor,
-  type GoalEndDescriptor,
-  type SurfaceCapability,
-  type SurfaceSemanticKind,
 } from './arena-spec.js';
 
 /** Schema for the operational primitive/seam contract, independent of the source spec version. */

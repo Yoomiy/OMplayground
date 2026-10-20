@@ -1,4 +1,4 @@
-import colyseus from 'colyseus';
+import * as colyseus from '@colyseus/core';
 import { randomUUID } from 'node:crypto';
 import RAPIER from '@dimforge/rapier3d-compat';
 import { GameState } from '@rocket-arena/shared/schema';

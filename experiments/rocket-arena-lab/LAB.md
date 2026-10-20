@@ -675,8 +675,11 @@ uses the existing temporary `LD_LIBRARY_PATH` and `FONTCONFIG_FILE` settings.
   The link was then switched with sudo and matching readiness verified. No failed
   release was served.
 
-`client/src/client.ts` exports `mountRocketClient(container)`, returning an
-idempotent `dispose()` and reversible `suspend()` / `resume()`. One client may own
+`client/src/standalone.ts` exports `mountStandaloneClient(container)`, which
+supplies the standalone lobby/comparison UI to the shared engine mount in
+`client/src/client.ts`. App frames use the engine through `platform/bridge.ts`;
+their lobby and results belong to the React container. Both return an idempotent
+`dispose()` and reversible `suspend()` / `resume()`. One client may own
 a document; mounting a replacement disposes its predecessor. Each mount owns its
 page-cache events: a persisted `pagehide` suspends rather than
 destroying the scene, and persisted `pageshow` resumes without catch-up input bursts.

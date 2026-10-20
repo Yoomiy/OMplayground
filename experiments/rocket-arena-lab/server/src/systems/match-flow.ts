@@ -44,8 +44,8 @@ export type MatchOutcomeHook =
   }>;
 
 /**
- * Task 4.4 owns timing and phase gates only. A pending outcome is an explicit
- * boundary for Task 6.4, which will apply scores and choose reset/overtime/end.
+ * Fixed-step timing and phase gates. Pending outcomes are resolved at the
+ * authoritative scoring boundary before reset, overtime or completion.
  */
 export interface MatchFlowState {
   readonly phase: MatchPhase;
@@ -514,7 +514,7 @@ export function beginGoalReset(
 
 export const startGoalReset = beginGoalReset;
 
-/** Explicit Task 6.4 integration hook for an already-resolved tied cutoff. */
+/** Integration hook for an already-resolved tied regulation cutoff. */
 export function beginOvertimeCountdown(
   state: MatchFlowState,
   config: MatchFlowConfig,

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { desktopPanelClass } from '@/components/KidDesktopShell';
 import { GameVoicePanel } from '@/components/GameVoicePanel';
 import { useRocketSession } from '@/hooks/useRocketSession';
-import { RocketChatPanel } from '@/game/RocketChatPanel';
+import { SessionChatPanel } from '@/game/SessionChatPanel';
 import { RocketRoomRoster } from '@/game/RocketRoomRoster';
 
 const secondary = 'border border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-white/80 dark:hover:bg-white/10';
@@ -122,7 +122,7 @@ export function RocketSessionContainer({ sessionId, backHref = '/home', backLabe
         <Button size="sm" className={`${secondary} lg:hidden`} onClick={() => { setSocialOpen(false); setRosterOpen(false); }}>חזרה למשחק</Button>
         <RocketRoomRoster view={view} control={game.control} />
         {!ended && <GameVoicePanel sessionId={sessionId} requestToken={game.requestVoiceToken} manualJoin />}
-        <RocketChatPanel sessionId={sessionId} observer={view.observer} canModerate={view.canModerate} ended={!!ended} send={game.sendChat} />
+        <SessionChatPanel sessionId={sessionId} observer={view.observer} canModerate={view.canModerate} ended={!!ended} send={game.sendChat} />
       </aside>}
     </div>
   </div>;

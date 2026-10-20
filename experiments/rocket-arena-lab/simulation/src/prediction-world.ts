@@ -1,4 +1,3 @@
-import type RAPIER from '@dimforge/rapier3d-compat';
 import { DEFAULT_TUNING_REGISTRY_SNAPSHOT, RESOLVED_ARENA_GEOMETRY, PHYSICS,
   resolveBoostPadDescriptors, type InputCommandV2 } from '@rocket-arena/shared';
 import { createArenaColliders } from './arena.js';

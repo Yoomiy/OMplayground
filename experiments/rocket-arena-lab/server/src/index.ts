@@ -1,4 +1,4 @@
-﻿import colyseus from 'colyseus';
+import * as colyseus from '@colyseus/core';
 import wsTransport from '@colyseus/ws-transport';
 import http from 'http';
 import { ArenaRoom } from './rooms/arena-room.js';

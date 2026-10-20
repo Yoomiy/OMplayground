@@ -75,10 +75,6 @@ function freeTrackedWorld(world: RAPIER.World): void {
   disposalTracker.freed += 1;
 }
 
-function rotationAroundX(radians: number): GroundingQuaternion {
-  return { x: Math.sin(radians / 2), y: 0, z: 0, w: Math.cos(radians / 2) };
-}
-
 function rotationAroundZ(radians: number): GroundingQuaternion {
   return { x: 0, y: 0, z: Math.sin(radians / 2), w: Math.cos(radians / 2) };
 }

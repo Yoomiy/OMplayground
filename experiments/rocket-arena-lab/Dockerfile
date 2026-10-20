@@ -19,7 +19,7 @@ COPY experiments/rocket-arena-lab/shared/package.json shared/package.json
 COPY experiments/rocket-arena-lab/simulation/package.json simulation/package.json
 COPY experiments/rocket-arena-lab/server/package.json server/package.json
 COPY experiments/rocket-arena-lab/client/package.json client/package.json
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm ci --omit=dev --workspace=@rocket-arena/server --include-workspace-root=false && npm cache clean --force
 COPY --from=build /rocket/shared/dist shared/dist
 COPY --from=build /rocket/simulation/dist simulation/dist
 COPY --from=build /rocket/server/dist server/dist

@@ -3,7 +3,6 @@ import test from 'node:test';
 import {
   PHYSICS,
   ROOM_POLICIES,
-  type InputCommandV2,
   type RoomMode,
   type RoomPolicy,
 } from '@rocket-arena/shared';

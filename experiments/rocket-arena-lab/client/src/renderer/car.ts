@@ -539,7 +539,6 @@ export function createCarVisualRig(
   const height = CAR.BODY.HEIGHT;
   const length = CAR.BODY.LENGTH;
   const wheelRadius = height * VISUAL.CAR.WHEEL.RADIUS_HEIGHT_RATIO;
-  const wheelWidth = width * VISUAL.CAR.WHEEL.WIDTH_BODY_RATIO;
 
   addMesh(group, geometry.shell, materials.body, 'faceted-main-shell');
 

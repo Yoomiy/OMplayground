@@ -111,7 +111,7 @@ try {
   result.checks.push('disconnect returns to usable lobby; fresh join rejects stale room UI');
 
   await page.evaluate(async () => {
-    window.__mountRocketClient = (await import('/src/client.ts')).mountRocketClient;
+    window.__mountRocketClient = (await import('/src/standalone.ts')).mountStandaloneClient;
     window.__clientHandle = window.__mountRocketClient(document.querySelector('#app'));
   });
   for (let i = 0; i < 3; i++) {

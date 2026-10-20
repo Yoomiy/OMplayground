@@ -7,7 +7,6 @@ import {
   ROOM_POLICIES,
   createVersionedTuningRegistry,
   type InputCommandV2,
-  type RoomPolicy,
 } from '@rocket-arena/shared';
 import type { KickoffAssignment } from '../systems/kickoff-slots.js';
 import {

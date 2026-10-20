@@ -5,7 +5,7 @@ import { once } from 'node:events';
 import { writeFile, mkdir, unlink } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import colyseus from 'colyseus';
+import * as colyseus from '@colyseus/core';
 import wsTransport from '@colyseus/ws-transport';
 import { Client, type Room } from 'colyseus.js';
 import { createPlatformService } from '../server/src/platform/service.js';

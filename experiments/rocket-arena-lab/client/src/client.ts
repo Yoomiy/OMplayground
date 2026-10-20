@@ -41,9 +41,6 @@ import {
   projectBallIndicator,
   type BallIndicatorProjection,
 } from './hud/ball-indicator.js';
-import { createDevPanel, destroyDevPanel } from './dev-panel/dev-panel.js';
-import { createLobby, destroyLobby, showLobby } from './ui/lobby.js';
-import { showGameOver, hideGameOver } from './ui/game-over.js';
 import { createPauseMenu, destroyPauseMenu, closePauseMenu } from './ui/pause-menu.js';
 import {
   beginGameplayCameraSession,
@@ -55,7 +52,6 @@ import { updateEntityEffects } from './renderer/entity-effects.js';
 import { initializeAudio, updateAudio, cleanupAudio } from './audio/audio-manager.js';
 import type { Room } from 'colyseus.js';
 import { WorkerDrivingLab } from './lab/worker-driving-lab.js';
-import { createLabPanel } from './lab/panel.js';
 import { readTimingProfile } from './lab/timing-profile.js';
 import { ClientLoop } from './client-loop.js';
 import { createPlayerLabels } from './hud/player-labels.js';
@@ -84,7 +80,19 @@ export interface EmbeddedRocketOptions {
   onRematch(join: boolean): void;
 }
 
-export function mountRocketClient(app: HTMLElement, embedded?: EmbeddedRocketOptions): RocketClient {
+/** Optional standalone UI; app frames own their lobby and results in React. */
+export interface StandaloneUI {
+  createLobby: typeof import('./ui/lobby.js').createLobby;
+  destroyLobby: typeof import('./ui/lobby.js').destroyLobby;
+  showLobby: typeof import('./ui/lobby.js').showLobby;
+  showGameOver: typeof import('./ui/game-over.js').showGameOver;
+  hideGameOver: typeof import('./ui/game-over.js').hideGameOver;
+  createLabPanel: typeof import('./lab/panel.js').createLabPanel;
+  createDevPanel: typeof import('./dev-panel/dev-panel.js').createDevPanel;
+  destroyDevPanel: typeof import('./dev-panel/dev-panel.js').destroyDevPanel;
+}
+
+export function mountRocketClient(app: HTMLElement, embedded?: EmbeddedRocketOptions, standalone?: StandaloneUI): RocketClient {
   activeClient?.dispose();
   applyDocumentLocale();
   // Fail before installing input, timers or a worker if WebGL is unavailable.
@@ -98,7 +106,7 @@ export function mountRocketClient(app: HTMLElement, embedded?: EmbeddedRocketOpt
 
   const timing = readTimingProfile(window.location.search);
   const drivingLab = new WorkerDrivingLab(undefined, { poseBufferMs: timing.poseBufferMs });
-  const destroyLabPanel = embedded ? () => {} : createLabPanel(drivingLab, timing.name);
+  const destroyLabPanel = standalone?.createLabPanel(drivingLab, timing.name) ?? (() => {});
   (window as unknown as { __drivingLab: WorkerDrivingLab }).__drivingLab = drivingLab;
   window.addEventListener('blur', () => drivingLab.neutralize(getCurrentInputCommandV2()), { signal: events.signal });
   document.addEventListener('visibilitychange', () => {
@@ -134,7 +142,7 @@ export function mountRocketClient(app: HTMLElement, embedded?: EmbeddedRocketOpt
     returnToLobby: () => {
       clearMatchPresentation();
       if (embedded) embedded.onExit();
-      else showLobby();
+      else standalone?.showLobby();
     },
     applyLowGraphics: (low) => {
       setRenderScale(low ? .7 : 1);arena.exteriorPresentation.visible=!low;
@@ -156,8 +164,8 @@ export function mountRocketClient(app: HTMLElement, embedded?: EmbeddedRocketOpt
     if (gameOverTimer !== null) clearTimeout(gameOverTimer);
     gameOverTimer = null;
     gameEnded = false;
-    hideGameOver();
-    destroyDevPanel();
+    standalone?.hideGameOver();
+    standalone?.destroyDevPanel();
     closePauseMenu();
     releaseHeldInput();
     resetHUD();
@@ -195,7 +203,7 @@ export function mountRocketClient(app: HTMLElement, embedded?: EmbeddedRocketOpt
   const joined = (room: Room) => {
     if (disposed) return;
     drivingLab.attach(room);
-    createDevPanel(room);
+    standalone?.createDevPanel(room);
     gameEnded = false;
     beginGameplayCameraSession(getCurrentInputCommandV2().cameraToggleSequence);
     console.log('[Rocket Arena] Connected and playing');
@@ -240,7 +248,7 @@ export function mountRocketClient(app: HTMLElement, embedded?: EmbeddedRocketOpt
     });
   }
   if (embedded?.reservation) connectPlatform(embedded.reservation);
-  if (!embedded) createLobby(joined, scene, () => {
+  standalone?.createLobby(joined, scene, () => {
     drivingLab.detach(); clearMatchPresentation();
   });
 
@@ -319,11 +327,11 @@ export function mountRocketClient(app: HTMLElement, embedded?: EmbeddedRocketOpt
       });
 
       drivingLab.clientSample('hudAudioMs',performance.now()-uiStarted);
-      if (!gameEnded && state?.phase === 'ended') {
+      if (standalone && !gameEnded && state?.phase === 'ended') {
         gameEnded = true;
         gameOverTimer = setTimeout(() => {
           gameOverTimer = null;
-          if (!embedded && !disposed && !suspended && getRoom() === room) showGameOver(room);
+          if (!disposed && !suspended && getRoom() === room) standalone.showGameOver(room);
         }, 2000);
       }
     } else {
@@ -389,7 +397,8 @@ export function mountRocketClient(app: HTMLElement, embedded?: EmbeddedRocketOpt
       labelViewport.disconnect();
       playerLabels.dispose();
       releaseKeyboard();
-      destroyLobby();
+      if (standalone) standalone.destroyLobby();
+      else leaveRoom();
       clearEntityMeshes(scene);
       cleanupAudio();
       destroyLabPanel();

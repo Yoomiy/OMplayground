@@ -1,4 +1,4 @@
-import colyseus from 'colyseus';
+import * as colyseus from '@colyseus/core';
 import { createLabStatsHandler, createLabStallHandler } from './lab-diagnostics.js';
 import RAPIER from '@dimforge/rapier3d-compat';
 import {

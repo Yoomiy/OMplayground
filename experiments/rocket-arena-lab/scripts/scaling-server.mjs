@@ -8,7 +8,7 @@ import { monitorEventLoopDelay } from 'node:perf_hooks';
 const release = process.env.SCALING_RELEASE_ROOT;
 if (!release) throw new Error('SCALING_RELEASE_ROOT must identify a built release');
 const require = createRequire(`${release}/package.json`);
-const { Server } = require('colyseus');
+const { Server } = require('@colyseus/core');
 const { WebSocketTransport } = require('@colyseus/ws-transport');
 const { CustomRoom } = await import(pathToFileURL(`${release}/server/dist/rooms/custom-room.js`).href);
 const { AuthoritativeRoomCore } = await import(pathToFileURL(`${release}/server/dist/rooms/authoritative-room-core.js`).href);

@@ -4,6 +4,14 @@ import { resolve } from 'path';
 const backendTarget = `http://127.0.0.1:${process.env.LAB_SERVER_PORT ?? '2567'}`;
 
 export default defineConfig({
+  plugins: [{
+    name: 'rocket-app-entry',
+    transformIndexHtml: {
+      order: 'pre',
+      handler: html => process.env.VITE_ROCKET_APP_ONLY === '1'
+        ? html.replace('src="/src/main.ts"', 'src="/src/app.ts"') : html,
+    },
+  }],
   resolve: {
     alias: {
       '@rocket-arena/shared': resolve(__dirname, '../shared/src'),
