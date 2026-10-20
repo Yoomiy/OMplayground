@@ -1,0 +1,9 @@
+# Wobble catalog cover
+
+Asset: `apps/web/public/games/wobble-rush.png`.
+Generated with the built-in `image_gen` tool. The original `docs/media/sweepers.png`
+was a reference for the game characters and palette, rather than the composition.
+
+## Generation prompt
+
+Use case: ads-marketing. Asset type: finished cover art for Wobble Rush's game catalog card. Create a NEW polished promotional illustration, using the attached gameplay screenshot ONLY as a reference for the game's world, character silhouettes and colors, not as a composition or UI reference. Landscape wide banner, ideally 1536 by 640. A beautifully simple studio-like 3D toy diorama: THREE large, cute smooth pear/teardrop wobble racers, cyan, coral pink and lime green, with a single thin dark antenna topped with a little golden ball, subtle dark outline and tiny side nubs, no human faces, no limbs invented, clearly based on the reference's racers. One hero cyan racer leading and two friends slightly behind; lively playful leaning/jumping poses around ONE yellow-and-coral striped rotating sweeper on a single floating turquoise race platform. Very simple pastel lilac to warm cream background with just one soft distant arch. Art-directed, premium playful party game key art, crisp silhouettes, soft studio lighting, subtle glossy materials, restrained colors, generous breathing room, strong central visual hierarchy. Camera close enough that racers read clearly at 350 by 128 pixels. Keep every racer and obstacle's important silhouette within the central 60 percent width and central 55 percent height, safe for centered object-cover cropping. The illustration must feel like a clean, presentable game cover, never a busy gameplay screenshot. NO text, NO letters, NO logo, NO HUD, NO timer, NO nametags, NO leaderboard, NO confetti, NO crowd, NO extra tracks, NO clutter, NO watermark.

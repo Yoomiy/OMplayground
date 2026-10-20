@@ -1,0 +1,190 @@
+/* ---------- HUD ---------- */
+.race-menu {
+  position: absolute;
+  right: 14px;
+  bottom: 16px;
+  font: inherit;
+  font-size: 12px;
+  padding: 8px 12px;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.screen--hud {
+  place-items: start center;
+  pointer-events: none;
+}
+
+.hud {
+  position: absolute;
+  inset: 14px 14px auto;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: start;
+  gap: 12px;
+}
+
+.hud__timer {
+  grid-column: 2;
+  font-size: clamp(30px, 5vw, 46px);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  padding: 6px 20px;
+  background: rgba(42, 36, 64, 0.72);
+  border-radius: var(--radius-l);
+  border: 3px solid rgba(255, 255, 255, 0.22);
+}
+
+.hud__pips {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  gap: 6px;
+  align-self: center;
+}
+
+.pip {
+  width: 26px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(42, 36, 64, 0.45);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  transition:
+    background 220ms ease,
+    transform 220ms cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+
+.pip--on {
+  background: var(--rest);
+  transform: scaleX(1.12);
+}
+
+.hud__place {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+  align-self: center;
+  padding: 6px 14px;
+  background: rgba(42, 36, 64, 0.55);
+  border-radius: 999px;
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 3px 0 rgba(42, 36, 64, 0.7);
+}
+
+.controls-hint {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  background: rgba(42, 36, 64, 0.6);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 14px;
+  transition: opacity 600ms ease;
+}
+
+.controls-hint--faded {
+  opacity: 0;
+}
+
+.countdown[hidden] {
+  display: none;
+}
+
+.countdown {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: clamp(90px, 22vw, 220px);
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 10px 0 rgba(42, 36, 64, 0.55);
+}
+
+.countdown--pop {
+  animation: pop 400ms cubic-bezier(0.2, 1.4, 0.3, 1) both;
+}
+
+@keyframes pop {
+  from {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+.hud__course {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  justify-self: center;
+  color: white;
+  background: #2a2440b8;
+  border-radius: 12px;
+  padding: 5px 12px;
+  font-size: 13px;
+}
+.waiting-hint {
+  position: absolute;
+  bottom: 90px;
+  margin: 0 20px;
+  padding: 12px 20px;
+  color: white;
+  background: #2a2440d9;
+  border-radius: 14px;
+}
+.waiting-hint[hidden] {
+  display: none;
+}
+@media (max-width: 560px) {
+  .hud {
+    gap: 6px;
+    inset: 10px 8px auto;
+  }
+  .hud__timer {
+    padding: 5px 10px;
+  }
+  .pip {
+    width: 12px;
+  }
+  .hud__pips {
+    gap: 3px;
+  }
+  .hud__place {
+    font-size: 15px;
+    padding: 5px 8px;
+  }
+  .controls-hint {
+    width: max-content;
+    max-width: calc(100% - 20px);
+    font-size: 11px;
+    text-align: center;
+  }
+}
+
+.connection-delayed {
+  grid-column: 1 / -1;
+  justify-self: center;
+  color: #823600;
+  background: #ffe2a4;
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-weight: 700;
+}
+
+/* Preserve the physical HUD layout; only its prose follows Hebrew direction. */
+.hud {
+  direction: ltr;
+}
+.hud__course,
+.connection-delayed {
+  direction: rtl;
+  unicode-bidi: isolate;
+}

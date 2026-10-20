@@ -1,0 +1,25 @@
+node_modules/
+dist/
+worker-output/
+action-dist/
+app-dist/
+.app-stage/
+.run/
+.build-stage/
+.wrangler/
+# QA run artifacts are reproducible; the curated ones live in docs/media
+evidence/
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+!.env.app.example
+test-results/
+playwright-report/
+# wrangler local secrets - never commit token material
+.dev.vars
+.dev.vars.*
+
+# Upstream agent workflow scratch is not part of the playable lab.
+.omo/
