@@ -67,6 +67,17 @@ export class PlatformGateway {
     return rows[0];
   }
 
+  /** Keyset pagination also reaches expired owners beyond PostgREST's row cap. */
+  async expiredAllocations(now: number, afterId?: string): Promise<PlatformSession[]> {
+    const query = new URLSearchParams({
+      select: 'id,host_id,status,is_open,invitation_code,gender,player_ids,player_names,connected_player_ids,connected_player_names,last_activity,game_state',
+      status: 'in.(waiting,playing,paused)', 'game_state->>rocket': 'eq.true',
+      and: `(game_state->leaseUntil.gt.0,game_state->leaseUntil.lte.${now})`,
+      order: 'id.asc', limit: '100', ...(afterId ? { id: `gt.${afterId}` } : {}),
+    });
+    return this.rest<PlatformSession[]>(`game_sessions?${query}`);
+  }
+
   async admit(profile: PlatformProfile, sessionId: string, observer: boolean, invitationCode?: string): Promise<Admission> {
     const session = await this.session(sessionId);
     let challenged = false;

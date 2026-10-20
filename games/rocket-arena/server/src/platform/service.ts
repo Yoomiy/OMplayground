@@ -9,7 +9,7 @@ import { PlatformGateway } from './gateway.js';
 import { LaunchTickets } from './tickets.js';
 import { configurePlatformRooms, PlaygroundRoom } from './playground-room.js';
 import { platformLog } from './logging.js';
-import { RoomCheckpoints } from './checkpoint.js';
+import { RoomCheckpoints, PAUSED_RETENTION_MS } from './checkpoint.js';
 
 const { matchMaker } = colyseus;
 export interface ServiceOptions { gateway: PlatformGateway; ticketSecret: string; origins: string[]; clientDir: string;
@@ -28,6 +28,8 @@ export function createPlatformService(options: ServiceOptions) {
   const launchRates = new Map<string, { at: number; count: number }>();
   const voiceTokens = new Map<string, { expiresAt: number; pending: Promise<{ token: string; serverUrl: string }> }>();
   let draining = false;
+  let recoveryTimer: ReturnType<typeof setInterval> | undefined;
+  let recovering: Promise<void> | undefined;
   if (!origins.size) throw new Error('App origins are required');
   for (const origin of origins) if (new URL(origin).origin !== origin) throw new Error('APP_ORIGINS must contain exact origins');
 
@@ -42,6 +44,39 @@ export function createPlatformService(options: ServiceOptions) {
       return liveRooms.size;
     },
   });
+
+  function recoverExpiredAllocations(): Promise<void> {
+    if (draining) return Promise.resolve();
+    if (recovering) return recovering;
+    const operation = (async () => {
+      const now = Date.now();
+      let afterId: string | undefined;
+      while (!draining) {
+        const sessions = await options.gateway.expiredAllocations(now, afterId);
+        if (!sessions.length) return;
+        for (const session of sessions) {
+          if (draining) return;
+          if (allocations.has(session.id)) continue;
+          const state = session.game_state;
+          if (state?.rocket !== true || typeof state.leaseUntil !== 'number' || state.leaseUntil <= 0 || state.leaseUntil > now) continue;
+          const saved = checkpoints.read(state.checkpoint, session.id, now);
+          if (!saved) continue;
+          try {
+            await options.gateway.update(session, { status: 'paused', connected_player_ids: [], connected_player_names: [],
+              last_activity: new Date(saved.expiresAt - PAUSED_RETENTION_MS).toISOString(),
+              game_state: { ...state, leaseUntil: 0, reason: 'allocation-expired' } });
+            platformLog('info', 'ROCKET_ALLOCATION_RECOVERED', { sessionId: session.id, allocationId: state.allocationId });
+          } catch (error) {
+            // A new owner, heartbeat or moderator may win while this read is in flight.
+            if (!(error instanceof AdmissionError && error.code === 'SESSION_CHANGED')) throw error;
+          }
+        }
+        afterId = sessions[sessions.length - 1]!.id;
+      }
+    })();
+    recovering = operation.finally(() => { recovering = undefined; });
+    return recovering;
+  }
 
   async function allocate(admission: Admission) {
     const sessionId = admission.session.id;
@@ -234,6 +269,16 @@ export function createPlatformService(options: ServiceOptions) {
 
   return {
     roomClass: PlaygroundRoom,
+    recoverExpiredAllocations,
+    startRecovery(): void {
+      if (recoveryTimer || draining) return;
+      const run = () => { void recoverExpiredAllocations().catch(error => {
+        platformLog('error', 'ROCKET_ALLOCATION_RECOVERY_FAILED', { err: error });
+      }); };
+      recoveryTimer = setInterval(run, 15_000);
+      recoveryTimer.unref();
+      run();
+    },
     handle(req: IncomingMessage, res: ServerResponse): void {
       void handler(req, res).catch(error => {
         const known = error instanceof AdmissionError;
@@ -246,6 +291,8 @@ export function createPlatformService(options: ServiceOptions) {
     },
     async drain(): Promise<void> {
       draining = true;
+      clearInterval(recoveryTimer);
+      await recovering?.catch(() => {});
       await Promise.all([...allocations.values()].map(async pending => {
         const allocation = await pending.catch(() => null);
         const room = allocation && matchMaker.getRoomById(allocation.roomId) as PlaygroundRoom | undefined;

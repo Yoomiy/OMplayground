@@ -8,13 +8,18 @@ import {
 import { getConstant } from '@rocket-arena/shared/constants';
 
 let rapier: typeof RAPIER;
+let initialization: Promise<typeof RAPIER> | undefined;
 
 type PhysicsTuningSnapshot = Pick<TuningRegistrySnapshot, 'get'>;
 
-export async function initPhysics(): Promise<typeof RAPIER> {
-  await RAPIER.init();
-  rapier = RAPIER;
-  return rapier;
+export function initPhysics(): Promise<typeof RAPIER> {
+  // Rapier's module owns global WASM memory. Reinitializing it for another room
+  // can invalidate worlds that are already stepping in this process/worker.
+  initialization ??= Promise.resolve().then(() => RAPIER.init()).then(() => {
+    rapier = RAPIER;
+    return rapier;
+  }, error => { initialization = undefined; throw error; });
+  return initialization;
 }
 
 function finiteTuningValue(

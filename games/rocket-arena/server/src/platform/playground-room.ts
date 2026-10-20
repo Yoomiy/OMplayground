@@ -58,6 +58,8 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
   private publishedRevision = 0;
   private lastPhase: MatchPhase = 'waiting';
   private completed = false;
+  private completing = false;
+  private completionRetryAt = 0;
   private lastPersistedRoster = new Set<string>();
   private readonly excludedRoster = new Set<string>();
   private wasOpen = false;
@@ -302,7 +304,7 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
   }
 
   private advance(delta: number): void {
-    if (this.disposed || this.completed) return;
+    if (this.disposed || this.completed || this.completing) return;
     const began = performance.now();
     const frame = this.core.advanceSimulation(delta);
     const phase = this.core.matchFlowState?.phase ?? 'waiting';
@@ -310,8 +312,10 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
       this.seats.kickoff(); this.installControllers(); this.publishPlatformState();
       void this.persist().catch(() => this.finish('platform-unavailable'));
     }
-    if (phase === 'ended' && this.lastPhase !== 'ended') {
-      void this.completeRound('finished').catch(() => this.finish('platform-unavailable'));
+    if (phase === 'ended' && Date.now() >= this.completionRetryAt) {
+      void this.completeRound('finished').catch(error => {
+        platformLog('error', 'ROCKET_COMPLETION_SAVE_FAILED', { sessionId: this.sessionId, roomId: this.roomId, err: error });
+      });
     }
     this.lastPhase = phase;
     if (frame.snapshotDue) {
@@ -329,7 +333,7 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
   }
 
   private async control(client: colyseus.Client, payload: unknown): Promise<void> {
-    if (this.disposed) throw new AdmissionError('SESSION_RECOVERING', 503);
+    if (this.disposed || this.completing) throw new AdmissionError('SESSION_RECOVERING', 503);
     const admission = this.admitted.get(client.sessionId);
     if (!admission || !payload || typeof payload !== 'object') throw new AdmissionError('CONTROL_FORBIDDEN');
     const request = payload as { action?: unknown; userId?: unknown; count?: unknown; actorId?: unknown; team?: unknown; accept?: unknown };
@@ -388,8 +392,10 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
       catch (error) { this.paused = previous; this.pausedAt = previousPausedAt; this.core.setPaused(previous); throw error; }
       if (paused) this.seats.retainRoster();
     } else if (request.action === 'end') {
+      const previousStoppedBy = this.stoppedBy;
       this.stoppedBy = admission.profile.userId;
-      await this.completeRound('stopped');
+      try { await this.completeRound('stopped'); }
+      catch (error) { this.stoppedBy = previousStoppedBy; throw error; }
       this.logControl(client, admission, request.action); return;
     } else if (request.action === 'remove' && staff && typeof request.userId === 'string') {
       this.remove(request.userId, 'REMOVED_FROM_ROOM');
@@ -416,12 +422,13 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
   }
 
   private maintenance(): void {
-    if (this.disposed || this.rematchStarting) return;
+    if (this.disposed || this.rematchStarting || this.completing) return;
     const now = Date.now();
     if (this.completed) {
       if (!this.seats.humans().some(human => human.connectionId) || now - this.completedAt > 5 * 60_000) void this.finish('finished');
       return;
     }
+    if (this.core.matchFlowState?.phase === 'ended') return; // advance() retries the terminal save.
     if (!this.paused) this.activeAgeMs += now - this.maintenanceAt;
     this.maintenanceAt = now;
     if (this.pausedAt !== null && Date.now() - this.pausedAt >= PAUSED_RETENTION_MS) { void this.finish('paused-expired'); return; }
@@ -439,7 +446,7 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
   }
 
   private sweep(): Promise<void> {
-    if (this.sweepRunning || this.disposed || this.completed) return Promise.resolve();
+    if (this.sweepRunning || this.disposed || this.completed || this.completing) return Promise.resolve();
     this.sweepRunning = true;
     // Policy reconciliation and host controls must observe one ordered lifecycle.
     const operation = this.controlChain.catch(() => {}).then(() => this.reconcile());
@@ -448,9 +455,12 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
   }
 
   private async reconcile(): Promise<void> {
-    if (this.disposed || this.completed) return;
+    if (this.disposed || this.completed || this.completing) return;
+    // Never replace a terminal result awaiting its completion save with a
+    // resumable checkpoint. advance() retries that write independently.
+    if (this.core.matchFlowState?.phase === 'ended') return;
     try {
-      await this.persistChain;
+      await this.persistChain.catch(() => {});
       const revision = this.seats.revision;
       const session = await dependencies.gateway.session(this.sessionId);
       // Joins/leaves may occur while reading the DB; their queued save is newer.
@@ -579,11 +589,25 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
   }
 
   private async completeRound(reason: string): Promise<void> {
-    if (this.completed || this.disposed) return;
-    this.completed = true; this.completedAt = Date.now(); this.paused = true; this.core.setPaused(true);
-    await this.persist('completed', { reason, phase: 'ended', result: this.core.matchFlowState?.terminalResult ?? null });
-    this.publishPlatformState(); this.publishSnapshot();
-    platformLog('info', 'ROCKET_ROUND_COMPLETED', { sessionId: this.sessionId, roomId: this.roomId, reason });
+    if (this.completed || this.disposed || this.completing) return;
+    const previousPaused = this.paused;
+    this.completing = true; this.paused = true; this.core.setPaused(true);
+    try {
+      try { await this.persist('completed', { reason, phase: 'ended', result: this.core.matchFlowState?.terminalResult ?? null }); }
+      catch (error) {
+        // A write may have committed before its response was lost. Confirm it
+        // before rolling back, rather than reviving an already completed game.
+        const saved = await dependencies.gateway.session(this.sessionId).catch(() => null);
+        if (saved?.status !== 'completed' || saved.game_state?.allocationId !== this.allocationId) throw error;
+      }
+      this.completed = true; this.completedAt = Date.now();
+      this.publishPlatformState(); this.publishSnapshot();
+      platformLog('info', 'ROCKET_ROUND_COMPLETED', { sessionId: this.sessionId, roomId: this.roomId, reason });
+    } catch (error) {
+      this.paused = previousPaused; this.core.setPaused(previousPaused);
+      this.completionRetryAt = Date.now() + 5000;
+      throw error;
+    } finally { this.completing = false; }
   }
 
   private async tryRematch(): Promise<void> {
@@ -633,7 +657,7 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
 
   async hibernate(reason: string): Promise<void> {
     if (this.disposed) return;
-    if (this.completed || !this.seats.humans().length) { await this.finish(reason); return; }
+    if (this.completed || this.core.matchFlowState?.phase === 'ended' || !this.seats.humans().length) { await this.finish(reason); return; }
     this.closingReason = reason;
     this.disposed = true; this.pauseForRetention();
     for (const human of this.seats.humans()) human.connectionId = null;
@@ -657,7 +681,7 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
     this.closingReason = reason;
     this.disposed = true;
     this.core?.setPaused(true);
-    try { await this.persist('completed', { reason }); }
+    try { await this.persist('completed', { reason, phase: 'ended', result: this.core?.matchFlowState?.terminalResult ?? null }); }
     catch { platformLog('error', 'ROCKET_PERSISTENCE_FAILED', { sessionId: this.sessionId, roomId: this.roomId, reason }); }
     this.broadcast('platform-ended', { reason });
     platformLog('info', 'ROCKET_ROOM_CLOSED', { sessionId: this.sessionId, roomId: this.roomId, reason });

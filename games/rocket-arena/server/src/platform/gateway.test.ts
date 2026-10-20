@@ -80,6 +80,20 @@ test('lifecycle writes use compare-and-swap rather than overwrite concurrent mod
   assert.equal(filters.get('player_ids'), 'eq.{kid}');
 });
 
+test('recovery queries only Rocket active sessions with expired positive numeric leases and paginates by id', async () => {
+  const gateway = new PlatformGateway('https://fixture.invalid', 'fixture-secret', (async input => {
+    const query = new URL(String(input)).searchParams;
+    assert.equal(query.get('status'), 'in.(waiting,playing,paused)');
+    assert.equal(query.get('game_state->>rocket'), 'eq.true');
+    assert.equal(query.get('and'), '(game_state->leaseUntil.gt.0,game_state->leaseUntil.lte.1234567890123)');
+    assert.equal(query.get('id'), 'gt.last-seen-session');
+    assert.equal(query.get('order'), 'id.asc');
+    assert.equal(query.get('limit'), '100');
+    return new Response('[]', { status: 200 });
+  }) as typeof fetch);
+  assert.deepEqual(await gateway.expiredAllocations(1234567890123, 'last-seen-session'), []);
+});
+
 test('versioned checkpoint writes use a short revision filter and rotate that revision', async () => {
   const session: PlatformSession = { id: 'session', status: 'paused', game_state: { revision: 'old-revision', checkpoint: 'x'.repeat(16000) },
     player_ids: ['kid'], player_names: ['חבר'], host_id: 'kid', is_open: true, gender: 'boy', invitation_code: null,

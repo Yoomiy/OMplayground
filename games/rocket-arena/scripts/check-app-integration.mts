@@ -95,6 +95,17 @@ const fixture = http.createServer((req, res) => {
     if (table === 'class_recess_schedule_exceptions') { send(res, 200, Array.from({ length: 7 }, (_, day_of_week) => ({ grade: 'closed', gender: 'boy', day_of_week, start_time: '00:00', end_time: '23:59', is_active: true, mode: 'class_time' }))); return; }
     if (table === 'recess_schedules') { send(res, 200, Array.from({ length: 7 }, (_, day_of_week) => ({ day_of_week, start_time: '00:00', end_time: '23:59', is_active: true }))); return; }
     if (table === 'game_sessions') {
+      if (req.method === 'GET' && url.searchParams.get('game_state->>rocket') === 'eq.true') {
+        const leaseFilter = /^\(game_state->leaseUntil.gt.0,game_state->leaseUntil.lte.(\d+)\)$/.exec(url.searchParams.get('and') ?? '');
+        assert.ok(leaseFilter);
+        const cutoff = Number(leaseFilter[1]);
+        const after = url.searchParams.get('id')?.replace('gt.', '') ?? '';
+        send(res, 200, [...sessions.values()].filter(session => session.id > after
+          && ['waiting', 'playing', 'paused'].includes(session.status) && session.game_state?.rocket === true
+          && Number(session.game_state.leaseUntil) > 0 && Number(session.game_state.leaseUntil) <= cutoff)
+          .sort((left, right) => left.id.localeCompare(right.id)).slice(0, Number(url.searchParams.get('limit'))));
+        return;
+      }
       const session = sessions.get(url.searchParams.get('id')?.replace('eq.', '') ?? '');
       if (!session) { send(res, 200, []); return; }
       if (req.method === 'GET' && heldSessionRead?.sessionId === session.id) {
@@ -159,7 +170,8 @@ async function launch(sessionId: string, user = 1, extra: Record<string, unknown
 }
 async function join(sessionId: string, user: number, extra: Record<string, unknown> = {}): Promise<Room> {
   const result = await launch(sessionId, user, extra);
-  assert.equal(result.status, 200, JSON.stringify(result.data));
+  assert.equal(result.status, 200, JSON.stringify({ ...result.data,
+    failures: logs.filter(line => line.level === 'error').slice(-3).map(line => ({ ...line, err: line.err?.stack })) }));
   if (extra.slowJoin) profileDelays.set(user, 1500);
   let room: Room;
   try { room = await clients.consumeSeatReservation(result.data.reservation); }
@@ -199,6 +211,7 @@ try {
   await mkdir(`${root}/.run`, { recursive: true });
   fixture.listen(19007, '127.0.0.1'); await once(fixture, 'listening');
   await gameServer.listen(19006, '127.0.0.1');
+  service.startRecovery();
   const config = await (await fetch(`${endpoint}/api/rocket/config`)).json() as { release: string; capabilities: string[] };
   assert.equal(config.release, 'fixture-release');
   assert.deepEqual(config.capabilities, ['lobby-controls', 'session-chat', 'voice', 'retained-matches', 'queued-roster', 'rematch', 'save-outcomes', 'platform-only']);
@@ -542,6 +555,17 @@ try {
   restored.send('platform-control', { action: 'resume' });
   await until(() => frames.get(restored)?.phase === 'playing', 'resume retained game at kickoff');
   assert.ok(restoredRoom.core.matchFlowState.regulationStepsRemaining <= savedProgress.regulationStepsRemaining);
+  failedPatch = { sessionId: retainedSession, reason: 'stopped' };
+  restored.send('platform-control', { action: 'end' });
+  await until(() => errors.get(restored)!.includes('PLATFORM_UNAVAILABLE'), 'failed stop reports a retryable save error');
+  assert.equal(sessions.get(retainedSession)!.status, 'playing');
+  assert.equal(views.get(restored)!.canRematch, false);
+  const beforeRetryTick = frames.get(restored)!.tick;
+  await until(() => frames.get(restored)!.tick > beforeRetryTick, 'failed stop restores the running simulation');
+  await restoredRoom.sweep();
+  assert.equal(sessions.get(retainedSession)!.status, 'playing', 'reconciliation survives a rejected stop write');
+  assert.ok(colyseus.matchMaker.getRoomById(restored.id));
+  await pause(350);
   restored.send('platform-control', { action: 'end' });
   await until(() => sessions.get(retainedSession)!.status === 'completed', 'explicit stop stays completed');
   const stopped = sessions.get(retainedSession)! as PlatformSession & { stopped_by: string; ended_at: string };
@@ -562,6 +586,7 @@ try {
   await pause(300); await disposeCompletedRooms();
   assert.deepEqual(sessions.get(retainedSession)!.game_state, finalState, 'disposal preserves the final DB state');
   report.pausedRetentionAndStopParity = 'PASS';
+  report.failedStopCanRetry = 'PASS';
   const expiredSession = newSession(7);
   const expiredPayload = { ...(savedState.checkpoint as any).payload, sessionId: expiredSession, expiresAt: Date.now() - 1 };
   sessions.get(expiredSession)!.status = 'paused';
@@ -732,6 +757,7 @@ createRoot(document.getElementById('root')!).render(<StrictMode><BrowserRouter><
   assert.deepEqual(sessions.get(restartSession)!.connected_player_ids, []);
   const restartProgress = (sessions.get(restartSession)!.game_state!.checkpoint as any).payload.progress;
   service = createPlatformService(serviceOptions);
+  service.startRecovery();
   gameServer.define('playground', service.roomClass);
   backend.removeAllListeners('request'); backend.on('request', service.handle);
   const afterRestart = await join(restartSession, 1);
@@ -742,6 +768,46 @@ createRoot(document.getElementById('root')!).render(<StrictMode><BrowserRouter><
   await until(() => sessions.get(restartSession)!.status === 'completed', 'stop after fresh service recovery');
   report.gracefulRestartRecovery = 'PASS';
   await disposeCompletedRooms();
+
+  // A dead process cannot clear its connection roster. The recovery timer must
+  // make private matches discoverable without any player launching them first.
+  const crashedSession = newSession(80, false);
+  const crashedCheckpoint = { ...recessSave, sessionId: crashedSession, hostUserId: uid(10),
+    seats: recessSave.seats.map(seat => ({ ...seat, human: seat.human
+      ? { ...seat.human, userId: seat.human.userId === uid(1) ? uid(10) : uid(11) } : null })),
+    pending: [], expiresAt: Date.now() + 24 * 60 * 60_000 - 60_000 };
+  Object.assign(sessions.get(crashedSession)!, { status: 'playing', host_id: uid(10), player_ids: [uid(10), uid(11)],
+    player_names: [names(10), names(11)], connected_player_ids: [uid(10), uid(11)], connected_player_names: [names(10), names(11)],
+    game_state: { rocket: true, version: 1, allocationId: 'dead-process', leaseUntil: Date.now() - 1,
+      checkpoint: new RoomCheckpoints(serviceOptions.ticketSecret).sign(crashedCheckpoint) } });
+  const crashedSigned = structuredClone(sessions.get(crashedSession)!.game_state!.checkpoint);
+  await until(() => sessions.get(crashedSession)!.status === 'paused', 'background crash recovery restores saved-game discovery', 20_000);
+  assert.deepEqual(sessions.get(crashedSession)!.connected_player_ids, []);
+  assert.deepEqual(sessions.get(crashedSession)!.connected_player_names, []);
+  assert.deepEqual(sessions.get(crashedSession)!.player_ids, [uid(10), uid(11)]);
+  assert.equal(sessions.get(crashedSession)!.is_open, false);
+  assert.deepEqual(sessions.get(crashedSession)!.game_state!.checkpoint, crashedSigned);
+  assert.equal(Date.parse(sessions.get(crashedSession)!.last_activity!), crashedCheckpoint.expiresAt - 24 * 60 * 60_000);
+  assert.ok(logs.some(line => line.context.event === 'ROCKET_ALLOCATION_RECOVERED' && line.sessionId === crashedSession));
+  assert.ok(!logs.some(line => line.context.event === 'ROCKET_LAUNCH_COMPLETED' && line.sessionId === crashedSession));
+  const crashRecovered = await join(crashedSession, 10);
+  assert.equal(views.get(crashRecovered)!.paused, true);
+  assert.deepEqual(views.get(crashRecovered)!.score, { blue: recessSave.progress.blueScore, orange: recessSave.progress.orangeScore });
+  crashRecovered.send('platform-control', { action: 'end' });
+  await until(() => sessions.get(crashedSession)!.status === 'completed', 'stop crash-recovered private game');
+  await disposeCompletedRooms();
+  report.uncleanRestartSavedGameDiscovery = 'PASS';
+
+  const ambiguousStopSession = newSession(81);
+  Object.assign(sessions.get(ambiguousStopSession)!, { host_id: uid(14), player_ids: [uid(14)], player_names: [names(14)] });
+  const ambiguousStop = await join(ambiguousStopSession, 14);
+  failedPatch = { sessionId: ambiguousStopSession, reason: 'stopped', commitBeforeFailure: true };
+  ambiguousStop.send('platform-control', { action: 'end' });
+  await until(() => views.get(ambiguousStop)!.canRematch, 'read-back confirms an ambiguously acknowledged stop');
+  assert.equal(sessions.get(ambiguousStopSession)!.status, 'completed');
+  assert.deepEqual(errors.get(ambiguousStop), []);
+  await disposeCompletedRooms();
+  report.stopLostAcknowledgementConfirmed = 'PASS';
 
   // Faults cross the real allocation, database and transport boundaries. The
   // fixture alone can fail writes/engine startup; no public fault-injection API.

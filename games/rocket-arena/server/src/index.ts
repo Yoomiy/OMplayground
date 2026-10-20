@@ -36,6 +36,7 @@ async function main(): Promise<void> {
     void app.drain().finally(() => gameServer.gracefullyShutdown(true));
   });
   await gameServer.listen(port, host);
+  app.startRecovery();
   platformLog('info', 'ROCKET_SERVICE_READY', { host, port, release });
 }
 main().catch(error => { console.error(error instanceof Error ? error.message : 'Startup failed'); process.exitCode = 1; });

@@ -58,6 +58,12 @@ Keep the ticket secret stable across releases/rollbacks. Graceful SIGTERM/SIGINT
 stops new allocation, checkpoints live rooms and closes their sockets. An
 unclean restart can lose changes after the last acknowledged checkpoint
 (normally about 15 seconds) and waits for the old 60-second allocation lease.
+An independent sweep runs at startup and every 15 seconds. After a lease expires,
+it verifies the signed checkpoint, marks the session paused and clears stale
+connected-player fields, so private matches return to saved-game discovery
+without requiring a launch first. It preserves the save's original expiry and
+uses the same compare-and-swap fencing as room writers; live local allocations
+and concurrent new owners/moderation are protected.
 Use the matching previous client/server image for rollback; a signed save must
 remain compatible with that release's checkpoint schema.
 
@@ -68,6 +74,11 @@ save: the app shows an explicit retryable error and the service logs
 from stale writers. A naturally completed/stopped live room retains rematch
 controls for five minutes; a rematch requires current participant consent and
 fresh eligibility checks.
+
+Completion becomes final only after its database write is acknowledged or a
+read-back confirms that it committed. A failed explicit stop restores the previous
+running/paused state and permits retry. A naturally ended round keeps its terminal
+result and retries saving at five-second intervals instead of becoming resumable.
 
 ## Logs
 
