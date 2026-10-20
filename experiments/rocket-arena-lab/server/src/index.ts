@@ -34,9 +34,9 @@ async function main() {
     const { createLogger } = await import(sharedLoggerModule);
     const sharedVoiceModule = './platform/shared-voice.cjs';
     const { createGameVoiceToken } = await import(sharedVoiceModule);
-    configurePlatformLogger(createLogger('rocket-server'));
     const manifest = JSON.parse(await readFile(new URL('./platform/build.json', import.meta.url), 'utf8')) as { release: string };
     release = manifest.release;
+    configurePlatformLogger(createLogger('rocket-server').child({ release }));
     const app = createPlatformService({
       gateway: new PlatformGateway(process.env.SUPABASE_URL ?? '', process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''),
       ticketSecret: process.env.ROCKET_TICKET_SECRET ?? '',

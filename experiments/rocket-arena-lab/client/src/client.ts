@@ -206,7 +206,6 @@ export function mountRocketClient(app: HTMLElement, embedded?: EmbeddedRocketOpt
     standalone?.createDevPanel(room);
     gameEnded = false;
     beginGameplayCameraSession(getCurrentInputCommandV2().cameraToggleSequence);
-    console.log('[Rocket Arena] Connected and playing');
   };
   function connectPlatform(reservation: PlatformReservation): void {
     if (!embedded || disposed) return;
@@ -426,6 +425,5 @@ export function mountRocketClient(app: HTMLElement, embedded?: EmbeddedRocketOpt
     if (event.persisted) handle.resume();
   }, { signal: events.signal });
   loop.start();
-  console.log('[Rocket Arena] Client initialized');
   return handle;
 }

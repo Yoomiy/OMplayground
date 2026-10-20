@@ -78,8 +78,8 @@ No catalog SQL has been executed here.
 - The existing canonical Pino logger is compiled into the isolated app artifact.
   Privileged staff observation/control requests are recorded in `audit_log` before
   execution with correlation IDs; request records do not claim a successful effect.
-  Validated, bounded client telemetry uses `ROCKET_CLIENT_WINDOW` /
-  `ROCKET_CLIENT_STALL`; standalone journal prefixes stay unchanged.
+  Opt-in, validated client telemetry uses `ROCKET_CLIENT_WINDOW` /
+  `ROCKET_CLIENT_STALL` at debug level; standalone journal prefixes stay unchanged.
 - Chat uses the existing `chat_messages` table, Realtime feed and teacher/admin
   moderation RPCs. Authenticated sends require a currently admitted player;
   names come from verified profiles, messages are limited to 500 characters and
@@ -115,8 +115,10 @@ backend in charge of the port.
 
 Local runtime logs use the same canonical `pino-pretty` development transport as
 the other services; build artifacts stay optimized and development tuning stays
-explicitly disabled. `LOG_LEVEL=warn npm run dev:rocket` filters out routine info
-and telemetry. Rejected controls show action, phase, error code, room/session,
+explicitly disabled. The default `info` level contains lifecycle and action
+boundaries; performance reports and periodic samples require
+`LOG_LEVEL=debug npm run dev:rocket`. `LOG_LEVEL=warn npm run dev:rocket` keeps
+only warnings and errors. Rejected controls show action, phase, error code, room/session,
 user and correlation IDs; unexpected exceptions include their stack. Database
 failures identify the operation, resource, HTTP status and bounded Postgres code,
 without logging credentials, query parameters or response bodies.
@@ -277,9 +279,19 @@ load the new server and frame together.
 
 The app service emits canonical structured logs (pretty printed locally):
 
-- Startup/readiness and matching loaded release; launch/join/leave/disposal;
-  accepted and rejected controls; eviction; saved/closed lifecycle events;
-  15-second room samples with humans, bots, observers, phase, pause and tick.
+- At the default `info` level: startup and loaded release; launch; room readiness
+  (`ROCKET_ROOM_READY`) and disposal (`ROCKET_ROOM_DISPOSED`); successful joins;
+  actual transport closure (`ROCKET_SOCKET_CLOSED`); accepted controls, including
+  rematch offers/votes; round completion, saves and rematch/room closure.
+  Room lifecycle logs include allocation ID, restoration state, disposal reason
+  and durations. Socket
+  closure includes connection ID, verified user/correlation IDs when available,
+  numeric WebSocket close code, duration and server close reason (e.g. `rematch`).
+  Membership leave receipt is debug-only; actual socket closure is logged once.
+  Framework disposal may precede the transport's final close callback.
+- Authentication/join rejection, control rejection, eviction and failures remain
+  visible at `warn`/`error`. An abnormal transport close (1006) is a warning;
+  expected server-driven rematch closes are ordinary lifecycle events.
 - Request failures: operation, bounded error code and correlation ID. Database
   failures: resource, method, status and bounded Postgres code; no query or body.
 - Allocation/startup failures: `ROCKET_ALLOCATION_FAILED`; a failed lease release
@@ -287,10 +299,14 @@ The app service emits canonical structured logs (pretty printed locally):
   original expiry. Failed or ambiguous hibernation writes emit
   `ROCKET_ROOM_SAVE_UNCONFIRMED` and tell the player the save was not confirmed;
   only an acknowledged write emits `ROCKET_ROOM_SAVED`.
-- Validated client windows: FPS/frame times, visible/focused/graphics context,
+- Only with `LOG_LEVEL=debug`: 15-second room samples and validated client
+  windows with FPS/frame times, visible/focused/graphics context,
   render/prediction timings, prediction active time, input backlog, RTT/snapshot
   gaps, correction sizes and hard snaps. Bounded stall incidents retain surrounding
   diagnostic samples. These are diagnostics reported by clients, not trusted results.
+  At the default level the service skips telemetry validation/formatting; local
+  client collection/export remains available. Routine client startup/join console
+  messages have been removed. There is no per-frame, input, snapshot or media logging.
 - Staff observation/control requests also enter the existing audit table.
 
 Logs contain session, connection and user IDs for correlation. Chat text remains
@@ -443,3 +459,32 @@ to lobby and disposal while joining. Evidence: `cleanup-standalone-report.json`,
 `.run/`. The first cold development attempt encountered Vite's dependency
 optimization reload; the stable-cache check passed without page errors.
 No real DB writes, SQL application, publication or live service restart was performed.
+
+
+## Logging and rematch teardown follow-up (2026-10-20)
+
+Routine performance dumps and room samples now require `LOG_LEVEL=debug`.
+Default logs retain lifecycle/action boundaries and failures. Actual socket
+closure is observed separately from room membership removal, so server-driven
+rematches and failed admission do not disappear behind an early return. Logs
+correlate the old/new room lifetimes through the platform session, allocation,
+connection, verified user and launch correlation IDs. Loaded server release is
+bound to the canonical logger. Routine browser initialization messages are gone.
+
+The client connection manager skips a leave packet on closing/closed sockets
+and sends at most one explicit leave per owned room. The rematch browser check
+now rejects the reported WebSocket closing/closed console warning.
+
+Verification: 476 engine/client tests; project type checking and app build;
+real HTTP/Colyseus/Rapier fixture checks for debug-only diagnostics, abnormal
+transport loss (1006), all rematch socket closures and one old-room disposal;
+two-client React/game browser rematch/reconnect/save checks with no page errors
+or closing-socket console warnings; compiled production runtime with the loaded
+release in structured logs. Final artifact: `app-76950d5cfec935b8`. Evidence:
+`.run/logging-tests.log`, `logging-typecheck.log`, `logging-app-build.log`,
+`logging-app-browser.log`, `logging-app-backend.log`, `logging-runtime.log` and
+`app-browser-report.json`. The deliberate abrupt-loss fixture can print native
+Colyseus client `onError` warnings; the browser console checks are clean.
+The final backend check also verifies the shared control-log helper without
+adding duplicate terminal snapshots. No live service was restarted or real
+Supabase data changed.

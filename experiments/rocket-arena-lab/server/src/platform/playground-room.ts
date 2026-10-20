@@ -13,7 +13,7 @@ import { PlatformGateway } from './gateway.js';
 import { LaunchTickets } from './tickets.js';
 import { PlatformSeats } from './seats.js';
 import { createBotController } from './bot-controller.js';
-import { platformLog } from './logging.js';
+import { isPlatformLogEnabled, platformLog } from './logging.js';
 import { captureSeats, restoreSeats, RoomCheckpoints, PAUSED_RETENTION_MS, type SavedRoom } from './checkpoint.js';
 
 export interface RoomDependencies {
@@ -63,6 +63,8 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
   private completedAt = 0;
   private rematch: { accepted: Set<string>; refused: Set<string> } | null = null;
   private rematchStarting = false;
+  private closingReason: string | null = null;
+  private readonly leaveConsents = new WeakMap<colyseus.Client, boolean>();
 
   onCreate(options: CreateOptions): void {
     if (!dependencies || options.internalKey !== dependencies.internalKey) throw new AdmissionError('UNAUTHORIZED', 401);
@@ -98,12 +100,16 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
     this.onMessage('lab-ping', (client, value: unknown) => {
       if (typeof value === 'number' && Number.isFinite(value)) client.send('lab-pong', value);
     });
-    const telemetry = (event: string) => ({ sessionId: connectionId, ...fields }: Record<string, unknown>) => platformLog('info', event, {
+    const telemetry = (event: string) => ({ sessionId: connectionId, ...fields }: Record<string, unknown>) => platformLog('debug', event, {
       ...fields, connectionId, sessionId: this.sessionId,
       humans: this.seats.humans().length, bots: this.seats.botCount(),
     });
-    this.onMessage('lab-stats', createLabStatsHandler(this.roomId, () => this.seats.seats.filter(seat => seat.human || seat.bot).length, telemetry('ROCKET_CLIENT_WINDOW')));
-    this.onMessage('lab-stall', createLabStallHandler(this.roomId, telemetry('ROCKET_CLIENT_STALL')));
+    const stats = createLabStatsHandler(this.roomId, () => this.seats.seats.filter(seat => seat.human || seat.bot).length, telemetry('ROCKET_CLIENT_WINDOW'));
+    const stalls = createLabStallHandler(this.roomId, telemetry('ROCKET_CLIENT_STALL'));
+    // Keep handlers registered for existing clients, but skip report validation
+    // and serialization entirely unless diagnostic logging is requested.
+    this.onMessage('lab-stats', (client, value: unknown) => { if (isPlatformLogEnabled('debug')) stats(client, value); });
+    this.onMessage('lab-stall', (client, value: unknown) => { if (isPlatformLogEnabled('debug')) stalls(client, value); });
     for (const type of ['lab-input', 'lab-neutral']) this.onMessage(type, (client, value: unknown) => {
       if (this.paused || this.completed || this.disposed) return;
       const actorId = this.seats.actorForConnection(client.sessionId);
@@ -118,6 +124,7 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
         .catch(error => {
           const code = this.errorCode(error);
           platformLog('warn', 'ROCKET_CONTROL_REJECTED', { sessionId: this.sessionId, roomId: this.roomId,
+            allocationId: this.allocationId, connectionId: client.sessionId,
             correlationId: this.admitted.get(client.sessionId)?.correlationId,
             userId: this.admitted.get(client.sessionId)?.profile.userId,
             action: payload && typeof payload === 'object' && typeof (payload as { action?: unknown }).action === 'string'
@@ -144,21 +151,47 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
       this.core.restoreProgressAtKickoff(this.saved.progress);
       this.lastPhase = 'countdown'; this.core.setPaused(true);
     }
+    platformLog('info', 'ROCKET_ROOM_READY', { sessionId: this.sessionId, roomId: this.roomId,
+      allocationId: this.allocationId, restored: !!this.saved, paused: this.paused,
+      phase: this.core.matchFlowState?.phase, duration_ms: Date.now() - this.createdAt });
   }
 
   async whenReady(): Promise<void> { await this.initialized; }
 
   async abortInitialization(): Promise<void> {
+    this.closingReason = 'initialization-failed';
     this.disposed = true;
     this.core?.setPaused(true);
     await this.disconnect();
   }
 
-  async onAuth(_client: colyseus.Client, options: { ticket?: unknown }): Promise<Admission> {
-    const ticket = dependencies.tickets.consume(options.ticket, this.roomId, this.allocationId);
-    if (ticket.sessionId !== this.sessionId || this.seats.banned.has(ticket.userId)) throw new AdmissionError('REMOVED_FROM_ROOM');
-    const profile = await dependencies.gateway.profile(ticket.userId);
-    return { ...await dependencies.gateway.admit(profile, this.sessionId, ticket.observer, ticket.invitationCode), correlationId: ticket.correlationId };
+  async onAuth(client: colyseus.Client, options: { ticket?: unknown }): Promise<Admission> {
+    const connectedAt = Date.now();
+    // onLeave is a room-membership callback; on server disconnect Colyseus can
+    // call it before closing the actual socket. Observe the transport separately
+    // so failed authentication and server-initiated closes are visible too.
+    client.ref.once('close', (closeCode: number) => {
+      const admission = client.auth as Admission | undefined;
+      platformLog(closeCode === 1006 ? 'warn' : 'info', 'ROCKET_SOCKET_CLOSED', {
+        sessionId: this.sessionId, roomId: this.roomId, allocationId: this.allocationId,
+        connectionId: client.sessionId, userId: admission?.profile.userId, correlationId: admission?.correlationId,
+        closeCode, consented: this.leaveConsents.get(client) ?? false,
+        reason: this.closingReason ?? (this.leaveConsents.get(client) ? 'client-leave' : 'transport-close'),
+        duration_ms: Date.now() - connectedAt,
+      });
+    });
+    try {
+      const ticket = dependencies.tickets.consume(options.ticket, this.roomId, this.allocationId);
+      if (ticket.sessionId !== this.sessionId || this.seats.banned.has(ticket.userId)) throw new AdmissionError('REMOVED_FROM_ROOM');
+      const profile = await dependencies.gateway.profile(ticket.userId);
+      return { ...await dependencies.gateway.admit(profile, this.sessionId, ticket.observer, ticket.invitationCode), correlationId: ticket.correlationId };
+    } catch (error) {
+      platformLog(error instanceof AdmissionError && error.status < 500 ? 'warn' : 'error', 'ROCKET_SOCKET_AUTH_REJECTED', {
+        sessionId: this.sessionId, roomId: this.roomId, allocationId: this.allocationId,
+        connectionId: client.sessionId, code: this.errorCode(error),
+      });
+      throw error;
+    }
   }
 
   assertAdmission(admission: Admission): void {
@@ -181,6 +214,18 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
   }
 
   async onJoin(client: colyseus.Client, _options?: unknown, admission?: Admission): Promise<void> {
+    try { await this.joinClient(client, admission); }
+    catch (error) {
+      platformLog(error instanceof AdmissionError && error.status < 500 ? 'warn' : 'error', 'ROCKET_JOIN_FAILED', {
+        sessionId: this.sessionId, roomId: this.roomId, allocationId: this.allocationId,
+        connectionId: client.sessionId, userId: admission?.profile.userId,
+        correlationId: admission?.correlationId, code: this.errorCode(error),
+      });
+      throw error;
+    }
+  }
+
+  private async joinClient(client: colyseus.Client, admission?: Admission): Promise<void> {
     if (!admission) throw new AdmissionError('UNAUTHORIZED', 401);
     await this.initialized;
     if (this.disposed) throw new AdmissionError('SESSION_RECOVERING', 503);
@@ -210,14 +255,20 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
     this.publishPlatformState();
     this.publishSnapshot();
     platformLog('info', 'ROCKET_JOIN_COMPLETED', { sessionId: this.sessionId, roomId: this.roomId,
+      allocationId: this.allocationId, connectionId: client.sessionId,
       userId: admission.profile.userId, correlationId: admission.correlationId, observer: admission.observer });
   }
 
   onLeave(client: colyseus.Client, consented: boolean): void {
+    this.leaveConsents.set(client, consented);
     const admission = this.admitted.get(client.sessionId);
     this.admitted.delete(client.sessionId);
     this.controlAt.delete(client.sessionId);
     this.readyAt.delete(client.sessionId);
+    if (admission) platformLog('debug', 'ROCKET_LEAVE_RECEIVED', { sessionId: this.sessionId, roomId: this.roomId,
+      allocationId: this.allocationId, connectionId: client.sessionId,
+      userId: admission.profile.userId, correlationId: admission.correlationId, consented,
+      serverClosing: this.disposed, reason: this.closingReason ?? (consented ? 'client-leave' : 'connection-lost') });
     if (this.disposed) return;
     if (admission && !admission.observer) {
       const lastHuman = !this.seats.humans().some(human => human.connectionId && human.connectionId !== client.sessionId);
@@ -229,8 +280,6 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
     this.publishPlatformState();
     if (this.rematch) this.controlChain = this.controlChain.catch(() => {}).then(() => this.tryRematch())
       .catch(error => platformLog('warn', 'ROCKET_REMATCH_FAILED', { sessionId: this.sessionId, code: this.errorCode(error) }));
-    if (admission) platformLog('info', 'ROCKET_LEAVE_COMPLETED', { sessionId: this.sessionId, roomId: this.roomId,
-      userId: admission.profile.userId, correlationId: admission.correlationId, consented });
   }
 
   private installControllers(): void {
@@ -293,7 +342,10 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
         this.rematch.accepted.delete(fresh.profile.userId); this.rematch.refused.delete(fresh.profile.userId);
         (request.accept ? this.rematch.accepted : this.rematch.refused).add(fresh.profile.userId);
       }
-      this.publishPlatformState(); await this.tryRematch(); return;
+      this.publishPlatformState(); await this.tryRematch();
+      this.logControl(client, admission, request.action,
+        request.action === 'rematch-response' ? { accept: request.accept } : {});
+      return;
     }
     if (this.completed) throw new AdmissionError('SESSION_COMPLETED', 409);
     // Re-read policy for every privileged action, including a revoked teacher role.
@@ -335,14 +387,20 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
       if (paused) this.seats.retainRoster();
     } else if (request.action === 'end') {
       this.stoppedBy = admission.profile.userId;
-      await this.completeRound('stopped'); return;
+      await this.completeRound('stopped');
+      this.logControl(client, admission, request.action); return;
     } else if (request.action === 'remove' && staff && typeof request.userId === 'string') {
       this.remove(request.userId, 'REMOVED_FROM_ROOM');
       await this.persist();
     } else throw new AdmissionError('BAD_CONTROL', 400);
     this.publishPlatformState(); this.publishSnapshot();
+    this.logControl(client, admission, request.action);
+  }
+
+  private logControl(client: colyseus.Client, admission: Admission, action: string, extra: Record<string, unknown> = {}): void {
     platformLog('info', 'ROCKET_CONTROL_COMPLETED', { sessionId: this.sessionId, roomId: this.roomId,
-      userId: admission.profile.userId, correlationId: admission.correlationId, action: request.action });
+      allocationId: this.allocationId, connectionId: client.sessionId,
+      userId: admission.profile.userId, correlationId: admission.correlationId, action, ...extra });
   }
 
   private remove(userId: string, code: string): void {
@@ -432,7 +490,7 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
         } else this.remove(admission.profile.userId, code);
       }
       await this.persist(); this.publishPlatformState();
-      platformLog('info', 'ROCKET_ROOM_SAMPLE', { sessionId: this.sessionId, roomId: this.roomId,
+      platformLog('debug', 'ROCKET_ROOM_SAMPLE', { sessionId: this.sessionId, roomId: this.roomId,
         humans: this.seats.humans().length, bots: this.seats.botCount(),
         observers: [...this.admitted.values()].filter(admission => admission.observer).length,
         phase: this.core.matchFlowState?.phase, paused: this.paused, tick: this.core.diagnostics.fixedStepsCompleted });
@@ -553,6 +611,7 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
           round: Number(session.game_state.round ?? 1) + 1, botCount: this.seats.botCount(), blueScore: 0, orangeScore: 0,
           checkpoint: dependencies.checkpoints.sign(checkpoint) } });
       // Fence the old writer before clients launch a fresh physics/transport lifetime.
+      this.closingReason = 'rematch';
       this.disposed = true;
       for (const client of this.clients) {
         const admission = this.admitted.get(client.sessionId);
@@ -571,6 +630,7 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
   async hibernate(reason: string): Promise<void> {
     if (this.disposed) return;
     if (this.completed || !this.seats.humans().length) { await this.finish(reason); return; }
+    this.closingReason = reason;
     this.disposed = true; this.pauseForRetention();
     for (const human of this.seats.humans()) human.connectionId = null;
     let confirmed = false;
@@ -590,6 +650,7 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
     if (reason === 'platform-unavailable' && !this.completed && this.seats.humans().length) {
       await this.hibernate(reason); return;
     }
+    this.closingReason = reason;
     this.disposed = true;
     this.core?.setPaused(true);
     try { await this.persist('completed', { reason }); }
@@ -603,6 +664,9 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
     this.disposed = true;
     this.core?.dispose(); this.admitted.clear(); this.installed.clear(); this.controlAt.clear(); this.readyAt.clear();
     dependencies.onDispose(this.sessionId, this.roomId);
+    platformLog('info', 'ROCKET_ROOM_DISPOSED', { sessionId: this.sessionId, roomId: this.roomId,
+      allocationId: this.allocationId, reason: this.closingReason ?? 'framework-dispose',
+      engineReady: this.engineReady, duration_ms: Date.now() - this.createdAt });
   }
   private botName(index: number): string { return `בוט ${index + 1}`; }
   private errorCode(error: unknown): string { return error instanceof AdmissionError ? error.code : 'PLATFORM_UNAVAILABLE'; }

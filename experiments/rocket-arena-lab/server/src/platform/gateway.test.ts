@@ -6,7 +6,7 @@ import { configurePlatformLogger } from './logging.js';
 
 test('database failures report the operation and Postgres code without credentials, query values or response text', async () => {
   const events: Record<string, unknown>[] = [];
-  configurePlatformLogger({ info: value => events.push(value), warn: value => events.push(value), error: value => events.push(value) });
+  configurePlatformLogger({ debug: () => {}, info: value => events.push(value), warn: value => events.push(value), error: value => events.push(value) });
   try {
     const gateway = new PlatformGateway('https://fixture.invalid', 'private-service-key', (async () => new Response(
       JSON.stringify({ code: '42501', message: 'private-response-body' }), { status: 403 },
@@ -16,7 +16,7 @@ test('database failures report the operation and Postgres code without credentia
     assert.equal(JSON.stringify(events).includes('private-service-key'), false);
     assert.equal(JSON.stringify(events).includes('private-response-body'), false);
     assert.equal(JSON.stringify(events).includes('is_active=eq.true'), false);
-  } finally { configurePlatformLogger({ info: () => {}, warn: () => {}, error: () => {} }); }
+  } finally { configurePlatformLogger({ debug: () => {}, info: () => {}, warn: () => {}, error: () => {} }); }
 });
 
 test('gateway applies class exceptions over school recess and fails closed on schedule errors', async () => {

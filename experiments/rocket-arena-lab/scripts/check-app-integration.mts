@@ -30,7 +30,14 @@ const names = (index: number) => index === 1 ? 'אורמן <QA>' : `חבר ${ind
 let platformFailure = false;
 let failedPatch: { sessionId: string; reason: string; commitBeforeFailure?: boolean } | null = null;
 const logs: Record<string, any>[] = [];
-configurePlatformLogger({ info: value => logs.push(value), warn: value => logs.push(value), error: value => logs.push(value) });
+let debugEnabled = false;
+configurePlatformLogger({
+  debug: value => logs.push({ level: 'debug', ...value }),
+  info: value => logs.push({ level: 'info', ...value }),
+  warn: value => logs.push({ level: 'warn', ...value }),
+  error: value => logs.push({ level: 'error', ...value }),
+  isLevelEnabled: level => level !== 'debug' || debugEnabled,
+});
 let heldSessionRead: { sessionId: string; reached(): void; released: Promise<void> } | null = null;
 const chatMessages: Record<string, unknown>[] = [];
 let voiceMints = 0;
@@ -211,6 +218,20 @@ try {
   observer.send('platform-control', { action: 'start' });
   await until(() => errors.get(observer)!.includes('NO_PLAYERS'), 'no bots-only room start');
   const host = await join(sessionId, 1);
+  const sample = { mode: 'predicted', fps: 60, rttMs: 20, pending: 1, ackLag: 1, replayMs: 2, recoveries: 0 };
+  host.send('lab-stats', sample);
+  await pause(100);
+  assert.ok(!logs.some(line => ['ROCKET_CLIENT_WINDOW', 'ROCKET_ROOM_SAMPLE'].includes(line.context.event)));
+  debugEnabled = true;
+  try {
+    host.send('lab-stats', sample);
+    await until(() => logs.some(line => line.context.event === 'ROCKET_CLIENT_WINDOW'), 'opt-in client diagnostics');
+    await waitingRoom.sweep();
+    assert.ok(logs.some(line => line.context.event === 'ROCKET_ROOM_SAMPLE'));
+    assert.ok(logs.filter(line => ['ROCKET_CLIENT_WINDOW', 'ROCKET_ROOM_SAMPLE'].includes(line.context.event))
+      .every(line => line.level === 'debug' && line.context.status === 'success'));
+  } finally { debugEnabled = false; }
+  report.diagnosticsRequireDebugLevel = 'PASS';
   assert.equal(views.get(host)!.actorId, 'rocket-0');
   assert.equal(views.get(observer)!.observer, true);
   assert.equal(views.get(observer)!.actorId, null);
@@ -316,7 +337,13 @@ try {
   await until(() => views.get(host)!.pendingPlayers.find(player => player.userId === uid(3))?.actorId === 'rocket-7', 'host plans bot replacement');
   assert.equal(views.get(late)!.actorId, null); // Plan cannot change physics mid-play.
 
-  friend.connection.close(); // Unconsented loss: reserve, do not remove the car.
+  controlledRoom.clients.find((client: colyseus.Client) => client.sessionId === friend.sessionId).ref.terminate();
+  // An abrupt transport loss reserves the car and produces one warning with
+  // the actual abnormal WebSocket close code, rather than a silent departure.
+  await until(() => logs.some(line => line.context.event === 'ROCKET_SOCKET_CLOSED' && line.connectionId === friend.sessionId), 'abnormal socket close log');
+  const lostSocket = logs.find(line => line.context.event === 'ROCKET_SOCKET_CLOSED' && line.connectionId === friend.sessionId)!;
+  assert.equal(lostSocket.closeCode, 1006);
+  assert.equal(lostSocket.level, 'warn');
   await until(() => views.get(host)!.players.some(player => player.actorId === actor && !player.connected), 'reserve disconnected car');
   const returned = await join(sessionId, 2);
   assert.equal(views.get(returned)!.actorId, actor);
@@ -342,6 +369,25 @@ try {
   late.send('platform-control', { action: 'rematch-response', accept: true });
   await until(() => sessions.get(sessionId)!.status === 'waiting', 'consented rematch resets platform session');
   await until(() => !colyseus.matchMaker.getRoomById(host.id), 'old room disposed after rematch');
+  await until(() => logs.filter(line => line.context.event === 'ROCKET_SOCKET_CLOSED' && line.roomId === host.id && line.reason === 'rematch').length === 3,
+    'all old rematch sockets report closure');
+  const oldLifecycle = logs.filter(line => line.roomId === host.id);
+  assert.equal(oldLifecycle.filter(line => line.context.event === 'ROCKET_ROOM_READY').length, 1);
+  const disposed = oldLifecycle.filter(line => line.context.event === 'ROCKET_ROOM_DISPOSED');
+  assert.equal(disposed.length, 1);
+  assert.equal(disposed[0].reason, 'rematch');
+  for (const connection of [host, late, observer]) {
+    const joined = oldLifecycle.find(line => line.context.event === 'ROCKET_JOIN_COMPLETED' && line.connectionId === connection.sessionId);
+    const closed = oldLifecycle.find(line => line.context.event === 'ROCKET_SOCKET_CLOSED' && line.connectionId === connection.sessionId);
+    assert.ok(joined && closed);
+    assert.equal(closed.reason, 'rematch');
+    assert.equal(closed.userId, joined.userId);
+    assert.equal(closed.correlationId, joined.correlationId);
+    assert.equal(closed.allocationId, joined.allocationId);
+    assert.equal(typeof closed.closeCode, 'number');
+    assert.ok(closed.duration_ms >= 0);
+  }
+  report.roomAndSocketLifecycle = 'PASS';
   await until(() => rematches.get(host)!.at(-1) === true && rematches.get(late)!.at(-1) === true && rematches.get(observer)!.at(-1) === true, 'consenters and observer follow rematch');
   assert.notEqual(sessions.get(sessionId)!.game_state!.allocationId, oldAllocation);
   assert.equal(sessions.get(sessionId)!.game_state!.blueScore, 0);

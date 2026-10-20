@@ -685,7 +685,6 @@ export function setupStateListener(
     acceptedSnapshotStore.reset(acceptedGeneration);
   });
 
-  console.log('[State] Listener setup complete (atomic buffered snapshots)');
 }
 
 export function setInterpolationDelay(delayMs: number): void {

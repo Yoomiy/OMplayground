@@ -13,6 +13,7 @@ export class RoomConnectionManager {
   private room: GameRoom | null = null;
   private requestGeneration = 0;
   private readonly joinedRoomModes = new WeakMap<GameRoom, RoomMode>();
+  private readonly closingRooms = new WeakSet<GameRoom>();
 
   constructor(
     readonly client: Client,
@@ -26,7 +27,6 @@ export class RoomConnectionManager {
       'quick',
       generation,
     );
-    console.log(`[Net] Joined arena room: ${joinedRoom.id}, sessionId: ${joinedRoom.sessionId}`);
     return joinedRoom;
   }
 
@@ -46,7 +46,6 @@ export class RoomConnectionManager {
       'custom',
       generation,
     );
-    console.log(`[Net] Created custom room: ${joinedRoom.id}`);
     return joinedRoom;
   }
 
@@ -61,7 +60,6 @@ export class RoomConnectionManager {
       'custom',
       generation,
     );
-    console.log(`[Net] Joined custom room: ${joinedRoom.id} (code: ${code})`);
     return joinedRoom;
   }
 
@@ -88,6 +86,11 @@ export class RoomConnectionManager {
   }
 
   private closeRoom(room: GameRoom): void {
+    // Colyseus 0.15 leave() always sends a packet, even on a closing socket.
+    // A server-driven rematch may already have closed this transport before
+    // the parent replaces the frame. Cleanup must not send another leave.
+    if (!room.connection?.isOpen || this.closingRooms.has(room)) return;
+    this.closingRooms.add(room);
     try { void Promise.resolve(room.leave()).catch(() => {}); } catch { /* Already closed. */ }
   }
 

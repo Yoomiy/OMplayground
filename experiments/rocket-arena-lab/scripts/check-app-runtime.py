@@ -67,10 +67,13 @@ with tempfile.TemporaryDirectory(prefix='rocket-app-runtime-') as temporary:
                 raise RuntimeError('Graceful runtime shutdown timed out')
     assert process.returncode == 0, log.read_text()
     lines = [json.loads(line) for line in log.read_text().splitlines() if line.startswith('{')]
-    assert any(line.get('service') == 'rocket-server' and line.get('context', {}).get('event') == 'ROCKET_SERVICE_READY' for line in lines)
+    release = json.loads((target / 'server/dist/platform/build.json').read_text())['release']
+    assert any(line.get('service') == 'rocket-server' and line.get('release') == release
+               and line.get('level') == 'info' and line.get('context', {}).get('event') == 'ROCKET_SERVICE_READY'
+               for line in lines)
     report = {'status': 'PASS', 'productionInstall': True, 'serverOnlyDependencies': True,
               'installedDependencyBytes': dependency_bytes, 'compiledEntrypoint': True,
-              'canonicalPlatformLogger': True, 'staticFramePolicy': True,
+              'canonicalPlatformLogger': True, 'loadedReleaseInLogs': True, 'staticFramePolicy': True,
               'anonymousMatchmakingDenied': True, 'gracefulShutdown': True,
               'dockerImageBuilt': False}
     (root / '.run' / 'app-runtime-report.json').write_text(json.dumps(report, indent=2))

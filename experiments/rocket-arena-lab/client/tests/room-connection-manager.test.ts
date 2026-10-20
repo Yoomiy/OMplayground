@@ -173,3 +173,33 @@ test('unknown Custom codes fail without claiming a room or mode', async () => {
   assert.equal(manager.getRoom(), null);
   assert.deepEqual(fakeClient.calls, [['getAvailableRooms', 'custom']]);
 });
+
+test('disposing during server-driven close never sends leave on the closing socket', async () => {
+  const fake = new FakeClient();
+  const manager = new RoomConnectionManager(asClient(fake));
+  await manager.createCustomRoom();
+  // isOpen becomes false at CLOSING, before the SDK fires onLeave. This is
+  // the interval in which the app replaces the old frame during a rematch.
+  fake.createdCustom.connection.isOpen = false;
+  fake.createdCustom.leave = () => {
+    fake.createdCustom.leaveCount++;
+    throw new Error('WebSocket is already in CLOSING or CLOSED state');
+  };
+  manager.leave(); manager.leave();
+  assert.equal(fake.createdCustom.leaveCount, 0);
+  assert.equal(manager.getRoom(), null);
+});
+
+test('cancelled matchmaking does not leave a late room whose socket already closed', async () => {
+  const fake = new FakeClient();
+  let finish!: (room: FakeRoom) => void;
+  fake.create = async () => new Promise(resolve => { finish = resolve; });
+  const manager = new RoomConnectionManager(asClient(fake));
+  const joining = manager.createCustomRoom();
+  manager.leave();
+  fake.createdCustom.connection.isOpen = false;
+  finish(fake.createdCustom);
+  await assert.rejects(joining, /cancelled/);
+  assert.equal(fake.createdCustom.leaveCount, 0);
+  assert.equal(manager.getRoom(), null);
+});

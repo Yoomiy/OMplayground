@@ -99,6 +99,17 @@ Chat now uses the shared persisted feed and moderation RPCs; voice uses the shar
 panel and canonical LiveKit microphone token helper, with explicit join. Both
 require live authenticated room membership.
 
+Operational logs default to lifecycle/actions at `info`: room readiness/disposal,
+joins, actual socket closures, saves, completed rounds and rematches. Socket
+closures carry numeric close codes and connection IDs; server-driven closure
+records its cause, including `rematch`, even after the old room is fenced off.
+Abnormal closure and authentication/join failures remain visible. Detailed
+performance windows/stalls, room samples and membership leave receipts require
+`LOG_LEVEL=debug`. Routine client initialization messages are removed. See
+`RAILWAY.md` for fields and retention. Client disposal skips `leave()` when the
+transport is already closing/closed, so rematch frame replacement cannot send a
+second leave packet to a dead socket.
+
 ## Implementation sequence
 
 The initial implementation follows this order. Backend adapters live under

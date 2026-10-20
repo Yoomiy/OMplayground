@@ -10,9 +10,11 @@ export async function runBrowserChecks(origin, sessionId, freezeForLateJoin, fai
   const page = await context.newPage();
   page.on('pageerror', error => errors.push(error.message));
   const startupWarnings = [];
+  const socketWarnings = [];
   const inspectConsole = entry => {
     const text = entry.text();
     if (/Allow attribute|target origin provided|onMessage\(\) not registered/.test(text)) startupWarnings.push(text);
+    if (/WebSocket.*(?:CLOSING|CLOSED)|already in (?:CLOSING|CLOSED)/i.test(text)) socketWarnings.push(text);
     if (entry.type() === 'error') consoleErrors.push(text);
   };
   page.on('console', inspectConsole);
@@ -151,10 +153,11 @@ export async function runBrowserChecks(origin, sessionId, freezeForLateJoin, fai
     await gameFrame().waitForFunction(() => !document.querySelector('canvas') && !window.__drivingLab);
     assert.deepEqual(errors, []);
     assert.deepEqual(startupWarnings, []);
+    assert.deepEqual(socketWarnings, []);
     return { status: 'PASS', parent: 'actual RocketSessionContainer', backend: 'real Colyseus/Rapier',
       identity: 'fixture Supabase API', hebrewNames: true, authoritativeInputs: true, pauseResume: true,
       optionalBotsAndTeamControls: true, soloTeamSwitch: true, persistedChat: true, voicePanel: true, rematchFrameCleanup: true, multiplayerRematch: true, directRosterAssignment: true, desktopRosterShortcutRemoved: true, strictModeStartupWarnings: startupWarnings,
-      lateJoinWaiting: true, hostRecruitAssignment: true, roomRoster: true, fullscreen: true, reconnectPreservesRenderer: true, saveFailureAndRetry: true, disposedFrame: true, foreignMessageRejected: true, browserErrors: errors, driving };
+      lateJoinWaiting: true, hostRecruitAssignment: true, roomRoster: true, fullscreen: true, reconnectPreservesRenderer: true, saveFailureAndRetry: true, disposedFrame: true, foreignMessageRejected: true, browserErrors: errors, socketWarnings, driving };
   } catch (error) {
     const pages = await Promise.all(context.pages().map(async item => ({ url: item.url(),
       text: await item.locator('body').innerText().catch(() => ''), frames: item.frames().map(frame => frame.url()) })));
