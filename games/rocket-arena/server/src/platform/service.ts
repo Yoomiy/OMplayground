@@ -12,7 +12,7 @@ import { platformLog } from './logging.js';
 import { RoomCheckpoints } from './checkpoint.js';
 
 const { matchMaker } = colyseus;
-export interface ServiceOptions { gateway: PlatformGateway; ticketSecret: string; origins: string[]; clientDir: string; maxRooms: number;
+export interface ServiceOptions { gateway: PlatformGateway; ticketSecret: string; origins: string[]; clientDir: string;
   release?: string;
   createVoiceToken?: (args: { sessionId: string; userId: string; displayName: string }) => Promise<{ token: string; serverUrl: string }> }
 
@@ -22,24 +22,32 @@ export function createPlatformService(options: ServiceOptions) {
   const internalKey = randomBytes(32).toString('hex');
   const instanceId = randomUUID();
   const allocations = new Map<string, Promise<{ roomId: string; allocationId: string }>>();
+  const liveRooms = new Set<string>();
   const origins = new Set(options.origins);
   const clientDir = resolve(options.clientDir);
   const launchRates = new Map<string, { at: number; count: number }>();
   const voiceTokens = new Map<string, { expiresAt: number; pending: Promise<{ token: string; serverUrl: string }> }>();
   let draining = false;
-  if (!origins.size || !Number.isSafeInteger(options.maxRooms) || options.maxRooms < 1) throw new Error('App origins and a positive room limit are required');
+  if (!origins.size) throw new Error('App origins are required');
   for (const origin of origins) if (new URL(origin).origin !== origin) throw new Error('APP_ORIGINS must contain exact origins');
 
-  configurePlatformRooms({ gateway: options.gateway, tickets, checkpoints, internalKey, onDispose(sessionId, roomId) {
-    const pending = allocations.get(sessionId);
-    void pending?.then(allocation => { if (allocation.roomId === roomId) allocations.delete(sessionId); }, () => {});
-  } });
+  configurePlatformRooms({ gateway: options.gateway, tickets, checkpoints, internalKey,
+    onReady(roomId) { liveRooms.add(roomId); return liveRooms.size; },
+    onDispose(sessionId, roomId) {
+      liveRooms.delete(roomId);
+      const pending = allocations.get(sessionId);
+      void pending?.then(allocation => {
+        if (allocation.roomId === roomId && allocations.get(sessionId) === pending) allocations.delete(sessionId);
+      }, () => {});
+      return liveRooms.size;
+    },
+  });
 
   async function allocate(admission: Admission) {
     const sessionId = admission.session.id;
     const existing = allocations.get(sessionId);
     if (existing) return existing;
-    if (draining || allocations.size >= options.maxRooms) throw new AdmissionError('SERVICE_BUSY', 503);
+    if (draining) throw new AdmissionError('SERVICE_DRAINING', 503);
     const pending = (async () => {
       const session = await options.gateway.session(sessionId);
       if (session.status === 'completed') throw new AdmissionError('SESSION_COMPLETED', 409);
@@ -124,7 +132,7 @@ export function createPlatformService(options: ServiceOptions) {
     if (req.method === 'OPTIONS') { res.writeHead(origin && origins.has(origin) ? 204 : 403); res.end(); return; }
     const url = new URL(req.url ?? '/', 'http://rocket.internal');
     if (url.pathname === '/health') { json(res, 200, { ok: true, service: 'playground-rocket', protocol: 1, release: options.release ?? 'development' }); return; }
-    if (url.pathname === '/ready') { json(res, draining ? 503 : 200, { ok: !draining, activeRooms: allocations.size, maxRooms: options.maxRooms, release: options.release ?? 'development' }); return; }
+    if (url.pathname === '/ready') { json(res, draining ? 503 : 200, { ok: !draining, activeRooms: liveRooms.size, release: options.release ?? 'development' }); return; }
     if (url.pathname === '/api/rocket/config') { json(res, 200, { protocol: 1, appOrigins: [...origins], release: options.release ?? 'development',
       capabilities: ['lobby-controls', 'session-chat', 'voice', 'retained-matches', 'queued-roster', 'rematch', 'save-outcomes', 'platform-only'] }); return; }
     if (['/api/rocket/chat', '/api/rocket/voice'].includes(url.pathname) && req.method === 'POST') {

@@ -47,7 +47,6 @@ const env = {
   LIVEKIT_API_SECRET: settings.LIVEKIT_API_SECRET ?? serverEnv.LIVEKIT_API_SECRET,
   ROCKET_TICKET_SECRET: settings.ROCKET_TICKET_SECRET ?? await localTicketSecret(),
   APP_ORIGINS: settings.APP_ORIGINS ?? 'http://localhost:5173,http://127.0.0.1:5173',
-  ROCKET_MAX_ROOMS: settings.ROCKET_MAX_ROOMS ?? '2',
   NODE_ENV: 'production',
   ROCKET_TEST_HOOKS: '0',
   HOST: '127.0.0.1',

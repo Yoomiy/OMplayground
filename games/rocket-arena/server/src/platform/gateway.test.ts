@@ -43,6 +43,25 @@ test('gateway applies class exceptions over school recess and fails closed on sc
   await assert.rejects(unavailable.withinRecess(kid), /PLATFORM_UNAVAILABLE/);
 });
 
+test('cached schedules still enforce the actual Jerusalem recess boundary', async t => {
+  // Monday, 09:59:55 in Jerusalem (summer time).
+  t.mock.timers.enable({ apis: ['Date'], now: new Date('2026-06-01T06:59:55Z') });
+  let reads = 0;
+  const gateway = new PlatformGateway('https://fixture.invalid', 'fixture-secret', (async input => {
+    reads++;
+    const rows = String(input).includes('/recess_schedules?')
+      ? [{ day_of_week: 1, start_time: '10:00', end_time: '10:01', is_active: true }] : [];
+    return new Response(JSON.stringify(rows), { status: 200 });
+  }) as typeof fetch);
+  const kid: PlatformProfile = { userId: 'kid', role: 'kid', gender: 'boy', grade: 'ג', name: 'חבר' };
+  assert.equal(await gateway.withinRecess(kid), false);
+  t.mock.timers.setTime(new Date('2026-06-01T07:00:00Z').getTime());
+  assert.equal(await gateway.withinRecess(kid), true);
+  assert.equal(reads, 3, 'a cached schedule must not cache an access decision');
+  t.mock.timers.setTime(new Date('2026-06-01T07:01:00Z').getTime());
+  assert.equal(await gateway.withinRecess(kid), false, 'the ending minute is excluded');
+});
+
 test('lifecycle writes use compare-and-swap rather than overwrite concurrent moderation', async () => {
   const session: PlatformSession = { id: 'session', status: 'playing', game_state: { allocationId: 'generation' },
     player_ids: ['kid'], player_names: ['חבר'], host_id: 'kid', is_open: true, gender: 'boy', invitation_code: null,

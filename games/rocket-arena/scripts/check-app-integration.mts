@@ -135,7 +135,7 @@ const transport = new wsTransport.WebSocketTransport({ server: backend, maxPaylo
 const gameServer = new colyseus.Server({ gracefullyShutdown: false, greet: false, transport });
 const gateway = new PlatformGateway('http://127.0.0.1:19007', 'fixture-service-key');
 const serviceOptions = { gateway, ticketSecret: 'fixture-secret-with-more-than-32-characters',
-  origins: [origin], clientDir: `${root}/client/dist`, maxRooms: 2, createVoiceToken: async (args: { sessionId: string; userId: string; displayName: string }) => { voiceMints++; await new Promise(resolve => setTimeout(resolve, 30)); return createGameVoiceToken(args); }, release: 'fixture-release' };
+  origins: [origin], clientDir: `${root}/client/dist`, createVoiceToken: async (args: { sessionId: string; userId: string; displayName: string }) => { voiceMints++; await new Promise(resolve => setTimeout(resolve, 30)); return createGameVoiceToken(args); }, release: 'fixture-release' };
 let service = createPlatformService(serviceOptions);
 gameServer.define('playground', service.roomClass);
 backend.removeAllListeners('request'); backend.on('request', service.handle);
@@ -202,6 +202,25 @@ try {
   const config = await (await fetch(`${endpoint}/api/rocket/config`)).json() as { release: string; capabilities: string[] };
   assert.equal(config.release, 'fixture-release');
   assert.deepEqual(config.capabilities, ['lobby-controls', 'session-chat', 'voice', 'retained-matches', 'queued-roster', 'rematch', 'save-outcomes', 'platform-only']);
+  // Exercise concurrent rooms beyond the former default cap, using real engines.
+  const concurrentRooms = await Promise.all([13, 14, 15].map(async user => {
+    const id = newSession(40 + user);
+    Object.assign(sessions.get(id)!, { host_id: uid(user), player_ids: [uid(user)], player_names: [names(user)] });
+    return join(id, user);
+  }));
+  const concurrentIds = new Set(concurrentRooms.map(room => room.id));
+  const ready = await (await fetch(`${endpoint}/ready`)).json() as { activeRooms: number; maxRooms?: number };
+  assert.equal(ready.activeRooms, 3);
+  assert.equal(ready.maxRooms, undefined);
+  assert.deepEqual(logs.filter(line => line.context.event === 'ROCKET_ROOM_READY' && concurrentIds.has(line.roomId))
+    .map(line => line.activeRooms).sort(), [1, 2, 3]);
+  await Promise.all(concurrentRooms.map(room =>
+    (colyseus.matchMaker.getRoomById(room.id) as PlaygroundRoom).hibernate('fixture-room-count')));
+  await until(() => concurrentRooms.every(room => !colyseus.matchMaker.getRoomById(room.id)), 'concurrent rooms disposed');
+  assert.deepEqual(logs.filter(line => line.context.event === 'ROCKET_ROOM_DISPOSED' && concurrentIds.has(line.roomId))
+    .map(line => line.activeRooms).sort(), [0, 1, 2]);
+  assert.equal(((await (await fetch(`${endpoint}/ready`)).json()) as { activeRooms: number }).activeRooms, 0);
+  report.uncappedRoomsAndLifecycleCounts = 'PASS';
   const sessionId = newSession(1);
   assert.equal((await fetch(`${endpoint}/matchmake/custom`)).status, 403);
   assert.equal((await launch(sessionId, 1, {}, 'https://untrusted.example')).status, 403);
@@ -530,7 +549,18 @@ try {
   assert.equal(stopped.last_activity, stopped.ended_at);
   assert.deepEqual(stopped.player_ids, [uid(1)]);
   assert.deepEqual(stopped.connected_player_ids, []);
+  assert.equal(stopped.game_state!.phase, 'ended');
+  assert.equal(stopped.game_state!.reason, 'stopped');
+  assert.equal(stopped.game_state!.checkpoint, null);
+  assert.equal(stopped.game_state!.blueScore, restoredRoom.core.matchFlowState.blueScore);
+  assert.equal(stopped.game_state!.orangeScore, restoredRoom.core.matchFlowState.orangeScore);
+  assert.equal(stopped.game_state!.regulationStepsRemaining, restoredRoom.core.matchFlowState.regulationStepsRemaining);
+  assert.equal(stopped.game_state!.regulationCutoffResolved, restoredRoom.core.matchFlowState.regulationCutoffResolved);
+  assert.equal(stopped.game_state!.botCount, 3);
+  assert.deepEqual(stopped.game_state!.teams, savedState.teams);
+  const finalState = structuredClone(stopped.game_state);
   await pause(300); await disposeCompletedRooms();
+  assert.deepEqual(sessions.get(retainedSession)!.game_state, finalState, 'disposal preserves the final DB state');
   report.pausedRetentionAndStopParity = 'PASS';
   const expiredSession = newSession(7);
   const expiredPayload = { ...(savedState.checkpoint as any).payload, sessionId: expiredSession, expiresAt: Date.now() - 1 };
@@ -610,9 +640,17 @@ createRoot(document.getElementById('root')!).render(<StrictMode><BrowserRouter><
   const recessSession = newSession(9);
   const recessHost = await join(recessSession, 1);
   const recessFriend = await join(recessSession, 2);
+  recessHost.send('platform-control', { action: 'bots', count: 2 });
+  await until(() => views.get(recessHost)!.players.filter(player => player.kind === 'bot').length === 2, 'recess bots');
+  await pause(350);
   recessHost.send('platform-control', { action: 'start' });
   await until(() => frames.get(recessHost)?.phase === 'playing', 'start per-class recess check');
-  const recessRoom = colyseus.matchMaker.getRoomById(recessHost.id) as unknown as { sweep(): Promise<void> };
+  const recessRoom = colyseus.matchMaker.getRoomById(recessHost.id) as unknown as {
+    sweep(): Promise<void>;
+    core: { matchFlowState: { blueScore: number; orangeScore: number; regulationStepsRemaining: number;
+      regulationActivePlayStepsCompleted: number; regulationCutoffResolved: boolean };
+      commitMatchFlowState(flow: unknown): void };
+  };
   recessDenied.add(2);
   await recessRoom.sweep();
   await until(() => errors.get(recessFriend)!.includes('RECESS_DENIED'), 'evict only the child whose recess ended');
@@ -620,17 +658,43 @@ createRoot(document.getElementById('root')!).render(<StrictMode><BrowserRouter><
   assert.equal(sessions.get(recessSession)!.status, 'playing');
   recessDenied.clear();
   const recessReturned = await join(recessSession, 2);
+  // Distinct nonzero progress catches an accidental reset on save/recovery.
+  const recessFlow = recessRoom.core.matchFlowState;
+  recessRoom.core.commitMatchFlowState(Object.freeze({ ...recessFlow, blueScore: 2, orangeScore: 1, regulationStepsRemaining: 4321,
+    regulationActivePlayStepsCompleted: recessFlow.regulationActivePlayStepsCompleted + recessFlow.regulationStepsRemaining - 4321 }));
   recessDenied.add(1); recessDenied.add(2);
-  await recessRoom.sweep();
-  await until(() => !colyseus.matchMaker.getRoomById(recessHost.id), 'save when all children lose eligibility');
+  // Let the production 15-second eligibility timer enforce simultaneous expiry.
+  await until(() => !colyseus.matchMaker.getRoomById(recessHost.id), 'scheduled recess enforcement saves empty room', 20_000);
   assert.equal(sessions.get(recessSession)!.status, 'paused');
   assert.deepEqual(new Set(sessions.get(recessSession)!.player_ids), new Set([uid(1), uid(2)]));
   assert.deepEqual(sessions.get(recessSession)!.connected_player_ids, []);
+  const recessState = sessions.get(recessSession)!.game_state!;
+  const recessSave = new RoomCheckpoints(serviceOptions.ticketSecret).read(recessState.checkpoint, recessSession);
+  assert.ok(recessSave, 'Supabase round-trip retains a valid signed checkpoint');
+  assert.ok(recessSave.progress.blueScore >= 2);
+  assert.ok(recessSave.progress.orangeScore >= 1);
+  assert.ok(recessSave.progress.regulationStepsRemaining > 0 && recessSave.progress.regulationStepsRemaining <= 4321);
+  assert.ok(Math.abs(recessSave.expiresAt - Date.parse(sessions.get(recessSession)!.last_activity!) - 24 * 60 * 60_000) < 10);
+  assert.equal(recessState.botCount, 2);
+  assert.equal((await launch(recessSession, 1)).data.code, 'RECESS_DENIED');
+  assert.equal((await launch(recessSession, 2)).data.code, 'RECESS_DENIED');
+  assert.deepEqual(sessions.get(recessSession)!.game_state, recessState, 'denied re-entry preserves saved state');
   recessDenied.clear();
   const recessRestored = await join(recessSession, 1);
   const recruitRestored = await join(recessSession, 2);
   assert.ok(views.get(recruitRestored)!.actorId); // Restored pending recruit enters at this recovery kickoff.
   assert.equal(views.get(recruitRestored)!.pending, false);
+  assert.equal(views.get(recessRestored)!.paused, true);
+  assert.deepEqual(views.get(recessRestored)!.score, { blue: recessSave.progress.blueScore, orange: recessSave.progress.orangeScore });
+  assert.equal(views.get(recessRestored)!.players.filter(player => player.kind === 'bot').length, 2);
+  const recoveredRecessRoom = colyseus.matchMaker.getRoomById(recessRestored.id) as unknown as typeof recessRoom;
+  assert.deepEqual({ blueScore: recoveredRecessRoom.core.matchFlowState.blueScore,
+    orangeScore: recoveredRecessRoom.core.matchFlowState.orangeScore,
+    regulationStepsRemaining: recoveredRecessRoom.core.matchFlowState.regulationStepsRemaining,
+    regulationCutoffResolved: recoveredRecessRoom.core.matchFlowState.regulationCutoffResolved }, recessSave.progress);
+  recessRestored.send('platform-control', { action: 'resume' });
+  await until(() => frames.get(recessRestored)?.phase === 'playing', 'resume saved recess game');
+  await pause(350);
   recessRestored.send('platform-control', { action: 'end' });
   await until(() => sessions.get(recessSession)!.status === 'completed', 'stop restored recess game');
   await pause(300); await disposeCompletedRooms();

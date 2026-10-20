@@ -8,14 +8,14 @@ Use the repository root as build context and
 `/packages/observability/src/logger.ts` and
 `/apps/game-server/src/gameVoiceToken.ts`.
 
-Run one replica. `ROCKET_MAX_ROOMS=2` is an initial admission ceiling, not a
+Run one replica. Room creation has no configured room-count cap; this is not a
 measured capacity guarantee. Do not enable multiple active room owners or
 horizontal replicas. The service serves the authenticated API, game frame and
 WebSockets from one HTTPS origin. Anonymous create/join/list routes are blocked.
 
 Use [.env.example](.env.example) for runtime settings: Supabase URL/service key,
 a stable `ROCKET_TICKET_SECRET` of at least 32 random characters, exact
-comma-separated `APP_ORIGINS`, room cap and the shared LiveKit server credentials.
+comma-separated `APP_ORIGINS` and the shared LiveKit server credentials.
 Railway supplies `PORT`; Docker sets `HOST=0.0.0.0` and `NODE_ENV=production`.
 There is only one runtime mode, so no lab/app mode switch or developer-tuning
 flag is required. Never set `ROCKET_TEST_HOOKS=1` for a deployed build.
@@ -41,7 +41,18 @@ Supabase stores session boundaries/results and signed checkpoints, not physics
 ticks. Saved score/time/roster/team/bot state remains resumable for 24 hours;
 restoration creates a fresh kickoff and pauses until resumed. The main app's
 cleanup expires old paused sessions. Runtime rooms and sockets live only in
-process memory.
+process memory. Explicit stop instead saves a completed session with final score,
+remaining match time, teams, bot count and stop metadata; it is not a resumable
+pause. Session records remain in the database.
+
+Eligibility is rechecked every 15 seconds using the current Jerusalem time and
+each child's class schedule. When one child's recess ends, only that child is
+removed while eligible players continue. When no eligible human remains, the
+room pauses, saves its signed checkpoint to Supabase and releases memory once
+empty. Its roster can return during an allowed recess within the 24-hour
+retention window. Recovery starts paused at a fresh kickoff with saved score,
+time and teams. Schedule configuration reads are cached for 15 seconds; access
+decisions are evaluated afresh, including schedule boundaries.
 
 Keep the ticket secret stable across releases/rollbacks. Graceful SIGTERM/SIGINT
 stops new allocation, checkpoints live rooms and closes their sockets. An
@@ -75,8 +86,11 @@ Lifecycle records carry loaded release, platform session, room/allocation,
 connection and verified user/correlation IDs where available. Socket close
 records include numeric WebSocket code, duration and server closure reason
 (e.g. `rematch`); room disposal can precede the socket's final close callback.
-Detailed diagnostics remain bounded, client-reported observations. No per-frame,
-input or snapshot logging. Chat content stays in the moderated chat table;
+`ROCKET_ROOM_READY` and `ROCKET_ROOM_DISPOSED` include `activeRooms`, the number
+of initialized rooms still in this process, including waiting/paused/rematch
+rooms until disposal. DB-only saved rooms are excluded. `/ready` exposes the
+same count. Detailed diagnostics remain bounded, client-reported observations.
+No per-frame, input or snapshot logging. Chat content stays in the moderated chat table;
 credentials, voice audio and free-form socket close text are not logged.
 Process/hosting retention governs logs; `.run/` reports are local ignored evidence.
 

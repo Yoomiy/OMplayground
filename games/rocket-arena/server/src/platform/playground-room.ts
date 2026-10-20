@@ -21,7 +21,8 @@ export interface RoomDependencies {
   tickets: LaunchTickets;
   checkpoints: RoomCheckpoints;
   internalKey: string;
-  onDispose(sessionId: string, roomId: string): void;
+  onReady(roomId: string): number;
+  onDispose(sessionId: string, roomId: string): number;
 }
 let dependencies: RoomDependencies;
 export function configurePlatformRooms(value: RoomDependencies): void { dependencies = value; }
@@ -151,7 +152,8 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
       this.core.restoreProgressAtKickoff(this.saved.progress);
       this.lastPhase = 'countdown'; this.core.setPaused(true);
     }
-    platformLog('info', 'ROCKET_ROOM_READY', { sessionId: this.sessionId, roomId: this.roomId,
+    const activeRooms = dependencies.onReady(this.roomId);
+    platformLog('info', 'ROCKET_ROOM_READY', { sessionId: this.sessionId, roomId: this.roomId, activeRooms,
       allocationId: this.allocationId, restored: !!this.saved, paused: this.paused,
       phase: this.core.matchFlowState?.phase, duration_ms: Date.now() - this.createdAt });
   }
@@ -526,7 +528,9 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
         teams: this.seats.seats.filter(seat => seat.human || seat.bot).map(seat => ({ actorId: seat.actorId,
           userId: seat.human?.userId ?? null, team: seat.index % 2 === 0 ? 'blue' : 'orange' })),
         leaseUntil: Date.now() + 60_000, blueScore: this.core.matchFlowState?.blueScore ?? 0,
-        orangeScore: this.core.matchFlowState?.orangeScore ?? 0, ...extra };
+        orangeScore: this.core.matchFlowState?.orangeScore ?? 0,
+        regulationStepsRemaining: flow?.regulationStepsRemaining ?? 0,
+        regulationCutoffResolved: flow?.regulationCutoffResolved ?? false, ...extra };
       // A teacher can open a waiting room before its host finishes loading.
       // Heartbeats must not erase the original platform roster in that interval.
       await dependencies.gateway.update(current, { status: nextStatus, game_state: gameState,
@@ -663,8 +667,8 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
   onDispose(): void {
     this.disposed = true;
     this.core?.dispose(); this.admitted.clear(); this.installed.clear(); this.controlAt.clear(); this.readyAt.clear();
-    dependencies.onDispose(this.sessionId, this.roomId);
-    platformLog('info', 'ROCKET_ROOM_DISPOSED', { sessionId: this.sessionId, roomId: this.roomId,
+    const activeRooms = dependencies.onDispose(this.sessionId, this.roomId);
+    platformLog('info', 'ROCKET_ROOM_DISPOSED', { sessionId: this.sessionId, roomId: this.roomId, activeRooms,
       allocationId: this.allocationId, reason: this.closingReason ?? 'framework-dispose',
       engineReady: this.engineReady, duration_ms: Date.now() - this.createdAt });
   }

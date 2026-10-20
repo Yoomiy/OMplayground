@@ -26,7 +26,7 @@ async function main(): Promise<void> {
     ticketSecret: process.env.ROCKET_TICKET_SECRET ?? '',
     origins: (process.env.APP_ORIGINS ?? '').split(',').map(value => value.trim()).filter(Boolean),
     clientDir: process.env.ROCKET_CLIENT_DIR ?? fileURLToPath(new URL('../../client/dist/', import.meta.url)),
-    maxRooms: Number(process.env.ROCKET_MAX_ROOMS ?? 2), createVoiceToken: createGameVoiceToken, release,
+    createVoiceToken: createGameVoiceToken, release,
   });
   gameServer.define('playground', app.roomClass);
   // All matchmaking goes through authenticated launch; there is no anonymous adapter.
