@@ -22,6 +22,7 @@ import {
   updateNpcProgress,
 } from "../src/shared/npc"
 import { platformControlSchema } from "../src/shared/platform-protocol"
+import { isWobbleView } from "../src/shared/platform-view"
 import { asPlayerId, NEUTRAL_INPUT } from "../src/shared/types"
 import { createWorldSnapshot } from "../src/shared/world"
 
@@ -176,7 +177,7 @@ function captureLogs(): CapturedLog[] {
 
 describe("Wobble app admission and persistence", () => {
   for (const role of ["teacher", "admin"] as const) {
-    test(`${role} observers can moderate but cannot configure, start or advance races`, async () => {
+    test(`${role} observers have chat moderation and only declared session permissions`, async () => {
       const { gateway, room } = await fixture()
       gateway.roles.set(TEACHER, role)
       await room.attach(await gateway.admit(await gateway.profile(TEACHER), SESSION, true))
@@ -184,6 +185,8 @@ describe("Wobble app admission and persistence", () => {
         observer: true,
         actorId: null,
         canControl: false,
+        canManageSession: role === "admin",
+        canRemovePlayers: role === "admin",
         canModerate: true,
       })
       for (const command of [
@@ -201,16 +204,48 @@ describe("Wobble app admission and persistence", () => {
       await expect(room.control(PROFILE(TEACHER), { action: "start" })).rejects.toThrow(
         "CONTROL_FORBIDDEN",
       )
+      if (role === "teacher") {
+        expect(room.view(TEACHER).canManageSession).toBe(false)
+        for (const action of ["pause", "resume", "end"] as const)
+          await expect(room.control(PROFILE(TEACHER), { action })).rejects.toThrow(
+            "CONTROL_FORBIDDEN",
+          )
+      }
       room.hostId = HOST
       await room.control(PROFILE(HOST), { action: "start" })
-      await room.control(PROFILE(TEACHER), { action: "pause" })
-      expect(room.paused).toBe(true)
-      await room.control(PROFILE(TEACHER), { action: "resume" })
-      expect(room.paused).toBe(false)
-      await room.control(PROFILE(TEACHER), { action: "remove", userId: GUEST })
-      expect(room.blocked.has(GUEST)).toBe(true)
-      await room.control(PROFILE(TEACHER), { action: "end" })
-      expect(room.ended).toBe(true)
+      if (role === "teacher") {
+        for (const command of [
+          { action: "pause" },
+          { action: "resume" },
+          { action: "end" },
+          { action: "remove", userId: GUEST },
+        ] as const) {
+          const before = structuredClone(gateway.row)
+          await expect(room.control(PROFILE(TEACHER), command)).rejects.toThrow("CONTROL_FORBIDDEN")
+          expect(gateway.row).toEqual(before)
+        }
+        expect(room.paused).toBe(false)
+        expect(room.blocked.size).toBe(0)
+        expect(room.ended).toBe(false)
+        expect(gateway.audits).toHaveLength(0)
+        await room.control(PROFILE(HOST), { action: "pause" })
+        expect(room.paused).toBe(true)
+        await expect(room.control(PROFILE(TEACHER), { action: "resume" })).rejects.toThrow(
+          "CONTROL_FORBIDDEN",
+        )
+        expect(room.paused).toBe(true)
+        await room.control(PROFILE(HOST), { action: "resume" })
+        expect(room.paused).toBe(false)
+      } else {
+        await room.control(PROFILE(TEACHER), { action: "pause" })
+        expect(room.paused).toBe(true)
+        await room.control(PROFILE(TEACHER), { action: "resume" })
+        expect(room.paused).toBe(false)
+        await room.control(PROFILE(TEACHER), { action: "remove", userId: GUEST })
+        expect(room.blocked.has(GUEST)).toBe(true)
+        await room.control(PROFILE(TEACHER), { action: "end" })
+        expect(room.ended).toBe(true)
+      }
     })
     test(`${role} joining as a player gets race decisions only when hosting`, async () => {
       const { gateway, room } = await fixture()
@@ -221,6 +256,8 @@ describe("Wobble app admission and persistence", () => {
       expect(room.view(TEACHER)).toMatchObject({
         observer: false,
         canControl: false,
+        canManageSession: role === "admin",
+        canRemovePlayers: role === "admin",
         canModerate: true,
       })
       await expect(room.control(PROFILE(TEACHER), { action: "start" })).rejects.toThrow(
@@ -234,6 +271,11 @@ describe("Wobble app admission and persistence", () => {
           remix: false,
         }),
       ).rejects.toThrow("CONTROL_FORBIDDEN")
+      if (role === "teacher")
+        for (const action of ["pause", "resume", "end"] as const)
+          await expect(room.control(PROFILE(TEACHER), { action })).rejects.toThrow(
+            "CONTROL_FORBIDDEN",
+          )
       room.hostId = TEACHER
       expect(room.view(TEACHER).canControl).toBe(true)
       await room.control(PROFILE(TEACHER), {
@@ -244,8 +286,52 @@ describe("Wobble app admission and persistence", () => {
       })
       await room.control(PROFILE(TEACHER), { action: "start" })
       expect(room.engine.state.phase).toBe("countdown")
+      expect(room.view(TEACHER).canManageSession).toBe(true)
+      await room.control(PROFILE(TEACHER), { action: "pause" })
+      await room.control(PROFILE(TEACHER), { action: "resume" })
+      if (role === "teacher")
+        await expect(
+          room.control(PROFILE(TEACHER), { action: "remove", userId: GUEST }),
+        ).rejects.toThrow("CONTROL_FORBIDDEN")
+      await room.control(PROFILE(TEACHER), { action: "end" })
+      expect(room.ended).toBe(true)
     })
   }
+  test("revoked admin authority cannot survive as teacher game controls; chat moderation stays separate", async () => {
+    const { gateway, room } = await fixture()
+    gateway.roles.set(TEACHER, "admin")
+    await room.attach(await gateway.admit(await gateway.profile(TEACHER), SESSION, true))
+    expect(room.view(TEACHER).canRemovePlayers).toBe(true)
+    gateway.roles.set(TEACHER, "teacher")
+    for (const command of [
+      { action: "pause" },
+      { action: "resume" },
+      { action: "end" },
+      { action: "remove", userId: GUEST },
+    ] as const)
+      await expect(room.control(PROFILE(TEACHER), command)).rejects.toThrow("CONTROL_FORBIDDEN")
+    const view = room.view(TEACHER)
+    expect(view).toMatchObject({
+      canControl: false,
+      canManageSession: false,
+      canRemovePlayers: false,
+      canModerate: true,
+    })
+    expect(isWobbleView(view, SESSION)).toBe(true)
+    expect(isWobbleView({ ...view, canManageSession: undefined }, SESSION)).toBe(false)
+    expect(isWobbleView({ ...view, canRemovePlayers: undefined }, SESSION)).toBe(false)
+    expect(room.view(HOST)).toMatchObject({
+      canControl: true,
+      canManageSession: true,
+      canRemovePlayers: false,
+      canModerate: false,
+    })
+    await expect(room.control(PROFILE(HOST), { action: "remove", userId: GUEST })).rejects.toThrow(
+      "CONTROL_FORBIDDEN",
+    )
+    expect(room.blocked.size).toBe(0)
+    expect(gateway.audits).toHaveLength(0)
+  })
   test("maintenance during stopped-room teardown keeps completion durable until connections detach", async () => {
     const { gateway, room, disconnected } = await fixture()
     await room.control(PROFILE(HOST), { action: "end" })
@@ -587,6 +673,10 @@ describe("Wobble app admission and persistence", () => {
     expect(room.engine.state.players).toHaveLength(2)
     expect(room.view(TEACHER).canModerate).toBe(true)
     await expect(room.authorize(PROFILE(TEACHER), true)).rejects.toThrow("READ_ONLY")
+    await expect(
+      room.control(PROFILE(TEACHER), { action: "remove", userId: LATE }),
+    ).rejects.toThrow("CONTROL_FORBIDDEN")
+    gateway.roles.set(TEACHER, "admin")
     await room.control(PROFILE(TEACHER), { action: "remove", userId: LATE })
     await expect(room.attach(await gateway.admit(PROFILE(LATE), SESSION, false))).rejects.toThrow(
       "REMOVED_FROM_ROOM",

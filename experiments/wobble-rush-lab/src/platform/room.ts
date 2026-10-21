@@ -305,7 +305,8 @@ export class PlaygroundWobbleRoom {
     const admission = await this.authorize(profile)
     admission.correlationId = correlationId
     const id = profile.userId
-    const moderator = admission.profile.role !== "kid"
+    const staff = admission.profile.role !== "kid"
+    const admin = admission.profile.role === "admin"
     const playerHost = this.isPlayerHost(id)
     if (control.action === "loaded") {
       const member = this.members.get(id)
@@ -382,10 +383,10 @@ export class PlaygroundWobbleRoom {
       return
     }
     const raceDecision = ["configure", "start", "next"].includes(control.action)
-    if (raceDecision ? !playerHost : !(playerHost || moderator))
+    if (raceDecision ? !playerHost : !(playerHost || admin))
       throw new AdmissionError("CONTROL_FORBIDDEN")
     if (control.action === "remove") {
-      if (!moderator || control.userId === id) throw new AdmissionError("CONTROL_FORBIDDEN")
+      if (!admin || control.userId === id) throw new AdmissionError("CONTROL_FORBIDDEN")
       await this.gateway.audit(admission, "remove", control.userId)
       this.blocked.add(control.userId)
       this.members.delete(control.userId)
@@ -467,7 +468,7 @@ export class PlaygroundWobbleRoom {
       for (const member of this.connected()) this.restore(member.userId)
       for (const observer of this.observers.values()) this.restore(observer.userId)
     } else if (control.action === "end") {
-      if (moderator) await this.gateway.audit(admission, "end")
+      if (staff) await this.gateway.audit(admission, "end")
       this.pause()
       this.ended = true
       this.stoppedBy = id
@@ -477,7 +478,7 @@ export class PlaygroundWobbleRoom {
         is_open: false,
       })
       this.publish()
-      if (moderator) await this.gateway.audit(admission, "end", undefined, "completed")
+      if (staff) await this.gateway.audit(admission, "end", undefined, "completed")
     }
     this.publish()
     if (control.action === "end") {
@@ -616,6 +617,9 @@ export class PlaygroundWobbleRoom {
       observer,
       pending: member?.pending ?? false,
       canControl: !this.ended && this.isPlayerHost(userId),
+      canManageSession:
+        !this.ended && (this.isPlayerHost(userId) || this.roles.get(userId) === "admin"),
+      canRemovePlayers: !this.ended && this.roles.get(userId) === "admin",
       canModerate:
         observer || this.roles.get(userId) === "teacher" || this.roles.get(userId) === "admin",
       paused: this.paused,

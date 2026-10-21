@@ -48,7 +48,7 @@ export function useWobbleSession(sessionId: string, backHref: string) {
       reconnectBegan = 0;
       clearTimeout(retryTimer);
       abort.abort();
-      setView(previous => previous ? { ...previous, ended: true, paused: false, pending: false, canControl: false } : null);
+      setView(previous => previous ? { ...previous, ended: true, paused: false, pending: false, canControl: false, canManageSession: false, canRemovePlayers: false } : null);
       setStatus('');
       if (code === 'SESSION_COMPLETED') { setEnded(true); setError(null); }
       else setError(wobbleError(code));

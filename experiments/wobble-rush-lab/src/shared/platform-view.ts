@@ -18,7 +18,11 @@ export interface WobbleView {
   pending: boolean
   /** Rostered player host: configure, start and advance races. Staff observation grants none. */
   canControl: boolean
-  /** Staff moderation also permits pause/resume/end independently of race control. */
+  /** Player host or admin: pause, resume and end. Observation grants none. */
+  canManageSession: boolean
+  /** Admin-only participant removal; independent of chat moderation. */
+  canRemovePlayers: boolean
+  /** Teachers/admins may moderate chat without controlling the game. */
   canModerate: boolean
   paused: boolean
   saved: boolean
@@ -74,6 +78,8 @@ export function isWobbleView(value: unknown, sessionId: string): value is Wobble
       "observer",
       "pending",
       "canControl",
+      "canManageSession",
+      "canRemovePlayers",
       "canModerate",
       "paused",
       "saved",

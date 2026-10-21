@@ -592,6 +592,8 @@ createRoot(document.getElementById('root')!).render(<StrictMode><BrowserRouter><
   assert.ok(teacherView)
   assert.equal(teacherView.canControl, false)
   assert.equal(teacherView.canModerate, true)
+  assert.equal(teacherView.canManageSession, false)
+  assert.equal(teacherView.canRemovePlayers, false)
   // UI projections exercise lobby/cup menus with the real teacher capabilities.
   // The server's actual three-race permission checks live in platform-integration.test.ts.
   const projectTeacherView = async (patch: Partial<WobbleView>) => {
@@ -639,18 +641,20 @@ createRoot(document.getElementById('root')!).render(<StrictMode><BrowserRouter><
   await teacher.getByRole("heading", { name: "הגביע הסתיים!", exact: true }).waitFor()
   assert.equal(await teacher.getByRole("button", { name: "משחק נוסף", exact: true }).count(), 0)
   await projectTeacherView({})
-  await teacher.getByRole("button", { name: "השהיה", exact: true }).click()
+  assert.equal(await teacher.getByRole("button", { name: "השהיה", exact: true }).count(), 0)
+  assert.equal(await teacher.getByRole("button", { name: "סיום", exact: true }).count(), 0)
+  await host.getByRole("button", { name: "השהיה", exact: true }).click()
   await teacher.getByRole("heading", { name: "המשחק מושהה", exact: true }).waitFor()
   assert.equal(service.rooms.get(sessionId)?.paused, true)
-  await teacher.getByRole("button", { name: "המשך משחק", exact: true }).last().click()
-  await until(
-    () => !service.rooms.get(sessionId)?.paused,
-    "teacher can resume without race decisions",
-  )
+  assert.equal(await teacher.getByRole("button", { name: "המשך משחק", exact: true }).count(), 0)
+  await host.getByRole("button", { name: "המשך משחק", exact: true }).last().click()
+  await until(() => !service.rooms.get(sessionId)?.paused, "host retains resume")
   assert.equal(service.rooms.get(sessionId)?.view(uid(4)).observer, true)
   assert.equal(service.rooms.get(sessionId)?.engine.state.players.length, 2)
   await teacher.getByRole("button", { name: "שחקנים (3/8)", exact: true }).click()
-  assert.equal(await teacher.getByRole("button", { name: "הסרה", exact: true }).count(), 3)
+  assert.equal(await teacher.getByRole("button", { name: "הסרה", exact: true }).count(), 0)
+  await teacher.getByRole("button", { name: "צ׳אט וקול", exact: true }).click()
+  assert.equal(await teacher.getByRole("button", { name: "ניקוי צ׳אט", exact: true }).count(), 1)
   await teacher.close()
   await until(
     () => !service.rooms.get(sessionId)?.observers.has(uid(4)),
@@ -808,9 +812,10 @@ createRoot(document.getElementById('root')!).render(<StrictMode><BrowserRouter><
     lateJoining: "PASS",
     reconnectKeepsRenderer: "PASS",
     dispose: "PASS",
-    teacherObserverAndModerationUI: "PASS",
+    teacherObserverAndChatModerationUI: "PASS",
     teacherRaceMenusAreReadOnly: "PASS (projected UI states; real capabilities)",
-    teacherPauseResume: "PASS (native service)",
+    teacherSessionControlsHidden:
+      "PASS (host retains pause/resume; teacher retains chat moderation)",
     teacherBufferedWorld:
       "PASS (characters and obstacles share a delayed server tick; no uploaded controls)",
     teacherReconnectFreezesPresentation: "PASS",

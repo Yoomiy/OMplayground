@@ -38,7 +38,7 @@ This is a game-specific adapter, not a universal action runtime or registry.
 | Recess | Backend rechecks each child's current class/gender eligibility at most every 15 seconds. Only affected children leave. Final eligible human leaving saves/pauses, including simultaneous expiry. Staff bypass recess. |
 | Pause | Freeze physics, NPC decisions, obstacle time, countdown and race clocks. Clear queued/held human inputs. Resume rebases clients and clocks from the authoritative state. Original active racers must return/load before resume. |
 | Host leaves | Preserve host authority through the reconnect grace, so refresh does not hand the room to somebody else. After grace, transfer to a connected active participant, then a connected waiting participant; retain the prior host if none remain. Host display/grade metadata follows the new host. |
-| Teacher | Authorized observation, pause/resume/stop and removal. Observing staff cannot configure, start or advance races, or vote on rematches. Staff joining as players follow normal player/host rules for race decisions. Ordinary host control does not grant moderation. Removal blocks rejoining this room and is persisted in the signed save. Observers have read-only social access and no microphone token. |
+| Teacher | Authorized observation and chat moderation. Teacher observers cannot configure/start/advance races, pause/resume/end, remove players or vote on rematches. Teachers joining as players follow normal player/host rules. Admin session management/removal remains separate from teacher chat moderation and player-host race control. Removal blocks rejoining this room and is persisted in the signed save. Observers have read-only social access and no microphone token. |
 | Explicit stop | Completed record, `stopped_by`/`ended_at`, closed joining and empty connected-player lists. Broadcast the saved ended state, close participant/observer sockets and clean up voice immediately. Clients stop reconnecting. Keep saved roster/results for the record. |
 
 Parent React container: `apps/web/src/game/WobbleSessionContainer.tsx`.
@@ -472,3 +472,43 @@ cross-device feel, real microphone delivery and production hosting remain manual
 acceptance. Validation used an isolated checkout/build; restart
 `npm run dev:wobble` and refresh clients in the shared checkout to test this change.
 No migration, deployment or PR was created.
+
+
+## Teacher session controls corrected — 2026-10-21
+
+This supersedes the earlier decision to retain teacher pause/resume/end/removal.
+The main board-game backend uses its player-host guard for pause/end and checks
+the host again on resume; Minecraft also guards pause/resume/end with player-host
+membership. Their UIs exclude teacher observers from those controls. Rocket's
+current staff override is broader and was not used as the teacher-policy reference.
+Only Wobble changes in this follow-up.
+
+Chat moderation, session management and participant removal now have independent
+capabilities and server checks. Teachers do not get game controls from their role.
+
+| Identity/participation | Configure/start/next | Pause/resume/end | Remove players | Moderate chat |
+| --- | --- | --- | --- | --- |
+| Ordinary player host | Yes | Yes | No | No |
+| Teacher observer | No | No | No | Yes |
+| Teacher playing, not host | No | No | No | Yes |
+| Teacher playing as host | Yes | Yes | No | Yes |
+| Admin observer | No | Yes | Yes | Yes |
+| Admin playing as host | Yes | Yes | Yes | Yes |
+
+`canControl` remains player-host race authority. New `canManageSession` and
+`canRemovePlayers` flags drive the corresponding UI controls; `canModerate` now
+means chat moderation only. View validation requires the flags, and terminal
+client state clears them. Server actions re-read current roles; losing admin
+access cannot leave an observing teacher with admin game controls. Failed teacher
+commands neither alter the saved room nor create a removal/end audit event.
+Existing admin permissions remain separate and unchanged.
+
+Validation: 596 tests / 127,233 assertions pass, including forbidden teacher
+commands, a stale observer host ID, admin-to-teacher role revocation, host authority,
+admin removal and the three-race cup. Web/client/platform TypeScript and Biome over
+240 game files pass. Matching artifact: `wobble-app-78f577ff639f00d0`.
+The isolated native-service/React browser check verifies no teacher pause, resume,
+end or removal buttons, retained chat moderation and normal host pause/resume,
+alongside its existing gameplay, spectator buffering/reconnect and terminal checks.
+Restart `npm run dev:wobble` and refresh clients together for the updated view
+capabilities. No deployment, migration or PR was created.
