@@ -23,6 +23,8 @@ Canonical product + architecture guide: **[`ARCHITECTURE.md`](../ARCHITECTURE.md
 | [`../tmp/logging_coverage_prototype.md`](../tmp/logging_coverage_prototype.md) | Historical observability design; current contributor rules are in [`LOGGING.md`](LOGGING.md) |
 | [`voxel_expansion_specification.md`](voxel_expansion_specification.md) | Biomes, tools, recipes, hunger |
 | [`voxel_client_optimization_proposal.md`](voxel_client_optimization_proposal.md) | Client perf (worldgen worker done; instancing open) |
+| [`voxel-runtime-rewrite-proposal.md`](voxel-runtime-rewrite-proposal.md) | Proposed full voxel replacement: engine fork, new authority/protocol/content/storage, school integration, delivery and acceptance gates |
+| [`Voxel runtime experiment results`](../research/voxel-runtime/RESULTS.md) | Measured engine, room and prediction costs; browser smoke and known candidate failures |
 | [`virtual_classrooms.md`](virtual_classrooms.md) | Virtual Classrooms Specification and Walkthrough — **implemented** |
 
 ## Agent skills (not duplicated here)

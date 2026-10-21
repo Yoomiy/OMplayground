@@ -1,6 +1,6 @@
 # Open-source multiplayer game integration guide
 
-Updated 2026-10-18. Audience: future agents evaluating and integrating multiplayer games into The Playground.
+Updated 2026-10-21. Audience: future agents evaluating and integrating multiplayer games into The Playground.
 
 ## Scope and decision status
 
@@ -16,6 +16,8 @@ Recommended general direction; do not assume a shared implementation exists:
 - Native game backends where preserving a working engine is cheaper and safer than rewriting it.
 
 Do not interpret this as a migration of existing Socket.io services. ADR 001 remains applicable to those services; document any new runtime decision explicitly when implementing it.
+
+Capacity planning means measuring increasing player/room workloads and improving or scaling the implementation. Do not introduce maximum-player, observer-count, or maximum-room caps as a default integration step, or turn benchmark sizes into join restrictions. Record intrinsic game participation rules and existing engine constraints separately; they do not establish platform-wide or per-service headcount ceilings.
 
 A game-specific adapter does not establish a shared action runtime or universal registry. Read the relevant game's integration and operations records before reusing its implementation. Local code, running processes, applied catalog SQL and published lab releases can be at different versions.
 
@@ -61,7 +63,7 @@ Record the decision, alternatives, estimated maintenance cost and known limitati
 - [ ] Inspect network calls, telemetry, credentials and public matchmaking dependencies before connecting the game to platform identity.
 - [ ] Install from a lockfile and document exact build/start/check commands and environment variables.
 - [ ] Run independently under `experiments/<slug>/`; keep production credentials and app sessions out of evaluation.
-- [ ] Record supported controls, browsers, devices, minimum/maximum players and server requirements.
+- [ ] Record supported controls, browsers, devices, game participation rules, existing engine constraints and server requirements.
 
 Exit evidence: reproducible build and a playable baseline, with failures and licensing questions recorded.
 
@@ -70,7 +72,7 @@ Exit evidence: reproducible build and a playable baseline, with failures and lic
 - [ ] Identify authority for movement, collisions, scoring, time, randomness, roster and match transitions.
 - [ ] Test creation/join, synchronized gameplay, completion and restart with two clients.
 - [ ] Test physical devices on different networks. Browser contexts alone do not establish network quality or device performance.
-- [ ] Test invalid/full rooms, host departure, leave, refresh and reconnect; distinguish supported behavior from assumptions.
+- [ ] Test invalid/closed rooms, applicable game participation rules, host departure, leave, refresh and reconnect; distinguish supported behavior from assumptions.
 - [ ] For action games, inspect input sequencing, bounded queues, tick scheduling, snapshot cadence, interpolation and correction behavior.
 - [ ] Measure browser frame times, RTT, server tick overruns, CPU/memory and traffic. Separate background tabs, solo tests, automation and human multiplayer evidence.
 - [ ] Decide continue, adapt, preserve native backend, or archive.
@@ -84,7 +86,7 @@ Exit evidence: multiplayer quality and integration cost are understood well enou
 - [ ] Specify pause/recess policy, reconnect grace, late joining and restart recovery.
 - [ ] Compare the app experience with existing games: host/participant controls, player identification, chat/voice, fullscreen, saved games and theme. Record missing required behavior before calling the integration ready.
 - [ ] Choose native React/client integration or an iframe wrapper. For iframes, specify trusted origins, message validation, focus, resize and cleanup; avoid passing long-lived credentials through URLs.
-- [ ] Define compatibility between client/server builds, capacity limits, deployment drain and rollback.
+- [ ] Define compatibility between client/server builds, measured workload behavior, scaling needs, deployment drain and rollback.
 - [ ] Record measurable acceptance criteria before implementation; use expected school concurrency and target devices, not invented capacity claims.
 
 Exit evidence: a reviewable integration plan and gap list. Implement only within the user's authorized scope.
@@ -105,7 +107,7 @@ Exit evidence: integrated functionality meets the contract below in an isolated 
 ### 5. Validation, rollout and maintenance
 
 - [ ] Complete the acceptance matrix below and report untested cases honestly.
-- [ ] Validate simultaneous rooms, not only maximum players in one room; enforce admission limits under overload.
+- [ ] Validate progressively increasing player counts and simultaneous rooms; measure resource behavior and scaling needs without converting tested workloads into headcount ceilings.
 - [ ] Prepare matching client/backend releases, health/readiness checks, drain procedure and a tested rollback path.
 - [ ] Retain the standalone comparison release until integrated play passes equivalent scenarios.
 - [ ] Assign ownership for upstream updates, vulnerabilities, dependency/toolchain changes and abandoned-game retirement.
@@ -117,7 +119,7 @@ The following is a behavioral contract. Event names, schema fields and endpoints
 ### Admission and launch
 
 1. The app creates or joins a Playground session through the platform's authorized flow.
-2. The responsible backend verifies identity and admission: session/game match, membership or permitted joining, gender, role, recess, capacity and session status.
+2. The responsible backend verifies identity and admission: session/game match, membership or permitted joining, gender, role, recess and session status.
 3. It creates or resolves the engine room and returns the backend endpoint, room identifier, compatible build/protocol information and admission credentials as needed.
 4. The client connects directly to that backend. The backend validates admission again at connection/join and enforces policy during play.
 5. The backend reports accepted lifecycle changes and results to platform storage.
@@ -131,22 +133,22 @@ Supabase JWT verification may be sufficient for a simple service. If using launc
 - Resolve concurrent room creation idempotently. One authoritative process owns each live simulation; do not accidentally run duplicate matches for the same allocation.
 - Persist routing/allocation metadata where required, with stale-allocation cleanup. Verify every join against the intended game and session.
 - Define who writes roster and lifecycle fields and how retries/stale updates are rejected. UI and backend must not independently claim conflicting authority.
-- Preserve native engine invariants when mapping platform roles, moving participants between actors, or filtering inactive actors out of published rosters. Keep host flags, control authority and serialized membership consistent. Exercise minimal as well as full rosters, including reassignment and owner departure; a valid platform roster can still produce an invalid engine snapshot.
+- Preserve native engine invariants when mapping platform roles, moving participants between actors, or filtering inactive actors out of published rosters. Keep host flags, control authority and serialized membership consistent. Exercise small and larger rosters, including reassignment and owner departure; a valid platform roster can still produce an invalid engine snapshot.
 
 ### Capabilities and lifecycle
 
-Declare capabilities such as spectators, teacher observation, pause, durable resume, reconnect, mid-match joining and maximum players. The app should only expose supported actions; required product capabilities that are absent remain integration blockers unless explicitly accepted by the operator.
+Declare capabilities such as spectators, teacher observation, pause, durable resume, reconnect and mid-match joining. Document intrinsic game participation rules separately. The app should only expose supported actions; required product capabilities that are absent remain integration blockers unless explicitly accepted by the operator.
 
 Map game phases to platform lifecycle states without storing high-frequency phases in Postgres. Define start, pause, resume, completion, cancellation, disconnect and host departure. For action games, specify whether pause freezes simulation and match clocks, how inputs are neutralized, and how clients rebase after resume. At recess end the backend must apply the agreed stop/pause policy even if a browser ignores the frontend gate.
 
-Teacher observation must be authorized and must not consume student slots or alter the match unless intended. Removing a player must also define whether rejoining is permitted. A spectator view must not accidentally reveal hidden information in games where that matters.
+Teacher observation must be authorized and must not displace students or alter the match unless intended. Removing a player must also define whether rejoining is permitted. A spectator view must not accidentally reveal hidden information in games where that matters.
 
 ### App experience and social features
 
 Engine connectivity alone is insufficient. Confirm these behaviors against existing app components and the operator's instructions:
 
-- A waiting/start flow appropriate to the game, with authorized host controls and catalog minimum/maximum player counts that agree with supported modes. Do not assume every imported engine's original lobby matches the app's participation policy.
-- Team assignment where applicable, including a full room. Declare host controls separately from privileged teacher/admin moderation; changing teams does not grant permission to remove people.
+- A waiting/start flow appropriate to the game, with authorized host controls and catalog participation rules that agree with supported modes. Do not assume every imported engine's original lobby matches the app's participation policy.
+- Team assignment where applicable, exercised at different roster sizes. Declare host controls separately from privileged teacher/admin moderation; changing teams does not grant permission to remove people.
 - When late joining requires waiting, show that status, notify the host, and provide any agreed assignment controls. Apply changes at a safe gameplay boundary; do not silently change ownership during a contested play. Define the fallback when the host makes no choice.
 - Identify the local player and friends both in play and in the roster. Show host, disconnected/reserved players, waiting arrivals and teacher observers. Keep platform user identity separate from transport IDs and engine actor slots.
 - Reuse the shared persisted chat, moderation and voice components/policy where applicable. Verify real message delivery and microphone audio separately from token issuance. Authorize chat/voice against current membership and eligibility, including observer restrictions.
@@ -198,7 +200,7 @@ Expose the build loaded by the running process at startup and through health/con
 
 For action games, prioritize smooth gameplay and small/infrequent corrections over average FPS. Compare the same gameplay intensity and graphics/settings. A foreground/background tab comparison can reflect browser throttling or OS scheduling rather than a networking improvement. Solo results do not establish multiplayer contact/correction quality. Avoid competing builds or unrelated load while collecting timing-sensitive measurements.
 
-When a full group of human testers is unavailable, automate representative small and maximum-size sessions and compare against available human baselines. Record which participants run server-side simulation, headless network clients or fully rendered browsers: these exercise different costs. Record the remaining physical-device/network coverage instead of making an unavailable manual group the only route to useful evidence. Software-rendered browser FPS is not target-device performance evidence.
+When a group of human testers is unavailable, automate representative sessions with progressively increasing participation and compare against available human baselines. Record which participants run server-side simulation, headless network clients or fully rendered browsers: these exercise different costs. Record the remaining physical-device/network coverage instead of making an unavailable manual group the only route to useful evidence. Software-rendered browser FPS is not target-device performance evidence.
 
 Preserve a reviewable tested baseline before substantial integration changes, following the requested branch/commit workflow. Keep per-game defaults, game-specific defects and detailed run evidence in that game's handoff; this guide should retain reusable platform requirements and engineering lessons. Exclude credentials and generated artifacts; summarize conclusions from gitignored raw reports in durable documentation.
 
@@ -206,7 +208,7 @@ Prepare catalog changes as Supabase migrations that match existing game conventi
 
 ## Hosting and scaling considerations
 
-- **Railway:** reasonable initial home for a compatible Node action service alongside existing services. Start with one instance and measured room limits. Verify current WebSocket, region, timeout, resource and pricing behavior before deployment.
+- **Railway:** reasonable initial home for a compatible Node action service alongside existing services. Size the deployment from measured workloads and scale as demand requires. Verify current WebSocket, region, timeout, resource and pricing behavior before deployment.
 - **Production VPS:** consider when measured local latency, sustained CPU cost or native runtimes justify its operational burden. Account for monitoring, patching, backups, restart supervision and capacity. The existing Oracle lab VPS is an evaluation environment, not established production capacity.
 - **Native hosting platforms:** preserve them where their runtime is a good fit. A relay/lifecycle workload and a continuously running physics simulation have different resource and billing needs.
 - **Static clients:** can use existing frontend/static hosting where appropriate; match client and server releases and configure trusted origins and HTTPS/WSS correctly.
@@ -221,15 +223,15 @@ Measure school-network latency before choosing a region or host. Establish targe
 
 | Area | Minimum scenarios/evidence |
 | --- | --- |
-| Access | Invalid/expired identity, wrong game/session, unauthorized role, gender mismatch, full/closed room, revoked membership |
+| Access | Invalid/expired identity, wrong game/session, unauthorized role, gender mismatch, closed room, applicable game participation rules, revoked membership |
 | Gameplay | Two physical devices, meaningful interactions/collisions, scoring, finish, restart; latency/disruption scenarios for action games |
 | Lifecycle | Leave, host departure, refresh/reconnect, grace expiry, per-class and simultaneous recess ending, live pause/resume, explicit stop and expiry, teacher removal |
 | Authority | Malformed/oversized messages, excessive inputs, forged movement/results and duplicate/stale submissions as applicable |
-| Teachers | Authorized observation, capacity handling, permitted controls and rejected unauthorized controls |
+| Teachers | Authorized observation across varied rosters, permitted controls and rejected unauthorized controls |
 | Persistence | Exactly-once effect for retried results, checkpoint compatibility/expiry, saved-game discovery, empty-room release/reopen, fresh-service recovery, failed save/restore and concurrent moderation |
 | Client | Target devices and controls, lobby/participant controls, Hebrew/RTL names and labels, themed UI, fullscreen/roster, StrictMode/remounts, retry and navigation cleanup |
 | Social | Persisted chat/moderation, scoped voice tokens, duplicate-request tolerance, actual microphone/audio delivery and media cleanup |
-| Capacity | Multiple active rooms, peak joins, tick overruns/event-loop delay, CPU/memory, overload rejection and cleanup |
+| Capacity | Increasing concurrent rooms/players, peak joins, tick overruns/event-loop delay, CPU/memory, scaling behavior and cleanup |
 | Operations | Health/readiness, logs correlated by session/room/build, deployment drain, matching releases and rollback |
 
 Reuse upstream tests and add meaningful checks at integration boundaries. Do not create tests that merely mirror adapter implementation. Record commands actually run, build identifiers, test conditions and human evidence; distinguish planned checks from completed checks.
@@ -256,7 +258,7 @@ Lobby / participant controls / late-arrival policies:
 Chat / voice / roster / fullscreen / theme:
 Devices / controls / localization:
 Ports / endpoints / configuration names (no secret values):
-Capacity limits / measurements / target audience:
+Workload measurements / scaling needs / target audience:
 Checks run / cross-device human evidence / untested cases:
 Deploy / drain / rollback / health and logs procedures:
 Loaded-build check / root dev command / service restart requirements:
