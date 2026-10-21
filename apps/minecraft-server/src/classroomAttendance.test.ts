@@ -8,6 +8,7 @@ import {
   summarizeAttendanceVisits
 } from "./classroomAttendance";
 import { getClassroomsLiveAttendance } from "./livekitService";
+import { ClassroomPresenceObserver } from "./classroomPresence";
 
 describe("classroom attendance webhook", () => {
   it("sends classroom lifecycle events to the idempotent database RPC", async () => {
@@ -82,6 +83,49 @@ describe("classroom attendance webhook", () => {
       currentVisitStartedAt: "2026-08-18T15:01:00.000Z",
       totalSeconds: 20
     });
+  });
+
+  it("logs observed departures even when the attendance database is unavailable", async () => {
+    const logger = { info: jest.fn() };
+    const observer = new ClassroomPresenceObserver(logger);
+    const chain = {
+      select: jest.fn().mockReturnThis(), in: jest.fn().mockReturnThis(),
+      is: jest.fn().mockResolvedValue({ data: null, error: { message: "database unavailable" } })
+    };
+    const supabase = { from: jest.fn().mockReturnValue(chain) } as any;
+    const classrooms = [{ id: "C1", room_code: "ROOM" }];
+    (getClassroomsLiveAttendance as jest.Mock).mockResolvedValue(new Map([["ROOM", {
+      roomSid: "RM_1", startedAt: "2026-10-16T08:00:00Z", participants: [{
+        sid: "PA_1", identity: "guest-1", name: "Private Name", metadata: "{}", joinedAt: "2026-10-16T08:01:00Z"
+      }]
+    }]]));
+    await expect(reconcileClassroomAttendance(supabase, classrooms, observer)).rejects.toMatchObject({ message: "database unavailable" });
+    (getClassroomsLiveAttendance as jest.Mock).mockResolvedValue(new Map([["ROOM", null]]));
+    await expect(reconcileClassroomAttendance(supabase, classrooms, observer)).rejects.toMatchObject({ message: "database unavailable" });
+    expect(logger.info.mock.calls.map(([entry]) => entry.context.event))
+      .toEqual(["CLASSROOM_PARTICIPANT_JOINED", "CLASSROOM_PARTICIPANT_LEFT"]);
+  });
+
+  it("logs departed open visits after a restart even if the whole LiveKit room vanished", async () => {
+    const logger = { info: jest.fn() };
+    const observer = new ClassroomPresenceObserver(logger);
+    (getClassroomsLiveAttendance as jest.Mock).mockResolvedValue(new Map([["ROOM", null]]));
+    const supabase = {
+      from: jest.fn((table: string) => ({
+        select: jest.fn().mockReturnThis(), in: jest.fn().mockReturnThis(),
+        is: jest.fn().mockResolvedValue({ data: table === "classroom_meetings"
+          ? [{ id: "M1", classroom_id: "C1", livekit_room_sid: "RM_old" }]
+          : [{ meeting_id: "M1", livekit_participant_sid: "PA_old" }], error: null })
+      })),
+      rpc: jest.fn().mockResolvedValue({ error: null })
+    } as any;
+    await reconcileClassroomAttendance(supabase, [{ id: "C1", room_code: "ROOM" }], observer);
+    expect(logger.info).toHaveBeenCalledTimes(1);
+    expect(logger.info.mock.calls[0][0]).toMatchObject({ roomCode: "ROOM", context: {
+      event: "CLASSROOM_PARTICIPANT_LEFT", roomSid: "RM_old", participantSid: "PA_old",
+      admissionLink: "unavailable", evidenceSource: "reconciliation"
+    } });
+    expect(supabase.rpc).toHaveBeenCalledWith("record_classroom_attendance_event", expect.objectContaining({ p_event_type: "room_finished" }));
   });
 
   it("explicitly closes every open meeting when a classroom is ended", async () => {

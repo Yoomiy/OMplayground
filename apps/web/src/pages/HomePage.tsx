@@ -32,7 +32,7 @@ type OpenGameScopeFilter = "class" | "all";
 
 const GAME_METADATA: Record<
   string,
-  { emoji: string; gradient: string; glowColor: string; badgeGradient: string; thumbnailUrl?: string }
+  { emoji: string; gradient: string; glowColor: string; badgeGradient: string; thumbnailUrl?: string; thumbnailFit?: "contain" }
 > = {
   tictactoe: { emoji: "❌", gradient: "from-sky-400 to-blue-600", glowColor: "shadow-sky-500/40", badgeGradient: "from-sky-400 to-blue-500" },
   connectfour: { emoji: "🔴", gradient: "from-red-400 to-rose-600", glowColor: "shadow-rose-500/40", badgeGradient: "from-red-400 to-rose-500" },
@@ -48,6 +48,7 @@ const GAME_METADATA: Record<
   "breakout-solo": { emoji: "👾", gradient: "from-purple-400 to-fuchsia-600", glowColor: "shadow-purple-500/40", badgeGradient: "from-purple-400 to-fuchsia-500", thumbnailUrl: "/legacy/breakout/thumbnail.png" },
   hexgl: { emoji: "🏎️", gradient: "from-orange-400 to-rose-600", glowColor: "shadow-rose-500/40", badgeGradient: "from-orange-400 to-rose-500" },
   "alges-escapade": { emoji: "🔢", gradient: "from-teal-400 to-cyan-600", glowColor: "shadow-teal-500/40", badgeGradient: "from-teal-400 to-cyan-500" },
+  "rocket-arena": { emoji: "🚗", gradient: "from-slate-900 via-blue-950 to-orange-950", glowColor: "shadow-blue-500/40", badgeGradient: "from-blue-500 to-orange-500", thumbnailUrl: "/games/rocket-arena.png", thumbnailFit: "contain" },
   minecraft: { emoji: "🧱", gradient: "from-green-600 to-amber-800", glowColor: "shadow-green-700/40", badgeGradient: "from-green-600 to-amber-700", thumbnailUrl: "/legacy/minecraft/thumbnail.png" },
   "2048": { emoji: "🔢", gradient: "from-amber-400 to-yellow-600", glowColor: "shadow-amber-500/40", badgeGradient: "from-amber-400 to-yellow-500" },
   "supertux-classic": { emoji: "🐧", gradient: "from-sky-400 to-blue-700", glowColor: "shadow-sky-500/40", badgeGradient: "from-sky-400 to-blue-600" },
@@ -391,7 +392,7 @@ export function HomePage() {
                             <img
                               src={game.thumbnail_url || meta.thumbnailUrl}
                               alt={game.name_he}
-                              className="size-full object-cover"
+                              className={cn("size-full", meta.thumbnailFit === "contain" ? "object-contain p-2" : "object-cover")}
                             />
                           ) : (
                             <span className="text-6xl drop-shadow-lg select-none transform transition-transform duration-300 group-hover:scale-110 group-hover:animate-kid-wiggle">

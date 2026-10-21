@@ -1,0 +1,127 @@
+import { t } from '../ui/i18n.js';
+import * as THREE from 'three';
+import { VISUAL } from '@rocket-arena/shared';
+import { DAYLIGHT_SCENE_STYLE } from './arena-style.js';
+
+let renderer: THREE.WebGLRenderer;
+let scene: THREE.Scene;
+let camera: THREE.PerspectiveCamera;
+let renderScale = 1;
+
+function viewportPixelRatio(): number {
+  return Math.min(window.devicePixelRatio || 1, VISUAL.RENDER.MAX_PIXEL_RATIO)*renderScale;
+}
+
+export function initScene(container: HTMLElement): {
+  renderer: THREE.WebGLRenderer;
+  scene: THREE.Scene;
+  camera: THREE.PerspectiveCamera;
+  dispose(): void;
+} {
+  renderer = new THREE.WebGLRenderer({
+    antialias: true,
+    alpha: false,
+    powerPreference: 'high-performance',
+  });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(viewportPixelRatio());
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = DAYLIGHT_SCENE_STYLE.exposure;
+  // Shadows start off. One directional key light over a 102 m field produced large
+  // blocky blobs that read as dirt on the turf and competed with the ball ground
+  // marker for the same cue, so this is the default rather than the only option:
+  // `setShadowsEnabled` turns the pass on for a player who wants it. Disabling the
+  // map here skips the whole shadow pass, so the per-mesh castShadow flags stay
+  // harmless and the
+  // treatment can be restored by flipping this one line back on.
+  renderer.shadowMap.enabled = false;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.setClearColor(DAYLIGHT_SCENE_STYLE.sky, 1);
+  renderer.domElement.style.display = 'block';
+  renderer.domElement.setAttribute('aria-label', t('Rocket Arena game view'));
+  container.appendChild(renderer.domElement);
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(DAYLIGHT_SCENE_STYLE.sky);
+  scene.fog = new THREE.Fog(
+    DAYLIGHT_SCENE_STYLE.haze,
+    DAYLIGHT_SCENE_STYLE.fogNear,
+    DAYLIGHT_SCENE_STYLE.fogFar,
+  );
+
+  camera = new THREE.PerspectiveCamera(
+    VISUAL.CAMERA.FOV_MIN,
+    window.innerWidth / window.innerHeight,
+    VISUAL.RENDER.CAMERA_NEAR,
+    DAYLIGHT_SCENE_STYLE.cameraFar,
+  );
+  camera.position.set(0, VISUAL.CAMERA.ORBIT_HEIGHT, -VISUAL.CAMERA.ORBIT_RADIUS_Z);
+  camera.lookAt(0, VISUAL.CAMERA.ORBIT_LOOK_HEIGHT, 0);
+
+  const resize = (): void => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setPixelRatio(viewportPixelRatio());
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  };
+  window.addEventListener('resize', resize);
+
+  const ownedRenderer = renderer;
+  let disposed = false;
+  return { renderer, scene, camera, dispose() {
+    if (disposed) return;
+    disposed = true;
+    window.removeEventListener('resize', resize);
+    ownedRenderer.dispose();
+    ownedRenderer.forceContextLoss();
+    ownedRenderer.domElement.remove();
+  } };
+}
+
+/**
+ * Turn the shadow pass on or off at runtime.
+ *
+ * Shadows ship off, for the reasons recorded where the map is configured, but they
+ * are now a setting rather than a decision made for the player.
+ *
+ * Flipping `shadowMap.enabled` is not enough on its own: whether a material samples
+ * a shadow map is baked into its compiled program, so every material already in the
+ * scene has to be marked for recompilation or the toggle appears to do nothing until
+ * something else happens to invalidate it. That is why this walks the scene instead
+ * of setting one flag. It runs on a settings change, not per frame.
+ */
+export function setShadowsEnabled(enabled: boolean): void {
+  if (!renderer || renderer.shadowMap.enabled === enabled) return;
+  renderer.shadowMap.enabled = enabled;
+
+  scene?.traverse((object) => {
+    const candidate = (object as Partial<THREE.Mesh>).material;
+    if (!candidate) return;
+    for (const material of Array.isArray(candidate) ? candidate : [candidate]) {
+      material.needsUpdate = true;
+    }
+  });
+}
+
+export function areShadowsEnabled(): boolean {
+  return renderer?.shadowMap.enabled === true;
+}
+
+export function getRenderer(): THREE.WebGLRenderer {
+  return renderer;
+}
+
+export function getScene(): THREE.Scene {
+  return scene;
+}
+
+export function getCamera(): THREE.PerspectiveCamera {
+  return camera;
+}
+
+/** Match CSS size while reducing raster work for the lighter graphics setting. */
+export function setRenderScale(scale: number): void {
+  renderScale = Math.max(.5,Math.min(1,scale));
+  if(renderer)renderer.setPixelRatio(viewportPixelRatio());
+}

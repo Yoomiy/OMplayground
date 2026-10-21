@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { GameSessionContainer } from "@/game/GameSessionContainer";
 import { MinecraftSessionContainer } from "@/game/MinecraftSessionContainer";
+import { RocketSessionContainer } from "@/game/RocketSessionContainer";
+import { WobbleSessionContainer } from "@/game/WobbleSessionContainer";
 import { KidDesktopShell } from "@/components/KidDesktopShell";
 import { supabase } from "@/lib/supabase";
 import { useProfile } from "@/hooks/useProfile";
@@ -78,6 +80,12 @@ function PlayPage() {
   // fullscreen by construction and renders its own back button.
   if (gameUrl === "minecraft") {
     return <MinecraftSessionContainer sessionId={sessionId} />;
+  }
+  if (gameUrl === 'rocket-arena') {
+    return <RocketSessionContainer sessionId={sessionId} backHref={backHref} backLabel={backLabel} />;
+  }
+  if (gameUrl === 'wobble-rush') {
+    return <WobbleSessionContainer sessionId={sessionId} backHref={backHref} backLabel={backLabel} />;
   }
 
   return (

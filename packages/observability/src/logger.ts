@@ -1,6 +1,6 @@
 import pino from "pino";
 
-export type ServiceName = "game-server" | "minecraft-server" | "document-converter";
+export type ServiceName = "game-server" | "minecraft-server" | "rocket-server" | "wobble-server" | "document-converter";
 
 // Railway recognizes textual severity labels, while Pino's default numeric
 // levels are displayed there as info regardless of their actual severity.
@@ -46,11 +46,13 @@ export function createLogger(service: ServiceName) {
       ],
       censor: "[REDACTED]"
     },
-    transport: !isProduction
+    ...(!isProduction
       ? {
-          target: "pino-pretty",
-          options: { colorize: true, ignore: "pid,hostname" }
+          transport: {
+            target: "pino-pretty",
+            options: { colorize: true, ignore: "pid,hostname" }
+          }
         }
-      : undefined
+      : {})
   });
 }

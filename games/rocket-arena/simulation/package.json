@@ -1,0 +1,17 @@
+{
+  "name": "@rocket-arena/simulation",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "development": "./src/*.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "dependencies": {
+    "@rocket-arena/shared": "*",
+    "@dimforge/rapier3d-compat": "^0.14.0"
+  }
+}

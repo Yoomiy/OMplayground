@@ -32,6 +32,8 @@ The chosen stack is **Porkbun DNS + Caddy + persistent systemd backend services 
 
 Keep each game under `experiments/<slug>/`, with its own dependencies, lockfile, environment example and `LAB.md`. Experiments stay outside the root npm workspaces until integration. Preserve upstream licenses and record the source URL and pinned revision.
 
+Track experiment source on its lab or development branch. Each experiment's `.gitignore` excludes dependencies, generated builds, logs and local runtime files; the root no longer ignores `experiments/`. Keep environment-local VPS hosting configuration under ignored `ops/`.
+
 An experiment runs without the Playground frontend, catalog, login or production credentials. If it needs a database or identity provider, use a dedicated test environment. Do not add app registry entries, catalog migrations or production session dependencies during standalone evaluation unless the user explicitly changes scope.
 
 Agents can retain their tooling. The common contract is reproducible commands, port ownership, test evidence and a handoff. Check `git status` before edits; do not commit another agent's unfinished files. Independent worktrees isolate code, but share VPS ports and services.
@@ -51,21 +53,21 @@ Published releases must not read a changing development source tree. Keep develo
 
 App reservations: 8080 for the main game server, 8081 for the voxel server. Forwarded 5173/3000 are development entry points. Choose unoccupied loopback backend ports in the 19000–19999 range for new published labs; record allocations before launching. Caddy uses public 80/443, so a static client needs no additional listener. Full HTTP applications may need another loopback port.
 
-Rocket Arena's existing configuration defaults and running overrides differ:
+Historical Rocket Arena lab inventory (the lab source is no longer part of the integrated game):
 
 | Item | Observed state on 2026-10-12 |
 | --- | --- |
-| Source | `experiments/rocket-arena-lab/` |
+| Integrated source | [`games/rocket-arena/`](../games/rocket-arena/README.md), authenticated app service |
 | Default development | client 5173, backend 2567 |
-| Default preview | client 8080 |
-| Running test backend | `127.0.0.1:2568` |
-| Running test client | `127.0.0.1:8081`, Vite preview |
-| Public test | Temporary Cloudflare URL recorded in its tunnel log |
-| User services | `rocket-arena-test-server`, `rocket-arena-test-web`, `rocket-arena-test-tunnel` |
-| Service durability | Transient units; `Restart=on-failure`; user lingering enabled |
-| Stable game hostname | `rocket.labs.play-ormenachem.com` resolves to VPS; no Caddy game route deployed by this workflow yet |
+| Default preview | client 3000 |
+| Published backend | `127.0.0.1:19001`, `playground-lab-rocket.service` |
+| Published client | Caddy static files from `/srv/playground-labs/rocket/current/client/dist` |
+| Public test | `https://rocket.labs.play-ormenachem.com`, same-origin `/game` HTTP/WSS proxy |
+| Service durability | Persistent enabled system unit; `Restart=on-failure` |
+| Releases | `/srv/playground-labs/rocket/releases/`; snapshot hashes and active release in its `LAB.md` |
+| Superseded test | Transient backend 2568, preview 8081 and Cloudflare tunnel; retired after direct-host verification |
 
-Reinspect listeners and service definitions before using this inventory. Do not kill an unfamiliar process or replace another agent's service to free a port. Migrate the preview off 8081 as part of an agreed release deployment. `PORT` and `LAB_SERVER_PORT` must agree when using that lab's Vite proxy. Its full development and preview commands share a backend by default.
+The production integration has no standalone lobby or lab deployment tooling. Use its [deployment guide](../games/rocket-arena/DEPLOYMENT.md) for app development and Railway; the inventory above records older VPS services only. Reinspect listeners and service definitions before using this inventory. Do not kill an unfamiliar process or replace another agent's service to free a port. `PORT` and `LAB_SERVER_PORT` must agree when using that lab's development/preview proxy. Its full development and preview commands share a backend by default. Rocket's persistent unit source is `ops/labs/rocket.service`; its Caddy hostname block is deployed.
 
 ## Publishing a game
 
@@ -125,7 +127,7 @@ Use a feedback log containing date, release, devices/networks, player count, sce
 
 A reproducible multiplayer loop and a real cross-device playtest make an experiment ready for integration planning. App readiness additionally requires Playground identity, authorized room membership, session lifecycle, recess/pause policy, reconnect/leave behavior, teacher controls, Hebrew/RTL, device support and observability.
 
-Choose whether the game adapts to the existing Socket.io server or remains a separate service. Integrate on a separate branch in small steps, adding registry entries and catalog migrations at that stage. Keep the standalone comparison release until the integrated version passes the same scenarios.
+Use the [open-source multiplayer integration guide](multiplayer-game-integration.md) for runtime selection, the shared platform contract, stage gates and production acceptance. Games may adapt to the existing board runtime, a future separate action runtime, or retain a native backend; the action runtime is a recommendation, not currently deployed infrastructure. Integrate on a separate branch in small steps, adding registry entries and catalog migrations at that stage. Keep the standalone comparison release until the integrated version passes the same scenarios.
 
 ## Infrastructure maintenance
 

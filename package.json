@@ -12,9 +12,11 @@
     "dev:web": "npm run dev -w @playground/web",
     "dev:server": "npm run dev -w @playground/game-server",
     "dev:minecraft": "npm run dev -w @playground/minecraft-server",
+    "dev:rocket": "node scripts/dev-rocket.mjs",
     "lint": "npm run lint --workspaces --if-present",
     "borrow-voxel-textures": "tsx scripts/borrow-voxel-textures.ts",
-    "borrow-voxel-audio": "tsx scripts/borrow-voxel-audio.ts"
+    "borrow-voxel-audio": "tsx scripts/borrow-voxel-audio.ts",
+    "dev:wobble": "node scripts/dev-wobble.mjs"
   },
   "devDependencies": {
     "tsx": "^4.22.3",

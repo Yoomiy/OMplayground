@@ -6,7 +6,9 @@ Canonical product + architecture guide: **[`ARCHITECTURE.md`](../ARCHITECTURE.md
 
 | Doc | Purpose |
 |-----|---------|
+| [`multiplayer-game-integration.md`](multiplayer-game-integration.md) | Agent guide for open-source multiplayer imports: runtime decisions, integration contract, pipeline, acceptance and hosting |
 | [`multiplayer-experiment-workflow.md`](multiplayer-experiment-workflow.md) | Environment-specific multiplayer labs on the Oracle dev VPS only |
+| [`Wobble app integration`](../games/wobble-rush/README.md) | Wobble runtime, local development, saved sessions, validation and rollout gates |
 | [`HARDENING.md`](HARDENING.md) | Production checklist — rate limits, health, logging, scaling |
 | [`LOGGING.md`](LOGGING.md) | Contributor contract for logging, audit events, telemetry, privacy, and new processes |
 | [`THEMING_AND_COMPONENTS.md`](THEMING_AND_COMPONENTS.md) | Contributor rules for switchable themes, color contrast, and future UI components |

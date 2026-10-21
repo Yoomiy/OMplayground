@@ -6,6 +6,8 @@
 
 **More docs:** [`docs/README.md`](docs/README.md) — index of ADRs, ops, and design specs.
 
+**Future multiplayer imports:** [`docs/multiplayer-game-integration.md`](docs/multiplayer-game-integration.md) — agent pipeline, runtime selection, integration contract and acceptance checklists. Its proposed action runtime is forward-looking, not part of the currently implemented stack.
+
 ---
 
 ## 1. Overview

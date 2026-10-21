@@ -72,4 +72,52 @@ The classroom page must call the RTC service from an allowed `CORS_ORIGIN` with 
 
 Deploy `apps/document-converter/Dockerfile` as a separate one-replica Railway service. Set the same `DOCUMENT_CONVERTER_SHARED_SECRET` on it and `minecraft-server`, set `DOCUMENT_CONVERTER_URL` on `minecraft-server`, and allow the Vercel classroom origin through the converter’s `CORS_ORIGIN`. The service needs ephemeral disk only; horizontal replicas require a shared job store and are intentionally unsupported.
 
-The converter propagates the classroom request correlation ID inside its signed ticket. Railway logs identify conversion jobs by job ID, classroom room code, and format, but never record filenames, tickets, result access tokens, or document contents.
+The converter propagates the classroom request correlation ID inside its signed ticket. Railway logs identify conversion jobs by job ID, document name, classroom room code, and format, but never record tickets, result access tokens, or document contents.
+
+### Classroom security logging deployment
+
+Configure LiveKit to POST webhooks to the publicly reachable
+`https://<minecraft-server-host>/webhooks/livekit` endpoint. For LiveKit Cloud,
+use Settings → Webhooks and select a signing API key matching this service's
+`LIVEKIT_API_KEY` and `LIVEKIT_API_SECRET`. The browser's ability to join a room
+does not establish that webhook delivery is configured. Use the dashboard's test
+event action, then verify real `participant_joined` and `participant_left`
+deliveries receive 2xx responses. See
+https://docs.livekit.io/intro/basics/rooms-participants-tracks/webhooks-events/.
+The webhook URL must target `minecraft-server`, not the drawing `game-server`.
+
+Search `minecraft-server` logs for `CLASSROOM_PARTICIPANT_LEFT` after both the
+Leave Class button and closing a tab. Webhooks log `evidenceSource=webhook`;
+the 30-second LiveKit polling fallback logs `evidenceSource=reconciliation`
+once a previously observed or recorded participant is absent. Tab closure may
+also wait for LiveKit's disconnect detection. Polling cannot guarantee evidence
+of visits occurring entirely between polls; webhook delivery remains necessary.
+Missing webhook delivery cannot be diagnosed solely from a board socket's
+disconnect log. Neither a leave button click nor a board socket disconnect is
+treated as proof of media-room departure.
+
+Set `CLASSROOM_CLIENT_IP_SOURCE=railway` on `minecraft-server` only for requests
+entering through Railway public HTTP ingress. Railway documents `X-Real-IP` as
+the client address: https://docs.railway.com/networking/public-networking/specs-and-limits.
+This mode trusts that header; restrict private/direct paths to the classroom
+endpoint so a caller cannot bypass ingress and supply its own header. Do not use
+this mode behind additional proxies without verifying which address is supplied.
+The existing Express proxy setting is not the source of security-log IPs.
+
+For a deployment accepting client connections directly without proxies, select
+`direct` (socket peer only; forwarding headers ignored). The default is
+`unavailable`: classroom outcomes still log, but no IP is asserted. Missing,
+malformed, multi-address or scoped-address inputs also produce
+`context.ipStatus=unavailable`; arbitrary forwarded headers are never a fallback.
+Invalid source configuration stops startup.
+
+Before relying on IP evidence, test from two known external networks and send
+forged `X-Real-IP` and `X-Forwarded-For` headers through the public endpoint. Verify
+the logged address remains the real external address, IPv4/IPv6 behave as
+expected, and direct/private callers cannot impersonate public ingress. This is
+a deployment acceptance check, not something local unit tests can establish.
+Also verify token issuance links to actual join/leave records through
+`context.admissionId`, re-entry blocks are visible, and secrets/content are absent.
+Hosting/log-drain retention and authorized school-staff access apply to these
+records; the application creates no IP database copy. See `docs/LOGGING.md` for
+event fields and investigation filters.

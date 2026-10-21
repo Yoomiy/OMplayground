@@ -1,0 +1,104 @@
+export type RecoveryReason = 'cpu_budget' | 'input_backlog' | 'server_stale'
+  | 'controls_released' | 'mode_change' | 'error';
+
+export interface TelemetryDistribution {
+  count: number;
+  mean: number;
+  /** Upper bound from fixed histogram buckets, rather than an exact percentile. */
+  p95Upper: number;
+  max: number;
+}
+
+export type PresentationReason = 'active' | 'mode' | 'worker_unready' | 'phase'
+  | 'server_stale' | 'result_stale' | 'sample_stale';
+export interface ClientStallSample {
+  timeMs: number; tick: number; sent: number; acknowledged: number; pending: number;
+  completed: number; inputSendAgeMs: number; ackAdvanceAgeMs: number;
+  snapshotAgeMs: number; workerBusyMs: number; resultAgeMs: number; sampleAgeMs: number;
+  frameGapMs: number; reason: PresentationReason;
+  serverCallbackGapMs: number; serverWorkMs: number; serverDroppedMs: number;
+}
+export interface ClientStallIncident {
+  event: 'input_backlog' | 'server_stale' | 'error' | 'fallback' | 'prediction_resumed';
+  /** Distance between presentation targets, NOT an equal-tick physics error. */
+  targetGapMeters: number;
+  samples: ClientStallSample[];
+}
+
+export type ClientTimingName = 'renderSubmitMs' | 'sceneEffectsMs' | 'presentationMs' | 'hudAudioMs' | 'workerRoundTripMs' | 'poseAgeMs';
+export interface ClientTimings extends Record<ClientTimingName, TelemetryDistribution> { drawCallsMax: number }
+
+export interface ClientTelemetryContext {
+  mode: 'server' | 'predicted';
+  phase: string;
+  players: number;
+  source: 'browser' | 'node';
+  visibility: 'visible' | 'hidden' | 'none';
+  focused: boolean;
+  width: number;
+  height: number;
+  dpr: number;
+  cores: number;
+  graphicsQuality?: 'standard' | 'low';
+  renderScale?: number;
+  shadows?: boolean;
+  ceilingEffect?: 'simple' | 'glass';
+  carRendering?: 'batched' | 'original';
+  uiLanguage?: 'he' | 'en';
+  playerLabels?: boolean;
+  timingProfile?: 'baseline' | 'buffer' | 'clock' | 'combined';
+  inputClock?: 'render' | 'worker';
+  poseBufferMs?: 0 | 50;
+}
+
+export interface ClientTelemetryWindow extends ClientTelemetryContext {
+  version: 2;
+  clientTimings?: ClientTimings;
+  stallIncidents?: ClientStallIncident[];
+  release: string;
+  runId: string;
+  windowSequence: number;
+  windowMs: number;
+  endedAtUtc: string;
+  endReason: 'periodic' | 'context_change' | 'leave' | 'export';
+  fps: number;
+  rttMs: number;
+  pending: number;
+  ackLag: number;
+  recoveries: number;
+  frames: number;
+  frameMs: TelemetryDistribution;
+  framesOver33ms: number;
+  framesOver50ms: number;
+  eligibleMs: number;
+  predictionActiveMs: number;
+  predictionActivePercent: number;
+  recoveryCounts: Record<RecoveryReason, number>;
+  replayMs: TelemetryDistribution;
+  localPhysicsMs: TelemetryDistribution;
+  rtt: TelemetryDistribution;
+  snapshotGapMs: TelemetryDistribution;
+  pendingMax: number;
+  ackLagMax: number;
+  snapshotAgeMaxMs: number;
+  carCorrectionMeters: TelemetryDistribution;
+  ballCorrectionMeters: TelemetryDistribution;
+  rotationCorrectionDegrees: TelemetryDistribution;
+  carCorrectionsOver10cm: number;
+  carCorrectionsOver50cm: number;
+  hardSnaps: number;
+  correctionsNearBall: number;
+  correctionsNearCar: number;
+  rebases: number;
+  predictionChecks: number;
+  confirmedSnapshots: number;
+  skippedReplaySteps: number;
+  replayedSteps: number;
+  historyMisses: number;
+  historyMismatches: number;
+  catchupYields: number;
+  unalignedCorrections: number;
+  predictionLagMax: number;
+  predictionResultAgeMaxMs: number;
+  predictionSampleAgeMaxMs: number;
+}

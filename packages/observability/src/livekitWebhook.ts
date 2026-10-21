@@ -2,6 +2,8 @@ import express, { type Express, type Request, type Response } from "express";
 import type { Logger } from "pino";
 import { WebhookReceiver } from "livekit-server-sdk";
 import type { StatsCollector } from "./statsCollector";
+import { logError } from "./error";
+import { classroomAdmissionIps } from "./classroomAdmissionIp";
 
 export interface LiveKitWebhookOptions {
   logger: Logger;
@@ -21,6 +23,37 @@ export interface LiveKitRoomContext {
   roomKind: "voxel-session" | "game-session" | "classroom" | "unknown";
   sessionId?: string;
   roomCode?: string;
+}
+
+/** Select bounded identifiers only; never spread participant metadata into logs. */
+export function classroomVisitEvidence(event: {
+  id?: string;
+  createdAt?: number | bigint | string;
+  room?: { sid?: string };
+  participant?: { sid?: string; identity?: string; metadata?: string };
+}) {
+  let metadata: Record<string, unknown> = {};
+  try {
+    const parsed = JSON.parse(event.participant?.metadata ?? "{}");
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) metadata = parsed;
+  } catch { /* Legacy participants may have no valid metadata. */ }
+  const admissionId = typeof metadata.admissionId === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(metadata.admissionId)
+      ? metadata.admissionId : undefined;
+  const participantKey = typeof metadata.attendanceKey === "string" && metadata.attendanceKey.length <= 256
+    ? metadata.attendanceKey : undefined;
+  const seconds = Number(event.createdAt);
+  return {
+    webhookEventId: event.id,
+    occurredAt: Number.isFinite(seconds) && seconds > 0 && seconds < 8_640_000_000_000
+      ? new Date(seconds * 1000).toISOString() : undefined,
+    roomSid: event.room?.sid,
+    participantSid: event.participant?.sid,
+    participantIdentity: event.participant?.identity,
+    participantKey,
+    admissionId,
+    admissionLink: admissionId ? "available" : "unavailable"
+  };
 }
 
 export function liveKitRoomContext(roomName: string): LiveKitRoomContext {
@@ -65,8 +98,8 @@ export function mountLiveKitWebhook(
       options.logger.warn({
         protocol: "livekit-webhook",
         message: "LiveKit webhook verification failed",
-        context: { status: "failed" },
-        err
+        context: { event: "LIVEKIT_WEBHOOK_VERIFICATION_FAILED", status: "failed" },
+        err: logError(err)
       });
       res.status(400).json({ error: "invalid_webhook" });
       return;
@@ -74,6 +107,22 @@ export function mountLiveKitWebhook(
 
     const livekitRoom = event.room?.name ?? "";
     const roomContext = liveKitRoomContext(livekitRoom);
+    // Record verified connection evidence even if attendance persistence fails.
+    // Retries remain distinguishable by webhookEventId and participantSid.
+    if (roomContext.roomKind === "classroom" &&
+        (event.event === "participant_joined" || event.event === "participant_left")) {
+      const evidence = classroomVisitEvidence(event);
+      options.logger.info({
+        protocol: "livekit-webhook",
+        roomCode: roomContext.roomCode,
+        message: "Classroom participant connection event",
+        context: {
+          event: event.event === "participant_joined" ? "CLASSROOM_PARTICIPANT_JOINED" : "CLASSROOM_PARTICIPANT_LEFT",
+          status: "success", evidenceSource: "webhook", livekitRoom, ...evidence,
+          ...classroomAdmissionIps.lookup(roomContext.roomCode!, evidence.admissionId, evidence.participantIdentity)
+        }
+      });
+    }
     try {
       await options.onVerifiedEvent?.(event);
       const { sessionId, roomCode, roomKind } = roomContext;
@@ -98,6 +147,7 @@ export function mountLiveKitWebhook(
           break;
         case "participant_joined":
           options.stats.adjustVoiceParticipants(1);
+          if (roomKind === "classroom") break;
           options.logger.info({
             protocol: "livekit-webhook",
             sessionId,
@@ -115,6 +165,7 @@ export function mountLiveKitWebhook(
           break;
         case "participant_left":
           options.stats.adjustVoiceParticipants(-1);
+          if (roomKind === "classroom") break;
           options.logger.info({
             protocol: "livekit-webhook",
             sessionId,
@@ -173,7 +224,7 @@ export function mountLiveKitWebhook(
           roomKind: roomContext.roomKind,
           status: "failed"
         },
-        err
+        err: logError(err)
       });
       // A 5xx allows LiveKit to retry a verified event that failed downstream.
       res.status(500).json({ error: "webhook_processing_failed" });

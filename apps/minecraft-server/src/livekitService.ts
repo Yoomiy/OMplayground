@@ -7,6 +7,7 @@ import {
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCachedAuth } from "./authCache";
 import { createLogger, logError } from "@playground/observability";
+import type { ClassroomSecurityIdentity } from "./classroomSecurity";
 import {
   classroomParticipantKeyFromMetadata,
   isClassroomParticipantBlocked,
@@ -669,6 +670,8 @@ export interface GenerateClassroomTokenArgs {
   delegate?: { id: string; displayName: string } | null;
   presenterIdentityOverride?: string;
   guestAttendanceKey?: string | null;
+  admissionId?: string;
+  onSecurityIdentity?: (identity: ClassroomSecurityIdentity) => void;
 }
 
 export async function generateClassroomToken(
@@ -748,6 +751,15 @@ export async function generateClassroomToken(
       : isDelegate || isTeacher
         ? "cohost"
         : "participant";
+  args.onSecurityIdentity?.({
+    accountId: profile?.userId,
+    participantIdentity: identity,
+    participantKey: attendanceKey,
+    authenticationMethod: isDelegate ? "delegate" : profile ? "account" : "guest",
+    accountTokenOutcome: accessToken ? profile ? "accepted" : "unverified" : "absent",
+    role,
+    isHost
+  });
   if (!isHost) {
     let isBlocked: boolean;
     try {
@@ -791,6 +803,7 @@ export async function generateClassroomToken(
       spectateMode: spectateMode ?? "none",
       attendanceKey,
       attendanceRole,
+      admissionId: args.admissionId,
       classroomHostKind: isDelegate ? "delegate" : isHost ? "staff" : undefined,
       classroomDelegateId: delegate?.id,
       canDrawWhiteboard

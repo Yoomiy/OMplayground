@@ -1,6 +1,10 @@
 import crypto from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getClassroomsLiveAttendance, type ClassroomLiveAttendance } from "./livekitService";
+import { createLogger } from "@playground/observability";
+import { ClassroomPresenceObserver } from "./classroomPresence";
+
+const presence = new ClassroomPresenceObserver(createLogger("minecraft-server"));
 
 const CLASSROOM_ROOM_PREFIX = "classroom-";
 
@@ -124,12 +128,17 @@ async function persistAttendanceEvent(
  */
 export async function reconcileClassroomAttendance(
   supabaseAdmin: SupabaseClient,
-  classrooms: Array<{ id: string; room_code: string }>
+  classrooms: Array<{ id: string; room_code: string }>,
+  observer = presence
 ): Promise<Map<string, ClassroomLiveAttendance | null>> {
   if (!classrooms.length) return new Map();
+  const observation = observer.beginObservation();
   const liveByRoomCode = await getClassroomsLiveAttendance(classrooms.map((classroom) => classroom.room_code));
+  // Log observed transitions even when the attendance database is unavailable.
+  // Missing map entries are failed reads, not evidence that a participant left.
+  observer.observe(liveByRoomCode, observation);
   const snapshots = classrooms
-    .filter((classroom) => liveByRoomCode.has(classroom.room_code))
+    .filter((classroom) => liveByRoomCode.has(classroom.room_code) && observer.isCurrent(classroom.room_code, observation))
     .map((classroom) => ({ classroom, live: liveByRoomCode.get(classroom.room_code) ?? null }));
   const classroomIds = classrooms.map((classroom) => classroom.id);
   const { data: openMeetings, error: meetingsError } = await supabaseAdmin
@@ -162,6 +171,9 @@ export async function reconcileClassroomAttendance(
     const priorMeetings = meetingsByClassroom.get(classroom.id) ?? [];
     if (!live) {
       for (const meeting of priorMeetings) {
+        for (const participantSid of visitsByMeeting.get(meeting.id) ?? []) {
+          observer.recordDeparture(classroom.room_code, meeting.livekit_room_sid, participantSid, occurredAt);
+        }
         await persistAttendanceEvent(supabaseAdmin, { eventType: "room_finished", roomCode: classroom.room_code, roomSid: meeting.livekit_room_sid, occurredAt });
       }
       continue;
@@ -171,11 +183,15 @@ export async function reconcileClassroomAttendance(
     const liveSids = new Set(live.participants.map((participant) => participant.sid));
     for (const meeting of priorMeetings) {
       if (meeting.livekit_room_sid !== live.roomSid) {
+        for (const participantSid of visitsByMeeting.get(meeting.id) ?? []) {
+          observer.recordDeparture(classroom.room_code, meeting.livekit_room_sid, participantSid, occurredAt);
+        }
         await persistAttendanceEvent(supabaseAdmin, { eventType: "room_finished", roomCode: classroom.room_code, roomSid: meeting.livekit_room_sid, occurredAt });
         continue;
       }
       for (const participantSid of visitsByMeeting.get(meeting.id) ?? []) {
         if (!liveSids.has(participantSid)) {
+          observer.recordDeparture(classroom.room_code, live.roomSid, participantSid, occurredAt);
           await persistAttendanceEvent(supabaseAdmin, { eventType: "participant_left", roomCode: classroom.room_code, roomSid: live.roomSid, participantSid, occurredAt });
         }
       }

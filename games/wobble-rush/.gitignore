@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.build-stage/
+.run/
+*.log
+.env*
+!.env.app.example
+coverage/
+test-results/
+playwright-report/
