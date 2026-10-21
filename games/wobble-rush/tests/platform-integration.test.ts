@@ -672,7 +672,7 @@ describe("Wobble app admission and persistence", () => {
     expect(room.view(LATE).actorId).toBeNull()
     expect(room.engine.state.players).toHaveLength(2)
     expect(room.view(TEACHER).canModerate).toBe(true)
-    await expect(room.authorize(PROFILE(TEACHER), true)).rejects.toThrow("READ_ONLY")
+    await expect(room.authorize(PROFILE(TEACHER), "chat")).rejects.toThrow("READ_ONLY")
     await expect(
       room.control(PROFILE(TEACHER), { action: "remove", userId: LATE }),
     ).rejects.toThrow("CONTROL_FORBIDDEN")
@@ -720,6 +720,70 @@ afterEach(async () => {
     for (const cleanup of logCleanup.splice(0)) cleanup()
   }
 })
+for (const role of ["teacher", "admin"] as const) {
+  test(`${role} observers can request voice after joining while chat stays read-only`, async () => {
+    const gateway = new FakeGateway()
+    gateway.roles.set(TEACHER, role)
+    const issued: { sessionId: string; userId: string; displayName: string }[] = []
+    const service = createPlatformService({
+      gateway,
+      secret: SECRET,
+      origins: ["http://app.test"],
+      clientDir: "dist/client",
+      maxRooms: 2,
+      release: "voice-permissions-test",
+      createVoiceToken: async (args) => {
+        issued.push(args)
+        return { token: "fixture-voice-token", serverUrl: "wss://voice.example.invalid" }
+      },
+    })
+    services.push(service)
+    await new Promise<void>((done) => service.server.listen(0, "127.0.0.1", done))
+    const base = `http://127.0.0.1:${(service.server.address() as AddressInfo).port}`
+    const post = (path: string, id = TEACHER) =>
+      fetch(`${base}/api/wobble/${path}`, {
+        method: "POST",
+        headers: {
+          Origin: "http://app.test",
+          Authorization: `Bearer ${id}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ sessionId: SESSION, message: "observer text" }),
+      })
+    expect((await post("launch", HOST)).status).toBe(200)
+    const room = required(service.rooms.get(SESSION))
+    await room.attach(await gateway.admit(PROFILE(HOST), SESSION, false))
+    expect((await post("launch")).status).toBe(200)
+    // A launch ticket alone must not grant voice access before room attachment.
+    expect((await post("voice")).status).toBe(403)
+    expect(issued).toHaveLength(0)
+    const observer = await gateway.profile(TEACHER)
+    await room.attach(await gateway.admit(observer, SESSION, true))
+    const voice = await post("voice")
+    expect(voice.status).toBe(200)
+    expect(await voice.json()).toEqual({
+      token: "fixture-voice-token",
+      serverUrl: "wss://voice.example.invalid",
+    })
+    expect(issued).toEqual([{ sessionId: SESSION, userId: TEACHER, displayName: observer.name }])
+    expect((await post("voice")).status).toBe(200)
+    expect(issued).toHaveLength(1)
+    expect(room.view(TEACHER)).toMatchObject({ observer: true, actorId: null, canControl: false })
+    const chat = await post("chat")
+    expect(chat.status).toBe(403)
+    expect(await chat.json()).toMatchObject({ code: "READ_ONLY" })
+    expect(gateway.messages).toHaveLength(0)
+    // Fresh authorization must still reject a cached token after role revocation.
+    gateway.roles.set(TEACHER, "kid")
+    expect((await post("voice")).status).toBe(403)
+    expect(issued).toHaveLength(1)
+    gateway.roles.set(TEACHER, role)
+    await room.detached(TEACHER)
+    expect((await post("voice")).status).toBe(403)
+    expect(issued).toHaveLength(1)
+  })
+}
+
 test("an expired initial allocation without a first checkpoint can retry without discarding a race save", async () => {
   const gateway = new FakeGateway()
   gateway.row.game_state = {

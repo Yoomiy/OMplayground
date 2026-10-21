@@ -31,6 +31,7 @@ const row: PlatformSession = {
   games: { game_url: "wobble-rush", is_active: true },
 }
 const revokedVoice: string[] = []
+const requestedVoice: string[] = []
 const chat: Record<string, unknown>[] = []
 const audit: unknown[] = []
 const report: Record<string, unknown> = {
@@ -173,6 +174,10 @@ const service = createPlatformService({
   clientDir: `${game}/dist/client`,
   maxRooms: 2,
   release: manifest.release,
+  createVoiceToken: async ({ userId }) => {
+    requestedVoice.push(userId)
+    throw new Error("Voice transport is intentionally unavailable in the browser fixture")
+  },
   revokeVoice: async (_sessionId, userId) => {
     revokedVoice.push(userId)
   },
@@ -592,6 +597,16 @@ createRoot(document.getElementById('root')!).render(<StrictMode><BrowserRouter><
   assert.equal(teacherView.canModerate, true)
   assert.equal(teacherView.canManageSession, false)
   assert.equal(teacherView.canRemovePlayers, false)
+  await teacher.getByRole("button", { name: "צ׳אט וקול", exact: true }).click()
+  const joinTeacherVoice = teacher.getByRole("button", { name: "הצטרף לצ׳אט הקולי", exact: true })
+  await joinTeacherVoice.waitFor()
+  await pause(200)
+  assert.deepEqual(requestedVoice, [], "observer voice remains off until explicitly joining")
+  await joinTeacherVoice.click()
+  await teacher.getByText("הצ׳אט הקולי אינו זמין כרגע.", { exact: true }).waitFor()
+  assert.ok(requestedVoice.length > 0, "observer reaches the voice token issuer")
+  assert.ok(requestedVoice.every((id) => id === uid(4)))
+  await teacher.getByRole("button", { name: "חזרה למשחק", exact: true }).click()
   // UI projections exercise lobby/cup menus with the real teacher capabilities.
   // The server's actual three-race permission checks live in platform-integration.test.ts.
   const projectTeacherView = async (patch: Partial<WobbleView>) => {
@@ -811,6 +826,7 @@ createRoot(document.getElementById('root')!).render(<StrictMode><BrowserRouter><
     reconnectKeepsRenderer: "PASS",
     dispose: "PASS",
     teacherObserverAndChatModerationUI: "PASS",
+    teacherVoiceIsOptIn: "PASS (explicit join reaches token issuer; no real microphone audio)",
     teacherRaceMenusAreReadOnly: "PASS (projected UI states; real capabilities)",
     teacherSessionControlsHidden:
       "PASS (host retains pause/resume; teacher retains chat moderation)",

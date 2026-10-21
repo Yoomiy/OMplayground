@@ -28,7 +28,7 @@ The catalog uses both migrations, in order: `20261018210000_prepare_wobble_rush_
 - `src/client`: embedded Three.js view, prediction, input, audio and in-race HUD.
 - `apps/web/src/game/WobbleSessionContainer.tsx`: React app flow, configuration, results, reconnect and session management.
 
-App sessions own admission, configuration and results. Observer teachers can watch and moderate chat; playing hosts control racing. Server capability checks enforce those boundaries independently of the UI. See [architecture](docs/architecture.md) and [deployment](DEPLOYMENT.md).
+App sessions own admission, configuration and results. Observer teachers can watch, moderate text chat and explicitly join voice chat; playing hosts control racing. Server capability checks enforce those boundaries independently of the UI. See [architecture](docs/architecture.md) and [deployment](DEPLOYMENT.md).
 
 ## Verification
 

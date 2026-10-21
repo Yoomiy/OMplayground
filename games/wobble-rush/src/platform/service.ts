@@ -364,7 +364,8 @@ export function createPlatformService(options: PlatformServiceOptions) {
       } else {
         const room = rooms.get(input.sessionId)
         if (!room) throw new AdmissionError("NOT_IN_ROOM")
-        const admission = await room.run(() => room.authorize(profile, true))
+        const activity = path.endsWith("/chat") ? "chat" : "voice"
+        const admission = await room.run(() => room.authorize(profile, activity))
         if (path.endsWith("/chat")) {
           rateLimit(`chat:${profile.userId}`, 1, 700)
           await options.gateway.sendChat(admission, input.message)
@@ -393,7 +394,7 @@ export function createPlatformService(options: PlatformServiceOptions) {
           } catch {
             throw new AdmissionError("VOICE_UNAVAILABLE", 503)
           }
-          await room.run(() => room.authorize(profile, true))
+          await room.run(() => room.authorize(profile, "voice"))
           json(response, 200, result)
         }
       }

@@ -47,7 +47,7 @@ export function wobbleError(code: string): string {
     LOBBY_ONLY: 'אפשר לשנות את המסלול וסוג המשחק בחדר ההמתנה בלבד.',
     REPLACEMENT_TAB: 'המשחק פתוח כעת בלשונית אחרת.',
     VOICE_UNAVAILABLE: 'הצ׳אט הקולי אינו זמין כרגע.',
-    READ_ONLY: 'מצב צפייה אינו מאפשר צ׳אט או מיקרופון.',
+    READ_ONLY: 'מצב צפייה אינו מאפשר שליחת הודעות בצ׳אט.',
     RATE_LIMITED: 'יש להמתין רגע לפני הפעולה הבאה.',
     SERVICE_OUTDATED: 'גרסת שרת המשחק אינה תואמת. יש להפעיל מחדש את שירות Wobble ולרענן.',
     PLATFORM_UNAVAILABLE: 'שמירת המשחק אינה זמינה כרגע. אפשר לנסות שוב בעוד רגע.',

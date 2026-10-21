@@ -265,7 +265,7 @@ export class PlaygroundWobbleRoom {
     this.publish()
   }
 
-  async authorize(profile: PlatformProfile, social = false): Promise<Admission> {
+  async authorize(profile: PlatformProfile, activity?: "chat" | "voice"): Promise<Admission> {
     const fresh = await this.gateway.profile(profile.userId)
     const session = await this.gateway.session(this.session.id)
     const observer = this.observers.has(profile.userId)
@@ -281,7 +281,7 @@ export class PlaygroundWobbleRoom {
     if (!observer && fresh.gender !== session.gender) throw new AdmissionError("GENDER_MISMATCH")
     if (fresh.role === "kid" && !(await this.gateway.withinRecess(fresh)))
       throw new AdmissionError("RECESS_DENIED")
-    if (social && observer) throw new AdmissionError("READ_ONLY")
+    if (activity === "chat" && observer) throw new AdmissionError("READ_ONLY")
     if (session.status === "completed" && !this.isComplete())
       throw new AdmissionError("SESSION_COMPLETED")
     this.session = session

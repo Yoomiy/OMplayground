@@ -149,7 +149,7 @@ export function WobbleSessionContainer({ sessionId, backHref = '/home', backLabe
           {players.some(player => player.pending) && <p role="status">מצטרפים חדשים ייכנסו אוטומטית למשחק הבא לאחר הסכמה למשחק נוסף.</p>}
         </section>}
         {social && <>
-          {!view.ended && !view.observer && <GameVoicePanel sessionId={sessionId} requestToken={game.requestVoiceToken} manualJoin />}
+          {!view.ended && <GameVoicePanel sessionId={sessionId} requestToken={game.requestVoiceToken} manualJoin />}
           <SessionChatPanel sessionId={sessionId} observer={view.observer} canModerate={view.canModerate} ended={view.ended} send={game.sendChat} />
         </>}
       </aside>}
