@@ -1,0 +1,103 @@
+import { describe, expect, test } from "bun:test"
+import { reduceRoom } from "../src/shared/room"
+import {
+  findBroadcast,
+  lobbyWithTwo,
+  P1,
+  P2,
+  player,
+  racingState,
+  T0,
+} from "./support/room-fixtures"
+
+describe("finish and results", () => {
+  test("records the first finish time and ignores a duplicate", () => {
+    const { state, raceStartMs } = racingState()
+    const afterFirst = reduceRoom(
+      state,
+      { kind: "finish", id: P1, timeMs: 61_500 },
+      raceStartMs + 61_500,
+    )
+    expect(player(afterFirst.state, P1).finishedMs).toBe(61_500)
+    expect(afterFirst.state.phase).toBe("racing")
+
+    const afterDup = reduceRoom(
+      afterFirst.state,
+      { kind: "finish", id: P1, timeMs: 99_000 },
+      raceStartMs + 99_000,
+    )
+    expect(player(afterDup.state, P1).finishedMs).toBe(61_500)
+    expect(afterDup.effects).toEqual([])
+  })
+
+  test("when all racers finish, the phase becomes finished and results are broadcast in ascending time order", () => {
+    const { state, raceStartMs } = racingState()
+    let next = reduceRoom(
+      state,
+      { kind: "finish", id: P1, timeMs: 61_500 },
+      raceStartMs + 61_500,
+    ).state
+    const { state: after, effects } = reduceRoom(
+      next,
+      { kind: "finish", id: P2, timeMs: 55_000 },
+      raceStartMs + 55_000,
+    )
+    next = after
+
+    expect(next.phase).toBe("finished")
+    const results = findBroadcast(effects, "results")
+    if (results === null || results.type !== "results")
+      throw new Error("expected a results broadcast")
+    expect(results.results).toEqual([
+      { id: P2, name: "Bravo", timeMs: 55_000, place: 1 },
+      { id: P1, name: "Alpha", timeMs: 61_500, place: 2 },
+    ])
+  })
+
+  test("ignores a finish outside the racing phase", () => {
+    const state = lobbyWithTwo()
+    const { state: after, effects } = reduceRoom(
+      state,
+      { kind: "finish", id: P1, timeMs: 1000 },
+      T0,
+    )
+    expect(after).toEqual(state)
+    expect(effects).toEqual([])
+  })
+})
+
+describe("restart", () => {
+  test("returns a finished room to the lobby with cleared times and readiness", () => {
+    const { state, raceStartMs } = racingState()
+    let next = reduceRoom(
+      state,
+      { kind: "finish", id: P1, timeMs: 61_500 },
+      raceStartMs + 61_500,
+    ).state
+    next = reduceRoom(next, { kind: "finish", id: P2, timeMs: 55_000 }, raceStartMs + 55_000).state
+    expect(next.phase).toBe("finished")
+
+    const { state: after, effects } = reduceRoom(
+      next,
+      { kind: "restart", id: P1 },
+      raceStartMs + 70_000,
+    )
+    expect(after.phase).toBe("lobby")
+    expect(after.phaseEndsAtMs).toBeNull()
+    for (const p of after.players) {
+      expect(p.ready).toBe(false)
+      expect(p.finishedMs).toBeNull()
+    }
+
+    const roster = findBroadcast(effects, "roster")
+    if (roster === null || roster.type !== "roster") throw new Error("expected a roster broadcast")
+    expect(roster.snapshot.phase).toBe("lobby")
+  })
+
+  test("is a no-op outside the finished phase", () => {
+    const state = lobbyWithTwo()
+    const { state: after, effects } = reduceRoom(state, { kind: "restart", id: P1 }, T0)
+    expect(after).toEqual(state)
+    expect(effects).toEqual([])
+  })
+})

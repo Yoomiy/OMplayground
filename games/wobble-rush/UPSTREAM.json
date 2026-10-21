@@ -1,0 +1,9 @@
+{
+  "repository": "https://github.com/code-yeongyu/wobble-rush-3d",
+  "revision": "b395e4a91ebdfb829533b1ae6beda244371658a3",
+  "license": "MIT",
+  "adaptation": "Playground app integration: 23 courses, authoritative Node/WebSocket racing, shared actor-world prediction, Hebrew presentation, authenticated sessions, role capabilities, voice/chat and signed durable recovery.",
+  "contentVersion": "playground-action-4",
+  "actionProtocol": 7,
+  "platformProtocol": 1
+}
