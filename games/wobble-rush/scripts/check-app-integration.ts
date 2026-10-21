@@ -172,7 +172,6 @@ const service = createPlatformService({
   secret: "fixture-secret-with-more-than-32-characters",
   origins: [parentOrigin],
   clientDir: `${game}/dist/client`,
-  maxRooms: 2,
   release: manifest.release,
   createVoiceToken: async ({ userId }) => {
     requestedVoice.push(userId)

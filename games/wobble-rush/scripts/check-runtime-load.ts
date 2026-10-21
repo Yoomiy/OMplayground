@@ -83,7 +83,6 @@ if (process.argv.includes("--host")) {
     origins: ["http://soak.test"],
     clientDir: "dist/client",
     release: "soak",
-    maxRooms: 2,
   })
   const lag = monitorEventLoopDelay({ resolution: 10 })
   lag.enable()
@@ -237,9 +236,8 @@ if (process.argv.includes("--host")) {
         })
       }
     }
-    const full = await launch(id(102), id(17))
-    assert.equal(full.status, 503)
-    assert.equal(full.body.code, "SERVICE_BUSY")
+    const additional = await launch(id(102), id(17))
+    assert.equal(additional.status, 200)
     await pause(200)
     for (const [room, host] of [peers[0], peers[8]].entries()) {
       assert.ok(host)
@@ -308,7 +306,7 @@ if (process.argv.includes("--host")) {
       connections: number
       metrics: { overloadPauses: number; skippedFrames: number; rejected: number }
     }
-    assert.equal(health.rooms, 2)
+    assert.equal(health.rooms, 3)
     assert.equal(health.connections, 16)
     assert.equal(health.metrics.overloadPauses, 0)
     assert.equal(health.metrics.skippedFrames, 0)
@@ -326,7 +324,8 @@ if (process.argv.includes("--host")) {
           },
           fixture:
             "isolated server process, native Node/ws clients; in-memory authenticated database fixture; no real Supabase/media/GPU",
-          rooms: 2,
+          racingRooms: 2,
+          hostedRooms: health.rooms,
           humanClients: 16,
           serverNpcs: 4,
           server,
@@ -339,7 +338,7 @@ if (process.argv.includes("--host")) {
             localhostRttP95Ms: rtt[Math.floor(rtt.length * 0.95)],
             localhostRttP99Ms: rtt[Math.floor(rtt.length * 0.99)],
           },
-          capacityRejection: full.status,
+          additionalRoomStatus: additional.status,
         },
         null,
         2,

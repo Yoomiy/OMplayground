@@ -10,7 +10,7 @@ Use the repository root as the Docker build context:
 docker build -f games/wobble-rush/Dockerfile -t playground-wobble .
 ```
 
-`railway.toml` selects this Dockerfile, checks `/ready`, and uses one replica. The service contains multiple rooms, bounded by `WOBBLE_MAX_ROOMS` (default 2, allowed 1–32). Do not add replicas behind a random load balancer: live rooms and sockets are process-local. Scaling needs deliberate room routing and capacity measurements.
+`railway.toml` selects this Dockerfile, checks `/ready`, and uses one replica. The service hosts multiple rooms without a configured room-count cap. Do not add replicas behind a random load balancer: live rooms and sockets are process-local. Scaling needs deliberate room routing and capacity measurements.
 
 For a Node 24 host, run `npm ci`, `npm run build`, then `npm start` from `games/wobble-rush`. Bun is needed only at build/test time. The runtime dependencies are installed with `npm ci --omit=dev` in the container.
 
@@ -20,7 +20,6 @@ For a Node 24 host, run `npm ci`, `npm run build`, then `npm start` from `games/
 - `WOBBLE_TICKET_SECRET`: stable, secret, at least 32 characters. Retain across restarts and releases to verify checkpoints. Rotating it invalidates existing signed saves and tickets.
 - `APP_ORIGINS`: comma-separated exact browser origins, including scheme and port. Only configured parents can launch the iframe.
 - `HOST=0.0.0.0` and platform `PORT`: bind the service for hosting. Local development uses loopback and port 3000.
-- `WOBBLE_MAX_ROOMS`: bounded room capacity.
 - `LOG_LEVEL=info`: lifecycle, admission, disconnection, completion and error logs. Use `debug` temporarily for correction diagnostics.
 - Optional `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`: voice token issuing and participant revocation, shared with the app’s voice setup.
 
@@ -28,7 +27,7 @@ Set the web app’s `VITE_WOBBLE_SERVICE_URL` to the public HTTPS service URL at
 
 ## Release checks and recovery
 
-`GET /ready` returns 200 while accepting traffic and 503 during shutdown. `GET /health` reports the build release, connections, rooms and overload counters. `GET /api/wobble/config` advertises the release, supported protocol and course content.
+`GET /ready` returns 200 while accepting traffic and 503 during shutdown. `GET /health` reports the build release, connections, rooms and overload counters. Service startup, room allocation/restoration, hibernation and shutdown logs include `activeRooms`, the number of rooms currently hosted in memory (including paused rooms and completed rooms retained for rematches). `GET /api/wobble/config` advertises the release, supported protocol and course content.
 
 The build fingerprints runtime sources and shared app dependencies into one release identifier. Authenticated launch/attach rejects mismatched releases; existing clients should reload after a release. Keep protocol and content versions compatible with any durable saves you intend to restore.
 

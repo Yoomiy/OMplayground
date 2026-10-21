@@ -730,7 +730,6 @@ for (const role of ["teacher", "admin"] as const) {
       secret: SECRET,
       origins: ["http://app.test"],
       clientDir: "dist/client",
-      maxRooms: 2,
       release: "voice-permissions-test",
       createVoiceToken: async (args) => {
         issued.push(args)
@@ -797,7 +796,6 @@ test("an expired initial allocation without a first checkpoint can retry without
     secret: SECRET,
     origins: ["http://app.test"],
     clientDir: "dist/client",
-    maxRooms: 2,
     release: "integration-test",
   })
   services.push(service)
@@ -826,7 +824,6 @@ test("real HTTP/WS launch rejects anonymous entry, authenticates two racers, rec
       secret: SECRET,
       origins: ["http://app.test"],
       clientDir: "dist/client",
-      maxRooms: 2,
       release: "integration-test",
       revokeVoice: async (_sessionId, userId) => {
         revoked.push(userId)
@@ -983,7 +980,9 @@ test("real HTTP/WS launch rejects anonymous entry, authenticates two racers, rec
     ),
   ).toHaveLength(3)
   expect(logs.filter((log) => log.context.event === "WOBBLE_GAME_STOPPED")).toHaveLength(1)
-  expect(logs.some((log) => log.context.event === "WOBBLE_ROOM_RESTORED")).toBe(true)
+  expect(
+    logs.some((log) => log.context.event === "WOBBLE_ROOM_RESTORED" && log.activeRooms === 1),
+  ).toBe(true)
   expect(
     logs.some((log) => log.context.event === "WOBBLE_LAUNCH_REJECTED" && log.level === "debug"),
   ).toBe(true)
