@@ -290,6 +290,13 @@ export class PlaygroundWobbleRoom {
     return { profile: fresh, session, observer }
   }
 
+  /** Match decisions belong to a rostered player host, independent of staff role. */
+  private isPlayerHost(userId: string): boolean {
+    return (
+      userId === this.hostId && !!this.members.get(userId)?.connected && !this.observers.has(userId)
+    )
+  }
+
   async control(
     profile: PlatformProfile,
     control: PlatformControl,
@@ -299,7 +306,7 @@ export class PlaygroundWobbleRoom {
     admission.correlationId = correlationId
     const id = profile.userId
     const moderator = admission.profile.role !== "kid"
-    const controller = moderator || id === this.hostId
+    const playerHost = this.isPlayerHost(id)
     if (control.action === "loaded") {
       const member = this.members.get(id)
       if (member) member.loaded = true
@@ -374,7 +381,9 @@ export class PlaygroundWobbleRoom {
       this.publish()
       return
     }
-    if (!controller) throw new AdmissionError("CONTROL_FORBIDDEN")
+    const raceDecision = ["configure", "start", "next"].includes(control.action)
+    if (raceDecision ? !playerHost : !(playerHost || moderator))
+      throw new AdmissionError("CONTROL_FORBIDDEN")
     if (control.action === "remove") {
       if (!moderator || control.userId === id) throw new AdmissionError("CONTROL_FORBIDDEN")
       await this.gateway.audit(admission, "remove", control.userId)
@@ -606,12 +615,7 @@ export class PlaygroundWobbleRoom {
       hostUserId: this.hostId,
       observer,
       pending: member?.pending ?? false,
-      canControl:
-        !this.ended &&
-        (observer ||
-          userId === this.hostId ||
-          this.roles.get(userId) === "teacher" ||
-          this.roles.get(userId) === "admin"),
+      canControl: !this.ended && this.isPlayerHost(userId),
       canModerate:
         observer || this.roles.get(userId) === "teacher" || this.roles.get(userId) === "admin",
       paused: this.paused,

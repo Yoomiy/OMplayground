@@ -61,6 +61,7 @@ class FakeGateway extends PlatformGateway {
   row = session()
   denied = new Set<string>()
   removed = new Set<string>()
+  roles = new Map<string, PlatformProfile["role"]>()
   fail = false
   audits: { action: string; outcome: string }[] = []
   messages: unknown[] = []
@@ -74,7 +75,8 @@ class FakeGateway extends PlatformGateway {
   }
   override async profile(id: string): Promise<PlatformProfile> {
     if (this.removed.has(id)) throw new AdmissionError("PROFILE_DISABLED")
-    return PROFILE(id)
+    const profile = PROFILE(id)
+    return { ...profile, role: this.roles.get(id) ?? profile.role }
   }
   override async session(): Promise<PlatformSession> {
     return structuredClone(this.row)
@@ -173,6 +175,77 @@ function captureLogs(): CapturedLog[] {
 }
 
 describe("Wobble app admission and persistence", () => {
+  for (const role of ["teacher", "admin"] as const) {
+    test(`${role} observers can moderate but cannot configure, start or advance races`, async () => {
+      const { gateway, room } = await fixture()
+      gateway.roles.set(TEACHER, role)
+      await room.attach(await gateway.admit(await gateway.profile(TEACHER), SESSION, true))
+      expect(room.view(TEACHER)).toMatchObject({
+        observer: true,
+        actorId: null,
+        canControl: false,
+        canModerate: true,
+      })
+      for (const command of [
+        { action: "configure", courseId: "sky-hop", mode: "cup", remix: true },
+        { action: "start" },
+        { action: "next" },
+      ] as const) {
+        const before = structuredClone(gateway.row)
+        await expect(room.control(PROFILE(TEACHER), command)).rejects.toThrow("CONTROL_FORBIDDEN")
+        expect(gateway.row).toEqual(before)
+      }
+      // Even a stale host ID must not turn an observing staff member into a player host.
+      room.hostId = TEACHER
+      expect(room.view(TEACHER).canControl).toBe(false)
+      await expect(room.control(PROFILE(TEACHER), { action: "start" })).rejects.toThrow(
+        "CONTROL_FORBIDDEN",
+      )
+      room.hostId = HOST
+      await room.control(PROFILE(HOST), { action: "start" })
+      await room.control(PROFILE(TEACHER), { action: "pause" })
+      expect(room.paused).toBe(true)
+      await room.control(PROFILE(TEACHER), { action: "resume" })
+      expect(room.paused).toBe(false)
+      await room.control(PROFILE(TEACHER), { action: "remove", userId: GUEST })
+      expect(room.blocked.has(GUEST)).toBe(true)
+      await room.control(PROFILE(TEACHER), { action: "end" })
+      expect(room.ended).toBe(true)
+    })
+    test(`${role} joining as a player gets race decisions only when hosting`, async () => {
+      const { gateway, room } = await fixture()
+      gateway.roles.set(TEACHER, role)
+      await room.attach(await gateway.admit(await gateway.profile(TEACHER), SESSION, false))
+      await room.control(PROFILE(TEACHER), { action: "loaded" })
+      await room.control(PROFILE(TEACHER), { action: "color", colorIndex: 6 })
+      expect(room.view(TEACHER)).toMatchObject({
+        observer: false,
+        canControl: false,
+        canModerate: true,
+      })
+      await expect(room.control(PROFILE(TEACHER), { action: "start" })).rejects.toThrow(
+        "CONTROL_FORBIDDEN",
+      )
+      await expect(
+        room.control(PROFILE(TEACHER), {
+          action: "configure",
+          courseId: "sky-hop",
+          mode: "cup",
+          remix: false,
+        }),
+      ).rejects.toThrow("CONTROL_FORBIDDEN")
+      room.hostId = TEACHER
+      expect(room.view(TEACHER).canControl).toBe(true)
+      await room.control(PROFILE(TEACHER), {
+        action: "configure",
+        courseId: "sky-hop",
+        mode: "cup",
+        remix: false,
+      })
+      await room.control(PROFILE(TEACHER), { action: "start" })
+      expect(room.engine.state.phase).toBe("countdown")
+    })
+  }
   test("maintenance during stopped-room teardown keeps completion durable until connections detach", async () => {
     const { gateway, room, disconnected } = await fixture()
     await room.control(PROFILE(HOST), { action: "end" })
@@ -274,6 +347,7 @@ describe("Wobble app admission and persistence", () => {
   test("an actual control-only three-race cup persists each result once and rematches only after consent", async () => {
     const logs = captureLogs()
     const { gateway, room } = await fixture()
+    await room.attach(await gateway.admit(PROFILE(TEACHER), SESSION, true))
     room.engine.state = { ...room.engine.state, seed: 7 }
     await room.control(PROFILE(HOST), {
       action: "configure",
@@ -339,9 +413,20 @@ describe("Wobble app admission and persistence", () => {
       })
       expect(room.accepted).toHaveLength(round + 1)
       expect(gateway.row.status).toBe(round === 2 ? "completed" : "playing")
-      if (round < 2) await room.control(PROFILE(HOST), { action: "next" })
+      if (round < 2) {
+        const before = structuredClone(gateway.row)
+        expect(room.view(TEACHER).canControl).toBe(false)
+        await expect(room.control(PROFILE(TEACHER), { action: "next" })).rejects.toThrow(
+          "CONTROL_FORBIDDEN",
+        )
+        expect(room.engine.state.phase).toBe("finished")
+        expect(gateway.row).toEqual(before)
+        await room.control(PROFILE(HOST), { action: "next" })
+      }
     }
     expect(room.view(HOST).standings.reduce((sum, row) => sum + row.points, 0)).toBe(54)
+    for (const action of ["rematch", "accept-rematch", "decline-rematch"] as const)
+      await expect(room.control(PROFILE(TEACHER), { action })).rejects.toThrow("CANNOT_REMATCH")
     await room.control(PROFILE(HOST), { action: "rematch" })
     expect(room.engine.state.phase).toBe("finished")
     await room.control(PROFILE(GUEST), { action: "accept-rematch" })

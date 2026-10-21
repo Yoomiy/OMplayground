@@ -9,6 +9,7 @@ import { chromium } from "@playwright/test"
 import type { PlatformSession } from "../../src/platform/admission"
 import { PlatformGateway } from "../../src/platform/gateway"
 import { createPlatformService } from "../../src/platform/service"
+import type { WobbleView } from "../../src/shared/platform-view"
 
 const repo = fileURLToPath(new URL("../../../../", import.meta.url))
 const game = fileURLToPath(new URL("../../", import.meta.url))
@@ -491,6 +492,65 @@ createRoot(document.getElementById('root')!).render(<StrictMode><BrowserRouter><
     null,
     { timeout: 60_000 },
   )
+  const teacherView = service.rooms.get(sessionId)?.view(uid(4))
+  assert.ok(teacherView)
+  assert.equal(teacherView.canControl, false)
+  assert.equal(teacherView.canModerate, true)
+  // UI projections exercise lobby/cup menus with the real teacher capabilities.
+  // The server's actual three-race permission checks live in platform-integration.test.ts.
+  const projectTeacherView = async (patch: Partial<WobbleView>) => {
+    await frame(teacher).evaluate(
+      (state) => {
+        const params = new URLSearchParams(location.search)
+        const origin = params.get("parentOrigin")
+        if (!origin) throw new Error("Missing parent origin")
+        parent.postMessage(
+          {
+            source: "wobble-frame",
+            version: 1,
+            sessionId: params.get("sessionId"),
+            bridgeId: params.get("bridgeId"),
+            kind: "state",
+            state,
+          },
+          origin,
+        )
+      },
+      { ...teacherView, ...patch },
+    )
+  }
+  await projectTeacherView({ phase: "lobby", paused: false, round: 0 })
+  await teacher.getByRole("heading", { name: "חדר ההמתנה", exact: true }).waitFor()
+  assert.equal(await teacher.getByRole("button", { name: "התחלת מרוץ", exact: true }).count(), 0)
+  assert.equal(
+    await teacher
+      .getByText("סוג משחק", { exact: true })
+      .locator("..")
+      .locator("select")
+      .isDisabled(),
+    true,
+  )
+  assert.equal(
+    await teacher.getByText("מסלול", { exact: true }).locator("..").locator("select").isDisabled(),
+    true,
+  )
+  assert.equal(await teacher.getByLabel("קצב מכשולים משתנה", { exact: true }).isDisabled(), true)
+  assert.equal(await teacher.getByRole("button", { name: "צבע סגול", exact: true }).count(), 0)
+  await projectTeacherView({ phase: "finished", paused: false, mode: "cup", complete: false })
+  await teacher.getByRole("heading", { name: "מרוץ 1 הסתיים", exact: true }).waitFor()
+  assert.equal(await teacher.getByRole("button", { name: "המרוץ הבא", exact: true }).count(), 0)
+  await projectTeacherView({ phase: "finished", paused: false, mode: "cup", complete: true })
+  await teacher.getByRole("heading", { name: "הגביע הסתיים!", exact: true }).waitFor()
+  assert.equal(await teacher.getByRole("button", { name: "משחק נוסף", exact: true }).count(), 0)
+  await projectTeacherView({})
+  await teacher.getByRole("button", { name: "השהיה", exact: true }).click()
+  await teacher.getByRole("heading", { name: "המשחק מושהה", exact: true }).waitFor()
+  assert.equal(service.rooms.get(sessionId)?.paused, true)
+  await teacher.getByRole("button", { name: "המשך משחק", exact: true }).last().click()
+  await until(
+    () => !service.rooms.get(sessionId)?.paused,
+    "teacher can resume without race decisions",
+  )
   assert.equal(service.rooms.get(sessionId)?.view(uid(4)).observer, true)
   assert.equal(service.rooms.get(sessionId)?.engine.state.players.length, 2)
   await teacher.getByRole("button", { name: "שחקנים (3/8)", exact: true }).click()
@@ -653,6 +713,8 @@ createRoot(document.getElementById('root')!).render(<StrictMode><BrowserRouter><
     reconnectKeepsRenderer: "PASS",
     dispose: "PASS",
     teacherObserverAndModerationUI: "PASS",
+    teacherRaceMenusAreReadOnly: "PASS (projected UI states; real capabilities)",
+    teacherPauseResume: "PASS (native service)",
     smallScreenPanelNavigation: "PASS",
     explicitEndClosesGameAndVoice: "PASS",
     endedClientsNeverRelaunch: "PASS",

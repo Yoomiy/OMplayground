@@ -28,7 +28,7 @@ This is a game-specific adapter, not a universal action runtime or registry.
 | Boundary | Behavior |
 | --- | --- |
 | Create/join | Existing Playground catalog, open/private session and invitation routes. No lab name/code/online menu. |
-| Lobby | Profile names, one app-styled roster with color indicators, each racer chooses from the existing eight-color palette, host/authorized staff configure course, race/cup and remix. All courses remain available in a simple dropdown without search. Loaded clients report readiness automatically. Host starts with at least two connected, loaded racers. |
+| Lobby | Profile names, one app-styled roster with color indicators, each racer chooses from the existing eight-color palette, player host configures course, race/cup and remix. All courses remain available in a simple dropdown without search. Loaded clients report readiness automatically. Host starts with at least two connected, loaded racers. |
 | Race | Existing engine, Hebrew HUD, controls and authoritative results. App toolbar retains fullscreen, invitations, roster, social controls, pause and exit. |
 | Cup transition | Race results and accumulated standings; host advances to the next course without completing the platform session. |
 | Match completion | Winner and results; connected participants opt into a rematch. At least two accept. Refusers remain waiting observers of gameplay. Rematch clicks show immediate pending feedback, suppress duplicate submissions, then confirm the authoritative vote and count unanswered participants. |
@@ -38,7 +38,7 @@ This is a game-specific adapter, not a universal action runtime or registry.
 | Recess | Backend rechecks each child's current class/gender eligibility at most every 15 seconds. Only affected children leave. Final eligible human leaving saves/pauses, including simultaneous expiry. Staff bypass recess. |
 | Pause | Freeze physics, NPC decisions, obstacle time, countdown and race clocks. Clear queued/held human inputs. Resume rebases clients and clocks from the authoritative state. Original active racers must return/load before resume. |
 | Host leaves | Preserve host authority through the reconnect grace, so refresh does not hand the room to somebody else. After grace, transfer to a connected active participant, then a connected waiting participant; retain the prior host if none remain. Host display/grade metadata follows the new host. |
-| Teacher | Authorized observation, pause/resume/start/stop and removal. Ordinary host control does not grant moderation. Removal blocks rejoining this room and is persisted in the signed save. Observers have read-only social access and no microphone token. |
+| Teacher | Authorized observation, pause/resume/stop and removal. Observing staff cannot configure, start or advance races, or vote on rematches. Staff joining as players follow normal player/host rules for race decisions. Ordinary host control does not grant moderation. Removal blocks rejoining this room and is persisted in the signed save. Observers have read-only social access and no microphone token. |
 | Explicit stop | Completed record, `stopped_by`/`ended_at`, closed joining and empty connected-player lists. Broadcast the saved ended state, close participant/observer sockets and clean up voice immediately. Clients stop reconnecting. Keep saved roster/results for the record. |
 
 Parent React container: `apps/web/src/game/WobbleSessionContainer.tsx`.
@@ -397,3 +397,25 @@ No product behavior or thresholds were changed to make the fixture pass.
 Physical-device FPS, real Supabase/RLS and microphone delivery, deployment and
 hosting/drain/rollback acceptance remain rollout checks. No service was published
 and no migration was applied during PR preparation.
+
+
+## Observer race permissions — 2026-10-21
+
+Race configuration, starting and cup advancement now require the connected player
+host. Observing teachers/admins retain pause/resume/end and participant removal,
+but cannot make race decisions or vote on rematches. Staff who explicitly join as
+players follow the same player/host rules. The server enforces these permissions;
+`canControl` describes player-host race authority and `canModerate` describes staff
+moderation. Player colors, input, chat and microphone access remain player-only.
+
+Validation: 576 tests / 109,247 assertions, client/platform and web TypeScript,
+game Biome and the matching app build (`wobble-app-74b908dd62732ba0`) pass. The real
+three-race cup test rejects the teacher's advancement command at both transitions,
+and teacher/admin tests reject configuration/start/next while retaining moderation.
+The native-service/React browser check passes with zero page errors: lobby and cup
+menus use projected UI states with real teacher capabilities; teacher pause/resume
+runs against the native service. The existing reconnect, removal, stop and terminal
+recovery checks also pass. Existing software-GPU/microphone limits still apply.
+Validation used an isolated build; no live dev service was restarted, deployment
+published, migration applied or PR opened. Restart `npm run dev:wobble` and refresh
+clients to test the changed backend permissions.

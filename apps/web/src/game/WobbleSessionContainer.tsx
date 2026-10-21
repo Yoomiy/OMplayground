@@ -59,6 +59,7 @@ export function WobbleSessionContainer({ sessionId, backHref = '/home', backLabe
   const players = view?.players ?? [];
   const self = players.find(player => player.userId === view?.selfUserId);
   const participants = players.filter(player => !player.pending);
+  const canManageSession = !!view && (view.canControl || view.canModerate);
   const canStart = participants.length >= 2 && participants.every(player => player.connected && player.loaded);
   const courses = game.config?.courses ?? [];
   const currentCourse = courses.find(course => course.id === view?.courseId)?.name ?? '';
@@ -80,7 +81,7 @@ export function WobbleSessionContainer({ sessionId, backHref = '/home', backLabe
         try { localStorage.setItem(GRAPHICS_QUALITY_KEY, event.target.value); } catch { /* Keep the active choice if storage is restricted. */ }
       }}><option value="low">חסכונית</option><option value="balanced">מאוזנת</option><option value="high">גבוהה</option></select></label>
       {document.fullscreenEnabled && <Button size="sm" className={secondary} onClick={() => void toggleFullscreen()}>{fullscreen ? <Minimize size={16} /> : <Maximize size={16} />}{fullscreen ? 'יציאה ממסך מלא' : 'מסך מלא'}</Button>}
-      {view?.canControl && !view.ended && <>
+      {view && canManageSession && !view.ended && <>
         {!lobby && !finish && <Button size="sm" className={secondary} disabled={view.paused && !canStart} onClick={() => game.control({ action: view.paused ? 'resume' : 'pause' })}>{view.paused ? <Play size={16} /> : <Pause size={16} />}{view.paused ? 'המשך משחק' : 'השהיה'}</Button>}
         <Button size="sm" className={danger} onClick={() => { if (window.confirm('לסיים את המפגש לכולם?')) game.control({ action: 'end' }); }}><Square size={16} />סיום</Button>
       </>}
@@ -99,7 +100,7 @@ export function WobbleSessionContainer({ sessionId, backHref = '/home', backLabe
               <h2 className="text-2xl font-black">המשחק מושהה</h2>
               <p role="status">{view.saved ? 'המשחק נשמר. אפשר לחזור אליו מהמשחקים השמורים בבית.' : 'השמירה עדיין לא אושרה. כדאי להמתין לפני היציאה.'}</p>
               {!canStart && <p>ממתינים לחזרת השחקנים ולטעינת המשחק.</p>}
-              {view.canControl && <Button className={primary} disabled={!canStart} onClick={() => game.control({ action: 'resume' })}>המשך משחק</Button>}
+              {canManageSession && <Button className={primary} disabled={!canStart} onClick={() => game.control({ action: 'resume' })}>המשך משחק</Button>}
             </>}
             {lobby && view && !view.paused && !view.ended && <>
               <h2 className="text-2xl font-black">חדר ההמתנה</h2>

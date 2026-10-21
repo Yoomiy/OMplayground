@@ -16,7 +16,9 @@ export interface WobbleView {
   hostUserId: string
   observer: boolean
   pending: boolean
+  /** Rostered player host: configure, start and advance races. Staff observation grants none. */
   canControl: boolean
+  /** Staff moderation also permits pause/resume/end independently of race control. */
   canModerate: boolean
   paused: boolean
   saved: boolean
