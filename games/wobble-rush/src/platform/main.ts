@@ -32,7 +32,6 @@ const service = createPlatformService({
     .map((origin) => origin.trim())
     .filter(Boolean),
   clientDir: resolve(process.env.WOBBLE_CLIENT_DIR ?? "dist/client"),
-  maxRooms: Number(process.env.WOBBLE_MAX_ROOMS ?? 2),
   release,
   createVoiceToken: createGameVoiceToken,
   ...(voice
@@ -48,5 +47,5 @@ installProcessLifecycle({
   timeoutMs: 30_000,
 })
 service.server.listen(port, process.env.HOST ?? "127.0.0.1", () =>
-  platformLog("info", "WOBBLE_SERVICE_READY", { port, release }),
+  platformLog("info", "WOBBLE_SERVICE_READY", { port, release, activeRooms: service.rooms.size }),
 )

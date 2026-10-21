@@ -41,7 +41,6 @@ export interface PlatformServiceOptions {
   origins: string[]
   clientDir: string
   release: string
-  maxRooms: number
   createVoiceToken?: (args: {
     sessionId: string
     userId: string
@@ -54,13 +53,7 @@ export function createPlatformService(options: PlatformServiceOptions) {
   const tickets = new LaunchTickets(options.secret)
   const checkpoints = new RoomCheckpoints(options.secret)
   const origins = new Set(options.origins)
-  if (
-    !origins.size ||
-    options.maxRooms < 1 ||
-    options.maxRooms > 32 ||
-    !Number.isInteger(options.maxRooms)
-  )
-    throw new Error("App origins and a bounded room limit are required")
+  if (!origins.size) throw new Error("App origins are required")
   for (const origin of origins)
     if (new URL(origin).origin !== origin) throw new Error("APP_ORIGINS must contain exact origins")
   const rooms = new Map<string, PlaygroundWobbleRoom>()
@@ -141,8 +134,7 @@ export function createPlatformService(options: PlatformServiceOptions) {
     if (existing) return existing
     const pending = allocations.get(id)
     if (pending) return pending
-    if (draining || rooms.size + allocations.size >= options.maxRooms)
-      throw new AdmissionError("SERVICE_BUSY", 503)
+    if (draining) throw new AdmissionError("SERVICE_DRAINING", 503)
     const work = (async () => {
       const session = await options.gateway.session(id)
       if (session.status === "completed") throw new AdmissionError("SESSION_COMPLETED", 409)
@@ -197,6 +189,7 @@ export function createPlatformService(options: PlatformServiceOptions) {
           sessionId: id,
           allocationId,
           restored: !!saved,
+          activeRooms: rooms.size,
         })
         return room
       } catch (error) {
@@ -280,7 +273,6 @@ export function createPlatformService(options: PlatformServiceOptions) {
         ready: !draining,
         release: options.release,
         rooms: rooms.size,
-        maxRooms: options.maxRooms,
       })
       return
     }
@@ -490,8 +482,7 @@ export function createPlatformService(options: PlatformServiceOptions) {
       !sessionId ||
       !/^\/app-ws\/[0-9a-f-]{36}$/i.test(path) ||
       !origin ||
-      (!origins.has(origin) && !sameOrigin) ||
-      peers.size >= options.maxRooms * 32 + 16
+      (!origins.has(origin) && !sameOrigin)
     ) {
       socket.end("HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n")
       return
@@ -716,7 +707,11 @@ export function createPlatformService(options: PlatformServiceOptions) {
               for (const observer of room.observers.values())
                 disconnect(sessionId, observer.userId, "SESSION_SAVED")
               rooms.delete(sessionId)
-              platformLog("info", "WOBBLE_ROOM_HIBERNATED", { sessionId, saved: true })
+              platformLog("info", "WOBBLE_ROOM_HIBERNATED", {
+                sessionId,
+                saved: true,
+                activeRooms: rooms.size,
+              })
             } catch {
               platformLog("error", "WOBBLE_HIBERNATE_FAILED", { sessionId })
             }
@@ -736,6 +731,7 @@ export function createPlatformService(options: PlatformServiceOptions) {
     rooms,
     async close() {
       draining = true
+      platformLog("info", "WOBBLE_SERVICE_DRAINING", { activeRooms: rooms.size })
       clearInterval(timer)
       const pending = [...allocations.values()]
       await Promise.allSettled(pending)
@@ -754,6 +750,9 @@ export function createPlatformService(options: PlatformServiceOptions) {
         )
       if (saves.some((result) => result.status === "rejected"))
         throw new Error("One or more Wobble saves failed during drain")
+      const closedRooms = rooms.size
+      rooms.clear()
+      platformLog("info", "WOBBLE_SERVICE_DRAINED", { closedRooms, activeRooms: rooms.size })
     },
   }
 }

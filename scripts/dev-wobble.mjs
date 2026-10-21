@@ -28,7 +28,6 @@ try { await writeFile(secretPath, randomBytes(32).toString('hex'), { flag: 'wx',
 catch (error) { if (error.code !== 'EEXIST') throw error; }
 const env = { ...process.env, NODE_ENV: 'development', HOST: '127.0.0.1', PORT: String(port),
   WOBBLE_TICKET_SECRET: settings.WOBBLE_TICKET_SECRET || (await readFile(secretPath, 'utf8')).trim(),
-  WOBBLE_MAX_ROOMS: settings.WOBBLE_MAX_ROOMS ?? '2',
   LOG_LEVEL: settings.LOG_LEVEL ?? 'info',
   APP_ORIGINS: settings.APP_ORIGINS ?? 'http://localhost:5173,http://127.0.0.1:5173',
 };
