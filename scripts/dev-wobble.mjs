@@ -6,13 +6,13 @@ import { fileURLToPath } from 'node:url';
 import { parseEnv } from 'node:util';
 
 const repo = new URL('../', import.meta.url);
-const game = new URL('experiments/wobble-rush-lab/', repo);
+const game = new URL('games/wobble-rush/', repo);
 async function envFile(path) {
   try { return parseEnv(await readFile(new URL(path, repo), 'utf8')); }
   catch (error) { if (error.code === 'ENOENT') return {}; throw error; }
 }
 const main = await envFile('apps/game-server/.env');
-const local = await envFile('experiments/wobble-rush-lab/.env.app.local');
+const local = await envFile('games/wobble-rush/.env.app.local');
 const settings = { ...local, ...process.env };
 const port = Number(settings.WOBBLE_PORT ?? local.PORT ?? 3000);
 if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('WOBBLE_PORT must be a valid port');
@@ -34,12 +34,8 @@ const env = { ...process.env, NODE_ENV: 'development', HOST: '127.0.0.1', PORT: 
 };
 for (const name of ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'LIVEKIT_URL', 'LIVEKIT_API_KEY', 'LIVEKIT_API_SECRET']) env[name] = settings[name] ?? main[name];
 delete env.WOBBLE_CLIENT_DIR;
-if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) throw new Error('Configure Supabase in apps/game-server/.env or experiments/wobble-rush-lab/.env.app.local');
-let bun = settings.WOBBLE_BUN ?? 'bun';
-if (!settings.WOBBLE_BUN) {
-  const local = new URL('ops/labs/tools/bun-1.4.3/package/bin/bun', repo);
-  try { await access(local); bun = fileURLToPath(local); } catch { /* Use Bun on PATH. */ }
-}
+if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) throw new Error('Configure Supabase in apps/game-server/.env or games/wobble-rush/.env.app.local');
+if (env.WOBBLE_TICKET_SECRET.length < 32) throw new Error('WOBBLE_TICKET_SECRET must have at least 32 characters');
 let child;
 let stopping = false;
 let killTimer;
@@ -66,9 +62,9 @@ async function run(command, args) {
   clearTimeout(killTimer);
   if (stopping || code !== 0) process.exit(code);
 }
-await run(bun, ['install', '--frozen-lockfile']);
-await run(bun, ['run', 'scripts/build-app.ts']);
+try { await access(new URL('node_modules/.package-lock.json', game)); }
+catch { await run('npm', ['ci', '--no-audit', '--no-fund']); }
+await run('npm', ['run', 'build']);
 console.log(`[wobble] App service: http://localhost:${port}; forward port ${port}. Restart this command after backend/frame changes.`);
 console.log(`[wobble] Allowed app origins: ${env.APP_ORIGINS}`);
-console.log('[wobble] Catalog setup: after the initial migration, apply 20261019144000_activate_wobble_rush_catalog.sql in your test database.');
-await run(process.execPath, ['app-dist/server.mjs']);
+await run(process.execPath, ['dist/server.mjs']);

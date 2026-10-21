@@ -1,7 +1,7 @@
-export { GRAPHICS_QUALITY_KEY, isGraphicsQuality, type GraphicsQuality } from "../../../../experiments/wobble-rush-lab/src/shared/graphics-quality";
-export { RUNNER_COLORS } from "../../../../experiments/wobble-rush-lab/src/shared/course-palette";
-export { isWobbleView } from "../../../../experiments/wobble-rush-lab/src/shared/platform-view";
-export type { WobbleView, WobbleControl } from "../../../../experiments/wobble-rush-lab/src/shared/platform-view";
+export { GRAPHICS_QUALITY_KEY, isGraphicsQuality, type GraphicsQuality } from "../../../../games/wobble-rush/src/shared/graphics-quality";
+export { RUNNER_COLORS } from "../../../../games/wobble-rush/src/shared/course-palette";
+export { isWobbleView } from "../../../../games/wobble-rush/src/shared/platform-view";
+export type { WobbleView, WobbleControl } from "../../../../games/wobble-rush/src/shared/platform-view";
 
 export interface WobbleConfig {
   version: 1; protocol: 7; content: string; release: string;
