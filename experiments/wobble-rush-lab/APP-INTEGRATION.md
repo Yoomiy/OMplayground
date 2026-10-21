@@ -419,3 +419,56 @@ recovery checks also pass. Existing software-GPU/microphone limits still apply.
 Validation used an isolated build; no live dev service was restarted, deployment
 published, migration applied or PR opened. Restart `npm run dev:wobble` and refresh
 clients to test the changed backend permissions.
+
+
+## Remote contact presentation and spectators — 2026-10-21
+
+The previous headless prediction checks covered valid collision bodies, but did
+not catch independently smoothed meshes overlapping during an unexpected remote
+steering change. A delayed-snapshot probe reproduced that visual gap from both a
+third player's viewpoint and the teacher's followed-player viewpoint.
+
+- Active players keep the shared predicted actor world and obstacle timeline.
+  Before drawing, a bounded contact pass repairs overlapping display positions,
+  including the local mesh. It removes offending smoothing offsets where possible,
+  checks motion between drawn poses so a fast correction cannot skip through
+  another character, and falls back to shared-world positions for an unresolved
+  dense pack. These positions never affect simulation,
+  input scheduling, checkpoints, finish results or server authority.
+- Remote corrections distinguish normal steering errors from respawns/resyncs.
+  Large accumulated remote errors ease out rather than snapping at the local
+  runner's former 2.5 m threshold; small contacts and local corrections retain
+  their fast response. Remote offsets remain bounded. Explicit respawn/resync
+  boundaries still reset presentation.
+- Teachers and pending participants now use a 100 ms snapshot buffer, in addition
+  to transport delay. Players, NPCs and obstacles are sampled on the same buffered
+  fractional tick. The view never extrapolates beyond the latest received frame,
+  reverses time under packet jitter, or interpolates across a respawn. A long TCP
+  backlog rebases to the buffered live edge. Pause/resume, reconnect and cup-race
+  boundaries reset the buffer. A disconnected observer freezes the last drawn
+  scene, including the followed character, until fresh snapshots arrive.
+- The followed character retains a stable identity while racing and uses that
+  racer's name/color. The inspection API exposes the buffered frame count and
+  uses its displayed tick for observers. The former observer prediction path and
+  the unused local rendering wrapper are removed.
+
+Validation: 595 tests / 127,195 assertions pass. New real-Three mesh regressions
+exercise glancing contacts and rapid steering with 15 Hz snapshots, 50/100 ms
+snapshot delay, bunched delivery and 60/120 Hz drawing. In those contact scenarios, active body centers remain
+at least 0.895 m apart (0.9 m diameter, with solver tolerance), and assertions also
+bound frame displacement and verify presentation does not mutate prediction.
+Additional coverage checks a ten-actor pack, jump/finish exclusions, remote
+correction continuity, fractional obstacle time, bounded buffers, stale batches,
+respawn/removal/finish boundaries and lifecycle resets. All four game/platform
+TypeScript configurations and Biome over 240 files pass. Matching app artifact:
+`wobble-app-0da4f1be7cde683a`.
+
+The native-service/React browser integration passes with zero page errors,
+including a buffered teacher world with no uploaded racer controls, teacher-only
+connection loss/re-admission, retained teacher permissions, pause/resume, player
+reconnect, context-loss recovery, explicit stop and completed-session recovery.
+Browser integration uses isolated REST fixtures and skips GPU draws; physical
+cross-device feel, real microphone delivery and production hosting remain manual
+acceptance. Validation used an isolated checkout/build; restart
+`npm run dev:wobble` and refresh clients in the shared checkout to test this change.
+No migration, deployment or PR was created.

@@ -48,6 +48,7 @@ import { localFinisherId, rankFinishers, recordBest } from "./race-results"
 import { RemoteRunners } from "./remote-runners"
 import type { SceneKit } from "./scene-kit"
 import { createSceneKit } from "./scene-kit"
+import { SPECTATOR_BUFFER_MS, SpectatorTimeline } from "./spectator-timeline"
 import { Ui } from "./ui"
 
 const PARTY_NPC_COUNT = 0
@@ -73,6 +74,7 @@ export class Game {
   private readonly loop: FrameLoop
   private readonly reducedMotion: boolean
   private readonly prediction = new RunnerPrediction()
+  private readonly spectator = new SpectatorTimeline()
   private raceProgress = new RaceProgress(this.course)
   private officialProgress = new Map<
     string,
@@ -197,7 +199,7 @@ export class Game {
         npcProgress: this.npcs.progress(),
         remoteProgress: this.remotes.progress(),
         renderPosition: { ...this.runner.renderPosition },
-        predictedActors: this.prediction.predictedActors.map((actor) => ({
+        predictedActors: this.displayActors.map((actor) => ({
           id: actor.id,
           npc: actor.npc,
           position: { ...actor.sim.position },
@@ -209,11 +211,12 @@ export class Game {
         selfId: this.selfId,
         room: this.roomCode,
         serverTick: this.authorityTick,
-        predictionTick: this.prediction.tick,
+        predictionTick: this.watching ? (this.spectator.sample?.tick ?? 0) : this.prediction.tick,
+        spectatorBufferedFrames: this.spectator.frameCount,
         pendingInputs: this.prediction.pendingCount,
         predictionHistory: this.prediction.historyCount,
         predictionFrozen: this.prediction.frozen,
-        frameAgeMs: this.prediction.frameAgeMs,
+        frameAgeMs: this.frameAgeMs,
         correctionM: this.maxCorrectionM,
         rttMs: this.timing.rttMs,
       }),
@@ -234,7 +237,7 @@ export class Game {
       this.pingNonce++
       this.timing.sent(this.pingNonce, pingAtMs)
       const racing = this.director.currentMode === "party" && this.clock.phase === "racing"
-      const frameAge = this.prediction.frameAgeMs
+      const frameAge = this.frameAgeMs
       const reason =
         racing && frameAge > 500
           ? "snapshot_delay"
@@ -370,6 +373,7 @@ export class Game {
       onPhase: (phase, endsAtMs, serverNowMs, session) => {
         if (phase === "countdown" || phase === "lobby") {
           this.prediction.clear()
+          this.spectator.clear()
           this.authorityCheckpoint = -1
         }
         if (session !== undefined) {
@@ -398,6 +402,7 @@ export class Game {
         this.ui.setReconnecting(reconnecting)
         if (reconnecting) {
           this.prediction.clear()
+          this.spectator.clear()
           this.input.reset()
           this.clock.suspend()
           this.audio.stopMusic()
@@ -406,18 +411,43 @@ export class Game {
     }
   }
 
+  private get watching(): boolean {
+    return !!this.platformView && (this.platformView.observer || this.platformView.pending)
+  }
+
+  private get frameAgeMs(): number {
+    return this.watching ? this.spectator.frameAgeMs : this.prediction.frameAgeMs
+  }
+
+  private get displayActors() {
+    return this.watching ? (this.spectator.sample?.actors ?? []) : this.prediction.predictedActors
+  }
+
   private onAuthorityFrame(frame: AuthorityFrame): void {
     if (this.disposed || this.director.currentMode !== "party" || this.selfId === null) return
-    const observing =
-      this.platformView !== null && (this.platformView.observer || this.platformView.pending)
+    const observing = this.watching
     const actor = observing
       ? (frame.actors.find((actor) => !actor.npc && actor.finishedMs === null) ?? frame.actors[0])
       : frame.actors.find((actor) => actor.id === this.selfId)
     if (actor === undefined) return
-    this.followId = actor.id
     this.frozenWorldSec = frame.worldTimeSec
-    if (this.platformView !== null)
-      this.runner.setLabel(observing ? actor.name : `${actor.name} · אני`)
+    if (observing) {
+      this.spectator.push(
+        this.platformView?.paused || this.platformView?.ended
+          ? { ...frame, phase: "finished" }
+          : frame,
+      )
+      this.authorityTick = frame.tick
+      this.clock.syncAuthority(
+        frame.worldTimeSec - (frame.phase === "racing" ? SPECTATOR_BUFFER_MS / 1000 : 0),
+        0,
+        NET.countdownSec,
+      )
+      if (this.platformView?.paused || this.platformView?.ended) this.clock.suspend()
+      return
+    }
+    this.followId = actor.id
+    if (this.platformView !== null) this.runner.setLabel(`${actor.name} · אני`)
     const frozen = this.platformView?.paused || this.platformView?.ended
     const predictionFrame = frozen ? { ...frame, phase: "finished" as const } : frame
     const previous = { ...this.runner.sim.position }
@@ -428,7 +458,6 @@ export class Game {
       actor,
       this.course,
       this.timing.rttMs / 2000,
-      observing,
     )
     if (initial === null) return
     this.runner.restorePilotProgress(previousCheckpoint)
@@ -450,7 +479,7 @@ export class Game {
     )
     this.remotes.syncPredicted(
       this.prediction.predictedActors,
-      observing ? actor.id : this.selfId,
+      this.selfId,
       this.prediction.tick,
       this.prediction.stepAtMs,
       true,
@@ -496,7 +525,7 @@ export class Game {
     this.ui.setConnectionDelayed(
       this.director.currentMode === "party" &&
         this.clock.phase === "racing" &&
-        (this.prediction.frameAgeMs > 500 || this.prediction.pendingCount >= 120),
+        (this.frameAgeMs > 500 || this.prediction.pendingCount >= 120),
     )
     if (this.clock.phase === "countdown" || tick.started) this.ui.setCountdown(tick.label)
     if (tick.started) {
@@ -508,19 +537,7 @@ export class Game {
     }
 
     const locked = this.clock.locked
-    if (this.platformView && (this.platformView.observer || this.platformView.pending)) {
-      this.runner.beginStep()
-      if (this.prediction.advanceSpectator(this.course, stepAtMs)) {
-        this.runner.afterStep([], dt, stepAtMs)
-        this.remotes.syncPredicted(
-          this.prediction.predictedActors,
-          this.followId,
-          this.prediction.tick,
-          stepAtMs,
-        )
-      }
-      return
-    }
+    if (this.watching) return
     if (
       locked &&
       this.director.currentMode === "party" &&
@@ -640,21 +657,58 @@ export class Game {
     this.ui.setConnectionDelayed(
       this.director.currentMode === "party" &&
         this.clock.phase === "racing" &&
-        (this.prediction.frameAgeMs > 500 || this.prediction.pendingCount >= 120),
+        (this.frameAgeMs > 500 || this.prediction.pendingCount >= 120),
     )
-    const worldTime =
-      this.platformView?.paused ||
-      this.platformView?.ended ||
-      this.platformView?.phase === "finished"
+    const spectator = this.watching ? this.spectator.read(nowMs) : null
+    const worldTime = this.watching
+      ? (spectator?.worldTimeSec ?? this.lastWorldDrawSec)
+      : this.platformView?.paused ||
+          this.platformView?.ended ||
+          this.platformView?.phase === "finished"
         ? this.frozenWorldSec
         : this.director.currentMode === "party" && this.prediction.racing
           ? this.prediction.renderAt(nowMs)
           : this.clock.renderWorldTimeSec
     this.lastWorldDrawSec = worldTime
     this.courseView.update(worldTime, this.reducedMotion)
-    this.runner.render(dt, nowMs)
+    if (spectator) {
+      const followed =
+        spectator.actors.find((actor) => actor.id === this.followId && actor.finishedMs === null) ??
+        spectator.actors.find((actor) => !actor.npc && actor.finishedMs === null) ??
+        spectator.actors[0]
+      if (followed) {
+        this.followId = followed.id
+        this.runner.setColor(RUNNER_COLORS[followed.colorIndex % RUNNER_COLORS.length] ?? "#FF7A5C")
+        this.runner.setLabel(followed.name)
+        Object.assign(this.runner.sim, followed.sim)
+        const local = {
+          id: followed.id,
+          position: { ...followed.sim.position },
+          reference:
+            spectator.references.find((actor) => actor.id === followed.id)?.sim.position ??
+            followed.sim.position,
+          active: followed.finishedMs === null,
+        }
+        this.remotes.renderBuffered(spectator.actors, spectator.references, dt, local)
+        this.runner.renderAt(local.position, dt)
+        this.ui.setCheckpoints(followed.sim.checkpoint, this.course.checkpoints.length - 1)
+        if (this.clock.phase === "racing")
+          this.ui.setTimer(Math.max(0, (worldTime - NET.countdownSec) * 1000))
+      }
+    } else if (!this.watching) {
+      const local = {
+        id: this.selfId ?? "self",
+        position: { ...this.runner.samplePosition(dt, nowMs) },
+        reference: this.runner.sim.position,
+        previous: this.runner.renderPosition,
+        active:
+          this.prediction.predictedActors.find((actor) => actor.id === this.selfId)?.finishedMs ===
+          null,
+      }
+      this.remotes.render(nowMs, dt, local)
+      this.runner.renderAt(local.position, dt)
+    }
     this.npcs.render(dt)
-    this.remotes.render(nowMs, dt)
     this.effects.update(dt)
 
     const sim = this.runner.sim
@@ -667,7 +721,7 @@ export class Game {
     this.kit.sun.target.position.set(sim.position.x, 0, sim.position.z)
     this.kit.sun.target.updateMatrixWorld()
 
-    if (this.clock.phase === "racing") {
+    if (this.clock.phase === "racing" && !this.watching) {
       const racers: ProgressRacer[] =
         this.director.currentMode === "party"
           ? this.prediction.predictedActors.map((actor) => {
@@ -713,6 +767,7 @@ export class Game {
     this.platformView = view
     if (wasPaused !== view.paused || wasWatching !== (view.observer || view.pending)) {
       this.prediction.clear()
+      this.spectator.clear()
       this.input.reset()
     }
     if (view.paused || view.ended) {

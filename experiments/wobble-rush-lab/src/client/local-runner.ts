@@ -87,6 +87,7 @@ export class LocalRunner {
   }
 
   setColor(color: string): void {
+    if (color === this.currentColor) return
     this.currentColor = color
     this.scene.remove(this.view.group)
     this.view.dispose()
@@ -97,7 +98,10 @@ export class LocalRunner {
   setLabel(label: string): void {
     if (label === this.label) return
     this.label = label
-    this.setColor(this.currentColor)
+    this.scene.remove(this.view.group)
+    this.view.dispose()
+    this.view = new RunnerView(this.currentColor, label)
+    this.scene.add(this.view.group)
   }
 
   /** Respawn point for the checkpoint this runner has captured. */
@@ -141,10 +145,14 @@ export class LocalRunner {
     if (pilot !== null) updateNpcProgress(pilot, this.sim, this.course, dt)
   }
 
-  render(dt: number, nowMs = performance.now()): void {
+  samplePosition(dt: number, nowMs: number): Vec3 {
     this.correction.advance(dt)
-    this.drawnPosition = this.correction.position(this.pose.read(nowMs))
-    this.view.update({ ...this.sim, position: { ...this.renderPosition } }, dt)
+    return this.correction.position(this.pose.read(nowMs))
+  }
+
+  renderAt(position: Vec3, dt: number): void {
+    this.drawnPosition = { ...position }
+    this.view.update({ ...this.sim, position: this.drawnPosition }, dt)
   }
 
   dispose(): void {

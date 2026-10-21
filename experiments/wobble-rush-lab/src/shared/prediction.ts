@@ -69,7 +69,6 @@ export class RunnerPrediction {
     actor: AuthorityActor,
     course: CourseDefinition,
     oneWaySec = 0,
-    observing = false,
   ): boolean | null {
     const initial = frame.raceId !== this.raceId
     if (!initial && frame.tick < this.lastServerTick) return null
@@ -101,7 +100,7 @@ export class RunnerPrediction {
     this.ack = actor.ack
     this.selfId = actor.id
     this.authorityPhase = frame.phase
-    this.authorityFinished = observing || actor.finishedMs !== null
+    this.authorityFinished = actor.finishedMs !== null
     const acceptedSeq = Math.max(actor.ack, ...actor.plannedInputs.map((command) => command.seq))
     this.sequence = Math.max(this.sequence, acceptedSeq)
     this.history = this.history.filter(
@@ -120,10 +119,7 @@ export class RunnerPrediction {
         new Map(entry.plannedInputs.map((command) => [command.tick, command])),
       )
       // Never revive controls that the host has already expired or released.
-      if (
-        (observing || entry.id !== this.selfId) &&
-        frame.tick - entry.inputTick <= INPUT_HOLD_TICKS
-      )
+      if (entry.id !== this.selfId && frame.tick - entry.inputTick <= INPUT_HOLD_TICKS)
         this.forecastIds.add(entry.id)
     }
     const ownControls = this.controls.get(actor.id)

@@ -7,6 +7,7 @@ import type { RoomSnapshot } from "../shared/room"
 import type { PlayerId, RunnerSim } from "../shared/types"
 import { CorrectionSmoother } from "./correction-smoother"
 import { FixedPose } from "./fixed-pose"
+import { constrainRenderContacts, type RenderBody } from "./render-contacts"
 import { RunnerView } from "./runner-view"
 
 type Entry = {
@@ -18,6 +19,7 @@ type Entry = {
   readonly correction: CorrectionSmoother
   respawnSeq: number
   tick: number
+  active: boolean
 }
 export class RemoteRunners {
   private readonly entries = new Map<PlayerId, Entry>()
@@ -62,6 +64,7 @@ export class RemoteRunners {
       } else if (tick !== entry.tick) entry.pose?.push(previous, actor.sim.position, atMs)
       entry.sim = structuredClone(actor.sim)
       entry.tick = tick
+      entry.active = actor.finishedMs === null
       entry.respawnSeq = actor.respawnSeq
     }
     for (const [id, entry] of this.entries) if (!alive.has(id)) this.remove(id, entry)
@@ -77,12 +80,57 @@ export class RemoteRunners {
     for (const [id, entry] of this.entries) if (!entry.npc && !alive.has(id)) this.remove(id, entry)
   }
 
-  render(nowMs: number, dt: number): void {
-    for (const entry of this.entries.values()) {
+  render(nowMs: number, dt: number, local?: RenderBody): void {
+    const bodies: RenderBody[] = []
+    for (const [id, entry] of this.entries) {
       if (entry.sim === null || entry.pose === null) continue
       entry.correction.advance(dt)
-      const position = entry.correction.position(entry.pose.read(nowMs))
-      entry.view.update({ ...entry.sim, position }, dt)
+      bodies.push({
+        id,
+        position: entry.correction.position(entry.pose.read(nowMs)),
+        reference: entry.sim.position,
+        active: entry.active,
+        previous: {
+          x: entry.view.group.position.x,
+          y: entry.view.group.position.y + RUNNER.radius,
+          z: entry.view.group.position.z,
+        },
+      })
+    }
+    this.draw(bodies, dt, local)
+  }
+
+  renderBuffered(
+    actors: readonly AuthorityActor[],
+    references: readonly AuthorityActor[],
+    dt: number,
+    local: RenderBody,
+  ): void {
+    const reference = new Map(references.map((actor) => [actor.id, actor.sim.position]))
+    const bodies: RenderBody[] = []
+    const alive = new Set<PlayerId>()
+    for (const actor of actors) {
+      if (actor.id === local.id) continue
+      alive.add(actor.id)
+      const entry = this.entryFor(actor)
+      entry.sim = actor.sim
+      bodies.push({
+        id: actor.id,
+        position: { ...actor.sim.position },
+        reference: reference.get(actor.id) ?? actor.sim.position,
+        active: actor.finishedMs === null,
+      })
+    }
+    for (const [id, entry] of this.entries) if (!alive.has(id)) this.remove(id, entry)
+    this.draw(bodies, dt, local)
+  }
+
+  private draw(bodies: RenderBody[], dt: number, local?: RenderBody): void {
+    if (local) bodies.push(local)
+    constrainRenderContacts(bodies)
+    for (const body of bodies) {
+      const entry = this.entries.get(body.id as PlayerId)
+      if (entry?.sim) entry.view.update({ ...entry.sim, position: body.position }, dt)
     }
   }
   /** Inspection reads the actual displayed contact geometry, not just simulation positions. */
@@ -119,9 +167,10 @@ export class RemoteRunners {
       colorIndex: actor.colorIndex,
       pose: null,
       sim: null,
-      correction: new CorrectionSmoother(),
+      correction: new CorrectionSmoother("remote"),
       respawnSeq: 0,
       tick: -1,
+      active: false,
     }
     this.entries.set(actor.id, entry)
     return entry

@@ -39,6 +39,7 @@ export type WobbleSnapshot = {
   readonly selfId?: string | null
   readonly room: string | null
   readonly serverTick?: number
+  readonly spectatorBufferedFrames?: number
   readonly predictionTick?: number
   readonly pendingInputs?: number
   readonly predictionHistory?: number

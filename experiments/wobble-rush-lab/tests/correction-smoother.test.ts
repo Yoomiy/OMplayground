@@ -28,3 +28,19 @@ test("contacts settle faster, respawns snap, and repeated offsets remain bounded
   drift.correct(origin, { x: 3, y: 0, z: 0 })
   expect(drift.position(origin)).toEqual(origin)
 })
+
+test("large remote direction corrections stay continuous while respawns still snap", () => {
+  const correction = new CorrectionSmoother("remote")
+  const target = { x: 3, y: 0, z: 0 }
+  correction.correct(origin, target, false, true)
+  expect(correction.position(target)).toEqual(origin)
+  correction.advance(1 / 60)
+  const first = correction.position(target).x
+  expect(first).toBeGreaterThan(0)
+  expect(first).toBeLessThan(0.5)
+  correction.correct(target, { ...target, x: 3.02 }, false, true)
+  correction.advance(1 / 60)
+  expect(correction.position({ ...target, x: 3.02 }).x - first).toBeLessThan(0.5)
+  correction.correct(origin, target, true)
+  expect(correction.position(target)).toEqual(target)
+})

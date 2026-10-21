@@ -254,6 +254,15 @@ createRoot(document.getElementById('root')!).render(<StrictMode><BrowserRouter><
     deviceScaleFactor: 0.5,
   })
   await context.addInitScript(() => {
+    const NativeWebSocket = window.WebSocket
+    const sockets: WebSocket[] = []
+    Object.defineProperty(window, "qaSockets", { value: sockets, configurable: true })
+    window.WebSocket = class extends NativeWebSocket {
+      constructor(url: string | URL, protocols?: string | string[]) {
+        super(url, protocols)
+        sockets.push(this)
+      }
+    }
     const define = Object.defineProperty
     Object.defineProperty = (target, key, descriptor) => {
       if (target === globalThis && key === "wobbleScene" && descriptor.value?.renderer) {
@@ -492,6 +501,93 @@ createRoot(document.getElementById('root')!).render(<StrictMode><BrowserRouter><
     null,
     { timeout: 60_000 },
   )
+  await frame(teacher).waitForFunction(
+    () => {
+      const state = (
+        window as unknown as {
+          wobble?: {
+            state(): {
+              spectatorBufferedFrames: number
+              predictionTick: number
+              serverTick: number
+              renderWorldTimeSec: number
+              pendingInputs: number
+            }
+          }
+        }
+      ).wobble?.state()
+      return (
+        state &&
+        state.spectatorBufferedFrames >= 2 &&
+        state.predictionTick < state.serverTick &&
+        state.pendingInputs === 0 &&
+        Math.abs(state.renderWorldTimeSec - (3 + state.predictionTick / 60)) < 0.001
+      )
+    },
+    null,
+    { timeout: 60_000 },
+  )
+  // Hold teacher re-admission briefly so the disconnected scene must remain
+  // at its last displayed pose rather than reverting to an unused local pose.
+  let releaseTeacherLaunch: () => void = () => {}
+  const teacherLaunchGate = new Promise<void>((resolve) => {
+    releaseTeacherLaunch = resolve
+  })
+  await teacher.route(`${endpoint}/api/wobble/launch`, async (route) => {
+    await teacherLaunchGate
+    await route.continue()
+  })
+  await frame(teacher).evaluate(() => {
+    const target = window as unknown as {
+      qaSockets: WebSocket[]
+      wobble: { state(): { renderPosition: unknown } }
+      qaDisconnectedPose?: unknown
+    }
+    const socket = target.qaSockets.find((socket) => socket.readyState === WebSocket.OPEN)
+    if (!socket) throw new Error("Missing teacher socket")
+    socket.addEventListener(
+      "close",
+      () => {
+        target.qaDisconnectedPose = target.wobble.state().renderPosition
+      },
+      { once: true },
+    )
+    socket.close()
+  })
+  await frame(teacher).waitForFunction(() => {
+    const target = window as unknown as {
+      qaDisconnectedPose?: unknown
+      wobble: { state(): { spectatorBufferedFrames: number } }
+    }
+    return target.qaDisconnectedPose && target.wobble.state().spectatorBufferedFrames === 0
+  })
+  await pause(250)
+  assert.equal(
+    await frame(teacher).evaluate(() => {
+      const target = window as unknown as {
+        qaDisconnectedPose?: unknown
+        wobble: { state(): { renderPosition: unknown } }
+      }
+      return (
+        JSON.stringify(target.qaDisconnectedPose) ===
+        JSON.stringify(target.wobble.state().renderPosition)
+      )
+    }),
+    true,
+    "teacher's disconnected presentation freezes without returning to spawn",
+  )
+  releaseTeacherLaunch()
+  await teacher.unroute(`${endpoint}/api/wobble/launch`)
+  await frame(teacher).waitForFunction(
+    () => {
+      const target = window as unknown as {
+        wobble: { state(): { spectatorBufferedFrames: number } }
+      }
+      return target.wobble.state().spectatorBufferedFrames >= 2
+    },
+    null,
+    { timeout: 60_000 },
+  )
   const teacherView = service.rooms.get(sessionId)?.view(uid(4))
   assert.ok(teacherView)
   assert.equal(teacherView.canControl, false)
@@ -715,6 +811,9 @@ createRoot(document.getElementById('root')!).render(<StrictMode><BrowserRouter><
     teacherObserverAndModerationUI: "PASS",
     teacherRaceMenusAreReadOnly: "PASS (projected UI states; real capabilities)",
     teacherPauseResume: "PASS (native service)",
+    teacherBufferedWorld:
+      "PASS (characters and obstacles share a delayed server tick; no uploaded controls)",
+    teacherReconnectFreezesPresentation: "PASS",
     smallScreenPanelNavigation: "PASS",
     explicitEndClosesGameAndVoice: "PASS",
     endedClientsNeverRelaunch: "PASS",
