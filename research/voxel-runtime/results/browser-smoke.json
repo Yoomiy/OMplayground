@@ -1,0 +1,355 @@
+{
+  "result": "PASS",
+  "renderer": "Chromium SwiftShader; no hardware-FPS claim",
+  "workers": 4,
+  "edit": {
+    "x": 26,
+    "y": 86,
+    "z": 0
+  },
+  "beforeTravel": {
+    "game": "sandbox",
+    "mode": "playing",
+    "ready": true,
+    "host": "server",
+    "player": "p1",
+    "state": {
+      "id": "p1",
+      "name": "Probe A",
+      "x": 24.5,
+      "y": 85,
+      "z": 0.5,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "onGround": true,
+      "inWater": false,
+      "eyesInWater": false,
+      "inLava": false,
+      "flying": false,
+      "bob": 0,
+      "sneaking": false,
+      "sprinting": false,
+      "sliding": false,
+      "speed": 1,
+      "bot": false,
+      "view": {
+        "seq": 5,
+        "yaw": 0.7854,
+        "pitch": 0
+      },
+      "health": 20,
+      "maxHealth": 20,
+      "mortal": false,
+      "dead": false,
+      "deathTime": 0,
+      "hotbar": null,
+      "hand": {
+        "state": null
+      },
+      "camera": {
+        "p": [
+          24.5,
+          86.64,
+          0.5
+        ],
+        "q": [
+          0,
+          0.3827,
+          0,
+          0.9239
+        ],
+        "fov": 70,
+        "follow": false
+      },
+      "vehicle": null,
+      "creative": {
+        "hotbar": [
+          2,
+          1,
+          5,
+          4,
+          11,
+          9,
+          42,
+          34,
+          35
+        ],
+        "selected": 0
+      },
+      "frozen": false,
+      "locked": false,
+      "canFly": true,
+      "swings": 0,
+      "ack": 62,
+      "move": {
+        "time": 2.0005,
+        "lastJumpTap": -1,
+        "lastForwardTap": -1,
+        "sprintLatched": false,
+        "sprinting": false,
+        "slide": 0,
+        "slideCool": 0
+      },
+      "lead": 0.0166,
+      "skin": null,
+      "model": null,
+      "color": null,
+      "avatar": "b103421015f50522",
+      "clip": null,
+      "ride": null,
+      "orbit": null
+    },
+    "health": 20,
+    "entities": 0,
+    "chunks": {
+      "loaded": 69,
+      "meshed": 37,
+      "generating": 0,
+      "meshing": 0,
+      "pending": 0,
+      "visibleSections": 29,
+      "genMs": 6.817391302274621,
+      "meshMs": 4.1409091190858325
+    },
+    "render": {
+      "calls": 46,
+      "triangles": 27886,
+      "shadowCalls": 0
+    },
+    "time": 0.4502,
+    "fps": 12.000685753471865,
+    "cpu": 45.591519991432605
+  },
+  "clients": [
+    {
+      "game": "sandbox",
+      "mode": "playing",
+      "ready": true,
+      "host": "server",
+      "player": "p1",
+      "state": {
+        "id": "p1",
+        "name": "Probe A",
+        "x": 24.5,
+        "y": 97.3867,
+        "z": 0.5,
+        "vx": 0,
+        "vy": -12.8,
+        "vz": 0,
+        "onGround": false,
+        "inWater": false,
+        "eyesInWater": false,
+        "inLava": false,
+        "flying": false,
+        "bob": 0,
+        "sneaking": false,
+        "sprinting": false,
+        "sliding": false,
+        "speed": 1,
+        "bot": false,
+        "view": {
+          "seq": 5,
+          "yaw": 0.7854,
+          "pitch": 0
+        },
+        "health": 20,
+        "maxHealth": 20,
+        "mortal": false,
+        "dead": false,
+        "deathTime": 0,
+        "hotbar": null,
+        "hand": {
+          "state": null
+        },
+        "camera": {
+          "p": [
+            24.5,
+            86.64,
+            0.5
+          ],
+          "q": [
+            0,
+            0.3827,
+            0,
+            0.9239
+          ],
+          "fov": 70,
+          "follow": false
+        },
+        "vehicle": null,
+        "creative": {
+          "hotbar": [
+            2,
+            1,
+            5,
+            4,
+            11,
+            9,
+            42,
+            34,
+            35
+          ],
+          "selected": 0
+        },
+        "frozen": false,
+        "locked": false,
+        "canFly": true,
+        "swings": 0,
+        "ack": 90,
+        "move": {
+          "time": 4.6503,
+          "lastJumpTap": -1,
+          "lastForwardTap": -1,
+          "sprintLatched": false,
+          "sprinting": false,
+          "slide": 0,
+          "slideCool": 0
+        },
+        "lead": 0.0164,
+        "skin": null,
+        "model": null,
+        "color": null,
+        "avatar": "b103421015f50522",
+        "clip": null,
+        "ride": null,
+        "orbit": null
+      },
+      "health": 20,
+      "entities": 0,
+      "chunks": {
+        "loaded": 61,
+        "meshed": 37,
+        "generating": 3,
+        "meshing": 1,
+        "pending": 0,
+        "visibleSections": 4,
+        "genMs": 8.44186047435731,
+        "meshMs": 8.46538462699988
+      },
+      "render": {
+        "calls": 15,
+        "triangles": 4064,
+        "shadowCalls": 0
+      },
+      "time": 0.4649,
+      "fps": 10,
+      "cpu": 20.878656024027794
+    },
+    {
+      "game": "sandbox",
+      "mode": "playing",
+      "ready": true,
+      "host": "server",
+      "player": "p2",
+      "state": {
+        "id": "p2",
+        "name": "Probe B",
+        "x": 24.5,
+        "y": 85,
+        "z": 0.5,
+        "vx": 0,
+        "vy": 0,
+        "vz": 0,
+        "onGround": true,
+        "inWater": false,
+        "eyesInWater": false,
+        "inLava": false,
+        "flying": false,
+        "bob": 0,
+        "sneaking": false,
+        "sprinting": false,
+        "sliding": false,
+        "speed": 1,
+        "bot": false,
+        "view": {
+          "seq": 2,
+          "yaw": 0.7854,
+          "pitch": 0
+        },
+        "health": 20,
+        "maxHealth": 20,
+        "mortal": false,
+        "dead": false,
+        "deathTime": 0,
+        "hotbar": null,
+        "hand": {
+          "state": null
+        },
+        "camera": {
+          "p": [
+            24.5,
+            86.64,
+            0.5
+          ],
+          "q": [
+            0,
+            0.3827,
+            0,
+            0.9239
+          ],
+          "fov": 70,
+          "follow": false
+        },
+        "vehicle": null,
+        "creative": {
+          "hotbar": [
+            2,
+            1,
+            5,
+            4,
+            11,
+            9,
+            42,
+            34,
+            35
+          ],
+          "selected": 0
+        },
+        "frozen": false,
+        "locked": false,
+        "canFly": true,
+        "swings": 0,
+        "ack": 139,
+        "move": {
+          "time": 5.548,
+          "lastJumpTap": -1,
+          "lastForwardTap": -1,
+          "sprintLatched": false,
+          "sprinting": false,
+          "slide": 0,
+          "slideCool": 0
+        },
+        "lead": 0.0169,
+        "skin": null,
+        "model": null,
+        "color": null,
+        "avatar": "b103421015f50522",
+        "clip": null,
+        "ride": null,
+        "orbit": null
+      },
+      "health": 20,
+      "entities": 0,
+      "chunks": {
+        "loaded": 69,
+        "meshed": 37,
+        "generating": 0,
+        "meshing": 0,
+        "pending": 0,
+        "visibleSections": 29,
+        "genMs": 16.4086956459543,
+        "meshMs": 9.795454556291753
+      },
+      "render": {
+        "calls": 45,
+        "triangles": 22558,
+        "shadowCalls": 0
+      },
+      "time": 0.4652,
+      "fps": 10.284538909838723,
+      "cpu": 26.504326456844748
+    }
+  ],
+  "errors": []
+}

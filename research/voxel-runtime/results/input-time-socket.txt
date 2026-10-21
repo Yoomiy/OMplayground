@@ -1,0 +1,23 @@
+[
+  {
+    "burst": false,
+    "wallSeconds": 1.0501466650000002,
+    "sent": 58,
+    "socketOpen": true,
+    "distanceBlocks": 3.882381065013523,
+    "lastAck": 58
+  },
+  {
+    "burst": true,
+    "wallSeconds": 1.054803207,
+    "sent": 118,
+    "socketOpen": true,
+    "distanceBlocks": 27.841730679515987,
+    "lastAck": 91
+  }
+]
+FAIL tests/headless/_playground-input-time-socket.ts
+AssertionError [ERR_ASSERTION]: Movement-time invariant violated: the burst client moved substantially farther in the same wall time
+    at Module.probe (/tmp/voxel-runtime-experiment-blockyard/tests/headless/_playground-input-time-socket.ts:107:35)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///tmp/voxel-runtime-experiment-blockyard/scripts/headless.mjs:34:7
