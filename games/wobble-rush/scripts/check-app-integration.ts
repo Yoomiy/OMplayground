@@ -234,7 +234,7 @@ createRoot(document.getElementById('root')!).render(<StrictMode><BrowserRouter><
         NODE_ENV: "development",
         VITE_WOBBLE_SERVICE_URL: endpoint,
         VITE_SUPABASE_URL: dbOrigin,
-        VITE_SUPABASE_ANON_KEY: "fixture-anon-key",
+        VITE_SUPABASE_PUBLISHABLE_KEY: "fixture-anon-key",
       },
       stdio: "ignore",
     },

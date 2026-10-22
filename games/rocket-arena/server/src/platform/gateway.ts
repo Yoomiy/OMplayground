@@ -8,7 +8,7 @@ export class PlatformGateway {
   private schedules: { at: number; defaults: RecessWindow[]; settings: { grade: string; gender: string; override_enabled: boolean }[];
     exceptions: (ClassRecessException & { grade: string; gender: string })[] } | null = null;
   constructor(private readonly url: string, private readonly key: string, private readonly request: typeof fetch = fetch) {
-    if (!url || !key) throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required');
+    if (!url || !key) throw new Error('SUPABASE_URL and SUPABASE_SECRET_KEY are required');
   }
 
   private async rest<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -16,7 +16,7 @@ export class PlatformGateway {
     try {
       response = await this.request(`${this.url.replace(/\/$/, '')}/rest/v1/${path}`, {
         ...init, signal: AbortSignal.timeout(8000), headers: {
-          apikey: this.key, Authorization: `Bearer ${this.key}`, 'Content-Type': 'application/json',
+          apikey: this.key, 'Content-Type': 'application/json',
           Prefer: 'return=representation', ...init.headers,
         },
       });

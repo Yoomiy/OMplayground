@@ -16,7 +16,7 @@ For a Node 24 host, run `npm ci`, `npm run build`, then `npm start` from `games/
 
 ## Configuration
 
-- `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`: server-only access for profile/session admission and durable saves.
+- `SUPABASE_URL`, `SUPABASE_SECRET_KEY`: server-only access for profile/session admission and durable saves.
 - `WOBBLE_TICKET_SECRET`: stable, secret, at least 32 characters. Retain across restarts and releases to verify checkpoints. Rotating it invalidates existing signed saves and tickets.
 - `APP_ORIGINS`: comma-separated exact browser origins, including scheme and port. Only configured parents can launch the iframe.
 - `HOST=0.0.0.0` and platform `PORT`: bind the service for hosting. Local development uses loopback and port 3000.

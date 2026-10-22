@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const serviceKey = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") ?? "{}")["default"];
   if (!supabaseUrl || !serviceKey) {
     console.error(JSON.stringify({ event: "ADMIN_PASSWORD_RESET_CONFIG_MISSING", correlationId }));
     return json({ error: "server_misconfigured" }, 503);

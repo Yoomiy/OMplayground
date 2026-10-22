@@ -634,7 +634,7 @@ createRoot(document.getElementById('root')!).render(<StrictMode><BrowserRouter><
     } catch (error) { await unlink(qaHtml); throw error; }
     vite = spawn(process.execPath, [`${repo}/node_modules/vite/bin/vite.js`, '--host', '127.0.0.1', '--port', '19008', '--strictPort'], {
       cwd: `${repo}/apps/web`, env: { ...process.env, VITE_ROCKET_SERVICE_URL: endpoint,
-        VITE_SUPABASE_URL: 'http://127.0.0.1:19007', VITE_SUPABASE_ANON_KEY: 'fixture-anon-key' }, stdio: 'ignore',
+        VITE_SUPABASE_URL: 'http://127.0.0.1:19007', VITE_SUPABASE_PUBLISHABLE_KEY: 'fixture-anon-key' }, stdio: 'ignore',
     });
     await until(() => fetch(`${origin}/rocket-integration-qa.html`).then(response => response.ok).catch(() => false), 'QA parent Vite');
     const { runBrowserChecks } = await import('./check-app-browser.mjs');

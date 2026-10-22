@@ -31,9 +31,9 @@ const env = { ...process.env, NODE_ENV: 'development', HOST: '127.0.0.1', PORT: 
   LOG_LEVEL: settings.LOG_LEVEL ?? 'info',
   APP_ORIGINS: settings.APP_ORIGINS ?? 'http://localhost:5173,http://127.0.0.1:5173',
 };
-for (const name of ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'LIVEKIT_URL', 'LIVEKIT_API_KEY', 'LIVEKIT_API_SECRET']) env[name] = settings[name] ?? main[name];
+for (const name of ['SUPABASE_URL', 'SUPABASE_SECRET_KEY', 'LIVEKIT_URL', 'LIVEKIT_API_KEY', 'LIVEKIT_API_SECRET']) env[name] = settings[name] ?? main[name];
 delete env.WOBBLE_CLIENT_DIR;
-if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) throw new Error('Configure Supabase in apps/game-server/.env or games/wobble-rush/.env.app.local');
+if (!env.SUPABASE_URL || !env.SUPABASE_SECRET_KEY) throw new Error('Configure Supabase in apps/game-server/.env or games/wobble-rush/.env.app.local');
 if (env.WOBBLE_TICKET_SECRET.length < 32) throw new Error('WOBBLE_TICKET_SECRET must have at least 32 characters');
 let child;
 let stopping = false;
