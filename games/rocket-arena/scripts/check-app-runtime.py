@@ -31,7 +31,7 @@ with tempfile.TemporaryDirectory(prefix='rocket-app-runtime-') as temporary:
                            if path.is_file() and not path.is_symlink())
     env = {**os.environ, 'NODE_ENV': 'production', 'LOG_LEVEL': 'info', 'HOST': '127.0.0.1',
            'PORT': '19009', 'SUPABASE_URL': 'http://127.0.0.1:19007',
-           'SUPABASE_SERVICE_ROLE_KEY': 'fixture-service-key',
+           'SUPABASE_SECRET_KEY': 'fixture-service-key',
            'ROCKET_TICKET_SECRET': 'fixture-secret-more-than-32-characters',
            'APP_ORIGINS': 'http://127.0.0.1:19008'}
     log = target / 'startup.log'

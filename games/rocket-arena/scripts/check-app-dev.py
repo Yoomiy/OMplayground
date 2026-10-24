@@ -13,7 +13,7 @@ game = Path(__file__).resolve().parents[1]
 repo = game.parents[1]
 endpoint = 'http://127.0.0.1:19010'
 env = {**os.environ, 'ROCKET_PORT': '19010', 'SUPABASE_URL': 'http://127.0.0.1:19007',
-       'SUPABASE_SERVICE_ROLE_KEY': 'fixture-service-key', 'APP_ORIGINS': 'http://localhost:5173'}
+       'SUPABASE_SECRET_KEY': 'fixture-service-key', 'APP_ORIGINS': 'http://localhost:5173'}
 log = game / '.run/app-dev-command.log'
 log.parent.mkdir(exist_ok=True)
 with log.open('w') as output:

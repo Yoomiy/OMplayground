@@ -2417,7 +2417,7 @@ export function ClassroomPage() {
                 <input
                   type="text"
                   required
-                  placeholder="הכנס שם מלא (למשל: דניאל כהן)"
+                  placeholder="הכנס שם מלא"
                   value={guestName}
                   onChange={(e) => {
                     const value = e.target.value;

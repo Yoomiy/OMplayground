@@ -31,7 +31,7 @@ with tempfile.TemporaryDirectory(prefix='rocket-local-migration-') as temporary:
         port = probe.getsockname()[1]
     env = {**os.environ, 'PATH': str(root / 'bin') + os.pathsep + os.environ['PATH'],
            'ROCKET_PORT': str(port), 'SUPABASE_URL': 'http://fixture.invalid',
-           'SUPABASE_SERVICE_ROLE_KEY': 'fixture-key', 'ROCKET_TEST_HOOKS': '1'}
+           'SUPABASE_SECRET_KEY': 'fixture-key', 'ROCKET_TEST_HOOKS': '1'}
     for key in ('ROCKET_TICKET_SECRET', 'APP_ORIGINS'):
         env.pop(key, None)
 

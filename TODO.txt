@@ -15,3 +15,9 @@
 60. solve whiboard popup error after permission revoke (race with the awareness?)
 61. class-wide whitboard permission should override personal one
 62. remove GET requsest from the logs
+63. media board is buggy
+64. some clients have problems with viewing media in the media/whitenoard (a refresh helps)
+65. rethink mp game retention policy 
+66. clean up pending challanges and/or make sure that the don't block future challanges
+67. log challange failure reason
+68. make laser pointer movment smoother

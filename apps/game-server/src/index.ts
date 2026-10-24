@@ -114,7 +114,7 @@ const CORS_ORIGIN =
   process.env.CORS_ORIGIN ??
   "http://localhost:5173,http://127.0.0.1:5173";
 const SUPABASE_URL = process.env.SUPABASE_URL ?? "";
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+const SUPABASE_SECRET_KEY = process.env.SUPABASE_SECRET_KEY ?? "";
 const MAX_LIVE_DELTA_BYTES = 8 * 1024 * 1024;
 
 function isGameInspectorRole(role: unknown): role is "teacher" | "admin" {
@@ -207,7 +207,7 @@ async function loadClassroomDrawingPolicy(
 }
 
 function exitIfInvalidSupabaseUrlForClient(): void {
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return;
+  if (!SUPABASE_URL || !SUPABASE_SECRET_KEY) return;
   const u = SUPABASE_URL.trim();
   if (!/^https?:\/\//i.test(u)) {
     process.stderr.write(
@@ -262,8 +262,8 @@ let logger: ReturnType<typeof initObservability>["logger"];
 let stats: ReturnType<typeof initObservability>["stats"];
 
 const supabaseAdmin =
-  SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
-    ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  SUPABASE_URL && SUPABASE_SECRET_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_SECRET_KEY, {
         auth: { persistSession: false, autoRefreshToken: false }
       })
     : null;
@@ -368,7 +368,7 @@ app.get("/health", (_req, res) => {
 });
 
 app.get("/ready", (_req, res) => {
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  if (!SUPABASE_URL || !SUPABASE_SECRET_KEY) {
     res.status(503).json({ ok: false, reason: "missing_env" });
     return;
   }
@@ -436,7 +436,7 @@ io.use(async (socket, next) => {
     const classroomBoardCapability = token.startsWith("classroom-board:")
       ? verifyClassroomBoardToken(
           token.slice("classroom-board:".length),
-          SUPABASE_SERVICE_ROLE_KEY
+          SUPABASE_SECRET_KEY
         )
       : null;
     if (token.startsWith("classroom-board:") && !classroomBoardCapability) {
@@ -450,7 +450,7 @@ io.use(async (socket, next) => {
     const classroomDelegate = token.startsWith("classroom-delegate:")
       ? verifyClassroomDelegateGameToken(
           token.slice("classroom-delegate:".length),
-          SUPABASE_SERVICE_ROLE_KEY
+          SUPABASE_SECRET_KEY
         )
       : null;
     if (token.startsWith("classroom-delegate:") && !classroomDelegate) {

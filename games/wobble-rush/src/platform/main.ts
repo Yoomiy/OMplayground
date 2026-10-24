@@ -24,7 +24,7 @@ const voice =
 const service = createPlatformService({
   gateway: new PlatformGateway(
     process.env.SUPABASE_URL ?? "",
-    process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
+    process.env.SUPABASE_SECRET_KEY ?? "",
   ),
   secret: process.env.WOBBLE_TICKET_SECRET ?? "",
   origins: (process.env.APP_ORIGINS ?? "")

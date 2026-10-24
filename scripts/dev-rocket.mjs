@@ -41,7 +41,7 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('ROCKET
 const env = {
   ...process.env,
   SUPABASE_URL: settings.SUPABASE_URL ?? serverEnv.SUPABASE_URL,
-  SUPABASE_SERVICE_ROLE_KEY: settings.SUPABASE_SERVICE_ROLE_KEY ?? serverEnv.SUPABASE_SERVICE_ROLE_KEY,
+  SUPABASE_SECRET_KEY: settings.SUPABASE_SECRET_KEY ?? serverEnv.SUPABASE_SECRET_KEY,
   LIVEKIT_URL: settings.LIVEKIT_URL ?? serverEnv.LIVEKIT_URL,
   LIVEKIT_API_KEY: settings.LIVEKIT_API_KEY ?? serverEnv.LIVEKIT_API_KEY,
   LIVEKIT_API_SECRET: settings.LIVEKIT_API_SECRET ?? serverEnv.LIVEKIT_API_SECRET,
@@ -54,7 +54,7 @@ const env = {
 };
 // Don't inherit deployment/client overrides that could serve a mismatched build.
 delete env.ROCKET_CLIENT_DIR;
-if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
+if (!env.SUPABASE_URL || !env.SUPABASE_SECRET_KEY) {
   throw new Error('Set Supabase credentials in apps/game-server/.env or games/rocket-arena/.env.app.local');
 }
 

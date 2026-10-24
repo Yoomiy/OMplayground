@@ -250,7 +250,7 @@ const CORS_ORIGIN =
   process.env.CORS_ORIGIN ??
   "http://localhost:5173,http://127.0.0.1:5173";
 const SUPABASE_URL = process.env.SUPABASE_URL ?? "";
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+const SUPABASE_SECRET_KEY = process.env.SUPABASE_SECRET_KEY ?? "";
 const LIVEKIT_URL = process.env.LIVEKIT_URL ?? "";
 const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY ?? "";
 const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET ?? "";
@@ -266,7 +266,7 @@ const TOKEN_DENIAL_WINDOW_MS = 5 * 60_000;
 const TOKEN_DENIAL_THRESHOLD = 5;
 
 function exitIfInvalidSupabaseUrlForClient(): void {
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return;
+  if (!SUPABASE_URL || !SUPABASE_SECRET_KEY) return;
   const u = SUPABASE_URL.trim();
   if (!/^https?:\/\//i.test(u)) {
     process.stderr.write(
@@ -378,8 +378,8 @@ const io = new Server(server, {
 });
 
 const supabaseAdmin =
-  SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
-    ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  SUPABASE_URL && SUPABASE_SECRET_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_SECRET_KEY, {
         auth: { persistSession: false, autoRefreshToken: false }
       })
     : null;
@@ -681,8 +681,8 @@ async function appendClassroomAudit(
 }
 
 function presenterCapabilityFor(roomCode: string, state: PresentationRoomState): string | null {
-  if (!state.presenterIdentity || !SUPABASE_SERVICE_ROLE_KEY) return null;
-  return createPresenterCapability(roomCode, state.presenterIdentity, state.presenterEpoch, SUPABASE_SERVICE_ROLE_KEY);
+  if (!state.presenterIdentity || !SUPABASE_SECRET_KEY) return null;
+  return createPresenterCapability(roomCode, state.presenterIdentity, state.presenterEpoch, SUPABASE_SECRET_KEY);
 }
 
 function requirePresenterCapability(
@@ -690,7 +690,7 @@ function requirePresenterCapability(
   res: express.Response,
   classroom: { room_code: string; settings: unknown }
 ): { identity: string; epoch: number } | null {
-  const capability = readPresenterCapability(req.body?.presenterToken, SUPABASE_SERVICE_ROLE_KEY);
+  const capability = readPresenterCapability(req.body?.presenterToken, SUPABASE_SECRET_KEY);
   const state = presentationRoomState(classroom.settings);
   if (
     !capability ||
@@ -937,7 +937,7 @@ app.post("/rtc/classroom-token", async (req, res) => {
         });
       }
     }
-    const reconnectCapability = readPresenterCapability(reconnectPresenterToken, SUPABASE_SERVICE_ROLE_KEY);
+    const reconnectCapability = readPresenterCapability(reconnectPresenterToken, SUPABASE_SECRET_KEY);
     const reconnectState = presentationRoomState(classroom.settings);
     const presenterIdentityOverride = reconnectCapability &&
       reconnectCapability.roomCode === classroom.room_code &&
@@ -987,7 +987,7 @@ app.post("/rtc/classroom-token", async (req, res) => {
             roomCode,
             identity: result.userId
           },
-          SUPABASE_SERVICE_ROLE_KEY
+          SUPABASE_SECRET_KEY
         )
       : undefined;
     const classroomBoardToken = createClassroomBoardToken(
@@ -1000,7 +1000,7 @@ app.post("/rtc/classroom-token", async (req, res) => {
         role: result.role as "kid" | "student" | "teacher" | "admin" | "classroom_delegate",
         isHost: result.isHost
       },
-      SUPABASE_SERVICE_ROLE_KEY
+      SUPABASE_SECRET_KEY
     );
 
     evidence.issued = true;
@@ -1489,7 +1489,7 @@ app.post("/rtc/classroom-delegate/activate", async (req, res) => {
       delegateScopes: Array.isArray(delegate.scopes) ? delegate.scopes : [],
       delegateGameToken: createClassroomDelegateGameToken(
         { delegateId: delegate.id, classroomId: classroom.id, roomCode: classroom.room_code, identity },
-        SUPABASE_SERVICE_ROLE_KEY
+        SUPABASE_SECRET_KEY
       )
     });
   } catch (err) {
@@ -2185,7 +2185,7 @@ app.get("/health", (_req, res) => {
 });
 
 app.get("/ready", (_req, res) => {
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  if (!SUPABASE_URL || !SUPABASE_SECRET_KEY) {
     res.status(503).json({ ok: false, reason: "missing_env" });
     return;
   }

@@ -46,7 +46,7 @@ serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const serviceKey = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") ?? "{}")["default"];
     if (!supabaseUrl || !serviceKey) {
       console.error(JSON.stringify({ event: "ADMIN_CREATE_USER_CONFIG_MISSING", correlationId }));
       return new Response(JSON.stringify({ error: "server_misconfigured" }), {
@@ -149,7 +149,7 @@ serve(async (req) => {
   } catch (error) {
     if (createdUserId && !profileCreated) {
       const supabaseUrl = Deno.env.get("SUPABASE_URL");
-      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      const serviceKey = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") ?? "{}")["default"];
       if (supabaseUrl && serviceKey) {
         const cleanupClient = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
         const { error: cleanupError } = await cleanupClient.auth.admin.deleteUser(createdUserId);

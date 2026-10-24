@@ -22,7 +22,7 @@ async function main(): Promise<void> {
   const gameServer = new colyseus.Server({ gracefullyShutdown: false,
     transport: new WebSocketTransport({ server, maxPayload: 16 * 1024 }) });
   const app = createPlatformService({
-    gateway: new PlatformGateway(process.env.SUPABASE_URL ?? '', process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''),
+    gateway: new PlatformGateway(process.env.SUPABASE_URL ?? '', process.env.SUPABASE_SECRET_KEY ?? ''),
     ticketSecret: process.env.ROCKET_TICKET_SECRET ?? '',
     origins: (process.env.APP_ORIGINS ?? '').split(',').map(value => value.trim()).filter(Boolean),
     clientDir: process.env.ROCKET_CLIENT_DIR ?? fileURLToPath(new URL('../../client/dist/', import.meta.url)),
