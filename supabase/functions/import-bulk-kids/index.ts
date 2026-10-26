@@ -1,4 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { parseImportGender } from "./gender.ts";
+import { parseImportGrade } from "../_shared/grades.ts";
+import { parseImportRole } from "./role.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -82,20 +85,27 @@ Deno.serve(async (req) => {
       .toLowerCase();
     const password = String(raw.password ?? "");
     const full_name = String(raw.full_name ?? "").trim();
-    const gender = raw.gender === "girl" ? "girl" : "boy";
-    const rawGrade = String(raw.grade ?? "").trim();
-    const cleanGrade = rawGrade.replace(/['"]+/g, "");
-    const validLetters = ["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח"];
-    const numMap: Record<string, string> = {
-      "1": "א", "2": "ב", "3": "ג", "4": "ד", "5": "ה", "6": "ו", "7": "ז", "8": "ח"
-    };
-    const grade = validLetters.includes(cleanGrade)
-      ? cleanGrade
-      : (numMap[cleanGrade] ?? "א");
-    const role = raw.role === "teacher" ? "teacher" : "kid";
+    const gender = parseImportGender(raw.gender);
+    const grade = parseImportGrade(raw.grade);
+    const role = parseImportRole(raw.role);
 
     if (!username || !password || !full_name) {
       results.push({ username, ok: false, error: "missing fields" });
+      continue;
+    }
+
+    if (!gender) {
+      results.push({ username, ok: false, error: "invalid gender: use boy/girl, male/female, m/f, בן/בת, or זכר/נקבה" });
+      continue;
+    }
+
+    if (!grade) {
+      results.push({ username, ok: false, error: "invalid grade: use גן, א–ט, or 0–9 (0 = גן)" });
+      continue;
+    }
+
+    if (!role) {
+      results.push({ username, ok: false, error: "invalid role: use kid or teacher; leave blank for kid" });
       continue;
     }
 

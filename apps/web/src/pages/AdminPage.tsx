@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
+import { parseImportCsv } from "@/lib/importCsv";
+import { CLASS_GRADES } from "../../../../supabase/functions/_shared/grades";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import {
@@ -22,16 +24,6 @@ import { ClassroomAdminExplorer } from "@/components/ClassroomAdminExplorer";
 import { GameSessionInspector } from "@/components/GameSessionInspector";
 import { PasswordInput } from "@/components/PasswordInput";
 import { buildEffectiveDaySchedule } from "@playground/game-logic";
-
-function parseGradeInput(raw: string): string {
-  const clean = raw.trim().replace(/['"]+/g, "");
-  const validLetters = ["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח"];
-  const numMap: Record<string, string> = {
-    "1": "א", "2": "ב", "3": "ג", "4": "ד", "5": "ה", "6": "ו", "7": "ז", "8": "ח"
-  };
-  if (validLetters.includes(clean)) return clean;
-  return numMap[clean] ?? "א";
-}
 
 interface GameRow {
   id: string;
@@ -101,7 +93,6 @@ const RECESS_DAY_LABELS_HE = [
   "יום שישי",
   "שבת"
 ] as const;
-const CLASS_GRADES = ["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח"] as const;
 
 function normalizeRecessTime(t: string): string {
   const s = t.trim();
@@ -183,6 +174,8 @@ export function AdminPage() {
   const [reportReporterSearch, setReportReporterSearch] = useState("");
   const [reportReportedSearch, setReportReportedSearch] = useState("");
   const [userSearch, setUserSearch] = useState("");
+  const [debouncedUserSearch, setDebouncedUserSearch] = useState("");
+  const userRequestId = useRef(0);
   const [userRoleFilter, setUserRoleFilter] = useState<"all" | "kid" | "teacher">("all");
   const [userGenderFilter, setUserGenderFilter] = useState<"all" | "boy" | "girl">("all");
   const [userGradeFilter, setUserGradeFilter] = useState<"all" | string>("all");
@@ -215,9 +208,47 @@ export function AdminPage() {
     avatar_preset_id: ""
   });
 
-    const reload = useCallback(async () => {
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedUserSearch(userSearch), 300);
+    return () => window.clearTimeout(timer);
+  }, [userSearch]);
+
+  const reloadUsers = useCallback(async () => {
     if (!user || !isAdmin) return;
-    const [g, k, rs, classSettings, classExceptions, r, a] = await Promise.all([
+    const requestId = ++userRequestId.current;
+    let query = supabase
+      .from("kid_profiles")
+      .select(
+        "id, username, full_name, gender, role, grade, is_active, avatar_color, avatar_preset_id, avatar_url, best_scores, unread_message_count, last_seen, created_at, updated_at"
+      )
+      .order("username")
+      .limit(1000);
+    if (userRoleFilter !== "all") {
+      query = query.eq("role", userRoleFilter);
+    }
+    if (userGenderFilter !== "all") {
+      query = query.eq("gender", userGenderFilter);
+    }
+    if (userGradeFilter !== "all") {
+      query = query.eq("grade", userGradeFilter);
+    }
+    if (debouncedUserSearch) {
+      query = query.or(
+        `username.ilike.%${debouncedUserSearch}%,full_name.ilike.%${debouncedUserSearch}%`
+      );
+    }
+    const { data, error } = await query;
+    if (requestId !== userRequestId.current) return;
+    if (error) {
+      setErr(error.message);
+      return;
+    }
+    setKids((data ?? []) as KidRow[]);
+  }, [user, isAdmin, debouncedUserSearch, userRoleFilter, userGenderFilter, userGradeFilter]);
+
+  const reloadAdminData = useCallback(async () => {
+    if (!user || !isAdmin) return;
+    const [g, rs, classSettings, classExceptions, r, a] = await Promise.all([
       (async () => {
         let query = supabase
           .from("games")
@@ -225,30 +256,6 @@ export function AdminPage() {
           .order("name_he");
         if (gameSearch) {
           query = query.ilike("name_he", `%${gameSearch}%`);
-        }
-        return await query;
-      })(),
-      (async () => {
-        let query = supabase
-          .from("kid_profiles")
-          .select(
-            "id, username, full_name, gender, role, grade, is_active, avatar_color, avatar_preset_id, avatar_url, best_scores, unread_message_count, last_seen, created_at, updated_at"
-          )
-          .order("username")
-          .limit(80);
-        if (userRoleFilter !== "all") {
-          query = query.eq("role", userRoleFilter);
-        }
-        if (userGenderFilter !== "all") {
-          query = query.eq("gender", userGenderFilter);
-        }
-        if (userGradeFilter !== "all") {
-          query = query.eq("grade", userGradeFilter);
-        }
-        if (userSearch) {
-          query = query.or(
-            `username.ilike.%${userSearch}%,full_name.ilike.%${userSearch}%`
-          );
         }
         return await query;
       })(),
@@ -291,17 +298,25 @@ export function AdminPage() {
         .limit(30)
     ]);
     if (!g.error) setGames((g.data ?? []) as GameRow[]);
-    if (!k.error) setKids((k.data ?? []) as KidRow[]);
     if (!rs.error) setRecessSchedules((rs.data ?? []) as RecessScheduleRow[]);
     if (!classSettings.error) setClassRecessSettings((classSettings.data ?? []) as ClassRecessSettingRow[]);
     if (!classExceptions.error) setClassRecessExceptions((classExceptions.data ?? []) as ClassRecessExceptionRow[]);
     if (!r.error) setReports((r.data ?? []) as ReportRow[]);
     if (!a.error) setAudit((a.data ?? []) as typeof audit);
-  }, [user, isAdmin, reportStatusFilter, reportReporterSearch, reportReportedSearch, userSearch, userRoleFilter, userGenderFilter, userGradeFilter, gameSearch]);
+  }, [user, isAdmin, reportStatusFilter, reportReporterSearch, reportReportedSearch, gameSearch]);
+
+  const reload = useCallback(async () => {
+    await Promise.all([reloadUsers(), reloadAdminData()]);
+  }, [reloadUsers, reloadAdminData]);
 
   useEffect(() => {
-    void reload();
-  }, [reload]);
+    void reloadUsers();
+    return () => { userRequestId.current++; };
+  }, [reloadUsers]);
+
+  useEffect(() => {
+    void reloadAdminData();
+  }, [reloadAdminData]);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -329,14 +344,14 @@ export function AdminPage() {
         "postgres_changes",
         { event: "*", schema: "public", table: "moderation_reports" },
         () => {
-          void reload();
+          void reloadAdminData();
         }
       )
       .subscribe();
     return () => {
       void supabase.removeChannel(ch);
     };
-  }, [user, isAdmin, reload]);
+  }, [user, isAdmin, reloadAdminData]);
 
   const recessByDay = useMemo(() => {
     const m: RecessScheduleRow[][] = Array.from({ length: 7 }, () => []);
@@ -744,12 +759,18 @@ export function AdminPage() {
   async function importCsv() {
     setErr(null);
     setMsg(null);
-    const lines = csvText.split(/\n/).map((l) => l.trim()).filter(Boolean);
+    let lines: string[][];
+    try {
+      lines = parseImportCsv(csvText);
+    } catch (error) {
+      setErr(error instanceof Error ? error.message : "קובץ CSV לא תקין");
+      return;
+    }
     if (lines.length < 2) {
       setErr("נדרש כותרת ולפחות שורה אחת");
       return;
     }
-    const header = lines[0].split(",").map((s) => s.trim().toLowerCase());
+    const header = lines[0].map((s) => s.toLowerCase());
     const need = ["username", "password", "full_name", "gender", "grade"];
     const idx = Object.fromEntries(header.map((h, i) => [h, i]));
     for (const n of need) {
@@ -758,15 +779,18 @@ export function AdminPage() {
         return;
       }
     }
-    const rows = lines.slice(1).map((line) => {
-      const cells = line.split(",").map((s) => s.trim());
+    if (lines.slice(1).some((cells) => cells.length !== header.length)) {
+      setErr("מספר העמודות בשורה אינו תואם לכותרת");
+      return;
+    }
+    const rows = lines.slice(1).map((cells) => {
       const roleIdx = idx["role"];
       return {
         username: cells[idx["username"]!] ?? "",
         password: cells[idx["password"]!] ?? "",
         full_name: cells[idx["full_name"]!] ?? "",
-        gender: cells[idx["gender"]!] ?? "boy",
-        grade: parseGradeInput(cells[idx["grade"]!] ?? "1"),
+        gender: cells[idx["gender"]!] ?? "",
+        grade: cells[idx["grade"]!] ?? "",
         role: roleIdx !== undefined ? cells[roleIdx] || "kid" : "kid"
       };
     });
@@ -1202,7 +1226,7 @@ export function AdminPage() {
           </div>
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 p-4 shadow-sm">
             <div>
-              <p className="font-semibold text-slate-900 dark:text-white">כיתה {selectedScheduleGrade} · {selectedScheduleGender === "boy" ? "בנים" : "בנות"}</p>
+              <p className="font-semibold text-slate-900 dark:text-white">{selectedScheduleGrade === "גן" ? "גן" : `כיתה ${selectedScheduleGrade}`} · {selectedScheduleGender === "boy" ? "בנים" : "בנות"}</p>
               <p className="text-xs text-slate-500 dark:text-white/55">{selectedClassOverrideEnabled ? "לוח מיוחד פעיל — החריגים שלהלן מיושמים." : "משתמשת כעת בלוח ברירת המחדל. החריגים השמורים אינם מיושמים."}</p>
             </div>
             <button type="button" disabled={busy} onClick={() => void toggleClassScheduleOverride()} className={cn("rounded-xl px-4 py-2 text-sm font-bold shadow-sm disabled:opacity-50 transition-colors", selectedClassOverrideEnabled ? "bg-amber-500 text-slate-950 hover:bg-amber-400" : "bg-indigo-600 text-white hover:bg-indigo-500")}>
@@ -1295,7 +1319,7 @@ export function AdminPage() {
               onChange={(e) => setUserGradeFilter(e.target.value)}
             >
               <option value="all">כל הכיתות</option>
-              {["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח"].map(g => <option key={g} value={g}>כיתה {g}</option>)}
+              {CLASS_GRADES.map(g => <option key={g} value={g}>{g === "גן" ? g : `כיתה ${g}`}</option>)}
             </select>
             <input
               className={kidFieldInputClass}
@@ -1400,9 +1424,9 @@ export function AdminPage() {
                           }))
                         }
                       >
-                        {["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח"].map((g) => (
+                        {CLASS_GRADES.map((g) => (
                           <option key={g} value={g}>
-                            כיתה {g}
+                            {g === "גן" ? g : `כיתה ${g}`}
                           </option>
                         ))}
                       </select>
@@ -1560,9 +1584,9 @@ export function AdminPage() {
                     setEditForm((f) => ({ ...f, grade: e.target.value }))
                   }
                 >
-                  {["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח"].map((g) => (
+                  {CLASS_GRADES.map((g) => (
                     <option key={g} value={g}>
-                      כיתה {g}
+                      {g === "גן" ? g : `כיתה ${g}`}
                     </option>
                   ))}
                 </select>
@@ -1699,9 +1723,9 @@ export function AdminPage() {
             </section>
           </div>
         ) : null}
-        <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/5 shadow-sm dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md">
+        <div className="max-h-[65vh] overflow-auto rounded-2xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/5 shadow-sm dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md" role="region" aria-label="רשימת משתמשים" tabIndex={0}>
           <table className="w-full text-right text-sm">
-            <thead className="bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-white">
+            <thead className="sticky top-0 z-10 bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-white">
               <tr>
                 <th className="p-2">שם משתמש</th>
                 <th className="p-2">שם</th>
@@ -1756,8 +1780,13 @@ export function AdminPage() {
       <section className="space-y-2">
         <h2 className="text-lg font-medium text-slate-900 dark:text-white">ייבוא CSV (ילדים)</h2>
         <p className="text-xs text-slate-500 dark:text-white/50">
-          שורת כותרת: username,password,full_name,gender,grade,role — פונקציית Edge
-          import-bulk-kids (מפתח שירות בשרת בלבד).
+          שורת כותרת: username,password,full_name,gender,grade,role
+        </p>
+        <p className="text-xs text-slate-500 dark:text-white/50">
+          מגדר (gender): boy / girl, male / female, m / f, בן / בת או זכר / נקבה. מגדר חסר או לא תקין יידחה.
+        </p>
+        <p className="text-xs text-slate-500 dark:text-white/50">
+          כיתה (grade): גן, א–ט או 0–9 (0 = גן). תפקיד (role): kid או teacher; ברירת המחדל לתפקיד ריק היא kid. ערכים לא תקינים יידחו.
         </p>
         <textarea
           className={`${kidFieldInputClass} min-h-[120px] font-mono text-xs`}
