@@ -1,0 +1,22 @@
+{
+  "result": "PASS",
+  "scope": "Four exact synthetic profile IDs from the two approved attempts; GET only",
+  "results": [
+    {
+      "id": "f7d25c65-53c9-4313-8298-5e535e1c8a3e",
+      "profileAbsent": true
+    },
+    {
+      "id": "4f53c31f-0690-40ad-97ff-9b88f12398e9",
+      "profileAbsent": true
+    },
+    {
+      "id": "68212e1c-496e-46f5-b66d-b0ccdde1dd6b",
+      "profileAbsent": true
+    },
+    {
+      "id": "45c9bfd8-805b-49fd-a5e4-677832512ef0",
+      "profileAbsent": true
+    }
+  ]
+}

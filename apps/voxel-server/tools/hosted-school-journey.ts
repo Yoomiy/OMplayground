@@ -316,8 +316,17 @@ try {
     { room },
     kidToken,
   );
-  assert.equal(denied.status, 403);
-  assert.equal(denied.value.error, "SESSION_CLOSED");
+  const denialCode =
+    typeof denied.value.error === "string" &&
+    /^[A-Z_]{1,60}$/.test(denied.value.error)
+      ? denied.value.error
+      : "INVALID_RESPONSE";
+  report.uninvitedAdmission = { status: denied.status, code: denialCode };
+  assert(
+    denied.status === 403,
+    `uninvited_status_${denied.status}_${denialCode}`,
+  );
+  assert(denialCode === "SESSION_CLOSED", `uninvited_code_${denialCode}`);
   report.uninvitedKidDenied = true;
   const first = await connect(endpoint, token);
   stage("real_school_native_admission_ready");

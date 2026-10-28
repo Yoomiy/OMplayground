@@ -1,0 +1,13 @@
+✔ hosted qualification scope allows its status/room/object requests and refuses global cleanup (26.521368ms)
+✔ hosted qualification scope rejects other sessions, actors, graphs and namespaces (8.31192ms)
+✔ hosted qualification reads are limited to exact own row IDs and configured provider (2.491452ms)
+✔ cleanup SQL rejects untrusted interpolation before any query is available (0.684163ms)
+✔ private-session challenge lookup reads only the temporary child's accepted challenge IDs (2.313532ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 204.76095

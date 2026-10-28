@@ -125,3 +125,28 @@ test("cleanup SQL rejects untrusted interpolation before any query is available"
       }),
     );
 });
+
+test("private-session challenge lookup reads only the temporary child's accepted challenge IDs", () => {
+  const query = new URLSearchParams({
+    select: "id",
+    session_id: `eq.${scope.room}`,
+    to_kid_id: `eq.${scope.kid}`,
+    status: "eq.accepted",
+  });
+  const path = () => "/rest/v1/game_challenges?" + query;
+  assert.equal(check(path(), undefined, "GET"), "allow");
+  for (const [field, value] of Object.entries({
+    session_id: `eq.${randomUUID()}`,
+    to_kid_id: `eq.${randomUUID()}`,
+    status: "eq.pending",
+    select: "*",
+  })) {
+    const original = query.get(field)!;
+    query.set(field, value);
+    assert.throws(() => check(path(), undefined, "GET"));
+    query.delete(field);
+    assert.throws(() => check(path(), undefined, "GET"));
+    query.set(field, original);
+  }
+  assert.throws(() => check(path(), undefined, "POST"));
+});

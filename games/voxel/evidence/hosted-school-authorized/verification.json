@@ -1,0 +1,133 @@
+{
+  "schema": 1,
+  "capturedAt": "2026-10-28T16:17:54.912911+00:00",
+  "baseCommit": "fc45dc086927b881bf8e8051bb963c9387a67291",
+  "buildId": "c293fe5e2511d2bc656ea33756509e834b8761fc743a9d2d8a4e83cebd2ad799",
+  "authorization": "User explicitly answered Yes, run the scoped hosted check on 2026-10-28",
+  "result": "PASS",
+  "initialAttempt": "FAIL: request guard omitted scoped accepted-challenge read; all cleanup passed",
+  "scope": "Actual hosted Auth/PostgREST/private Storage, two synthetic identities and one private session per attempt; local production composition, packaged native worker and socket client; no real school-user, school-setting, email or SFU-room changes",
+  "sources": [
+    {
+      "path": "apps/voxel-server/tools/hosted-school-journey.ts",
+      "sha256": "09985cf9d5e1c7f1e5ec26beffca37c93b637c1129f53f4d31597adc2d88400a"
+    },
+    {
+      "path": "apps/voxel-server/tools/hosted-school-scope.ts",
+      "sha256": "55ce7880f9c1157e0e6e553a88012ddaff39efdada50afc4d55b7c3ef1c7b61d"
+    },
+    {
+      "path": "apps/voxel-server/tools/hosted-natural-mining.ts",
+      "sha256": "dd152ae295c75411a63f1441ed28604122f1cac0b0682afc33463c5d3e868663"
+    },
+    {
+      "path": "apps/voxel-server/tests/hosted-school-scope.test.ts",
+      "sha256": "028fe11217950cfcfff0cf145b973e9ee08d5241c985d26e29c22e74bc7c8afe"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "build.json",
+      "sha256": "4e60334b8c8fce6b231967b0c81bd7135ee35c50517e12504aa7632873c19774"
+    },
+    {
+      "path": "initial-guard-failure/cleanup-output.json",
+      "sha256": "a6f6f40e05eff9a7e08f028a0403da3b6fe75c9325ee84ed34609183ea4b2e47"
+    },
+    {
+      "path": "initial-guard-failure/cleanup.sql",
+      "sha256": "ad587e0a12c103230b8918dd82f1534d7eb5fe210a7ddb9cbfff77947a1cfdd8"
+    },
+    {
+      "path": "initial-guard-failure/journal.json",
+      "sha256": "7f780c99087deaa0777f57c6ac4bb7a73c46721e9add311ba886071dfe0faee6"
+    },
+    {
+      "path": "initial-guard-failure/report.json",
+      "sha256": "d695766be49993e1d8ba0c58bd4a4742feda4e03d94147eb4440838861b4b6a1"
+    },
+    {
+      "path": "initial-guard-failure/run.txt",
+      "sha256": "727248f77168260f4e77fe234115ed8eee64101788c762204eaa326730ba9761"
+    },
+    {
+      "path": "initial-guard-failure/sources/apps/voxel-server/tools/hosted-school-journey.ts",
+      "sha256": "7d69cd8cbb6647075ea35d270a115ebcf9e2316320fd04b09b9b67a6217e16ed"
+    },
+    {
+      "path": "initial-guard-failure/sources/apps/voxel-server/tools/hosted-school-scope.ts",
+      "sha256": "3108a91fe7491ac30d46a44026e562177edad26587f758cae9b21fe6cfca36a1"
+    },
+    {
+      "path": "profile-cleanup-verify.mjs",
+      "sha256": "df6cb9e8c6017233e40e68b7ff036a6f0686f324d3877b49316667b527fc03e2"
+    },
+    {
+      "path": "profile-cleanup.json",
+      "sha256": "1b33589ae20c2f5343f6ca99b9a88a9bba80c6a600ff098d223700cf9d590616"
+    },
+    {
+      "path": "profile-cleanup.txt",
+      "sha256": "107af2e51a84adb58a8d3196f450dcff44809ba27fb25e18eda4ed57eb86fb5b"
+    },
+    {
+      "path": "qualified/cleanup-output.json",
+      "sha256": "498402faf2039f2d3eaca4f3de92df7b5c209544fee17120e229f1dff0144d2f"
+    },
+    {
+      "path": "qualified/cleanup.sql",
+      "sha256": "6ce2026c8903b4f753d4e527984598eb3d2cd2d714f5e2273c10a1dbee3116d3"
+    },
+    {
+      "path": "qualified/journal.json",
+      "sha256": "5bd14bba03686332ecf58932869b89b0bcc638af379116801aa5d80c88602fc5"
+    },
+    {
+      "path": "qualified/report.json",
+      "sha256": "985200e9ac5f0609d2f76ee61e6a634e3359a7bfcdb412efd184c49a9de0ba81"
+    },
+    {
+      "path": "qualified/run.txt",
+      "sha256": "2acec23a16c7c1b64e2fe9ca878253c5d4cbf2f48e35349f5e32eefdbd81c390"
+    },
+    {
+      "path": "release.json",
+      "sha256": "3a835aa11a1de76b8b84b390c49feb67594db9c1503c2e866c63d9d4c148c859"
+    },
+    {
+      "path": "scope-tests.txt",
+      "sha256": "58b386382001e6ab03edbf5af0d285528c4e35d37cb4b379328f68c172f7e9dc"
+    },
+    {
+      "path": "service-tests.txt",
+      "sha256": "5906b917c10418435521cdb4bb8bb48c576f61bb38a4ec0d99bfddd0d6b1c66a"
+    },
+    {
+      "path": "service-types.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "sources/apps/voxel-server/tests/hosted-school-scope.test.ts",
+      "sha256": "028fe11217950cfcfff0cf145b973e9ee08d5241c985d26e29c22e74bc7c8afe"
+    },
+    {
+      "path": "sources/apps/voxel-server/tools/hosted-natural-mining.ts",
+      "sha256": "dd152ae295c75411a63f1441ed28604122f1cac0b0682afc33463c5d3e868663"
+    },
+    {
+      "path": "sources/apps/voxel-server/tools/hosted-school-journey.ts",
+      "sha256": "09985cf9d5e1c7f1e5ec26beffca37c93b637c1129f53f4d31597adc2d88400a"
+    },
+    {
+      "path": "sources/apps/voxel-server/tools/hosted-school-scope.ts",
+      "sha256": "55ce7880f9c1157e0e6e553a88012ddaff39efdada50afc4d55b7c3ef1c7b61d"
+    }
+  ],
+  "limits": [
+    "No hosted React/catalog-shell browser journey",
+    "No successful child recess session",
+    "No SFU/WebRTC qualification",
+    "No abrupt process crash/provider outage test",
+    "No physical school-PC or deployment qualification"
+  ]
+}

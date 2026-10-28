@@ -1889,6 +1889,33 @@ but no container run or selected-host deployment is claimed. No hosted requests,
 SQL, application data, catalog changes, push or deployment is performed. Hosted
 Auth/game/SFU/recovery, physical PCs, product decisions and cutover remain open.
 
+## 2026-10-28 — Approved hosted Auth, mining, checkpoint and restart journey
+
+After the user's explicit approval, the prepared bounded hosted runner executed
+with two synthetic Auth identities/profiles and one private session. The first
+executed attempt found a test-guard omission in the accepted-challenge lookup;
+it stopped before gameplay and fully cleaned up. The correction allows only the
+temporary child's accepted challenge IDs for the exact test session. Five guard
+tests, all 52 service unit tests and strict service types pass.
+
+The second attempt passes actual Auth, teacher RLS session creation, uninvited
+child denial, teacher/player admission through the packaged native gateway,
+empty-inventory natural mining/pickup, committed pause/checkpoint download,
+fresh production-service restore of the same earned bag/revision under a newer
+owner epoch, superseded pause receipt behavior and live profile revocation.
+Cleanup confirms the session/world/object metadata and both Auth users absent;
+five Storage objects are removed. There are zero service errors and no global
+maintenance calls, existing-user changes, school-setting changes, email or SFU
+rooms. Both service instances close cleanly; the corrected test runner returns zero.
+Game build `c293fe5e2511` is unchanged.
+
+The [authorized evidence](../games/voxel/evidence/hosted-school-authorized/README.md)
+preserves both attempts, exact cleanup SQL/results, successful report, local
+checks and changed test-tool sources. This qualifies the stated real-provider
+socket/restart scenario, not abrupt process crash/provider outage, successful
+child recess admission, hosted React/catalog journey, SFU/WebRTC, actual school
+PCs or deployment. Those checks and product acceptance remain open.
+
 ## 2026-10-28 — Configurable world profile and single-port local development
 
 The [shared world profile](../games/voxel/docs/world-profile.md) now controls

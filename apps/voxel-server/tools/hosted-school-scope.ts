@@ -131,11 +131,18 @@ export function checkHostedRequest(
       "/rest/v1/kid_profiles",
       "/rest/v1/admin_profiles",
       "/rest/v1/game_sessions",
+      "/rest/v1/game_challenges",
     ].includes(path),
     "unexpected service table",
   );
   if (path.endsWith("game_sessions"))
     assert.equal(url.searchParams.get("id"), `eq.${scope.room}`);
+  if (path.endsWith("game_challenges")) {
+    assert.equal(url.searchParams.get("session_id"), `eq.${scope.room}`);
+    assert.equal(url.searchParams.get("to_kid_id"), `eq.${scope.kid}`);
+    assert.equal(url.searchParams.get("status"), "eq.accepted");
+    assert.equal(url.searchParams.get("select"), "id");
+  }
   if (path.endsWith("kid_profiles") || path.endsWith("admin_profiles"))
     assert(
       [`eq.${scope.teacher}`, `eq.${scope.kid}`].includes(

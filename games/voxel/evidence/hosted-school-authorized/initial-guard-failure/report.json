@@ -1,0 +1,39 @@
+{
+  "result": "FAIL",
+  "run": "3c6c91b8-1462-41e4-82a3-547546ee7a56",
+  "room": "378c32e4-9c06-4825-9f8c-573b2a386dc3",
+  "startedAt": "2026-10-28T16:09:33.603Z",
+  "buildId": "c293fe5e2511d2bc656ea33756509e834b8761fc743a9d2d8a4e83cebd2ad799",
+  "scope": "Real hosted Auth/PostgREST/private Storage and packaged gateway/native worker, temporary identities and one private session; socket client, no real school users, browser/SFU/physical-device/deployment qualification",
+  "stages": [
+    "temporary_real_auth_profiles_ready",
+    "public_rls_private_session_created",
+    "production_service_hosted_ready"
+  ],
+  "cleanup": {
+    "serviceClosed": true,
+    "scopedSql": true,
+    "sessionAbsent": true,
+    "metadataAbsent": true,
+    "kidAbsent": true,
+    "teacherAbsent": true
+  },
+  "catalogId": "2afb3bb7-1090-49a3-8e30-e4cccb891193",
+  "failure": {
+    "stage": "production_service_hosted_ready",
+    "code": "CHECK_FAILED"
+  },
+  "requests": {
+    "voxel_persistence_status": 1,
+    "voxel_session_projection_status": 1,
+    "voxel_roster_status": 1,
+    "voxel_controls_status": 1,
+    "voxel_staff_status": 1,
+    "voxel_moderation_status": 1,
+    "voxel_chat_status": 1,
+    "voxel_media_status": 1,
+    "voxel_actor_policy": 1
+  },
+  "serviceErrors": [],
+  "finishedAt": "2026-10-28T16:09:53.738Z"
+}

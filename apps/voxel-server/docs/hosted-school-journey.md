@@ -2,18 +2,20 @@
 
 The prepared runner is
 [`tools/hosted-school-journey.ts`](../tools/hosted-school-journey.ts).
-It has not run against hosted writes. Automatic approval review rejected its
-first execution because the session did not explicitly authorize creation and
-deletion of hosted Auth users, profiles, session/audit/checkpoint rows and
-Storage objects. That execution did not start. The rejection is an approval
-boundary, not a passing or failing hosted gameplay result.
+The user explicitly approved its exact temporary hosted scope on 2026-10-28.
+It now passes against real Auth, PostgREST and private Storage with game build
+`c293fe5e2511`; both test identities, the private session/metadata and all five
+Storage objects were removed and their absence verified. The earlier automatic
+approval rejection preceded this authorization and performed no writes.
+The [authorized evidence](../../../games/voxel/evidence/hosted-school-authorized/README.md)
+preserves the successful result and the first executed attempt's guard failure.
 
 The read-only preflight on 2026-10-27 passes all eight installed schemas/private
 bucket, verifies matching browser/server project configuration and finds one
 active `minecraft` catalog row. The linked CLI project must match that SDK
 project before the runner can prepare any resources.
 
-## Concrete scope for approval
+## Approved and executed scope
 
 The opt-in run creates exactly two randomly identified synthetic Auth users,
 with one teacher and one child profile, and one private session. Synthetic
@@ -48,10 +50,13 @@ checks explicit Auth 404s. Failure keeps the run failed and leaves a recovery
 journal plus exact cleanup SQL under a unique `/tmp/voxel-hosted-school-*` folder.
 There is no broad test-world reset or migration application.
 
-After explicit approval, run from the repository root:
+The approved execution used the existing server credential fallback and browser
+configuration through normal Node env-file selection, without inspecting or
+copying credentials. From the repository root:
 
 ```sh
 VOXEL_HOSTED_SCHOOL_CHECK=1 node \
+  --env-file=apps/minecraft-server/.env \
   --env-file=apps/voxel-server/.env \
   --env-file=apps/web/.env.local \
   apps/voxel-server/tools/hosted-school-journey.ts
@@ -59,7 +64,7 @@ VOXEL_HOSTED_SCHOOL_CHECK=1 node \
 
 ## Local verification
 
-All 50 service unit tests and strict service types pass. Four scope tests cover
+All 52 service unit tests and strict service types pass. Five scope tests cover
 allowed requests and rejection of other projects, sessions, actors, graphs,
 unreviewed RPCs and global maintenance. Two real local PostgreSQL tests exercise
 the exact cleanup SQL against installed voxel schemas: graph/audit deletion,
@@ -72,6 +77,21 @@ bag/revision in a paused world. An earlier driver timeout is retained: focus is
 correctly rejected while the restored room is paused. The corrected driver
 checks restored ownership before issuing fresh resume. No product-runtime change
 or new matched game build is claimed by this tool increment.
+
+The first authorized hosted attempt stopped before gameplay because the test's
+request guard omitted the accepted-challenge lookup needed to reject an uninvited
+child. Its cleanup fully passed. The corrected guard permits only a GET of
+accepted challenge IDs for that exact temporary child and session; missing or
+different session/child/status/selection filters and writes are rejected. The
+second attempt passes private-room denial, actual teacher/player admission,
+empty-inventory natural mining/pickup, committed save plus independent graph
+download, restart under owner epoch 2, identical earned bag/revision, historical
+pause receipt supersession and live profile revocation. It has no service errors.
+Both attempts' cleanup removes only their marked resources and confirms absence.
+
+This passes the exact socket/real-provider scenario. It does not prove a successful
+child recess session, actual React/catalog-shell journey against hosted services,
+SFU/WebRTC, abrupt process crash/provider outage, physical PCs or deployment.
 
 Local logs: `/tmp/voxel-hosted-service-tests.log`,
 `/tmp/voxel-hosted-school-types.log`, `/tmp/voxel-hosted-cleanup-tests.log` and

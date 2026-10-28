@@ -2,8 +2,9 @@
 
 This checkpoint contains the replacement game, school adapters, React HUD,
 independent classroom service, eight voxel migrations, CI and local dev tooling.
-It is ready for local testing and staging preparation. It is not a claim that
-hosted gameplay, actual SFU media or deployment has been qualified.
+It is ready for local testing and staging preparation. The scoped hosted
+socket/Auth/checkpoint/restart scenario now passes. Actual browser/SFU media
+and deployment still need qualification.
 
 ## Test locally
 
@@ -91,6 +92,12 @@ voxel service tests, 168 web tests, strict types, web production build, trusted
 desktop survival input, and actual React/local SQL school workflows. Three dev
 tests cover graceful shutdown, typed workers and HTTP/binary WebSocket routing.
 Hosted read-only startup checks all eight schemas and allocates zero rooms.
+The [approved hosted journey](../apps/voxel-server/docs/hosted-school-journey.md)
+also passes private-room denial, teacher/player natural mining/pickup, actual
+Storage checkpoint download, fresh service recovery with identical ownership,
+historical receipt supersession and live profile revocation. Its marked users,
+session, metadata and five Storage objects are confirmed removed. This is a
+socket scenario, not actual hosted browser/SFU or physical-PC qualification.
 Detailed limitations and historical build identities are in the
 [progress record](voxel-runtime-rewrite-progress.md) and immutable evidence
 archives; older archives do not qualify the current source automatically.
@@ -119,8 +126,7 @@ assets are recoverable from Git history. Do not send new-format saves to the
 old service or overwrite checkpoints while reverting application versions.
 
 This checkpoint does not apply SQL, change provider settings, start a normal
-hosted-backed stack, push Git commits or deploy. The prepared automated hosted
-journey creates temporary Auth users and school records; that exact mutation
-still requires the user's explicit authorization after automatic approval
-review rejected the earlier request. Manual tests with the user's own accounts
-can proceed through the local/staging app.
+hosted-backed stack, push Git commits or deploy. The user explicitly authorized
+the scoped hosted journey after the earlier automatic approval rejection; it
+has now completed and cleaned up. Manual tests with the user's own accounts can
+proceed through the local/staging app.
