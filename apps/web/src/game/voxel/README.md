@@ -7,10 +7,10 @@ renderer modules and simulation/server modules in either browser bundle graph.
 Classroom HTTP/RTC now has its own `apps/classroom-server` workspace and deployment configuration.
 
 Set `VITE_VOXEL_RUNTIME_SERVER_URL` to the rewritten service's HTTPS origin.
-Development defaults to `http://localhost:3001`; production requires configuration.
+Development defaults to the browser origin through Vite's voxel proxies;
+production requires configuration. See [local development](../../../../../docs/local-development.md).
 `VITE_CLASSROOM_SERVER_URL` selects the independent classroom/RTC service.
-The legacy `VITE_VOXEL_SERVER_URL` remains only for code awaiting voxel retirement;
-it is not a fallback for classrooms or the rewritten runtime.
+The legacy `VITE_VOXEL_SERVER_URL` has no active consumer and is not a fallback.
 
 The container obtains a fresh Playground session token for each API request,
 checks its user ID and sends it only in the Authorization header. The trusted
@@ -29,7 +29,8 @@ The fullscreen root also owns the Hebrew inventory dialog. Exit releases owned
 pointer/fullscreen state and disposes GPU, worker, audio and DOM resources.
 
 The Hebrew RTL HUD includes an owned hotbar, inventory/crafting/equipment/chests,
-health/food/air, mining feedback, death/respawn, explicit input resume and a hidden
+health/food/air, mining feedback, confirmed incoming/outgoing combat-hit notices,
+death/respawn, explicit input resume and a hidden
 staff-observer state. Touch-player vitals sit below the measured header. Staff
 participation changes require fresh admission. Pause/end confirmation displays
 saved only after a committed server receipt; an unconfirmed request retains the
@@ -67,10 +68,13 @@ Banned entry is denied; removal/unban require explicit fresh admission. The
 three-context browser flow preserves a nonempty owned bag through those entries.
 [Persisted chat](../../../../voxel-server/docs/chat.md) now has owned Hebrew UI,
 strict history/receipts, explicit lost-response retry and staff delete/clear. Its
-seventh migration is locally qualified, installed and read-only verified. Remaining
-LiveKit proximity/enforced mute policy, hosted classroom
-qualification, hosted recovery and hardware/network/
-capacity qualification and cutover/removal remain part of the full rewrite.
+seventh migration is locally qualified, installed and read-only verified.
+Proximity audio, output selection, microphone controls and enforced mute policy
+are implemented independently of rendering; actual hosted SFU/browser composition
+remains open. The approved hosted socket/Auth/Storage restart journey now passes
+with complete cleanup; see [hosted qualification](../../../../voxel-server/docs/hosted-school-journey.md).
+Hosted classroom/browser, actual school-PC/network qualification, balance/product
+acceptance and operational cutover remain open. Legacy voxel code is retired.
 There are no player, observer, object or room-count admission caps.
 
 Mode changes keep existing deaths until ordinary respawn, including after reconnect.

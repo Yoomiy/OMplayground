@@ -1916,6 +1916,31 @@ socket/restart scenario, not abrupt process crash/provider outage, successful
 child recess admission, hosted React/catalog journey, SFU/WebRTC, actual school
 PCs or deployment. Those checks and product acceptance remain open.
 
+## 2026-10-28 — React combat notice and current gameplay notes
+
+The runtime's confirmed hit event was shown by the prototype but omitted from
+the school React HUD. Participant HUDs now display a brief Hebrew incoming or
+outgoing damage notice. It uses only the existing authoritative `hud.hit` value
+and existing HUD update clock, adds no gameplay action/timer/listener, and is
+hidden for observers, terminal sessions and non-playing/non-dead states. The
+1500 ms freshness window is evaluated on HUD renders, including the existing
+one-second presence clock. It does not change health, damage, combat or replay.
+
+The content survey now derives spawn clamping and its sample grid from the shared
+world bounds instead of fixed 512-world constants. Its default sample remains
+exactly 332 columns across three seeds, with identical columns/resource counts
+and no missing progression resources. This remains presence evidence, not
+extended natural progression or final balance.
+
+All 168 web tests, strict web/game tool types and the production web build pass;
+the browser boundary still reports 46 game modules and zero forbidden imports.
+No new actual-browser combat scenario or physical-device result is claimed by
+these checks. The game release remains `c293fe5e2511`. Current survival/equipment/
+progression/app documentation now distinguishes completed checkpoint, HUD,
+teacher and classroom work from remaining hosted browser/SFU/classroom, actual
+PC/network, balance/product and cutover qualification. Historical archives stay
+unchanged. No additional hosted mutation, push or deployment is performed.
+
 ## 2026-10-28 — Configurable world profile and single-port local development
 
 The [shared world profile](../games/voxel/docs/world-profile.md) now controls

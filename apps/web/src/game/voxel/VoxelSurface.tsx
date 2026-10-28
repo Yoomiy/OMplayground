@@ -718,6 +718,20 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
           +
         </span>
       )}
+      {hud?.hit &&
+        hud.role === "participant" &&
+        !terminal &&
+        (hud.status === "playing" || hud.status === "dead") &&
+        performance.now() - hud.hit.at < 1500 && (
+          <output
+            key={hud.hit.at}
+            className={`voxel-session__hit${hud.hit.received ? " voxel-session__hit--received" : ""}`}
+            role="status"
+            aria-live="polite"
+          >
+            {hud.hit.received ? "נפגעתם" : "פגיעה"} · {hud.hit.damage} נקודות
+          </output>
+        )}
       <div className="voxel-session__notices">
         {control && (
           <aside

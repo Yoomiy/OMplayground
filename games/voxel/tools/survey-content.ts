@@ -36,8 +36,8 @@ for (const seed of [4242, 42, 20261024]) {
     start = performance.now();
   try {
     const spawn = Array.from(generator.find_spawn()),
-      cx = Math.floor(Math.max(-224, Math.min(224, spawn[0])) / 16),
-      cz = Math.floor(Math.max(-224, Math.min(224, spawn[2])) / 16),
+      cx = Math.floor(Math.max(BOUNDS.minX + 32, Math.min(BOUNDS.maxX - 32, spawn[0])) / 16),
+      cz = Math.floor(Math.max(BOUNDS.minZ + 32, Math.min(BOUNDS.maxZ - 32, spawn[2])) / 16),
       columns = new Map<string, readonly [number, number]>(),
       counts = new Map<string, number>();
     const add = (x: number, z: number) => {
@@ -49,7 +49,9 @@ for (const seed of [4242, 42, 20261024]) {
       )
         columns.set(`${x},${z}`, [x, z]);
     };
-    for (let x = -16; x < 16; x += 4) for (let z = -16; z < 16; z += 4) add(x, z);
+    const step = Math.max(1, Math.floor((BOUNDS.maxX - BOUNDS.minX) / 16 / 8));
+    for (let x = BOUNDS.minX / 16; x < BOUNDS.maxX / 16; x += step)
+      for (let z = BOUNDS.minZ / 16; z < BOUNDS.maxZ / 16; z += step) add(x, z);
     for (let x = cx - 3; x <= cx + 3; x++) for (let z = cz - 3; z <= cz + 3; z++) add(x, z);
     for (const [x, z] of columns.values()) {
       const data = generator.generate(x, z),

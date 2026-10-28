@@ -273,6 +273,27 @@
   font-size: 12px;
 }
 
+.voxel-session__hit {
+  position: absolute;
+  z-index: 3;
+  top: 56%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 5px 10px;
+  border: 1px solid #c3dac8;
+  border-radius: 8px;
+  color: #f4fff4;
+  background: #17342ce8;
+  font-size: 14px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.voxel-session__hit--received {
+  color: #fff0e6;
+  border-color: #ebaf97;
+  background: #542c22eb;
+}
+
 .voxel-session__bottom[hidden] {
   display: none;
 }

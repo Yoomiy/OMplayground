@@ -78,8 +78,8 @@ The roll is a deterministic function of room seed, cell and full committed
 column revision. It uses no client randomness or transient global counter.
 Guaranteed drops remain separate. Mining awards only after a committed world
 edit; explosions use each committed affected column's revision. Failed/replayed
-mutations cannot award another roll. Durable preservation of those inputs is
-still part of checkpoint integration.
+mutations cannot award another roll. Checkpoints preserve the seed and committed
+column revisions used by these rolls, alongside inventories and simulation time.
 
 Bread restores five food; cookies two; melon two; carrots three; golden carrots
 eight; potatoes one; baked potatoes five; cake ten. Apples retain four. Food
@@ -167,7 +167,10 @@ The complete natural bucket route also passes on this rebuilt release. These
 checks establish software-rendered presentation at the measured sizes; physical
 device ergonomics and performance remain open.
 
-Final resource/yield tuning, natural extended progression across seeds,
-durable inventory/timer/revision recovery, school integration, hardware/input/
-latency/load qualification and cutover remain required. No player, observer or
-room-count admission limits are introduced.
+Durable inventory/timer/revision recovery and school integration are implemented
+and locally exercised; the approved hosted socket/Auth/Storage restart journey
+also passes. Final resource/yield tuning and extended natural progression across
+seeds, actual hosted browser/SFU/classroom composition, physical school-PC/network
+qualification, product acceptance and cutover remain open. No large synthetic
+load or mobile/tablet gate is added. No player, observer or room-count admission
+limits are introduced.

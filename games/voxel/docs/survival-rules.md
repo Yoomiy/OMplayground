@@ -13,8 +13,9 @@ Pausing the room freezes hunger, healing, air, damage, food cooldown, mining,
 drop expiry and respawn wait. Opening an individual inventory freezes its body
 and input while room time and its vitals keep running. Environmental queries
 read authoritative blocks even when the body's native movement flags are frozen.
-Disconnected actors' vitals freeze until reconnect; offline-time simulation and
-durable serialization remain part of the checkpoint/lifecycle work.
+Disconnected actors' vitals freeze until reconnect. Checkpoints persist vitals,
+timer phases, equipment, inventories and room time; saved pauses freeze them
+through restart. See [checkpoint state](checkpoint-state.md).
 
 | Rule | Current value |
 | --- | --- |
@@ -75,31 +76,33 @@ After two simulation seconds the player can request respawn. The server resets
 vitals and movement state, starts a new epoch at the room's spawn area and finds
 a supported collision-safe position. Movement remains frozen until the normal
 server/client collision readiness exchange completes. Replayed or old-epoch
-respawn commands cannot repeat the transition. The Hebrew prototype displays
-health, food, low air, eating and respawn controls. Final damage feedback,
-death presentation and the React session/HUD remain pending.
+respawn commands cannot repeat the transition. The Hebrew React HUD displays
+health, food, low air, eating, death/respawn and confirmed incoming/outgoing hit
+feedback. The notice uses the existing HUD clock and never changes health or
+replays a hit. Current PC input and local SQL/React checks are recorded in the
+[progress record](../../../docs/voxel-runtime-rewrite-progress.md).
 
 TNT now follows the [explosive rules](explosive-rules.md), including owned
 crafting/ignition, room-time fuses/chains, native shape/material shielding,
 atomic terrain/container/drop outcomes and capability-checked blast damage.
-Final content balance/natural progression, durable vitals/timers,
-school/Supabase/LiveKit integration, teacher lifecycle controls, classroom service
-separation, hardware/load qualification and cutover are still required by the
-full rewrite proposal.
+Durable vitals/timers, teacher lifecycle controls, school adapters and the
+classroom service split are implemented and locally qualified. The approved
+hosted Auth/mining/checkpoint/restart socket journey passes. Final balance and
+extended natural progression, hosted browser/SFU/classroom composition, physical
+school-PC qualification, product acceptance and cutover remain open. Large
+synthetic scale and mobile/tablet qualification are not release gates.
 
 ## Equipment capability tracking
 
-The representative boots and shield do not complete the equipment requirement.
-The legacy authored item definitions expose these intended capabilities. This
-table tracks implemented rules and remaining content, authority, prediction,
-presentation and obtainability work. Old constants/slots/assets are not compatibility
-requirements. This table prevents the representative modifier implementation
-from silently narrowing the full rewrite's equipment scope.
+The authored equipment now covers all five intended special capabilities plus
+trail boots, heavy shield and a body-slot vest. The table records current rules
+and their evidence; final balance and actual school-device review remain open.
+Old constants, slots and assets are not compatibility requirements.
 
 | Legacy capability | Current implementation and remaining evidence |
 | --- | --- |
 | Swift pickaxe movement bonus while held | Owned selected-tool activation, speed ×1.5, normal mining/weapon wear and prediction epochs implemented; natural route verified in the equipment milestone |
-| Heavy shield protection with movement cost | Implemented as a craftable durable offhand shield with 50% melee reduction and a 0.8 movement multiplier; complete equipment models/content balance remain pending |
+| Heavy shield protection with movement cost | Craftable durable offhand shield with 50% melee reduction and a 0.8 movement multiplier; owned and remote rendered equipment checks pass; balance review remains open |
 | Feather falling talisman | Explicit owned fall immunity and prevented-impact wear implemented; real-Wasm final-use/second-fall checks pass |
 | Helios medallion | Room-time sunlight healing, glass/solid/night occlusion, owned heal wear and pause checks implemented |
 | Helium boots | Shared native jump strength, accepted-takeoff wear, swimming rejection and prediction/replay implemented; natural touch route verified in the equipment milestone |
@@ -109,5 +112,6 @@ The current heavy shield exercises bounded armor data, accepted-hit wear and
 movement updates through the new authoritative combat path. The complete legacy block/item/recipe decisions are now recorded in
 `content/disposition.json`; release balance remains open.
 See [equipment-rules.md](equipment-rules.md) for the new contracts, fictional
-natural recipes and current tuning. Complete matched browser evidence and
-remote equipment presentation remain part of the ongoing rewrite.
+natural recipes and current tuning. Current trusted PC input exercises owned
+and remote equipment presentation; software Chromium is functional evidence,
+not a physical school-PC frame-rate verdict.

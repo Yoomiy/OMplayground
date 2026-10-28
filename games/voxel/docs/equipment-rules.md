@@ -49,7 +49,8 @@ Glow changes the owning viewer's terrain-light floor and nearby item/avatar
 presentation. It retains terrain AO/depth cues, the real sky/day/night clock and
 fog. It changes no native block light, emission, mesh journal or shared terrain.
 Its private owned inventory view controls activation and expiration. Timers and
-ownership survive room-local reconnect; durable checkpoints remain pending.
+ownership survive room-local reconnect and coherent durable checkpoint restore;
+saved pause preserves timer phases. Checkpoint/native tests cover these rules.
 
 All five new items have 3×3 recipes from obtainable natural resources. Swift
 uses three stone, two sticks and two charcoal. Feather uses four leaves and an
@@ -70,4 +71,9 @@ touch jump uses the authoritative profile and consumes one boot use; real
 framebuffer samples show Glow brightening the same night viewpoint without
 changing world light. The full check and all eleven browser commands pass for
 the matched release in [equipment evidence](../evidence/equipment/README.md).
-Hardware performance, final balance/content and platform integration remain open.
+All 197 legacy content declarations now have explicit dispositions. School/HUD
+adapters, checkpoints, teacher lifecycle and the classroom split are implemented
+and locally exercised; the approved hosted socket save/restart journey passes.
+Physical school-PC performance, final balance/product acceptance, actual hosted
+browser/SFU/classroom composition and deployment remain open. Historical evidence
+above retains its original build and input scope.
