@@ -46,7 +46,7 @@ async function run(args) {
 async function main() {
   if (process.versions.node !== '24.21.0') throw new Error('Use Node 24.21.0 for app development');
   for (const kind of Object.keys(services)) await run(serviceArguments(kind, { check: true }));
-  await run([fileURLToPath(new URL('../games/voxel/tools/verify-release.mjs', import.meta.url))]);
+  await run(['--import=tsx', fileURLToPath(new URL('../games/voxel/tools/verify-release.mjs', import.meta.url))]);
   for (const port of [5173, ...Object.values(services).map(service => service.port)]) {
     await new Promise((resolve, reject) => {
       const probe = createServer();

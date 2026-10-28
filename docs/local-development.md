@@ -23,6 +23,11 @@ creates the ignored Wasm/client/server outputs. This startup path needs no Rust
 toolchain. It refuses a source mismatch; game edits need the full rebuild
 described below.
 
+If `node -p 'process.features.typescript'` reports `false`, release restoration
+uses the root project's existing `tsx` loader. Install root development
+dependencies with `npm ci` before restoring. The dev launchers also load `tsx`
+explicitly for service configuration and release verification.
+
 ## Start the app
 
 Run the full app with Node 24.21.0:

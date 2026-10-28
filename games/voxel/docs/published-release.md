@@ -10,6 +10,11 @@ upstream engine code, compile Rust, copy credentials or contact providers.
 This makes fresh Vercel/Railway builds work without depending on ignored files
 that happened to exist in the developer's checkout.
 
+When native TypeScript support is disabled or unavailable in Node, the verifier
+uses the existing root `tsx` development dependency. Run `npm ci` at the repository
+root first for that case. Ordinary Node builds with native type stripping can
+still restore a clean source tree without npm dependencies in that tree.
+
 Before overwriting generated directories, restoration checks the current game,
 content, configuration, engine source/toolchain and compiler-input hashes, every
 payload checksum and every destination path. Source edits require a new release;
@@ -36,6 +41,8 @@ source-based image intentionally require the published release to match.
 outputs or npm dependencies restores and fully verifies the release. It also
 rejects source changes, payload corruption and traversal paths before replacing
 existing generated output. CI runs this alongside the existing core checks.
+It also exercises restoration with native type stripping disabled, using the
+installed project loader without installing dependencies in the temporary tree.
 
 The root `build:staging:web` command installs game build dependencies with
 install scripts disabled, restores this snapshot and builds the app. The voxel

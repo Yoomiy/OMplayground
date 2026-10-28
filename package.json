@@ -32,7 +32,7 @@
     "dev:classroom": "node scripts/dev-service-start.mjs classroom",
     "predev:app": "npm run build --workspace @playground/game-logic && npm run build --workspace @playground/observability",
     "dev:app": "node scripts/dev-app.mjs",
-    "predev:voxel-server": "npm run build --workspace @playground/game-logic && npm run build --workspace @playground/observability && npm --prefix games/voxel run verify:release",
+    "predev:voxel-server": "npm run build --workspace @playground/game-logic && npm run build --workspace @playground/observability && node --import=tsx games/voxel/tools/verify-release.mjs",
     "dev:voxel-server": "node scripts/dev-service-start.mjs voxel",
     "predev:classroom": "npm run build --workspace @playground/observability",
     "test:dev": "node --test scripts/dev-app.test.mjs scripts/dev-proxy.test.mjs",

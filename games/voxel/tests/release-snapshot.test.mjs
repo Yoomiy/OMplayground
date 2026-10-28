@@ -13,6 +13,7 @@ import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { restoreRelease } from '../tools/release-snapshot.mjs';
+import { execFileSync } from 'node:child_process';
 const game = new URL('../', import.meta.url);
 function fixture() {
   const dir = mkdtempSync(join(tmpdir(), 'voxel-published-release-')),
@@ -69,5 +70,28 @@ test('source, payload corruption and destination traversal fail before overwriti
     } finally {
       rmSync(f.dir, { recursive: true, force: true });
     }
+  }
+});
+
+test('a Node process without native TypeScript restores a clean checkout through the project tsx loader', () => {
+  const f = fixture();
+  try {
+    const module = new URL('../tools/release-snapshot.mjs', import.meta.url).href;
+    const script = `import { restoreRelease } from ${JSON.stringify(module)};
+      if (process.features.typescript !== false) throw Error('TypeScript must be disabled in this regression');
+      restoreRelease(new URL(${JSON.stringify(f.root.href)}));`;
+    execFileSync(process.execPath, ['--no-strip-types', '--input-type=module', '--eval', script], {
+      env: { ...process.env, NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ''} --no-strip-types` },
+      stdio: 'pipe',
+      encoding: 'utf8',
+    });
+    assert(!existsSync(new URL('node_modules/', f.root)));
+    const proof = JSON.parse(
+      readFileSync(new URL('test-results/release-verification.json', f.root), 'utf8'),
+    );
+    assert.equal(proof.result, 'PASS');
+    assert.equal(proof.matchedReleaseFiles, 12);
+  } finally {
+    rmSync(f.dir, { recursive: true, force: true });
   }
 });
