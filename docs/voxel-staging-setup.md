@@ -13,7 +13,10 @@ Use repository root `/`, branch `dev/staging`, and Dockerfile path
 Wasm release, builds shared packages and installs production runtime dependencies;
 no Rust installation or prebuilt local directory is required on Railway.
 
-Use `/ready` for the healthcheck and a termination grace of at least 60 seconds.
+Use `/ready` for the healthcheck. Set
+`RAILWAY_DEPLOYMENT_DRAINING_SECONDS=90` to allow the service's 60-second graceful
+shutdown to finish before Railway sends SIGKILL. Leave any custom start command
+empty so the image's Node command runs.
 The image starts Node directly, listens on `0.0.0.0`, and defaults to port 3001;
 an injected `PORT` is honored. Generate a public HTTPS domain, then set:
 
@@ -26,6 +29,22 @@ an injected `PORT` is honored. Generate a public HTTPS domain, then set:
 | `LIVEKIT_URL` | Staging's selected `wss://…` endpoint |
 | `LIVEKIT_API_KEY` | Matching server API key |
 | `LIVEKIT_API_SECRET` | Matching server API secret |
+
+Referencing a shared `CORS_ORIGIN` from `VOXEL_ALLOWED_ORIGINS` works when its
+resolved value includes the actual staging web origin. Multiple entries are
+comma-separated exact HTTPS origins, without paths, trailing slashes, wildcards
+or localhost entries in production.
+
+Use these watch paths so changes to shared runtime dependencies also deploy:
+
+```text
+/apps/voxel-server/**
+/games/voxel/**
+/packages/game-logic/**
+/packages/observability/**
+/package.json
+/package-lock.json
+```
 
 The selected Supabase project needs all eight voxel migrations
 `20261025010000`–`20261025080000`. Startup fails before listening if a schema or
