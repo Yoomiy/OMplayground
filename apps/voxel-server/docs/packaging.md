@@ -59,17 +59,9 @@ release. Historical evidence, local outputs, dependencies and credential files
 are not build inputs. Provider credentials are
 supplied by the target's runtime environment, never build arguments.
 
-On managed build hosts with a session CA, preserve the configured proxy and pass
-the CA as a BuildKit secret:
-
-```sh
-docker build --secret id=proxy_ca,src="$CODEX_PROXY_CERT" \
-  -f apps/voxel-server/Dockerfile -t playground-voxel .
-```
-
-The CA mount is optional on ordinary build hosts and is never copied into the
-image. TLS verification stays enabled. Runtime proxy trust, if required by that
-host, must likewise use its supported CA mount/configuration.
+Dependency installation uses plain `RUN` instructions with TLS verification
+enabled. The hosted Dockerfile has no BuildKit secret mounts: Railway's builder
+rejects those instructions even when the secret is optional.
 
 The image smoke test runs a read-only container, a small temporary `/tmp`, local
 HTTP schema fixtures and synthetic credentials. It checks production startup,
