@@ -61,7 +61,7 @@ These are recommendations for the rewrite, not claims that the implementation al
 
 **Device clarification — 2026-10-28: students mostly use PCs.** Desktop keyboard/mouse input and school PC browsers are the release focus. Mobile/tablet compatibility and performance are optional; do not add work or block release for that matrix. Retain existing touch behavior where practical.
 
-The world size and launch device floor remain proposed product defaults to ratify before release. Expected participation and simultaneous sessions are workload inputs for testing and infrastructure planning, not limits on allowed users or rooms.
+**Launch direction — 2026-10-28:** The user asked to proceed toward launch with the current candidate, rather than extend product qualification. It uses a 512×512 world, visual/audio weather and a healthy-service checkpoint recovery target of at most 30 seconds of unsaved progress. Continue manual staging validation with these defaults; do not introduce another product-ratification questionnaire. Expected participation and simultaneous sessions are workload inputs, not limits on allowed users or rooms.
 
 ### Alternatives considered
 
