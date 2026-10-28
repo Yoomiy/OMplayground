@@ -3,8 +3,9 @@
 `SchoolAccess` reads current Supabase identity, profile, session, invitation and
 recess policy. `schoolAdmission` adapts it to the runtime gateway. This implements
 the authorization boundary. The production entry, React session/HUD and fenced
-lifecycle projection are implemented. Removal/ban/unban endpoints are implemented; rewritten media endpoints remain
-unfinished. Deployment and full hosted school qualification remain open.
+lifecycle projection are implemented, along with removal/ban/unban, persisted
+chat and rewritten media endpoints. Deployment and full hosted school
+qualification remain open.
 
 The HTTP request contains a session UUID, optional invitation code and optional
 player/observer choice. The bearer JWT is verified with Supabase Auth before its
@@ -17,8 +18,12 @@ Children enter their session's partition during effective recess. Schedule
 interpretation uses the platform's shared Jerusalem-time helper, including class
 overrides and half-open closing boundaries. Corrupt or unavailable policy fails
 closed. Closed sessions require a current roster/host, accepted invitation code
-or accepted challenge. Paused sessions admit existing members and staff
-inspection; new players cannot bypass the paused roster with an invitation.
+or accepted challenge. A deliberate pause admits existing members and staff
+inspection; new players cannot bypass it with an invitation. When public presence
+displays paused during empty-room recovery or startup, admission reads the
+service-only `voxel_session_policy` RPC. Playing intent permits normal new
+admission; paused or ended intent and unavailable or malformed replies cannot
+open the room. Membership acceptance rechecks pause intent inside its SQL locks.
 Completed or unrelated game sessions are denied.
 
 Teachers and administrators default to hidden observation across partitions.

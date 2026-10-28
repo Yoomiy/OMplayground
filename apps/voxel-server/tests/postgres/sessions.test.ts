@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import { setTimeout as delay } from "node:timers/promises";
 import { PostgresTestDatabase, literal } from "../helpers/postgres.ts";
 import { supabaseWire } from "../helpers/supabase-wire.ts";
+import { schoolSqlFixture } from "../helpers/school-sql-fixture.ts";
 import {
   createSupabaseServerClient,
   SupabasePersistence,
@@ -55,6 +56,28 @@ const project = (lease: RoomLease, seq: number, state: string, ids: string[]) =>
     p_state: state,
     p_participants: ids,
   });
+
+test("fresh school admission distinguishes an empty presence projection from deliberate SQL pause intent", async () => {
+  const f = fixture(),
+    school = schoolSqlFixture(db, f.room, [f.host, f.guest, f.teacher]);
+  assert.equal(project(f.lease, 1, "paused", []), true);
+  assert.equal(view(f.room).status, "paused");
+  assert.equal(
+    (await school.access.authorize(school.token(f.guest), { room: f.room }))
+      .actor.id,
+    f.guest,
+  );
+  assert(school.calls.includes("voxel_session_policy"));
+  db.exec(
+    `UPDATE public.voxel_session_controls SET desired_state='paused' WHERE session_id=${literal(f.room)}`,
+  );
+  await assert.rejects(
+    school.access.authorize(school.token(f.guest), { room: f.room }),
+    { code: "PAUSED_ROSTER" },
+  );
+  await school.access.authorize(school.token(f.host), { room: f.room });
+  await school.access.authorize(school.token(f.teacher), { room: f.room });
+});
 
 test("SDK projection persists accepted membership and derives aligned presence/names and host reassignment without exposing staff", async () => {
   const f = fixture(),
@@ -332,9 +355,11 @@ test(
                   aud: "authenticated",
                   role: "authenticated",
                 };
-              } else if (path === "voxel_actor_policy") {
+              } else if (
+                ["voxel_actor_policy", "voxel_session_policy"].includes(path!)
+              ) {
                 data = db.rpc(
-                  path,
+                  path!,
                   (await request.json()) as Record<string, unknown>,
                 );
               } else if (path === "game_sessions") {
@@ -398,11 +423,11 @@ test(
         },
         body: JSON.stringify({ room: f.room }),
       });
-      assert.equal(response.status, 200);
       const ticket = (await response.json()) as {
         ticket: string;
         buildId: string;
       };
+      assert.equal(response.status, 200, JSON.stringify(ticket));
       const p = new SocketProbe(
         origin.replace(/^http/, "ws") + "/voxel",
         content.blocks.length,

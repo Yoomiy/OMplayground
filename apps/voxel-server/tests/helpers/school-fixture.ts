@@ -55,6 +55,7 @@ export function schoolFixture() {
     setting: null as { override_enabled: boolean } | null,
     exceptions: [] as Record<string, unknown>[],
     accepted: false,
+    sessionPolicy: undefined as unknown,
     policies: new Map<
       string,
       { revision: number; acceptedRevision: number; banned: boolean }
@@ -110,6 +111,16 @@ export function schoolFixture() {
         });
       }
       assert.equal(request.headers.has("Authorization"), false);
+      if (path === "voxel_session_policy") {
+        assert.deepEqual(await request.json(), { p_session: room });
+        return response(
+          state.sessionPolicy === undefined
+            ? {
+                state: state.session.status === "paused" ? "paused" : "playing",
+              }
+            : state.sessionPolicy,
+        );
+      }
       if (path === "voxel_actor_policy") {
         const body = (await request.json()) as {
           p_session: string;

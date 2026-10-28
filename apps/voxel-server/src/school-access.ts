@@ -466,8 +466,20 @@ export class SchoolAccess {
     const member =
       session.view.hostId === subject.id ||
       session.view.playerIds.includes(subject.id);
-    if (!observing && session.view.status === "paused" && !member)
-      deny("PAUSED_ROSTER");
+    if (!observing && session.view.status === "paused" && !member) {
+      // Public presence is also paused while an empty/recovering worker starts.
+      // Only a deliberate pause restricts admission to the existing roster.
+      const policy = await this.row(
+        this.client.rpc("voxel_session_policy", { p_session: request.room }),
+      );
+      if (
+        !record(policy) ||
+        !["playing", "paused", "ended"].includes(policy.state as string)
+      )
+        throw new SchoolUnavailable();
+      if (policy.state === "ended") deny("SESSION_ENDED");
+      if (policy.state === "paused") deny("PAUSED_ROSTER");
+    }
     if (
       !observing &&
       !session.view.isOpen &&
