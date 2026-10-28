@@ -20,6 +20,8 @@ import type { ChunkFrame } from '../../src/shared/chunk-wire.ts';
 import type { ContentManifest } from '../../src/shared/content.ts';
 import type { InventoryCommand, InventoryView } from '../../src/shared/inventory.ts';
 import { NEUTRAL } from '../../src/shared/input.ts';
+import { stepBoundedMovement } from '../../src/shared/movement.ts';
+import type { MovementModifiers } from '../../src/shared/movement.ts';
 import { DAY_TICKS, ENVIRONMENT_VERSION, sampleEnvironment } from '../../src/shared/environment.ts';
 import { initSync, set_content, VoxelWorld, TerrainGen } from '../../engine/pkg/voxel_engine.js';
 const build = JSON.parse(
@@ -971,6 +973,21 @@ test(
       await new Promise((resolve) => setTimeout(resolve, 1500));
       clearInterval(timer);
       timer = undefined;
+      const snapshots = (probe: Probe) =>
+        new Map(
+          probe.events
+            .filter(
+              (e): e is Extract<ServerMessage, { type: 'snapshot' }> =>
+                'type' in e && e.type === 'snapshot' && !!e.self,
+            )
+            .map((e) => [e.tick, e.self!.state]),
+        );
+      const lastCommon = (a: Map<number, readonly number[]>, b: Map<number, readonly number[]>) =>
+        Math.max(...[...a.keys()].filter((tick) => b.has(tick)));
+      const normalBefore = snapshots(normal.probe),
+        burstBefore = snapshots(burst.probe),
+        startTick = lastCommon(normalBefore, burstBefore);
+      assert.ok(Number.isSafeInteger(startTick));
       normal.probe.send({ type: 'input', frames: [input(normalStart.epoch, ++normalSequence)] });
       for (let i = 0; i < 15; i++)
         burst.probe.send({
@@ -990,30 +1007,52 @@ test(
       await new Promise((resolve) => setTimeout(resolve, 1100));
       clearInterval(timer);
       timer = undefined;
-      // Receipt order can differ by a snapshot interval. Compare earned time in
-      // the same authoritative room tick instead of unrelated "latest" receipts.
-      const snapshots = (probe: Probe) =>
-        new Map(
-          probe.events
-            .filter(
-              (e): e is Extract<ServerMessage, { type: 'snapshot' }> =>
-                'type' in e && e.type === 'snapshot' && !!e.self,
-            )
-            .map((e) => [e.tick, e.self!.state]),
-        );
+      // Both clients are bounded by the same earned room time. A normally paced
+      // sender can miss timer callbacks under CI load, so it is not a speed oracle.
       const normalSnapshots = snapshots(normal.probe),
         burstSnapshots = snapshots(burst.probe);
-      const commonTick = Math.max(
-        ...[...normalSnapshots.keys()].filter((tick) => burstSnapshots.has(tick)),
-      );
+      const commonTick = lastCommon(normalSnapshots, burstSnapshots);
       assert.ok(Number.isSafeInteger(commonTick));
-      const normalDistance = normalSnapshots.get(commonTick)![0] - normalStart.state[0],
-        burstDistance = burstSnapshots.get(commonTick)![0] - burstStart.state[0];
+      assert.ok(commonTick > startTick);
+      const maximumDistance = (start: readonly number[], movement: MovementModifiers) => {
+        const reference = new VoxelWorld(),
+          empty = new TerrainGen(4242),
+          loaded = new Set<string>();
+        try {
+          empty.set_void();
+          const slot = reference.player_add(start[0], start[1], start[2]);
+          reference.player_restore(slot, new Float64Array(start));
+          assert.equal(start[10], 1, 'reference begins in authorized flight');
+          for (let step = 0; step < (commonTick - startTick) * 2; step++) {
+            const body = reference.player_state(slot);
+            for (const column of around(Math.floor(body[0] / 16), Math.floor(body[2] / 16), 1)) {
+              const key = `${column.x},${column.z}`;
+              if (!loaded.has(key)) {
+                reference.insert_column(column.x, column.z, empty.generate(column.x, column.z));
+                loaded.add(key);
+              }
+            }
+            stepBoundedMovement(reference, slot, { ...NEUTRAL, x: 1 }, movement);
+          }
+          return reference.player_state(slot)[0] - start[0];
+        } finally {
+          reference.free();
+          empty.free();
+        }
+      };
+      const normalDistance = normalSnapshots.get(commonTick)![0] - normalBefore.get(startTick)![0],
+        burstDistance = burstSnapshots.get(commonTick)![0] - burstBefore.get(startTick)![0];
       assert.ok(normalDistance > 5);
-      assert.ok(
-        burstDistance <= normalDistance + 0.45,
-        `tick ${commonTick}: burst ${burstDistance} vs normal ${normalDistance}`,
-      );
+      for (const [name, distance, state, movement] of [
+        ['normal', normalDistance, normalBefore.get(startTick)!, normalStart.movement],
+        ['burst', burstDistance, burstBefore.get(startTick)!, burstStart.movement],
+      ] as const) {
+        const maximum = maximumDistance(state, movement);
+        assert.ok(
+          distance <= maximum + 0.001,
+          `ticks ${startTick}–${commonTick}: ${name} moved ${distance}, native limit ${maximum}`,
+        );
+      }
       assert.ok(
         burst.probe.events.some(
           (e) => 'type' in e && e.type === 'baseline' && e.reason === 'resync',
