@@ -27,6 +27,9 @@ export class SocketProbe {
   wait<T extends ServerMessage | ChunkFrame>(
     predicate: (event: ServerMessage | ChunkFrame) => event is T,
   ): Promise<T> {
+    // Capture the caller before the timer runs so CI identifies the awaited
+    // handshake/action rather than reporting only the timer callback.
+    const timeout = new Error('socket event timeout');
     return new Promise((resolve, reject) => {
       const check = () => {
         const found = this.events.find(predicate);
@@ -38,7 +41,13 @@ export class SocketProbe {
       };
       const timer = setTimeout(() => {
         this.listeners.delete(check);
-        reject(new Error('socket event timeout'));
+        const recent = this.events.slice(-12).map((event) =>
+          'type' in event
+            ? event.type === 'error' ? `error:${event.code}` : event.type
+            : `chunk:${event.x},${event.z}`,
+        );
+        timeout.message += ` (state=${this.socket.readyState}; recent=${recent.join(',')})`;
+        reject(timeout);
       }, 10000);
       this.listeners.add(check);
       check();
