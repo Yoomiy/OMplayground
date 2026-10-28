@@ -1,0 +1,10 @@
+✔ a clean source checkout restores matching browser/server/Wasm artifacts without Rust or npm dependencies (415.001841ms)
+✔ source, payload corruption and destination traversal fail before overwriting generated output (229.288706ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 724.198931

@@ -1,0 +1,11 @@
+{
+  "result": "EXACT_HOSTED_MEDIA_CATALOG_PASS",
+  "checkedAt": "2026-10-26T20:00:27.024Z",
+  "migrationSha256": "d58069e7469913cc7402fb8366297f739b8fe3971f82db18fca5cd83c6ac457d",
+  "functions": 6,
+  "privateTables": 3,
+  "allEightMigrationsRecorded": true,
+  "gradeMigrationRecorded": true,
+  "sdkAndCliSameTarget": true,
+  "remoteApplicationWrites": false
+}

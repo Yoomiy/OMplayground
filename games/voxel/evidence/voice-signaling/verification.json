@@ -1,0 +1,142 @@
+{
+  "result": "ESCROW_REPLAY_MUTE_AND_INDEPENDENT_EXPIRY_PASS",
+  "capturedAt": "2026-10-26T19:02:21.542Z",
+  "scope": "Isolated transport only; no completed school voice or matched game release",
+  "provider": {
+    "version": "1.12.0",
+    "edition": 0,
+    "protocol": 17
+  },
+  "schoolDatabaseWrites": 0,
+  "cleaned": true,
+  "protocolTests": 7,
+  "serviceTypes": true,
+  "sources": [
+    {
+      "path": "apps/voxel-server/src/voice-signaling.ts",
+      "sha256": "713fdfba8de1df5a686e13f4c4acfd99fd73a370ea240899552a615978477345"
+    },
+    {
+      "path": "apps/voxel-server/src/voice-signal-worker.ts",
+      "sha256": "d36dd6ec26530ac9ea6c6c4c8af6fa576174b2cecc593fb38d2c546dfaa38b7c"
+    },
+    {
+      "path": "apps/voxel-server/src/voice-signal-protocol.ts",
+      "sha256": "aaad5e852fd3a46594a989eb71d137704028a691b13ff9ce33b75328d7bc6532"
+    },
+    {
+      "path": "apps/voxel-server/src/voice-signal-messages.ts",
+      "sha256": "f7415e8503ccc28a6b6f282596a97a282bf52eeb9e0d08e42995db8cd20815eb"
+    },
+    {
+      "path": "apps/voxel-server/tests/voice-signaling.test.ts",
+      "sha256": "109d48b116542572eaf5dd8c0df0884b41f4268631e86b5c1fe9a3573d9d80e4"
+    },
+    {
+      "path": "apps/voxel-server/tests/voice-signal-protocol.test.ts",
+      "sha256": "70219db61c5724e49090a6c60e5d2023a4b2703f005d987ec2b92ad5d28dacc0"
+    },
+    {
+      "path": "apps/web/tools/voxel-livekit-escrow.ts",
+      "sha256": "5ad2070fbe4b30d9841cb070f8e1414a2ea00ea3dc13b0b7a0c9f709420cd198"
+    },
+    {
+      "path": "apps/voxel-server/package.json",
+      "sha256": "8a1fc6374f8b4e760dc0efa646b95be465944d9f90567a8831219d97afb208bb"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "49e0cf581f853d02284c9a6d73033f9565231e53f221bfda42d8ef47b339599a"
+    },
+    {
+      "path": "attempt-1.json",
+      "sha256": "96e865e66d9c9cd05b744fc0a521a645b72e0a22bbad9b8588814bd863170e27"
+    },
+    {
+      "path": "attempt-1.log",
+      "sha256": "a8d1b5f8ce029eeae29a60a245115520527febb0a2e380ea37c9aa192d756205"
+    },
+    {
+      "path": "attempt-2.json",
+      "sha256": "dffb2cd07746a8ef6342db59df326072edd8411bc98b0e112983d32da5e508c2"
+    },
+    {
+      "path": "attempt-2.log",
+      "sha256": "7ebbb7c8554fd5a3efe121a65b0846f5790f01a38a3f4e77386f1fafea60fe48"
+    },
+    {
+      "path": "attempt-3.json",
+      "sha256": "eee169e08b3e2a0fac4778c54e622ab5898cbcf392e6421cc6b7c461233ff7a2"
+    },
+    {
+      "path": "attempt-3.log",
+      "sha256": "24ca713836381c0842fffc593911080f1f04eb1e15870a89f5c28fa0d7a67818"
+    },
+    {
+      "path": "attempt-4.json",
+      "sha256": "335b296a860d970d7f14b2f550ef4dfbd7ca842f2aa5c8dd763eaf060c92f991"
+    },
+    {
+      "path": "attempt-4.log",
+      "sha256": "b98289c5325bb5d2f7152caf12a4da979900cf8c61600d124581ecb2788b8abf"
+    },
+    {
+      "path": "attempt-5.json",
+      "sha256": "542c0d23c0e7734b6626556d7070fe583d5ad86c4db0b22bfb704f784899a88f"
+    },
+    {
+      "path": "attempt-5.log",
+      "sha256": "fcafcbd205590aaa96429e4aa2f4352701d09d5da6bd45632bd8211703e6954b"
+    },
+    {
+      "path": "provider.json",
+      "sha256": "78f3d84d596d98649593ee51b658c0099551579b967f7a5f47e70e57b2cadd62"
+    },
+    {
+      "path": "provider.txt",
+      "sha256": "0a1d1012124ef7a3b018d1c4da78dd7b2fdbc35e1027da4e87ce5b87b5660c26"
+    },
+    {
+      "path": "service-types.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "signal-tests.txt",
+      "sha256": "456d8d54b575c3908153d113362416620a7d548d50627fb6c7227d85e910526e"
+    },
+    {
+      "path": "sources/apps/voxel-server/package.json",
+      "sha256": "8a1fc6374f8b4e760dc0efa646b95be465944d9f90567a8831219d97afb208bb"
+    },
+    {
+      "path": "sources/apps/voxel-server/src/voice-signal-messages.ts",
+      "sha256": "f7415e8503ccc28a6b6f282596a97a282bf52eeb9e0d08e42995db8cd20815eb"
+    },
+    {
+      "path": "sources/apps/voxel-server/src/voice-signal-protocol.ts",
+      "sha256": "aaad5e852fd3a46594a989eb71d137704028a691b13ff9ce33b75328d7bc6532"
+    },
+    {
+      "path": "sources/apps/voxel-server/src/voice-signal-worker.ts",
+      "sha256": "d36dd6ec26530ac9ea6c6c4c8af6fa576174b2cecc593fb38d2c546dfaa38b7c"
+    },
+    {
+      "path": "sources/apps/voxel-server/src/voice-signaling.ts",
+      "sha256": "713fdfba8de1df5a686e13f4c4acfd99fd73a370ea240899552a615978477345"
+    },
+    {
+      "path": "sources/apps/voxel-server/tests/voice-signal-protocol.test.ts",
+      "sha256": "70219db61c5724e49090a6c60e5d2023a4b2703f005d987ec2b92ad5d28dacc0"
+    },
+    {
+      "path": "sources/apps/voxel-server/tests/voice-signaling.test.ts",
+      "sha256": "109d48b116542572eaf5dd8c0df0884b41f4268631e86b5c1fe9a3573d9d80e4"
+    },
+    {
+      "path": "sources/apps/web/tools/voxel-livekit-escrow.ts",
+      "sha256": "5ad2070fbe4b30d9841cb070f8e1414a2ea00ea3dc13b0b7a0c9f709420cd198"
+    }
+  ]
+}

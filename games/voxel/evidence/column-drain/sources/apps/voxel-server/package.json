@@ -1,0 +1,39 @@
+{
+  "name": "@playground/voxel-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.21.0"
+  },
+  "scripts": {
+    "pretypecheck": "npm run build:shared",
+    "pretest": "npm run build:shared",
+    "typecheck": "tsc --noEmit",
+    "check:supabase": "node tools/check-supabase.ts",
+    "test": "node --test tests/*.test.ts",
+    "test:postgres": "node --test --test-concurrency=1 tests/postgres/*.test.ts",
+    "test:integration": "node --test tests/integration/*.test.ts",
+    "test:browser": "node tools/browser-school.ts",
+    "test:browser:lifecycle": "node tools/browser-lifecycle.ts",
+    "start": "node src/index.ts",
+    "build:shared": "npm --prefix ../.. run build --workspace @playground/game-logic && npm --prefix ../.. run build --workspace @playground/observability",
+    "build": "npm run typecheck"
+  },
+  "dependencies": {
+    "@livekit/protocol": "1.46.4",
+    "@playground/game-logic": "0.0.1",
+    "@playground/observability": "0.0.1",
+    "@supabase/supabase-js": "2.103.3",
+    "dotenv": "17.4.2",
+    "livekit-server-sdk": "2.15.4",
+    "ws": "8.20.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.17",
+    "@types/pg": "8.20.0",
+    "@types/ws": "8.18.1",
+    "pg": "8.23.1",
+    "typescript": "5.9.3"
+  }
+}

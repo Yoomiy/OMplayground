@@ -1,0 +1,577 @@
+{
+  "result": "BROWSER_REAL_TCP_INPUT_STALL_AUTHORITY_ACK_BOUND_AND_EXPLICIT_RECOVERY_PASS",
+  "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+  "startedAt": "2026-10-27T20:30:35.849Z",
+  "browser": "156.0.8078.4",
+  "host": {
+    "node": "v24.21.0",
+    "arch": "arm64",
+    "cpu": "Neoverse-N1",
+    "availableParallelism": 2
+  },
+  "configuration": {
+    "viewport": {
+      "width": 640,
+      "height": 480
+    },
+    "quality": "low",
+    "renderScale": 0.5,
+    "renderHz": 30,
+    "workerCores": 2
+  },
+  "scope": "Built client/release Wasm and packaged gateway/native workers over actual client-to-server TCP read suspension while server snapshots remain fresh. Fixture admission, natural creative world, public controls, software Chromium; no hosted services or physical school-network/FPS qualification.",
+  "short": {
+    "requestedHeldMs": 1000,
+    "serverBefore": {
+      "epoch": 3,
+      "ack": 233,
+      "tick": 178,
+      "position": [
+        49.5,
+        92.9332,
+        0.5
+      ],
+      "frozen": 0
+    },
+    "serverWhileHeld": {
+      "epoch": 3,
+      "ack": 233,
+      "tick": 202,
+      "position": [
+        49.5,
+        92.9333,
+        0.5
+      ],
+      "frozen": 0
+    },
+    "clientWhileHeld": {
+      "position": [
+        55.07992532553071,
+        92.9333,
+        0.5
+      ],
+      "inputLag": 62,
+      "status": "playing",
+      "lastReceivedAgoMs": 22.399999856948853
+    },
+    "clientFramesBuffered": 120,
+    "serverTraceAfterRelease": [
+      {
+        "atMs": 9781.773666,
+        "state": {
+          "epoch": 3,
+          "ack": 236,
+          "tick": 204,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 9910.629277,
+        "state": {
+          "epoch": 3,
+          "ack": 292,
+          "tick": 206,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 9914.393415,
+        "state": {
+          "epoch": 3,
+          "ack": 296,
+          "tick": 208,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 9977.086753,
+        "state": {
+          "epoch": 3,
+          "ack": 300,
+          "tick": 210,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 10046.07228,
+        "state": {
+          "epoch": 3,
+          "ack": 304,
+          "tick": 212,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 10111.559231,
+        "state": {
+          "epoch": 3,
+          "ack": 308,
+          "tick": 214,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 10179.193192,
+        "state": {
+          "epoch": 3,
+          "ack": 312,
+          "tick": 216,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 10244.900344,
+        "state": {
+          "epoch": 3,
+          "ack": 316,
+          "tick": 218,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 10314.412754,
+        "state": {
+          "epoch": 3,
+          "ack": 320,
+          "tick": 220,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 10384.228725,
+        "state": {
+          "epoch": 3,
+          "ack": 324,
+          "tick": 222,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 10445.886418,
+        "state": {
+          "epoch": 3,
+          "ack": 328,
+          "tick": 224,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 10511.65477,
+        "state": {
+          "epoch": 3,
+          "ack": 332,
+          "tick": 226,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 10580.026815,
+        "state": {
+          "epoch": 3,
+          "ack": 336,
+          "tick": 228,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 10643.943038,
+        "state": {
+          "epoch": 3,
+          "ack": 340,
+          "tick": 230,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 10713.642689,
+        "state": {
+          "epoch": 3,
+          "ack": 344,
+          "tick": 232,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 10780.411446,
+        "state": {
+          "epoch": 3,
+          "ack": 348,
+          "tick": 234,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 10844.338029,
+        "state": {
+          "epoch": 3,
+          "ack": 352,
+          "tick": 236,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 10913.536678,
+        "state": {
+          "epoch": 3,
+          "ack": 356,
+          "tick": 238,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      }
+    ],
+    "recoveredInputLag": 12
+  },
+  "long": {
+    "requestedHeldMs": 5000,
+    "elapsedHeldMs": 5015.7368480000005,
+    "serverBefore": {
+      "epoch": 3,
+      "ack": 365,
+      "tick": 244,
+      "position": [
+        49.5,
+        92.9333,
+        0.5
+      ],
+      "frozen": 0
+    },
+    "serverWhileHeld": {
+      "epoch": 3,
+      "ack": 365,
+      "tick": 394,
+      "position": [
+        49.5,
+        92.9333,
+        0.5
+      ],
+      "frozen": 0
+    },
+    "clientAtFailure": {
+      "inputLag": 120,
+      "status": "recovering",
+      "focused": false
+    },
+    "clientLate": {
+      "inputLag": 120,
+      "status": "recovering",
+      "focused": false,
+      "lastReceivedAgoMs": 21.800000190734863
+    },
+    "bufferedFrames": 108,
+    "serverTraceAfterRelease": [
+      {
+        "atMs": 16189.053999,
+        "state": {
+          "epoch": 3,
+          "ack": 367,
+          "tick": 396,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 16329.659866,
+        "state": {
+          "epoch": 4,
+          "ack": 0,
+          "tick": 398,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 1
+        }
+      },
+      {
+        "atMs": 16335.303333,
+        "state": {
+          "epoch": 4,
+          "ack": 0,
+          "tick": 400,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 1
+        }
+      },
+      {
+        "atMs": 16381.533793,
+        "state": {
+          "epoch": 4,
+          "ack": 0,
+          "tick": 402,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 1
+        }
+      },
+      {
+        "atMs": 16447.860707,
+        "state": {
+          "epoch": 4,
+          "ack": 0,
+          "tick": 404,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 1
+        }
+      },
+      {
+        "atMs": 16513.238378,
+        "state": {
+          "epoch": 4,
+          "ack": 0,
+          "tick": 406,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 1
+        }
+      },
+      {
+        "atMs": 16580.619498,
+        "state": {
+          "epoch": 4,
+          "ack": 0,
+          "tick": 408,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 1
+        }
+      },
+      {
+        "atMs": 16645.666206,
+        "state": {
+          "epoch": 4,
+          "ack": 0,
+          "tick": 410,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 1
+        }
+      },
+      {
+        "atMs": 16712.876525,
+        "state": {
+          "epoch": 4,
+          "ack": 0,
+          "tick": 412,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 1
+        }
+      }
+    ],
+    "admissionsBeforeReconnect": 1
+  },
+  "reconnect": {
+    "oldEpoch": 4,
+    "newEpoch": 7,
+    "admissions": 2,
+    "owners": {
+      "openedSockets": 2,
+      "closedSockets": 1,
+      "createdWorkers": 2,
+      "closedWorkers": 1,
+      "liveWorkers": 1
+    },
+    "inputLag": 1
+  },
+  "cleanup": {
+    "resources": {
+      "geometries": 0,
+      "textures": 0,
+      "workers": 0
+    },
+    "audio": "closed",
+    "owners": {
+      "openedSockets": 2,
+      "closedSockets": 2,
+      "createdWorkers": 2,
+      "closedWorkers": 2,
+      "liveWorkers": 0
+    }
+  },
+  "finishedAt": "2026-10-27T20:30:53.462Z",
+  "errors": [],
+  "events": [
+    {
+      "event": "VOXEL_ADMISSION_ISSUED",
+      "context": {
+        "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252"
+      }
+    },
+    {
+      "event": "VOXEL_ROOM_READY",
+      "context": {
+        "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252"
+      }
+    },
+    {
+      "event": "VOXEL_ROOM_METRICS",
+      "context": {
+        "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+        "worldId": "2123e602-a0bc-4e23-9821-9488a6b656a0",
+        "ticks": 299,
+        "columns": 9,
+        "overrunMs": 0,
+        "windowMs": 9999.021858,
+        "windowStartedAtMs": 2977.627812,
+        "windowEndedAtMs": 12976.64967,
+        "worldStep_samples": 299,
+        "worldStep_meanMs": 0.3082683712374704,
+        "worldStep_p95UpperMs": 0.9,
+        "worldStep_p99UpperMs": 4.95,
+        "worldStep_maxMs": 7.229153999999653,
+        "observerStep_samples": 0,
+        "observerStep_meanMs": 0,
+        "observerStep_p95UpperMs": 0,
+        "observerStep_p99UpperMs": 0,
+        "observerStep_maxMs": 0,
+        "workerTurn_samples": 2280,
+        "workerTurn_meanMs": 0.1131595254385933,
+        "workerTurn_p95UpperMs": 0.25,
+        "workerTurn_p99UpperMs": 0.85,
+        "workerTurn_maxMs": 35.75381000000016,
+        "generationJob_samples": 9,
+        "generationJob_meanMs": 13.183142777777801,
+        "generationJob_p95UpperMs": 34.90696600000001,
+        "generationJob_p99UpperMs": 34.90696600000001,
+        "generationJob_maxMs": 34.90696600000001,
+        "command_samples": 139,
+        "command_meanMs": 0.12733124460426476,
+        "command_p95UpperMs": 0.25,
+        "command_p99UpperMs": 2.35,
+        "command_maxMs": 8.4058
+      }
+    },
+    {
+      "event": "VOXEL_ADMISSION_ISSUED",
+      "context": {
+        "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252"
+      }
+    },
+    {
+      "event": "VOXEL_ROOM_EXITED",
+      "context": {
+        "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+        "code": 0
+      }
+    }
+  ],
+  "remainingRooms": 0
+}

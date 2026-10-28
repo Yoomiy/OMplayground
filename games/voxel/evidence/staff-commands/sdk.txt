@@ -1,0 +1,44 @@
+✔ a verified active child gets a short private authorization with no name, inventory or capacity query (265.414385ms)
+✔ disabled accounts cannot fall through into admin access; each authorization reads current identity and profile (43.170439ms)
+✔ staff observe across partitions without gameplay grants; teacher participation follows the normal gender rule (49.725474ms)
+✔ closed rooms require current membership, a current invitation, or an accepted challenge (79.907961ms)
+✔ paused sessions preserve roster/host access and staff inspection, while ended or wrong-game sessions never start (53.915417ms)
+✔ class exceptions override recess defaults and conflicting or unavailable schedules fail closed (58.854165ms)
+✔ authorization cannot cross a schedule minute, JWT expiry, or an overlong provider read (38.643173ms)
+✔ private owned-object eligibility ignores offline recess time, but never ignores membership removal or a provider outage (14.812922ms)
+✔ authority comes from platform rows, never forged claims, extra request fields or a headcount ceiling (18.591303ms)
+✔ schedule interpretation retains Jerusalem time across summer and winter offsets (23.671411ms)
+✔ a continuous recess interval renews across ordinary minutes while the actual closing boundary remains authoritative (30.026726ms)
+✔ a private grant refreshes current policy and cannot be redirected by mutating its original request (29.700724ms)
+✔ central room policy reads fresh session state independently of player admission and treats deletion/completion as terminal (19.98367ms)
+✔ unavailable or overlong session reads cannot renew central room permission (8.157285ms)
+✔ a completed school session remains a terminal revalidation reason rather than a generic permission or provider failure (9.599373ms)
+✔ an empty invitation value never opens a closed room (10.431578ms)
+✔ roster revisions fence old open-room tickets while actor and passive ownership renewal require accepted membership (86.151636ms)
+✔ control rejects extra intent fields before identity or allocation (57.805999ms)
+✔ queued control repeats fresh authority and a revoked teacher cannot execute its earlier grant (32.61698ms)
+✔ pause save failure has no completion receipt and a prior committed receipt replays without reading the ended session (30.392647ms)
+✔ read-only session inspection follows live school scope and allows completed roster/staff without granting admission (169.977698ms)
+✔ staff policy rechecks queued role authority and never dispatches browser-supplied actors or coordinates (148.753861ms)
+✔ staff completion preserves the request identity and reports applied without claiming a checkpoint save (18.604782ms)
+✔ unknown dispatch in another owner epoch stays unconfirmed and malformed installation replies fail closed (16.386091ms)
+✔ production listener rejects wildcard, path, insecure and credential origins and requires a concrete port (3.54862ms)
+✔ release inventory corruption is rejected before importing executable gateway code (201.800673ms)
+✔ startup verifies every schema and fails before listening when controls are absent (76.867824ms)
+✔ installed SDK sends canonical service RPCs with a secret apikey and accepts only coherent immutable lease replies (72.841722ms)
+✔ create-only uploads copy bytes before IO and verify a duplicate object before marking it ready (19.433907ms)
+✔ provider errors cannot expose credentials and an unavailable provider respects the request deadline (34.122149ms)
+✔ failed Storage cleanup retains its catalog claim; completion only follows a successful API deletion (7.402161ms)
+✔ configuration rejects missing, public or legacy API keys and nonsecure remote endpoints (0.864965ms)
+✔ the shared server SDK preserves an explicit user bearer token for identity verification (1.93949ms)
+✔ session SDK sends fenced identities, deduplicates presence and excludes observers from membership writes (80.741245ms)
+✔ session SDK rejects malformed installation/policy replies and request-start deadlines never extend during IO (19.039785ms)
+✔ session SDK treats explicit fencing as false and provider failures expose only a machine code (17.699338ms)
+ℹ tests 36
+ℹ suites 0
+ℹ pass 36
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5213.930247

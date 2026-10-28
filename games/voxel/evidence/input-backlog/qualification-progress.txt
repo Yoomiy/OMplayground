@@ -1,0 +1,25 @@
+START service-tests
+START web-tests
+END web-tests 0
+END service-tests 0
+START types
+START service-types
+START web-types
+END service-types 0
+END types 0
+END web-types 0
+START web-build
+END web-build 0
+START startup
+END startup 0
+START release-verify
+END release-verify 0
+START react-browser
+END react-browser 0
+START presentation
+END presentation 0
+START sockets
+END sockets 0
+START survival
+OBSERVED survival terminal report after original session loss; no rerun or original shell exit claim
+END survival-audit 0

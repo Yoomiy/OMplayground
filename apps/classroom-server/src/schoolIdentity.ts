@@ -1,0 +1,64 @@
+import { SupabaseClient } from "@supabase/supabase-js";
+
+export interface SchoolIdentity {
+  userId: string;
+  role: string;
+  gender: "boy" | "girl";
+  grade: string | null;
+  full_name: string;
+  is_active: boolean;
+}
+
+export async function getSchoolIdentity(
+  supabaseAdmin: SupabaseClient,
+  token: string,
+): Promise<SchoolIdentity> {
+  const { data: authData, error: authErr } =
+    await supabaseAdmin.auth.getUser(token);
+  if (authErr || !authData?.user?.id) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  // 1. Check kid_profiles table
+  const { data: profile, error: profileError } = await supabaseAdmin
+    .from("kid_profiles")
+    .select("id, role, gender, grade, full_name, is_active")
+    .eq("id", authData.user.id)
+    .maybeSingle();
+  if (profileError) throw profileError;
+
+  if (profile && !profile.is_active) throw new Error("FORBIDDEN");
+  if (profile && profile.is_active) {
+    const result: SchoolIdentity = {
+      userId: profile.id as string,
+      role: profile.role as string,
+      gender: profile.gender as "boy" | "girl",
+      grade: profile.grade as string,
+      full_name: profile.full_name as string,
+      is_active: profile.is_active as boolean,
+    };
+    return result;
+  }
+
+  // 2. Check admin_profiles table (Admins are stored in admin_profiles!)
+  const { data: adminProfile, error: adminProfileError } = await supabaseAdmin
+    .from("admin_profiles")
+    .select("id, full_name")
+    .eq("id", authData.user.id)
+    .maybeSingle();
+  if (adminProfileError) throw adminProfileError;
+
+  if (adminProfile) {
+    const result: SchoolIdentity = {
+      userId: adminProfile.id as string,
+      role: "admin",
+      gender: "boy",
+      grade: null,
+      full_name: (adminProfile.full_name as string) || "מנהל מערכת (אדמין)",
+      is_active: true,
+    };
+    return result;
+  }
+
+  throw new Error("FORBIDDEN");
+}

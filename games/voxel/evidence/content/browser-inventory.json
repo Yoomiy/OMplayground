@@ -1,0 +1,292 @@
+{
+  "result": "PASS",
+  "scope": "Built Hebrew inventory UI, trusted touch resume/open, normal pointer slot moves and public authoritative building controls; 2x2/3x3 crafting, equipment, local freeze with continuing room time, reconnect and teardown; software Chromium only",
+  "buildId": "e4f100782c6972d28d3a854f5492ec47a6fc29aad21b89b117a08af096b8ea29",
+  "engineHash": "1e3f1e257d7326182e52736112b4a585b5809173a7f6f6d3fee34e52f414b7b6",
+  "contentHash": "368b605ac5bdf5ff6fcf4af02f7174cbc6d39b5110f48e0a41b231a0a6479464",
+  "browser": "156.0.8078.4",
+  "crafted": {
+    "inventory": {
+      "version": 2,
+      "catalog": true,
+      "revision": 17,
+      "selected": 0,
+      "bag": [
+        {
+          "itemType": "oak_log",
+          "count": 63
+        },
+        {
+          "count": 56,
+          "itemType": "oak_planks"
+        },
+        {
+          "itemType": "oak_planks",
+          "count": 4
+        },
+        {
+          "count": 1,
+          "itemType": "chest"
+        },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "craft2": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "craft3": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "equipment": [
+        null,
+        null,
+        null,
+        {
+          "itemType": "trail_boots",
+          "count": 1,
+          "instance": {
+            "durability": 120
+          }
+        },
+        null
+      ],
+      "station": "container",
+      "container": {
+        "id": "chest-1",
+        "cell": [
+          50,
+          68,
+          -1
+        ],
+        "revision": 2,
+        "slots": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      }
+    },
+    "body": {
+      "position": [
+        49.5,
+        68,
+        0.5
+      ],
+      "onGround": 1,
+      "inWater": 0,
+      "eyesInWater": 0,
+      "frozen": 1,
+      "flying": 0,
+      "velocity": [
+        0,
+        0,
+        0
+      ]
+    },
+    "environment": {
+      "tick": 550.1530000042916,
+      "seconds": 18.338433333476384,
+      "dayFraction": 0.235282027777897,
+      "daylight": 1,
+      "sun": [
+        0.08844950860609205,
+        0.9537336510199749,
+        0.2873478855663454
+      ],
+      "sky": [
+        0.59,
+        0.76,
+        0.88
+      ],
+      "rain": 0,
+      "wind": [
+        -0.09681483233576553,
+        -0.2839487422754283
+      ],
+      "openSky": true
+    }
+  },
+  "reconnected": {
+    "inventory": {
+      "version": 2,
+      "catalog": true,
+      "revision": 17,
+      "selected": 0,
+      "bag": [
+        {
+          "itemType": "oak_log",
+          "count": 63
+        },
+        {
+          "count": 56,
+          "itemType": "oak_planks"
+        },
+        {
+          "itemType": "oak_planks",
+          "count": 4
+        },
+        {
+          "count": 1,
+          "itemType": "chest"
+        },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "craft2": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "craft3": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "equipment": [
+        null,
+        null,
+        null,
+        {
+          "itemType": "trail_boots",
+          "count": 1,
+          "instance": {
+            "durability": 120
+          }
+        },
+        null
+      ],
+      "station": "personal",
+      "container": null
+    },
+    "epoch": 9
+  },
+  "cleanup": {
+    "geometries": 0,
+    "textures": 0,
+    "workers": 0,
+    "audio": {
+      "supported": true,
+      "contexts": 0,
+      "state": "closed",
+      "active": false,
+      "muted": false,
+      "voices": 0,
+      "effects": 2,
+      "gain": 0,
+      "dropped": 0,
+      "listener": [
+        49.5,
+        69.62,
+        0.5
+      ],
+      "lastSource": [
+        50.5,
+        68.5,
+        -0.5
+      ]
+    }
+  },
+  "errors": []
+}

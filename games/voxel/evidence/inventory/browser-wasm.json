@@ -1,0 +1,83 @@
+{
+  "result": "PASS",
+  "scope": "Release Wasm compute parity in Node, Chromium, and a module worker; WebGL2 availability only; no renderer or hardware FPS claim",
+  "browser": "156.0.8078.4",
+  "engineHash": "084b17c0ae40222777a0225f6fc186a9903ac19d9c455aae025188185ea250ab",
+  "contentHash": "77266ab65d26c121b49fe7b15c7ebd4636c1c28847d2c57bfedb94d2293402ee",
+  "highIdFixtureHash": "7606d6cd203eedca3ab431fb83691c1ff8e8ec77b09bbc22c7f60dca63a1c28d",
+  "highIdScenario": {
+    "columns": [
+      "fe971dce494c212f32c0342b9edaa57ac40e45381f130a0bcfded1d6382fc5d8",
+      "4de3fc719eee9e4b1f4a08f83d680887e072e0620337ba096dba2e32fa4246a8",
+      "e1af417242e16479ba0e0cdacd84c7e599a5b913c0d5287022b265b738c08af2",
+      "a50cff775df5daa13275603faa7f3e239d30f3b129fbaa7c330ab0453ee8ecf0",
+      "768f65cd481ef1fc9201643e0a6b8184ea007593826aa93557b5679d2c5599ad",
+      "5ca5b1e0f96bea82ef117fa0d9dbfa45d1a0a74426c8306285e25420126070e6",
+      "3b85086d311d5b48f95140d3b609258b83cf7862b6298ac539b0ffe038b5dbb6",
+      "1db66fd5c61d12c5e8ea253630254363538c6fc54f5783f718db3439725630c9",
+      "fb5e24567a07ebaf1d6960cd57c03acd1d81086808e5fdd5f5b889763d5df11f"
+    ],
+    "editHash": "04d11fd4df9166851fc9323785bfdd5518c7f5be72b5b95cdc2c8d2746853db0",
+    "meshHash": "7064fd1e7a87766853eb44bc9464270e586299e85862204108a92b852148c565",
+    "state": [
+      3.1348032602179043,
+      60.40000000000023,
+      -7.404409780653722,
+      0.46922449214921935,
+      -4,
+      -1.407673476447659,
+      0,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "high": 328,
+    "regionBytes": 319528,
+    "meshBytes": 27968
+  },
+  "productionContentScenario": {
+    "columns": [
+      "5c7339f50fbf8daa0fbe91023abe352d6f2a8d6e18f3b07246e081c2b796913d",
+      "fcb2b1f2c2af9fefdc2a2682f19e06af3b7a01f27d86ce967789dc182682be19",
+      "04d34ac5e481800fae87d251378abfc6fd261bd31d3e00705d950d8e64525773",
+      "0f73b38f6a6586844854249c3c1d2aa742391e030a175c43de5622cc29d34532",
+      "82643c2ebb5cadb012021847148985295ca7975304db2e0d37b707afead77b2d",
+      "d997ebfe49b7c6884bc6214dd3f4afda6a8f13ece31e43a9d933fb63c084c6d4",
+      "db6c1ceffcb164418059c5f8973205c3943088195e03939ccdd4121edb212e8f",
+      "ce2a7a7edeffb714c191d5c43ff5c95fe4f532225f7b94ffa7e84e21dff220f2",
+      "23df61f4ee57b3bbee5a43077fe4b2d0c0b4bc6df4af912e60e236cf03314f79"
+    ],
+    "editHash": "6f16a1a68d73b2ae9f251a3dbd4c90ca7fd7b08def7a81fb616054e5094c4341",
+    "meshHash": "89d74c39266473b9da21b04c643df4f7d28d823d9b3f7593a16e6b7fb294f67a",
+    "state": [
+      3.1348032602179043,
+      60.40000000000023,
+      -7.404409780653722,
+      0.46922449214921935,
+      -4,
+      -1.407673476447659,
+      0,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "high": 6,
+    "regionBytes": 319528,
+    "meshBytes": 27968
+  },
+  "errors": []
+}

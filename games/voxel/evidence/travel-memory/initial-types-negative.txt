@@ -1,0 +1,1 @@
+games/voxel/tools/browser-memory-probe.ts(78,12): error TS2345: Argument of type 'number' is not assignable to parameter of type '34962 | 34963 | 36662 | 36663 | 35051 | 35052 | 35345 | 35982'.

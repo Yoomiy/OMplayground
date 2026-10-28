@@ -1,6 +1,6 @@
 # Technical Proposal: Voxel Client Performance & Tick Loop Optimization
 
-> **Implementation status (June 2026):** **Worldgen Web Worker** — implemented (`apps/web/src/games/voxel/worldgen.worker.ts`, `worldgenPool.ts`, used from `MinecraftClient.tsx`). **GPU instanced meshes for custom objects** — not fully adopted; `voxelObjectMesher` still uses SolidParticleSystem-style meshing. Treat remaining sections as open optimization work.
+> **Historical, superseded 2026-10-28.** This NOA/Babylon optimization proposal is retained as research. Its old client/workers/mesher have been removed. Current architecture and work are defined by [the runtime rewrite](voxel-runtime-rewrite-proposal.md) and [`games/voxel`](../games/voxel/README.md); the sections below are not current implementation tasks.
 
 ## 1. Executive Summary
 

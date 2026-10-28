@@ -1,0 +1,21 @@
+{
+  "result": "SURVIVAL_REPORT_FOUR_CORRUPTION_REJECTIONS_PASS",
+  "checks": [
+    {
+      "name": "missing-resumed-craft",
+      "rejected": true
+    },
+    {
+      "name": "extra-worker-failure",
+      "rejected": true
+    },
+    {
+      "name": "lost-ack-sample",
+      "rejected": true
+    },
+    {
+      "name": "missing-steady-window",
+      "rejected": true
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+(node:851109) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+PASS src/service.test.ts (9.674 s)
+PASS src/classroomSecurity.test.ts
+PASS src/classroomAttendance.test.ts
+[12:49:53.185] [32mINFO[39m:
+    [35mservice[39m: "classroom-server"
+    [35menvironment[39m: "test"
+    [35mprotocol[39m: "webrtc"
+    [35mroomCode[39m: "class-demo"
+    [35mmessage[39m: "Classroom presence transition observed"
+    [35mcontext[39m: {
+      "occurredAt": "2026-08-18T15:00:00.000Z",
+      "roomSid": "RM_demo",
+      "participantSid": "PA_demo",
+      "participantIdentity": "guest-demo",
+      "participantKey": "guest:class-demo:abc",
+      "admissionLink": "unavailable",
+      "ipStatus": "unavailable",
+      "ipSource": "unavailable",
+      "ipObservation": "admission",
+      "ipUnavailableReason": "admission_not_cached",
+      "event": "CLASSROOM_PARTICIPANT_JOINED",
+      "status": "success",
+      "evidenceSource": "reconciliation",
+      "observedAt": "2026-10-28T10:49:53.184Z",
+      "timeAccuracy": "livekit_join_time",
+      "reason": "present_in_livekit_snapshot"
+    }
+PASS src/livekitService.test.ts
+PASS src/classroomPresence.test.ts
+PASS src/classroomDrawingSession.test.ts
+PASS src/classroomPresenterAssignment.test.ts
+PASS src/classroomParticipantBlocks.test.ts
+PASS src/classroomDelegates.test.ts
+PASS src/classroomPresentation.test.ts
+PASS src/classroomBoardToken.test.ts
+
+Test Suites: 11 passed, 11 total
+Tests:       69 passed, 69 total
+Snapshots:   0 total
+Time:        12.321 s
+Ran all test suites.

@@ -1,0 +1,2101 @@
+// src/server/gateway.ts
+import { createServer } from "node:http";
+import { readFile } from "node:fs/promises";
+import { randomBytes, randomUUID, createHash as createHash2 } from "node:crypto";
+import { Worker } from "node:worker_threads";
+import { WebSocket, WebSocketServer } from "ws";
+
+// src/shared/input.ts
+var MOVEMENT_HZ = 60;
+var WORLD_HZ = 30;
+var MOVEMENT_DT = 1 / MOVEMENT_HZ;
+var NEUTRAL = Object.freeze({
+  x: 0,
+  z: 0,
+  yaw: 0,
+  pitch: 0,
+  jump: false,
+  sneak: false,
+  sprint: false
+});
+var keys = ["epoch", "sequence", "x", "z", "yaw", "pitch", "jump", "sneak", "sprint"];
+function isInputFrame(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const v = value;
+  if (Object.keys(v).length !== keys.length || keys.some((k) => !Object.hasOwn(v, k))) return false;
+  return Number.isSafeInteger(v.epoch) && v.epoch > 0 && Number.isSafeInteger(v.sequence) && v.sequence > 0 && ["x", "z", "yaw", "pitch"].every((k) => typeof v[k] === "number" && Number.isFinite(v[k])) && Math.abs(v.x) <= 1 && Math.abs(v.z) <= 1 && Math.abs(v.yaw) <= Math.PI && Math.abs(v.pitch) <= Math.PI / 2 && ["jump", "sneak", "sprint"].every((k) => typeof v[k] === "boolean");
+}
+
+// src/shared/environment.ts
+var ENVIRONMENT_VERSION = 1;
+var DAY_TICKS = WORLD_HZ * 20 * 60;
+var WEATHER_TICKS = WORLD_HZ * 3 * 60;
+var TRANSITION_TICKS = WORLD_HZ * 15;
+
+// src/shared/inventory.ts
+var BAG_SLOTS = 36;
+var CHEST_SLOTS = 27;
+var EQUIPMENT = ["head", "body", "legs", "feet", "offhand"];
+var object = (v) => !!v && typeof v === "object" && !Array.isArray(v);
+var exact = (v, keys2) => Object.keys(v).length === keys2.length && keys2.every((key) => Object.hasOwn(v, key));
+var integer = (v, min, max = Number.MAX_SAFE_INTEGER) => Number.isSafeInteger(v) && v >= min && v <= max;
+var areaSizes = {
+  bag: BAG_SLOTS,
+  craft2: 4,
+  craft3: 9,
+  equipment: EQUIPMENT.length,
+  container: CHEST_SLOTS
+};
+var slotRef = (v) => object(v) && exact(v, ["area", "slot"]) && typeof v.area === "string" && Object.hasOwn(areaSizes, v.area) && integer(v.slot, 0, areaSizes[v.area] - 1);
+function isInventoryCommand(v, cell2) {
+  if (!object(v)) return false;
+  switch (v.kind) {
+    case "consume":
+      return exact(v, ["kind", "slot", "revision"]) && integer(v.slot, 0, BAG_SLOTS - 1) && integer(v.revision, 0);
+    case "select":
+      return exact(v, ["kind", "slot", "revision"]) && integer(v.slot, 0, 8) && integer(v.revision, 0);
+    case "drop":
+      return exact(v, ["kind", "slot", "count", "revision"]) && integer(v.slot, 0, BAG_SLOTS - 1) && integer(v.count, 1, 999) && integer(v.revision, 0);
+    case "open":
+      return exact(v, ["kind", "target"]) && (v.target === null || cell2(v.target));
+    case "close":
+      return exact(v, ["kind"]);
+    case "move":
+      return exact(v, ["kind", "from", "to", "count", "revision", "containerId", "containerRevision"]) && slotRef(v.from) && slotRef(v.to) && integer(v.count, 1, 999) && integer(v.revision, 0) && (v.containerId === null || typeof v.containerId === "string" && /^chest-[1-9][0-9]{0,15}$/.test(v.containerId)) && (v.containerRevision === null || integer(v.containerRevision, 0));
+    case "craft":
+      return exact(v, ["kind", "grid", "count", "revision"]) && [2, 3].includes(v.grid) && integer(v.count, 1, 64) && integer(v.revision, 0);
+    case "give":
+      return exact(v, ["kind", "itemType", "count", "revision"]) && typeof v.itemType === "string" && /^[a-z][a-z0-9_]{0,63}$/.test(v.itemType) && integer(v.count, 1, 999) && integer(v.revision, 0);
+    default:
+      return false;
+  }
+}
+
+// src/shared/movement.ts
+var DEFAULT_MOVEMENT = Object.freeze({
+  speed: 1,
+  gravity: 1,
+  control: 1,
+  jump: 1,
+  sprint: true
+});
+
+// src/shared/vitals.ts
+var VITALS_VERSION = 2;
+var MAX_HEALTH = 20;
+var MAX_FOOD = 20;
+var MAX_AIR = 300;
+var RESPAWN_TICKS = 60;
+
+// src/shared/protocol.ts
+var PROTOCOL = 13;
+var GENERATOR_VERSION = 2;
+var MAX_CONTROL_BYTES = 16384;
+var BOUNDS = Object.freeze({ minX: -256, minZ: -256, maxX: 256, maxZ: 256, height: 256 });
+var integer2 = (n, min = 0, max = Number.MAX_SAFE_INTEGER) => Number.isSafeInteger(n) && n >= min && n <= max;
+var object2 = (v) => !!v && typeof v === "object" && !Array.isArray(v);
+var exact2 = (v, keys2) => Object.keys(v).length === keys2.length && keys2.every((k) => Object.hasOwn(v, k));
+var coordinate = (n) => integer2(n, -16, 15);
+var revision = (v) => object2(v) && exact2(v, ["x", "z", "revision"]) && coordinate(v.x) && coordinate(v.z) && integer2(v.revision);
+var cell = (v) => Array.isArray(v) && v.length === 3 && integer2(v[0], BOUNDS.minX, BOUNDS.maxX - 1) && integer2(v[1], 0, 255) && integer2(v[2], BOUNDS.minZ, BOUNDS.maxZ - 1);
+function parseClientMessage(text) {
+  if (text.length > MAX_CONTROL_BYTES) return null;
+  let v;
+  try {
+    v = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  if (!object2(v)) return null;
+  switch (v.type) {
+    case "hello":
+      return exact2(v, ["type", "ticket", "buildId"]) && typeof v.ticket === "string" && /^[a-zA-Z0-9_-]{32,128}$/.test(v.ticket) && typeof v.buildId === "string" && /^[a-f0-9]{64}$/.test(v.buildId) ? v : null;
+    case "input":
+      return exact2(v, ["type", "frames"]) && Array.isArray(v.frames) && v.frames.length > 0 && v.frames.length <= 4 && v.frames.every(isInputFrame) ? v : null;
+    case "ready":
+      return exact2(v, ["type", "epoch", "columns"]) && integer2(v.epoch, 1) && Array.isArray(v.columns) && v.columns.length >= 1 && v.columns.length <= 9 && v.columns.every(revision) && new Set(v.columns.map((c) => `${c.x},${c.z}`)).size === v.columns.length ? v : null;
+    case "focus":
+      return exact2(v, ["type", "epoch", "active"]) && integer2(v.epoch, 1) && typeof v.active === "boolean" ? v : null;
+    case "palette":
+      return exact2(v, ["type", "epoch", "sequence", "state"]) && integer2(v.epoch, 1) && integer2(v.sequence, 1) && integer2(v.state, 1, 65534) ? v : null;
+    case "resync":
+      return exact2(v, ["type", "x", "z", "subscription"]) && coordinate(v.x) && coordinate(v.z) && integer2(v.subscription, 1) ? v : null;
+    case "ignite":
+      return exact2(v, [
+        "type",
+        "epoch",
+        "sequence",
+        "inputSequence",
+        "target",
+        "revision",
+        "inventoryRevision"
+      ]) && integer2(v.epoch, 1) && integer2(v.sequence, 1) && integer2(v.inputSequence) && cell(v.target) && integer2(v.revision) && integer2(v.inventoryRevision) ? v : null;
+    case "attack":
+      return exact2(v, ["type", "epoch", "sequence", "inputSequence", "inventoryRevision"]) && integer2(v.epoch, 1) && integer2(v.sequence, 1) && integer2(v.inputSequence) && integer2(v.inventoryRevision) ? v : null;
+    case "respawn":
+      return exact2(v, ["type", "epoch", "sequence"]) && integer2(v.epoch, 1) && integer2(v.sequence, 1) ? v : null;
+    case "flight":
+      return exact2(v, ["type", "epoch", "sequence", "on"]) && integer2(v.epoch, 1) && integer2(v.sequence, 1) && typeof v.on === "boolean" ? v : null;
+    case "inventory":
+      return exact2(v, ["type", "epoch", "sequence", "operation"]) && integer2(v.epoch, 1) && integer2(v.sequence, 1) && isInventoryCommand(v.operation, cell) ? v : null;
+    case "mining":
+      return exact2(v, [
+        "type",
+        "epoch",
+        "sequence",
+        "inputSequence",
+        "target",
+        "revision",
+        "inventoryRevision"
+      ]) && integer2(v.epoch, 1) && integer2(v.sequence, 1) && integer2(v.inputSequence) && (v.target === null || cell(v.target)) && integer2(v.revision) && integer2(v.inventoryRevision) ? v : null;
+    case "action":
+      return exact2(v, [
+        "type",
+        "epoch",
+        "sequence",
+        "inputSequence",
+        "kind",
+        "target",
+        "state",
+        "inventoryRevision",
+        "revisions"
+      ]) && integer2(v.epoch, 1) && integer2(v.sequence, 1) && integer2(v.inputSequence) && ["place", "remove", "collect"].includes(v.kind) && cell(v.target) && integer2(v.state, 0, 65534) && (v.kind !== "collect" || v.state === 0) && integer2(v.inventoryRevision) && Array.isArray(v.revisions) && v.revisions.length >= 1 && v.revisions.length <= 2 && v.revisions.every(revision) ? v : null;
+    default:
+      return null;
+  }
+}
+function around(x, z, radius) {
+  const out = [];
+  for (let dz = -radius; dz <= radius; dz++)
+    for (let dx = -radius; dx <= radius; dx++)
+      if (coordinate(x + dx) && coordinate(z + dz)) out.push({ x: x + dx, z: z + dz });
+  return out;
+}
+
+// src/server/checkpoint-storage.ts
+import { createHash } from "node:crypto";
+
+// src/sim/checkpoint-values.ts
+function checkpointObject(value, fields) {
+  return !!value && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length === fields.length && fields.every((field) => Object.hasOwn(value, field));
+}
+function checkpointInteger(value, min = 0, max = Number.MAX_SAFE_INTEGER) {
+  return Number.isSafeInteger(value) && value >= min && value <= max;
+}
+function checkpointIdentity(value) {
+  return typeof value === "string" && value.length > 0 && value.length <= 128;
+}
+function checkpointVector(value) {
+  return Array.isArray(value) && value.length === 3 && Array.from(value).every((n) => typeof n === "number" && Number.isFinite(n));
+}
+function checkpointPosition(value) {
+  return checkpointVector(value) && value[0] >= BOUNDS.minX && value[0] < BOUNDS.maxX && value[1] >= 0 && value[1] < BOUNDS.height && value[2] >= BOUNDS.minZ && value[2] < BOUNDS.maxZ;
+}
+function checkpointVelocity(value) {
+  return checkpointVector(value) && value.every((n) => Math.abs(n) <= 12);
+}
+function checkpointCounterId(value, prefix2, counter) {
+  if (typeof value !== "string" || !value.startsWith(`${prefix2}-`)) return false;
+  const suffix = value.slice(prefix2.length + 1);
+  return /^[1-9][0-9]*$/.test(suffix) && checkpointInteger(Number(suffix), 1, counter);
+}
+
+// src/sim/vitals.ts
+var checkpointBounds = {
+  health: MAX_HEALTH,
+  food: MAX_FOOD,
+  air: MAX_AIR,
+  deadTicks: RESPAWN_TICKS,
+  elapsed: 3599,
+  regeneration: 149,
+  solar: 149,
+  vision: 899,
+  starvation: 119,
+  lava: 14,
+  drowning: 29,
+  eatDelay: 15,
+  attackDelay: 60,
+  hurtDelay: 10,
+  protection: 60
+};
+var checkpointFields = Object.keys(checkpointBounds);
+function validCheckpoint(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const v = value;
+  return v.schema === 1 && Object.keys(v).length === checkpointFields.length + 3 && Object.keys(v).every(
+    (key) => key === "schema" || key === "exhaustion" || key === "peak" || Object.hasOwn(checkpointBounds, key)
+  ) && checkpointFields.every(
+    (key) => Number.isSafeInteger(v[key]) && v[key] >= 0 && v[key] <= checkpointBounds[key]
+  ) && typeof v.exhaustion === "number" && Number.isFinite(v.exhaustion) && v.exhaustion >= 0 && v.exhaustion < 4 && (v.peak === null || typeof v.peak === "number" && Number.isFinite(v.peak) && v.peak >= 0 && v.peak <= 256) && (v.health === 0 ? v.protection === 0 : v.deadTicks === 0);
+}
+var Vitals = class _Vitals {
+  health = MAX_HEALTH;
+  food = MAX_FOOD;
+  air = MAX_AIR;
+  deadTicks = 0;
+  elapsed = 0;
+  regeneration = 0;
+  solar = 0;
+  vision = 0;
+  starvation = 0;
+  lava = 0;
+  drowning = 0;
+  exhaustion = 0;
+  eatDelay = 0;
+  peak = null;
+  attackDelay = 0;
+  hurtDelay = 0;
+  protection = 0;
+  checkpoint() {
+    return Object.freeze({
+      schema: 1,
+      health: this.health,
+      food: this.food,
+      air: this.air,
+      deadTicks: this.deadTicks,
+      elapsed: this.elapsed,
+      regeneration: this.regeneration,
+      solar: this.solar,
+      vision: this.vision,
+      starvation: this.starvation,
+      lava: this.lava,
+      drowning: this.drowning,
+      exhaustion: this.exhaustion,
+      eatDelay: this.eatDelay,
+      peak: this.peak,
+      attackDelay: this.attackDelay,
+      hurtDelay: this.hurtDelay,
+      protection: this.protection
+    });
+  }
+  /** Validate the whole object before constructing any replacement live state. */
+  static fromCheckpoint(value) {
+    if (!validCheckpoint(value)) throw new Error("invalid vitals checkpoint");
+    const restored = new _Vitals();
+    for (const field of checkpointFields) restored[field] = value[field];
+    restored.exhaustion = value.exhaustion;
+    restored.peak = value.peak;
+    return restored;
+  }
+  get dead() {
+    return this.health === 0;
+  }
+  view() {
+    return {
+      version: VITALS_VERSION,
+      health: this.health,
+      food: this.food,
+      air: this.air,
+      dead: this.dead,
+      respawnIn: this.deadTicks,
+      attackCooldown: this.attackDelay,
+      protection: this.protection
+    };
+  }
+  effort(amount) {
+    if (this.dead || !Number.isFinite(amount) || amount <= 0) return;
+    this.exhaustion += amount;
+    const spent = Math.floor(this.exhaustion / 4);
+    this.exhaustion %= 4;
+    this.food = Math.max(0, this.food - spent);
+  }
+  damage(amount) {
+    if (this.dead || !Number.isFinite(amount) || amount <= 0) return false;
+    this.health = Math.max(0, this.health - Math.ceil(amount));
+    this.regeneration = 0;
+    this.solar = 0;
+    if (this.dead) {
+      this.deadTicks = RESPAWN_TICKS;
+      this.protection = 0;
+    }
+    return this.dead;
+  }
+  get canBeHit() {
+    return !this.dead && this.protection === 0 && this.hurtDelay === 0;
+  }
+  beginAttack(cooldown) {
+    if (this.dead || this.attackDelay) return false;
+    this.attackDelay = cooldown;
+    this.protection = 0;
+    return true;
+  }
+  strikeDamage(amount) {
+    if (!this.canBeHit) return false;
+    this.hurtDelay = 10;
+    this.damage(amount);
+    return true;
+  }
+  eat(nutrition) {
+    if (!Number.isInteger(nutrition) || nutrition < 1 || nutrition > MAX_FOOD)
+      throw new Error("invalid food nutrition");
+    if (this.dead) return "dead";
+    if (this.food >= MAX_FOOD) return "full";
+    if (this.eatDelay) return "cooldown";
+    this.food = Math.min(MAX_FOOD, this.food + nutrition);
+    this.eatDelay = 15;
+    return "eaten";
+  }
+  movement(before, after, climbing, fallReduction, sprint) {
+    if (this.dead) return { damage: 0, impact: 0 };
+    const distance = Math.min(1, Math.hypot(after[0] - before[0], after[2] - before[2]));
+    this.effort(distance * (sprint ? 0.1 : 0.01));
+    if (after[7] || after[9] || after[10] || climbing) {
+      this.peak = null;
+      return { damage: 0, impact: 0 };
+    }
+    this.peak = Math.max(this.peak ?? before[1], before[1], after[1]);
+    if (!after[6]) return { damage: 0, impact: 0 };
+    const fallDistance = Math.max(0, this.peak - after[1] - 3), impact = Math.floor(fallDistance + 1e-6);
+    const damage = Math.floor(fallDistance * (1 - fallReduction) + 1e-6);
+    this.peak = null;
+    this.damage(damage);
+    return { damage, impact };
+  }
+  /** One owned medallion heal after five continuous eligible room seconds. */
+  sunlight(eligible) {
+    if (!eligible || this.dead || this.health >= MAX_HEALTH) {
+      this.solar = 0;
+      return false;
+    }
+    if (++this.solar < 150) return false;
+    this.solar = 0;
+    this.health++;
+    return true;
+  }
+  visibility(active) {
+    if (!active || this.dead) {
+      this.vision = 0;
+      return false;
+    }
+    if (++this.vision < 900) return false;
+    this.vision = 0;
+    return true;
+  }
+  step(state) {
+    if (this.dead) {
+      this.deadTicks = Math.max(0, this.deadTicks - 1);
+      return;
+    }
+    this.elapsed = (this.elapsed + 1) % 3600;
+    this.attackDelay = Math.max(0, this.attackDelay - 1);
+    this.hurtDelay = Math.max(0, this.hurtDelay - 1);
+    this.protection = Math.max(0, this.protection - 1);
+    this.eatDelay = Math.max(0, this.eatDelay - 1);
+    if (this.elapsed === 0) this.food = Math.max(0, this.food - 1);
+    if (this.food === 0) {
+      if (++this.starvation >= 120) {
+        this.starvation = 0;
+        this.damage(1);
+      }
+    } else this.starvation = 0;
+    if (this.food >= 18 && this.health < MAX_HEALTH) {
+      if (++this.regeneration >= 150) {
+        this.regeneration = 0;
+        this.health++;
+        this.effort(1);
+      }
+    } else this.regeneration = 0;
+    if (state[8]) {
+      this.air = Math.max(0, this.air - 1);
+      if (!this.air && ++this.drowning >= 30) {
+        this.drowning = 0;
+        this.damage(2);
+      }
+    } else {
+      this.air = Math.min(MAX_AIR, this.air + 10);
+      this.drowning = 0;
+    }
+    if (state[9]) {
+      if (++this.lava >= 15) {
+        this.lava = 0;
+        this.damage(4);
+      }
+    } else this.lava = 0;
+  }
+  resetMotion() {
+    this.peak = null;
+  }
+  respawn() {
+    if (!this.dead || this.deadTicks) return false;
+    this.health = MAX_HEALTH;
+    this.food = MAX_FOOD;
+    this.air = MAX_AIR;
+    this.attackDelay = this.hurtDelay = 0;
+    this.protection = 60;
+    this.peak = null;
+    this.exhaustion = this.elapsed = this.regeneration = this.solar = this.vision = this.starvation = this.lava = this.drowning = this.eatDelay = 0;
+    return true;
+  }
+};
+
+// src/sim/room-checkpoint.ts
+var RECONNECT_RESERVATION_MS = 3e4;
+function validCheckpointBody(value) {
+  return Array.isArray(value) && value.length === 17 && Array.from(value).every((n) => typeof n === "number" && Number.isFinite(n)) && checkpointPosition(value.slice(0, 3)) && [3, 4, 5].every((i) => Math.abs(value[i]) <= 128) && [6, 7, 8, 9, 10, 12].every((i) => value[i] === 0 || value[i] === 1) && value[11] >= 0 && [13, 14, 15, 16].every((i) => value[i] === 0);
+}
+function readRoomCheckpoint(value, content, build) {
+  const invalid = () => {
+    throw new Error("invalid room checkpoint");
+  };
+  if (!checkpointObject(value, [
+    "schema",
+    "worldId",
+    "seed",
+    "preset",
+    "generatorVersion",
+    "contentHash",
+    "engineHash",
+    "sourceBuildId",
+    "bounds",
+    "mode",
+    "tick",
+    "epoch",
+    "paused",
+    "hitSequence",
+    "explosionSequence",
+    "spawn",
+    "players",
+    "world",
+    "inventories",
+    "drops",
+    "explosives"
+  ]) || value.schema !== 1 || !checkpointIdentity(value.worldId) || !checkpointInteger(value.seed, 0, 4294967295) || value.preset !== "blockyard-natural-v2" || value.generatorVersion !== GENERATOR_VERSION || value.contentHash !== content.hash || value.engineHash !== build.engineHash || typeof value.sourceBuildId !== "string" || !/^[a-f0-9]{64}$/.test(value.sourceBuildId) || !checkpointObject(value.bounds, Object.keys(BOUNDS)) || !Object.entries(BOUNDS).every(
+    ([key, n]) => value.bounds[key] === n
+  ) || !["creative", "survival"].includes(value.mode) || !checkpointInteger(value.tick, 0, Number.MAX_SAFE_INTEGER - 9e3) || !checkpointInteger(value.epoch, 0, Number.MAX_SAFE_INTEGER - 2) || typeof value.paused !== "boolean" || !checkpointInteger(value.hitSequence) || !checkpointInteger(value.explosionSequence) || !checkpointPosition(value.spawn) || !Array.isArray(value.players))
+    return invalid();
+  const ids = /* @__PURE__ */ new Set(), players = [];
+  for (const p of value.players) {
+    if (!checkpointObject(p, ["id", "state", "yaw", "pitch", "reservationMs", "vitals"]) || !checkpointIdentity(p.id) || ids.has(p.id) || !validCheckpointBody(p.state) || typeof p.yaw !== "number" || !Number.isFinite(p.yaw) || Math.abs(p.yaw) > Math.PI || typeof p.pitch !== "number" || !Number.isFinite(p.pitch) || Math.abs(p.pitch) > Math.PI / 2 || p.reservationMs !== null && (typeof p.reservationMs !== "number" || !Number.isFinite(p.reservationMs) || p.reservationMs < 0 || p.reservationMs > RECONNECT_RESERVATION_MS))
+      return invalid();
+    let vitals;
+    try {
+      vitals = Vitals.fromCheckpoint(p.vitals).checkpoint();
+    } catch {
+      return invalid();
+    }
+    ids.add(p.id);
+    players.push(
+      Object.freeze({
+        id: p.id,
+        state: Object.freeze([...p.state]),
+        yaw: p.yaw,
+        pitch: p.pitch,
+        reservationMs: p.reservationMs,
+        vitals
+      })
+    );
+  }
+  return Object.freeze({
+    ...value,
+    spawn: Object.freeze([...value.spawn]),
+    bounds: BOUNDS,
+    players: Object.freeze(players)
+  });
+}
+
+// src/server/checkpoint-storage.ts
+var hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
+var jsonBytes = (value) => Buffer.from(JSON.stringify(value), "utf8");
+var prefix = (worldId) => `v1/${hash(worldId)}/`;
+function objectFor(worldId, bytes) {
+  const sha256 = hash(bytes);
+  return Object.freeze({
+    key: `${prefix(worldId)}${sha256}.json`,
+    sha256,
+    bytes: bytes.byteLength
+  });
+}
+function validObject(value, worldId) {
+  return checkpointObject(value, ["key", "sha256", "bytes"]) && typeof value.sha256 === "string" && /^[a-f0-9]{64}$/.test(value.sha256) && value.key === `${prefix(worldId)}${value.sha256}.json` && checkpointInteger(value.bytes, 1);
+}
+async function eachObject(values, run) {
+  const result = new Array(values.length);
+  let next = 0;
+  const pending = await Promise.allSettled(
+    Array.from({ length: Math.min(4, values.length) }, async () => {
+      for (; ; ) {
+        const index = next++;
+        if (index >= values.length) return;
+        result[index] = await run(values[index]);
+      }
+    })
+  );
+  const failed = pending.find((entry) => entry.status === "rejected");
+  if (failed?.status === "rejected") throw failed.reason;
+  return result;
+}
+var CheckpointFenced = class extends Error {
+  constructor() {
+    super("checkpoint owner or sequence fenced");
+  }
+};
+var CheckpointStorage = class {
+  columns = /* @__PURE__ */ new Set();
+  saving = false;
+  worldId;
+  objects;
+  metadata;
+  content;
+  build;
+  constructor(worldId, objects, metadata, content, build) {
+    this.worldId = worldId;
+    this.objects = objects;
+    this.metadata = metadata;
+    this.content = content;
+    this.build = build;
+  }
+  async read(object4) {
+    if (!validObject(object4, this.worldId)) throw new Error("invalid checkpoint object reference");
+    const bytes = await this.objects.get(object4);
+    if (bytes.byteLength !== object4.bytes || hash(bytes) !== object4.sha256)
+      throw new Error("checkpoint object integrity failure");
+    try {
+      return JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+    } catch {
+      throw new Error("invalid checkpoint object JSON");
+    }
+  }
+  async load(pointer) {
+    if (!checkpointObject(pointer, ["ownerEpoch", "sequence", "object"]) || !checkpointInteger(pointer.ownerEpoch, 1) || !checkpointInteger(pointer.sequence, 1))
+      throw new Error("invalid checkpoint pointer");
+    const manifest = await this.read(pointer.object);
+    if (!checkpointObject(manifest, [
+      "schema",
+      "worldId",
+      "ownerEpoch",
+      "sequence",
+      "room",
+      "world"
+    ]) || manifest.schema !== 1 || manifest.worldId !== this.worldId || manifest.ownerEpoch !== pointer.ownerEpoch || manifest.sequence !== pointer.sequence || !checkpointObject(manifest.world, ["schema", "contentHash", "columns"]) || manifest.world.schema !== 1 || manifest.world.contentHash !== this.content.hash || !manifest.room || typeof manifest.room !== "object" || Array.isArray(manifest.room) || Object.hasOwn(manifest.room, "world") || !Array.isArray(manifest.world.columns) || !manifest.world.columns.every((ref) => validObject(ref, this.worldId)))
+      throw new Error("invalid checkpoint manifest");
+    const room = readRoomCheckpoint(
+      { ...manifest.room, world: null },
+      this.content,
+      this.build
+    );
+    if (room.worldId !== this.worldId) throw new Error("checkpoint world mismatch");
+    const refs = manifest.world.columns;
+    const columns = await eachObject(refs, async (ref) => {
+      const value = await this.read(ref);
+      if (!checkpointObject(value, ["schema", "contentHash", "column"]) || value.schema !== 1 || value.contentHash !== this.content.hash)
+        throw new Error("invalid checkpoint column object");
+      return value.column;
+    });
+    const snapshot = readRoomCheckpoint(
+      {
+        ...room,
+        world: {
+          schema: 1,
+          contentHash: this.content.hash,
+          columns
+        }
+      },
+      this.content,
+      this.build
+    );
+    this.columns = new Set(refs.map((ref) => ref.sha256));
+    return snapshot;
+  }
+  async save(lease, sequence, snapshot) {
+    if (this.saving) throw new Error("checkpoint save already in flight");
+    if (lease.worldId !== this.worldId || !checkpointInteger(lease.epoch, 1) || !checkpointInteger(sequence, 1) || sequence !== lease.sequence + 1 || snapshot.worldId !== this.worldId || snapshot.contentHash !== this.content.hash || snapshot.engineHash !== this.build.engineHash)
+      throw new Error("incompatible checkpoint save");
+    readRoomCheckpoint(snapshot, this.content, this.build);
+    if (snapshot.world.schema !== 1 || snapshot.world.contentHash !== this.content.hash)
+      throw new Error("incompatible checkpoint terrain");
+    const { world, ...room } = snapshot;
+    const rows = world.columns.map((column) => {
+      const bytes2 = jsonBytes({ schema: 1, contentHash: world.contentHash, column });
+      return { bytes: bytes2, object: objectFor(this.worldId, bytes2) };
+    });
+    const manifest = {
+      schema: 1,
+      worldId: this.worldId,
+      ownerEpoch: lease.epoch,
+      sequence,
+      room,
+      world: { schema: 1, contentHash: world.contentHash, columns: rows.map((row) => row.object) }
+    };
+    const bytes = jsonBytes(manifest), object4 = objectFor(this.worldId, bytes);
+    const pointer = Object.freeze({ ownerEpoch: lease.epoch, sequence, object: object4 });
+    this.saving = true;
+    try {
+      await eachObject(rows, async (row) => {
+        if (!this.columns.has(row.object.sha256)) await this.objects.put(row.object, row.bytes);
+      });
+      await this.objects.put(object4, bytes);
+      if (!await this.metadata.commit(lease, sequence - 1, pointer, [
+        object4,
+        ...rows.map((row) => row.object)
+      ]))
+        throw new CheckpointFenced();
+      this.columns = new Set(rows.map((row) => row.object.sha256));
+      return pointer;
+    } finally {
+      this.saving = false;
+    }
+  }
+};
+
+// src/server/room-durability.ts
+var RoomDurability = class _RoomDurability {
+  storage;
+  lease;
+  metadata;
+  onLost;
+  deadline;
+  deadlineTimer = null;
+  renewal = null;
+  lost = false;
+  closed = false;
+  closing = null;
+  post = null;
+  requestId = 0;
+  capture = null;
+  running = false;
+  active = null;
+  queued = null;
+  unconfirmed = null;
+  constructor(ports, content, build, lease, started, onLost) {
+    this.lease = lease;
+    this.metadata = ports.metadata;
+    this.onLost = onLost;
+    this.deadline = started + lease.validForMs - 1e3;
+    this.storage = new CheckpointStorage(
+      lease.worldId,
+      ports.objects,
+      ports.metadata,
+      content,
+      build
+    );
+    this.watchDeadline();
+    this.scheduleRenewal(lease.validForMs);
+  }
+  static async acquire(ports, content, build, room, owner, onLost) {
+    const started = performance.now(), lease = await ports.metadata.acquire(room, owner);
+    if (!lease || lease.room !== room || lease.owner !== owner || !lease.worldId || !Number.isSafeInteger(lease.epoch) || lease.epoch < 1 || !Number.isSafeInteger(lease.sequence) || lease.sequence < 0 || (lease.checkpoint ? lease.checkpoint.sequence !== lease.sequence || !Number.isSafeInteger(lease.checkpoint.ownerEpoch) || lease.checkpoint.ownerEpoch < 1 || lease.checkpoint.ownerEpoch > lease.epoch : lease.sequence !== 0) || !Number.isFinite(lease.validForMs) || lease.validForMs <= 1e3 || started + lease.validForMs - 1e3 <= performance.now())
+      throw new Error("room ownership unavailable");
+    return new _RoomDurability(ports, content, build, lease, started, onLost);
+  }
+  get ownership() {
+    if (!this.owned()) throw new Error("room ownership lost");
+    return Object.freeze({ ...this.lease });
+  }
+  get worldId() {
+    return this.lease.worldId;
+  }
+  get ownershipDeadline() {
+    return this.deadline;
+  }
+  get sequence() {
+    return this.lease.sequence;
+  }
+  owned() {
+    if (!this.closed && !this.lost && performance.now() < this.deadline) return true;
+    if (!this.closed) this.lose();
+    return false;
+  }
+  async load() {
+    if (!this.owned()) throw new Error("room ownership lost");
+    const snapshot = this.lease.checkpoint ? await this.storage.load(this.lease.checkpoint) : null;
+    if (!this.owned()) throw new Error("room ownership lost");
+    return snapshot;
+  }
+  attach(post) {
+    if (!this.owned() || this.post) throw new Error("room ownership unavailable");
+    this.post = post;
+    post({ type: "ownership", deadline: this.deadline });
+  }
+  watchDeadline() {
+    if (this.deadlineTimer) clearTimeout(this.deadlineTimer);
+    this.deadlineTimer = setTimeout(
+      () => this.lose(),
+      Math.max(0, this.deadline - performance.now())
+    );
+  }
+  scheduleRenewal(validForMs) {
+    this.renewal = setTimeout(() => void this.renew(), Math.min(1e4, (validForMs - 1e3) / 3));
+  }
+  async renew() {
+    if (!this.owned()) return;
+    const started = performance.now();
+    try {
+      const result = await this.metadata.renew(this.lease);
+      if (!this.owned()) return;
+      if (!result || !Number.isFinite(result.validForMs) || result.validForMs <= 1e3) {
+        this.lose();
+        return;
+      }
+      const deadline = started + result.validForMs - 1e3;
+      if (deadline <= performance.now()) {
+        this.lose();
+        return;
+      }
+      this.deadline = deadline;
+      this.watchDeadline();
+      this.post?.({ type: "ownership", deadline });
+      this.scheduleRenewal(result.validForMs);
+    } catch {
+      if (this.owned()) this.renewal = setTimeout(() => void this.renew(), 500);
+    }
+  }
+  lose() {
+    if (this.lost || this.closed) return;
+    this.lost = true;
+    this.cancel(new Error("room ownership lost"));
+    this.onLost();
+  }
+  cancel(error) {
+    if (this.deadlineTimer) clearTimeout(this.deadlineTimer);
+    if (this.renewal) clearTimeout(this.renewal);
+    if (this.capture) {
+      clearTimeout(this.capture.timer);
+      this.capture.reject(error);
+      this.capture = null;
+    }
+    this.queued?.reject(error);
+    this.queued = null;
+    this.active?.reject(error);
+  }
+  receive(message) {
+    if (message.type !== "checkpoint" && message.type !== "checkpoint-failed") return;
+    const capture = this.capture;
+    if (!capture || capture.requestId !== message.requestId) return;
+    clearTimeout(capture.timer);
+    this.capture = null;
+    if (!this.owned()) capture.reject(new Error("room ownership lost"));
+    else if (message.type === "checkpoint-failed")
+      capture.reject(new Error("room checkpoint capture failed"));
+    else capture.resolve(message.checkpoint);
+  }
+  async takeSnapshot(pause) {
+    if (!this.owned() || !this.post) throw new Error("room ownership unavailable");
+    const requestId = ++this.requestId;
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.capture = null;
+        reject(new Error("room checkpoint capture timed out"));
+      }, 5e3);
+      this.capture = { requestId, resolve, reject, timer };
+      try {
+        this.post({ type: "checkpoint", requestId, pause });
+      } catch (error) {
+        clearTimeout(timer);
+        this.capture = null;
+        reject(error);
+      }
+    });
+  }
+  save(pause = false) {
+    if (!this.owned()) return Promise.reject(new Error("room ownership lost"));
+    if (pause) {
+      try {
+        this.post?.({ type: "pause" });
+      } catch (error) {
+        return Promise.reject(error);
+      }
+    }
+    if (!this.queued) {
+      let resolve, reject;
+      const promise2 = new Promise((r, j) => {
+        resolve = r;
+        reject = j;
+      });
+      this.queued = { pause, promise: promise2, resolve, reject };
+    } else this.queued.pause ||= pause;
+    const promise = this.queued.promise;
+    if (!this.running) void this.run();
+    return promise;
+  }
+  async commit(snapshot) {
+    if (!this.owned()) throw new Error("room ownership lost");
+    const pointer = await this.storage.save(this.lease, this.lease.sequence + 1, snapshot);
+    this.lease = { ...this.lease, sequence: pointer.sequence, checkpoint: pointer };
+    this.unconfirmed = null;
+    if (!this.owned()) throw new Error("room ownership lost");
+    return pointer;
+  }
+  async run() {
+    const request = this.queued;
+    this.active = request;
+    this.queued = null;
+    this.running = true;
+    try {
+      if (this.unconfirmed) await this.commit(this.unconfirmed);
+      const snapshot = await this.takeSnapshot(request.pause);
+      this.unconfirmed = snapshot;
+      request.resolve(await this.commit(snapshot));
+    } catch (error) {
+      if (error instanceof CheckpointFenced) this.lose();
+      request.reject(error instanceof Error ? error : new Error("room checkpoint failed"));
+    } finally {
+      this.running = false;
+      this.active = null;
+      if (this.queued) void this.run();
+    }
+  }
+  close() {
+    if (this.closing) return this.closing;
+    this.closed = true;
+    this.cancel(new Error("room persistence closed"));
+    this.closing = Promise.resolve().then(() => this.metadata.release(this.lease));
+    return this.closing;
+  }
+};
+
+// src/sim/explosives.ts
+var Explosives = class _Explosives {
+  values = /* @__PURE__ */ new Map();
+  next = 0;
+  owners() {
+    return [...new Set([...this.values.values()].map((body) => body.owner))].sort();
+  }
+  checkpoint(content) {
+    return Object.freeze({
+      schema: 1,
+      contentHash: content.hash,
+      next: this.next,
+      entries: Object.freeze(
+        [...this.values.values()].map((body) => {
+          const family = content.blocks[body.state]?.name, rule = content.behavior.find((block) => block.family === family)?.explosive;
+          if (!rule || rule.fuse !== body.rule.fuse || rule.radius !== body.rule.radius || rule.damage !== body.rule.damage)
+            throw new Error("explosive checkpoint content mismatch");
+          return Object.freeze({
+            id: body.id,
+            revision: body.revision,
+            state: body.state,
+            position: Object.freeze([...body.position]),
+            velocity: Object.freeze([...body.velocity]),
+            remaining: body.remaining,
+            total: body.total,
+            owner: body.owner
+          });
+        })
+      )
+    });
+  }
+  static fromCheckpoint(content, value) {
+    const invalid = () => {
+      throw new Error("invalid explosives checkpoint");
+    };
+    if (!checkpointObject(value, ["schema", "contentHash", "next", "entries"]) || value.schema !== 1 || value.contentHash !== content.hash || !checkpointInteger(value.next) || !Array.isArray(value.entries))
+      return invalid();
+    const restored = new _Explosives(), entries = /* @__PURE__ */ new Map();
+    for (const b of value.entries) {
+      if (!checkpointObject(b, [
+        "id",
+        "revision",
+        "state",
+        "position",
+        "velocity",
+        "remaining",
+        "total",
+        "owner"
+      ]) || !checkpointCounterId(b.id, "tnt", value.next) || entries.has(b.id) || !checkpointInteger(b.revision) || !checkpointInteger(b.state, 1, content.blocks.length - 1) || !checkpointPosition(b.position) || !checkpointVelocity(b.velocity) || !checkpointInteger(b.total, 30, 900) || !checkpointInteger(b.remaining, 0, b.total) || b.remaining !== Math.max(0, b.total - b.revision) || !checkpointIdentity(b.owner))
+        return invalid();
+      const rule = content.behavior.find(
+        (block) => block.family === content.blocks[b.state].name
+      )?.explosive;
+      if (!rule) return invalid();
+      entries.set(b.id, {
+        id: b.id,
+        revision: b.revision,
+        state: b.state,
+        position: [...b.position],
+        velocity: [...b.velocity],
+        remaining: b.remaining,
+        total: b.total,
+        owner: b.owner,
+        rule: { ...rule }
+      });
+    }
+    restored.values = entries;
+    restored.next = value.next;
+    return restored;
+  }
+  get size() {
+    return this.values.size;
+  }
+  get positions() {
+    return [...this.values.values()].map((body) => body.position);
+  }
+  add(owner, state, position, rule, fuse = rule.fuse) {
+    if (!checkpointIdentity(owner) || this.next === Number.MAX_SAFE_INTEGER || !Number.isInteger(state) || state < 1 || state >= 65535 || !checkpointPosition(position) || !Number.isInteger(fuse) || fuse < 30 || fuse > 900 || !Number.isInteger(rule.fuse) || rule.fuse < 30 || rule.fuse > 900 || !Number.isInteger(rule.radius) || rule.radius < 1 || rule.radius > 4 || !Number.isInteger(rule.damage) || rule.damage < 1 || rule.damage > 20)
+      throw new Error("invalid primed explosive");
+    const id = `tnt-${++this.next}`;
+    this.values.set(id, {
+      id,
+      revision: 0,
+      state,
+      position: [...position],
+      remaining: fuse,
+      total: fuse,
+      owner,
+      rule: { ...rule },
+      velocity: [0, 2, 0]
+    });
+    return id;
+  }
+  step(world) {
+    for (const body of this.values.values()) {
+      body.remaining = Math.max(0, body.remaining - 1);
+      body.revision++;
+      const [x, y, z] = body.position;
+      if (!around(Math.floor(x / 16), Math.floor(z / 16), 1).every((p) => world.has_column(p.x, p.z)))
+        continue;
+      body.velocity[1] = Math.max(-12, body.velocity[1] - 18 / 30);
+      const moved = world.sweep_body(
+        x,
+        y,
+        z,
+        body.velocity[0] / 30,
+        body.velocity[1] / 30,
+        body.velocity[2] / 30,
+        0.45,
+        0.9
+      );
+      body.position = [
+        Math.max(-255.55, Math.min(255.55, moved[0])),
+        Math.max(0, Math.min(255.1, moved[1])),
+        Math.max(-255.55, Math.min(255.55, moved[2]))
+      ];
+      for (let axis = 0; axis < 3; axis++)
+        if (moved[axis + 3] || body.position[axis] !== moved[axis]) body.velocity[axis] = 0;
+    }
+  }
+  due() {
+    return [...this.values.values()].filter((body) => body.remaining === 0).map(({ velocity, ...body }) => ({ ...body, position: [...body.position] }));
+  }
+  remove(id) {
+    this.values.delete(id);
+  }
+  nearby(position, radius) {
+    return [...this.values.values()].filter(
+      (body) => Math.hypot(...body.position.map((value, axis) => value - position[axis])) <= radius
+    ).map(({ owner, rule, velocity, ...body }) => ({ ...body, position: [...body.position] }));
+  }
+  dispose() {
+    this.values.clear();
+  }
+};
+
+// src/server/admission.ts
+function isSessionEnded(error) {
+  return error instanceof Error && error.code === "SESSION_ENDED";
+}
+var MAX_AUTHORIZATION_MS = 6e4;
+function object3(value, fields) {
+  return !!value && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length === fields.length && fields.every((key) => Object.hasOwn(value, key));
+}
+function readAuthorization(value, now, expectedId) {
+  if (!object3(value, ["actor", "expiresAt"]) && !object3(value, ["actor", "expiresAt", "membershipRevision"]) || "membershipRevision" in value && (!Number.isSafeInteger(value.membershipRevision) || value.membershipRevision < 0) || !object3(value.actor, ["id", "role", "capabilities"]) || typeof value.actor.id !== "string" || !value.actor.id.length || value.actor.id.length > 128 || expectedId !== void 0 && value.actor.id !== expectedId || !["participant", "observer"].includes(value.actor.role) || !object3(value.actor.capabilities, ["build", "fly", "observe", "combat", "explosives"]) || !Object.values(value.actor.capabilities).every((flag) => typeof flag === "boolean") || value.actor.role === "observer" && value.actor.capabilities.observe !== true || typeof value.expiresAt !== "number" || !Number.isFinite(value.expiresAt) || value.expiresAt <= now || value.expiresAt > now + MAX_AUTHORIZATION_MS)
+    throw new Error("invalid server authorization");
+  return Object.freeze({
+    actor: Object.freeze({
+      id: value.actor.id,
+      role: value.actor.role,
+      capabilities: Object.freeze({
+        build: value.actor.capabilities.build,
+        fly: value.actor.capabilities.fly,
+        observe: value.actor.capabilities.observe,
+        combat: value.actor.capabilities.combat,
+        explosives: value.actor.capabilities.explosives
+      })
+    }),
+    expiresAt: value.expiresAt,
+    ...value.membershipRevision === void 0 ? {} : { membershipRevision: value.membershipRevision }
+  });
+}
+var ConnectionAuthorization = class {
+  grant;
+  current;
+  deadline;
+  renewal = null;
+  expiry = null;
+  closed = false;
+  initialMembershipRevision;
+  apply;
+  lost;
+  constructor(grant, current, apply, lost) {
+    this.grant = grant;
+    this.current = current;
+    this.initialMembershipRevision = current.membershipRevision ?? 0;
+    this.apply = apply;
+    this.lost = lost;
+    this.deadline = performance.now() + current.expiresAt - Date.now();
+    this.schedule();
+  }
+  get until() {
+    return this.deadline;
+  }
+  get actorId() {
+    return this.current.actor.id;
+  }
+  /** Renewal cannot upgrade a connection past a later removal boundary. */
+  get admissionRevision() {
+    return this.initialMembershipRevision;
+  }
+  valid() {
+    if (!this.closed && performance.now() < this.deadline) return true;
+    if (!this.closed) this.fail("UNAUTHORIZED");
+    return false;
+  }
+  schedule() {
+    const remaining = this.deadline - performance.now();
+    this.expiry = setTimeout(() => this.fail("UNAUTHORIZED"), Math.max(0, remaining));
+    this.renewal = setTimeout(() => void this.renew(), Math.max(0, remaining / 2));
+  }
+  async renew() {
+    if (!this.valid()) return;
+    try {
+      const value = await this.grant.revalidate("actor");
+      if (!this.valid()) return;
+      if (value === null) {
+        this.fail("UNAUTHORIZED");
+        return;
+      }
+      const next = readAuthorization(value, Date.now(), this.current.actor.id);
+      if (JSON.stringify(next.actor) !== JSON.stringify(this.current.actor)) {
+        this.fail("UNAUTHORIZED");
+        return;
+      }
+      if (this.expiry) clearTimeout(this.expiry);
+      this.current = next;
+      this.deadline = performance.now() + next.expiresAt - Date.now();
+      this.apply(this.deadline);
+      this.schedule();
+    } catch (error) {
+      if (this.valid()) this.fail(isSessionEnded(error) ? "SESSION_ENDED" : "RECOVERING");
+    }
+  }
+  fail(reason) {
+    if (this.closed) return;
+    this.close();
+    this.lost(reason);
+  }
+  close() {
+    this.closed = true;
+    if (this.renewal) clearTimeout(this.renewal);
+    if (this.expiry) clearTimeout(this.expiry);
+  }
+};
+
+// src/server/owner-authorization.ts
+var OWNER_AUTHORIZATION_MS = 5e3;
+async function resolveOwnerAuthorizations(resolve, room, owners) {
+  if (!Array.isArray(owners) || new Set(owners).size !== owners.length || owners.some((id) => typeof id !== "string" || !id.length || id.length > 128))
+    throw new Error("invalid owner identities");
+  let next = 0;
+  const results = new Array(owners.length);
+  const workers = await Promise.allSettled(
+    Array.from({ length: Math.min(4, owners.length) }, async () => {
+      for (; ; ) {
+        const index = next++;
+        if (index >= owners.length) return;
+        const id = owners[index], value = await resolve(room, id), now = Date.now();
+        const actor = value === null ? null : readAuthorization({ actor: value, expiresAt: now + OWNER_AUTHORIZATION_MS }, now, id).actor;
+        results[index] = Object.freeze([id, actor]);
+      }
+    })
+  );
+  if (workers.some((result) => result.status === "rejected"))
+    throw new Error("owner authorization unavailable");
+  return Object.freeze(results);
+}
+
+// src/server/room-policy.ts
+var ROOM_POLICY_MS = 5e3;
+function readRoomPolicy(value, now) {
+  if (!Number.isFinite(now)) throw new Error("invalid room policy");
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    throw new Error("invalid room policy");
+  const v = value;
+  if (Object.keys(v).length !== 2 || !["playing", "paused", "ended"].includes(v.state) || typeof v.expiresAt !== "number" || !Number.isFinite(v.expiresAt) || v.expiresAt <= now || v.expiresAt > now + ROOM_POLICY_MS)
+    throw new Error("invalid room policy");
+  return Object.freeze({ state: v.state, expiresAt: v.expiresAt });
+}
+
+// src/server/session-projection.ts
+var SessionOutbox = class {
+  sequence = 0;
+  pending = null;
+  running = null;
+  stopped = false;
+  finished = false;
+  terminal = false;
+  retry = null;
+  write;
+  onError;
+  constructor(write, onError) {
+    this.write = write;
+    this.onError = onError;
+  }
+  offer(view) {
+    if (this.stopped) return;
+    this.terminal ||= view.state === "ended";
+    this.pending = Object.freeze({
+      state: this.terminal ? "ended" : view.state,
+      participants: Object.freeze([...new Set(view.participants)])
+    });
+    if (!this.running && !this.retry) this.start();
+  }
+  start() {
+    const task = this.run();
+    this.running = task;
+    void task.then(() => {
+      this.running = null;
+      if (this.pending && !this.stopped)
+        this.retry = setTimeout(() => {
+          this.retry = null;
+          if (!this.stopped) this.start();
+        }, 500);
+    });
+  }
+  async run() {
+    while (this.pending && !this.stopped) {
+      const view = this.pending;
+      this.pending = null;
+      try {
+        if (this.sequence === Number.MAX_SAFE_INTEGER)
+          throw new Error("projection sequence exhausted");
+        if (!await this.write(++this.sequence, view))
+          throw new Error("session projection fenced");
+      } catch {
+        if (!this.pending) this.pending = view;
+        this.onError();
+        return;
+      }
+    }
+  }
+  /** Stop accepting worker updates, then persist final empty presence before lease release. */
+  async finish() {
+    if (this.finished) return;
+    this.stopped = true;
+    if (this.retry) clearTimeout(this.retry);
+    this.retry = null;
+    await this.running;
+    this.pending = null;
+    if (this.sequence === Number.MAX_SAFE_INTEGER) throw new Error("projection sequence exhausted");
+    if (!await this.write(++this.sequence, {
+      state: this.terminal ? "ended" : "paused",
+      participants: []
+    }))
+      throw new Error("session projection unavailable");
+    this.finished = true;
+  }
+  close() {
+    this.stopped = true;
+    this.pending = null;
+    if (this.retry) clearTimeout(this.retry);
+    this.retry = null;
+  }
+};
+
+// src/server/gateway.ts
+async function createGateway(options) {
+  if (options.sessions && (!options.persistence || !options.roomPolicy))
+    throw new Error("session projection requires durable ownership and lifecycle policy");
+  if (options.control && !options.sessions)
+    throw new Error("control requires authoritative session projection");
+  const apiRoutes = new Map(Object.entries(options.api ?? {}));
+  for (const path of apiRoutes.keys())
+    if (!/^\/api\/voxel\/[a-z-]+$/.test(path) || ["/api/voxel/admission", "/api/voxel/control"].includes(path))
+      throw new Error("invalid service API route");
+  const commandQueues = /* @__PURE__ */ new Map();
+  const resolveOwner = options.resolveOwner ?? options.persistence?.resolveOwner;
+  if (options.build.protocol !== PROTOCOL || options.build.environmentVersion !== ENVIRONMENT_VERSION || options.content.hash !== options.build.contentHash)
+    throw new Error("incompatible server content/protocol");
+  const seed = options.worldDefaults?.seed ?? 4242, initialTick = options.worldDefaults?.initialTick ?? 0, mode = options.worldDefaults?.mode ?? "creative";
+  if (!Number.isInteger(seed) || seed < 0 || seed > 4294967295 || !Number.isSafeInteger(initialTick) || initialTick < 0 || !["creative", "survival"].includes(mode))
+    throw new Error("invalid world defaults");
+  const wasm = await readFile(
+    new URL(
+      import.meta.url.endsWith(".ts") ? "../../engine/pkg/voxel_engine_bg.wasm" : "./engine.wasm",
+      import.meta.url
+    )
+  );
+  if (createHash2("sha256").update(wasm).digest("hex") !== options.build.engineHash)
+    throw new Error("incompatible server engine artifact");
+  const module = await WebAssembly.compile(wasm);
+  const rooms = /* @__PURE__ */ new Map(), admitting = /* @__PURE__ */ new Map(), allocations = /* @__PURE__ */ new Map(), connections = /* @__PURE__ */ new Map(), tickets = /* @__PURE__ */ new Map();
+  let draining = false;
+  const event = (name, context = {}) => options.onEvent?.(name, { buildId: options.build.buildId, ...context });
+  const allowedOrigin = (req) => !req.headers.origin || options.allowedOrigins?.includes(req.headers.origin) || req.headers.origin === `http://${req.headers.host}` || req.headers.origin === `https://${req.headers.host}`;
+  const reply = (res, status, value) => {
+    res.writeHead(status, { "Content-Type": "application/json", "Cache-Control": "no-store" });
+    res.end(JSON.stringify(value));
+  };
+  const failRoom = (handle) => {
+    if (handle.closing) return;
+    handle.closing = true;
+    if (handle.staffPending) {
+      clearTimeout(handle.staffPending.timer);
+      handle.staffPending.reject(new Error("staff outcome unconfirmed"));
+      handle.staffPending = null;
+    }
+    handle.rejectStartup();
+    handle.projection?.close();
+    for (const id of handle.connections) {
+      const c = connections.get(id);
+      if (c) {
+        c.socket.send(
+          JSON.stringify({
+            type: "error",
+            code: "RECOVERING",
+            retryable: true
+          })
+        );
+        c.socket.close(1012, "recovering");
+      }
+    }
+    for (const [key, value] of rooms) if (value === handle) rooms.delete(key);
+    event("VOXEL_ROOM_FAILED", { connections: handle.connections.size });
+    void handle.worker.terminate().then(
+      () => handle.durability?.close(),
+      () => handle.durability?.close()
+    ).catch(() => event("VOXEL_LEASE_RELEASE_FAILED"));
+  };
+  const detach = (id) => {
+    const entry = connections.get(id);
+    if (!entry) return;
+    entry.authorization?.close();
+    const room = entry.room;
+    entry.room = null;
+    room?.connections.delete(id);
+    room?.worker.postMessage({ type: "leave", connection: id });
+    if (!draining && room && (room.durability || options.roomPolicy) && !room.closing && !room.connections.size)
+      void retireRoom(room);
+  };
+  const apiContext = Object.freeze({
+    revoke(roomId, actor, revision2) {
+      if (!/^[a-zA-Z0-9_-]{1,64}$/.test(roomId) || !actor.length || actor.length > 128 || !Number.isSafeInteger(revision2) || revision2 < 1)
+        throw new Error("invalid actor revocation");
+      const room = rooms.get(roomId);
+      if (!room || room.closing) return;
+      const cutoff = Math.max(room.revocations.get(actor) ?? 0, revision2);
+      room.revocations.set(actor, cutoff);
+      let revoked = 0;
+      for (const id of room.connections) {
+        const entry = connections.get(id), authorization = entry?.authorization;
+        if (!entry || !authorization || authorization.actorId !== actor || authorization.admissionRevision >= cutoff)
+          continue;
+        if (entry.socket.readyState === WebSocket.OPEN)
+          entry.socket.send(
+            JSON.stringify({
+              type: "error",
+              code: "UNAUTHORIZED",
+              retryable: false
+            })
+          );
+        detach(id);
+        entry.socket.close(1008, "room access revoked");
+        revoked++;
+      }
+      event("VOXEL_ACTOR_REVOKED", {
+        worldId: room.worldId,
+        revision: cutoff,
+        connections: revoked
+      });
+    }
+  });
+  async function roomFor(id) {
+    const existing = rooms.get(id);
+    if (existing) {
+      if (existing.retiring) {
+        await retireRoom(existing);
+        return roomFor(id);
+      }
+      await existing.ready;
+      if (existing.closing) throw new Error("room recovering");
+      return existing;
+    }
+    const pending = allocations.get(id);
+    if (pending) return pending;
+    const allocation = allocate(id);
+    allocations.set(id, allocation);
+    try {
+      return await allocation;
+    } finally {
+      if (allocations.get(id) === allocation) allocations.delete(id);
+    }
+  }
+  function retireRoom(handle) {
+    if (handle.idle) return handle.idle;
+    if (handle.closing) return Promise.resolve();
+    handle.retiring = true;
+    if (handle.controlBusy) {
+      const waiting = handle.controlBusy.then(() => retireRoom(handle));
+      void waiting.catch(
+        () => event("VOXEL_DEFERRED_RETIREMENT_FAILED", { worldId: handle.worldId })
+      );
+      return waiting;
+    }
+    const task = (async () => {
+      await handle.durability?.save(true);
+      await handle.projection?.finish();
+      if (handle.closing) return;
+      handle.closing = true;
+      handle.rejectStartup();
+      await new Promise((resolve) => {
+        const timeout = setTimeout(
+          () => void handle.worker.terminate().then(
+            () => resolve(),
+            () => resolve()
+          ),
+          3e3
+        );
+        handle.worker.once("exit", () => {
+          clearTimeout(timeout);
+          resolve();
+        });
+        handle.worker.postMessage({ type: "stop" });
+      });
+      await handle.durability?.close();
+      for (const [key, value] of rooms) if (value === handle) rooms.delete(key);
+      event(handle.durability ? "VOXEL_ROOM_SAVED_AND_RELEASED" : "VOXEL_EMPTY_ROOM_STOPPED", {
+        worldId: handle.worldId
+      });
+    })().finally(() => {
+      handle.idle = null;
+      if (handle.closing) {
+        for (const [key, value] of rooms) if (value === handle) rooms.delete(key);
+      }
+    });
+    handle.idle = task;
+    void task.catch(() => event("VOXEL_CHECKPOINT_FAILED", { worldId: handle.worldId }));
+    return task;
+  }
+  async function allocate(id) {
+    let durability = null, handle = null, ownershipLost = false;
+    try {
+      if (options.persistence)
+        durability = await RoomDurability.acquire(
+          options.persistence,
+          options.content,
+          options.build,
+          id,
+          randomUUID(),
+          () => {
+            ownershipLost = true;
+            if (handle) failRoom(handle);
+          }
+        );
+      if (options.sessions && durability) await options.sessions.initialize(durability.ownership);
+      const snapshot = await durability?.load();
+      let start;
+      const worldId = durability?.worldId ?? randomUUID();
+      if (snapshot) {
+        const ids = [
+          ...new Set(
+            Explosives.fromCheckpoint(options.content, snapshot.explosives).checkpoint(options.content).entries.map((body) => body.owner)
+          )
+        ];
+        if (ids.length && !resolveOwner)
+          throw new Error("restored explosive owner resolver unavailable");
+        const owners = ids.length ? await resolveOwnerAuthorizations(resolveOwner, id, ids) : [];
+        start = { type: "restore", checkpoint: snapshot, owners };
+      } else start = { type: "fresh", worldId, seed, initialTick, mode };
+      if (draining || ownershipLost || durability && !durability.owned())
+        throw new Error("room ownership unavailable");
+      handle = spawnRoom(id, worldId, start, durability);
+      await handle.ready;
+      if (draining || handle.closing || durability && !durability.owned())
+        throw new Error("room startup cancelled");
+      return handle;
+    } catch (error) {
+      if (handle) failRoom(handle);
+      else await durability?.close().catch(() => event("VOXEL_LEASE_RELEASE_FAILED"));
+      throw error;
+    }
+  }
+  function spawnRoom(id, worldId, start, durability) {
+    const worker = new Worker(
+      new URL(
+        import.meta.url.endsWith(".ts") ? "./room-worker.ts" : "./room-worker.js",
+        import.meta.url
+      ),
+      {
+        workerData: {
+          module,
+          start,
+          ...durability ? { ownershipDeadline: durability.ownershipDeadline } : {},
+          refreshOwners: !!resolveOwner,
+          enforceLifecycle: !!options.roomPolicy,
+          projectSession: !!options.sessions,
+          build: options.build,
+          content: options.content
+        }
+      }
+    );
+    let resolve, reject;
+    const ready = new Promise((r, j) => {
+      resolve = r;
+      reject = j;
+    });
+    const handle = {
+      worker,
+      ready,
+      connections: /* @__PURE__ */ new Set(),
+      revocations: /* @__PURE__ */ new Map(),
+      closing: false,
+      heartbeat: Date.now(),
+      worldId,
+      durability,
+      rejectStartup: () => reject(new Error("room failed")),
+      retiring: false,
+      idle: null,
+      hasJoined: false,
+      controlBusy: null,
+      staffPending: null,
+      projection: options.sessions && durability ? new SessionOutbox(
+        (sequence, view) => options.sessions.project(durability.ownership, sequence, view),
+        () => event("VOXEL_SESSION_PROJECTION_FAILED", { worldId })
+      ) : null
+    };
+    rooms.set(id, handle);
+    durability?.attach((message) => worker.postMessage(message));
+    const deadline = setTimeout(() => {
+      reject(new Error("room startup timed out"));
+      failRoom(handle);
+    }, 15e3);
+    worker.on("message", (message) => {
+      if (handle.closing || durability && !durability.owned()) return;
+      if (message.type === "staff-result") {
+        const pending = handle.staffPending;
+        if (pending?.requestId === message.requestId && pending.revision === message.revision) {
+          clearTimeout(pending.timer);
+          handle.staffPending = null;
+          pending.resolve(message.result);
+        }
+      } else if (message.type === "ready") {
+        handle.heartbeat = Date.now();
+        clearTimeout(deadline);
+        resolve();
+        event("VOXEL_ROOM_READY");
+      } else if (message.type === "room-policy-needed") {
+        const unavailable = () => {
+          if (!handle.closing && (!durability || durability.owned()))
+            worker.postMessage({
+              type: "room-policy-unavailable",
+              requestId: message.requestId
+            });
+        };
+        if (!options.roomPolicy || draining || performance.now() >= message.deadline) {
+          unavailable();
+          return;
+        }
+        void Promise.resolve().then(() => options.roomPolicy(id)).then(
+          (value) => {
+            if (handle.closing || durability && !durability.owned()) return;
+            try {
+              const now = Date.now(), policy = readRoomPolicy(value, now), until = Math.min(message.deadline, performance.now() + policy.expiresAt - now);
+              if (performance.now() >= until) {
+                unavailable();
+                return;
+              }
+              worker.postMessage({
+                type: "room-policy",
+                requestId: message.requestId,
+                state: policy.state,
+                deadline: until
+              });
+            } catch {
+              unavailable();
+            }
+          },
+          () => {
+            event("VOXEL_ROOM_POLICY_UNAVAILABLE", { worldId: handle.worldId });
+            unavailable();
+          }
+        );
+      } else if (message.type === "session-projection") {
+        handle.projection?.offer(message);
+      } else if (message.type === "session-ended") {
+        handle.projection?.offer({ state: "ended", participants: [] });
+        void retireRoom(handle);
+      } else if (message.type === "owner-authorization-needed") {
+        const unavailable = () => {
+          if (!handle.closing && (!durability || durability.owned()))
+            worker.postMessage({
+              type: "owner-authorization-unavailable",
+              requestId: message.requestId
+            });
+        };
+        if (!resolveOwner || draining || performance.now() >= message.deadline) {
+          unavailable();
+          return;
+        }
+        void resolveOwnerAuthorizations(resolveOwner, id, message.owners).then(
+          (owners) => {
+            if (handle.closing || durability && !durability.owned()) return;
+            if (performance.now() >= message.deadline) {
+              unavailable();
+              return;
+            }
+            worker.postMessage({
+              type: "owner-authorization",
+              requestId: message.requestId,
+              owners,
+              deadline: message.deadline
+            });
+          },
+          () => {
+            event("VOXEL_OWNER_POLICY_UNAVAILABLE", { worldId: handle.worldId });
+            unavailable();
+          }
+        );
+      } else if (message.type === "fault") {
+        reject(new Error("room failed"));
+        failRoom(handle);
+      } else if (message.type === "metrics") {
+        handle.heartbeat = Date.now();
+        event("VOXEL_ROOM_METRICS", {
+          worldId: handle.worldId,
+          ticks: message.ticks,
+          columns: message.columns,
+          overrunMs: message.overrunMs
+        });
+      } else if (message.type === "checkpoint" || message.type === "checkpoint-failed") {
+        durability?.receive(message);
+      } else {
+        const c = connections.get(message.connection);
+        if (!c || c.room !== handle || c.socket.readyState !== WebSocket.OPEN) return;
+        if (message.type === "close") {
+          detach(message.connection);
+          c.socket.send(
+            JSON.stringify({
+              type: "error",
+              code: message.reason,
+              retryable: false
+            })
+          );
+          c.socket.close(
+            ["UNAUTHORIZED", "SESSION_ENDED"].includes(message.reason) ? 1008 : 4001,
+            message.reason.toLowerCase()
+          );
+        } else {
+          if (!c.authorization?.valid()) return;
+          if (message.kind === "snapshot" && c.socket.bufferedAmount > 65536) return;
+          if (c.socket.bufferedAmount > 1024 * 1024) {
+            c.socket.close(1013, "resynchronize");
+            return;
+          }
+          c.socket.send(
+            message.payload,
+            { binary: typeof message.payload !== "string" },
+            (error) => {
+              if (error) c.socket.terminate();
+            }
+          );
+        }
+      }
+    });
+    worker.on("error", () => {
+      clearTimeout(deadline);
+      reject(new Error("room worker error"));
+      failRoom(handle);
+    });
+    worker.on("exit", (code) => {
+      clearTimeout(deadline);
+      if (!handle.closing) {
+        reject(new Error("room exited"));
+        failRoom(handle);
+      }
+      event("VOXEL_ROOM_EXITED", { code });
+    });
+    void ready.catch(() => {
+    });
+    return handle;
+  }
+  async function executeControl(grant) {
+    if (!/^[a-zA-Z0-9_-]{1,64}$/.test(grant.room)) throw new Error("invalid control room");
+    const previous = commandQueues.get(grant.room) ?? Promise.resolve();
+    const task = previous.then(async () => {
+      if (draining) throw new Error("service draining");
+      const room = await roomFor(grant.room);
+      if (!room.durability || room.closing || !room.durability.owned())
+        throw new Error("durable control room unavailable");
+      let release;
+      room.controlBusy = new Promise((resolve) => release = resolve);
+      try {
+        return await grant.execute({
+          lease: room.durability.ownership,
+          staff: (request) => {
+            const now = Date.now(), remaining = request.expiresAt - now;
+            if (!room.durability.owned() || room.closing || room.staffPending || !Number.isFinite(remaining) || remaining <= 0 || remaining > 5e3)
+              throw new Error("staff authority unavailable");
+            return new Promise((resolve, reject) => {
+              const timer = setTimeout(() => {
+                if (room.staffPending?.requestId === request.requestId) room.staffPending = null;
+                reject(new Error("staff outcome unconfirmed"));
+              }, remaining);
+              room.staffPending = {
+                requestId: request.requestId,
+                revision: request.revision,
+                resolve,
+                reject,
+                timer
+              };
+              room.worker.postMessage({
+                type: "staff",
+                requestId: request.requestId,
+                revision: request.revision,
+                actorId: request.actorId,
+                command: request.command,
+                deadline: performance.now() + remaining
+              });
+            });
+          },
+          savePaused: () => room.durability.save(true),
+          resume: () => {
+            if (!room.durability.owned() || room.closing) throw new Error("room ownership lost");
+            room.worker.postMessage({ type: "resume" });
+          },
+          end: () => {
+            if (!room.durability.owned() || room.closing) throw new Error("room ownership lost");
+            room.worker.postMessage({ type: "end" });
+          }
+        });
+      } finally {
+        room.controlBusy = null;
+        release();
+        if (!draining && !room.closing && !room.connections.size) void retireRoom(room);
+      }
+    });
+    const tail = task.then(
+      () => {
+      },
+      () => {
+      }
+    );
+    commandQueues.set(grant.room, tail);
+    try {
+      return await task;
+    } finally {
+      if (commandQueues.get(grant.room) === tail) commandQueues.delete(grant.room);
+    }
+  }
+  const http = createServer((req, res) => {
+    void (async () => {
+      if (req.url === "/health") {
+        reply(res, 200, { ok: true });
+        return;
+      }
+      if (req.url === "/ready") {
+        reply(res, draining ? 503 : 200, { ready: !draining });
+        return;
+      }
+      if (req.url !== "/api/voxel/admission" && !(req.url === "/api/voxel/control" && options.control) && !apiRoutes.has(req.url ?? "") || req.method !== "POST" && req.method !== "OPTIONS") {
+        if (req.method === "GET" && options.handleClient) {
+          await options.handleClient(req, res);
+          return;
+        }
+        reply(res, 404, { error: "NOT_FOUND" });
+        return;
+      }
+      if (!allowedOrigin(req)) {
+        reply(res, 403, { error: "ORIGIN" });
+        return;
+      }
+      res.setHeader("Vary", "Origin");
+      if (req.headers.origin) {
+        res.setHeader("Access-Control-Allow-Origin", req.headers.origin);
+        res.setHeader("Access-Control-Allow-Credentials", "true");
+      }
+      if (req.method === "OPTIONS") {
+        const method = req.headers["access-control-request-method"];
+        const headers = req.headers["access-control-request-headers"];
+        if (method !== void 0 && method !== "POST" || headers !== void 0 && (typeof headers !== "string" || headers.split(",").some(
+          (header) => !["authorization", "content-type"].includes(header.trim().toLowerCase())
+        ))) {
+          reply(res, 403, { error: "ORIGIN" });
+          return;
+        }
+        res.writeHead(204, {
+          "Access-Control-Allow-Methods": "POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Authorization, Content-Type",
+          "Cache-Control": "no-store"
+        });
+        res.end();
+        return;
+      }
+      if (draining) {
+        reply(res, 503, { error: "RECOVERING" });
+        return;
+      }
+      let raw = "";
+      for await (const chunk of req) {
+        raw += chunk;
+        if (raw.length > 2048) {
+          reply(res, 413, { error: "TOO_LARGE" });
+          return;
+        }
+      }
+      let body;
+      try {
+        body = JSON.parse(raw);
+      } catch {
+        reply(res, 400, { error: "INVALID" });
+        return;
+      }
+      const serviceApi = apiRoutes.get(req.url ?? "");
+      if (serviceApi) {
+        const result = await serviceApi(req, body, res, apiContext);
+        if (!res.writableEnded) reply(res, 200, result);
+        return;
+      }
+      if (req.url === "/api/voxel/control") {
+        const grant2 = await options.control(req, body, res);
+        if (res.writableEnded) return;
+        if (!grant2) {
+          reply(res, 403, { error: "UNAUTHORIZED" });
+          return;
+        }
+        try {
+          const result = await executeControl(grant2);
+          if (!res.writableEnded) reply(res, 200, result);
+        } catch {
+          event("VOXEL_CONTROL_FAILED");
+          if (!res.writableEnded) reply(res, 503, { error: "RECOVERING", saved: false });
+        }
+        return;
+      }
+      if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).some(
+        (key) => !["room", "invitationCode", "participation"].includes(key)
+      ) || !("room" in body) || typeof body.room !== "string" || !/^[a-zA-Z0-9_-]{1,64}$/.test(body.room) || "invitationCode" in body && (typeof body.invitationCode !== "string" || body.invitationCode.length > 128) || "participation" in body && !["player", "observer"].includes(body.participation)) {
+        reply(res, 400, { error: "INVALID" });
+        return;
+      }
+      const input = body;
+      const grant = await options.admit(req, input, res);
+      if (res.writableEnded) return;
+      if (draining) {
+        reply(res, 503, { error: "RECOVERING" });
+        return;
+      }
+      if (!grant || grant.actor.role === "observer" && !grant.actor.capabilities.observe) {
+        reply(res, 403, { error: "UNAUTHORIZED" });
+        return;
+      }
+      if (typeof grant.revalidate !== "function")
+        throw new Error("admission revalidation required");
+      const initial = readAuthorization(
+        { actor: grant.actor, expiresAt: grant.expiresAt },
+        Date.now()
+      );
+      const ticket = randomBytes(32).toString("base64url");
+      tickets.set(ticket, {
+        grant,
+        actor: initial.actor,
+        room: body.room,
+        expires: Date.now() + 3e4
+      });
+      reply(res, 200, { ticket, buildId: options.build.buildId });
+      event("VOXEL_ADMISSION_ISSUED");
+    })().catch(() => {
+      event("VOXEL_HTTP_FAILED");
+      if (!res.headersSent) reply(res, 500, { error: "INTERNAL" });
+      else res.end();
+    });
+  });
+  const sockets = new WebSocketServer({
+    noServer: true,
+    maxPayload: MAX_CONTROL_BYTES,
+    perMessageDeflate: false
+  });
+  http.on("upgrade", (req, socket, head) => {
+    if (draining || req.url !== "/voxel" || !allowedOrigin(req)) {
+      socket.destroy();
+      return;
+    }
+    sockets.handleUpgrade(req, socket, head, (ws) => sockets.emit("connection", ws));
+  });
+  sockets.on("connection", (socket) => {
+    const id = randomUUID(), entry = {
+      socket,
+      room: null,
+      authorization: null
+    };
+    connections.set(id, entry);
+    let authenticated = false, joining = false, windowStart = Date.now(), messages = 0;
+    const deadline = setTimeout(() => socket.close(1008, "admission required"), 5e3);
+    socket.on("error", () => socket.terminate());
+    socket.on("close", () => {
+      clearTimeout(deadline);
+      detach(id);
+      connections.delete(id);
+    });
+    socket.on("message", (bytes, binary) => {
+      void (async () => {
+        if (Date.now() - windowStart >= 1e3) {
+          windowStart = Date.now();
+          messages = 0;
+        }
+        if (++messages > 300 || binary) {
+          socket.close(1008, "invalid control stream");
+          return;
+        }
+        const message = parseClientMessage(bytes.toString());
+        if (!message) {
+          socket.send(
+            JSON.stringify({
+              type: "error",
+              code: "INVALID",
+              retryable: false
+            })
+          );
+          return;
+        }
+        if (!authenticated) {
+          if (joining || message.type !== "hello") {
+            socket.close(1008, "admission required");
+            return;
+          }
+          joining = true;
+          const ticket = tickets.get(message.ticket);
+          tickets.delete(message.ticket);
+          if (!ticket || ticket.expires < Date.now()) {
+            socket.send(
+              JSON.stringify({
+                type: "error",
+                code: "UNAUTHORIZED",
+                retryable: false
+              })
+            );
+            socket.close(1008);
+            return;
+          }
+          if (message.buildId !== options.build.buildId) {
+            socket.send(
+              JSON.stringify({
+                type: "error",
+                code: "INCOMPATIBLE",
+                retryable: false
+              })
+            );
+            socket.close(1008);
+            return;
+          }
+          admitting.set(ticket.room, (admitting.get(ticket.room) ?? 0) + 1);
+          try {
+            const validate = async () => {
+              const next = await ticket.grant.revalidate("ticket");
+              return next === null ? null : readAuthorization(next, Date.now(), ticket.actor.id);
+            };
+            let authorization = await validate();
+            if (!authorization) {
+              socket.send(
+                JSON.stringify({
+                  type: "error",
+                  code: "UNAUTHORIZED",
+                  retryable: false
+                })
+              );
+              socket.close(1008);
+              return;
+            }
+            let room;
+            let acceptedBy = null;
+            for (; ; ) {
+              if (socket.readyState !== WebSocket.OPEN) return;
+              room = await roomFor(ticket.room);
+              if (socket.readyState !== WebSocket.OPEN) return;
+              if (room.retiring) continue;
+              if (authorization.expiresAt <= Date.now()) {
+                authorization = await validate();
+                if (!authorization) {
+                  socket.close(1008, "authorization expired");
+                  return;
+                }
+                continue;
+              }
+              if (options.sessions && room.durability && acceptedBy !== room) {
+                await options.sessions.accept(
+                  room.durability.ownership,
+                  authorization.actor,
+                  authorization
+                );
+                acceptedBy = room;
+                continue;
+              }
+              break;
+            }
+            if (socket.readyState !== WebSocket.OPEN || room.closing || room.durability && !room.durability.owned())
+              return;
+            if ((authorization.membershipRevision ?? 0) < (room.revocations.get(authorization.actor.id) ?? 0)) {
+              socket.send(
+                JSON.stringify({
+                  type: "error",
+                  code: "UNAUTHORIZED",
+                  retryable: false
+                })
+              );
+              socket.close(1008, "room access revoked");
+              return;
+            }
+            entry.room = room;
+            room.hasJoined = true;
+            room.connections.add(id);
+            authenticated = true;
+            clearTimeout(deadline);
+            entry.authorization = new ConnectionAuthorization(
+              ticket.grant,
+              authorization,
+              (until) => entry.room?.worker.postMessage({
+                type: "authorization",
+                connection: id,
+                deadline: until
+              }),
+              (reason) => {
+                detach(id);
+                if (socket.readyState === WebSocket.OPEN)
+                  socket.send(
+                    JSON.stringify({
+                      type: "error",
+                      code: reason,
+                      retryable: reason === "RECOVERING"
+                    })
+                  );
+                socket.close(reason === "RECOVERING" ? 1012 : 1008, reason.toLowerCase());
+              }
+            );
+            room.worker.postMessage({
+              type: "join",
+              actor: authorization.actor,
+              connection: id,
+              authorizationUntil: entry.authorization.until
+            });
+            return;
+          } finally {
+            const remaining = (admitting.get(ticket.room) ?? 1) - 1;
+            if (remaining) admitting.set(ticket.room, remaining);
+            else admitting.delete(ticket.room);
+            const handle = rooms.get(ticket.room);
+            if (!draining && !remaining && handle && !handle.closing && !handle.connections.size && (!handle.hasJoined || handle.durability || options.roomPolicy))
+              void retireRoom(handle);
+          }
+        }
+        if (message.type === "hello") {
+          socket.close(1008, "ticket already used");
+          return;
+        }
+        if (!entry.room || !entry.authorization?.valid()) {
+          socket.close(1008, "authorization expired");
+          return;
+        }
+        if (entry.room.closing || entry.room.durability && !entry.room.durability.owned()) {
+          socket.close(1012, "recovering");
+          return;
+        }
+        entry.room.worker.postMessage({
+          type: "message",
+          connection: id,
+          message
+        });
+      })().catch((error) => {
+        const ended = isSessionEnded(error);
+        event("VOXEL_CONNECTION_FAILED");
+        if (socket.readyState === WebSocket.OPEN)
+          socket.send(
+            JSON.stringify({
+              type: "error",
+              code: ended ? "SESSION_ENDED" : "RECOVERING",
+              retryable: !ended
+            })
+          );
+        socket.close(ended ? 1008 : 1012, ended ? "session ended" : "recovering");
+      });
+    });
+  });
+  const sweep = setInterval(() => {
+    for (const [key, ticket] of tickets) if (ticket.expires < Date.now()) tickets.delete(key);
+    for (const handle of rooms.values())
+      if (Date.now() - handle.heartbeat > 25e3) failRoom(handle);
+  }, 5e3);
+  const autosave = setInterval(() => {
+    for (const handle of rooms.values())
+      if (handle.durability && !handle.closing && handle.retiring) void retireRoom(handle);
+      else if (handle.durability && !handle.closing)
+        void handle.durability.save(false).then(
+          (pointer) => event("VOXEL_CHECKPOINT_COMMITTED", {
+            worldId: handle.worldId,
+            sequence: pointer.sequence
+          }),
+          () => event("VOXEL_CHECKPOINT_FAILED", { worldId: handle.worldId })
+        );
+  }, 15e3);
+  await new Promise((resolve, reject) => {
+    http.once("error", reject);
+    http.listen(options.port ?? 0, options.host ?? "127.0.0.1", () => {
+      http.off("error", reject);
+      resolve();
+    });
+  });
+  return {
+    http,
+    sockets,
+    rooms,
+    address: http.address(),
+    async save(room, pause = false) {
+      const handle = rooms.get(room);
+      if (!handle?.durability || handle.closing) throw new Error("durable room unavailable");
+      return handle.durability.save(pause);
+    },
+    resume(room) {
+      const handle = rooms.get(room);
+      if (!handle || handle.closing || handle.durability && !handle.durability.owned())
+        throw new Error("room unavailable");
+      handle.worker.postMessage({ type: "resume" });
+    },
+    async close() {
+      draining = true;
+      clearInterval(sweep);
+      clearInterval(autosave);
+      tickets.clear();
+      await Promise.allSettled([...commandQueues.values()]);
+      await Promise.allSettled([...rooms.values()].map((handle) => handle.idle));
+      const handles = [...rooms.values()];
+      const saved = await Promise.allSettled(
+        handles.map(async (handle) => {
+          await handle.durability?.save(true);
+          await handle.projection?.finish();
+        })
+      );
+      for (const c of connections.values()) c.socket.terminate();
+      const closed = new Promise((resolve) => http.close(() => resolve()));
+      const force = setTimeout(() => http.closeAllConnections(), 3500);
+      for (const handle of rooms.values()) {
+        handle.closing = true;
+        handle.projection?.close();
+        handle.worker.postMessage({ type: "stop" });
+      }
+      await Promise.all(
+        [...rooms.values()].map(
+          (handle) => new Promise((resolve) => {
+            const timeout = setTimeout(() => {
+              void handle.worker.terminate().then(
+                () => resolve(),
+                () => resolve()
+              );
+            }, 3e3);
+            handle.worker.once("exit", () => {
+              clearTimeout(timeout);
+              resolve();
+            });
+          })
+        )
+      );
+      await Promise.allSettled(handles.map((handle) => handle.durability?.close()));
+      rooms.clear();
+      await Promise.allSettled([...allocations.values()]);
+      sockets.close();
+      await closed;
+      clearTimeout(force);
+      for (const result of saved) if (result.status === "rejected") throw result.reason;
+    }
+  };
+}
+export {
+  createGateway
+};
+//# sourceMappingURL=gateway.js.map

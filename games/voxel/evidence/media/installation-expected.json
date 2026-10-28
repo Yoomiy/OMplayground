@@ -1,0 +1,260 @@
+[
+  {
+    "kind": "function",
+    "name": "voxel_media_authorize",
+    "detail": {
+      "bodyMd5": "dbb285829aecc0fd8c62e3ca2e9612da",
+      "definer": true,
+      "settings": [
+        "search_path=\"\""
+      ],
+      "signature": "p_session uuid, p_world uuid, p_owner uuid, p_epoch bigint, p_actor uuid, p_revision bigint, p_participation text, p_media_revision bigint, p_authorized_until timestamp with time zone",
+      "anonExecute": false,
+      "browserExecute": false,
+      "serviceExecute": true
+    }
+  },
+  {
+    "kind": "function",
+    "name": "voxel_media_moderate",
+    "detail": {
+      "bodyMd5": "481c9901ff92f6a771b8d8c25224adbb",
+      "definer": true,
+      "settings": [
+        "search_path=\"\""
+      ],
+      "signature": "p_session uuid, p_actor uuid, p_request uuid, p_target uuid, p_action text, p_authorized_until timestamp with time zone",
+      "anonExecute": false,
+      "browserExecute": false,
+      "serviceExecute": true
+    }
+  },
+  {
+    "kind": "function",
+    "name": "voxel_media_receipt",
+    "detail": {
+      "bodyMd5": "95c9298b95a05b70d62adcc0b6f8ebca",
+      "definer": true,
+      "settings": [
+        "search_path=\"\""
+      ],
+      "signature": "p_session uuid, p_request uuid, p_actor uuid",
+      "anonExecute": false,
+      "browserExecute": false,
+      "serviceExecute": false
+    }
+  },
+  {
+    "kind": "function",
+    "name": "voxel_media_scope",
+    "detail": {
+      "bodyMd5": "6368cb4e315f8c94c66681093c74676b",
+      "definer": true,
+      "settings": [
+        "search_path=\"\""
+      ],
+      "signature": "p_session uuid, p_actor uuid, p_authorized_until timestamp with time zone",
+      "anonExecute": false,
+      "browserExecute": false,
+      "serviceExecute": false
+    }
+  },
+  {
+    "kind": "function",
+    "name": "voxel_media_state",
+    "detail": {
+      "bodyMd5": "7adbab542045ccda1718ccacab493c17",
+      "definer": true,
+      "settings": [
+        "search_path=\"\""
+      ],
+      "signature": "p_session uuid, p_actor uuid, p_authorized_until timestamp with time zone",
+      "anonExecute": false,
+      "browserExecute": false,
+      "serviceExecute": true
+    }
+  },
+  {
+    "kind": "function",
+    "name": "voxel_media_status",
+    "detail": {
+      "bodyMd5": "f1f01b10d87c37d43f6aff8398bde168",
+      "definer": true,
+      "settings": [
+        "search_path=\"\""
+      ],
+      "signature": "",
+      "anonExecute": false,
+      "browserExecute": false,
+      "serviceExecute": true
+    }
+  },
+  {
+    "kind": "table",
+    "name": "voxel_media_actors",
+    "detail": {
+      "rls": true,
+      "columns": [
+        {
+          "name": "session_id",
+          "type": "uuid",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "actor_id",
+          "type": "uuid",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "revision",
+          "type": "bigint",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "muted",
+          "type": "boolean",
+          "default": null,
+          "required": true
+        }
+      ],
+      "anonSelect": false,
+      "constraints": [
+        "PRIMARY KEY (session_id, actor_id)",
+        "CHECK (((revision >= 1) AND (revision <= '9007199254740991'::bigint)))",
+        "FOREIGN KEY (session_id) REFERENCES voxel_media_policy(session_id) ON DELETE CASCADE"
+      ],
+      "browserInsert": false,
+      "browserSelect": false,
+      "serviceDelete": false,
+      "serviceInsert": false,
+      "serviceSelect": false,
+      "serviceUpdate": false
+    }
+  },
+  {
+    "kind": "table",
+    "name": "voxel_media_commands",
+    "detail": {
+      "rls": true,
+      "columns": [
+        {
+          "name": "session_id",
+          "type": "uuid",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "request_id",
+          "type": "uuid",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "actor_id",
+          "type": "uuid",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "target_id",
+          "type": "uuid",
+          "default": null,
+          "required": false
+        },
+        {
+          "name": "action",
+          "type": "text",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "revision",
+          "type": "bigint",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "muted",
+          "type": "boolean",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "audit_id",
+          "type": "uuid",
+          "default": null,
+          "required": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "clock_timestamp()",
+          "required": true
+        }
+      ],
+      "anonSelect": false,
+      "constraints": [
+        "CHECK ((action = ANY (ARRAY['mute'::text, 'unmute'::text])))",
+        "FOREIGN KEY (audit_id) REFERENCES audit_log(id) ON DELETE SET NULL",
+        "PRIMARY KEY (session_id, request_id)",
+        "CHECK (((revision >= 0) AND (revision <= '9007199254740991'::bigint)))",
+        "FOREIGN KEY (session_id) REFERENCES voxel_media_policy(session_id) ON DELETE CASCADE"
+      ],
+      "browserInsert": false,
+      "browserSelect": false,
+      "serviceDelete": false,
+      "serviceInsert": false,
+      "serviceSelect": false,
+      "serviceUpdate": false
+    }
+  },
+  {
+    "kind": "table",
+    "name": "voxel_media_policy",
+    "detail": {
+      "rls": true,
+      "columns": [
+        {
+          "name": "session_id",
+          "type": "uuid",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "revision",
+          "type": "bigint",
+          "default": "0",
+          "required": true
+        },
+        {
+          "name": "all_revision",
+          "type": "bigint",
+          "default": "0",
+          "required": true
+        },
+        {
+          "name": "all_muted",
+          "type": "boolean",
+          "default": "false",
+          "required": true
+        }
+      ],
+      "anonSelect": false,
+      "constraints": [
+        "CHECK (((all_revision >= 0) AND (all_revision <= revision)))",
+        "PRIMARY KEY (session_id)",
+        "CHECK (((revision >= 0) AND (revision <= '9007199254740991'::bigint)))",
+        "FOREIGN KEY (session_id) REFERENCES voxel_worlds(session_id) ON DELETE CASCADE"
+      ],
+      "browserInsert": false,
+      "browserSelect": false,
+      "serviceDelete": false,
+      "serviceInsert": false,
+      "serviceSelect": false,
+      "serviceUpdate": false
+    }
+  }
+]

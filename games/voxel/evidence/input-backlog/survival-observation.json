@@ -1,0 +1,17 @@
+{
+  "result": "SURVIVAL_TERMINAL_REPORT_AND_INDEPENDENT_AUDIT_PASS",
+  "checkedAt": "2026-10-28T00:18:31.684Z",
+  "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc",
+  "originalToolSession": 30781,
+  "observedLivePid": 838462,
+  "pidNoLongerExists": true,
+  "originalShellExitStatus": null,
+  "benchmarkRerun": false,
+  "reportPath": "games/voxel/test-results/survival-workers.json",
+  "reportSha256": "50578807789cc011cc40c4f03ff25d3ded09ced298c203e9df0ef744ac3609ef",
+  "reportStartedAt": "2026-10-27T21:22:57.137Z",
+  "reportFinishedAt": "2026-10-27T21:26:03.800Z",
+  "auditPath": "/tmp/voxel-input-backlog-survival-audit.log",
+  "auditSha256": "0aa5a6ec41f205e798670b142f22d0bbcb6185f38d8b523e28567a6bf63d7335",
+  "note": "The original tool session disappeared during a goal continuation. The existing benchmark child was confirmed live, awaited without restart, then its terminal report was independently checked. No original wrapper exit code is claimed."
+}

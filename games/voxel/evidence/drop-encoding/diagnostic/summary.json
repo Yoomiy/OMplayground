@@ -1,0 +1,207 @@
+{
+  "scope": "One diagnostic 128-player pair per scene, including harness/startup/generation/hashing outside measured ticks; prior release 6b20 and baseline 3ea.",
+  "profile": "CPU.20261027.162917.809818.0.001.cpuprofile",
+  "totalMs": 34846.459,
+  "hotspots": [
+    {
+      "key": "player_state games/voxel/engine/pkg/voxel_engine.js:746",
+      "sampledMs": 3878.08
+    },
+    {
+      "key": "snapshots games/voxel/src/sim/game-room.ts:1931",
+      "sampledMs": 2917.878
+    },
+    {
+      "key": "snapshots games/voxel/evidence/worker-timings/sources/games/voxel/src/sim/game-room.ts:1917",
+      "sampledMs": 2911.524
+    },
+    {
+      "key": "subscriptions games/voxel/evidence/worker-timings/sources/games/voxel/src/sim/game-room.ts:1785",
+      "sampledMs": 2453.896
+    },
+    {
+      "key": "encode games/voxel/src/server/snapshot-encoder.ts:13",
+      "sampledMs": 2021.72
+    },
+    {
+      "key": "update node:internal/crypto/hash:146",
+      "sampledMs": 1956.274
+    },
+    {
+      "key": "dropSnapshots games/voxel/src/sim/game-room.ts:1653",
+      "sampledMs": 1465.84
+    },
+    {
+      "key": "dropSnapshots games/voxel/evidence/worker-timings/sources/games/voxel/src/sim/game-room.ts:1649",
+      "sampledMs": 980.659
+    },
+    {
+      "key": " games/voxel/evidence/worker-timings/sources/games/voxel/src/sim/game-room.ts:728",
+      "sampledMs": 976.53
+    },
+    {
+      "key": "(garbage collector) :0",
+      "sampledMs": 813.096
+    },
+    {
+      "key": " games/voxel/evidence/worker-timings/sources/games/voxel/src/sim/drops.ts:204",
+      "sampledMs": 761.613
+    },
+    {
+      "key": " :0",
+      "sampledMs": 745.273
+    },
+    {
+      "key": " games/voxel/evidence/worker-timings/sources/games/voxel/src/sim/game-room.ts:1795",
+      "sampledMs": 731.395
+    },
+    {
+      "key": " games/voxel/src/server/snapshot-encoder.ts:21",
+      "sampledMs": 622.203
+    },
+    {
+      "key": "require games/voxel/src/sim/world-store.ts:122",
+      "sampledMs": 583.806
+    },
+    {
+      "key": " games/voxel/src/sim/game-room.ts:731",
+      "sampledMs": 530.099
+    },
+    {
+      "key": " games/voxel/evidence/worker-timings/sources/games/voxel/src/sim/game-room.ts:1654",
+      "sampledMs": 526.307
+    },
+    {
+      "key": "nearby games/voxel/evidence/worker-timings/sources/games/voxel/src/sim/drops.ts:201",
+      "sampledMs": 447.338
+    },
+    {
+      "key": "getArrayF64FromWasm0 games/voxel/engine/pkg/voxel_engine.js:1150",
+      "sampledMs": 397.656
+    },
+    {
+      "key": " games/voxel/evidence/worker-timings/sources/games/voxel/src/sim/drops.ts:211",
+      "sampledMs": 348.343
+    },
+    {
+      "key": "state games/voxel/evidence/worker-timings/sources/games/voxel/src/sim/game-room.ts:1719",
+      "sampledMs": 323.385
+    },
+    {
+      "key": "equipped games/voxel/evidence/worker-timings/sources/games/voxel/src/sim/inventory.ts:424",
+      "sampledMs": 304.776
+    },
+    {
+      "key": "state games/voxel/src/sim/game-room.ts:1727",
+      "sampledMs": 304.335
+    },
+    {
+      "key": "wasm-function[141] wasm://wasm/00219756:1",
+      "sampledMs": 279.749
+    },
+    {
+      "key": " games/voxel/src/sim/drops.ts:235",
+      "sampledMs": 275.047
+    },
+    {
+      "key": "snapshot games/voxel/src/sim/drops.ts:205",
+      "sampledMs": 273.77
+    },
+    {
+      "key": "equipped games/voxel/src/sim/inventory.ts:424",
+      "sampledMs": 257.362
+    },
+    {
+      "key": "wasm-function[294] wasm://wasm/00219756:1",
+      "sampledMs": 216.095
+    },
+    {
+      "key": " games/voxel/evidence/worker-timings/sources/games/voxel/src/sim/game-room.ts:1655",
+      "sampledMs": 211.404
+    },
+    {
+      "key": "run games/voxel/tools/benchmark-survival.ts:67",
+      "sampledMs": 206.932
+    },
+    {
+      "key": "send games/voxel/tools/benchmark-survival.ts:85",
+      "sampledMs": 199.527
+    },
+    {
+      "key": "refreshMovement games/voxel/evidence/worker-timings/sources/games/voxel/src/sim/game-room.ts:1104",
+      "sampledMs": 198.133
+    },
+    {
+      "key": "copyStack games/voxel/evidence/worker-timings/sources/games/voxel/src/shared/inventory.ts:48",
+      "sampledMs": 186.41
+    },
+    {
+      "key": "find games/voxel/src/sim/game-room.ts:1712",
+      "sampledMs": 175.222
+    },
+    {
+      "key": "find games/voxel/evidence/worker-timings/sources/games/voxel/src/sim/game-room.ts:1704",
+      "sampledMs": 171.906
+    },
+    {
+      "key": "refreshMovement games/voxel/src/sim/game-room.ts:1108",
+      "sampledMs": 167.773
+    },
+    {
+      "key": " games/voxel/src/sim/game-room.ts:1663",
+      "sampledMs": 147.752
+    },
+    {
+      "key": "wasm-function[44] wasm://wasm/00219756:1",
+      "sampledMs": 140.352
+    },
+    {
+      "key": "stepBoundedMovement games/voxel/evidence/worker-timings/sources/games/voxel/src/shared/movement.ts:61",
+      "sampledMs": 137.164
+    },
+    {
+      "key": "stepBoundedMovement games/voxel/src/shared/movement.ts:61",
+      "sampledMs": 126.481
+    },
+    {
+      "key": "wasm-function[98] wasm://wasm/00219756:1",
+      "sampledMs": 123.135
+    },
+    {
+      "key": "around games/voxel/evidence/worker-timings/sources/games/voxel/src/shared/protocol.ts:597",
+      "sampledMs": 116.937
+    },
+    {
+      "key": " games/voxel/evidence/worker-timings/sources/games/voxel/src/sim/game-room.ts:1705",
+      "sampledMs": 115.109
+    },
+    {
+      "key": "receive games/voxel/src/sim/game-room.ts:508",
+      "sampledMs": 107.48
+    },
+    {
+      "key": "receive games/voxel/evidence/worker-timings/sources/games/voxel/src/sim/game-room.ts:505",
+      "sampledMs": 100.057
+    },
+    {
+      "key": "take games/voxel/src/sim/input-queue.ts:54",
+      "sampledMs": 99.007
+    },
+    {
+      "key": "receive games/voxel/src/sim/input-queue.ts:39",
+      "sampledMs": 98.524
+    },
+    {
+      "key": "pickups games/voxel/src/sim/game-room.ts:1622",
+      "sampledMs": 97.731
+    },
+    {
+      "key": " games/voxel/src/sim/game-room.ts:1713",
+      "sampledMs": 92.659
+    },
+    {
+      "key": "take games/voxel/evidence/worker-timings/sources/games/voxel/src/sim/input-queue.ts:54",
+      "sampledMs": 91.258
+    }
+  ]
+}

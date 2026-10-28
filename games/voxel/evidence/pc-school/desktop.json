@@ -1,0 +1,2020 @@
+{
+  "result": "PASS",
+  "checkedAt": "2026-10-28T09:46:05.128Z",
+  "scope": "Natural empty-inventory survival with trusted PC keyboard and pointer-lock mouse input, owned drops/pickups, 2x2/3x3 crafting, consumed workbench placement, held pickaxe, crafted/equipped trail boots and heavy shield, and a harvested apple eaten after real simulation-time hunger with inventory open; no creative grants or test-only world mutations; software Chromium functional check only",
+  "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc",
+  "seed": 4242,
+  "engineHash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388",
+  "contentHash": "368b605ac5bdf5ff6fcf4af02f7174cbc6d39b5110f48e0a41b231a0a6479464",
+  "browser": "156.0.8078.4",
+  "desktopInput": {
+    "moves": 97,
+    "lockedPrimary": 7,
+    "lockedSecondary": 3,
+    "untrusted": 0,
+    "keys": {
+      "Escape": 4,
+      "KeyW": 34,
+      "Space": 5,
+      "KeyE": 2,
+      "Digit4": 2
+    },
+    "samples": [
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "keydown",
+        "trusted": true,
+        "locked": true,
+        "code": "KeyW"
+      },
+      {
+        "type": "keydown",
+        "trusted": true,
+        "locked": true,
+        "code": "Space"
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "keydown",
+        "trusted": true,
+        "locked": true,
+        "code": "KeyW"
+      },
+      {
+        "type": "keydown",
+        "trusted": true,
+        "locked": true,
+        "code": "Space"
+      },
+      {
+        "type": "keydown",
+        "trusted": true,
+        "locked": true,
+        "code": "KeyE"
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 2
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 2
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 2
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 2
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 2
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 2
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "keydown",
+        "trusted": true,
+        "locked": false,
+        "code": "Escape"
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "keydown",
+        "trusted": true,
+        "locked": true,
+        "code": "Digit4"
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": true,
+        "button": 2
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": true,
+        "button": 2
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": true,
+        "button": 2
+      },
+      {
+        "type": "keydown",
+        "trusted": true,
+        "locked": true,
+        "code": "KeyE"
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 2
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 2
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 2
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 2
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 2
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 2
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 2
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 2
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 2
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 2
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 2
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 2
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 2
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 2
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 2
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 2
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "keydown",
+        "trusted": true,
+        "locked": false,
+        "code": "Escape"
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      },
+      {
+        "type": "keydown",
+        "trusted": true,
+        "locked": true,
+        "code": "Digit4"
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "keydown",
+        "trusted": true,
+        "locked": false,
+        "code": "Escape"
+      },
+      {
+        "type": "mousedown",
+        "trusted": true,
+        "locked": false,
+        "button": 0
+      },
+      {
+        "type": "mousemove",
+        "trusted": true,
+        "locked": true,
+        "button": 0
+      }
+    ]
+  },
+  "configuration": {
+    "networkProfile": {
+      "rttMs": 100,
+      "jitterMs": 25,
+      "mbps": 10
+    },
+    "server": "packaged gateway/native workers",
+    "viewport": {
+      "width": 900,
+      "height": 650
+    },
+    "quality": "low",
+    "hostedWrites": false
+  },
+  "harvested": [
+    {
+      "target": [
+        49,
+        68,
+        -4
+      ],
+      "visible": {
+        "drop": {
+          "id": "drop-1",
+          "revision": 9,
+          "stack": {
+            "itemType": "spruce_log",
+            "count": 1
+          },
+          "position": [
+            49.5,
+            68,
+            -3.5
+          ]
+        },
+        "origin": {
+          "x": 48,
+          "z": 0
+        },
+        "feedback": {
+          "visible": 1,
+          "kinds": 1
+        }
+      },
+      "inventoryRevision": 1
+    },
+    {
+      "target": [
+        49,
+        69,
+        -4
+      ],
+      "visible": null,
+      "inventoryRevision": 2
+    },
+    {
+      "target": [
+        49,
+        70,
+        -4
+      ],
+      "visible": null,
+      "inventoryRevision": 3
+    },
+    {
+      "target": [
+        49,
+        71,
+        -4
+      ],
+      "visible": {
+        "drop": {
+          "id": "drop-6",
+          "revision": 3,
+          "stack": {
+            "itemType": "spruce_log",
+            "count": 1
+          },
+          "position": [
+            49.5,
+            71.28,
+            -3.5
+          ]
+        },
+        "origin": {
+          "x": 48,
+          "z": -16
+        },
+        "feedback": {
+          "visible": 2,
+          "kinds": 2
+        }
+      },
+      "inventoryRevision": 4
+    },
+    {
+      "target": [
+        49,
+        72,
+        -4
+      ],
+      "visible": {
+        "drop": {
+          "id": "drop-7",
+          "revision": 5,
+          "stack": {
+            "itemType": "spruce_log",
+            "count": 1
+          },
+          "position": [
+            49.5,
+            72.23333333333333,
+            -3.5
+          ]
+        },
+        "origin": {
+          "x": 48,
+          "z": -16
+        },
+        "feedback": {
+          "visible": 2,
+          "kinds": 2
+        }
+      },
+      "inventoryRevision": 5
+    }
+  ],
+  "cleared": [
+    {
+      "cell": [
+        49,
+        69,
+        -8
+      ],
+      "family": "spruce_leaves",
+      "purpose": "pickup"
+    }
+  ],
+  "placement": {
+    "type": "result",
+    "epoch": 4,
+    "sequence": 4,
+    "status": "applied",
+    "outcome": {
+      "ok": true,
+      "reason": "edited",
+      "cell": [
+        50,
+        68,
+        -2
+      ],
+      "state": 23,
+      "revision": 8
+    }
+  },
+  "food": {
+    "foliage": [
+      48,
+      69,
+      -3
+    ],
+    "hungry": {
+      "version": 2,
+      "health": 20,
+      "food": 19,
+      "air": 300,
+      "dead": false,
+      "respawnIn": 0,
+      "attackCooldown": 0,
+      "protection": 0
+    },
+    "after": {
+      "version": 2,
+      "health": 20,
+      "food": 20,
+      "air": 300,
+      "dead": false,
+      "respawnIn": 0,
+      "attackCooldown": 0,
+      "protection": 0
+    }
+  },
+  "explosive": null,
+  "equipment": null,
+  "bucket": null,
+  "remoteEquipment": {
+    "appearance": {
+      "held": "wooden_pickaxe",
+      "equipment": {
+        "head": null,
+        "body": null,
+        "legs": null,
+        "feet": "trail_boots",
+        "offhand": "heavy_shield"
+      }
+    },
+    "viewerId": "e6f5463b-f1de-4669-9d16-02ebba2e928f",
+    "ownerId": "acac276c-f387-4ecb-8b63-f270b07f00a1",
+    "joined": {
+      "origin": {
+        "x": 48,
+        "z": 0
+      },
+      "gear": {
+        "visible": 4,
+        "held": 1,
+        "worn": 3,
+        "kinds": 3,
+        "capacity": 24,
+        "samples": [
+          {
+            "id": "acac276c-f387-4ecb-8b63-f270b07f00a1",
+            "itemType": "wooden_pickaxe",
+            "slot": "held",
+            "side": 0,
+            "position": [
+              0.4197000563144684,
+              68.83999633789062,
+              -1.3983001708984375
+            ],
+            "vertices": 96
+          },
+          {
+            "id": "acac276c-f387-4ecb-8b63-f270b07f00a1",
+            "itemType": "trail_boots",
+            "slot": "feet",
+            "side": -1,
+            "position": [
+              0.3351166248321533,
+              68.30000305175781,
+              -1.8983707427978516
+            ],
+            "vertices": 48
+          },
+          {
+            "id": "acac276c-f387-4ecb-8b63-f270b07f00a1",
+            "itemType": "trail_boots",
+            "slot": "feet",
+            "side": 1,
+            "position": [
+              0.33488336205482483,
+              68.30000305175781,
+              -1.6183708906173706
+            ],
+            "vertices": 48
+          },
+          {
+            "id": "acac276c-f387-4ecb-8b63-f270b07f00a1",
+            "itemType": "heavy_shield",
+            "slot": "offhand",
+            "side": 0,
+            "position": [
+              0.42029985785484314,
+              68.83999633789062,
+              -2.118299961090088
+            ],
+            "vertices": 72
+          }
+        ]
+      }
+    },
+    "shifted": {
+      "origin": {
+        "x": 32,
+        "z": 0
+      },
+      "gear": {
+        "visible": 4,
+        "held": 1,
+        "worn": 3,
+        "kinds": 3,
+        "capacity": 24,
+        "samples": [
+          {
+            "id": "acac276c-f387-4ecb-8b63-f270b07f00a1",
+            "itemType": "wooden_pickaxe",
+            "slot": "held",
+            "side": 0,
+            "position": [
+              16.419700622558594,
+              68.83999633789062,
+              -1.3983001708984375
+            ],
+            "vertices": 96
+          },
+          {
+            "id": "acac276c-f387-4ecb-8b63-f270b07f00a1",
+            "itemType": "trail_boots",
+            "slot": "feet",
+            "side": -1,
+            "position": [
+              16.33511734008789,
+              68.30000305175781,
+              -1.8983707427978516
+            ],
+            "vertices": 48
+          },
+          {
+            "id": "acac276c-f387-4ecb-8b63-f270b07f00a1",
+            "itemType": "trail_boots",
+            "slot": "feet",
+            "side": 1,
+            "position": [
+              16.334882736206055,
+              68.30000305175781,
+              -1.6183708906173706
+            ],
+            "vertices": 48
+          },
+          {
+            "id": "acac276c-f387-4ecb-8b63-f270b07f00a1",
+            "itemType": "heavy_shield",
+            "slot": "offhand",
+            "side": 0,
+            "position": [
+              16.420299530029297,
+              68.83999633789062,
+              -2.118299961090088
+            ],
+            "vertices": 72
+          }
+        ]
+      }
+    },
+    "withoutFeet": {
+      "visible": 2,
+      "held": 1,
+      "worn": 1,
+      "kinds": 2,
+      "capacity": 16,
+      "samples": [
+        {
+          "id": "acac276c-f387-4ecb-8b63-f270b07f00a1",
+          "itemType": "wooden_pickaxe",
+          "slot": "held",
+          "side": 0,
+          "position": [
+            16.419700622558594,
+            68.83999633789062,
+            -1.3983001708984375
+          ],
+          "vertices": 96
+        },
+        {
+          "id": "acac276c-f387-4ecb-8b63-f270b07f00a1",
+          "itemType": "heavy_shield",
+          "slot": "offhand",
+          "side": 0,
+          "position": [
+            16.420299530029297,
+            68.83999633789062,
+            -2.118299961090088
+          ],
+          "vertices": 72
+        }
+      ]
+    },
+    "selected": {
+      "visible": 4,
+      "held": 1,
+      "worn": 3,
+      "kinds": 3,
+      "capacity": 24,
+      "samples": [
+        {
+          "id": "acac276c-f387-4ecb-8b63-f270b07f00a1",
+          "itemType": "spruce_planks",
+          "slot": "held",
+          "side": 0,
+          "position": [
+            16.419700622558594,
+            68.83999633789062,
+            -1.3983001708984375
+          ],
+          "vertices": 24
+        },
+        {
+          "id": "acac276c-f387-4ecb-8b63-f270b07f00a1",
+          "itemType": "trail_boots",
+          "slot": "feet",
+          "side": -1,
+          "position": [
+            16.33511734008789,
+            68.30000305175781,
+            -1.8983707427978516
+          ],
+          "vertices": 48
+        },
+        {
+          "id": "acac276c-f387-4ecb-8b63-f270b07f00a1",
+          "itemType": "trail_boots",
+          "slot": "feet",
+          "side": 1,
+          "position": [
+            16.334882736206055,
+            68.30000305175781,
+            -1.6183708906173706
+          ],
+          "vertices": 48
+        },
+        {
+          "id": "acac276c-f387-4ecb-8b63-f270b07f00a1",
+          "itemType": "heavy_shield",
+          "slot": "offhand",
+          "side": 0,
+          "position": [
+            16.420299530029297,
+            68.83999633789062,
+            -2.118299961090088
+          ],
+          "vertices": 72
+        }
+      ]
+    },
+    "reconnected": {
+      "visible": 4,
+      "held": 1,
+      "worn": 3,
+      "kinds": 3,
+      "capacity": 24,
+      "samples": [
+        {
+          "id": "acac276c-f387-4ecb-8b63-f270b07f00a1",
+          "itemType": "wooden_pickaxe",
+          "slot": "held",
+          "side": 0,
+          "position": [
+            16.419700622558594,
+            68.83999633789062,
+            -1.3983001708984375
+          ],
+          "vertices": 96
+        },
+        {
+          "id": "acac276c-f387-4ecb-8b63-f270b07f00a1",
+          "itemType": "trail_boots",
+          "slot": "feet",
+          "side": -1,
+          "position": [
+            16.33511734008789,
+            68.30000305175781,
+            -1.8983707427978516
+          ],
+          "vertices": 48
+        },
+        {
+          "id": "acac276c-f387-4ecb-8b63-f270b07f00a1",
+          "itemType": "trail_boots",
+          "slot": "feet",
+          "side": 1,
+          "position": [
+            16.334882736206055,
+            68.30000305175781,
+            -1.6183708906173706
+          ],
+          "vertices": 48
+        },
+        {
+          "id": "acac276c-f387-4ecb-8b63-f270b07f00a1",
+          "itemType": "heavy_shield",
+          "slot": "offhand",
+          "side": 0,
+          "position": [
+            16.420299530029297,
+            68.83999633789062,
+            -2.118299961090088
+          ],
+          "vertices": 72
+        }
+      ]
+    },
+    "publicPackets": [
+      {
+        "id": "acac276c-f387-4ecb-8b63-f270b07f00a1",
+        "state": [
+          48.3,
+          68,
+          -1.7584,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          5.524405596022267,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "yaw": 1.571629385640826,
+        "pitch": -0.7,
+        "appearance": {
+          "held": "wooden_pickaxe",
+          "equipment": {
+            "head": null,
+            "body": null,
+            "legs": null,
+            "feet": "trail_boots",
+            "offhand": "heavy_shield"
+          }
+        }
+      },
+      {
+        "id": "acac276c-f387-4ecb-8b63-f270b07f00a1",
+        "appearance": {
+          "held": "wooden_pickaxe",
+          "equipment": {
+            "head": null,
+            "body": null,
+            "legs": null,
+            "feet": null,
+            "offhand": "heavy_shield"
+          }
+        }
+      },
+      {
+        "id": "acac276c-f387-4ecb-8b63-f270b07f00a1",
+        "appearance": {
+          "held": "wooden_pickaxe",
+          "equipment": {
+            "head": null,
+            "body": null,
+            "legs": null,
+            "feet": "trail_boots",
+            "offhand": "heavy_shield"
+          }
+        }
+      },
+      {
+        "id": "acac276c-f387-4ecb-8b63-f270b07f00a1",
+        "appearance": {
+          "held": "spruce_planks",
+          "equipment": {
+            "head": null,
+            "body": null,
+            "legs": null,
+            "feet": "trail_boots",
+            "offhand": "heavy_shield"
+          }
+        }
+      },
+      {
+        "id": "acac276c-f387-4ecb-8b63-f270b07f00a1",
+        "appearance": {
+          "held": "wooden_pickaxe",
+          "equipment": {
+            "head": null,
+            "body": null,
+            "legs": null,
+            "feet": "trail_boots",
+            "offhand": "heavy_shield"
+          }
+        }
+      },
+      {
+        "id": "acac276c-f387-4ecb-8b63-f270b07f00a1",
+        "state": [
+          48.3,
+          68,
+          -1.7584,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          5.524405596022267,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "yaw": 1.571629385640826,
+        "pitch": -0.7,
+        "appearance": {
+          "held": "wooden_pickaxe",
+          "equipment": {
+            "head": null,
+            "body": null,
+            "legs": null,
+            "feet": "trail_boots",
+            "offhand": "heavy_shield"
+          }
+        }
+      }
+    ],
+    "cleanup": {
+      "geometries": 0,
+      "textures": 0,
+      "workers": 0,
+      "audio": {
+        "supported": true,
+        "contexts": 0,
+        "state": "closed",
+        "active": false,
+        "muted": false,
+        "voices": 0,
+        "effects": 1,
+        "gain": 0,
+        "dropped": 0,
+        "listener": [
+          47.2849,
+          69.62,
+          0.5
+        ],
+        "lastSource": [
+          47.35829162597656,
+          68.0199966430664,
+          0.5
+        ]
+      },
+      "gpu": {
+        "submitted": 25,
+        "skipped": 75,
+        "pending": 0,
+        "failures": 0
+      },
+      "gear": {
+        "visible": 0,
+        "held": 0,
+        "worn": 0,
+        "kinds": 0,
+        "capacity": 0,
+        "samples": []
+      }
+    }
+  },
+  "completed": {
+    "inventory": {
+      "version": 2,
+      "catalog": false,
+      "revision": 49,
+      "selected": 3,
+      "bag": [
+        {
+          "count": 1,
+          "itemType": "spruce_planks"
+        },
+        {
+          "itemType": "spruce_leaves",
+          "count": 1
+        },
+        null,
+        {
+          "count": 1,
+          "instance": {
+            "durability": 60
+          },
+          "itemType": "wooden_pickaxe"
+        },
+        {
+          "count": 1,
+          "itemType": "stick"
+        },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "craft2": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "craft3": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "equipment": [
+        null,
+        null,
+        null,
+        {
+          "count": 1,
+          "instance": {
+            "durability": 120
+          },
+          "itemType": "trail_boots"
+        },
+        {
+          "count": 1,
+          "instance": {
+            "durability": 120
+          },
+          "itemType": "heavy_shield"
+        }
+      ],
+      "station": "personal",
+      "container": null
+    },
+    "feedback": {
+      "held": {
+        "state": 0,
+        "itemType": "wooden_pickaxe",
+        "visible": true,
+        "swings": 14
+      },
+      "effects": {
+        "live": 0,
+        "bursts": 8,
+        "hits": 0,
+        "explosions": 0
+      },
+      "drops": {
+        "visible": 2,
+        "kinds": 2
+      },
+      "explosives": {
+        "visible": 0,
+        "capacity": 0,
+        "flashing": 0
+      },
+      "vision": false
+    },
+    "vitals": {
+      "version": 2,
+      "health": 20,
+      "food": 20,
+      "air": 300,
+      "dead": false,
+      "respawnIn": 0,
+      "attackCooldown": 0,
+      "protection": 0
+    }
+  },
+  "cleanup": {
+    "geometries": 0,
+    "textures": 0,
+    "workers": 0,
+    "audio": {
+      "supported": true,
+      "contexts": 0,
+      "state": "closed",
+      "active": false,
+      "muted": false,
+      "voices": 0,
+      "effects": 12,
+      "gain": 0,
+      "dropped": 0,
+      "listener": [
+        48.3,
+        69.62,
+        -1.7584
+      ],
+      "lastSource": [
+        50.5,
+        68.5,
+        -1.5
+      ]
+    },
+    "owners": {
+      "openedSockets": 1,
+      "closedSockets": 1,
+      "createdWorkers": 1,
+      "closedWorkers": 1,
+      "liveWorkers": 0
+    }
+  },
+  "errors": [],
+  "finishedAt": "2026-10-28T09:46:05.348Z",
+  "transport": {
+    "profile": {
+      "rttMs": 100,
+      "jitterMs": 25,
+      "mbps": 10
+    },
+    "packetBytes": 8192,
+    "flowBufferBytes": 65536,
+    "opened": 8,
+    "closed": 8,
+    "live": 0,
+    "up": {
+      "receivedBytes": 416945,
+      "forwardedBytes": 416945,
+      "queuedBytes": 0,
+      "peakQueuedBytes": 1730,
+      "peakFlowQueuedBytes": 1497,
+      "packets": 1052,
+      "readPauses": 0,
+      "writePauses": 0,
+      "trace": [
+        {
+          "receivedAt": 1226.234489,
+          "eligibleAt": 1251.234489,
+          "forwardedAt": 1253.667782,
+          "bytes": 700
+        },
+        {
+          "receivedAt": 1365.587207,
+          "eligibleAt": 1415.587207,
+          "forwardedAt": 1415.723171,
+          "bytes": 599
+        },
+        {
+          "receivedAt": 1366.535252,
+          "eligibleAt": 1441.535252,
+          "forwardedAt": 1442.653902,
+          "bytes": 614
+        },
+        {
+          "receivedAt": 4341.33933,
+          "eligibleAt": 4391.33933,
+          "forwardedAt": 4391.377094,
+          "bytes": 578
+        },
+        {
+          "receivedAt": 4368.657503,
+          "eligibleAt": 4393.657503,
+          "forwardedAt": 4395.680235,
+          "bytes": 627
+        },
+        {
+          "receivedAt": 6093.430937,
+          "eligibleAt": 6143.430937,
+          "forwardedAt": 6144.663667,
+          "bytes": 702
+        },
+        {
+          "receivedAt": 6186.757312,
+          "eligibleAt": 6261.757312,
+          "forwardedAt": 6262.721401,
+          "bytes": 551
+        },
+        {
+          "receivedAt": 6316.697224,
+          "eligibleAt": 6366.697224,
+          "forwardedAt": 6366.697547,
+          "bytes": 156
+        },
+        {
+          "receivedAt": 6539.94951,
+          "eligibleAt": 6564.94951,
+          "forwardedAt": 6568.64265,
+          "bytes": 536
+        },
+        {
+          "receivedAt": 6944.6692,
+          "eligibleAt": 6994.6692,
+          "forwardedAt": 6995.737289,
+          "bytes": 292
+        },
+        {
+          "receivedAt": 9187.828877,
+          "eligibleAt": 9262.828877,
+          "forwardedAt": 9263.201204,
+          "bytes": 91
+        },
+        {
+          "receivedAt": 9759.441219,
+          "eligibleAt": 9809.441219,
+          "forwardedAt": 9809.651983,
+          "bytes": 78
+        },
+        {
+          "receivedAt": 10989.002442,
+          "eligibleAt": 11014.002442,
+          "forwardedAt": 11014.167605,
+          "bytes": 46
+        },
+        {
+          "receivedAt": 11000.639939,
+          "eligibleAt": 11050.639939,
+          "forwardedAt": 11053.507996,
+          "bytes": 684
+        },
+        {
+          "receivedAt": 11125.617387,
+          "eligibleAt": 11200.617387,
+          "forwardedAt": 11201.241235,
+          "bytes": 130
+        },
+        {
+          "receivedAt": 11163.824573,
+          "eligibleAt": 11213.824573,
+          "forwardedAt": 11214.377859,
+          "bytes": 326
+        },
+        {
+          "receivedAt": 11212.077088,
+          "eligibleAt": 11237.077088,
+          "forwardedAt": 11237.619412,
+          "bytes": 326
+        },
+        {
+          "receivedAt": 11247.326699,
+          "eligibleAt": 11297.326699,
+          "forwardedAt": 11297.790225,
+          "bytes": 229
+        },
+        {
+          "receivedAt": 11301.172041,
+          "eligibleAt": 11376.172041,
+          "forwardedAt": 11376.729729,
+          "bytes": 329
+        },
+        {
+          "receivedAt": 11339.675149,
+          "eligibleAt": 11389.675149,
+          "forwardedAt": 11390.698677,
+          "bytes": 329
+        },
+        {
+          "receivedAt": 11389.144629,
+          "eligibleAt": 11414.144629,
+          "forwardedAt": 11419.121975,
+          "bytes": 329
+        },
+        {
+          "receivedAt": 11435.327854,
+          "eligibleAt": 11485.327854,
+          "forwardedAt": 11486.377623,
+          "bytes": 243
+        },
+        {
+          "receivedAt": 11483.307088,
+          "eligibleAt": 11558.307088,
+          "forwardedAt": 11558.826575,
+          "bytes": 347
+        },
+        {
+          "receivedAt": 11532.619448,
+          "eligibleAt": 11582.619448,
+          "forwardedAt": 11582.630531,
+          "bytes": 347
+        },
+        {
+          "receivedAt": 11580.44508,
+          "eligibleAt": 11605.44508,
+          "forwardedAt": 11609.15422,
+          "bytes": 347
+        },
+        {
+          "receivedAt": 11629.271478,
+          "eligibleAt": 11679.271478,
+          "forwardedAt": 11679.618763,
+          "bytes": 353
+        },
+        {
+          "receivedAt": 11676.587828,
+          "eligibleAt": 11751.587828,
+          "forwardedAt": 11751.606433,
+          "bytes": 353
+        },
+        {
+          "receivedAt": 11725.427186,
+          "eligibleAt": 11775.427186,
+          "forwardedAt": 11775.63747,
+          "bytes": 353
+        },
+        {
+          "receivedAt": 11771.716971,
+          "eligibleAt": 11796.716971,
+          "forwardedAt": 11797.144935,
+          "bytes": 247
+        },
+        {
+          "receivedAt": 11819.299683,
+          "eligibleAt": 11869.299683,
+          "forwardedAt": 11869.912609,
+          "bytes": 353
+        },
+        {
+          "receivedAt": 11868.537042,
+          "eligibleAt": 11943.537042,
+          "forwardedAt": 11944.723973,
+          "bytes": 353
+        },
+        {
+          "receivedAt": 12091.137246,
+          "eligibleAt": 12141.137246,
+          "forwardedAt": 12141.654491,
+          "bytes": 459
+        }
+      ],
+      "flows": 0,
+      "timers": 0
+    },
+    "down": {
+      "receivedBytes": 3163115,
+      "forwardedBytes": 3163115,
+      "queuedBytes": 0,
+      "peakQueuedBytes": 96933,
+      "peakFlowQueuedBytes": 96768,
+      "packets": 3015,
+      "readPauses": 40,
+      "writePauses": 0,
+      "trace": [
+        {
+          "receivedAt": 1272.480034,
+          "eligibleAt": 1297.480034,
+          "forwardedAt": 1297.694357,
+          "bytes": 1934
+        },
+        {
+          "receivedAt": 1422.548764,
+          "eligibleAt": 1472.548764,
+          "forwardedAt": 1474.712418,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 1422.548764,
+          "eligibleAt": 1472.548764,
+          "forwardedAt": 1481.31565,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 1422.548764,
+          "eligibleAt": 1472.548764,
+          "forwardedAt": 1488.884927,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 1422.548764,
+          "eligibleAt": 1472.548764,
+          "forwardedAt": 1496.106922,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 1422.548764,
+          "eligibleAt": 1472.548764,
+          "forwardedAt": 1503.341557,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 1422.548764,
+          "eligibleAt": 1472.548764,
+          "forwardedAt": 1510.298231,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 1422.548764,
+          "eligibleAt": 1472.548764,
+          "forwardedAt": 1517.817588,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 1443.668627,
+          "eligibleAt": 1518.668627,
+          "forwardedAt": 1525.327144,
+          "bytes": 4888
+        },
+        {
+          "receivedAt": 1422.548764,
+          "eligibleAt": 1472.548764,
+          "forwardedAt": 1529.416524,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 1503.84832,
+          "eligibleAt": 1553.84832,
+          "forwardedAt": 1554.757128,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 1503.84832,
+          "eligibleAt": 1553.84832,
+          "forwardedAt": 1563.040168,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 1503.84832,
+          "eligibleAt": 1553.84832,
+          "forwardedAt": 1570.354564,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 1503.84832,
+          "eligibleAt": 1553.84832,
+          "forwardedAt": 1577.8698,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 1503.84832,
+          "eligibleAt": 1553.84832,
+          "forwardedAt": 1585.912959,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 1503.84832,
+          "eligibleAt": 1553.84832,
+          "forwardedAt": 1593.400116,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 1503.84832,
+          "eligibleAt": 1553.84832,
+          "forwardedAt": 1600.649671,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 1503.84832,
+          "eligibleAt": 1553.84832,
+          "forwardedAt": 1607.966267,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 1586.0796,
+          "eligibleAt": 1611.0796,
+          "forwardedAt": 1615.495063,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 1586.0796,
+          "eligibleAt": 1611.0796,
+          "forwardedAt": 1622.707098,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 1586.0796,
+          "eligibleAt": 1611.0796,
+          "forwardedAt": 1629.28009,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 1586.0796,
+          "eligibleAt": 1611.0796,
+          "forwardedAt": 1636.592966,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 1586.0796,
+          "eligibleAt": 1611.0796,
+          "forwardedAt": 1643.47128,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 1623.441262,
+          "eligibleAt": 1673.441262,
+          "forwardedAt": 1674.504991,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 1623.441262,
+          "eligibleAt": 1673.441262,
+          "forwardedAt": 1681.870946,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 1623.441262,
+          "eligibleAt": 1673.441262,
+          "forwardedAt": 1689.201822,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 1623.441262,
+          "eligibleAt": 1673.441262,
+          "forwardedAt": 1695.993735,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 1623.441262,
+          "eligibleAt": 1673.441262,
+          "forwardedAt": 1703.610572,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 1623.441262,
+          "eligibleAt": 1673.441262,
+          "forwardedAt": 1711.044888,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 1623.441262,
+          "eligibleAt": 1673.441262,
+          "forwardedAt": 1718.405844,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 1623.441262,
+          "eligibleAt": 1673.441262,
+          "forwardedAt": 1726.042841,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 1703.771493,
+          "eligibleAt": 1778.771493,
+          "forwardedAt": 1779.725703,
+          "bytes": 8192
+        }
+      ],
+      "flows": 0,
+      "timers": 0
+    }
+  },
+  "remainingRooms": 0
+}

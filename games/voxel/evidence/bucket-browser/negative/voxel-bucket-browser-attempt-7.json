@@ -1,0 +1,69 @@
+{
+  "stage": "pointer locked",
+  "error": "Error: mouse.move: Target page, context or browser has been closed",
+  "state": null,
+  "events": [],
+  "errors": [],
+  "requests": [
+    {
+      "path": "/",
+      "event": "request",
+      "at": 103002.30559
+    },
+    {
+      "path": "/assets/index-BOJUFUTy.js",
+      "event": "request",
+      "at": 103046.200842
+    },
+    {
+      "path": "/assets/index-5w2pNf9N.css",
+      "event": "request",
+      "at": 103046.256442
+    },
+    {
+      "path": "/",
+      "event": "requestfinished",
+      "at": 103046.290522
+    },
+    {
+      "path": "/assets/index-5w2pNf9N.css",
+      "event": "requestfinished",
+      "at": 103046.861085
+    },
+    {
+      "path": "/assets/index-BOJUFUTy.js",
+      "event": "requestfinished",
+      "at": 103085.054749
+    },
+    {
+      "path": "/assets/voxel_engine_bg-1ejYMYOZ.wasm",
+      "event": "request",
+      "at": 103329.536926
+    },
+    {
+      "path": "/assets/voxel_engine_bg-1ejYMYOZ.wasm",
+      "event": "requestfinished",
+      "at": 103340.667539
+    },
+    {
+      "path": "/api/voxel/admission",
+      "event": "request",
+      "at": 104205.236102
+    },
+    {
+      "path": "/api/voxel/admission",
+      "event": "requestfinished",
+      "at": 104286.205452
+    },
+    {
+      "path": "/assets/engine-worker-DYAFKrDe.js",
+      "event": "request",
+      "at": 104322.373266
+    },
+    {
+      "path": "/assets/engine-worker-DYAFKrDe.js",
+      "event": "requestfinished",
+      "at": 104370.154336
+    }
+  ]
+}

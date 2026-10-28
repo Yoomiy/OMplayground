@@ -1,0 +1,574 @@
+{
+  "result": "FAIL",
+  "buildId": "5fec9a3ff7782d641836a4dc8c8c162463af5f18e8b5e3f72f643c311dd5e1e9",
+  "startedAt": "2026-10-27T20:51:29.460Z",
+  "browser": "156.0.8078.4",
+  "host": {
+    "node": "v24.21.0",
+    "arch": "arm64",
+    "cpu": "Neoverse-N1",
+    "availableParallelism": 2
+  },
+  "configuration": {
+    "viewport": {
+      "width": 640,
+      "height": 480
+    },
+    "quality": "low",
+    "renderScale": 0.5,
+    "renderHz": 30,
+    "workerCores": 2
+  },
+  "scope": "Built client/release Wasm and packaged gateway/native workers over actual client-to-server TCP read suspension while server snapshots remain fresh. Fixture admission, natural creative world, public controls, software Chromium; no hosted services or physical school-network/FPS qualification.",
+  "referenceLag": [
+    3,
+    6,
+    6,
+    2,
+    3,
+    6,
+    2,
+    2
+  ],
+  "short": {
+    "requestedHeldMs": 1000,
+    "elapsedHeldMs": 1016.12673,
+    "serverBefore": {
+      "epoch": 3,
+      "ack": 312,
+      "tick": 220,
+      "position": [
+        49.5,
+        92.9333,
+        0.5
+      ],
+      "frozen": 0
+    },
+    "serverWhileHeld": {
+      "epoch": 3,
+      "ack": 312,
+      "tick": 244,
+      "position": [
+        49.5,
+        92.9333,
+        0.5
+      ],
+      "frozen": 0
+    },
+    "clientWhileHeld": {
+      "position": [
+        54.72463462633816,
+        92.9333,
+        0.5
+      ],
+      "inputLag": 62,
+      "status": "playing",
+      "lastReceivedAgoMs": 63.700000047683716
+    },
+    "clientFramesBuffered": 61,
+    "serverTraceAfterRelease": [
+      {
+        "atMs": 11290.789421,
+        "state": {
+          "epoch": 3,
+          "ack": 312,
+          "tick": 246,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 11381.801561,
+        "state": {
+          "epoch": 3,
+          "ack": 373,
+          "tick": 248,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 11398.302444,
+        "state": {
+          "epoch": 3,
+          "ack": 377,
+          "tick": 250,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 11464.091016,
+        "state": {
+          "epoch": 3,
+          "ack": 381,
+          "tick": 252,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 11535.792258,
+        "state": {
+          "epoch": 3,
+          "ack": 389,
+          "tick": 254,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 11596.502645,
+        "state": {
+          "epoch": 3,
+          "ack": 391,
+          "tick": 256,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 11667.376602,
+        "state": {
+          "epoch": 3,
+          "ack": 398,
+          "tick": 258,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 11733.417256,
+        "state": {
+          "epoch": 3,
+          "ack": 400,
+          "tick": 260,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 11805.354299,
+        "state": {
+          "epoch": 3,
+          "ack": 403,
+          "tick": 262,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 11864.500077,
+        "state": {
+          "epoch": 3,
+          "ack": 407,
+          "tick": 264,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 11935.541436,
+        "state": {
+          "epoch": 3,
+          "ack": 411,
+          "tick": 266,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 12006.060392,
+        "state": {
+          "epoch": 3,
+          "ack": 418,
+          "tick": 268,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 12064.775968,
+        "state": {
+          "epoch": 3,
+          "ack": 420,
+          "tick": 270,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 12136.700611,
+        "state": {
+          "epoch": 3,
+          "ack": 424,
+          "tick": 272,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 12197.580839,
+        "state": {
+          "epoch": 3,
+          "ack": 428,
+          "tick": 274,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 12264.457616,
+        "state": {
+          "epoch": 3,
+          "ack": 431,
+          "tick": 276,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 12336.54798,
+        "state": {
+          "epoch": 3,
+          "ack": 438,
+          "tick": 278,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 12397.86833,
+        "state": {
+          "epoch": 3,
+          "ack": 440,
+          "tick": 280,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 12468.395686,
+        "state": {
+          "epoch": 3,
+          "ack": 444,
+          "tick": 282,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 12531.191603,
+        "state": {
+          "epoch": 3,
+          "ack": 448,
+          "tick": 284,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 12598.355302,
+        "state": {
+          "epoch": 3,
+          "ack": 452,
+          "tick": 286,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 12669.31066,
+        "state": {
+          "epoch": 3,
+          "ack": 456,
+          "tick": 288,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 12730.234447,
+        "state": {
+          "epoch": 3,
+          "ack": 459,
+          "tick": 290,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 12806.808554,
+        "state": {
+          "epoch": 3,
+          "ack": 466,
+          "tick": 292,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 12870.195354,
+        "state": {
+          "epoch": 3,
+          "ack": 468,
+          "tick": 294,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 12930.358898,
+        "state": {
+          "epoch": 3,
+          "ack": 472,
+          "tick": 296,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 12999.310246,
+        "state": {
+          "epoch": 3,
+          "ack": 476,
+          "tick": 298,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 13070.291044,
+        "state": {
+          "epoch": 3,
+          "ack": 479,
+          "tick": 300,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 13135.899335,
+        "state": {
+          "epoch": 3,
+          "ack": 486,
+          "tick": 302,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 13202.447631,
+        "state": {
+          "epoch": 3,
+          "ack": 488,
+          "tick": 304,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      }
+    ],
+    "recoveredInputLag": 6,
+    "recoveredLagSamples": [
+      6,
+      4,
+      2,
+      6,
+      3,
+      2,
+      4,
+      4,
+      4,
+      4,
+      3,
+      3
+    ]
+  },
+  "failure": {
+    "phase": "five-second-input-stall",
+    "message": "Expected values to be strictly equal:\n\n616 !== 615\n",
+    "stack": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n616 !== 615\n\n    at file:///home/ubuntu/OMplayground/games/voxel/tools/browser-input-stalls.ts:243:10"
+  },
+  "finishedAt": "2026-10-27T20:51:47.118Z",
+  "errors": [],
+  "events": [
+    {
+      "event": "VOXEL_ADMISSION_ISSUED",
+      "context": {
+        "buildId": "5fec9a3ff7782d641836a4dc8c8c162463af5f18e8b5e3f72f643c311dd5e1e9"
+      }
+    },
+    {
+      "event": "VOXEL_ROOM_READY",
+      "context": {
+        "buildId": "5fec9a3ff7782d641836a4dc8c8c162463af5f18e8b5e3f72f643c311dd5e1e9"
+      }
+    },
+    {
+      "event": "VOXEL_ROOM_METRICS",
+      "context": {
+        "buildId": "5fec9a3ff7782d641836a4dc8c8c162463af5f18e8b5e3f72f643c311dd5e1e9",
+        "worldId": "113520df-9e94-4f7c-9328-5efd24f0e9a2",
+        "ticks": 299,
+        "columns": 9,
+        "overrunMs": 0,
+        "windowMs": 9999.644012,
+        "windowStartedAtMs": 3063.259675,
+        "windowEndedAtMs": 13062.903687,
+        "worldStep_samples": 299,
+        "worldStep_meanMs": 0.3295168461538368,
+        "worldStep_p95UpperMs": 0.85,
+        "worldStep_p99UpperMs": 5.5,
+        "worldStep_maxMs": 9.131645999999819,
+        "observerStep_samples": 0,
+        "observerStep_meanMs": 0,
+        "observerStep_p95UpperMs": 0,
+        "observerStep_p99UpperMs": 0,
+        "observerStep_maxMs": 0,
+        "workerTurn_samples": 2308,
+        "workerTurn_meanMs": 0.1257877309358691,
+        "workerTurn_p95UpperMs": 0.25,
+        "workerTurn_p99UpperMs": 0.9,
+        "workerTurn_maxMs": 33.91229199999998,
+        "generationJob_samples": 9,
+        "generationJob_meanMs": 15.849031333333235,
+        "generationJob_p95UpperMs": 33.707650999999714,
+        "generationJob_p99UpperMs": 33.707650999999714,
+        "generationJob_maxMs": 33.707650999999714,
+        "command_samples": 178,
+        "command_meanMs": 0.09430385393257444,
+        "command_p95UpperMs": 0.1,
+        "command_p99UpperMs": 0.75,
+        "command_maxMs": 9.294006999999965
+      }
+    },
+    {
+      "event": "VOXEL_ROOM_EXITED",
+      "context": {
+        "buildId": "5fec9a3ff7782d641836a4dc8c8c162463af5f18e8b5e3f72f643c311dd5e1e9",
+        "code": 0
+      }
+    }
+  ],
+  "remainingRooms": 0
+}

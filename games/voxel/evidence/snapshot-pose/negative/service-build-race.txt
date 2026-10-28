@@ -1,0 +1,92 @@
+✔ hosted qualification scope allows its status/room/object requests and refuses global cleanup (91.727125ms)
+✔ hosted qualification scope rejects other sessions, actors, graphs and namespaces (10.679852ms)
+✔ hosted qualification reads are limited to exact own row IDs and configured provider (3.029694ms)
+✔ cleanup SQL rejects untrusted interpolation before any query is available (0.872884ms)
+✔ a verified active child gets a short private authorization with no name, inventory or capacity query (150.442649ms)
+✔ disabled accounts cannot fall through into admin access; each authorization reads current identity and profile (27.083931ms)
+✔ staff observe across partitions without gameplay grants; teacher participation follows the normal gender rule (32.581598ms)
+✔ closed rooms require current membership, a current invitation, or an accepted challenge (72.999514ms)
+✔ paused sessions preserve roster/host access and staff inspection, while ended or wrong-game sessions never start (27.759655ms)
+✔ class exceptions override recess defaults and conflicting or unavailable schedules fail closed (47.223949ms)
+✔ authorization cannot cross a schedule minute, JWT expiry, or an overlong provider read (40.868518ms)
+✔ private owned-object eligibility ignores offline recess time, but never ignores membership removal or a provider outage (30.215866ms)
+✔ authority comes from platform rows, never forged claims, extra request fields or a headcount ceiling (14.623631ms)
+✔ schedule interpretation retains Jerusalem time across summer and winter offsets (36.534817ms)
+✔ a continuous recess interval renews across ordinary minutes while the actual closing boundary remains authoritative (43.758172ms)
+✔ a private grant refreshes current policy and cannot be redirected by mutating its original request (28.184456ms)
+✔ central room policy reads fresh session state independently of player admission and treats deletion/completion as terminal (10.765773ms)
+✔ unavailable or overlong session reads cannot renew central room permission (1.413807ms)
+✔ a completed school session remains a terminal revalidation reason rather than a generic permission or provider failure (12.49582ms)
+✔ an empty invitation value never opens a closed room (6.390311ms)
+✔ roster revisions fence old open-room tickets while actor and passive ownership renewal require accepted membership (120.688864ms)
+✔ removal generations revoke earlier actor/owner proofs without disrupting peers and bans deny fresh admission until explicit unban/readmission (115.548599ms)
+✔ missing, inconsistent or overlong access-policy reads cannot grant or renew school authority (15.657596ms)
+✔ control rejects extra intent fields before identity or allocation (77.173334ms)
+✔ queued control repeats fresh authority and a revoked teacher cannot execute its earlier grant (28.8615ms)
+✔ pause save failure has no completion receipt and a prior committed receipt replays without reading the ended session (27.289052ms)
+✔ read-only session inspection follows live school scope and allows completed roster/staff without granting admission (218.85914ms)
+✔ staff policy rechecks queued role authority and never dispatches browser-supplied actors or coordinates (124.280522ms)
+✔ staff completion preserves the request identity and reports applied without claiming a checkpoint save (20.441859ms)
+✔ unknown dispatch in another owner epoch stays unconfirmed and malformed installation replies fail closed (19.386894ms)
+✔ production listener rejects wildcard, path, insecure and credential origins and requires a concrete port (8.841403ms)
+✖ release inventory corruption is rejected before importing executable gateway code (69.396896ms)
+✖ startup verifies every schema and fails before listening when controls are absent (21.721985ms)
+✔ installed SDK sends canonical service RPCs with a secret apikey and accepts only coherent immutable lease replies (141.153723ms)
+✔ create-only uploads copy bytes before IO and verify a duplicate object before marking it ready (41.151639ms)
+✔ provider errors cannot expose credentials and an unavailable provider respects the request deadline (39.403511ms)
+✔ failed Storage cleanup retains its catalog claim; completion only follows a successful API deletion (24.002116ms)
+✔ configuration rejects missing, public or legacy API keys and nonsecure remote endpoints (0.348922ms)
+✔ the shared server SDK preserves an explicit user bearer token for identity verification (4.208381ms)
+✔ session SDK sends fenced identities, deduplicates presence and excludes observers from membership writes (115.692481ms)
+✔ session SDK rejects malformed installation/policy replies and request-start deadlines never extend during IO (18.196608ms)
+✔ session SDK treats explicit fencing as false and provider failures expose only a machine code (7.365436ms)
+✔ media signaling withholds refreshed/migrated SFU credentials and strips unknown nested extensions (14.664951ms)
+✔ media signaling rejects forged publication sources and metadata mutation while preserving audio requests (6.020989ms)
+✔ compressed media joins cannot override server identity metadata, resume old bindings or bypass source grants (22.290788ms)
+✔ rewritten join queries retain SDK padding for every compressed length (40.178714ms)
+✔ single-use media tickets bridge real signaling while keeping reusable provider credentials out of browser frames (572.559172ms)
+✔ late policy replies cannot revive an expired unused media ticket or allocate an upstream connection (632.468703ms)
+✔ mute fences a consumed ticket still awaiting policy IO, and a delayed pre-command grant cannot escape the barrier (464.125808ms)
+✔ the signaling worker ends provider media on its own deadline while the gateway event loop is blocked (1546.001047ms)
+ℹ tests 50
+ℹ suites 0
+ℹ pass 48
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10810.346595
+
+✖ failing tests:
+
+test at apps/voxel-server/tests/service.test.ts:37:1
+✖ release inventory corruption is rejected before importing executable gateway code (69.396896ms)
+  Error: voxel release mismatch
+      at loadServerRelease (file:///home/ubuntu/OMplayground/apps/voxel-server/src/release.ts:55:11)
+      at async TestContext.<anonymous> (file:///home/ubuntu/OMplayground/apps/voxel-server/tests/service.test.ts:38:19)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at apps/voxel-server/tests/service.test.ts:63:1
+✖ startup verifies every schema and fails before listening when controls are absent (21.721985ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /PGRST202/. Input:
+  
+  'Error: voxel release mismatch'
+  
+      at async TestContext.<anonymous> (file:///home/ubuntu/OMplayground/apps/voxel-server/tests/service.test.ts:65:3)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: voxel release mismatch
+        at loadServerRelease (file:///home/ubuntu/OMplayground/apps/voxel-server/src/release.ts:55:11)
+        at async startVoxelService (file:///home/ubuntu/OMplayground/apps/voxel-server/src/service.ts:83:19)
+        at async waitForActual (node:assert:646:5)
+        at async strict.rejects (node:assert:769:25)
+        at async TestContext.<anonymous> (file:///home/ubuntu/OMplayground/apps/voxel-server/tests/service.test.ts:65:3)
+        at async Test.run (node:internal/test_runner/test:1409:7)
+        at async Test.processPendingSubtests (node:internal/test_runner/test:974:7),
+    expected: /PGRST202/,
+    operator: 'rejects',
+    diff: 'simple'
+  }

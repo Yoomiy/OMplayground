@@ -1,0 +1,26 @@
+{
+  "result": "NO_CONFIGURED_CATALOG_OR_AVATAR_REFERENCES_TO_RETIRED_ASSETS",
+  "checkedAt": "2026-10-28T11:16:52.870Z",
+  "configuredOriginSha256": "b1341f10b558fe6d22b13b3a8005b531137647818d578b7c8c10099c4bfacf43",
+  "matchingCounts": {
+    "gameCatalog": 0,
+    "avatarPresets": 0,
+    "profileAvatarUrls": 0
+  },
+  "trace": [
+    {
+      "method": "HEAD",
+      "table": "games"
+    },
+    {
+      "method": "HEAD",
+      "table": "avatar_presets"
+    },
+    {
+      "method": "HEAD",
+      "table": "kid_profiles"
+    }
+  ],
+  "rowValuesReturned": false,
+  "hostedWrites": false
+}

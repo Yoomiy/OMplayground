@@ -1,0 +1,9 @@
+
+> @playground/voxel@0.1.0 test:touch:browser
+> node tools/browser-touch.ts
+
+Testing touch jump
+Testing simultaneous joystick and look
+Testing flight and blur release
+Testing WebGL loss latch
+Touch, blur/cancel and WebGL recovery scenario passes

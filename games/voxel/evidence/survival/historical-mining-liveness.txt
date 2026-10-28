@@ -1,0 +1,17 @@
+
+> @playground/voxel@0.1.0 test:survival:browser
+> node tools/browser-survival.ts
+
+Harvesting natural log 1 with actual held touch input
+Mining completion diagnostics {"disposed":false,"inputMode":"touch","mode":"survival","mining":{"target":null,"elapsed":0,"total":0},"miningHeld":true,"drops":[],"selectedSlot":0,"environment":{"tick":816.9060000014305,"seconds":27.23020000004768,"dayFraction":0.24269183333337307,"daylight":1,"sun":[0.04396655445202433,0.956816667261899,0.2873478855663454],"sky":[0.59,0.76,0.88],"rain":0,"wind":[-0.09681483233576553,-0.2839487422754283],"openSky":true},"atmosphere":{"rainLines":0,"stars":false,"clouds":16,"sun":true,"moon":false},"avatars":{"visible":0,"capacity":8,"samples":[]},"renderOrigin":{"x":48,"z":0},"feedback":{"held":{"state":0,"itemType":null,"visible":true,"swings":91},"effects":{"live":0,"bursts":0},"drops":{"visible":0,"kinds":0}},"audio":{"supported":true,"contexts":1,"state":"running","active":true,"muted":false,"voices":0,"effects":0,"gain":0.2199999988079071,"dropped":0,"listener":[49.5,69.62000274658203,0.5],"lastSource":null},"renderLimitHz":30,"touch":{"x":0,"z":0,"jump":false,"sneak":false,"sprint":false},"focused":true,"visible":"visible","hasFocus":true,"lastFrame":29235.8,"lastUpdate":29302.599999904633,"resources":{"geometries":61,"textures":5,"workers":1},"actorId":"1bb3228a-bba9-490d-8c0e-7396706673d8","worldId":"1e9cd628-3a68-4d01-9289-0ef492af7e09","body":{"position":[49.5,68,0.5],"onGround":1,"frozen":0,"flying":0,"velocity":[0,0,0]},"view":{"yaw":0,"pitch":-0.4},"lastResult":{"type":"result","epoch":2,"sequence":90,"status":"applied","outcome":{"ok":true,"reason":"mining"}},"inventory":{"version":2,"catalog":false,"revision":0,"selected":0,"bag":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"craft2":[null,null,null,null],"craft3":[null,null,null,null,null,null,null,null,null],"equipment":[null,null,null,null,null],"station":"personal","container":null},"inventoryOpen":false,"inventoryPending":false,"recentEdits":[],"status":"playing","epoch":2,"phase":"playing","position":[49.5,68,0.5],"selected":0,"players":1,"inputLag":9,"correction":0,"columns":49,"collisionColumns":49,"meshed":25,"workers":1,"activeJobs":0,"stream":{"discardedJobs":0,"installed":49,"meshJobs":25,"generationJobs":49,"mainWorkMs":0.09999990463256836},"render":{"uploadedBytes":1832152,"columns":25,"drawCalls":26,"triangles":18854,"uploadMs":0.20000004768371582},"target":[49,68,-4],"targetState":14,"targetNormal":[0,0,1],"actionPending":0}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+page.waitForFunction: Timeout 20000ms exceeded.
+    at /home/ubuntu/OMplayground/games/voxel/tools/browser-survival.ts:118:18 {
+  log: [],
+  name: 'TimeoutError'
+}
+
+Node.js v24.21.0

@@ -1,0 +1,161 @@
+{
+  "result": "PASS",
+  "sourceModules": 15,
+  "repositoryModules": [
+    "apps/classroom-server/dist/classroomAttendance.js",
+    "apps/classroom-server/dist/classroomBoardToken.js",
+    "apps/classroom-server/dist/classroomDelegates.js",
+    "apps/classroom-server/dist/classroomDrawingSession.js",
+    "apps/classroom-server/dist/classroomParticipantBlocks.js",
+    "apps/classroom-server/dist/classroomPresence.js",
+    "apps/classroom-server/dist/classroomPresentation.js",
+    "apps/classroom-server/dist/classroomPresenterAssignment.js",
+    "apps/classroom-server/dist/classroomSecurity.js",
+    "apps/classroom-server/dist/livekitService.js",
+    "apps/classroom-server/dist/routes.js",
+    "apps/classroom-server/dist/schoolIdentity.js",
+    "apps/classroom-server/dist/service.js",
+    "apps/classroom-server/tools/verify-boundary.cjs",
+    "packages/observability/dist/adminAuth.js",
+    "packages/observability/dist/auditMetadata.js",
+    "packages/observability/dist/classroomAdmissionIp.js",
+    "packages/observability/dist/clientIp.js",
+    "packages/observability/dist/correlation.js",
+    "packages/observability/dist/error.js",
+    "packages/observability/dist/index.js",
+    "packages/observability/dist/livekitVoiceStats.js",
+    "packages/observability/dist/livekitWebhook.js",
+    "packages/observability/dist/logger.js",
+    "packages/observability/dist/operational.js",
+    "packages/observability/dist/processLifecycle.js",
+    "packages/observability/dist/serverSetup.js",
+    "packages/observability/dist/socketLifecycle.js",
+    "packages/observability/dist/statsCollector.js",
+    "packages/observability/dist/telemetryIngest.js"
+  ],
+  "classroomRoutes": 20,
+  "legacyClassroomOwnership": false,
+  "gameImports": 0,
+  "productionFiles": [
+    {
+      "path": "classroomAttendance.js",
+      "sha256": "95531e14f437d7adc25743492ea99c4ac400dddc46faad79172dd671443d2124"
+    },
+    {
+      "path": "classroomAttendance.js.map",
+      "sha256": "ad9898c96e0f0f0c24fff4a555115d7f3176d1b09c136e412df22363a500e3a2"
+    },
+    {
+      "path": "classroomBoardToken.js",
+      "sha256": "a842cf7115d6e55c662202f9df7aa72e7d7be6044e5396233800d8f1cebcff5c"
+    },
+    {
+      "path": "classroomBoardToken.js.map",
+      "sha256": "c56168c4c09e5ae077fe6f9ba0d0bbbafb75e79b2ead2524b47c015952c13e87"
+    },
+    {
+      "path": "classroomDelegates.js",
+      "sha256": "8537e95eb828f3cec55268974068fa477db0e3faf7868afb8bb2fc81f4603150"
+    },
+    {
+      "path": "classroomDelegates.js.map",
+      "sha256": "de80c6ef0f7755cf322d419eb06a970417bb131ac462a886acc0cea473a343df"
+    },
+    {
+      "path": "classroomDrawingSession.js",
+      "sha256": "4a913567b7453244c98d949df9ac131ac8ec4f76de5cbd5af0e9a57e74ea31af"
+    },
+    {
+      "path": "classroomDrawingSession.js.map",
+      "sha256": "90618620b1ccf3b9a23c7f890883408f4f07d0a6136fd030b46eb9b2ff784ba2"
+    },
+    {
+      "path": "classroomParticipantBlocks.js",
+      "sha256": "21bbf7908c5aeffbd83d21d76c2feb245a26bbdce0653691fdc9db3d11c6dcca"
+    },
+    {
+      "path": "classroomParticipantBlocks.js.map",
+      "sha256": "e65d2f5043fd19ce4a0cdfb2e23032e17a1799405aceec7c23e874e87d60f518"
+    },
+    {
+      "path": "classroomPresence.js",
+      "sha256": "25291bbe8045453d70ed377845ba8835bba0be9eb26347ac1f0f2f9d905afa57"
+    },
+    {
+      "path": "classroomPresence.js.map",
+      "sha256": "f30331ce347c43604a299bfc71909c878b42be7fa0b82671b40b99f7ea353e54"
+    },
+    {
+      "path": "classroomPresentation.js",
+      "sha256": "a88c96b06775b92912eabeea1a4c1f4c660726aa1ca487a1a0bd55fad18823ac"
+    },
+    {
+      "path": "classroomPresentation.js.map",
+      "sha256": "9afc3f9d8316fbbb35ae68da05ee80029f973f25cf22757e0e5d5666d70097a6"
+    },
+    {
+      "path": "classroomPresenterAssignment.js",
+      "sha256": "a01934924306b26febd57dc5b1a64e81a36ae4783a4aefaa12523526f7df1069"
+    },
+    {
+      "path": "classroomPresenterAssignment.js.map",
+      "sha256": "7afadae4d5c64b1ce204b38ba2bd2b66ffb3e88915a5a2e14e5341d7fda9a7c3"
+    },
+    {
+      "path": "classroomSecurity.js",
+      "sha256": "c2e7fa84c00b40c9be53687f5acc939ce9009dade15465de0559bbb7b0d5681e"
+    },
+    {
+      "path": "classroomSecurity.js.map",
+      "sha256": "aa1bbc83a0c7d1ffd32004329775e4c4e59245738f59a7c922da72fb341a9a15"
+    },
+    {
+      "path": "config.js",
+      "sha256": "e7f313a4e09efa58f86736681f4a72c39d64c189f6aa8cc93a88bcb1997d89f5"
+    },
+    {
+      "path": "config.js.map",
+      "sha256": "f53299e2f4ddd8cb4f426abb2be1a0524ae7b06b50e984fc6473cbd360f00ecc"
+    },
+    {
+      "path": "index.js",
+      "sha256": "923d577ac603b5697c930069e930fc8ed75286919b7e621d6fae99dfeaca907a"
+    },
+    {
+      "path": "index.js.map",
+      "sha256": "2de10f957c361333b2135b49853781ed1bfd75817b3e86aa74d024bae9ae537b"
+    },
+    {
+      "path": "livekitService.js",
+      "sha256": "4e8edaef1f6a24ebc37845289e6ef4b06884845af2ce6d9110e13bef2fb3fba9"
+    },
+    {
+      "path": "livekitService.js.map",
+      "sha256": "ba7d8b083b639795ef51ca1cc8838acd4f12aef383b4135a57f5414bf49d34c0"
+    },
+    {
+      "path": "routes.js",
+      "sha256": "dfdbc46fdf09a44edf6915bdd6b12b86a65037e1b51b71dfdf7bdbfedb87cd74"
+    },
+    {
+      "path": "routes.js.map",
+      "sha256": "b0194d2a99b992808a0d7d6304687a28633edfc6f76671891ff32f6221dcef53"
+    },
+    {
+      "path": "schoolIdentity.js",
+      "sha256": "f9cd20b20b028fbcb34669ab8c44b70632b14e2c29c99ae83e81be3ec925b239"
+    },
+    {
+      "path": "schoolIdentity.js.map",
+      "sha256": "e796177ba73c7204fea5d63ec71192b1ef16ff01e40fdcbf169fd94b66420ff4"
+    },
+    {
+      "path": "service.js",
+      "sha256": "9073c65d9ea16eb28bceb05cbbe92d37ebf033189cf1e2ce8c4a996bf273b693"
+    },
+    {
+      "path": "service.js.map",
+      "sha256": "bd4f10d4b3c2609bbc8614a76af31c19871a3ef90c46e1f0d115e5e7cfca21c7"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+
+> @playground/voxel-server@0.1.0 test:postgres
+> node --test --test-concurrency=1 tests/postgres/*.test.ts
+
+✔ real concurrent acquisition yields one owner; retry is idempotent and expired takeover retains world identity (94.581647ms)
+✔ renewal checks the database clock after waiting for the owner row lock (509.726213ms)
+✔ two transactions racing one sequence commit one whole graph and exact retry cannot duplicate history (191.497147ms)
+✔ expired or replaced owner cannot commit, renew or release the new epoch (196.296689ms)
+✔ corrupt graph suffixes or unconfirmed uploads roll back pointer, history and every reference (292.264704ms)
+✔ browser roles cannot read metadata or execute RPCs; service writes require RPCs and the bucket is private (127.076562ms)
+✔ retention keeps active/shared objects; garbage claims fence uploads and stale deletion workers (461.589305ms)
+✔ cleanup skips uncommitted graph locks and rechecks references before claiming deletion (502.209258ms)
+✔ session removal retains orphan object addresses for subsequent Storage cleanup (120.659491ms)
+✔ old active references cannot starve a bounded garbage-collection batch (2003.172486ms)
+✔ commit rechecks expiry after object locks and cannot leave partial history after a delayed upload lock (557.241039ms)
+✔ real SDK and PostgreSQL carry a committed room across worker failure, ambiguous commit and new ownership (1136.04178ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7143.724389

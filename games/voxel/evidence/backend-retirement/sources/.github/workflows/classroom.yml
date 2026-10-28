@@ -1,0 +1,23 @@
+name: Classroom service
+on:
+  push:
+    paths: ['apps/classroom-server/**', 'packages/observability/**', 'package.json', 'package-lock.json', '.github/workflows/classroom.yml']
+  pull_request:
+    paths: ['apps/classroom-server/**', 'packages/observability/**', 'package.json', 'package-lock.json', '.github/workflows/classroom.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  classroom:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.21.0
+          cache: npm
+      - run: npm ci --workspace @playground/classroom-server --workspace @playground/observability --include-workspace-root=false --ignore-scripts
+      - run: npm test --workspace @playground/classroom-server
+      - run: npm run verify:boundary --workspace @playground/classroom-server
+      - run: npm test --workspace @playground/observability -- --runInBand
+      - run: docker build -f apps/classroom-server/Dockerfile -t playground-classroom .

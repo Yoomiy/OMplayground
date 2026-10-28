@@ -1,0 +1,326 @@
+{
+  "result": "NATURAL_BUCKET_TOUCH_OS_DESKTOP_PASS",
+  "capturedAt": "2026-10-27T08:20:09.451Z",
+  "buildId": "5d89f56af88a8d1a456575052791a13f560bef75acac7144ebcb19882ced7247",
+  "runtimeHash": "9611e06329d93a63a090d350fe50a313e0f0d9827dc16537990a1e28683183ed",
+  "scope": "One natural seed-4242 empty-inventory route on headed software Chromium, emulated touch plus trusted OS desktop input, volatile local development gateway. No hosted Auth/SQL/LiveKit, physical devices, durable recovery, multi-seed balance or deployment qualification.",
+  "waterState": 116,
+  "priorArchive": "games/voxel/evidence/media-composition",
+  "priorVerificationSha256": "09525ad797b46dbd42429f7f8f7b4b7c51fc9ecd85d1a0da69f1a2be22df01ac",
+  "comparedPriorSources": 470,
+  "changedPriorSources": [
+    "games/voxel/package.json",
+    "games/voxel/tools/browser-harness.ts",
+    "games/voxel/tools/browser-survival.ts"
+  ],
+  "sources": [
+    {
+      "path": "games/voxel/package.json",
+      "sha256": "e97e771df77b1ad17b9ff9eb347f0029b9163c9bde503301b9942864031c3682"
+    },
+    {
+      "path": "games/voxel/tools/browser-harness.ts",
+      "sha256": "88e0877d1dbac85bcb9b67ce3b94b09d90d4de1b8d18eb9f29a268a42eeb9dd4"
+    },
+    {
+      "path": "games/voxel/tools/browser-survival.ts",
+      "sha256": "d8a74f7b3ac0093b147b972a99f208c07402e1e29cbb802fb49fa21e877775d6"
+    },
+    {
+      "path": "games/voxel/tools/browser-survival-bucket.ts",
+      "sha256": "4d981e54d101e879cacadcca775e8d97a092d07f7a8341ffc6b47e6ff7a92da3"
+    },
+    {
+      "path": "games/voxel/tools/browser-bucket-mouse.ts",
+      "sha256": "bce966f319aea8ee0f966349bc71ba0ed0eeeb708b779ef8c0e3353b782f0d33"
+    },
+    {
+      "path": "games/voxel/tools/browser-inventory.ts",
+      "sha256": "9462cbefd476f824e8b665e923b974909487d377e1499b163e188bdfbb7dc693"
+    },
+    {
+      "path": "games/voxel/docs/content-progression.md",
+      "sha256": "2919b14f426a6d7ffede62f6269daeee647fbefbe2a70ee486926d3d83f18bb9"
+    },
+    {
+      "path": "docs/voxel-runtime-rewrite-progress.md",
+      "sha256": "d6f1e95dff3c98b57d396b0f28ca004e01c3329229ad2d4e27c146e569732389"
+    }
+  ],
+  "releaseFiles": [
+    {
+      "path": "games/voxel/dist-client/assets/engine-worker-DYAFKrDe.js",
+      "sha256": "99d3377c134578cd5e9bdd923e7707547e62c3a2a0a1a64c90adec5f1121bf04"
+    },
+    {
+      "path": "games/voxel/dist-client/assets/index-5w2pNf9N.css",
+      "sha256": "2b1c35f291993017e6b64ee082d5b043f59edef25e5d29d5239bc23fab798eac"
+    },
+    {
+      "path": "games/voxel/dist-client/assets/index-BOJUFUTy.js",
+      "sha256": "5e2c8106dc0aff04c40bcdc412e228b45d3f048c0f345493de800ec6a56bd39b"
+    },
+    {
+      "path": "games/voxel/dist-client/assets/voxel_engine_bg-1ejYMYOZ.wasm",
+      "sha256": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "games/voxel/dist-client/index.html",
+      "sha256": "cb1a5910071c419dbcc2067f0b427a384ac59c6439235d96c721edc854f6519d"
+    },
+    {
+      "path": "games/voxel/dist-server/build.json",
+      "sha256": "10262000311ef5d8144203e766e9613c7212e17d49e52b0ed8eee107fcc62fd5"
+    },
+    {
+      "path": "games/voxel/dist-server/content.json",
+      "sha256": "87da078927c9df8366a815c868478e71f559da83e4785447a8edb3e505dba250"
+    },
+    {
+      "path": "games/voxel/dist-server/engine.wasm",
+      "sha256": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "games/voxel/dist-server/gateway.js",
+      "sha256": "6dac33e536444da46e5ee597dbcbba22f3ad7ce83caa4ac3be7f8371a41b25af"
+    },
+    {
+      "path": "games/voxel/dist-server/gateway.js.map",
+      "sha256": "853f717b39604ce9cc3f978fc998050a1f877d1b5c22539c50c1bfd6f5544c0f"
+    },
+    {
+      "path": "games/voxel/dist-server/room-worker.js",
+      "sha256": "7ac9d7794a6e92ac1d3d058c77752d36a5f4b04f817e65d0beab0abab347a8a1"
+    },
+    {
+      "path": "games/voxel/dist-server/room-worker.js.map",
+      "sha256": "214e9ec96368b382204672087066eb68c04dc5e9740a311bdced9dbeddd2b119"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "sources/games/voxel/package.json",
+      "sha256": "e97e771df77b1ad17b9ff9eb347f0029b9163c9bde503301b9942864031c3682"
+    },
+    {
+      "path": "sources/games/voxel/tools/browser-harness.ts",
+      "sha256": "88e0877d1dbac85bcb9b67ce3b94b09d90d4de1b8d18eb9f29a268a42eeb9dd4"
+    },
+    {
+      "path": "sources/games/voxel/tools/browser-survival.ts",
+      "sha256": "d8a74f7b3ac0093b147b972a99f208c07402e1e29cbb802fb49fa21e877775d6"
+    },
+    {
+      "path": "sources/games/voxel/tools/browser-survival-bucket.ts",
+      "sha256": "4d981e54d101e879cacadcca775e8d97a092d07f7a8341ffc6b47e6ff7a92da3"
+    },
+    {
+      "path": "sources/games/voxel/tools/browser-bucket-mouse.ts",
+      "sha256": "bce966f319aea8ee0f966349bc71ba0ed0eeeb708b779ef8c0e3353b782f0d33"
+    },
+    {
+      "path": "sources/games/voxel/tools/browser-inventory.ts",
+      "sha256": "9462cbefd476f824e8b665e923b974909487d377e1499b163e188bdfbb7dc693"
+    },
+    {
+      "path": "sources/games/voxel/docs/content-progression.md",
+      "sha256": "2919b14f426a6d7ffede62f6269daeee647fbefbe2a70ee486926d3d83f18bb9"
+    },
+    {
+      "path": "sources/docs/voxel-runtime-rewrite-progress.md",
+      "sha256": "d6f1e95dff3c98b57d396b0f28ca004e01c3329229ad2d4e27c146e569732389"
+    },
+    {
+      "path": "browser.json",
+      "sha256": "bd58df0cf2fc66b1a94a1b2931677f2403803e4f7febdcc3091ad63f7891e131"
+    },
+    {
+      "path": "browser.txt",
+      "sha256": "5432f6306e914c90dee2dc359bde11cdce00e8b072e054ad90a18a5005ef2775"
+    },
+    {
+      "path": "inventory-regression.json",
+      "sha256": "9821b9388e26d38506ee112c5e6bef6d4047057e6c0ef2da323f5e0a058367fa"
+    },
+    {
+      "path": "inventory-regression.txt",
+      "sha256": "17b9ee0aca3476e8218e8eb1d7e433698a1a5530d4135ba6a2d1141d62523e70"
+    },
+    {
+      "path": "types.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "release-verify.txt",
+      "sha256": "fafe80c131b5912fe97e9612fab038861c1c22104d449cc00fe78fbc0f91d7b1"
+    },
+    {
+      "path": "build.json",
+      "sha256": "10262000311ef5d8144203e766e9613c7212e17d49e52b0ed8eee107fcc62fd5"
+    },
+    {
+      "path": "release.json",
+      "sha256": "a44eeeaa83da64bc4b8e464cd522d478f292c67352f08a86204b55f15f188ce2"
+    },
+    {
+      "path": "producer.mjs",
+      "sha256": "ada28583c32abfe9e9ccd3cbf759ac08150d41516451102d80116546a2a8d87c"
+    },
+    {
+      "path": "input/pointer-probe.mjs",
+      "sha256": "c6dd7093506bf503312822607abd14be6dbb5a07185d29182150e6e55c1a2f4c"
+    },
+    {
+      "path": "input/pointer-probe.json",
+      "sha256": "91ba5139f31542a5044828dd41dfb39915fa21f58624e6f35d162183ad003b04"
+    },
+    {
+      "path": "input/pointer-probe.txt",
+      "sha256": "bd6c7faf3186ff48cb2d8dd74ba380e641c426dd244a03258df6fda3e62ef6b6"
+    },
+    {
+      "path": "input/xvfb-provenance.json",
+      "sha256": "9166ee9a5cc8ce50f68cb0ab6e605e462c77b736b937754758c254d23d59b190"
+    },
+    {
+      "path": "input/xvfb.txt",
+      "sha256": "f6447d68e9217201f19fb7a07f106c54695e0eaa5fe2d9d3ed95756d0515842c"
+    },
+    {
+      "path": "input/webgl-before.json",
+      "sha256": "e6f209a9281c8714232134575ca68017fc093deee1e841a1bfd6f0133ced0a22"
+    },
+    {
+      "path": "input/webgl-glx-before.json",
+      "sha256": "a9cf698a35a8678f6ebd8c61386d437d72e835e3c29102379be54bb5dd95b8d5"
+    },
+    {
+      "path": "input/gpu.txt",
+      "sha256": "0930f801edd8e99fca14f91dd7d354e5e51000bab5b1fad3fb6f35182718475d"
+    },
+    {
+      "path": "input/gpu-strace.txt",
+      "sha256": "ea507fce0eb5367e986e00aa02ff874eed1220756d8cf0d3ba96eb1e23f4a4fa"
+    },
+    {
+      "path": "input/gpu-strace-output.txt",
+      "sha256": "dc8ee136f97708672d415affbefd5bdbeb0cba07498c65cf351c719bfca2b459"
+    },
+    {
+      "path": "input/webgl-after.json",
+      "sha256": "4b3113ec89411536a6eeab9e9bfb97cb3b39fe329df906ad691ea8ce4b8e96a2"
+    },
+    {
+      "path": "screenshots/bucket-crafted.png",
+      "sha256": "8aca4508acd8d397423dcc5f14f8ed2bc22b253087a931c6d04ed09823933663"
+    },
+    {
+      "path": "screenshots/bucket-filled.png",
+      "sha256": "6eaad2e5fbd73f7484215afbf5d334f20340bba0b02693b7f513880907de326d"
+    },
+    {
+      "path": "screenshots/bucket-held-filled.png",
+      "sha256": "1a8a71b12a4532a3987ce1078a200222b4ac7b5bb46043758ab8a9d4ce9d6cfe"
+    },
+    {
+      "path": "screenshots/bucket-reused.png",
+      "sha256": "5f7d1e01ca6ea21f94c429bd4f0fc8061872605822a1636afb4474ee816eaf08"
+    },
+    {
+      "path": "screenshots/bucket-desktop-filled.png",
+      "sha256": "dfd550a1a668356371ae24eb1eedd3484e52c3de3edc5b061ca7684eacb9747a"
+    },
+    {
+      "path": "screenshots/bucket-desktop-reused.png",
+      "sha256": "b53c906c860a2cbd0b23f9faca92b26b69dcb5c87640624e26b13ae72904c59c"
+    },
+    {
+      "path": "negative/voxel-bucket-browser-attempt-1.log",
+      "sha256": "6d312545d100cb710a1f5627debae5e00ecd2306c2c24fec96e9a77efbcf11ff"
+    },
+    {
+      "path": "negative/voxel-bucket-browser-attempt-10.json",
+      "sha256": "a72967b3c60f1af080ea339687d32ec46471156160b68f55fb344fa0401eb7ae"
+    },
+    {
+      "path": "negative/voxel-bucket-browser-attempt-10.log",
+      "sha256": "b739cd656a4c73c38a2b8fe692ba4818d962365db6719d2458338fdd1f02c667"
+    },
+    {
+      "path": "negative/voxel-bucket-browser-attempt-11.json",
+      "sha256": "ccdeb2eb3d925b8bc987a4d46cc4c913a7ce259eb139a26e69a550eb425a4a90"
+    },
+    {
+      "path": "negative/voxel-bucket-browser-attempt-11.log",
+      "sha256": "003149b6f9c31d449a7f04167635f0980862bc1962138d675c8d6e8a4e7251be"
+    },
+    {
+      "path": "negative/voxel-bucket-browser-attempt-2.log",
+      "sha256": "71a8dfc607a20478a2cd593e86ac0c3bebac52f14580c72227af587b1813edae"
+    },
+    {
+      "path": "negative/voxel-bucket-browser-attempt-3.json",
+      "sha256": "190d3bbb9a080288c6421e3168ebee5c825442bfe221d2977a761f2a79446cf0"
+    },
+    {
+      "path": "negative/voxel-bucket-browser-attempt-3.log",
+      "sha256": "319f04387102218d1a46b5727ea0b00b3b568af18ca36f1640d11c672c01c4ce"
+    },
+    {
+      "path": "negative/voxel-bucket-browser-attempt-3.png",
+      "sha256": "5781261b1e871eb083f38a3f36ccc1a86b2dbb2d622b8a9cfad827629dfadd30"
+    },
+    {
+      "path": "history/touch-only/voxel-bucket-browser-attempt-4.json",
+      "sha256": "2d01dab0781e0b887056344c829126357b3b6a5663c995908491c9ecc42033f0"
+    },
+    {
+      "path": "history/touch-only/voxel-bucket-browser-attempt-4.log",
+      "sha256": "e8cada32f4528e22203e66ffd1768ef2083b507d7fd05f67af2b8f349e37fccc"
+    },
+    {
+      "path": "history/touch-only/voxel-bucket-browser-attempt-5.json",
+      "sha256": "ebb1a97ce0931f1c40131e27056313150abe23099281b3f172c8d52c595aec66"
+    },
+    {
+      "path": "history/touch-only/voxel-bucket-browser-attempt-5.log",
+      "sha256": "e8cada32f4528e22203e66ffd1768ef2083b507d7fd05f67af2b8f349e37fccc"
+    },
+    {
+      "path": "negative/voxel-bucket-browser-attempt-6.json",
+      "sha256": "61c6e3fcb1b1db5587b9dfc1bdaa9729fbd37987deab72ee7ba5777a5a06051a"
+    },
+    {
+      "path": "negative/voxel-bucket-browser-attempt-6.log",
+      "sha256": "29f018caa08e475ed746e97162ed127dc51d3812564dd7c6216b7cb7e017c2b1"
+    },
+    {
+      "path": "negative/voxel-bucket-browser-attempt-7.json",
+      "sha256": "5e12b548ed5977f9140ae69ee4d8899092c7728b1f061802fa5e2e78d5e15b9a"
+    },
+    {
+      "path": "negative/voxel-bucket-browser-attempt-7.log",
+      "sha256": "268debda687a2d2ca9dba608b7899bc9bf9b1176eba3d220a85c276aee356f27"
+    },
+    {
+      "path": "negative/voxel-bucket-browser-attempt-8.json",
+      "sha256": "6dd7f54d03bc02ca05c61549c0d6f49e2da6ca54e46790608de2fcf54bbca15e"
+    },
+    {
+      "path": "negative/voxel-bucket-browser-attempt-8.log",
+      "sha256": "0f7cc60b0fd7498a45efb6d538023a8b05a6099e98a3421debfc07a468b23496"
+    },
+    {
+      "path": "negative/voxel-bucket-browser-attempt-9.log",
+      "sha256": "d0801714fed5f5c9c332ad2409476e15d9fd852ea03374acdff5450e816d6759"
+    },
+    {
+      "path": "input/packages.json",
+      "sha256": "0008495f2a539ec0e1e0fcd5d679ca648f9fa78413cdcc9f78c0343a54e7147c"
+    },
+    {
+      "path": "README.md",
+      "sha256": "fa8724cc1fdd51e9226d4b46a884b1bc53e78632edafa48cc499295b7e2ec422"
+    }
+  ]
+}

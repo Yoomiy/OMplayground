@@ -1,0 +1,3 @@
+{"entry":{"x":46,"y":695,"screen":[10,10,1288,805,1280,720]}}
+{"moves":[{"x":20,"y":30,"trusted":true}]}
+{"result":"TRUSTED_OS_POINTER_LOCK_PROBE_PASS","browser":"156.0.8078.4","moves":[{"x":20,"y":30,"trusted":true}],"scope":"Private Xvfb display, full headed software Chromium, actual OS relative mouse input; this probe is not a game or hardware qualification."}

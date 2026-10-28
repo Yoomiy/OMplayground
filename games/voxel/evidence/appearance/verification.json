@@ -1,0 +1,723 @@
+{
+  "result": "PASS_WITH_RETAINED_DEVELOPMENT_HISTORY",
+  "capturedAt": "2026-10-23T11:37:07.266Z",
+  "buildId": "70127a28adf5c606b47b7f9bd749ca39397b964869f3fa4f13db4c2c96dc8957",
+  "engineHash": "d907627aac8145c44e0ff405123bdb5d8deba8c7a11df47c90b59a4ce7973878",
+  "contentHash": "6cfc9de62ffe3dc2a54677f5b1be4647ea0bcb24abd6312cfca163b2b327801a",
+  "matchedReleaseFiles": 12,
+  "checksExitCode": 0,
+  "browserExitCodes": [
+    {
+      "script": "test:creative:browser",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "script": "test:presentation:browser",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "script": "test:equipment:browser",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "script": "test:survival:browser",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "script": "test:tnt:browser",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "script": "test:combat:browser",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "script": "test:touch:browser",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "script": "test:inventory:browser",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "script": "test:environment:browser",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "script": "test:recovery:browser",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "script": "test:browser",
+      "code": 0,
+      "signal": null
+    }
+  ],
+  "limitations": "Functional software Chromium/SwiftShader evidence only. Hardware performance/touch/audio, OS focus, latency, long-session load, durable timers/checkpoints, complete content/balance, school/platform integration remain unqualified. Historical development builds and natural-route failures are retained separately from the final release outcomes, including the exact earlier passing two-client night scenario before creative catalog replication and the camera submission wait refinement.",
+  "screenshots": [
+    {
+      "path": "survival-drop.png",
+      "script": "test:tnt:browser",
+      "startedAt": "2026-10-23T11:26:31.270Z",
+      "finishedAt": "2026-10-23T11:27:51.638Z",
+      "sourceModifiedAt": "2026-10-23T11:26:42.114Z"
+    },
+    {
+      "path": "survival-crafting.png",
+      "script": "test:tnt:browser",
+      "startedAt": "2026-10-23T11:26:31.270Z",
+      "finishedAt": "2026-10-23T11:27:51.638Z",
+      "sourceModifiedAt": "2026-10-23T11:27:02.101Z"
+    },
+    {
+      "path": "survival-tool.png",
+      "script": "test:tnt:browser",
+      "startedAt": "2026-10-23T11:26:31.270Z",
+      "finishedAt": "2026-10-23T11:27:51.638Z",
+      "sourceModifiedAt": "2026-10-23T11:27:03.468Z"
+    },
+    {
+      "path": "tnt-fuse.png",
+      "script": "test:tnt:browser",
+      "startedAt": "2026-10-23T11:26:31.270Z",
+      "finishedAt": "2026-10-23T11:27:51.638Z",
+      "sourceModifiedAt": "2026-10-23T11:27:47.942Z"
+    },
+    {
+      "path": "tnt-crater.png",
+      "script": "test:tnt:browser",
+      "startedAt": "2026-10-23T11:26:31.270Z",
+      "finishedAt": "2026-10-23T11:27:51.638Z",
+      "sourceModifiedAt": "2026-10-23T11:27:50.435Z"
+    },
+    {
+      "path": "combat-death.png",
+      "script": "test:combat:browser",
+      "startedAt": "2026-10-23T11:27:54.084Z",
+      "finishedAt": "2026-10-23T11:28:17.860Z",
+      "sourceModifiedAt": "2026-10-23T11:28:13.564Z"
+    },
+    {
+      "path": "combat-respawn.png",
+      "script": "test:combat:browser",
+      "startedAt": "2026-10-23T11:27:54.084Z",
+      "finishedAt": "2026-10-23T11:28:17.860Z",
+      "sourceModifiedAt": "2026-10-23T11:28:15.559Z"
+    },
+    {
+      "path": "equipment-night-before.png",
+      "script": "test:equipment:browser",
+      "startedAt": "2026-10-23T11:21:44.093Z",
+      "finishedAt": "2026-10-23T11:23:58.113Z",
+      "sourceModifiedAt": "2026-10-23T11:23:29.615Z"
+    },
+    {
+      "path": "equipment-night-after.png",
+      "script": "test:equipment:browser",
+      "startedAt": "2026-10-23T11:21:44.093Z",
+      "finishedAt": "2026-10-23T11:23:58.113Z",
+      "sourceModifiedAt": "2026-10-23T11:23:31.434Z"
+    },
+    {
+      "path": "remote-equipment-night.png",
+      "script": "test:equipment:browser",
+      "startedAt": "2026-10-23T11:21:44.093Z",
+      "finishedAt": "2026-10-23T11:23:58.113Z",
+      "sourceModifiedAt": "2026-10-23T11:23:43.313Z"
+    },
+    {
+      "path": "remote-equipment-survival.png",
+      "script": "test:survival:browser",
+      "startedAt": "2026-10-23T11:24:00.566Z",
+      "finishedAt": "2026-10-23T11:26:28.236Z",
+      "sourceModifiedAt": "2026-10-23T11:26:17.553Z"
+    },
+    {
+      "path": "avatar-held.png",
+      "script": "test:presentation:browser",
+      "startedAt": "2026-10-23T11:21:11.644Z",
+      "finishedAt": "2026-10-23T11:21:41.261Z",
+      "sourceModifiedAt": "2026-10-23T11:21:38.336Z"
+    },
+    {
+      "path": "remote-equipment-creative.png",
+      "script": "test:presentation:browser",
+      "startedAt": "2026-10-23T11:21:11.644Z",
+      "finishedAt": "2026-10-23T11:21:41.261Z",
+      "sourceModifiedAt": "2026-10-23T11:21:39.448Z"
+    }
+  ],
+  "scenarios": [
+    {
+      "path": "tests/appearance.test.ts",
+      "hash": "1aeb12b6126af8435e649c3894b3b72b9430da638ac7f612d53a0c0e7602a557"
+    },
+    {
+      "path": "tests/avatar-equipment.test.ts",
+      "hash": "625df0b722938a97e1d4f567cbef9fa6a18af937e55d008c65abbcd970baedac"
+    },
+    {
+      "path": "tests/wasm/appearance.test.ts",
+      "hash": "9466a07dd6033ae5caf7d833ed56b63183f491ffca110c64478e71dcf83ae58c"
+    },
+    {
+      "path": "tools/browser-remote-equipment.ts",
+      "hash": "4f0737496a817660903e039a19a231c34bf87b61d705ae7223f7a8d140a9744d"
+    },
+    {
+      "path": "tests/gpu-pacing.test.ts",
+      "hash": "8bc36ba13ab2e48d781da6b85ef719e044b21c3683e8da06e94a10aa152435c4"
+    },
+    {
+      "path": "tests/equipment.test.ts",
+      "hash": "7e6a26e296ea618a94619186fc6d5a66d5e8a79a0cee12eb606a9eb7ac6b0549"
+    },
+    {
+      "path": "tests/wasm/equipment.test.ts",
+      "hash": "d31a621da12da02d9dade5372acd10ca7bfcd78d7d7990ac440143b017fb8e80"
+    },
+    {
+      "path": "tests/explosives.test.ts",
+      "hash": "30d6d982706dc49d7c748adbd640fcf4e3d835f84698c0c9074ed0a0db8b5c94"
+    },
+    {
+      "path": "tests/wasm/explosives.test.ts",
+      "hash": "1247014fb70a118095fcc80a0efa4d7a89e6a4cd9675e23771ce5f7d322f4e1c"
+    },
+    {
+      "path": "tests/combat.test.ts",
+      "hash": "81ed0bdec2053df956aa86864a6f820a59aaeeb7165814748b6b55eb5c43797c"
+    },
+    {
+      "path": "tests/wasm/combat.test.ts",
+      "hash": "293e72d5642685415145b825f841421741e2e064d45c2560523bf7cd7c58197b"
+    },
+    {
+      "path": "tests/wasm/room-fixture.ts",
+      "hash": "7ef627e904ac4a3070e2e4cf7077c833a681f87c84b283a9967d786a9b72ef5f"
+    },
+    {
+      "path": "tests/wasm/fixture.ts",
+      "hash": "6e4009d88e43b9ecaa6b6f145b9859629e6b758528dc0b2f598c141b2bbdd2cf"
+    },
+    {
+      "path": "tools/browser-combat.ts",
+      "hash": "2e1db43ff7d9442ed997bc4de2909a666e8b13a729559446eee128ec725636d0"
+    },
+    {
+      "path": "tools/browser-harness.ts",
+      "hash": "6b5f9fde3719606b6d5488f09e7219da7e01bd68d0a0299c46e4f3a72d398e49"
+    },
+    {
+      "path": "tests/vitals.test.ts",
+      "hash": "e162a1393869d6b6c5a571bd7af85c0b0c0b913a3341fab94b68b560ea8dfba4"
+    },
+    {
+      "path": "tests/wasm/prediction.test.ts",
+      "hash": "af491b505fcaec432ed7d94335d0e3e8e9dedfd003bd509c26164a4263d6cd8c"
+    },
+    {
+      "path": "tests/survival.test.ts",
+      "hash": "4cacaca4366367f168f58a1c6ee18a281fc3d14a6563564a950e6484b2aec5f2"
+    },
+    {
+      "path": "tests/wasm/survival.test.ts",
+      "hash": "ba6466b47780f7603fe0382a793c4bb2a9f4680bc3b628f7336d337aa6b48622"
+    },
+    {
+      "path": "tests/authority.test.ts",
+      "hash": "9ed448f1e4750de57774216f4d2ec7ad24adbb2587acec3b2535c2f603e1b916"
+    },
+    {
+      "path": "tests/integration/creative.test.ts",
+      "hash": "4e26e08e831e475b298400e78872da8729f0894ba9889f8c8b800fd24608dea3"
+    },
+    {
+      "path": "tools/browser-survival.ts",
+      "hash": "612408f04bd9f023549fd7f647061aaccdd93439363694e3748c86b4e9a5a87c"
+    },
+    {
+      "path": "tools/browser-touch.ts",
+      "hash": "674ed5b901219a003f4039c0914699be41e60f6d29d58b79362b2631edd7c169"
+    },
+    {
+      "path": "tools/browser-creative.ts",
+      "hash": "83e2d795a501edcff3b7904d42908b62a54f61ebad2199fddea0e1f822eecae2"
+    },
+    {
+      "path": "tools/browser-inventory.ts",
+      "hash": "9462cbefd476f824e8b665e923b974909487d377e1499b163e188bdfbb7dc693"
+    },
+    {
+      "path": "tools/browser-presentation.ts",
+      "hash": "d839498abf9ea070cbb6dcb79812667d26813db5401f6f00a686e05f1029eedc"
+    },
+    {
+      "path": "tools/browser-environment.ts",
+      "hash": "c5baa674174283c6a79fc31aeef2f9f0488a9af59032ba31f2f440988e6522d0"
+    },
+    {
+      "path": "tools/browser-worker-recovery.ts",
+      "hash": "4e2645298e9a184e654bfbaf725e4934aac885c33860570ec972c4a6093e98ea"
+    },
+    {
+      "path": "tools/browser-smoke.ts",
+      "hash": "e14e614fb0a99dab8a4aecfaa6d1b8b9528c87e57db51cb433351aa967b665da"
+    },
+    {
+      "path": "tools/wasm-scenario.mjs",
+      "hash": "5c531722b1d7be58e651550fd3583eeb280245123920d270c0267a84f6ceebc0"
+    }
+  ],
+  "files": [
+    {
+      "path": "README.md",
+      "hash": "b9a3680a0cc5ace85cd84d44f11361b0d958637d0ba70572ace29d6da9754fea"
+    },
+    {
+      "path": "archive.py",
+      "hash": "d190d45854fe0e58842e0836a9ab1058b821eeb49d76ecd0f8a7e6c8aecb7d25"
+    },
+    {
+      "path": "avatar-held.png",
+      "hash": "c562d19f5dce8090bd73e869a3e37574322f2ccc3dc28fb01199b82e3ae118ba"
+    },
+    {
+      "path": "browser-combat.json",
+      "hash": "b7472ac7303e4754ae02e6df645da4694951e6d185e35bc2c455d705d2bdbda9"
+    },
+    {
+      "path": "browser-creative.json",
+      "hash": "2123d2d8b6a5e5446a3213813d7bc8489d12aae18c7317b8b9fc3e109d9091b9"
+    },
+    {
+      "path": "browser-environment.json",
+      "hash": "642a421e72ba71e9583235fd8bba604bee55344e8f3ae4ad2e7ade50e9f625d7"
+    },
+    {
+      "path": "browser-equipment.json",
+      "hash": "11bcb321a16b8840e225c0653ee4ff8078c693fc15f4871803e423c6306bbcef"
+    },
+    {
+      "path": "browser-inventory.json",
+      "hash": "233a8fec822583fbd43238b1c99f4340227e019fea58f803f55baae27e2718f6"
+    },
+    {
+      "path": "browser-presentation.json",
+      "hash": "84b2f2bacfdf0cd66a67034744297759942434dadf98fe0b02ded75247cf68ea"
+    },
+    {
+      "path": "browser-suite.json",
+      "hash": "58058ed00787e400cdef7baf17b96810a02c129cd6a08cbbcd6f2f0e0b78b2fc"
+    },
+    {
+      "path": "browser-survival.json",
+      "hash": "19bec26d9d806c1d57e727481f85cdd017b7dae6a36c76e40dc3680357b39603"
+    },
+    {
+      "path": "browser-tnt.json",
+      "hash": "191215b91c79998bc88c4079f501e338b29b7038a7ff3476c9ee667b072673ac"
+    },
+    {
+      "path": "browser-touch.json",
+      "hash": "15b597262dd1016ead6631a0dfcefa1b8e55627c266937cb52576795190be39b"
+    },
+    {
+      "path": "browser-wasm.json",
+      "hash": "e4401eebc2430665214447626db0a4bf078820651810fff0fbf22ca1220b8bf5"
+    },
+    {
+      "path": "browser-worker-recovery.json",
+      "hash": "0ed18aae1fdf57e9486e788e1429ace326b7b500c8a09cfe113a131e36523054"
+    },
+    {
+      "path": "build.json",
+      "hash": "86de09eae3a609863fe59c3d3a5cec83e0ef255b5f8ce313f7f28ba934919129"
+    },
+    {
+      "path": "capture.mjs",
+      "hash": "d6b59002437273b0388f92ceaf2708de4c41f671367b4721fc98a36330206847"
+    },
+    {
+      "path": "check-exit.json",
+      "hash": "f8a98fc20d1efb083dcba59bcd2925d3d30128ddf563f750bca55e239953a3c6"
+    },
+    {
+      "path": "check.txt",
+      "hash": "def2f128a1e684458d1c46610629fbd3152d76810e5514428c8ff96893d125ff"
+    },
+    {
+      "path": "combat-death.png",
+      "hash": "a200bdf2a6da2ebe39d2075cd708d3b8e7946b2ef267018019a2affb42831165"
+    },
+    {
+      "path": "combat-respawn.png",
+      "hash": "e9dcc975ef4e61ad7a4ffa928cc99728f931d2bde48b2e8a712ffc058399819b"
+    },
+    {
+      "path": "equipment-night-after.png",
+      "hash": "d2b560f4d514174ba0b2df61e5fc073b04596e6c9c2d8db2b70aa934e11b131e"
+    },
+    {
+      "path": "equipment-night-before.png",
+      "hash": "af2b3061ecbee763885f2a36a1964e88e1bbd5615cbe333de2817da2c74541d6"
+    },
+    {
+      "path": "historical-browser-0-exit.json",
+      "hash": "6b531cb86a3cfd59ba809fdef6c593d0dddf90e1f4bfacff41490ef4826e5651"
+    },
+    {
+      "path": "historical-browser-0.txt",
+      "hash": "0640b4c8c0517a7e72caebd62f9902aa35ccdcfabb5f28259cbffd0b867d0249"
+    },
+    {
+      "path": "pre-catalog-history/browser-equipment.json",
+      "hash": "8c7568a88dde9a8d9828fa9c4807a558bb11545cc97f13b7cd6e829aa222ac51"
+    },
+    {
+      "path": "pre-catalog-history/browser-suite.json",
+      "hash": "a9943c9a5547f4845a58eb3f7a941a3f8cb74dde0074599306518da20bdec503"
+    },
+    {
+      "path": "pre-catalog-history/build.json",
+      "hash": "1fdfd571bab866ba1d2c40b3345132654d2126dee94296dc715000cf40a72a00"
+    },
+    {
+      "path": "pre-catalog-history/check-exit.json",
+      "hash": "2ba9aaefd73dc5c6ed4cd1e2eb15c53a727329c477edeb6220991abfce9f2fb1"
+    },
+    {
+      "path": "pre-catalog-history/check.log",
+      "hash": "0a33de3325071da69a61ab542bc95f65d1014cc3eefb95882bed660d94eb2f51"
+    },
+    {
+      "path": "pre-catalog-history/hashes.json",
+      "hash": "50e52a736bcbc9c37f64e36cfa0ca4941dd75ca29c69ef03e1ebc63033bda9ea"
+    },
+    {
+      "path": "pre-catalog-history/release.json",
+      "hash": "4fd1c30c2f0820e67ea77851c43801369689db77774efea89a17aa09b8c37e53"
+    },
+    {
+      "path": "pre-catalog-history/remote-equipment-night.png",
+      "hash": "41dbc5ab995789bababf861d702994e68079e6b9be068ad09660fb8c2e78f7d2"
+    },
+    {
+      "path": "pre-catalog-history/source.tar.gz",
+      "hash": "af672c9798060cab98174a37fd1349562319a9f8b97aff3b57f23c680aceb72a"
+    },
+    {
+      "path": "pre-catalog-history/voxel-appearance-suite-test-equipment-browser.log",
+      "hash": "67222d7d2efe6e4d1bd57a29b329a4915ee9f789f27eeb6a61f94924580fd82a"
+    },
+    {
+      "path": "pre-catalog-history/voxel-appearance-suite-test-equipment-browser.log.exit.json",
+      "hash": "3716c37e2a1af9d45796432511a857fafee03983ef5aac6ab116eec659910361"
+    },
+    {
+      "path": "pre-warmup-history/browser-combat.json",
+      "hash": "e9862f1da1d08ac16aa481757993b9b61985f3fd461e65f788141a1c84ad276a"
+    },
+    {
+      "path": "pre-warmup-history/browser-equipment.json",
+      "hash": "1155df40ebf04d22b052dc0d7a0e12e070f3323202ed23d347066fdb957e4962"
+    },
+    {
+      "path": "pre-warmup-history/browser-presentation.json",
+      "hash": "98f9103270eb3233c7c21d9e526a719ccbf5d122c425600dda38a3efa66fbfbd"
+    },
+    {
+      "path": "pre-warmup-history/browser-suite.json",
+      "hash": "83fdc08122c3344ab0929e0b04b4bc4b797362fee06f50baf75b364f5ffe1d6b"
+    },
+    {
+      "path": "pre-warmup-history/browser-survival.json",
+      "hash": "6943505edb5a6c3fb2723e96095bf3d8c0334712eecfbdb2f86efe6b7f64e9f5"
+    },
+    {
+      "path": "pre-warmup-history/browser-tnt.json",
+      "hash": "12f6948d812ff37e44611eadeba14642bd807b80c058ee671295e87e572df1ce"
+    },
+    {
+      "path": "pre-warmup-history/build.json",
+      "hash": "d64013cacd12b6a6c75319a2aa9d5d4c92838ff477db4c473b79a46d0add4e7a"
+    },
+    {
+      "path": "pre-warmup-history/check-exit.json",
+      "hash": "359784a7d18194c9f572f9774585046a84078f1b0dac1063e69908141a62a7af"
+    },
+    {
+      "path": "pre-warmup-history/check.log",
+      "hash": "fc39bfcddf9610b4f04ea0f5592da9d2cd9da28f390b0ee2a43ccef9dcdc4e2b"
+    },
+    {
+      "path": "pre-warmup-history/equipment-night-after.png",
+      "hash": "e2890877073ae938ffc91021c922b5e3ce1ce17a5f85bdfd55e10a96ff89f090"
+    },
+    {
+      "path": "pre-warmup-history/equipment-night-before.png",
+      "hash": "6e325195ded27850e8f9e1256d987529838810d0ed0d1a1338c65335361be54f"
+    },
+    {
+      "path": "pre-warmup-history/hashes.json",
+      "hash": "31ee96bf65a88e83b24f94e5abc6aa818e86149f1d43d80b60aaf7f3bd7b63ea"
+    },
+    {
+      "path": "pre-warmup-history/release.json",
+      "hash": "3426909a62330151d5ee68c9dcc44037e67652bc5e45bc22ef0f2a8b3342136f"
+    },
+    {
+      "path": "pre-warmup-history/remote-equipment-creative.png",
+      "hash": "ee877627333e92d5ae4958ec744a26fc9edf1baaf3455a16a9c936583e171568"
+    },
+    {
+      "path": "pre-warmup-history/remote-equipment-night.png",
+      "hash": "5cea4a09bda199e6ba8db52c8d14b7251374854750eb6933e99fba99f6d12b0f"
+    },
+    {
+      "path": "pre-warmup-history/remote-equipment-survival.png",
+      "hash": "57ddcaf8474279762231280b9fb225aaa80045a424ed134e816e73abb34834b8"
+    },
+    {
+      "path": "pre-warmup-history/source.tar.gz",
+      "hash": "cd4a205fe29127b52ede824631abf6b87e635996ef104319714af3218c98f99f"
+    },
+    {
+      "path": "pre-warmup-history/voxel-appearance-suite-test-combat-browser.log",
+      "hash": "95370081eb8636a37c459bdab36740b797750b98899e1bc49c0eca2220d4d258"
+    },
+    {
+      "path": "pre-warmup-history/voxel-appearance-suite-test-combat-browser.log.exit.json",
+      "hash": "3cf499f7fea29308d945b5291299c528d28652b969d1fa00d96bad658f81d0c9"
+    },
+    {
+      "path": "pre-warmup-history/voxel-appearance-suite-test-creative-browser.log",
+      "hash": "ff67d529ecb053c511fa29e951ef3d3a7605538660e6a1278723c61e9e36bcb9"
+    },
+    {
+      "path": "pre-warmup-history/voxel-appearance-suite-test-creative-browser.log.exit.json",
+      "hash": "ee9d64e95694e88b53e164dd06ff484e85a220014f1d479d970709d8843176b9"
+    },
+    {
+      "path": "pre-warmup-history/voxel-appearance-suite-test-creative-browser.log.exit.json.prior-2",
+      "hash": "ecbe4ffcd59cc88ce43f407179af0e4db8a3e7f4f4ecc8b927a512652f8a782c"
+    },
+    {
+      "path": "pre-warmup-history/voxel-appearance-suite-test-creative-browser.log.exit.json.prior-3",
+      "hash": "5292c223e05f4b161dbe80d4b93fd985e5299a42b0ae5f7aa015de8ae244ccc9"
+    },
+    {
+      "path": "pre-warmup-history/voxel-appearance-suite-test-creative-browser.log.prior-2",
+      "hash": "a3b053a351f2b7eea87de7c10144d63542e1faea6620686a8514a72cfe8a51a9"
+    },
+    {
+      "path": "pre-warmup-history/voxel-appearance-suite-test-creative-browser.log.prior-3",
+      "hash": "730709e31ed34dfc1c48a3c40b2bfdddd28b9980c690684a1c1f76976cd3614f"
+    },
+    {
+      "path": "pre-warmup-history/voxel-appearance-suite-test-equipment-browser.log",
+      "hash": "67222d7d2efe6e4d1bd57a29b329a4915ee9f789f27eeb6a61f94924580fd82a"
+    },
+    {
+      "path": "pre-warmup-history/voxel-appearance-suite-test-equipment-browser.log.exit.json",
+      "hash": "a7b8c14c2cff4b017a6f9f7b3258ce5b05033664e9631506da8f532e7a940e57"
+    },
+    {
+      "path": "pre-warmup-history/voxel-appearance-suite-test-equipment-browser.log.exit.json.prior-0",
+      "hash": "483d93c0d20880437a5343cc4293b76ddaf63f7023d30eaadb1541e1eb1896e8"
+    },
+    {
+      "path": "pre-warmup-history/voxel-appearance-suite-test-equipment-browser.log.exit.json.prior-1",
+      "hash": "5faa0e07ed2de9ec0a05f6693e251a5dd86bed986ca839b51066f0d6ad9c4cd4"
+    },
+    {
+      "path": "pre-warmup-history/voxel-appearance-suite-test-equipment-browser.log.prior-0",
+      "hash": "b75dfd06474764e286b2da278c23afd2f7fe9691219a3dcf9c434a0e169c1795"
+    },
+    {
+      "path": "pre-warmup-history/voxel-appearance-suite-test-equipment-browser.log.prior-1",
+      "hash": "6a9ea18bc0a6e465fc884d99ca148eb030f45b5eba6910af81759937d666a516"
+    },
+    {
+      "path": "pre-warmup-history/voxel-appearance-suite-test-presentation-browser.log",
+      "hash": "29ea38f4d4fda75ecde6ed0b3db56ea669ec5045936e2dab361c556959d7f2a2"
+    },
+    {
+      "path": "pre-warmup-history/voxel-appearance-suite-test-presentation-browser.log.exit.json",
+      "hash": "1026bf295c74e4dbea6b152f9dcb47a29e95852a760b19f0c73364a8dc5285fc"
+    },
+    {
+      "path": "pre-warmup-history/voxel-appearance-suite-test-survival-browser.log",
+      "hash": "fbf17ba76070d29bbd326653b8952a4ba0093bf403d61b740915574d8ed6f63a"
+    },
+    {
+      "path": "pre-warmup-history/voxel-appearance-suite-test-survival-browser.log.exit.json",
+      "hash": "b7b3cbead4551add25b6a5a8c47ac65d4fdcf7977c72cf8252ddcc1a2b5a54be"
+    },
+    {
+      "path": "pre-warmup-history/voxel-appearance-suite-test-tnt-browser.log",
+      "hash": "594f33ef37d6e3471192b3d6bc3c0eeb65db1791000a9e0413f59bb34282470f"
+    },
+    {
+      "path": "pre-warmup-history/voxel-appearance-suite-test-tnt-browser.log.exit.json",
+      "hash": "7152e59928d6adeacc0ad7b5e67dfe0d1d57b79c6921d28b76b401739b6857f9"
+    },
+    {
+      "path": "release.json",
+      "hash": "6052eec267b817070cdf0ac616c333931e9351a7ffdbba028edd85a5c0d1f92f"
+    },
+    {
+      "path": "remote-equipment-creative.png",
+      "hash": "b2af192727e78dc6d9b3c9c13e16bc8310b91589a0798a42c57ffc31cf96a0f1"
+    },
+    {
+      "path": "remote-equipment-night.png",
+      "hash": "409fe2e458763728f98463a9174092df5fca7b67f618fc5a5a5f2172c3308f86"
+    },
+    {
+      "path": "remote-equipment-survival.png",
+      "hash": "283a82ec772b441d7bd391b42411359756be9051c54e37cf8fbb7324a546644b"
+    },
+    {
+      "path": "source-inputs.json",
+      "hash": "6c88ad7ab55b3ce93b890cbf46f4e0b9ac46a52f76c985228f9d44c55049f60f"
+    },
+    {
+      "path": "source-release-verification.json",
+      "hash": "f485eb51d338b58bd5c9c86e73fb52285adb4880b6e687fc8a034870daafc3e8"
+    },
+    {
+      "path": "source.tar.gz",
+      "hash": "e39156b0dab14307cb60c018b058ef080bf3582a037d45ca7179428e579112c9"
+    },
+    {
+      "path": "survival-crafting.png",
+      "hash": "6a3beb9a8c5c8cdc241dfce4ee91db76f78c9673679dea94cfd9afbbd60d3692"
+    },
+    {
+      "path": "survival-drop.png",
+      "hash": "a790fdbd5b51d248ff19d8523e1d722fd691a363b9b64e75471f7e0716ae4b75"
+    },
+    {
+      "path": "survival-tool.png",
+      "hash": "c6c942501c565a48e5886bc14f7dfe2cb6bfb840c1d5a3ecee9793d137aa3495"
+    },
+    {
+      "path": "test-browser-exit.json",
+      "hash": "2b184d35eef72a2bb3325477e8445089eb674580bf8995637342ac7d567a722c"
+    },
+    {
+      "path": "test-browser.txt",
+      "hash": "d748fd6cbb5caa64c0a06157dc6276d8248b7d20833a96bea594bb1804b25823"
+    },
+    {
+      "path": "test-combat-browser-exit.json",
+      "hash": "0cfc67af585b39df8d0cb80ffba3287320e531208ab9b08cc6060b14e8f63e87"
+    },
+    {
+      "path": "test-combat-browser.txt",
+      "hash": "95370081eb8636a37c459bdab36740b797750b98899e1bc49c0eca2220d4d258"
+    },
+    {
+      "path": "test-creative-browser-exit.json",
+      "hash": "b020c45e4362a5af68d0eeb854fd936010c483c9ee54f8a512cb3f283813196a"
+    },
+    {
+      "path": "test-creative-browser.txt",
+      "hash": "b7c6c370a84a48aa001e6af61efce253adf1d7e06573c39c81343ff227dbc485"
+    },
+    {
+      "path": "test-environment-browser-exit.json",
+      "hash": "b4e1da39f4e7aa803dc3d2c89e3897e401044a14a3b972b1f15294898d879f54"
+    },
+    {
+      "path": "test-environment-browser.txt",
+      "hash": "74835b04719744611db5bea8fa643ebfa4434949c23e69d5951162ddb238f037"
+    },
+    {
+      "path": "test-equipment-browser-exit.json",
+      "hash": "49724a525016f825f3db5f0a25b92ec2f67ce127a4736081ca258b46736a8adb"
+    },
+    {
+      "path": "test-equipment-browser.txt",
+      "hash": "4bc12548939c1129007cb60e04f36e322f6caf6a34043190abcd26dcbba8f342"
+    },
+    {
+      "path": "test-inventory-browser-exit.json",
+      "hash": "b371666bacdcea8dc6dd8af8402894ae2d0c5d3560f05728f8b7f644cf02023a"
+    },
+    {
+      "path": "test-inventory-browser.txt",
+      "hash": "770f74744d7ca9abacbe1fd41c1041264d9cb104d0bc25cf717bc9d08d1816fc"
+    },
+    {
+      "path": "test-presentation-browser-exit.json",
+      "hash": "4001a1f40c47538ee7932c58f0c87045bab1b3e6983f0e084f5b19cd6c057354"
+    },
+    {
+      "path": "test-presentation-browser.txt",
+      "hash": "29ea38f4d4fda75ecde6ed0b3db56ea669ec5045936e2dab361c556959d7f2a2"
+    },
+    {
+      "path": "test-recovery-browser-exit.json",
+      "hash": "5b078c31905a5a7e4c8354f82fddf10aece174552da66d834b245687035751ce"
+    },
+    {
+      "path": "test-recovery-browser.txt",
+      "hash": "dca103c15b7e9ddf6ee0780f7fe9a684cdfc6aec63b1fad70cf1be3f0f62f1e6"
+    },
+    {
+      "path": "test-survival-browser-exit.json",
+      "hash": "84c7adc891c815b8bdd8f51496561fcb8f583ba9e0f19c9354ce7badfaa9f8e1"
+    },
+    {
+      "path": "test-survival-browser.txt",
+      "hash": "696ba8a7f21b54994d2419855be1eeb06fac09bbce4dad1dccf8445a7838f923"
+    },
+    {
+      "path": "test-tnt-browser-exit.json",
+      "hash": "7de6286429d4281bd3997b8e345cd9cebdc70d530915927b6ef450f848fe7bf7"
+    },
+    {
+      "path": "test-tnt-browser.txt",
+      "hash": "594f33ef37d6e3471192b3d6bc3c0eeb65db1791000a9e0413f59bb34282470f"
+    },
+    {
+      "path": "test-touch-browser-exit.json",
+      "hash": "cda819ca023d9652132356b5925bf34bc631dc208d99597929222465a7128e90"
+    },
+    {
+      "path": "test-touch-browser.txt",
+      "hash": "0d40981824e13958d64d3a4f69091e6bc374025a7534e3dc4e59614776e7fa4e"
+    },
+    {
+      "path": "tnt-crater.png",
+      "hash": "3a3944868b39f07c888bb00fcc961d514274ade9ec27406e29abc9ab965857fc"
+    },
+    {
+      "path": "tnt-fuse.png",
+      "hash": "7a01fc92b8ffe04208de5f86af18397ff95b0734b2db5b66428f0cd5909e4494"
+    },
+    {
+      "path": "workbench-occlusion-scenario.ts",
+      "hash": "51fa0e687ac3ae521438753576855d5f50f4fd6858e7e7f08920e6ca212087a0"
+    }
+  ],
+  "sourceArchive": {
+    "path": "source.tar.gz",
+    "layout": "repository-relative",
+    "purpose": "Preserve the exact verified milestone sources, tests, content, toolchain inputs and provenance before later development",
+    "verifiedSourceFiles": 158,
+    "verification": "Every archived regular file matched the workspace byte-for-byte at capture; all evidence and scenario hashes also matched"
+  }
+}

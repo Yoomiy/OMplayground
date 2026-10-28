@@ -1,0 +1,11 @@
+{
+  "result": "PASS",
+  "buildId": "133667cb44e78b62cd57286267288fd201154cd0901a37066f75d40fed5cdb39",
+  "scope": "Read-only hosted schema checks and local loopback production composition; no admission, worker, hosted recovery or deployment claim",
+  "health": 200,
+  "ready": 200,
+  "roomsAllocated": 0,
+  "remoteApplicationWrites": false,
+  "closed": true,
+  "checkedAt": "2026-10-25T17:51:50.871Z"
+}

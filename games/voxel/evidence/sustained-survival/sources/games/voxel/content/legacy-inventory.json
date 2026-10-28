@@ -1,0 +1,951 @@
+{
+  "schema": 1,
+  "purpose": "Legacy product inventory for explicit retain/replace/combine/remove decisions; no runtime dependency or ID compatibility",
+  "sources": [
+    {
+      "path": "packages/voxel-content/src/blocks.ts",
+      "hash": "1a7b273a058d02198284fbfec4ac3223ae349806c285d371e2bc0e199dc36a36"
+    },
+    {
+      "path": "packages/voxel-content/src/items.ts",
+      "hash": "f39a45143e2af3bd6f1b1d16d3d6de020c431acc85e473b3bde7cc8e6d64480d"
+    },
+    {
+      "path": "packages/voxel-content/src/recipes.ts",
+      "hash": "64a67c04cd74b4d8dce0aa1c763c65fb637fbf55b414694ad6abb693d23e8b98"
+    }
+  ],
+  "blocks": [
+    {
+      "legacyId": 0,
+      "key": "AIR"
+    },
+    {
+      "legacyId": 1,
+      "key": "GRASS"
+    },
+    {
+      "legacyId": 2,
+      "key": "DIRT"
+    },
+    {
+      "legacyId": 3,
+      "key": "STONE"
+    },
+    {
+      "legacyId": 4,
+      "key": "WOOD"
+    },
+    {
+      "legacyId": 5,
+      "key": "LEAVES"
+    },
+    {
+      "legacyId": 6,
+      "key": "SAND"
+    },
+    {
+      "legacyId": 7,
+      "key": "WATER"
+    },
+    {
+      "legacyId": 8,
+      "key": "GLASS"
+    },
+    {
+      "legacyId": 9,
+      "key": "COBBLESTONE"
+    },
+    {
+      "legacyId": 10,
+      "key": "OAK_PLANKS"
+    },
+    {
+      "legacyId": 11,
+      "key": "SAPLING"
+    },
+    {
+      "legacyId": 12,
+      "key": "GRAVEL"
+    },
+    {
+      "legacyId": 13,
+      "key": "GOLD_ORE"
+    },
+    {
+      "legacyId": 14,
+      "key": "IRON_ORE"
+    },
+    {
+      "legacyId": 15,
+      "key": "COAL_ORE"
+    },
+    {
+      "legacyId": 16,
+      "key": "SPONGE"
+    },
+    {
+      "legacyId": 17,
+      "key": "RED_WOOL"
+    },
+    {
+      "legacyId": 18,
+      "key": "ORANGE_WOOL"
+    },
+    {
+      "legacyId": 19,
+      "key": "YELLOW_WOOL"
+    },
+    {
+      "legacyId": 20,
+      "key": "LIME_WOOL"
+    },
+    {
+      "legacyId": 21,
+      "key": "GREEN_WOOL"
+    },
+    {
+      "legacyId": 22,
+      "key": "CYAN_WOOL"
+    },
+    {
+      "legacyId": 23,
+      "key": "BLUE_WOOL"
+    },
+    {
+      "legacyId": 24,
+      "key": "PURPLE_WOOL"
+    },
+    {
+      "legacyId": 25,
+      "key": "MAGENTA_WOOL"
+    },
+    {
+      "legacyId": 26,
+      "key": "PINK_WOOL"
+    },
+    {
+      "legacyId": 27,
+      "key": "BLACK_WOOL"
+    },
+    {
+      "legacyId": 28,
+      "key": "GRAY_WOOL"
+    },
+    {
+      "legacyId": 29,
+      "key": "WHITE_WOOL"
+    },
+    {
+      "legacyId": 30,
+      "key": "DANDELION"
+    },
+    {
+      "legacyId": 31,
+      "key": "ROSE"
+    },
+    {
+      "legacyId": 32,
+      "key": "BROWN_MUSHROOM"
+    },
+    {
+      "legacyId": 33,
+      "key": "RED_MUSHROOM"
+    },
+    {
+      "legacyId": 34,
+      "key": "GOLD_BLOCK"
+    },
+    {
+      "legacyId": 35,
+      "key": "IRON_BLOCK"
+    },
+    {
+      "legacyId": 36,
+      "key": "STONE_SLAB"
+    },
+    {
+      "legacyId": 37,
+      "key": "BRICKS"
+    },
+    {
+      "legacyId": 38,
+      "key": "TNT"
+    },
+    {
+      "legacyId": 39,
+      "key": "BOOKSHELF"
+    },
+    {
+      "legacyId": 40,
+      "key": "MOSSY_COBBLESTONE"
+    },
+    {
+      "legacyId": 41,
+      "key": "OBSIDIAN"
+    },
+    {
+      "legacyId": 42,
+      "key": "BEDROCK"
+    },
+    {
+      "legacyId": 43,
+      "key": "BIRCH_LOG"
+    },
+    {
+      "legacyId": 44,
+      "key": "BIRCH_PLANKS"
+    },
+    {
+      "legacyId": 45,
+      "key": "BIRCH_LEAVES"
+    },
+    {
+      "legacyId": 46,
+      "key": "SPRUCE_LOG"
+    },
+    {
+      "legacyId": 47,
+      "key": "SPRUCE_PLANKS"
+    },
+    {
+      "legacyId": 48,
+      "key": "SPRUCE_LEAVES"
+    },
+    {
+      "legacyId": 49,
+      "key": "GRASS_SNOW"
+    },
+    {
+      "legacyId": 50,
+      "key": "BARRIER"
+    },
+    {
+      "legacyId": 51,
+      "key": "SNOW"
+    },
+    {
+      "legacyId": 52,
+      "key": "CACTUS"
+    },
+    {
+      "legacyId": 53,
+      "key": "DEADBUSH"
+    },
+    {
+      "legacyId": 54,
+      "key": "CRAFTING"
+    },
+    {
+      "legacyId": 55,
+      "key": "STONEBRICK"
+    },
+    {
+      "legacyId": 56,
+      "key": "BROWN_WOOL"
+    },
+    {
+      "legacyId": 57,
+      "key": "LIGHT_BLUE_WOOL"
+    },
+    {
+      "legacyId": 58,
+      "key": "WHITE_STAINED_GLASS"
+    },
+    {
+      "legacyId": 59,
+      "key": "YELLOW_STAINED_GLASS"
+    },
+    {
+      "legacyId": 60,
+      "key": "RED_STAINED_GLASS"
+    },
+    {
+      "legacyId": 61,
+      "key": "PURPLE_STAINED_GLASS"
+    },
+    {
+      "legacyId": 62,
+      "key": "PINK_STAINED_GLASS"
+    },
+    {
+      "legacyId": 63,
+      "key": "ORANGE_STAINED_GLASS"
+    },
+    {
+      "legacyId": 64,
+      "key": "MAGENTA_STAINED_GLASS"
+    },
+    {
+      "legacyId": 65,
+      "key": "LIME_STAINED_GLASS"
+    },
+    {
+      "legacyId": 66,
+      "key": "LIGHT_BLUE_STAINED_GLASS"
+    },
+    {
+      "legacyId": 67,
+      "key": "GREEN_STAINED_GLASS"
+    },
+    {
+      "legacyId": 68,
+      "key": "GRAY_STAINED_GLASS"
+    },
+    {
+      "legacyId": 69,
+      "key": "CYAN_STAINED_GLASS"
+    },
+    {
+      "legacyId": 70,
+      "key": "BROWN_STAINED_GLASS"
+    },
+    {
+      "legacyId": 71,
+      "key": "BLUE_STAINED_GLASS"
+    },
+    {
+      "legacyId": 72,
+      "key": "BLACK_STAINED_GLASS"
+    },
+    {
+      "legacyId": 73,
+      "key": "SANDSTONE"
+    },
+    {
+      "legacyId": 74,
+      "key": "DIAMOND_ORE"
+    },
+    {
+      "legacyId": 75,
+      "key": "DIAMOND_BLOCK"
+    },
+    {
+      "legacyId": 76,
+      "key": "LAPIS_ORE"
+    },
+    {
+      "legacyId": 77,
+      "key": "LAPIS_BLOCK"
+    },
+    {
+      "legacyId": 78,
+      "key": "MOSSY_STONEBRICKS"
+    },
+    {
+      "legacyId": 79,
+      "key": "WHITE_CONCRETE"
+    },
+    {
+      "legacyId": 80,
+      "key": "YELLOW_CONCRETE"
+    },
+    {
+      "legacyId": 81,
+      "key": "RED_CONCRETE"
+    },
+    {
+      "legacyId": 82,
+      "key": "PURPLE_CONCRETE"
+    },
+    {
+      "legacyId": 83,
+      "key": "PINK_CONCRETE"
+    },
+    {
+      "legacyId": 84,
+      "key": "ORANGE_CONCRETE"
+    },
+    {
+      "legacyId": 85,
+      "key": "MAGENTA_CONCRETE"
+    },
+    {
+      "legacyId": 86,
+      "key": "LIME_CONCRETE"
+    },
+    {
+      "legacyId": 87,
+      "key": "LIGHT_BLUE_CONCRETE"
+    },
+    {
+      "legacyId": 88,
+      "key": "GREEN_CONCRETE"
+    },
+    {
+      "legacyId": 89,
+      "key": "GRAY_CONCRETE"
+    },
+    {
+      "legacyId": 90,
+      "key": "CYAN_CONCRETE"
+    },
+    {
+      "legacyId": 91,
+      "key": "BROWN_CONCRETE"
+    },
+    {
+      "legacyId": 92,
+      "key": "BLUE_CONCRETE"
+    },
+    {
+      "legacyId": 93,
+      "key": "BLACK_CONCRETE"
+    },
+    {
+      "legacyId": 94,
+      "key": "PUMPKIN"
+    },
+    {
+      "legacyId": 95,
+      "key": "ICE"
+    },
+    {
+      "legacyId": 96,
+      "key": "GRASS_YELLOW"
+    },
+    {
+      "legacyId": 97,
+      "key": "GRASS_PLANT_YELLOW"
+    },
+    {
+      "legacyId": 98,
+      "key": "LEAVES_YELLOW"
+    },
+    {
+      "legacyId": 99,
+      "key": "GRASS_PLANT"
+    },
+    {
+      "legacyId": 100,
+      "key": "LADDER"
+    },
+    {
+      "legacyId": 101,
+      "key": "TORCH"
+    },
+    {
+      "legacyId": 102,
+      "key": "CHEST"
+    },
+    {
+      "legacyId": 103,
+      "key": "MELON"
+    },
+    {
+      "legacyId": 104,
+      "key": "CAKE"
+    },
+    {
+      "legacyId": 105,
+      "key": "SUGAR_CANE"
+    },
+    {
+      "legacyId": 106,
+      "key": "CAKE_5"
+    },
+    {
+      "legacyId": 107,
+      "key": "CAKE_4"
+    },
+    {
+      "legacyId": 108,
+      "key": "CAKE_3"
+    },
+    {
+      "legacyId": 109,
+      "key": "CAKE_2"
+    },
+    {
+      "legacyId": 110,
+      "key": "CAKE_1"
+    }
+  ],
+  "items": [
+    {
+      "legacyId": 100,
+      "key": "STICK"
+    },
+    {
+      "legacyId": 101,
+      "key": "PLANKS"
+    },
+    {
+      "legacyId": 102,
+      "key": "WOODEN_PICKAXE"
+    },
+    {
+      "legacyId": 103,
+      "key": "STONE_PICKAXE"
+    },
+    {
+      "legacyId": 104,
+      "key": "IRON_PICKAXE"
+    },
+    {
+      "legacyId": 105,
+      "key": "WOODEN_AXE"
+    },
+    {
+      "legacyId": 106,
+      "key": "STONE_AXE"
+    },
+    {
+      "legacyId": 107,
+      "key": "WOODEN_SHOVEL"
+    },
+    {
+      "legacyId": 108,
+      "key": "STONE_SHOVEL"
+    },
+    {
+      "legacyId": 109,
+      "key": "BUCKET"
+    },
+    {
+      "legacyId": 110,
+      "key": "WATER_BUCKET"
+    },
+    {
+      "legacyId": 111,
+      "key": "IRON_INGOT"
+    },
+    {
+      "legacyId": 112,
+      "key": "DIAMOND"
+    },
+    {
+      "legacyId": 113,
+      "key": "COAL"
+    },
+    {
+      "legacyId": 114,
+      "key": "FLINT"
+    },
+    {
+      "legacyId": 115,
+      "key": "WHEAT"
+    },
+    {
+      "legacyId": 116,
+      "key": "BREAD"
+    },
+    {
+      "legacyId": 117,
+      "key": "APPLE"
+    },
+    {
+      "legacyId": 118,
+      "key": "DIAMOND_PICKAXE"
+    },
+    {
+      "legacyId": 119,
+      "key": "DIAMOND_AXE"
+    },
+    {
+      "legacyId": 120,
+      "key": "SWIFT_PICKAXE"
+    },
+    {
+      "legacyId": 121,
+      "key": "FLINT_AND_STEEL"
+    },
+    {
+      "legacyId": 122,
+      "key": "HEAVY_SHIELD"
+    },
+    {
+      "legacyId": 123,
+      "key": "FEATHER_FALLING_TALISMAN"
+    },
+    {
+      "legacyId": 124,
+      "key": "HELIOS_MEDALLION"
+    },
+    {
+      "legacyId": 125,
+      "key": "HELIUM_BOOTS"
+    },
+    {
+      "legacyId": 126,
+      "key": "GLOW_TALISMAN"
+    },
+    {
+      "legacyId": 127,
+      "key": "GOLD_INGOT"
+    },
+    {
+      "legacyId": 128,
+      "key": "IRON_AXE"
+    },
+    {
+      "legacyId": 129,
+      "key": "SUGAR"
+    },
+    {
+      "legacyId": 130,
+      "key": "COCOA_BEANS"
+    },
+    {
+      "legacyId": 131,
+      "key": "EGG"
+    },
+    {
+      "legacyId": 132,
+      "key": "RAW_MEAT"
+    },
+    {
+      "legacyId": 133,
+      "key": "COOKED_MEAT"
+    },
+    {
+      "legacyId": 134,
+      "key": "RAW_BEEF"
+    },
+    {
+      "legacyId": 135,
+      "key": "COOKED_BEEF"
+    },
+    {
+      "legacyId": 136,
+      "key": "COOKIE"
+    },
+    {
+      "legacyId": 137,
+      "key": "MELON_SLICE"
+    },
+    {
+      "legacyId": 138,
+      "key": "CARROT"
+    },
+    {
+      "legacyId": 139,
+      "key": "GOLDEN_CARROT"
+    },
+    {
+      "legacyId": 140,
+      "key": "POTATO"
+    },
+    {
+      "legacyId": 141,
+      "key": "BAKED_POTATO"
+    },
+    {
+      "legacyId": 142,
+      "key": "POISONOUS_POTATO"
+    },
+    {
+      "legacyId": 143,
+      "key": "GUNPOWDER"
+    }
+  ],
+  "recipes": [
+    {
+      "key": "oak_log_to_planks",
+      "helper": "shapeless",
+      "references": [
+        "BLOCK_REGISTRY.OAK_PLANKS",
+        "BLOCK_REGISTRY.WOOD"
+      ]
+    },
+    {
+      "key": "birch_log_to_planks",
+      "helper": "shapeless",
+      "references": [
+        "BLOCK_REGISTRY.BIRCH_LOG",
+        "BLOCK_REGISTRY.BIRCH_PLANKS"
+      ]
+    },
+    {
+      "key": "spruce_log_to_planks",
+      "helper": "shapeless",
+      "references": [
+        "BLOCK_REGISTRY.SPRUCE_LOG",
+        "BLOCK_REGISTRY.SPRUCE_PLANKS"
+      ]
+    },
+    {
+      "key": "crafting_table",
+      "helper": "shaped",
+      "references": [
+        "BLOCK_REGISTRY.CRAFTING"
+      ]
+    },
+    {
+      "key": "planks_to_sticks",
+      "helper": "shaped",
+      "references": [
+        "ITEM_REGISTRY.STICK"
+      ]
+    },
+    {
+      "key": "wooden_pickaxe",
+      "helper": "pickaxeRecipe",
+      "references": [
+        "ITEM_REGISTRY.WOODEN_PICKAXE"
+      ]
+    },
+    {
+      "key": "stone_pickaxe",
+      "helper": "pickaxeRecipe",
+      "references": [
+        "ITEM_REGISTRY.STONE_PICKAXE"
+      ]
+    },
+    {
+      "key": "iron_pickaxe",
+      "helper": "pickaxeRecipe",
+      "references": [
+        "ITEM_REGISTRY.IRON_PICKAXE"
+      ]
+    },
+    {
+      "key": "diamond_pickaxe",
+      "helper": "pickaxeRecipe",
+      "references": [
+        "ITEM_REGISTRY.DIAMOND_PICKAXE"
+      ]
+    },
+    {
+      "key": "wooden_axe",
+      "helper": "axeRecipe",
+      "references": [
+        "ITEM_REGISTRY.WOODEN_AXE"
+      ]
+    },
+    {
+      "key": "stone_axe",
+      "helper": "axeRecipe",
+      "references": [
+        "ITEM_REGISTRY.STONE_AXE"
+      ]
+    },
+    {
+      "key": "iron_axe",
+      "helper": "axeRecipe",
+      "references": [
+        "ITEM_REGISTRY.IRON_AXE"
+      ]
+    },
+    {
+      "key": "diamond_axe",
+      "helper": "axeRecipe",
+      "references": [
+        "ITEM_REGISTRY.DIAMOND_AXE"
+      ]
+    },
+    {
+      "key": "wooden_shovel",
+      "helper": "shovelRecipe",
+      "references": [
+        "ITEM_REGISTRY.WOODEN_SHOVEL"
+      ]
+    },
+    {
+      "key": "stone_shovel",
+      "helper": "shovelRecipe",
+      "references": [
+        "ITEM_REGISTRY.STONE_SHOVEL"
+      ]
+    },
+    {
+      "key": "bread",
+      "helper": "shaped",
+      "references": [
+        "ITEM_REGISTRY.BREAD"
+      ]
+    },
+    {
+      "key": "helium_boots",
+      "helper": "shaped",
+      "references": [
+        "BLOCK_REGISTRY.SAPLING",
+        "ITEM_REGISTRY.HELIUM_BOOTS"
+      ]
+    },
+    {
+      "key": "swift_pickaxe",
+      "helper": "pickaxeRecipe",
+      "references": [
+        "BLOCK_REGISTRY.GOLD_BLOCK",
+        "ITEM_REGISTRY.SWIFT_PICKAXE"
+      ]
+    },
+    {
+      "key": "coal_ore_to_coal",
+      "helper": "shapeless",
+      "references": [
+        "BLOCK_REGISTRY.COAL_ORE",
+        "ITEM_REGISTRY.COAL"
+      ]
+    },
+    {
+      "key": "iron_ore_to_ingot",
+      "helper": "shapeless",
+      "references": [
+        "BLOCK_REGISTRY.IRON_ORE",
+        "ITEM_REGISTRY.IRON_INGOT"
+      ]
+    },
+    {
+      "key": "gold_ore_to_ingot",
+      "helper": "shapeless",
+      "references": [
+        "BLOCK_REGISTRY.GOLD_ORE",
+        "ITEM_REGISTRY.GOLD_INGOT"
+      ]
+    },
+    {
+      "key": "diamond_ore_to_diamond",
+      "helper": "shapeless",
+      "references": [
+        "BLOCK_REGISTRY.DIAMOND_ORE",
+        "ITEM_REGISTRY.DIAMOND"
+      ]
+    },
+    {
+      "key": "bucket",
+      "helper": "shaped",
+      "references": [
+        "ITEM_REGISTRY.BUCKET"
+      ]
+    },
+    {
+      "key": "flint_and_steel",
+      "helper": "shapeless",
+      "references": [
+        "ITEM_REGISTRY.FLINT_AND_STEEL"
+      ]
+    },
+    {
+      "key": "ladder",
+      "helper": "shaped",
+      "references": [
+        "BLOCK_REGISTRY.LADDER"
+      ]
+    },
+    {
+      "key": "torch",
+      "helper": "shaped",
+      "references": [
+        "BLOCK_REGISTRY.TORCH"
+      ]
+    },
+    {
+      "key": "chest",
+      "helper": "shaped",
+      "references": [
+        "BLOCK_REGISTRY.CHEST"
+      ]
+    },
+    {
+      "key": "heavy_shield",
+      "helper": "shaped",
+      "references": [
+        "ITEM_REGISTRY.HEAVY_SHIELD"
+      ]
+    },
+    {
+      "key": "feather_falling_talisman",
+      "helper": "shaped",
+      "references": [
+        "ITEM_REGISTRY.FEATHER_FALLING_TALISMAN"
+      ]
+    },
+    {
+      "key": "helios_medallion",
+      "helper": "shaped",
+      "references": [
+        "BLOCK_REGISTRY.GOLD_BLOCK",
+        "ITEM_REGISTRY.HELIOS_MEDALLION"
+      ]
+    },
+    {
+      "key": "glow_talisman",
+      "helper": "shaped",
+      "references": [
+        "BLOCK_REGISTRY.TORCH",
+        "ITEM_REGISTRY.GLOW_TALISMAN"
+      ]
+    },
+    {
+      "key": "sugar_from_cane",
+      "helper": "shapeless",
+      "references": [
+        "BLOCK_REGISTRY.SUGAR_CANE",
+        "ITEM_REGISTRY.SUGAR"
+      ]
+    },
+    {
+      "key": "cookie",
+      "helper": "shaped",
+      "references": [
+        "ITEM_REGISTRY.COOKIE"
+      ]
+    },
+    {
+      "key": "melon_block_to_slices",
+      "helper": "shapeless",
+      "references": [
+        "BLOCK_REGISTRY.MELON",
+        "ITEM_REGISTRY.MELON_SLICE"
+      ]
+    },
+    {
+      "key": "melon_slices_to_block",
+      "helper": "shaped",
+      "references": [
+        "BLOCK_REGISTRY.MELON"
+      ]
+    },
+    {
+      "key": "cake",
+      "helper": "shaped",
+      "references": [
+        "BLOCK_REGISTRY.CAKE"
+      ]
+    },
+    {
+      "key": "golden_carrot",
+      "helper": "shaped",
+      "references": [
+        "ITEM_REGISTRY.GOLDEN_CARROT"
+      ]
+    },
+    {
+      "key": "cook_meat",
+      "helper": "shapeless",
+      "references": [
+        "ITEM_REGISTRY.COOKED_MEAT"
+      ]
+    },
+    {
+      "key": "cook_beef",
+      "helper": "shapeless",
+      "references": [
+        "ITEM_REGISTRY.COOKED_BEEF"
+      ]
+    },
+    {
+      "key": "bake_potato",
+      "helper": "shapeless",
+      "references": [
+        "ITEM_REGISTRY.BAKED_POTATO"
+      ]
+    },
+    {
+      "key": "gunpowder",
+      "helper": "shapeless",
+      "references": [
+        "ITEM_REGISTRY.GUNPOWDER"
+      ]
+    },
+    {
+      "key": "tnt",
+      "helper": "shaped",
+      "references": [
+        "BLOCK_REGISTRY.TNT"
+      ]
+    }
+  ]
+}

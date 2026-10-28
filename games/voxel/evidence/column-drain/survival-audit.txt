@@ -1,0 +1,1 @@
+{"result":"SURVIVAL_WORKER_REPORT_AUDIT_PASS","file":"/home/ubuntu/OMplayground/games/voxel/test-results/survival-workers.json","buildId":"f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252","actors":16,"rounds":54,"containedWindows":34,"maxDurableLagSeconds":15}

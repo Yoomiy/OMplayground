@@ -1,0 +1,380 @@
+{
+  "result": "FAIL",
+  "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc",
+  "networkProfile": {
+    "rttMs": 100,
+    "jitterMs": 25,
+    "mbps": 10
+  },
+  "failure": {
+    "message": "mouse look requires owned pointer lock",
+    "stack": "AssertionError [ERR_ASSERTION]: mouse look requires owned pointer lock\n    at Object.look (file:///home/ubuntu/OMplayground/games/voxel/tools/browser-desktop-input.ts:120:9)\n    at async look (file:///home/ubuntu/OMplayground/games/voxel/tools/browser-survival.ts:181:7)\n    at async file:///home/ubuntu/OMplayground/games/voxel/tools/browser-survival.ts:290:9"
+  },
+  "errors": [],
+  "finishedAt": "2026-10-28T09:42:11.541Z",
+  "transport": {
+    "profile": {
+      "rttMs": 100,
+      "jitterMs": 25,
+      "mbps": 10
+    },
+    "packetBytes": 8192,
+    "flowBufferBytes": 65536,
+    "opened": 3,
+    "closed": 3,
+    "live": 0,
+    "up": {
+      "receivedBytes": 7978,
+      "forwardedBytes": 7978,
+      "queuedBytes": 0,
+      "peakQueuedBytes": 1213,
+      "peakFlowQueuedBytes": 702,
+      "packets": 22,
+      "readPauses": 0,
+      "writePauses": 0,
+      "trace": [
+        {
+          "receivedAt": 2827.624186,
+          "eligibleAt": 2852.624186,
+          "forwardedAt": 2855.09304,
+          "bytes": 700
+        },
+        {
+          "receivedAt": 2962.330443,
+          "eligibleAt": 3012.330443,
+          "forwardedAt": 3012.97205,
+          "bytes": 599
+        },
+        {
+          "receivedAt": 2967.095386,
+          "eligibleAt": 3042.095386,
+          "forwardedAt": 3042.574754,
+          "bytes": 614
+        },
+        {
+          "receivedAt": 5909.058529,
+          "eligibleAt": 5959.058529,
+          "forwardedAt": 5959.080092,
+          "bytes": 578
+        },
+        {
+          "receivedAt": 5933.212166,
+          "eligibleAt": 5958.212166,
+          "forwardedAt": 5962.148387,
+          "bytes": 627
+        },
+        {
+          "receivedAt": 7600.917616,
+          "eligibleAt": 7650.917616,
+          "forwardedAt": 7651.681184,
+          "bytes": 702
+        },
+        {
+          "receivedAt": 7691.713939,
+          "eligibleAt": 7766.713939,
+          "forwardedAt": 7767.78587,
+          "bytes": 551
+        },
+        {
+          "receivedAt": 7821.688133,
+          "eligibleAt": 7871.688133,
+          "forwardedAt": 7871.747137,
+          "bytes": 156
+        },
+        {
+          "receivedAt": 8087.566069,
+          "eligibleAt": 8112.566069,
+          "forwardedAt": 8113.568755,
+          "bytes": 536
+        },
+        {
+          "receivedAt": 8676.055258,
+          "eligibleAt": 8726.055258,
+          "forwardedAt": 8726.128182,
+          "bytes": 292
+        },
+        {
+          "receivedAt": 10812.536592,
+          "eligibleAt": 10887.536592,
+          "forwardedAt": 10887.601838,
+          "bytes": 91
+        },
+        {
+          "receivedAt": 11347.937642,
+          "eligibleAt": 11397.937642,
+          "forwardedAt": 11399.357293,
+          "bytes": 78
+        },
+        {
+          "receivedAt": 12713.634299,
+          "eligibleAt": 12738.634299,
+          "forwardedAt": 12743.544205,
+          "bytes": 46
+        },
+        {
+          "receivedAt": 12731.167985,
+          "eligibleAt": 12781.167985,
+          "forwardedAt": 12783.5334,
+          "bytes": 684
+        },
+        {
+          "receivedAt": 12821.420785,
+          "eligibleAt": 12896.420785,
+          "forwardedAt": 12896.594031,
+          "bytes": 130
+        },
+        {
+          "receivedAt": 12864.587235,
+          "eligibleAt": 12914.587235,
+          "forwardedAt": 12915.184882,
+          "bytes": 326
+        },
+        {
+          "receivedAt": 12912.030866,
+          "eligibleAt": 12937.030866,
+          "forwardedAt": 12937.44163,
+          "bytes": 326
+        },
+        {
+          "receivedAt": 12958.864095,
+          "eligibleAt": 13008.864095,
+          "forwardedAt": 13010.259545,
+          "bytes": 327
+        },
+        {
+          "receivedAt": 13008.862698,
+          "eligibleAt": 13083.862698,
+          "forwardedAt": 13086.843238,
+          "bytes": 329
+        },
+        {
+          "receivedAt": 13057.285094,
+          "eligibleAt": 13107.285094,
+          "forwardedAt": 13107.374018,
+          "bytes": 231
+        },
+        {
+          "receivedAt": 13070.253277,
+          "eligibleAt": 13095.253277,
+          "forwardedAt": 13110.730875,
+          "bytes": 47
+        },
+        {
+          "receivedAt": 13109.444108,
+          "eligibleAt": 13159.444108,
+          "forwardedAt": 13159.501232,
+          "bytes": 8
+        }
+      ],
+      "flows": 0,
+      "timers": 0
+    },
+    "down": {
+      "receivedBytes": 1329252,
+      "forwardedBytes": 1329248,
+      "queuedBytes": 0,
+      "peakQueuedBytes": 96768,
+      "peakFlowQueuedBytes": 96768,
+      "packets": 253,
+      "readPauses": 20,
+      "writePauses": 1,
+      "trace": [
+        {
+          "receivedAt": 2866.697056,
+          "eligibleAt": 2891.697056,
+          "forwardedAt": 2892.291621,
+          "bytes": 1934
+        },
+        {
+          "receivedAt": 3020.190965,
+          "eligibleAt": 3070.190965,
+          "forwardedAt": 3070.58353,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 3020.190965,
+          "eligibleAt": 3070.190965,
+          "forwardedAt": 3077.773885,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 3020.190965,
+          "eligibleAt": 3070.190965,
+          "forwardedAt": 3086.545928,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 3020.190965,
+          "eligibleAt": 3070.190965,
+          "forwardedAt": 3094.108165,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 3020.190965,
+          "eligibleAt": 3070.190965,
+          "forwardedAt": 3101.786923,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 3020.190965,
+          "eligibleAt": 3070.190965,
+          "forwardedAt": 3109.593681,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 3020.190965,
+          "eligibleAt": 3070.190965,
+          "forwardedAt": 3117.868561,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 3044.055161,
+          "eligibleAt": 3119.055161,
+          "forwardedAt": 3125.227997,
+          "bytes": 4888
+        },
+        {
+          "receivedAt": 3020.190965,
+          "eligibleAt": 3070.190965,
+          "forwardedAt": 3129.560298,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 3102.287165,
+          "eligibleAt": 3152.287165,
+          "forwardedAt": 3153.286214,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 3102.287165,
+          "eligibleAt": 3152.287165,
+          "forwardedAt": 3162.133057,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 3102.287165,
+          "eligibleAt": 3152.287165,
+          "forwardedAt": 3169.528493,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 3102.287165,
+          "eligibleAt": 3152.287165,
+          "forwardedAt": 3176.873209,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 3102.287165,
+          "eligibleAt": 3152.287165,
+          "forwardedAt": 3183.518361,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 3102.287165,
+          "eligibleAt": 3152.287165,
+          "forwardedAt": 3190.549395,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 3102.287165,
+          "eligibleAt": 3152.287165,
+          "forwardedAt": 3197.271548,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 3102.287165,
+          "eligibleAt": 3152.287165,
+          "forwardedAt": 3204.609704,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 3183.718042,
+          "eligibleAt": 3208.718042,
+          "forwardedAt": 3211.94938,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 3183.718042,
+          "eligibleAt": 3208.718042,
+          "forwardedAt": 3220.516501,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 3183.718042,
+          "eligibleAt": 3208.718042,
+          "forwardedAt": 3228.097498,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 3183.718042,
+          "eligibleAt": 3208.718042,
+          "forwardedAt": 3235.908816,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 3183.718042,
+          "eligibleAt": 3208.718042,
+          "forwardedAt": 3243.884255,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 3220.685822,
+          "eligibleAt": 3270.685822,
+          "forwardedAt": 3271.52711,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 3220.685822,
+          "eligibleAt": 3270.685822,
+          "forwardedAt": 3279.523989,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 3220.685822,
+          "eligibleAt": 3270.685822,
+          "forwardedAt": 3287.362507,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 3220.685822,
+          "eligibleAt": 3270.685822,
+          "forwardedAt": 3294.807704,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 3220.685822,
+          "eligibleAt": 3270.685822,
+          "forwardedAt": 3301.481856,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 3220.685822,
+          "eligibleAt": 3270.685822,
+          "forwardedAt": 3309.022213,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 3220.685822,
+          "eligibleAt": 3270.685822,
+          "forwardedAt": 3315.888286,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 3220.685822,
+          "eligibleAt": 3270.685822,
+          "forwardedAt": 3322.651919,
+          "bytes": 8192
+        },
+        {
+          "receivedAt": 3302.538341,
+          "eligibleAt": 3377.538341,
+          "forwardedAt": 3378.08407,
+          "bytes": 8192
+        }
+      ],
+      "flows": 0,
+      "timers": 0
+    }
+  },
+  "remainingRooms": 0
+}

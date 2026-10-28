@@ -1,0 +1,110 @@
+{
+  "result": "PASS",
+  "scope": "Emulated tablet with actual multi-touch, dispatched blur lifecycle event and actual software WebGL context loss; functional evidence only",
+  "buildId": "901ab685a7af21749774a31480af07dcce4b154537c86fdd90ff7bf21eded6d2",
+  "engineHash": "084b17c0ae40222777a0225f6fc186a9903ac19d9c455aae025188185ea250ab",
+  "contentHash": "0e18a28a479058f6af964ead4081e464697e59fb5c842cf96c91a9fff3c61980",
+  "browser": "156.0.8078.4",
+  "moved": 0.6391821735140913,
+  "jumpHeight": 1.1867000000000019,
+  "beforeLook": {
+    "yaw": 0,
+    "pitch": 0
+  },
+  "afterLook": {
+    "yaw": 0.2,
+    "pitch": 0.1
+  },
+  "diagnostics": {
+    "disposed": false,
+    "inputMode": "touch",
+    "touch": {
+      "x": 0,
+      "z": 0,
+      "jump": false,
+      "sneak": false,
+      "sprint": false
+    },
+    "focused": false,
+    "visible": "visible",
+    "hasFocus": true,
+    "lastFrame": 19566.4,
+    "resources": {
+      "geometries": 30,
+      "textures": 4,
+      "workers": 1
+    },
+    "actorId": "e0aef168-7040-4a11-b1cf-d639336295ab",
+    "worldId": "41700533-09e2-458c-8fff-37d19e8df65a",
+    "body": {
+      "position": [
+        50.6207,
+        69.2,
+        -3.5034
+      ],
+      "onGround": 0,
+      "frozen": 1,
+      "flying": 1,
+      "velocity": [
+        0,
+        0,
+        0
+      ]
+    },
+    "view": {
+      "yaw": 0.2,
+      "pitch": 0.1
+    },
+    "lastResult": null,
+    "recentEdits": [],
+    "status": "error",
+    "epoch": 6,
+    "phase": "playing",
+    "position": [
+      50.6207,
+      69.2,
+      -3.5034
+    ],
+    "selected": 24,
+    "players": 1,
+    "inputLag": 0,
+    "correction": 0,
+    "columns": 49,
+    "collisionColumns": 49,
+    "meshed": 27,
+    "workers": 1,
+    "activeJobs": 0,
+    "stream": {
+      "discardedJobs": 0,
+      "installed": 53,
+      "meshJobs": 27,
+      "generationJobs": 53,
+      "mainWorkMs": 0
+    },
+    "render": {
+      "uploadedBytes": 1892072,
+      "columns": 27,
+      "drawCalls": 29,
+      "triangles": 24984,
+      "uploadMs": 0.2999999523162842
+    },
+    "target": [
+      50,
+      71,
+      -6
+    ],
+    "targetState": 11,
+    "targetNormal": [
+      0,
+      -1,
+      0
+    ],
+    "actionPending": 0
+  },
+  "cleanup": {
+    "geometries": 0,
+    "textures": 0,
+    "workers": 0
+  },
+  "errors": []
+}

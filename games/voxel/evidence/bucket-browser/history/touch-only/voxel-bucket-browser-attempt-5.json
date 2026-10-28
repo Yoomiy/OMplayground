@@ -1,0 +1,774 @@
+{
+  "result": "PASS",
+  "checkedAt": "2026-10-27T01:03:11.286Z",
+  "scope": "Natural empty-inventory survival: six logs, placed workbench, wooden/stone pickaxes, shallow river stone, mined natural iron vein, charcoal/iron refining and bucket crafting through Hebrew inventory; earned-block shaft exit, actual touch fill/place/recollect, same-slot reusable container and reconnect; no grants, world or position injection; software Chromium functional evidence only",
+  "buildId": "5d89f56af88a8d1a456575052791a13f560bef75acac7144ebcb19882ced7247",
+  "seed": 4242,
+  "engineHash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388",
+  "contentHash": "368b605ac5bdf5ff6fcf4af02f7174cbc6d39b5110f48e0a41b231a0a6479464",
+  "browser": "156.0.8078.4",
+  "harvested": [
+    {
+      "target": [
+        49,
+        68,
+        -4
+      ],
+      "visible": null,
+      "inventoryRevision": 1
+    },
+    {
+      "target": [
+        49,
+        69,
+        -4
+      ],
+      "visible": null,
+      "inventoryRevision": 2
+    },
+    {
+      "target": [
+        49,
+        70,
+        -4
+      ],
+      "visible": {
+        "drop": {
+          "id": "drop-3",
+          "revision": 5,
+          "stack": {
+            "itemType": "spruce_log",
+            "count": 1
+          },
+          "position": [
+            49.5,
+            70.23333333333333,
+            -3.5
+          ]
+        },
+        "origin": {
+          "x": 48,
+          "z": -16
+        },
+        "feedback": {
+          "visible": 1,
+          "kinds": 1
+        }
+      },
+      "inventoryRevision": 3
+    },
+    {
+      "target": [
+        49,
+        71,
+        -4
+      ],
+      "visible": {
+        "drop": {
+          "id": "drop-4",
+          "revision": 8,
+          "stack": {
+            "itemType": "spruce_log",
+            "count": 1
+          },
+          "position": [
+            49.5,
+            71.01333333333334,
+            -3.5
+          ]
+        },
+        "origin": {
+          "x": 48,
+          "z": -16
+        },
+        "feedback": {
+          "visible": 1,
+          "kinds": 1
+        }
+      },
+      "inventoryRevision": 4
+    },
+    {
+      "target": [
+        49,
+        72,
+        -4
+      ],
+      "visible": {
+        "drop": {
+          "id": "drop-5",
+          "revision": 9,
+          "stack": {
+            "itemType": "spruce_log",
+            "count": 1
+          },
+          "position": [
+            49.5,
+            71.9,
+            -3.5
+          ]
+        },
+        "origin": {
+          "x": 48,
+          "z": -16
+        },
+        "feedback": {
+          "visible": 1,
+          "kinds": 1
+        }
+      },
+      "inventoryRevision": 5
+    },
+    {
+      "target": [
+        49,
+        73,
+        -4
+      ],
+      "visible": {
+        "drop": {
+          "id": "drop-6",
+          "revision": 8,
+          "stack": {
+            "itemType": "spruce_log",
+            "count": 1
+          },
+          "position": [
+            49.5,
+            73.01333333333334,
+            -3.5
+          ]
+        },
+        "origin": {
+          "x": 48,
+          "z": -16
+        },
+        "feedback": {
+          "visible": 1,
+          "kinds": 1
+        }
+      },
+      "inventoryRevision": 6
+    }
+  ],
+  "cleared": [
+    {
+      "cell": [
+        49,
+        67,
+        2
+      ],
+      "family": "short_grass",
+      "purpose": "travel"
+    },
+    {
+      "cell": [
+        52,
+        68,
+        -3
+      ],
+      "family": "short_grass",
+      "purpose": "travel"
+    }
+  ],
+  "placement": {
+    "type": "result",
+    "epoch": 4,
+    "sequence": 2,
+    "status": "applied",
+    "outcome": {
+      "ok": true,
+      "reason": "edited",
+      "cell": [
+        49,
+        68,
+        -5
+      ],
+      "state": 23,
+      "revision": 7
+    }
+  },
+  "food": null,
+  "explosive": null,
+  "equipment": null,
+  "bucket": {
+    "mined": [
+      {
+        "cell": [
+          58,
+          67,
+          -1
+        ],
+        "family": "short_grass"
+      },
+      {
+        "cell": [
+          58,
+          66,
+          -1
+        ],
+        "family": "dirt"
+      },
+      {
+        "cell": [
+          58,
+          65,
+          -1
+        ],
+        "family": "dirt"
+      },
+      {
+        "cell": [
+          58,
+          64,
+          -1
+        ],
+        "family": "dirt"
+      },
+      {
+        "cell": [
+          58,
+          63,
+          -1
+        ],
+        "family": "dirt"
+      },
+      {
+        "cell": [
+          58,
+          62,
+          -1
+        ],
+        "family": "stone"
+      },
+      {
+        "cell": [
+          58,
+          61,
+          -1
+        ],
+        "family": "iron_ore"
+      },
+      {
+        "cell": [
+          58,
+          60,
+          -1
+        ],
+        "family": "iron_ore"
+      },
+      {
+        "cell": [
+          58,
+          61,
+          -2
+        ],
+        "family": "stone"
+      },
+      {
+        "cell": [
+          58,
+          60,
+          -2
+        ],
+        "family": "iron_ore"
+      }
+    ],
+    "shaftTop": 67,
+    "pillars": [
+      {
+        "type": "result",
+        "epoch": 10,
+        "sequence": 2,
+        "status": "applied",
+        "outcome": {
+          "ok": true,
+          "reason": "edited",
+          "cell": [
+            58,
+            60,
+            -1
+          ],
+          "state": 33,
+          "revision": 18
+        }
+      },
+      {
+        "type": "result",
+        "epoch": 12,
+        "sequence": 2,
+        "status": "applied",
+        "outcome": {
+          "ok": true,
+          "reason": "edited",
+          "cell": [
+            58,
+            61,
+            -1
+          ],
+          "state": 33,
+          "revision": 19
+        }
+      },
+      {
+        "type": "result",
+        "epoch": 14,
+        "sequence": 2,
+        "status": "applied",
+        "outcome": {
+          "ok": true,
+          "reason": "edited",
+          "cell": [
+            58,
+            62,
+            -1
+          ],
+          "state": 33,
+          "revision": 20
+        }
+      },
+      {
+        "type": "result",
+        "epoch": 16,
+        "sequence": 2,
+        "status": "applied",
+        "outcome": {
+          "ok": true,
+          "reason": "edited",
+          "cell": [
+            58,
+            63,
+            -1
+          ],
+          "state": 33,
+          "revision": 21
+        }
+      },
+      {
+        "type": "result",
+        "epoch": 18,
+        "sequence": 2,
+        "status": "applied",
+        "outcome": {
+          "ok": true,
+          "reason": "edited",
+          "cell": [
+            58,
+            64,
+            -1
+          ],
+          "state": 109,
+          "revision": 22
+        }
+      },
+      {
+        "type": "result",
+        "epoch": 20,
+        "sequence": 2,
+        "status": "applied",
+        "outcome": {
+          "ok": true,
+          "reason": "edited",
+          "cell": [
+            58,
+            65,
+            -1
+          ],
+          "state": 109,
+          "revision": 23
+        }
+      },
+      {
+        "type": "result",
+        "epoch": 22,
+        "sequence": 2,
+        "status": "applied",
+        "outcome": {
+          "ok": true,
+          "reason": "edited",
+          "cell": [
+            58,
+            66,
+            -1
+          ],
+          "state": 108,
+          "revision": 24
+        }
+      }
+    ],
+    "source": [
+      46,
+      62,
+      13
+    ],
+    "filled": {
+      "type": "result",
+      "epoch": 24,
+      "sequence": 2,
+      "status": "applied",
+      "outcome": {
+        "ok": true,
+        "reason": "edited",
+        "cell": [
+          46,
+          62,
+          13
+        ],
+        "state": 0,
+        "revision": 9
+      }
+    },
+    "collections": [
+      {
+        "type": "result",
+        "epoch": 24,
+        "sequence": 2,
+        "status": "applied",
+        "outcome": {
+          "ok": true,
+          "reason": "edited",
+          "cell": [
+            46,
+            62,
+            13
+          ],
+          "state": 0,
+          "revision": 9
+        }
+      },
+      {
+        "type": "result",
+        "epoch": 26,
+        "sequence": 2,
+        "status": "applied",
+        "outcome": {
+          "ok": true,
+          "reason": "edited",
+          "cell": [
+            46,
+            63,
+            7
+          ],
+          "state": 0,
+          "revision": 11
+        }
+      }
+    ],
+    "placements": [
+      {
+        "type": "result",
+        "epoch": 26,
+        "sequence": 1,
+        "status": "applied",
+        "outcome": {
+          "ok": true,
+          "reason": "edited",
+          "cell": [
+            46,
+            63,
+            7
+          ],
+          "state": 116,
+          "revision": 10
+        }
+      },
+      {
+        "type": "result",
+        "epoch": 29,
+        "sequence": 1,
+        "status": "applied",
+        "outcome": {
+          "ok": true,
+          "reason": "edited",
+          "cell": [
+            46,
+            63,
+            7
+          ],
+          "state": 116,
+          "revision": 12
+        }
+      }
+    ],
+    "reconnected": {
+      "version": 2,
+      "catalog": false,
+      "revision": 107,
+      "selected": 0,
+      "bag": [
+        {
+          "itemType": "water_bucket",
+          "count": 1
+        },
+        {
+          "itemType": "cocoa_beans",
+          "count": 1
+        },
+        {
+          "count": 1,
+          "instance": {
+            "durability": 51
+          },
+          "itemType": "wooden_pickaxe"
+        },
+        {
+          "count": 1,
+          "itemType": "charcoal"
+        },
+        {
+          "itemType": "sand",
+          "count": 5
+        },
+        null,
+        {
+          "itemType": "plant_fiber",
+          "count": 3
+        },
+        {
+          "count": 1,
+          "instance": {
+            "durability": 122
+          },
+          "itemType": "stone_pickaxe"
+        },
+        {
+          "count": 4,
+          "itemType": "spruce_planks"
+        },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "craft2": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "craft3": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "equipment": [
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "station": "personal",
+      "container": null
+    },
+    "initialRevision": 104,
+    "finalRevision": 108,
+    "finalBucket": {
+      "itemType": "bucket",
+      "count": 1
+    },
+    "vitals": {
+      "version": 2,
+      "health": 20,
+      "food": 19,
+      "air": 300,
+      "dead": false,
+      "respawnIn": 0,
+      "attackCooldown": 0,
+      "protection": 0
+    }
+  },
+  "remoteEquipment": null,
+  "completed": {
+    "inventory": {
+      "version": 2,
+      "catalog": false,
+      "revision": 108,
+      "selected": 0,
+      "bag": [
+        {
+          "itemType": "bucket",
+          "count": 1
+        },
+        {
+          "itemType": "cocoa_beans",
+          "count": 1
+        },
+        {
+          "count": 1,
+          "instance": {
+            "durability": 51
+          },
+          "itemType": "wooden_pickaxe"
+        },
+        {
+          "count": 1,
+          "itemType": "charcoal"
+        },
+        {
+          "itemType": "sand",
+          "count": 5
+        },
+        null,
+        {
+          "itemType": "plant_fiber",
+          "count": 3
+        },
+        {
+          "count": 1,
+          "instance": {
+            "durability": 122
+          },
+          "itemType": "stone_pickaxe"
+        },
+        {
+          "count": 4,
+          "itemType": "spruce_planks"
+        },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "craft2": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "craft3": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "equipment": [
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "station": "personal",
+      "container": null
+    },
+    "feedback": {
+      "held": {
+        "state": 0,
+        "itemType": "bucket",
+        "visible": true,
+        "swings": 68
+      },
+      "effects": {
+        "live": 6,
+        "bursts": 38,
+        "hits": 0,
+        "explosions": 0
+      },
+      "drops": {
+        "visible": 0,
+        "kinds": 0
+      },
+      "explosives": {
+        "visible": 0,
+        "capacity": 0,
+        "flashing": 0
+      },
+      "vision": false
+    },
+    "vitals": {
+      "version": 2,
+      "health": 20,
+      "food": 19,
+      "air": 300,
+      "dead": false,
+      "respawnIn": 0,
+      "attackCooldown": 0,
+      "protection": 0
+    }
+  },
+  "cleanup": {
+    "geometries": 0,
+    "textures": 0,
+    "workers": 0,
+    "audio": {
+      "supported": true,
+      "contexts": 0,
+      "state": "closed",
+      "active": false,
+      "muted": false,
+      "voices": 0,
+      "effects": 70,
+      "gain": 0,
+      "dropped": 0,
+      "listener": [
+        46.5546,
+        64.62,
+        8.3094
+      ],
+      "lastSource": [
+        46.5,
+        63.5,
+        7.5
+      ]
+    }
+  },
+  "errors": []
+}

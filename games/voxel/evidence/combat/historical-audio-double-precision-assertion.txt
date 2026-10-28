@@ -1,0 +1,24 @@
+
+> @playground/voxel@0.1.0 test:combat:browser
+> node tools/browser-combat.ts
+
+Opening victim inventory and positioning attacker using public movement
+Sending a real touch attack, then ordinary public attack intents at authoritative readiness
+Respawning the same built client through the normal UI and collision-readiness exchange
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: impact audio uses the accepted absolute hit point
+    at file:///home/ubuntu/OMplayground/games/voxel/tools/browser-combat.ts:211:10
+    at runNextTicks (node:internal/process/task_queues:65:5)
+    at process.processImmediate (node:internal/timers:541:9) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.21.0

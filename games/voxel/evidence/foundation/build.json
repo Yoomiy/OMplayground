@@ -1,0 +1,13 @@
+{
+  "engineHash": "39c856a11ff58ee806e01c1af646292962ea9f99c64e10e241879802f87e89c3",
+  "bindingsHash": "e851e5b76cf96d3c6bcafefd36ff629e1a5bc797dc3aae6641d66c89aa29b287",
+  "contentHash": "0e18a28a479058f6af964ead4081e464697e59fb5c842cf96c91a9fff3c61980",
+  "protocol": 2,
+  "columnFormat": 2,
+  "regionFormat": 2,
+  "editFormat": 2,
+  "height": 256,
+  "buildId": "0e90eb250bfb822cf2caf532f4fcb9ba446155ec11810d4b27ab6be3e31165e3",
+  "engineArtifact": "engine-39c856a11ff58ee806e01c1af646292962ea9f99c64e10e241879802f87e89c3.wasm",
+  "bindingsArtifact": "bindings-e851e5b76cf96d3c6bcafefd36ff629e1a5bc797dc3aae6641d66c89aa29b287.js"
+}

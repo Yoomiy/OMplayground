@@ -1,0 +1,18 @@
+[
+  {
+    "burst": false,
+    "wallSeconds": 1.0501466650000002,
+    "sent": 58,
+    "socketOpen": true,
+    "distanceBlocks": 3.882381065013523,
+    "lastAck": 58
+  },
+  {
+    "burst": true,
+    "wallSeconds": 1.054803207,
+    "sent": 118,
+    "socketOpen": true,
+    "distanceBlocks": 27.841730679515987,
+    "lastAck": 91
+  }
+]

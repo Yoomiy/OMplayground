@@ -1,0 +1,20 @@
+✔ real concurrent acquisition yields one owner; retry is idempotent and expired takeover retains world identity (107.263313ms)
+✔ renewal checks the database clock after waiting for the owner row lock (505.944984ms)
+✔ two transactions racing one sequence commit one whole graph and exact retry cannot duplicate history (193.946969ms)
+✔ expired or replaced owner cannot commit, renew or release the new epoch (188.058181ms)
+✔ corrupt graph suffixes or unconfirmed uploads roll back pointer, history and every reference (276.800046ms)
+✔ browser roles cannot read metadata or execute RPCs; service writes require RPCs and the bucket is private (105.357785ms)
+✔ retention keeps active/shared objects; garbage claims fence uploads and stale deletion workers (367.092439ms)
+✔ cleanup skips uncommitted graph locks and rechecks references before claiming deletion (463.688262ms)
+✔ session removal retains orphan object addresses for subsequent Storage cleanup (122.189665ms)
+✔ old active references cannot starve a bounded garbage-collection batch (1991.28554ms)
+✔ commit rechecks expiry after object locks and cannot leave partial history after a delayed upload lock (556.853748ms)
+✔ real SDK and PostgreSQL carry a committed room across worker failure, ambiguous commit and new ownership (1141.931911ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6986.88135

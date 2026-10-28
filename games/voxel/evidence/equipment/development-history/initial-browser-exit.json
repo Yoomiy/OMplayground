@@ -1,0 +1,10 @@
+{
+  "script": "test:equipment:browser",
+  "path": "/tmp/voxel-equipment-suite-test-equipment-browser.log",
+  "code": 1,
+  "signal": null,
+  "startedAt": "2026-10-22T21:01:45.341Z",
+  "finishedAt": "2026-10-22T21:02:13.911Z",
+  "durationMs": 28570,
+  "buildId": "b3aca71c98e81bb07ac62040a829c484cc157397deb6c647b2de42898da83c36"
+}

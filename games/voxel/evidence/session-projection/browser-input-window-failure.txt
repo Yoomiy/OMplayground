@@ -1,0 +1,21 @@
+
+> @playground/voxel-server@0.1.0 test:browser:lifecycle
+> node tools/browser-lifecycle.ts
+
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: resume uses fresh backward input rather than the old held forward key
+    at file:///home/ubuntu/OMplayground/apps/voxel-server/tools/browser-lifecycle.ts:239:10
+    at runNextTicks (node:internal/process/task_queues:65:5)
+    at process.processImmediate (node:internal/timers:541:9) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.21.0

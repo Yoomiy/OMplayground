@@ -1,0 +1,12 @@
+✔ timing quantiles conservatively bound nearest-rank samples within 0.05 ms (7.069234ms)
+✔ timing windows reset all counts, distinguish empty from zero and ignore invalid samples (1.045965ms)
+✔ timing overflow cannot underreport slow quantiles or grow storage (4.899824ms)
+✔ each catch-up step is timed separately, and paused observer steps never count as world steps (103.593822ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1281.013723

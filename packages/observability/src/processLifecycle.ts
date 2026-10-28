@@ -23,7 +23,7 @@ export function installProcessLifecycle(options: ProcessLifecycleOptions): () =>
         message: "Service shutdown timed out",
         context: { event: "SERVICE_SHUTDOWN_TIMEOUT", signal, timeout_ms: timeoutMs, status: "failed" }
       });
-      process.exit(exitCode);
+      process.exit(1);
     }, timeoutMs);
     hardStop.unref();
 

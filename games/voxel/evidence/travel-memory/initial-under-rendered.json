@@ -1,0 +1,617 @@
+{
+  "result": "BROWSER_TRAVEL_RECONNECT_RESOURCE_MEASUREMENTS_COMPLETE",
+  "startedAt": "2026-10-27T19:04:08.618Z",
+  "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077",
+  "configuration": {
+    "cycles": 2,
+    "viewport": {
+      "width": 480,
+      "height": 300
+    },
+    "renderScale": 0.5,
+    "renderHz": 30,
+    "workerCores": 2
+  },
+  "scope": "Unchanged built client/release Wasm with source gateway and native room workers. Authorized public flight over generated terrain, repeated same-page reconnect, weak-reference main-Wasm high-water and instrumented GL buffer ownership; forced-GC main-isolate heap/backing storage via CDP. Software Chromium, no FPS/device/whole-process/worker-heap qualification.",
+  "samples": [
+    {
+      "label": "initial",
+      "atMs": 20332.282935,
+      "position": [
+        56.40073695223253,
+        175.8667,
+        8.462461120273556
+      ],
+      "epoch": 3,
+      "columns": 49,
+      "collisionColumns": 49,
+      "meshed": 25,
+      "resources": {
+        "geometries": 28,
+        "textures": 5,
+        "workers": 1
+      },
+      "stream": {
+        "discardedJobs": 0,
+        "installed": 49,
+        "meshJobs": 25,
+        "generationJobs": 49,
+        "mainWorkMs": 0
+      },
+      "renderedColumns": 25,
+      "memory": {
+        "wasm": [
+          5636096
+        ],
+        "gpuBuffers": {
+          "created": 81,
+          "deleted": 6,
+          "live": 75,
+          "bytes": 791924,
+          "peakBytes": 791924
+        }
+      },
+      "heap": {
+        "usedSize": 6002588,
+        "totalSize": 6955008,
+        "embedderHeapUsedSize": 1909872,
+        "backingStorageSize": 7468063
+      },
+      "dom": {
+        "documents": 1,
+        "nodes": 1772,
+        "jsEventListeners": 365
+      },
+      "liveWorkers": 1,
+      "openedSockets": 1,
+      "closedSockets": 0,
+      "createdWorkers": 1,
+      "closedWorkers": 0
+    },
+    {
+      "label": "travel-0",
+      "atMs": 42147.617111,
+      "position": [
+        56.0193,
+        175.8667,
+        6.936054733187949
+      ],
+      "epoch": 3,
+      "columns": 49,
+      "collisionColumns": 49,
+      "meshed": 34,
+      "resources": {
+        "geometries": 5,
+        "textures": 5,
+        "workers": 1
+      },
+      "stream": {
+        "discardedJobs": 0,
+        "installed": 133,
+        "meshJobs": 85,
+        "generationJobs": 133,
+        "mainWorkMs": 0.10000014305114746
+      },
+      "renderedColumns": 34,
+      "memory": {
+        "wasm": [
+          6094848
+        ],
+        "gpuBuffers": {
+          "created": 81,
+          "deleted": 52,
+          "live": 29,
+          "bytes": 8204,
+          "peakBytes": 791924
+        }
+      },
+      "heap": {
+        "usedSize": 6232436,
+        "totalSize": 7217152,
+        "embedderHeapUsedSize": 1676792,
+        "backingStorageSize": 8291536
+      },
+      "dom": {
+        "documents": 1,
+        "nodes": 1765,
+        "jsEventListeners": 365
+      },
+      "liveWorkers": 1,
+      "openedSockets": 1,
+      "closedSockets": 0,
+      "createdWorkers": 1,
+      "closedWorkers": 0
+    },
+    {
+      "label": "reconnect-0",
+      "atMs": 44343.899624,
+      "position": [
+        56.0193,
+        175.8667,
+        6.9359
+      ],
+      "epoch": 6,
+      "columns": 49,
+      "collisionColumns": 49,
+      "meshed": 25,
+      "resources": {
+        "geometries": 5,
+        "textures": 5,
+        "workers": 1
+      },
+      "stream": {
+        "discardedJobs": 0,
+        "installed": 49,
+        "meshJobs": 25,
+        "generationJobs": 49,
+        "mainWorkMs": 0.10000014305114746
+      },
+      "renderedColumns": 25,
+      "memory": {
+        "wasm": [
+          6094848
+        ],
+        "gpuBuffers": {
+          "created": 81,
+          "deleted": 52,
+          "live": 29,
+          "bytes": 8204,
+          "peakBytes": 791924
+        }
+      },
+      "heap": {
+        "usedSize": 6163768,
+        "totalSize": 6692864,
+        "embedderHeapUsedSize": 1696992,
+        "backingStorageSize": 7465625
+      },
+      "dom": {
+        "documents": 1,
+        "nodes": 1766,
+        "jsEventListeners": 365
+      },
+      "liveWorkers": 1,
+      "openedSockets": 2,
+      "closedSockets": 1,
+      "createdWorkers": 2,
+      "closedWorkers": 1
+    },
+    {
+      "label": "travel-1",
+      "atMs": 66136.798267,
+      "position": [
+        56.0192,
+        175.8667,
+        6.945496987596306
+      ],
+      "epoch": 6,
+      "columns": 49,
+      "collisionColumns": 49,
+      "meshed": 34,
+      "resources": {
+        "geometries": 5,
+        "textures": 5,
+        "workers": 1
+      },
+      "stream": {
+        "discardedJobs": 0,
+        "installed": 133,
+        "meshJobs": 85,
+        "generationJobs": 133,
+        "mainWorkMs": 0
+      },
+      "renderedColumns": 34,
+      "memory": {
+        "wasm": [
+          6094848
+        ],
+        "gpuBuffers": {
+          "created": 81,
+          "deleted": 52,
+          "live": 29,
+          "bytes": 8204,
+          "peakBytes": 791924
+        }
+      },
+      "heap": {
+        "usedSize": 6315216,
+        "totalSize": 6955008,
+        "embedderHeapUsedSize": 1705624,
+        "backingStorageSize": 8290991
+      },
+      "dom": {
+        "documents": 1,
+        "nodes": 1765,
+        "jsEventListeners": 365
+      },
+      "liveWorkers": 1,
+      "openedSockets": 2,
+      "closedSockets": 1,
+      "createdWorkers": 2,
+      "closedWorkers": 1
+    },
+    {
+      "label": "reconnect-1",
+      "atMs": 68241.647036,
+      "position": [
+        56.0192,
+        175.8667,
+        6.9455
+      ],
+      "epoch": 9,
+      "columns": 49,
+      "collisionColumns": 49,
+      "meshed": 25,
+      "resources": {
+        "geometries": 5,
+        "textures": 5,
+        "workers": 1
+      },
+      "stream": {
+        "discardedJobs": 0,
+        "installed": 49,
+        "meshJobs": 25,
+        "generationJobs": 49,
+        "mainWorkMs": 0.09999990463256836
+      },
+      "renderedColumns": 25,
+      "memory": {
+        "wasm": [
+          6094848
+        ],
+        "gpuBuffers": {
+          "created": 81,
+          "deleted": 52,
+          "live": 29,
+          "bytes": 8204,
+          "peakBytes": 791924
+        }
+      },
+      "heap": {
+        "usedSize": 6264212,
+        "totalSize": 6955008,
+        "embedderHeapUsedSize": 1886984,
+        "backingStorageSize": 7464229
+      },
+      "dom": {
+        "documents": 1,
+        "nodes": 1771,
+        "jsEventListeners": 366
+      },
+      "liveWorkers": 1,
+      "openedSockets": 3,
+      "closedSockets": 2,
+      "createdWorkers": 3,
+      "closedWorkers": 2
+    },
+    {
+      "label": "disposed",
+      "atMs": 68305.508204,
+      "position": [
+        56.0192,
+        175.8667,
+        6.9455
+      ],
+      "resources": {
+        "geometries": 0,
+        "textures": 0,
+        "workers": 0
+      },
+      "renderedColumns": 0,
+      "memory": {
+        "wasm": [
+          6094848
+        ],
+        "gpuBuffers": {
+          "created": 81,
+          "deleted": 81,
+          "live": 0,
+          "bytes": 0,
+          "peakBytes": 791924
+        }
+      },
+      "heap": {
+        "usedSize": 5522280,
+        "totalSize": 6692864,
+        "embedderHeapUsedSize": 861648,
+        "backingStorageSize": 744499
+      },
+      "dom": {
+        "documents": 1,
+        "nodes": 345,
+        "jsEventListeners": 211
+      },
+      "liveWorkers": 0,
+      "openedSockets": 3,
+      "closedSockets": 3,
+      "createdWorkers": 3,
+      "closedWorkers": 3
+    }
+  ],
+  "errors": [],
+  "route": [
+    [
+      56,
+      8
+    ],
+    [
+      104,
+      8
+    ],
+    [
+      104,
+      56
+    ],
+    [
+      56,
+      56
+    ],
+    [
+      56,
+      8
+    ]
+  ],
+  "finishedAt": "2026-10-27T19:05:16.265Z",
+  "gatewayEvents": [
+    {
+      "event": "VOXEL_ADMISSION_ISSUED",
+      "context": {
+        "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077"
+      }
+    },
+    {
+      "event": "VOXEL_ROOM_READY",
+      "context": {
+        "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077"
+      }
+    },
+    {
+      "event": "VOXEL_ROOM_METRICS",
+      "context": {
+        "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077",
+        "worldId": "54d360cd-380e-4e15-b003-5e9e4457da61",
+        "ticks": 300,
+        "columns": 9,
+        "overrunMs": 0,
+        "windowMs": 10001.745030999999,
+        "windowStartedAtMs": 3122.739492,
+        "windowEndedAtMs": 13124.484523,
+        "worldStep_samples": 300,
+        "worldStep_meanMs": 0.30970704666661286,
+        "worldStep_p95UpperMs": 0.75,
+        "worldStep_p99UpperMs": 3.6,
+        "worldStep_maxMs": 8.56492500000013,
+        "observerStep_samples": 0,
+        "observerStep_meanMs": 0,
+        "observerStep_p95UpperMs": 0,
+        "observerStep_p99UpperMs": 0,
+        "observerStep_maxMs": 0,
+        "workerTurn_samples": 2265,
+        "workerTurn_meanMs": 0.12331228565120644,
+        "workerTurn_p95UpperMs": 0.25,
+        "workerTurn_p99UpperMs": 0.75,
+        "workerTurn_maxMs": 45.78911700000026,
+        "generationJob_samples": 9,
+        "generationJob_meanMs": 14.23558033333332,
+        "generationJob_p95UpperMs": 35.06118200000037,
+        "generationJob_p99UpperMs": 35.06118200000037,
+        "generationJob_maxMs": 35.06118200000037,
+        "command_samples": 199,
+        "command_meanMs": 0.09346283417089266,
+        "command_p95UpperMs": 0.15,
+        "command_p99UpperMs": 1.15,
+        "command_maxMs": 9.050486999999976
+      }
+    },
+    {
+      "event": "VOXEL_ROOM_METRICS",
+      "context": {
+        "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077",
+        "worldId": "54d360cd-380e-4e15-b003-5e9e4457da61",
+        "ticks": 300,
+        "columns": 9,
+        "overrunMs": 0,
+        "windowMs": 9998.772067000002,
+        "windowStartedAtMs": 13124.484523,
+        "windowEndedAtMs": 23123.25659,
+        "worldStep_samples": 300,
+        "worldStep_meanMs": 0.18762245666658897,
+        "worldStep_p95UpperMs": 0.4,
+        "worldStep_p99UpperMs": 0.8,
+        "worldStep_maxMs": 2.9694949999975506,
+        "observerStep_samples": 0,
+        "observerStep_meanMs": 0,
+        "observerStep_p95UpperMs": 0,
+        "observerStep_p99UpperMs": 0,
+        "observerStep_maxMs": 0,
+        "workerTurn_samples": 2298,
+        "workerTurn_meanMs": 0.050248614012210854,
+        "workerTurn_p95UpperMs": 0.2,
+        "workerTurn_p99UpperMs": 0.35,
+        "workerTurn_maxMs": 6.735595000001922,
+        "generationJob_samples": 6,
+        "generationJob_meanMs": 5.074993000000177,
+        "generationJob_p95UpperMs": 6.729155000000901,
+        "generationJob_p99UpperMs": 6.729155000000901,
+        "generationJob_maxMs": 6.729155000000901,
+        "command_samples": 211,
+        "command_meanMs": 0.02874684360185237,
+        "command_p95UpperMs": 0.05,
+        "command_p99UpperMs": 0.15,
+        "command_maxMs": 1.639088999996602
+      }
+    },
+    {
+      "event": "VOXEL_ROOM_METRICS",
+      "context": {
+        "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077",
+        "worldId": "54d360cd-380e-4e15-b003-5e9e4457da61",
+        "ticks": 300,
+        "columns": 9,
+        "overrunMs": 0,
+        "windowMs": 9999.729725000001,
+        "windowStartedAtMs": 23123.25659,
+        "windowEndedAtMs": 33122.986315,
+        "worldStep_samples": 300,
+        "worldStep_meanMs": 0.17412210666665498,
+        "worldStep_p95UpperMs": 0.3,
+        "worldStep_p99UpperMs": 0.6,
+        "worldStep_maxMs": 2.0332909999997355,
+        "observerStep_samples": 0,
+        "observerStep_meanMs": 0,
+        "observerStep_p95UpperMs": 0,
+        "observerStep_p99UpperMs": 0,
+        "observerStep_maxMs": 0,
+        "workerTurn_samples": 2309,
+        "workerTurn_meanMs": 0.05926384538762683,
+        "workerTurn_p95UpperMs": 0.2,
+        "workerTurn_p99UpperMs": 0.3,
+        "workerTurn_maxMs": 8.004640999999538,
+        "generationJob_samples": 15,
+        "generationJob_meanMs": 3.609250666666776,
+        "generationJob_p95UpperMs": 7.635039000000688,
+        "generationJob_p99UpperMs": 7.635039000000688,
+        "generationJob_maxMs": 7.635039000000688,
+        "command_samples": 210,
+        "command_meanMs": 0.022337852380986158,
+        "command_p95UpperMs": 0.05,
+        "command_p99UpperMs": 0.2,
+        "command_maxMs": 0.3706019999990531
+      }
+    },
+    {
+      "event": "VOXEL_ADMISSION_ISSUED",
+      "context": {
+        "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077"
+      }
+    },
+    {
+      "event": "VOXEL_ROOM_METRICS",
+      "context": {
+        "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077",
+        "worldId": "54d360cd-380e-4e15-b003-5e9e4457da61",
+        "ticks": 300,
+        "columns": 9,
+        "overrunMs": 0,
+        "windowMs": 10000.710383999998,
+        "windowStartedAtMs": 33122.986315,
+        "windowEndedAtMs": 43123.696699,
+        "worldStep_samples": 300,
+        "worldStep_meanMs": 0.16541190333337,
+        "worldStep_p95UpperMs": 0.35,
+        "worldStep_p99UpperMs": 1.05,
+        "worldStep_maxMs": 1.2223660000017844,
+        "observerStep_samples": 0,
+        "observerStep_meanMs": 0,
+        "observerStep_p95UpperMs": 0,
+        "observerStep_p99UpperMs": 0,
+        "observerStep_maxMs": 0,
+        "workerTurn_samples": 2302,
+        "workerTurn_meanMs": 0.08060032841016393,
+        "workerTurn_p95UpperMs": 0.2,
+        "workerTurn_p99UpperMs": 0.75,
+        "workerTurn_maxMs": 12.27794300000096,
+        "generationJob_samples": 24,
+        "generationJob_meanMs": 4.540966583333405,
+        "generationJob_p95UpperMs": 11.75,
+        "generationJob_p99UpperMs": 12.159582000000228,
+        "generationJob_maxMs": 12.159582000000228,
+        "command_samples": 209,
+        "command_meanMs": 0.03833935406672017,
+        "command_p95UpperMs": 0.05,
+        "command_p99UpperMs": 0.4,
+        "command_maxMs": 2.8221749999938766
+      }
+    },
+    {
+      "event": "VOXEL_ROOM_METRICS",
+      "context": {
+        "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077",
+        "worldId": "54d360cd-380e-4e15-b003-5e9e4457da61",
+        "ticks": 300,
+        "columns": 9,
+        "overrunMs": 0,
+        "windowMs": 10001.652405,
+        "windowStartedAtMs": 43123.696699,
+        "windowEndedAtMs": 53125.349104,
+        "worldStep_samples": 300,
+        "worldStep_meanMs": 0.15134799333320803,
+        "worldStep_p95UpperMs": 0.3,
+        "worldStep_p99UpperMs": 0.45,
+        "worldStep_maxMs": 0.8404049999953713,
+        "observerStep_samples": 0,
+        "observerStep_meanMs": 0,
+        "observerStep_p95UpperMs": 0,
+        "observerStep_p99UpperMs": 0,
+        "observerStep_maxMs": 0,
+        "workerTurn_samples": 2319,
+        "workerTurn_meanMs": 0.05217342259596078,
+        "workerTurn_p95UpperMs": 0.2,
+        "workerTurn_p99UpperMs": 0.3,
+        "workerTurn_maxMs": 9.152286999997159,
+        "generationJob_samples": 15,
+        "generationJob_meanMs": 3.5004741333332885,
+        "generationJob_p95UpperMs": 5.718829999997979,
+        "generationJob_p99UpperMs": 5.718829999997979,
+        "generationJob_maxMs": 5.718829999997979,
+        "command_samples": 210,
+        "command_meanMs": 0.02106869523822319,
+        "command_p95UpperMs": 0.05,
+        "command_p99UpperMs": 0.1,
+        "command_maxMs": 0.16892099999677157
+      }
+    },
+    {
+      "event": "VOXEL_ROOM_METRICS",
+      "context": {
+        "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077",
+        "worldId": "54d360cd-380e-4e15-b003-5e9e4457da61",
+        "ticks": 300,
+        "columns": 9,
+        "overrunMs": 0,
+        "windowMs": 9999.647369999999,
+        "windowStartedAtMs": 53125.349104,
+        "windowEndedAtMs": 63124.996474,
+        "worldStep_samples": 300,
+        "worldStep_meanMs": 0.15911920333341797,
+        "worldStep_p95UpperMs": 0.35,
+        "worldStep_p99UpperMs": 0.75,
+        "worldStep_maxMs": 1.441367999999784,
+        "observerStep_samples": 0,
+        "observerStep_meanMs": 0,
+        "observerStep_p95UpperMs": 0,
+        "observerStep_p99UpperMs": 0,
+        "observerStep_maxMs": 0,
+        "workerTurn_samples": 2319,
+        "workerTurn_meanMs": 0.05853180077622027,
+        "workerTurn_p95UpperMs": 0.2,
+        "workerTurn_p99UpperMs": 0.4,
+        "workerTurn_maxMs": 8.45324399999663,
+        "generationJob_samples": 18,
+        "generationJob_meanMs": 3.6716921666662126,
+        "generationJob_p95UpperMs": 8.438203999998223,
+        "generationJob_p99UpperMs": 8.438203999998223,
+        "generationJob_maxMs": 8.438203999998223,
+        "command_samples": 211,
+        "command_meanMs": 0.017929578198879182,
+        "command_p95UpperMs": 0.05,
+        "command_p99UpperMs": 0.05,
+        "command_maxMs": 0.06819999999424908
+      }
+    },
+    {
+      "event": "VOXEL_ADMISSION_ISSUED",
+      "context": {
+        "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077"
+      }
+    },
+    {
+      "event": "VOXEL_ROOM_EXITED",
+      "context": {
+        "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077",
+        "code": 0
+      }
+    }
+  ],
+  "remainingRooms": 0
+}

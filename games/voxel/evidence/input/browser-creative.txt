@@ -1,0 +1,22 @@
+
+> @playground/voxel@0.1.0 test:creative:browser
+> node tools/browser-creative.ts
+
+271 Opening creative client
+6229 Creative client ready
+6313 Opening creative client
+16538 Creative client ready
+16932 Testing jump [49.5,68.005,0.5]
+17158 Dispatching jump key
+28947 Jump key delivered
+30833 Testing movement
+37256 Testing shared edits
+54112 Testing reconnect
+54635 Pointer lock released
+54694 Reconnect requested
+61712 Reconnect diagnostic {"disposed":false,"inputMode":"desktop","touch":{"x":0,"z":0,"jump":false,"sneak":false,"sprint":false},"focused":false,"visible":"visible","hasFocus":true,"lastFrame":59824.9,"resources":{"geometries":2,"textures":4,"workers":1},"actorId":"0559773f-4215-476e-8dd7-95128c5ff7ab","worldId":"049e155e-330e-4454-bf90-9fcbfbde687b","body":{"position":[49.8829,68,0.3006],"onGround":1,"frozen":1,"flying":0,"velocity":[0,0,0]},"view":{"yaw":-0.48000000000000004,"pitch":-0.7},"lastResult":null,"recentEdits":[],"status":"loading","epoch":6,"phase":"preparing","position":[49.8829,68,0.3006],"selected":4,"players":2,"inputLag":0,"correction":0,"columns":49,"collisionColumns":5,"meshed":0,"workers":1,"activeJobs":1,"stream":{"discardedJobs":0,"installed":5,"meshJobs":0,"generationJobs":6,"mainWorkMs":3},"render":{"uploadedBytes":2408168,"columns":0,"drawCalls":2,"triangles":12,"uploadMs":0.3000001907348633},"target":[48,67,-2],"targetState":5,"targetNormal":[0,1,0],"actionPending":0}
+69001 Reconnect diagnostic {"disposed":false,"inputMode":"desktop","touch":{"x":0,"z":0,"jump":false,"sneak":false,"sprint":false},"focused":false,"visible":"visible","hasFocus":true,"lastFrame":61808.2,"resources":{"geometries":2,"textures":4,"workers":1},"actorId":"0559773f-4215-476e-8dd7-95128c5ff7ab","worldId":"049e155e-330e-4454-bf90-9fcbfbde687b","body":{"position":[49.8829,68,0.3006],"onGround":1,"frozen":1,"flying":0,"velocity":[0,0,0]},"view":{"yaw":-0.48000000000000004,"pitch":-0.7},"lastResult":null,"recentEdits":[],"status":"loading","epoch":6,"phase":"preparing","position":[49.8829,68,0.3006],"selected":4,"players":2,"inputLag":0,"correction":0,"columns":49,"collisionColumns":7,"meshed":0,"workers":1,"activeJobs":1,"stream":{"discardedJobs":0,"installed":7,"meshJobs":0,"generationJobs":8,"mainWorkMs":0.5},"render":{"uploadedBytes":2408168,"columns":0,"drawCalls":2,"triangles":12,"uploadMs":0.3000001907348633},"target":[48,67,-2],"targetState":5,"targetNormal":[0,1,0],"actionPending":0}
+82562 Reconnect diagnostic {"disposed":false,"inputMode":"desktop","touch":{"x":0,"z":0,"jump":false,"sneak":false,"sprint":false},"focused":false,"visible":"visible","hasFocus":true,"lastFrame":76607.6,"resources":{"geometries":2,"textures":4,"workers":1},"actorId":"0559773f-4215-476e-8dd7-95128c5ff7ab","worldId":"049e155e-330e-4454-bf90-9fcbfbde687b","body":{"position":[49.8829,68,0.3006],"onGround":1,"frozen":1,"flying":0,"velocity":[0,0,0]},"view":{"yaw":-0.48000000000000004,"pitch":-0.7},"lastResult":null,"recentEdits":[],"status":"loading","epoch":6,"phase":"preparing","position":[49.8829,68,0.3006],"selected":4,"players":2,"inputLag":0,"correction":0,"columns":49,"collisionColumns":9,"meshed":0,"workers":1,"activeJobs":1,"stream":{"discardedJobs":0,"installed":9,"meshJobs":0,"generationJobs":10,"mainWorkMs":2.299999952316284},"render":{"uploadedBytes":2408168,"columns":0,"drawCalls":2,"triangles":12,"uploadMs":0.3000001907348633},"target":[48,67,-2],"targetState":5,"targetNormal":[0,1,0],"actionPending":0}
+84877 Reconnect diagnostic {"disposed":false,"inputMode":"desktop","touch":{"x":0,"z":0,"jump":false,"sneak":false,"sprint":false},"focused":false,"visible":"visible","hasFocus":true,"lastFrame":82274,"resources":{"geometries":2,"textures":4,"workers":1},"actorId":"0559773f-4215-476e-8dd7-95128c5ff7ab","worldId":"049e155e-330e-4454-bf90-9fcbfbde687b","body":{"position":[49.8829,68,0.3006],"onGround":1,"frozen":1,"flying":0,"velocity":[0,0,0]},"view":{"yaw":-0.48000000000000004,"pitch":-0.7},"lastResult":null,"recentEdits":[],"status":"loading","epoch":6,"phase":"preparing","position":[49.8829,68,0.3006],"selected":4,"players":2,"inputLag":0,"correction":0,"columns":49,"collisionColumns":10,"meshed":0,"workers":1,"activeJobs":0,"stream":{"discardedJobs":0,"installed":10,"meshJobs":0,"generationJobs":11,"mainWorkMs":0.6000001430511475},"render":{"uploadedBytes":2408168,"columns":0,"drawCalls":2,"triangles":12,"uploadMs":0.3000001907348633},"target":[48,67,-2],"targetState":5,"targetNormal":[0,1,0],"actionPending":0}
+87625 Reconnect ready
+Two-client creative browser smoke passes

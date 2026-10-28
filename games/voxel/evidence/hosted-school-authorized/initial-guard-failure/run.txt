@@ -1,0 +1,4 @@
+temporary_real_auth_profiles_ready
+public_rls_private_session_created
+production_service_hosted_ready
+{"result":"FAIL","stages":["temporary_real_auth_profiles_ready","public_rls_private_session_created","production_service_hosted_ready"],"failure":{"stage":"production_service_hosted_ready","code":"CHECK_FAILED"},"cleanup":{"serviceClosed":true,"scopedSql":true,"sessionAbsent":true,"metadataAbsent":true,"kidAbsent":true,"teacherAbsent":true},"localArtifacts":"/tmp/voxel-hosted-school-KKdL8j"}

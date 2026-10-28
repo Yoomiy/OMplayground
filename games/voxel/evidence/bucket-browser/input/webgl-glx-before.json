@@ -1,0 +1,24 @@
+[
+  {
+    "extra": [],
+    "webgl2": false
+  },
+  {
+    "extra": [
+      "--disable-gpu-sandbox"
+    ],
+    "webgl2": false
+  },
+  {
+    "extra": [
+      "--ignore-gpu-blocklist"
+    ],
+    "webgl2": false
+  },
+  {
+    "extra": [
+      "--use-angle=swiftshader-webgl"
+    ],
+    "webgl2": false
+  }
+]

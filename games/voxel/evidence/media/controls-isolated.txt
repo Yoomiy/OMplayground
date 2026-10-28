@@ -1,0 +1,11 @@
+✔ fenced SQL commands deny nonhosts, recheck host/role, order idempotent requests and audit staff exactly once (303.50623ms)
+✔ control completion cannot claim an uncommitted save; fresh expiry and stale owners cannot mutate intent (1204.956239ms)
+✔ real school HTTP controls fail unsaved, retry once, resume, end with a committed receipt and replay after terminal retirement (1904.552988ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4212.845933

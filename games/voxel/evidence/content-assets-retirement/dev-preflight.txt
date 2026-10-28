@@ -1,0 +1,20 @@
+
+> predev:app
+> npm run build --workspace @playground/game-logic && npm run build --workspace @playground/observability
+
+
+> @playground/game-logic@0.0.1 build
+> tsc -p tsconfig.json
+
+
+> @playground/observability@0.0.1 build
+> tsc -p tsconfig.json
+
+
+> dev:app
+> node scripts/dev-app.mjs --check
+
+Development configuration present: game-server on 8080; no provider requests made.
+Development configuration present: voxel-server on 3001; no provider requests made.
+Development configuration present: classroom-server on 8083; no provider requests made.
+Verified current source/content and 12 release files: 7c770c2043d1

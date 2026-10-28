@@ -1,0 +1,275 @@
+{
+  "result": "PASS",
+  "scope": "Natural empty-inventory survival with actual held touch mining, owned drops/pickups, 2x2/3x3 crafting, consumed workbench placement, held pickaxe, crafted/equipped trail boots and a harvested apple eaten after real simulation-time hunger with inventory open; no creative grants or test-only world mutations; software Chromium functional check only",
+  "buildId": "0f33682a9fc3c187f9ab396491392118761a1bafe0b1cc712ba566a128c7e6b4",
+  "engineHash": "7688702bb6a210b9ac77384f44e7a8f7feca2f9036df7b9230cbe923cde80f49",
+  "contentHash": "9919b63bb600baf7d1bdbc1bee44d97b74057ee661cdf4515eba0d56baeb62a0",
+  "browser": "156.0.8078.4",
+  "harvested": [
+    {
+      "target": [
+        49,
+        68,
+        -4
+      ],
+      "visible": {
+        "drop": {
+          "id": "drop-1",
+          "revision": 9,
+          "stack": {
+            "itemType": "oak_log",
+            "count": 1
+          },
+          "position": [
+            49.5,
+            68,
+            -3.5
+          ]
+        },
+        "origin": {
+          "x": 48,
+          "z": 0
+        },
+        "feedback": {
+          "visible": 1,
+          "kinds": 1
+        }
+      },
+      "inventoryRevision": 1
+    },
+    {
+      "target": [
+        49,
+        69,
+        -4
+      ],
+      "visible": {
+        "drop": {
+          "id": "drop-2",
+          "revision": 4,
+          "stack": {
+            "itemType": "oak_log",
+            "count": 1
+          },
+          "position": [
+            49.5,
+            69.26666666666667,
+            -3.5
+          ]
+        },
+        "origin": {
+          "x": 48,
+          "z": -16
+        },
+        "feedback": {
+          "visible": 1,
+          "kinds": 1
+        }
+      },
+      "inventoryRevision": 2
+    },
+    {
+      "target": [
+        49,
+        70,
+        -4
+      ],
+      "visible": null,
+      "inventoryRevision": 3
+    },
+    {
+      "target": [
+        49,
+        71,
+        -4
+      ],
+      "visible": null,
+      "inventoryRevision": 4
+    }
+  ],
+  "cleared": [],
+  "placement": {
+    "type": "result",
+    "epoch": 4,
+    "sequence": 2,
+    "status": "applied",
+    "outcome": {
+      "ok": true,
+      "reason": "edited",
+      "cell": [
+        49,
+        68,
+        -5
+      ],
+      "state": 3,
+      "revision": 6
+    }
+  },
+  "food": {
+    "foliage": [
+      48,
+      69,
+      -3
+    ],
+    "hungry": {
+      "version": 1,
+      "health": 20,
+      "food": 19,
+      "air": 300,
+      "dead": false,
+      "respawnIn": 0
+    },
+    "after": {
+      "version": 1,
+      "health": 20,
+      "food": 20,
+      "air": 300,
+      "dead": false,
+      "respawnIn": 0
+    }
+  },
+  "completed": {
+    "inventory": {
+      "version": 2,
+      "catalog": false,
+      "revision": 34,
+      "selected": 3,
+      "bag": [
+        {
+          "count": 3,
+          "itemType": "oak_planks"
+        },
+        {
+          "itemType": "oak_leaves",
+          "count": 1
+        },
+        null,
+        {
+          "count": 1,
+          "instance": {
+            "durability": 60
+          },
+          "itemType": "wooden_pickaxe"
+        },
+        {
+          "count": 2,
+          "itemType": "stick"
+        },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "craft2": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "craft3": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "equipment": [
+        null,
+        null,
+        null,
+        {
+          "count": 1,
+          "instance": {
+            "durability": 120
+          },
+          "itemType": "trail_boots"
+        },
+        null
+      ],
+      "station": "personal",
+      "container": null
+    },
+    "feedback": {
+      "held": {
+        "state": 0,
+        "itemType": "wooden_pickaxe",
+        "visible": true,
+        "swings": 14
+      },
+      "effects": {
+        "live": 0,
+        "bursts": 6
+      },
+      "drops": {
+        "visible": 0,
+        "kinds": 0
+      }
+    },
+    "vitals": {
+      "version": 1,
+      "health": 20,
+      "food": 20,
+      "air": 300,
+      "dead": false,
+      "respawnIn": 0
+    }
+  },
+  "cleanup": {
+    "geometries": 0,
+    "textures": 0,
+    "workers": 0,
+    "audio": {
+      "supported": true,
+      "contexts": 0,
+      "state": "closed",
+      "active": false,
+      "muted": false,
+      "voices": 0,
+      "effects": 8,
+      "gain": 0,
+      "dropped": 0,
+      "listener": [
+        49.5,
+        69.62,
+        -2.7
+      ],
+      "lastSource": [
+        49.5,
+        68.5,
+        -4.5
+      ]
+    }
+  },
+  "errors": []
+}

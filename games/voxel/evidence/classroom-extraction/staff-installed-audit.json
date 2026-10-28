@@ -1,0 +1,13 @@
+{
+  "result": "PASS",
+  "allFiveMigrationVersions": [
+    "20261025010000",
+    "20261025020000",
+    "20261025030000",
+    "20261025040000",
+    "20261025050000"
+  ],
+  "matchingFunctionBodies": 6,
+  "browserExecute": false,
+  "privateRoleResolver": true
+}

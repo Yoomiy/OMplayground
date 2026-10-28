@@ -1,0 +1,41 @@
+{
+  "functions": [
+    {
+      "name": "voxel_actor_policy",
+      "body_md5": "f5c49466df65ea4b4d9bc8fbd86f5836"
+    },
+    {
+      "name": "voxel_moderation_receipt",
+      "body_md5": "b982de7bf49c8b9077a3c9b87eb08789"
+    },
+    {
+      "name": "voxel_moderate",
+      "body_md5": "7b62b5df2ec4f68c3ecaee2a5151590d"
+    },
+    {
+      "name": "voxel_moderation_status",
+      "body_md5": "02c56c893d843d5b6eed895a5c0207f4"
+    },
+    {
+      "name": "voxel_accept_member_revision",
+      "body_md5": "20aef0dc541475859449e84637e75e5d"
+    },
+    {
+      "name": "voxel_project_session",
+      "body_md5": "344044550d08bb87d9fc5349b5a305b2"
+    },
+    {
+      "name": "voxel_begin_control",
+      "body_md5": "5f5f8f0213839284baa4674f619ebf2b"
+    },
+    {
+      "name": "voxel_moderation_targets",
+      "body_md5": "25ec56b741346dda2cd3aa930edc99c1"
+    },
+    {
+      "name": "voxel_actor_kind",
+      "body_md5": "e2191642d8ec1f1f6f44ac68ccb07aea"
+    }
+  ],
+  "migrationSha256": "0c16c00a3e76fef628e07ad1f2ee70ac606448a514f6ed7e524fa89fa765f56d"
+}

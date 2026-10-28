@@ -1,0 +1,366 @@
+.voxel-session {
+  position: fixed;
+  inset: 0;
+  isolation: isolate;
+  background: #112d37;
+  color: #f4f7f2;
+  font-family: inherit;
+  overflow: hidden;
+}
+.voxel-session__world {
+  position: absolute;
+  inset: 0;
+}
+.voxel-session__world canvas {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  outline: none;
+}
+.voxel-session__world--ended {
+  pointer-events: none;
+}
+.voxel-session button {
+  min-height: 40px;
+  padding: 7px 11px;
+  border: 1px solid #abc7c480;
+  border-radius: 10px;
+  background: #214758;
+  color: #f4f7f2;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.voxel-session button:hover {
+  background: #356276;
+}
+.voxel-session button:focus-visible {
+  outline: 3px solid #ffdb8a;
+  outline-offset: 2px;
+}
+.voxel-session button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.voxel-session button[aria-pressed="true"] {
+  border-color: #ffe0a0;
+  background: #6c6746;
+}
+.voxel-session__header {
+  position: absolute;
+  z-index: 3;
+  inset: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right))
+    auto max(8px, env(safe-area-inset-left));
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: #102c3be8;
+  border: 1px solid #b8d4c94d;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px #07151c55;
+}
+.voxel-session h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+.voxel-session__header p {
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: #d1e6df;
+}
+.voxel-session nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.voxel-session__status {
+  position: absolute;
+  z-index: 4;
+  top: 34%;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(90vw, 480px);
+  text-align: center;
+  background: #102c3bda;
+  border-radius: 14px;
+  padding: 8px 14px;
+  pointer-events: auto;
+}
+.voxel-session__status p {
+  margin: 0 0 7px;
+}
+.voxel-session__notices {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  top: 49%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(90vw, 520px);
+  display: grid;
+  gap: 8px;
+}
+.voxel-session__save {
+  border: 1px solid #d5dfb277;
+  border-radius: 12px;
+  background: #1d3a3fee;
+  padding: 10px 14px;
+  text-align: center;
+}
+.voxel-session__save p {
+  margin: 0;
+}
+.voxel-session__save--unconfirmed {
+  border-color: #f1cc8c;
+  background: #483c29ee;
+}
+.voxel-session__observer {
+  position: absolute;
+  z-index: 2;
+  top: 27%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 5px 10px;
+  border-radius: 10px;
+  background: #102c3be0;
+  font-size: 12px;
+  pointer-events: none;
+}
+.voxel-session__help {
+  position: absolute;
+  z-index: 6;
+  inset: 25% max(12px, env(safe-area-inset-right)) auto auto;
+  width: min(440px, calc(100vw - 24px));
+  max-height: 62vh;
+  overflow: auto;
+  padding: 18px;
+  background: #102c3bf5;
+  border: 1px solid #adc8bc;
+  border-radius: 16px;
+}
+.voxel-session__help h2 {
+  margin-top: 0;
+}
+.voxel-session__help p {
+  margin: 10px 0;
+}
+.voxel-session__vitals {
+  position: absolute;
+  z-index: 3;
+  bottom: 125px;
+  right: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: #102c3bcf;
+  font-size: 12px;
+}
+.voxel-session__bottom {
+  position: absolute;
+  z-index: 3;
+  inset: auto max(8px, env(safe-area-inset-right))
+    max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 8px;
+  border-radius: 14px;
+  background: #102c3be8;
+}
+.voxel-session__inventory-tools {
+  display: flex;
+  gap: 6px;
+}
+.voxel-session__hotbar {
+  display: flex;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+}
+.voxel-session__hotbar button {
+  flex: 0 0 auto;
+  min-width: 65px;
+  max-width: 140px;
+  font-size: 11px;
+}
+.voxel-session__mining {
+  position: absolute;
+  z-index: 2;
+  top: 61%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+}
+.voxel-session__dialog {
+  color: #f4f7f2;
+  background: #173948;
+  border: 1px solid #abc7c4;
+  border-radius: 16px;
+  padding: 22px;
+  width: min(430px, calc(100vw - 30px));
+}
+.voxel-session__dialog::backdrop {
+  background: #05151ac7;
+}
+.voxel-session__dialog h2 {
+  margin-top: 0;
+  font-size: 20px;
+}
+.voxel-session__dialog button {
+  margin-inline-end: 8px;
+}
+.voxel-session .voxel-inventory {
+  margin: auto;
+}
+@media (max-width: 600px) {
+  .voxel-session__header {
+    padding: 8px;
+    gap: 6px;
+  }
+  .voxel-session h1 {
+    font-size: 15px;
+  }
+  .voxel-session button {
+    font-size: 12px;
+    padding: 5px 8px;
+  }
+  .voxel-session__vitals {
+    bottom: 132px;
+    left: 10px;
+    right: auto;
+    max-width: 50vw;
+  }
+  .voxel-session__header nav {
+    gap: 4px;
+  }
+  .voxel-session__status {
+    top: 39%;
+  }
+}
+
+.voxel-session__crosshair {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font: 24px monospace;
+  text-shadow: 0 1px 3px #000;
+  pointer-events: none;
+}
+.voxel-session-metadata-error {
+  position: fixed;
+  z-index: 8;
+  top: 24%;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 90vw;
+  padding: 8px 12px;
+  border-radius: 10px;
+  color: #fff1ca;
+  background: #443b2be8;
+  font-size: 12px;
+}
+
+.voxel-session__bottom[hidden] {
+  display: none;
+}
+
+.voxel-session[data-input="touch"] .voxel-session__vitals {
+  top: calc(var(--voxel-header-bottom, 160px) + 8px);
+  bottom: auto;
+  left: max(12px, env(safe-area-inset-left));
+  right: auto;
+  max-width: calc(100vw - 24px);
+}
+
+.voxel-session__staff summary {
+  cursor: pointer;
+  padding: 8px;
+  border: 1px solid #abc7c480;
+  border-radius: 10px;
+}
+.voxel-session__staff[open] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.voxel-session__staff label {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.voxel-session__staff select {
+  min-height: 40px;
+  max-width: 220px;
+  border: 1px solid #abc7c480;
+  border-radius: 10px;
+  background: #214758;
+  color: #f4f7f2;
+  font: inherit;
+}
+.voxel-session__moderation {
+  flex-basis: 100%;
+}
+.voxel-session__moderation-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding-top: 6px;
+}
+.voxel-session__moderation-notice {
+  margin-top: 6px;
+  padding: 8px;
+  border: 1px solid #abc7c480;
+  border-radius: 10px;
+}
+.voxel-session__chat {
+  width: min(36rem, calc(100vw - 2rem));
+}
+.voxel-session__chat header,
+.voxel-session__chat nav,
+.voxel-session__chat-lines li {
+  display: flex;
+  gap: 0.5rem;
+  align-items: start;
+  justify-content: space-between;
+}
+.voxel-session__chat header,
+.voxel-session__chat nav {
+  flex-wrap: wrap;
+}
+.voxel-session__chat-lines {
+  max-height: min(40vh, 22rem);
+  overflow: auto;
+  padding-inline-start: 1.5rem;
+  overflow-wrap: anywhere;
+}
+.voxel-session__chat-lines li {
+  padding-block: 0.4rem;
+  border-bottom: 1px solid #ffffff30;
+}
+.voxel-session__chat-lines bdi {
+  white-space: pre-wrap;
+}
+.voxel-session__chat textarea {
+  display: block;
+  width: 100%;
+  min-height: 4rem;
+  box-sizing: border-box;
+  color: #10263a;
+  background: white;
+  font: inherit;
+}

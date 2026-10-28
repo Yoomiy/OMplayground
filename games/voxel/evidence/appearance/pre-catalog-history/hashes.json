@@ -1,0 +1,46 @@
+{
+  "buildId": "8fbded24fedc1e469a5534f11b870fbfa3124d4d9c16ba72871b948707261788",
+  "sourceLayout": "game-relative",
+  "files": [
+    {
+      "path": "browser-equipment.json",
+      "hash": "8c7568a88dde9a8d9828fa9c4807a558bb11545cc97f13b7cd6e829aa222ac51"
+    },
+    {
+      "path": "browser-suite.json",
+      "hash": "a9943c9a5547f4845a58eb3f7a941a3f8cb74dde0074599306518da20bdec503"
+    },
+    {
+      "path": "build.json",
+      "hash": "1fdfd571bab866ba1d2c40b3345132654d2126dee94296dc715000cf40a72a00"
+    },
+    {
+      "path": "check-exit.json",
+      "hash": "2ba9aaefd73dc5c6ed4cd1e2eb15c53a727329c477edeb6220991abfce9f2fb1"
+    },
+    {
+      "path": "check.log",
+      "hash": "0a33de3325071da69a61ab542bc95f65d1014cc3eefb95882bed660d94eb2f51"
+    },
+    {
+      "path": "release.json",
+      "hash": "4fd1c30c2f0820e67ea77851c43801369689db77774efea89a17aa09b8c37e53"
+    },
+    {
+      "path": "remote-equipment-night.png",
+      "hash": "41dbc5ab995789bababf861d702994e68079e6b9be068ad09660fb8c2e78f7d2"
+    },
+    {
+      "path": "source.tar.gz",
+      "hash": "af672c9798060cab98174a37fd1349562319a9f8b97aff3b57f23c680aceb72a"
+    },
+    {
+      "path": "voxel-appearance-suite-test-equipment-browser.log",
+      "hash": "67222d7d2efe6e4d1bd57a29b329a4915ee9f789f27eeb6a61f94924580fd82a"
+    },
+    {
+      "path": "voxel-appearance-suite-test-equipment-browser.log.exit.json",
+      "hash": "3716c37e2a1af9d45796432511a857fafee03983ef5aac6ab116eec659910361"
+    }
+  ]
+}

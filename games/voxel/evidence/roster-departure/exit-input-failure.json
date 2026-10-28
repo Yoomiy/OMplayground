@@ -1,0 +1,230 @@
+{
+  "events": [
+    {
+      "type": "pointerdown",
+      "tag": "BUTTON",
+      "text": "יציאה",
+      "fullscreen": true,
+      "pointerLock": false,
+      "time": 56431.200000047684
+    },
+    {
+      "type": "mousedown",
+      "tag": "BUTTON",
+      "text": "יציאה",
+      "fullscreen": true,
+      "pointerLock": false,
+      "time": 56433.10000014305
+    },
+    {
+      "type": "pointerup",
+      "tag": "BUTTON",
+      "text": "יציאה",
+      "fullscreen": true,
+      "pointerLock": false,
+      "time": 56433.800000190735
+    },
+    {
+      "type": "mouseup",
+      "tag": "BUTTON",
+      "text": "יציאה",
+      "fullscreen": true,
+      "pointerLock": false,
+      "time": 56434.60000014305
+    },
+    {
+      "type": "click",
+      "tag": "BUTTON",
+      "text": "יציאה",
+      "fullscreen": true,
+      "pointerLock": false,
+      "time": 56434.800000190735
+    },
+    {
+      "type": "fullscreenchange",
+      "fullscreen": false,
+      "pointerLock": false,
+      "time": 56475.300000190735
+    }
+  ],
+  "state": {
+    "exitCalls": 2,
+    "fullscreen": false,
+    "pointerLock": false,
+    "root": false,
+    "runtime": {
+      "disposed": true,
+      "inputMode": "desktop",
+      "mode": "survival",
+      "lifecycle": "ended",
+      "worldPauseReason": "manual",
+      "worldTick": 7.5,
+      "mining": {
+        "target": null,
+        "elapsed": 0,
+        "total": 0
+      },
+      "vitals": null,
+      "combat": false,
+      "hit": null,
+      "lastHitEvent": null,
+      "lastExplosionEvent": null,
+      "explosives": [],
+      "canIgnite": false,
+      "miningHeld": false,
+      "drops": [],
+      "selectedSlot": 0,
+      "environment": {
+        "tick": 0,
+        "seconds": 0,
+        "dayFraction": 0.22,
+        "daylight": 1,
+        "sun": [
+          0.17947874846950068,
+          0.9408605483855575,
+          0.2873478855663454
+        ],
+        "sky": [
+          0.59,
+          0.76,
+          0.88
+        ],
+        "rain": 0,
+        "wind": [
+          0.3,
+          0
+        ],
+        "openSky": false
+      },
+      "atmosphere": {
+        "rainLines": 0,
+        "stars": false,
+        "clouds": 0,
+        "sun": false,
+        "moon": false
+      },
+      "avatars": {
+        "visible": 0,
+        "capacity": 0,
+        "samples": [],
+        "equipment": {
+          "visible": 0,
+          "held": 0,
+          "worn": 0,
+          "kinds": 0,
+          "capacity": 0,
+          "samples": []
+        }
+      },
+      "renderOrigin": {
+        "x": 48,
+        "z": 0
+      },
+      "feedback": {
+        "held": {
+          "state": -1,
+          "itemType": null,
+          "visible": false,
+          "swings": 0
+        },
+        "effects": {
+          "live": 0,
+          "bursts": 0,
+          "hits": 0,
+          "explosions": 0
+        },
+        "drops": {
+          "visible": 0,
+          "kinds": 0
+        },
+        "explosives": {
+          "visible": 0,
+          "capacity": 0,
+          "flashing": 0
+        },
+        "vision": false
+      },
+      "audio": {
+        "supported": true,
+        "contexts": 0,
+        "state": "closed",
+        "active": false,
+        "muted": false,
+        "voices": 0,
+        "effects": 5,
+        "gain": 0,
+        "dropped": 0,
+        "listener": [
+          53.8198,
+          68.62,
+          3.928
+        ],
+        "lastSource": [
+          53.40040588378906,
+          67.0199966430664,
+          3.5951056480407715
+        ]
+      },
+      "renderLimitHz": 0,
+      "touch": {
+        "x": 0,
+        "z": 0,
+        "jump": false,
+        "sneak": false,
+        "sprint": false
+      },
+      "focused": false,
+      "visible": "visible",
+      "hasFocus": true,
+      "lastFrame": 51006.9,
+      "lastUpdate": 51024,
+      "resources": {
+        "geometries": 0,
+        "textures": 0,
+        "workers": 0
+      },
+      "actorId": "15b18bb4-f248-43a3-b1f2-a2f3439fe18f",
+      "worldId": "f5472e22-f340-4573-a781-6dcc98666d08",
+      "body": null,
+      "view": {
+        "yaw": -0.9,
+        "pitch": 0.55
+      },
+      "lastResult": null,
+      "inventory": null,
+      "inventoryOpen": false,
+      "inventoryPending": false,
+      "recentEdits": [],
+      "status": "paused",
+      "phase": "preparing",
+      "position": [
+        53.8198,
+        67,
+        3.928
+      ],
+      "selected": 0,
+      "players": 1,
+      "render": {
+        "uploadedBytes": 1835064,
+        "columns": 0,
+        "drawCalls": 19,
+        "triangles": 14524,
+        "uploadMs": 0.20000004768371582,
+        "prepareMs": 529.7999999523163,
+        "gpu": {
+          "submitted": 21,
+          "skipped": 298,
+          "pending": 0,
+          "failures": 0
+        }
+      },
+      "target": null,
+      "targetState": null,
+      "targetNormal": null,
+      "actionPending": 0,
+      "queuedAction": null,
+      "actionSequence": 0,
+      "lastReceivedAgoMs": 23084.400000095367
+    }
+  }
+}

@@ -1,0 +1,1 @@
+{"result":"NOT_READY","schema":1,"privateBucket":true,"sessionProjectionSchema":1,"controlsSchema":1,"rosterSchema":1,"staffSchema":null,"checks":{"checkpoint":{"ready":true},"projection":{"ready":true},"controls":{"ready":true},"roster":{"ready":true},"staff":{"ready":false,"code":"PGRST202","operation":"voxel_staff_status"}},"checkedAt":"2026-10-26T08:56:10.338Z"}

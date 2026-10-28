@@ -1,0 +1,21 @@
+
+> @playground/voxel@0.1.0 test:touch:browser
+> node tools/browser-touch.ts
+
+Testing touch jump
+Testing simultaneous joystick and look
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: cancelled movement must stop
+    at file:///home/ubuntu/OMplayground/games/voxel/tools/browser-touch.ts:171:10 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.21.0

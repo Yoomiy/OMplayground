@@ -1,0 +1,11 @@
+✔ same-epoch resynchronization never reuses an already transmitted input identity (49.570568ms)
+✔ prediction replays equipment and hunger profiles through epoch changes with delayed snapshots (50.263211ms)
+✔ prediction replays delayed snapshots within one centimeter on an unchanged world (45.219385ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 572.381377

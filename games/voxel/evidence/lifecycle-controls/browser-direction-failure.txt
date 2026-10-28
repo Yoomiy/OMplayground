@@ -1,0 +1,16 @@
+
+> @playground/voxel-server@0.1.0 test:browser:lifecycle
+> node tools/browser-lifecycle.ts
+
+Resumed movement diagnostic {"pausedPosition":[47.3944,68,-0.7],"position":[71.7,67,-2.6958483143979906],"body":{"position":[71.7,67,-2.6958483143979906],"onGround":1,"inWater":0,"eyesInWater":0,"frozen":0,"flying":0,"velocity":[0,0,-0.2468125551180282]},"focused":true,"lifecycle":"playing","phase":"playing","status":"playing","view":{"yaw":-1.6280000000000001,"pitch":0.424},"target":null,"targetNormal":null,"inputLag":11,"inputs":[[{"x":0,"z":1,"yaw":-1.6280000000000001,"pitch":0.424,"jump":false,"sneak":false,"sprint":false,"epoch":8,"sequence":535},{"x":0,"z":1,"yaw":-1.6280000000000001,"pitch":0.424,"jump":false,"sneak":false,"sprint":false,"epoch":8,"sequence":536},{"x":0,"z":1,"yaw":-1.6280000000000001,"pitch":0.424,"jump":false,"sneak":false,"sprint":false,"epoch":8,"sequence":537}],[{"x":0,"z":1,"yaw":-1.6280000000000001,"pitch":0.424,"jump":false,"sneak":false,"sprint":false,"epoch":8,"sequence":538},{"x":0,"z":1,"yaw":-1.6280000000000001,"pitch":0.424,"jump":false,"sneak":false,"sprint":false,"epoch":8,"sequence":539}],[{"x":0,"z":1,"yaw":-1.6280000000000001,"pitch":0.424,"jump":false,"sneak":false,"sprint":false,"epoch":8,"sequence":540},{"x":0,"z":1,"yaw":-1.6280000000000001,"pitch":0.424,"jump":false,"sneak":false,"sprint":false,"epoch":8,"sequence":541},{"x":0,"z":1,"yaw":-1.6280000000000001,"pitch":0.424,"jump":false,"sneak":false,"sprint":false,"epoch":8,"sequence":542},{"x":0,"z":1,"yaw":-1.6280000000000001,"pitch":0.424,"jump":false,"sneak":false,"sprint":false,"epoch":8,"sequence":543}],[{"x":0,"z":1,"yaw":-1.6280000000000001,"pitch":0.424,"jump":false,"sneak":false,"sprint":false,"epoch":8,"sequence":544},{"x":0,"z":1,"yaw":-1.6280000000000001,"pitch":0.424,"jump":false,"sneak":false,"sprint":false,"epoch":8,"sequence":545}],[{"x":0,"z":1,"yaw":-1.6280000000000001,"pitch":0.424,"jump":false,"sneak":false,"sprint":false,"epoch":8,"sequence":546},{"x":0,"z":1,"yaw":-1.6280000000000001,"pitch":0.424,"jump":false,"sneak":false,"sprint":false,"epoch":8,"sequence":547}],[{"x":0,"z":1,"yaw":-1.6280000000000001,"pitch":0.424,"jump":false,"sneak":false,"sprint":false,"epoch":8,"sequence":548},{"x":0,"z":1,"yaw":-1.6280000000000001,"pitch":0.424,"jump":false,"sneak":false,"sprint":false,"epoch":8,"sequence":549},{"x":0,"z":1,"yaw":-1.6280000000000001,"pitch":0.424,"jump":false,"sneak":false,"sprint":false,"epoch":8,"sequence":550}],[{"x":0,"z":1,"yaw":-1.6280000000000001,"pitch":0.424,"jump":false,"sneak":false,"sprint":false,"epoch":8,"sequence":551},{"x":0,"z":1,"yaw":-1.6280000000000001,"pitch":0.424,"jump":false,"sneak":false,"sprint":false,"epoch":8,"sequence":552},{"x":0,"z":1,"yaw":-1.6280000000000001,"pitch":0.424,"jump":false,"sneak":false,"sprint":false,"epoch":8,"sequence":553},{"x":0,"z":1,"yaw":-1.6280000000000001,"pitch":0.424,"jump":false,"sneak":false,"sprint":false,"epoch":8,"sequence":554}],[{"x":0,"z":1,"yaw":-1.6280000000000001,"pitch":0.424,"jump":false,"sneak":false,"sprint":false,"epoch":8,"sequence":555}]]}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+page.waitForFunction: Timeout 15000ms exceeded.
+    at /home/ubuntu/OMplayground/apps/voxel-server/tools/browser-lifecycle.ts:231:15 {
+  log: [],
+  name: 'TimeoutError'
+}
+
+Node.js v24.21.0

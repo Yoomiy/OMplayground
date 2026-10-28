@@ -1,0 +1,5 @@
+
+> @playground/voxel@0.1.0 verify:release
+> node tools/verify-release.mjs
+
+Verified current source/content and 12 release files: 2140097fdcb8

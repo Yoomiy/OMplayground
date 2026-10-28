@@ -1,0 +1,43 @@
+✔ fenced SQL commands deny nonhosts, recheck host/role, order idempotent requests and audit staff exactly once (296.369019ms)
+✔ control completion cannot claim an uncommitted save; fresh expiry and stale owners cannot mutate intent (1206.119492ms)
+✔ real school HTTP controls fail unsaved, retry once, resume, end with a committed receipt and replay after terminal retirement (3402.077463ms)
+✔ real concurrent acquisition yields one owner; retry is idempotent and expired takeover retains world identity (146.377222ms)
+✔ renewal checks the database clock after waiting for the owner row lock (538.401955ms)
+✔ two transactions racing one sequence commit one whole graph and exact retry cannot duplicate history (349.264459ms)
+✔ expired or replaced owner cannot commit, renew or release the new epoch (313.257337ms)
+✔ corrupt graph suffixes or unconfirmed uploads roll back pointer, history and every reference (580.277865ms)
+✔ browser roles cannot read metadata or execute RPCs; service writes require RPCs and the bucket is private (171.900498ms)
+✔ retention keeps active/shared objects; garbage claims fence uploads and stale deletion workers (400.013769ms)
+✔ cleanup skips uncommitted graph locks and rechecks references before claiming deletion (458.961836ms)
+✔ session removal retains orphan object addresses for subsequent Storage cleanup (113.827475ms)
+✔ old active references cannot starve a bounded garbage-collection batch (1916.481472ms)
+✔ commit rechecks expiry after object locks and cannot leave partial history after a delayed upload lock (554.792031ms)
+✔ self-departure reassigns the host with fresh aligned names and revision-fences old admissions; retry cannot remove a later rejoin (232.10485ms)
+✔ connected participants and live last-owner retirement cannot be dismissed; the released empty roster becomes terminal without claiming a save (200.814189ms)
+✔ departure checks fresh profiles, scope and the database clock after a row-lock wait, with atomic rollback (624.762788ms)
+✔ the real SDK/HTTP self-departure route binds the verified subject, rejects forged targets and allocates no worker (248.039803ms)
+✔ a never-opened roster receives guarded metadata without a worker and browser roles cannot read departure receipts or undo removal (155.227462ms)
+✔ membership acceptance rechecks its own proof expiry after waiting for the session row even with a live owner (540.205886ms)
+✔ an active child can remove their own old partition membership without gaining cross-partition play authority (113.365514ms)
+✔ real SDK and PostgreSQL carry a committed room across worker failure, ambiguous commit and new ownership (1122.121ms)
+✔ production composition verifies real schemas, serves authenticated APIs without a prototype launcher and drains idempotently (215.600976ms)
+✔ scoped session API reads real metadata across staff partitions and completed rosters without allocating or exposing diagnostic payloads (492.669672ms)
+✔ SDK projection persists accepted membership and derives aligned presence/names and host reassignment without exposing staff (369.565474ms)
+✔ out-of-order, expired, released and replaced owner projections cannot overwrite newer state; completion is irreversible (308.762399ms)
+✔ database checks lease expiry after row-lock wait and pause intent denies late newcomer acceptance (610.024044ms)
+✔ all session mutations recheck lease expiry after waiting for the platform session row (1708.3719ms)
+✔ browser roles and browser-invoked legacy definer RPCs cannot write allocated sessions; unrelated sessions retain policy (155.838786ms)
+✔ school SDK/native worker preserve an accepted guest through paused renewal/reconnect, hide staff, reassign host and save empty presence (8641.367532ms)
+✔ SQL staff authority is fresh, audit is idempotent and application receipts never claim a checkpoint (364.427853ms)
+✔ SQL dispatched commands cannot execute or complete under a replacement owner; a fresh explicit request remains possible (178.987211ms)
+✔ SQL staff proofs and completion recheck the clock after platform/audit row waits and roll back partial results (1094.728686ms)
+✔ native SDK/SQL staff controls change mode and teleport only the verified hidden staff actor with one audited receipt (1375.984122ms)
+✔ SQL inactive or demoted kid-profile rows cannot fall through to a second admin profile for staff or lifecycle authority (322.441503ms)
+ℹ tests 35
+ℹ suites 0
+ℹ pass 35
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 34658.785874

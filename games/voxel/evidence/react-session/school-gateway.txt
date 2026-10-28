@@ -1,0 +1,14 @@
+✔ school admission supports the configured browser origin and rejects foreign preflights before authenticating (163.660904ms)
+✔ an inactive account or rotated invitation cannot consume an earlier ticket and allocates no world (92.096281ms)
+✔ school staff observe invisibly and fly in survival while player participation retains school partition rules (421.546179ms)
+✔ the school SDK refreshes an offline TNT owner, holds through profile outages and fizzles after account deactivation (4826.241794ms)
+✔ recess closure pauses earned world time and TNT while staff inspect; earlier tickets cannot override it and fresh admission resumes (2982.694725ms)
+✔ connected school accounts lose authority on revocation and provider outages close with a retryable recovery reason (5204.033963ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 14157.246802

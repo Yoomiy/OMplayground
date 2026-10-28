@@ -1,0 +1,51 @@
+{
+  "result": "INCOMPLETE",
+  "room": "voxel-escrow-qualification-f93c4839-12fb-445e-bd57-7b7aff53729c",
+  "schoolDatabaseWrites": 0,
+  "scope": "Actual self-hosted LiveKit, private signaling worker and generated test audio; no school/Auth/UI deployment qualification",
+  "upgrades": [
+    {
+      "path": "/voxel-media/rtc/v1",
+      "queryLength": 2411,
+      "queryValid": true
+    }
+  ],
+  "initial": {
+    "connected": false,
+    "error": {
+      "name": "ConnectionError",
+      "code": 1,
+      "description": "could not establish signal connection: Received leave request while trying to (re)connect"
+    },
+    "expiresAt": 1793041128453
+  },
+  "stage": "initial-escrow-media",
+  "error": {
+    "name": "AssertionError",
+    "description": "The expression evaluated to a falsy value:\n\n  assert(result.initial.connected)\n"
+  },
+  "finalSignalStats": {
+    "sessions": 0,
+    "tickets": 0,
+    "filteredTokens": 0,
+    "protocolClosures": 0,
+    "expired": 0,
+    "failed": false,
+    "closed": false
+  },
+  "finalBrowserState": {
+    "phase": "connecting",
+    "state": "disconnected",
+    "initial": {
+      "connected": false,
+      "error": {
+        "name": "ConnectionError",
+        "code": 1,
+        "description": "could not establish signal connection: Received leave request while trying to (re)connect"
+      },
+      "expiresAt": 1793041128453
+    }
+  },
+  "cleaned": true,
+  "checkedAt": "2026-10-26T18:58:45.486Z"
+}

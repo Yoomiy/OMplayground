@@ -1,0 +1,675 @@
+{
+  "result": "LOCAL_AND_READ_ONLY_PROVIDER_PASS_WITH_HOSTED_JOURNEY_AND_CONTAINER_LIMITATIONS",
+  "capturedAt": "2026-10-26T09:47:20.720655+00:00",
+  "buildId": "66a9ff4dc9d4a0a38acdffdb68a05776d271c445395bd1d1a3d379208b584e68",
+  "counts": {
+    "classroom": 69,
+    "observability": 32,
+    "legacyGame": 120,
+    "drawingAndCapabilities": 19,
+    "web": 90
+  },
+  "sourceFiles": 650,
+  "classroomSourceModules": 15,
+  "classroomProductionFiles": 30,
+  "classroomRoutes": 20,
+  "gameImports": 0,
+  "unchangedCoreSourceInputs": 182,
+  "coreEvidence": "games/voxel/evidence/staff-commands/verification.json",
+  "hostedVoxelSchemas": 5,
+  "installedStaffFunctionsMatch": 6,
+  "classroomProviderReadinessOnly": true,
+  "agentRemoteApplicationWrites": false,
+  "deployment": false,
+  "containerQualified": false,
+  "priorStaffArchiveUnchanged": true,
+  "limitations": [
+    "Classroom combined flows use fixture providers; actual Auth/WebRTC/browser/cookie/board/presentation/restart/outage qualification remains open",
+    "Actual hosted reads establish base-table and LiveKit API connectivity, not a hosted classroom journey",
+    "Guarded voxel startup uses five status RPCs and zero rooms; full hosted school/checkpoint/worker recovery remains open",
+    "Docker image and CI are prepared but not executed locally",
+    "Remaining voxel moderation/chat/voice, survival balance/bucket UI, device/network/load/capacity and cutover/legacy removal remain required"
+  ],
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "813fd16e1ca1599794af71e1627ec3b03fa958278c3ec322b5bb7c237a87f914"
+    },
+    {
+      "path": "before-extraction/legacy-index.ts",
+      "sha256": "b0295c402b877e20c05586b8802c3cb7f5c4f52b203048de21df4c4ceb78e7ed"
+    },
+    {
+      "path": "before-extraction/legacy-livekitService.test.ts",
+      "sha256": "304f0fd569b162787c1c113244d69449a021b23aa5bb863f8067cb68870da284"
+    },
+    {
+      "path": "before-extraction/legacy-livekitService.ts",
+      "sha256": "f1d42e50c5ab191c4d40ad28615e9461ff488ac5473d82c759a829aeafed31c9"
+    },
+    {
+      "path": "boundary.txt",
+      "sha256": "0b61fef66f67fb9e30b4fbb0e589f372ef2678e712387707383887e7bcb4aec4"
+    },
+    {
+      "path": "capture.py",
+      "sha256": "5a2bd26f8756af3d45014ad5a8171b426227613c5e68560ed8ca547914ec3d4e"
+    },
+    {
+      "path": "classroom-boundary.json",
+      "sha256": "a8c7ba91646e24a6df3da9d0a2e1f98aed97ebe096391009c6d2efac20676e02"
+    },
+    {
+      "path": "classroom-production/classroomAttendance.js",
+      "sha256": "95531e14f437d7adc25743492ea99c4ac400dddc46faad79172dd671443d2124"
+    },
+    {
+      "path": "classroom-production/classroomAttendance.js.map",
+      "sha256": "ad9898c96e0f0f0c24fff4a555115d7f3176d1b09c136e412df22363a500e3a2"
+    },
+    {
+      "path": "classroom-production/classroomBoardToken.js",
+      "sha256": "a842cf7115d6e55c662202f9df7aa72e7d7be6044e5396233800d8f1cebcff5c"
+    },
+    {
+      "path": "classroom-production/classroomBoardToken.js.map",
+      "sha256": "c56168c4c09e5ae077fe6f9ba0d0bbbafb75e79b2ead2524b47c015952c13e87"
+    },
+    {
+      "path": "classroom-production/classroomDelegates.js",
+      "sha256": "8537e95eb828f3cec55268974068fa477db0e3faf7868afb8bb2fc81f4603150"
+    },
+    {
+      "path": "classroom-production/classroomDelegates.js.map",
+      "sha256": "de80c6ef0f7755cf322d419eb06a970417bb131ac462a886acc0cea473a343df"
+    },
+    {
+      "path": "classroom-production/classroomDrawingSession.js",
+      "sha256": "4a913567b7453244c98d949df9ac131ac8ec4f76de5cbd5af0e9a57e74ea31af"
+    },
+    {
+      "path": "classroom-production/classroomDrawingSession.js.map",
+      "sha256": "90618620b1ccf3b9a23c7f890883408f4f07d0a6136fd030b46eb9b2ff784ba2"
+    },
+    {
+      "path": "classroom-production/classroomParticipantBlocks.js",
+      "sha256": "21bbf7908c5aeffbd83d21d76c2feb245a26bbdce0653691fdc9db3d11c6dcca"
+    },
+    {
+      "path": "classroom-production/classroomParticipantBlocks.js.map",
+      "sha256": "e65d2f5043fd19ce4a0cdfb2e23032e17a1799405aceec7c23e874e87d60f518"
+    },
+    {
+      "path": "classroom-production/classroomPresence.js",
+      "sha256": "25291bbe8045453d70ed377845ba8835bba0be9eb26347ac1f0f2f9d905afa57"
+    },
+    {
+      "path": "classroom-production/classroomPresence.js.map",
+      "sha256": "f30331ce347c43604a299bfc71909c878b42be7fa0b82671b40b99f7ea353e54"
+    },
+    {
+      "path": "classroom-production/classroomPresentation.js",
+      "sha256": "a88c96b06775b92912eabeea1a4c1f4c660726aa1ca487a1a0bd55fad18823ac"
+    },
+    {
+      "path": "classroom-production/classroomPresentation.js.map",
+      "sha256": "9afc3f9d8316fbbb35ae68da05ee80029f973f25cf22757e0e5d5666d70097a6"
+    },
+    {
+      "path": "classroom-production/classroomPresenterAssignment.js",
+      "sha256": "a01934924306b26febd57dc5b1a64e81a36ae4783a4aefaa12523526f7df1069"
+    },
+    {
+      "path": "classroom-production/classroomPresenterAssignment.js.map",
+      "sha256": "7afadae4d5c64b1ce204b38ba2bd2b66ffb3e88915a5a2e14e5341d7fda9a7c3"
+    },
+    {
+      "path": "classroom-production/classroomSecurity.js",
+      "sha256": "c2e7fa84c00b40c9be53687f5acc939ce9009dade15465de0559bbb7b0d5681e"
+    },
+    {
+      "path": "classroom-production/classroomSecurity.js.map",
+      "sha256": "aa1bbc83a0c7d1ffd32004329775e4c4e59245738f59a7c922da72fb341a9a15"
+    },
+    {
+      "path": "classroom-production/config.js",
+      "sha256": "e7f313a4e09efa58f86736681f4a72c39d64c189f6aa8cc93a88bcb1997d89f5"
+    },
+    {
+      "path": "classroom-production/config.js.map",
+      "sha256": "f53299e2f4ddd8cb4f426abb2be1a0524ae7b06b50e984fc6473cbd360f00ecc"
+    },
+    {
+      "path": "classroom-production/index.js",
+      "sha256": "923d577ac603b5697c930069e930fc8ed75286919b7e621d6fae99dfeaca907a"
+    },
+    {
+      "path": "classroom-production/index.js.map",
+      "sha256": "2de10f957c361333b2135b49853781ed1bfd75817b3e86aa74d024bae9ae537b"
+    },
+    {
+      "path": "classroom-production/livekitService.js",
+      "sha256": "4e8edaef1f6a24ebc37845289e6ef4b06884845af2ce6d9110e13bef2fb3fba9"
+    },
+    {
+      "path": "classroom-production/livekitService.js.map",
+      "sha256": "ba7d8b083b639795ef51ca1cc8838acd4f12aef383b4135a57f5414bf49d34c0"
+    },
+    {
+      "path": "classroom-production/routes.js",
+      "sha256": "dfdbc46fdf09a44edf6915bdd6b12b86a65037e1b51b71dfdf7bdbfedb87cd74"
+    },
+    {
+      "path": "classroom-production/routes.js.map",
+      "sha256": "b0194d2a99b992808a0d7d6304687a28633edfc6f76671891ff32f6221dcef53"
+    },
+    {
+      "path": "classroom-production/schoolIdentity.js",
+      "sha256": "f9cd20b20b028fbcb34669ab8c44b70632b14e2c29c99ae83e81be3ec925b239"
+    },
+    {
+      "path": "classroom-production/schoolIdentity.js.map",
+      "sha256": "e796177ba73c7204fea5d63ec71192b1ef16ff01e40fdcbf169fd94b66420ff4"
+    },
+    {
+      "path": "classroom-production/service.js",
+      "sha256": "9073c65d9ea16eb28bceb05cbbe92d37ebf033189cf1e2ce8c4a996bf273b693"
+    },
+    {
+      "path": "classroom-production/service.js.map",
+      "sha256": "bd4f10d4b3c2609bbc8614a76af31c19871a3ef90c46e1f0d115e5e7cfca21c7"
+    },
+    {
+      "path": "drawing-tests.txt",
+      "sha256": "0c29d0cdff16f12c1b1252f67353ccc93bc1525ee01a14f39f7e515fd1dbf20b"
+    },
+    {
+      "path": "game-build.json",
+      "sha256": "e9df2c8c75822eb2807102784e36a02a1381d5e40f17309720dab25f2652271e"
+    },
+    {
+      "path": "game-release.json",
+      "sha256": "b0057e34d2e4eea26024d282ebd1c9d464bcf6030e0085da7b8289969f376cb4"
+    },
+    {
+      "path": "game-release.txt",
+      "sha256": "3f2b36c1508473ea1ff181ca6509556b99d03e61d5387cbed0926bac31311b61"
+    },
+    {
+      "path": "hosted-ready.json",
+      "sha256": "befbc57f8756c80abe47e1bd6414f53e2ff8db45834a8dd466fbe5c66cd3ff26"
+    },
+    {
+      "path": "legacy-tests.txt",
+      "sha256": "dd62e1d6fda67cea2986be4a2429a9a9320d78e26226e64d4e8021fd93803f7f"
+    },
+    {
+      "path": "legacy-types.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "lock.txt",
+      "sha256": "3e0550256b7fb698b0622a187136ef56928f85074c09a4d5969811a410789b0b"
+    },
+    {
+      "path": "observability-production/__tests__/classroomAdmissionIp.test.d.ts",
+      "sha256": "ebc2458047f94834a02e894716c03aa6f2e6202d14b57d5842ec43dcaeebd0b6"
+    },
+    {
+      "path": "observability-production/__tests__/classroomAdmissionIp.test.d.ts.map",
+      "sha256": "940abe3c88bc87849840ea41fa5113a389d49e7c4bace41aa4e448737692643e"
+    },
+    {
+      "path": "observability-production/__tests__/classroomAdmissionIp.test.js",
+      "sha256": "e56e15913b0d13e9157892122c3a1dd6c061c1c1da173a5f175aad9245992076"
+    },
+    {
+      "path": "observability-production/__tests__/classroomAdmissionIp.test.js.map",
+      "sha256": "72baef082060f0f7b040f16a5cf8a503408a17ad8506dc84d5cedba64cc87fa0"
+    },
+    {
+      "path": "observability-production/__tests__/classroomWebhook.test.d.ts",
+      "sha256": "89a2821e35a423d58fed30131b762879254efe023ec69de654c892c973fdc27f"
+    },
+    {
+      "path": "observability-production/__tests__/classroomWebhook.test.d.ts.map",
+      "sha256": "b71fb5f934b0f368ba16e5696c40814c0950a1f0fd33dab5446e68518b8701ab"
+    },
+    {
+      "path": "observability-production/__tests__/classroomWebhook.test.js",
+      "sha256": "c78196fdae857dc897195daa3502da72afff3fb1e552c0273642ff8b31ca0c23"
+    },
+    {
+      "path": "observability-production/__tests__/classroomWebhook.test.js.map",
+      "sha256": "4bc2fb8e852317c628bde4bdbfcb7fdec96c24915915f8110090e768e1484aa1"
+    },
+    {
+      "path": "observability-production/__tests__/clientIp.test.d.ts",
+      "sha256": "fe5c5612443e76455ec29772ad9f09263efd6216b88771895ea4a7a466328042"
+    },
+    {
+      "path": "observability-production/__tests__/clientIp.test.d.ts.map",
+      "sha256": "e7bc3033d202e3edf7c7106d55941361f209cfde921acb4f621f5405dfb7230d"
+    },
+    {
+      "path": "observability-production/__tests__/clientIp.test.js",
+      "sha256": "200f572e5f4e3034580630e2b0857621c504a48cce5c943959b84d94a9026eb8"
+    },
+    {
+      "path": "observability-production/__tests__/clientIp.test.js.map",
+      "sha256": "13cab094c0d5c5d5b03729526a18b8cdf2e71edbc9f8513e50b692cfd0473902"
+    },
+    {
+      "path": "observability-production/__tests__/observability.test.d.ts",
+      "sha256": "58075a4f569d0d2591e439c1a73f2e3d0c3fd7f2b305be6de558e52c44c05767"
+    },
+    {
+      "path": "observability-production/__tests__/observability.test.d.ts.map",
+      "sha256": "e6a197d8a371d47626dd079afaca345bdc19a45e8e652260627f0795815879d4"
+    },
+    {
+      "path": "observability-production/__tests__/observability.test.js",
+      "sha256": "8af9e466e0ccebd1722a1cdea673304c10badd00825b2ce9a83ec8c982c9aa29"
+    },
+    {
+      "path": "observability-production/__tests__/observability.test.js.map",
+      "sha256": "c8f0eea3ca7a3a9402cf2cf159a13777bcc585fe7cbce2b92788599440f2cc3a"
+    },
+    {
+      "path": "observability-production/__tests__/processLifecycle.test.d.ts",
+      "sha256": "ca90e177d9a7c504d82de89bca37c372ae6f18ff7033aa7d16bc120a0da1d752"
+    },
+    {
+      "path": "observability-production/__tests__/processLifecycle.test.d.ts.map",
+      "sha256": "776989141e4be5384cf8a1996a2d7c9f4b43902e865bf09b3646a5e2f1d4be7a"
+    },
+    {
+      "path": "observability-production/__tests__/processLifecycle.test.js",
+      "sha256": "f1e0e4ee27bea8f5bb37a36926a2f58260a6b31b89234aa02bfc0b2e73ddce5a"
+    },
+    {
+      "path": "observability-production/__tests__/processLifecycle.test.js.map",
+      "sha256": "6755bf840a55651c60623f6fa2470d9d212414c130d8baaf3254d608af7a6543"
+    },
+    {
+      "path": "observability-production/adminAuth.d.ts",
+      "sha256": "177a8ca7f7c8545ce9a1ffbf5ca23b3767155d1d73e5cf7b56f660fd53dafb7b"
+    },
+    {
+      "path": "observability-production/adminAuth.d.ts.map",
+      "sha256": "004546c714cd1ac2feb53bf09f349a1a4b33b1b7f675d973e92087d42927bb26"
+    },
+    {
+      "path": "observability-production/adminAuth.js",
+      "sha256": "dc4e6e1761c6c4d43aafa2ace0d2a28a7fa1bde23baf726eb523417dc3c4dff8"
+    },
+    {
+      "path": "observability-production/adminAuth.js.map",
+      "sha256": "59ff6c2d4fe8b00ac6e50b5cb74eb8285cbe1dfceb5f40cf6db2b706976e4afe"
+    },
+    {
+      "path": "observability-production/auditMetadata.d.ts",
+      "sha256": "d1fec4c470b65d1839f17836b9b749cb0ccdba56a8397498dc9d3d055b8ee8bf"
+    },
+    {
+      "path": "observability-production/auditMetadata.d.ts.map",
+      "sha256": "f1736612803f9e49c25511f8958c70dc4211a5547eb65f2384a1bf64ffdd9189"
+    },
+    {
+      "path": "observability-production/auditMetadata.js",
+      "sha256": "324580518cb309b448ec4bab8767ecf3ee73da7ee3aa0961b8bb0e998128f8db"
+    },
+    {
+      "path": "observability-production/auditMetadata.js.map",
+      "sha256": "1e0eea2783eb79ac527aa352fa3ac53b80ee22967a07205dbf7dae6c28b9f955"
+    },
+    {
+      "path": "observability-production/classroomAdmissionIp.d.ts",
+      "sha256": "dbafc3afc78761dc77abb0626c2f124ab89ae8d432ae380aa4329a905eca6636"
+    },
+    {
+      "path": "observability-production/classroomAdmissionIp.d.ts.map",
+      "sha256": "ade1ec6ffa4cd4c55a79869115f2c7ebf1ea101d5724491f7f29e7d8f82f75f4"
+    },
+    {
+      "path": "observability-production/classroomAdmissionIp.js",
+      "sha256": "d7d837bbdb8e0ac5ab42f935298d750cc653a4778b94f033c68ce56415ebdd5e"
+    },
+    {
+      "path": "observability-production/classroomAdmissionIp.js.map",
+      "sha256": "ccdd818cbca7d734a85f1d365f68107b919386bb709c62d669b10c440abde0cf"
+    },
+    {
+      "path": "observability-production/clientIp.d.ts",
+      "sha256": "95c3a3ffabc7abedd119b3886994b907ccd4501e47148165679e8a35c849a207"
+    },
+    {
+      "path": "observability-production/clientIp.d.ts.map",
+      "sha256": "d942152ec508b33ddabf99fea8d3e4a31cc994182ff4de967f9923788fa4cdc2"
+    },
+    {
+      "path": "observability-production/clientIp.js",
+      "sha256": "f0968063006eaf5ddb1bc61d31f374c1349b712d0ece1fd8d4e3c03a6f76cff0"
+    },
+    {
+      "path": "observability-production/clientIp.js.map",
+      "sha256": "c3c2ae5f6809f44e1ea03b9546ff9db56f420a66ff4ea93ea3e6c098e5bb6892"
+    },
+    {
+      "path": "observability-production/correlation.d.ts",
+      "sha256": "eeb1779d0647d6cbb2f1ed0238cd15b95ea3a43411b810a45ee90def8f8ff1c5"
+    },
+    {
+      "path": "observability-production/correlation.d.ts.map",
+      "sha256": "93dee39bffa7ba6d9ba3a75520d421cb6446aa2afbcd00c1f6d563e48bb307f4"
+    },
+    {
+      "path": "observability-production/correlation.js",
+      "sha256": "ee60568e9dcb9e78933f5565fc693d5137696ec5abcbe423a6940d9b954f0353"
+    },
+    {
+      "path": "observability-production/correlation.js.map",
+      "sha256": "ba0f652433b5eaf1bb0eddd4a7f2eda0261ccb883145ebeb3583eec8e3599d2c"
+    },
+    {
+      "path": "observability-production/error.d.ts",
+      "sha256": "5259a7eac7a420bcceccfc19cac0d0c34bd2b8399814e3299b7c5b1785422872"
+    },
+    {
+      "path": "observability-production/error.d.ts.map",
+      "sha256": "9fbfbaa6e60c4c2f7f2d0efa64b62d94197bde76db7a6d4a0c12a2e20a1d49fb"
+    },
+    {
+      "path": "observability-production/error.js",
+      "sha256": "f6ceea6ef5b88cf1aa702e50977cab69b4a3a409bb0f1c52ad9f863806d4b5e6"
+    },
+    {
+      "path": "observability-production/error.js.map",
+      "sha256": "54f6adf7d60aa9dad516c3cc82c9f82f3bfa243fec0025c3d36234358abc4edb"
+    },
+    {
+      "path": "observability-production/index.d.ts",
+      "sha256": "f9711f95c30c3e81ece977b3918058e5196030c995ecc5187a1701932dd9f4a1"
+    },
+    {
+      "path": "observability-production/index.d.ts.map",
+      "sha256": "59b25565cad0d89a4577b1bfe5a90bd554532bc716edbda31c7dbfee24423b2f"
+    },
+    {
+      "path": "observability-production/index.js",
+      "sha256": "8db0981da2f00e337628f7449128b035d430ce6c010e4e702d8f5d57c793d7d5"
+    },
+    {
+      "path": "observability-production/index.js.map",
+      "sha256": "2fc3d8511bd739f208b1c65051a8345968a1ca4f34ec3a1cb3a939027e0bb396"
+    },
+    {
+      "path": "observability-production/livekitVoiceStats.d.ts",
+      "sha256": "601ea55782cca1227538dc882c4e7cc03f3212177c0a71c492669cbd874062d7"
+    },
+    {
+      "path": "observability-production/livekitVoiceStats.d.ts.map",
+      "sha256": "8aa30bc95d14e1ddee1a0ab3a0c5342840e57c60e8dd89b222ecce666dcad001"
+    },
+    {
+      "path": "observability-production/livekitVoiceStats.js",
+      "sha256": "8c32e5a70ec75654fbc3926e752402902b6b620ba4541838a6cc5903d2d611c8"
+    },
+    {
+      "path": "observability-production/livekitVoiceStats.js.map",
+      "sha256": "934d2279d4e561dc0b50f2cdc3d41a08c1b2d27824c9568683b7737e1c5d9e31"
+    },
+    {
+      "path": "observability-production/livekitWebhook.d.ts",
+      "sha256": "0064e286174f80c36583e26f48574e84d48c9da893efe3b7781786c02468be40"
+    },
+    {
+      "path": "observability-production/livekitWebhook.d.ts.map",
+      "sha256": "37de871835cf2fe633140f6857834134885de404e740e7d9324ed195b0231e71"
+    },
+    {
+      "path": "observability-production/livekitWebhook.js",
+      "sha256": "3da4c71b733832828c816796c2986decf70f661ebaceb8fe19d4669cd975fbe3"
+    },
+    {
+      "path": "observability-production/livekitWebhook.js.map",
+      "sha256": "8d1088b16830f08072786f5ad3b8148b1c0d0bd2b7aaa1097b6c5f5c59f92c4a"
+    },
+    {
+      "path": "observability-production/logger.d.ts",
+      "sha256": "26aeb8727d9268331ddb37a2915b847b0e1a3871b29ed9850f2c5aa8beba4958"
+    },
+    {
+      "path": "observability-production/logger.d.ts.map",
+      "sha256": "b9a6199d8a30a04e61060cb4ce5024dd092f1ec70c49cf6cc79acdf550d346ac"
+    },
+    {
+      "path": "observability-production/logger.js",
+      "sha256": "418004bb1b971f2b3fc77fe1f076b8783549a3dd186945db31e8a62d4dfa9901"
+    },
+    {
+      "path": "observability-production/logger.js.map",
+      "sha256": "ba941c304f8dc3492f787d4bf76759133060a8823116999fabecc13ad46bcd63"
+    },
+    {
+      "path": "observability-production/operational.d.ts",
+      "sha256": "e8307503f73ea45f2a5b2e05a7bfd6510ddaaa9eb074a5ffda4d5406f22230e1"
+    },
+    {
+      "path": "observability-production/operational.d.ts.map",
+      "sha256": "2feeaf73b117cec9251e667ee33a5dab37e006abb709934bb55ecb74b5664d56"
+    },
+    {
+      "path": "observability-production/operational.js",
+      "sha256": "c4a4e688fe8fa0870bf503fa23f934cfb0025f8f0606d96ca195633b17cd693f"
+    },
+    {
+      "path": "observability-production/operational.js.map",
+      "sha256": "c11166562a2bcdde849c512f8fce5a19572e079f301a11388226ff4fe02cc067"
+    },
+    {
+      "path": "observability-production/processLifecycle.d.ts",
+      "sha256": "7f4467a48ff1f6a7d5febcf3da57554792fe3e3828b0d18aa1157d2348c640c6"
+    },
+    {
+      "path": "observability-production/processLifecycle.d.ts.map",
+      "sha256": "5bab3868945d93ad364fa72020d35956671ff56a579da499ac94aa679aee3d5e"
+    },
+    {
+      "path": "observability-production/processLifecycle.js",
+      "sha256": "2751bee139c8675ef3268a82f4c538d49a464e9d95e61ca4421db625b6b73484"
+    },
+    {
+      "path": "observability-production/processLifecycle.js.map",
+      "sha256": "745893e5ba4948f1c8796c90ac0c88e1b48c6bf106843e0bf6fcd0f380b26ee2"
+    },
+    {
+      "path": "observability-production/serverSetup.d.ts",
+      "sha256": "1e4f20d3b8477cccf74a3c52f45675279e0eb3adce22adea874d2222b96c97ae"
+    },
+    {
+      "path": "observability-production/serverSetup.d.ts.map",
+      "sha256": "0801359da9bb8b64c9c19f0350e188b4197a328b7f7b3f5189b5aa5e16c02d16"
+    },
+    {
+      "path": "observability-production/serverSetup.js",
+      "sha256": "e0ff3c91c8f83d8863b9afad41b49c3303ab539fc32928bc4f10d4af35c78414"
+    },
+    {
+      "path": "observability-production/serverSetup.js.map",
+      "sha256": "e4f29163570e9b5645c91c82c097a688e72aeddc0cd95d4013a0a168cd85c0d6"
+    },
+    {
+      "path": "observability-production/socketLifecycle.d.ts",
+      "sha256": "a72d5656f443970d51c01abcd1f740032daaf383d747401e5ca4cfb8df77e80f"
+    },
+    {
+      "path": "observability-production/socketLifecycle.d.ts.map",
+      "sha256": "1426568cf93f3b1af94f998560f7b7a855b31ac64c01d51037bf1c99906df91c"
+    },
+    {
+      "path": "observability-production/socketLifecycle.js",
+      "sha256": "0001200e7660b0c7576945aa563e148a4d7762d4b910b0713c40f8eb447ef581"
+    },
+    {
+      "path": "observability-production/socketLifecycle.js.map",
+      "sha256": "b89fabf343778004e0171690c8c9d8a862667af63d5e53e54658b32660939d0e"
+    },
+    {
+      "path": "observability-production/statsCollector.d.ts",
+      "sha256": "6b7ed6966c6b86986610944a6efd1b166ccaef28933f8f47657175b559d47e7f"
+    },
+    {
+      "path": "observability-production/statsCollector.d.ts.map",
+      "sha256": "04ef8c91f11ba0018f502a312f7a5eb6c5206e685e65974b40658e81d096bacb"
+    },
+    {
+      "path": "observability-production/statsCollector.js",
+      "sha256": "ee5ad14a9e9edc11eac735314624c895d10099227521fc8f1a87cc7a4ad4357e"
+    },
+    {
+      "path": "observability-production/statsCollector.js.map",
+      "sha256": "4a9fab5fbeb7715269f5c165a30c54ddf83f301a23db5e344e364fc85563e2d4"
+    },
+    {
+      "path": "observability-production/telemetryIngest.d.ts",
+      "sha256": "a4000f236f23218884c7a3eef0b75f322a17be0dad1d659be8bca4313cfada66"
+    },
+    {
+      "path": "observability-production/telemetryIngest.d.ts.map",
+      "sha256": "c694af359bb4dde26e256dc6b8ad61d02aae85d7e02b9cc2360ccb69c889d6f5"
+    },
+    {
+      "path": "observability-production/telemetryIngest.js",
+      "sha256": "b28ced3873529a8fd327c5b50b8f9310788656ed946e544ae6bd58d96700ff10"
+    },
+    {
+      "path": "observability-production/telemetryIngest.js.map",
+      "sha256": "5dd5f7f3ef27d06039e0efc4399d6601d0e60c31ec6d76a08457f0a55a4b86f6"
+    },
+    {
+      "path": "observability-tests.txt",
+      "sha256": "87164dc0d0608125cbf12a13ee2f16071aa22c4daa4235008d9ef710cacb1075"
+    },
+    {
+      "path": "provider-ready.json",
+      "sha256": "a17264adf48b7cab0a61ada792611a0d86145f9692be818f26dc389f3f3d1048"
+    },
+    {
+      "path": "source-inputs.json",
+      "sha256": "264e5ed35e1ccbe1b76b39515447622b2cce04ef9aa094872b86084fd3ec5cc1"
+    },
+    {
+      "path": "source.tar.gz",
+      "sha256": "e4230556d6016aa99c17c4d7b07d16c36c7cd3c916515cf686e099f3510c0265"
+    },
+    {
+      "path": "staff-expected.json",
+      "sha256": "268f135251fd1da3025df2720a05d32c4988809fb8d3889c00f6edc8a15bb86e"
+    },
+    {
+      "path": "staff-installed-audit.json",
+      "sha256": "2f5765fade9b3e2fbd8201b1f4346920606cbcdb4b22f9faab9df250b1ccf5c8"
+    },
+    {
+      "path": "staff-installed-read.json",
+      "sha256": "e23b0ccf4e52ff5dbe686bf96df67196d25be2022a80e83c92810a59c1a754fe"
+    },
+    {
+      "path": "staff-installed-read.sql",
+      "sha256": "5b7284bad3ce61f304f9ef673a1ac919b9170796a773460c8e9a0b02f9861d23"
+    },
+    {
+      "path": "target-match.json",
+      "sha256": "cd94a608bdbeaeff793561066e455d3c0078a540de70c094346578c1367696e8"
+    },
+    {
+      "path": "tests.txt",
+      "sha256": "13ccff594c6c23baf5904d6e376514ad0b33b85b1d0c0afb14a05cae73175419"
+    },
+    {
+      "path": "voxel-startup.json",
+      "sha256": "e8533be2fdaffad52823b3b787f3c2dec52ed5439c25cf8b3bd0e00bdebfb913"
+    },
+    {
+      "path": "voxel-startup.log",
+      "sha256": "edbd1cb78d83354ad1cd80bf66c9fbabccabaf6cdb61d0f4f30899a7f720ad6a"
+    },
+    {
+      "path": "voxel-startup.mjs",
+      "sha256": "c0ff43462bf49947e332906b1d155e9a586c0029790ec0ff7c3414d89b0ea138"
+    },
+    {
+      "path": "voxel-types.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "web-build.txt",
+      "sha256": "83fb99c7c0790aa94aec484bb35c5c2399e56c925e8490a281d769b9cd65e1b1"
+    },
+    {
+      "path": "web-production-inventory.json",
+      "sha256": "b35a6ae18d866926614e463fc9f22727035ce3a71f8f96924d8c12d66fc90ade"
+    },
+    {
+      "path": "web-production/assets/ClassroomPage-DoTBkf5F.js",
+      "sha256": "a2d64f4cc839373fdda5c611310b09b3cdd3cf9d01c8ecef7c275a4a4c6e009a"
+    },
+    {
+      "path": "web-production/assets/TeacherPage-BXkjUNEz.js",
+      "sha256": "9e367a4f7d98ca83d6eaf921102e7b73676b90efbd6abb0ed2839692b829e1d3"
+    },
+    {
+      "path": "web-production/assets/VoxelSessionContainer-BqHxd5tp.js",
+      "sha256": "ab4fedb94bc84d05940fbe0039a2fa3177150be183c2d5faedcf3761ef3ae0c6"
+    },
+    {
+      "path": "web-production/assets/VoxelSessionContainer-DBURI58A.css",
+      "sha256": "701591d38ad7c8eb0d7fb85d51b5bb362a93145d72a4e55d192be3cbb8362b33"
+    },
+    {
+      "path": "web-production/assets/embed-BwOPc5_N.js",
+      "sha256": "ffbe64dae05d29f9f8834d9aba3297c9bfb52fd71578b3b5dc3cea0356e88a80"
+    },
+    {
+      "path": "web-production/assets/embed-DVW6RJqP.css",
+      "sha256": "708cffb3ae60cca7871296dce5a5cc10568a23f978b4aab138cfee65032511a8"
+    },
+    {
+      "path": "web-production/assets/engine-worker-CQrkI0k9.js",
+      "sha256": "b9a8fc1f8eed79922ee019869d7057f81ad1bf4e2c6b01ec27debf50cb685c3d"
+    },
+    {
+      "path": "web-production/assets/index-BGQaXMoy.css",
+      "sha256": "c28358398e78e5b873c447e77c61eeff30cbb6b06e529e751448437786b2acce"
+    },
+    {
+      "path": "web-production/assets/index-BRd_3rmB.js",
+      "sha256": "32b6bb882d8f12eead295283d3fcc1e89adf3f3e888d9e0415327685cbe3e8c4"
+    },
+    {
+      "path": "web-production/assets/index-CnyYJYxl.js",
+      "sha256": "35badcf299faf1a6f520d41247e37ec68cd6cf0a5ab3efc894c0b43404b9a17c"
+    },
+    {
+      "path": "web-production/assets/voxel_engine_bg-1ejYMYOZ.wasm",
+      "sha256": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "web-production/index.html",
+      "sha256": "ba59d0584c3e3068e903cc14d7acb5a0b75268e4cdd5ee3c1d83f7e08d6596cf"
+    },
+    {
+      "path": "web-production/voxel-browser-boundary.json",
+      "sha256": "87cda588d5a1ab2e7be32785fad842694f1bc47d7f24bea8430ef45800064413"
+    },
+    {
+      "path": "web-tests.txt",
+      "sha256": "7e527fd390f800d0e34d23ba08a622f94a07c327f54a91656082d8d81a4c0351"
+    },
+    {
+      "path": "web-types.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

@@ -1,0 +1,989 @@
+{
+  "layout": "repository-relative",
+  "files": [
+    {
+      "path": ".github/workflows/voxel.yml",
+      "sha256": "ba4e16c6b0243a5ef4a4e11017bb23e88f11d771fd5872221af0073ccc89070d"
+    },
+    {
+      "path": "apps/voxel-server/README.md",
+      "sha256": "eec467bbedb513e0e16a5d412b967a487102d5f7eb30229ca2ea1070d7c16909"
+    },
+    {
+      "path": "apps/voxel-server/docs/school-admission.md",
+      "sha256": "2df1275715d761f0d593b91740fc983a975244a86a168059d4b7a6c787827919"
+    },
+    {
+      "path": "apps/voxel-server/docs/session-projection.md",
+      "sha256": "384bcca19a05c8d03bfd5002ae9a14c85cedff586498563c15b1684da245d4a9"
+    },
+    {
+      "path": "apps/voxel-server/package.json",
+      "sha256": "867f2e4f87b604b92b6ae88b2211828e4883af3cc7f4973667908d228b31b016"
+    },
+    {
+      "path": "apps/voxel-server/src/school-access.ts",
+      "sha256": "f35d33db8d07cd1d253c4360a059a9d917e567c4fd8d3571a0cb92c29aef32a6"
+    },
+    {
+      "path": "apps/voxel-server/src/school-admission.ts",
+      "sha256": "045a142ecfbb5efc375b32c2230dcfa977c7a691b08466891633390b036b70fa"
+    },
+    {
+      "path": "apps/voxel-server/src/supabase-persistence.ts",
+      "sha256": "d66bd15a9b839302140daf5670676cdfdb47b7b8bfff26dcc2685c3f889484c0"
+    },
+    {
+      "path": "apps/voxel-server/src/supabase-sessions.ts",
+      "sha256": "3a80da83d4275cc3e4923441b7244c74ee9db4720a6fbe22032c2bc7bde40006"
+    },
+    {
+      "path": "apps/voxel-server/tests/helpers/postgres.ts",
+      "sha256": "310cbfff13f2b240c190d413567540981d1b26285d414fd56d03bba7f2f9d380"
+    },
+    {
+      "path": "apps/voxel-server/tests/helpers/school-fixture.ts",
+      "sha256": "fedacd895555ed74cb3f8ec9fc90a06edd52e1fb85b6efa3000520e92656c48a"
+    },
+    {
+      "path": "apps/voxel-server/tests/helpers/supabase-wire.ts",
+      "sha256": "c30abd5af3faba7ef167a958b102a5a6e40a8fcec69a6be58cdae1aa9c2cec60"
+    },
+    {
+      "path": "apps/voxel-server/tests/hosted/checkpoint-rollback.sql",
+      "sha256": "7155a176fb9b35bd2a357b948fe4ca34895b0743cbda96b692416b26b4f93a07"
+    },
+    {
+      "path": "apps/voxel-server/tests/integration/school-gateway.test.ts",
+      "sha256": "3e4cacddeaacb4343aa0e0ea7e4af5bc8c4781a9855eb13bd0da7073900d9f1b"
+    },
+    {
+      "path": "apps/voxel-server/tests/postgres/persistence.test.ts",
+      "sha256": "84853c817e0a795b788faa02feec981ceabf87ce858321ca3287cecb8f617d12"
+    },
+    {
+      "path": "apps/voxel-server/tests/postgres/sdk-gateway.test.ts",
+      "sha256": "5158ef5f4dfbfb6d2db0e9c35d037a8fb57a4375b53a5a0221e1188585a6905d"
+    },
+    {
+      "path": "apps/voxel-server/tests/postgres/sessions.test.ts",
+      "sha256": "618025deeb2d022651c15ab82e641b7ee57e964dbb7d428a400f69e6dc0105c8"
+    },
+    {
+      "path": "apps/voxel-server/tests/schema-bootstrap.sql",
+      "sha256": "4264e9415727183815c0acc3cb73afc0368d986c5593e507dcb0b0b29439a429"
+    },
+    {
+      "path": "apps/voxel-server/tests/school-access.test.ts",
+      "sha256": "71d0f90ad7a2cd94555652bd1f7c28439b90c482f70914d68a6dc46d97425ffb"
+    },
+    {
+      "path": "apps/voxel-server/tests/session-bootstrap.sql",
+      "sha256": "9d313501e26784a485a5e6692a3658731040e922a00d130de86fc748b101151d"
+    },
+    {
+      "path": "apps/voxel-server/tests/supabase-persistence.test.ts",
+      "sha256": "be5333296b0cf6b4452088f545f111bedc523a440e017405dd332aa77ac723c7"
+    },
+    {
+      "path": "apps/voxel-server/tests/supabase-sessions.test.ts",
+      "sha256": "e2adb73cf623205cce47a4450e8396f34b8c9ea4fd8fdaaa91632b5f32ff164e"
+    },
+    {
+      "path": "apps/voxel-server/tools/browser-lifecycle.ts",
+      "sha256": "fabbb64cac487a21e371fc14c1fee9b9d5a9bc57a84469c333d338e6eb02f5ea"
+    },
+    {
+      "path": "apps/voxel-server/tools/browser-school.ts",
+      "sha256": "616206757327dc14ce1ef8d4b0a411a76908f1acf112bbe7d33cbb5a66112291"
+    },
+    {
+      "path": "apps/voxel-server/tools/check-live-storage.ts",
+      "sha256": "9090388ed893dbdefeea2d4a9e535b0e59cccb6be3c1fdeb2856cb7ff8ac1e22"
+    },
+    {
+      "path": "apps/voxel-server/tools/check-supabase.ts",
+      "sha256": "77bb64064de484db1c73f7f08b757ce90de0f1874b32b5f5e0177ce94507b058"
+    },
+    {
+      "path": "apps/voxel-server/tsconfig.json",
+      "sha256": "b3542065ccf7381e606ac9d154efbcdddf870d739ae8b1d2c7d55557a23fd7a7"
+    },
+    {
+      "path": "docs/adr/002-voxel-native-websocket.md",
+      "sha256": "832c836308d94fcffe7259d253de6b6f9700e45b78c5016722d3b0b641440778"
+    },
+    {
+      "path": "docs/voxel-runtime-rewrite-progress.md",
+      "sha256": "4494e5627dc85cea6ab01ea4d8b967bf28bac2da897a171532104c508c6fbfab"
+    },
+    {
+      "path": "docs/voxel-runtime-rewrite-proposal.md",
+      "sha256": "685a37d6492bc284eae2b6618e713133a4c8436a64fae853b131508de529c2ac"
+    },
+    {
+      "path": "games/voxel/LICENSE",
+      "sha256": "4c89ee97bee29e2bd7dcd9567a06c1fee5fb8ab7c5c35ca4a153543524b6f07f"
+    },
+    {
+      "path": "games/voxel/README.md",
+      "sha256": "579e999fc2076474c2da2daadfd12b7ab0b9db9ccb510ac72a1b2fa53fd5ccce"
+    },
+    {
+      "path": "games/voxel/UPSTREAM.md",
+      "sha256": "f3b2aace3c043fe80f259938bca0ae7fc242357df51a03ff7062bd5437894bb7"
+    },
+    {
+      "path": "games/voxel/content/availability.ts",
+      "sha256": "d754150797d63c9cef758df559e1b60d1101f5cd9f6b0903e10ddfd1878246d2"
+    },
+    {
+      "path": "games/voxel/content/building.ts",
+      "sha256": "17060999c435f365196f55496ab65aa790e9c6f9bb132cb256fd822b228aadf1"
+    },
+    {
+      "path": "games/voxel/content/disposition.json",
+      "sha256": "87f7ddbfee48f7981fa7859e23720e8f02e5547a4511caaadf7524b6e724422a"
+    },
+    {
+      "path": "games/voxel/content/helpers.ts",
+      "sha256": "d98a5bcb8f6e3261c75d7a3d09f06c33556e71ac4be070dad750465b96a3f10b"
+    },
+    {
+      "path": "games/voxel/content/index.ts",
+      "sha256": "7eb57f7ceb440136ff112b7228adcebfd9a07eae58bd4e53881be2ceeb98fa76"
+    },
+    {
+      "path": "games/voxel/content/legacy-inventory.json",
+      "sha256": "e303c3b100db96a2af847726d13ec1d0a4802af9fe8518456df31586e818763c"
+    },
+    {
+      "path": "games/voxel/content/progression.ts",
+      "sha256": "9f69ff4345d6ff5257998a9cd56cd8450e4f4ac56fd14ed48092aa784cd3566c"
+    },
+    {
+      "path": "games/voxel/content/texture-layers.json",
+      "sha256": "65faced3a69a67fe9f1f62830c43c2b5b64c070fea9e0d5b98ce81592058a6f6"
+    },
+    {
+      "path": "games/voxel/docs/avatar-appearance.md",
+      "sha256": "5ba7d1930f07c62cc86b5b3268329cd37e6883bcbb79ba27dc8bbe66dc11e023"
+    },
+    {
+      "path": "games/voxel/docs/checkpoint-state.md",
+      "sha256": "e0e90aa5365dcb1600f9336a9a88d0a8f439f85b064408ddabe038580cc969f0"
+    },
+    {
+      "path": "games/voxel/docs/combat-rules.md",
+      "sha256": "34cb70d8f04aa3cb5fa90263825b7e78358d5961fdb5109fc00e62b47ce21446"
+    },
+    {
+      "path": "games/voxel/docs/content-progression.md",
+      "sha256": "ab9e655c0506a3f3e2794ade5d38acf5b04eb88c2c67997aeead81f09ea788b6"
+    },
+    {
+      "path": "games/voxel/docs/equipment-rules.md",
+      "sha256": "3cbd265e6531fd173e440037a2b06cabfd3510cf77cc4fb9537814d1922cd3f6"
+    },
+    {
+      "path": "games/voxel/docs/explosive-rules.md",
+      "sha256": "35a0c1eed64824c9e84e08498c8d2a9082014a6475899c633b189b572a6e58ff"
+    },
+    {
+      "path": "games/voxel/docs/room-lifecycle.md",
+      "sha256": "57c6757a6ec0969309225ecd04e49be1987da28d0c01e7e0140160ad0f2b19f2"
+    },
+    {
+      "path": "games/voxel/docs/survival-rules.md",
+      "sha256": "80466e2b5df92094cf5ebbcda622b953fdb38c56bba6e56158a207476b4546e5"
+    },
+    {
+      "path": "games/voxel/engine/Cargo.lock",
+      "sha256": "95c5d9290ae14570e949b2cc3a6b13048503279423099313ad34023acaacd479"
+    },
+    {
+      "path": "games/voxel/engine/Cargo.toml",
+      "sha256": "c39b7dd9eb1e2efb24b1874b6f3c310fb8944722109fcca052c31bbfcfe8982a"
+    },
+    {
+      "path": "games/voxel/engine/LICENSE",
+      "sha256": "4c89ee97bee29e2bd7dcd9567a06c1fee5fb8ab7c5c35ca4a153543524b6f07f"
+    },
+    {
+      "path": "games/voxel/engine/src/blocks.rs",
+      "sha256": "7ec09fe0dfcabb8e224e3367475a623197814c44350756127b85b038bb8667c2"
+    },
+    {
+      "path": "games/voxel/engine/src/cull.rs",
+      "sha256": "4d2a7d284afbe5a3bd729cfc3db96d52249ac244ecf9242edde1bb6d048bdfa3"
+    },
+    {
+      "path": "games/voxel/engine/src/damage.rs",
+      "sha256": "a3e821f81e33a67066ddda4bc77077b85a16cd28957996fb953dd57c2cb94c1a"
+    },
+    {
+      "path": "games/voxel/engine/src/entities.rs",
+      "sha256": "11676a5179be78dd834425a78ee3a8e932a61bb84e7f4bc6788f9c2c18ad193f"
+    },
+    {
+      "path": "games/voxel/engine/src/entitytex.rs",
+      "sha256": "6a9b140af7a84925b8101393a84cb9d47ecebf7f3fc1e2e03990ae4f42d5300c"
+    },
+    {
+      "path": "games/voxel/engine/src/formats.rs",
+      "sha256": "5609c43dc1a72342aaa94ed61c8230a80d159d18ff343cd33ae7a6033bec03fc"
+    },
+    {
+      "path": "games/voxel/engine/src/gen.rs",
+      "sha256": "1b2aea7ca673f3a9bc127bc8bbf2e13e88fec624efa050a11f9e8aa4dc422cfc"
+    },
+    {
+      "path": "games/voxel/engine/src/json.rs",
+      "sha256": "899ac70a7bcfe3c7884d39f5928d2588e0cbb2905ffca6194a47ff87bb19d704"
+    },
+    {
+      "path": "games/voxel/engine/src/lib.rs",
+      "sha256": "b73939ec0b52f61975da30552b75269636bfcc99542a5ed4a712012a43a4f01f"
+    },
+    {
+      "path": "games/voxel/engine/src/mesher.rs",
+      "sha256": "a39ca4f0c42a3cf086ec329b86dfa0c614b963f31f828b5fb33fc7bf01aae780"
+    },
+    {
+      "path": "games/voxel/engine/src/movers.rs",
+      "sha256": "2b271360c0c701b11d7a41b28f983616e665919a21983e1ac05fc1edaab2fc01"
+    },
+    {
+      "path": "games/voxel/engine/src/noise.rs",
+      "sha256": "11c293fb988cd355efb153972914f597d7c088d6ccb5c961fbfe62181782c466"
+    },
+    {
+      "path": "games/voxel/engine/src/noisetex.rs",
+      "sha256": "368256f94fbd74146a65364b38bcee22630f654d1b31eae76968dd438fdaa513"
+    },
+    {
+      "path": "games/voxel/engine/src/shapes.rs",
+      "sha256": "2bc4d554009240683d7731792fe5ca738ff1f8f1b91df84772fb01a30f099551"
+    },
+    {
+      "path": "games/voxel/engine/src/state_width.rs",
+      "sha256": "4aa4ac8f12fd2ce83797a4fe7b88849c8ac3dd79ec4839969ad8726e4746c0ab"
+    },
+    {
+      "path": "games/voxel/engine/src/testutil.rs",
+      "sha256": "b045762fc131d14ae2024dd20782027e79fea54e8a64f60f46e145ec7bc489fa"
+    },
+    {
+      "path": "games/voxel/engine/src/texgen.rs",
+      "sha256": "0fdb3764339c65d7593d45b74a497672d3e232e81e560e703cb7d9f1dac05d6f"
+    },
+    {
+      "path": "games/voxel/engine/src/world.rs",
+      "sha256": "7315169f7aad3977a140fe4fe53a35c5dad7de3ce6310ae659b69c00cd0c10a0"
+    },
+    {
+      "path": "games/voxel/index.html",
+      "sha256": "dba6e114b79c88820709640f4c0079745db763b03b96b3e507f753a9ee141e61"
+    },
+    {
+      "path": "games/voxel/package-lock.json",
+      "sha256": "8f291cbe2b0130c7b28c738c476684f9326d8b8682f3e95dad0a96b87d635f56"
+    },
+    {
+      "path": "games/voxel/package.json",
+      "sha256": "a0e5aff1a7f21df7aef0fb6d1c0df3e5daa772f9f20096f1ff0cb81946702de6"
+    },
+    {
+      "path": "games/voxel/src/client/assets.d.ts",
+      "sha256": "417a1e13efdd3daf20309c7097a2df58a7170c83c76f3c98edd3e2842209d376"
+    },
+    {
+      "path": "games/voxel/src/client/content-labels.ts",
+      "sha256": "6c2a7aa28b6f4b15875ceef6e02733798a3bf3e9b96d19894afe25b8a140e539"
+    },
+    {
+      "path": "games/voxel/src/client/dev-entry.ts",
+      "sha256": "d1d0ccb519a11ddd7831cc8ad5ff180cc6d502fb09a3d516f1d665bdb6281cd7"
+    },
+    {
+      "path": "games/voxel/src/client/engine.ts",
+      "sha256": "c103397109709c63148cffe9ab84933e4d35fd87118d48b827f5c2cf90f08116"
+    },
+    {
+      "path": "games/voxel/src/client/interpolation.ts",
+      "sha256": "618cc2de934f80ac9f2fa4dc59dbc92066c9d85de528f5fba6b0166593d53f9b"
+    },
+    {
+      "path": "games/voxel/src/client/inventory-controls.ts",
+      "sha256": "130e5c1869379f7fa4dfbcff000e2453db848c9f5bb115c8723b5d082f051e56"
+    },
+    {
+      "path": "games/voxel/src/client/inventory.css",
+      "sha256": "29ebcfb226280c9bf16e6f6085d4b9a84b8500073b4a5549302a4088fe27b47b"
+    },
+    {
+      "path": "games/voxel/src/client/item-description.ts",
+      "sha256": "935ac9ce1b03187748aaa392ccee9657945294e225cb908baca45c426f3224eb"
+    },
+    {
+      "path": "games/voxel/src/client/palette.ts",
+      "sha256": "cccc9b3c2a2cfaa51cc6acfc15a128bd236d7a20d145e997f3373d7f04b2f289"
+    },
+    {
+      "path": "games/voxel/src/client/prediction.ts",
+      "sha256": "ba385bbfc230e9611378b37a1b0a788294c83143d8d38e7a293f23111161e93f"
+    },
+    {
+      "path": "games/voxel/src/client/runtime.ts",
+      "sha256": "ea35c9899654179c675561261db2c39bb55c830ff204ffeef6d0261a23f79205"
+    },
+    {
+      "path": "games/voxel/src/client/style.css",
+      "sha256": "bda30689a1e2f48879a62208da0d32fbb48dc11a69d2bf859c7bfd7c96d9300c"
+    },
+    {
+      "path": "games/voxel/src/client/touch-controls.css",
+      "sha256": "f5628f9dc85a4c8ae10f047ec44bfe5d53eeafc0684f33f4c8c37bdedd2f78d3"
+    },
+    {
+      "path": "games/voxel/src/client/touch-controls.ts",
+      "sha256": "4418b20ddc2146432aa236055519c2ee4929592827c5639e5fb130afe598458b"
+    },
+    {
+      "path": "games/voxel/src/client/world-audio.ts",
+      "sha256": "5d09f1cb6b7691943dd8a9c02cf1e3bcb0c380946a5e7e115c5aa9650c4ef3f2"
+    },
+    {
+      "path": "games/voxel/src/client/world-clock.ts",
+      "sha256": "16fbfe10a03b947c2ad8cefbd8e4e701170fd9dfcd70c9fac986395dfd6a83a3"
+    },
+    {
+      "path": "games/voxel/src/render/avatar-equipment.ts",
+      "sha256": "49ae5cc8369774019a51320a49e957bf6a675ab70824170ea56133e708630415"
+    },
+    {
+      "path": "games/voxel/src/render/avatar-motion.ts",
+      "sha256": "5cc8183ba90997b05c5301ae6be73db22325a7c587a99b84a4829e3ff46d5462"
+    },
+    {
+      "path": "games/voxel/src/render/avatars.ts",
+      "sha256": "0fd3fdd58fe732db4f5e2431c7fbf06cbf611b4eda60f7f66f00a6898983c766"
+    },
+    {
+      "path": "games/voxel/src/render/drops.ts",
+      "sha256": "c561ea072b809ef3f314ff718f349e4ec9e144c73a85940d7272bc2e92b85bf5"
+    },
+    {
+      "path": "games/voxel/src/render/edit-effects.ts",
+      "sha256": "f4879d161078dd44fbd146f0f5162eced2f9d1fbec6af4451db04f1c4ef9cca2"
+    },
+    {
+      "path": "games/voxel/src/render/environment.ts",
+      "sha256": "731a245ee92f84a530f33d9da889272d62c9160d28ae713beafe70d70ae74ac9"
+    },
+    {
+      "path": "games/voxel/src/render/explosives.ts",
+      "sha256": "8e181f770fc5c7bb6d41d47fa1f1e88b6ed47bf9ba2e311d490035b11cbbbf1d"
+    },
+    {
+      "path": "games/voxel/src/render/gpu-pacing.ts",
+      "sha256": "c3502d2d84f01df0f49cd87931eade94db2349d187522769a8dc131cd47d4d9d"
+    },
+    {
+      "path": "games/voxel/src/render/held-block.ts",
+      "sha256": "22406a67e99b7c16a5c717dddbd7efb8298ab7bd30b28e4f36742ee4473a424f"
+    },
+    {
+      "path": "games/voxel/src/render/shaders/common.glsl",
+      "sha256": "7bf0a4b7f797d4fd63281be9158908ffd238a4e75f5cdc9ed04b91f2595613b1"
+    },
+    {
+      "path": "games/voxel/src/render/shaders/vertex_unpack.glsl",
+      "sha256": "947678393c774ad450835fa68a7292e8dc9857299e7cf9481e19667b0dc373b0"
+    },
+    {
+      "path": "games/voxel/src/render/terrain.ts",
+      "sha256": "549a6ad036dbb45ea210ca33bcc550cd0f1bf9c6bed587d08ca8d82fb847f07f"
+    },
+    {
+      "path": "games/voxel/src/server/admission.ts",
+      "sha256": "62eea7a28bf64bbc8291d4b4d7aefcc48bee55261bc4ddd0185640253308ebc5"
+    },
+    {
+      "path": "games/voxel/src/server/checkpoint-storage.ts",
+      "sha256": "7f4f3782f6d97c7cc717a31470658477c4cc559e2337a754cfe5c4c4e4105538"
+    },
+    {
+      "path": "games/voxel/src/server/gateway.ts",
+      "sha256": "f351c9253b6ec37f55a0f338bd7240d2e5facdc1bb9417442ffcacbe6f881f58"
+    },
+    {
+      "path": "games/voxel/src/server/owner-authorization.ts",
+      "sha256": "b95d2b615755b10cdcecc018bbb43cc4254ebdb578698b80da83e2ecbe747871"
+    },
+    {
+      "path": "games/voxel/src/server/room-durability.ts",
+      "sha256": "4eb34dd0494e704c35eeef69e90952fc745e99e6051d478581799e7514bf5e86"
+    },
+    {
+      "path": "games/voxel/src/server/room-policy.ts",
+      "sha256": "d8886191fda505bb3592a8009af2caef9aec56803c1834d6adaf9ab71d99e652"
+    },
+    {
+      "path": "games/voxel/src/server/room-worker-protocol.ts",
+      "sha256": "87d30a97826b46d615ddf0dcb6f4a6bbcb702e8482589518dd6499330895e798"
+    },
+    {
+      "path": "games/voxel/src/server/room-worker.ts",
+      "sha256": "fa8474adecd8c24728c143e6c41fc9d32bfa11de0a5be59006cfa415b3575029"
+    },
+    {
+      "path": "games/voxel/src/server/session-projection.ts",
+      "sha256": "922326352b2f6c58d25102cb2c71c123cf2c174173bf38d13e88a5d2696850e6"
+    },
+    {
+      "path": "games/voxel/src/shared/appearance.ts",
+      "sha256": "dc6d14cf996a9d9a316c081ceee7ece23b6a0f42bd39355a6b6802ca4913e8bc"
+    },
+    {
+      "path": "games/voxel/src/shared/chunk-wire.ts",
+      "sha256": "2f98529c462d123ed260cf96f54f1f1c85dea7c944070b76a9a28faedebede1e"
+    },
+    {
+      "path": "games/voxel/src/shared/combat.ts",
+      "sha256": "e4cfe75bfaac26d9134cd8b1935482e82e049c2006429a50687b56b1ddacecd4"
+    },
+    {
+      "path": "games/voxel/src/shared/content.ts",
+      "sha256": "f5213cd9e38195bac70e6548e9b2e6c12c1a131fc4f9a6fbbcf8de80fa121045"
+    },
+    {
+      "path": "games/voxel/src/shared/engine-port.ts",
+      "sha256": "88cfd1efeb71b32e7f62da4e0bb651a77ec7792e166fe878952c802313e77f19"
+    },
+    {
+      "path": "games/voxel/src/shared/environment.ts",
+      "sha256": "9f4239603f127b07b5aa59ffc813233fe08e49942455452e78037758fac4eca7"
+    },
+    {
+      "path": "games/voxel/src/shared/explosives.ts",
+      "sha256": "b56df9363bc59723a4c5841d3784267c55af444c164dfdb4aeb396869c3db03d"
+    },
+    {
+      "path": "games/voxel/src/shared/gameplay.ts",
+      "sha256": "4be5e09f3726b64b19fd1c05fcf3118e63c8784144198a5232902c4fb9f52a99"
+    },
+    {
+      "path": "games/voxel/src/shared/input.ts",
+      "sha256": "30cdf7c507ab2fe30c93ccd974fcb5e8cc6b9262eef9f92dd99079b783bd40da"
+    },
+    {
+      "path": "games/voxel/src/shared/inventory.ts",
+      "sha256": "87db9eb0e653a1f53a570f8291d88aa5a62decb3810382657bb53a71235cb194"
+    },
+    {
+      "path": "games/voxel/src/shared/lifecycle.ts",
+      "sha256": "c346b2e48d5c0cc3493d38fe2c298cc965613c1a36814f14dd179f8928fdc183"
+    },
+    {
+      "path": "games/voxel/src/shared/loot.ts",
+      "sha256": "d6f273d5b1bcab38f0736c0379fc3ed2d1f3a289c80f96931af07333866f1893"
+    },
+    {
+      "path": "games/voxel/src/shared/movement.ts",
+      "sha256": "40327b858c2722514c40aa3a5717bc92c9808f31f731e3b0581ab8581da7663b"
+    },
+    {
+      "path": "games/voxel/src/shared/protocol.ts",
+      "sha256": "426d57258620f61d69bba530f3bda319cd76b4c139cb3643707dcf220f17c969"
+    },
+    {
+      "path": "games/voxel/src/shared/recipes.ts",
+      "sha256": "5396639bfcf1332ca519137ffc155f12ec192dd0011bb5f7d0a3a3c55365a5e5"
+    },
+    {
+      "path": "games/voxel/src/shared/vitals.ts",
+      "sha256": "dd04b2e83faf9625cf14071e8e20e9d3c8c6f49a90d559708fc53524820a11d7"
+    },
+    {
+      "path": "games/voxel/src/sim/action-ledger.ts",
+      "sha256": "aeedf61456858c4d290ae26550fb5c54495b0f0b20e2f6e8dbac3bb086ae96e8"
+    },
+    {
+      "path": "games/voxel/src/sim/blast.ts",
+      "sha256": "66ad564fb9cfc4f207ce20ab8a98f4d7fcbd651416f15f91550f367b56cfad2c"
+    },
+    {
+      "path": "games/voxel/src/sim/checkpoint-values.ts",
+      "sha256": "85605b99079c62fa617a3e7c8118378eb855dae89482cdf7a0abd0d516c91472"
+    },
+    {
+      "path": "games/voxel/src/sim/drops.ts",
+      "sha256": "ff843f5c26fbd5d7f11493ccef4abcc24b4d34fa53207ddbe456bd4fd16e2bde"
+    },
+    {
+      "path": "games/voxel/src/sim/explosives.ts",
+      "sha256": "e571da5405bb50114a9ba6d813e4e758a65916dd2cffd2bfa77ab8864a6bd782"
+    },
+    {
+      "path": "games/voxel/src/sim/game-room.ts",
+      "sha256": "64b0acb597f5652c90a28817b860f4e42b4a88b5af82a8ff77dd5ca3d91ad12a"
+    },
+    {
+      "path": "games/voxel/src/sim/input-queue.ts",
+      "sha256": "f8ee910aec45d540933072d82d26cfe1f5b19cabb39b4facd8fdc71618d72ab7"
+    },
+    {
+      "path": "games/voxel/src/sim/inventory.ts",
+      "sha256": "878756952a9c55cdaaec45e102db197c8514b0ed1f6e984690dbbd44f33a9a38"
+    },
+    {
+      "path": "games/voxel/src/sim/mining.ts",
+      "sha256": "aa8d1688135257b2fda5a8d8c50a96de73fb4b18408babcc98fc65f22145be7a"
+    },
+    {
+      "path": "games/voxel/src/sim/movement-room.ts",
+      "sha256": "09d45fb6069ada6aa17eecf23f623083341247d0977060b78e1b3e9da46b6a43"
+    },
+    {
+      "path": "games/voxel/src/sim/room-checkpoint.ts",
+      "sha256": "749b6d8a895fcee994d6a114d0f3daac5ca72ea9553719012b14383cf2969637"
+    },
+    {
+      "path": "games/voxel/src/sim/scheduler.ts",
+      "sha256": "772e38263f9e795cb81dff99679f8167910088e09c8b9f71ee917b20ef4868e1"
+    },
+    {
+      "path": "games/voxel/src/sim/sunlight.ts",
+      "sha256": "392c373253a40a50d97071e10630cea050dadf1479177dc38daae427adf8acbe"
+    },
+    {
+      "path": "games/voxel/src/sim/vitals.ts",
+      "sha256": "34dcab275128f6f7e88ddf17ec64b93aeb9c94fedcdf66f5b1fe6185525cff48"
+    },
+    {
+      "path": "games/voxel/src/sim/world-store.ts",
+      "sha256": "e2662d389c047bb99fb1f9fc3649e0378851a4e7d801f9149afabcd575f614df"
+    },
+    {
+      "path": "games/voxel/src/world/engine-worker.ts",
+      "sha256": "27d38c30deccfd65028dc6959e690039f5032c76f3d4270a98b62f5bbe46b604"
+    },
+    {
+      "path": "games/voxel/src/world/jobs.ts",
+      "sha256": "d0f820555e3378e44e260eb081184b3b78fb2e4f3ba0e34cb49af64879e6569b"
+    },
+    {
+      "path": "games/voxel/src/world/stream.ts",
+      "sha256": "8527e308d708bc817f5d21665ae03465593d40cb830e24610f0f7b4290d0614b"
+    },
+    {
+      "path": "games/voxel/src/world/worker-pool.ts",
+      "sha256": "d13f5ce5c7275a01e3a1fe8ea8a5e9ea6d9300b2075ec7da8844bc61a430b98e"
+    },
+    {
+      "path": "games/voxel/tests/admission.test.ts",
+      "sha256": "8d152d9c0cf7ed0306bb13904465fdfc9e80c356af36381384f0afacc9ea0f35"
+    },
+    {
+      "path": "games/voxel/tests/appearance.test.ts",
+      "sha256": "1aeb12b6126af8435e649c3894b3b72b9430da638ac7f612d53a0c0e7602a557"
+    },
+    {
+      "path": "games/voxel/tests/authority.test.ts",
+      "sha256": "9ed448f1e4750de57774216f4d2ec7ad24adbb2587acec3b2535c2f603e1b916"
+    },
+    {
+      "path": "games/voxel/tests/avatar-equipment.test.ts",
+      "sha256": "625df0b722938a97e1d4f567cbef9fa6a18af937e55d008c65abbcd970baedac"
+    },
+    {
+      "path": "games/voxel/tests/combat.test.ts",
+      "sha256": "81ed0bdec2053df956aa86864a6f820a59aaeeb7165814748b6b55eb5c43797c"
+    },
+    {
+      "path": "games/voxel/tests/content-progression.test.ts",
+      "sha256": "4c18f829cb1bf4abf71fd4e229e0044bd33dd1211fccdeb61a4e7d103effb235"
+    },
+    {
+      "path": "games/voxel/tests/content.test.ts",
+      "sha256": "ece6da0634717225d968408e360d576c04abc0ffe9155b2af5204e7438d71a39"
+    },
+    {
+      "path": "games/voxel/tests/environment.test.ts",
+      "sha256": "61f3609e9b8fc8dd10fbc0b0a803a285a885aeff07543c3921287686f98e820b"
+    },
+    {
+      "path": "games/voxel/tests/equipment.test.ts",
+      "sha256": "7e6a26e296ea618a94619186fc6d5a66d5e8a79a0cee12eb606a9eb7ac6b0549"
+    },
+    {
+      "path": "games/voxel/tests/explosives.test.ts",
+      "sha256": "30d6d982706dc49d7c748adbd640fcf4e3d835f84698c0c9074ed0a0db8b5c94"
+    },
+    {
+      "path": "games/voxel/tests/fixtures/checkpoint-storage.ts",
+      "sha256": "d8739843d477dec79588bb95e45e246e46c4c95e43238890376d06bf47196666"
+    },
+    {
+      "path": "games/voxel/tests/fixtures/socket-probe.ts",
+      "sha256": "e64b9a2c2d922d1e1b4887560aa71445ec1383c86f2045828fd5181c45543941"
+    },
+    {
+      "path": "games/voxel/tests/gpu-pacing.test.ts",
+      "sha256": "8bc36ba13ab2e48d781da6b85ef719e044b21c3683e8da06e94a10aa152435c4"
+    },
+    {
+      "path": "games/voxel/tests/integration/admission-allocation.test.ts",
+      "sha256": "698e4f2351625e5744f15b35b9db9fd735367ab4c86b692250a2ba0bfb955f28"
+    },
+    {
+      "path": "games/voxel/tests/integration/admission.test.ts",
+      "sha256": "7ea333797ac3d07f6b1c5896c1d2c0497fdc47f7d6818acd9f7f79116b77b4f7"
+    },
+    {
+      "path": "games/voxel/tests/integration/creative.test.ts",
+      "sha256": "0a59aab30d4349b85d2017162c198412250b0325398ccd014591d6d44a290820"
+    },
+    {
+      "path": "games/voxel/tests/integration/durability.test.ts",
+      "sha256": "b025d7a091687f573a4ff28d7405d0833b829d720bf1f28b03ee3a38aba1b27a"
+    },
+    {
+      "path": "games/voxel/tests/integration/lifecycle.test.ts",
+      "sha256": "c08f2bbbb29fca202395e2a737180561732c99d73d3b4ad4d6d8090671b098dd"
+    },
+    {
+      "path": "games/voxel/tests/integration/session-projection.test.ts",
+      "sha256": "54fcfef68aa430fadb97877f837d0aeda20fe4a6775df3d9c729a9232d49178e"
+    },
+    {
+      "path": "games/voxel/tests/integration/worker-checkpoint.test.ts",
+      "sha256": "9fa32b538c72e39cafe2794e2c09912a0b3472f10a30afda6cb6ee2879e4b1aa"
+    },
+    {
+      "path": "games/voxel/tests/interpolation.test.ts",
+      "sha256": "e10057e419232ecbc08e1c192420fe197f75778e3615a455cca11a21ac646630"
+    },
+    {
+      "path": "games/voxel/tests/inventory-checkpoint.test.ts",
+      "sha256": "00ce5d4b90fcb199b78dff65e08cb94a9216c285698950af7e28056a82a6ff34"
+    },
+    {
+      "path": "games/voxel/tests/inventory.test.ts",
+      "sha256": "63bd93b2caba65120f6b84c2e97faadd327dbd473a31012d48794ce7b98f9118"
+    },
+    {
+      "path": "games/voxel/tests/lifecycle.test.ts",
+      "sha256": "ecd739b3a376d656dacc685a90ff1b3f817428f3c480b5d4207a45a1e7386f2e"
+    },
+    {
+      "path": "games/voxel/tests/object-checkpoint.test.ts",
+      "sha256": "e31493333ff67994db851edc00e878e4c4e129c80042e148caaaa49c6808d450"
+    },
+    {
+      "path": "games/voxel/tests/owner-authorization.test.ts",
+      "sha256": "d5621c4e632c3f0e7a93301a44ad4d456aff428a2a83e831d4dc9676dc10badf"
+    },
+    {
+      "path": "games/voxel/tests/protocol.test.ts",
+      "sha256": "527a280f8be2de49c75e0dd8f747d9111599433abed139de841e9a512d78c49d"
+    },
+    {
+      "path": "games/voxel/tests/session-projection.test.ts",
+      "sha256": "3665e9cc73cee7a23ce617e4cc49f06053271a6e90b75c3d2c3a811cd03874a6"
+    },
+    {
+      "path": "games/voxel/tests/survival.test.ts",
+      "sha256": "4cacaca4366367f168f58a1c6ee18a281fc3d14a6563564a950e6484b2aec5f2"
+    },
+    {
+      "path": "games/voxel/tests/vitals-checkpoint.test.ts",
+      "sha256": "bf852d933452d300b8b75062b30d3f8bf65d23762bfd254a1aa74afe044d9703"
+    },
+    {
+      "path": "games/voxel/tests/vitals.test.ts",
+      "sha256": "e162a1393869d6b6c5a571bd7af85c0b0c0b913a3341fab94b68b560ea8dfba4"
+    },
+    {
+      "path": "games/voxel/tests/wasm/appearance.test.ts",
+      "sha256": "9466a07dd6033ae5caf7d833ed56b63183f491ffca110c64478e71dcf83ae58c"
+    },
+    {
+      "path": "games/voxel/tests/wasm/buckets.test.ts",
+      "sha256": "5baa5bad0099bb5830a9c027e8fdbca9f7964dcea01f04030bc9cdf212c4f1c9"
+    },
+    {
+      "path": "games/voxel/tests/wasm/checkpoint-objects.test.ts",
+      "sha256": "d70b92f4eea3941edab28f2fd7eba060e36c7ea0f6763f6b42cfb9ff19e52f4a"
+    },
+    {
+      "path": "games/voxel/tests/wasm/checkpoint-room.test.ts",
+      "sha256": "7d45d0c17db36f7290ad4131d7105b9ba2888c017f69efb080655a5589ad6b3f"
+    },
+    {
+      "path": "games/voxel/tests/wasm/checkpoint-storage.test.ts",
+      "sha256": "c00cbd9ceac43fe52f9bb687d950bdd2445aed48fa0ebdd23083b76060ac600f"
+    },
+    {
+      "path": "games/voxel/tests/wasm/checkpoint-world.test.ts",
+      "sha256": "a3e09a521c4f0ede81e3d501ee1a3c5fc52c572cbc31b0f99308c7b7a76680a0"
+    },
+    {
+      "path": "games/voxel/tests/wasm/combat.test.ts",
+      "sha256": "293e72d5642685415145b825f841421741e2e064d45c2560523bf7cd7c58197b"
+    },
+    {
+      "path": "games/voxel/tests/wasm/equipment.test.ts",
+      "sha256": "d31a621da12da02d9dade5372acd10ca7bfcd78d7d7990ac440143b017fb8e80"
+    },
+    {
+      "path": "games/voxel/tests/wasm/explosives.test.ts",
+      "sha256": "65274f7f4f444889f06356d05b774a85ab3cac1d7329dbab0d9f27dbd5b3bf68"
+    },
+    {
+      "path": "games/voxel/tests/wasm/fixture.ts",
+      "sha256": "6e4009d88e43b9ecaa6b6f145b9859629e6b758528dc0b2f598c141b2bbdd2cf"
+    },
+    {
+      "path": "games/voxel/tests/wasm/flight.test.ts",
+      "sha256": "b71f1106e841a5de3f97a8e63d1629e04f31849177ed4ab8b68d7edc4eaee90a"
+    },
+    {
+      "path": "games/voxel/tests/wasm/lifecycle.test.ts",
+      "sha256": "8a71d0c93a58de30ca40d5ab398681212d69867e7d33d5d3419ad0f871c2b053"
+    },
+    {
+      "path": "games/voxel/tests/wasm/natural.test.ts",
+      "sha256": "38943785db4cb76ec0e8423cd06d6683f6d06d2d5aa76972ee11321b351968aa"
+    },
+    {
+      "path": "games/voxel/tests/wasm/prediction.test.ts",
+      "sha256": "af491b505fcaec432ed7d94335d0e3e8e9dedfd003bd509c26164a4263d6cd8c"
+    },
+    {
+      "path": "games/voxel/tests/wasm/progression.test.ts",
+      "sha256": "650de1317c604fbae964789318f9321edec6e3a4c8e297c672a7b70bf9dba046"
+    },
+    {
+      "path": "games/voxel/tests/wasm/room-fixture.ts",
+      "sha256": "ebb99d2a003a272e1a2db24999d67132d2142b5fddb1afb96246189b4e9f36a2"
+    },
+    {
+      "path": "games/voxel/tests/wasm/socket.test.ts",
+      "sha256": "2998387e5320b92e9df7551971d748c026fae4f7e69c8fffefc863c6f8e72b81"
+    },
+    {
+      "path": "games/voxel/tests/wasm/storage.test.ts",
+      "sha256": "e9c9354417b68993a0c4a1bd40a184bba3c6e84b05fc394a8b4114a272b2b84c"
+    },
+    {
+      "path": "games/voxel/tests/wasm/stream.test.ts",
+      "sha256": "0e59141de25d1a457aae6d589fa7858f61fdf0542478a79834a75d93431f43b9"
+    },
+    {
+      "path": "games/voxel/tests/wasm/survival.test.ts",
+      "sha256": "ba6466b47780f7603fe0382a793c4bb2a9f4680bc3b628f7336d337aa6b48622"
+    },
+    {
+      "path": "games/voxel/tools/benchmark-engine.ts",
+      "sha256": "b51cf428e5bbbc8e6038b1cc10a3f116adc24308c039ce809efd3fe90bddcec8"
+    },
+    {
+      "path": "games/voxel/tools/browser-combat.ts",
+      "sha256": "2e1db43ff7d9442ed997bc4de2909a666e8b13a729559446eee128ec725636d0"
+    },
+    {
+      "path": "games/voxel/tools/browser-creative.ts",
+      "sha256": "cc21b2ce090ef378f965457ece975237f69f21932fc5653cf88616955fbf4ba6"
+    },
+    {
+      "path": "games/voxel/tools/browser-environment.ts",
+      "sha256": "c5baa674174283c6a79fc31aeef2f9f0488a9af59032ba31f2f440988e6522d0"
+    },
+    {
+      "path": "games/voxel/tools/browser-harness.ts",
+      "sha256": "3676c6815df84ec9f2968fdd8b2730c16c92586255bdd0b1f8ca17d39b0838ac"
+    },
+    {
+      "path": "games/voxel/tools/browser-inventory.ts",
+      "sha256": "9462cbefd476f824e8b665e923b974909487d377e1499b163e188bdfbb7dc693"
+    },
+    {
+      "path": "games/voxel/tools/browser-presentation.ts",
+      "sha256": "d839498abf9ea070cbb6dcb79812667d26813db5401f6f00a686e05f1029eedc"
+    },
+    {
+      "path": "games/voxel/tools/browser-remote-equipment.ts",
+      "sha256": "4f0737496a817660903e039a19a231c34bf87b61d705ae7223f7a8d140a9744d"
+    },
+    {
+      "path": "games/voxel/tools/browser-smoke.ts",
+      "sha256": "e14e614fb0a99dab8a4aecfaa6d1b8b9528c87e57db51cb433351aa967b665da"
+    },
+    {
+      "path": "games/voxel/tools/browser-survival.ts",
+      "sha256": "45169586cf358fa028505f2d16139fcf12a8e9d8d5a50a9fbb0d3988e171ff59"
+    },
+    {
+      "path": "games/voxel/tools/browser-touch.ts",
+      "sha256": "674ed5b901219a003f4039c0914699be41e60f6d29d58b79362b2631edd7c169"
+    },
+    {
+      "path": "games/voxel/tools/browser-worker-recovery.ts",
+      "sha256": "4e2645298e9a184e654bfbaf725e4934aac885c33860570ec972c4a6093e98ea"
+    },
+    {
+      "path": "games/voxel/tools/build-engine.mjs",
+      "sha256": "c7670b48c2ea41bb2a694ef73c1d86479d9a909dd655e8a08a53ab276a15dbb4"
+    },
+    {
+      "path": "games/voxel/tools/build-manifest.mjs",
+      "sha256": "5923b10b8e472901015ac3d8d0bebb97cce1018f18c7414f0a89baf182bc1fc3"
+    },
+    {
+      "path": "games/voxel/tools/build-server.mjs",
+      "sha256": "c71529316d90c8dd5a2f30ca5dabcf31e722e0cb5dfa94a43fb0bd71bbd0807b"
+    },
+    {
+      "path": "games/voxel/tools/check-boundaries.mjs",
+      "sha256": "d250987d657cf609155909a6d3a6356c55fd5d156718c74f9f72ad40fcfd43b7"
+    },
+    {
+      "path": "games/voxel/tools/check-content-disposition.ts",
+      "sha256": "cdeaa8da1927f079cacdff6c66583de1dd57acf908f329b20a36d0dca89e156c"
+    },
+    {
+      "path": "games/voxel/tools/compile-content.ts",
+      "sha256": "a2d95118b716f1c244fa82045d37038e65677a854a02bb0f199d6fd58269365e"
+    },
+    {
+      "path": "games/voxel/tools/dev.ts",
+      "sha256": "f054cd8e87301d91d49c8ef81680368b8586bf729574487c7f6765d3293b931a"
+    },
+    {
+      "path": "games/voxel/tools/development-admission.ts",
+      "sha256": "df14c1561b249069b8bc3f6c5645807d0d222b733739e295bace336c2b4b1ff9"
+    },
+    {
+      "path": "games/voxel/tools/inventory-legacy-content.ts",
+      "sha256": "cd5cac6ba786ebeadc4ff18fecd6baef43119a53b59f3570672c0a599412daac"
+    },
+    {
+      "path": "games/voxel/tools/release-manifest.mjs",
+      "sha256": "4fc580d822690d2fba62a511e339e68a6d6ef80a77c49632b85262a34da48478"
+    },
+    {
+      "path": "games/voxel/tools/survey-content.ts",
+      "sha256": "3c5771a7351430ef1da721dbaa7e3c1a5a0d2f512e4c97dcfb5097aa82bc1fd4"
+    },
+    {
+      "path": "games/voxel/tools/test-server-bundle.mjs",
+      "sha256": "9c709127ebdbd762bd5b87082059730c43f781dc9ee6b4628534a39dc48d46bc"
+    },
+    {
+      "path": "games/voxel/tools/verify-release.mjs",
+      "sha256": "ef3e306e45cc6d28965586a6b91c56e8c1ebcdcbac7b8eee731964aa172338b8"
+    },
+    {
+      "path": "games/voxel/tools/wasm-scenario.mjs",
+      "sha256": "f5e33f3770c3bb2aaf384e4ed3d41e0d33951967970e0e9f8a2323e9934ce33a"
+    },
+    {
+      "path": "games/voxel/tsconfig.json",
+      "sha256": "d439f8d41f864dc8e69dcfaa30360ffa09a24afe0dd34f2e568ad97169e40775"
+    },
+    {
+      "path": "games/voxel/vite.config.ts",
+      "sha256": "d58fac22e92ecd44a39385a2e24308177b771d07d77933af403c1ef5be4f69a2"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "25857b790605d3d8f70cb0063951b2620d7c9c63ddb52c2251985f3903d65dfb"
+    },
+    {
+      "path": "package.json",
+      "sha256": "c6c02027285acf0231395242122644ca50bc0868a741ae861ff684d9ef657f3a"
+    },
+    {
+      "path": "packages/game-logic/package.json",
+      "sha256": "978903f64623c3a11a69f1df83cdd026a7cc5bda3ef90981fad6278add9e72e9"
+    },
+    {
+      "path": "packages/game-logic/src/breakoutMp.test.ts",
+      "sha256": "999c0d4fc7660806f599bc880db2707daa5f9d50c343874e265049529a5d8fff"
+    },
+    {
+      "path": "packages/game-logic/src/breakoutMp.ts",
+      "sha256": "f17325cc7db5d0a2c6f199dfbc7a086d24686d27343d00e0e27a2f3a81435f64"
+    },
+    {
+      "path": "packages/game-logic/src/chess.test.ts",
+      "sha256": "2d09e45dc88c06c53b7785571633482e3e9e7092f42621d5fe9cb7e85873324f"
+    },
+    {
+      "path": "packages/game-logic/src/chess.ts",
+      "sha256": "513a53092d1b6f393d8c7778c73e78ccf667e423b570fe553e5a2aaece86365d"
+    },
+    {
+      "path": "packages/game-logic/src/connectfour.test.ts",
+      "sha256": "f7f6b0efea6ee8687221a1b8784a62d415e84f5ec3a060e6f9931ba57df5482e"
+    },
+    {
+      "path": "packages/game-logic/src/connectfour.ts",
+      "sha256": "334c1f17c93564ccb47a1d712db9c8a44ef2f0cd9ed90b1f05627ccf4097b10e"
+    },
+    {
+      "path": "packages/game-logic/src/drawing.test.ts",
+      "sha256": "25b095740e011e09559bab44b49f537f0a0254784255fcc52371ffd96e21c741"
+    },
+    {
+      "path": "packages/game-logic/src/drawing.ts",
+      "sha256": "9c1fb27368abafef251d5bda2acf4ce0c0fb3490f6fde2042eefce9c9129771d"
+    },
+    {
+      "path": "packages/game-logic/src/index.ts",
+      "sha256": "2cdfe1b2d0f9dfaaad02cb5b1c818e170d290d86fec64876bc79fca1883179d1"
+    },
+    {
+      "path": "packages/game-logic/src/memory.test.ts",
+      "sha256": "9a4c02b4196e6a5fcaeb5a62fcf42f1517b805ec78f5552ee9ba332a5907cdb4"
+    },
+    {
+      "path": "packages/game-logic/src/memory.ts",
+      "sha256": "bc2ba686e9148cb54644adb486aa486f793128eed446effff2134550895ebd57"
+    },
+    {
+      "path": "packages/game-logic/src/recessSchedule.test.ts",
+      "sha256": "94800280ad1d98b27bf9c2d6280850efc0e9b2db52f21001b60ba396bed47e4c"
+    },
+    {
+      "path": "packages/game-logic/src/recessSchedule.ts",
+      "sha256": "f8d76be9a13b3c2d1ea20dd61115299f9d4954c75d767f8006367f7633c93095"
+    },
+    {
+      "path": "packages/game-logic/src/registry.ts",
+      "sha256": "43cfe30956bb4d2018c95d856a18ebda4aa5588d1746f680344725693703d8e8"
+    },
+    {
+      "path": "packages/game-logic/src/tictactoe.test.ts",
+      "sha256": "7fcfa1435c6e7336286e0b4101691c38e2c4ef84145452371db0dcd3d659b81c"
+    },
+    {
+      "path": "packages/game-logic/src/tictactoe.ts",
+      "sha256": "ec24a5353f6811b6d207bdf87f839b5f1e6805765454ec752621c84a66b3ade2"
+    },
+    {
+      "path": "packages/game-logic/tsconfig.json",
+      "sha256": "9b88f991239524c071eb06de2f24c94ae4323d2ddf9bd27cac8341311007d32c"
+    },
+    {
+      "path": "supabase/migrations/20261025010000_voxel_checkpoint_storage.sql",
+      "sha256": "ed7e06017888eab5899b0fb3837c3a12791b46895f4ff362dcbe3966e8d8f240"
+    },
+    {
+      "path": "supabase/migrations/20261025020000_voxel_session_projection.sql",
+      "sha256": "e1ef579079c1783e74deac88f29b70390df74244d5a6ee9fbd8d91905ec9439a"
+    }
+  ]
+}

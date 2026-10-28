@@ -1,0 +1,73 @@
+{
+  "schema": 1,
+  "baseCommit": "74fa76131e9a75124a0db34e4e0ec256750d60ec",
+  "buildId": "c293fe5e2511d2bc656ea33756509e834b8761fc743a9d2d8a4e83cebd2ad799",
+  "result": "CURRENT_REACT_NATIVE_LOCAL_SQL_SFU_PASS",
+  "scope": "Actual configured LiveKit and generated audio; real React/packaged native game/local PostgreSQL; fixture Auth/PostgREST/Storage. Not an actual-Auth-plus-SFU or deployed staging check.",
+  "hostedSchoolWrites": 0,
+  "mediaRoomCleanup": true,
+  "privateClusterStopped": true,
+  "sourceRuntimeChanged": false,
+  "artifacts": [
+    {
+      "path": "browser.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "browser.txt",
+      "sha256": "4e512aa361dd954e6a2face71037a60ab7e96465908f1ac6a7cca5d1c79d0f06"
+    },
+    {
+      "path": "media-cleanup.json",
+      "sha256": "530b64e6aeb121d38bb51cddead115b8bba184b04ab790c0b1326dffde1b3345"
+    },
+    {
+      "path": "postgres-stop.txt",
+      "sha256": "ca19178a35ab4153b75b494963b66ce8243e1b94c173107c87b44d09db23652d"
+    },
+    {
+      "path": "react-fixture/assets/embed-BbfR4Nnp.css",
+      "sha256": "88cf956a48a285c6e672ae7387cbdaa256a319b20328632c5aff65ea426abae7"
+    },
+    {
+      "path": "react-fixture/assets/embed-XOrmj1kr.js",
+      "sha256": "58cf7ec14faae637f76957cfa88bc92b39c42a1af6a9c3acc6cc84d32d84925c"
+    },
+    {
+      "path": "react-fixture/assets/engine-worker-DPFd4qax.js",
+      "sha256": "4fb4aae45165a42ca55545e132de209d72dc6557be1d4704e7682774dd17c18c"
+    },
+    {
+      "path": "react-fixture/assets/index-BI1NryoK.css",
+      "sha256": "95b51702c53b47fc69da88fc0d997dea35a454115cf3e51455e3a5e9d20d4937"
+    },
+    {
+      "path": "react-fixture/assets/index-DnaEGm0_.js",
+      "sha256": "ebe404a1c05b725ed4f263884c2185ee15b72fdb47a288219bb07571c800f3e4"
+    },
+    {
+      "path": "react-fixture/assets/voxel_engine_bg-1ejYMYOZ.wasm",
+      "sha256": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "react-fixture/index.html",
+      "sha256": "a0b522bfa7b23e39e51972b178e090e0204a7e3d22039981af4e86cc0986865a"
+    },
+    {
+      "path": "react-sfu.json",
+      "sha256": "5cd63ac02747b7f3c626a382797fb55fce5904160ae623b3bf093c7c54e9e75d"
+    },
+    {
+      "path": "release-snapshot-tests.txt",
+      "sha256": "3315ffb94baca11290878a95c7501cf4ce49a3154f82e0da2534082d04b51db4"
+    },
+    {
+      "path": "release.json",
+      "sha256": "3a835aa11a1de76b8b84b390c49feb67594db9c1503c2e866c63d9d4c148c859"
+    },
+    {
+      "path": "staging-web-build.txt",
+      "sha256": "323d43211be1cb1b88ce59827200400850c442522929c880d84675d99a7fbb95"
+    }
+  ]
+}

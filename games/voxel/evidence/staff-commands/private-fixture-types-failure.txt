@@ -1,0 +1,5 @@
+
+> @playground/voxel@0.1.0 typecheck
+> tsc --noEmit
+
+tests/wasm/staff.test.ts(132,14): error TS2341: Property 'build' is private and only accessible within class 'GameRoom'.

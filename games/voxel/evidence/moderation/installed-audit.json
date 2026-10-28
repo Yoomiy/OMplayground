@@ -1,0 +1,8 @@
+{
+  "result": "PASS",
+  "migrations": 6,
+  "matchedFunctions": 9,
+  "privateTables": 2,
+  "remoteApplicationWrites": 0,
+  "migrationSha256": "0c16c00a3e76fef628e07ad1f2ee70ac606448a514f6ed7e524fa89fa765f56d"
+}

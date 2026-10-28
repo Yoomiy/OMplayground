@@ -1,0 +1,9 @@
+{
+  "result": "PASS",
+  "migrations": 7,
+  "matchingFunctionBodies": 5,
+  "privateTables": 2,
+  "validVisibleHistoryIndex": true,
+  "remoteApplicationWrites": 0,
+  "migrationSha256": "f3de58fecd2634105fe4b25ce7875b308ba9eca7c428c43c3552f00f26a0ed5b"
+}

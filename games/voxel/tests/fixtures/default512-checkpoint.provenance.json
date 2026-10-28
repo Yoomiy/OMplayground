@@ -1,0 +1,12 @@
+{
+  "purpose": "Synthetic local checkpoint captured over real WebSocket from the previous packaged runtime; volatile in-memory persistence, no hosted data",
+  "sourceBuildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc",
+  "sha256": "e29a18b414dd4476b6f4eab51bba023ecf7492b98c0c8f94634c0d3964e304db",
+  "bounds": {
+    "minX": -256,
+    "minZ": -256,
+    "maxX": 256,
+    "maxZ": 256,
+    "height": 256
+  }
+}

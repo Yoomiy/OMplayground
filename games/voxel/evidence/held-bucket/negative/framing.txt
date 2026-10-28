@@ -1,0 +1,19 @@
+
+> @playground/voxel@0.1.0 test:held:browser
+> node tools/browser-held-bucket.ts
+
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: desktop bucket shell must fit the viewport
+    at file:///home/ubuntu/OMplayground/games/voxel/tools/browser-held-bucket.ts:124:7 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.21.0

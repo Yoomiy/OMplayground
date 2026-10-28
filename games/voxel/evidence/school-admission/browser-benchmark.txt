@@ -1,0 +1,63 @@
+{
+  "scope": "Compute-only foundation preset, 81 generated columns and 49 complete mesh neighborhoods; no hardware frame-rate or capacity claim. Content differs from upstream research, so this is not an isolated format-width comparison.",
+  "node": "v24.21.0",
+  "arch": "arm64",
+  "cpu": "Neoverse-N1",
+  "availableCpus": 2,
+  "engineHash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388",
+  "contentHash": "368b605ac5bdf5ff6fcf4af02f7174cbc6d39b5110f48e0a41b231a0a6479464",
+  "stateCount": 123,
+  "wasmBytes": 550357,
+  "generationMs": {
+    "samples": 81,
+    "mean": 2.4175966049382738,
+    "p95": 3.638497000000001,
+    "p99": 6.099948999999981,
+    "max": 6.099948999999981
+  },
+  "insertionMs": {
+    "samples": 81,
+    "mean": 0.06687392592592484,
+    "p95": 0.14116100000001097,
+    "p99": 0.7052830000000085,
+    "max": 0.7052830000000085
+  },
+  "extractionMs": {
+    "samples": 49,
+    "mean": 0.5550400408163308,
+    "p95": 0.6710830000000101,
+    "p99": 1.53268700000001,
+    "max": 1.53268700000001
+  },
+  "lightingAndMeshingMs": {
+    "samples": 49,
+    "mean": 3.0575183061224527,
+    "p95": 4.109020000000044,
+    "p99": 10.557529999999986,
+    "max": 10.557529999999986
+  },
+  "columnBytes": {
+    "samples": 81,
+    "mean": 37137.48148148148,
+    "p95": 50184,
+    "p99": 50184,
+    "max": 50184
+  },
+  "regionBytes": {
+    "samples": 49,
+    "mean": 320531.10204081633,
+    "p95": 393256,
+    "p99": 401448,
+    "max": 401448
+  },
+  "meshBytes": {
+    "samples": 49,
+    "mean": 39253.551020408166,
+    "p95": 57888,
+    "p99": 65344,
+    "max": 65344
+  },
+  "loadedWasmHighWaterBytes": 8716288,
+  "afterFreeWasmHighWaterBytes": 8716288,
+  "finalLoadedColumns": 0
+}

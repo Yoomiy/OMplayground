@@ -1,0 +1,237 @@
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useSoloAutoSave } from "@/hooks/useSoloAutoSave";
+import {
+  isJsonObject,
+  type JsonValue,
+  type SoloGameSaveControls
+} from "@/lib/soloGameSaves";
+
+interface Balloon {
+  id: number;
+  x: number;
+  y: number;
+  speed: number;
+  hue: number;
+}
+
+interface BalloonLocalState {
+  balloons: Balloon[];
+  score: number;
+  lives: number;
+  status: "playing" | "gameover";
+  nextId: number;
+}
+
+const START_LIVES = 3;
+const SPAWN_MIN_MS = 650;
+const SPAWN_MAX_MS = 1400;
+const BASE_SPEED = 0.06;
+const MAX_SPEED = 0.22;
+
+function isBalloon(value: JsonValue | undefined): boolean {
+  return (
+    isJsonObject(value) &&
+    typeof value.id === "number" &&
+    typeof value.x === "number" &&
+    typeof value.y === "number" &&
+    typeof value.speed === "number" &&
+    typeof value.hue === "number"
+  );
+}
+
+function initialState(saved?: JsonValue | null): BalloonLocalState {
+  if (
+    isJsonObject(saved) &&
+    Array.isArray(saved.balloons) &&
+    saved.balloons.every(isBalloon) &&
+    typeof saved.score === "number" &&
+    typeof saved.lives === "number" &&
+    typeof saved.nextId === "number" &&
+    saved.status === "playing"
+  ) {
+    return {
+      balloons: saved.balloons as unknown as Balloon[],
+      score: saved.score,
+      lives: saved.lives,
+      status: "playing",
+      nextId: saved.nextId
+    };
+  }
+  return {
+    balloons: [],
+    score: 0,
+    lives: START_LIVES,
+    status: "playing",
+    nextId: 1
+  };
+}
+
+export function BalloonPopSolo({ save }: { save: SoloGameSaveControls }) {
+  const stateRef = useRef<BalloonLocalState>(initialState(save.savedState));
+  const [, forceUpdate] = useState(0);
+
+  const fieldRef = useRef<HTMLDivElement | null>(null);
+  const [size, setSize] = useState({ w: 0, h: 0 });
+  const lastFrameRef = useRef<number | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const nextSpawnAtRef = useRef<number>(Date.now() + 400);
+
+  useLayoutEffect(() => {
+    const el = fieldRef.current;
+    if (!el) return;
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      setSize({ w: r.width, h: r.height });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+    const step = useCallback(
+      (now: number) => {
+        const s = stateRef.current;
+        if (s.status !== "playing") return;
+
+        const prev = lastFrameRef.current ?? now;
+        const dt = Math.min(50, now - prev);
+        lastFrameRef.current = now;
+
+        let escapedCount = 0;
+        const moved = s.balloons.map((b) => {
+          const newY = b.y - b.speed * dt;
+          if (newY + 28 <= 0) escapedCount++;
+          return { ...b, y: newY };
+        });
+
+        const inField = moved.filter((b) => b.y + 28 > 0);
+        let balloons = inField;
+        if (Date.now() >= nextSpawnAtRef.current) {
+          const hue = Math.floor(Math.random() * 360);
+          balloons = [
+            ...balloons,
+            {
+              id: s.nextId,
+              x: 20 + Math.random() * Math.max(1, size.w - 60),
+              y: size.h - 20,
+              speed: Math.min(MAX_SPEED, BASE_SPEED + s.score * 0.003),
+              hue
+            }
+          ];
+          stateRef.current.nextId += 1;
+          const delay =
+            SPAWN_MAX_MS -
+            Math.min(SPAWN_MAX_MS - SPAWN_MIN_MS, s.score * 30);
+          nextSpawnAtRef.current = Date.now() + delay;
+        }
+        stateRef.current.balloons = balloons;
+
+        if (escapedCount > 0) {
+          stateRef.current.lives = Math.max(0, s.lives - escapedCount);
+        }
+
+        if (stateRef.current.lives <= 0) {
+          stateRef.current.status = "gameover";
+        }
+        forceUpdate(c => c + 1);
+        rafRef.current = window.requestAnimationFrame(step);
+      },
+      [size.w, size.h]
+    );
+
+    // rAF game loop — local only, no server roundtrip per frame.
+    useEffect(() => {
+      if (stateRef.current.status !== "playing") return undefined;
+      if (size.w === 0 || size.h === 0) return undefined;
+      rafRef.current = window.requestAnimationFrame(step);
+      return () => {
+        if (rafRef.current !== null) window.cancelAnimationFrame(rafRef.current);
+        lastFrameRef.current = null;
+      };
+    }, [stateRef.current.status, size.w, size.h, step]);
+
+    const pop = useCallback((id: number) => {
+      const s = stateRef.current;
+      if (s.status !== "playing") return;
+      if (!s.balloons.some((b) => b.id === id)) return;
+      stateRef.current.balloons = s.balloons.filter((b) => b.id !== id);
+      stateRef.current.score = s.score + 1;
+      forceUpdate(c => c + 1);
+    }, []);
+
+    const reset = () => {
+      void save.clearSave();
+      nextSpawnAtRef.current = Date.now() + 400;
+      lastFrameRef.current = null;
+      stateRef.current = initialState();
+      forceUpdate(c => c + 1);
+    };
+
+    const state = stateRef.current;
+    const saveSnapshot = {
+      balloons: state.balloons.map((b) => ({ ...b })),
+      score: state.score,
+      lives: state.lives,
+      status: state.status,
+      nextId: state.nextId
+    };
+    useSoloAutoSave(
+      save,
+      saveSnapshot as unknown as JsonValue,
+      state.status === "playing"
+    );
+
+    useEffect(() => {
+      if (state.status === "gameover") void save.clearSave();
+    }, [save, state.status]);
+
+  return (
+    <div className="mx-auto flex w-full max-w-xl flex-col gap-3 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-md p-4 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+      <div className="flex w-full items-center justify-between text-sm font-semibold text-white/80">
+        <span>ניקוד: {state.score}</span>
+        <span>חיים: {"❤️".repeat(Math.max(0, state.lives))}</span>
+      </div>
+      <div
+        ref={fieldRef}
+        className="relative h-[70vh] w-full overflow-hidden rounded-3xl border border-white/10 bg-slate-950/40 shadow-inner backdrop-blur-sm"
+      >
+        {state.balloons.map((b) => (
+          <button
+            key={b.id}
+            type="button"
+            aria-label="בלון"
+            disabled={state.status !== "playing"}
+            className="absolute flex h-14 w-12 items-center justify-center rounded-full text-3xl shadow-lg border border-white/20 transition hover:scale-105 active:scale-95"
+            style={{
+              left: b.x,
+              top: b.y,
+              backgroundColor: `hsl(${b.hue}, 80%, 60%)`,
+              transform: "translate(-50%, -50%)"
+            }}
+            onClick={() => pop(b.id)}
+          >
+            🎈
+          </button>
+        ))}
+        {state.status === "gameover" ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-4 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-md p-6 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+              <p className="text-lg font-bold text-white">
+                המשחק הסתיים · {state.score} נק'
+              </p>
+              <button
+                type="button"
+                onClick={reset}
+                className="rounded-2xl bg-gradient-to-r from-violet-500 to-fuchsia-500 border border-violet-400/50 px-6 py-2.5 text-sm font-black text-white shadow-[0_4px_12px_rgba(139,92,246,0.4)] hover:shadow-[0_4px_16px_rgba(139,92,246,0.6)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
+              >
+                שחק שוב
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+

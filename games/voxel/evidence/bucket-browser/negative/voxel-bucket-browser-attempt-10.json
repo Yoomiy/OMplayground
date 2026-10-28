@@ -1,0 +1,597 @@
+{
+  "state": {
+    "disposed": false,
+    "inputMode": "touch",
+    "mode": "survival",
+    "lifecycle": "playing",
+    "worldPauseReason": "allowed",
+    "worldTick": 3669.86,
+    "mining": {
+      "target": null,
+      "elapsed": 0,
+      "total": 0
+    },
+    "vitals": {
+      "version": 2,
+      "health": 20,
+      "food": 18,
+      "air": 300,
+      "dead": false,
+      "respawnIn": 0,
+      "attackCooldown": 0,
+      "protection": 0
+    },
+    "combat": true,
+    "hit": null,
+    "lastHitEvent": null,
+    "lastExplosionEvent": null,
+    "explosives": [],
+    "canIgnite": true,
+    "miningHeld": false,
+    "drops": [
+      {
+        "id": "drop-27",
+        "revision": 9,
+        "stack": {
+          "itemType": "iron_ore",
+          "count": 1
+        },
+        "position": [
+          58.5,
+          60,
+          -1.5
+        ]
+      }
+    ],
+    "selectedSlot": 7,
+    "environment": {
+      "tick": 3669.5030000042916,
+      "seconds": 122.31676666680973,
+      "dayFraction": 0.3219306388890081,
+      "daylight": 1,
+      "sun": [
+        -0.4183054933631493,
+        0.8616563740162099,
+        0.2873478855663454
+      ],
+      "sky": [
+        0.59,
+        0.76,
+        0.88
+      ],
+      "rain": 0,
+      "wind": [
+        -0.09681483233576553,
+        -0.2839487422754283
+      ],
+      "openSky": true
+    },
+    "atmosphere": {
+      "rainLines": 0,
+      "stars": false,
+      "clouds": 16,
+      "sun": true,
+      "moon": false
+    },
+    "avatars": {
+      "visible": 0,
+      "capacity": 8,
+      "samples": [],
+      "equipment": {
+        "visible": 0,
+        "held": 0,
+        "worn": 0,
+        "kinds": 0,
+        "capacity": 0,
+        "samples": []
+      }
+    },
+    "renderOrigin": {
+      "x": 48,
+      "z": -16
+    },
+    "feedback": {
+      "held": {
+        "state": 0,
+        "itemType": "stone_pickaxe",
+        "visible": true,
+        "swings": 58
+      },
+      "effects": {
+        "live": 0,
+        "bursts": 27,
+        "hits": 0,
+        "explosions": 0
+      },
+      "drops": {
+        "visible": 1,
+        "kinds": 1
+      },
+      "explosives": {
+        "visible": 0,
+        "capacity": 0,
+        "flashing": 0
+      },
+      "vision": false
+    },
+    "audio": {
+      "supported": true,
+      "contexts": 1,
+      "state": "running",
+      "active": true,
+      "muted": false,
+      "voices": 0,
+      "effects": 51,
+      "gain": 0.2199999988079071,
+      "dropped": 0,
+      "listener": [
+        58.5,
+        60.619998931884766,
+        -0.699999988079071
+      ],
+      "lastSource": [
+        58.5,
+        60.5,
+        -1.5
+      ]
+    },
+    "renderLimitHz": 30,
+    "touch": {
+      "x": 0,
+      "z": 0,
+      "jump": false,
+      "sneak": false,
+      "sprint": false
+    },
+    "focused": true,
+    "visible": "visible",
+    "hasFocus": true,
+    "lastFrame": 126996.6,
+    "lastUpdate": 126989.60000014305,
+    "resources": {
+      "geometries": 79,
+      "textures": 5,
+      "workers": 1
+    },
+    "actorId": "c0ca7b3d-ffb8-441e-9214-298d625cdfbd",
+    "worldId": "22bd7f92-b3e5-49bb-897e-1f3cf19b4122",
+    "body": {
+      "position": [
+        58.5,
+        59,
+        -0.7
+      ],
+      "onGround": 1,
+      "inWater": 0,
+      "eyesInWater": 0,
+      "frozen": 0,
+      "flying": 0,
+      "velocity": [
+        0,
+        0,
+        0
+      ]
+    },
+    "view": {
+      "yaw": 0,
+      "pitch": -0.7
+    },
+    "lastResult": {
+      "type": "result",
+      "epoch": 8,
+      "sequence": 36,
+      "status": "applied",
+      "outcome": {
+        "ok": false,
+        "reason": "conflict"
+      }
+    },
+    "inventory": {
+      "version": 2,
+      "catalog": false,
+      "revision": 82,
+      "selected": 7,
+      "bag": [
+        {
+          "count": 5,
+          "itemType": "spruce_planks"
+        },
+        {
+          "itemType": "cocoa_beans",
+          "count": 1
+        },
+        {
+          "count": 1,
+          "instance": {
+            "durability": 51
+          },
+          "itemType": "wooden_pickaxe"
+        },
+        {
+          "itemType": "dirt",
+          "count": 4
+        },
+        {
+          "itemType": "sand",
+          "count": 5
+        },
+        {
+          "itemType": "stone",
+          "count": 3
+        },
+        {
+          "itemType": "plant_fiber",
+          "count": 2
+        },
+        {
+          "count": 1,
+          "instance": {
+            "durability": 121
+          },
+          "itemType": "stone_pickaxe"
+        },
+        {
+          "count": 4,
+          "itemType": "charcoal"
+        },
+        {
+          "itemType": "iron_ore",
+          "count": 2
+        },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "craft2": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "craft3": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "equipment": [
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "station": "personal",
+      "container": null
+    },
+    "inventoryOpen": false,
+    "inventoryPending": false,
+    "recentEdits": [
+      {
+        "cell": [
+          49,
+          68,
+          -4
+        ],
+        "state": 0,
+        "revision": 1
+      },
+      {
+        "cell": [
+          49,
+          69,
+          -4
+        ],
+        "state": 0,
+        "revision": 2
+      },
+      {
+        "cell": [
+          49,
+          70,
+          -4
+        ],
+        "state": 0,
+        "revision": 3
+      },
+      {
+        "cell": [
+          49,
+          71,
+          -4
+        ],
+        "state": 0,
+        "revision": 4
+      },
+      {
+        "cell": [
+          49,
+          72,
+          -4
+        ],
+        "state": 0,
+        "revision": 5
+      },
+      {
+        "cell": [
+          49,
+          73,
+          -4
+        ],
+        "state": 0,
+        "revision": 6
+      },
+      {
+        "cell": [
+          49,
+          68,
+          -5
+        ],
+        "state": 23,
+        "revision": 7
+      },
+      {
+        "cell": [
+          46,
+          63,
+          7
+        ],
+        "state": 0,
+        "revision": 1
+      },
+      {
+        "cell": [
+          45,
+          63,
+          7
+        ],
+        "state": 0,
+        "revision": 2
+      },
+      {
+        "cell": [
+          44,
+          63,
+          7
+        ],
+        "state": 0,
+        "revision": 3
+      },
+      {
+        "cell": [
+          43,
+          63,
+          7
+        ],
+        "state": 0,
+        "revision": 4
+      },
+      {
+        "cell": [
+          43,
+          60,
+          12
+        ],
+        "state": 0,
+        "revision": 5
+      },
+      {
+        "cell": [
+          44,
+          60,
+          13
+        ],
+        "state": 0,
+        "revision": 6
+      },
+      {
+        "cell": [
+          45,
+          61,
+          12
+        ],
+        "state": 0,
+        "revision": 7
+      },
+      {
+        "cell": [
+          45,
+          60,
+          13
+        ],
+        "state": 0,
+        "revision": 8
+      },
+      {
+        "cell": [
+          49,
+          67,
+          2
+        ],
+        "state": 0,
+        "revision": 1
+      },
+      {
+        "cell": [
+          58,
+          67,
+          -1
+        ],
+        "state": 0,
+        "revision": 8
+      },
+      {
+        "cell": [
+          58,
+          66,
+          -1
+        ],
+        "state": 0,
+        "revision": 9
+      },
+      {
+        "cell": [
+          58,
+          65,
+          -1
+        ],
+        "state": 0,
+        "revision": 10
+      },
+      {
+        "cell": [
+          58,
+          64,
+          -1
+        ],
+        "state": 0,
+        "revision": 11
+      },
+      {
+        "cell": [
+          58,
+          63,
+          -1
+        ],
+        "state": 0,
+        "revision": 12
+      },
+      {
+        "cell": [
+          58,
+          62,
+          -1
+        ],
+        "state": 0,
+        "revision": 13
+      },
+      {
+        "cell": [
+          58,
+          61,
+          -1
+        ],
+        "state": 0,
+        "revision": 14
+      },
+      {
+        "cell": [
+          58,
+          60,
+          -1
+        ],
+        "state": 0,
+        "revision": 15
+      },
+      {
+        "cell": [
+          58,
+          59,
+          -1
+        ],
+        "state": 0,
+        "revision": 16
+      },
+      {
+        "cell": [
+          58,
+          61,
+          -2
+        ],
+        "state": 0,
+        "revision": 17
+      },
+      {
+        "cell": [
+          58,
+          60,
+          -2
+        ],
+        "state": 0,
+        "revision": 18
+      }
+    ],
+    "status": "playing",
+    "epoch": 8,
+    "phase": "playing",
+    "position": [
+      58.5,
+      59,
+      -0.7
+    ],
+    "selected": 0,
+    "players": 1,
+    "inputLag": 9,
+    "correction": 0,
+    "columns": 49,
+    "collisionColumns": 49,
+    "meshed": 35,
+    "workers": 1,
+    "activeJobs": 0,
+    "stream": {
+      "discardedJobs": 0,
+      "installed": 84,
+      "meshJobs": 293,
+      "generationJobs": 84,
+      "mainWorkMs": 0
+    },
+    "render": {
+      "uploadedBytes": 21422968,
+      "columns": 35,
+      "drawCalls": 10,
+      "triangles": 3182,
+      "uploadMs": 0.20000004768371582,
+      "prepareMs": 497,
+      "gpu": {
+        "submitted": 585,
+        "skipped": 808,
+        "pending": 1,
+        "failures": 0
+      }
+    },
+    "target": [
+      58,
+      59,
+      -2
+    ],
+    "targetState": 109,
+    "targetNormal": [
+      0,
+      1,
+      0
+    ],
+    "actionPending": 0,
+    "queuedAction": null,
+    "actionSequence": 36,
+    "lastReceivedAgoMs": 62
+  },
+  "trace": []
+}

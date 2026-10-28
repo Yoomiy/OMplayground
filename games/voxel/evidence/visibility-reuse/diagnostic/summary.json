@@ -1,0 +1,298 @@
+{
+  "scope": "Diagnostic sampled CPU profiles of a single actual packaged 128-player loopback run, including load clients, startup and warmup. Profiling overhead; not an isolated capacity qualification.",
+  "buildId": "dc0be6db305ecd9b23c809e7fa9e9c370b354d04847ae31bbaa0461188235e86",
+  "profiles": [
+    {
+      "file": "CPU.20261027.171402.815438.0.001.cpuprofile",
+      "elapsedMs": 29562.061,
+      "hotspots": [
+        {
+          "key": "(idle) :0",
+          "sampledMs": 9043.633
+        },
+        {
+          "key": "writev :0",
+          "sampledMs": 4882.697
+        },
+        {
+          "key": "(anonymous) games/voxel/tools/benchmark-sockets.mjs:165",
+          "sampledMs": 4560.182
+        },
+        {
+          "key": "(program) :0",
+          "sampledMs": 1637.752
+        },
+        {
+          "key": "postMessage :0",
+          "sampledMs": 1112.104
+        },
+        {
+          "key": "nextTick node:internal/process/task_queues:113",
+          "sampledMs": 708.499
+        },
+        {
+          "key": "parseClientMessage games/voxel/dist-server/gateway.js:101",
+          "sampledMs": 637.84
+        },
+        {
+          "key": "postMessage node:internal/worker:462",
+          "sampledMs": 519.475
+        },
+        {
+          "key": "(anonymous) games/voxel/tools/benchmark-sockets.mjs:228",
+          "sampledMs": 425.225
+        },
+        {
+          "key": "(anonymous) :0",
+          "sampledMs": 390.575
+        },
+        {
+          "key": "writevGeneric node:internal/stream_base_commons:121",
+          "sampledMs": 313.443
+        },
+        {
+          "key": "(garbage collector) :0",
+          "sampledMs": 296.508
+        },
+        {
+          "key": "(anonymous) node:internal/worker:333",
+          "sampledMs": 263.968
+        },
+        {
+          "key": "(anonymous) games/voxel/dist-server/gateway.js:1491",
+          "sampledMs": 174.1
+        },
+        {
+          "key": "createWriteWrap node:internal/stream_base_commons:108",
+          "sampledMs": 162.964
+        },
+        {
+          "key": "FastBuffer node:internal/buffer:960",
+          "sampledMs": 162.094
+        },
+        {
+          "key": "send games/voxel/node_modules/ws/lib/sender.js:351",
+          "sampledMs": 159.205
+        },
+        {
+          "key": "emit node:events:489",
+          "sampledMs": 152.775
+        },
+        {
+          "key": "consume games/voxel/node_modules/ws/lib/receiver.js:127",
+          "sampledMs": 150.78
+        },
+        {
+          "key": "runMicrotasks :0",
+          "sampledMs": 141.1
+        },
+        {
+          "key": "(anonymous) games/voxel/dist-server/gateway.js:1877",
+          "sampledMs": 139.658
+        },
+        {
+          "key": "frame games/voxel/node_modules/ws/lib/sender.js:79",
+          "sampledMs": 137.117
+        },
+        {
+          "key": "processTicksAndRejections node:internal/process/task_queues:72",
+          "sampledMs": 129.737
+        },
+        {
+          "key": "clearBuffer node:internal/streams/writable:746",
+          "sampledMs": 128.904
+        },
+        {
+          "key": "toString node:buffer:918",
+          "sampledMs": 120.361
+        },
+        {
+          "key": "_write node:internal/streams/writable:452",
+          "sampledMs": 118.141
+        },
+        {
+          "key": "utf8Slice :0",
+          "sampledMs": 114.611
+        },
+        {
+          "key": "(anonymous) games/voxel/tools/benchmark-sockets.mjs:238",
+          "sampledMs": 103.285
+        },
+        {
+          "key": "Socket._writeGeneric node:net:1231",
+          "sampledMs": 98.343
+        },
+        {
+          "key": "_write games/voxel/node_modules/ws/lib/receiver.js:96",
+          "sampledMs": 96.759
+        },
+        {
+          "key": "dataMessage games/voxel/node_modules/ws/lib/receiver.js:577",
+          "sampledMs": 88.413
+        },
+        {
+          "key": "getData games/voxel/node_modules/ws/lib/receiver.js:480",
+          "sampledMs": 84.929
+        },
+        {
+          "key": "Writable.uncork node:internal/streams/writable:522",
+          "sampledMs": 83.877
+        },
+        {
+          "key": "onwrite node:internal/streams/writable:617",
+          "sampledMs": 74.542
+        },
+        {
+          "key": "onStreamRead node:internal/stream_base_commons:166",
+          "sampledMs": 74.38
+        }
+      ]
+    },
+    {
+      "file": "CPU.20261027.171403.815438.1.002.cpuprofile",
+      "elapsedMs": 28847.36,
+      "hotspots": [
+        {
+          "key": "(idle) :0",
+          "sampledMs": 17087.065
+        },
+        {
+          "key": "snapshots games/voxel/dist-server/room-worker.js:4543",
+          "sampledMs": 3385.175
+        },
+        {
+          "key": "player_state games/voxel/dist-server/room-worker.js:778",
+          "sampledMs": 1475.471
+        },
+        {
+          "key": "encode games/voxel/dist-server/room-worker.js:4659",
+          "sampledMs": 753.449
+        },
+        {
+          "key": "(anonymous) games/voxel/dist-server/room-worker.js:3564",
+          "sampledMs": 674.898
+        },
+        {
+          "key": "(program) :0",
+          "sampledMs": 579.918
+        },
+        {
+          "key": "send games/voxel/dist-server/room-worker.js:4736",
+          "sampledMs": 539.451
+        },
+        {
+          "key": "(garbage collector) :0",
+          "sampledMs": 537.429
+        },
+        {
+          "key": "postMessage :0",
+          "sampledMs": 343.939
+        },
+        {
+          "key": "(anonymous) games/voxel/dist-server/room-worker.js:4679",
+          "sampledMs": 233.772
+        },
+        {
+          "key": "require games/voxel/dist-server/room-worker.js:1749",
+          "sampledMs": 196.948
+        },
+        {
+          "key": "take games/voxel/dist-server/room-worker.js:1320",
+          "sampledMs": 152.123
+        },
+        {
+          "key": "expireAuthorizations games/voxel/dist-server/room-worker.js:4873",
+          "sampledMs": 150.157
+        },
+        {
+          "key": "getArrayF64FromWasm0 games/voxel/dist-server/room-worker.js:1070",
+          "sampledMs": 139.802
+        },
+        {
+          "key": "advance games/voxel/dist-server/room-worker.js:3556",
+          "sampledMs": 122.221
+        },
+        {
+          "key": "equipped games/voxel/dist-server/room-worker.js:2453",
+          "sampledMs": 120.764
+        },
+        {
+          "key": "wasm-function[294] wasm://wasm/00219756:1",
+          "sampledMs": 107.648
+        },
+        {
+          "key": "stepBoundedMovement games/voxel/dist-server/room-worker.js:1533",
+          "sampledMs": 97.364
+        },
+        {
+          "key": "advance games/voxel/dist-server/room-worker.js:1363",
+          "sampledMs": 93.227
+        },
+        {
+          "key": "vitalsView games/voxel/dist-server/room-worker.js:3909",
+          "sampledMs": 89.125
+        },
+        {
+          "key": "send games/voxel/dist-server/room-worker.js:4748",
+          "sampledMs": 87.208
+        },
+        {
+          "key": "wasm-function[141] wasm://wasm/00219756:1",
+          "sampledMs": 86.456
+        },
+        {
+          "key": "state games/voxel/dist-server/room-worker.js:4382",
+          "sampledMs": 79.951
+        },
+        {
+          "key": "subscriptions games/voxel/dist-server/room-worker.js:4434",
+          "sampledMs": 68.115
+        },
+        {
+          "key": "receive games/voxel/dist-server/room-worker.js:3385",
+          "sampledMs": 66.868
+        },
+        {
+          "key": "processTimers node:internal/timers:603",
+          "sampledMs": 62.376
+        },
+        {
+          "key": "find games/voxel/dist-server/room-worker.js:4367",
+          "sampledMs": 57.302
+        },
+        {
+          "key": "receive games/voxel/dist-server/room-worker.js:1306",
+          "sampledMs": 56.565
+        },
+        {
+          "key": "(anonymous) games/voxel/dist-server/room-worker.js:4940",
+          "sampledMs": 56.422
+        },
+        {
+          "key": "now :0",
+          "sampledMs": 45.877
+        },
+        {
+          "key": "(anonymous) games/voxel/dist-server/room-worker.js:4368",
+          "sampledMs": 41.6
+        },
+        {
+          "key": "(anonymous) games/voxel/dist-server/room-worker.js:4893",
+          "sampledMs": 40.639
+        },
+        {
+          "key": "listOnTimeout node:internal/timers:623",
+          "sampledMs": 39.596
+        },
+        {
+          "key": "(anonymous) node:internal/per_context/messageport:19",
+          "sampledMs": 38.945
+        },
+        {
+          "key": "explosiveSnapshots games/voxel/dist-server/room-worker.js:4339",
+          "sampledMs": 37.76
+        }
+      ]
+    }
+  ]
+}

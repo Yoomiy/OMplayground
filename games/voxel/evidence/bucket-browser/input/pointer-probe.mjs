@@ -1,0 +1,33 @@
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import {createServer} from 'node:http';
+import {execFile} from 'node:child_process';
+import {promisify} from 'node:util';
+import {writeFileSync} from 'node:fs';
+const require=createRequire('/home/ubuntu/OMplayground/games/voxel/package.json');
+const {chromium}=require('playwright'),execute=promisify(execFile);
+const http=createServer((req,res)=>res.end(`<button onclick="document.querySelector('canvas').requestPointerLock()">Start</button><canvas width="800" height="600"></canvas><script>window.moves=[];window.addEventListener('mousemove',e=>moves.push({x:e.movementX,y:e.movementY,trusted:e.isTrusted}));</script>`));
+await new Promise(r=>http.listen(0,'127.0.0.1',r));
+let browser;const timer=setTimeout(()=>void browser?.close(),15000);
+try {
+  browser=await chromium.launch({headless:false,args:['--no-sandbox','--enable-unsafe-swiftshader','--use-angle=swiftshader']});
+  const page=await browser.newPage();
+  await page.goto('http://127.0.0.1:'+http.address().port);
+  await page.bringToFront();
+  const entry=await page.locator('button').evaluate(e=>{const r=e.getBoundingClientRect();const border=(window.outerWidth-window.innerWidth)/2;return{x:Math.round(window.screenX+border+r.x+r.width/2),y:Math.round(window.screenY+window.outerHeight-window.innerHeight-border+r.y+r.height/2),screen:[window.screenX,window.screenY,window.outerWidth,window.outerHeight,window.innerWidth,window.innerHeight]};});
+  console.log(JSON.stringify({entry}));
+  await execute('/tmp/voxel-x11-runtime/root/usr/bin/xdotool',['mousemove',String(entry.x),String(entry.y),'click','1']);
+  await page.waitForFunction(()=>document.pointerLockElement!==null);
+  await page.waitForTimeout(150);
+  await page.evaluate(()=>window.moves.length=0);
+  await execute('/tmp/voxel-x11-runtime/root/usr/bin/xdotool',['mousemove_relative','--','20','30']);
+  await page.waitForFunction(()=>window.moves.some(e=>e.x!==0||e.y!==0));
+  await page.waitForTimeout(100);
+  const moves=await page.evaluate(()=>window.moves);
+  console.log(JSON.stringify({moves}));
+  assert(moves.some(e=>e.trusted&&e.x===20&&e.y===30));
+  assert.equal(moves.reduce((n,e)=>n+e.x,0),20);
+  assert.equal(moves.reduce((n,e)=>n+e.y,0),30);
+  const report={result:'TRUSTED_OS_POINTER_LOCK_PROBE_PASS',browser:browser.version(),moves,scope:'Private Xvfb display, full headed software Chromium, actual OS relative mouse input; this probe is not a game or hardware qualification.'};
+  writeFileSync('/tmp/voxel-bucket-pointer-probe.json',JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));
+} finally {clearTimeout(timer);await browser?.close();await new Promise(r=>http.close(r));}

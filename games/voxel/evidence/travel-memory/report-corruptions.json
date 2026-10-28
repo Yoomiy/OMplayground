@@ -1,0 +1,21 @@
+{
+  "result": "TRAVEL_MEMORY_FOUR_CORRUPTION_REJECTIONS_PASS",
+  "checks": [
+    {
+      "name": "growing-buffer-count",
+      "rejected": true
+    },
+    {
+      "name": "growing-wasm-high-water",
+      "rejected": true
+    },
+    {
+      "name": "leaked-worker",
+      "rejected": true
+    },
+    {
+      "name": "missing-rendered-terrain",
+      "rejected": true
+    }
+  ]
+}

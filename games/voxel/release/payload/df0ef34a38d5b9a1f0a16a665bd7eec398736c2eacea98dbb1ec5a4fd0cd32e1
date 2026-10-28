@@ -1,0 +1,1422 @@
+/* @ts-self-types="./voxel_engine.d.ts" */
+
+/**
+ * Lighting + meshing (one per worker).
+ */
+export class ChunkMesher {
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        ChunkMesherFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_chunkmesher_free(ptr, 0);
+    }
+    /**
+     * @param {Uint8Array} region
+     * @returns {Uint32Array}
+     */
+    mesh(region) {
+        const ptr0 = passArray8ToWasm0(region, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.chunkmesher_mesh(this.__wbg_ptr, ptr0, len0);
+        if (ret[3]) {
+            throw takeFromExternrefTable0(ret[2]);
+        }
+        var v2 = getArrayU32FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v2;
+    }
+    constructor() {
+        const ret = wasm.chunkmesher_new();
+        this.__wbg_ptr = ret;
+        ChunkMesherFinalization.register(this, this.__wbg_ptr, this);
+        return this;
+    }
+}
+if (Symbol.dispose) ChunkMesher.prototype[Symbol.dispose] = ChunkMesher.prototype.free;
+
+/**
+ * Visibility culling over registered chunk meshes.
+ */
+export class Culler {
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        CullerFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_culler_free(ptr, 0);
+    }
+    /**
+     * Slot capacity; output arrays hold 6 (main) / 4 (shadow) words per slot.
+     * @returns {number}
+     */
+    capacity() {
+        const ret = wasm.culler_capacity(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @param {Float64Array} vp
+     * @param {number} cx
+     * @param {number} cy
+     * @param {number} cz
+     * @param {number} radius
+     * @param {boolean} occlusion
+     */
+    cull(vp, cx, cy, cz, radius, occlusion) {
+        const ptr0 = passArrayF64ToWasm0(vp, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.culler_cull(this.__wbg_ptr, ptr0, len0, cx, cy, cz, radius, occlusion);
+    }
+    /**
+     * @param {Float64Array} vp
+     * @param {number} cx
+     * @param {number} cy
+     * @param {number} cz
+     * @param {number} radius
+     */
+    cull_shadow(vp, cx, cy, cz, radius) {
+        const ptr0 = passArrayF64ToWasm0(vp, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.culler_cull_shadow(this.__wbg_ptr, ptr0, len0, cx, cy, cz, radius);
+    }
+    constructor() {
+        const ret = wasm.culler_new();
+        this.__wbg_ptr = ret;
+        CullerFinalization.register(this, this.__wbg_ptr, this);
+        return this;
+    }
+    /**
+     * @returns {number}
+     */
+    out_ptr() {
+        const ret = wasm.culler_out_ptr(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    out_shadow_ptr() {
+        const ret = wasm.culler_out_shadow_ptr(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @param {number} cx
+     * @param {number} cz
+     */
+    remove_column(cx, cz) {
+        wasm.culler_remove_column(this.__wbg_ptr, cx, cz);
+    }
+    /**
+     * @param {number} cx
+     * @param {number} cz
+     * @param {Uint32Array} header
+     * @returns {number}
+     */
+    set_column(cx, cz, header) {
+        const ptr0 = passArray32ToWasm0(header, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.culler_set_column(this.__wbg_ptr, cx, cz, ptr0, len0);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    visible_sections() {
+        const ret = wasm.culler_visible_sections(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+}
+if (Symbol.dispose) Culler.prototype[Symbol.dispose] = Culler.prototype.free;
+
+/**
+ * Stateless terrain generator (one per worker).
+ */
+export class TerrainGen {
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        TerrainGenFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_terraingen_free(ptr, 0);
+    }
+    /**
+     * Stamp a game structure during generation. `data` is (y * sz + z) * sx + x; 65535 = keep.
+     * @param {number} ox
+     * @param {number} oy
+     * @param {number} oz
+     * @param {number} sx
+     * @param {number} sy
+     * @param {number} sz
+     * @param {Uint16Array} data
+     */
+    add_blueprint(ox, oy, oz, sx, sy, sz, data) {
+        const ptr0 = passArray16ToWasm0(data, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.terraingen_add_blueprint(this.__wbg_ptr, ox, oy, oz, sx, sy, sz, ptr0, len0);
+        if (ret[1]) {
+            throw takeFromExternrefTable0(ret[0]);
+        }
+    }
+    /**
+     * Flatten terrain to `height` inside `radius`, blending over `blend` blocks.
+     * @param {number} cx
+     * @param {number} cz
+     * @param {number} radius
+     * @param {number} blend
+     * @param {number} height
+     */
+    add_terraform(cx, cz, radius, blend, height) {
+        wasm.terraingen_add_terraform(this.__wbg_ptr, cx, cz, radius, blend, height);
+    }
+    /**
+     * [x, y, z] of a pleasant spawn column.
+     * @returns {Int32Array}
+     */
+    find_spawn() {
+        const ret = wasm.terraingen_find_spawn(this.__wbg_ptr);
+        var v1 = getArrayI32FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v1;
+    }
+    /**
+     * @param {number} cx
+     * @param {number} cz
+     * @returns {Uint8Array}
+     */
+    generate(cx, cz) {
+        const ret = wasm.terraingen_generate(this.__wbg_ptr, cx, cz);
+        var v1 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
+        return v1;
+    }
+    /**
+     * @param {number} seed
+     */
+    constructor(seed) {
+        const ret = wasm.terraingen_new(seed);
+        this.__wbg_ptr = ret;
+        TerrainGenFinalization.register(this, this.__wbg_ptr, this);
+        return this;
+    }
+    /**
+     * @param {number} height
+     */
+    set_flat(height) {
+        wasm.terraingen_set_flat(this.__wbg_ptr, height);
+    }
+    set_void() {
+        wasm.terraingen_set_void(this.__wbg_ptr);
+    }
+    /**
+     * @param {number} y
+     * @param {number} top
+     * @param {number} fill
+     * @param {number} depth
+     */
+    set_void_ground(y, top, fill, depth) {
+        wasm.terraingen_set_void_ground(this.__wbg_ptr, y, top, fill, depth);
+    }
+}
+if (Symbol.dispose) TerrainGen.prototype[Symbol.dispose] = TerrainGen.prototype.free;
+
+/**
+ * A world: block storage, edits, raycasts, the players' physics bodies (by slot) and the
+ * entity simulation.
+ */
+export class VoxelWorld {
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        VoxelWorldFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_voxelworld_free(ptr, 0);
+    }
+    /**
+     * Damage from the simulation's copy of the world (`carve`'s changes, `export_damage`), here
+     * too. Returns the loaded columns whose meshes change: [cx, cz, relight] triples, relight 1
+     * where a block went altogether (remesh around it: its light changed).
+     * @param {Uint8Array} data
+     * @returns {Int32Array}
+     */
+    apply_damage(data) {
+        const ptr0 = passArray8ToWasm0(data, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.voxelworld_apply_damage(this.__wbg_ptr, ptr0, len0);
+        var v2 = getArrayI32FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v2;
+    }
+    /**
+     * A blast's crater (`World::blast`): a ragged sphere of little voxels `radius` round (x, y, z),
+     * its edge wandering by `roughness` of that (the same for the same `seed`), out of the
+     * carvable blocks among `cells` (x, y, z triples). Returns what `carve` returns.
+     * @param {number} x
+     * @param {number} y
+     * @param {number} z
+     * @param {number} radius
+     * @param {number} roughness
+     * @param {number} seed
+     * @param {Int32Array} cells
+     * @returns {Uint8Array}
+     */
+    blast(x, y, z, radius, roughness, seed, cells) {
+        const ptr0 = passArray32ToWasm0(cells, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.voxelworld_blast(this.__wbg_ptr, x, y, z, radius, roughness, seed, ptr0, len0);
+        var v2 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
+        return v2;
+    }
+    /**
+     * @returns {number}
+     */
+    bodies_ptr() {
+        const ret = wasm.voxelworld_bodies_ptr(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    body_capacity() {
+        const ret = wasm.voxelworld_body_capacity(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * [ride, x, y, z] for an entity body: the mover it rides (0 for none) and where it is on it.
+     * @param {number} i
+     * @returns {Float64Array}
+     */
+    body_ride(i) {
+        const ret = wasm.voxelworld_body_ride(this.__wbg_ptr, i);
+        var v1 = getArrayF64FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 8, 8);
+        return v1;
+    }
+    /**
+     * @returns {number}
+     */
+    body_stride() {
+        const ret = wasm.voxelworld_body_stride(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * Whether `carve` and `blast` can take bits out of the block at (x, y, z).
+     * @param {number} x
+     * @param {number} y
+     * @param {number} z
+     * @returns {boolean}
+     */
+    carvable(x, y, z) {
+        const ret = wasm.voxelworld_carvable(this.__wbg_ptr, x, y, z);
+        return ret !== 0;
+    }
+    /**
+     * Take a capsule of little voxels out of the destructible blocks it reaches: from (x, y, z)
+     * along (dx, dy, dz) for `depth` blocks, `radius` round. Returns [removed u32, n u32, then n
+     * blocks left with nothing (air now, an edit) as x, y, z, the block it was (i32 each), then
+     * the changes to the rest for other copies of the world (`apply_damage`)], little-endian.
+     * @param {number} x
+     * @param {number} y
+     * @param {number} z
+     * @param {number} dx
+     * @param {number} dy
+     * @param {number} dz
+     * @param {number} radius
+     * @param {number} depth
+     * @returns {Uint8Array}
+     */
+    carve(x, y, z, dx, dy, dz, radius, depth) {
+        const ret = wasm.voxelworld_carve(this.__wbg_ptr, x, y, z, dx, dy, dz, radius, depth);
+        var v1 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
+        return v1;
+    }
+    clear_edits() {
+        wasm.voxelworld_clear_edits(this.__wbg_ptr);
+    }
+    /**
+     * How high the collision of the block at (x, y, z) reaches above the bottom of its cell, in
+     * blocks: 0 if nothing there is solid, 1 for a full block, 0.5 for a bottom slab, 1.5 for a
+     * fence; a fence as it's joined there, a carved block as what's left of it. Unloaded columns
+     * count as solid.
+     * @param {number} x
+     * @param {number} y
+     * @param {number} z
+     * @returns {number}
+     */
+    collision_top(x, y, z) {
+        const ret = wasm.voxelworld_collision_top(this.__wbg_ptr, x, y, z);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    column_count() {
+        const ret = wasm.voxelworld_column_count(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * How many blocks are damaged.
+     * @returns {number}
+     */
+    damage_count() {
+        const ret = wasm.voxelworld_damage_count(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * How many of a block's 4096 little voxels are left: fewer once it's been carved, 4096 for
+     * a block that hasn't (whatever it is).
+     * @param {number} x
+     * @param {number} y
+     * @param {number} z
+     * @returns {number}
+     */
+    damage_left(x, y, z) {
+        const ret = wasm.voxelworld_damage_left(this.__wbg_ptr, x, y, z);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    edit_count() {
+        const ret = wasm.voxelworld_edit_count(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * All the damage, for `apply_damage` in a copy of the world that has none (a late joiner).
+     * @returns {Uint8Array}
+     */
+    export_damage() {
+        const ret = wasm.voxelworld_export_damage(this.__wbg_ptr);
+        var v1 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
+        return v1;
+    }
+    /**
+     * @returns {Uint8Array}
+     */
+    export_edits() {
+        const ret = wasm.voxelworld_export_edits(this.__wbg_ptr);
+        var v1 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
+        return v1;
+    }
+    /**
+     * @param {number} cx
+     * @param {number} cz
+     * @returns {Uint8Array}
+     */
+    extract_region(cx, cz) {
+        const ret = wasm.voxelworld_extract_region(this.__wbg_ptr, cx, cz);
+        var v1 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
+        return v1;
+    }
+    /**
+     * `extract_region` for a world drawn repeated along x (`period` columns from column `x0`): a
+     * neighbour past either end is the column at the other end.
+     * @param {number} cx
+     * @param {number} cz
+     * @param {number} x0
+     * @param {number} period
+     * @returns {Uint8Array}
+     */
+    extract_region_wrapped(cx, cz, x0, period) {
+        const ret = wasm.voxelworld_extract_region_wrapped(this.__wbg_ptr, cx, cz, x0, period);
+        var v1 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
+        return v1;
+    }
+    /**
+     * @param {number} cx
+     * @param {number} cz
+     */
+    forget_column(cx, cz) {
+        wasm.voxelworld_forget_column(this.__wbg_ptr, cx, cz);
+    }
+    /**
+     * Block id; 65535 when the column is not loaded.
+     * @param {number} x
+     * @param {number} y
+     * @param {number} z
+     * @returns {number}
+     */
+    get_block(x, y, z) {
+        const ret = wasm.voxelworld_get_block(this.__wbg_ptr, x, y, z);
+        return ret;
+    }
+    /**
+     * @param {number} cx
+     * @param {number} cz
+     * @returns {boolean}
+     */
+    has_column(cx, cz) {
+        const ret = wasm.voxelworld_has_column(this.__wbg_ptr, cx, cz);
+        return ret !== 0;
+    }
+    /**
+     * @param {Uint8Array} data
+     */
+    import_edits(data) {
+        const ptr0 = passArray8ToWasm0(data, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.voxelworld_import_edits(this.__wbg_ptr, ptr0, len0);
+        if (ret[1]) {
+            throw takeFromExternrefTable0(ret[0]);
+        }
+    }
+    /**
+     * @param {number} cx
+     * @param {number} cz
+     * @param {Uint8Array} data
+     */
+    insert_column(cx, cz, data) {
+        const ptr0 = passArray8ToWasm0(data, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.voxelworld_insert_column(this.__wbg_ptr, cx, cz, ptr0, len0);
+        if (ret[1]) {
+            throw takeFromExternrefTable0(ret[0]);
+        }
+    }
+    /**
+     * [sky, block] light estimate (0..1) at a block position.
+     * @param {number} x
+     * @param {number} y
+     * @param {number} z
+     * @returns {Float32Array}
+     */
+    light_probe(x, y, z) {
+        const ret = wasm.voxelworld_light_probe(this.__wbg_ptr, x, y, z);
+        var v1 = getArrayF32FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v1;
+    }
+    /**
+     * Whether the segment between two points is free of solid blocks.
+     * @param {number} ax
+     * @param {number} ay
+     * @param {number} az
+     * @param {number} bx
+     * @param {number} by
+     * @param {number} bz
+     * @returns {boolean}
+     */
+    line_clear(ax, ay, az, bx, by, bz) {
+        const ret = wasm.voxelworld_line_clear(this.__wbg_ptr, ax, ay, az, bx, by, bz);
+        return ret !== 0;
+    }
+    /**
+     * An edit from the simulation's copy of the world: applied now if loaded, else when the
+     * column loads. True if the block changed now.
+     * @param {number} x
+     * @param {number} y
+     * @param {number} z
+     * @param {number} b
+     * @returns {boolean}
+     */
+    mirror_block(x, y, z, b) {
+        const ret = wasm.voxelworld_mirror_block(this.__wbg_ptr, x, y, z, b);
+        return ret !== 0;
+    }
+    /**
+     * Add (or replace) a mover: `cells` holds 1 for each solid cell of an `sx` x `sy` x `sz` grid
+     * (index `(y * sz + z) * sx + x`); the model's origin is at grid point (`px`, `py`, `pz`) and
+     * a cell is `unit` model units across.
+     * @param {number} id
+     * @param {number} sx
+     * @param {number} sy
+     * @param {number} sz
+     * @param {Uint16Array} cells
+     * @param {number} px
+     * @param {number} py
+     * @param {number} pz
+     * @param {number} unit
+     */
+    mover_add(id, sx, sy, sz, cells, px, py, pz, unit) {
+        const ptr0 = passArray16ToWasm0(cells, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.voxelworld_mover_add(this.__wbg_ptr, id, sx, sy, sz, ptr0, len0, px, py, pz, unit);
+    }
+    /**
+     * The mover whose cells hold this point, or 0.
+     * @param {number} x
+     * @param {number} y
+     * @param {number} z
+     * @returns {number}
+     */
+    mover_at(x, y, z) {
+        const ret = wasm.voxelworld_mover_at(this.__wbg_ptr, x, y, z);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    mover_count() {
+        const ret = wasm.voxelworld_mover_count(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * How many of a mover's blocks would be in the world's solid blocks with it at this pose
+     * (position, rotation, scale): 0 when it's clear.
+     * @param {number} id
+     * @param {number} x
+     * @param {number} y
+     * @param {number} z
+     * @param {number} qx
+     * @param {number} qy
+     * @param {number} qz
+     * @param {number} qw
+     * @param {number} scale
+     * @returns {number}
+     */
+    mover_overlap(id, x, y, z, qx, qy, qz, qw, scale) {
+        const ret = wasm.voxelworld_mover_overlap(this.__wbg_ptr, id, x, y, z, qx, qy, qz, qw, scale);
+        return ret >>> 0;
+    }
+    /**
+     * Where a mover is now: position, rotation (unit quaternion) and scale. `snap` places it
+     * without motion (new, teleported): nothing riding it is carried and nobody is pushed.
+     * @param {number} id
+     * @param {number} x
+     * @param {number} y
+     * @param {number} z
+     * @param {number} qx
+     * @param {number} qy
+     * @param {number} qz
+     * @param {number} qw
+     * @param {number} scale
+     * @param {boolean} snap
+     */
+    mover_pose(id, x, y, z, qx, qy, qz, qw, scale, snap) {
+        wasm.voxelworld_mover_pose(this.__wbg_ptr, id, x, y, z, qx, qy, qz, qw, scale, snap);
+    }
+    /**
+     * [mover id or 0, distance] for the first mover along a ray within `max_dist`.
+     * @param {number} ox
+     * @param {number} oy
+     * @param {number} oz
+     * @param {number} dx
+     * @param {number} dy
+     * @param {number} dz
+     * @param {number} max_dist
+     * @returns {Float64Array}
+     */
+    mover_raycast(ox, oy, oz, dx, dy, dz, max_dist) {
+        const ret = wasm.voxelworld_mover_raycast(this.__wbg_ptr, ox, oy, oz, dx, dy, dz, max_dist);
+        var v1 = getArrayF64FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 8, 8);
+        return v1;
+    }
+    /**
+     * @param {number} id
+     */
+    mover_remove(id) {
+        wasm.voxelworld_mover_remove(this.__wbg_ptr, id);
+    }
+    /**
+     * The movers have moved (`mover_pose`) over `dt` seconds: carry what rides them, push what
+     * they ran into, and start measuring their motion afresh.
+     * @param {number} dt
+     */
+    movers_carry(dt) {
+        wasm.voxelworld_movers_carry(this.__wbg_ptr, dt);
+    }
+    /**
+     * `movers_carry` without the carrying (a client's copy of the world, which only predicts).
+     * @param {number} dt
+     */
+    movers_settle(dt) {
+        wasm.voxelworld_movers_settle(this.__wbg_ptr, dt);
+    }
+    constructor() {
+        const ret = wasm.voxelworld_new();
+        this.__wbg_ptr = ret;
+        VoxelWorldFinalization.register(this, this.__wbg_ptr, this);
+        return this;
+    }
+    /**
+     * [body index or -1, distance] for the first body hit by a ray before any solid block.
+     * @param {number} ox
+     * @param {number} oy
+     * @param {number} oz
+     * @param {number} dx
+     * @param {number} dy
+     * @param {number} dz
+     * @param {number} max_dist
+     * @param {number} pad
+     * @returns {Float64Array}
+     */
+    pick_body(ox, oy, oz, dx, dy, dz, max_dist, pad) {
+        const ret = wasm.voxelworld_pick_body(this.__wbg_ptr, ox, oy, oz, dx, dy, dz, max_dist, pad);
+        var v1 = getArrayF64FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 8, 8);
+        return v1;
+    }
+    /**
+     * A new player body at (x, y, z); returns its slot (slots of removed players are reused).
+     * @param {number} x
+     * @param {number} y
+     * @param {number} z
+     * @returns {number}
+     */
+    player_add(x, y, z) {
+        const ret = wasm.voxelworld_player_add(this.__wbg_ptr, x, y, z);
+        return ret >>> 0;
+    }
+    /**
+     * Whether a player's body (0.6 x 1.8 x 0.6) fits with its feet at (x, y, z): no solid block,
+     * block model or mover in the way (unloaded columns count as solid).
+     * @param {number} x
+     * @param {number} y
+     * @param {number} z
+     * @returns {boolean}
+     */
+    player_fits(x, y, z) {
+        const ret = wasm.voxelworld_player_fits(this.__wbg_ptr, x, y, z);
+        return ret !== 0;
+    }
+    /**
+     * Add a velocity change to a player (knockback, launch pads).
+     * @param {number} i
+     * @param {number} vx
+     * @param {number} vy
+     * @param {number} vz
+     */
+    player_impulse(i, vx, vy, vz) {
+        wasm.voxelworld_player_impulse(this.__wbg_ptr, i, vx, vy, vz);
+    }
+    /**
+     * Whether block `id` at (x, y, z) would overlap any player's body (only its solid boxes:
+     * a bottom slab leaves room above it). By id, not what's there: the block would be new, and
+     * whole.
+     * @param {number} x
+     * @param {number} y
+     * @param {number} z
+     * @param {number} id
+     * @returns {boolean}
+     */
+    player_overlaps(x, y, z, id) {
+        const ret = wasm.voxelworld_player_overlaps(this.__wbg_ptr, x, y, z, id);
+        return ret !== 0;
+    }
+    /**
+     * @param {number} i
+     */
+    player_remove(i) {
+        wasm.voxelworld_player_remove(this.__wbg_ptr, i);
+    }
+    /**
+     * @param {number} i
+     * @param {number} x
+     * @param {number} y
+     * @param {number} z
+     */
+    player_reset(i, x, y, z) {
+        wasm.voxelworld_player_reset(this.__wbg_ptr, i, x, y, z);
+    }
+    /**
+     * Put a player's body back exactly as `player_state` described it (client-side prediction
+     * starts again from the server's word).
+     * @param {number} i
+     * @param {Float64Array} s
+     */
+    player_restore(i, s) {
+        const ptr0 = passArrayF64ToWasm0(s, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.voxelworld_player_restore(this.__wbg_ptr, i, ptr0, len0);
+    }
+    /**
+     * [x, y, z, vx, vy, vz, on_ground, in_water, eyes_in_water, in_lava, flying, bob, frozen,
+     * ride, ride_x, ride_y, ride_z] (the mover they ride, 0 for none, and where they are on it)
+     * @param {number} i
+     * @returns {Float64Array}
+     */
+    player_state(i) {
+        const ret = wasm.voxelworld_player_state(this.__wbg_ptr, i);
+        var v1 = getArrayF64FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 8, 8);
+        return v1;
+    }
+    /**
+     * One step of a player's movement. Gravity, control and ground-jump power are per-step
+     * multipliers. Returns whether native ground takeoff occurred. Jump power never applies
+     * to water/lava swimming, flight or an airborne press.
+     * @param {number} i
+     * @param {number} wish_x
+     * @param {number} wish_z
+     * @param {boolean} jump
+     * @param {boolean} sneak
+     * @param {boolean} sprint
+     * @param {boolean} slide
+     * @param {number} speed
+     * @param {number} gravity
+     * @param {number} control
+     * @param {number} jump_power
+     * @param {number} dt
+     * @returns {boolean}
+     */
+    player_step(i, wish_x, wish_z, jump, sneak, sprint, slide, speed, gravity, control, jump_power, dt) {
+        const ret = wasm.voxelworld_player_step(this.__wbg_ptr, i, wish_x, wish_z, jump, sneak, sprint, slide, speed, gravity, control, jump_power, dt);
+        return ret !== 0;
+    }
+    /**
+     * How a player moves: [walk, sprint, sneak, jump, gravity, ground_accel, air_accel,
+     * edge_guard (0/1), mantle, slide_friction] (see `world::Tuning`). Kept across `player_reset`.
+     * @param {number} i
+     * @param {Float64Array} t
+     */
+    player_tune(i, t) {
+        const ptr0 = passArrayF64ToWasm0(t, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.voxelworld_player_tune(this.__wbg_ptr, i, ptr0, len0);
+    }
+    /**
+     * Whether a point is inside solid material: a solid block's collision boxes, less what's been
+     * shot out of it. Unloaded columns count as air.
+     * @param {number} x
+     * @param {number} y
+     * @param {number} z
+     * @returns {boolean}
+     */
+    point_solid(x, y, z) {
+        const ret = wasm.voxelworld_point_solid(this.__wbg_ptr, x, y, z);
+        return ret !== 0;
+    }
+    /**
+     * @returns {number}
+     */
+    projectile_capacity() {
+        const ret = wasm.voxelworld_projectile_capacity(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    projectile_stride() {
+        const ret = wasm.voxelworld_projectile_stride(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    projectiles_ptr() {
+        const ret = wasm.voxelworld_projectiles_ptr(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * A ray that went into material at (ox, oy, oz): [found, distance, nx, ny, nz], how far along
+     * it comes out into the open and the face it comes out of (see `World::ray_exit`); found 0
+     * when it's still in material after `max`.
+     * @param {number} ox
+     * @param {number} oy
+     * @param {number} oz
+     * @param {number} dx
+     * @param {number} dy
+     * @param {number} dz
+     * @param {number} max
+     * @returns {Float64Array}
+     */
+    ray_exit(ox, oy, oz, dx, dy, dz, max) {
+        const ret = wasm.voxelworld_ray_exit(this.__wbg_ptr, ox, oy, oz, dx, dy, dz, max);
+        var v1 = getArrayF64FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 8, 8);
+        return v1;
+    }
+    /**
+     * [hit, bx, by, bz, nx, ny, nz, block, distance]
+     * @param {number} ox
+     * @param {number} oy
+     * @param {number} oz
+     * @param {number} dx
+     * @param {number} dy
+     * @param {number} dz
+     * @param {number} max_dist
+     * @returns {Float64Array}
+     */
+    raycast(ox, oy, oz, dx, dy, dz, max_dist) {
+        const ret = wasm.voxelworld_raycast(this.__wbg_ptr, ox, oy, oz, dx, dy, dz, max_dist);
+        var v1 = getArrayF64FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 8, 8);
+        return v1;
+    }
+    /**
+     * [hit, bx, by, bz, nx, ny, nz, block, distance], including liquid surfaces.
+     * @param {number} ox
+     * @param {number} oy
+     * @param {number} oz
+     * @param {number} dx
+     * @param {number} dy
+     * @param {number} dz
+     * @param {number} max_dist
+     * @returns {Float64Array}
+     */
+    raycast_liquids(ox, oy, oz, dx, dy, dz, max_dist) {
+        const ret = wasm.voxelworld_raycast_liquids(this.__wbg_ptr, ox, oy, oz, dx, dy, dz, max_dist);
+        var v1 = getArrayF64FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 8, 8);
+        return v1;
+    }
+    /**
+     * Force a navigation-field rebuild toward the players now.
+     */
+    rebuild_flow() {
+        wasm.voxelworld_rebuild_flow(this.__wbg_ptr);
+    }
+    /**
+     * @param {number} cx
+     * @param {number} cz
+     */
+    remove_column(cx, cz) {
+        wasm.voxelworld_remove_column(this.__wbg_ptr, cx, cz);
+    }
+    /**
+     * Undo this session's edits; returns the loaded columns that changed as [cx, cz, ...].
+     * @returns {Int32Array}
+     */
+    revert_edits() {
+        const ret = wasm.voxelworld_revert_edits(this.__wbg_ptr);
+        var v1 = getArrayI32FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v1;
+    }
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @param {number} z
+     * @param {number} b
+     * @returns {boolean}
+     */
+    set_block(x, y, z, b) {
+        const ret = wasm.voxelworld_set_block(this.__wbg_ptr, x, y, z, b);
+        return ret !== 0;
+    }
+    /**
+     * Which blocks `carve` can take bits out of: `ids` has 1 for each destructible block id (by
+     * id; all 0 or empty turns carving off), and only blocks higher than `above`. Solid opaque
+     * cubes only, whatever it says.
+     * @param {number} above
+     * @param {Uint8Array} ids
+     */
+    set_destructible(above, ids) {
+        const ptr0 = passArray8ToWasm0(ids, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.voxelworld_set_destructible(this.__wbg_ptr, above, ptr0, len0);
+    }
+    /**
+     * @param {number} i
+     * @param {boolean} on
+     */
+    set_flying(i, on) {
+        wasm.voxelworld_set_flying(this.__wbg_ptr, i, on);
+    }
+    /**
+     * @param {number} i
+     * @param {boolean} on
+     */
+    set_frozen(i, on) {
+        wasm.voxelworld_set_frozen(this.__wbg_ptr, i, on);
+    }
+    /**
+     * A spectator (on) or a player again: see `world::Player::ghost`. Flying either way; off, they fall.
+     * @param {number} i
+     * @param {boolean} on
+     */
+    set_ghost(i, on) {
+        wasm.voxelworld_set_ghost(this.__wbg_ptr, i, on);
+    }
+    /**
+     * Advance bodies (navigation, physics, separation) and projectiles.
+     * @param {number} dt
+     */
+    step_entities(dt) {
+        wasm.voxelworld_step_entities(this.__wbg_ptr, dt);
+    }
+    /**
+     * Shape-aware motion for small server-owned bodies. Positions use feet coordinates.
+     * No entity or simulation clock is allocated by this compute operation.
+     * @param {number} x
+     * @param {number} y
+     * @param {number} z
+     * @param {number} dx
+     * @param {number} dy
+     * @param {number} dz
+     * @param {number} half_width
+     * @param {number} height
+     * @returns {Float64Array}
+     */
+    sweep_body(x, y, z, dx, dy, dz, half_width, height) {
+        const ret = wasm.voxelworld_sweep_body(this.__wbg_ptr, x, y, z, dx, dy, dz, half_width, height);
+        if (ret[3]) {
+            throw takeFromExternrefTable0(ret[2]);
+        }
+        var v1 = getArrayF64FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 8, 8);
+        return v1;
+    }
+    /**
+     * The boxes you aim at in the block at (x, y, z), 6 numbers each (1/16 of a block within its
+     * cell): a fence or pane as it's joined there. Empty for air.
+     * @param {number} x
+     * @param {number} y
+     * @param {number} z
+     * @returns {Uint8Array}
+     */
+    target_boxes(x, y, z) {
+        const ret = wasm.voxelworld_target_boxes(this.__wbg_ptr, x, y, z);
+        var v1 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
+        return v1;
+    }
+}
+if (Symbol.dispose) VoxelWorld.prototype[Symbol.dispose] = VoxelWorld.prototype.free;
+
+/**
+ * @returns {string}
+ */
+export function block_registry_json() {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+        const ret = wasm.block_registry_json();
+        deferred1_0 = ret[0];
+        deferred1_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    }
+}
+
+/**
+ * @returns {number}
+ */
+export function chunk_header_bytes() {
+    const ret = wasm.chunk_header_bytes();
+    return ret >>> 0;
+}
+
+/**
+ * Built-in entity atlas (monster skins + item sprites): 256x256 RGBA albedo followed by
+ * 256x256 single-channel emissive.
+ * @returns {Uint8Array}
+ */
+export function entity_textures() {
+    const ret = wasm.entity_textures();
+    var v1 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
+    wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
+    return v1;
+}
+
+/**
+ * Albedo layers followed by material layers (see `texgen`).
+ * @returns {Uint8Array}
+ */
+export function generate_textures() {
+    const ret = wasm.generate_textures();
+    var v1 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
+    wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
+    return v1;
+}
+
+/**
+ * @returns {number}
+ */
+export function mesh_header_words() {
+    const ret = wasm.mesh_header_words();
+    return ret >>> 0;
+}
+
+/**
+ * @param {number} size
+ * @returns {Uint8Array}
+ */
+export function noise_texture(size) {
+    const ret = wasm.noise_texture(size);
+    var v1 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
+    wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
+    return v1;
+}
+
+/**
+ * @returns {number}
+ */
+export function sea_level() {
+    const ret = wasm.sea_level();
+    return ret;
+}
+
+/**
+ * Install the complete compiled content manifest once in this Wasm instance.
+ * @param {string} json
+ * @returns {number}
+ */
+export function set_content(json) {
+    const ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.set_content(ptr0, len0);
+    if (ret[2]) {
+        throw takeFromExternrefTable0(ret[1]);
+    }
+    return ret[0] >>> 0;
+}
+
+/**
+ * View (16) + projection (16) matrices of a texel-snapped orthographic shadow camera.
+ * @param {Float64Array} to_sun
+ * @param {Float64Array} center
+ * @param {number} radius
+ * @param {number} depth
+ * @param {number} resolution
+ * @returns {Float64Array}
+ */
+export function shadow_camera(to_sun, center, radius, depth, resolution) {
+    const ptr0 = passArrayF64ToWasm0(to_sun, wasm.__wbindgen_malloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ptr1 = passArrayF64ToWasm0(center, wasm.__wbindgen_malloc);
+    const len1 = WASM_VECTOR_LEN;
+    const ret = wasm.shadow_camera(ptr0, len0, ptr1, len1, radius, depth, resolution);
+    var v3 = getArrayF64FromWasm0(ret[0], ret[1]).slice();
+    wasm.__wbindgen_free(ret[0], ret[1] * 8, 8);
+    return v3;
+}
+
+/**
+ * @returns {number}
+ */
+export function texture_layer_count() {
+    const ret = wasm.texture_layer_count();
+    return ret >>> 0;
+}
+function __wbg_get_imports() {
+    const import0 = {
+        __proto__: null,
+        __wbg_Error_67e7344beaa85059: function(arg0, arg1) {
+            const ret = Error(getStringFromWasm0(arg0, arg1));
+            return ret;
+        },
+        __wbg___wbindgen_throw_5d9e815e6fdf150f: function(arg0, arg1) {
+            throw new Error(getStringFromWasm0(arg0, arg1));
+        },
+        __wbindgen_generic_0000000000000001: function(arg0, arg1) {
+            // Cast intrinsic for `Ref(String) -> Externref`.
+            const ret = getStringFromWasm0(arg0, arg1);
+            return ret;
+        },
+        __wbindgen_init_externref_table: function() {
+            const table = wasm.__wbindgen_externrefs;
+            const offset = table.grow(4);
+            table.set(0, undefined);
+            table.set(offset + 0, undefined);
+            table.set(offset + 1, null);
+            table.set(offset + 2, true);
+            table.set(offset + 3, false);
+        },
+    };
+    return {
+        __proto__: null,
+        "./voxel_engine_bg.js": import0,
+    };
+}
+
+const ChunkMesherFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_chunkmesher_free(ptr, 1));
+const CullerFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_culler_free(ptr, 1));
+const TerrainGenFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_terraingen_free(ptr, 1));
+const VoxelWorldFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_voxelworld_free(ptr, 1));
+
+function getArrayF32FromWasm0(ptr, len) {
+    ptr = ptr >>> 0;
+    return getFloat32ArrayMemory0().subarray(ptr / 4, ptr / 4 + len);
+}
+
+function getArrayF64FromWasm0(ptr, len) {
+    ptr = ptr >>> 0;
+    return getFloat64ArrayMemory0().subarray(ptr / 8, ptr / 8 + len);
+}
+
+function getArrayI32FromWasm0(ptr, len) {
+    ptr = ptr >>> 0;
+    return getInt32ArrayMemory0().subarray(ptr / 4, ptr / 4 + len);
+}
+
+function getArrayU32FromWasm0(ptr, len) {
+    ptr = ptr >>> 0;
+    return getUint32ArrayMemory0().subarray(ptr / 4, ptr / 4 + len);
+}
+
+function getArrayU8FromWasm0(ptr, len) {
+    ptr = ptr >>> 0;
+    return getUint8ArrayMemory0().subarray(ptr / 1, ptr / 1 + len);
+}
+
+let cachedFloat32ArrayMemory0 = null;
+function getFloat32ArrayMemory0() {
+    if (cachedFloat32ArrayMemory0 === null || cachedFloat32ArrayMemory0.byteLength === 0) {
+        cachedFloat32ArrayMemory0 = new Float32Array(wasm.memory.buffer);
+    }
+    return cachedFloat32ArrayMemory0;
+}
+
+let cachedFloat64ArrayMemory0 = null;
+function getFloat64ArrayMemory0() {
+    if (cachedFloat64ArrayMemory0 === null || cachedFloat64ArrayMemory0.byteLength === 0) {
+        cachedFloat64ArrayMemory0 = new Float64Array(wasm.memory.buffer);
+    }
+    return cachedFloat64ArrayMemory0;
+}
+
+let cachedInt32ArrayMemory0 = null;
+function getInt32ArrayMemory0() {
+    if (cachedInt32ArrayMemory0 === null || cachedInt32ArrayMemory0.byteLength === 0) {
+        cachedInt32ArrayMemory0 = new Int32Array(wasm.memory.buffer);
+    }
+    return cachedInt32ArrayMemory0;
+}
+
+function getStringFromWasm0(ptr, len) {
+    return decodeText(ptr >>> 0, len);
+}
+
+let cachedUint16ArrayMemory0 = null;
+function getUint16ArrayMemory0() {
+    if (cachedUint16ArrayMemory0 === null || cachedUint16ArrayMemory0.byteLength === 0) {
+        cachedUint16ArrayMemory0 = new Uint16Array(wasm.memory.buffer);
+    }
+    return cachedUint16ArrayMemory0;
+}
+
+let cachedUint32ArrayMemory0 = null;
+function getUint32ArrayMemory0() {
+    if (cachedUint32ArrayMemory0 === null || cachedUint32ArrayMemory0.byteLength === 0) {
+        cachedUint32ArrayMemory0 = new Uint32Array(wasm.memory.buffer);
+    }
+    return cachedUint32ArrayMemory0;
+}
+
+let cachedUint8ArrayMemory0 = null;
+function getUint8ArrayMemory0() {
+    if (cachedUint8ArrayMemory0 === null || cachedUint8ArrayMemory0.byteLength === 0) {
+        cachedUint8ArrayMemory0 = new Uint8Array(wasm.memory.buffer);
+    }
+    return cachedUint8ArrayMemory0;
+}
+
+function passArray16ToWasm0(arg, malloc) {
+    const ptr = malloc(arg.length * 2, 2) >>> 0;
+    getUint16ArrayMemory0().set(arg, ptr / 2);
+    WASM_VECTOR_LEN = arg.length;
+    return ptr;
+}
+
+function passArray32ToWasm0(arg, malloc) {
+    const ptr = malloc(arg.length * 4, 4) >>> 0;
+    getUint32ArrayMemory0().set(arg, ptr / 4);
+    WASM_VECTOR_LEN = arg.length;
+    return ptr;
+}
+
+function passArray8ToWasm0(arg, malloc) {
+    const ptr = malloc(arg.length * 1, 1) >>> 0;
+    getUint8ArrayMemory0().set(arg, ptr / 1);
+    WASM_VECTOR_LEN = arg.length;
+    return ptr;
+}
+
+function passArrayF64ToWasm0(arg, malloc) {
+    const ptr = malloc(arg.length * 8, 8) >>> 0;
+    getFloat64ArrayMemory0().set(arg, ptr / 8);
+    WASM_VECTOR_LEN = arg.length;
+    return ptr;
+}
+
+function passStringToWasm0(arg, malloc, realloc) {
+    if (realloc === undefined) {
+        const buf = cachedTextEncoder.encode(arg);
+        const ptr = malloc(buf.length, 1) >>> 0;
+        getUint8ArrayMemory0().subarray(ptr, ptr + buf.length).set(buf);
+        WASM_VECTOR_LEN = buf.length;
+        return ptr;
+    }
+
+    let len = arg.length;
+    let ptr = malloc(len, 1) >>> 0;
+
+    const mem = getUint8ArrayMemory0();
+
+    let offset = 0;
+
+    for (; offset < len; offset++) {
+        const code = arg.charCodeAt(offset);
+        if (code > 0x7F) break;
+        mem[ptr + offset] = code;
+    }
+    if (offset !== len) {
+        if (offset !== 0) {
+            arg = arg.slice(offset);
+        }
+        ptr = realloc(ptr, len, len = offset + arg.length * 3, 1) >>> 0;
+        const view = getUint8ArrayMemory0().subarray(ptr + offset, ptr + len);
+        const ret = cachedTextEncoder.encodeInto(arg, view);
+
+        offset += ret.written;
+        ptr = realloc(ptr, len, offset, 1) >>> 0;
+    }
+
+    WASM_VECTOR_LEN = offset;
+    return ptr;
+}
+
+function takeFromExternrefTable0(idx) {
+    const value = wasm.__wbindgen_externrefs.get(idx);
+    wasm.__externref_table_dealloc(idx);
+    return value;
+}
+
+let cachedTextDecoder = new TextDecoder('utf-8', { ignoreBOM: true, fatal: true });
+cachedTextDecoder.decode();
+const MAX_SAFARI_DECODE_BYTES = 2146435072;
+let numBytesDecoded = 0;
+function decodeText(ptr, len) {
+    numBytesDecoded += len;
+    if (numBytesDecoded >= MAX_SAFARI_DECODE_BYTES) {
+        cachedTextDecoder = new TextDecoder('utf-8', { ignoreBOM: true, fatal: true });
+        cachedTextDecoder.decode();
+        numBytesDecoded = len;
+    }
+    return cachedTextDecoder.decode(getUint8ArrayMemory0().subarray(ptr, ptr + len));
+}
+
+const cachedTextEncoder = new TextEncoder();
+
+if (!('encodeInto' in cachedTextEncoder)) {
+    cachedTextEncoder.encodeInto = function (arg, view) {
+        const buf = cachedTextEncoder.encode(arg);
+        view.set(buf);
+        return {
+            read: arg.length,
+            written: buf.length
+        };
+    };
+}
+
+let WASM_VECTOR_LEN = 0;
+
+let wasmModule, wasmInstance, wasm;
+function __wbg_finalize_init(instance, module) {
+    wasmInstance = instance;
+    wasm = instance.exports;
+    wasmModule = module;
+    cachedFloat32ArrayMemory0 = null;
+    cachedFloat64ArrayMemory0 = null;
+    cachedInt32ArrayMemory0 = null;
+    cachedUint16ArrayMemory0 = null;
+    cachedUint32ArrayMemory0 = null;
+    cachedUint8ArrayMemory0 = null;
+    wasm.__wbindgen_start();
+    return wasm;
+}
+
+async function __wbg_load(module, imports) {
+    if (typeof Response === 'function' && module instanceof Response) {
+        if (!module.ok) {
+            throw new Error(`failed to fetch Wasm: ${module.status} ${module.statusText} fetching '${module.url}'`);
+        }
+
+        if (typeof WebAssembly.instantiateStreaming === 'function') {
+            try {
+                return await WebAssembly.instantiateStreaming(module, imports);
+            } catch (e) {
+                const validResponse = expectedResponseType(module.type);
+
+                if (validResponse && module.headers.get('Content-Type') !== 'application/wasm') {
+                    console.warn("`WebAssembly.instantiateStreaming` failed because your server does not serve Wasm with `application/wasm` MIME type. Falling back to `WebAssembly.instantiate` which is slower. Original error:\n", e);
+
+                } else { throw e; }
+            }
+        }
+
+        const bytes = await module.arrayBuffer();
+        return await WebAssembly.instantiate(bytes, imports);
+    } else {
+        const instance = await WebAssembly.instantiate(module, imports);
+
+        if (instance instanceof WebAssembly.Instance) {
+            return { instance, module };
+        } else {
+            return instance;
+        }
+    }
+
+    function expectedResponseType(type) {
+        switch (type) {
+            case 'basic': case 'cors': case 'default': return true;
+        }
+        return false;
+    }
+}
+
+function initSync(module) {
+    if (wasm !== undefined) return wasm;
+
+
+    if (module !== undefined) {
+        if (Object.getPrototypeOf(module) === Object.prototype) {
+            ({module} = module)
+        } else {
+            console.warn('using deprecated parameters for `initSync()`; pass a single object instead')
+        }
+    }
+
+    const imports = __wbg_get_imports();
+    if (!(module instanceof WebAssembly.Module)) {
+        module = new WebAssembly.Module(module);
+    }
+    const instance = new WebAssembly.Instance(module, imports);
+    return __wbg_finalize_init(instance, module);
+}
+
+async function __wbg_init(module_or_path) {
+    if (wasm !== undefined) return wasm;
+
+
+    if (module_or_path !== undefined) {
+        if (Object.getPrototypeOf(module_or_path) === Object.prototype) {
+            ({module_or_path} = module_or_path)
+        } else {
+            console.warn('using deprecated parameters for the initialization function; pass a single object instead')
+        }
+    }
+
+    if (module_or_path === undefined) {
+        module_or_path = new URL('voxel_engine_bg.wasm', import.meta.url);
+    }
+    const imports = __wbg_get_imports();
+
+    if (typeof module_or_path === 'string' || (typeof Request === 'function' && module_or_path instanceof Request) || (typeof URL === 'function' && module_or_path instanceof URL)) {
+        module_or_path = fetch(module_or_path);
+    }
+
+    const { instance, module } = await __wbg_load(await module_or_path, imports);
+
+    return __wbg_finalize_init(instance, module);
+}
+
+export { initSync, __wbg_init as default };

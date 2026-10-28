@@ -1,0 +1,89 @@
+{
+  "result": "FAIL",
+  "startedAt": "2026-10-27T18:39:08.424Z",
+  "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077",
+  "configuration": {
+    "seconds": 10,
+    "roomCount": 1,
+    "playerCount": 2,
+    "ioMs": 5
+  },
+  "host": {
+    "node": "v24.21.0",
+    "arch": "arm64",
+    "cpu": "Neoverse-N1",
+    "logicalCpus": 2,
+    "availableParallelism": 2
+  },
+  "scope": "Packaged gateway/native workers, UUID actors, ordinary survival inputs/actions, fixture-owned kits and prepared natural-world work platforms, contested containers and commit/worker-crash recovery. Delayed in-memory metadata/object contract backend with advancing clock; no actual Supabase/Auth/SQL/Storage/SFU, rendering, real devices/networks, TNT or school-capacity signoff.",
+  "failure": {
+    "phase": "prepare",
+    "message": "timeout: 093282c2-44d1-44aa-b9df-d67e3bb82a14 ready baseline",
+    "stack": "Error: timeout: 093282c2-44d1-44aa-b9df-d67e3bb82a14 ready baseline\n    at Timeout.<anonymous> (file:///home/ubuntu/OMplayground/games/voxel/tools/survival-peer.ts:146:45)\n    at listOnTimeout (node:internal/timers:685:17)\n    at process.processTimers (node:internal/timers:618:7)"
+  },
+  "finishedAt": "2026-10-27T18:39:18.705Z",
+  "peers": [
+    {
+      "id": "093282c2-44d1-44aa-b9df-d67e3bb82a14",
+      "messages": 212,
+      "bytes": 26711,
+      "resyncs": 0,
+      "retainedEvents": 212,
+      "retainedHighWater": 212,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 0,
+        "meanMs": 0,
+        "p95UpperMs": 0,
+        "p99UpperMs": 0,
+        "maxMs": 0
+      },
+      "commandMs": {
+        "samples": 0,
+        "meanMs": 0,
+        "p95UpperMs": 0,
+        "p99UpperMs": 0,
+        "maxMs": 0
+      },
+      "outcomes": {}
+    },
+    {
+      "id": "9a9c3d63-0ced-4312-854d-32f9c52ac247",
+      "messages": 212,
+      "bytes": 26559,
+      "resyncs": 0,
+      "retainedEvents": 212,
+      "retainedHighWater": 212,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 0,
+        "meanMs": 0,
+        "p95UpperMs": 0,
+        "p99UpperMs": 0,
+        "maxMs": 0
+      },
+      "commandMs": {
+        "samples": 0,
+        "meanMs": 0,
+        "p95UpperMs": 0,
+        "p99UpperMs": 0,
+        "maxMs": 0
+      },
+      "outcomes": {}
+    }
+  ],
+  "cleanup": {
+    "rooms": 0,
+    "closedClients": 2,
+    "totalClients": 2,
+    "pendingWaiters": 0
+  },
+  "storage": {
+    "objects": 6,
+    "bytes": 12129,
+    "puts": 6,
+    "commits": 2
+  }
+}

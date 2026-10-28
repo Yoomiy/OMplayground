@@ -1,0 +1,25 @@
+
+> @playground/voxel@0.1.0 test:survival:browser
+> node tools/browser-survival.ts
+
+Harvesting natural log 1 with actual held touch input
+Harvesting natural log 2 with actual held touch input
+Harvesting natural log 3 with actual held touch input
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: {"disposed":false,"inputMode":"touch","mode":"survival","mining":{"target":null,"elapsed":0,"total":0},"miningHeld":false,"drops":[{"id":"drop-3","revision":9,"stack":{"itemType":"oak_log","count":1},"position":[47.5,70,-2.5]}],"selectedSlot":0,"environment":{"tick":1203.1039999985694,"seconds":40.10346666661898,"dayFraction":0.2534195555555158,"daylight":1,"sun":[-0.020577986048680597,0.9576052104864147,0.2873478855663454],"sky":[0.59,0.76,0.88],"rain":0,"wind":[-0.09681483233576553,-0.2839487422754283],"openSky":false},"atmosphere":{"rainLines":0,"stars":false,"clouds":16,"sun":true,"moon":false},"avatars":{"visible":0,"capacity":8,"samples":[]},"renderOrigin":{"x":48,"z":-16},"feedback":{"held":{"state":14,"itemType":"oak_log","visible":true,"swings":8},"effects":{"live":0,"bursts":3},"drops":{"visible":1,"kinds":1}},"audio":{"supported":true,"contexts":1,"state":"running","active":true,"muted":false,"voices":0,"effects":5,"gain":0.2199999988079071,"dropped":0,"listener":[49.29999923706055,69.62000274658203,-2.5],"lastSource":[47.5,70.5,-2.5]},"renderLimitHz":30,"touch":{"x":0,"z":0,"jump":false,"sneak":false,"sprint":false},"focused":true,"visible":"visible","hasFocus":true,"lastFrame":42102.4,"lastUpdate":42236.5,"resources":{"geometries":71,"textures":5,"workers":1},"actorId":"5b8bd066-6830-4d89-8554-86ad06d06aa4","worldId":"a96a0db9-5b6c-413d-b300-0e2e0293faef","body":{"position":[49.3,68,-2.5],"onGround":1,"frozen":0,"flying":0,"velocity":[0,0,-2.3196987793156364e-16]},"view":{"yaw":-1.5707963267948966,"pitch":-0.1},"lastResult":{"type":"result","epoch":2,"sequence":11,"status":"applied","outcome":{"ok":true,"reason":"cancelled"}},"inventory":{"version":2,"catalog":false,"revision":2,"selected":0,"bag":[{"itemType":"oak_log","count":2},null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"craft2":[null,null,null,null],"craft3":[null,null,null,null,null,null,null,null,null],"equipment":[null,null,null,null,null],"station":"personal","container":null},"inventoryOpen":false,"inventoryPending":false,"recentEdits":[{"cell":[49,68,-4],"state":0,"revision":1},{"cell":[49,69,-4],"state":0,"revision":2},{"cell":[47,70,-3],"state":0,"revision":1}],"status":"playing","epoch":2,"phase":"playing","position":[49.3,68,-2.5],"selected":14,"players":1,"inputLag":9,"correction":0,"columns":49,"collisionColumns":49,"meshed":30,"workers":1,"activeJobs":0,"stream":{"discardedJobs":0,"installed":56,"meshJobs":57,"generationJobs":56,"mainWorkMs":0.20000004768371582},"render":{"uploadedBytes":4145512,"columns":30,"drawCalls":31,"triangles":23750,"uploadMs":0.2999999523162842},"target":[48,69,-3],"targetState":13,"targetNormal":[1,0,0],"actionPending":0}
+
+2 !== 3
+
+    at file:///home/ubuntu/OMplayground/games/voxel/tools/browser-survival.ts:154:12 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 2,
+  expected: 3,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.21.0

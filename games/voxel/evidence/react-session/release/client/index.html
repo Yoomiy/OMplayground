@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>עולם הבנייה — פיתוח</title>
+    <script type="module" crossorigin src="./assets/index-DLNi-emg.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-5w2pNf9N.css">
+  </head>
+  <body>
+    <main id="app">
+      <div id="world"></div>
+      <div class="crosshair" aria-hidden="true">+</div>
+      <progress id="mining" max="1" value="0" aria-label="התקדמות כרייה" hidden></progress>
+      <output id="hit-feedback" aria-live="polite"></output>
+      <aside class="toolbar">
+        <span id="vitals" aria-label="בריאות, מזון ואוויר" hidden></span>
+        <button id="eat" hidden>אכילה (R)</button
+        ><button id="respawn" hidden>חזרה לנקודת ההתחלה</button> <strong>עולם הבנייה</strong
+        ><span id="environment" aria-label="זמן ומזג אוויר"></span
+        ><span id="status" role="status">טוענים…</span><button id="resume">כניסה לעולם</button
+        ><button id="fullscreen">מסך מלא</button><button id="reconnect">חיבור מחדש</button
+        ><button id="effects" aria-pressed="false">קולות משחק: פעילים</button
+        ><small>WASD לתנועה · רווח לקפיצה · F לתעופה · לחיצה שמאלית להסרה · ימנית לבנייה</small>
+      </aside>
+      <nav id="hotbar" aria-label="בחירת בלוק"></nav>
+      <details id="diagnostics">
+        <summary>בדיקת פיתוח</summary>
+        <pre></pre>
+      </details>
+    </main>
+  </body>
+</html>

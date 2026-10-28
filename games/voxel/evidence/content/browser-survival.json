@@ -1,0 +1,793 @@
+{
+  "result": "PASS",
+  "scope": "Natural empty-inventory survival with actual held touch mining, owned drops/pickups, 2x2/3x3 crafting, consumed workbench placement, held pickaxe, crafted/equipped trail boots and heavy shield, and a harvested apple eaten after real simulation-time hunger with inventory open; no creative grants or test-only world mutations; software Chromium functional check only",
+  "buildId": "e4f100782c6972d28d3a854f5492ec47a6fc29aad21b89b117a08af096b8ea29",
+  "engineHash": "1e3f1e257d7326182e52736112b4a585b5809173a7f6f6d3fee34e52f414b7b6",
+  "contentHash": "368b605ac5bdf5ff6fcf4af02f7174cbc6d39b5110f48e0a41b231a0a6479464",
+  "browser": "156.0.8078.4",
+  "harvested": [
+    {
+      "target": [
+        49,
+        68,
+        -4
+      ],
+      "visible": {
+        "drop": {
+          "id": "drop-1",
+          "revision": 9,
+          "stack": {
+            "itemType": "spruce_log",
+            "count": 1
+          },
+          "position": [
+            49.5,
+            68,
+            -3.5
+          ]
+        },
+        "origin": {
+          "x": 48,
+          "z": 0
+        },
+        "feedback": {
+          "visible": 1,
+          "kinds": 1
+        }
+      },
+      "inventoryRevision": 2
+    },
+    {
+      "target": [
+        49,
+        70,
+        -4
+      ],
+      "visible": null,
+      "inventoryRevision": 3
+    },
+    {
+      "target": [
+        49,
+        71,
+        -4
+      ],
+      "visible": {
+        "drop": {
+          "id": "drop-4",
+          "revision": 2,
+          "stack": {
+            "itemType": "spruce_log",
+            "count": 1
+          },
+          "position": [
+            49.5,
+            71.27333333333334,
+            -3.5
+          ]
+        },
+        "origin": {
+          "x": 48,
+          "z": -16
+        },
+        "feedback": {
+          "visible": 1,
+          "kinds": 1
+        }
+      },
+      "inventoryRevision": 4
+    },
+    {
+      "target": [
+        49,
+        72,
+        -4
+      ],
+      "visible": {
+        "drop": {
+          "id": "drop-5",
+          "revision": 8,
+          "stack": {
+            "itemType": "spruce_log",
+            "count": 1
+          },
+          "position": [
+            49.5,
+            72.01333333333334,
+            -3.5
+          ]
+        },
+        "origin": {
+          "x": 48,
+          "z": -16
+        },
+        "feedback": {
+          "visible": 1,
+          "kinds": 1
+        }
+      },
+      "inventoryRevision": 5
+    }
+  ],
+  "cleared": [
+    {
+      "cell": [
+        49,
+        69,
+        -4
+      ],
+      "family": "spruce_log",
+      "purpose": "pickup"
+    }
+  ],
+  "placement": {
+    "type": "result",
+    "epoch": 4,
+    "sequence": 3,
+    "status": "applied",
+    "outcome": {
+      "ok": true,
+      "reason": "edited",
+      "cell": [
+        50,
+        68,
+        -8
+      ],
+      "state": 23,
+      "revision": 7
+    }
+  },
+  "food": {
+    "foliage": [
+      49,
+      69,
+      -8
+    ],
+    "hungry": {
+      "version": 2,
+      "health": 20,
+      "food": 19,
+      "air": 300,
+      "dead": false,
+      "respawnIn": 0,
+      "attackCooldown": 0,
+      "protection": 0
+    },
+    "after": {
+      "version": 2,
+      "health": 20,
+      "food": 20,
+      "air": 300,
+      "dead": false,
+      "respawnIn": 0,
+      "attackCooldown": 0,
+      "protection": 0
+    }
+  },
+  "explosive": null,
+  "equipment": null,
+  "remoteEquipment": {
+    "appearance": {
+      "held": "wooden_pickaxe",
+      "equipment": {
+        "head": null,
+        "body": null,
+        "legs": null,
+        "feet": "trail_boots",
+        "offhand": "heavy_shield"
+      }
+    },
+    "viewerId": "32f5e95d-1c23-4920-b5cd-4afaf15a1fff",
+    "ownerId": "b3c16d69-9a4a-4233-8cf0-e71a0f86988e",
+    "joined": {
+      "origin": {
+        "x": 48,
+        "z": 0
+      },
+      "gear": {
+        "visible": 4,
+        "held": 1,
+        "worn": 3,
+        "kinds": 3,
+        "capacity": 24,
+        "samples": [
+          {
+            "id": "b3c16d69-9a4a-4233-8cf0-e71a0f86988e",
+            "itemType": "wooden_pickaxe",
+            "slot": "held",
+            "side": 0,
+            "position": [
+              1.6200000047683716,
+              67.83999633789062,
+              -7.570300102233887
+            ],
+            "vertices": 96
+          },
+          {
+            "id": "b3c16d69-9a4a-4233-8cf0-e71a0f86988e",
+            "itemType": "trail_boots",
+            "slot": "feet",
+            "side": -1,
+            "position": [
+              1.534999966621399,
+              67.30000305175781,
+              -8.070300102233887
+            ],
+            "vertices": 48
+          },
+          {
+            "id": "b3c16d69-9a4a-4233-8cf0-e71a0f86988e",
+            "itemType": "trail_boots",
+            "slot": "feet",
+            "side": 1,
+            "position": [
+              1.534999966621399,
+              67.30000305175781,
+              -7.790299892425537
+            ],
+            "vertices": 48
+          },
+          {
+            "id": "b3c16d69-9a4a-4233-8cf0-e71a0f86988e",
+            "itemType": "heavy_shield",
+            "slot": "offhand",
+            "side": 0,
+            "position": [
+              1.6200000047683716,
+              67.83999633789062,
+              -8.290300369262695
+            ],
+            "vertices": 72
+          }
+        ]
+      }
+    },
+    "shifted": {
+      "origin": {
+        "x": 32,
+        "z": 0
+      },
+      "gear": {
+        "visible": 4,
+        "held": 1,
+        "worn": 3,
+        "kinds": 3,
+        "capacity": 24,
+        "samples": [
+          {
+            "id": "b3c16d69-9a4a-4233-8cf0-e71a0f86988e",
+            "itemType": "wooden_pickaxe",
+            "slot": "held",
+            "side": 0,
+            "position": [
+              17.6200008392334,
+              67.83999633789062,
+              -7.570300102233887
+            ],
+            "vertices": 96
+          },
+          {
+            "id": "b3c16d69-9a4a-4233-8cf0-e71a0f86988e",
+            "itemType": "trail_boots",
+            "slot": "feet",
+            "side": -1,
+            "position": [
+              17.53499984741211,
+              67.30000305175781,
+              -8.070300102233887
+            ],
+            "vertices": 48
+          },
+          {
+            "id": "b3c16d69-9a4a-4233-8cf0-e71a0f86988e",
+            "itemType": "trail_boots",
+            "slot": "feet",
+            "side": 1,
+            "position": [
+              17.53499984741211,
+              67.30000305175781,
+              -7.790299892425537
+            ],
+            "vertices": 48
+          },
+          {
+            "id": "b3c16d69-9a4a-4233-8cf0-e71a0f86988e",
+            "itemType": "heavy_shield",
+            "slot": "offhand",
+            "side": 0,
+            "position": [
+              17.6200008392334,
+              67.83999633789062,
+              -8.290300369262695
+            ],
+            "vertices": 72
+          }
+        ]
+      }
+    },
+    "withoutFeet": {
+      "visible": 2,
+      "held": 1,
+      "worn": 1,
+      "kinds": 2,
+      "capacity": 16,
+      "samples": [
+        {
+          "id": "b3c16d69-9a4a-4233-8cf0-e71a0f86988e",
+          "itemType": "wooden_pickaxe",
+          "slot": "held",
+          "side": 0,
+          "position": [
+            17.6200008392334,
+            67.83999633789062,
+            -7.570300102233887
+          ],
+          "vertices": 96
+        },
+        {
+          "id": "b3c16d69-9a4a-4233-8cf0-e71a0f86988e",
+          "itemType": "heavy_shield",
+          "slot": "offhand",
+          "side": 0,
+          "position": [
+            17.6200008392334,
+            67.83999633789062,
+            -8.290300369262695
+          ],
+          "vertices": 72
+        }
+      ]
+    },
+    "selected": {
+      "visible": 4,
+      "held": 1,
+      "worn": 3,
+      "kinds": 3,
+      "capacity": 24,
+      "samples": [
+        {
+          "id": "b3c16d69-9a4a-4233-8cf0-e71a0f86988e",
+          "itemType": "spruce_planks",
+          "slot": "held",
+          "side": 0,
+          "position": [
+            17.6200008392334,
+            67.83999633789062,
+            -7.570300102233887
+          ],
+          "vertices": 24
+        },
+        {
+          "id": "b3c16d69-9a4a-4233-8cf0-e71a0f86988e",
+          "itemType": "trail_boots",
+          "slot": "feet",
+          "side": -1,
+          "position": [
+            17.53499984741211,
+            67.30000305175781,
+            -8.070300102233887
+          ],
+          "vertices": 48
+        },
+        {
+          "id": "b3c16d69-9a4a-4233-8cf0-e71a0f86988e",
+          "itemType": "trail_boots",
+          "slot": "feet",
+          "side": 1,
+          "position": [
+            17.53499984741211,
+            67.30000305175781,
+            -7.790299892425537
+          ],
+          "vertices": 48
+        },
+        {
+          "id": "b3c16d69-9a4a-4233-8cf0-e71a0f86988e",
+          "itemType": "heavy_shield",
+          "slot": "offhand",
+          "side": 0,
+          "position": [
+            17.6200008392334,
+            67.83999633789062,
+            -8.290300369262695
+          ],
+          "vertices": 72
+        }
+      ]
+    },
+    "reconnected": {
+      "visible": 4,
+      "held": 1,
+      "worn": 3,
+      "kinds": 3,
+      "capacity": 24,
+      "samples": [
+        {
+          "id": "b3c16d69-9a4a-4233-8cf0-e71a0f86988e",
+          "itemType": "wooden_pickaxe",
+          "slot": "held",
+          "side": 0,
+          "position": [
+            17.6200008392334,
+            67.83999633789062,
+            -7.570300102233887
+          ],
+          "vertices": 96
+        },
+        {
+          "id": "b3c16d69-9a4a-4233-8cf0-e71a0f86988e",
+          "itemType": "trail_boots",
+          "slot": "feet",
+          "side": -1,
+          "position": [
+            17.53499984741211,
+            67.30000305175781,
+            -8.070300102233887
+          ],
+          "vertices": 48
+        },
+        {
+          "id": "b3c16d69-9a4a-4233-8cf0-e71a0f86988e",
+          "itemType": "trail_boots",
+          "slot": "feet",
+          "side": 1,
+          "position": [
+            17.53499984741211,
+            67.30000305175781,
+            -7.790299892425537
+          ],
+          "vertices": 48
+        },
+        {
+          "id": "b3c16d69-9a4a-4233-8cf0-e71a0f86988e",
+          "itemType": "heavy_shield",
+          "slot": "offhand",
+          "side": 0,
+          "position": [
+            17.6200008392334,
+            67.83999633789062,
+            -8.290300369262695
+          ],
+          "vertices": 72
+        }
+      ]
+    },
+    "publicPackets": [
+      {
+        "id": "b3c16d69-9a4a-4233-8cf0-e71a0f86988e",
+        "state": [
+          49.5,
+          67,
+          -7.9303,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          6.540048490186246,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "yaw": 1.5707963267948966,
+        "pitch": -0.7,
+        "appearance": {
+          "held": "wooden_pickaxe",
+          "equipment": {
+            "head": null,
+            "body": null,
+            "legs": null,
+            "feet": "trail_boots",
+            "offhand": "heavy_shield"
+          }
+        }
+      },
+      {
+        "id": "b3c16d69-9a4a-4233-8cf0-e71a0f86988e",
+        "appearance": {
+          "held": "wooden_pickaxe",
+          "equipment": {
+            "head": null,
+            "body": null,
+            "legs": null,
+            "feet": null,
+            "offhand": "heavy_shield"
+          }
+        }
+      },
+      {
+        "id": "b3c16d69-9a4a-4233-8cf0-e71a0f86988e",
+        "appearance": {
+          "held": "wooden_pickaxe",
+          "equipment": {
+            "head": null,
+            "body": null,
+            "legs": null,
+            "feet": "trail_boots",
+            "offhand": "heavy_shield"
+          }
+        }
+      },
+      {
+        "id": "b3c16d69-9a4a-4233-8cf0-e71a0f86988e",
+        "state": [
+          49.5,
+          67,
+          -7.9303,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          6.5400485138214925,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "appearance": {
+          "held": "spruce_planks",
+          "equipment": {
+            "head": null,
+            "body": null,
+            "legs": null,
+            "feet": "trail_boots",
+            "offhand": "heavy_shield"
+          }
+        }
+      },
+      {
+        "id": "b3c16d69-9a4a-4233-8cf0-e71a0f86988e",
+        "appearance": {
+          "held": "wooden_pickaxe",
+          "equipment": {
+            "head": null,
+            "body": null,
+            "legs": null,
+            "feet": "trail_boots",
+            "offhand": "heavy_shield"
+          }
+        }
+      },
+      {
+        "id": "b3c16d69-9a4a-4233-8cf0-e71a0f86988e",
+        "state": [
+          49.5,
+          67,
+          -7.9303,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          6.5400485138214925,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "yaw": 1.5707963267948966,
+        "pitch": -0.7,
+        "appearance": {
+          "held": "wooden_pickaxe",
+          "equipment": {
+            "head": null,
+            "body": null,
+            "legs": null,
+            "feet": "trail_boots",
+            "offhand": "heavy_shield"
+          }
+        }
+      }
+    ],
+    "cleanup": {
+      "geometries": 0,
+      "textures": 0,
+      "workers": 0,
+      "audio": {
+        "supported": true,
+        "contexts": 0,
+        "state": "closed",
+        "active": false,
+        "muted": false,
+        "voices": 0,
+        "effects": 0,
+        "gain": 0,
+        "dropped": 0,
+        "listener": [
+          47.4288,
+          69.62,
+          0.5
+        ],
+        "lastSource": null
+      },
+      "gpu": {
+        "submitted": 13,
+        "skipped": 368,
+        "pending": 0,
+        "failures": 0
+      },
+      "gear": {
+        "visible": 0,
+        "held": 0,
+        "worn": 0,
+        "kinds": 0,
+        "capacity": 0,
+        "samples": []
+      }
+    }
+  },
+  "completed": {
+    "inventory": {
+      "version": 2,
+      "catalog": false,
+      "revision": 49,
+      "selected": 3,
+      "bag": [
+        {
+          "count": 1,
+          "itemType": "spruce_planks"
+        },
+        {
+          "itemType": "spruce_leaves",
+          "count": 1
+        },
+        null,
+        {
+          "count": 1,
+          "instance": {
+            "durability": 60
+          },
+          "itemType": "wooden_pickaxe"
+        },
+        {
+          "count": 1,
+          "itemType": "stick"
+        },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "craft2": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "craft3": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "equipment": [
+        null,
+        null,
+        null,
+        {
+          "count": 1,
+          "instance": {
+            "durability": 120
+          },
+          "itemType": "trail_boots"
+        },
+        {
+          "count": 1,
+          "instance": {
+            "durability": 120
+          },
+          "itemType": "heavy_shield"
+        }
+      ],
+      "station": "personal",
+      "container": null
+    },
+    "feedback": {
+      "held": {
+        "state": 0,
+        "itemType": "wooden_pickaxe",
+        "visible": true,
+        "swings": 12
+      },
+      "effects": {
+        "live": 0,
+        "bursts": 7,
+        "hits": 0,
+        "explosions": 0
+      },
+      "drops": {
+        "visible": 0,
+        "kinds": 0
+      },
+      "explosives": {
+        "visible": 0,
+        "capacity": 0,
+        "flashing": 0
+      },
+      "vision": false
+    },
+    "vitals": {
+      "version": 2,
+      "health": 20,
+      "food": 20,
+      "air": 300,
+      "dead": false,
+      "respawnIn": 0,
+      "attackCooldown": 0,
+      "protection": 0
+    }
+  },
+  "cleanup": {
+    "geometries": 0,
+    "textures": 0,
+    "workers": 0,
+    "audio": {
+      "supported": true,
+      "contexts": 0,
+      "state": "closed",
+      "active": false,
+      "muted": false,
+      "voices": 0,
+      "effects": 10,
+      "gain": 0,
+      "dropped": 0,
+      "listener": [
+        49.5,
+        68.62,
+        -7.9303
+      ],
+      "lastSource": [
+        50.5,
+        68.5,
+        -7.5
+      ]
+    }
+  },
+  "errors": []
+}

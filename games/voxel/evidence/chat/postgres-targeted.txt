@@ -1,0 +1,16 @@
+✔ chat commits one canonical named message per request and rejects changed-content or actor replay (843.417338ms)
+✔ chat posting tolerates a paused world but rejects expired or replaced owner authority (497.660514ms)
+✔ chat delete and clear are audited once; retrying an earlier clear cannot erase later messages (1147.49156ms)
+✔ chat keyset pages expose recent messages and support older history without a persisted-message cap (507.110039ms)
+✔ chat locks recheck student cutoff, live owner, role precedence and terminal write policy (652.048097ms)
+✔ chat denies direct table access and private helper use; staff can inspect an unallocated room without allocation (630.231672ms)
+✔ chat expiry after a session lock or audit wait rolls back messages and moderation (984.452456ms)
+✔ real SDK/native worker chat requires a live participant, recovers one lost write and supports hidden staff moderation (3067.096155ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9285.032948

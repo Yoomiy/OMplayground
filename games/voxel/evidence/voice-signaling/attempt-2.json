@@ -1,0 +1,21 @@
+{
+  "result": "INCOMPLETE",
+  "room": "voxel-escrow-qualification-a28b935b-f105-4c2b-96b7-cf10d4d26061",
+  "schoolDatabaseWrites": 0,
+  "scope": "Actual self-hosted LiveKit, private signaling worker and generated test audio; no school/Auth/UI deployment qualification",
+  "stage": "initial-escrow-media",
+  "error": {
+    "name": "TimeoutError"
+  },
+  "finalSignalStats": {
+    "sessions": 0,
+    "tickets": 0,
+    "filteredTokens": 0,
+    "protocolClosures": 0,
+    "expired": 0,
+    "failed": false,
+    "closed": false
+  },
+  "cleaned": true,
+  "checkedAt": "2026-10-26T17:16:09.043Z"
+}

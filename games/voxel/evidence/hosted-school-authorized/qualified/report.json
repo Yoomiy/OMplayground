@@ -1,0 +1,87 @@
+{
+  "result": "PASS",
+  "run": "33c5672a-89a3-47e6-b6af-635cfac47bc9",
+  "room": "16bb7296-7228-4024-9775-58afcd57f0a8",
+  "startedAt": "2026-10-28T16:12:27.084Z",
+  "buildId": "c293fe5e2511d2bc656ea33756509e834b8761fc743a9d2d8a4e83cebd2ad799",
+  "scope": "Real hosted Auth/PostgREST/private Storage and packaged gateway/native worker, temporary identities and one private session; socket client, no real school users, browser/SFU/physical-device/deployment qualification",
+  "stages": [
+    "temporary_real_auth_profiles_ready",
+    "public_rls_private_session_created",
+    "production_service_hosted_ready",
+    "real_school_native_admission_ready",
+    "natural_target_selected",
+    "mining_accepted",
+    "mined_drop_published",
+    "earned_item_collected",
+    "natural_survival_item_earned",
+    "hosted_graph_and_saved_receipt_verified",
+    "fresh_production_service_started",
+    "real_auth_hosted_restart_restored_earned_ownership"
+  ],
+  "cleanup": {
+    "serviceClosed": true,
+    "storageObjectsRemoved": 5,
+    "scopedSql": true,
+    "sessionAbsent": true,
+    "metadataAbsent": true,
+    "kidAbsent": true,
+    "teacherAbsent": true
+  },
+  "catalogId": "2afb3bb7-1090-49a3-8e30-e4cccb891193",
+  "uninvitedAdmission": {
+    "status": 403,
+    "code": "SESSION_CLOSED"
+  },
+  "uninvitedKidDenied": true,
+  "mining": {
+    "target": [
+      49,
+      67,
+      -1
+    ],
+    "itemType": "dirt",
+    "inventoryRevision": 1
+  },
+  "checkpoint": {
+    "worldId": "698ce569-0056-4d85-a22c-df8d6f7e468f",
+    "sequence": 1,
+    "ownerEpoch": 1,
+    "tick": 142,
+    "inventoryRevision": 1
+  },
+  "restored": {
+    "worldId": "698ce569-0056-4d85-a22c-df8d6f7e468f",
+    "ownerEpoch": 2,
+    "inventoryRevision": 1,
+    "sameBag": true,
+    "historicalPauseCannotUndoResume": true
+  },
+  "accountRevocation": true,
+  "requests": {
+    "voxel_persistence_status": 2,
+    "voxel_session_projection_status": 2,
+    "voxel_roster_status": 2,
+    "voxel_controls_status": 2,
+    "voxel_staff_status": 2,
+    "voxel_moderation_status": 2,
+    "voxel_chat_status": 2,
+    "voxel_media_status": 2,
+    "voxel_actor_policy": 1,
+    "voxel_acquire_room": 2,
+    "voxel_initialize_session": 2,
+    "voxel_accept_member_revision": 2,
+    "voxel_project_session": 9,
+    "voxel_session_policy": 7,
+    "voxel_control_receipt": 3,
+    "voxel_begin_control": 2,
+    "voxel_prepare_object": 5,
+    "voxel_complete_object": 5,
+    "voxel_commit_checkpoint": 4,
+    "voxel_finish_control": 2,
+    "voxel_renew_room": 1,
+    "voxel_release_room": 2
+  },
+  "serviceErrors": [],
+  "finishedAt": "2026-10-28T16:13:12.038Z"
+}

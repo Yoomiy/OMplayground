@@ -1,0 +1,126 @@
+[
+  {
+    "name": "gsettings-desktop-schemas_46.1-0ubuntu1_all.deb",
+    "sha256": "4d15441e9197f95b29c0d2845d8fcdbf63fa4ac0c68fb221820ccd24131e3436"
+  },
+  {
+    "name": "libatk-bridge2.0-0t64_2.52.0-1build1_arm64.deb",
+    "sha256": "7a2ce532caa857c4d7d8bced0a8143d1c7cf8a3093f8da926e025252ef70117f"
+  },
+  {
+    "name": "libatspi2.0-0t64_2.52.0-1build1_arm64.deb",
+    "sha256": "c65f137507a665c969f9d158c8f63188b308037e66b48bca85ea2e7cf31bb84e"
+  },
+  {
+    "name": "libavahi-client3_0.8-13ubuntu6.2_arm64.deb",
+    "sha256": "64630bbfab8107ceb9144d197e55c9552f49228ee009415c2d188b4e3a487673"
+  },
+  {
+    "name": "libavahi-common3_0.8-13ubuntu6.2_arm64.deb",
+    "sha256": "bf9c24af82b91b8ec4c7bf94158cfab8ef4d196fd6430c8a45c439580bcfcdf7"
+  },
+  {
+    "name": "libcairo2_1.18.0-3build1_arm64.deb",
+    "sha256": "d7820deae45510a3ca1c1f6e32baa2e8b12a234a410d185e42e75e9dd5fcd6da"
+  },
+  {
+    "name": "libcups2t64_2.4.7-1.2ubuntu7.14_arm64.deb",
+    "sha256": "7bd0f0a3904cca3890a0f050c1b79231433b5528eee0fadc2dc55e40032d694b"
+  },
+  {
+    "name": "libdatrie1_0.2.13-3build1_arm64.deb",
+    "sha256": "cb148b2bb3c4ee4be7c1316ba4970e60d9aade63d71d41ae5b2897f5004704d0"
+  },
+  {
+    "name": "libfontconfig1_2.15.0-1.1ubuntu2_arm64.deb",
+    "sha256": "4df2aefa7395140499033b339a96164925f1fd3039df52669b87acb6bec20f19"
+  },
+  {
+    "name": "libfontenc1_1%3a1.1.8-1build1_arm64.deb",
+    "sha256": "5d021e7c79fcde0c3940fe1765e54cf483782b03f06563795b056df8fccd9a4b"
+  },
+  {
+    "name": "libgl1_1.7.0-1build1_arm64.deb",
+    "sha256": "8b2478bdeaf7a13d3c3b993f0238ac74640ab5a623b9d2645ebf6f1336c9881b"
+  },
+  {
+    "name": "libglvnd0_1.7.0-1build1_arm64.deb",
+    "sha256": "3d0c30187bb5f0993b42cc9af94abfc42098451503fbde23d51fd152c4b7ff7e"
+  },
+  {
+    "name": "libglx0_1.7.0-1build1_arm64.deb",
+    "sha256": "830625e5a00b176afcc47742cd2b123c74555afd58da91f6bc7e68f0781b684a"
+  },
+  {
+    "name": "libgraphite2-3_1.3.14-2ubuntu0.24.04.1_arm64.deb",
+    "sha256": "52fbc13dfd5e756cda8e033d5f225e733e7b83e908e508703cedeb029bd02a9c"
+  },
+  {
+    "name": "libharfbuzz0b_8.3.0-2build2_arm64.deb",
+    "sha256": "f6917480f6e2df79563398f4fcfc25167fcaa512f35fe1f595a6e3fa7b78a46d"
+  },
+  {
+    "name": "libpango-1.0-0_1.52.1+ds-1build1_arm64.deb",
+    "sha256": "4964bc4c61df425e41a32108e58a493cf311a8366a9cb2522e8ca07e30a81eb4"
+  },
+  {
+    "name": "libpixman-1-0_0.42.2-1build1_arm64.deb",
+    "sha256": "81065c180e30302950a1bd39428d335797126ef89dc2922f89216678720d4eca"
+  },
+  {
+    "name": "libthai0_0.1.29-2build1_arm64.deb",
+    "sha256": "c4c01317f90cec985253f360451df9cf3f45ef68cf409c8e21ab5d379ee1e883"
+  },
+  {
+    "name": "libx11-xcb1_2%3a1.8.7-1ubuntu0.1_arm64.deb",
+    "sha256": "07eda00a142945e2da4e8e122323ec44c295588398657d1e26f9a1ee2817f5d9"
+  },
+  {
+    "name": "libxcb-render0_1.15-1ubuntu2_arm64.deb",
+    "sha256": "de6dafb552bab55a848b4017087eb0d9ce25fc0e1fd083a4fca5f71de9058934"
+  },
+  {
+    "name": "libxcb-shm0_1.15-1ubuntu2_arm64.deb",
+    "sha256": "1d3f59159910a43ec798a0bf467ca2f78d1f9e1351ac04fb8d3db8469d4a516c"
+  },
+  {
+    "name": "libxdo3_1%3a3.20160805.1-5build1_arm64.deb",
+    "sha256": "eb6d4bbb1ce91a7590d65c0185cab5a8f285ff82ed56fc756482624f18a64f1a"
+  },
+  {
+    "name": "libxfont2_1%3a2.0.6-1+deb13u1build0.24.04.2_arm64.deb",
+    "sha256": "64635511de505f71c7f80f0d0c6cb2c08ed02bd22884f9c7794a8707f6cf88c3"
+  },
+  {
+    "name": "libxinerama1_2%3a1.1.4-3build1_arm64.deb",
+    "sha256": "d93a71ccaced2ccac4efb25c23238ceee7b4fc352118f105a1265be7b55c638b"
+  },
+  {
+    "name": "libxkbfile1_1%3a1.1.0-1build4_arm64.deb",
+    "sha256": "da7d27f330c0ab544ca9990de267defb909bd01f2362d8b02bcd581a4b8689d2"
+  },
+  {
+    "name": "libxtst6_2%3a1.2.3-1.1ubuntu0.1_arm64.deb",
+    "sha256": "b92af64612a122f046ef1e1a11e84f2a028707eea4343726a5914a1a78aa7898"
+  },
+  {
+    "name": "x11-xkb-utils_7.7+8build2_arm64.deb",
+    "sha256": "1be1f73f3f9c62540591ab9ed79391b07e446af258574316f3e15cf2026ca117"
+  },
+  {
+    "name": "xdotool_1%3a3.20160805.1-5build1_arm64.deb",
+    "sha256": "0af555548a9f036d69d9891a405acf315d9d0b712c02cd8ab7feb914df797454"
+  },
+  {
+    "name": "xkb-data_2.41-2ubuntu1.1_all.deb",
+    "sha256": "e99f2a0b4c56cdf35dec489e56b6a8418826cab8ce6306ec6d0bd98e2cd0014a"
+  },
+  {
+    "name": "xserver-common_2%3a21.1.12-1ubuntu1.9_all.deb",
+    "sha256": "ceeac76b9c94973c71e4e6566fa9ff5d3caae9716775d840810a4e1ad749a737"
+  },
+  {
+    "name": "xvfb_2%3a21.1.12-1ubuntu1.9_arm64.deb",
+    "sha256": "15827310fc6f356ba8259b102301f5417264f742a9abf3bd7f3487dc1c5ad42c"
+  }
+]

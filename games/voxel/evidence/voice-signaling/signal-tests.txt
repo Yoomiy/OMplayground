@@ -1,0 +1,15 @@
+✔ media signaling withholds refreshed/migrated SFU credentials and strips unknown nested extensions (7.872518ms)
+✔ media signaling rejects forged publication sources and metadata mutation while preserving audio requests (1.961769ms)
+✔ compressed media joins cannot override server identity metadata, resume old bindings or bypass source grants (7.105714ms)
+✔ rewritten join queries retain SDK padding for every compressed length (14.040748ms)
+✔ single-use media tickets bridge real signaling while keeping reusable provider credentials out of browser frames (231.318809ms)
+✔ late policy replies cannot revive an expired unused media ticket or allocate an upstream connection (417.619278ms)
+✔ the signaling worker ends provider media on its own deadline while the gateway event loop is blocked (1196.439717ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2431.943266

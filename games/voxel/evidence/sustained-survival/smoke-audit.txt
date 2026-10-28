@@ -1,0 +1,1 @@
+{"result":"SURVIVAL_WORKER_REPORT_AUDIT_PASS","file":"/tmp/voxel-survival-workers-smoke-pass.json","buildId":"543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077","actors":2,"rounds":3,"containedWindows":0,"maxDurableLagSeconds":10.866666666666667}

@@ -1,0 +1,22 @@
+
+> @playground/voxel-server@0.1.0 test:browser:lifecycle
+> node tools/browser-lifecycle.ts
+
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+page.waitForFunction: Timeout 15000ms exceeded.
+    at /home/ubuntu/OMplayground/apps/voxel-server/tools/browser-lifecycle.ts:192:13 {
+  log: [],
+  name: 'TimeoutError'
+}
+
+Node.js v24.21.0
+npm error Lifecycle script `test:browser:lifecycle` failed with error:
+npm error code 1
+npm error path /home/ubuntu/OMplayground/apps/voxel-server
+npm error workspace @playground/voxel-server@0.1.0
+npm error location /home/ubuntu/OMplayground/apps/voxel-server
+npm error command failed
+npm error command sh -c node tools/browser-lifecycle.ts

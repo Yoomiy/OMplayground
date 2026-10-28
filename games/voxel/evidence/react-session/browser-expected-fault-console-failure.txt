@@ -1,0 +1,37 @@
+vite v6.4.2 building for production...
+transforming...
+✓ 77 modules transformed.
+rendering chunks...
+computing gzip size...
+built/index.html                                0.34 kB │ gzip:   0.25 kB
+built/assets/engine-worker-DPFd4qax.js         10.94 kB
+built/assets/voxel_engine_bg-1ejYMYOZ.wasm    550.36 kB │ gzip: 210.28 kB
+built/assets/embed-BbfR4Nnp.css                 3.21 kB │ gzip:   1.05 kB
+built/assets/index-_esVi6ly.css                 5.23 kB │ gzip:   1.41 kB
+built/assets/index-CHKh8t9i.js              1,034.03 kB │ gzip: 172.99 kB
+built/assets/embed-DILsNNFS.js              1,403.48 kB │ gzip: 265.87 kB
+✓ built in 4.03s
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
++ actual - expected
+
++ [
++   'Failed to load resource: the server responded with a status of 503 (Service Unavailable)'
++ ]
+- []
+
+    at file:///home/ubuntu/OMplayground/apps/web/tools/voxel-react-browser.ts:419:10 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: [
+    'Failed to load resource: the server responded with a status of 503 (Service Unavailable)'
+  ],
+  expected: [],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.21.0

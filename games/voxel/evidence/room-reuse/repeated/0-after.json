@@ -1,0 +1,91 @@
+{
+  "result": "LOOPBACK_SURVIVAL_LOAD_COMPLETED",
+  "startedAt": "2026-10-27T14:20:38.324Z",
+  "buildId": "6b20c88f7d8c9e7b6158c26d02524c24a419cc03b5fc9b2d53a90c083066da47",
+  "releaseRoot": "current",
+  "host": {
+    "node": "v24.21.0",
+    "arch": "arm64",
+    "cpu": "Neoverse-N1",
+    "logicalCpus": 2,
+    "availableParallelism": 2
+  },
+  "samplingSeconds": 10,
+  "scope": "Packaged gateway/native room workers with co-located real loopback WebSocket load clients, development identity fixture, natural survival movement/turning/jumping. No hosted writes, school Auth/SQL/Storage, crafting/TNT, browser/SFU, physical devices, impairment or deployment-capacity qualification.",
+  "profiles": [
+    {
+      "rooms": 1,
+      "playersPerRoom": 128,
+      "totalPlayers": 128,
+      "inputBatchHz": 29.998460886966352,
+      "skippedInputBatches": 0,
+      "joinedMs": 1576.294334,
+      "joinMs": {
+        "samples": 128,
+        "mean": 1071.8417750546873,
+        "p95": 1525.18613,
+        "p99": 1526.3743359999999,
+        "max": 1526.560817
+      },
+      "sampleMs": 10000.513063999999,
+      "ackMs": {
+        "samples": 19200,
+        "mean": 96.45651385937522,
+        "p95": 114.40694299999996,
+        "p99": 120.20637199999965,
+        "max": 128.19428900000003
+      },
+      "tickRate": {
+        "samples": 128,
+        "mean": 29.79847114771985,
+        "p95": 29.79847114771991,
+        "p99": 29.79847114771991,
+        "max": 29.79847114771991
+      },
+      "messages": 38400,
+      "wireBytes": 166737904,
+      "resyncs": 0,
+      "gatewayEventLoopP99Ms": 29.802495,
+      "roomMetrics": [
+        {
+          "buildId": "6b20c88f7d8c9e7b6158c26d02524c24a419cc03b5fc9b2d53a90c083066da47",
+          "worldId": "53b142cc-3c94-433d-88b4-28350cbe8d53",
+          "ticks": 300,
+          "columns": 9,
+          "overrunMs": 0,
+          "windowMs": 10012.128317,
+          "worldStep_samples": 300,
+          "worldStep_meanMs": 11.955078973333286,
+          "worldStep_p95UpperMs": 26.1,
+          "worldStep_p99UpperMs": 35.5,
+          "worldStep_maxMs": 65.45167100000003,
+          "observerStep_samples": 0,
+          "observerStep_meanMs": 0,
+          "observerStep_p95UpperMs": 0,
+          "observerStep_p99UpperMs": 0,
+          "observerStep_maxMs": 0,
+          "workerTurn_samples": 1599,
+          "workerTurn_meanMs": 2.374625620387754,
+          "workerTurn_p95UpperMs": 17.5,
+          "workerTurn_p99UpperMs": 26.6,
+          "workerTurn_maxMs": 66.32171500000004,
+          "generationJob_samples": 9,
+          "generationJob_meanMs": 9.338364333333313,
+          "generationJob_p95UpperMs": 13.80410500000005,
+          "generationJob_p99UpperMs": 13.80410500000005,
+          "generationJob_maxMs": 13.80410500000005,
+          "command_samples": 33920,
+          "command_meanMs": 0.014066923113211519,
+          "command_p95UpperMs": 0.05,
+          "command_p99UpperMs": 0.05,
+          "command_maxMs": 6.079829000000245
+        }
+      ],
+      "cleanup": {
+        "rooms": 0,
+        "closedClients": 128
+      }
+    }
+  ],
+  "finishedAt": "2026-10-27T14:20:52.965Z"
+}

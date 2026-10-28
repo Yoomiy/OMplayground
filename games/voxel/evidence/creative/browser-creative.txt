@@ -1,0 +1,13 @@
+
+> @playground/voxel@0.1.0 test:creative:browser
+> node tools/browser-creative.ts
+
+Opening creative client
+Creative client ready
+Opening creative client
+Creative client ready
+Testing jump [49.5,68.005,0.5]
+Testing movement
+Testing shared edits
+Testing reconnect
+Two-client creative browser smoke passes

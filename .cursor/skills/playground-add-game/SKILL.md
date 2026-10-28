@@ -247,17 +247,30 @@ Always tell the user clearly when any of these apply:
 - The game needs a **server tick** loop (current server is event-driven only — see "Voxel / tick-based games" below).
 - `minPlayers` / `maxPlayers` differ from the module defaults and need to match the `games` row.
 
-## Voxel / tick-based games (Minecraft)
+## Native voxel runtime exception
 
-Real-time voxel/tick games **do NOT extend `apps/game-server`, do NOT register in `BOARD_REGISTRY`, and do NOT implement `GameModule`**. The `applyIntent(state) -> snapshot` JSON model in `packages/game-logic/src/registry.ts` is a poor fit for high-frequency state (positions at ~15 Hz, sparse block deltas), and a per-room tick loop would block the existing event-driven server. Instead:
+Voxel does not extend `GameModule` or `BOARD_REGISTRY`. Its current implementation
+is `games/voxel` plus `apps/voxel-server`, with the React adapter under
+`apps/web/src/game/voxel`. The removed NOA/Babylon client, legacy socket hook and
+mirrored protocol are not reference implementations for new work.
 
-1. **Add a new in-monorepo service** under `apps/<game>-server/` (its own Express + Socket.IO process, deployed as a separate Railway service). Mirror `apps/minecraft-server` for structure: `package.json`, `tsconfig`, `jest.config.cjs`, `.env.example`, plus `src/index.ts` / `src/room.ts` / `src/world.ts` / `src/tick.ts` / `src/sessionPersistence.ts` / `src/recessSweep.ts`. Copy `recess.ts` verbatim from `apps/game-server` (extracting to a shared package can come later).
-2. **Reuse platform plumbing** verbatim: bearer-token auth via `supabaseAdmin.auth.getUser`, the kid `is_active`/gender check, the recess gate for `role === "kid"`, recess sweep at 30 s, and `game_sessions.game_state` for paused-room hydration. Voxel `game_state` is `{ voxel: true, seed, deltas: [[x,y,z,id],...], spawnPoints }`.
-3. **Per-session isolation must be structural.** One `game_sessions.id` = one in-memory room = one Socket.IO room namespace `voxel:${sessionId}`. Every emit goes through `io.to(\`voxel:${sessionId}\`)`. No global broadcasts.
-4. **Tick rate**: a single `setInterval` at ~66 ms, coalesced per room with a `dirty` flag so idle rooms emit nothing. See `apps/minecraft-server/src/tick.ts`.
-5. **Client wiring**: a per-game container (e.g. `apps/web/src/game/MinecraftSessionContainer.tsx`) reachable from `PlayPage.tsx` via a `game_url` branch (`game_url === 'minecraft'`) that bypasses `KidDesktopShell`. The dumb game component (e.g. `apps/web/src/games/MinecraftClient.tsx`) imports its rendering deps directly (noa-engine, Babylon) and is props-only — no socket / Supabase calls. The hook `apps/web/src/hooks/useVoxelSocket.ts` owns the Socket.IO connection.
-6. **Catalog row**: same SQL pattern as multiplayer games (`is_multiplayer=true`, `game_url='<key>'`).
-7. **Anti-patterns**: do **not** import a 3D engine from the server (no rendering server-side); do **not** persist on every tick (only at lifecycle boundaries — pause / stop / recess-end / leave-empty); do **not** touch `apps/game-server/src/**` or `packages/game-logic/src/**`.
+- Read `games/voxel/README.md`, `UPSTREAM.md` and `docs/adr/002-voxel-native-websocket.md`.
+- Keep the Rust/Wasm engine, semantic compiled content, headless rules, client
+  presentation and platform policy/persistence ports separate. Browser and Node
+  use matching release Wasm/content/build artifacts.
+- The server owns 30 Hz world time and two fixed 60 Hz movement steps. Inputs
+  cannot supply positions or durations; epoch/revision fencing and server-side
+  inventory/mining/combat rules remain authoritative.
+- Persist coherent immutable private checkpoints with fenced Postgres pointers,
+  autosaves and acknowledged pause/stop commits. Do not add per-tick database
+  writes or return to a `game_state` voxel blob.
+- Classroom/RTC responsibilities use their own service. Preserve school auth,
+  membership, recess, teacher capabilities and moderated chat/media flows.
+- The catalog key `minecraft` remains a platform identity. It does not select an
+  old protocol or compatibility runtime.
+- This private-school app targets PCs. Prioritize desktop student/teacher flows;
+  do not require synthetic-scale or mobile/tablet qualification or add voxel
+  player/observer/room admission ceilings.
 
-Reference implementation: `apps/minecraft-server` (server) + `apps/web/src/{games,game,hooks,lib}/{MinecraftClient.tsx, MinecraftSessionContainer.tsx, useVoxelSocket.ts, voxelServerUrl.ts, voxelProtocol.ts}` (client).  
-For upcoming voxel content work, treat shared content definitions (for blocks/items/tools) as canonical and avoid reintroducing duplicate client/server constant tables.
+For other realtime action games, use the integration/ADR workflow rather than
+copying the retired Minecraft server/client architecture.

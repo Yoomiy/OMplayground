@@ -1,0 +1,16 @@
+
+> @playground/voxel-server@0.1.0 test:integration
+> node --test tests/integration/*.test.ts
+
+✔ school admission supports the configured browser origin and rejects foreign preflights before authenticating (102.009361ms)
+✔ an inactive account or rotated invitation cannot consume an earlier ticket and allocates no world (59.984923ms)
+✔ school staff observe invisibly and fly in survival while player participation retains school partition rules (321.673718ms)
+✔ connected school accounts lose authority on revocation and provider outages close with a retryable recovery reason (5088.953813ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5924.728956

@@ -1,0 +1,298 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { RoomServiceClient, TrackSource } from "livekit-server-sdk";
+import * as authCache from "./schoolIdentity";
+import {
+  classroomVoiceStats,
+  classroomPublishSourcesForRole,
+  evictClassroomParticipants,
+  generateClassroomToken,
+  getClassroomParticipantBlockTarget,
+  getClassroomsLiveAttendance,
+  LiveKitTokenError,
+} from "./livekitService";
+
+test("classroom metrics exclude game rooms sharing the same SFU", async () => {
+  const previous = process.env;
+  process.env = {
+    ...previous,
+    LIVEKIT_URL: "wss://media.invalid",
+    LIVEKIT_API_KEY: "key",
+    LIVEKIT_API_SECRET: "secret",
+  };
+  const list = jest
+    .spyOn(RoomServiceClient.prototype, "listRooms")
+    .mockResolvedValue([
+      { name: "classroom-one", numParticipants: 3 },
+      { name: "classroom-two", numParticipants: 2 },
+      { name: "voxel-session-game", numParticipants: 100 },
+    ] as never);
+  try {
+    expect(await classroomVoiceStats()).toEqual({
+      activeRooms: 2,
+      totalParticipants: 5,
+    });
+    list.mockRejectedValue(new Error("unavailable"));
+    expect(await classroomVoiceStats()).toBeUndefined();
+  } finally {
+    process.env = previous;
+    list.mockRestore();
+  }
+});
+
+describe("classroom presenter publishing", () => {
+  it("grants screen sharing only to the designated presenter", () => {
+    const legacySettings = {
+      allowStudentMic: true,
+      allowStudentCam: true,
+      allowStudentScreenShare: true,
+    };
+    expect(
+      classroomPublishSourcesForRole(legacySettings, true, false),
+    ).not.toContain(TrackSource.SCREEN_SHARE);
+    expect(
+      classroomPublishSourcesForRole(legacySettings, false, false),
+    ).not.toContain(TrackSource.SCREEN_SHARE);
+    expect(
+      classroomPublishSourcesForRole(legacySettings, false, true),
+    ).toContain(TrackSource.SCREEN_SHARE);
+  });
+});
+
+describe("classroom token and moderation", () => {
+  const prevEnv = process.env;
+
+  beforeEach(() => {
+    process.env = {
+      ...prevEnv,
+      LIVEKIT_URL: "wss://lk.example.com",
+      LIVEKIT_API_KEY: "key",
+      LIVEKIT_API_SECRET: "secret",
+    };
+  });
+
+  afterEach(() => {
+    process.env = prevEnv;
+    jest.restoreAllMocks();
+  });
+
+  it("denies a new classroom token after that participant was kicked", async () => {
+    const onSecurityIdentity = jest.fn();
+    const classroomChain = {
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      maybeSingle: jest.fn().mockResolvedValue({
+        data: {
+          id: "classroom-1",
+          room_code: "room-123",
+          teacher_id: "teacher-1",
+          teacher_name: "Teacher",
+          status: "active",
+          settings: {},
+        },
+        error: null,
+      }),
+    };
+    const blockChain = {
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      maybeSingle: jest
+        .fn()
+        .mockResolvedValue({ data: { id: "block-1" }, error: null }),
+    };
+    const supabase = {
+      from: jest.fn((table: string) =>
+        table === "classroom_participant_blocks" ? blockChain : classroomChain,
+      ),
+    } as unknown as SupabaseClient;
+
+    await expect(
+      generateClassroomToken({
+        supabaseAdmin: supabase,
+        roomCode: "room-123",
+        displayName: "Student",
+        guestAttendanceKey:
+          "guest:room-123:11111111-1111-4111-8111-111111111111",
+        onSecurityIdentity,
+      }),
+    ).rejects.toMatchObject({ reason: "classroom_blocked" });
+    expect(onSecurityIdentity).toHaveBeenCalledWith(
+      expect.objectContaining({
+        participantKey: "guest:room-123:11111111-1111-4111-8111-111111111111",
+        authenticationMethod: "guest",
+        accountTokenOutcome: "absent",
+      }),
+    );
+  });
+
+  it.each(["guest", "account", "unverified", "delegate"])(
+    "links issued tokens to admission evidence for %s access without putting IPs in metadata",
+    async (kind) => {
+      const profile = {
+        userId: "account-1",
+        role: "kid",
+        gender: "boy" as const,
+        grade: null,
+        full_name: "Student",
+        is_active: true,
+      };
+      const auth = jest.spyOn(authCache, "getSchoolIdentity");
+      if (kind === "account") auth.mockResolvedValue(profile);
+      else auth.mockRejectedValue(new Error("UNAUTHORIZED"));
+      const classroom = {
+        id: "classroom-1",
+        room_code: "room-123",
+        teacher_id: "teacher-1",
+        status: "active",
+        settings: {},
+      };
+      const supabase = {
+        from: jest.fn((table: string) => ({
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          maybeSingle: jest.fn().mockResolvedValue({
+            data: table === "classroom_sessions" ? classroom : null,
+            error: null,
+          }),
+        })),
+      } as unknown as SupabaseClient;
+      const onSecurityIdentity = jest.fn();
+      const admissionId = "11111111-1111-4111-8111-111111111111";
+      const result = await generateClassroomToken({
+        supabaseAdmin: supabase,
+        roomCode: "room-123",
+        displayName: "Student",
+        accessToken: ["account", "unverified"].includes(kind)
+          ? "credential"
+          : undefined,
+        delegate:
+          kind === "delegate"
+            ? { id: "delegate-1", displayName: "Delegate" }
+            : null,
+        guestAttendanceKey: "guest:room-123:browser-key",
+        admissionId,
+        onSecurityIdentity,
+      });
+      expect(onSecurityIdentity).toHaveBeenCalledWith(
+        expect.objectContaining({
+          accountId: kind === "account" ? "account-1" : undefined,
+          authenticationMethod:
+            kind === "account"
+              ? "account"
+              : kind === "delegate"
+                ? "delegate"
+                : "guest",
+          accountTokenOutcome:
+            kind === "account"
+              ? "accepted"
+              : kind === "unverified"
+                ? "unverified"
+                : "absent",
+        }),
+      );
+      const payload = JSON.parse(
+        Buffer.from(result.token.split(".")[1], "base64url").toString("utf8"),
+      );
+      const metadata = JSON.parse(payload.metadata);
+      expect(metadata.admissionId).toEqual(admissionId);
+      expect(metadata.attendanceKey).toEqual(result.attendanceKey);
+      expect(metadata.clientIp).toBeUndefined();
+      expect(metadata.accessToken).toBeUndefined();
+    },
+  );
+
+  it("actively removes every attendee and revokes each active classroom token", async () => {
+    const listParticipants = jest
+      .spyOn(RoomServiceClient.prototype, "listParticipants")
+      .mockResolvedValue([
+        { identity: "teacher" },
+        { identity: "student-a" },
+        { identity: "student-b" },
+      ] as never);
+    const removeParticipant = jest
+      .spyOn(RoomServiceClient.prototype, "removeParticipant")
+      .mockResolvedValue({} as never);
+
+    await expect(evictClassroomParticipants("room-123")).resolves.toBe(3);
+
+    expect(listParticipants).toHaveBeenCalledWith("classroom-room-123");
+    expect(removeParticipant).toHaveBeenCalledTimes(3);
+    expect(removeParticipant).toHaveBeenCalledWith(
+      "classroom-room-123",
+      "student-a",
+      expect.objectContaining({ revokeTokenTs: expect.any(BigInt) }),
+    );
+  });
+
+  it("reads the durable participant key before kicking a student", async () => {
+    jest
+      .spyOn(RoomServiceClient.prototype, "getParticipant")
+      .mockResolvedValue({
+        identity: "student-a",
+        name: "Student A",
+        metadata: JSON.stringify({
+          attendanceKey: "guest:room-123:11111111-1111-4111-8111-111111111111",
+          isHost: false,
+        }),
+      } as never);
+
+    await expect(
+      getClassroomParticipantBlockTarget("room-123", "student-a"),
+    ).resolves.toEqual({
+      participantKey: "guest:room-123:11111111-1111-4111-8111-111111111111",
+      identity: "student-a",
+      displayName: "Student A",
+    });
+  });
+
+  it("refuses to put a classroom host on the kick block list", async () => {
+    jest
+      .spyOn(RoomServiceClient.prototype, "getParticipant")
+      .mockResolvedValue({
+        identity: "teacher-a",
+        name: "Teacher A",
+        metadata: JSON.stringify({
+          attendanceKey: "user:teacher-a",
+          isHost: true,
+        }),
+      } as never);
+
+    await expect(
+      getClassroomParticipantBlockTarget("room-123", "teacher-a"),
+    ).rejects.toThrow("cannot_block_classroom_host");
+  });
+
+  it("lists LiveKit rooms once and fetches participants only for rooms that exist", async () => {
+    const listRooms = jest
+      .spyOn(RoomServiceClient.prototype, "listRooms")
+      .mockResolvedValue([
+        {
+          name: "classroom-live-room",
+          sid: "RM_live",
+          creationTime: BigInt(1_700_000_000),
+          creationTimeMs: BigInt(1_700_000_000_000),
+        },
+      ] as never);
+    const listParticipants = jest
+      .spyOn(RoomServiceClient.prototype, "listParticipants")
+      .mockResolvedValue([
+        {
+          sid: "PA_student",
+          identity: "student",
+          name: "Student",
+          metadata: "{}",
+          joinedAt: BigInt(1_700_000_010),
+          joinedAtMs: BigInt(1_700_000_010_000),
+        },
+      ] as never);
+
+    const snapshots = await getClassroomsLiveAttendance([
+      "live-room",
+      "empty-room",
+    ]);
+
+    expect(listRooms).toHaveBeenCalledTimes(1);
+    expect(listParticipants).toHaveBeenCalledTimes(1);
+    expect(snapshots.get("live-room")).toMatchObject({ roomSid: "RM_live" });
+    expect(snapshots.get("empty-room")).toBeNull();
+  });
+});

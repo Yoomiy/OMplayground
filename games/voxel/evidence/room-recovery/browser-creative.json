@@ -1,0 +1,4502 @@
+{
+  "result": "PASS",
+  "scope": "Loopback development policy, two software-rendered Chromium clients; functional evidence only",
+  "buildId": "afd3a9b33e5e2c39f88b4e0f31fa53fdaa0b1605aef14a3621f948666174ca77",
+  "engineHash": "1e3f1e257d7326182e52736112b4a585b5809173a7f6f6d3fee34e52f414b7b6",
+  "contentHash": "368b605ac5bdf5ff6fcf4af02f7174cbc6d39b5110f48e0a41b231a0a6479464",
+  "browser": "156.0.8078.4",
+  "moved": 1.0554234309958446,
+  "jumpHeight": 1.1977966666666475,
+  "jumpTrace": {
+    "peak": 69.19779666666665,
+    "done": true,
+    "pressed": true,
+    "samples": 54,
+    "last": 11402.8,
+    "maxFrameGapMs": 700.1000000000004,
+    "maxUpdateAgeMs": 467.5,
+    "maxReceiptAgeMs": 103,
+    "catalogNodeChanges": 0,
+    "prepareMs": 471.7999999523163
+  },
+  "jumpWire": [
+    {
+      "kind": "input",
+      "at": 7793.483717000001,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 19
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 20
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 21
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 22
+        }
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 7793.519597,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 23
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 24
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 25
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 8028.9130829999995,
+      "tick": 150,
+      "epoch": 3,
+      "ack": 18,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 8030.883691999999,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 26
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 27
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 28
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 29
+        }
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 8030.903052,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 30
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 31
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 8030.925292,
+      "tick": 152,
+      "epoch": 3,
+      "ack": 22,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 8030.938612,
+      "tick": 154,
+      "epoch": 3,
+      "ack": 25,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 8030.951612000001,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 32
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 33
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 8030.962251999999,
+      "tick": 156,
+      "epoch": 3,
+      "ack": 29,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 8030.977973000001,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 34
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 35
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 36
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 8163.201485,
+      "tick": 158,
+      "epoch": 3,
+      "ack": 33,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 8163.231125,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 37
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 38
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 39
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 40
+        }
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 8163.264405,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 41
+        }
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 8163.2840049999995,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 42
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 43
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 8165.767297,
+      "tick": 160,
+      "epoch": 3,
+      "ack": 36,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 8255.702687,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 44
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 45
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 46
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 8255.724608,
+      "tick": 162,
+      "epoch": 3,
+      "ack": 38,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 8293.397388,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 47
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 48
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 49
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 8293.417868,
+      "tick": 164,
+      "epoch": 3,
+      "ack": 42,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 8293.431148,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 50
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 51
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 52
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 8390.739453,
+      "tick": 166,
+      "epoch": 3,
+      "ack": 46,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 8390.911454000001,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 53
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 54
+        }
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 8390.926974,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 55
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 56
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 57
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 8390.938614,
+      "tick": 168,
+      "epoch": 3,
+      "ack": 50,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 8429.142997,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 58
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 59
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 60
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 61
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 8450.143377,
+      "tick": 170,
+      "epoch": 3,
+      "ack": 54,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "baseline",
+      "at": 8614.354283,
+      "type": "baseline",
+      "epoch": 3,
+      "ack": 58,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "phase": "playing",
+      "reason": "resync",
+      "movement": {
+        "speed": 1,
+        "gravity": 1,
+        "control": 1,
+        "jump": 1,
+        "sprint": true
+      }
+    },
+    {
+      "kind": "input",
+      "at": 8616.734014,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 59
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 60
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 61
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 62
+        }
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 8616.747854,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 63
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 64
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 8625.611617,
+      "tick": 172,
+      "epoch": 3,
+      "ack": 61,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 8628.163109000001,
+      "tick": 174,
+      "epoch": 3,
+      "ack": 61,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 8640.451008,
+      "tick": 176,
+      "epoch": 3,
+      "ack": 63,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 8660.463463,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 65
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 66
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 67
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 8734.485137,
+      "tick": 178,
+      "epoch": 3,
+      "ack": 67,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 8742.432495000001,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 68
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 69
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 70
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 71
+        }
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 8743.277539,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 72
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 8775.821735,
+      "tick": 180,
+      "epoch": 3,
+      "ack": 69,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 8789.646921,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 73
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 74
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 75
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 8880.279475,
+      "tick": 182,
+      "epoch": 3,
+      "ack": 73,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 8880.300115,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 76
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 77
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 78
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 79
+        }
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 8880.309755,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 80
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 8910.268578,
+      "tick": 184,
+      "epoch": 3,
+      "ack": 77,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 8915.819565,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 81
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 82
+        }
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 8968.416856,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 83
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 84
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 85
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 8994.474341000001,
+      "tick": 186,
+      "epoch": 3,
+      "ack": 81,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 9024.327964,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 86
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 87
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 88
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 9130.360591,
+      "tick": 188,
+      "epoch": 3,
+      "ack": 85,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 9130.384271,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": true,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 89
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 90
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 91
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 92
+        }
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 9130.393911,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 93
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 94
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 9130.403111,
+      "tick": 190,
+      "epoch": 3,
+      "ack": 88,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 9181.630116,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 95
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 96
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 97
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 9187.654745,
+      "tick": 192,
+      "epoch": 3,
+      "ack": 92,
+      "state": [
+        49.5,
+        68.5378,
+        0.5,
+        0,
+        7.1333,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 9243.486132,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 98
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 99
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 100
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 9245.14234,
+      "tick": 194,
+      "epoch": 3,
+      "ack": 96,
+      "state": [
+        49.5,
+        68.9333,
+        0.5,
+        0,
+        5,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 9269.409576,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 101
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 102
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 103
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 9313.347786,
+      "tick": 196,
+      "epoch": 3,
+      "ack": 100,
+      "state": [
+        49.5,
+        69.1867,
+        0.5,
+        0,
+        2.8667,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 9316.16172,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 104
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 105
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 106
+        }
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 9364.018109,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 107
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 108
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 109
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 9381.687513,
+      "tick": 198,
+      "epoch": 3,
+      "ack": 104,
+      "state": [
+        49.5,
+        69.2978,
+        0.5,
+        0,
+        0.7333,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 9978.426367,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 110
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 111
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 112
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 113
+        }
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 9978.442247,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 114
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 115
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 116
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 9979.587893,
+      "tick": 200,
+      "epoch": 3,
+      "ack": 108,
+      "state": [
+        49.5,
+        69.2667,
+        0.5,
+        0,
+        -1.4,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11212.697551,
+      "tick": 202,
+      "epoch": 3,
+      "ack": 109,
+      "state": [
+        49.5,
+        69.0933,
+        0.5,
+        0,
+        -3.5333,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11212.710671,
+      "tick": 204,
+      "epoch": 3,
+      "ack": 109,
+      "state": [
+        49.5,
+        68.7778,
+        0.5,
+        0,
+        -5.6667,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11212.719791,
+      "tick": 206,
+      "epoch": 3,
+      "ack": 109,
+      "state": [
+        49.5,
+        68.32,
+        0.5,
+        0,
+        -7.8,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11212.728351,
+      "tick": 208,
+      "epoch": 3,
+      "ack": 109,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11212.736831,
+      "tick": 210,
+      "epoch": 3,
+      "ack": 109,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11212.744831,
+      "tick": 212,
+      "epoch": 3,
+      "ack": 109,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11212.753191,
+      "tick": 214,
+      "epoch": 3,
+      "ack": 109,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 11212.788351,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 117
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 118
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 119
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 120
+        }
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 11212.797831,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 121
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 122
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11214.841241,
+      "tick": 216,
+      "epoch": 3,
+      "ack": 111,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11214.855601,
+      "tick": 218,
+      "epoch": 3,
+      "ack": 115,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11214.865321,
+      "tick": 220,
+      "epoch": 3,
+      "ack": 116,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11214.874201,
+      "tick": 222,
+      "epoch": 3,
+      "ack": 116,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11214.894681,
+      "tick": 224,
+      "epoch": 3,
+      "ack": 116,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11214.903121,
+      "tick": 226,
+      "epoch": 3,
+      "ack": 116,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11214.911801,
+      "tick": 228,
+      "epoch": 3,
+      "ack": 116,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11214.920041,
+      "tick": 230,
+      "epoch": 3,
+      "ack": 116,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11214.928601,
+      "tick": 232,
+      "epoch": 3,
+      "ack": 116,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11214.936962,
+      "tick": 234,
+      "epoch": 3,
+      "ack": 116,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 11214.953642,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 123
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 124
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 125
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 126
+        }
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 11214.962162,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 127
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11214.971442,
+      "tick": 236,
+      "epoch": 3,
+      "ack": 118,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11214.979882,
+      "tick": 238,
+      "epoch": 3,
+      "ack": 122,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 11214.989242,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 128
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 129
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 130
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11215.002562,
+      "tick": 240,
+      "epoch": 3,
+      "ack": 126,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 11215.011242,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 131
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 132
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11215.019362000001,
+      "tick": 242,
+      "epoch": 3,
+      "ack": 130,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 11216.74285,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 133
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 134
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 135
+        }
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 11216.782650000001,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 136
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 137
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11216.80129,
+      "tick": 244,
+      "epoch": 3,
+      "ack": 134,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 11216.81217,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 138
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 139
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 140
+        }
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 11216.821091,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 141
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 142
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 143
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11216.829451,
+      "tick": 246,
+      "epoch": 3,
+      "ack": 138,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 11216.843771,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 144
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 145
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 146
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11216.857611,
+      "tick": 248,
+      "epoch": 3,
+      "ack": 142,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 11216.867531,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 147
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 148
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 149
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 150
+        }
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 11216.875171,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 151
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11216.888451,
+      "tick": 250,
+      "epoch": 3,
+      "ack": 146,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 11216.897291,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 152
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 153
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11216.910851,
+      "tick": 252,
+      "epoch": 3,
+      "ack": 150,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 11216.920291,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 154
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 155
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 156
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11319.646302000001,
+      "tick": 254,
+      "epoch": 3,
+      "ack": 154,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 11338.394352,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 157
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 158
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 159
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 160
+        }
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 11338.411832,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 161
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 162
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11338.427712,
+      "tick": 256,
+      "epoch": 3,
+      "ack": 156,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11375.264008,
+      "tick": 258,
+      "epoch": 3,
+      "ack": 160,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 11382.256522,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 163
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 164
+        }
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 11429.292107,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 165
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 166
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 167
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11446.512149,
+      "tick": 260,
+      "epoch": 3,
+      "ack": 164,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 11477.96038,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 168
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 169
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 170
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11783.404001,
+      "tick": 262,
+      "epoch": 3,
+      "ack": 168,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 11783.425801,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 171
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 172
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 173
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 174
+        }
+      ]
+    },
+    {
+      "kind": "input",
+      "at": 11786.006293,
+      "frames": [
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 175
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 176
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "yaw": 0,
+          "pitch": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false,
+          "epoch": 3,
+          "sequence": 177
+        }
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11790.402874,
+      "tick": 264,
+      "epoch": 3,
+      "ack": 170,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11790.418794,
+      "tick": 266,
+      "epoch": 3,
+      "ack": 170,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11790.430154,
+      "tick": 268,
+      "epoch": 3,
+      "ack": 170,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 11790.451394,
+      "tick": 270,
+      "epoch": 3,
+      "ack": 170,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "snapshot",
+      "at": 12170.677813,
+      "tick": 272,
+      "epoch": 3,
+      "ack": 174,
+      "state": [
+        49.5,
+        68,
+        0.5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "disposed": false,
+      "inputMode": "desktop",
+      "mode": "creative",
+      "mining": {
+        "target": null,
+        "elapsed": 0,
+        "total": 0
+      },
+      "vitals": {
+        "version": 2,
+        "health": 20,
+        "food": 20,
+        "air": 300,
+        "dead": false,
+        "respawnIn": 0,
+        "attackCooldown": 0,
+        "protection": 0
+      },
+      "combat": false,
+      "hit": null,
+      "lastHitEvent": null,
+      "lastExplosionEvent": null,
+      "explosives": [],
+      "canIgnite": true,
+      "miningHeld": false,
+      "drops": [],
+      "selectedSlot": 0,
+      "environment": {
+        "tick": 858.99,
+        "seconds": 28.633,
+        "dayFraction": 0.24386083333333333,
+        "daylight": 1,
+        "sun": [
+          0.0369375714974512,
+          0.9571137907649336,
+          0.2873478855663454
+        ],
+        "sky": [
+          0.59,
+          0.76,
+          0.88
+        ],
+        "rain": 0,
+        "wind": [
+          -0.09681483233576553,
+          -0.2839487422754283
+        ],
+        "openSky": true
+      },
+      "atmosphere": {
+        "rainLines": 0,
+        "stars": false,
+        "clouds": 16,
+        "sun": true,
+        "moon": false
+      },
+      "avatars": {
+        "visible": 1,
+        "capacity": 8,
+        "samples": [
+          {
+            "id": "2a80842b-d2b0-4247-8764-eb736eb08e61",
+            "head": [
+              1.5,
+              69.58499908447266,
+              0.5
+            ],
+            "yaw": 0
+          }
+        ],
+        "equipment": {
+          "visible": 1,
+          "held": 1,
+          "worn": 0,
+          "kinds": 1,
+          "capacity": 8,
+          "samples": [
+            {
+              "id": "2a80842b-d2b0-4247-8764-eb736eb08e61",
+              "itemType": "stone",
+              "slot": "held",
+              "side": 0,
+              "position": [
+                1.8600000143051147,
+                68.84500122070312,
+                0.3799999952316284
+              ],
+              "vertices": 24
+            }
+          ]
+        }
+      },
+      "renderOrigin": {
+        "x": 48,
+        "z": 0
+      },
+      "feedback": {
+        "held": {
+          "state": 35,
+          "itemType": null,
+          "visible": false,
+          "swings": 2
+        },
+        "effects": {
+          "live": 0,
+          "bursts": 2,
+          "hits": 0,
+          "explosions": 0
+        },
+        "drops": {
+          "visible": 0,
+          "kinds": 0
+        },
+        "explosives": {
+          "visible": 0,
+          "capacity": 0,
+          "flashing": 0
+        },
+        "vision": false
+      },
+      "audio": {
+        "supported": true,
+        "contexts": 1,
+        "state": "running",
+        "active": false,
+        "muted": false,
+        "voices": 0,
+        "effects": 3,
+        "gain": 0,
+        "dropped": 0,
+        "listener": [
+          50.867000579833984,
+          69.62000274658203,
+          0.5
+        ],
+        "lastSource": [
+          50.5,
+          68.5,
+          -1.5
+        ]
+      },
+      "renderLimitHz": 10,
+      "touch": {
+        "x": 0,
+        "z": 0,
+        "jump": false,
+        "sneak": false,
+        "sprint": false
+      },
+      "focused": false,
+      "visible": "visible",
+      "hasFocus": true,
+      "lastFrame": 31068.6,
+      "lastUpdate": 31068.699999809265,
+      "resources": {
+        "geometries": 30,
+        "textures": 5,
+        "workers": 1
+      },
+      "actorId": "70ac27fe-d819-4481-bacd-a25c4e2b2754",
+      "worldId": "bb53f65c-ec6f-483b-a14e-b0594d569b8e",
+      "body": {
+        "position": [
+          50.867,
+          68,
+          0.5
+        ],
+        "onGround": 1,
+        "inWater": 0,
+        "eyesInWater": 0,
+        "frozen": 1,
+        "flying": 0,
+        "velocity": [
+          0,
+          0,
+          0
+        ]
+      },
+      "view": {
+        "yaw": 0,
+        "pitch": -0.6980000000000001
+      },
+      "lastResult": null,
+      "inventory": {
+        "version": 2,
+        "catalog": true,
+        "revision": 0,
+        "selected": 0,
+        "bag": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "craft2": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "craft3": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "equipment": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "station": "personal",
+        "container": null
+      },
+      "inventoryOpen": false,
+      "inventoryPending": false,
+      "recentEdits": [],
+      "status": "paused",
+      "epoch": 6,
+      "phase": "playing",
+      "position": [
+        50.867,
+        68,
+        0.5
+      ],
+      "selected": 35,
+      "players": 2,
+      "inputLag": 0,
+      "correction": 0,
+      "columns": 49,
+      "collisionColumns": 38,
+      "meshed": 15,
+      "workers": 1,
+      "activeJobs": 0,
+      "stream": {
+        "discardedJobs": 0,
+        "installed": 38,
+        "meshJobs": 16,
+        "generationJobs": 38,
+        "mainWorkMs": 0.9000000953674316
+      },
+      "render": {
+        "uploadedBytes": 4296712,
+        "columns": 15,
+        "drawCalls": 33,
+        "triangles": 18784,
+        "uploadMs": 0.20000004768371582,
+        "prepareMs": 471.7999999523163,
+        "gpu": {
+          "submitted": 20,
+          "skipped": 165,
+          "pending": 1,
+          "failures": 0
+        }
+      },
+      "target": [
+        50,
+        67,
+        -2
+      ],
+      "targetState": 39,
+      "targetNormal": [
+        0,
+        1,
+        0
+      ],
+      "actionPending": 0,
+      "queuedAction": null,
+      "actionSequence": 0,
+      "lastReceivedAgoMs": 41.700000047683716
+    },
+    {
+      "disposed": false,
+      "inputMode": "desktop",
+      "mode": "creative",
+      "mining": {
+        "target": null,
+        "elapsed": 0,
+        "total": 0
+      },
+      "vitals": {
+        "version": 2,
+        "health": 20,
+        "food": 20,
+        "air": 300,
+        "dead": false,
+        "respawnIn": 0,
+        "attackCooldown": 0,
+        "protection": 0
+      },
+      "combat": false,
+      "hit": null,
+      "lastHitEvent": null,
+      "lastExplosionEvent": null,
+      "explosives": [],
+      "canIgnite": true,
+      "miningHeld": false,
+      "drops": [],
+      "selectedSlot": 0,
+      "environment": {
+        "tick": 858.96,
+        "seconds": 28.632,
+        "dayFraction": 0.24386,
+        "daylight": 1,
+        "sun": [
+          0.03694258293303443,
+          0.9571135973471415,
+          0.2873478855663454
+        ],
+        "sky": [
+          0.59,
+          0.76,
+          0.88
+        ],
+        "rain": 0,
+        "wind": [
+          -0.09681483233576553,
+          -0.2839487422754283
+        ],
+        "openSky": true
+      },
+      "atmosphere": {
+        "rainLines": 0,
+        "stars": false,
+        "clouds": 16,
+        "sun": true,
+        "moon": false
+      },
+      "avatars": {
+        "visible": 1,
+        "capacity": 8,
+        "samples": [
+          {
+            "id": "70ac27fe-d819-4481-bacd-a25c4e2b2754",
+            "head": [
+              2.867000102996826,
+              69.58000183105469,
+              0.5
+            ],
+            "yaw": 0
+          }
+        ],
+        "equipment": {
+          "visible": 1,
+          "held": 1,
+          "worn": 0,
+          "kinds": 1,
+          "capacity": 8,
+          "samples": [
+            {
+              "id": "70ac27fe-d819-4481-bacd-a25c4e2b2754",
+              "itemType": "glowstone",
+              "slot": "held",
+              "side": 0,
+              "position": [
+                3.2269999980926514,
+                68.83999633789062,
+                0.3799999952316284
+              ],
+              "vertices": 24
+            }
+          ]
+        }
+      },
+      "renderOrigin": {
+        "x": 48,
+        "z": 0
+      },
+      "feedback": {
+        "held": {
+          "state": 1,
+          "itemType": null,
+          "visible": false,
+          "swings": 0
+        },
+        "effects": {
+          "live": 0,
+          "bursts": 2,
+          "hits": 0,
+          "explosions": 0
+        },
+        "drops": {
+          "visible": 0,
+          "kinds": 0
+        },
+        "explosives": {
+          "visible": 0,
+          "capacity": 0,
+          "flashing": 0
+        },
+        "vision": false
+      },
+      "audio": {
+        "supported": true,
+        "contexts": 0,
+        "state": "locked",
+        "active": false,
+        "muted": false,
+        "voices": 0,
+        "effects": 0,
+        "gain": 0,
+        "dropped": 0,
+        "listener": [
+          49.5,
+          69.625,
+          0.5
+        ],
+        "lastSource": null
+      },
+      "renderLimitHz": 10,
+      "touch": {
+        "x": 0,
+        "z": 0,
+        "jump": false,
+        "sneak": false,
+        "sprint": false
+      },
+      "focused": false,
+      "visible": "visible",
+      "hasFocus": true,
+      "lastFrame": 27583.9,
+      "lastUpdate": 27598.700000047684,
+      "resources": {
+        "geometries": 30,
+        "textures": 5,
+        "workers": 1
+      },
+      "actorId": "2a80842b-d2b0-4247-8764-eb736eb08e61",
+      "worldId": "bb53f65c-ec6f-483b-a14e-b0594d569b8e",
+      "body": {
+        "position": [
+          49.5,
+          68.005,
+          0.5
+        ],
+        "onGround": 0,
+        "inWater": 0,
+        "eyesInWater": 0,
+        "frozen": 1,
+        "flying": 0,
+        "velocity": [
+          0,
+          0,
+          0
+        ]
+      },
+      "view": {
+        "yaw": 0,
+        "pitch": 0
+      },
+      "lastResult": null,
+      "inventory": {
+        "version": 2,
+        "catalog": true,
+        "revision": 0,
+        "selected": 0,
+        "bag": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "craft2": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "craft3": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "equipment": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "station": "personal",
+        "container": null
+      },
+      "inventoryOpen": false,
+      "inventoryPending": false,
+      "recentEdits": [
+        {
+          "cell": [
+            50,
+            68,
+            -2
+          ],
+          "state": 35,
+          "revision": 1
+        },
+        {
+          "cell": [
+            50,
+            68,
+            -2
+          ],
+          "state": 0,
+          "revision": 2
+        }
+      ],
+      "status": "paused",
+      "epoch": 2,
+      "phase": "playing",
+      "position": [
+        49.5,
+        68.005,
+        0.5
+      ],
+      "selected": 109,
+      "players": 2,
+      "inputLag": 0,
+      "correction": 0,
+      "columns": 49,
+      "collisionColumns": 49,
+      "meshed": 25,
+      "workers": 1,
+      "activeJobs": 0,
+      "stream": {
+        "discardedJobs": 0,
+        "installed": 49,
+        "meshJobs": 43,
+        "generationJobs": 49,
+        "mainWorkMs": 0
+      },
+      "render": {
+        "uploadedBytes": 3201072,
+        "columns": 25,
+        "drawCalls": 33,
+        "triangles": 18944,
+        "uploadMs": 0.10000014305114746,
+        "prepareMs": 668,
+        "gpu": {
+          "submitted": 35,
+          "skipped": 237,
+          "pending": 1,
+          "failures": 0
+        }
+      },
+      "target": [
+        49,
+        69,
+        -4
+      ],
+      "targetState": 107,
+      "targetNormal": [
+        0,
+        0,
+        1
+      ],
+      "actionPending": 0,
+      "queuedAction": null,
+      "actionSequence": 0,
+      "lastReceivedAgoMs": 46.89999985694885
+    }
+  ],
+  "cleanup": [
+    {
+      "geometries": 0,
+      "textures": 0,
+      "workers": 0
+    },
+    {
+      "geometries": 0,
+      "textures": 0,
+      "workers": 0
+    }
+  ],
+  "gpuCleanup": [
+    {
+      "submitted": 21,
+      "skipped": 172,
+      "pending": 0,
+      "failures": 0
+    },
+    {
+      "submitted": 37,
+      "skipped": 244,
+      "pending": 0,
+      "failures": 0
+    }
+  ],
+  "audioCleanup": [
+    {
+      "supported": true,
+      "contexts": 0,
+      "state": "closed",
+      "active": false,
+      "muted": false,
+      "voices": 0,
+      "effects": 3,
+      "gain": 0,
+      "dropped": 0,
+      "listener": [
+        50.867,
+        69.62,
+        0.5
+      ],
+      "lastSource": [
+        50.5,
+        68.5,
+        -1.5
+      ]
+    },
+    {
+      "supported": true,
+      "contexts": 0,
+      "state": "closed",
+      "active": false,
+      "muted": false,
+      "voices": 0,
+      "effects": 0,
+      "gain": 0,
+      "dropped": 0,
+      "listener": [
+        49.5,
+        69.625,
+        0.5
+      ],
+      "lastSource": null
+    }
+  ],
+  "inputMethod": "Trusted pointer capture and jump; DOM keyboard/relative-mouse events through normal runtime listeners for held walking and aim",
+  "errors": []
+}

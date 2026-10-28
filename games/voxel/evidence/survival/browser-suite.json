@@ -1,0 +1,64 @@
+{
+  "buildId": "37a9e3788eddb78445d9ebeb495735b31f59847e034d033a4ff19e7fc077f576",
+  "startedAt": "2026-10-22T17:40:53.096Z",
+  "active": null,
+  "checks": [
+    {
+      "script": "test:touch:browser",
+      "path": "/tmp/voxel-survival-suite-test-touch-browser.log",
+      "code": 0,
+      "signal": null,
+      "durationMs": 22165
+    },
+    {
+      "script": "test:survival:browser",
+      "path": "/tmp/voxel-survival-suite-test-survival-browser.log",
+      "code": 0,
+      "signal": null,
+      "durationMs": 54858
+    },
+    {
+      "script": "test:creative:browser",
+      "path": "/tmp/voxel-survival-suite-test-creative-browser.log",
+      "code": 0,
+      "signal": null,
+      "durationMs": 98073
+    },
+    {
+      "script": "test:inventory:browser",
+      "path": "/tmp/voxel-survival-suite-test-inventory-browser.log",
+      "code": 0,
+      "signal": null,
+      "durationMs": 46376
+    },
+    {
+      "script": "test:presentation:browser",
+      "path": "/tmp/voxel-survival-suite-test-presentation-browser.log",
+      "code": 0,
+      "signal": null,
+      "durationMs": 37416
+    },
+    {
+      "script": "test:environment:browser",
+      "path": "/tmp/voxel-survival-suite-test-environment-browser.log",
+      "code": 0,
+      "signal": null,
+      "durationMs": 15876
+    },
+    {
+      "script": "test:recovery:browser",
+      "path": "/tmp/voxel-survival-suite-test-recovery-browser.log",
+      "code": 0,
+      "signal": null,
+      "durationMs": 10301
+    },
+    {
+      "script": "test:browser",
+      "path": "/tmp/voxel-survival-suite-test-browser.log",
+      "code": 0,
+      "signal": null,
+      "durationMs": 2076
+    }
+  ],
+  "finishedAt": "2026-10-22T17:45:40.255Z"
+}

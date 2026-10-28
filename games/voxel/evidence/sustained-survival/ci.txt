@@ -1,0 +1,18 @@
+
+> @playground/voxel@0.1.0 benchmark:survival:workers
+> node tools/benchmark-survival-workers.ts
+
+{"phase":"round","round":1,"elapsedSeconds":3.708252355,"rounds":1,"mined":4,"placed":4,"crafted":4,"consumed":4,"containerRaces":2,"containerConflicts":2,"cachedReplays":6,"hits":2,"staleEpochReplays":0,"skippedInputBatches":0}
+{"phase":"round","round":2,"elapsedSeconds":7.437586090999999,"rounds":2,"mined":8,"placed":8,"crafted":8,"consumed":4,"containerRaces":4,"containerConflicts":4,"cachedReplays":12,"hits":4,"staleEpochReplays":0,"skippedInputBatches":0}
+{"phase":"round","round":3,"elapsedSeconds":11.302520512,"rounds":3,"mined":12,"placed":12,"crafted":12,"consumed":4,"containerRaces":6,"containerConflicts":6,"cachedReplays":18,"hits":6,"staleEpochReplays":0,"skippedInputBatches":0}
+{"phase":"round","round":4,"elapsedSeconds":15.174125044999998,"rounds":4,"mined":16,"placed":16,"crafted":16,"consumed":4,"containerRaces":8,"containerConflicts":8,"cachedReplays":24,"hits":8,"staleEpochReplays":0,"skippedInputBatches":0}
+{"phase":"round","round":5,"elapsedSeconds":18.974025037,"rounds":5,"mined":20,"placed":20,"crafted":20,"consumed":4,"containerRaces":10,"containerConflicts":10,"cachedReplays":30,"hits":10,"staleEpochReplays":0,"skippedInputBatches":0}
+{"phase":"round","round":6,"elapsedSeconds":22.706493709,"rounds":6,"mined":24,"placed":24,"crafted":24,"consumed":4,"containerRaces":12,"containerConflicts":12,"cachedReplays":36,"hits":12,"staleEpochReplays":0,"skippedInputBatches":0}
+{"phase":"round","round":7,"elapsedSeconds":26.6406989,"rounds":7,"mined":28,"placed":28,"crafted":28,"consumed":8,"containerRaces":14,"containerConflicts":14,"cachedReplays":42,"hits":14,"staleEpochReplays":0,"skippedInputBatches":0}
+{"phase":"round","round":8,"elapsedSeconds":30.439986129,"rounds":8,"mined":32,"placed":32,"crafted":32,"consumed":8,"containerRaces":16,"containerConflicts":16,"cachedReplays":48,"hits":16,"staleEpochReplays":0,"skippedInputBatches":0}
+{"result":"PACKAGED_SUSTAINED_SURVIVAL_AND_COMMITTED_CRASH_RECOVERY_PASS","counts":{"rounds":8,"mined":32,"placed":32,"crafted":34,"consumed":8,"containerRaces":16,"containerConflicts":16,"cachedReplays":50,"hits":16,"staleEpochReplays":4,"skippedInputBatches":0},"cleanup":{"rooms":0,"closedClients":8,"totalClients":8,"pendingWaiters":0}}
+
+> @playground/voxel@0.1.0 check:survival:workers
+> node tools/check-survival-workers.ts
+
+{"result":"SURVIVAL_WORKER_REPORT_AUDIT_PASS","file":"/home/ubuntu/OMplayground/games/voxel/test-results/survival-workers.json","buildId":"543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077","actors":4,"rounds":8,"containedWindows":4,"maxDurableLagSeconds":14.766666666666667}

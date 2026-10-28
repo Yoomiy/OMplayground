@@ -1,0 +1,81 @@
+{
+  "result": "PASS",
+  "buildId": "32f0fda71111b20ba54d355f17d09e645ad87f58b7f19440e0e3141ae695d6c0",
+  "engineHash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388",
+  "contentHash": "368b605ac5bdf5ff6fcf4af02f7174cbc6d39b5110f48e0a41b231a0a6479464",
+  "browser": "156.0.8078.4",
+  "scope": "Built child pointer-lock pause/resume with cleared input, fixed world time and teacher touch flight while paused, terminal session/no automatic readmission and teardown; fixture school Auth/PostgREST and software Chromium",
+  "paused": {
+    "tick": 85,
+    "position": [
+      47.9831,
+      68,
+      -0.7
+    ]
+  },
+  "teacherRise": 2.710236715229968,
+  "resumed": {
+    "epoch": 8,
+    "position": [
+      48.179069007355984,
+      68,
+      -0.5148115442537007
+    ]
+  },
+  "noAutomaticReadmission": true,
+  "cleanup": [
+    {
+      "resources": {
+        "geometries": 0,
+        "textures": 0,
+        "workers": 0
+      },
+      "audio": {
+        "supported": true,
+        "contexts": 0,
+        "state": "closed",
+        "active": false,
+        "muted": false,
+        "voices": 0,
+        "effects": 0,
+        "gain": 0,
+        "dropped": 0,
+        "listener": [
+          49.5,
+          72.5583,
+          0.5
+        ],
+        "lastSource": null
+      }
+    },
+    {
+      "resources": {
+        "geometries": 0,
+        "textures": 0,
+        "workers": 0
+      },
+      "audio": {
+        "supported": true,
+        "contexts": 0,
+        "state": "closed",
+        "active": false,
+        "muted": false,
+        "voices": 0,
+        "effects": 1,
+        "gain": 0,
+        "dropped": 0,
+        "listener": [
+          48.4538,
+          69.62,
+          -0.2554
+        ],
+        "lastSource": [
+          48.45516586303711,
+          68.0199966430664,
+          -0.48678940534591675
+        ]
+      }
+    }
+  ],
+  "errors": []
+}

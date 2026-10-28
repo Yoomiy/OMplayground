@@ -1,0 +1,46 @@
+{
+  "result": "REAL_TCP_EDITED_BASELINE_DRAIN_AND_RECONNECT_PASS",
+  "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc",
+  "seed": {
+    "worldId": "world-f2bc739f-673d-40ef-a2b8-2444aad521c9",
+    "columns": 49,
+    "entries": 16384,
+    "baselineBytes": 4818072
+  },
+  "holds": [
+    {
+      "holdMs": 1000,
+      "elapsedHeldMs": 1000.3608770000001,
+      "readyAfterReleaseMs": 164.59308299999975,
+      "frames": 49,
+      "worldId": "world-f2bc739f-673d-40ef-a2b8-2444aad521c9",
+      "epoch": 4
+    },
+    {
+      "holdMs": 5000,
+      "elapsedHeldMs": 5000.8066229999995,
+      "readyAfterReleaseMs": 128.15954500000043,
+      "frames": 49,
+      "worldId": "world-f2bc739f-673d-40ef-a2b8-2444aad521c9",
+      "epoch": 7
+    }
+  ],
+  "maxBufferedBytes": 503397,
+  "events": [],
+  "readers": [
+    {
+      "frames": 49,
+      "closeCode": 1006
+    },
+    {
+      "frames": 49,
+      "closeCode": 1006
+    },
+    {
+      "frames": 49,
+      "closeCode": 1006
+    }
+  ],
+  "remainingRooms": 0,
+  "scope": "Local prepared edited checkpoint, actual TCP read suspension and native workers. Contract persistence; no hosted or physical school network qualification."
+}

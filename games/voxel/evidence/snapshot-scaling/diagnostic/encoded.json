@@ -1,0 +1,54 @@
+{
+  "scope": "Lower-bound direct GameRoom survival simulation plus input dispatch and actual JSON/chunk encoding, natural terrain, dense stationary/jumping actors, no sockets/worker scheduling/SQL/browser/voice/mining/crafting/TNT",
+  "buildId": "be31826802e0d7ea54bf7f6c8cdbb873e79e9ff217f87bbc21df18431d64d520",
+  "results": [
+    {
+      "players": 16,
+      "samples": 600,
+      "p95": 1.5936079999999038,
+      "p99": 1.8098489999999856,
+      "max": 4.3202609999999595,
+      "mean": 1.0070531950000008,
+      "messages": 5552,
+      "wireBytes": 7642004,
+      "columns": 9,
+      "wasmHighWaterBytes": 2031616
+    },
+    {
+      "players": 32,
+      "samples": 600,
+      "p95": 3.4894970000000285,
+      "p99": 4.566661999999951,
+      "max": 5.182784999999967,
+      "mean": 2.2150748000000022,
+      "messages": 11616,
+      "wireBytes": 30006340,
+      "columns": 9,
+      "wasmHighWaterBytes": 2031616
+    },
+    {
+      "players": 64,
+      "samples": 600,
+      "p95": 9.749326999999539,
+      "p99": 10.847211999999672,
+      "max": 12.647061000000576,
+      "mean": 5.517660381666647,
+      "messages": 25280,
+      "wireBytes": 118921478,
+      "columns": 9,
+      "wasmHighWaterBytes": 2031616
+    },
+    {
+      "players": 128,
+      "samples": 600,
+      "p95": 31.11139000000003,
+      "p99": 32.70843799999966,
+      "max": 39.78107199999977,
+      "mean": 15.91425278500005,
+      "messages": 100864,
+      "wireBytes": 477433804,
+      "columns": 9,
+      "wasmHighWaterBytes": 2031616
+    }
+  ]
+}

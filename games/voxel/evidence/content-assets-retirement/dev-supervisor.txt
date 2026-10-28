@@ -1,0 +1,14 @@
+
+> test:dev
+> node --test scripts/dev-app.test.mjs
+
+✔ a failed dev process gracefully stops its own peer and waits for cleanup (59.421168ms)
+✔ the actual watch/tsx flags support typed workers and graceful shutdown (223.335125ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 357.194654

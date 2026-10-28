@@ -1,0 +1,39 @@
+
+> @playground/web@0.0.1 test:voxel:browser
+> node tools/voxel-react-browser.ts
+
+vite v6.4.2 building for production...
+transforming...
+✓ 77 modules transformed.
+rendering chunks...
+computing gzip size...
+built/index.html                                0.34 kB │ gzip:   0.25 kB
+built/assets/engine-worker-DPFd4qax.js         10.94 kB
+built/assets/voxel_engine_bg-1ejYMYOZ.wasm    550.36 kB │ gzip: 210.28 kB
+built/assets/embed-BbfR4Nnp.css                 3.21 kB │ gzip:   1.05 kB
+built/assets/index-BQ7vHRz2.css                 5.28 kB │ gzip:   1.42 kB
+built/assets/index-DheWojpD.js              1,034.54 kB │ gzip: 173.07 kB
+built/assets/embed-Db63hwGH.js              1,403.70 kB │ gzip: 265.92 kB
+✓ built in 4.05s
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.click: Timeout 20000ms exceeded.
+Call log:
+[2m  - waiting for getByRole('button', { name: 'יציאה', exact: true })[22m
+[2m    - locator resolved to <button type="button">יציאה</button>[22m
+[2m  - attempting click action[22m
+[2m    - waiting for element to be visible, enabled and stable[22m
+
+    at /home/ubuntu/OMplayground/apps/web/tools/voxel-react-browser.ts:426:68 {
+  log: [
+    "  - waiting for getByRole('button', { name: 'יציאה', exact: true })",
+    '    - locator resolved to <button type="button">יציאה</button>',
+    '  - attempting click action',
+    '    - waiting for element to be visible, enabled and stable'
+  ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.21.0

@@ -1,0 +1,372 @@
+{
+  "result": "PASS",
+  "scope": "Actual module-worker startup faults in software Chromium with a configured two-core worker budget; no fallback generation or test-only world mutation",
+  "buildId": "6026fc56edb2a79e548ac84792a98e968b5acfa850c3858abd38b99f0f0e4e56",
+  "engineHash": "084b17c0ae40222777a0225f6fc186a9903ac19d9c455aae025188185ea250ab",
+  "contentHash": "51dc81994a301b7cf19e657603e85f54d8c850f978268aaf4333e5097cc9e647",
+  "browser": "156.0.8078.4",
+  "results": [
+    {
+      "mode": "transient",
+      "requests": 3,
+      "failures": 2,
+      "diagnostics": {
+        "disposed": false,
+        "inputMode": "touch",
+        "environment": {
+          "tick": 30.092999999999996,
+          "seconds": 1.0030999999999999,
+          "dayFraction": 0.22083591666666666,
+          "daylight": 1,
+          "sun": [
+            0.1745346897139326,
+            0.9417902286321576,
+            0.2873478855663454
+          ],
+          "sky": [
+            0.59,
+            0.76,
+            0.88
+          ],
+          "rain": 0,
+          "wind": [
+            -0.09681483233576553,
+            -0.2839487422754283
+          ],
+          "openSky": true
+        },
+        "atmosphere": {
+          "rainLines": 0,
+          "stars": false,
+          "clouds": 16,
+          "sun": true,
+          "moon": false
+        },
+        "avatars": {
+          "visible": 0,
+          "capacity": 8,
+          "samples": []
+        },
+        "renderOrigin": {
+          "x": 48,
+          "z": 0
+        },
+        "feedback": {
+          "held": {
+            "state": -1,
+            "visible": false,
+            "swings": 0
+          },
+          "effects": {
+            "live": 0,
+            "bursts": 0
+          }
+        },
+        "audio": {
+          "supported": true,
+          "contexts": 0,
+          "state": "locked",
+          "active": false,
+          "muted": false,
+          "voices": 0,
+          "effects": 0,
+          "gain": 0,
+          "dropped": 0,
+          "listener": [
+            49.5,
+            69.625,
+            0.5
+          ],
+          "lastSource": null
+        },
+        "renderLimitHz": 10,
+        "touch": {
+          "x": 0,
+          "z": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false
+        },
+        "focused": false,
+        "visible": "visible",
+        "hasFocus": true,
+        "lastFrame": 2848.1,
+        "resources": {
+          "geometries": 18,
+          "textures": 5,
+          "workers": 1
+        },
+        "actorId": "b3f7ae9d-c53b-47e1-9cbe-924f2f48491f",
+        "worldId": "2b81cc7f-fd3f-42ab-b6cb-0fc05474da73",
+        "body": {
+          "position": [
+            49.5,
+            68.005,
+            0.5
+          ],
+          "onGround": 0,
+          "frozen": 1,
+          "flying": 0,
+          "velocity": [
+            0,
+            0,
+            0
+          ]
+        },
+        "view": {
+          "yaw": 0,
+          "pitch": 0
+        },
+        "lastResult": null,
+        "recentEdits": [],
+        "status": "paused",
+        "epoch": 1,
+        "phase": "playing",
+        "position": [
+          49.5,
+          68.005,
+          0.5
+        ],
+        "selected": 24,
+        "players": 1,
+        "inputLag": 0,
+        "correction": 0,
+        "columns": 49,
+        "collisionColumns": 29,
+        "meshed": 9,
+        "workers": 1,
+        "activeJobs": 0,
+        "stream": {
+          "discardedJobs": 0,
+          "installed": 29,
+          "meshJobs": 9,
+          "generationJobs": 30,
+          "mainWorkMs": 0.2999999523162842
+        },
+        "render": {
+          "uploadedBytes": 691768,
+          "columns": 9,
+          "drawCalls": 16,
+          "triangles": 13450,
+          "uploadMs": 0.20000004768371582
+        },
+        "target": [
+          49,
+          69,
+          -4
+        ],
+        "targetState": 12,
+        "targetNormal": [
+          0,
+          0,
+          1
+        ],
+        "actionPending": 0
+      },
+      "cleanup": {
+        "geometries": 0,
+        "textures": 0,
+        "workers": 0,
+        "audio": {
+          "supported": true,
+          "contexts": 0,
+          "state": "closed",
+          "active": false,
+          "muted": false,
+          "voices": 0,
+          "effects": 0,
+          "gain": 0,
+          "dropped": 0,
+          "listener": [
+            49.5,
+            69.625,
+            0.5
+          ],
+          "lastSource": null
+        }
+      }
+    },
+    {
+      "mode": "permanent",
+      "requests": 4,
+      "failures": 3,
+      "diagnostics": {
+        "disposed": false,
+        "inputMode": "touch",
+        "environment": {
+          "tick": 48.27899999570847,
+          "seconds": 1.6092999998569488,
+          "dayFraction": 0.22134108333321412,
+          "daylight": 1,
+          "sun": [
+            0.17154452083194666,
+            0.9423394664520255,
+            0.2873478855663454
+          ],
+          "sky": [
+            0.59,
+            0.76,
+            0.88
+          ],
+          "rain": 0,
+          "wind": [
+            -0.09681483233576553,
+            -0.2839487422754283
+          ],
+          "openSky": true
+        },
+        "atmosphere": {
+          "rainLines": 0,
+          "stars": false,
+          "clouds": 16,
+          "sun": true,
+          "moon": false
+        },
+        "avatars": {
+          "visible": 0,
+          "capacity": 8,
+          "samples": []
+        },
+        "renderOrigin": {
+          "x": 48,
+          "z": 0
+        },
+        "feedback": {
+          "held": {
+            "state": -1,
+            "visible": false,
+            "swings": 0
+          },
+          "effects": {
+            "live": 0,
+            "bursts": 0
+          }
+        },
+        "audio": {
+          "supported": true,
+          "contexts": 1,
+          "state": "running",
+          "active": false,
+          "muted": false,
+          "voices": 0,
+          "effects": 0,
+          "gain": 0,
+          "dropped": 0,
+          "listener": [
+            49.5,
+            69.625,
+            0.5
+          ],
+          "lastSource": null
+        },
+        "renderLimitHz": 10,
+        "touch": {
+          "x": 0,
+          "z": 0,
+          "jump": false,
+          "sneak": false,
+          "sprint": false
+        },
+        "focused": false,
+        "visible": "visible",
+        "hasFocus": true,
+        "lastFrame": 2073.9,
+        "resources": {
+          "geometries": 16,
+          "textures": 5,
+          "workers": 1
+        },
+        "actorId": "eea47893-bb77-4a36-8401-5a1b310af1c0",
+        "worldId": "db3a2589-53f3-4e3b-ab32-895a797837ec",
+        "body": {
+          "position": [
+            49.5,
+            68.005,
+            0.5
+          ],
+          "onGround": 0,
+          "frozen": 1,
+          "flying": 0,
+          "velocity": [
+            0,
+            0,
+            0
+          ]
+        },
+        "view": {
+          "yaw": 0,
+          "pitch": 0
+        },
+        "lastResult": null,
+        "recentEdits": [],
+        "status": "paused",
+        "epoch": 4,
+        "phase": "playing",
+        "position": [
+          49.5,
+          68.005,
+          0.5
+        ],
+        "selected": 24,
+        "players": 1,
+        "inputLag": 0,
+        "correction": 0,
+        "columns": 49,
+        "collisionColumns": 29,
+        "meshed": 9,
+        "workers": 1,
+        "activeJobs": 0,
+        "stream": {
+          "discardedJobs": 0,
+          "installed": 29,
+          "meshJobs": 9,
+          "generationJobs": 30,
+          "mainWorkMs": 0.40000009536743164
+        },
+        "render": {
+          "uploadedBytes": 691768,
+          "columns": 9,
+          "drawCalls": 14,
+          "triangles": 10508,
+          "uploadMs": 0.40000009536743164
+        },
+        "target": [
+          49,
+          69,
+          -4
+        ],
+        "targetState": 12,
+        "targetNormal": [
+          0,
+          0,
+          1
+        ],
+        "actionPending": 0
+      },
+      "cleanup": {
+        "geometries": 0,
+        "textures": 0,
+        "workers": 0,
+        "audio": {
+          "supported": true,
+          "contexts": 0,
+          "state": "closed",
+          "active": false,
+          "muted": false,
+          "voices": 0,
+          "effects": 0,
+          "gain": 0,
+          "dropped": 0,
+          "listener": [
+            49.5,
+            69.625,
+            0.5
+          ],
+          "lastSource": null
+        }
+      }
+    }
+  ],
+  "injectedErrors": [],
+  "errors": []
+}

@@ -1,0 +1,79 @@
+{
+  "result": "OBSERVATION",
+  "checkedAt": "2026-10-27T08:48:25.177Z",
+  "buildId": "5d89f56af88a8d1a456575052791a13f560bef75acac7144ebcb19882ced7247",
+  "scope": "Actual held renderer and native procedural texture arrays on software Chromium; isolated view-model visibility/cache/cleanup, not gameplay or physical-device qualification",
+  "cases": [
+    {
+      "name": "desktop",
+      "width": 900,
+      "height": 650,
+      "swing": false,
+      "changedPixels": 0,
+      "waterPixels": 0,
+      "visiblePixels": 51569,
+      "stalePixels": 0,
+      "centerPixels": 0
+    },
+    {
+      "name": "desktop",
+      "width": 900,
+      "height": 650,
+      "swing": true,
+      "changedPixels": 3635,
+      "waterPixels": 3635,
+      "visiblePixels": 42988,
+      "stalePixels": 0,
+      "centerPixels": 0
+    },
+    {
+      "name": "portrait",
+      "width": 390,
+      "height": 780,
+      "swing": false,
+      "changedPixels": 0,
+      "waterPixels": 0,
+      "visiblePixels": 3403,
+      "stalePixels": 0,
+      "centerPixels": 0
+    },
+    {
+      "name": "portrait",
+      "width": 390,
+      "height": 780,
+      "swing": true,
+      "changedPixels": 0,
+      "waterPixels": 0,
+      "visiblePixels": 8688,
+      "stalePixels": 0,
+      "centerPixels": 0
+    },
+    {
+      "name": "tablet",
+      "width": 768,
+      "height": 1024,
+      "swing": false,
+      "changedPixels": 0,
+      "waterPixels": 0,
+      "visiblePixels": 45040,
+      "stalePixels": 0,
+      "centerPixels": 0
+    },
+    {
+      "name": "tablet",
+      "width": 768,
+      "height": 1024,
+      "swing": true,
+      "changedPixels": 373,
+      "waterPixels": 373,
+      "visiblePixels": 42703,
+      "stalePixels": 0,
+      "centerPixels": 0
+    }
+  ],
+  "errors": [],
+  "cleanup": {
+    "geometries": 0,
+    "textures": 0
+  }
+}

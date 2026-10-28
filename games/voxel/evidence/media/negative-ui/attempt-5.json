@@ -1,0 +1,101 @@
+{
+  "result": "INCOMPLETE",
+  "room": "voxel-ui-qualification-d44f273e-d3cf-4d2c-9772-3ccb78cf1955",
+  "schoolDatabaseWrites": 0,
+  "scope": "Actual React voice panel/coordinator, generated browser audio and configured SFU; school/Auth/SQL and game poses are fixtures, not deployment or physical-device qualification",
+  "noAutomaticMicrophone": true,
+  "permissionDenial": true,
+  "initialAudioSamples": [
+    0.039408896815541127
+  ],
+  "speakerAudio": {
+    "stats": {
+      "disposed": false,
+      "phase": "connected",
+      "room": "connected",
+      "remoteParticipants": 1,
+      "pendingDisconnects": 0,
+      "capturePending": false,
+      "microphoneTracks": 1,
+      "timers": 1,
+      "audio": {
+        "disposed": false,
+        "context": "running",
+        "tracks": 0,
+        "nodes": 2,
+        "outputs": 1,
+        "inputs": 0,
+        "blockedInputs": 0,
+        "outputSelection": true
+      }
+    },
+    "generators": [
+      {
+        "state": "running",
+        "track": "live"
+      }
+    ]
+  },
+  "listenerAudio": {
+    "stats": {
+      "disposed": false,
+      "phase": "connected",
+      "room": "connected",
+      "remoteParticipants": 1,
+      "pendingDisconnects": 0,
+      "capturePending": false,
+      "microphoneTracks": 0,
+      "timers": 1,
+      "audio": {
+        "disposed": false,
+        "context": "running",
+        "tracks": 1,
+        "nodes": 6,
+        "outputs": 1,
+        "inputs": 1,
+        "blockedInputs": 0,
+        "outputSelection": true
+      }
+    },
+    "measuring": "running"
+  },
+  "receiver": {
+    "visibility": "visible",
+    "contextTime": 2.7225396825396824,
+    "tracks": [
+      {
+        "enabled": true,
+        "muted": false,
+        "readyState": "live",
+        "bytesReceived": 4926,
+        "totalAudioEnergy": 0,
+        "totalSamplesDuration": 0.4400000000000002
+      }
+    ],
+    "gains": [
+      {
+        "gain": 1,
+        "position": [
+          -2,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "audio": {
+    "near": 0.039408896815541127,
+    "occluded": 0.004710985858700923,
+    "far": 0
+  },
+  "hiddenStaffAbsentFromPeerLists": true,
+  "invalidOutputRejected": true,
+  "reconnectRequiresExplicitMicrophone": true,
+  "stage": "audited-ui-retry",
+  "error": {
+    "name": "TimeoutError",
+    "description": "locator.waitFor: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'בדיקה חוזרת של בקשת השמע', exact: true }) to be visible\u001b[22m\n"
+  },
+  "cleaned": true,
+  "checkedAt": "2026-10-26T19:44:40.980Z"
+}

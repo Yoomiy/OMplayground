@@ -1,0 +1,23 @@
+
+> @playground/voxel@0.1.0 test:equipment:browser
+> VOXEL_SURVIVAL_EQUIPMENT=1 node tools/browser-survival.ts
+
+Harvesting natural log 1 with actual held touch input
+Harvesting natural log 2 with actual held touch input
+Harvesting natural log 3 with actual held touch input
+Harvesting natural log 4 with actual held touch input
+Harvesting natural log 5 with actual held touch input
+Harvesting natural log 6 with actual held touch input
+Held mining diagnostics {"disposed":false,"inputMode":"touch","mode":"survival","mining":{"target":null,"elapsed":0,"total":0},"vitals":{"version":2,"health":20,"food":20,"air":300,"dead":false,"respawnIn":0,"attackCooldown":0,"protection":0},"combat":true,"hit":null,"lastHitEvent":null,"lastExplosionEvent":null,"explosives":[],"canIgnite":true,"miningHeld":true,"drops":[{"id":"drop-6","revision":9,"stack":{"itemType":"oak_leaves","count":1},"position":[49.5,72,-4.5]},{"id":"drop-7","revision":9,"stack":{"itemType":"apple","count":1},"position":[49.5,72,-4.5]},{"id":"drop-8","revision":18,"stack":{"itemType":"oak_leaves","count":1},"position":[49.5,72,-4.5]},{"id":"drop-9","revision":18,"stack":{"itemType":"apple","count":1},"position":[49.5,72,-4.5]}],"selectedSlot":0,"environment":{"tick":19520.536999995707,"seconds":650.6845666665236,"dayFraction":0.7622371388887696,"daylight":0.06,"sun":[0.07357300829804926,-0.9549964424596176,0.2873478855663454],"sky":[0.058899999999999994,0.0832,0.1374],"rain":0,"wind":[-0.09681483233576553,-0.2839487422754283],"openSky":false},"atmosphere":{"rainLines":0,"stars":true,"clouds":16,"sun":false,"moon":true},"avatars":{"visible":0,"capacity":8,"samples":[]},"renderOrigin":{"x":48,"z":-16},"feedback":{"held":{"state":14,"itemType":"oak_log","visible":true,"swings":15},"effects":{"live":0,"bursts":7,"hits":0,"explosions":0},"drops":{"visible":4,"kinds":2},"explosives":{"visible":0,"capacity":0,"flashing":0},"vision":false},"audio":{"supported":true,"contexts":1,"state":"running","active":true,"muted":false,"voices":0,"effects":9,"gain":0.2199999988079071,"dropped":0,"listener":[49.5,69.62000274658203,-3.1805999279022217],"lastSource":[49.5,74.5,-4.5]},"renderLimitHz":30,"touch":{"x":0,"z":0,"jump":false,"sneak":false,"sprint":false},"focused":true,"visible":"visible","hasFocus":true,"lastFrame":52714.5,"lastUpdate":52796.199999809265,"resources":{"geometries":73,"textures":5,"workers":1},"actorId":"57023d8c-296a-4cd0-a388-8f5b76e73e47","worldId":"9fbc3ac8-6abc-4018-94ee-0dde4f663010","body":{"position":[49.5,68,-3.1806],"onGround":1,"inWater":0,"eyesInWater":0,"frozen":0,"flying":0,"velocity":[0,0,0]},"view":{"yaw":0,"pitch":1.3296272034357437},"lastResult":{"type":"result","epoch":2,"sequence":18,"status":"applied","outcome":{"ok":true,"reason":"mining"}},"inventory":{"version":2,"catalog":false,"revision":5,"selected":0,"bag":[{"itemType":"oak_log","count":5},null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"craft2":[null,null,null,null],"craft3":[null,null,null,null,null,null,null,null,null],"equipment":[null,null,null,null,null],"station":"personal","container":null},"inventoryOpen":false,"inventoryPending":false,"recentEdits":[{"cell":[49,68,-4],"state":0,"revision":1},{"cell":[49,69,-4],"state":0,"revision":2},{"cell":[49,70,-4],"state":0,"revision":3},{"cell":[49,71,-4],"state":0,"revision":4},{"cell":[49,72,-4],"state":0,"revision":5},{"cell":[49,72,-5],"state":0,"revision":6},{"cell":[49,74,-5],"state":0,"revision":7}],"status":"playing","epoch":2,"phase":"playing","position":[49.5,68,-3.1806],"selected":14,"players":1,"inputLag":6,"correction":0,"columns":49,"collisionColumns":49,"meshed":30,"workers":1,"activeJobs":0,"stream":{"discardedJobs":0,"installed":56,"meshJobs":93,"generationJobs":56,"mainWorkMs":0.10000014305114746},"render":{"uploadedBytes":6866328,"columns":30,"drawCalls":28,"triangles":15958,"uploadMs":0.20000004768371582},"target":null,"targetState":null,"targetNormal":null,"actionPending":0,"queuedAction":null,"actionSequence":18,"lastReceivedAgoMs":33.299999952316284}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+page.waitForFunction: Timeout 20000ms exceeded.
+    at mineCell (/home/ubuntu/OMplayground/games/voxel/tools/browser-survival.ts:139:18)
+    at async file:///home/ubuntu/OMplayground/games/voxel/tools/browser-survival.ts:199:5 {
+  log: [],
+  name: 'TimeoutError'
+}
+
+Node.js v24.21.0

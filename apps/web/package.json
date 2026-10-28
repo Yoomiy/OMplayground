@@ -3,18 +3,18 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
+  "engines": { "node": "24.x" },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:voxel:browser": "node tools/voxel-react-browser.ts"
   },
   "dependencies": {
-    "@babylonjs/core": "^6.49.0",
     "@excalidraw/excalidraw": "^0.18.1",
     "@playground/game-logic": "0.0.1",
-    "@playground/voxel-content": "0.0.1",
     "@radix-ui/react-slot": "^1.1.2",
     "@supabase/supabase-js": "^2.49.1",
     "@zip.js/zip.js": "^2.8.38",
@@ -23,7 +23,6 @@
     "clsx": "^2.1.1",
     "livekit-client": "^2.19.1",
     "lucide-react": "^0.487.0",
-    "noa-engine": "^0.33.0",
     "patch-package": "^8.0.1",
     "react": "^18.3.1",
     "react-chessboard": "^4.7.3",

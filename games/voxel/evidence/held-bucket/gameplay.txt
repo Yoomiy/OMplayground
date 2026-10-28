@@ -1,0 +1,24 @@
+Harvesting natural log 1 with actual held touch input
+Mining natural pickup obstruction at 49,69,-4
+Harvesting natural log 3 with actual held touch input
+Harvesting natural log 4 with actual held touch input
+Harvesting natural log 5 with actual held touch input
+Harvesting natural log 6 with actual held touch input
+Crafting owned logs into a workbench, sticks and pickaxe
+Gathering natural shore sand and shallow river stone with owned tools
+Collecting 4 owned sand from natural drops
+Clearing natural sand occlusion at 45,61,12
+Collecting 3 owned stone from natural drops
+Crafting an owned stone pickaxe before mining natural iron
+Collecting 3 owned iron_ore from natural drops
+Returning from the shallow iron shaft with earned building blocks
+Refining earned iron and crafting one reusable bucket in the Hebrew dialog
+Using the earned bucket with trusted desktop mouse movement and right-click
+Desktop bucket: creating context
+Desktop bucket: navigating
+Desktop bucket: waiting for native readiness
+Desktop bucket: native ready
+Desktop bucket: waiting for pointer lock
+Desktop bucket: pointer locked
+Desktop bucket: aimed at owned water
+Natural iron mining/refining, owned bucket crafting, touch fill/place/recollect, reconnect and teardown pass

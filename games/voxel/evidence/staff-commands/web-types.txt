@@ -1,0 +1,4 @@
+
+> @playground/web@0.0.1 lint
+> tsc --noEmit
+

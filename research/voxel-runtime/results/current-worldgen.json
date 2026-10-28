@@ -1,0 +1,25 @@
+{
+  "seed": 4242,
+  "cubeGenerationMs": {
+    "n": 400,
+    "mean": 0.5001859974999989,
+    "p50": 0.18572099999994407,
+    "p95": 2.2681709999999953,
+    "max": 17.17644200000001
+  },
+  "full256HighColumnMs": {
+    "n": 25,
+    "mean": 8.211908039999996,
+    "p50": 6.000148999999965,
+    "p95": 22.65434799999997,
+    "max": 35.393088999999975
+  },
+  "checksum": 1789,
+  "fullColumnVoxelBytes": 131072,
+  "excludes": [
+    "NOA ndarray population",
+    "meshing",
+    "rendering",
+    "worker transfer"
+  ]
+}

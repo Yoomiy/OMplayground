@@ -1,0 +1,116 @@
+name: Voxel runtime
+on:
+  push:
+    paths: ['games/voxel/**', 'apps/voxel-server/**', 'apps/web/**', 'packages/game-logic/src/recessSchedule.ts', 'packages/game-logic/package.json', 'packages/game-logic/tsconfig.json', 'packages/observability/**', 'supabase/migrations/*voxel*', 'package.json', 'package-lock.json', '.github/workflows/voxel.yml']
+  pull_request:
+    paths: ['games/voxel/**', 'apps/voxel-server/**', 'apps/web/**', 'packages/game-logic/src/recessSchedule.ts', 'packages/game-logic/package.json', 'packages/game-logic/tsconfig.json', 'packages/observability/**', 'supabase/migrations/*voxel*', 'package.json', 'package-lock.json', '.github/workflows/voxel.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  runtime:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.21.0
+          cache: npm
+          cache-dependency-path: games/voxel/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.99.1
+          targets: wasm32-unknown-unknown
+      - run: npm ci --prefix games/voxel
+      - run: npm ci --workspace @playground/voxel-server --workspace @playground/game-logic --workspace @playground/observability --workspace @playground/web --include-workspace-root=false --ignore-scripts
+      - run: npm run check:voxel
+      - run: npm --prefix games/voxel run verify:release
+      - name: Packaged survival, autosave and crash recovery
+        run: |
+          npm --prefix games/voxel run benchmark:survival:workers
+          npm --prefix games/voxel run check:survival:workers
+        env:
+          VOXEL_SURVIVAL_SECONDS: '30'
+          VOXEL_SURVIVAL_ROOMS: '2'
+          VOXEL_SURVIVAL_PLAYERS: '2'
+      - run: npm run typecheck --workspace @playground/voxel-server
+      - run: npm test --workspace @playground/observability -- --runInBand processLifecycle
+      - run: npm test --workspace @playground/voxel-server
+      - run: npm run test:integration --workspace @playground/voxel-server
+      - run: npm run test:postgres --workspace @playground/voxel-server
+        env:
+          VOXEL_TEST_POSTGRES: '1'
+          PGHOST: 127.0.0.1
+          PGPORT: '5432'
+          PGUSER: postgres
+          PGPASSWORD: postgres
+      - run: npm run lint --workspace @playground/web
+      - run: npm test --workspace @playground/web
+      - run: npm run build --workspace @playground/web
+        env:
+          VITE_SUPABASE_URL: https://school.invalid
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_fixture
+          VITE_VOXEL_RUNTIME_SERVER_URL: https://voxel.invalid
+      - run: npm --prefix games/voxel exec -- playwright install --with-deps chromium
+      - run: npm run test:voxel:browser --workspace @playground/web
+        env:
+          VOXEL_TEST_POSTGRES: '1'
+          PGHOST: 127.0.0.1
+          PGPORT: '5432'
+          PGUSER: postgres
+          PGPASSWORD: postgres
+      - run: npm run test:browser --workspace @playground/voxel-server
+      - run: npm run test:browser:lifecycle --workspace @playground/voxel-server
+      - run: npm run test:voxel:browser
+      - run: npm run test:voxel:creative
+      - run: npm --prefix games/voxel run test:edited:browser
+      - run: npm --prefix games/voxel run test:input-stalls:browser
+      - run: npm --prefix games/voxel run test:network:browser
+      - name: Optional existing touch controls
+        continue-on-error: true
+        run: npm run test:voxel:touch
+      - run: npm run test:voxel:environment
+      - run: npm run test:voxel:presentation
+      - run: npm --prefix games/voxel run test:memory:probe
+      - run: |
+          npm --prefix games/voxel run test:memory:browser
+          npm --prefix games/voxel run check:memory:browser
+        env:
+          VOXEL_MEMORY_CYCLES: '2'
+      - run: npm run test:voxel:recovery
+      - run: npm run test:voxel:inventory
+      - run: npm --prefix games/voxel run test:held:browser
+      - name: PC survival over a delayed connection
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb xdotool xauth
+          xvfb-run -a -s '-screen 0 1280x900x24 -nolisten tcp' env VOXEL_XDOTOOL=/usr/bin/xdotool npm --prefix games/voxel run test:survival:desktop:browser
+      - run: npm run test:voxel:tnt
+      - run: npm run test:voxel:equipment
+      - run: npm run test:voxel:combat
+      - run: npm --prefix games/voxel run benchmark:engine
+      - name: Assemble matched production runtime
+        run: npm run package:voxel-server
+      - name: Build voxel service image
+        run: docker build -f apps/voxel-server/Dockerfile -t playground-voxel .
+      - name: Verify image startup and graceful drain with fixture providers
+        run: node apps/voxel-server/tools/smoke-package.mjs --container playground-voxel > apps/voxel-server/test-results/container-package.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: voxel-runtime-evidence
+          path: |
+            games/voxel/test-results/
+            apps/voxel-server/test-results/
+            apps/web/test-results/

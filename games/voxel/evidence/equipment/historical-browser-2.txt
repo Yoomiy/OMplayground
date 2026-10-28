@@ -1,0 +1,20 @@
+
+> @playground/voxel@0.1.0 test:survival:browser
+> node tools/browser-survival.ts
+
+Harvesting natural log 1 with actual held touch input
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: {"disposed":false,"inputMode":"touch","mode":"survival","mining":{"target":null,"elapsed":0,"total":0},"vitals":{"version":2,"health":20,"food":20,"air":300,"dead":false,"respawnIn":0,"attackCooldown":0,"protection":0},"combat":true,"hit":null,"lastHitEvent":null,"lastExplosionEvent":null,"explosives":[],"canIgnite":true,"miningHeld":false,"drops":[{"id":"drop-1","revision":19,"stack":{"itemType":"oak_log","count":1},"position":[49.5,67,-3.5]},{"id":"drop-2","revision":9,"stack":{"itemType":"dirt","count":1},"position":[49.5,67,-3.5]}],"selectedSlot":0,"environment":{"tick":505.677000002861,"seconds":16.855900000095367,"dayFraction":0.2340465833334128,"daylight":1,"sun":[0.0958501520530023,0.9530183319390906,0.2873478855663454],"sky":[0.59,0.76,0.88],"rain":0,"wind":[-0.09681483233576553,-0.2839487422754283],"openSky":false},"atmosphere":{"rainLines":0,"stars":false,"clouds":16,"sun":true,"moon":false},"avatars":{"visible":0,"capacity":8,"samples":[]},"renderOrigin":{"x":48,"z":-16},"feedback":{"held":{"state":0,"itemType":null,"visible":true,"swings":3},"effects":{"live":0,"bursts":2,"hits":0,"explosions":0},"drops":{"visible":2,"kinds":2},"explosives":{"visible":0,"capacity":0,"flashing":0},"vision":false},"audio":{"supported":true,"contexts":1,"state":"running","active":true,"muted":false,"voices":0,"effects":4,"gain":0.2199999988079071,"dropped":0,"listener":[49.5,69.62000274658203,-2.700000047683716],"lastSource":[49.5,68.0199966430664,-2.3019626140594482]},"renderLimitHz":30,"touch":{"x":0,"z":0,"jump":false,"sneak":false,"sprint":false},"focused":true,"visible":"visible","hasFocus":true,"lastFrame":18894.9,"lastUpdate":18898,"resources":{"geometries":41,"textures":5,"workers":1},"actorId":"01e3a13d-006e-466a-ba6b-e398c93fc4f2","worldId":"bc6345fb-9a8a-48fa-999a-dfc9014a334a","body":{"position":[49.5,68,-2.7],"onGround":1,"inWater":0,"eyesInWater":0,"frozen":0,"flying":0,"velocity":[0,0,0]},"view":{"yaw":0,"pitch":-0.1},"lastResult":{"type":"result","epoch":2,"sequence":4,"status":"applied","outcome":{"ok":true,"reason":"cancelled"}},"inventory":{"version":2,"catalog":false,"revision":0,"selected":0,"bag":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"craft2":[null,null,null,null],"craft3":[null,null,null,null,null,null,null,null,null],"equipment":[null,null,null,null,null],"station":"personal","container":null},"inventoryOpen":false,"inventoryPending":false,"recentEdits":[{"cell":[49,68,-4],"state":0,"revision":1},{"cell":[49,67,-4],"state":0,"revision":2}],"status":"playing","epoch":2,"phase":"playing","position":[49.5,68,-2.7],"selected":0,"players":1,"inputLag":10,"correction":0,"columns":49,"collisionColumns":49,"meshed":30,"workers":1,"activeJobs":0,"stream":{"discardedJobs":0,"installed":56,"meshJobs":48,"generationJobs":56,"mainWorkMs":0},"render":{"uploadedBytes":3475808,"columns":30,"drawCalls":29,"triangles":22418,"uploadMs":0.10000014305114746,"gpu":{"submitted":26,"skipped":399,"pending":1,"failures":0}},"target":[49,69,-4],"targetState":14,"targetNormal":[0,0,1],"actionPending":0,"queuedAction":null,"actionSequence":4,"lastReceivedAgoMs":58.299999952316284}
+    at file:///home/ubuntu/OMplayground/games/voxel/tools/browser-survival.ts:241:12 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.21.0

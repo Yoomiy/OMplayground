@@ -1,0 +1,24 @@
+✔ input bursts cannot buy more simulated movement time (23.682953ms)
+✔ a recovered steady 60 Hz stream clears transport backlog without extra simulation steps (0.721443ms)
+✔ backlog recovery retires stale presses while consuming fresh look and jump only on scheduled steps (0.375121ms)
+✔ fresh queued input proves liveness while consumed aim stays authoritative; rejected packets never renew it (0.677723ms)
+✔ queues expire, transient presses clear, overflow requests resync, epochs invalidate (0.795844ms)
+✔ positions, durations, client clocks, and nonfinite controls are rejected (0.400202ms)
+✔ epoch resets retain consumed look direction while discarding pending view and movement (1.014525ms)
+✔ scheduler bounds stalls without an unbounded catch-up queue (0.374562ms)
+✔ evicted command results cannot execute again, including after reconnect (0.746883ms)
+✔ gameplay schema rejects dev commands, forged positions/clocks, and oversize input batches (1.908049ms)
+✔ binary subscription baselines preserve high states and reject format/length/index corruption (1.196805ms)
+✔ acknowledgement includes discarded controls and worker identities include every freshness boundary (0.691523ms)
+✔ a recovered input link retires stale movement/jump and restores native prediction agreement without extra steps (105.284943ms)
+✔ same-epoch resynchronization never reuses an already transmitted input identity (18.78925ms)
+✔ prediction replays equipment and hunger profiles through epoch changes with delayed snapshots (43.293727ms)
+✔ prediction replays delayed snapshots within one centimeter on an unchanged world (46.449422ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1079.602669

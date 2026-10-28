@@ -1,0 +1,150 @@
+{
+  "buildId": "3171fee1fefa301e78db3a892b7f385073c2a20bbaa94747a72f87e31e99af25",
+  "sourceLayout": "game-relative",
+  "files": [
+    {
+      "path": "browser-combat.json",
+      "hash": "e9862f1da1d08ac16aa481757993b9b61985f3fd461e65f788141a1c84ad276a"
+    },
+    {
+      "path": "browser-equipment.json",
+      "hash": "1155df40ebf04d22b052dc0d7a0e12e070f3323202ed23d347066fdb957e4962"
+    },
+    {
+      "path": "browser-presentation.json",
+      "hash": "98f9103270eb3233c7c21d9e526a719ccbf5d122c425600dda38a3efa66fbfbd"
+    },
+    {
+      "path": "browser-suite.json",
+      "hash": "83fdc08122c3344ab0929e0b04b4bc4b797362fee06f50baf75b364f5ffe1d6b"
+    },
+    {
+      "path": "browser-survival.json",
+      "hash": "6943505edb5a6c3fb2723e96095bf3d8c0334712eecfbdb2f86efe6b7f64e9f5"
+    },
+    {
+      "path": "browser-tnt.json",
+      "hash": "12f6948d812ff37e44611eadeba14642bd807b80c058ee671295e87e572df1ce"
+    },
+    {
+      "path": "build.json",
+      "hash": "d64013cacd12b6a6c75319a2aa9d5d4c92838ff477db4c473b79a46d0add4e7a"
+    },
+    {
+      "path": "check-exit.json",
+      "hash": "359784a7d18194c9f572f9774585046a84078f1b0dac1063e69908141a62a7af"
+    },
+    {
+      "path": "check.log",
+      "hash": "fc39bfcddf9610b4f04ea0f5592da9d2cd9da28f390b0ee2a43ccef9dcdc4e2b"
+    },
+    {
+      "path": "equipment-night-after.png",
+      "hash": "e2890877073ae938ffc91021c922b5e3ce1ce17a5f85bdfd55e10a96ff89f090"
+    },
+    {
+      "path": "equipment-night-before.png",
+      "hash": "6e325195ded27850e8f9e1256d987529838810d0ed0d1a1338c65335361be54f"
+    },
+    {
+      "path": "release.json",
+      "hash": "3426909a62330151d5ee68c9dcc44037e67652bc5e45bc22ef0f2a8b3342136f"
+    },
+    {
+      "path": "remote-equipment-creative.png",
+      "hash": "ee877627333e92d5ae4958ec744a26fc9edf1baaf3455a16a9c936583e171568"
+    },
+    {
+      "path": "remote-equipment-night.png",
+      "hash": "5cea4a09bda199e6ba8db52c8d14b7251374854750eb6933e99fba99f6d12b0f"
+    },
+    {
+      "path": "remote-equipment-survival.png",
+      "hash": "57ddcaf8474279762231280b9fb225aaa80045a424ed134e816e73abb34834b8"
+    },
+    {
+      "path": "source.tar.gz",
+      "hash": "cd4a205fe29127b52ede824631abf6b87e635996ef104319714af3218c98f99f"
+    },
+    {
+      "path": "voxel-appearance-suite-test-combat-browser.log",
+      "hash": "95370081eb8636a37c459bdab36740b797750b98899e1bc49c0eca2220d4d258"
+    },
+    {
+      "path": "voxel-appearance-suite-test-combat-browser.log.exit.json",
+      "hash": "3cf499f7fea29308d945b5291299c528d28652b969d1fa00d96bad658f81d0c9"
+    },
+    {
+      "path": "voxel-appearance-suite-test-creative-browser.log",
+      "hash": "ff67d529ecb053c511fa29e951ef3d3a7605538660e6a1278723c61e9e36bcb9"
+    },
+    {
+      "path": "voxel-appearance-suite-test-creative-browser.log.exit.json",
+      "hash": "ee9d64e95694e88b53e164dd06ff484e85a220014f1d479d970709d8843176b9"
+    },
+    {
+      "path": "voxel-appearance-suite-test-creative-browser.log.exit.json.prior-2",
+      "hash": "ecbe4ffcd59cc88ce43f407179af0e4db8a3e7f4f4ecc8b927a512652f8a782c"
+    },
+    {
+      "path": "voxel-appearance-suite-test-creative-browser.log.exit.json.prior-3",
+      "hash": "5292c223e05f4b161dbe80d4b93fd985e5299a42b0ae5f7aa015de8ae244ccc9"
+    },
+    {
+      "path": "voxel-appearance-suite-test-creative-browser.log.prior-2",
+      "hash": "a3b053a351f2b7eea87de7c10144d63542e1faea6620686a8514a72cfe8a51a9"
+    },
+    {
+      "path": "voxel-appearance-suite-test-creative-browser.log.prior-3",
+      "hash": "730709e31ed34dfc1c48a3c40b2bfdddd28b9980c690684a1c1f76976cd3614f"
+    },
+    {
+      "path": "voxel-appearance-suite-test-equipment-browser.log",
+      "hash": "67222d7d2efe6e4d1bd57a29b329a4915ee9f789f27eeb6a61f94924580fd82a"
+    },
+    {
+      "path": "voxel-appearance-suite-test-equipment-browser.log.exit.json",
+      "hash": "a7b8c14c2cff4b017a6f9f7b3258ce5b05033664e9631506da8f532e7a940e57"
+    },
+    {
+      "path": "voxel-appearance-suite-test-equipment-browser.log.exit.json.prior-0",
+      "hash": "483d93c0d20880437a5343cc4293b76ddaf63f7023d30eaadb1541e1eb1896e8"
+    },
+    {
+      "path": "voxel-appearance-suite-test-equipment-browser.log.exit.json.prior-1",
+      "hash": "5faa0e07ed2de9ec0a05f6693e251a5dd86bed986ca839b51066f0d6ad9c4cd4"
+    },
+    {
+      "path": "voxel-appearance-suite-test-equipment-browser.log.prior-0",
+      "hash": "b75dfd06474764e286b2da278c23afd2f7fe9691219a3dcf9c434a0e169c1795"
+    },
+    {
+      "path": "voxel-appearance-suite-test-equipment-browser.log.prior-1",
+      "hash": "6a9ea18bc0a6e465fc884d99ca148eb030f45b5eba6910af81759937d666a516"
+    },
+    {
+      "path": "voxel-appearance-suite-test-presentation-browser.log",
+      "hash": "29ea38f4d4fda75ecde6ed0b3db56ea669ec5045936e2dab361c556959d7f2a2"
+    },
+    {
+      "path": "voxel-appearance-suite-test-presentation-browser.log.exit.json",
+      "hash": "1026bf295c74e4dbea6b152f9dcb47a29e95852a760b19f0c73364a8dc5285fc"
+    },
+    {
+      "path": "voxel-appearance-suite-test-survival-browser.log",
+      "hash": "fbf17ba76070d29bbd326653b8952a4ba0093bf403d61b740915574d8ed6f63a"
+    },
+    {
+      "path": "voxel-appearance-suite-test-survival-browser.log.exit.json",
+      "hash": "b7b3cbead4551add25b6a5a8c47ac65d4fdcf7977c72cf8252ddcc1a2b5a54be"
+    },
+    {
+      "path": "voxel-appearance-suite-test-tnt-browser.log",
+      "hash": "594f33ef37d6e3471192b3d6bc3c0eeb65db1791000a9e0413f59bb34282470f"
+    },
+    {
+      "path": "voxel-appearance-suite-test-tnt-browser.log.exit.json",
+      "hash": "7152e59928d6adeacc0ad7b5e67dfe0d1d57b79c6921d28b76b401739b6857f9"
+    }
+  ]
+}

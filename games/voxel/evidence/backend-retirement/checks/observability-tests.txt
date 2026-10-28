@@ -1,0 +1,60 @@
+PASS src/__tests__/observability.test.ts (8.367 s)
+  Observability Package
+    Railway log levels
+      ✓ emits Pino severity labels as strings (4 ms)
+    Correlation ID Utility
+      ✓ should generate a correlation ID prefixed with c- (2 ms)
+    StatsCollector
+      ✓ should track connection and disconnection counts (3 ms)
+      ✓ should track room states and uptime (2 ms)
+      ✓ should prune rooms that are no longer active in snapshot
+      ✓ should track socket event rates and average latency
+      ✓ should track socket event failures within 5 minute window (2 ms)
+    Telemetry Context Redaction
+      ✓ should scrub sensitive keys at top level and nested fields (2 ms)
+      ✓ should truncate deeply nested objects to avoid call stack overflow (1 ms)
+    Audit Metadata Helper
+      ✓ should merge correlation_id into audit metadata when present
+      ✓ should return empty object if no arguments are provided (1 ms)
+    LiveKit room classification
+      ✓ keeps classroom room codes separate from game session ids (1 ms)
+    socket event policy
+      ✓ includes lifecycle mutations and excludes hot gameplay traffic (1 ms)
+
+PASS src/__tests__/classroomWebhook.test.ts
+  classroom connection evidence
+    ✓ selects only connection identifiers and tolerates legacy or malformed metadata (10 ms)
+    ✓ keeps verified evidence when persistence fails and identifies repeated webhook deliveries (85 ms)
+    ✓ records no connection evidence for an unverified webhook (6 ms)
+    ✓ logs a verified class departure separately from a board socket disconnect (11 ms)
+
+PASS src/__tests__/processLifecycle.test.ts
+  process drain status
+    ✓ exits unsuccessfully when a normal termination cannot finish its drain (9 ms)
+    ✓ a successful termination exits normally after its drain resolves (3 ms)
+
+PASS src/__tests__/classroomAdmissionIp.test.ts
+  classroom admission IP association
+    ✓ binds the IP to both the admission and its classroom participant (4 ms)
+    ✓ expires idle associations while active observations refresh them (1 ms)
+    ✓ bounds retained associations and preserves unavailable source evidence
+
+PASS src/__tests__/clientIp.test.ts
+  security IP attribution
+    ✓ ignores forwarding headers unless the matching ingress is explicitly trusted (4 ms)
+    ✓ does not replace invalid or absent Railway evidence with a proxy or forwarded address: undefined (3 ms)
+    ✓ does not replace invalid or absent Railway evidence with a proxy or forwarded address: garbage (5 ms)
+    ✓ does not replace invalid or absent Railway evidence with a proxy or forwarded address: 192.0.2.1, 192.0.2.2 (7 ms)
+    ✓ does not replace invalid or absent Railway evidence with a proxy or forwarded address: [ '192.0.2.1', '192.0.2.2' ] (1 ms)
+    ✓ does not replace invalid or absent Railway evidence with a proxy or forwarded address: fe80::1%eth0
+    ✓ does not replace invalid or absent Railway evidence with a proxy or forwarded address: 192.0.2.1:80
+    ✓ normalizes ::ffff:192.0.2.1 for consistent searches (1 ms)
+    ✓ normalizes ::ffff:c000:201 for consistent searches (1 ms)
+    ✓ normalizes 2001:0DB8:0000:0000:0000:0000:0000:0001 for consistent searches
+
+Test Suites: 5 passed, 5 total
+Tests:       32 passed, 32 total
+Snapshots:   0 total
+Time:        11.421 s, estimated 19 s
+Ran all test suites.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?

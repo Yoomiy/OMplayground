@@ -1,0 +1,4 @@
+Crafting and equipping through the actual Hebrew modal
+Placing a real chest and moving owned stacks through its UI
+Reconnecting with an open inventory without resubmitting mutations
+Inventory, crafting, equipment, reconnect and teardown pass

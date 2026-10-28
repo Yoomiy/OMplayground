@@ -1,0 +1,43 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
+const archive='games/voxel/evidence/sustained-survival';
+const read=p=>fs.readFileSync(p),json=p=>JSON.parse(read(p)),sha=b=>createHash('sha256').update(b).digest('hex');
+const walk=dir=>fs.readdirSync(dir,{withFileTypes:true}).sort((a,b)=>a.name.localeCompare(b.name,'en')).flatMap(e=>e.isDirectory()?walk(path.join(dir,e.name)):[path.join(dir,e.name)]);
+const pointer=json('games/voxel/test-results/sustained-survival.json'),v=json(archive+'/verification.json');
+assert.equal(sha(read(archive+'/verification.json')),pointer.verificationSha256);
+assert.equal(walk(archive).length,v.artifacts.length+1);
+for(const f of v.artifacts)assert.equal(sha(read(archive+'/'+f.path)),f.sha256,f.path);
+for(const f of v.sourceInputs){assert.equal(sha(read(f.path)),f.sha256,f.path);assert.equal(sha(read(archive+'/sources/'+f.path)),f.sha256,f.path);}
+for(const f of v.releaseFiles)assert.equal(sha(read(f.path)),f.sha256,f.path);
+assert.equal(sha(Buffer.concat(walk('games/voxel/src').flatMap(p=>[Buffer.from(p.slice('games/voxel/'.length)),read(p)]))),v.runtimeHash);
+assert.equal(json('games/voxel/artifacts/build.json').buildId,v.buildId);
+const prior=json(v.priorArchive+'/verification.json');
+assert.equal(sha(read(v.priorArchive+'/verification.json')),v.priorVerificationSha256);
+for(const f of prior.artifacts)assert.equal(sha(read(v.priorArchive+'/'+f.path)),f.sha256,f.path);
+assert.equal(v.buildId,prior.buildId);assert.equal(v.runtimeHash,prior.runtimeHash);
+for(const f of prior.sourceInputs.filter(f=>f.path.startsWith('games/voxel/src/')))assert.equal(sha(read(f.path)),f.sha256,f.path);
+for(const f of prior.releaseFiles)assert.equal(sha(read(f.path)),f.sha256,f.path);
+for(const name of ['smoke','full','ci']){
+  const r=json(archive+'/'+name+'.json');assert.equal(r.buildId,v.buildId);
+  const output=execFileSync(process.execPath,['games/voxel/tools/check-survival-workers.ts',archive+'/'+name+'.json'],{encoding:'utf8'});assert.equal(JSON.parse(output).result,'SURVIVAL_WORKER_REPORT_AUDIT_PASS');
+}
+const full=json(archive+'/full.json');
+assert.deepEqual(full.configuration,{seconds:180,roomCount:2,playerCount:8,ioMs:5});
+assert.equal(full.counts.rounds,53);assert.equal(full.counts.mined,848);assert.equal(full.counts.crafted,850);
+assert.equal(full.steadyRoomMetrics.length,34);assert.equal(Math.max(...full.rooms.map(g=>g.maxDurableLagSeconds)),15);
+assert.equal(Math.max(...full.steadyRoomMetrics.map(m=>m.worldStep_p95UpperMs)),0.8);
+assert.equal(Math.max(...full.steadyRoomMetrics.map(m=>m.worldStep_p99UpperMs)),1.45);
+assert.equal(Math.max(...full.peers.map(p=>p.ackMs.p99UpperMs)),45);
+const web=json(archive+'/web-inventory.json');assert.equal(web.length,v.webInventoryFiles);
+for(const f of web)assert.equal(sha(read(f.path)),f.sha256,f.path);
+const negatives=json(archive+'/report-corruption-checks.json');assert.equal(negatives.result,'SURVIVAL_REPORT_FOUR_CORRUPTION_REJECTIONS_PASS');assert.equal(negatives.checks.length,4);assert(negatives.checks.every(c=>c.rejected));
+const yaml=(await import(process.cwd()+'/node_modules/yaml/dist/index.js')).default;
+const workflow=yaml.parse(read('.github/workflows/voxel.yml').toString());
+const step=workflow.jobs.runtime.steps.find(s=>s.name==='Packaged survival, autosave and crash recovery');
+assert.deepEqual(step.env,{VOXEL_SURVIVAL_SECONDS:'30',VOXEL_SURVIVAL_ROOMS:'2',VOXEL_SURVIVAL_PLAYERS:'2'});
+assert.match(step.run,/benchmark:survival:workers[\s\S]*check:survival:workers/);
+const result={result:'SUSTAINED_SURVIVAL_ARCHIVE_SOURCE_RELEASE_REPORT_AND_PRIOR_IMMUTABILITY_AUDIT_PASS',checkedAt:new Date().toISOString(),buildId:v.buildId,verificationSha256:pointer.verificationSha256,sourceFiles:v.sourceInputs.length,releaseFiles:v.releaseFiles.length,artifacts:v.artifacts.length,webFiles:web.length,profiles:3,fullContainedWindows:34,unchangedRuntime:true,unchangedPriorArchive:true,scope:v.scope};
+fs.writeFileSync('games/voxel/test-results/sustained-survival-audit.json',JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify(result));

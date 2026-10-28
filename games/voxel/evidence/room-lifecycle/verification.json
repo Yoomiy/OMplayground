@@ -1,0 +1,282 @@
+{
+  "result": "PASS_WITH_PLATFORM_HOSTED_AND_DEVICE_LIMITATIONS",
+  "capturedAt": "2026-10-25T12:38:52.474072+00:00",
+  "buildId": "32f0fda71111b20ba54d355f17d09e645ad87f58b7f19440e0e3141ae695d6c0",
+  "engineHash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388",
+  "contentHash": "368b605ac5bdf5ff6fcf4af02f7174cbc6d39b5110f48e0a41b231a0a6479464",
+  "counts": {
+    "domain": 78,
+    "native": 80,
+    "nativeIgnored": 3,
+    "wasm": 80,
+    "sourceIntegration": 33,
+    "packagedIntegration": 33,
+    "sdkAndSchoolPolicy": 22,
+    "schoolGateway": 6,
+    "postgresSdk": 12,
+    "renderedScenarios": 5,
+    "priorHostedSqlChecks": 9
+  },
+  "sourceFiles": 237,
+  "hostedInstallation": {
+    "result": "PASS",
+    "schema": 1,
+    "privateBucket": true,
+    "checkedAt": "2026-10-25T12:28:53.314Z"
+  },
+  "remoteChangesThisPhase": {
+    "schemaWrites": false,
+    "objectWrites": false,
+    "readOnlyStoragePolicyAudit": true
+  },
+  "priorHostedSourceHashesUnchanged": [
+    "apps/voxel-server/src/supabase-persistence.ts",
+    "supabase/migrations/20261025010000_voxel_checkpoint_storage.sql",
+    "apps/voxel-server/tests/hosted/checkpoint-rollback.sql",
+    "apps/voxel-server/tools/check-live-storage.ts"
+  ],
+  "limitations": [
+    "Hosted SQL fixture metadata and separate Storage byte/cleanup checks are retained from the earlier offline-owner phase; no full hosted SDK/Storage/worker recovery proof",
+    "School Auth/PostgREST and local combined-test Storage bytes are fixtures",
+    "Five rendered scenarios on software Chromium; not all eleven scenarios, hardware/input/network/capacity qualification",
+    "Fenced platform status/roster/presence projection, accepted membership, host controls, production entry, React, moderation/chat, LiveKit and classroom extraction unfinished"
+  ],
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "84bf0b9d24f35c3e3fe1dee3790ade7a88abd738531e117052f0f6d2f66c7d9b"
+    },
+    {
+      "path": "browser-creative.json",
+      "sha256": "60efc88fe512b8faaa84f4e8b680b64913bdac8214013abd908f24ca9fcb8f74"
+    },
+    {
+      "path": "browser-flow-diagnostic-scope-failure.txt",
+      "sha256": "16d892c56d6a273a8c022b79316b34cc7bce66b9bda078ee37ce5ffe521d6416"
+    },
+    {
+      "path": "browser-flow-resume-forward-timeout.txt",
+      "sha256": "a6165f9deeb599da13a75544142f39a4b96ea500d051ad50b5d89ead7ec4903a"
+    },
+    {
+      "path": "browser-flow-toolbar-failure.txt",
+      "sha256": "f08adf48cfa063c02bafe792f3e082aefcb7f9c0250f3326ff89d22e6402bd71"
+    },
+    {
+      "path": "browser-flow.txt",
+      "sha256": "175511e82534dae5a436947af397ed545a242f240fe43f7316aff998c0599560"
+    },
+    {
+      "path": "browser-inventory.json",
+      "sha256": "7a41f1f94efbb43f8ac2a943280e2da0726acce1200f3735ac5b2e90adcea220"
+    },
+    {
+      "path": "browser-lifecycle.json",
+      "sha256": "861cdd779bff0e041ee4fb30d9c08feb195593fa3ae621c8a5f1ee9ca509e1d4"
+    },
+    {
+      "path": "browser-school.json",
+      "sha256": "da16e1af90f7f72a1175301b5e32ec1fe59e3f30a05c810de7d690b4813577c5"
+    },
+    {
+      "path": "browser-tnt.json",
+      "sha256": "66f99598d4aded2246467c77ab73033f562e124139b0470835e12e4ec8b82883"
+    },
+    {
+      "path": "build.json",
+      "sha256": "799c915c366d8162db6182c527218d60e3d1401cf8323f4e621be5a526bb0d38"
+    },
+    {
+      "path": "capture.py",
+      "sha256": "d9274e0e91231cdeec6c83999dc85467addc3d8245c334c861ecdeb6d65a1f00"
+    },
+    {
+      "path": "check-exit.json",
+      "sha256": "5868ccbd244995b7efd05f6a4b74fd2828f0fb625ea4d1b2f04274b454194d54"
+    },
+    {
+      "path": "check.txt",
+      "sha256": "84023e308be6c87a79118bc758aa5eb210723b1e9156c4ad27080f2b1db451e1"
+    },
+    {
+      "path": "content.json",
+      "sha256": "87da078927c9df8366a815c868478e71f559da83e4785447a8edb3e505dba250"
+    },
+    {
+      "path": "creative.png",
+      "sha256": "d742dafba7bd4ef30dd8a35d42738523ccfe72f9e905f1a3862dd35bc0b21da4"
+    },
+    {
+      "path": "hosted-status.json",
+      "sha256": "f7c26f6afd2b525c9b22e047588bd608d025f7c3b709903019c8fdbfe29f86c3"
+    },
+    {
+      "path": "inventory-chest.png",
+      "sha256": "9d1866cac17794ad51a0d33ea198b068e870eb529b3d55e37945989a3d9d803a"
+    },
+    {
+      "path": "inventory-crafting.png",
+      "sha256": "26759aa6d1bad7f348c9cf0291b660381f3898e8fba871bd0f11af2cd14ed59a"
+    },
+    {
+      "path": "platform-postgres.txt",
+      "sha256": "624e8a041217d4b1378d41b6938feedcb405f2c42dc8b879ee833ef05fe16046"
+    },
+    {
+      "path": "platform-school-gateway.txt",
+      "sha256": "c94e62ddb8f019594e9f0858eb50765bbc4be4d88f1ef160c486d5a6266f2a80"
+    },
+    {
+      "path": "platform-sdk.txt",
+      "sha256": "be51212651a4ea994b675517f4075055efc4fcd1f23cdc12f212817c4f1c6b0b"
+    },
+    {
+      "path": "prior-hosted-sql.json",
+      "sha256": "c424098e20abdc3fb92e75267832382539529fd7fe89b8385bfbdf54610be4eb"
+    },
+    {
+      "path": "prior-hosted-target-match.json",
+      "sha256": "cdd914726ddaca976034c87c15232f8bf310d1b267899898f47a67652e6af534"
+    },
+    {
+      "path": "prior-live-storage.json",
+      "sha256": "5d193c6bb907c8172ca15216f20bac7d0c17f26198a6f7b17698dd8a6f04676d"
+    },
+    {
+      "path": "release.json",
+      "sha256": "faae02567d53b8ba7ad7b2f64e00ca9823ec43938550990ea5e154eac70d52bd"
+    },
+    {
+      "path": "release/client/assets/engine-worker-DYAFKrDe.js",
+      "sha256": "99d3377c134578cd5e9bdd923e7707547e62c3a2a0a1a64c90adec5f1121bf04"
+    },
+    {
+      "path": "release/client/assets/index-5w2pNf9N.css",
+      "sha256": "2b1c35f291993017e6b64ee082d5b043f59edef25e5d29d5239bc23fab798eac"
+    },
+    {
+      "path": "release/client/assets/index-CTcjwH_p.js",
+      "sha256": "1da3133f2c01b845f3d524d0be32367b7e7f662d024e6b895bed282c42cc507f"
+    },
+    {
+      "path": "release/client/assets/voxel_engine_bg-1ejYMYOZ.wasm",
+      "sha256": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "release/client/index.html",
+      "sha256": "4e4284bfa82d381f12e0d9b19e59adbaba027001b4057ebb539339178f0f75d1"
+    },
+    {
+      "path": "release/server/build.json",
+      "sha256": "799c915c366d8162db6182c527218d60e3d1401cf8323f4e621be5a526bb0d38"
+    },
+    {
+      "path": "release/server/content.json",
+      "sha256": "87da078927c9df8366a815c868478e71f559da83e4785447a8edb3e505dba250"
+    },
+    {
+      "path": "release/server/engine.wasm",
+      "sha256": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "release/server/gateway.js",
+      "sha256": "9f798b04d533de7be58185402d16aa39f50c2c43aa7bd48478f6d9835ac0b1e3"
+    },
+    {
+      "path": "release/server/gateway.js.map",
+      "sha256": "c4ce9270cfb25ce2df18b16a174451a9e3056e4c7993957aebf02e27a12e52fd"
+    },
+    {
+      "path": "release/server/room-worker.js",
+      "sha256": "185990464e969d0c1d5aaab7526d650ba83d7030c81def91d5b0c0e0b4ee9a16"
+    },
+    {
+      "path": "release/server/room-worker.js.map",
+      "sha256": "69ffb321176d22e928c8b0ab79d8ca931e726221aa743e9eab9429285b083e9c"
+    },
+    {
+      "path": "run-check.mjs",
+      "sha256": "d510cc2cb8967089c6e81f38307c6e1f0281daca1b91e1757a8c30960211caf2"
+    },
+    {
+      "path": "run-suite.mjs",
+      "sha256": "94324f2cc10aaf10aa7ab15c91fc1cfff17f201249ef5483a77636f7240bdbdf"
+    },
+    {
+      "path": "school-lifecycle-paused.png",
+      "sha256": "796651365bfa80206849f267b6adafc7a612fadd38a9d0d321d78e60c7a46ad3"
+    },
+    {
+      "path": "school-observer.png",
+      "sha256": "ae58d629093aeeab4f8e348cf024b56b6b2dd00da67a44878b903bf1e8d7d0d1"
+    },
+    {
+      "path": "source-inputs.json",
+      "sha256": "6338a2be56616192045d856670a01132e1cd6a8e602016f133884aefce76b165"
+    },
+    {
+      "path": "source-release-verification.json",
+      "sha256": "675aba270e78022f1b65a5cda9dd425520bdf352f5f4e93725a73e27c7156cca"
+    },
+    {
+      "path": "source.tar.gz",
+      "sha256": "5c9f1ae13d643dd25ccf933721fd12c639175d98483171d9436dd049120a7d79"
+    },
+    {
+      "path": "storage-policy-read.json",
+      "sha256": "9bc7733a691fe9038a57d855b0ba27acf632f11894a99f4d1587f9b0fd12c5c9"
+    },
+    {
+      "path": "storage-policy-read.sql",
+      "sha256": "854c7dfaa9d4d4436258d4a19bd369a564ead99bb5f6dbb7cbc6fccb736dd2de"
+    },
+    {
+      "path": "suite-creative.txt",
+      "sha256": "ac2635032a5c6204a49497700f7143b5e9e19ee99a58ff49eac4fd3a480380cd"
+    },
+    {
+      "path": "suite-inventory.txt",
+      "sha256": "17b9ee0aca3476e8218e8eb1d7e433698a1a5530d4135ba6a2d1141d62523e70"
+    },
+    {
+      "path": "suite-observer.txt",
+      "sha256": "a4f9f7e11369ac1323707a42062cddd4d6a05185b28fd66692ea1f377da91720"
+    },
+    {
+      "path": "suite-postgres-start.txt",
+      "sha256": "66afd0411ccc09366e99fdd99b85f21899c8d2d064f5835126859618802153ad"
+    },
+    {
+      "path": "suite-postgres-stop.txt",
+      "sha256": "ca19178a35ab4153b75b494963b66ce8243e1b94c173107c87b44d09db23652d"
+    },
+    {
+      "path": "suite-postgres.txt",
+      "sha256": "624e8a041217d4b1378d41b6938feedcb405f2c42dc8b879ee833ef05fe16046"
+    },
+    {
+      "path": "suite-release.txt",
+      "sha256": "ba3cca98de5496503deab8a8c49d5954427ef6d3d3e1825eb9ba1202c9e7f0fb"
+    },
+    {
+      "path": "suite-school-gateway.txt",
+      "sha256": "c94e62ddb8f019594e9f0858eb50765bbc4be4d88f1ef160c486d5a6266f2a80"
+    },
+    {
+      "path": "suite-tnt.txt",
+      "sha256": "53ce977d9f33d546eb0e47046aa5280c61c7bfdb0cd7f752293396abdddcd74a"
+    },
+    {
+      "path": "suite.json",
+      "sha256": "b8280ea3ea4f6a927d5528074da703c3543f03b9a898b978680afc78c9a9df43"
+    },
+    {
+      "path": "tnt-crater.png",
+      "sha256": "82c18ccd9e850b1fe319de9387b87c082eb8dae0957bfba9b061665e2c1c7d39"
+    },
+    {
+      "path": "tnt-fuse.png",
+      "sha256": "daecf73c637c8549cc735c5bdbcb4dd2ac464597c065910ec0e45552feab3fc0"
+    }
+  ]
+}

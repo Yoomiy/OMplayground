@@ -1,0 +1,5052 @@
+{
+  "result": "PACKAGED_SUSTAINED_SURVIVAL_AND_COMMITTED_CRASH_RECOVERY_PASS",
+  "startedAt": "2026-10-27T20:10:23.173Z",
+  "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+  "configuration": {
+    "seconds": 180,
+    "roomCount": 2,
+    "playerCount": 8,
+    "ioMs": 5
+  },
+  "host": {
+    "node": "v24.21.0",
+    "arch": "arm64",
+    "cpu": "Neoverse-N1",
+    "logicalCpus": 2,
+    "availableParallelism": 2
+  },
+  "scope": "Packaged gateway/native workers, UUID actors, ordinary survival inputs/actions, fixture-owned kits and prepared natural-world work platforms, contested containers and commit/worker-crash recovery. Delayed in-memory metadata/object contract backend with advancing clock; no actual Supabase/Auth/SQL/Storage/SFU, rendering, real devices/networks, TNT or school-capacity signoff.",
+  "sample": {
+    "startedAtMs": 941.529288,
+    "endedAtMs": 181622.910999,
+    "elapsedMs": 180681.38171100002
+  },
+  "counts": {
+    "rounds": 54,
+    "mined": 864,
+    "placed": 864,
+    "crafted": 866,
+    "consumed": 192,
+    "containerRaces": 432,
+    "containerConflicts": 432,
+    "cachedReplays": 1298,
+    "hits": 280,
+    "staleEpochReplays": 16,
+    "skippedInputBatches": 0
+  },
+  "roomMetrics": [
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 297,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10001.75103,
+      "windowStartedAtMs": 742.678207,
+      "windowEndedAtMs": 10744.429237,
+      "worldStep_samples": 297,
+      "worldStep_meanMs": 0.6707533973064049,
+      "worldStep_p95UpperMs": 1.4,
+      "worldStep_p99UpperMs": 4.2,
+      "worldStep_maxMs": 6.313627999999994,
+      "observerStep_samples": 2,
+      "observerStep_meanMs": 0.4762020000000575,
+      "observerStep_p95UpperMs": 0.8517240000001038,
+      "observerStep_p99UpperMs": 0.8517240000001038,
+      "observerStep_maxMs": 0.8517240000001038,
+      "workerTurn_samples": 2339,
+      "workerTurn_meanMs": 0.1477603321932305,
+      "workerTurn_p95UpperMs": 0.7,
+      "workerTurn_p99UpperMs": 2.85,
+      "workerTurn_maxMs": 12.171054000000026,
+      "generationJob_samples": 28,
+      "generationJob_meanMs": 3.581217321428527,
+      "generationJob_p95UpperMs": 6.9,
+      "generationJob_p99UpperMs": 11.24621000000002,
+      "generationJob_maxMs": 11.24621000000002,
+      "command_samples": 2731,
+      "command_meanMs": 0.028780925668263527,
+      "command_p95UpperMs": 0.1,
+      "command_p99UpperMs": 0.45,
+      "command_maxMs": 5.199783000000025
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 298,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 9999.344099,
+      "windowStartedAtMs": 803.273276,
+      "windowEndedAtMs": 10802.617375,
+      "worldStep_samples": 298,
+      "worldStep_meanMs": 0.6456452919463209,
+      "worldStep_p95UpperMs": 1.4,
+      "worldStep_p99UpperMs": 2.5,
+      "worldStep_maxMs": 4.1730190000000675,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2324,
+      "workerTurn_meanMs": 0.1317073666092809,
+      "workerTurn_p95UpperMs": 0.65,
+      "workerTurn_p99UpperMs": 1.95,
+      "workerTurn_maxMs": 10.506805999999983,
+      "generationJob_samples": 28,
+      "generationJob_meanMs": 2.601390071428487,
+      "generationJob_p95UpperMs": 4.05,
+      "generationJob_p99UpperMs": 5.925946000000067,
+      "generationJob_maxMs": 5.925946000000067,
+      "command_samples": 2751,
+      "command_meanMs": 0.03252034896401151,
+      "command_p95UpperMs": 0.1,
+      "command_p99UpperMs": 0.45,
+      "command_maxMs": 9.73420299999998
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 9999.118245000001,
+      "windowStartedAtMs": 10744.429237,
+      "windowEndedAtMs": 20743.547482,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.45932918000014367,
+      "worldStep_p95UpperMs": 0.8,
+      "worldStep_p99UpperMs": 1.5,
+      "worldStep_maxMs": 1.9816489999975602,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2361,
+      "workerTurn_meanMs": 0.07826285980516656,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.75,
+      "workerTurn_maxMs": 6.519828999998936,
+      "generationJob_samples": 8,
+      "generationJob_meanMs": 2.196309624999685,
+      "generationJob_p95UpperMs": 3.5396550000004936,
+      "generationJob_p99UpperMs": 3.5396550000004936,
+      "generationJob_maxMs": 3.5396550000004936,
+      "command_samples": 2626,
+      "command_meanMs": 0.012746676313798777,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 3.01697299999978
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 9999.772768,
+      "windowStartedAtMs": 10802.617375,
+      "windowEndedAtMs": 20802.390143,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.47767691999994577,
+      "worldStep_p95UpperMs": 0.8,
+      "worldStep_p99UpperMs": 1.25,
+      "worldStep_maxMs": 6.906109999999899,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2359,
+      "workerTurn_meanMs": 0.07948962568884567,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.75,
+      "workerTurn_maxMs": 6.919149999999718,
+      "generationJob_samples": 8,
+      "generationJob_meanMs": 1.9872538750003057,
+      "generationJob_p95UpperMs": 2.047409000000698,
+      "generationJob_p99UpperMs": 2.047409000000698,
+      "generationJob_maxMs": 2.047409000000698,
+      "command_samples": 2642,
+      "command_meanMs": 0.01381547577597807,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 4.653620999999475
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 9999.960994999998,
+      "windowStartedAtMs": 20743.547482,
+      "windowEndedAtMs": 30743.508477,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4462509233333063,
+      "worldStep_p95UpperMs": 0.8,
+      "worldStep_p99UpperMs": 1.15,
+      "worldStep_maxMs": 1.461607000001095,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2371,
+      "workerTurn_meanMs": 0.0775557545339198,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.75,
+      "workerTurn_maxMs": 5.106021999999939,
+      "generationJob_samples": 12,
+      "generationJob_meanMs": 2.0461623333339958,
+      "generationJob_p95UpperMs": 2.2634500000021944,
+      "generationJob_p99UpperMs": 2.2634500000021944,
+      "generationJob_maxMs": 2.2634500000021944,
+      "command_samples": 2680,
+      "command_meanMs": 0.011913274626858204,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 1.0358839999971678
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10000.297318,
+      "windowStartedAtMs": 20802.390143,
+      "windowEndedAtMs": 30802.687461,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.44197342666660333,
+      "worldStep_p95UpperMs": 0.75,
+      "worldStep_p99UpperMs": 1.15,
+      "worldStep_maxMs": 1.4572860000007495,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2370,
+      "workerTurn_meanMs": 0.07689860506332254,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.75,
+      "workerTurn_maxMs": 5.4259039999997185,
+      "generationJob_samples": 12,
+      "generationJob_meanMs": 2.0290587499994217,
+      "generationJob_p95UpperMs": 2.4257700000016484,
+      "generationJob_p99UpperMs": 2.4257700000016484,
+      "generationJob_maxMs": 2.4257700000016484,
+      "command_samples": 2686,
+      "command_meanMs": 0.011614270662712489,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 1.2683260000012524
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10000.893585000002,
+      "windowStartedAtMs": 30743.508477,
+      "windowEndedAtMs": 40744.402062,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.42604390666663633,
+      "worldStep_p95UpperMs": 0.7,
+      "worldStep_p99UpperMs": 0.95,
+      "worldStep_maxMs": 1.6839279999985592,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2382,
+      "workerTurn_meanMs": 0.07139219437442697,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.7,
+      "workerTurn_maxMs": 6.025987000000896,
+      "generationJob_samples": 8,
+      "generationJob_meanMs": 2.3651654999994207,
+      "generationJob_p95UpperMs": 3.484454999997979,
+      "generationJob_p99UpperMs": 3.484454999997979,
+      "generationJob_maxMs": 3.484454999997979,
+      "command_samples": 2708,
+      "command_meanMs": 0.011322993722375692,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 2.4336110000003828
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10000.684182999998,
+      "windowStartedAtMs": 30802.687461,
+      "windowEndedAtMs": 40803.371644,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.43509234333329616,
+      "worldStep_p95UpperMs": 0.75,
+      "worldStep_p99UpperMs": 1.3,
+      "worldStep_maxMs": 1.9336889999976847,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2378,
+      "workerTurn_meanMs": 0.07168050378458395,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.7,
+      "workerTurn_maxMs": 4.7965819999953965,
+      "generationJob_samples": 8,
+      "generationJob_meanMs": 2.033149124999909,
+      "generationJob_p95UpperMs": 2.0832099999970524,
+      "generationJob_p99UpperMs": 2.0832099999970524,
+      "generationJob_maxMs": 2.0832099999970524,
+      "command_samples": 2696,
+      "command_meanMs": 0.010502850148321108,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 1.1907649999993737
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 9999.979082999998,
+      "windowStartedAtMs": 40744.402062,
+      "windowEndedAtMs": 50744.381145,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.43594095999966775,
+      "worldStep_p95UpperMs": 0.8,
+      "worldStep_p99UpperMs": 1.2,
+      "worldStep_maxMs": 1.2786059999998542,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2390,
+      "workerTurn_meanMs": 0.07475388535568063,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.8,
+      "workerTurn_maxMs": 6.5740290000030654,
+      "generationJob_samples": 12,
+      "generationJob_meanMs": 2.073355916666211,
+      "generationJob_p95UpperMs": 2.664251999995031,
+      "generationJob_p99UpperMs": 2.664251999995031,
+      "generationJob_maxMs": 2.664251999995031,
+      "command_samples": 2659,
+      "command_meanMs": 0.010216053027451598,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 2.472931000003882
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10000.097565000004,
+      "windowStartedAtMs": 40803.371644,
+      "windowEndedAtMs": 50803.469209,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4398760033333623,
+      "worldStep_p95UpperMs": 0.75,
+      "worldStep_p99UpperMs": 1,
+      "worldStep_maxMs": 1.2480859999996028,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2387,
+      "workerTurn_meanMs": 0.07574306619184483,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.75,
+      "workerTurn_maxMs": 6.693310000002384,
+      "generationJob_samples": 12,
+      "generationJob_meanMs": 2.177733166666561,
+      "generationJob_p95UpperMs": 4.33657900000253,
+      "generationJob_p99UpperMs": 4.33657900000253,
+      "generationJob_maxMs": 4.33657900000253,
+      "command_samples": 2674,
+      "command_meanMs": 0.009544989154881755,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 1.2892859999992652
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10000.855670999998,
+      "windowStartedAtMs": 50744.381145,
+      "windowEndedAtMs": 60745.236816,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4104686100002678,
+      "worldStep_p95UpperMs": 0.7,
+      "worldStep_p99UpperMs": 0.85,
+      "worldStep_maxMs": 1.2366059999985737,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2404,
+      "workerTurn_meanMs": 0.06780858194673271,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.7,
+      "workerTurn_maxMs": 6.334308000004967,
+      "generationJob_samples": 8,
+      "generationJob_meanMs": 2.0205838749998293,
+      "generationJob_p95UpperMs": 2.140370000000985,
+      "generationJob_p99UpperMs": 2.140370000000985,
+      "generationJob_maxMs": 2.140370000000985,
+      "command_samples": 2713,
+      "command_meanMs": 0.010568351640253125,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 0.9672040000004927
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 9999.841785999997,
+      "windowStartedAtMs": 50803.469209,
+      "windowEndedAtMs": 60803.310995,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4264632566666842,
+      "worldStep_p95UpperMs": 0.7,
+      "worldStep_p99UpperMs": 0.85,
+      "worldStep_maxMs": 1.224804999998014,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2402,
+      "workerTurn_meanMs": 0.06885238592839686,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.7,
+      "workerTurn_maxMs": 6.510508999999729,
+      "generationJob_samples": 8,
+      "generationJob_meanMs": 1.9814790000000355,
+      "generationJob_p95UpperMs": 2.04084999999759,
+      "generationJob_p99UpperMs": 2.04084999999759,
+      "generationJob_maxMs": 2.04084999999759,
+      "command_samples": 2720,
+      "command_meanMs": 0.01041520919106648,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 0.8316839999970398
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 9999.215363999996,
+      "windowStartedAtMs": 60745.236816,
+      "windowEndedAtMs": 70744.45218,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.45108017666658246,
+      "worldStep_p95UpperMs": 0.8,
+      "worldStep_p99UpperMs": 1.25,
+      "worldStep_maxMs": 2.556771999996272,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2402,
+      "workerTurn_meanMs": 0.07952255870118687,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.8,
+      "workerTurn_maxMs": 6.414948000005097,
+      "generationJob_samples": 16,
+      "generationJob_meanMs": 2.1162569375005664,
+      "generationJob_p95UpperMs": 3.0953730000037467,
+      "generationJob_p99UpperMs": 3.0953730000037467,
+      "generationJob_maxMs": 3.0953730000037467,
+      "command_samples": 2745,
+      "command_meanMs": 0.011649038615436253,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 1.9672089999949094
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10000.774331,
+      "windowStartedAtMs": 60803.310995,
+      "windowEndedAtMs": 70804.085326,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4477722833334701,
+      "worldStep_p95UpperMs": 0.85,
+      "worldStep_p99UpperMs": 1.05,
+      "worldStep_maxMs": 1.994208999996772,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2402,
+      "workerTurn_meanMs": 0.07922148626152024,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.8,
+      "workerTurn_maxMs": 7.013070999993943,
+      "generationJob_samples": 16,
+      "generationJob_meanMs": 2.1311045625016045,
+      "generationJob_p95UpperMs": 3.563695999997435,
+      "generationJob_p99UpperMs": 3.563695999997435,
+      "generationJob_maxMs": 3.563695999997435,
+      "command_samples": 2773,
+      "command_meanMs": 0.010318172376565573,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 0.7748439999995753
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 12,
+      "overrunMs": 0,
+      "windowMs": 10000.161148000014,
+      "windowStartedAtMs": 70744.45218,
+      "windowEndedAtMs": 80744.613328,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.430405933333095,
+      "worldStep_p95UpperMs": 0.75,
+      "worldStep_p99UpperMs": 1.2,
+      "worldStep_maxMs": 1.6674869999988005,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2418,
+      "workerTurn_meanMs": 0.06952578287822724,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.7,
+      "workerTurn_maxMs": 7.060951999999816,
+      "generationJob_samples": 8,
+      "generationJob_meanMs": 2.0486642500000016,
+      "generationJob_p95UpperMs": 2.482170999996015,
+      "generationJob_p99UpperMs": 2.482170999996015,
+      "generationJob_maxMs": 2.482170999996015,
+      "command_samples": 2739,
+      "command_meanMs": 0.010018503468416479,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 0.8256429999892134
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10001.282793999999,
+      "windowStartedAtMs": 70804.085326,
+      "windowEndedAtMs": 80805.36812,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.44148349000034326,
+      "worldStep_p95UpperMs": 0.85,
+      "worldStep_p99UpperMs": 1.15,
+      "worldStep_maxMs": 2.150488999992376,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2411,
+      "workerTurn_meanMs": 0.07391780174200299,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.85,
+      "workerTurn_maxMs": 4.77690199999779,
+      "generationJob_samples": 12,
+      "generationJob_meanMs": 2.037579166665334,
+      "generationJob_p95UpperMs": 2.4972110000089742,
+      "generationJob_p99UpperMs": 2.4972110000089742,
+      "generationJob_maxMs": 2.4972110000089742,
+      "command_samples": 2752,
+      "command_meanMs": 0.010037409520289803,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 0.8933640000032028
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10003.771702999991,
+      "windowStartedAtMs": 80744.613328,
+      "windowEndedAtMs": 90748.385031,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4264759033338731,
+      "worldStep_p95UpperMs": 0.85,
+      "worldStep_p99UpperMs": 1.2,
+      "worldStep_maxMs": 1.457446999993408,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2422,
+      "workerTurn_meanMs": 0.07571706317085111,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.8,
+      "workerTurn_maxMs": 6.4929489999922225,
+      "generationJob_samples": 16,
+      "generationJob_meanMs": 2.0939367500004664,
+      "generationJob_p95UpperMs": 2.6738919999916106,
+      "generationJob_p99UpperMs": 2.6738919999916106,
+      "generationJob_maxMs": 2.6738919999916106,
+      "command_samples": 2748,
+      "command_meanMs": 0.009943363900981852,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 1.0526839999947697
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10000.215366999997,
+      "windowStartedAtMs": 80805.36812,
+      "windowEndedAtMs": 90805.583487,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4284110933332702,
+      "worldStep_p95UpperMs": 0.85,
+      "worldStep_p99UpperMs": 1.25,
+      "worldStep_maxMs": 3.065573999992921,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2413,
+      "workerTurn_meanMs": 0.07393358392062414,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.75,
+      "workerTurn_maxMs": 5.662105999988853,
+      "generationJob_samples": 12,
+      "generationJob_meanMs": 2.360754083333934,
+      "generationJob_p95UpperMs": 3.159454000007827,
+      "generationJob_p99UpperMs": 3.159454000007827,
+      "generationJob_maxMs": 3.159454000007827,
+      "command_samples": 2739,
+      "command_meanMs": 0.009150897407797474,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 0.7881630000047153
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 12,
+      "overrunMs": 0,
+      "windowMs": 9999.915584000002,
+      "windowStartedAtMs": 90748.385031,
+      "windowEndedAtMs": 100748.300615,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.41237503000040315,
+      "worldStep_p95UpperMs": 0.7,
+      "worldStep_p99UpperMs": 1,
+      "worldStep_maxMs": 1.317165999993449,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2425,
+      "workerTurn_meanMs": 0.0669465183504478,
+      "workerTurn_p95UpperMs": 0.45,
+      "workerTurn_p99UpperMs": 0.65,
+      "workerTurn_maxMs": 6.721949999991921,
+      "generationJob_samples": 8,
+      "generationJob_meanMs": 2.002478874999724,
+      "generationJob_p95UpperMs": 2.118929999996908,
+      "generationJob_p99UpperMs": 2.118929999996908,
+      "generationJob_maxMs": 2.118929999996908,
+      "command_samples": 2735,
+      "command_meanMs": 0.009169435100742739,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 0.5639220000011846
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 12,
+      "overrunMs": 0,
+      "windowMs": 9999.856904,
+      "windowStartedAtMs": 90805.583487,
+      "windowEndedAtMs": 100805.440391,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.41976267666672334,
+      "worldStep_p95UpperMs": 0.7,
+      "worldStep_p99UpperMs": 1.25,
+      "worldStep_maxMs": 1.53872599999886,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2418,
+      "workerTurn_meanMs": 0.06779493093468578,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.65,
+      "workerTurn_maxMs": 6.8677100000059,
+      "generationJob_samples": 8,
+      "generationJob_meanMs": 1.9963088749991584,
+      "generationJob_p95UpperMs": 2.0764889999991283,
+      "generationJob_p99UpperMs": 2.0764889999991283,
+      "generationJob_maxMs": 2.0764889999991283,
+      "command_samples": 2738,
+      "command_meanMs": 0.009273543097028002,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 0.2749610000028042
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10000.285642000003,
+      "windowStartedAtMs": 100748.300615,
+      "windowEndedAtMs": 110748.586257,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4600539000004452,
+      "worldStep_p95UpperMs": 0.8,
+      "worldStep_p99UpperMs": 1.45,
+      "worldStep_maxMs": 2.386650999993435,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2424,
+      "workerTurn_meanMs": 0.07683512500005968,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.75,
+      "workerTurn_maxMs": 5.512145000000601,
+      "generationJob_samples": 12,
+      "generationJob_meanMs": 2.1561330833343773,
+      "generationJob_p95UpperMs": 3.4441750000114553,
+      "generationJob_p99UpperMs": 3.4441750000114553,
+      "generationJob_maxMs": 3.4441750000114553,
+      "command_samples": 2738,
+      "command_meanMs": 0.01100113550033855,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 1.6222470000066096
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 12,
+      "overrunMs": 0,
+      "windowMs": 10000.351762999999,
+      "windowStartedAtMs": 100805.440391,
+      "windowEndedAtMs": 110805.792154,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.46970555333357605,
+      "worldStep_p95UpperMs": 0.9,
+      "worldStep_p99UpperMs": 1.15,
+      "worldStep_maxMs": 2.558812000002945,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2423,
+      "workerTurn_meanMs": 0.0775068262485236,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.9,
+      "workerTurn_maxMs": 6.461269000006723,
+      "generationJob_samples": 12,
+      "generationJob_meanMs": 2.0249958333345908,
+      "generationJob_p95UpperMs": 2.397970999998506,
+      "generationJob_p99UpperMs": 2.397970999998506,
+      "generationJob_maxMs": 2.397970999998506,
+      "command_samples": 2718,
+      "command_meanMs": 0.011382407652831964,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 1.477087000006577
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10000.203576999993,
+      "windowStartedAtMs": 110748.586257,
+      "windowEndedAtMs": 120748.789834,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.45310124333327023,
+      "worldStep_p95UpperMs": 0.75,
+      "worldStep_p99UpperMs": 1.1,
+      "worldStep_maxMs": 1.706927999999607,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2431,
+      "workerTurn_meanMs": 0.0783517984368693,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.75,
+      "workerTurn_maxMs": 6.667230000006384,
+      "generationJob_samples": 16,
+      "generationJob_meanMs": 2.0236416250027105,
+      "generationJob_p95UpperMs": 2.2713700000022072,
+      "generationJob_p99UpperMs": 2.2713700000022072,
+      "generationJob_maxMs": 2.2713700000022072,
+      "command_samples": 2821,
+      "command_meanMs": 0.01344302268708716,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 1.2703659999970114
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10000.08941700001,
+      "windowStartedAtMs": 110805.792154,
+      "windowEndedAtMs": 120805.881571,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4416626433334505,
+      "worldStep_p95UpperMs": 0.75,
+      "worldStep_p99UpperMs": 1.1,
+      "worldStep_maxMs": 1.213845999998739,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2429,
+      "workerTurn_meanMs": 0.07701287896244616,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.75,
+      "workerTurn_maxMs": 6.633789999992587,
+      "generationJob_samples": 16,
+      "generationJob_meanMs": 2.016429187500762,
+      "generationJob_p95UpperMs": 2.480171999995946,
+      "generationJob_p99UpperMs": 2.480171999995946,
+      "generationJob_maxMs": 2.480171999995946,
+      "command_samples": 2830,
+      "command_meanMs": 0.013264372438008681,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 1.1940860000031535
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 12,
+      "overrunMs": 0,
+      "windowMs": 9999.805070000002,
+      "windowStartedAtMs": 120748.789834,
+      "windowEndedAtMs": 130748.594904,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4603856633325631,
+      "worldStep_p95UpperMs": 0.8,
+      "worldStep_p99UpperMs": 1.45,
+      "worldStep_maxMs": 1.7626480000035372,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2436,
+      "workerTurn_meanMs": 0.07659419868615473,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.8,
+      "workerTurn_maxMs": 7.403113000007579,
+      "generationJob_samples": 12,
+      "generationJob_meanMs": 1.9902522500027164,
+      "generationJob_p95UpperMs": 2.098849000001792,
+      "generationJob_p99UpperMs": 2.098849000001792,
+      "generationJob_maxMs": 2.098849000001792,
+      "command_samples": 2757,
+      "command_meanMs": 0.012326712005859395,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 1.5929269999905955
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 12,
+      "overrunMs": 0,
+      "windowMs": 9999.989830999999,
+      "windowStartedAtMs": 120805.881571,
+      "windowEndedAtMs": 130805.871402,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.46708558000046935,
+      "worldStep_p95UpperMs": 0.8,
+      "worldStep_p99UpperMs": 1.4,
+      "worldStep_maxMs": 2.334811000007903,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2433,
+      "workerTurn_meanMs": 0.07662454993840799,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.8,
+      "workerTurn_maxMs": 6.611269999993965,
+      "generationJob_samples": 12,
+      "generationJob_meanMs": 2.012049166666354,
+      "generationJob_p95UpperMs": 2.1093699999910314,
+      "generationJob_p99UpperMs": 2.1093699999910314,
+      "generationJob_maxMs": 2.1093699999910314,
+      "command_samples": 2765,
+      "command_meanMs": 0.011931200361760945,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 1.9476489999942714
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 12,
+      "overrunMs": 0,
+      "windowMs": 9999.844763000001,
+      "windowStartedAtMs": 130748.594904,
+      "windowEndedAtMs": 140748.439667,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.46661009666626335,
+      "worldStep_p95UpperMs": 0.75,
+      "worldStep_p99UpperMs": 1.15,
+      "worldStep_maxMs": 1.5042869999888353,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2439,
+      "workerTurn_meanMs": 0.07762943788444666,
+      "workerTurn_p95UpperMs": 0.55,
+      "workerTurn_p99UpperMs": 0.75,
+      "workerTurn_maxMs": 5.421224000005168,
+      "generationJob_samples": 12,
+      "generationJob_meanMs": 2.142906250005277,
+      "generationJob_p95UpperMs": 3.23781500000041,
+      "generationJob_p99UpperMs": 3.23781500000041,
+      "generationJob_maxMs": 3.23781500000041,
+      "command_samples": 2743,
+      "command_meanMs": 0.012707648924469591,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 1.207365000009304
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 9999.820843000009,
+      "windowStartedAtMs": 130805.871402,
+      "windowEndedAtMs": 140805.692245,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.47007052000049315,
+      "worldStep_p95UpperMs": 0.8,
+      "worldStep_p99UpperMs": 1.2,
+      "worldStep_maxMs": 1.654167000000598,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2436,
+      "workerTurn_meanMs": 0.08305891995074599,
+      "workerTurn_p95UpperMs": 0.55,
+      "workerTurn_p99UpperMs": 0.8,
+      "workerTurn_maxMs": 7.489354000019375,
+      "generationJob_samples": 16,
+      "generationJob_meanMs": 2.4100658125007617,
+      "generationJob_p95UpperMs": 6.713950000004843,
+      "generationJob_p99UpperMs": 6.713950000004843,
+      "generationJob_maxMs": 6.713950000004843,
+      "command_samples": 2748,
+      "command_meanMs": 0.012332021106336384,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 1.3177260000084061
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 12,
+      "overrunMs": 0,
+      "windowMs": 10000.534658999997,
+      "windowStartedAtMs": 140748.439667,
+      "windowEndedAtMs": 150748.974326,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4488286766665987,
+      "worldStep_p95UpperMs": 0.8,
+      "worldStep_p99UpperMs": 1.1,
+      "worldStep_maxMs": 4.604060999990907,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2404,
+      "workerTurn_meanMs": 0.075704070298956,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.8,
+      "workerTurn_maxMs": 6.6508299999986775,
+      "generationJob_samples": 12,
+      "generationJob_meanMs": 2.1117195833357982,
+      "generationJob_p95UpperMs": 3.213294000015594,
+      "generationJob_p99UpperMs": 3.213294000015594,
+      "generationJob_maxMs": 3.213294000015594,
+      "command_samples": 2746,
+      "command_meanMs": 0.0122396463945077,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 2.5912119999993593
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 12,
+      "overrunMs": 0,
+      "windowMs": 10000.669819999981,
+      "windowStartedAtMs": 140805.692245,
+      "windowEndedAtMs": 150806.362065,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.43334087666686777,
+      "worldStep_p95UpperMs": 0.75,
+      "worldStep_p99UpperMs": 1,
+      "worldStep_maxMs": 1.3500070000009146,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2402,
+      "workerTurn_meanMs": 0.07002574521263587,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.7,
+      "workerTurn_maxMs": 4.711100999993505,
+      "generationJob_samples": 8,
+      "generationJob_meanMs": 2.020009250005387,
+      "generationJob_p95UpperMs": 2.173010000027716,
+      "generationJob_p99UpperMs": 2.173010000027716,
+      "generationJob_maxMs": 2.173010000027716,
+      "command_samples": 2745,
+      "command_meanMs": 0.01181182222218612,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 2.403450999991037
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10001.315474000003,
+      "windowStartedAtMs": 150748.974326,
+      "windowEndedAtMs": 160750.2898,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.43969467666621004,
+      "worldStep_p95UpperMs": 0.8,
+      "worldStep_p99UpperMs": 1.05,
+      "worldStep_maxMs": 1.3421260000031907,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2287,
+      "workerTurn_meanMs": 0.08195951377319005,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.8,
+      "workerTurn_maxMs": 5.1845829999947455,
+      "generationJob_samples": 16,
+      "generationJob_meanMs": 2.0543868124914297,
+      "generationJob_p95UpperMs": 2.170488999981899,
+      "generationJob_p99UpperMs": 2.170488999981899,
+      "generationJob_maxMs": 2.170488999981899,
+      "command_samples": 2818,
+      "command_meanMs": 0.01273119198003674,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 0.5162030000064988
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 9999.888948000007,
+      "windowStartedAtMs": 150806.362065,
+      "windowEndedAtMs": 160806.251013,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4353013199990772,
+      "worldStep_p95UpperMs": 0.75,
+      "worldStep_p99UpperMs": 1,
+      "worldStep_maxMs": 1.6710079999757,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2271,
+      "workerTurn_meanMs": 0.08092034698397549,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.75,
+      "workerTurn_maxMs": 6.709189999994123,
+      "generationJob_samples": 16,
+      "generationJob_meanMs": 1.988451500001247,
+      "generationJob_p95UpperMs": 2.0783299999893643,
+      "generationJob_p99UpperMs": 2.0783299999893643,
+      "generationJob_maxMs": 2.0783299999893643,
+      "command_samples": 2821,
+      "command_meanMs": 0.012010761077269162,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 0.42472199999610893
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 9998.673311999999,
+      "windowStartedAtMs": 160750.2898,
+      "windowEndedAtMs": 170748.963112,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4553117599998949,
+      "worldStep_p95UpperMs": 0.9,
+      "worldStep_p99UpperMs": 1.3,
+      "worldStep_maxMs": 1.6100870000082068,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2288,
+      "workerTurn_meanMs": 0.08396286451083966,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.9,
+      "workerTurn_maxMs": 6.470228999998653,
+      "generationJob_samples": 16,
+      "generationJob_meanMs": 2.1323645000047695,
+      "generationJob_p95UpperMs": 2.9964529999997467,
+      "generationJob_p99UpperMs": 2.9964529999997467,
+      "generationJob_maxMs": 2.9964529999997467,
+      "command_samples": 2765,
+      "command_meanMs": 0.011462488245479185,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 1.2246049999957904
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10000.478159999999,
+      "windowStartedAtMs": 160806.251013,
+      "windowEndedAtMs": 170806.729173,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4604512033335049,
+      "worldStep_p95UpperMs": 0.85,
+      "worldStep_p99UpperMs": 1.5,
+      "worldStep_maxMs": 2.6042920000036247,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2287,
+      "workerTurn_meanMs": 0.08540258154783201,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.9,
+      "workerTurn_maxMs": 5.799146000004839,
+      "generationJob_samples": 16,
+      "generationJob_meanMs": 2.1746874374985055,
+      "generationJob_p95UpperMs": 3.0855739999969956,
+      "generationJob_p99UpperMs": 3.0855739999969956,
+      "generationJob_maxMs": 3.0855739999969956,
+      "command_samples": 2758,
+      "command_meanMs": 0.011529349890935032,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 1.2304460000013933
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10000.568809999997,
+      "windowStartedAtMs": 170748.963112,
+      "windowEndedAtMs": 180749.531922,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4332833833337646,
+      "worldStep_p95UpperMs": 0.75,
+      "worldStep_p99UpperMs": 1,
+      "worldStep_maxMs": 1.3853260000178125,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2301,
+      "workerTurn_meanMs": 0.07691157801012366,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.75,
+      "workerTurn_maxMs": 6.605630000005476,
+      "generationJob_samples": 12,
+      "generationJob_meanMs": 2.151733083335178,
+      "generationJob_p95UpperMs": 4.036577999999281,
+      "generationJob_p99UpperMs": 4.036577999999281,
+      "generationJob_maxMs": 4.036577999999281,
+      "command_samples": 2827,
+      "command_meanMs": 0.01323813406504428,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 1.1138449999853037
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10001.64929500001,
+      "windowStartedAtMs": 170806.729173,
+      "windowEndedAtMs": 180808.378468,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4257759266662953,
+      "worldStep_p95UpperMs": 0.8,
+      "worldStep_p99UpperMs": 1.15,
+      "worldStep_maxMs": 1.2720459999982268,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2299,
+      "workerTurn_meanMs": 0.07706839625888043,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.75,
+      "workerTurn_maxMs": 6.375228999997489,
+      "generationJob_samples": 12,
+      "generationJob_meanMs": 2.304513750001206,
+      "generationJob_p95UpperMs": 4.0579389999911655,
+      "generationJob_p99UpperMs": 4.0579389999911655,
+      "generationJob_maxMs": 4.0579389999911655,
+      "command_samples": 2838,
+      "command_meanMs": 0.011893236434582363,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 1.0758050000004005
+    }
+  ],
+  "steadyRoomMetrics": [
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 9999.118245000001,
+      "windowStartedAtMs": 10744.429237,
+      "windowEndedAtMs": 20743.547482,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.45932918000014367,
+      "worldStep_p95UpperMs": 0.8,
+      "worldStep_p99UpperMs": 1.5,
+      "worldStep_maxMs": 1.9816489999975602,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2361,
+      "workerTurn_meanMs": 0.07826285980516656,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.75,
+      "workerTurn_maxMs": 6.519828999998936,
+      "generationJob_samples": 8,
+      "generationJob_meanMs": 2.196309624999685,
+      "generationJob_p95UpperMs": 3.5396550000004936,
+      "generationJob_p99UpperMs": 3.5396550000004936,
+      "generationJob_maxMs": 3.5396550000004936,
+      "command_samples": 2626,
+      "command_meanMs": 0.012746676313798777,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 3.01697299999978
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 9999.772768,
+      "windowStartedAtMs": 10802.617375,
+      "windowEndedAtMs": 20802.390143,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.47767691999994577,
+      "worldStep_p95UpperMs": 0.8,
+      "worldStep_p99UpperMs": 1.25,
+      "worldStep_maxMs": 6.906109999999899,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2359,
+      "workerTurn_meanMs": 0.07948962568884567,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.75,
+      "workerTurn_maxMs": 6.919149999999718,
+      "generationJob_samples": 8,
+      "generationJob_meanMs": 1.9872538750003057,
+      "generationJob_p95UpperMs": 2.047409000000698,
+      "generationJob_p99UpperMs": 2.047409000000698,
+      "generationJob_maxMs": 2.047409000000698,
+      "command_samples": 2642,
+      "command_meanMs": 0.01381547577597807,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 4.653620999999475
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 9999.960994999998,
+      "windowStartedAtMs": 20743.547482,
+      "windowEndedAtMs": 30743.508477,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4462509233333063,
+      "worldStep_p95UpperMs": 0.8,
+      "worldStep_p99UpperMs": 1.15,
+      "worldStep_maxMs": 1.461607000001095,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2371,
+      "workerTurn_meanMs": 0.0775557545339198,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.75,
+      "workerTurn_maxMs": 5.106021999999939,
+      "generationJob_samples": 12,
+      "generationJob_meanMs": 2.0461623333339958,
+      "generationJob_p95UpperMs": 2.2634500000021944,
+      "generationJob_p99UpperMs": 2.2634500000021944,
+      "generationJob_maxMs": 2.2634500000021944,
+      "command_samples": 2680,
+      "command_meanMs": 0.011913274626858204,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 1.0358839999971678
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10000.297318,
+      "windowStartedAtMs": 20802.390143,
+      "windowEndedAtMs": 30802.687461,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.44197342666660333,
+      "worldStep_p95UpperMs": 0.75,
+      "worldStep_p99UpperMs": 1.15,
+      "worldStep_maxMs": 1.4572860000007495,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2370,
+      "workerTurn_meanMs": 0.07689860506332254,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.75,
+      "workerTurn_maxMs": 5.4259039999997185,
+      "generationJob_samples": 12,
+      "generationJob_meanMs": 2.0290587499994217,
+      "generationJob_p95UpperMs": 2.4257700000016484,
+      "generationJob_p99UpperMs": 2.4257700000016484,
+      "generationJob_maxMs": 2.4257700000016484,
+      "command_samples": 2686,
+      "command_meanMs": 0.011614270662712489,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 1.2683260000012524
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10000.893585000002,
+      "windowStartedAtMs": 30743.508477,
+      "windowEndedAtMs": 40744.402062,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.42604390666663633,
+      "worldStep_p95UpperMs": 0.7,
+      "worldStep_p99UpperMs": 0.95,
+      "worldStep_maxMs": 1.6839279999985592,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2382,
+      "workerTurn_meanMs": 0.07139219437442697,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.7,
+      "workerTurn_maxMs": 6.025987000000896,
+      "generationJob_samples": 8,
+      "generationJob_meanMs": 2.3651654999994207,
+      "generationJob_p95UpperMs": 3.484454999997979,
+      "generationJob_p99UpperMs": 3.484454999997979,
+      "generationJob_maxMs": 3.484454999997979,
+      "command_samples": 2708,
+      "command_meanMs": 0.011322993722375692,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 2.4336110000003828
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10000.684182999998,
+      "windowStartedAtMs": 30802.687461,
+      "windowEndedAtMs": 40803.371644,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.43509234333329616,
+      "worldStep_p95UpperMs": 0.75,
+      "worldStep_p99UpperMs": 1.3,
+      "worldStep_maxMs": 1.9336889999976847,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2378,
+      "workerTurn_meanMs": 0.07168050378458395,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.7,
+      "workerTurn_maxMs": 4.7965819999953965,
+      "generationJob_samples": 8,
+      "generationJob_meanMs": 2.033149124999909,
+      "generationJob_p95UpperMs": 2.0832099999970524,
+      "generationJob_p99UpperMs": 2.0832099999970524,
+      "generationJob_maxMs": 2.0832099999970524,
+      "command_samples": 2696,
+      "command_meanMs": 0.010502850148321108,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 1.1907649999993737
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 9999.979082999998,
+      "windowStartedAtMs": 40744.402062,
+      "windowEndedAtMs": 50744.381145,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.43594095999966775,
+      "worldStep_p95UpperMs": 0.8,
+      "worldStep_p99UpperMs": 1.2,
+      "worldStep_maxMs": 1.2786059999998542,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2390,
+      "workerTurn_meanMs": 0.07475388535568063,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.8,
+      "workerTurn_maxMs": 6.5740290000030654,
+      "generationJob_samples": 12,
+      "generationJob_meanMs": 2.073355916666211,
+      "generationJob_p95UpperMs": 2.664251999995031,
+      "generationJob_p99UpperMs": 2.664251999995031,
+      "generationJob_maxMs": 2.664251999995031,
+      "command_samples": 2659,
+      "command_meanMs": 0.010216053027451598,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 2.472931000003882
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10000.097565000004,
+      "windowStartedAtMs": 40803.371644,
+      "windowEndedAtMs": 50803.469209,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4398760033333623,
+      "worldStep_p95UpperMs": 0.75,
+      "worldStep_p99UpperMs": 1,
+      "worldStep_maxMs": 1.2480859999996028,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2387,
+      "workerTurn_meanMs": 0.07574306619184483,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.75,
+      "workerTurn_maxMs": 6.693310000002384,
+      "generationJob_samples": 12,
+      "generationJob_meanMs": 2.177733166666561,
+      "generationJob_p95UpperMs": 4.33657900000253,
+      "generationJob_p99UpperMs": 4.33657900000253,
+      "generationJob_maxMs": 4.33657900000253,
+      "command_samples": 2674,
+      "command_meanMs": 0.009544989154881755,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 1.2892859999992652
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10000.855670999998,
+      "windowStartedAtMs": 50744.381145,
+      "windowEndedAtMs": 60745.236816,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4104686100002678,
+      "worldStep_p95UpperMs": 0.7,
+      "worldStep_p99UpperMs": 0.85,
+      "worldStep_maxMs": 1.2366059999985737,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2404,
+      "workerTurn_meanMs": 0.06780858194673271,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.7,
+      "workerTurn_maxMs": 6.334308000004967,
+      "generationJob_samples": 8,
+      "generationJob_meanMs": 2.0205838749998293,
+      "generationJob_p95UpperMs": 2.140370000000985,
+      "generationJob_p99UpperMs": 2.140370000000985,
+      "generationJob_maxMs": 2.140370000000985,
+      "command_samples": 2713,
+      "command_meanMs": 0.010568351640253125,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 0.9672040000004927
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 9999.841785999997,
+      "windowStartedAtMs": 50803.469209,
+      "windowEndedAtMs": 60803.310995,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4264632566666842,
+      "worldStep_p95UpperMs": 0.7,
+      "worldStep_p99UpperMs": 0.85,
+      "worldStep_maxMs": 1.224804999998014,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2402,
+      "workerTurn_meanMs": 0.06885238592839686,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.7,
+      "workerTurn_maxMs": 6.510508999999729,
+      "generationJob_samples": 8,
+      "generationJob_meanMs": 1.9814790000000355,
+      "generationJob_p95UpperMs": 2.04084999999759,
+      "generationJob_p99UpperMs": 2.04084999999759,
+      "generationJob_maxMs": 2.04084999999759,
+      "command_samples": 2720,
+      "command_meanMs": 0.01041520919106648,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 0.8316839999970398
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 9999.215363999996,
+      "windowStartedAtMs": 60745.236816,
+      "windowEndedAtMs": 70744.45218,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.45108017666658246,
+      "worldStep_p95UpperMs": 0.8,
+      "worldStep_p99UpperMs": 1.25,
+      "worldStep_maxMs": 2.556771999996272,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2402,
+      "workerTurn_meanMs": 0.07952255870118687,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.8,
+      "workerTurn_maxMs": 6.414948000005097,
+      "generationJob_samples": 16,
+      "generationJob_meanMs": 2.1162569375005664,
+      "generationJob_p95UpperMs": 3.0953730000037467,
+      "generationJob_p99UpperMs": 3.0953730000037467,
+      "generationJob_maxMs": 3.0953730000037467,
+      "command_samples": 2745,
+      "command_meanMs": 0.011649038615436253,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 1.9672089999949094
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10000.774331,
+      "windowStartedAtMs": 60803.310995,
+      "windowEndedAtMs": 70804.085326,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4477722833334701,
+      "worldStep_p95UpperMs": 0.85,
+      "worldStep_p99UpperMs": 1.05,
+      "worldStep_maxMs": 1.994208999996772,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2402,
+      "workerTurn_meanMs": 0.07922148626152024,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.8,
+      "workerTurn_maxMs": 7.013070999993943,
+      "generationJob_samples": 16,
+      "generationJob_meanMs": 2.1311045625016045,
+      "generationJob_p95UpperMs": 3.563695999997435,
+      "generationJob_p99UpperMs": 3.563695999997435,
+      "generationJob_maxMs": 3.563695999997435,
+      "command_samples": 2773,
+      "command_meanMs": 0.010318172376565573,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 0.7748439999995753
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 12,
+      "overrunMs": 0,
+      "windowMs": 10000.161148000014,
+      "windowStartedAtMs": 70744.45218,
+      "windowEndedAtMs": 80744.613328,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.430405933333095,
+      "worldStep_p95UpperMs": 0.75,
+      "worldStep_p99UpperMs": 1.2,
+      "worldStep_maxMs": 1.6674869999988005,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2418,
+      "workerTurn_meanMs": 0.06952578287822724,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.7,
+      "workerTurn_maxMs": 7.060951999999816,
+      "generationJob_samples": 8,
+      "generationJob_meanMs": 2.0486642500000016,
+      "generationJob_p95UpperMs": 2.482170999996015,
+      "generationJob_p99UpperMs": 2.482170999996015,
+      "generationJob_maxMs": 2.482170999996015,
+      "command_samples": 2739,
+      "command_meanMs": 0.010018503468416479,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 0.8256429999892134
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10001.282793999999,
+      "windowStartedAtMs": 70804.085326,
+      "windowEndedAtMs": 80805.36812,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.44148349000034326,
+      "worldStep_p95UpperMs": 0.85,
+      "worldStep_p99UpperMs": 1.15,
+      "worldStep_maxMs": 2.150488999992376,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2411,
+      "workerTurn_meanMs": 0.07391780174200299,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.85,
+      "workerTurn_maxMs": 4.77690199999779,
+      "generationJob_samples": 12,
+      "generationJob_meanMs": 2.037579166665334,
+      "generationJob_p95UpperMs": 2.4972110000089742,
+      "generationJob_p99UpperMs": 2.4972110000089742,
+      "generationJob_maxMs": 2.4972110000089742,
+      "command_samples": 2752,
+      "command_meanMs": 0.010037409520289803,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 0.8933640000032028
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10003.771702999991,
+      "windowStartedAtMs": 80744.613328,
+      "windowEndedAtMs": 90748.385031,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4264759033338731,
+      "worldStep_p95UpperMs": 0.85,
+      "worldStep_p99UpperMs": 1.2,
+      "worldStep_maxMs": 1.457446999993408,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2422,
+      "workerTurn_meanMs": 0.07571706317085111,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.8,
+      "workerTurn_maxMs": 6.4929489999922225,
+      "generationJob_samples": 16,
+      "generationJob_meanMs": 2.0939367500004664,
+      "generationJob_p95UpperMs": 2.6738919999916106,
+      "generationJob_p99UpperMs": 2.6738919999916106,
+      "generationJob_maxMs": 2.6738919999916106,
+      "command_samples": 2748,
+      "command_meanMs": 0.009943363900981852,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 1.0526839999947697
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10000.215366999997,
+      "windowStartedAtMs": 80805.36812,
+      "windowEndedAtMs": 90805.583487,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4284110933332702,
+      "worldStep_p95UpperMs": 0.85,
+      "worldStep_p99UpperMs": 1.25,
+      "worldStep_maxMs": 3.065573999992921,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2413,
+      "workerTurn_meanMs": 0.07393358392062414,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.75,
+      "workerTurn_maxMs": 5.662105999988853,
+      "generationJob_samples": 12,
+      "generationJob_meanMs": 2.360754083333934,
+      "generationJob_p95UpperMs": 3.159454000007827,
+      "generationJob_p99UpperMs": 3.159454000007827,
+      "generationJob_maxMs": 3.159454000007827,
+      "command_samples": 2739,
+      "command_meanMs": 0.009150897407797474,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 0.7881630000047153
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 12,
+      "overrunMs": 0,
+      "windowMs": 9999.915584000002,
+      "windowStartedAtMs": 90748.385031,
+      "windowEndedAtMs": 100748.300615,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.41237503000040315,
+      "worldStep_p95UpperMs": 0.7,
+      "worldStep_p99UpperMs": 1,
+      "worldStep_maxMs": 1.317165999993449,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2425,
+      "workerTurn_meanMs": 0.0669465183504478,
+      "workerTurn_p95UpperMs": 0.45,
+      "workerTurn_p99UpperMs": 0.65,
+      "workerTurn_maxMs": 6.721949999991921,
+      "generationJob_samples": 8,
+      "generationJob_meanMs": 2.002478874999724,
+      "generationJob_p95UpperMs": 2.118929999996908,
+      "generationJob_p99UpperMs": 2.118929999996908,
+      "generationJob_maxMs": 2.118929999996908,
+      "command_samples": 2735,
+      "command_meanMs": 0.009169435100742739,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 0.5639220000011846
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 12,
+      "overrunMs": 0,
+      "windowMs": 9999.856904,
+      "windowStartedAtMs": 90805.583487,
+      "windowEndedAtMs": 100805.440391,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.41976267666672334,
+      "worldStep_p95UpperMs": 0.7,
+      "worldStep_p99UpperMs": 1.25,
+      "worldStep_maxMs": 1.53872599999886,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2418,
+      "workerTurn_meanMs": 0.06779493093468578,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.65,
+      "workerTurn_maxMs": 6.8677100000059,
+      "generationJob_samples": 8,
+      "generationJob_meanMs": 1.9963088749991584,
+      "generationJob_p95UpperMs": 2.0764889999991283,
+      "generationJob_p99UpperMs": 2.0764889999991283,
+      "generationJob_maxMs": 2.0764889999991283,
+      "command_samples": 2738,
+      "command_meanMs": 0.009273543097028002,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 0.2749610000028042
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10000.285642000003,
+      "windowStartedAtMs": 100748.300615,
+      "windowEndedAtMs": 110748.586257,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4600539000004452,
+      "worldStep_p95UpperMs": 0.8,
+      "worldStep_p99UpperMs": 1.45,
+      "worldStep_maxMs": 2.386650999993435,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2424,
+      "workerTurn_meanMs": 0.07683512500005968,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.75,
+      "workerTurn_maxMs": 5.512145000000601,
+      "generationJob_samples": 12,
+      "generationJob_meanMs": 2.1561330833343773,
+      "generationJob_p95UpperMs": 3.4441750000114553,
+      "generationJob_p99UpperMs": 3.4441750000114553,
+      "generationJob_maxMs": 3.4441750000114553,
+      "command_samples": 2738,
+      "command_meanMs": 0.01100113550033855,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 1.6222470000066096
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 12,
+      "overrunMs": 0,
+      "windowMs": 10000.351762999999,
+      "windowStartedAtMs": 100805.440391,
+      "windowEndedAtMs": 110805.792154,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.46970555333357605,
+      "worldStep_p95UpperMs": 0.9,
+      "worldStep_p99UpperMs": 1.15,
+      "worldStep_maxMs": 2.558812000002945,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2423,
+      "workerTurn_meanMs": 0.0775068262485236,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.9,
+      "workerTurn_maxMs": 6.461269000006723,
+      "generationJob_samples": 12,
+      "generationJob_meanMs": 2.0249958333345908,
+      "generationJob_p95UpperMs": 2.397970999998506,
+      "generationJob_p99UpperMs": 2.397970999998506,
+      "generationJob_maxMs": 2.397970999998506,
+      "command_samples": 2718,
+      "command_meanMs": 0.011382407652831964,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 1.477087000006577
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10000.203576999993,
+      "windowStartedAtMs": 110748.586257,
+      "windowEndedAtMs": 120748.789834,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.45310124333327023,
+      "worldStep_p95UpperMs": 0.75,
+      "worldStep_p99UpperMs": 1.1,
+      "worldStep_maxMs": 1.706927999999607,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2431,
+      "workerTurn_meanMs": 0.0783517984368693,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.75,
+      "workerTurn_maxMs": 6.667230000006384,
+      "generationJob_samples": 16,
+      "generationJob_meanMs": 2.0236416250027105,
+      "generationJob_p95UpperMs": 2.2713700000022072,
+      "generationJob_p99UpperMs": 2.2713700000022072,
+      "generationJob_maxMs": 2.2713700000022072,
+      "command_samples": 2821,
+      "command_meanMs": 0.01344302268708716,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 1.2703659999970114
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10000.08941700001,
+      "windowStartedAtMs": 110805.792154,
+      "windowEndedAtMs": 120805.881571,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4416626433334505,
+      "worldStep_p95UpperMs": 0.75,
+      "worldStep_p99UpperMs": 1.1,
+      "worldStep_maxMs": 1.213845999998739,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2429,
+      "workerTurn_meanMs": 0.07701287896244616,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.75,
+      "workerTurn_maxMs": 6.633789999992587,
+      "generationJob_samples": 16,
+      "generationJob_meanMs": 2.016429187500762,
+      "generationJob_p95UpperMs": 2.480171999995946,
+      "generationJob_p99UpperMs": 2.480171999995946,
+      "generationJob_maxMs": 2.480171999995946,
+      "command_samples": 2830,
+      "command_meanMs": 0.013264372438008681,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 1.1940860000031535
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 12,
+      "overrunMs": 0,
+      "windowMs": 9999.805070000002,
+      "windowStartedAtMs": 120748.789834,
+      "windowEndedAtMs": 130748.594904,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4603856633325631,
+      "worldStep_p95UpperMs": 0.8,
+      "worldStep_p99UpperMs": 1.45,
+      "worldStep_maxMs": 1.7626480000035372,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2436,
+      "workerTurn_meanMs": 0.07659419868615473,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.8,
+      "workerTurn_maxMs": 7.403113000007579,
+      "generationJob_samples": 12,
+      "generationJob_meanMs": 1.9902522500027164,
+      "generationJob_p95UpperMs": 2.098849000001792,
+      "generationJob_p99UpperMs": 2.098849000001792,
+      "generationJob_maxMs": 2.098849000001792,
+      "command_samples": 2757,
+      "command_meanMs": 0.012326712005859395,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 1.5929269999905955
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 12,
+      "overrunMs": 0,
+      "windowMs": 9999.989830999999,
+      "windowStartedAtMs": 120805.881571,
+      "windowEndedAtMs": 130805.871402,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.46708558000046935,
+      "worldStep_p95UpperMs": 0.8,
+      "worldStep_p99UpperMs": 1.4,
+      "worldStep_maxMs": 2.334811000007903,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2433,
+      "workerTurn_meanMs": 0.07662454993840799,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.8,
+      "workerTurn_maxMs": 6.611269999993965,
+      "generationJob_samples": 12,
+      "generationJob_meanMs": 2.012049166666354,
+      "generationJob_p95UpperMs": 2.1093699999910314,
+      "generationJob_p99UpperMs": 2.1093699999910314,
+      "generationJob_maxMs": 2.1093699999910314,
+      "command_samples": 2765,
+      "command_meanMs": 0.011931200361760945,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 1.9476489999942714
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 12,
+      "overrunMs": 0,
+      "windowMs": 9999.844763000001,
+      "windowStartedAtMs": 130748.594904,
+      "windowEndedAtMs": 140748.439667,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.46661009666626335,
+      "worldStep_p95UpperMs": 0.75,
+      "worldStep_p99UpperMs": 1.15,
+      "worldStep_maxMs": 1.5042869999888353,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2439,
+      "workerTurn_meanMs": 0.07762943788444666,
+      "workerTurn_p95UpperMs": 0.55,
+      "workerTurn_p99UpperMs": 0.75,
+      "workerTurn_maxMs": 5.421224000005168,
+      "generationJob_samples": 12,
+      "generationJob_meanMs": 2.142906250005277,
+      "generationJob_p95UpperMs": 3.23781500000041,
+      "generationJob_p99UpperMs": 3.23781500000041,
+      "generationJob_maxMs": 3.23781500000041,
+      "command_samples": 2743,
+      "command_meanMs": 0.012707648924469591,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 1.207365000009304
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 9999.820843000009,
+      "windowStartedAtMs": 130805.871402,
+      "windowEndedAtMs": 140805.692245,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.47007052000049315,
+      "worldStep_p95UpperMs": 0.8,
+      "worldStep_p99UpperMs": 1.2,
+      "worldStep_maxMs": 1.654167000000598,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2436,
+      "workerTurn_meanMs": 0.08305891995074599,
+      "workerTurn_p95UpperMs": 0.55,
+      "workerTurn_p99UpperMs": 0.8,
+      "workerTurn_maxMs": 7.489354000019375,
+      "generationJob_samples": 16,
+      "generationJob_meanMs": 2.4100658125007617,
+      "generationJob_p95UpperMs": 6.713950000004843,
+      "generationJob_p99UpperMs": 6.713950000004843,
+      "generationJob_maxMs": 6.713950000004843,
+      "command_samples": 2748,
+      "command_meanMs": 0.012332021106336384,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 1.3177260000084061
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 12,
+      "overrunMs": 0,
+      "windowMs": 10000.534658999997,
+      "windowStartedAtMs": 140748.439667,
+      "windowEndedAtMs": 150748.974326,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4488286766665987,
+      "worldStep_p95UpperMs": 0.8,
+      "worldStep_p99UpperMs": 1.1,
+      "worldStep_maxMs": 4.604060999990907,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2404,
+      "workerTurn_meanMs": 0.075704070298956,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.8,
+      "workerTurn_maxMs": 6.6508299999986775,
+      "generationJob_samples": 12,
+      "generationJob_meanMs": 2.1117195833357982,
+      "generationJob_p95UpperMs": 3.213294000015594,
+      "generationJob_p99UpperMs": 3.213294000015594,
+      "generationJob_maxMs": 3.213294000015594,
+      "command_samples": 2746,
+      "command_meanMs": 0.0122396463945077,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 2.5912119999993593
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 12,
+      "overrunMs": 0,
+      "windowMs": 10000.669819999981,
+      "windowStartedAtMs": 140805.692245,
+      "windowEndedAtMs": 150806.362065,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.43334087666686777,
+      "worldStep_p95UpperMs": 0.75,
+      "worldStep_p99UpperMs": 1,
+      "worldStep_maxMs": 1.3500070000009146,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2402,
+      "workerTurn_meanMs": 0.07002574521263587,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.7,
+      "workerTurn_maxMs": 4.711100999993505,
+      "generationJob_samples": 8,
+      "generationJob_meanMs": 2.020009250005387,
+      "generationJob_p95UpperMs": 2.173010000027716,
+      "generationJob_p99UpperMs": 2.173010000027716,
+      "generationJob_maxMs": 2.173010000027716,
+      "command_samples": 2745,
+      "command_meanMs": 0.01181182222218612,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 2.403450999991037
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10001.315474000003,
+      "windowStartedAtMs": 150748.974326,
+      "windowEndedAtMs": 160750.2898,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.43969467666621004,
+      "worldStep_p95UpperMs": 0.8,
+      "worldStep_p99UpperMs": 1.05,
+      "worldStep_maxMs": 1.3421260000031907,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2287,
+      "workerTurn_meanMs": 0.08195951377319005,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.8,
+      "workerTurn_maxMs": 5.1845829999947455,
+      "generationJob_samples": 16,
+      "generationJob_meanMs": 2.0543868124914297,
+      "generationJob_p95UpperMs": 2.170488999981899,
+      "generationJob_p99UpperMs": 2.170488999981899,
+      "generationJob_maxMs": 2.170488999981899,
+      "command_samples": 2818,
+      "command_meanMs": 0.01273119198003674,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 0.5162030000064988
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 9999.888948000007,
+      "windowStartedAtMs": 150806.362065,
+      "windowEndedAtMs": 160806.251013,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4353013199990772,
+      "worldStep_p95UpperMs": 0.75,
+      "worldStep_p99UpperMs": 1,
+      "worldStep_maxMs": 1.6710079999757,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2271,
+      "workerTurn_meanMs": 0.08092034698397549,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.75,
+      "workerTurn_maxMs": 6.709189999994123,
+      "generationJob_samples": 16,
+      "generationJob_meanMs": 1.988451500001247,
+      "generationJob_p95UpperMs": 2.0783299999893643,
+      "generationJob_p99UpperMs": 2.0783299999893643,
+      "generationJob_maxMs": 2.0783299999893643,
+      "command_samples": 2821,
+      "command_meanMs": 0.012010761077269162,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 0.42472199999610893
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 9998.673311999999,
+      "windowStartedAtMs": 160750.2898,
+      "windowEndedAtMs": 170748.963112,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4553117599998949,
+      "worldStep_p95UpperMs": 0.9,
+      "worldStep_p99UpperMs": 1.3,
+      "worldStep_maxMs": 1.6100870000082068,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2288,
+      "workerTurn_meanMs": 0.08396286451083966,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.9,
+      "workerTurn_maxMs": 6.470228999998653,
+      "generationJob_samples": 16,
+      "generationJob_meanMs": 2.1323645000047695,
+      "generationJob_p95UpperMs": 2.9964529999997467,
+      "generationJob_p99UpperMs": 2.9964529999997467,
+      "generationJob_maxMs": 2.9964529999997467,
+      "command_samples": 2765,
+      "command_meanMs": 0.011462488245479185,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 1.2246049999957904
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10000.478159999999,
+      "windowStartedAtMs": 160806.251013,
+      "windowEndedAtMs": 170806.729173,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4604512033335049,
+      "worldStep_p95UpperMs": 0.85,
+      "worldStep_p99UpperMs": 1.5,
+      "worldStep_maxMs": 2.6042920000036247,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2287,
+      "workerTurn_meanMs": 0.08540258154783201,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.9,
+      "workerTurn_maxMs": 5.799146000004839,
+      "generationJob_samples": 16,
+      "generationJob_meanMs": 2.1746874374985055,
+      "generationJob_p95UpperMs": 3.0855739999969956,
+      "generationJob_p99UpperMs": 3.0855739999969956,
+      "generationJob_maxMs": 3.0855739999969956,
+      "command_samples": 2758,
+      "command_meanMs": 0.011529349890935032,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.15,
+      "command_maxMs": 1.2304460000013933
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10000.568809999997,
+      "windowStartedAtMs": 170748.963112,
+      "windowEndedAtMs": 180749.531922,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4332833833337646,
+      "worldStep_p95UpperMs": 0.75,
+      "worldStep_p99UpperMs": 1,
+      "worldStep_maxMs": 1.3853260000178125,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2301,
+      "workerTurn_meanMs": 0.07691157801012366,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.75,
+      "workerTurn_maxMs": 6.605630000005476,
+      "generationJob_samples": 12,
+      "generationJob_meanMs": 2.151733083335178,
+      "generationJob_p95UpperMs": 4.036577999999281,
+      "generationJob_p99UpperMs": 4.036577999999281,
+      "generationJob_maxMs": 4.036577999999281,
+      "command_samples": 2827,
+      "command_meanMs": 0.01323813406504428,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 1.1138449999853037
+    },
+    {
+      "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ticks": 300,
+      "columns": 16,
+      "overrunMs": 0,
+      "windowMs": 10001.64929500001,
+      "windowStartedAtMs": 170806.729173,
+      "windowEndedAtMs": 180808.378468,
+      "worldStep_samples": 300,
+      "worldStep_meanMs": 0.4257759266662953,
+      "worldStep_p95UpperMs": 0.8,
+      "worldStep_p99UpperMs": 1.15,
+      "worldStep_maxMs": 1.2720459999982268,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2299,
+      "workerTurn_meanMs": 0.07706839625888043,
+      "workerTurn_p95UpperMs": 0.5,
+      "workerTurn_p99UpperMs": 0.75,
+      "workerTurn_maxMs": 6.375228999997489,
+      "generationJob_samples": 12,
+      "generationJob_meanMs": 2.304513750001206,
+      "generationJob_p95UpperMs": 4.0579389999911655,
+      "generationJob_p99UpperMs": 4.0579389999911655,
+      "generationJob_maxMs": 4.0579389999911655,
+      "command_samples": 2838,
+      "command_meanMs": 0.011893236434582363,
+      "command_p95UpperMs": 0.05,
+      "command_p99UpperMs": 0.2,
+      "command_maxMs": 1.0758050000004005
+    }
+  ],
+  "events": [
+    {
+      "name": "VOXEL_ROOM_FAILED",
+      "context": {
+        "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+        "connections": 8
+      }
+    },
+    {
+      "name": "VOXEL_ROOM_FAILED",
+      "context": {
+        "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+        "connections": 8
+      }
+    }
+  ],
+  "rooms": [
+    {
+      "room": "5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "worldId": "world-5da2f9e9-463d-4f7f-b108-e8b77e2bc533",
+      "ownerEpoch": 3,
+      "checkpointSequence": 16,
+      "readbackChecks": 12,
+      "maxDurableLagSeconds": 15
+    },
+    {
+      "room": "ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "worldId": "world-ad9e5c44-d960-4ab7-a9a0-5caa2fa45495",
+      "ownerEpoch": 3,
+      "checkpointSequence": 16,
+      "readbackChecks": 12,
+      "maxDurableLagSeconds": 14.933333333333334
+    }
+  ],
+  "finishedAt": "2026-10-27T20:13:27.302Z",
+  "peers": [
+    {
+      "id": "9f43e1cf-a3ae-4185-94a6-881326c5b34c",
+      "messages": 5917,
+      "bytes": 4202112,
+      "resyncs": 0,
+      "retainedEvents": 256,
+      "retainedHighWater": 256,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 2710,
+        "meanMs": 28.83026145350528,
+        "p95UpperMs": 31.65,
+        "p99UpperMs": 32.75,
+        "maxMs": 35.01451499999894
+      },
+      "commandMs": {
+        "samples": 696,
+        "meanMs": 2.2045211293103613,
+        "p95UpperMs": 4.45,
+        "p99UpperMs": 7.15,
+        "maxMs": 13.336379999993369
+      },
+      "outcomes": {
+        "selected": 126,
+        "mining": 54,
+        "edited": 54,
+        "move": 216,
+        "craft": 108,
+        "opened": 54,
+        "closed": 54,
+        "eaten": 12,
+        "hit": 18
+      },
+      "inventorySummary": {
+        "revision": 519,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 174,
+        "position": [
+          -11.805,
+          160,
+          -9.5231
+        ]
+      }
+    },
+    {
+      "id": "6be03980-f524-46bd-8c35-f89138451771",
+      "messages": 5827,
+      "bytes": 4192044,
+      "resyncs": 0,
+      "retainedEvents": 256,
+      "retainedHighWater": 256,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 2710,
+        "meanMs": 28.80904560332112,
+        "p95UpperMs": 31.65,
+        "p99UpperMs": 32.75,
+        "maxMs": 34.949195000001055
+      },
+      "commandMs": {
+        "samples": 607,
+        "meanMs": 2.2439082553542637,
+        "p95UpperMs": 4.6,
+        "p99UpperMs": 7.35,
+        "maxMs": 13.321860000025481
+      },
+      "outcomes": {
+        "selected": 125,
+        "mining": 54,
+        "conflict": 75,
+        "edited": 54,
+        "move": 54,
+        "craft": 108,
+        "opened": 54,
+        "closed": 54,
+        "eaten": 12,
+        "hit": 17
+      },
+      "inventorySummary": {
+        "revision": 410,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 175,
+        "position": [
+          -5.4615,
+          160,
+          -9.7164
+        ]
+      }
+    },
+    {
+      "id": "4c19cca1-43a4-4a4b-b4f2-829ef57677a6",
+      "messages": 5917,
+      "bytes": 4200881,
+      "resyncs": 0,
+      "retainedEvents": 256,
+      "retainedHighWater": 256,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 2710,
+        "meanMs": 28.824323586347102,
+        "p95UpperMs": 31.7,
+        "p99UpperMs": 32.75,
+        "maxMs": 34.95587499999965
+      },
+      "commandMs": {
+        "samples": 696,
+        "meanMs": 2.205249850575219,
+        "p95UpperMs": 4.55,
+        "p99UpperMs": 7.45,
+        "maxMs": 13.308380000002217
+      },
+      "outcomes": {
+        "selected": 126,
+        "mining": 54,
+        "edited": 54,
+        "move": 216,
+        "craft": 108,
+        "opened": 54,
+        "closed": 54,
+        "eaten": 12,
+        "hit": 18
+      },
+      "inventorySummary": {
+        "revision": 519,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 176,
+        "position": [
+          0.1934,
+          160,
+          -9.522
+        ]
+      }
+    },
+    {
+      "id": "58b1934d-0fa7-466b-89c7-fa35993c1a01",
+      "messages": 5825,
+      "bytes": 4191502,
+      "resyncs": 0,
+      "retainedEvents": 256,
+      "retainedHighWater": 256,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 2710,
+        "meanMs": 28.835906763837787,
+        "p95UpperMs": 31.7,
+        "p99UpperMs": 32.75,
+        "maxMs": 34.96019499999966
+      },
+      "commandMs": {
+        "samples": 605,
+        "meanMs": 2.2591576859502847,
+        "p95UpperMs": 4.6,
+        "p99UpperMs": 7.55,
+        "maxMs": 13.315219999989495
+      },
+      "outcomes": {
+        "selected": 125,
+        "mining": 54,
+        "conflict": 73,
+        "edited": 54,
+        "move": 54,
+        "craft": 108,
+        "opened": 54,
+        "closed": 54,
+        "eaten": 12,
+        "hit": 17
+      },
+      "inventorySummary": {
+        "revision": 410,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 177,
+        "position": [
+          6.5342,
+          160,
+          -9.7199
+        ]
+      }
+    },
+    {
+      "id": "c40520cd-2be3-4b4b-920a-81bc9a8ed0cb",
+      "messages": 7493,
+      "bytes": 4260429,
+      "resyncs": 0,
+      "retainedEvents": 256,
+      "retainedHighWater": 256,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 2710,
+        "meanMs": 28.8459720693729,
+        "p95UpperMs": 31.7,
+        "p99UpperMs": 32.75,
+        "maxMs": 34.96663599999738
+      },
+      "commandMs": {
+        "samples": 758,
+        "meanMs": 2.142799890501825,
+        "p95UpperMs": 4.35,
+        "p99UpperMs": 6.95,
+        "maxMs": 13.269900000013877
+      },
+      "outcomes": {
+        "selected": 126,
+        "mining": 54,
+        "edited": 54,
+        "move": 216,
+        "craft": 108,
+        "opened": 54,
+        "closed": 54,
+        "eaten": 12,
+        "hit": 18,
+        "conflict": 62
+      },
+      "inventorySummary": {
+        "revision": 519,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 178,
+        "position": [
+          -11.8068,
+          160,
+          0.4781
+        ]
+      }
+    },
+    {
+      "id": "52f57f6a-a54f-498e-ae3e-cc9097cad2a8",
+      "messages": 7416,
+      "bytes": 4251071,
+      "resyncs": 0,
+      "retainedEvents": 256,
+      "retainedHighWater": 256,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 2710,
+        "meanMs": 28.861808443173697,
+        "p95UpperMs": 31.7,
+        "p99UpperMs": 32.8,
+        "maxMs": 34.587273000001005
+      },
+      "commandMs": {
+        "samples": 683,
+        "meanMs": 2.174676232796716,
+        "p95UpperMs": 4.5,
+        "p99UpperMs": 6.9,
+        "maxMs": 13.287420000007842
+      },
+      "outcomes": {
+        "selected": 125,
+        "mining": 54,
+        "conflict": 151,
+        "edited": 54,
+        "move": 54,
+        "craft": 108,
+        "opened": 54,
+        "closed": 54,
+        "eaten": 12,
+        "hit": 17
+      },
+      "inventorySummary": {
+        "revision": 410,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 179,
+        "position": [
+          -5.4667,
+          160,
+          0.2794
+        ]
+      }
+    },
+    {
+      "id": "7076d462-0bed-47c6-bcce-4183e8d45a62",
+      "messages": 7496,
+      "bytes": 4259406,
+      "resyncs": 0,
+      "retainedEvents": 256,
+      "retainedHighWater": 256,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 2710,
+        "meanMs": 28.883486235055326,
+        "p95UpperMs": 31.75,
+        "p99UpperMs": 32.75,
+        "maxMs": 34.945834999998624
+      },
+      "commandMs": {
+        "samples": 761,
+        "meanMs": 2.1383395781862284,
+        "p95UpperMs": 4.5,
+        "p99UpperMs": 6.65,
+        "maxMs": 13.292779999988852
+      },
+      "outcomes": {
+        "selected": 126,
+        "mining": 54,
+        "conflict": 65,
+        "edited": 54,
+        "move": 216,
+        "craft": 108,
+        "opened": 54,
+        "closed": 54,
+        "eaten": 12,
+        "hit": 18
+      },
+      "inventorySummary": {
+        "revision": 519,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 180,
+        "position": [
+          0.1932,
+          160,
+          0.4781
+        ]
+      }
+    },
+    {
+      "id": "2167c491-79e0-4a97-b1f1-42030bedb75d",
+      "messages": 7403,
+      "bytes": 4250585,
+      "resyncs": 0,
+      "retainedEvents": 256,
+      "retainedHighWater": 256,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 2710,
+        "meanMs": 28.899833830258178,
+        "p95UpperMs": 31.8,
+        "p99UpperMs": 32.85,
+        "maxMs": 34.70391400000153
+      },
+      "commandMs": {
+        "samples": 670,
+        "meanMs": 2.1681342791047555,
+        "p95UpperMs": 4.6,
+        "p99UpperMs": 6.8,
+        "maxMs": 13.335019999998622
+      },
+      "outcomes": {
+        "selected": 125,
+        "mining": 54,
+        "conflict": 138,
+        "edited": 54,
+        "move": 54,
+        "craft": 108,
+        "opened": 54,
+        "closed": 54,
+        "eaten": 12,
+        "hit": 17
+      },
+      "inventorySummary": {
+        "revision": 410,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 181,
+        "position": [
+          6.5334,
+          160,
+          0.2795
+        ]
+      }
+    },
+    {
+      "id": "3e96ec03-4c85-4066-9631-c280ddb76afc",
+      "messages": 5887,
+      "bytes": 4166508,
+      "resyncs": 0,
+      "retainedEvents": 256,
+      "retainedHighWater": 256,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 2710,
+        "meanMs": 20.034094558671903,
+        "p95UpperMs": 23,
+        "p99UpperMs": 23.6,
+        "maxMs": 27.281120999999985
+      },
+      "commandMs": {
+        "samples": 696,
+        "meanMs": 2.1518855660919045,
+        "p95UpperMs": 4.55,
+        "p99UpperMs": 6.3,
+        "maxMs": 13.301299999991897
+      },
+      "outcomes": {
+        "selected": 126,
+        "mining": 54,
+        "edited": 54,
+        "move": 216,
+        "craft": 108,
+        "opened": 54,
+        "closed": 54,
+        "eaten": 12,
+        "hit": 18
+      },
+      "inventorySummary": {
+        "revision": 519,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 174,
+        "position": [
+          -11.6217,
+          160,
+          -9.5057
+        ]
+      }
+    },
+    {
+      "id": "6fd09527-9c9e-4ca7-af9a-cc8e9328f9df",
+      "messages": 5807,
+      "bytes": 4157317,
+      "resyncs": 0,
+      "retainedEvents": 256,
+      "retainedHighWater": 256,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 2710,
+        "meanMs": 20.055583723247267,
+        "p95UpperMs": 23,
+        "p99UpperMs": 23.65,
+        "maxMs": 27.299761000000217
+      },
+      "commandMs": {
+        "samples": 613,
+        "meanMs": 2.2514801729196403,
+        "p95UpperMs": 4.6,
+        "p99UpperMs": 6.35,
+        "maxMs": 13.28658000001451
+      },
+      "outcomes": {
+        "selected": 125,
+        "mining": 54,
+        "conflict": 81,
+        "edited": 54,
+        "move": 54,
+        "craft": 108,
+        "opened": 54,
+        "closed": 54,
+        "eaten": 12,
+        "hit": 17
+      },
+      "inventorySummary": {
+        "revision": 410,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 175,
+        "position": [
+          -5.182,
+          160,
+          -9.3157
+        ]
+      }
+    },
+    {
+      "id": "8e0a5268-2079-4a1e-a52c-fb7759a67b93",
+      "messages": 5887,
+      "bytes": 4166444,
+      "resyncs": 0,
+      "retainedEvents": 256,
+      "retainedHighWater": 256,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 2710,
+        "meanMs": 20.074420351291625,
+        "p95UpperMs": 23,
+        "p99UpperMs": 23.65,
+        "maxMs": 27.308160999999018
+      },
+      "commandMs": {
+        "samples": 696,
+        "meanMs": 2.161082693964978,
+        "p95UpperMs": 4.55,
+        "p99UpperMs": 6.35,
+        "maxMs": 13.274099999980535
+      },
+      "outcomes": {
+        "selected": 126,
+        "mining": 54,
+        "edited": 54,
+        "move": 216,
+        "craft": 108,
+        "opened": 54,
+        "closed": 54,
+        "eaten": 12,
+        "hit": 18
+      },
+      "inventorySummary": {
+        "revision": 519,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 176,
+        "position": [
+          0.3783,
+          160,
+          -9.5057
+        ]
+      }
+    },
+    {
+      "id": "2f6d9f1d-1874-4ad6-b797-5b38f901d75e",
+      "messages": 5806,
+      "bytes": 4156246,
+      "resyncs": 0,
+      "retainedEvents": 256,
+      "retainedHighWater": 256,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 2710,
+        "meanMs": 20.088963563837773,
+        "p95UpperMs": 23.05,
+        "p99UpperMs": 23.65,
+        "maxMs": 27.282521000000997
+      },
+      "commandMs": {
+        "samples": 612,
+        "meanMs": 2.2869520130719025,
+        "p95UpperMs": 4.65,
+        "p99UpperMs": 6.5,
+        "maxMs": 13.260619999986375
+      },
+      "outcomes": {
+        "selected": 125,
+        "mining": 54,
+        "conflict": 80,
+        "edited": 54,
+        "move": 54,
+        "craft": 108,
+        "opened": 54,
+        "closed": 54,
+        "eaten": 12,
+        "hit": 17
+      },
+      "inventorySummary": {
+        "revision": 410,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 177,
+        "position": [
+          6.8179,
+          160,
+          -9.3158
+        ]
+      }
+    },
+    {
+      "id": "27da2dd3-ff0f-4401-ad71-1a90c2d4bd7b",
+      "messages": 7475,
+      "bytes": 4226387,
+      "resyncs": 0,
+      "retainedEvents": 256,
+      "retainedHighWater": 256,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 2710,
+        "meanMs": 20.098371171217547,
+        "p95UpperMs": 23,
+        "p99UpperMs": 23.7,
+        "maxMs": 27.291001000001415
+      },
+      "commandMs": {
+        "samples": 772,
+        "meanMs": 2.111269360103916,
+        "p95UpperMs": 4.5,
+        "p99UpperMs": 6.45,
+        "maxMs": 13.245499999989988
+      },
+      "outcomes": {
+        "selected": 126,
+        "mining": 54,
+        "conflict": 76,
+        "edited": 54,
+        "move": 216,
+        "craft": 108,
+        "opened": 54,
+        "closed": 54,
+        "eaten": 12,
+        "hit": 18
+      },
+      "inventorySummary": {
+        "revision": 519,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 178,
+        "position": [
+          -11.6217,
+          160,
+          0.4942
+        ]
+      }
+    },
+    {
+      "id": "35f5321d-c644-4f67-9a27-1078ff690416",
+      "messages": 7407,
+      "bytes": 4216787,
+      "resyncs": 0,
+      "retainedEvents": 256,
+      "retainedHighWater": 256,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 2710,
+        "meanMs": 20.11480892214028,
+        "p95UpperMs": 23.05,
+        "p99UpperMs": 23.75,
+        "maxMs": 27.299001999999746
+      },
+      "commandMs": {
+        "samples": 701,
+        "meanMs": 2.1838854479316443,
+        "p95UpperMs": 4.6,
+        "p99UpperMs": 6.55,
+        "maxMs": 13.251179000013508
+      },
+      "outcomes": {
+        "selected": 125,
+        "mining": 54,
+        "conflict": 169,
+        "edited": 54,
+        "move": 54,
+        "craft": 108,
+        "opened": 54,
+        "closed": 54,
+        "eaten": 12,
+        "hit": 17
+      },
+      "inventorySummary": {
+        "revision": 410,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 179,
+        "position": [
+          -5.182,
+          160,
+          0.6843
+        ]
+      }
+    },
+    {
+      "id": "958cc256-7af6-46eb-bb0b-0f285ef7f897",
+      "messages": 7479,
+      "bytes": 4225673,
+      "resyncs": 0,
+      "retainedEvents": 256,
+      "retainedHighWater": 256,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 2710,
+        "meanMs": 20.138011514391124,
+        "p95UpperMs": 23.05,
+        "p99UpperMs": 23.8,
+        "maxMs": 27.31076100000064
+      },
+      "commandMs": {
+        "samples": 775,
+        "meanMs": 2.1107024890321138,
+        "p95UpperMs": 4.6,
+        "p99UpperMs": 6.55,
+        "maxMs": 13.242659999988973
+      },
+      "outcomes": {
+        "selected": 126,
+        "mining": 54,
+        "conflict": 79,
+        "edited": 54,
+        "move": 216,
+        "craft": 108,
+        "opened": 54,
+        "closed": 54,
+        "eaten": 12,
+        "hit": 18
+      },
+      "inventorySummary": {
+        "revision": 519,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 180,
+        "position": [
+          0.224,
+          160,
+          0.4865
+        ]
+      }
+    },
+    {
+      "id": "7d7e49f5-ffcd-40f5-a7c0-56afdd16b66a",
+      "messages": 7403,
+      "bytes": 4215922,
+      "resyncs": 0,
+      "retainedEvents": 256,
+      "retainedHighWater": 256,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 2710,
+        "meanMs": 20.15499251549832,
+        "p95UpperMs": 23.1,
+        "p99UpperMs": 23.8,
+        "maxMs": 27.32140100000106
+      },
+      "commandMs": {
+        "samples": 697,
+        "meanMs": 2.194040956957829,
+        "p95UpperMs": 4.65,
+        "p99UpperMs": 6.65,
+        "maxMs": 13.274460000015097
+      },
+      "outcomes": {
+        "selected": 125,
+        "mining": 54,
+        "conflict": 165,
+        "edited": 54,
+        "move": 54,
+        "craft": 108,
+        "opened": 54,
+        "closed": 54,
+        "eaten": 12,
+        "hit": 17
+      },
+      "inventorySummary": {
+        "revision": 410,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 181,
+        "position": [
+          6.818,
+          160,
+          0.6842
+        ]
+      }
+    },
+    {
+      "id": "9f43e1cf-a3ae-4185-94a6-881326c5b34c",
+      "messages": 129,
+      "bytes": 24755,
+      "resyncs": 0,
+      "retainedEvents": 129,
+      "retainedHighWater": 129,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 0,
+        "meanMs": 0,
+        "p95UpperMs": 0,
+        "p99UpperMs": 0,
+        "maxMs": 0
+      },
+      "commandMs": {
+        "samples": 4,
+        "meanMs": 1.8189082500030054,
+        "p95UpperMs": 2.6746519999869633,
+        "p99UpperMs": 2.6746519999869633,
+        "maxMs": 2.6746519999869633
+      },
+      "outcomes": {
+        "stale_epoch": 1,
+        "move": 1,
+        "craft": 2
+      },
+      "inventorySummary": {
+        "revision": 521,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 9
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 28
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 207,
+        "position": [
+          -11.805,
+          160,
+          -9.5231
+        ]
+      }
+    },
+    {
+      "id": "6be03980-f524-46bd-8c35-f89138451771",
+      "messages": 123,
+      "bytes": 21752,
+      "resyncs": 0,
+      "retainedEvents": 123,
+      "retainedHighWater": 123,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 0,
+        "meanMs": 0,
+        "p95UpperMs": 0,
+        "p99UpperMs": 0,
+        "maxMs": 0
+      },
+      "commandMs": {
+        "samples": 1,
+        "meanMs": 0.46952199999941513,
+        "p95UpperMs": 0.46952199999941513,
+        "p99UpperMs": 0.46952199999941513,
+        "maxMs": 0.46952199999941513
+      },
+      "outcomes": {
+        "stale_epoch": 1
+      },
+      "inventorySummary": {
+        "revision": 410,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 208,
+        "position": [
+          -5.4615,
+          160,
+          -9.7164
+        ]
+      }
+    },
+    {
+      "id": "4c19cca1-43a4-4a4b-b4f2-829ef57677a6",
+      "messages": 123,
+      "bytes": 22167,
+      "resyncs": 0,
+      "retainedEvents": 123,
+      "retainedHighWater": 123,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 0,
+        "meanMs": 0,
+        "p95UpperMs": 0,
+        "p99UpperMs": 0,
+        "maxMs": 0
+      },
+      "commandMs": {
+        "samples": 1,
+        "meanMs": 0.3698819999990519,
+        "p95UpperMs": 0.3698819999990519,
+        "p99UpperMs": 0.3698819999990519,
+        "maxMs": 0.3698819999990519
+      },
+      "outcomes": {
+        "stale_epoch": 1
+      },
+      "inventorySummary": {
+        "revision": 519,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 209,
+        "position": [
+          0.1934,
+          160,
+          -9.522
+        ]
+      }
+    },
+    {
+      "id": "58b1934d-0fa7-466b-89c7-fa35993c1a01",
+      "messages": 123,
+      "bytes": 21709,
+      "resyncs": 0,
+      "retainedEvents": 123,
+      "retainedHighWater": 123,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 0,
+        "meanMs": 0,
+        "p95UpperMs": 0,
+        "p99UpperMs": 0,
+        "maxMs": 0
+      },
+      "commandMs": {
+        "samples": 1,
+        "meanMs": 0.4606820000044536,
+        "p95UpperMs": 0.4606820000044536,
+        "p99UpperMs": 0.4606820000044536,
+        "maxMs": 0.4606820000044536
+      },
+      "outcomes": {
+        "stale_epoch": 1
+      },
+      "inventorySummary": {
+        "revision": 410,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 210,
+        "position": [
+          6.5342,
+          160,
+          -9.7199
+        ]
+      }
+    },
+    {
+      "id": "c40520cd-2be3-4b4b-920a-81bc9a8ed0cb",
+      "messages": 123,
+      "bytes": 22294,
+      "resyncs": 0,
+      "retainedEvents": 123,
+      "retainedHighWater": 123,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 0,
+        "meanMs": 0,
+        "p95UpperMs": 0,
+        "p99UpperMs": 0,
+        "maxMs": 0
+      },
+      "commandMs": {
+        "samples": 1,
+        "meanMs": 0.727082999976119,
+        "p95UpperMs": 0.727082999976119,
+        "p99UpperMs": 0.727082999976119,
+        "maxMs": 0.727082999976119
+      },
+      "outcomes": {
+        "stale_epoch": 1
+      },
+      "inventorySummary": {
+        "revision": 519,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 211,
+        "position": [
+          -11.8068,
+          160,
+          0.4781
+        ]
+      }
+    },
+    {
+      "id": "52f57f6a-a54f-498e-ae3e-cc9097cad2a8",
+      "messages": 123,
+      "bytes": 21754,
+      "resyncs": 0,
+      "retainedEvents": 123,
+      "retainedHighWater": 123,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 0,
+        "meanMs": 0,
+        "p95UpperMs": 0,
+        "p99UpperMs": 0,
+        "maxMs": 0
+      },
+      "commandMs": {
+        "samples": 1,
+        "meanMs": 0.3753220000071451,
+        "p95UpperMs": 0.3753220000071451,
+        "p99UpperMs": 0.3753220000071451,
+        "maxMs": 0.3753220000071451
+      },
+      "outcomes": {
+        "stale_epoch": 1
+      },
+      "inventorySummary": {
+        "revision": 410,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 212,
+        "position": [
+          -5.4667,
+          160,
+          0.2794
+        ]
+      }
+    },
+    {
+      "id": "7076d462-0bed-47c6-bcce-4183e8d45a62",
+      "messages": 123,
+      "bytes": 22211,
+      "resyncs": 0,
+      "retainedEvents": 123,
+      "retainedHighWater": 123,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 0,
+        "meanMs": 0,
+        "p95UpperMs": 0,
+        "p99UpperMs": 0,
+        "maxMs": 0
+      },
+      "commandMs": {
+        "samples": 1,
+        "meanMs": 0.3630420000117738,
+        "p95UpperMs": 0.3630420000117738,
+        "p99UpperMs": 0.3630420000117738,
+        "maxMs": 0.3630420000117738
+      },
+      "outcomes": {
+        "stale_epoch": 1
+      },
+      "inventorySummary": {
+        "revision": 519,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 213,
+        "position": [
+          0.1932,
+          160,
+          0.4781
+        ]
+      }
+    },
+    {
+      "id": "2167c491-79e0-4a97-b1f1-42030bedb75d",
+      "messages": 123,
+      "bytes": 21666,
+      "resyncs": 0,
+      "retainedEvents": 123,
+      "retainedHighWater": 123,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 0,
+        "meanMs": 0,
+        "p95UpperMs": 0,
+        "p99UpperMs": 0,
+        "maxMs": 0
+      },
+      "commandMs": {
+        "samples": 1,
+        "meanMs": 0.3826419999822974,
+        "p95UpperMs": 0.3826419999822974,
+        "p99UpperMs": 0.3826419999822974,
+        "maxMs": 0.3826419999822974
+      },
+      "outcomes": {
+        "stale_epoch": 1
+      },
+      "inventorySummary": {
+        "revision": 410,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 214,
+        "position": [
+          6.5334,
+          160,
+          0.2795
+        ]
+      }
+    },
+    {
+      "id": "3e96ec03-4c85-4066-9631-c280ddb76afc",
+      "messages": 129,
+      "bytes": 24799,
+      "resyncs": 0,
+      "retainedEvents": 129,
+      "retainedHighWater": 129,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 0,
+        "meanMs": 0,
+        "p95UpperMs": 0,
+        "p99UpperMs": 0,
+        "maxMs": 0
+      },
+      "commandMs": {
+        "samples": 4,
+        "meanMs": 1.349616250001418,
+        "p95UpperMs": 1.72652699999162,
+        "p99UpperMs": 1.72652699999162,
+        "maxMs": 1.72652699999162
+      },
+      "outcomes": {
+        "stale_epoch": 1,
+        "move": 1,
+        "craft": 2
+      },
+      "inventorySummary": {
+        "revision": 521,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 9
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 28
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 207,
+        "position": [
+          -11.6217,
+          160,
+          -9.5057
+        ]
+      }
+    },
+    {
+      "id": "6fd09527-9c9e-4ca7-af9a-cc8e9328f9df",
+      "messages": 123,
+      "bytes": 21754,
+      "resyncs": 0,
+      "retainedEvents": 123,
+      "retainedHighWater": 123,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 0,
+        "meanMs": 0,
+        "p95UpperMs": 0,
+        "p99UpperMs": 0,
+        "maxMs": 0
+      },
+      "commandMs": {
+        "samples": 1,
+        "meanMs": 0.3260010000085458,
+        "p95UpperMs": 0.3260010000085458,
+        "p99UpperMs": 0.3260010000085458,
+        "maxMs": 0.3260010000085458
+      },
+      "outcomes": {
+        "stale_epoch": 1
+      },
+      "inventorySummary": {
+        "revision": 410,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 208,
+        "position": [
+          -5.182,
+          160,
+          -9.3157
+        ]
+      }
+    },
+    {
+      "id": "8e0a5268-2079-4a1e-a52c-fb7759a67b93",
+      "messages": 123,
+      "bytes": 22212,
+      "resyncs": 0,
+      "retainedEvents": 123,
+      "retainedHighWater": 123,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 0,
+        "meanMs": 0,
+        "p95UpperMs": 0,
+        "p99UpperMs": 0,
+        "maxMs": 0
+      },
+      "commandMs": {
+        "samples": 1,
+        "meanMs": 0.475722000002861,
+        "p95UpperMs": 0.475722000002861,
+        "p99UpperMs": 0.475722000002861,
+        "maxMs": 0.475722000002861
+      },
+      "outcomes": {
+        "stale_epoch": 1
+      },
+      "inventorySummary": {
+        "revision": 519,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 209,
+        "position": [
+          0.3783,
+          160,
+          -9.5057
+        ]
+      }
+    },
+    {
+      "id": "2f6d9f1d-1874-4ad6-b797-5b38f901d75e",
+      "messages": 123,
+      "bytes": 21752,
+      "resyncs": 0,
+      "retainedEvents": 123,
+      "retainedHighWater": 123,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 0,
+        "meanMs": 0,
+        "p95UpperMs": 0,
+        "p99UpperMs": 0,
+        "maxMs": 0
+      },
+      "commandMs": {
+        "samples": 1,
+        "meanMs": 0.4470419999852311,
+        "p95UpperMs": 0.4470419999852311,
+        "p99UpperMs": 0.4470419999852311,
+        "maxMs": 0.4470419999852311
+      },
+      "outcomes": {
+        "stale_epoch": 1
+      },
+      "inventorySummary": {
+        "revision": 410,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 210,
+        "position": [
+          6.8179,
+          160,
+          -9.3158
+        ]
+      }
+    },
+    {
+      "id": "27da2dd3-ff0f-4401-ad71-1a90c2d4bd7b",
+      "messages": 123,
+      "bytes": 22254,
+      "resyncs": 0,
+      "retainedEvents": 123,
+      "retainedHighWater": 123,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 0,
+        "meanMs": 0,
+        "p95UpperMs": 0,
+        "p99UpperMs": 0,
+        "maxMs": 0
+      },
+      "commandMs": {
+        "samples": 1,
+        "meanMs": 0.46664199998485856,
+        "p95UpperMs": 0.46664199998485856,
+        "p99UpperMs": 0.46664199998485856,
+        "maxMs": 0.46664199998485856
+      },
+      "outcomes": {
+        "stale_epoch": 1
+      },
+      "inventorySummary": {
+        "revision": 519,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 211,
+        "position": [
+          -11.6217,
+          160,
+          0.4942
+        ]
+      }
+    },
+    {
+      "id": "35f5321d-c644-4f67-9a27-1078ff690416",
+      "messages": 123,
+      "bytes": 21712,
+      "resyncs": 0,
+      "retainedEvents": 123,
+      "retainedHighWater": 123,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 0,
+        "meanMs": 0,
+        "p95UpperMs": 0,
+        "p99UpperMs": 0,
+        "maxMs": 0
+      },
+      "commandMs": {
+        "samples": 1,
+        "meanMs": 0.44844199999351986,
+        "p95UpperMs": 0.44844199999351986,
+        "p99UpperMs": 0.44844199999351986,
+        "maxMs": 0.44844199999351986
+      },
+      "outcomes": {
+        "stale_epoch": 1
+      },
+      "inventorySummary": {
+        "revision": 410,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 212,
+        "position": [
+          -5.182,
+          160,
+          0.6843
+        ]
+      }
+    },
+    {
+      "id": "958cc256-7af6-46eb-bb0b-0f285ef7f897",
+      "messages": 123,
+      "bytes": 22128,
+      "resyncs": 0,
+      "retainedEvents": 123,
+      "retainedHighWater": 123,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 0,
+        "meanMs": 0,
+        "p95UpperMs": 0,
+        "p99UpperMs": 0,
+        "maxMs": 0
+      },
+      "commandMs": {
+        "samples": 1,
+        "meanMs": 0.45712199999252334,
+        "p95UpperMs": 0.45712199999252334,
+        "p99UpperMs": 0.45712199999252334,
+        "maxMs": 0.45712199999252334
+      },
+      "outcomes": {
+        "stale_epoch": 1
+      },
+      "inventorySummary": {
+        "revision": 519,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 213,
+        "position": [
+          0.224,
+          160,
+          0.4865
+        ]
+      }
+    },
+    {
+      "id": "7d7e49f5-ffcd-40f5-a7c0-56afdd16b66a",
+      "messages": 123,
+      "bytes": 21669,
+      "resyncs": 0,
+      "retainedEvents": 123,
+      "retainedHighWater": 123,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 0,
+        "meanMs": 0,
+        "p95UpperMs": 0,
+        "p99UpperMs": 0,
+        "maxMs": 0
+      },
+      "commandMs": {
+        "samples": 1,
+        "meanMs": 0.33608100001583807,
+        "p95UpperMs": 0.33608100001583807,
+        "p99UpperMs": 0.33608100001583807,
+        "maxMs": 0.33608100001583807
+      },
+      "outcomes": {
+        "stale_epoch": 1
+      },
+      "inventorySummary": {
+        "revision": 410,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 10
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 4
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 64
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 24
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 214,
+        "position": [
+          6.818,
+          160,
+          0.6842
+        ]
+      }
+    }
+  ],
+  "cleanup": {
+    "rooms": 0,
+    "closedClients": 32,
+    "totalClients": 32,
+    "pendingWaiters": 0
+  },
+  "storage": {
+    "objects": 98,
+    "bytes": 619573,
+    "puts": 98,
+    "commits": 32
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "script": "test:tnt:browser",
+  "path": "/tmp/voxel-equipment-suite-test-tnt-browser.log",
+  "code": 143,
+  "signal": "UNKNOWN",
+  "finishedAt": "2026-10-23T10:03:38.008830+00:00",
+  "source": "exec session 50828 terminal exit 143; wrapper and Chromium absent in independent process audit; no scenario result produced",
+  "buildId": "97603656240f4114699c26afdb40c03852735e6ebee1c8ed06e2984118c0dd9c"
+}

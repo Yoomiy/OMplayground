@@ -1,0 +1,97 @@
+{
+  "result": "INCOMPLETE",
+  "room": "voxel-escrow-qualification-3073ca77-0a67-4701-b20e-55a5dc688b61",
+  "schoolDatabaseWrites": 0,
+  "scope": "Actual self-hosted LiveKit, private signaling worker and generated test audio; no school/Auth/UI deployment qualification",
+  "upgrades": [
+    {
+      "path": "/voxel-media/rtc/v1",
+      "queryLength": 2411,
+      "queryValid": true
+    },
+    {
+      "path": "/voxel-media/rtc/v1",
+      "queryLength": 2419,
+      "queryValid": true
+    },
+    {
+      "path": "/voxel-media/rtc/v1",
+      "queryLength": 2415,
+      "queryValid": true
+    }
+  ],
+  "initial": {
+    "connected": true,
+    "canPublish": true,
+    "expiresAt": 1793041195516,
+    "serverInfo": {
+      "version": "1.12.0",
+      "edition": 0,
+      "protocol": 17
+    }
+  },
+  "initialTrackPublished": true,
+  "replayBeforeExpiry": true,
+  "cachedTicketReplay": {
+    "connected": false,
+    "error": {
+      "name": "ConnectionError",
+      "code": 1,
+      "description": "could not establish signal connection: VOICE_UNAUTHORIZED"
+    }
+  },
+  "directSfuReplay": {
+    "connected": false,
+    "error": {
+      "name": "ConnectionError",
+      "code": 1,
+      "description": "could not establish signal connection: invalid authorization token"
+    }
+  },
+  "onlyOpaqueInSdk": true,
+  "muteDisconnected": true,
+  "listenOnly": {
+    "connected": false,
+    "error": {
+      "name": "ConnectionError",
+      "code": 1,
+      "description": "could not establish signal connection: Received leave request while trying to (re)connect"
+    },
+    "expiresAt": 1793041198132
+  },
+  "stage": "listen-only-rejoin",
+  "error": {
+    "name": "AssertionError",
+    "description": "The expression evaluated to a falsy value:\n\n  assert(result.listenOnly.connected)\n"
+  },
+  "finalSignalStats": {
+    "sessions": 0,
+    "tickets": 0,
+    "filteredTokens": 2,
+    "protocolClosures": 0,
+    "expired": 0,
+    "closures": {
+      "CLOSED": 1,
+      "UPSTREAM": 1
+    },
+    "upstreamStatus": 400,
+    "failed": false,
+    "closed": false
+  },
+  "finalBrowserState": {
+    "phase": "connecting",
+    "state": "disconnected",
+    "initial": {
+      "connected": true,
+      "canPublish": true,
+      "expiresAt": 1793041195516,
+      "serverInfo": {
+        "version": "1.12.0",
+        "edition": 0,
+        "protocol": 17
+      }
+    }
+  },
+  "cleaned": true,
+  "checkedAt": "2026-10-26T18:59:54.385Z"
+}

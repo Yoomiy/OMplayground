@@ -1,0 +1,310 @@
+{
+  "scope": "Diagnostic sampled CPU profile of one 128-actor before/after pair in each scene, including startup, hashing and generation outside tick measurements. Not a repeated qualification, and predates worker timing instrumentation.",
+  "buildId": "5886a6dc973378530fbe79b71c007eccfdd440fdbde064dc3cd2938ea363aa57",
+  "profile": "CPU.20261027.154557.803788.0.001.cpuprofile",
+  "profileSha256": "6d9e0334d8986ddab3b8b295fe0512a00ac52b7ab629a03e56df5ac942977d3f",
+  "elapsedMs": 49767.468,
+  "samples": 45635,
+  "hotSelfSamples": [
+    {
+      "function": "send",
+      "url": "games/voxel/tools/benchmark-survival.ts",
+      "line": 74,
+      "sampledMs": 6820.955
+    },
+    {
+      "function": "snapshots",
+      "url": "games/voxel/evidence/media-composition/sources/games/voxel/src/sim/game-room.ts",
+      "line": 1910,
+      "sampledMs": 5583.43
+    },
+    {
+      "function": "player_state",
+      "url": "games/voxel/engine/pkg/voxel_engine.js",
+      "line": 746,
+      "sampledMs": 4266.021
+    },
+    {
+      "function": "subscriptions",
+      "url": "games/voxel/evidence/media-composition/sources/games/voxel/src/sim/game-room.ts",
+      "line": 1778,
+      "sampledMs": 2828.292
+    },
+    {
+      "function": "snapshots",
+      "url": "games/voxel/src/sim/game-room.ts",
+      "line": 1911,
+      "sampledMs": 2813.192
+    },
+    {
+      "function": "subscriptions",
+      "url": "games/voxel/src/sim/game-room.ts",
+      "line": 1779,
+      "sampledMs": 2550.327
+    },
+    {
+      "function": "(anonymous)",
+      "url": "games/voxel/evidence/media-composition/sources/games/voxel/src/sim/game-room.ts",
+      "line": 725,
+      "sampledMs": 2419.556
+    },
+    {
+      "function": "update",
+      "url": "node:internal/crypto/hash",
+      "line": 146,
+      "sampledMs": 1760.011
+    },
+    {
+      "function": "encode",
+      "url": "games/voxel/src/server/snapshot-encoder.ts",
+      "line": 13,
+      "sampledMs": 1018.746
+    },
+    {
+      "function": "(anonymous)",
+      "url": "games/voxel/src/sim/game-room.ts",
+      "line": 726,
+      "sampledMs": 1003.315
+    },
+    {
+      "function": "(garbage collector)",
+      "url": "",
+      "line": 0,
+      "sampledMs": 955.803
+    },
+    {
+      "function": "dropSnapshots",
+      "url": "games/voxel/src/sim/game-room.ts",
+      "line": 1643,
+      "sampledMs": 946.71
+    },
+    {
+      "function": "dropSnapshots",
+      "url": "games/voxel/evidence/media-composition/sources/games/voxel/src/sim/game-room.ts",
+      "line": 1642,
+      "sampledMs": 943.827
+    },
+    {
+      "function": "(anonymous)",
+      "url": "games/voxel/evidence/media-composition/sources/games/voxel/src/sim/drops.ts",
+      "line": 204,
+      "sampledMs": 766.134
+    },
+    {
+      "function": "(anonymous)",
+      "url": "games/voxel/src/sim/drops.ts",
+      "line": 204,
+      "sampledMs": 710.324
+    },
+    {
+      "function": "(anonymous)",
+      "url": "games/voxel/src/sim/game-room.ts",
+      "line": 1789,
+      "sampledMs": 710.064
+    },
+    {
+      "function": "(anonymous)",
+      "url": "games/voxel/evidence/media-composition/sources/games/voxel/src/sim/game-room.ts",
+      "line": 1788,
+      "sampledMs": 698.466
+    },
+    {
+      "function": "(anonymous)",
+      "url": "",
+      "line": 0,
+      "sampledMs": 652.512
+    },
+    {
+      "function": "require",
+      "url": "games/voxel/src/sim/world-store.ts",
+      "line": 122,
+      "sampledMs": 556.876
+    },
+    {
+      "function": "(anonymous)",
+      "url": "games/voxel/evidence/media-composition/sources/games/voxel/src/sim/game-room.ts",
+      "line": 1647,
+      "sampledMs": 552.701
+    },
+    {
+      "function": "(anonymous)",
+      "url": "games/voxel/src/sim/game-room.ts",
+      "line": 1648,
+      "sampledMs": 531.4
+    },
+    {
+      "function": "getArrayF64FromWasm0",
+      "url": "games/voxel/engine/pkg/voxel_engine.js",
+      "line": 1150,
+      "sampledMs": 492.867
+    },
+    {
+      "function": "nearby",
+      "url": "games/voxel/evidence/media-composition/sources/games/voxel/src/sim/drops.ts",
+      "line": 201,
+      "sampledMs": 467.853
+    },
+    {
+      "function": "state",
+      "url": "games/voxel/evidence/media-composition/sources/games/voxel/src/sim/game-room.ts",
+      "line": 1712,
+      "sampledMs": 425.69
+    },
+    {
+      "function": "nearby",
+      "url": "games/voxel/src/sim/drops.ts",
+      "line": 201,
+      "sampledMs": 407.628
+    },
+    {
+      "function": "(anonymous)",
+      "url": "games/voxel/src/sim/drops.ts",
+      "line": 211,
+      "sampledMs": 340.907
+    },
+    {
+      "function": "(anonymous)",
+      "url": "games/voxel/evidence/media-composition/sources/games/voxel/src/sim/drops.ts",
+      "line": 211,
+      "sampledMs": 323.281
+    },
+    {
+      "function": "state",
+      "url": "games/voxel/src/sim/game-room.ts",
+      "line": 1713,
+      "sampledMs": 305.257
+    },
+    {
+      "function": "equipped",
+      "url": "games/voxel/evidence/media-composition/sources/games/voxel/src/sim/inventory.ts",
+      "line": 424,
+      "sampledMs": 290.328
+    },
+    {
+      "function": "wasm-function[294]",
+      "url": "wasm://wasm/00219756",
+      "line": 1,
+      "sampledMs": 287.467
+    },
+    {
+      "function": "wasm-function[141]",
+      "url": "wasm://wasm/00219756",
+      "line": 1,
+      "sampledMs": 285.427
+    },
+    {
+      "function": "(anonymous)",
+      "url": "games/voxel/src/server/snapshot-encoder.ts",
+      "line": 21,
+      "sampledMs": 284.763
+    },
+    {
+      "function": "equipped",
+      "url": "games/voxel/src/sim/inventory.ts",
+      "line": 424,
+      "sampledMs": 267.081
+    },
+    {
+      "function": "(anonymous)",
+      "url": "games/voxel/evidence/media-composition/sources/games/voxel/src/sim/game-room.ts",
+      "line": 1648,
+      "sampledMs": 242.46
+    },
+    {
+      "function": "run",
+      "url": "games/voxel/tools/benchmark-survival.ts",
+      "line": 56,
+      "sampledMs": 236.892
+    },
+    {
+      "function": "(anonymous)",
+      "url": "games/voxel/src/sim/game-room.ts",
+      "line": 1649,
+      "sampledMs": 231.209
+    },
+    {
+      "function": "refreshMovement",
+      "url": "games/voxel/evidence/media-composition/sources/games/voxel/src/sim/game-room.ts",
+      "line": 1097,
+      "sampledMs": 212.835
+    },
+    {
+      "function": "find",
+      "url": "games/voxel/src/sim/game-room.ts",
+      "line": 1698,
+      "sampledMs": 204.322
+    },
+    {
+      "function": "find",
+      "url": "games/voxel/evidence/media-composition/sources/games/voxel/src/sim/game-room.ts",
+      "line": 1697,
+      "sampledMs": 199.611
+    },
+    {
+      "function": "copyStack",
+      "url": "games/voxel/src/shared/inventory.ts",
+      "line": 48,
+      "sampledMs": 189.049
+    },
+    {
+      "function": "refreshMovement",
+      "url": "games/voxel/src/sim/game-room.ts",
+      "line": 1098,
+      "sampledMs": 179.107
+    },
+    {
+      "function": "copyStack",
+      "url": "games/voxel/evidence/media-composition/sources/games/voxel/src/shared/inventory.ts",
+      "line": 48,
+      "sampledMs": 171.731
+    },
+    {
+      "function": "pickups",
+      "url": "games/voxel/src/sim/game-room.ts",
+      "line": 1612,
+      "sampledMs": 133.446
+    },
+    {
+      "function": "(anonymous)",
+      "url": "games/voxel/evidence/media-composition/sources/games/voxel/src/sim/game-room.ts",
+      "line": 1698,
+      "sampledMs": 126.845
+    },
+    {
+      "function": "wasm-function[44]",
+      "url": "wasm://wasm/00219756",
+      "line": 1,
+      "sampledMs": 119.272
+    },
+    {
+      "function": "wasm-function[98]",
+      "url": "wasm://wasm/00219756",
+      "line": 1,
+      "sampledMs": 117.202
+    },
+    {
+      "function": "take",
+      "url": "games/voxel/evidence/media-composition/sources/games/voxel/src/sim/input-queue.ts",
+      "line": 54,
+      "sampledMs": 108.041
+    },
+    {
+      "function": "(anonymous)",
+      "url": "games/voxel/src/sim/game-room.ts",
+      "line": 1699,
+      "sampledMs": 107.375
+    },
+    {
+      "function": "take",
+      "url": "games/voxel/src/sim/input-queue.ts",
+      "line": 54,
+      "sampledMs": 103.471
+    },
+    {
+      "function": "stepBoundedMovement",
+      "url": "games/voxel/evidence/media-composition/sources/games/voxel/src/shared/movement.ts",
+      "line": 61,
+      "sampledMs": 98.229
+    }
+  ]
+}

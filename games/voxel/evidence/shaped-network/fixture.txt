@@ -1,0 +1,10 @@
+✔ shaped real TCP preserves binary streams and shares its bandwidth across connections (2289.605916ms)
+✔ closing a shaped TCP relay retires queued bytes and timers without waiting for latency (9.060202ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2468.479141

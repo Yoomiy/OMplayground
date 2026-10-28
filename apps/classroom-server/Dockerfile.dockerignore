@@ -1,0 +1,15 @@
+**
+!package.json
+!package-lock.json
+!apps/
+!apps/classroom-server/
+!apps/classroom-server/**
+!packages/
+!packages/observability/
+!packages/observability/**
+**/node_modules
+**/dist
+**/test-results
+**/.env
+**/.env.*
+**/*.log

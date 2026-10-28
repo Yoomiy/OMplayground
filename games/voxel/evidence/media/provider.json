@@ -1,0 +1,249 @@
+{
+  "result": "PRODUCT_VOICE_UI_AND_SFU_PASS",
+  "room": "voxel-ui-qualification-56014978-9efc-4560-b258-d47485188aed",
+  "schoolDatabaseWrites": 0,
+  "scope": "Actual React voice panel/coordinator, generated browser audio and configured SFU; school/Auth/SQL and game poses are fixtures, not deployment or physical-device qualification",
+  "noAutomaticMicrophone": true,
+  "permissionDenial": true,
+  "initialAudioSamples": [
+    0.03979011662979826
+  ],
+  "speakerAudio": {
+    "stats": {
+      "disposed": false,
+      "phase": "connected",
+      "room": "connected",
+      "remoteParticipants": 1,
+      "pendingDisconnects": 0,
+      "capturePending": false,
+      "microphoneTracks": 1,
+      "timers": 1,
+      "audio": {
+        "disposed": false,
+        "context": "running",
+        "tracks": 0,
+        "nodes": 2,
+        "outputs": 1,
+        "inputs": 0,
+        "blockedInputs": 0,
+        "outputSelection": true
+      }
+    },
+    "generators": [
+      {
+        "state": "running",
+        "track": "live"
+      }
+    ]
+  },
+  "listenerAudio": {
+    "stats": {
+      "disposed": false,
+      "phase": "connected",
+      "room": "connected",
+      "remoteParticipants": 1,
+      "pendingDisconnects": 0,
+      "capturePending": false,
+      "microphoneTracks": 0,
+      "timers": 1,
+      "audio": {
+        "disposed": false,
+        "context": "running",
+        "tracks": 1,
+        "nodes": 6,
+        "outputs": 1,
+        "inputs": 1,
+        "blockedInputs": 0,
+        "outputSelection": true
+      }
+    },
+    "measuring": "running"
+  },
+  "receiver": {
+    "visibility": "visible",
+    "contextTime": 2.670294784580499,
+    "tracks": [
+      {
+        "enabled": true,
+        "muted": false,
+        "readyState": "live",
+        "bytesReceived": 5434,
+        "totalAudioEnergy": 0,
+        "totalSamplesDuration": 0.4300000000000002
+      }
+    ],
+    "gains": [
+      {
+        "gain": 1,
+        "position": [
+          -2,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "audio": {
+    "near": 0.03979011662979826,
+    "occluded": 0.004719506710534909,
+    "far": 0,
+    "muted": 0,
+    "restored": 0.025860283342350982
+  },
+  "simulatedBackgroundStopsCaptureWithoutAutomaticResume": true,
+  "unavailableGameSceneStopsCapture": true,
+  "hiddenStaffAbsentFromPeerLists": true,
+  "invalidOutputRejected": true,
+  "reconnectRequiresExplicitMicrophone": true,
+  "sameUuidMuteRetry": true,
+  "lateCaptureStopped": true,
+  "lateActivation": {
+    "calls": 0,
+    "stats": {
+      "disposed": true,
+      "phase": "off",
+      "room": "disconnected",
+      "remoteParticipants": 0,
+      "pendingDisconnects": 0,
+      "capturePending": false,
+      "microphoneTracks": 0,
+      "timers": 0,
+      "audio": {
+        "disposed": true,
+        "context": "closed",
+        "tracks": 0,
+        "nodes": 0,
+        "outputs": 0,
+        "inputs": 0,
+        "blockedInputs": 0,
+        "outputSelection": false
+      }
+    }
+  },
+  "cleanup": [
+    [
+      {
+        "disposed": true,
+        "phase": "off",
+        "room": "disconnected",
+        "remoteParticipants": 0,
+        "pendingDisconnects": 0,
+        "capturePending": false,
+        "microphoneTracks": 0,
+        "timers": 0,
+        "audio": {
+          "disposed": true,
+          "context": "closed",
+          "tracks": 0,
+          "nodes": 0,
+          "outputs": 0,
+          "inputs": 0,
+          "blockedInputs": 0,
+          "outputSelection": false
+        }
+      },
+      {
+        "disposed": true,
+        "phase": "off",
+        "room": "disconnected",
+        "remoteParticipants": 0,
+        "pendingDisconnects": 0,
+        "capturePending": false,
+        "microphoneTracks": 0,
+        "timers": 0,
+        "audio": {
+          "disposed": true,
+          "context": "closed",
+          "tracks": 0,
+          "nodes": 0,
+          "outputs": 0,
+          "inputs": 0,
+          "blockedInputs": 0,
+          "outputSelection": false
+        }
+      }
+    ],
+    [
+      {
+        "disposed": true,
+        "phase": "off",
+        "room": "disconnected",
+        "remoteParticipants": 0,
+        "pendingDisconnects": 0,
+        "capturePending": false,
+        "microphoneTracks": 0,
+        "timers": 0,
+        "audio": {
+          "disposed": true,
+          "context": "closed",
+          "tracks": 0,
+          "nodes": 0,
+          "outputs": 0,
+          "inputs": 0,
+          "blockedInputs": 0,
+          "outputSelection": false
+        }
+      }
+    ],
+    [
+      {
+        "disposed": true,
+        "phase": "off",
+        "room": "disconnected",
+        "remoteParticipants": 0,
+        "pendingDisconnects": 0,
+        "capturePending": false,
+        "microphoneTracks": 0,
+        "timers": 0,
+        "audio": {
+          "disposed": true,
+          "context": "closed",
+          "tracks": 0,
+          "nodes": 0,
+          "outputs": 0,
+          "inputs": 0,
+          "blockedInputs": 0,
+          "outputSelection": false
+        }
+      }
+    ]
+  ],
+  "backendCredentialSeen": false,
+  "signalStats": {
+    "sessions": 0,
+    "tickets": 0,
+    "filteredTokens": 8,
+    "protocolClosures": 0,
+    "expired": 0,
+    "closures": {
+      "UPSTREAM": 1,
+      "CLOSED": 7
+    },
+    "upstreamStatus": null,
+    "failed": false,
+    "closed": false
+  },
+  "moderationRequests": [
+    {
+      "room": "7e64e648-1e60-4536-802a-327a84784c02",
+      "requestId": "6197fdeb-4cb4-4ea4-a2d3-74a271cd6254",
+      "action": "mute",
+      "target": null
+    },
+    {
+      "room": "7e64e648-1e60-4536-802a-327a84784c02",
+      "requestId": "6197fdeb-4cb4-4ea4-a2d3-74a271cd6254",
+      "action": "mute",
+      "target": null
+    },
+    {
+      "room": "7e64e648-1e60-4536-802a-327a84784c02",
+      "requestId": "e37bbb73-1820-4181-af7c-4ca74fd5ddfa",
+      "action": "unmute",
+      "target": null
+    }
+  ],
+  "commands": 2,
+  "cleaned": true,
+  "checkedAt": "2026-10-26T19:50:51.143Z"
+}

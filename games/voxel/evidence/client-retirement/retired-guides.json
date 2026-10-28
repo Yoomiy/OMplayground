@@ -1,0 +1,17 @@
+[
+  {
+    "path": ".cursor/skills/playground-voxel-entities/SKILL.md",
+    "bytes": 2809,
+    "sha256": "37b11304402a2a57420f6a9789dc36cea7f504c90755cfc835394f9ca0a9dbda"
+  },
+  {
+    "path": ".cursor/skills/playground-voxel-blocks/SKILL.md",
+    "bytes": 4045,
+    "sha256": "3ef61165f74131dfc7e8cd1bc6f954f2ba39b22388256047dc6611a3f3d8521a"
+  },
+  {
+    "path": ".cursor/skills/playground-voxel-items/SKILL.md",
+    "bytes": 3970,
+    "sha256": "4bac6702b6228fea2eaf951893803029d825b7aba24eaf6fdd53672f74c568a1"
+  }
+]

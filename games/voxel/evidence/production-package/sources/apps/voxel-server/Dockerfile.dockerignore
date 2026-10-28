@@ -1,0 +1,11 @@
+# Only the explicitly assembled runtime is sent to the Docker builder.
+**
+!apps/
+!apps/voxel-server/
+!apps/voxel-server/dist/
+!apps/voxel-server/dist/runtime/
+!apps/voxel-server/dist/runtime/**
+**/node_modules
+**/.env
+**/.env.*
+**/*.log

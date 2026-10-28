@@ -1,0 +1,599 @@
+{
+  "browser": "156.0.8078.4",
+  "scope": "Standalone DOM fullscreen root removal; no React, game renderer, workers, network or database",
+  "samples": [
+    {
+      "acknowledged": true,
+      "root": false,
+      "fullscreen": false,
+      "exits": 1,
+      "events": [
+        {
+          "type": "pointerdown",
+          "target": "enter",
+          "time": 160.79999995231628,
+          "fullscreen": false
+        },
+        {
+          "type": "mousedown",
+          "target": "enter",
+          "time": 160.90000009536743,
+          "fullscreen": false
+        },
+        {
+          "type": "pointerup",
+          "target": "enter",
+          "time": 161.29999995231628,
+          "fullscreen": false
+        },
+        {
+          "type": "mouseup",
+          "target": "enter",
+          "time": 161.40000009536743,
+          "fullscreen": false
+        },
+        {
+          "type": "click",
+          "target": "enter",
+          "time": 161.40000009536743,
+          "fullscreen": false
+        },
+        {
+          "type": "fullscreenchange",
+          "target": "root",
+          "time": 186.70000004768372,
+          "fullscreen": true
+        },
+        {
+          "type": "pointerdown",
+          "target": "exit",
+          "time": 224.90000009536743,
+          "fullscreen": true
+        },
+        {
+          "type": "mousedown",
+          "target": "exit",
+          "time": 224.90000009536743,
+          "fullscreen": true
+        },
+        {
+          "type": "pointerup",
+          "target": "exit",
+          "time": 225.40000009536743,
+          "fullscreen": true
+        },
+        {
+          "type": "mouseup",
+          "target": "exit",
+          "time": 225.5,
+          "fullscreen": true
+        },
+        {
+          "type": "click",
+          "target": "exit",
+          "time": 225.59999990463257,
+          "fullscreen": true
+        }
+      ]
+    },
+    {
+      "acknowledged": true,
+      "root": false,
+      "fullscreen": false,
+      "exits": 1,
+      "events": [
+        {
+          "type": "pointerdown",
+          "target": "enter",
+          "time": 107.30000019073486,
+          "fullscreen": false
+        },
+        {
+          "type": "mousedown",
+          "target": "enter",
+          "time": 107.40000009536743,
+          "fullscreen": false
+        },
+        {
+          "type": "pointerup",
+          "target": "enter",
+          "time": 107.60000014305115,
+          "fullscreen": false
+        },
+        {
+          "type": "mouseup",
+          "target": "enter",
+          "time": 107.60000014305115,
+          "fullscreen": false
+        },
+        {
+          "type": "click",
+          "target": "enter",
+          "time": 107.70000004768372,
+          "fullscreen": false
+        },
+        {
+          "type": "fullscreenchange",
+          "target": "root",
+          "time": 134.40000009536743,
+          "fullscreen": true
+        },
+        {
+          "type": "pointerdown",
+          "target": "exit",
+          "time": 172,
+          "fullscreen": true
+        },
+        {
+          "type": "mousedown",
+          "target": "exit",
+          "time": 172,
+          "fullscreen": true
+        },
+        {
+          "type": "pointerup",
+          "target": "exit",
+          "time": 172.40000009536743,
+          "fullscreen": true
+        },
+        {
+          "type": "mouseup",
+          "target": "exit",
+          "time": 172.5,
+          "fullscreen": true
+        },
+        {
+          "type": "click",
+          "target": "exit",
+          "time": 172.60000014305115,
+          "fullscreen": true
+        }
+      ]
+    },
+    {
+      "acknowledged": true,
+      "root": false,
+      "fullscreen": false,
+      "exits": 1,
+      "events": [
+        {
+          "type": "pointerdown",
+          "target": "enter",
+          "time": 143.79999995231628,
+          "fullscreen": false
+        },
+        {
+          "type": "mousedown",
+          "target": "enter",
+          "time": 143.90000009536743,
+          "fullscreen": false
+        },
+        {
+          "type": "pointerup",
+          "target": "enter",
+          "time": 144.40000009536743,
+          "fullscreen": false
+        },
+        {
+          "type": "mouseup",
+          "target": "enter",
+          "time": 144.40000009536743,
+          "fullscreen": false
+        },
+        {
+          "type": "click",
+          "target": "enter",
+          "time": 144.40000009536743,
+          "fullscreen": false
+        },
+        {
+          "type": "fullscreenchange",
+          "target": "root",
+          "time": 170.60000014305115,
+          "fullscreen": true
+        },
+        {
+          "type": "pointerdown",
+          "target": "exit",
+          "time": 209.5,
+          "fullscreen": true
+        },
+        {
+          "type": "mousedown",
+          "target": "exit",
+          "time": 209.60000014305115,
+          "fullscreen": true
+        },
+        {
+          "type": "pointerup",
+          "target": "exit",
+          "time": 210,
+          "fullscreen": true
+        },
+        {
+          "type": "mouseup",
+          "target": "exit",
+          "time": 210,
+          "fullscreen": true
+        },
+        {
+          "type": "click",
+          "target": "exit",
+          "time": 210.10000014305115,
+          "fullscreen": true
+        }
+      ]
+    },
+    {
+      "acknowledged": true,
+      "root": false,
+      "fullscreen": false,
+      "exits": 1,
+      "events": [
+        {
+          "type": "pointerdown",
+          "target": "enter",
+          "time": 93.5,
+          "fullscreen": false
+        },
+        {
+          "type": "mousedown",
+          "target": "enter",
+          "time": 93.59999990463257,
+          "fullscreen": false
+        },
+        {
+          "type": "pointerup",
+          "target": "enter",
+          "time": 93.89999985694885,
+          "fullscreen": false
+        },
+        {
+          "type": "mouseup",
+          "target": "enter",
+          "time": 93.89999985694885,
+          "fullscreen": false
+        },
+        {
+          "type": "click",
+          "target": "enter",
+          "time": 94,
+          "fullscreen": false
+        },
+        {
+          "type": "fullscreenchange",
+          "target": "root",
+          "time": 120.69999980926514,
+          "fullscreen": true
+        },
+        {
+          "type": "pointerdown",
+          "target": "exit",
+          "time": 157.79999995231628,
+          "fullscreen": true
+        },
+        {
+          "type": "mousedown",
+          "target": "exit",
+          "time": 157.89999985694885,
+          "fullscreen": true
+        },
+        {
+          "type": "pointerup",
+          "target": "exit",
+          "time": 158.39999985694885,
+          "fullscreen": true
+        },
+        {
+          "type": "mouseup",
+          "target": "exit",
+          "time": 158.5,
+          "fullscreen": true
+        },
+        {
+          "type": "click",
+          "target": "exit",
+          "time": 158.59999990463257,
+          "fullscreen": true
+        }
+      ]
+    },
+    {
+      "acknowledged": true,
+      "root": false,
+      "fullscreen": false,
+      "exits": 1,
+      "events": [
+        {
+          "type": "pointerdown",
+          "target": "enter",
+          "time": 109.79999995231628,
+          "fullscreen": false
+        },
+        {
+          "type": "mousedown",
+          "target": "enter",
+          "time": 109.79999995231628,
+          "fullscreen": false
+        },
+        {
+          "type": "pointerup",
+          "target": "enter",
+          "time": 110.20000004768372,
+          "fullscreen": false
+        },
+        {
+          "type": "mouseup",
+          "target": "enter",
+          "time": 110.20000004768372,
+          "fullscreen": false
+        },
+        {
+          "type": "click",
+          "target": "enter",
+          "time": 110.20000004768372,
+          "fullscreen": false
+        },
+        {
+          "type": "fullscreenchange",
+          "target": "root",
+          "time": 135.5,
+          "fullscreen": true
+        },
+        {
+          "type": "pointerdown",
+          "target": "exit",
+          "time": 173.39999985694885,
+          "fullscreen": true
+        },
+        {
+          "type": "mousedown",
+          "target": "exit",
+          "time": 173.5,
+          "fullscreen": true
+        },
+        {
+          "type": "pointerup",
+          "target": "exit",
+          "time": 174.20000004768372,
+          "fullscreen": true
+        },
+        {
+          "type": "mouseup",
+          "target": "exit",
+          "time": 174.29999995231628,
+          "fullscreen": true
+        },
+        {
+          "type": "click",
+          "target": "exit",
+          "time": 174.5,
+          "fullscreen": true
+        }
+      ]
+    },
+    {
+      "acknowledged": true,
+      "root": false,
+      "fullscreen": false,
+      "exits": 1,
+      "events": [
+        {
+          "type": "pointerdown",
+          "target": "enter",
+          "time": 95.5,
+          "fullscreen": false
+        },
+        {
+          "type": "mousedown",
+          "target": "enter",
+          "time": 95.5,
+          "fullscreen": false
+        },
+        {
+          "type": "pointerup",
+          "target": "enter",
+          "time": 95.79999995231628,
+          "fullscreen": false
+        },
+        {
+          "type": "mouseup",
+          "target": "enter",
+          "time": 95.79999995231628,
+          "fullscreen": false
+        },
+        {
+          "type": "click",
+          "target": "enter",
+          "time": 95.90000009536743,
+          "fullscreen": false
+        },
+        {
+          "type": "fullscreenchange",
+          "target": "root",
+          "time": 122.90000009536743,
+          "fullscreen": true
+        },
+        {
+          "type": "pointerdown",
+          "target": "exit",
+          "time": 160.20000004768372,
+          "fullscreen": true
+        },
+        {
+          "type": "mousedown",
+          "target": "exit",
+          "time": 160.20000004768372,
+          "fullscreen": true
+        },
+        {
+          "type": "pointerup",
+          "target": "exit",
+          "time": 160.70000004768372,
+          "fullscreen": true
+        },
+        {
+          "type": "mouseup",
+          "target": "exit",
+          "time": 160.79999995231628,
+          "fullscreen": true
+        },
+        {
+          "type": "click",
+          "target": "exit",
+          "time": 160.79999995231628,
+          "fullscreen": true
+        }
+      ]
+    },
+    {
+      "acknowledged": true,
+      "root": false,
+      "fullscreen": false,
+      "exits": 1,
+      "events": [
+        {
+          "type": "pointerdown",
+          "target": "enter",
+          "time": 105.70000004768372,
+          "fullscreen": false
+        },
+        {
+          "type": "mousedown",
+          "target": "enter",
+          "time": 105.79999995231628,
+          "fullscreen": false
+        },
+        {
+          "type": "pointerup",
+          "target": "enter",
+          "time": 106.09999990463257,
+          "fullscreen": false
+        },
+        {
+          "type": "mouseup",
+          "target": "enter",
+          "time": 106.09999990463257,
+          "fullscreen": false
+        },
+        {
+          "type": "click",
+          "target": "enter",
+          "time": 106.09999990463257,
+          "fullscreen": false
+        },
+        {
+          "type": "fullscreenchange",
+          "target": "root",
+          "time": 133.90000009536743,
+          "fullscreen": true
+        },
+        {
+          "type": "pointerdown",
+          "target": "exit",
+          "time": 170.70000004768372,
+          "fullscreen": true
+        },
+        {
+          "type": "mousedown",
+          "target": "exit",
+          "time": 170.70000004768372,
+          "fullscreen": true
+        },
+        {
+          "type": "pointerup",
+          "target": "exit",
+          "time": 171.09999990463257,
+          "fullscreen": true
+        },
+        {
+          "type": "mouseup",
+          "target": "exit",
+          "time": 171.20000004768372,
+          "fullscreen": true
+        },
+        {
+          "type": "click",
+          "target": "exit",
+          "time": 171.20000004768372,
+          "fullscreen": true
+        }
+      ]
+    },
+    {
+      "acknowledged": true,
+      "root": false,
+      "fullscreen": false,
+      "exits": 1,
+      "events": [
+        {
+          "type": "pointerdown",
+          "target": "enter",
+          "time": 98.59999990463257,
+          "fullscreen": false
+        },
+        {
+          "type": "mousedown",
+          "target": "enter",
+          "time": 98.70000004768372,
+          "fullscreen": false
+        },
+        {
+          "type": "pointerup",
+          "target": "enter",
+          "time": 99.29999995231628,
+          "fullscreen": false
+        },
+        {
+          "type": "mouseup",
+          "target": "enter",
+          "time": 99.29999995231628,
+          "fullscreen": false
+        },
+        {
+          "type": "click",
+          "target": "enter",
+          "time": 99.29999995231628,
+          "fullscreen": false
+        },
+        {
+          "type": "fullscreenchange",
+          "target": "root",
+          "time": 125.20000004768372,
+          "fullscreen": true
+        },
+        {
+          "type": "pointerdown",
+          "target": "exit",
+          "time": 161.09999990463257,
+          "fullscreen": true
+        },
+        {
+          "type": "mousedown",
+          "target": "exit",
+          "time": 161.09999990463257,
+          "fullscreen": true
+        },
+        {
+          "type": "pointerup",
+          "target": "exit",
+          "time": 161.40000009536743,
+          "fullscreen": true
+        },
+        {
+          "type": "mouseup",
+          "target": "exit",
+          "time": 161.5,
+          "fullscreen": true
+        },
+        {
+          "type": "click",
+          "target": "exit",
+          "time": 161.70000004768372,
+          "fullscreen": true
+        }
+      ]
+    }
+  ],
+  "acknowledgementTimeouts": 0
+}

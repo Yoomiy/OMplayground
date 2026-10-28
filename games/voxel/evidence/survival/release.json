@@ -1,0 +1,59 @@
+{
+  "buildId": "37a9e3788eddb78445d9ebeb495735b31f59847e034d033a4ff19e7fc077f576",
+  "engineHash": "7688702bb6a210b9ac77384f44e7a8f7feca2f9036df7b9230cbe923cde80f49",
+  "contentHash": "c2ed76b95f1df88d5c2e1b852d1f866a6f323483260b6dcad903cfe64d35b6c6",
+  "clientHash": "542a27df86d44655906349b280794ed84d44f6cf8a31fee3c36dd66b88d8ebab",
+  "serverHash": "2728794217899bf3066ef3f50c3a82bd0e4c06ab092528400186e0804808dad8",
+  "client": [
+    {
+      "path": "assets/engine-worker-DsbFhM1d.js",
+      "hash": "ebd6b3bc74cd9be23a51f5819e30b72c82975fd48725b2a70f391b523be791df"
+    },
+    {
+      "path": "assets/index-B-am0Dsg.js",
+      "hash": "18142137dd7e03f0cd743ca86cc04e97e86ce65dd1d746f180a161cbb7059dcf"
+    },
+    {
+      "path": "assets/index-CnEL1LWt.css",
+      "hash": "6302fa8bf28ea629469a2f9ef87f2ff2b1cce1c56039628aab0aed6ec651f4da"
+    },
+    {
+      "path": "assets/voxel_engine_bg-DS1_wqc4.wasm",
+      "hash": "7688702bb6a210b9ac77384f44e7a8f7feca2f9036df7b9230cbe923cde80f49"
+    },
+    {
+      "path": "index.html",
+      "hash": "b5934a02ca553658a3445ac25f7fe8b02e22e636ff7c55b937b6639cca7f3cc0"
+    }
+  ],
+  "server": [
+    {
+      "path": "build.json",
+      "hash": "c7661903eb38a6b7203ea51fc8fd7dfa35886e1ad9486a43c5a14f43706aff56"
+    },
+    {
+      "path": "content.json",
+      "hash": "edc85cda628959c686acc16617502f215dcdd2ecbf4390fc298d263a5b95f3d2"
+    },
+    {
+      "path": "engine.wasm",
+      "hash": "7688702bb6a210b9ac77384f44e7a8f7feca2f9036df7b9230cbe923cde80f49"
+    },
+    {
+      "path": "gateway.js",
+      "hash": "0749d28eb66b41e40b60d11be29456169f33d2bff98db3daecda87a82eabb56d"
+    },
+    {
+      "path": "gateway.js.map",
+      "hash": "9d4c1537facb86bcd5b01611acd7509ff0cdc5d107684863e8838954608f5513"
+    },
+    {
+      "path": "room-worker.js",
+      "hash": "2862f7502a9f0905f0565796994decf74842bd6802d79a7c48bf27f1c85a5a1f"
+    },
+    {
+      "path": "room-worker.js.map",
+      "hash": "5e99a240337e23e4573808a17623eb75c506a691443910ac57cc4615ce99f9cf"
+    }
+  ]
+}

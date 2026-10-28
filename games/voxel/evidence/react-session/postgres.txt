@@ -1,0 +1,31 @@
+✔ fenced SQL commands deny nonhosts, recheck host/role, order idempotent requests and audit staff exactly once (294.961492ms)
+✔ control completion cannot claim an uncommitted save; fresh expiry and stale owners cannot mutate intent (1181.563299ms)
+✔ real school HTTP controls fail unsaved, retry once, resume, end with a committed receipt and replay after terminal retirement (1904.527961ms)
+✔ real concurrent acquisition yields one owner; retry is idempotent and expired takeover retains world identity (94.632053ms)
+✔ renewal checks the database clock after waiting for the owner row lock (527.992969ms)
+✔ two transactions racing one sequence commit one whole graph and exact retry cannot duplicate history (434.42592ms)
+✔ expired or replaced owner cannot commit, renew or release the new epoch (312.091895ms)
+✔ corrupt graph suffixes or unconfirmed uploads roll back pointer, history and every reference (499.555472ms)
+✔ browser roles cannot read metadata or execute RPCs; service writes require RPCs and the bucket is private (120.286496ms)
+✔ retention keeps active/shared objects; garbage claims fence uploads and stale deletion workers (387.120414ms)
+✔ cleanup skips uncommitted graph locks and rechecks references before claiming deletion (460.361005ms)
+✔ session removal retains orphan object addresses for subsequent Storage cleanup (113.152742ms)
+✔ old active references cannot starve a bounded garbage-collection batch (2030.825406ms)
+✔ commit rechecks expiry after object locks and cannot leave partial history after a delayed upload lock (562.480493ms)
+✔ real SDK and PostgreSQL carry a committed room across worker failure, ambiguous commit and new ownership (1303.863244ms)
+✔ production composition verifies real schemas, serves authenticated APIs without a prototype launcher and drains idempotently (156.251868ms)
+✔ scoped session API reads real metadata across staff partitions and completed rosters without allocating or exposing diagnostic payloads (521.293457ms)
+✔ SDK projection persists accepted membership and derives aligned presence/names and host reassignment without exposing staff (377.520128ms)
+✔ out-of-order, expired, released and replaced owner projections cannot overwrite newer state; completion is irreversible (308.371597ms)
+✔ database checks lease expiry after row-lock wait and pause intent denies late newcomer acceptance (603.319569ms)
+✔ all session mutations recheck lease expiry after waiting for the platform session row (1727.316512ms)
+✔ browser roles and browser-invoked legacy definer RPCs cannot write allocated sessions; unrelated sessions retain policy (158.354318ms)
+✔ school SDK/native worker preserve an accepted guest through paused renewal/reconnect, hide staff, reassign host and save empty presence (8547.437415ms)
+ℹ tests 23
+ℹ suites 0
+ℹ pass 23
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 26059.182442

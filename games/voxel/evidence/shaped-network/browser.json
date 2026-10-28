@@ -1,0 +1,3225 @@
+{
+  "result": "SHAPED_TCP_NETWORK_MATRIX_FUNCTIONAL_PASS",
+  "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc",
+  "startedAt": "2026-10-28T09:03:25.406Z",
+  "host": {
+    "node": "v24.21.0",
+    "arch": "arm64",
+    "cpu": "Neoverse-N1",
+    "availableParallelism": 2
+  },
+  "configuration": {
+    "viewport": {
+      "width": 640,
+      "height": 480
+    },
+    "quality": "low",
+    "workerCores": 2,
+    "freshBrowserProcessPerProfile": true
+  },
+  "scope": "Software Chromium with built client/release Wasm and packaged gateway/workers. Local FIFO TCP byte forwarding with aggregate per-direction bandwidth, propagation delay and deterministic read-chunk jitter, including all HTTP/admission/assets/WebSocket traffic. Fixture identity and natural creative terrain; no hosted writes or physical packet-loss/device/network/capacity qualification.",
+  "profiles": [
+    {
+      "profile": {
+        "rttMs": 50,
+        "jitterMs": 0,
+        "mbps": 10
+      },
+      "result": "SHAPED_TCP_BROWSER_JOIN_MOVEMENT_AND_RECONNECT_FUNCTIONAL_PASS",
+      "startedAt": "2026-10-28T09:03:25.406Z",
+      "cold": {
+        "elapsedMs": 5145.516382,
+        "targetMs": 8000,
+        "budgetMet": true,
+        "columns": 49,
+        "collisionColumns": 49,
+        "meshed": 25
+      },
+      "browser": "156.0.8078.4",
+      "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc",
+      "movement": {
+        "before": {
+          "epoch": 3,
+          "ack": 243,
+          "tick": 184,
+          "position": [
+            49.5,
+            92.7999,
+            0.5
+          ]
+        },
+        "after": {
+          "epoch": 3,
+          "ack": 459,
+          "tick": 292,
+          "position": [
+            63.67,
+            92.8,
+            0.5
+          ]
+        },
+        "framesSent": 219,
+        "samples": [
+          {
+            "atMs": 11394.406287,
+            "inputLag": 6,
+            "correction": 0.000024044334665518363,
+            "lastReceivedAgoMs": 10.800000190734863,
+            "position": [
+              49.5,
+              92.79992444750296,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 243,
+              "tick": 184,
+              "position": [
+                49.5,
+                92.7999,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 11499.556099,
+            "inputLag": 8,
+            "correction": 0.00006202216732731358,
+            "lastReceivedAgoMs": 51.799999952316284,
+            "position": [
+              49.92929871227806,
+              92.80002824582078,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 247,
+              "tick": 186,
+              "position": [
+                49.5,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 11611.497743,
+            "inputLag": 7,
+            "correction": 0.00004995729109160854,
+            "lastReceivedAgoMs": 25,
+            "position": [
+              50.93619148955687,
+              92.80000660303689,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 255,
+              "tick": 190,
+              "position": [
+                49.9293,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 11720.225371,
+            "inputLag": 6,
+            "correction": 0.000013850742665150212,
+            "lastReceivedAgoMs": 2.6999998092651367,
+            "position": [
+              52.12544162017019,
+              92.80000777796891,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 263,
+              "tick": 194,
+              "position": [
+                51.0995,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 11827.158272,
+            "inputLag": 9,
+            "correction": 0.00004918536037479271,
+            "lastReceivedAgoMs": 43.69999980926514,
+            "position": [
+              53.37137157497165,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 267,
+              "tick": 196,
+              "position": [
+                51.7768,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 11936.830025,
+            "inputLag": 6,
+            "correction": 0.0000654043601358012,
+            "lastReceivedAgoMs": 18.59999990463257,
+            "position": [
+              54.27313208402346,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 275,
+              "tick": 200,
+              "position": [
+                53.1918,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 12048.809468,
+            "inputLag": 9,
+            "correction": 0.0000065835046925144525,
+            "lastReceivedAgoMs": 63.59999990463257,
+            "position": [
+              55.54133206855153,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 279,
+              "tick": 202,
+              "position": [
+                53.9118,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 12154.464963,
+            "inputLag": 8,
+            "correction": 0.000010299440148742178,
+            "lastReceivedAgoMs": 37,
+            "position": [
+              56.81196341102636,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 287,
+              "tick": 206,
+              "position": [
+                55.36,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 12265.00592,
+            "inputLag": 6,
+            "correction": 0.000005783206852072453,
+            "lastReceivedAgoMs": 13.200000047683716,
+            "position": [
+              57.9015908645351,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 295,
+              "tick": 210,
+              "position": [
+                56.8119,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 12376.19016,
+            "inputLag": 9,
+            "correction": 0.00007229338363146098,
+            "lastReceivedAgoMs": 58.299999952316284,
+            "position": [
+              59.17320631305495,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 299,
+              "tick": 212,
+              "position": [
+                57.5384,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 12483.810423,
+            "inputLag": 8,
+            "correction": 0.000007983428432112305,
+            "lastReceivedAgoMs": 33.59999990463257,
+            "position": [
+              60.444783903147,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 307,
+              "tick": 216,
+              "position": [
+                58.9915,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 12589.649399,
+            "inputLag": 6,
+            "correction": 0.000047677750323771306,
+            "lastReceivedAgoMs": 7.799999952316284,
+            "position": [
+              61.53483555479092,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 315,
+              "tick": 220,
+              "position": [
+                60.4448,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 12701.14996,
+            "inputLag": 8,
+            "correction": 0.000042827791503441404,
+            "lastReceivedAgoMs": 49.700000047683716,
+            "position": [
+              62.62482627187815,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 319,
+              "tick": 222,
+              "position": [
+                61.1715,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 12809.877629,
+            "inputLag": 7,
+            "correction": 0.0000333333333131236,
+            "lastReceivedAgoMs": 25.199999809265137,
+            "position": [
+              63.34453102334138,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 327,
+              "tick": 226,
+              "position": [
+                62.6248,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 12916.555688,
+            "inputLag": 10,
+            "correction": 0.000013913105526341951,
+            "lastReceivedAgoMs": 66.20000004768372,
+            "position": [
+              63.568670697626466,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 331,
+              "tick": 228,
+              "position": [
+                63.1334,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 13027.070245,
+            "inputLag": 9,
+            "correction": 0.000057654893069525315,
+            "lastReceivedAgoMs": 41.200000047683716,
+            "position": [
+              63.638394992817055,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 339,
+              "tick": 232,
+              "position": [
+                63.5285,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 13138.609327,
+            "inputLag": 6,
+            "correction": 0.00004290617081892378,
+            "lastReceivedAgoMs": 17.300000190734863,
+            "position": [
+              63.65626703308864,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 347,
+              "tick": 236,
+              "position": [
+                63.6327,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 13245.359946,
+            "inputLag": 9,
+            "correction": 0.000057970263668494226,
+            "lastReceivedAgoMs": 62.5,
+            "position": [
+              63.66576919778082,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 351,
+              "tick": 238,
+              "position": [
+                63.6509,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 13353.387731,
+            "inputLag": 8,
+            "correction": 0.000015920164301519435,
+            "lastReceivedAgoMs": 35.90000009536743,
+            "position": [
+              63.66871432543023,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 359,
+              "tick": 242,
+              "position": [
+                63.665,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 13465.306935,
+            "inputLag": 6,
+            "correction": 0.00004249406596557037,
+            "lastReceivedAgoMs": 13,
+            "position": [
+              63.66954254567883,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 367,
+              "tick": 246,
+              "position": [
+                63.6687,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 13576.197974,
+            "inputLag": 9,
+            "correction": 0.000050539118682024764,
+            "lastReceivedAgoMs": 56.200000047683716,
+            "position": [
+              63.66982891434993,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 371,
+              "tick": 248,
+              "position": [
+                63.6693,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 13684.882002,
+            "inputLag": 8,
+            "correction": 0.000027383263713431916,
+            "lastReceivedAgoMs": 35.39999985694885,
+            "position": [
+              63.66993416764862,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 379,
+              "tick": 252,
+              "position": [
+                63.6698,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 13793.140149,
+            "inputLag": 6,
+            "correction": 0.00005252770916541749,
+            "lastReceivedAgoMs": 8.799999952316284,
+            "position": [
+              63.66997777968936,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 387,
+              "tick": 256,
+              "position": [
+                63.67,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 13902.268179,
+            "inputLag": 8,
+            "correction": 0.000020705405582077674,
+            "lastReceivedAgoMs": 52.39999985694885,
+            "position": [
+              63.670021184365574,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 391,
+              "tick": 258,
+              "position": [
+                63.67,
+                92.8,
+                0.5
+              ]
+            }
+          }
+        ],
+        "settledAgreementMetres": 0
+      },
+      "warm": {
+        "elapsedMs": 1484.8147879999997,
+        "targetMs": 3000,
+        "budgetMet": true,
+        "oldEpoch": 3,
+        "newEpoch": 6,
+        "columns": 49,
+        "collisionColumns": 49,
+        "meshed": 25,
+        "admissions": 2
+      },
+      "cleanup": {
+        "resources": {
+          "geometries": 0,
+          "textures": 0,
+          "workers": 0
+        },
+        "audio": "closed",
+        "owners": {
+          "openedSockets": 2,
+          "closedSockets": 2,
+          "createdWorkers": 2,
+          "closedWorkers": 2,
+          "liveWorkers": 0
+        }
+      },
+      "finishedAt": "2026-10-28T09:03:41.398Z",
+      "errors": [],
+      "transport": {
+        "profile": {
+          "rttMs": 50,
+          "jitterMs": 0,
+          "mbps": 10
+        },
+        "packetBytes": 8192,
+        "flowBufferBytes": 65536,
+        "opened": 5,
+        "closed": 5,
+        "live": 0,
+        "up": {
+          "receivedBytes": 64829,
+          "forwardedBytes": 64829,
+          "queuedBytes": 0,
+          "peakQueuedBytes": 1219,
+          "peakFlowQueuedBytes": 761,
+          "packets": 207,
+          "readPauses": 0,
+          "writePauses": 0,
+          "trace": [
+            {
+              "receivedAt": 1762.125159,
+              "eligibleAt": 1787.125159,
+              "forwardedAt": 1788.258681,
+              "bytes": 703
+            },
+            {
+              "receivedAt": 1850.943454,
+              "eligibleAt": 1875.943454,
+              "forwardedAt": 1876.533454,
+              "bytes": 602
+            },
+            {
+              "receivedAt": 1852.993184,
+              "eligibleAt": 1877.993184,
+              "forwardedAt": 1881.663078,
+              "bytes": 617
+            },
+            {
+              "receivedAt": 3848.618875,
+              "eligibleAt": 3873.618875,
+              "forwardedAt": 3874.022514,
+              "bytes": 581
+            },
+            {
+              "receivedAt": 4961.206998,
+              "eligibleAt": 4986.206998,
+              "forwardedAt": 4986.555037,
+              "bytes": 704
+            },
+            {
+              "receivedAt": 5029.243756,
+              "eligibleAt": 5054.243756,
+              "forwardedAt": 5055.258478,
+              "bytes": 529
+            },
+            {
+              "receivedAt": 5085.167778,
+              "eligibleAt": 5110.167778,
+              "forwardedAt": 5110.771338,
+              "bytes": 156
+            },
+            {
+              "receivedAt": 5283.657866,
+              "eligibleAt": 5308.657866,
+              "forwardedAt": 5308.842984,
+              "bytes": 513
+            },
+            {
+              "receivedAt": 5695.379712,
+              "eligibleAt": 5720.379712,
+              "forwardedAt": 5721.796715,
+              "bytes": 292
+            },
+            {
+              "receivedAt": 5768.655334,
+              "eligibleAt": 5793.655334,
+              "forwardedAt": 5794.979297,
+              "bytes": 59
+            },
+            {
+              "receivedAt": 7092.671326,
+              "eligibleAt": 7117.671326,
+              "forwardedAt": 7118.116565,
+              "bytes": 46
+            },
+            {
+              "receivedAt": 7146.607979,
+              "eligibleAt": 7171.607979,
+              "forwardedAt": 7172.196058,
+              "bytes": 59
+            },
+            {
+              "receivedAt": 7157.779991,
+              "eligibleAt": 7182.779991,
+              "forwardedAt": 7183.119229,
+              "bytes": 229
+            },
+            {
+              "receivedAt": 7163.273977,
+              "eligibleAt": 7188.273977,
+              "forwardedAt": 7189.341698,
+              "bytes": 56
+            },
+            {
+              "receivedAt": 7195.640368,
+              "eligibleAt": 7220.640368,
+              "forwardedAt": 7220.671125,
+              "bytes": 229
+            },
+            {
+              "receivedAt": 7243.412351,
+              "eligibleAt": 7268.412351,
+              "forwardedAt": 7268.585829,
+              "bytes": 59
+            },
+            {
+              "receivedAt": 7257.932299,
+              "eligibleAt": 7282.932299,
+              "forwardedAt": 7282.955936,
+              "bytes": 229
+            },
+            {
+              "receivedAt": 7292.29966,
+              "eligibleAt": 7317.29966,
+              "forwardedAt": 7317.8677,
+              "bytes": 227
+            },
+            {
+              "receivedAt": 7340.648486,
+              "eligibleAt": 7365.648486,
+              "forwardedAt": 7365.858684,
+              "bytes": 323
+            },
+            {
+              "receivedAt": 7387.462625,
+              "eligibleAt": 7412.462625,
+              "forwardedAt": 7413.327746,
+              "bytes": 324
+            },
+            {
+              "receivedAt": 7436.126373,
+              "eligibleAt": 7461.126373,
+              "forwardedAt": 7462.153694,
+              "bytes": 326
+            },
+            {
+              "receivedAt": 7483.419794,
+              "eligibleAt": 7508.419794,
+              "forwardedAt": 7509.585076,
+              "bytes": 229
+            },
+            {
+              "receivedAt": 7533.425468,
+              "eligibleAt": 7558.425468,
+              "forwardedAt": 7559.60103,
+              "bytes": 326
+            },
+            {
+              "receivedAt": 7579.612764,
+              "eligibleAt": 7604.612764,
+              "forwardedAt": 7605.707806,
+              "bytes": 326
+            },
+            {
+              "receivedAt": 7627.726669,
+              "eligibleAt": 7652.726669,
+              "forwardedAt": 7653.60703,
+              "bytes": 326
+            },
+            {
+              "receivedAt": 7676.309496,
+              "eligibleAt": 7701.309496,
+              "forwardedAt": 7701.452174,
+              "bytes": 326
+            },
+            {
+              "receivedAt": 7725.069524,
+              "eligibleAt": 7750.069524,
+              "forwardedAt": 7750.925885,
+              "bytes": 326
+            },
+            {
+              "receivedAt": 7775.074518,
+              "eligibleAt": 7800.074518,
+              "forwardedAt": 7800.682798,
+              "bytes": 326
+            },
+            {
+              "receivedAt": 7819.476326,
+              "eligibleAt": 7844.476326,
+              "forwardedAt": 7845.298846,
+              "bytes": 326
+            },
+            {
+              "receivedAt": 7867.46867,
+              "eligibleAt": 7892.46867,
+              "forwardedAt": 7893.939194,
+              "bytes": 229
+            },
+            {
+              "receivedAt": 7916.151738,
+              "eligibleAt": 7941.151738,
+              "forwardedAt": 7941.870658,
+              "bytes": 326
+            },
+            {
+              "receivedAt": 7963.77032,
+              "eligibleAt": 7988.77032,
+              "forwardedAt": 7989.568121,
+              "bytes": 326
+            }
+          ],
+          "flows": 0,
+          "timers": 0
+        },
+        "down": {
+          "receivedBytes": 1360919,
+          "forwardedBytes": 1360919,
+          "queuedBytes": 0,
+          "peakQueuedBytes": 96768,
+          "peakFlowQueuedBytes": 96768,
+          "packets": 353,
+          "readPauses": 20,
+          "writePauses": 0,
+          "trace": [
+            {
+              "receivedAt": 1794.111589,
+              "eligibleAt": 1819.111589,
+              "forwardedAt": 1819.487467,
+              "bytes": 1934
+            },
+            {
+              "receivedAt": 1881.801759,
+              "eligibleAt": 1906.801759,
+              "forwardedAt": 1907.75436,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 1883.449326,
+              "eligibleAt": 1908.449326,
+              "forwardedAt": 1914.372511,
+              "bytes": 4888
+            },
+            {
+              "receivedAt": 1881.801759,
+              "eligibleAt": 1906.801759,
+              "forwardedAt": 1919.080933,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 1881.801759,
+              "eligibleAt": 1906.801759,
+              "forwardedAt": 1926.371927,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 1881.801759,
+              "eligibleAt": 1906.801759,
+              "forwardedAt": 1933.884082,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 1881.801759,
+              "eligibleAt": 1906.801759,
+              "forwardedAt": 1941.544318,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 1881.801759,
+              "eligibleAt": 1906.801759,
+              "forwardedAt": 1948.780792,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 1881.801759,
+              "eligibleAt": 1906.801759,
+              "forwardedAt": 1957.960955,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 1881.801759,
+              "eligibleAt": 1906.801759,
+              "forwardedAt": 1965.351349,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 1942.162761,
+              "eligibleAt": 1967.162761,
+              "forwardedAt": 1972.429063,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 1942.162761,
+              "eligibleAt": 1967.162761,
+              "forwardedAt": 1979.975178,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 1942.162761,
+              "eligibleAt": 1967.162761,
+              "forwardedAt": 1987.438253,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 1942.162761,
+              "eligibleAt": 1967.162761,
+              "forwardedAt": 1994.083604,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 1942.162761,
+              "eligibleAt": 1967.162761,
+              "forwardedAt": 2001.216957,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 1942.162761,
+              "eligibleAt": 1967.162761,
+              "forwardedAt": 2008.992233,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 1942.162761,
+              "eligibleAt": 1967.162761,
+              "forwardedAt": 2016.277708,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 1942.162761,
+              "eligibleAt": 1967.162761,
+              "forwardedAt": 2022.962219,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 2001.477598,
+              "eligibleAt": 2026.477598,
+              "forwardedAt": 2030.357733,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 2001.477598,
+              "eligibleAt": 2026.477598,
+              "forwardedAt": 2037.652687,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 2001.477598,
+              "eligibleAt": 2026.477598,
+              "forwardedAt": 2044.395639,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 2001.477598,
+              "eligibleAt": 2026.477598,
+              "forwardedAt": 2051.554992,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 2001.477598,
+              "eligibleAt": 2026.477598,
+              "forwardedAt": 2058.838147,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 2037.808568,
+              "eligibleAt": 2062.808568,
+              "forwardedAt": 2066.162981,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 2037.808568,
+              "eligibleAt": 2062.808568,
+              "forwardedAt": 2073.450975,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 2037.808568,
+              "eligibleAt": 2062.808568,
+              "forwardedAt": 2080.750889,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 2037.808568,
+              "eligibleAt": 2062.808568,
+              "forwardedAt": 2088.042643,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 2037.808568,
+              "eligibleAt": 2062.808568,
+              "forwardedAt": 2095.331517,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 2037.808568,
+              "eligibleAt": 2062.808568,
+              "forwardedAt": 2101.928828,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 2037.808568,
+              "eligibleAt": 2062.808568,
+              "forwardedAt": 2109.257262,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 2037.808568,
+              "eligibleAt": 2062.808568,
+              "forwardedAt": 2116.588297,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 2095.575878,
+              "eligibleAt": 2120.575878,
+              "forwardedAt": 2123.910331,
+              "bytes": 8192
+            }
+          ],
+          "flows": 0,
+          "timers": 0
+        }
+      },
+      "events": [
+        {
+          "event": "VOXEL_ADMISSION_ISSUED",
+          "context": {
+            "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc"
+          }
+        },
+        {
+          "event": "VOXEL_ROOM_READY",
+          "context": {
+            "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc"
+          }
+        },
+        {
+          "event": "VOXEL_ADMISSION_ISSUED",
+          "context": {
+            "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc"
+          }
+        },
+        {
+          "event": "VOXEL_ROOM_METRICS",
+          "context": {
+            "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc",
+            "worldId": "3fb83aef-6d40-4520-b9fd-c4c76bf4f7dc",
+            "ticks": 300,
+            "columns": 9,
+            "overrunMs": 0,
+            "windowMs": 9999.614134,
+            "windowStartedAtMs": 5217.722558,
+            "windowEndedAtMs": 15217.336692,
+            "worldStep_samples": 300,
+            "worldStep_meanMs": 0.2460271666666904,
+            "worldStep_p95UpperMs": 0.6,
+            "worldStep_p99UpperMs": 1.8,
+            "worldStep_maxMs": 4.098019000000022,
+            "observerStep_samples": 0,
+            "observerStep_meanMs": 0,
+            "observerStep_p95UpperMs": 0,
+            "observerStep_p99UpperMs": 0,
+            "observerStep_maxMs": 0,
+            "workerTurn_samples": 2322,
+            "workerTurn_meanMs": 0.12129109345394413,
+            "workerTurn_p95UpperMs": 0.25,
+            "workerTurn_p99UpperMs": 1.25,
+            "workerTurn_maxMs": 28.785855000000083,
+            "generationJob_samples": 18,
+            "generationJob_meanMs": 8.364825777777696,
+            "generationJob_p95UpperMs": 28.555774000000383,
+            "generationJob_p99UpperMs": 28.555774000000383,
+            "generationJob_maxMs": 28.555774000000383,
+            "command_samples": 176,
+            "command_meanMs": 0.1272899375000933,
+            "command_p95UpperMs": 0.15,
+            "command_p99UpperMs": 2.65,
+            "command_maxMs": 10.90161100000023
+          }
+        },
+        {
+          "event": "VOXEL_ROOM_EXITED",
+          "context": {
+            "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc",
+            "code": 0
+          }
+        }
+      ],
+      "remainingRooms": 0
+    },
+    {
+      "profile": {
+        "rttMs": 100,
+        "jitterMs": 25,
+        "mbps": 10
+      },
+      "result": "SHAPED_TCP_BROWSER_JOIN_MOVEMENT_AND_RECONNECT_FUNCTIONAL_PASS",
+      "startedAt": "2026-10-28T09:03:41.399Z",
+      "cold": {
+        "elapsedMs": 5527.769388000001,
+        "targetMs": 8000,
+        "budgetMet": true,
+        "columns": 49,
+        "collisionColumns": 49,
+        "meshed": 25
+      },
+      "browser": "156.0.8078.4",
+      "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc",
+      "movement": {
+        "before": {
+          "epoch": 3,
+          "ack": 233,
+          "tick": 182,
+          "position": [
+            49.5,
+            92.7997,
+            0.5
+          ]
+        },
+        "after": {
+          "epoch": 3,
+          "ack": 453,
+          "tick": 292,
+          "position": [
+            64.215,
+            92.8,
+            0.5
+          ]
+        },
+        "framesSent": 216,
+        "samples": [
+          {
+            "atMs": 26974.385595,
+            "inputLag": 2,
+            "correction": 0.00010000000000331966,
+            "lastReceivedAgoMs": 3.3999998569488525,
+            "position": [
+              49.56704787715417,
+              92.79984349144313,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 238,
+              "tick": 184,
+              "position": [
+                49.5,
+                92.7998,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 27081.747177,
+            "inputLag": 8,
+            "correction": 0.00006981580314402436,
+            "lastReceivedAgoMs": 81.40000009536743,
+            "position": [
+              50.18363471756498,
+              92.79995649164151,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 242,
+              "tick": 186,
+              "position": [
+                49.5,
+                92.7999,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 27190.772088,
+            "inputLag": 11,
+            "correction": 0.000027801747328675208,
+            "lastReceivedAgoMs": 6.699999809265137,
+            "position": [
+              51.26560269589563,
+              92.80001611202736,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 251,
+              "tick": 190,
+              "position": [
+                49.7181,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 27301.109364,
+            "inputLag": 8,
+            "correction": 0.000009590290447337854,
+            "lastReceivedAgoMs": 30.399999856948853,
+            "position": [
+              52.125362746362555,
+              92.80000706145518,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 259,
+              "tick": 194,
+              "position": [
+                50.7762,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 27411.021159,
+            "inputLag": 12,
+            "correction": 0.17879184463173442,
+            "lastReceivedAgoMs": 51.200000047683716,
+            "position": [
+              53.551301137338186,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 262,
+              "tick": 196,
+              "position": [
+                51.4341,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 27518.344821,
+            "inputLag": 11,
+            "correction": 0.000024352407145045163,
+            "lastReceivedAgoMs": 25.59999990463257,
+            "position": [
+              54.81615353003241,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 270,
+              "tick": 200,
+              "position": [
+                52.8339,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 27630.269145,
+            "inputLag": 10,
+            "correction": 0.00001784666329740503,
+            "lastReceivedAgoMs": 3.8999998569488525,
+            "position": [
+              56.08575760834277,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 278,
+              "tick": 204,
+              "position": [
+                54.2732,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 27739.929619,
+            "inputLag": 12,
+            "correction": 0.000011955991723766601,
+            "lastReceivedAgoMs": 22.899999856948853,
+            "position": [
+              57.17516132916309,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 282,
+              "tick": 206,
+              "position": [
+                54.9974,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 27846.866479,
+            "inputLag": 11,
+            "correction": 0.000015529072861397708,
+            "lastReceivedAgoMs": 46.200000047683716,
+            "position": [
+              58.44656135636221,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 290,
+              "tick": 210,
+              "position": [
+                56.4488,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 27958.519362,
+            "inputLag": 13,
+            "correction": 0.00003946540093835438,
+            "lastReceivedAgoMs": 67.39999985694885,
+            "position": [
+              59.53645251442104,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 294,
+              "tick": 212,
+              "position": [
+                57.1751,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 28064.89322,
+            "inputLag": 12,
+            "correction": 0.00002007927793812314,
+            "lastReceivedAgoMs": 41.799999952316284,
+            "position": [
+              60.808117086265284,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 302,
+              "tick": 216,
+              "position": [
+                58.6282,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 28172.840645,
+            "inputLag": 10,
+            "correction": 0.000053437845828341324,
+            "lastReceivedAgoMs": 14.599999904632568,
+            "position": [
+              61.89814333275985,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 310,
+              "tick": 220,
+              "position": [
+                60.0815,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 28281.967796,
+            "inputLag": 13,
+            "correction": 0.000048316689856164885,
+            "lastReceivedAgoMs": 31.5,
+            "position": [
+              63.16975817606544,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 314,
+              "tick": 222,
+              "position": [
+                60.8081,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 28392.217312,
+            "inputLag": 12,
+            "correction": 0.000041624706824450186,
+            "lastReceivedAgoMs": 56.5,
+            "position": [
+              63.88956435667474,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 322,
+              "tick": 226,
+              "position": [
+                62.2615,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 28498.646331,
+            "inputLag": 13,
+            "correction": 0.00006666666668309063,
+            "lastReceivedAgoMs": 74.19999980926514,
+            "position": [
+              64.07352637489701,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 326,
+              "tick": 228,
+              "position": [
+                62.9881,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 28614.727834,
+            "inputLag": 8,
+            "correction": 0.000025889913160881406,
+            "lastReceivedAgoMs": 0.2999999523162842,
+            "position": [
+              64.17093408969231,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 338,
+              "tick": 234,
+              "position": [
+                64.0479,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 28724.252547,
+            "inputLag": 12,
+            "correction": 0.0024725110482108903,
+            "lastReceivedAgoMs": 26.200000047683716,
+            "position": [
+              64.20338291843613,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 341,
+              "tick": 236,
+              "position": [
+                64.1292,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 28832.640574,
+            "inputLag": 11,
+            "correction": 0.00004029315373088593,
+            "lastReceivedAgoMs": 8.599999904632568,
+            "position": [
+              64.21143637340603,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 349,
+              "tick": 240,
+              "position": [
+                64.1924,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 28940.224198,
+            "inputLag": 13,
+            "correction": 6.232819202978135e-7,
+            "lastReceivedAgoMs": 69,
+            "position": [
+              64.213682118093,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 353,
+              "tick": 242,
+              "position": [
+                64.2034,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 29047.48382,
+            "inputLag": 16,
+            "correction": 0.00004844767620681978,
+            "lastReceivedAgoMs": 87.90000009536743,
+            "position": [
+              64.21455000310235,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 357,
+              "tick": 244,
+              "position": [
+                64.209,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 29154.776002,
+            "inputLag": 10,
+            "correction": 0.000033299220277172026,
+            "lastReceivedAgoMs": 20.700000047683716,
+            "position": [
+              64.21485334939067,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 369,
+              "tick": 250,
+              "position": [
+                64.2142,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 29266.715726,
+            "inputLag": 13,
+            "correction": 0.000007040854995921109,
+            "lastReceivedAgoMs": 39.5,
+            "position": [
+              64.21496509585302,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 373,
+              "tick": 252,
+              "position": [
+                64.2146,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 29376.297279,
+            "inputLag": 11,
+            "correction": 0.00000494570737430422,
+            "lastReceivedAgoMs": 18.299999952316284,
+            "position": [
+              64.21498861615044,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 381,
+              "tick": 256,
+              "position": [
+                64.2149,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 29482.217535,
+            "inputLag": 14,
+            "correction": 0.00004869962621967261,
+            "lastReceivedAgoMs": 85.29999995231628,
+            "position": [
+              64.21495195546336,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 385,
+              "tick": 258,
+              "position": [
+                64.2149,
+                92.8,
+                0.5
+              ]
+            }
+          }
+        ],
+        "settledAgreementMetres": 0
+      },
+      "warm": {
+        "elapsedMs": 1677.5563350000011,
+        "targetMs": 3000,
+        "budgetMet": true,
+        "oldEpoch": 3,
+        "newEpoch": 6,
+        "columns": 49,
+        "collisionColumns": 49,
+        "meshed": 25,
+        "admissions": 2
+      },
+      "cleanup": {
+        "resources": {
+          "geometries": 0,
+          "textures": 0,
+          "workers": 0
+        },
+        "audio": "closed",
+        "owners": {
+          "openedSockets": 2,
+          "closedSockets": 2,
+          "createdWorkers": 2,
+          "closedWorkers": 2,
+          "liveWorkers": 0
+        }
+      },
+      "finishedAt": "2026-10-28T09:03:57.211Z",
+      "errors": [],
+      "transport": {
+        "profile": {
+          "rttMs": 100,
+          "jitterMs": 25,
+          "mbps": 10
+        },
+        "packetBytes": 8192,
+        "flowBufferBytes": 65536,
+        "opened": 5,
+        "closed": 5,
+        "live": 0,
+        "up": {
+          "receivedBytes": 65220,
+          "forwardedBytes": 65220,
+          "queuedBytes": 0,
+          "peakQueuedBytes": 1219,
+          "peakFlowQueuedBytes": 978,
+          "packets": 209,
+          "readPauses": 0,
+          "writePauses": 0,
+          "trace": [
+            {
+              "receivedAt": 16855.644317,
+              "eligibleAt": 16880.644317,
+              "forwardedAt": 16881.362238,
+              "bytes": 703
+            },
+            {
+              "receivedAt": 16929.945625,
+              "eligibleAt": 16979.945625,
+              "forwardedAt": 16980.583422,
+              "bytes": 602
+            },
+            {
+              "receivedAt": 16931.245991,
+              "eligibleAt": 17006.245991,
+              "forwardedAt": 17006.670424,
+              "bytes": 617
+            },
+            {
+              "receivedAt": 19119.702272,
+              "eligibleAt": 19169.702272,
+              "forwardedAt": 19170.506549,
+              "bytes": 581
+            },
+            {
+              "receivedAt": 20466.013612,
+              "eligibleAt": 20491.013612,
+              "forwardedAt": 20492.114974,
+              "bytes": 704
+            },
+            {
+              "receivedAt": 20551.390571,
+              "eligibleAt": 20601.390571,
+              "forwardedAt": 20602.33381,
+              "bytes": 529
+            },
+            {
+              "receivedAt": 20630.396381,
+              "eligibleAt": 20705.396381,
+              "forwardedAt": 20706.353337,
+              "bytes": 156
+            },
+            {
+              "receivedAt": 20850.714772,
+              "eligibleAt": 20900.714772,
+              "forwardedAt": 20901.853132,
+              "bytes": 513
+            },
+            {
+              "receivedAt": 21266.720199,
+              "eligibleAt": 21291.720199,
+              "forwardedAt": 21292.248279,
+              "bytes": 292
+            },
+            {
+              "receivedAt": 21359.801355,
+              "eligibleAt": 21409.801355,
+              "forwardedAt": 21410.567552,
+              "bytes": 59
+            },
+            {
+              "receivedAt": 22513.184633,
+              "eligibleAt": 22588.184633,
+              "forwardedAt": 22588.753587,
+              "bytes": 46
+            },
+            {
+              "receivedAt": 22624.610674,
+              "eligibleAt": 22674.610674,
+              "forwardedAt": 22674.93723,
+              "bytes": 59
+            },
+            {
+              "receivedAt": 22633.855238,
+              "eligibleAt": 22658.855238,
+              "forwardedAt": 22676.367637,
+              "bytes": 229
+            },
+            {
+              "receivedAt": 22645.758093,
+              "eligibleAt": 22695.758093,
+              "forwardedAt": 22696.840172,
+              "bytes": 56
+            },
+            {
+              "receivedAt": 22671.217613,
+              "eligibleAt": 22746.217613,
+              "forwardedAt": 22746.693126,
+              "bytes": 229
+            },
+            {
+              "receivedAt": 22719.136757,
+              "eligibleAt": 22769.136757,
+              "forwardedAt": 22769.453512,
+              "bytes": 326
+            },
+            {
+              "receivedAt": 22767.404863,
+              "eligibleAt": 22792.404863,
+              "forwardedAt": 22793.023463,
+              "bytes": 327
+            },
+            {
+              "receivedAt": 22815.374727,
+              "eligibleAt": 22865.374727,
+              "forwardedAt": 22866.347606,
+              "bytes": 329
+            },
+            {
+              "receivedAt": 22817.187656,
+              "eligibleAt": 22892.187656,
+              "forwardedAt": 22892.680209,
+              "bytes": 59
+            },
+            {
+              "receivedAt": 22864.993119,
+              "eligibleAt": 22914.993119,
+              "forwardedAt": 22915.676157,
+              "bytes": 323
+            },
+            {
+              "receivedAt": 22911.580217,
+              "eligibleAt": 22936.580217,
+              "forwardedAt": 22936.943616,
+              "bytes": 227
+            },
+            {
+              "receivedAt": 22959.318041,
+              "eligibleAt": 23009.318041,
+              "forwardedAt": 23010.055318,
+              "bytes": 323
+            },
+            {
+              "receivedAt": 23007.305706,
+              "eligibleAt": 23082.305706,
+              "forwardedAt": 23083.204101,
+              "bytes": 325
+            },
+            {
+              "receivedAt": 23107.575015,
+              "eligibleAt": 23157.575015,
+              "forwardedAt": 23158.217492,
+              "bytes": 652
+            },
+            {
+              "receivedAt": 23151.34982,
+              "eligibleAt": 23176.34982,
+              "forwardedAt": 23176.672658,
+              "bytes": 326
+            },
+            {
+              "receivedAt": 23199.313124,
+              "eligibleAt": 23249.313124,
+              "forwardedAt": 23249.7788,
+              "bytes": 326
+            },
+            {
+              "receivedAt": 23247.174748,
+              "eligibleAt": 23322.174748,
+              "forwardedAt": 23322.737102,
+              "bytes": 326
+            },
+            {
+              "receivedAt": 23295.589895,
+              "eligibleAt": 23345.589895,
+              "forwardedAt": 23345.82845,
+              "bytes": 229
+            },
+            {
+              "receivedAt": 23343.138117,
+              "eligibleAt": 23368.138117,
+              "forwardedAt": 23368.490236,
+              "bytes": 326
+            },
+            {
+              "receivedAt": 23391.425823,
+              "eligibleAt": 23441.425823,
+              "forwardedAt": 23442.944505,
+              "bytes": 326
+            },
+            {
+              "receivedAt": 23441.329257,
+              "eligibleAt": 23516.329257,
+              "forwardedAt": 23516.924251,
+              "bytes": 326
+            },
+            {
+              "receivedAt": 23487.169992,
+              "eligibleAt": 23537.169992,
+              "forwardedAt": 23537.521307,
+              "bytes": 326
+            }
+          ],
+          "flows": 0,
+          "timers": 0
+        },
+        "down": {
+          "receivedBytes": 1362586,
+          "forwardedBytes": 1362586,
+          "queuedBytes": 0,
+          "peakQueuedBytes": 96256,
+          "peakFlowQueuedBytes": 96256,
+          "packets": 358,
+          "readPauses": 19,
+          "writePauses": 0,
+          "trace": [
+            {
+              "receivedAt": 16882.303162,
+              "eligibleAt": 16907.303162,
+              "forwardedAt": 16907.56928,
+              "bytes": 1934
+            },
+            {
+              "receivedAt": 16982.33723,
+              "eligibleAt": 17032.33723,
+              "forwardedAt": 17032.646826,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 16982.33723,
+              "eligibleAt": 17032.33723,
+              "forwardedAt": 17040.130861,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 16982.33723,
+              "eligibleAt": 17032.33723,
+              "forwardedAt": 17047.358094,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 16982.33723,
+              "eligibleAt": 17032.33723,
+              "forwardedAt": 17054.533408,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 16982.33723,
+              "eligibleAt": 17032.33723,
+              "forwardedAt": 17061.717362,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 16982.33723,
+              "eligibleAt": 17032.33723,
+              "forwardedAt": 17068.988916,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 16982.33723,
+              "eligibleAt": 17032.33723,
+              "forwardedAt": 17076.210589,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 17007.401987,
+              "eligibleAt": 17082.401987,
+              "forwardedAt": 17083.491663,
+              "bytes": 4888
+            },
+            {
+              "receivedAt": 16982.33723,
+              "eligibleAt": 17032.33723,
+              "forwardedAt": 17088.239166,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 17061.792682,
+              "eligibleAt": 17111.792682,
+              "forwardedAt": 17112.553479,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 17061.792682,
+              "eligibleAt": 17111.792682,
+              "forwardedAt": 17120.010034,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 17061.792682,
+              "eligibleAt": 17111.792682,
+              "forwardedAt": 17127.471189,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 17061.792682,
+              "eligibleAt": 17111.792682,
+              "forwardedAt": 17134.943624,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 17061.792682,
+              "eligibleAt": 17111.792682,
+              "forwardedAt": 17141.559135,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 17061.792682,
+              "eligibleAt": 17111.792682,
+              "forwardedAt": 17148.92257,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 17061.792682,
+              "eligibleAt": 17111.792682,
+              "forwardedAt": 17156.228364,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 17061.792682,
+              "eligibleAt": 17111.792682,
+              "forwardedAt": 17163.077916,
+              "bytes": 6144
+            },
+            {
+              "receivedAt": 17135.193705,
+              "eligibleAt": 17160.193705,
+              "forwardedAt": 17168.495541,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 17135.193705,
+              "eligibleAt": 17160.193705,
+              "forwardedAt": 17175.416134,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 17135.193705,
+              "eligibleAt": 17160.193705,
+              "forwardedAt": 17182.763728,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 17135.193705,
+              "eligibleAt": 17160.193705,
+              "forwardedAt": 17189.968042,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 17135.193705,
+              "eligibleAt": 17160.193705,
+              "forwardedAt": 17197.328636,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 17135.193705,
+              "eligibleAt": 17160.193705,
+              "forwardedAt": 17204.60791,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 17135.193705,
+              "eligibleAt": 17160.193705,
+              "forwardedAt": 17211.918904,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 17135.193705,
+              "eligibleAt": 17160.193705,
+              "forwardedAt": 17219.196698,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 17197.440237,
+              "eligibleAt": 17247.440237,
+              "forwardedAt": 17248.119434,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 17197.440237,
+              "eligibleAt": 17247.440237,
+              "forwardedAt": 17255.430388,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 17197.440237,
+              "eligibleAt": 17247.440237,
+              "forwardedAt": 17262.676342,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 17197.440237,
+              "eligibleAt": 17247.440237,
+              "forwardedAt": 17269.966296,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 17197.440237,
+              "eligibleAt": 17247.440237,
+              "forwardedAt": 17278.493456,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 17197.440237,
+              "eligibleAt": 17247.440237,
+              "forwardedAt": 17286.834215,
+              "bytes": 8192
+            }
+          ],
+          "flows": 0,
+          "timers": 0
+        }
+      },
+      "events": [
+        {
+          "event": "VOXEL_ADMISSION_ISSUED",
+          "context": {
+            "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc"
+          }
+        },
+        {
+          "event": "VOXEL_ROOM_READY",
+          "context": {
+            "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc"
+          }
+        },
+        {
+          "event": "VOXEL_ADMISSION_ISSUED",
+          "context": {
+            "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc"
+          }
+        },
+        {
+          "event": "VOXEL_ROOM_METRICS",
+          "context": {
+            "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc",
+            "worldId": "6873b233-b26d-4d7e-a0c5-123c32be6db9",
+            "ticks": 299,
+            "columns": 9,
+            "overrunMs": 0,
+            "windowMs": 10000.261532,
+            "windowStartedAtMs": 20767.188861,
+            "windowEndedAtMs": 30767.450393,
+            "worldStep_samples": 299,
+            "worldStep_meanMs": 0.23520648494979657,
+            "worldStep_p95UpperMs": 0.7,
+            "worldStep_p99UpperMs": 1.9,
+            "worldStep_maxMs": 2.98709400000007,
+            "observerStep_samples": 0,
+            "observerStep_meanMs": 0,
+            "observerStep_p95UpperMs": 0,
+            "observerStep_p99UpperMs": 0,
+            "observerStep_maxMs": 0,
+            "workerTurn_samples": 2349,
+            "workerTurn_meanMs": 0.06471572541508583,
+            "workerTurn_p95UpperMs": 0.25,
+            "workerTurn_p99UpperMs": 0.75,
+            "workerTurn_maxMs": 7.45395500000086,
+            "generationJob_samples": 12,
+            "generationJob_meanMs": 3.2265984999997577,
+            "generationJob_p95UpperMs": 6.811831999999413,
+            "generationJob_p99UpperMs": 6.811831999999413,
+            "generationJob_maxMs": 6.811831999999413,
+            "command_samples": 179,
+            "command_meanMs": 0.07074603910615483,
+            "command_p95UpperMs": 0.15,
+            "command_p99UpperMs": 1.8,
+            "command_maxMs": 3.84629799999675
+          }
+        },
+        {
+          "event": "VOXEL_ROOM_EXITED",
+          "context": {
+            "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc",
+            "code": 0
+          }
+        }
+      ],
+      "remainingRooms": 0
+    },
+    {
+      "profile": {
+        "rttMs": 150,
+        "jitterMs": 0,
+        "mbps": 10
+      },
+      "result": "SHAPED_TCP_BROWSER_JOIN_MOVEMENT_AND_RECONNECT_FUNCTIONAL_PASS",
+      "startedAt": "2026-10-28T09:03:57.212Z",
+      "cold": {
+        "elapsedMs": 6132.805361000002,
+        "targetMs": 8000,
+        "budgetMet": true,
+        "columns": 49,
+        "collisionColumns": 49,
+        "meshed": 25
+      },
+      "browser": "156.0.8078.4",
+      "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc",
+      "movement": {
+        "before": {
+          "epoch": 3,
+          "ack": 234,
+          "tick": 186,
+          "position": [
+            49.5,
+            92.7996,
+            0.5
+          ]
+        },
+        "after": {
+          "epoch": 3,
+          "ack": 454,
+          "tick": 296,
+          "position": [
+            63.8517,
+            92.8,
+            0.5
+          ]
+        },
+        "framesSent": 218,
+        "samples": [
+          {
+            "atMs": 43432.403108,
+            "inputLag": 15,
+            "correction": 0.0000444732620223931,
+            "lastReceivedAgoMs": 53.40000009536743,
+            "position": [
+              49.5,
+              92.79992567388246,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 234,
+              "tick": 186,
+              "position": [
+                49.5,
+                92.7996,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 43542.819545,
+            "inputLag": 14,
+            "correction": 0.000013379877898955783,
+            "lastReceivedAgoMs": 30.40000009536743,
+            "position": [
+              50.05193564332529,
+              92.79998659243894,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 242,
+              "tick": 190,
+              "position": [
+                49.5,
+                92.7999,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 43654.666949,
+            "inputLag": 13,
+            "correction": 0.00002273970212297604,
+            "lastReceivedAgoMs": 12.299999952316284,
+            "position": [
+              51.099464362713704,
+              92.80002547180366,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 250,
+              "tick": 194,
+              "position": [
+                49.5212,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 43765.174347,
+            "inputLag": 15,
+            "correction": 0.00004929311223345467,
+            "lastReceivedAgoMs": 59.700000047683716,
+            "position": [
+              52.12544060848581,
+              92.8000088019968,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 254,
+              "tick": 196,
+              "position": [
+                49.8174,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 43870.753602,
+            "inputLag": 13,
+            "correction": 0.000014329497768815874,
+            "lastReceivedAgoMs": 30.700000047683716,
+            "position": [
+              53.191844529071865,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 262,
+              "tick": 200,
+              "position": [
+                50.9362,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 43980.705877,
+            "inputLag": 12,
+            "correction": 0.00005757570360032105,
+            "lastReceivedAgoMs": 3.6000001430511475,
+            "position": [
+              54.45406237424035,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 270,
+              "tick": 204,
+              "position": [
+                52.3013,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 44087.802139,
+            "inputLag": 14,
+            "correction": 0.0000948835724585706,
+            "lastReceivedAgoMs": 47.40000009536743,
+            "position": [
+              55.541399211153795,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 274,
+              "tick": 206,
+              "position": [
+                53.0127,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 44195.893685,
+            "inputLag": 13,
+            "correction": 0.00008854048932249725,
+            "lastReceivedAgoMs": 21.5,
+            "position": [
+              56.81198834911805,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 282,
+              "tick": 210,
+              "position": [
+                54.4541,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 44301.56154,
+            "inputLag": 15,
+            "correction": 0.00009460521255277854,
+            "lastReceivedAgoMs": 63,
+            "position": [
+              57.90158434272748,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 286,
+              "tick": 212,
+              "position": [
+                55.1786,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 44413.875986,
+            "inputLag": 14,
+            "correction": 0.00007982256980909597,
+            "lastReceivedAgoMs": 38.200000047683716,
+            "position": [
+              59.173213778699754,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 294,
+              "tick": 216,
+              "position": [
+                56.6304,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 44526.529194,
+            "inputLag": 12,
+            "correction": 0.0000772990160200493,
+            "lastReceivedAgoMs": 11.700000047683716,
+            "position": [
+              60.26316733802447,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 302,
+              "tick": 220,
+              "position": [
+                58.0833,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 44634.256259,
+            "inputLag": 15,
+            "correction": 0.000009717173078627184,
+            "lastReceivedAgoMs": 62,
+            "position": [
+              61.5348295840254,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 306,
+              "tick": 222,
+              "position": [
+                58.8099,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 44746.319544,
+            "inputLag": 14,
+            "correction": 0.000047558075301878944,
+            "lastReceivedAgoMs": 32.10000014305115,
+            "position": [
+              62.806416014845546,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 314,
+              "tick": 226,
+              "position": [
+                60.2631,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 44855.350535,
+            "inputLag": 13,
+            "correction": 0.000033964794418750444,
+            "lastReceivedAgoMs": 11.300000190734863,
+            "position": [
+              63.52622253274015,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 322,
+              "tick": 230,
+              "position": [
+                61.7165,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 44962.433116,
+            "inputLag": 15,
+            "correction": 0.00005786466982726779,
+            "lastReceivedAgoMs": 51.39999985694885,
+            "position": [
+              63.731908867715866,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 326,
+              "tick": 232,
+              "position": [
+                62.4431,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 45067.77609,
+            "inputLag": 13,
+            "correction": 0.00008455921148708967,
+            "lastReceivedAgoMs": 23.300000190734863,
+            "position": [
+              63.80766461883673,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 334,
+              "tick": 236,
+              "position": [
+                63.4672,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 45180.98026,
+            "inputLag": 12,
+            "correction": 0.00005457770834738085,
+            "lastReceivedAgoMs": 7.400000095367432,
+            "position": [
+              63.83799439528627,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 342,
+              "tick": 240,
+              "position": [
+                63.7503,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 45287.74424,
+            "inputLag": 14,
+            "correction": 0.000017077579968827195,
+            "lastReceivedAgoMs": 48.60000014305115,
+            "position": [
+              63.84659371660849,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 346,
+              "tick": 242,
+              "position": [
+                63.7996,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 45393.877458,
+            "inputLag": 13,
+            "correction": 0.000002263590296536222,
+            "lastReceivedAgoMs": 20.300000190734863,
+            "position": [
+              63.850041559763,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 354,
+              "tick": 246,
+              "position": [
+                63.8379,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 45503.406891,
+            "inputLag": 15,
+            "correction": 0.000026214692312009902,
+            "lastReceivedAgoMs": 61.39999985694885,
+            "position": [
+              63.85106066566825,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 358,
+              "tick": 248,
+              "position": [
+                63.8446,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 45615.039854,
+            "inputLag": 14,
+            "correction": 0.00005538217956768676,
+            "lastReceivedAgoMs": 40.5,
+            "position": [
+              63.85147989331529,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 366,
+              "tick": 252,
+              "position": [
+                63.8498,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 45721.880834,
+            "inputLag": 12,
+            "correction": 0.000039459012057818654,
+            "lastReceivedAgoMs": 16.09999990463257,
+            "position": [
+              63.85162286004697,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 374,
+              "tick": 256,
+              "position": [
+                63.8512,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 45829.7501,
+            "inputLag": 15,
+            "correction": 0.000039445482372002516,
+            "lastReceivedAgoMs": 55.200000047683716,
+            "position": [
+              63.851628851917404,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 378,
+              "tick": 258,
+              "position": [
+                63.8514,
+                92.8,
+                0.5
+              ]
+            }
+          },
+          {
+            "atMs": 45936.722921,
+            "inputLag": 14,
+            "correction": 0.00004204276486063918,
+            "lastReceivedAgoMs": 31.699999809265137,
+            "position": [
+              63.85166061470724,
+              92.8,
+              0.5
+            ],
+            "server": {
+              "epoch": 3,
+              "ack": 386,
+              "tick": 262,
+              "position": [
+                63.8516,
+                92.8,
+                0.5
+              ]
+            }
+          }
+        ],
+        "settledAgreementMetres": 0
+      },
+      "warm": {
+        "elapsedMs": 1866.297225000002,
+        "targetMs": 3000,
+        "budgetMet": true,
+        "oldEpoch": 3,
+        "newEpoch": 6,
+        "columns": 49,
+        "collisionColumns": 49,
+        "meshed": 25,
+        "admissions": 2
+      },
+      "cleanup": {
+        "resources": {
+          "geometries": 0,
+          "textures": 0,
+          "workers": 0
+        },
+        "audio": "closed",
+        "owners": {
+          "openedSockets": 2,
+          "closedSockets": 2,
+          "createdWorkers": 2,
+          "closedWorkers": 2,
+          "liveWorkers": 0
+        }
+      },
+      "finishedAt": "2026-10-28T09:04:13.970Z",
+      "errors": [],
+      "transport": {
+        "profile": {
+          "rttMs": 150,
+          "jitterMs": 0,
+          "mbps": 10
+        },
+        "packetBytes": 8192,
+        "flowBufferBytes": 65536,
+        "opened": 5,
+        "closed": 5,
+        "live": 0,
+        "up": {
+          "receivedBytes": 64161,
+          "forwardedBytes": 64161,
+          "queuedBytes": 0,
+          "peakQueuedBytes": 1219,
+          "peakFlowQueuedBytes": 761,
+          "packets": 205,
+          "readPauses": 0,
+          "writePauses": 0,
+          "trace": [
+            {
+              "receivedAt": 32671.487948,
+              "eligibleAt": 32746.487948,
+              "forwardedAt": 32746.815261,
+              "bytes": 703
+            },
+            {
+              "receivedAt": 32848.115175,
+              "eligibleAt": 32923.115175,
+              "forwardedAt": 32923.743369,
+              "bytes": 602
+            },
+            {
+              "receivedAt": 32848.316816,
+              "eligibleAt": 32923.316816,
+              "forwardedAt": 32925.445337,
+              "bytes": 617
+            },
+            {
+              "receivedAt": 35064.803555,
+              "eligibleAt": 35139.803555,
+              "forwardedAt": 35140.019308,
+              "bytes": 581
+            },
+            {
+              "receivedAt": 36639.094568,
+              "eligibleAt": 36714.094568,
+              "forwardedAt": 36714.799083,
+              "bytes": 704
+            },
+            {
+              "receivedAt": 36799.59052,
+              "eligibleAt": 36874.59052,
+              "forwardedAt": 36875.170434,
+              "bytes": 529
+            },
+            {
+              "receivedAt": 36952.324275,
+              "eligibleAt": 37027.324275,
+              "forwardedAt": 37027.634508,
+              "bytes": 156
+            },
+            {
+              "receivedAt": 37180.505264,
+              "eligibleAt": 37255.505264,
+              "forwardedAt": 37256.199858,
+              "bytes": 513
+            },
+            {
+              "receivedAt": 37654.443483,
+              "eligibleAt": 37729.443483,
+              "forwardedAt": 37729.741316,
+              "bytes": 292
+            },
+            {
+              "receivedAt": 37822.888592,
+              "eligibleAt": 37897.888592,
+              "forwardedAt": 37898.914388,
+              "bytes": 59
+            },
+            {
+              "receivedAt": 38904.97382,
+              "eligibleAt": 38979.97382,
+              "forwardedAt": 38980.043332,
+              "bytes": 46
+            },
+            {
+              "receivedAt": 39092.244138,
+              "eligibleAt": 39167.244138,
+              "forwardedAt": 39168.044373,
+              "bytes": 59
+            },
+            {
+              "receivedAt": 39102.945068,
+              "eligibleAt": 39177.945068,
+              "forwardedAt": 39178.832063,
+              "bytes": 130
+            },
+            {
+              "receivedAt": 39109.249897,
+              "eligibleAt": 39184.249897,
+              "forwardedAt": 39185.217293,
+              "bytes": 56
+            },
+            {
+              "receivedAt": 39148.484641,
+              "eligibleAt": 39223.484641,
+              "forwardedAt": 39224.306716,
+              "bytes": 326
+            },
+            {
+              "receivedAt": 39195.791823,
+              "eligibleAt": 39270.791823,
+              "forwardedAt": 39271.253656,
+              "bytes": 326
+            },
+            {
+              "receivedAt": 39243.598246,
+              "eligibleAt": 39318.598246,
+              "forwardedAt": 39318.99472,
+              "bytes": 327
+            },
+            {
+              "receivedAt": 39289.24438,
+              "eligibleAt": 39364.24438,
+              "forwardedAt": 39364.918055,
+              "bytes": 59
+            },
+            {
+              "receivedAt": 39298.485184,
+              "eligibleAt": 39373.485184,
+              "forwardedAt": 39374.093938,
+              "bytes": 229
+            },
+            {
+              "receivedAt": 39340.217859,
+              "eligibleAt": 39415.217859,
+              "forwardedAt": 39415.483852,
+              "bytes": 227
+            },
+            {
+              "receivedAt": 39387.692441,
+              "eligibleAt": 39462.692441,
+              "forwardedAt": 39462.792673,
+              "bytes": 323
+            },
+            {
+              "receivedAt": 39436.39915,
+              "eligibleAt": 39511.39915,
+              "forwardedAt": 39512.351385,
+              "bytes": 324
+            },
+            {
+              "receivedAt": 39484.777096,
+              "eligibleAt": 39559.777096,
+              "forwardedAt": 39560.474691,
+              "bytes": 326
+            },
+            {
+              "receivedAt": 39532.58576,
+              "eligibleAt": 39607.58576,
+              "forwardedAt": 39608.293035,
+              "bytes": 326
+            },
+            {
+              "receivedAt": 39579.62714,
+              "eligibleAt": 39654.62714,
+              "forwardedAt": 39654.822453,
+              "bytes": 326
+            },
+            {
+              "receivedAt": 39628.207048,
+              "eligibleAt": 39703.207048,
+              "forwardedAt": 39704.241884,
+              "bytes": 326
+            },
+            {
+              "receivedAt": 39675.52879,
+              "eligibleAt": 39750.52879,
+              "forwardedAt": 39751.453905,
+              "bytes": 229
+            },
+            {
+              "receivedAt": 39724.875581,
+              "eligibleAt": 39799.875581,
+              "forwardedAt": 39800.291374,
+              "bytes": 326
+            },
+            {
+              "receivedAt": 39771.6214,
+              "eligibleAt": 39846.6214,
+              "forwardedAt": 39847.343274,
+              "bytes": 326
+            },
+            {
+              "receivedAt": 39819.805705,
+              "eligibleAt": 39894.805705,
+              "forwardedAt": 39895.077298,
+              "bytes": 326
+            },
+            {
+              "receivedAt": 39867.572929,
+              "eligibleAt": 39942.572929,
+              "forwardedAt": 39943.315884,
+              "bytes": 326
+            },
+            {
+              "receivedAt": 39915.495674,
+              "eligibleAt": 39990.495674,
+              "forwardedAt": 39990.866707,
+              "bytes": 326
+            }
+          ],
+          "flows": 0,
+          "timers": 0
+        },
+        "down": {
+          "receivedBytes": 1361963,
+          "forwardedBytes": 1361963,
+          "queuedBytes": 0,
+          "peakQueuedBytes": 96768,
+          "peakFlowQueuedBytes": 96768,
+          "packets": 365,
+          "readPauses": 20,
+          "writePauses": 0,
+          "trace": [
+            {
+              "receivedAt": 32747.576784,
+              "eligibleAt": 32822.576784000004,
+              "forwardedAt": 32822.874457,
+              "bytes": 1934
+            },
+            {
+              "receivedAt": 32925.605538,
+              "eligibleAt": 33000.605538,
+              "forwardedAt": 33001.513333,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 32926.201261,
+              "eligibleAt": 33001.201261,
+              "forwardedAt": 33008.526086,
+              "bytes": 4888
+            },
+            {
+              "receivedAt": 32925.605538,
+              "eligibleAt": 33000.605538,
+              "forwardedAt": 33013.363789,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 32925.605538,
+              "eligibleAt": 33000.605538,
+              "forwardedAt": 33020.633183,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 32925.605538,
+              "eligibleAt": 33000.605538,
+              "forwardedAt": 33027.871737,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 32925.605538,
+              "eligibleAt": 33000.605538,
+              "forwardedAt": 33035.134131,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 32925.605538,
+              "eligibleAt": 33000.605538,
+              "forwardedAt": 33043.626771,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 32925.605538,
+              "eligibleAt": 33000.605538,
+              "forwardedAt": 33051.221526,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 32925.605538,
+              "eligibleAt": 33000.605538,
+              "forwardedAt": 33058.150599,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 33035.224491,
+              "eligibleAt": 33110.224491,
+              "forwardedAt": 33110.933046,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 33035.224491,
+              "eligibleAt": 33110.224491,
+              "forwardedAt": 33117.828158,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 33035.224491,
+              "eligibleAt": 33110.224491,
+              "forwardedAt": 33125.303513,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 33035.224491,
+              "eligibleAt": 33110.224491,
+              "forwardedAt": 33132.578307,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 33035.224491,
+              "eligibleAt": 33110.224491,
+              "forwardedAt": 33139.860501,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 33035.224491,
+              "eligibleAt": 33110.224491,
+              "forwardedAt": 33147.168855,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 33035.224491,
+              "eligibleAt": 33110.224491,
+              "forwardedAt": 33154.423849,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 33035.224491,
+              "eligibleAt": 33110.224491,
+              "forwardedAt": 33161.682963,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 33139.991142,
+              "eligibleAt": 33214.991142,
+              "forwardedAt": 33215.943857,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 33139.991142,
+              "eligibleAt": 33214.991142,
+              "forwardedAt": 33223.240972,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 33139.991142,
+              "eligibleAt": 33214.991142,
+              "forwardedAt": 33230.704127,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 33139.991142,
+              "eligibleAt": 33214.991142,
+              "forwardedAt": 33237.95908,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 33139.991142,
+              "eligibleAt": 33214.991142,
+              "forwardedAt": 33245.213954,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 33223.373052,
+              "eligibleAt": 33298.373052,
+              "forwardedAt": 33298.387003,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 33223.373052,
+              "eligibleAt": 33298.373052,
+              "forwardedAt": 33305.687398,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 33223.373052,
+              "eligibleAt": 33298.373052,
+              "forwardedAt": 33312.957192,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 33223.373052,
+              "eligibleAt": 33298.373052,
+              "forwardedAt": 33320.241866,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 33223.373052,
+              "eligibleAt": 33298.373052,
+              "forwardedAt": 33328.577865,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 33223.373052,
+              "eligibleAt": 33298.373052,
+              "forwardedAt": 33336.00618,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 33223.373052,
+              "eligibleAt": 33298.373052,
+              "forwardedAt": 33343.249254,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 33223.373052,
+              "eligibleAt": 33298.373052,
+              "forwardedAt": 33350.503127,
+              "bytes": 8192
+            },
+            {
+              "receivedAt": 33328.694705,
+              "eligibleAt": 33403.694705,
+              "forwardedAt": 33403.706257,
+              "bytes": 8192
+            }
+          ],
+          "flows": 0,
+          "timers": 0
+        }
+      },
+      "events": [
+        {
+          "event": "VOXEL_ADMISSION_ISSUED",
+          "context": {
+            "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc"
+          }
+        },
+        {
+          "event": "VOXEL_ROOM_READY",
+          "context": {
+            "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc"
+          }
+        },
+        {
+          "event": "VOXEL_ROOM_METRICS",
+          "context": {
+            "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc",
+            "worldId": "aa6a1e53-a01b-4ed7-84ee-874735e7d574",
+            "ticks": 299,
+            "columns": 9,
+            "overrunMs": 0,
+            "windowMs": 9999.542843000003,
+            "windowStartedAtMs": 37093.748857,
+            "windowEndedAtMs": 47093.2917,
+            "worldStep_samples": 299,
+            "worldStep_meanMs": 0.20616093979963793,
+            "worldStep_p95UpperMs": 0.55,
+            "worldStep_p99UpperMs": 1,
+            "worldStep_maxMs": 1.348126000004413,
+            "observerStep_samples": 0,
+            "observerStep_meanMs": 0,
+            "observerStep_p95UpperMs": 0,
+            "observerStep_p99UpperMs": 0,
+            "observerStep_maxMs": 0,
+            "workerTurn_samples": 2343,
+            "workerTurn_meanMs": 0.054364141698725325,
+            "workerTurn_p95UpperMs": 0.25,
+            "workerTurn_p99UpperMs": 0.5,
+            "workerTurn_maxMs": 8.57788000000437,
+            "generationJob_samples": 9,
+            "generationJob_meanMs": 2.741043777776617,
+            "generationJob_p95UpperMs": 3.694937000000209,
+            "generationJob_p99UpperMs": 3.694937000000209,
+            "generationJob_maxMs": 3.694937000000209,
+            "command_samples": 178,
+            "command_meanMs": 0.07731656741579469,
+            "command_p95UpperMs": 0.1,
+            "command_p99UpperMs": 1.7,
+            "command_maxMs": 5.373264999994717
+          }
+        },
+        {
+          "event": "VOXEL_ADMISSION_ISSUED",
+          "context": {
+            "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc"
+          }
+        },
+        {
+          "event": "VOXEL_ROOM_EXITED",
+          "context": {
+            "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc",
+            "code": 0
+          }
+        }
+      ],
+      "remainingRooms": 0
+    }
+  ],
+  "finishedAt": "2026-10-28T09:04:13.970Z"
+}

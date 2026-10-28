@@ -1,0 +1,31 @@
+
+> @playground/voxel@0.1.0 test:equipment:browser
+> VOXEL_SURVIVAL_EQUIPMENT=1 node tools/browser-survival.ts
+
+Harvesting natural log 1 with actual held touch input
+Harvesting natural log 2 with actual held touch input
+Harvesting natural log 3 with actual held touch input
+Harvesting natural log 4 with actual held touch input
+Harvesting natural log 5 with actual held touch input
+Harvesting natural log 6 with actual held touch input
+Harvesting natural log 7 with actual held touch input
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: original trunk must be reachable through removable foliage: {"disposed":false,"inputMode":"touch","mode":"survival","mining":{"target":null,"elapsed":0,"total":0},"vitals":{"version":2,"health":20,"food":20,"air":300,"dead":false,"respawnIn":0,"attackCooldown":0,"protection":0},"combat":true,"hit":null,"lastHitEvent":null,"lastExplosionEvent":null,"explosives":[],"canIgnite":true,"miningHeld":false,"drops":[],"selectedSlot":0,"environment":{"tick":19020.70200000286,"seconds":634.0234000000953,"dayFraction":0.7483528333334127,"daylight":0.06,"sun":[-0.009912801538054565,-0.9577749887245007,0.2873478855663454],"sky":[0.058899999999999994,0.0832,0.1374],"rain":0,"wind":[-0.09681483233576553,-0.2839487422754283],"openSky":false},"atmosphere":{"rainLines":0,"stars":true,"clouds":16,"sun":false,"moon":true},"avatars":{"visible":0,"capacity":8,"samples":[]},"renderOrigin":{"x":48,"z":-16},"feedback":{"held":{"state":14,"itemType":"oak_log","visible":true,"swings":17},"effects":{"live":12,"bursts":8,"hits":0,"explosions":0},"drops":{"visible":0,"kinds":0},"explosives":{"visible":0,"capacity":0,"flashing":0},"vision":false},"audio":{"supported":true,"contexts":1,"state":"running","active":true,"muted":false,"voices":0,"effects":10,"gain":0.2199999988079071,"dropped":0,"listener":[49.5,69.62000274658203,-2.700000047683716],"lastSource":[48.5,69.5,-2.5]},"renderLimitHz":30,"touch":{"x":0,"z":0,"jump":false,"sneak":false,"sprint":false},"focused":true,"visible":"visible","hasFocus":true,"lastFrame":36175.2,"lastUpdate":36186.60000014305,"resources":{"geometries":67,"textures":5,"workers":1},"actorId":"ffc1d722-b97a-4694-93c7-fbdf1daf2847","worldId":"219e797b-c11b-4cc7-89ff-b8d6ffb0e962","body":{"position":[49.5,68,-2.7],"onGround":1,"inWater":0,"eyesInWater":0,"frozen":0,"flying":0,"velocity":[0,0,0]},"view":{"yaw":-1.6704649792860589,"pitch":-0.5083701231063279},"lastResult":{"type":"result","epoch":2,"sequence":23,"status":"applied","outcome":{"ok":true,"reason":"cancelled"}},"inventory":{"version":2,"catalog":false,"revision":10,"selected":0,"bag":[{"itemType":"oak_log","count":6},{"itemType":"oak_leaves","count":2},{"itemType":"apple","count":2},null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"craft2":[null,null,null,null],"craft3":[null,null,null,null,null,null,null,null,null],"equipment":[null,null,null,null,null],"station":"personal","container":null},"inventoryOpen":false,"inventoryPending":false,"recentEdits":[{"cell":[49,68,-4],"state":0,"revision":1},{"cell":[49,69,-4],"state":0,"revision":2},{"cell":[49,70,-4],"state":0,"revision":3},{"cell":[49,71,-4],"state":0,"revision":4},{"cell":[49,72,-4],"state":0,"revision":5},{"cell":[49,71,-3],"state":0,"revision":6},{"cell":[49,73,-4],"state":0,"revision":7},{"cell":[48,69,-3],"state":0,"revision":8}],"status":"playing","epoch":2,"phase":"playing","position":[49.5,68,-2.7],"selected":14,"players":1,"inputLag":8,"correction":0,"columns":49,"collisionColumns":49,"meshed":30,"workers":1,"activeJobs":0,"stream":{"discardedJobs":0,"installed":56,"meshJobs":102,"generationJobs":56,"mainWorkMs":0},"render":{"uploadedBytes":7544600,"columns":30,"drawCalls":32,"triangles":23290,"uploadMs":0.10000014305114746},"target":[48,68,-3],"targetState":25,"targetNormal":[0,1,0],"actionPending":0,"queuedAction":null,"actionSequence":23,"lastReceivedAgoMs":33.5}
++ actual - expected
+
++ 'short_grass'
+- 'oak_leaves'
+
+    at file:///home/ubuntu/OMplayground/games/voxel/tools/browser-survival.ts:187:16 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 'short_grass',
+  expected: 'oak_leaves',
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.21.0

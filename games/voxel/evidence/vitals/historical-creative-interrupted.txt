@@ -1,0 +1,16 @@
+
+> @playground/voxel@0.1.0 test:creative:browser
+> node tools/browser-creative.ts
+
+179 Opening creative client
+3104 Creative client ready
+3193 Opening creative client
+7233 Creative client ready
+11778 Testing jump [49.5,68,0.5]
+12044 Dispatching jump key
+50358 Jump key delivered
+59779 Testing movement
+84578 Testing shared edits
+98128 Testing reconnect
+98396 Pointer lock released
+98447 Reconnect requested

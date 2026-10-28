@@ -1,0 +1,81 @@
+✔ input bursts cannot buy more simulated movement time (29.434383ms)
+✖ a recovered steady 60 Hz stream clears transport backlog without extra simulation steps (1.252687ms)
+✖ backlog recovery retires stale presses while consuming fresh look and jump only on scheduled steps (0.787844ms)
+✔ brief packet jitter drains naturally without retiring valid controls or requesting resync (1.107766ms)
+✖ a smaller persistent backlog also clears after the jitter grace period without overflow (4.900184ms)
+✔ fresh queued input proves liveness while consumed aim stays authoritative; rejected packets never renew it (0.357561ms)
+✔ queues expire, transient presses clear, overflow requests resync, epochs invalidate (0.732643ms)
+✔ positions, durations, client clocks, and nonfinite controls are rejected (0.539443ms)
+✔ epoch resets retain consumed look direction while discarding pending view and movement (0.434043ms)
+✔ scheduler bounds stalls without an unbounded catch-up queue (0.563323ms)
+✔ evicted command results cannot execute again, including after reconnect (0.426562ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 8
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 225.844781
+
+✖ failing tests:
+
+test at ../../../tmp/voxel-input-backlog-old-authority.test.ts:44:1
+✖ a recovered steady 60 Hz stream clears transport backlog without extra simulation steps (1.252687ms)
+  AssertionError [ERR_ASSERTION]: a restored link must not retain old input latency indefinitely
+      at TestContext.<anonymous> (file:///tmp/voxel-input-backlog-old-authority.test.ts:59:3)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ../../../tmp/voxel-input-backlog-old-authority.test.ts:64:1
+✖ backlog recovery retires stale presses while consuming fresh look and jump only on scheduled steps (0.787844ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///tmp/voxel-input-backlog-old-authority.test.ts:72:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ../../../tmp/voxel-input-backlog-old-authority.test.ts:103:1
+✖ a smaller persistent backlog also clears after the jitter grace period without overflow (4.900184ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert(queue.received - queue.ack <= 2)
+  
+      at TestContext.<anonymous> (file:///tmp/voxel-input-backlog-old-authority.test.ts:112:20)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

@@ -1,0 +1,111 @@
+{
+  "result": "FAIL",
+  "checkedAt": "2026-10-27T08:52:30.844Z",
+  "buildId": "bb997dbae29bc5aaee832f5bc054990d17e689708217ea13cf5998899e6f56a6",
+  "engineHash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388",
+  "rendererSourceSha256": "3993f4600da3011455f12d4a8fc8d4ac764521d541a2e9937614961c242bfa52",
+  "scope": "Actual held renderer and native procedural texture arrays on software Chromium; isolated view-model visibility/cache/cleanup, not gameplay or physical-device qualification",
+  "cases": [
+    {
+      "name": "desktop",
+      "width": 900,
+      "height": 650,
+      "swing": false,
+      "changedPixels": 3410,
+      "waterPixels": 3410,
+      "visiblePixels": 56916,
+      "stalePixels": 0,
+      "centerPixels": 0,
+      "shellBounds": [
+        590,
+        888
+      ],
+      "shellMargin": 11
+    },
+    {
+      "name": "desktop",
+      "width": 900,
+      "height": 650,
+      "swing": true,
+      "changedPixels": 3635,
+      "waterPixels": 3635,
+      "visiblePixels": 42988,
+      "stalePixels": 0,
+      "centerPixels": 0,
+      "shellBounds": [
+        555,
+        899
+      ],
+      "shellMargin": 0
+    },
+    {
+      "name": "portrait",
+      "width": 390,
+      "height": 780,
+      "swing": false,
+      "changedPixels": 3133,
+      "waterPixels": 3133,
+      "visiblePixels": 35824,
+      "stalePixels": 0,
+      "centerPixels": 0,
+      "shellBounds": [
+        195,
+        389
+      ],
+      "shellMargin": 0
+    },
+    {
+      "name": "portrait",
+      "width": 390,
+      "height": 780,
+      "swing": true,
+      "changedPixels": 36,
+      "waterPixels": 36,
+      "visiblePixels": 14573,
+      "stalePixels": 0,
+      "centerPixels": 0,
+      "shellBounds": [
+        170,
+        389
+      ],
+      "shellMargin": 0
+    },
+    {
+      "name": "tablet",
+      "width": 768,
+      "height": 1024,
+      "swing": false,
+      "changedPixels": 4937,
+      "waterPixels": 4937,
+      "visiblePixels": 64995,
+      "stalePixels": 0,
+      "centerPixels": 0,
+      "shellBounds": [
+        474,
+        754
+      ],
+      "shellMargin": 13
+    },
+    {
+      "name": "tablet",
+      "width": 768,
+      "height": 1024,
+      "swing": true,
+      "changedPixels": 244,
+      "waterPixels": 244,
+      "visiblePixels": 26903,
+      "stalePixels": 0,
+      "centerPixels": 0,
+      "shellBounds": [
+        437,
+        767
+      ],
+      "shellMargin": 0
+    }
+  ],
+  "errors": [],
+  "cleanup": {
+    "geometries": 0,
+    "textures": 0
+  }
+}

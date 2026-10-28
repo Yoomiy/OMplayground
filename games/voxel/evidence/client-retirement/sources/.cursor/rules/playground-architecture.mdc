@@ -1,0 +1,41 @@
+---
+description: Separation of concerns, authoritative server, Supabase Auth email hack, RLS-first
+alwaysApply: true
+---
+
+# The Playground — Architecture & Supabase
+
+**Canonical overview:** [`ARCHITECTURE.md`](../../ARCHITECTURE.md).
+
+## UI vs network
+
+- **Components stay dumb:** Pages/components must not embed fetch/WebSocket logic inline. Use hooks or thin data modules the UI imports.
+- **Games are pure:** e.g. `TicTacToe` accepts props like `gameState` and `onIntent`. The **parent container** connects to the WebSocket server and maps server state → props.
+- **Session containers:**
+  - `GameSessionContainer` + `BOARD_REGISTRY` — board multiplayer (`game-server`)
+  - `game/voxel/VoxelSessionContainer` — rewritten imperative voxel runtime (`games/voxel`, native WebSocket to `voxel-server`)
+  - `SoloGameContainer` + `SOLO_REGISTRY` — solo (`/solo/:gameKey`, no socket)
+
+## Authoritative server
+
+- **Never trust the client** for game truth. Board clients send **`INTENT_GAME`** with `{ sessionId, intent }` (e.g. `{ cellIndex: 4 }`, `{ column: 3 }`). The Node server validates via `packages/game-logic`, updates authoritative state, broadcasts `ROOM_SNAPSHOT` / events.
+- Voxel uses the authoritative 30 Hz room workers and Rust/Wasm engine under `games/voxel`, compiled semantic content, and `apps/voxel-server` school/persistence adapters. The removed NOA/Babylon client, mirrored protocol and old Socket.io hook must not be recreated. Classroom/RTC code belongs to `apps/classroom-server`.
+- The user targets a private school and mostly PCs: prioritize complete desktop student/teacher flows, voice, saves and recovery. Do not pursue larger synthetic scale or mobile/tablet qualification as release gates. Do not add voxel headcount caps.
+- For voxel content/entities, start with `games/voxel/README.md`, `docs/content-progression.md` inside that directory, and its compiled content/schema. Keep React, Supabase and LiveKit out of the engine/simulation; adapters inject those ports. The old `.cursor` NOA-specific voxel skills are retired.
+- Do not let clients PATCH arbitrary `game_state` blobs without server validation.
+- **Hybrid realtime (exceptions):** `LIVE_DELTA` for drawing (and breakout MP score sync); legacy iframe wrappers (breakout, alges-escapade, hexgl) — still no sockets inside the dumb board/iframe shell; container owns wiring.
+
+## Supabase Auth (username login)
+
+- Map usernames to synthetic emails: `[username]@playground.school.local` **only** for Supabase Auth API calls.
+- **Never** show or persist this dummy email in the UI; display real usernames from profile tables.
+
+## Social & presence
+
+- **Challenges:** `game_challenges` table + Realtime (not `kid_profiles.pending_challenge`).
+- **Online peers:** Supabase Realtime Presence via `usePresence` — channel `presence:playground:{gender}`.
+
+## RLS first
+
+- Prefer **Row Level Security** so the database enforces tenant/user scope. Avoid duplicating the same filters only in application code when a policy can guarantee it.
+- Service-role or backend-only operations must still be minimal and documented; default paths use the authenticated Supabase client + RLS.

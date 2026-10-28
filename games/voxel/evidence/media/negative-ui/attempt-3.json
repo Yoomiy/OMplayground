@@ -1,0 +1,91 @@
+{
+  "result": "INCOMPLETE",
+  "room": "voxel-ui-qualification-ab45d6c7-a484-4c78-bd7d-3e99d6f0ecc3",
+  "schoolDatabaseWrites": 0,
+  "scope": "Actual React voice panel/coordinator, generated browser audio and configured SFU; school/Auth/SQL and game poses are fixtures, not deployment or physical-device qualification",
+  "noAutomaticMicrophone": true,
+  "permissionDenial": true,
+  "initialAudioSamples": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "speakerAudio": {
+    "stats": {
+      "disposed": false,
+      "phase": "connected",
+      "room": "connected",
+      "remoteParticipants": 1,
+      "pendingDisconnects": 0,
+      "capturePending": false,
+      "microphoneTracks": 1,
+      "timers": 1,
+      "audio": {
+        "disposed": false,
+        "context": "running",
+        "tracks": 0,
+        "nodes": 2,
+        "outputs": 1,
+        "outputSelection": true
+      }
+    },
+    "generators": [
+      {
+        "state": "running",
+        "track": "live"
+      }
+    ]
+  },
+  "listenerAudio": {
+    "stats": {
+      "disposed": false,
+      "phase": "connected",
+      "room": "connected",
+      "remoteParticipants": 1,
+      "pendingDisconnects": 0,
+      "capturePending": false,
+      "microphoneTracks": 0,
+      "timers": 1,
+      "audio": {
+        "disposed": false,
+        "context": "running",
+        "tracks": 1,
+        "nodes": 6,
+        "outputs": 1,
+        "outputSelection": true
+      }
+    },
+    "measuring": "running"
+  },
+  "receiver": {
+    "visibility": "visible",
+    "tracks": [
+      {
+        "enabled": true,
+        "muted": false,
+        "readyState": "live",
+        "bytesReceived": 30134
+      }
+    ],
+    "gains": [
+      {
+        "gain": 1,
+        "position": [
+          -2,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "stage": "generated-media",
+  "error": {
+    "name": "AssertionError",
+    "description": "The expression evaluated to a falsy value:\n\n  assert(near > 0.002)\n"
+  },
+  "cleaned": true,
+  "checkedAt": "2026-10-26T19:41:22.339Z"
+}

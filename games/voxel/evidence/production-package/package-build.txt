@@ -1,0 +1,30 @@
+
+> package:voxel-server
+> npm run build --workspace @playground/voxel-server && node apps/voxel-server/tools/package-release.ts
+
+
+> @playground/voxel-server@0.1.0 build
+> npm run typecheck
+
+
+> @playground/voxel-server@0.1.0 pretypecheck
+> npm run build:shared
+
+
+> @playground/voxel-server@0.1.0 build:shared
+> npm --prefix ../.. run build --workspace @playground/game-logic && npm --prefix ../.. run build --workspace @playground/observability
+
+
+> @playground/game-logic@0.0.1 build
+> tsc -p tsconfig.json
+
+
+> @playground/observability@0.0.1 build
+> tsc -p tsconfig.json
+
+
+> @playground/voxel-server@0.1.0 typecheck
+> tsc --noEmit
+
+Verified runtime package c293fe5e2511 (165 files)
+Packaged voxel c293fe5e2511: apps/voxel-server/dist/runtime

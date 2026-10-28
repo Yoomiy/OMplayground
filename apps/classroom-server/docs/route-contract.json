@@ -1,0 +1,26 @@
+{
+  "extractedFrom": "apps/minecraft-server/src/index.ts",
+  "originalSha256": "b0295c402b877e20c05586b8802c3cb7f5c4f52b203048de21df4c4ceb78e7ed",
+  "routes": [
+    "delete /rtc/admin/classroom-records/:classroomId",
+    "get /rtc/admin/classroom-records",
+    "get /rtc/admin/classroom-records/:classroomId",
+    "post /rtc/classroom-cleanup",
+    "post /rtc/classroom-cohost/revoke",
+    "post /rtc/classroom-delegate/activate",
+    "post /rtc/classroom-document-conversion-ticket",
+    "post /rtc/classroom-end",
+    "post /rtc/classroom-presentation-state",
+    "post /rtc/classroom-presentation-visibility",
+    "post /rtc/classroom-presenter-elect",
+    "post /rtc/classroom-presenter-leave",
+    "post /rtc/classroom-presenter-ready",
+    "post /rtc/classroom-presenter-transfer",
+    "post /rtc/classroom-promote",
+    "post /rtc/classroom-remove-participant",
+    "post /rtc/classroom-settings",
+    "post /rtc/classroom-stage-layout",
+    "post /rtc/classroom-token",
+    "post /rtc/classroom-whiteboard-permission"
+  ]
+}

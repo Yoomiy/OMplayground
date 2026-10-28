@@ -1,0 +1,194 @@
+{
+  "result": "PASS",
+  "scope": "Emulated tablet with actual multi-touch, dispatched blur lifecycle event and actual software WebGL context loss; functional evidence only",
+  "buildId": "6026fc56edb2a79e548ac84792a98e968b5acfa850c3858abd38b99f0f0e4e56",
+  "engineHash": "084b17c0ae40222777a0225f6fc186a9903ac19d9c455aae025188185ea250ab",
+  "contentHash": "51dc81994a301b7cf19e657603e85f54d8c850f978268aaf4333e5097cc9e647",
+  "browser": "156.0.8078.4",
+  "moved": 0.640705809217347,
+  "jumpHeight": 0.650020000000012,
+  "beforeLook": {
+    "yaw": 0,
+    "pitch": 0
+  },
+  "afterLook": {
+    "yaw": 0.2,
+    "pitch": 0.1
+  },
+  "diagnostics": {
+    "disposed": false,
+    "inputMode": "touch",
+    "environment": {
+      "tick": 497.50000000143046,
+      "seconds": 16.583333333381017,
+      "dayFraction": 0.2338194444444842,
+      "daylight": 1,
+      "sun": [
+        0.09721015955163645,
+        0.9528805683507748,
+        0.2873478855663454
+      ],
+      "sky": [
+        0.59,
+        0.76,
+        0.88
+      ],
+      "rain": 0,
+      "wind": [
+        -0.09681483233576553,
+        -0.2839487422754283
+      ],
+      "openSky": false
+    },
+    "atmosphere": {
+      "rainLines": 0,
+      "stars": false,
+      "clouds": 16,
+      "sun": true,
+      "moon": false
+    },
+    "avatars": {
+      "visible": 0,
+      "capacity": 8,
+      "samples": []
+    },
+    "renderOrigin": {
+      "x": 48,
+      "z": -16
+    },
+    "feedback": {
+      "held": {
+        "state": 24,
+        "visible": false,
+        "swings": 0
+      },
+      "effects": {
+        "live": 0,
+        "bursts": 0
+      }
+    },
+    "audio": {
+      "supported": true,
+      "contexts": 1,
+      "state": "running",
+      "active": false,
+      "muted": false,
+      "voices": 0,
+      "effects": 3,
+      "gain": 0.008531277067959309,
+      "dropped": 0,
+      "listener": [
+        51.43709945678711,
+        70.81999969482422,
+        -3.572200059890747
+      ],
+      "lastSource": [
+        50.918941497802734,
+        68.0199966430664,
+        -2.843430995941162
+      ]
+    },
+    "renderLimitHz": 10,
+    "touch": {
+      "x": 0,
+      "z": 0,
+      "jump": false,
+      "sneak": false,
+      "sprint": false
+    },
+    "focused": false,
+    "visible": "visible",
+    "hasFocus": true,
+    "lastFrame": 18626.3,
+    "resources": {
+      "geometries": 0,
+      "textures": 0,
+      "workers": 1
+    },
+    "actorId": "a697c445-67cf-41db-8533-4e3674697e04",
+    "worldId": "812f1306-a713-4de5-9ea3-5ec90ce3fd73",
+    "body": {
+      "position": [
+        51.4371,
+        69.2,
+        -3.5722
+      ],
+      "onGround": 0,
+      "frozen": 1,
+      "flying": 1,
+      "velocity": [
+        0,
+        0,
+        0
+      ]
+    },
+    "view": {
+      "yaw": 0.2,
+      "pitch": 0.1
+    },
+    "lastResult": null,
+    "recentEdits": [],
+    "status": "error",
+    "epoch": 6,
+    "phase": "playing",
+    "position": [
+      51.4371,
+      69.2,
+      -3.5722
+    ],
+    "selected": 24,
+    "players": 1,
+    "inputLag": 0,
+    "correction": 0,
+    "columns": 49,
+    "collisionColumns": 49,
+    "meshed": 30,
+    "workers": 1,
+    "activeJobs": 0,
+    "stream": {
+      "discardedJobs": 0,
+      "installed": 56,
+      "meshJobs": 30,
+      "generationJobs": 56,
+      "mainWorkMs": 1
+    },
+    "render": {
+      "uploadedBytes": 2117584,
+      "columns": 30,
+      "drawCalls": 2,
+      "triangles": 24,
+      "uploadMs": 0.10000014305114746
+    },
+    "target": null,
+    "targetState": null,
+    "targetNormal": null,
+    "actionPending": 0
+  },
+  "cleanup": {
+    "geometries": 0,
+    "textures": 0,
+    "workers": 0
+  },
+  "audioCleanup": {
+    "supported": true,
+    "contexts": 0,
+    "state": "closed",
+    "active": false,
+    "muted": false,
+    "voices": 0,
+    "effects": 3,
+    "gain": 0,
+    "dropped": 0,
+    "listener": [
+      51.4371,
+      70.82000000000001,
+      -3.5722
+    ],
+    "lastSource": [
+      50.918941497802734,
+      68.0199966430664,
+      -2.843430995941162
+    ]
+  },
+  "errors": []
+}

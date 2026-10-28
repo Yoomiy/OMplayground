@@ -1,0 +1,42 @@
+{
+  "result": "SERVER_MUTE_VERIFIED_TOKEN_REVOCATION_UNAVAILABLE",
+  "scope": "Isolated LiveKit room and generated test identity; no school DB, user microphone, recording or deployment",
+  "room": "voxel-qualification-d0300d5a-a268-491b-8942-491fdc77d34e",
+  "actor": "voxel-probe-aa8632cc-8ec0-4041-812e-7d9610984dfe",
+  "schoolDatabaseWrites": 0,
+  "temporaryMediaRoomCreated": true,
+  "initial": {
+    "connected": true,
+    "serverInfo": {
+      "version": "1.12.0",
+      "edition": 0,
+      "protocol": 17
+    },
+    "canPublish": true
+  },
+  "generatedMicrophoneTrackPublished": true,
+  "cachedToken": {
+    "refreshed": true
+  },
+  "serverMuteVerified": true,
+  "cachedAfterMute": {
+    "connected": true,
+    "canPublish": true
+  },
+  "removalAcknowledged": false,
+  "removalCode": "not_found",
+  "originalAfterRemoval": {
+    "connected": true,
+    "canPublish": true
+  },
+  "refreshedAfterRemoval": {
+    "connected": true,
+    "canPublish": true
+  },
+  "freshAfterRemoval": {
+    "connected": true,
+    "canPublish": false
+  },
+  "cleaned": true,
+  "checkedAt": "2026-10-26T16:28:31.339Z"
+}

@@ -1,0 +1,122 @@
+{
+  "result": "READ_ONLY_INSTALLED_CHAT_AND_PACKAGED_STARTUP_PASS",
+  "capturedAt": "2026-10-26T14:58:54.253894+00:00",
+  "buildId": "bedd62f9b37b2a071c498413c7352033ccd97e94f2bd976101259481c789d3f8",
+  "hostedSchemas": 7,
+  "functionBodiesAndGrants": 5,
+  "privateTables": 2,
+  "validHistoryIndex": true,
+  "unchangedServiceInputs": [
+    {
+      "path": "apps/voxel-server/src/index.ts",
+      "sha256": "02e6cee87836d308a2e2b9ba4285f662f97f90d42205ec059bac0d80dc16a43f"
+    },
+    {
+      "path": "apps/voxel-server/src/release.ts",
+      "sha256": "87e26c588c4e0ce4f375e415913c2eb99763d51948864787dbac6198f16c646d"
+    },
+    {
+      "path": "apps/voxel-server/src/school-access.ts",
+      "sha256": "92413f2f0898bbb5f0330d2d84c5dc233ee8906b3561aedaf775b482571e825c"
+    },
+    {
+      "path": "apps/voxel-server/src/school-admission.ts",
+      "sha256": "045a142ecfbb5efc375b32c2230dcfa977c7a691b08466891633390b036b70fa"
+    },
+    {
+      "path": "apps/voxel-server/src/school-chat.ts",
+      "sha256": "a087dcdda88fd5018252fac1afaf6dc8bb6ea9ba2e70f842293ac6bcd40a73fb"
+    },
+    {
+      "path": "apps/voxel-server/src/school-control.ts",
+      "sha256": "da79fc4b551a7cad9ca960a99ba0009af2e51b2cc90d91b1a37793d08188ab20"
+    },
+    {
+      "path": "apps/voxel-server/src/school-moderation.ts",
+      "sha256": "26f66931e2c1b009b9f5185532be450fb206e126dbb6615bc8e2769913c5883f"
+    },
+    {
+      "path": "apps/voxel-server/src/school-roster.ts",
+      "sha256": "de875350c26cd634bc4daf0df1465f657cdc72dd65ac5c687f0cbb3173246228"
+    },
+    {
+      "path": "apps/voxel-server/src/school-session.ts",
+      "sha256": "547ed471383603bce953ad06a39ce3bf6a8a623e19350c4c62d1cbc2a8d42039"
+    },
+    {
+      "path": "apps/voxel-server/src/school-staff.ts",
+      "sha256": "5e9ef5cb214220a9bee734abb804adb66e4d56b041ff94f8233e232fb6537cc6"
+    },
+    {
+      "path": "apps/voxel-server/src/service.ts",
+      "sha256": "af3f16635417a2f3da46a4e038c29dd77968ccfa364559ec4f98332ac0997a56"
+    },
+    {
+      "path": "apps/voxel-server/src/supabase-persistence.ts",
+      "sha256": "d66bd15a9b839302140daf5670676cdfdb47b7b8bfff26dcc2685c3f889484c0"
+    },
+    {
+      "path": "apps/voxel-server/src/supabase-sessions.ts",
+      "sha256": "2b765b041e560494e01fbc7d6ece388c96ac51968b077c9b315ee4df1d0c5d4a"
+    },
+    {
+      "path": "apps/voxel-server/tools/check-supabase.ts",
+      "sha256": "db3a7e818c37dc6fd9026cf592be46ee7d88e339e6700e0baa5352aa1416730a"
+    },
+    {
+      "path": "supabase/migrations/20261025070000_voxel_chat.sql",
+      "sha256": "f3de58fecd2634105fe4b25ce7875b308ba9eca7c428c43c3552f00f26a0ed5b"
+    }
+  ],
+  "priorChatArchiveUnchanged": true,
+  "userReportedApplied": true,
+  "agentRemoteApplicationWrites": false,
+  "migrationSha256": "f3de58fecd2634105fe4b25ce7875b308ba9eca7c428c43c3552f00f26a0ed5b",
+  "scope": "Packaged chat release startup and hosted installation; in-progress voice client is excluded",
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "f6eaac429e305db45ec1e36f4b98f60d4545ed0c18e056dd95feb99c6b5741a4"
+    },
+    {
+      "path": "hosted-ready.json",
+      "sha256": "5cc2c8b7b22141a6221fcbe781588ba07378d06a1d45568dc603841da36dfded"
+    },
+    {
+      "path": "installed-audit.json",
+      "sha256": "9e314806055a73e4d5a37581efece5b5496d5c1308c809745b8a5803f27d0004"
+    },
+    {
+      "path": "installed-expected.json",
+      "sha256": "70bcd82ca688f8a7e5e86f949cb3a7d520e834aa7bff827fb039aa1198bd032b"
+    },
+    {
+      "path": "installed-read.json",
+      "sha256": "2aa5e1659c0c858fabd2708588e285d0a370ea1c318fde6c8ce3d0250c28d10e"
+    },
+    {
+      "path": "installed-read.sql",
+      "sha256": "11bea1b53940d775febbc9ee12089bf8d3605b9ba097676827979111c67d0677"
+    },
+    {
+      "path": "migration.sql",
+      "sha256": "f3de58fecd2634105fe4b25ce7875b308ba9eca7c428c43c3552f00f26a0ed5b"
+    },
+    {
+      "path": "startup.json",
+      "sha256": "909a5af364f791e8ea1300511bdc0f8c427260677c75133a0f943b0391df2416"
+    },
+    {
+      "path": "startup.log",
+      "sha256": "4d70504d779f1b3c695aba6cb65306bf99488331f49fe116fafe344e6a928f1c"
+    },
+    {
+      "path": "startup.mjs",
+      "sha256": "f0513f2502f1628a5e419bdded878a55483eb84f3ce26822ea883ae8039b3a1e"
+    },
+    {
+      "path": "target-match.json",
+      "sha256": "cd94a608bdbeaeff793561066e455d3c0078a540de70c094346578c1367696e8"
+    }
+  ]
+}

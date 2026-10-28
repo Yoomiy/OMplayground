@@ -1,0 +1,306 @@
+
+> check:voxel
+> npm --prefix games/voxel run check
+
+
+> @playground/voxel@0.1.0 check
+> npm run build && npm run typecheck && npm run check:boundaries && npm test && npm run test:engine && npm run test:wasm && npm run test:integration && npm run test:server-bundle
+
+
+> @playground/voxel@0.1.0 build
+> npm run content && npm run build:engine && node tools/build-manifest.mjs && npm run build:client && npm run build:server && node tools/release-manifest.mjs
+
+
+> @playground/voxel@0.1.0 content
+> node tools/compile-content.ts
+
+Compiled 32 block states; content 9b4f0e7f6a00
+
+> @playground/voxel@0.1.0 build:engine
+> node tools/build-engine.mjs
+
+[INFO]: 🎯  Checking for the Wasm target...
+[INFO]: 🌀  Compiling to Wasm...
+    Finished `release` profile [optimized] target(s) in 0.01s
+[INFO]: ⬇️  Installing wasm-bindgen...
+[INFO]: Optimizing wasm binaries with `wasm-opt`...
+[INFO]: Optional field missing from Cargo.toml: 'repository'. This is not necessary, but recommended
+[INFO]: ✨   Done in 8.87s
+[INFO]: 📦   Your wasm pkg is ready to publish at engine/pkg.
+Voxel build 059ee0d9b858
+
+> @playground/voxel@0.1.0 build:client
+> vite build
+
+vite v8.3.5 building client environment for production...
+transforming...
+✓ 42 modules transformed.
+rendering chunks...
+computing gzip size...
+dist-client/index.html                              1.74 kB │ gzip:   0.88 kB
+dist-client/assets/engine-worker-DsbFhM1d.js       13.07 kB
+dist-client/assets/voxel_engine_bg-YhcecsEd.wasm  539.31 kB │ gzip: 208.34 kB
+dist-client/assets/index-5w2pNf9N.css               4.69 kB │ gzip:   1.63 kB
+dist-client/assets/index-Du0PSIBY.js              665.62 kB │ gzip: 174.26 kB
+
+✓ built in 334ms
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+> @playground/voxel@0.1.0 build:server
+> node tools/build-server.mjs
+
+Built voxel gateway and room worker
+Matched client/server release 059ee0d9b858
+
+> @playground/voxel@0.1.0 typecheck
+> tsc --noEmit
+
+
+> @playground/voxel@0.1.0 check:boundaries
+> node tools/check-boundaries.mjs
+
+Voxel import boundaries pass
+
+> @playground/voxel@0.1.0 test
+> node --test tests/*.test.ts
+
+✔ input bursts cannot buy more simulated movement time (23.292272ms)
+✔ fresh queued input proves liveness while consumed aim stays authoritative; rejected packets never renew it (0.999084ms)
+✔ queues expire, transient presses clear, overflow requests resync, epochs invalidate (1.379846ms)
+✔ positions, durations, client clocks, and nonfinite controls are rejected (0.418802ms)
+✔ epoch resets retain consumed look direction while discarding pending view and movement (1.174846ms)
+✔ scheduler bounds stalls without an unbounded catch-up queue (0.395482ms)
+✔ evicted command results cannot execute again, including after reconnect (0.396921ms)
+✔ body ray chooses actual bounded intersections including parallel, grazing and inside rays (1.222206ms)
+✔ combat cooldown, hit recovery and respawn protection advance only by simulation steps and attacks abandon protection (0.634963ms)
+✔ owned weapon wear commits once after accepted damage and stale/rejected strikes leave ownership unchanged (22.417588ms)
+✔ combat profiles and wire carry intentions only and reject forged target, damage, reach, clock and hit effects (3.073615ms)
+✔ semantic manifest and IDs are deterministic across authoring order (33.847843ms)
+✔ compiler assigns ordinary states across the u8 boundary with no reserved stock pool (14.45395ms)
+✔ unknown references, duplicate states, malformed shapes, and recipes fail the build (4.265621ms)
+✔ room-time atmosphere is deterministic, bounded, cyclic and weather transitions are continuous (5.884989ms)
+✔ presentation clock aligns late joiners, rejects stale ticks, freezes on stalls and resets for a new world (0.424002ms)
+✔ welcome requires matching environment format and valid authoritative ticks; clients cannot set world time (1.312166ms)
+✔ blast batch validates before mutation, rolls back a native failure and stamps one revision per affected column (3.766179ms)
+✔ primed objects count fixed steps through unavailable terrain without empty fallback or client clocks (3.152215ms)
+✔ ignition requires an owned igniter, commits wear after success and preserves both item and revision on failure (20.929421ms)
+✔ explosive wire and content reject forged timers, positions, strength, completions and malformed body batches (2.545893ms)
+✔ a delayed receipt cannot leave remote movement and look stuck behind after healthy snapshots resume (1.356527ms)
+✔ extrapolation is bounded, frozen bodies do not coast, and removed actors release interpolation state (0.951685ms)
+✔ stack instance validation rejects forged counts/metadata and compiler enforces equipment/durable outputs (5.720268ms)
+✔ split/merge/swap/equip conserve owned items, reject partial overflow, and snapshots cannot mutate authority (3.606497ms)
+✔ 2x2 recipes translate/mirror, batch atomically, and never consume ingredients when output is full (1.269406ms)
+✔ 3x3 crafting requires a reachable live station and creates a bounded durable instance (2.09013ms)
+✔ simultaneous chest withdrawals serialize by revisions and cannot duplicate or erase items (1.272846ms)
+✔ failed grants and stale revisions do not partially install; disconnect preserves grids/equipment and closes shared access (0.486763ms)
+✔ old chest incarnations conflict even with identical revisions; abandoned crafting ingredients stay recoverable (0.457322ms)
+✔ inventory wire intents reject client results, unknown fields, forged slots and malformed owned instances (1.483607ms)
+✔ gameplay schema rejects dev commands, forged positions/clocks, and oversize input batches (3.332336ms)
+✔ binary subscription baselines preserve high states and reject format/length/index corruption (1.304206ms)
+✔ acknowledgement includes discarded controls and worker identities include every freshness boundary (0.673684ms)
+✔ owned placement commits one item with the world, rejects stale selection/revision, and rolls back a failed edit (6.910713ms)
+✔ mining requirements/speed come from content and tool wear breaks the final durable instance exactly once (6.209349ms)
+✔ partial pickups preserve remainder and durable metadata, and failed throw callbacks do not consume the bag (3.155695ms)
+✔ mining and drop protocol carries intents only, bounds replication batches and rejects forged completion/positions (2.950175ms)
+✔ vitals timers, regeneration, effort, food cooldown and starvation use fixed simulation steps (3.262616ms)
+✔ fall peaks survive a stop, water/ladder reset them and death/respawn retain exact room durations (1.117646ms)
+✔ food consumes one owned item only after accepted effect; death drains every private area without duplication (20.933821ms)
+✔ bounded data-driven equipment profiles and vitals wire reject forged modifiers, health and food awards (2.980414ms)
+ℹ tests 42
+ℹ suites 0
+ℹ pass 42
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2125.276265
+
+> @playground/voxel@0.1.0 test:engine
+> cargo test --release --locked --manifest-path engine/Cargo.toml
+
+   Compiling voxel-engine v0.1.0 (/home/ubuntu/OMplayground/games/voxel/engine)
+    Finished `release` profile [optimized] target(s) in 29.17s
+     Running unittests src/lib.rs (engine/target/release/deps/voxel_engine-4a50f397ddddc515)
+
+running 82 tests
+test blocks::tests::ids_match_table ... ok
+test blocks::tests::variants_fill_their_ranges ... ok
+test blocks::tests::game_blocks_follow_the_built_in_ones ... ok
+test cull::tests::occlusion_matches_frustum_in_open_air ... ok
+test cull::tests::shadow_camera_projects_center_to_middle ... ok
+test damage::tests::blasts_take_a_ragged_sphere ... ok
+test damage::tests::boxes_cover_exactly_what_is_left ... ok
+test damage::tests::capsules_take_a_rounded_channel ... ok
+test damage::tests::changes_round_trip ... ok
+test entities::tests::arrows_hit_bodies_and_walls ... ok
+test entities::tests::bodies_chase_the_nearest_player_or_their_target ... ok
+test blocks::tests::wrong_game_blocks_are_refused ... ok
+test entities::tests::bodies_climb_single_steps ... ok
+test entities::tests::bodies_find_a_player_standing_on_a_slab_or_a_stair ... ok
+test entities::tests::melee_pick_respects_walls ... ok
+test entities::tests::navigation_fields_take_turns ... ok
+test entities::tests::projectiles_hit_other_players_not_their_shooter ... ok
+test entitytex::tests::contract ... ok
+test entitytex::tests::preview ... ignored
+test gen::map_tests::map ... ignored
+test gen::tests::biome_distribution ... ok
+test gen::tests::blueprints_stamp_and_terraform ... ok
+test gen::tests::border_trees_agree ... ok
+test gen::tests::deterministic_and_sane ... ok
+test entities::tests::bodies_path_around_a_wall_to_the_player ... ok
+test gen::tests::void_ground_is_a_plain_slab_shaped_by_terraforms ... ok
+test gen::tests::void_world_has_only_structures ... ok
+test json::tests::reads_what_the_platform_writes ... ok
+test json::tests::refuses_what_isnt_json ... ok
+test mesher::tests::damaged_blocks_mesh_what_is_left ... ok
+test gen::tests::timing ... ok
+test mesher::tests::game_blocks_mesh_like_built_in_ones ... ok
+test mesher::tests::damaged_column_timing ... ok
+test mesher::tests::greedy_merges_flat_layer ... ok
+test mesher::tests::mesh_flat_region ... ok
+test mesher::tests::game_shapes_leave_built_in_meshes_alone ... ok
+test mesher::tests::mesh_generated_timing ... ok
+test movers::tests::a_body_lands_on_a_mover_and_rides_it ... ok
+test movers::tests::a_mover_pushes_a_body_it_runs_into ... ok
+test movers::tests::a_mover_that_jumps_into_a_body_pushes_it ... ok
+test movers::tests::a_rider_jumping_on_a_moving_deck_lands_where_they_jumped ... ok
+test movers::tests::frozen_on_deck_still_rides ... ok
+test movers::tests::overlap_counts_blocks_in_the_ground ... ok
+test movers::tests::rays_stop_at_movers ... ok
+test movers::tests::riders_go_with_a_mover_moved_far_at_once ... ok
+test movers::tests::stepping_off_takes_the_decks_motion ... ok
+test movers::tests::walking_across_a_turned_deck_does_not_catch_on_seams ... ok
+test movers::tests::walking_up_a_low_lip_onto_a_deck ... ok
+test movers::tests::walking_up_and_down_a_tilted_deck ... ok
+test noise::tests::noise_range ... ok
+test mesher::tests::undamaged_meshes_are_unchanged ... ok
+test shapes::tests::built_in_tables_are_unchanged ... ok
+test shapes::tests::fences_join_stop_bodies_and_let_rays_between_their_rails ... ok
+test shapes::tests::game_shapes_are_built ... ok
+test shapes::tests::ladders_climb_hold_and_let_down_slowly ... ok
+test shapes::tests::panes_are_thin_walls ... ok
+test shapes::tests::slabs_and_stairs_fill_their_sides ... ok
+test shapes::tests::transforms_cover_every_orientation ... ok
+test shapes::tests::turned_models_keep_their_textures_the_same_way_round ... ok
+test shapes::tests::wrong_shapes_are_refused ... ok
+test state_width::high_states_survive_generation_storage_and_edits ... ok
+test texgen::tests::contract ... ok
+test texgen::tests::preview ... ignored
+test world::tests::a_block_carved_to_nothing_is_air_and_reverts_whole ... ok
+test shapes::tests::built_in_physics_and_rays_are_unchanged ... ok
+test world::tests::carving_takes_bits_once_and_only_where_it_may ... ok
+test world::tests::blasts_leave_a_ragged_crater_and_the_ground_whole ... ok
+test world::tests::edits_survive_reload ... ok
+test world::tests::mantles_onto_ledges_within_reach ... ok
+test world::tests::mirrored_edits_wait_for_their_column ... ok
+test world::tests::damage_replicates_exactly_and_idempotently ... ok
+test world::tests::player_lands_on_ground ... ok
+test world::tests::rays_and_sight_pass_through_holes ... ok
+test world::tests::rays_come_out_of_walls_where_the_material_ends ... ok
+test world::tests::players_stop_at_whats_left_and_walk_through_holes ... ok
+test world::tests::revert_restores_generated_blocks ... ok
+test world::tests::rays_hit_model_boxes ... ok
+test world::tests::settling_off_a_mover_in_a_hole_does_not_trap ... ok
+test world::tests::slides_bleed_speed_away ... ok
+test world::tests::step_scales_gravity_and_control ... ok
+test world::tests::walks_up_slabs_and_stairs_but_not_blocks ... ok
+test world::tests::wrapped_regions_see_the_other_end ... ok
+
+test result: ok. 79 passed; 0 failed; 3 ignored; 0 measured; 0 filtered out; finished in 0.97s
+
+   Doc-tests voxel_engine
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+> @playground/voxel@0.1.0 test:wasm
+> node --test tests/wasm/*.test.ts
+
+✔ real Wasm combat uses owned weapons/armor once, fixed cooldowns and an independent replay boundary after eviction (89.33239ms)
+✔ solid occlusion, partial slab geometry, reach, mode and independent source/target combat permission control damage (60.687812ms)
+✔ attack waits for consumed aim, rejects stale input and cannot turn a future aim packet into immediate damage (23.464553ms)
+✔ melee death drops personal state once and the same connection respawns only after collision readiness with protection (58.828723ms)
+✔ nonfatal knockback changes velocity without minting motion time and reconciles through a fresh damage epoch (40.188713ms)
+✔ respawn searches past a flooded or lava-filled spawn cell before offering collision readiness (22.934191ms)
+✔ real Wasm ignition wears the last owned tool once, survives replay eviction and freezes only with room time (118.051048ms)
+✔ chain ignition creates a separate short fuse; revoking explosion permission fizzles that owned body (50.879084ms)
+✔ ignition rejects stale inventory/terrain, missing permissions, occluded aim and unowned ignition tools (11.941657ms)
+✔ blast planning uses native partial shapes, material resistance, wet shielding and unbreakable cells (16.490079ms)
+✔ blast terrain batches preserve high states across columns and reject an invalid suffix without partial mutation (13.088103ms)
+✔ due work is scheduled in bounded tick batches without limiting primed body admission and survives owner disconnect (16.57764ms)
+✔ actor damage samples pre-blast geometry, preserves frozen bodies and consumes armor on an accepted hit (88.633186ms)
+✔ a blast drains a shared chest once, closes every viewer and rejects the old chest incarnation (23.065031ms)
+✔ grounded flight survives input delay, takes off, and lands on descent (43.400449ms)
+✔ natural-world jump/walk and camera-relative culling remain correct through a negative column boundary (266.163401ms)
+✔ hidden observer bodies never block creative placement (0.500763ms)
+✔ prediction replays equipment and hunger profiles through epoch changes with delayed snapshots (86.302295ms)
+✔ prediction replays delayed snapshots within one centimeter on an unchanged world (47.144107ms)
+✔ real WebSocket bursts cannot accelerate actual Wasm physics (1159.69994ms)
+✔ actual Wasm round-trips high IDs through generation, blueprints, edits, unload, and mesh input (56.271351ms)
+✔ high-state collision, selection, skylight/block light, AO, and packed mesh match equivalent low states (24.667959ms)
+✔ Wasm rejects version mismatches and corrupt/truncated buffers without partially changing state (14.280028ms)
+✔ liquid behavior is independent of old stock IDs and non-solid ladders stay passable (12.53434ms)
+✔ edits arriving during generation cannot be overwritten, and unload/reload rejects old incarnations (30.774108ms)
+✔ a neighboring edit invalidates an in-flight mesh even when its own column revision is unchanged (36.672856ms)
+✔ authoritative native falls apply damage, equipped perks rotate prediction epoch and final-use boots break once (143.671531ms)
+✔ inventory freeze leaves actual water/lava hazards running while room pause freezes vitals exactly (47.81783ms)
+✔ real lava death drains owned grids/equipment once, rejects dead commands and respawns through fresh collision readiness (36.509336ms)
+✔ food transactions replay once across eviction and hunger sprint permission changes use fresh baselines (282.052957ms)
+✔ real Wasm mining earns fixed world ticks despite action bursts, ignores unrelated edits and yields one competing pickup (35.532971ms)
+✔ mining cancels on stale input, replacement at the same cell, focus epoch and changed owned tool (15.512275ms)
+✔ survival forbids catalog/flight/instant removal, consumes placement atomically and cannot replay a dropped stack (15.472435ms)
+✔ real engine enforces tool requirements, wears the final tool once and prevents mining completion during room pause (13.374345ms)
+✔ drop pickups obey solid occlusion and capacity; pause freezes expiry and small-body sweeps match slab collision (21.276703ms)
+✔ read-only participants cannot collect drops or keep a shared container view after capability revocation (15.042353ms)
+✔ two miners racing one block commit one drop and one tool wear, including cached replay after completion (12.766222ms)
+✔ fall history survives focus and room pause, vitals remain private, and fresh spawn after reservation expiry starts a new fall segment (45.078697ms)
+ℹ tests 38
+ℹ suites 0
+ℹ pass 38
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5859.587952
+
+> @playground/voxel@0.1.0 test:integration
+> node --test tests/integration/*.test.ts
+
+✔ survival gateway mines natural terrain on room time, replicates a real drop and picks it into a private owned hotbar (1802.693113ms)
+✔ real inventory commands craft once across cache eviction/reconnect and shared chest withdrawals cannot duplicate (440.299159ms)
+✔ room-owned world clock survives late joins/reconnects and rejects browser time changes (334.298409ms)
+✔ supervised creative room shares authoritative edits, admits late joins/reconnects, and rejects replay/time forgery (324.614002ms)
+✔ the actual gateway bounds burst movement time and enforces participant/observer capabilities (2867.823078ms)
+✔ survival sockets resolve authoritative melee, cache once, bound bursts and enforce combat independently of build permission (644.267859ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6708.039475
+
+> @playground/voxel@0.1.0 test:server-bundle
+> node tools/test-server-bundle.mjs
+
+✔ survival gateway mines natural terrain on room time, replicates a real drop and picks it into a private owned hotbar (1724.231175ms)
+✔ real inventory commands craft once across cache eviction/reconnect and shared chest withdrawals cannot duplicate (388.915551ms)
+✔ room-owned world clock survives late joins/reconnects and rejects browser time changes (287.412063ms)
+✔ supervised creative room shares authoritative edits, admits late joins/reconnects, and rejects replay/time forgery (272.029469ms)
+✔ the actual gateway bounds burst movement time and enforces participant/observer capabilities (2827.806206ms)
+✔ survival sockets resolve authoritative melee, cache once, bound bursts and enforce combat independently of build permission (587.493627ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6377.400444

@@ -1,0 +1,17 @@
+{
+  "result": "PASS",
+  "buildId": "66a9ff4dc9d4a0a38acdffdb68a05776d271c445395bd1d1a3d379208b584e68",
+  "health": 200,
+  "ready": 200,
+  "rooms": 0,
+  "remoteStatusCalls": [
+    "voxel_controls_status",
+    "voxel_persistence_status",
+    "voxel_roster_status",
+    "voxel_session_projection_status",
+    "voxel_staff_status"
+  ],
+  "remoteApplicationWrites": 0,
+  "closed": true,
+  "checkedAt": "2026-10-26T09:40:44.511Z"
+}

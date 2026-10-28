@@ -1,0 +1,756 @@
+{
+  "result": "PASS",
+  "scope": "Natural empty-inventory survival in a server-configured night: nine logs, leaves/apples, shore sand and river stone; owned crafting/equipping of Swift pickaxe, feather talisman, Helios medallion, helium boots and glow talisman; authoritative movement baselines, actual touch boosted jump and wear, real framebuffer night-visibility increase, unchanged room daylight/body position, and complete teardown; no creative grants, position/world injection or client clock overrides; software Chromium functional evidence only",
+  "buildId": "1c662833dabd3d290563b3934b85aa7500a00026741a7655ece5b9300bd9a9ba",
+  "engineHash": "d907627aac8145c44e0ff405123bdb5d8deba8c7a11df47c90b59a4ce7973878",
+  "contentHash": "6cfc9de62ffe3dc2a54677f5b1be4647ea0bcb24abd6312cfca163b2b327801a",
+  "browser": "156.0.8078.4",
+  "harvested": [
+    {
+      "target": [
+        49,
+        68,
+        -4
+      ],
+      "visible": {
+        "drop": {
+          "id": "drop-1",
+          "revision": 9,
+          "stack": {
+            "itemType": "oak_log",
+            "count": 1
+          },
+          "position": [
+            49.5,
+            68,
+            -3.5
+          ]
+        },
+        "origin": {
+          "x": 48,
+          "z": 0
+        },
+        "feedback": {
+          "visible": 1,
+          "kinds": 1
+        }
+      },
+      "inventoryRevision": 1
+    },
+    {
+      "target": [
+        49,
+        69,
+        -4
+      ],
+      "visible": null,
+      "inventoryRevision": 2
+    },
+    {
+      "target": [
+        49,
+        70,
+        -4
+      ],
+      "visible": null,
+      "inventoryRevision": 3
+    },
+    {
+      "target": [
+        49,
+        71,
+        -4
+      ],
+      "visible": null,
+      "inventoryRevision": 4
+    },
+    {
+      "target": [
+        49,
+        72,
+        -4
+      ],
+      "visible": null,
+      "inventoryRevision": 5
+    },
+    {
+      "target": [
+        49,
+        73,
+        -4
+      ],
+      "visible": null,
+      "inventoryRevision": 8
+    },
+    {
+      "target": [
+        47,
+        68,
+        -3
+      ],
+      "visible": {
+        "drop": {
+          "id": "drop-11",
+          "revision": 9,
+          "stack": {
+            "itemType": "oak_log",
+            "count": 1
+          },
+          "position": [
+            47.5,
+            68,
+            -2.5
+          ]
+        },
+        "origin": {
+          "x": 48,
+          "z": -16
+        },
+        "feedback": {
+          "visible": 1,
+          "kinds": 1
+        }
+      },
+      "inventoryRevision": 11
+    },
+    {
+      "target": [
+        47,
+        69,
+        -3
+      ],
+      "visible": null,
+      "inventoryRevision": 12
+    },
+    {
+      "target": [
+        47,
+        70,
+        -3
+      ],
+      "visible": null,
+      "inventoryRevision": 13
+    }
+  ],
+  "cleared": [
+    {
+      "cell": [
+        49,
+        71,
+        -3
+      ],
+      "family": "oak_leaves"
+    },
+    {
+      "cell": [
+        48,
+        69,
+        -3
+      ],
+      "family": "oak_leaves"
+    },
+    {
+      "cell": [
+        48,
+        68,
+        -3
+      ],
+      "family": "short_grass"
+    }
+  ],
+  "placement": {
+    "type": "result",
+    "epoch": 4,
+    "sequence": 2,
+    "status": "applied",
+    "outcome": {
+      "ok": true,
+      "reason": "edited",
+      "cell": [
+        49,
+        68,
+        -7
+      ],
+      "state": 3,
+      "revision": 11
+    }
+  },
+  "food": null,
+  "explosive": null,
+  "equipment": {
+    "resources": [
+      {
+        "cell": [
+          46,
+          63,
+          7
+        ],
+        "kind": "sand"
+      },
+      {
+        "cell": [
+          45,
+          63,
+          7
+        ],
+        "kind": "sand"
+      },
+      {
+        "cell": [
+          44,
+          63,
+          7
+        ],
+        "kind": "sand"
+      },
+      {
+        "cell": [
+          43,
+          63,
+          7
+        ],
+        "kind": "sand"
+      },
+      {
+        "cell": [
+          43,
+          60,
+          12
+        ],
+        "kind": "stone"
+      },
+      {
+        "cell": [
+          44,
+          60,
+          13
+        ],
+        "kind": "stone"
+      },
+      {
+        "cell": [
+          45,
+          61,
+          12
+        ],
+        "kind": "sand",
+        "purpose": "occlusion"
+      },
+      {
+        "cell": [
+          45,
+          60,
+          13
+        ],
+        "kind": "stone"
+      }
+    ],
+    "crafted": {
+      "version": 2,
+      "catalog": false,
+      "revision": 111,
+      "selected": 4,
+      "bag": [
+        {
+          "count": 1,
+          "itemType": "oak_planks"
+        },
+        {
+          "count": 1,
+          "instance": {
+            "durability": 120
+          },
+          "itemType": "glow_talisman"
+        },
+        {
+          "itemType": "apple",
+          "count": 5
+        },
+        {
+          "count": 1,
+          "instance": {
+            "durability": 80
+          },
+          "itemType": "swift_pickaxe"
+        },
+        {
+          "count": 1,
+          "instance": {
+            "durability": 52
+          },
+          "itemType": "wooden_pickaxe"
+        },
+        {
+          "count": 3,
+          "itemType": "stick"
+        },
+        {
+          "itemType": "sand",
+          "count": 1
+        },
+        null,
+        {
+          "count": 1,
+          "itemType": "charcoal"
+        },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "craft2": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "craft3": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "equipment": [
+        {
+          "count": 1,
+          "instance": {
+            "durability": 120
+          },
+          "itemType": "helios_medallion"
+        },
+        null,
+        {
+          "count": 1,
+          "instance": {
+            "durability": 64
+          },
+          "itemType": "feather_talisman"
+        },
+        {
+          "count": 1,
+          "instance": {
+            "durability": 120
+          },
+          "itemType": "helium_boots"
+        },
+        null
+      ],
+      "station": "workbench",
+      "container": null
+    },
+    "swiftProfile": {
+      "epoch": 10,
+      "movement": {
+        "speed": 1.5,
+        "gravity": 1,
+        "control": 1,
+        "jump": 1.6,
+        "sprint": true
+      }
+    },
+    "jump": {
+      "peak": 66.237795,
+      "done": true,
+      "samples": 16,
+      "from": [
+        46.510505073634896,
+        63,
+        8.451379705460395
+      ],
+      "boots": {
+        "count": 1,
+        "instance": {
+          "durability": 119
+        },
+        "itemType": "helium_boots"
+      }
+    },
+    "visibility": {
+      "beforeBrightness": 24.80600783540108,
+      "afterBrightness": 82.89702715694273,
+      "before": {
+        "tick": 24446.135,
+        "seconds": 814.8711666666666,
+        "dayFraction": 0.8990593055555555,
+        "daylight": 0.06,
+        "sun": [
+          0.7715566052004723,
+          -0.5675663816965139,
+          0.2873478855663454
+        ],
+        "sky": [
+          0.058899999999999994,
+          0.0832,
+          0.1374
+        ],
+        "rain": 0,
+        "wind": [
+          -0.09681483233576553,
+          -0.2839487422754283
+        ],
+        "openSky": false
+      },
+      "after": {
+        "tick": 24525.23,
+        "seconds": 817.5076666666666,
+        "dayFraction": 0.9012563888888888,
+        "daylight": 0.06,
+        "sun": [
+          0.7793179132929728,
+          -0.5568615471382782,
+          0.2873478855663454
+        ],
+        "sky": [
+          0.058899999999999994,
+          0.0832,
+          0.1374
+        ],
+        "rain": 0,
+        "wind": [
+          -0.09681483233576553,
+          -0.2839487422754283
+        ],
+        "openSky": false
+      },
+      "position": [
+        49.5054,
+        68,
+        -5.4321
+      ]
+    },
+    "movementBaselines": [
+      {
+        "epoch": 1,
+        "movement": {
+          "speed": 1,
+          "gravity": 1,
+          "control": 1,
+          "jump": 1,
+          "sprint": true
+        }
+      },
+      {
+        "epoch": 1,
+        "movement": {
+          "speed": 1,
+          "gravity": 1,
+          "control": 1,
+          "jump": 1,
+          "sprint": true
+        }
+      },
+      {
+        "epoch": 2,
+        "movement": {
+          "speed": 1,
+          "gravity": 1,
+          "control": 1,
+          "jump": 1,
+          "sprint": true
+        }
+      },
+      {
+        "epoch": 2,
+        "movement": {
+          "speed": 1,
+          "gravity": 1,
+          "control": 1,
+          "jump": 1,
+          "sprint": true
+        }
+      },
+      {
+        "epoch": 3,
+        "movement": {
+          "speed": 1,
+          "gravity": 1,
+          "control": 1,
+          "jump": 1,
+          "sprint": true
+        }
+      },
+      {
+        "epoch": 4,
+        "movement": {
+          "speed": 1,
+          "gravity": 1,
+          "control": 1,
+          "jump": 1,
+          "sprint": true
+        }
+      },
+      {
+        "epoch": 5,
+        "movement": {
+          "speed": 1,
+          "gravity": 1,
+          "control": 1,
+          "jump": 1,
+          "sprint": true
+        }
+      },
+      {
+        "epoch": 6,
+        "movement": {
+          "speed": 1,
+          "gravity": 1,
+          "control": 1,
+          "jump": 1,
+          "sprint": true
+        }
+      },
+      {
+        "epoch": 7,
+        "movement": {
+          "speed": 1,
+          "gravity": 1,
+          "control": 1,
+          "jump": 1,
+          "sprint": true
+        }
+      },
+      {
+        "epoch": 8,
+        "movement": {
+          "speed": 1,
+          "gravity": 1,
+          "control": 1,
+          "jump": 1.6,
+          "sprint": true
+        }
+      },
+      {
+        "epoch": 9,
+        "movement": {
+          "speed": 1,
+          "gravity": 1,
+          "control": 1,
+          "jump": 1.6,
+          "sprint": true
+        }
+      },
+      {
+        "epoch": 10,
+        "movement": {
+          "speed": 1.5,
+          "gravity": 1,
+          "control": 1,
+          "jump": 1.6,
+          "sprint": true
+        }
+      }
+    ]
+  },
+  "completed": {
+    "inventory": {
+      "version": 2,
+      "catalog": false,
+      "revision": 114,
+      "selected": 3,
+      "bag": [
+        {
+          "count": 1,
+          "itemType": "oak_planks"
+        },
+        {
+          "count": 1,
+          "instance": {
+            "durability": 120
+          },
+          "itemType": "helios_medallion"
+        },
+        {
+          "itemType": "apple",
+          "count": 5
+        },
+        {
+          "count": 1,
+          "instance": {
+            "durability": 80
+          },
+          "itemType": "swift_pickaxe"
+        },
+        {
+          "count": 1,
+          "instance": {
+            "durability": 52
+          },
+          "itemType": "wooden_pickaxe"
+        },
+        {
+          "count": 3,
+          "itemType": "stick"
+        },
+        {
+          "itemType": "sand",
+          "count": 1
+        },
+        null,
+        {
+          "count": 1,
+          "itemType": "charcoal"
+        },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "craft2": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "craft3": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "equipment": [
+        {
+          "count": 1,
+          "instance": {
+            "durability": 120
+          },
+          "itemType": "glow_talisman"
+        },
+        null,
+        {
+          "count": 1,
+          "instance": {
+            "durability": 64
+          },
+          "itemType": "feather_talisman"
+        },
+        {
+          "count": 1,
+          "instance": {
+            "durability": 119
+          },
+          "itemType": "helium_boots"
+        },
+        null
+      ],
+      "station": "personal",
+      "container": null
+    },
+    "feedback": {
+      "held": {
+        "state": 0,
+        "itemType": "swift_pickaxe",
+        "visible": true,
+        "swings": 50
+      },
+      "effects": {
+        "live": 0,
+        "bursts": 25,
+        "hits": 0,
+        "explosions": 0
+      },
+      "drops": {
+        "visible": 0,
+        "kinds": 0
+      },
+      "explosives": {
+        "visible": 0,
+        "capacity": 0,
+        "flashing": 0
+      },
+      "vision": true
+    },
+    "vitals": {
+      "version": 2,
+      "health": 20,
+      "food": 18,
+      "air": 300,
+      "dead": false,
+      "respawnIn": 0,
+      "attackCooldown": 0,
+      "protection": 0
+    }
+  },
+  "cleanup": {
+    "geometries": 0,
+    "textures": 0,
+    "workers": 0,
+    "audio": {
+      "supported": true,
+      "contexts": 0,
+      "state": "closed",
+      "active": false,
+      "muted": false,
+      "voices": 0,
+      "effects": 59,
+      "gain": 0,
+      "dropped": 0,
+      "listener": [
+        46.5105,
+        64.62,
+        8.4514
+      ],
+      "lastSource": [
+        46.45654296875,
+        63.02000045776367,
+        8.701358795166016
+      ]
+    }
+  },
+  "errors": []
+}

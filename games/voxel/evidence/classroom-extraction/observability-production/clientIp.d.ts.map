@@ -1,0 +1,1 @@
+{"version":3,"file":"clientIp.d.ts","sourceRoot":"","sources":["../src/clientIp.ts"],"names":[],"mappings":"AACA,OAAO,KAAK,EAAE,OAAO,EAAE,MAAM,SAAS,CAAC;AAEvC,MAAM,MAAM,cAAc,GAAG,SAAS,GAAG,QAAQ,GAAG,aAAa,CAAC;AAElE,oFAAoF;AACpF,wBAAgB,oBAAoB,CAAC,GAAG,EAAE,OAAO,EAAE,MAAM,EAAE,cAAc;;;;;;;;EAkBxE"}

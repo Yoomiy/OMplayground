@@ -1,0 +1,23 @@
+
+> @playground/voxel@0.1.0 test:tnt:browser
+> VOXEL_SURVIVAL_TNT=1 node tools/browser-survival.ts
+
+Harvesting natural log 1 with actual held touch input
+Harvesting natural log 2 with actual held touch input
+Harvesting natural log 3 with actual held touch input
+Harvesting natural log 4 with actual held touch input
+Harvesting natural log 5 with actual held touch input
+Harvesting natural log 6 with actual held touch input
+Harvesting nearby natural foliage for an owned apple
+Crafting owned logs into a workbench, sticks, pickaxe, trail boots and heavy shield
+Gathering natural shore sand and shallow river stone with owned tools
+Resource aim diagnostics {"cell":[45,60,13],"position":[44.4038,62,11.1855],"body":{"position":[44.4038,62,11.1855],"onGround":1,"inWater":1,"eyesInWater":0,"frozen":0,"flying":0,"velocity":[0,0,0]},"target":[45,61,12],"targetFamily":"sand","view":{"yaw":2.699268577990576,"pitch":-0.8834864385864768},"status":"playing"}
+file:///home/ubuntu/OMplayground/games/voxel/tools/browser-survival.ts:419
+      throw new Error(`natural resource is occluded: ${cell.join(',')}`);
+            ^
+
+Error: natural resource is occluded: 45,60,13
+    at aimCell (file:///home/ubuntu/OMplayground/games/voxel/tools/browser-survival.ts:419:13)
+    at async file:///home/ubuntu/OMplayground/games/voxel/tools/browser-survival.ts:500:7
+
+Node.js v24.21.0

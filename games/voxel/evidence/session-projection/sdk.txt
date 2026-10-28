@@ -1,0 +1,49 @@
+
+> @playground/voxel-server@0.1.0 pretest
+> npm run build:policy
+
+
+> @playground/voxel-server@0.1.0 build:policy
+> npm --prefix ../.. run build --workspace @playground/game-logic
+
+
+> @playground/game-logic@0.0.1 build
+> tsc -p tsconfig.json
+
+
+> @playground/voxel-server@0.1.0 test
+> node --test tests/*.test.ts
+
+✔ a verified active child gets a short private authorization with no name, inventory or capacity query (67.516565ms)
+✔ disabled accounts cannot fall through into admin access; each authorization reads current identity and profile (10.989733ms)
+✔ staff observe across partitions without gameplay grants; teacher participation follows the normal gender rule (11.388935ms)
+✔ closed rooms require current membership, a current invitation, or an accepted challenge (19.739695ms)
+✔ paused sessions preserve roster/host access and staff inspection, while ended or wrong-game sessions never start (11.185054ms)
+✔ class exceptions override recess defaults and conflicting or unavailable schedules fail closed (14.927072ms)
+✔ authorization cannot cross a schedule minute, JWT expiry, or an overlong provider read (11.080934ms)
+✔ private owned-object eligibility ignores offline recess time, but never ignores membership removal or a provider outage (5.501987ms)
+✔ authority comes from platform rows, never forged claims, extra request fields or a headcount ceiling (6.597992ms)
+✔ schedule interpretation retains Jerusalem time across summer and winter offsets (7.493876ms)
+✔ a continuous recess interval renews across ordinary minutes while the actual closing boundary remains authoritative (7.522716ms)
+✔ a private grant refreshes current policy and cannot be redirected by mutating its original request (8.468161ms)
+✔ central room policy reads fresh session state independently of player admission and treats deletion/completion as terminal (4.372941ms)
+✔ unavailable or overlong session reads cannot renew central room permission (1.403847ms)
+✔ a completed school session remains a terminal revalidation reason rather than a generic permission or provider failure (5.040505ms)
+✔ an empty invitation value never opens a closed room (2.844494ms)
+✔ installed SDK sends canonical service RPCs with a secret apikey and accepts only coherent immutable lease replies (50.924324ms)
+✔ create-only uploads copy bytes before IO and verify a duplicate object before marking it ready (13.851667ms)
+✔ provider errors cannot expose credentials and an unavailable provider respects the request deadline (29.896304ms)
+✔ failed Storage cleanup retains its catalog claim; completion only follows a successful API deletion (6.533911ms)
+✔ configuration rejects missing, public or legacy API keys and nonsecure remote endpoints (0.321081ms)
+✔ the shared server SDK preserves an explicit user bearer token for identity verification (1.762728ms)
+✔ session SDK sends fenced identities, deduplicates presence and excludes observers from membership writes (41.968562ms)
+✔ session SDK rejects malformed installation/policy replies and request-start deadlines never extend during IO (7.709277ms)
+✔ session SDK treats explicit fencing as false and provider failures expose only a machine code (4.487581ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1027.645054
