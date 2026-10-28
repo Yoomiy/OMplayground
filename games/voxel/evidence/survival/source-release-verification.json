@@ -1,0 +1,16 @@
+{
+  "result": "PASS",
+  "capturedAt": "2026-10-22T17:47:13.847Z",
+  "buildId": "37a9e3788eddb78445d9ebeb495735b31f59847e034d033a4ff19e7fc077f576",
+  "runtimeHash": "a3abc90804415306056a8dd29ddf432d294d1522b2acdd5bff9e9c2d1d09cd81",
+  "engineHash": "7688702bb6a210b9ac77384f44e7a8f7feca2f9036df7b9230cbe923cde80f49",
+  "bindingsHash": "0c9abe79b19abe1c2b4aaf25de20a03b42d72e79208cb83f088af0ffff111b37",
+  "contentHash": "c2ed76b95f1df88d5c2e1b852d1f866a6f323483260b6dcad903cfe64d35b6c6",
+  "protocol": 5,
+  "environmentVersion": 1,
+  "columnFormat": 2,
+  "regionFormat": 2,
+  "editFormat": 2,
+  "height": 256,
+  "matchedReleaseFiles": 12
+}

@@ -1,0 +1,46 @@
+✔ a verified active child gets a short private authorization with no name, inventory or capacity query (273.15907ms)
+✔ disabled accounts cannot fall through into admin access; each authorization reads current identity and profile (60.49617ms)
+✔ staff observe across partitions without gameplay grants; teacher participation follows the normal gender rule (60.740252ms)
+✔ closed rooms require current membership, a current invitation, or an accepted challenge (119.864975ms)
+✔ paused sessions preserve roster/host access and staff inspection, while ended or wrong-game sessions never start (63.501425ms)
+✔ class exceptions override recess defaults and conflicting or unavailable schedules fail closed (67.386523ms)
+✔ authorization cannot cross a schedule minute, JWT expiry, or an overlong provider read (71.0107ms)
+✔ private owned-object eligibility ignores offline recess time, but never ignores membership removal or a provider outage (56.449231ms)
+✔ authority comes from platform rows, never forged claims, extra request fields or a headcount ceiling (35.969453ms)
+✔ schedule interpretation retains Jerusalem time across summer and winter offsets (47.709949ms)
+✔ a continuous recess interval renews across ordinary minutes while the actual closing boundary remains authoritative (40.556954ms)
+✔ a private grant refreshes current policy and cannot be redirected by mutating its original request (37.827941ms)
+✔ central room policy reads fresh session state independently of player admission and treats deletion/completion as terminal (6.25043ms)
+✔ unavailable or overlong session reads cannot renew central room permission (1.377007ms)
+✔ a completed school session remains a terminal revalidation reason rather than a generic permission or provider failure (24.809319ms)
+✔ an empty invitation value never opens a closed room (3.437817ms)
+✔ roster revisions fence old open-room tickets while actor and passive ownership renewal require accepted membership (97.768309ms)
+✔ removal generations revoke earlier actor/owner proofs without disrupting peers and bans deny fresh admission until explicit unban/readmission (215.323673ms)
+✔ missing, inconsistent or overlong access-policy reads cannot grant or renew school authority (24.715118ms)
+✔ control rejects extra intent fields before identity or allocation (130.388506ms)
+✔ queued control repeats fresh authority and a revoked teacher cannot execute its earlier grant (78.965419ms)
+✔ pause save failure has no completion receipt and a prior committed receipt replays without reading the ended session (53.894019ms)
+✔ read-only session inspection follows live school scope and allows completed roster/staff without granting admission (192.121561ms)
+✔ staff policy rechecks queued role authority and never dispatches browser-supplied actors or coordinates (181.746032ms)
+✔ staff completion preserves the request identity and reports applied without claiming a checkpoint save (26.570608ms)
+✔ unknown dispatch in another owner epoch stays unconfirmed and malformed installation replies fail closed (29.07702ms)
+✔ production listener rejects wildcard, path, insecure and credential origins and requires a concrete port (4.593022ms)
+✔ release inventory corruption is rejected before importing executable gateway code (353.900578ms)
+✔ startup verifies every schema and fails before listening when controls are absent (102.17541ms)
+✔ installed SDK sends canonical service RPCs with a secret apikey and accepts only coherent immutable lease replies (173.756194ms)
+✔ create-only uploads copy bytes before IO and verify a duplicate object before marking it ready (30.376146ms)
+✔ provider errors cannot expose credentials and an unavailable provider respects the request deadline (39.324229ms)
+✔ failed Storage cleanup retains its catalog claim; completion only follows a successful API deletion (20.91578ms)
+✔ configuration rejects missing, public or legacy API keys and nonsecure remote endpoints (0.364761ms)
+✔ the shared server SDK preserves an explicit user bearer token for identity verification (10.701651ms)
+✔ session SDK sends fenced identities, deduplicates presence and excludes observers from membership writes (138.527345ms)
+✔ session SDK rejects malformed installation/policy replies and request-start deadlines never extend during IO (15.927797ms)
+✔ session SDK treats explicit fencing as false and provider failures expose only a machine code (7.523676ms)
+ℹ tests 38
+ℹ suites 0
+ℹ pass 38
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7541.424943

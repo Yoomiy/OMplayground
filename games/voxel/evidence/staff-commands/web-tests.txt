@@ -1,0 +1,42 @@
+
+> @playground/web@0.0.1 test
+> vitest run
+
+
+ RUN  v3.2.4 /home/ubuntu/OMplayground/apps/web
+
+ ✓ src/lib/recessAccess.test.ts (3 tests) 67ms
+stderr | src/games/voxel/worldgenPool.test.ts > WorldgenWorkerPool > handles worker error events and triggers synchronous fallback
+Worldgen Web Worker 0 encountered an error: { message: 'Worker crashed' }
+Falling back to synchronous chunk generation for chunk c_error_test due to worker error.
+
+ ✓ src/games/voxel/worldgenPool.test.ts (8 tests) 52ms
+ ✓ src/lib/classroomActivityTime.test.ts (4 tests) 38ms
+ ✓ src/game/voxel/session-api.test.ts (6 tests) 78ms
+ ✓ src/game/legacyWasmTeardown.test.ts (6 tests) 59ms
+ ✓ src/lib/classroomLayout.test.ts (8 tests) 25ms
+ ✓ src/utils/telemetry.test.ts (2 tests) 11ms
+ ✓ src/game/voxel/session-projection.test.ts (1 test) 28ms
+ ✓ src/lib/rocketProtocol.test.ts (3 tests) 28ms
+ ✓ src/games/drawing/localDrawingPersistence.test.ts (3 tests) 17ms
+ ✓ src/lib/classroomHands.test.ts (5 tests) 23ms
+ ✓ src/games/drawing/drawingViewportSync.test.ts (3 tests) 22ms
+ ✓ src/components/ClassroomCameraRail.test.ts (2 tests) 7ms
+ ✓ src/games/chess/chessEngine.test.ts (2 tests) 4ms
+ ✓ src/lib/drawingSessionScope.test.ts (2 tests) 8ms
+ ✓ src/lib/classroomDrawingViewport.test.ts (5 tests) 15ms
+ ✓ src/lib/classroomChatStorage.test.ts (2 tests) 7ms
+ ✓ src/games/voxel/audioManager.test.ts (3 tests) 17ms
+ ✓ src/games/chessSounds.test.ts (1 test) 10ms
+ ✓ src/components/presentationViewport.test.ts (7 tests) 10ms
+ ✓ src/games/voxel/movementConfig.test.ts (5 tests) 6ms
+ ✓ src/games/voxel/heldItemView.test.ts (4 tests) 6ms
+ ✓ src/lib/sessionPresence.test.ts (1 test) 4ms
+ ✓ src/lib/teacherSessionFilter.test.ts (2 tests) 8ms
+ ✓ src/lib/classroomLifecycle.test.ts (1 test) 7ms
+
+ Test Files  25 passed (25)
+      Tests  89 passed (89)
+   Start at  00:23:51
+   Duration  18.59s (transform 1.80s, setup 0ms, collect 3.96s, tests 557ms, environment 13ms, prepare 4.60s)
+

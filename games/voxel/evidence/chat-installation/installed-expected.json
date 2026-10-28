@@ -1,0 +1,25 @@
+{
+  "functions": [
+    {
+      "name": "voxel_chat_authorize",
+      "bodyMd5": "e24811236143403506449916a1c3e98f"
+    },
+    {
+      "name": "voxel_chat_history",
+      "bodyMd5": "306fcf90aea1b1eea822c372c28ee34b"
+    },
+    {
+      "name": "voxel_chat_send",
+      "bodyMd5": "c1b5cc0e9d16a01a3deb24288a32e0c5"
+    },
+    {
+      "name": "voxel_chat_moderate",
+      "bodyMd5": "b8451ff803e50e87fb789048c3dbc6ce"
+    },
+    {
+      "name": "voxel_chat_status",
+      "bodyMd5": "c690e174a04929f33dc4e339eb98b91b"
+    }
+  ],
+  "migrationSha256": "f3de58fecd2634105fe4b25ce7875b308ba9eca7c428c43c3552f00f26a0ed5b"
+}

@@ -1,0 +1,1024 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { io, type Socket } from "socket.io-client";
+import { supabase } from "@/lib/supabase";
+import { useProfile } from "@/hooks/useProfile";
+import { usePersistedSessionChat } from "@/hooks/usePersistedSessionChat";
+import { useTeacherSessionChat } from "@/hooks/useTeacherSessionChat";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { LazyGameBoard } from "@/game/lazyBoards";
+import { desktopPanelClass } from "@/components/KidDesktopShell";
+import { GameVoicePanel } from "@/components/GameVoicePanel";
+import { reportTelemetry } from "@/utils/telemetry";
+
+type RoomEvent =
+  | {
+      kind: "GAME_ENDED";
+      outcome: { kind: "won"; winner: string } | { kind: "draw" };
+    }
+  | { kind: "GAME_STOPPED"; stoppedBy?: string }
+  | { kind: "GAME_PAUSED" }
+  | { kind: "GAME_RESUMED" }
+  | { kind: "HOST_LEFT"; newHostId?: string }
+  | { kind: "RECESS_ENDED" }
+  | { kind: "ROOM_FULL" }
+  | { kind: "PLAYER_JOINED"; player?: RoomPlayer }
+  | { kind: "PLAYER_LEFT"; player?: RoomPlayer }
+  | { kind: "REMATCH_REQUESTED"; requestedBy: string }
+  | { kind: "REMATCH_CANCELLED" }
+  | { kind: "REMATCH_STARTED" };
+
+export interface RoomPlayer {
+  userId: string;
+  displayName: string;
+  isTeacher?: boolean;
+}
+
+interface RematchState {
+  requestedBy: string;
+  accepted: string[];
+  refused: string[];
+}
+
+type EndOverlay =
+  | { kind: "won"; winner: string }
+  | { kind: "draw" }
+  | { kind: "stopped" };
+
+type ParticipationMode = "joining" | "player" | "spectator";
+
+function endOverlayHeadline(
+  overlay: EndOverlay,
+  mySymbol: string | null,
+  isObserver: boolean,
+  winnerName: string | null
+): string {
+  if (isObserver) {
+    if (overlay.kind === "draw") return "תיקו!";
+    if (overlay.kind === "stopped") return "המשחק נעצר";
+    return winnerName ? `המנצח/ת: ${winnerName}` : "המשחק הסתיים";
+  }
+  if (overlay.kind === "draw") return "תיקו!";
+  if (overlay.kind === "stopped") return "המארח עצר את המשחק";
+  if (mySymbol && (overlay.winner === mySymbol || overlay.winner === "both")) return "ניצחת!";
+  return "הפסדת";
+}
+
+/**
+ * Map of `gameKey` (matches `games.game_url`) → client board renderer.
+ * The container stays game-agnostic; new games just register here.
+ */
+
+
+/** In dev, prefer same-origin + Vite proxy so the browser does not hit :8080 directly (avoids wrong URL / CORS). */
+function gameServerUrl(): string {
+  const fromEnv = import.meta.env.VITE_GAME_SERVER_URL?.trim();
+  if (fromEnv) return fromEnv;
+  if (import.meta.env.DEV && typeof window !== "undefined") {
+    return window.location.origin;
+  }
+  return "http://localhost:8080";
+}
+
+function connectErrorLabel(err: Error): string {
+  const raw = err.message;
+  if (raw === "xhr poll error" || raw === "websocket error") {
+    return "לא ניתן להתחבר לשרת המשחק — הפעל אותו מקומית (npm run dev:server, פורט 8080) או הגדר VITE_GAME_SERVER_URL.";
+  }
+  switch (raw) {
+    case "UNAUTHORIZED":
+      return "לא מאומת — נסה להתחבר מחדש.";
+    case "FORBIDDEN":
+      return "אין הרשאה לשחק (פרופיל לא נמצא או לא פעיל).";
+    case "RECESS_DENIED":
+      return "מחוץ לזמן ההפסקה — לא ניתן לשחק כרגע.";
+    case "SERVER_CONFIG":
+      return "שרת המשחק לא מוגדר (בדוק משתני Supabase בשרת).";
+    default:
+      return `שגיאת חיבור לשרת המשחק: ${raw}`;
+  }
+}
+
+export interface GameSessionContainerProps {
+  sessionId: string;
+}
+
+export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const inviteCode = searchParams.get("invite") ?? undefined;
+  const requestedParticipationMode =
+    searchParams.get("mode") === "player" ? "player" : "observer";
+  const { profile } = useProfile();
+  const { isAdmin } = useIsAdmin();
+  const isStaff = isAdmin || profile?.role === "teacher";
+  const [participationMode, setParticipationMode] = useState<ParticipationMode>(
+    "joining"
+  );
+  const isStaffObserver = isStaff && participationMode !== "player";
+  const isChildSpectator = !isStaff && participationMode === "spectator";
+  const teacherChat = useTeacherSessionChat(
+    isStaff ? sessionId : undefined
+  );
+  const kidChat = usePersistedSessionChat(
+    !isStaff && participationMode !== "joining" ? sessionId : undefined
+  );
+  const socketRef = useRef<Socket | null>(null);
+  const recessEndedRef = useRef(false);
+  const [gameKey, setGameKey] = useState<string | null>(null);
+  const [gameState, setGameState] = useState<unknown>(null);
+  const [status, setStatus] = useState<string>("מתחבר…");
+  const [hostId, setHostId] = useState<string | null>(null);
+  const [myUserId, setMyUserId] = useState<string | null>(null);
+  const [players, setPlayers] = useState<RoomPlayer[]>([]);
+  const [spectators, setSpectators] = useState<RoomPlayer[]>([]);
+  const [roster, setRoster] = useState<RoomPlayer[]>([]);
+  const [missingPlayers, setMissingPlayers] = useState<RoomPlayer[]>([]);
+  const [paused, setPaused] = useState(false);
+  const [canResume, setCanResume] = useState(false);
+  const [rematch, setRematch] = useState<RematchState | null>(null);
+  const [endOverlay, setEndOverlay] = useState<EndOverlay | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const [chatDraft, setChatDraft] = useState("");
+  const [roomIsOpen, setRoomIsOpen] = useState<boolean | null>(null);
+  const [invitationCode, setInvitationCode] = useState<string | null>(null);
+  const [updatingVisibility, setUpdatingVisibility] = useState(false);
+  const [inviteFallbackLink, setInviteFallbackLink] = useState<string | null>(null);
+  const [drawingSync, setDrawingSync] = useState<{ update: string; token: string } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void (async () => {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) {
+        reportTelemetry(
+          {
+            level: "warn",
+            message: "Game session socket setup without auth token",
+            sessionId,
+            context: { appArea: "game-session" }
+          },
+          "game-server"
+        );
+        setStatus("אין סשן — התחבר מחדש.");
+        return;
+      }
+      if (cancelled) return;
+      setMyUserId(data.session?.user.id ?? null);
+
+      const { getCorrelationId } = await import("@/utils/correlation");
+      const s = io(gameServerUrl(), {
+        auth: { token, correlationId: getCorrelationId() },
+        reconnectionAttempts: 2,
+        reconnectionDelay: 1500
+      });
+      socketRef.current = s;
+
+      s.on("connect", () => {
+        setDrawingSync(null);
+        setParticipationMode("joining");
+        setStatus("מחובר");
+        s.emit(
+          "JOIN_ROOM",
+          {
+            sessionId,
+            participationMode: requestedParticipationMode,
+            ...(inviteCode ? { invitationCode: inviteCode } : {})
+          },
+          (ack: {
+            ok?: boolean;
+            spectator?: boolean;
+            fallbackReason?: "ROOM_FULL";
+            error?: { code?: string; message?: string };
+          }) => {
+            if (!ack?.ok) {
+              reportTelemetry(
+                {
+                  level: "warn",
+                  message: "JOIN_ROOM failed",
+                  sessionId,
+                  context: {
+                    appArea: "game-session",
+                    code: ack?.error?.code,
+                    event: "JOIN_ROOM"
+                  }
+                },
+                "game-server"
+              );
+              setStatus(ack?.error?.message ?? "הצטרפות לחדר נכשלה");
+              return;
+            }
+            setParticipationMode(ack?.spectator ? "spectator" : "player");
+            if (ack?.fallbackReason === "ROOM_FULL") {
+              setToast("החדר מלא — הצטרפת במצב צפייה וניהול");
+            }
+          }
+        );
+      });
+
+      s.on(
+        "ROOM_SNAPSHOT",
+        (payload: {
+          gameKey?: string;
+          gameState?: unknown;
+          hostId?: string;
+          players?: RoomPlayer[];
+          spectators?: RoomPlayer[];
+          roster?: RoomPlayer[];
+          missingPlayers?: RoomPlayer[];
+          paused?: boolean;
+          canResume?: boolean;
+          rematch?: RematchState | null;
+        }) => {
+          if (payload?.gameKey) {
+            setGameKey(payload.gameKey);
+          }
+          if (payload?.gameState !== undefined) {
+            setGameState(payload.gameState);
+            const st = payload.gameState as { status?: string };
+            if (st?.status === "playing") {
+              setEndOverlay(null);
+            }
+          }
+          if (payload?.hostId) {
+            setHostId(payload.hostId);
+          }
+          if (payload?.players) {
+            setPlayers(payload.players);
+          }
+          if (payload?.spectators) {
+            setSpectators(payload.spectators);
+          }
+          if (payload?.roster) {
+            setRoster(payload.roster);
+          }
+          if (payload?.missingPlayers) {
+            setMissingPlayers(payload.missingPlayers);
+          }
+          if (typeof payload?.paused === "boolean") {
+            setPaused(payload.paused);
+          }
+          if (typeof payload?.canResume === "boolean") {
+            setCanResume(payload.canResume);
+          }
+          if ("rematch" in payload) {
+            setRematch(payload.rematch ?? null);
+          }
+        }
+      );
+
+      s.on("ROOM_EVENT", (ev: RoomEvent) => {
+        switch (ev.kind) {
+          case "GAME_ENDED":
+            setEndOverlay(ev.outcome);
+            return;
+          case "GAME_STOPPED":
+            setEndOverlay({ kind: "stopped" });
+            return;
+          case "GAME_PAUSED":
+            setToast("המשחק הושהה");
+            return;
+          case "GAME_RESUMED":
+            setToast("המשחק חודש");
+            return;
+          case "HOST_LEFT":
+            setToast("המארח עזב — הקברניט הוחלף");
+            return;
+          case "RECESS_ENDED":
+            recessEndedRef.current = true;
+            setToast("ההפסקה הסתיימה");
+            return;
+          case "ROOM_FULL":
+            setToast("החדר מלא — אפשר להפוך אותו לפרטי דרך ניהול החדר");
+            return;
+          case "PLAYER_JOINED":
+            setToast(`${ev.player?.displayName ?? "שחקן"} הצטרף לחדר`);
+            return;
+          case "PLAYER_LEFT":
+            setToast(`${ev.player?.displayName ?? "שחקן"} עזב את החדר`);
+            return;
+          case "REMATCH_REQUESTED":
+            setToast("המארח ביקש משחק חוזר");
+            return;
+          case "REMATCH_CANCELLED":
+            setToast("המשחק החוזר בוטל");
+            return;
+          case "REMATCH_STARTED":
+            setEndOverlay(null);
+            setToast("משחק חוזר התחיל");
+            return;
+        }
+      });
+
+      s.on("DRAWING_SYNC", (payload: { sessionId?: string; yjsUpdate?: string; syncToken?: string }) => {
+        if (payload.sessionId !== sessionId || typeof payload.yjsUpdate !== "string" || typeof payload.syncToken !== "string") return;
+        setDrawingSync({ update: payload.yjsUpdate, token: payload.syncToken });
+      });
+
+      s.on("disconnect", () => {
+        if (recessEndedRef.current) {
+          navigate("/login", { replace: true });
+        }
+      });
+
+      s.on("connect_error", (err: Error) => {
+        reportTelemetry(
+          {
+            level: "error",
+            message: "Game socket connect_error",
+            sessionId,
+            context: { appArea: "game-session", code: err.message }
+          },
+          "game-server"
+        );
+        setStatus(connectErrorLabel(err));
+      });
+    })();
+
+    return () => {
+      cancelled = true;
+      socketRef.current?.disconnect();
+      socketRef.current = null;
+    };
+  }, [sessionId, inviteCode, navigate, requestedParticipationMode]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const { data, error } = await supabase
+        .from("game_sessions")
+        .select("is_open, invitation_code")
+        .eq("id", sessionId)
+        .maybeSingle();
+      if (cancelled || error || !data) return;
+      setRoomIsOpen(data.is_open);
+      setInvitationCode(data.invitation_code);
+    })();
+
+    const channel = supabase
+      .channel(`session-privacy:${sessionId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "game_sessions",
+          filter: `id=eq.${sessionId}`
+        },
+        (payload) => {
+          const next = payload.new as {
+            is_open?: boolean;
+            invitation_code?: string;
+          };
+          if (typeof next.is_open === "boolean") {
+            setRoomIsOpen(next.is_open);
+          }
+          if (typeof next.invitation_code === "string") {
+            setInvitationCode(next.invitation_code);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      void supabase.removeChannel(channel);
+    };
+  }, [sessionId]);
+
+  const stopGame = useCallback(() => {
+    const s = socketRef.current;
+    if (!s?.connected) return;
+    s.emit(
+      "STOP_GAME",
+      { sessionId },
+      (ack: { ok?: boolean; error?: { message?: string } }) => {
+        if (!ack?.ok) {
+          setStatus(ack?.error?.message ?? "עצירה נכשלה");
+        }
+      }
+    );
+  }, [sessionId]);
+
+  const pauseGame = useCallback(() => {
+    const s = socketRef.current;
+    if (!s?.connected) return;
+    s.emit(
+      "PAUSE_GAME",
+      { sessionId },
+      (ack: { ok?: boolean; error?: { message?: string } }) => {
+        if (!ack?.ok) {
+          setStatus(ack?.error?.message ?? "השהיית המשחק נכשלה");
+        }
+      }
+    );
+  }, [sessionId]);
+
+  const resumeGame = useCallback(() => {
+    const s = socketRef.current;
+    if (!s?.connected) return;
+    s.emit(
+      "RESUME_GAME",
+      { sessionId },
+      (ack: { ok?: boolean; error?: { message?: string } }) => {
+        if (!ack?.ok) {
+          setToast(ack?.error?.message ?? "חידוש המשחק נכשל");
+        }
+      }
+    );
+  }, [sessionId]);
+
+  const requestRematch = useCallback(() => {
+    const s = socketRef.current;
+    if (!s?.connected) return;
+    s.emit(
+      "REMATCH",
+      { sessionId },
+      (ack: {
+        ok?: boolean;
+        error?: { code?: string; message?: string };
+      }) => {
+        if (!ack?.ok) {
+          setToast(ack?.error?.message ?? "משחק חוזר נכשל");
+        }
+      }
+    );
+  }, [sessionId]);
+
+  const respondToRematch = useCallback(
+    (accept: boolean) => {
+      const s = socketRef.current;
+      if (!s?.connected) return;
+      s.emit(
+        "REMATCH_RESPONSE",
+        { sessionId, accept },
+        (ack: { ok?: boolean; error?: { message?: string } }) => {
+          if (!ack?.ok) {
+            setToast(ack?.error?.message ?? "תגובה למשחק חוזר נכשלה");
+          }
+        }
+      );
+    },
+    [sessionId]
+  );
+
+  const sendChat = useCallback(() => {
+    const s = socketRef.current;
+    const text = chatDraft.trim();
+    if (!s?.connected || !text) return;
+    s.emit(
+      "CHAT_MESSAGE",
+      { sessionId, message: text },
+      (ack: { ok?: boolean; error?: { message?: string } }) => {
+        if (!ack?.ok) {
+          setStatus(ack?.error?.message ?? "שליחת צ׳אט נכשלה");
+        } else {
+          setChatDraft("");
+        }
+      }
+    );
+  }, [chatDraft, sessionId]);
+
+  const toggleRoomVisibility = useCallback(async () => {
+    if (!myUserId || !hostId || myUserId !== hostId || roomIsOpen === null) return;
+    setUpdatingVisibility(true);
+    setInviteFallbackLink(null);
+    const { data, error } = await supabase
+      .from("game_sessions")
+      .update({ is_open: !roomIsOpen })
+      .eq("id", sessionId)
+      .eq("host_id", myUserId)
+      .select("is_open")
+      .maybeSingle();
+    setUpdatingVisibility(false);
+    if (error || !data) {
+      setStatus(error?.message ?? "עדכון פרטיות נכשל");
+      return;
+    }
+    setRoomIsOpen(data.is_open);
+    setToast(data.is_open ? "החדר פתוח להצטרפות" : "החדר פרטי עכשיו");
+  }, [hostId, myUserId, roomIsOpen, sessionId]);
+
+  const copyInviteLink = useCallback(async () => {
+    if (!invitationCode) return;
+    const inviteUrl = `${window.location.origin}/join/${invitationCode}`;
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      setInviteFallbackLink(null);
+      setToast("קישור ההזמנה הועתק");
+    } catch {
+      setInviteFallbackLink(inviteUrl);
+      setToast("אי אפשר להעתיק אוטומטית בדפדפן הזה");
+    }
+  }, [invitationCode]);
+
+  const requestVoiceToken = useCallback(() => {
+    return new Promise<{ token: string; serverUrl: string }>((resolve, reject) => {
+      const socket = socketRef.current;
+      if (!socket?.connected) {
+        reject(new Error("אין חיבור פעיל לשרת המשחק."));
+        return;
+      }
+      const timer = window.setTimeout(() => {
+        reject(new Error("החיבור לצ׳אט הקולי ארך זמן רב מדי."));
+      }, 10_000);
+      socket.emit(
+        "VOICE_TOKEN",
+        { sessionId },
+        (response: {
+          ok?: boolean;
+          token?: string;
+          serverUrl?: string;
+          error?: { message?: string };
+        }) => {
+          window.clearTimeout(timer);
+          if (response?.ok && response.token && response.serverUrl) {
+            resolve({ token: response.token, serverUrl: response.serverUrl });
+            return;
+          }
+          reject(new Error(response?.error?.message ?? "לא ניתן להתחבר לצ׳אט הקולי."));
+        }
+      );
+    });
+  }, [sessionId]);
+
+  const onIntent = useCallback(
+    (intent: unknown) => {
+      if (isStaffObserver || isChildSpectator || participationMode !== "player") return;
+      if (paused) {
+        setStatus("המשחק מושהה");
+        return;
+      }
+      const s = socketRef.current;
+      if (!s?.connected) {
+        setStatus("אין חיבור פעיל");
+        return;
+      }
+      s.emit(
+        "INTENT_GAME",
+        { sessionId, intent },
+        (ack: { ok?: boolean; error?: { message?: string } }) => {
+          if (!ack?.ok) {
+            setStatus(ack?.error?.message ?? "מהלך לא חוקי");
+          }
+        }
+      );
+    },
+    [sessionId, isStaffObserver, isChildSpectator, participationMode, paused]
+  );
+  const onLiveDelta = useCallback(
+    (delta: unknown) => {
+      if (isStaffObserver || isChildSpectator || participationMode !== "player") return;
+      const s = socketRef.current;
+      if (!s?.connected) return;
+      if (paused) return;
+      s.emit("LIVE_DELTA", { sessionId, delta });
+    },
+    [sessionId, isStaffObserver, isChildSpectator, participationMode, paused]
+  );
+
+  const subscribeLiveDeltas = useCallback(
+    (cb: (payload: any) => void) => {
+      const s = socketRef.current;
+      if (!s) return () => {};
+      const handler = (payload: { from: string; delta: any }) => {
+        cb(payload);
+      };
+      s.on("LIVE_DELTA", handler);
+      return () => {
+        s.off("LIVE_DELTA", handler);
+      };
+    },
+    []
+  );
+
+  const acknowledgeDrawingSync = useCallback((syncToken: string) => {
+    const s = socketRef.current;
+    if (!s?.connected) return;
+    s.emit("DRAWING_SYNC_ACK", { sessionId, syncToken });
+  }, [sessionId]);
+
+  const clearDrawing = useCallback(() => new Promise<boolean>((resolve) => {
+    if (isStaffObserver || isChildSpectator || participationMode !== "player" || paused) {
+      resolve(false);
+      return;
+    }
+    const s = socketRef.current;
+    if (!s?.connected) {
+      setStatus("אין חיבור פעיל");
+      resolve(false);
+      return;
+    }
+    s.emit(
+      "INTENT_GAME",
+      { sessionId, intent: { type: "CLEAR_CANVAS" } },
+      (ack: { ok?: boolean; error?: { message?: string } }) => {
+        if (!ack?.ok) setStatus(ack?.error?.message ?? "ניקוי הלוח נכשל");
+        resolve(ack?.ok === true);
+      }
+    );
+  }), [isStaffObserver, isChildSpectator, participationMode, paused, sessionId]);
+
+  const drawingMode = useMemo(() => ({
+    kind: "canonical" as const,
+    initialSync: drawingSync,
+    viewportRole: "independent" as const,
+    canClear: !isStaffObserver && !isChildSpectator && participationMode === "player" && !paused,
+    sendDelta: onLiveDelta,
+    acknowledgeSync: acknowledgeDrawingSync,
+    subscribe: subscribeLiveDeltas,
+    clear: clearDrawing
+  }), [
+    acknowledgeDrawingSync,
+    clearDrawing,
+    drawingSync,
+    isStaffObserver,
+    isChildSpectator,
+    participationMode,
+    onLiveDelta,
+    paused,
+    subscribeLiveDeltas
+  ]);
+
+  /** Derived from authoritative state so clients never diverge on seat order. */
+  const mySymbol = useMemo<string | null>(() => {
+    const seats = (gameState as { seats?: Record<string, string> } | null)
+      ?.seats;
+    if (!seats || !myUserId) return null;
+    return seats[myUserId] ?? null;
+  }, [gameState, myUserId]);
+
+  const winnerName = useMemo<string | null>(() => {
+    if (endOverlay?.kind !== "won" || endOverlay.winner === "both") return null;
+    const seats = (gameState as { seats?: Record<string, string> } | null)?.seats;
+    const winnerId = Object.entries(seats ?? {}).find(
+      ([, seat]) => seat === endOverlay.winner
+    )?.[0];
+    if (!winnerId) return null;
+    return (
+      roster.find((player) => player.userId === winnerId)?.displayName ??
+      players.find((player) => player.userId === winnerId)?.displayName ??
+      null
+    );
+  }, [endOverlay, gameState, players, roster]);
+
+  if (!gameState || !gameKey) {
+    return <p className="text-sm text-slate-500 dark:text-white/50">{status}</p>;
+  }
+
+  const iAmHost =
+    !isStaffObserver &&
+    participationMode === "player" &&
+    myUserId != null &&
+    hostId != null &&
+    myUserId === hostId;
+  const connectedIds = new Set(players.map((p) => p.userId));
+  const acceptedRematch = myUserId ? rematch?.accepted.includes(myUserId) : false;
+  const refusedRematch = myUserId ? rematch?.refused.includes(myUserId) : false;
+  const canVoteRematch =
+    !isStaffObserver &&
+    participationMode === "player" &&
+    !!endOverlay &&
+    endOverlay.kind !== "stopped" &&
+    !!rematch &&
+    !!myUserId &&
+    roster.some((p) => p.userId === myUserId);
+
+  const chatPanel = isStaff ? (
+    <section className={desktopPanelClass("space-y-2 p-3")}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-sm font-black text-slate-900 dark:text-white">צ׳אט (ניהול)</h2>
+        <button
+          type="button"
+          className="rounded-lg border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 text-xs font-semibold text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-500/20 transition duration-200"
+          onClick={() => {
+            if (!window.confirm("למחוק את כל ההודעות במפגש זה?")) return;
+            void teacherChat.clearSession().catch((e: Error) => setStatus(e.message));
+          }}
+        >
+          ניקוי צ׳אט
+        </button>
+      </div>
+      {teacherChat.error ? (
+        <p className="text-xs font-medium text-amber-800 dark:text-amber-300">{teacherChat.error}</p>
+      ) : null}
+      <ul className="max-h-64 space-y-2 overflow-y-auto text-sm text-slate-700 dark:text-white/80">
+        {teacherChat.lines.map((line) => (
+          <li key={line.id} className="flex items-start justify-between gap-2 border-b border-slate-200 dark:border-white/10 pb-1">
+            <span>
+              <span className="text-slate-500 dark:text-white/40">{line.sender_name}:</span>{" "}
+              {line.message}
+            </span>
+            {!line.is_system ? (
+              <button
+                type="button"
+                className="shrink-0 text-xs text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-300 underline transition duration-200"
+                onClick={() =>
+                  void teacherChat.softDelete(line.id).catch((e: Error) =>
+                    setStatus(e.message)
+                  )
+                }
+              >
+                מחק
+              </button>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+      {participationMode === "player" && !isAdmin ? (
+        <div className="flex gap-2">
+          <input
+            className="min-h-10 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-400 transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-white/40"
+            value={chatDraft}
+            onChange={(event) => setChatDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                sendChat();
+              }
+            }}
+            placeholder="הודעה כמורה…"
+            maxLength={500}
+          />
+          <button
+            type="button"
+            className="rounded-lg bg-gradient-to-r from-violet-500 to-indigo-500 border border-violet-400/50 px-3.5 py-1 text-sm font-bold text-white"
+            onClick={() => sendChat()}
+          >
+            שלח
+          </button>
+        </div>
+      ) : null}
+    </section>
+  ) : (
+    <section className={desktopPanelClass("space-y-2 p-3")}>
+      <h2 className="text-sm font-black text-slate-900 dark:text-white">צ׳אט במשחק</h2>
+      {kidChat.error ? (
+        <p className="text-xs font-medium text-amber-800 dark:text-amber-300">{kidChat.error}</p>
+      ) : null}
+      <ul className="max-h-56 space-y-1 overflow-y-auto text-sm text-slate-700 dark:text-white/80">
+        {kidChat.lines.map((line) => (
+          <li key={line.id}>
+            <span className="text-slate-500 dark:text-white/40">{line.sender_name}:</span>{" "}
+            {line.message}
+          </li>
+        ))}
+      </ul>
+      <div className="flex gap-2">
+        <input
+          className="min-h-10 flex-1 rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm text-slate-900 dark:text-white outline-none placeholder:text-slate-400 dark:placeholder:text-white/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 shadow-sm transition"
+          value={chatDraft}
+          onChange={(e) => setChatDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              sendChat();
+            }
+          }}
+          placeholder="הודעה…"
+          maxLength={500}
+        />
+        <button
+          type="button"
+          className="rounded-lg bg-gradient-to-r from-violet-500 to-indigo-500 border border-violet-400/50 px-3.5 py-1 text-sm font-bold text-white hover:shadow-[0_0_12px_rgba(139,92,246,0.3)] transition duration-200"
+          onClick={() => sendChat()}
+        >
+          שלח
+        </button>
+      </div>
+    </section>
+  );
+
+  return (
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <main className="min-w-0 space-y-4">
+        <div className={desktopPanelClass("flex flex-wrap items-center justify-between gap-3 px-4 py-3")}>
+          <div className="flex items-center gap-3">
+            <p className="text-sm font-bold text-slate-700 dark:text-white/80">
+              {isStaffObserver
+                ? `צפייה בלבד (${isAdmin ? "מנהל" : "מורה"}) · `
+                : isStaff
+                  ? "משחק/ת כמורה · "
+                  : isChildSpectator
+                    ? "צפייה בלבד · "
+                    : ""}
+              {status}
+            </p>
+            {toast ? (
+              <div role="status" className="rounded-xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-3 py-2 text-sm font-bold text-amber-800 dark:text-amber-200">
+                {toast}
+              </div>
+            ) : null}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200"
+              onClick={() =>
+                navigate(isAdmin ? "/admin" : isStaffObserver ? "/teacher" : "/home")
+              }
+            >
+              {isAdmin ? "חזרה לניהול" : isStaffObserver ? "חזרה ללוח המורה" : "יציאה"}
+            </button>
+          </div>
+        </div>
+
+        <section className={desktopPanelClass(
+          "min-h-[560px] p-4",
+          { backdropBlur: gameKey !== "drawing" }
+        )}>
+          {paused ? (
+            <div className="mb-4 rounded-xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-300">
+              <p className="font-bold">המשחק מושהה ונשמר להמשך.</p>
+              <p className="mt-1">
+                {missingPlayers.length > 0
+                  ? `ממתינים להצטרפות: ${missingPlayers.map((p) => p.displayName).join(", ")}`
+                  : "כל השחקנים חזרו לחדר."}
+              </p>
+            </div>
+          ) : null}
+
+          <div
+            className={
+              paused || ((isStaffObserver || isChildSpectator) && gameKey !== "drawing")
+                ? "pointer-events-none mx-auto max-w-5xl opacity-60"
+                : "mx-auto max-w-5xl"
+            }
+          >
+            <LazyGameBoard
+              gameKey={gameKey}
+              boardProps={{
+                gameState,
+                mySymbol,
+                myUserId: myUserId ?? "",
+                onIntent,
+                isHost: iAmHost,
+                endOverlay,
+                rematch,
+                canVoteRematch,
+                acceptedRematch,
+                refusedRematch,
+                onRequestRematch: requestRematch,
+                onRespondRematch: respondToRematch,
+                onLiveDelta,
+                subscribeLiveDeltas,
+                paused,
+                onGoHome: () =>
+                  navigate(isAdmin ? "/admin" : isStaffObserver ? "/teacher" : "/home"),
+                players: roster.length > 0 ? roster : players,
+                connectedPlayers: players,
+                drawingMode: gameKey === "drawing" ? drawingMode : undefined
+              }}
+            />
+          </div>
+        </section>
+
+        {endOverlay && gameKey !== "chess" ? (
+          <div role="alertdialog" aria-label="המשחק הסתיים" className={desktopPanelClass("p-4 text-center")}>
+            <p className="text-lg font-black text-slate-900 dark:text-white">
+              {endOverlayHeadline(
+                endOverlay,
+                mySymbol,
+                isStaffObserver || isChildSpectator,
+                winnerName
+              )}
+            </p>
+            {rematch && endOverlay.kind !== "stopped" ? (
+              <p className="mt-2 text-sm font-semibold text-slate-600 dark:text-white/60">
+                משחק חוזר: {rematch.accepted.length} אישרו
+                {rematch.refused.length > 0 ? ` · ${rematch.refused.length} סירבו` : ""}
+              </p>
+            ) : null}
+            <div className="mt-3 flex flex-wrap justify-center gap-2">
+              {iAmHost && endOverlay.kind !== "stopped" && !rematch && gameKey !== "breakout" ? (
+                <button type="button" className="rounded-lg bg-emerald-600 border border-emerald-500/50 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-500 transition duration-200" onClick={() => requestRematch()}>
+                  בקש משחק חוזר
+                </button>
+              ) : null}
+              {canVoteRematch && gameKey !== "breakout" ? (
+                <>
+                  <button type="button" className="rounded-lg bg-emerald-600 border border-emerald-500/50 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-500 disabled:opacity-50 transition duration-200" disabled={acceptedRematch} onClick={() => respondToRematch(true)}>
+                    {acceptedRematch ? "אישרת משחק חוזר" : "אני רוצה משחק חוזר"}
+                  </button>
+                  <button type="button" className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-3 py-2 text-sm font-bold text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white disabled:opacity-50 transition duration-200" disabled={refusedRematch} onClick={() => respondToRematch(false)}>
+                    {refusedRematch ? "סירבת" : "לא עכשיו"}
+                  </button>
+                </>
+              ) : null}
+              <button
+                type="button"
+                className="rounded-lg bg-gradient-to-r from-violet-500 to-indigo-500 border border-violet-400/50 px-3.5 py-2 text-sm font-bold text-white hover:shadow-[0_0_12px_rgba(139,92,246,0.3)] transition duration-200"
+                onClick={() =>
+                  navigate(isAdmin ? "/admin" : isStaffObserver ? "/teacher" : "/home")
+                }
+              >
+                חזרה לדף הבית
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </main>
+
+      <aside className="space-y-4">
+          <GameVoicePanel
+            sessionId={sessionId}
+            requestToken={requestVoiceToken}
+            manualJoin={isStaffObserver}
+          />
+
+          <section className={desktopPanelClass("p-4 text-sm")}>
+            <h2 className="font-black text-slate-900 dark:text-white/95">שחקנים בחדר</h2>
+            <div className="mt-3 space-y-2">
+              {(roster.length > 0 ? roster : players).map((player) => (
+                <div
+                  key={player.userId}
+                  className={
+                    connectedIds.has(player.userId)
+                      ? "rounded-xl border border-emerald-300 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-2 font-bold text-emerald-800 dark:text-emerald-300"
+                      : "rounded-xl border border-slate-200 dark:border-white/5 bg-slate-100 dark:bg-white/5 px-3 py-2 font-semibold text-slate-600 dark:text-white/50"
+                  }
+                >
+                  {player.displayName}
+                  {player.isTeacher ? (
+                    <span className="mr-2 rounded-full border border-sky-300 bg-sky-50 px-2 py-0.5 text-[10px] font-black text-sky-700 dark:border-sky-400/30 dark:bg-sky-500/15 dark:text-sky-200">
+                      מורה
+                    </span>
+                  ) : null}
+                  <span className="block text-xs">
+                    {connectedIds.has(player.userId) ? "מחובר" : "חסר"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {spectators.length > 0 ? (
+            <section className={desktopPanelClass("p-4 text-sm")}>
+              <h2 className="font-black text-slate-900 dark:text-white/95">צופים</h2>
+              <div className="mt-3 space-y-2">
+                {spectators.map((spectator) => (
+                  <div
+                    key={spectator.userId}
+                    className="rounded-xl border border-indigo-200 dark:border-indigo-500/20 bg-indigo-50 dark:bg-indigo-500/10 px-3 py-2 font-semibold text-indigo-800 dark:text-indigo-200"
+                  >
+                    {spectator.displayName}
+                    <span className="block text-xs text-indigo-600 dark:text-indigo-300/70">צופה</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {paused && iAmHost ? (
+            <section className="rounded-2xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-4 text-sm text-amber-800 dark:text-amber-300 shadow-sm backdrop-blur-md">
+              <p className="font-bold">אפשר לחדש כשהשחקנים חזרו.</p>
+              <button
+                type="button"
+                className="mt-3 rounded-lg bg-emerald-600 border border-emerald-500/50 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-500 disabled:opacity-50 transition duration-200"
+                disabled={!canResume}
+                onClick={() => resumeGame()}
+              >
+                המשך משחק
+              </button>
+            </section>
+          ) : null}
+
+          {iAmHost && !endOverlay ? (
+            <section className={desktopPanelClass("space-y-3 p-4")}>
+              <h2 className="text-sm font-black text-slate-900 dark:text-white/95">ניהול חדר</h2>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" className="rounded-lg bg-amber-600 border border-amber-500/50 px-3 py-2 text-sm font-bold text-white hover:bg-amber-500 disabled:opacity-50 transition duration-200" disabled={paused} onClick={() => pauseGame()}>
+                  השהה
+                </button>
+                <button type="button" className="rounded-lg bg-rose-600 border border-rose-500/50 px-3 py-2 text-sm font-bold text-white hover:bg-rose-500 transition duration-200" onClick={() => stopGame()}>
+                  סיים
+                </button>
+              </div>
+              <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">
+                <p className="text-sm font-black text-slate-800 dark:text-white">
+                  {roomIsOpen === null ? "טוען פרטיות…" : roomIsOpen ? "חדר פתוח" : "חדר פרטי"}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button type="button" className="rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm font-bold text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white disabled:opacity-50 transition duration-200 shadow-sm" disabled={updatingVisibility || roomIsOpen === null} onClick={() => void toggleRoomVisibility()}>
+                    {updatingVisibility ? "מעדכן…" : roomIsOpen ? "הפוך לפרטי" : "הפוך לפתוח"}
+                  </button>
+                  <button type="button" className="rounded-lg border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 px-3 py-2 text-sm font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 disabled:opacity-50 transition duration-200 shadow-sm" disabled={!invitationCode} onClick={() => void copyInviteLink()}>
+                    העתק הזמנה
+                  </button>
+                </div>
+              </div>
+              {inviteFallbackLink ? (
+                <p className="break-all rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 px-3 py-2 text-xs text-indigo-800 dark:text-indigo-300">
+                  {inviteFallbackLink}
+                </p>
+              ) : null}
+            </section>
+          ) : null}
+
+          {chatPanel}
+        </aside>
+    </div>
+  );
+}

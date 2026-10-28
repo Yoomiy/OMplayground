@@ -1,0 +1,57 @@
+{
+  "result": "BROWSER_MEMORY_PROBE_KNOWN_ALLOCATION_PASS",
+  "allocated": {
+    "wasm": [],
+    "gpuBuffers": {
+      "created": 2,
+      "deleted": 0,
+      "live": 2,
+      "bytes": 64,
+      "peakBytes": 64
+    }
+  },
+  "resized": {
+    "wasm": [],
+    "gpuBuffers": {
+      "created": 2,
+      "deleted": 0,
+      "live": 2,
+      "bytes": 28,
+      "peakBytes": 64
+    }
+  },
+  "removed": {
+    "wasm": [],
+    "gpuBuffers": {
+      "created": 2,
+      "deleted": 2,
+      "live": 0,
+      "bytes": 0,
+      "peakBytes": 64
+    }
+  },
+  "initialWasm": {
+    "wasm": [
+      65536
+    ],
+    "gpuBuffers": {
+      "created": 2,
+      "deleted": 2,
+      "live": 0,
+      "bytes": 0,
+      "peakBytes": 64
+    }
+  },
+  "grownWasm": {
+    "wasm": [
+      131072
+    ],
+    "gpuBuffers": {
+      "created": 2,
+      "deleted": 2,
+      "live": 0,
+      "bytes": 0,
+      "peakBytes": 64
+    }
+  }
+}

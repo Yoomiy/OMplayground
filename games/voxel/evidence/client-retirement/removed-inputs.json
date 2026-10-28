@@ -1,0 +1,170 @@
+[
+  {
+    "path": "apps/web/src/game/MinecraftSessionContainer.tsx",
+    "bytes": 23478,
+    "lines": 695,
+    "sha256": "b7c73f01ed2ef1c6403c380bb47fe45b16b2e80cd86466cf046d4f42b8e95204"
+  },
+  {
+    "path": "apps/web/src/games/MinecraftClient.tsx",
+    "bytes": 170285,
+    "lines": 4502,
+    "sha256": "6bb172f035fd0bc21d84c74a26ad2705f684c16e3141a7bfafb71eda8c04c46f"
+  },
+  {
+    "path": "apps/web/src/games/voxel/audioManager.test.ts",
+    "bytes": 1733,
+    "lines": 56,
+    "sha256": "94d4193894749cff0e5e7954dade2372d3924d75e914fa6ad1094c962a44e35a"
+  },
+  {
+    "path": "apps/web/src/games/voxel/audioManager.ts",
+    "bytes": 18141,
+    "lines": 607,
+    "sha256": "a0cf325f3dd8b124a4b168de62abb7b1f7386a15419fb826ae1debe3b9fa1a8f"
+  },
+  {
+    "path": "apps/web/src/games/voxel/breakCrackOverlay.ts",
+    "bytes": 4158,
+    "lines": 128,
+    "sha256": "de0dfd5310961bbb26d089bd7671beb567b1955900bd15f59467aa568f770b52"
+  },
+  {
+    "path": "apps/web/src/games/voxel/heldItemView.test.ts",
+    "bytes": 2558,
+    "lines": 96,
+    "sha256": "e584a713aff09682d7f3538e77ff13b7c5a5d343d4fbb2bc4ec16ee8ff00b976"
+  },
+  {
+    "path": "apps/web/src/games/voxel/heldItemView.ts",
+    "bytes": 7327,
+    "lines": 238,
+    "sha256": "e621c71df50bdcc1530e0e9ef31d83637979f5cf4ce9c502175293a19c43391d"
+  },
+  {
+    "path": "apps/web/src/games/voxel/hud/BlockHotbarHud.tsx",
+    "bytes": 4243,
+    "lines": 122,
+    "sha256": "b9727f92dfe7726c1c9ddb94b54f255979570f573a1be585d35882f498a39e4b"
+  },
+  {
+    "path": "apps/web/src/games/voxel/hud/ChatOverlay.tsx",
+    "bytes": 6787,
+    "lines": 175,
+    "sha256": "530a7b1a3bb3c28fdff3ead3d9826a3c2fe11372450d10c12ca11ba01cbd4ef3"
+  },
+  {
+    "path": "apps/web/src/games/voxel/hud/SurvivalVitalsHud.tsx",
+    "bytes": 1763,
+    "lines": 51,
+    "sha256": "ae2a095f04211e3b8eaebba74e1fccef81cbd8ec00ec057f098b16fcb838ea48"
+  },
+  {
+    "path": "apps/web/src/games/voxel/hud/TeacherDashboard.tsx",
+    "bytes": 4465,
+    "lines": 92,
+    "sha256": "2fca26133765fc60524a52d42e3b3395f001157e3d00fc0a87e8564eb9a95cc2"
+  },
+  {
+    "path": "apps/web/src/games/voxel/hud/VoiceWidget.tsx",
+    "bytes": 17106,
+    "lines": 302,
+    "sha256": "4fbd15115cad3e3ec9c48e5fe510223eca2ef5d1934479a8557b444af77938a7"
+  },
+  {
+    "path": "apps/web/src/games/voxel/hud/hudConstants.ts",
+    "bytes": 15715,
+    "lines": 311,
+    "sha256": "c88a1dda4a2af15a75e3e04e157852f8b233284de3b7281121bb3edc9c86e713"
+  },
+  {
+    "path": "apps/web/src/games/voxel/hud/hudUtils.tsx",
+    "bytes": 1406,
+    "lines": 38,
+    "sha256": "e2015c1212d4fdcfb00d4217ac552bce87e8727764ad1108006be14ac8fe5cef"
+  },
+  {
+    "path": "apps/web/src/games/voxel/movementConfig.test.ts",
+    "bytes": 2812,
+    "lines": 88,
+    "sha256": "2aee592acdd0aed047f3907f8422b55f242deeaa953cc3bb94fe67be3f235843"
+  },
+  {
+    "path": "apps/web/src/games/voxel/movementConfig.ts",
+    "bytes": 3088,
+    "lines": 95,
+    "sha256": "8f1f4f90a4916b79a7a3d61a32e9bf393df774d43962eafdd29958b38f7268bd"
+  },
+  {
+    "path": "apps/web/src/games/voxel/noaVoxelVisual.ts",
+    "bytes": 2620,
+    "lines": 70,
+    "sha256": "e4aaab1018374459e1f1119779f4586b5c20fa0688ac443fa6e320ab2818bed9"
+  },
+  {
+    "path": "apps/web/src/games/voxel/voxelAvatarAnimation.ts",
+    "bytes": 5324,
+    "lines": 169,
+    "sha256": "053938acf8a2d5d8a552da1e0bb6d94d6393fb69ea96235b0ef64b3aaa3168e6"
+  },
+  {
+    "path": "apps/web/src/games/voxel/voxelEntityCatalog.ts",
+    "bytes": 612,
+    "lines": 25,
+    "sha256": "99bc9bf0417621fc7f3abf2a31dd97c4a4e8bc58bb68ed70dc1922507dccbaa5"
+  },
+  {
+    "path": "apps/web/src/games/voxel/voxelJsonModel.ts",
+    "bytes": 7947,
+    "lines": 233,
+    "sha256": "b10eec4b465dfe919f065ae6264579ca48d5172d4cffc9e8c2dc19c2d7d49e59"
+  },
+  {
+    "path": "apps/web/src/games/voxel/voxelObjectMesher.ts",
+    "bytes": 4571,
+    "lines": 146,
+    "sha256": "125e1362b0cd1f6a6e36ded41651296eb811d2b0d1a0c18d841b4df5ea860bfb"
+  },
+  {
+    "path": "apps/web/src/games/voxel/worldgen.worker.ts",
+    "bytes": 1204,
+    "lines": 49,
+    "sha256": "45e2a7d2f0a6ce3e25283304f30ff5de2ec345a2ec2bf7ba17013faab00ad3db"
+  },
+  {
+    "path": "apps/web/src/games/voxel/worldgenPool.test.ts",
+    "bytes": 5381,
+    "lines": 203,
+    "sha256": "12c35c8c9b684df37b45fa67887cc68d67ad5dc9d49fa7d2ea42de3007621bed"
+  },
+  {
+    "path": "apps/web/src/games/voxel/worldgenPool.ts",
+    "bytes": 6342,
+    "lines": 215,
+    "sha256": "93b7e170176889f50c5c1259b9630beb13ccef8d1d42c5559b81b208043cfcc1"
+  },
+  {
+    "path": "apps/web/src/hooks/useLiveKitProximity.ts",
+    "bytes": 12721,
+    "lines": 411,
+    "sha256": "72b9086fd4fccbe3a2130fcce069757c2f5e0eaad4c1d73f7720232876b69bd5"
+  },
+  {
+    "path": "apps/web/src/hooks/useVoxelSocket.ts",
+    "bytes": 26044,
+    "lines": 748,
+    "sha256": "b39d5333e55601eaf0bcf36a494d361c824080d494a4b2704578ef3c466b8fb3"
+  },
+  {
+    "path": "apps/web/src/lib/voxelCraftingPreview.ts",
+    "bytes": 3215,
+    "lines": 114,
+    "sha256": "a09e2c78b8dc85f601e0790743dff85f50586eb5a85bc7033a510b158e52f537"
+  },
+  {
+    "path": "apps/web/src/lib/voxelProtocol.ts",
+    "bytes": 7072,
+    "lines": 325,
+    "sha256": "b03d1d756921f453f2b0a1dcfbafdc26afd5a8c1df5aadfe5221d18da4c54b5f"
+  }
+]

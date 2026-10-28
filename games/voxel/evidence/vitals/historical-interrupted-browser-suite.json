@@ -1,0 +1,21 @@
+{
+  "buildId": "0f33682a9fc3c187f9ab396491392118761a1bafe0b1cc712ba566a128c7e6b4",
+  "startedAt": "2026-10-22T18:18:14.016Z",
+  "active": "test:creative:browser",
+  "checks": [
+    {
+      "script": "test:survival:browser",
+      "path": "/tmp/voxel-vitals-suite-test-survival-browser.log",
+      "code": 0,
+      "signal": null,
+      "durationMs": 133553
+    },
+    {
+      "script": "test:touch:browser",
+      "path": "/tmp/voxel-vitals-suite-test-touch-browser.log",
+      "code": 0,
+      "signal": null,
+      "durationMs": 22182
+    }
+  ]
+}

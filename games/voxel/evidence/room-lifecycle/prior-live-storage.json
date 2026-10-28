@@ -1,0 +1,14 @@
+{
+  "result": "PASS",
+  "run": "79e08932-f725-4131-8cde-44ba7d559773",
+  "bucket": "voxel-checkpoints",
+  "path": "qualification/79e08932-f725-4131-8cde-44ba7d559773.json",
+  "startedAt": "2026-10-25T10:45:30.215Z",
+  "cleanup": true,
+  "privateBucket": true,
+  "immutable": true,
+  "byteHash": "9c2252d423fe281b2c06168f161049ba75ee52d827d40b775be29e3c237e113c",
+  "anonymousStatus": 400,
+  "publicStatus": 400,
+  "finishedAt": "2026-10-25T10:45:34.121Z"
+}

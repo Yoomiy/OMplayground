@@ -1,0 +1,12 @@
+✔ staff mode changes preserve ownership and earned time, revoke creative flight and invalidate queued epochs before publishing rules (73.349925ms)
+✔ trusted self teleport resolves an authoritative target, clears motion/stream incarnations and prepares a hidden camera without advancing a paused world (74.276569ms)
+✔ unavailable/dead teleport targets and ended rooms cannot mutate; normal checkpoints retain an applied mode without persisting staff authority (15.653078ms)
+✔ dead participants remain dead across creative changes and rejoin until ordinary respawn, preserving checkpoint and item conservation (60.060819ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 704.070304

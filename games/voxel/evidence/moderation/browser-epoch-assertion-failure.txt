@@ -1,0 +1,26 @@
+vite v6.4.2 building for production...
+transforming...
+✓ 80 modules transformed.
+rendering chunks...
+computing gzip size...
+built/index.html                                0.34 kB │ gzip:   0.25 kB
+built/assets/engine-worker-DPFd4qax.js         10.94 kB
+built/assets/voxel_engine_bg-1ejYMYOZ.wasm    550.36 kB │ gzip: 210.28 kB
+built/assets/embed-BbfR4Nnp.css                 3.21 kB │ gzip:   1.05 kB
+built/assets/index-DU8VFtkO.css                 6.37 kB │ gzip:   1.62 kB
+built/assets/index-BY2ty0Ib.js              1,058.62 kB │ gzip: 176.92 kB
+built/assets/embed-BKyFx_cK.js              1,404.75 kB │ gzip: 266.07 kB
+✓ built in 4.59s
+Staff teleport {"from":[115.16993333333339,80.9383,0.5],"to":[49.5,70,0.5],"target":[49.5,68,0.5],"epoch":12,"unloads":77}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+page.waitForFunction: Timeout 20000ms exceeded.
+    at rejoinKid (/home/ubuntu/OMplayground/apps/web/tools/voxel-react-browser.ts:637:19)
+    at async file:///home/ubuntu/OMplayground/apps/web/tools/voxel-react-browser.ts:679:3 {
+  log: [],
+  name: 'TimeoutError'
+}
+
+Node.js v24.21.0

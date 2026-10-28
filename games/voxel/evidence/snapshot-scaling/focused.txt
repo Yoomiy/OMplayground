@@ -1,0 +1,12 @@
+✔ snapshot encoding preserves every delta shape, split message, self and escaped identity (3.287456ms)
+✔ shared actor deltas serialize once per pass while private self never crosses viewers (0.446162ms)
+✔ a different viewer delta for the same actor never reuses omitted fields or another baseline (3.747018ms)
+✔ real room shares identical deltas across viewers without changing visibility or private self (64.697232ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 727.297545

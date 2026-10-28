@@ -1,0 +1,215 @@
+{
+  "result": "PASS_WITH_HOSTED_LIFECYCLE_AND_DEVICE_LIMITATIONS",
+  "capturedAt": "2026-10-25T10:29:45.773462+00:00",
+  "buildId": "784ee64fa87cc28b1a9612fc508a90d4e99b6a312467773da627320a00644d02",
+  "engineHash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388",
+  "contentHash": "368b605ac5bdf5ff6fcf4af02f7174cbc6d39b5110f48e0a41b231a0a6479464",
+  "counts": {
+    "domain": 73,
+    "native": 80,
+    "nativeIgnored": 3,
+    "wasm": 75,
+    "sourceIntegration": 24,
+    "packagedIntegration": 24,
+    "sdkAndSchoolPolicy": 19,
+    "schoolGateway": 4,
+    "postgresSdk": 12
+  },
+  "sourceFiles": 226,
+  "remoteWriteExecuted": false,
+  "hostedInstallation": {
+    "result": "NOT_READY",
+    "schema": null,
+    "code": "PGRST202",
+    "checkedAt": "2026-10-25T10:23:19.080Z"
+  },
+  "limitations": [
+    "Fixture Auth/PostgREST and Storage bytes; no hosted school journey or durable-backend browser proof",
+    "Three rendered regressions; not all eleven scenarios rerun",
+    "Software creative maximum frame gap 4149.8 ms; hardware/input/capacity qualification remains open",
+    "Production lifecycle, offline-owner refresh, React, moderation/chat, LiveKit and classroom extraction unfinished",
+    "Automatic review rejected remote migration without explicit authorization; existing approval request pending"
+  ],
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "f99a08decb23a87d70edb65939c544d90090ebfeb47a01175fd3171b974ec114"
+    },
+    {
+      "path": "browser-benchmark.txt",
+      "sha256": "f63c28b5ef4377b9cc30c560f990384c9b711f6080fa9f1b47abde8d48d82a69"
+    },
+    {
+      "path": "browser-creative.json",
+      "sha256": "31746bc91c6bd16976c2cf897beb45d0c4890761980935483df26e590791c2fe"
+    },
+    {
+      "path": "browser-creative.txt",
+      "sha256": "c4262f172cf365b24d872de2d380679af79c46f6f840dd89db9878eb2a3a8f0d"
+    },
+    {
+      "path": "browser-inventory.json",
+      "sha256": "3d06812d9afc55afd751e624ee93fe983f9cd168aaebf71667e94d58bd872408"
+    },
+    {
+      "path": "browser-inventory.txt",
+      "sha256": "17b9ee0aca3476e8218e8eb1d7e433698a1a5530d4135ba6a2d1141d62523e70"
+    },
+    {
+      "path": "browser-release.txt",
+      "sha256": "52e1a0cf05448469591c342ed7dac4d50dbb9f2738de6211d31191b00b127a2d"
+    },
+    {
+      "path": "browser-school.json",
+      "sha256": "f6f054d7a3f1cbbed81f96a5d36c9756b8bf6f371c084d469336db7b92936453"
+    },
+    {
+      "path": "browser-school.txt",
+      "sha256": "042bbda5541308cbf2c78dae1d80bed4b58960730add2b9905db05a76d324ed5"
+    },
+    {
+      "path": "browser-suite.json",
+      "sha256": "780924b775d44f76bad0c6be4933e6ee6843380bc2b9195a34382a2c0f18bd71"
+    },
+    {
+      "path": "browser-wasm.json",
+      "sha256": "c1723ec139080264028e854d43cd6f6fde4d59578d79393908358e5cb72aa516"
+    },
+    {
+      "path": "browser-wasm.txt",
+      "sha256": "e72fc478563aa8710aee520a3e1b9c48828559bc044618e02c1c431f985a3777"
+    },
+    {
+      "path": "build.json",
+      "sha256": "a3d244028532492b0bb3680501b02b297a672e7f5cc6923bb0a580aea5099c19"
+    },
+    {
+      "path": "capture.py",
+      "sha256": "0b216275af041077c0d6946ab2acf8a70b70c76eea077c5fdc9de5256ee4b9d3"
+    },
+    {
+      "path": "check-exit.json",
+      "sha256": "169d13836b3b989e221b3340ad3c1ce1cce73ffca0f170a2bd30c87bc610c25b"
+    },
+    {
+      "path": "check.txt",
+      "sha256": "ce2d5c7ce7ba639d05bcfc4198e9e2b7a4f1752b76e856a8e574cb22143a4f4d"
+    },
+    {
+      "path": "content.json",
+      "sha256": "87da078927c9df8366a815c868478e71f559da83e4785447a8edb3e505dba250"
+    },
+    {
+      "path": "creative.png",
+      "sha256": "6603156da84cd8dcb2db26004e4755718257214db50bb8c49c1e19e102b4836e"
+    },
+    {
+      "path": "engine-benchmark.json",
+      "sha256": "f63c28b5ef4377b9cc30c560f990384c9b711f6080fa9f1b47abde8d48d82a69"
+    },
+    {
+      "path": "hosted-status.json",
+      "sha256": "3095e772de7344e09d9183162455bc645c82e9d3d779821e4da8dcac9c880236"
+    },
+    {
+      "path": "inventory-chest.png",
+      "sha256": "fa59f0c2ee03edcb4987cb1e3007130d31fd9229995608aff1f1e65674615da9"
+    },
+    {
+      "path": "inventory-crafting.png",
+      "sha256": "52b649cd4d92c754f8ff6d7132e35afef4d84322159183eb7cd006008acada17"
+    },
+    {
+      "path": "observer-before-fix.txt",
+      "sha256": "ce90d6c91a185ae1dcaa588d119af4b84a95eb71867e5a455e2e218d1c780f40"
+    },
+    {
+      "path": "platform-gateway.txt",
+      "sha256": "bfa6c9a0dc97e8c6256c8c67dd88b87c772c882e16b6ad122856767508703389"
+    },
+    {
+      "path": "platform-postgres.txt",
+      "sha256": "8bb5634a8aa4d79ceb02cf6e9e0bb069db5a9510caa145ea642109b21af13484"
+    },
+    {
+      "path": "platform-sdk.txt",
+      "sha256": "79f71aaf1945ee28c52ba8618e25cec604bc11e31ca291c3128b63b0a0163690"
+    },
+    {
+      "path": "release.json",
+      "sha256": "1f104d9570dcb7857391630cf97bb000ffac840e749650879b814442cbef84a4"
+    },
+    {
+      "path": "release/client/assets/engine-worker-DYAFKrDe.js",
+      "sha256": "99d3377c134578cd5e9bdd923e7707547e62c3a2a0a1a64c90adec5f1121bf04"
+    },
+    {
+      "path": "release/client/assets/index-5w2pNf9N.css",
+      "sha256": "2b1c35f291993017e6b64ee082d5b043f59edef25e5d29d5239bc23fab798eac"
+    },
+    {
+      "path": "release/client/assets/index-lWEQwsAA.js",
+      "sha256": "adea8cc11bfd29575fe71b847879b2ee433735bc64107bb9748a95baf15f103c"
+    },
+    {
+      "path": "release/client/assets/voxel_engine_bg-1ejYMYOZ.wasm",
+      "sha256": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "release/client/index.html",
+      "sha256": "4ca50a1d8e787925589d603d72fd951c6e70d94abc0bbf87aa5b9c1191966bb2"
+    },
+    {
+      "path": "release/server/build.json",
+      "sha256": "a3d244028532492b0bb3680501b02b297a672e7f5cc6923bb0a580aea5099c19"
+    },
+    {
+      "path": "release/server/content.json",
+      "sha256": "87da078927c9df8366a815c868478e71f559da83e4785447a8edb3e505dba250"
+    },
+    {
+      "path": "release/server/engine.wasm",
+      "sha256": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "release/server/gateway.js",
+      "sha256": "b01dba5b77608739bfcec63e53a71c0dc335494b7ada12c8bf3ef70ddbf35e85"
+    },
+    {
+      "path": "release/server/gateway.js.map",
+      "sha256": "99b92851da7d90d162c3b76828d390aa162b6af69998c3b1fc54c172fb6ff43f"
+    },
+    {
+      "path": "release/server/room-worker.js",
+      "sha256": "9d9c10b5460079865eed8059ed5d27301a843348d8cfb02f83ce318509bf2866"
+    },
+    {
+      "path": "release/server/room-worker.js.map",
+      "sha256": "dd892c81b882bd7c1a36b5b03fc30c6d4710cc448edc7a519b7372f20029c5e7"
+    },
+    {
+      "path": "run-browser.mjs",
+      "sha256": "8cc5fd32407d237e6ce0fed40a3a65229c8146dde0511a794f320255bdab537b"
+    },
+    {
+      "path": "run-check.mjs",
+      "sha256": "7987ed0ecb1ec75db27a2c179f878718e592ae3992b8dafafdcc5a7faf3e9f2c"
+    },
+    {
+      "path": "school-observer.png",
+      "sha256": "23f67fec8aa2d171fed5a072aa8b1d6a6726efa5ec4ca159ff0c4e7b9ed62541"
+    },
+    {
+      "path": "source-inputs.json",
+      "sha256": "f6a7cb31b01d22cb873106229e47ce21c4db2afe14c08b69ce0b9c652b04fa57"
+    },
+    {
+      "path": "source-release-verification.json",
+      "sha256": "5b4cbf8f67982ad0090afed915e56d86bcac9572a4030564e8249a70b78cbaa7"
+    },
+    {
+      "path": "source.tar.gz",
+      "sha256": "5a33dc9284ae251c199e2194e4efcace13b1eb34f5b263c8b10c2c50f499e1b5"
+    }
+  ]
+}

@@ -1,0 +1,536 @@
+{
+  "result": "FAIL",
+  "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+  "startedAt": "2026-10-27T20:37:48.790Z",
+  "browser": "156.0.8078.4",
+  "host": {
+    "node": "v24.21.0",
+    "arch": "arm64",
+    "cpu": "Neoverse-N1",
+    "availableParallelism": 2
+  },
+  "configuration": {
+    "viewport": {
+      "width": 640,
+      "height": 480
+    },
+    "quality": "low",
+    "renderScale": 0.5,
+    "renderHz": 30,
+    "workerCores": 2
+  },
+  "scope": "Built client/release Wasm and packaged gateway/native workers over actual client-to-server TCP read suspension while server snapshots remain fresh. Fixture admission, natural creative world, public controls, software Chromium; no hosted services or physical school-network/FPS qualification.",
+  "referenceLag": [
+    5,
+    3,
+    6,
+    5,
+    3,
+    6,
+    5,
+    3
+  ],
+  "short": {
+    "requestedHeldMs": 1000,
+    "elapsedHeldMs": 1011.867021,
+    "serverBefore": {
+      "epoch": 3,
+      "ack": 288,
+      "tick": 204,
+      "position": [
+        49.5,
+        92.9333,
+        0.5
+      ],
+      "frozen": 0
+    },
+    "serverWhileHeld": {
+      "epoch": 3,
+      "ack": 288,
+      "tick": 228,
+      "position": [
+        49.5,
+        92.9333,
+        0.5
+      ],
+      "frozen": 0
+    },
+    "clientWhileHeld": {
+      "position": [
+        54.90624746485349,
+        92.9333,
+        0.5
+      ],
+      "inputLag": 61,
+      "status": "playing",
+      "lastReceivedAgoMs": 50.09999990463257
+    },
+    "clientFramesBuffered": 61,
+    "serverTraceAfterRelease": [
+      {
+        "atMs": 10725.653185,
+        "state": {
+          "epoch": 3,
+          "ack": 290,
+          "tick": 230,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 10846.633282,
+        "state": {
+          "epoch": 3,
+          "ack": 342,
+          "tick": 232,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 10854.407759,
+        "state": {
+          "epoch": 3,
+          "ack": 346,
+          "tick": 234,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 10927.320386,
+        "state": {
+          "epoch": 3,
+          "ack": 351,
+          "tick": 236,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 10989.811484,
+        "state": {
+          "epoch": 3,
+          "ack": 355,
+          "tick": 238,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 11057.784728,
+        "state": {
+          "epoch": 3,
+          "ack": 359,
+          "tick": 240,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 11123.40992,
+        "state": {
+          "epoch": 3,
+          "ack": 363,
+          "tick": 242,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 11189.736476,
+        "state": {
+          "epoch": 3,
+          "ack": 367,
+          "tick": 244,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 11253.824382,
+        "state": {
+          "epoch": 3,
+          "ack": 371,
+          "tick": 246,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 11322.79451,
+        "state": {
+          "epoch": 3,
+          "ack": 375,
+          "tick": 248,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 11393.074605,
+        "state": {
+          "epoch": 3,
+          "ack": 379,
+          "tick": 250,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 11456.737629,
+        "state": {
+          "epoch": 3,
+          "ack": 383,
+          "tick": 252,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 11523.102305,
+        "state": {
+          "epoch": 3,
+          "ack": 387,
+          "tick": 254,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 11588.534177,
+        "state": {
+          "epoch": 3,
+          "ack": 391,
+          "tick": 256,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 11657.041423,
+        "state": {
+          "epoch": 3,
+          "ack": 395,
+          "tick": 258,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 11722.162533,
+        "state": {
+          "epoch": 3,
+          "ack": 399,
+          "tick": 260,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 11787.389644,
+        "state": {
+          "epoch": 3,
+          "ack": 403,
+          "tick": 262,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 11856.626694,
+        "state": {
+          "epoch": 3,
+          "ack": 407,
+          "tick": 264,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 11924.539178,
+        "state": {
+          "epoch": 3,
+          "ack": 411,
+          "tick": 266,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 11988.197681,
+        "state": {
+          "epoch": 3,
+          "ack": 415,
+          "tick": 268,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 12056.172365,
+        "state": {
+          "epoch": 3,
+          "ack": 419,
+          "tick": 270,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 12121.384356,
+        "state": {
+          "epoch": 3,
+          "ack": 423,
+          "tick": 272,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 12189.692241,
+        "state": {
+          "epoch": 3,
+          "ack": 427,
+          "tick": 274,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 12254.680671,
+        "state": {
+          "epoch": 3,
+          "ack": 431,
+          "tick": 276,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 12324.824925,
+        "state": {
+          "epoch": 3,
+          "ack": 435,
+          "tick": 278,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 12389.739794,
+        "state": {
+          "epoch": 3,
+          "ack": 439,
+          "tick": 280,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 12457.122835,
+        "state": {
+          "epoch": 3,
+          "ack": 443,
+          "tick": 282,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 12527.080089,
+        "state": {
+          "epoch": 3,
+          "ack": 447,
+          "tick": 284,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 12591.585436,
+        "state": {
+          "epoch": 3,
+          "ack": 451,
+          "tick": 286,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      },
+      {
+        "atMs": 12655.36086,
+        "state": {
+          "epoch": 3,
+          "ack": 455,
+          "tick": 288,
+          "position": [
+            49.5,
+            92.9333,
+            0.5
+          ],
+          "frozen": 0
+        }
+      }
+    ],
+    "recoveredInputLag": 12,
+    "recoveredLagSamples": [
+      13,
+      12,
+      14,
+      12,
+      11,
+      14,
+      11,
+      10,
+      13,
+      11,
+      14,
+      12
+    ]
+  },
+  "failure": {
+    "phase": "one-second-input-stall",
+    "message": "short stall left persistent acknowledgement backlog",
+    "stack": "AssertionError [ERR_ASSERTION]: short stall left persistent acknowledgement backlog\n    at file:///home/ubuntu/OMplayground/games/voxel/tools/browser-input-stalls.ts:213:3"
+  },
+  "finishedAt": "2026-10-27T20:38:00.794Z",
+  "errors": [],
+  "events": [
+    {
+      "event": "VOXEL_ADMISSION_ISSUED",
+      "context": {
+        "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252"
+      }
+    },
+    {
+      "event": "VOXEL_ROOM_READY",
+      "context": {
+        "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252"
+      }
+    },
+    {
+      "event": "VOXEL_ROOM_EXITED",
+      "context": {
+        "buildId": "f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252",
+        "code": 0
+      }
+    }
+  ],
+  "remainingRooms": 0
+}

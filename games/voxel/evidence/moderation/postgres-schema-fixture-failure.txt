@@ -1,0 +1,71 @@
+✔ fenced SQL commands deny nonhosts, recheck host/role, order idempotent requests and audit staff exactly once (278.336699ms)
+✔ control completion cannot claim an uncommitted save; fresh expiry and stale owners cannot mutate intent (1179.956195ms)
+✔ real school HTTP controls fail unsaved, retry once, resume, end with a committed receipt and replay after terminal retirement (1947.383527ms)
+✔ SQL removal commits one access boundary and audit, fences old acceptance/presence and permits an explicit fresh rejoin (266.961284ms)
+✔ SQL ban survives an expired owner and denies matching-generation admission and child-host controls until explicit unban and rejoin (211.151175ms)
+✔ SQL moderation requires fresh staff, cannot target staff and is inaccessible to browser roles or direct service table reads (158.12248ms)
+✔ SQL moderation rechecks proof expiry after session and audit waits and rolls back every policy/audit boundary (488.737751ms)
+✔ lifting an already absent ban does not revoke a current admission or rotate unrelated tickets (645.166943ms)
+✔ real SDK/SQL/worker moderation rejects child-host commands, disconnects old admissions and safely replays after remove/ban/unban and explicit rejoin (2443.552274ms)
+✔ a staff ban on a never-allocated room creates guarded metadata without an owner or world save (280.49919ms)
+✔ real concurrent acquisition yields one owner; retry is idempotent and expired takeover retains world identity (90.664476ms)
+✔ renewal checks the database clock after waiting for the owner row lock (506.375396ms)
+✔ two transactions racing one sequence commit one whole graph and exact retry cannot duplicate history (190.440477ms)
+✔ expired or replaced owner cannot commit, renew or release the new epoch (191.15608ms)
+✔ corrupt graph suffixes or unconfirmed uploads roll back pointer, history and every reference (302.577536ms)
+✔ browser roles cannot read metadata or execute RPCs; service writes require RPCs and the bucket is private (107.109435ms)
+✔ retention keeps active/shared objects; garbage claims fence uploads and stale deletion workers (398.838838ms)
+✔ cleanup skips uncommitted graph locks and rechecks references before claiming deletion (458.145524ms)
+✔ session removal retains orphan object addresses for subsequent Storage cleanup (116.850202ms)
+✔ old active references cannot starve a bounded garbage-collection batch (1962.764801ms)
+✔ commit rechecks expiry after object locks and cannot leave partial history after a delayed upload lock (560.465656ms)
+✔ self-departure reassigns the host with fresh aligned names and revision-fences old admissions; retry cannot remove a later rejoin (227.833856ms)
+✔ connected participants and live last-owner retirement cannot be dismissed; the released empty roster becomes terminal without claiming a save (192.338565ms)
+✔ departure checks fresh profiles, scope and the database clock after a row-lock wait, with atomic rollback (627.481618ms)
+✔ the real SDK/HTTP self-departure route binds the verified subject, rejects forged targets and allocates no worker (245.094459ms)
+✔ a never-opened roster receives guarded metadata without a worker and browser roles cannot read departure receipts or undo removal (157.297237ms)
+✔ membership acceptance rechecks its own proof expiry after waiting for the session row even with a live owner (543.698496ms)
+✔ an active child can remove their own old partition membership without gaining cross-partition play authority (116.992443ms)
+✔ real SDK and PostgreSQL carry a committed room across worker failure, ambiguous commit and new ownership (1143.817943ms)
+✔ production composition verifies real schemas, serves authenticated APIs without a prototype launcher and drains idempotently (212.840864ms)
+✔ scoped session API reads real metadata across staff partitions and completed rosters without allocating or exposing diagnostic payloads (535.177414ms)
+✔ SDK projection persists accepted membership and derives aligned presence/names and host reassignment without exposing staff (356.649276ms)
+✔ out-of-order, expired, released and replaced owner projections cannot overwrite newer state; completion is irreversible (280.70899ms)
+✔ database checks lease expiry after row-lock wait and pause intent denies late newcomer acceptance (601.203452ms)
+✔ all session mutations recheck lease expiry after waiting for the platform session row (1713.617484ms)
+✔ browser roles and browser-invoked legacy definer RPCs cannot write allocated sessions; unrelated sessions retain policy (168.076688ms)
+✖ school SDK/native worker preserve an accepted guest through paused renewal/reconnect, hide staff, reassign host and save empty presence (153.634859ms)
+✔ SQL staff authority is fresh, audit is idempotent and application receipts never claim a checkpoint (327.428615ms)
+✔ SQL dispatched commands cannot execute or complete under a replacement owner; a fresh explicit request remains possible (166.961084ms)
+✔ SQL staff proofs and completion recheck the clock after platform/audit row waits and roll back partial results (1076.042057ms)
+✔ native SDK/SQL staff controls change mode and teleport only the verified hidden staff actor with one audited receipt (1372.188881ms)
+✔ SQL inactive or demoted kid-profile rows cannot fall through to a second admin profile for staff or lifecycle authority (279.603425ms)
+ℹ tests 42
+ℹ suites 0
+ℹ pass 41
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 29075.905425
+
+✖ failing tests:
+
+test at apps/voxel-server/tests/postgres/sessions.test.ts:274:1
+✖ school SDK/native worker preserve an accepted guest through paused renewal/reconnect, hide staff, reassign host and save empty presence (153.634859ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  503 !== 200
+  
+      at connectAs (file:///home/ubuntu/OMplayground/apps/voxel-server/tests/postgres/sessions.test.ts:402:14)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///home/ubuntu/OMplayground/apps/voxel-server/tests/postgres/sessions.test.ts:426:20)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 503,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

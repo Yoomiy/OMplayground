@@ -1,0 +1,18 @@
+Harvesting natural log 1 with actual held desktop mouse input
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: mouse look requires owned pointer lock
+    at Object.look (file:///home/ubuntu/OMplayground/games/voxel/tools/browser-desktop-input.ts:120:9)
+    at async look (file:///home/ubuntu/OMplayground/games/voxel/tools/browser-survival.ts:181:7)
+    at async file:///home/ubuntu/OMplayground/games/voxel/tools/browser-survival.ts:290:9 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: undefined,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.21.0

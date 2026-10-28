@@ -1,0 +1,739 @@
+{
+  "result": "BROWSER_TRAVEL_RECONNECT_RESOURCE_MEASUREMENTS_COMPLETE",
+  "startedAt": "2026-10-27T19:27:30.848Z",
+  "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077",
+  "configuration": {
+    "cycles": 2,
+    "viewport": {
+      "width": 480,
+      "height": 300
+    },
+    "renderScale": 0.5,
+    "renderHz": 30,
+    "workerCores": 2
+  },
+  "scope": "Unchanged built client/release Wasm with source gateway and native room workers. Authorized public flight over generated terrain, repeated same-page reconnect, weak-reference main-Wasm high-water and instrumented GL buffer ownership; forced-GC main-isolate heap/backing storage via CDP. Software Chromium, no FPS/device/whole-process/worker-heap qualification.",
+  "samples": [
+    {
+      "label": "initial",
+      "atMs": 21191.960115,
+      "position": [
+        56.4008,
+        175.8667,
+        8.4624
+      ],
+      "epoch": 3,
+      "columns": 49,
+      "collisionColumns": 49,
+      "meshed": 25,
+      "resources": {
+        "geometries": 61,
+        "textures": 5,
+        "workers": 1
+      },
+      "render": {
+        "uploadedBytes": 1835064,
+        "columns": 25,
+        "drawCalls": 59,
+        "triangles": 48918,
+        "uploadMs": 0.20000004768371582,
+        "prepareMs": 467.69999980926514,
+        "gpu": {
+          "submitted": 409,
+          "skipped": 163,
+          "pending": 1,
+          "failures": 0
+        }
+      },
+      "stream": {
+        "discardedJobs": 0,
+        "installed": 49,
+        "meshJobs": 25,
+        "generationJobs": 49,
+        "mainWorkMs": 0.10000014305114746
+      },
+      "renderedColumns": 25,
+      "memory": {
+        "wasm": [
+          5636096
+        ],
+        "gpuBuffers": {
+          "created": 147,
+          "deleted": 6,
+          "live": 141,
+          "bytes": 1843268,
+          "peakBytes": 1843268
+        }
+      },
+      "heap": {
+        "usedSize": 6095296,
+        "totalSize": 6692864,
+        "embedderHeapUsedSize": 1888288,
+        "backingStorageSize": 7467525
+      },
+      "dom": {
+        "documents": 1,
+        "nodes": 1771,
+        "jsEventListeners": 366
+      },
+      "liveWorkers": 1,
+      "openedSockets": 1,
+      "closedSockets": 0,
+      "createdWorkers": 1,
+      "closedWorkers": 0
+    },
+    {
+      "label": "travel-0",
+      "atMs": 43934.442799,
+      "position": [
+        56.0075,
+        175.8667,
+        7.4879
+      ],
+      "epoch": 3,
+      "columns": 49,
+      "collisionColumns": 49,
+      "meshed": 34,
+      "resources": {
+        "geometries": 72,
+        "textures": 5,
+        "workers": 1
+      },
+      "render": {
+        "uploadedBytes": 6764016,
+        "columns": 34,
+        "drawCalls": 70,
+        "triangles": 60254,
+        "uploadMs": 0.20000004768371582,
+        "prepareMs": 467.69999980926514,
+        "gpu": {
+          "submitted": 1073,
+          "skipped": 182,
+          "pending": 1,
+          "failures": 0
+        }
+      },
+      "stream": {
+        "discardedJobs": 0,
+        "installed": 133,
+        "meshJobs": 85,
+        "generationJobs": 133,
+        "mainWorkMs": 0
+      },
+      "renderedColumns": 34,
+      "memory": {
+        "wasm": [
+          6094848
+        ],
+        "gpuBuffers": {
+          "created": 261,
+          "deleted": 98,
+          "live": 163,
+          "bytes": 2429812,
+          "peakBytes": 2429812
+        }
+      },
+      "heap": {
+        "usedSize": 6319820,
+        "totalSize": 7217152,
+        "embedderHeapUsedSize": 1896088,
+        "backingStorageSize": 8292136
+      },
+      "dom": {
+        "documents": 1,
+        "nodes": 1771,
+        "jsEventListeners": 365
+      },
+      "liveWorkers": 1,
+      "openedSockets": 1,
+      "closedSockets": 0,
+      "createdWorkers": 1,
+      "closedWorkers": 0
+    },
+    {
+      "label": "reconnect-0",
+      "atMs": 47114.414395,
+      "position": [
+        56.0075,
+        175.8667,
+        7.4879
+      ],
+      "epoch": 6,
+      "columns": 49,
+      "collisionColumns": 49,
+      "meshed": 25,
+      "resources": {
+        "geometries": 61,
+        "textures": 5,
+        "workers": 1
+      },
+      "render": {
+        "uploadedBytes": 8599080,
+        "columns": 25,
+        "drawCalls": 59,
+        "triangles": 48918,
+        "uploadMs": 0.20000004768371582,
+        "prepareMs": 467.69999980926514,
+        "gpu": {
+          "submitted": 1122,
+          "skipped": 222,
+          "pending": 1,
+          "failures": 0
+        }
+      },
+      "stream": {
+        "discardedJobs": 0,
+        "installed": 49,
+        "meshJobs": 25,
+        "generationJobs": 49,
+        "mainWorkMs": 0.09999990463256836
+      },
+      "renderedColumns": 25,
+      "memory": {
+        "wasm": [
+          6094848
+        ],
+        "gpuBuffers": {
+          "created": 373,
+          "deleted": 232,
+          "live": 141,
+          "bytes": 1843268,
+          "peakBytes": 2429812
+        }
+      },
+      "heap": {
+        "usedSize": 6229508,
+        "totalSize": 6955008,
+        "embedderHeapUsedSize": 1575928,
+        "backingStorageSize": 7464817
+      },
+      "dom": {
+        "documents": 1,
+        "nodes": 1765,
+        "jsEventListeners": 365
+      },
+      "liveWorkers": 1,
+      "openedSockets": 2,
+      "closedSockets": 1,
+      "createdWorkers": 2,
+      "closedWorkers": 1
+    },
+    {
+      "label": "travel-1",
+      "atMs": 69922.678532,
+      "position": [
+        56.0192,
+        175.8667,
+        7.1283
+      ],
+      "epoch": 6,
+      "columns": 49,
+      "collisionColumns": 49,
+      "meshed": 34,
+      "resources": {
+        "geometries": 72,
+        "textures": 5,
+        "workers": 1
+      },
+      "render": {
+        "uploadedBytes": 13528032,
+        "columns": 34,
+        "drawCalls": 70,
+        "triangles": 60254,
+        "uploadMs": 0.20000004768371582,
+        "prepareMs": 467.69999980926514,
+        "gpu": {
+          "submitted": 1790,
+          "skipped": 239,
+          "pending": 1,
+          "failures": 0
+        }
+      },
+      "stream": {
+        "discardedJobs": 0,
+        "installed": 133,
+        "meshJobs": 85,
+        "generationJobs": 133,
+        "mainWorkMs": 0.20000004768371582
+      },
+      "renderedColumns": 34,
+      "memory": {
+        "wasm": [
+          6094848
+        ],
+        "gpuBuffers": {
+          "created": 487,
+          "deleted": 324,
+          "live": 163,
+          "bytes": 2429812,
+          "peakBytes": 2429812
+        }
+      },
+      "heap": {
+        "usedSize": 6420004,
+        "totalSize": 7217152,
+        "embedderHeapUsedSize": 1974952,
+        "backingStorageSize": 8292400
+      },
+      "dom": {
+        "documents": 1,
+        "nodes": 1771,
+        "jsEventListeners": 365
+      },
+      "liveWorkers": 1,
+      "openedSockets": 2,
+      "closedSockets": 1,
+      "createdWorkers": 2,
+      "closedWorkers": 1
+    },
+    {
+      "label": "reconnect-1",
+      "atMs": 73043.269318,
+      "position": [
+        56.0192,
+        175.8667,
+        7.1283
+      ],
+      "epoch": 9,
+      "columns": 49,
+      "collisionColumns": 49,
+      "meshed": 25,
+      "resources": {
+        "geometries": 61,
+        "textures": 5,
+        "workers": 1
+      },
+      "render": {
+        "uploadedBytes": 15363096,
+        "columns": 25,
+        "drawCalls": 59,
+        "triangles": 48918,
+        "uploadMs": 0.20000004768371582,
+        "prepareMs": 467.69999980926514,
+        "gpu": {
+          "submitted": 1837,
+          "skipped": 278,
+          "pending": 1,
+          "failures": 0
+        }
+      },
+      "stream": {
+        "discardedJobs": 0,
+        "installed": 49,
+        "meshJobs": 25,
+        "generationJobs": 49,
+        "mainWorkMs": 0.10000014305114746
+      },
+      "renderedColumns": 25,
+      "memory": {
+        "wasm": [
+          6094848
+        ],
+        "gpuBuffers": {
+          "created": 599,
+          "deleted": 458,
+          "live": 141,
+          "bytes": 1843268,
+          "peakBytes": 2429812
+        }
+      },
+      "heap": {
+        "usedSize": 6381696,
+        "totalSize": 7217152,
+        "embedderHeapUsedSize": 1901992,
+        "backingStorageSize": 7465895
+      },
+      "dom": {
+        "documents": 1,
+        "nodes": 1771,
+        "jsEventListeners": 365
+      },
+      "liveWorkers": 1,
+      "openedSockets": 3,
+      "closedSockets": 2,
+      "createdWorkers": 3,
+      "closedWorkers": 2
+    },
+    {
+      "label": "disposed",
+      "atMs": 73110.903325,
+      "position": [
+        56.0192,
+        175.8667,
+        7.1283
+      ],
+      "resources": {
+        "geometries": 0,
+        "textures": 0,
+        "workers": 0
+      },
+      "render": {
+        "uploadedBytes": 15363096,
+        "columns": 0,
+        "drawCalls": 59,
+        "triangles": 48918,
+        "uploadMs": 0.20000004768371582,
+        "prepareMs": 467.69999980926514,
+        "gpu": {
+          "submitted": 1837,
+          "skipped": 279,
+          "pending": 0,
+          "failures": 0
+        }
+      },
+      "renderedColumns": 0,
+      "memory": {
+        "wasm": [
+          6094848
+        ],
+        "gpuBuffers": {
+          "created": 599,
+          "deleted": 599,
+          "live": 0,
+          "bytes": 0,
+          "peakBytes": 2429812
+        }
+      },
+      "heap": {
+        "usedSize": 5536580,
+        "totalSize": 6692864,
+        "embedderHeapUsedSize": 861368,
+        "backingStorageSize": 744499
+      },
+      "dom": {
+        "documents": 1,
+        "nodes": 345,
+        "jsEventListeners": 211
+      },
+      "liveWorkers": 0,
+      "openedSockets": 3,
+      "closedSockets": 3,
+      "createdWorkers": 3,
+      "closedWorkers": 3
+    }
+  ],
+  "errors": [],
+  "route": [
+    [
+      56,
+      8
+    ],
+    [
+      104,
+      8
+    ],
+    [
+      104,
+      56
+    ],
+    [
+      56,
+      56
+    ],
+    [
+      56,
+      8
+    ]
+  ],
+  "finishedAt": "2026-10-27T19:28:43.280Z",
+  "gatewayEvents": [
+    {
+      "event": "VOXEL_ADMISSION_ISSUED",
+      "context": {
+        "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077"
+      }
+    },
+    {
+      "event": "VOXEL_ROOM_READY",
+      "context": {
+        "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077"
+      }
+    },
+    {
+      "event": "VOXEL_ROOM_METRICS",
+      "context": {
+        "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077",
+        "worldId": "e0f56ccc-8b40-48b7-ac8f-d9a0ca420ca9",
+        "ticks": 300,
+        "columns": 9,
+        "overrunMs": 0,
+        "windowMs": 10001.095998,
+        "windowStartedAtMs": 3113.207079,
+        "windowEndedAtMs": 13114.303077,
+        "worldStep_samples": 300,
+        "worldStep_meanMs": 0.29594194666667295,
+        "worldStep_p95UpperMs": 0.85,
+        "worldStep_p99UpperMs": 2.05,
+        "worldStep_maxMs": 4.33386100000007,
+        "observerStep_samples": 0,
+        "observerStep_meanMs": 0,
+        "observerStep_p95UpperMs": 0,
+        "observerStep_p99UpperMs": 0,
+        "observerStep_maxMs": 0,
+        "workerTurn_samples": 2344,
+        "workerTurn_meanMs": 0.10636499786689599,
+        "workerTurn_p95UpperMs": 0.25,
+        "workerTurn_p99UpperMs": 1,
+        "workerTurn_maxMs": 37.779143000000204,
+        "generationJob_samples": 9,
+        "generationJob_meanMs": 11.985204666666707,
+        "generationJob_p95UpperMs": 32.31567600000017,
+        "generationJob_p99UpperMs": 32.31567600000017,
+        "generationJob_maxMs": 32.31567600000017,
+        "command_samples": 200,
+        "command_meanMs": 0.1031402799999296,
+        "command_p95UpperMs": 0.1,
+        "command_p99UpperMs": 0.6,
+        "command_maxMs": 11.924176999999872
+      }
+    },
+    {
+      "event": "VOXEL_ROOM_METRICS",
+      "context": {
+        "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077",
+        "worldId": "e0f56ccc-8b40-48b7-ac8f-d9a0ca420ca9",
+        "ticks": 300,
+        "columns": 9,
+        "overrunMs": 0,
+        "windowMs": 10000.697991000001,
+        "windowStartedAtMs": 13114.303077,
+        "windowEndedAtMs": 23115.001068,
+        "worldStep_samples": 300,
+        "worldStep_meanMs": 0.20945452999982694,
+        "worldStep_p95UpperMs": 0.45,
+        "worldStep_p99UpperMs": 1.1,
+        "worldStep_maxMs": 2.2548510000015085,
+        "observerStep_samples": 0,
+        "observerStep_meanMs": 0,
+        "observerStep_p95UpperMs": 0,
+        "observerStep_p99UpperMs": 0,
+        "observerStep_maxMs": 0,
+        "workerTurn_samples": 2343,
+        "workerTurn_meanMs": 0.04439151472469353,
+        "workerTurn_p95UpperMs": 0.25,
+        "workerTurn_p99UpperMs": 0.4,
+        "workerTurn_maxMs": 6.662873000001127,
+        "generationJob_samples": 3,
+        "generationJob_meanMs": 3.8241520000010496,
+        "generationJob_p95UpperMs": 4.81654300000082,
+        "generationJob_p99UpperMs": 4.81654300000082,
+        "generationJob_maxMs": 4.81654300000082,
+        "command_samples": 210,
+        "command_meanMs": 0.025249266666755168,
+        "command_p95UpperMs": 0.05,
+        "command_p99UpperMs": 0.15,
+        "command_maxMs": 0.4898819999980333
+      }
+    },
+    {
+      "event": "VOXEL_ROOM_METRICS",
+      "context": {
+        "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077",
+        "worldId": "e0f56ccc-8b40-48b7-ac8f-d9a0ca420ca9",
+        "ticks": 300,
+        "columns": 9,
+        "overrunMs": 0,
+        "windowMs": 10000.110184000001,
+        "windowStartedAtMs": 23115.001068,
+        "windowEndedAtMs": 33115.111252,
+        "worldStep_samples": 300,
+        "worldStep_meanMs": 0.20934848666661615,
+        "worldStep_p95UpperMs": 0.4,
+        "worldStep_p99UpperMs": 1.35,
+        "worldStep_maxMs": 3.0331350000014936,
+        "observerStep_samples": 0,
+        "observerStep_meanMs": 0,
+        "observerStep_p95UpperMs": 0,
+        "observerStep_p99UpperMs": 0,
+        "observerStep_maxMs": 0,
+        "workerTurn_samples": 2299,
+        "workerTurn_meanMs": 0.07309475728575623,
+        "workerTurn_p95UpperMs": 0.25,
+        "workerTurn_p99UpperMs": 0.85,
+        "workerTurn_maxMs": 8.793722999998863,
+        "generationJob_samples": 18,
+        "generationJob_meanMs": 4.222269277777538,
+        "generationJob_p95UpperMs": 8.43312099999821,
+        "generationJob_p99UpperMs": 8.43312099999821,
+        "generationJob_maxMs": 8.43312099999821,
+        "command_samples": 211,
+        "command_meanMs": 0.021759507108951616,
+        "command_p95UpperMs": 0.05,
+        "command_p99UpperMs": 0.1,
+        "command_maxMs": 0.31852100000105565
+      }
+    },
+    {
+      "event": "VOXEL_ROOM_METRICS",
+      "context": {
+        "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077",
+        "worldId": "e0f56ccc-8b40-48b7-ac8f-d9a0ca420ca9",
+        "ticks": 300,
+        "columns": 9,
+        "overrunMs": 0,
+        "windowMs": 10000.862064,
+        "windowStartedAtMs": 33115.111252,
+        "windowEndedAtMs": 43115.973316,
+        "worldStep_samples": 300,
+        "worldStep_meanMs": 0.1765485799999685,
+        "worldStep_p95UpperMs": 0.35,
+        "worldStep_p99UpperMs": 0.75,
+        "worldStep_maxMs": 1.6098879999990459,
+        "observerStep_samples": 0,
+        "observerStep_meanMs": 0,
+        "observerStep_p95UpperMs": 0,
+        "observerStep_p99UpperMs": 0,
+        "observerStep_maxMs": 0,
+        "workerTurn_samples": 2298,
+        "workerTurn_meanMs": 0.06822493646636903,
+        "workerTurn_p95UpperMs": 0.2,
+        "workerTurn_p99UpperMs": 0.55,
+        "workerTurn_maxMs": 9.527765999999247,
+        "generationJob_samples": 15,
+        "generationJob_meanMs": 5.106203466666921,
+        "generationJob_p95UpperMs": 9.52340600000025,
+        "generationJob_p99UpperMs": 9.52340600000025,
+        "generationJob_maxMs": 9.52340600000025,
+        "command_samples": 209,
+        "command_meanMs": 0.02078287081360433,
+        "command_p95UpperMs": 0.05,
+        "command_p99UpperMs": 0.1,
+        "command_maxMs": 0.16984100000263425
+      }
+    },
+    {
+      "event": "VOXEL_ADMISSION_ISSUED",
+      "context": {
+        "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077"
+      }
+    },
+    {
+      "event": "VOXEL_ROOM_METRICS",
+      "context": {
+        "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077",
+        "worldId": "e0f56ccc-8b40-48b7-ac8f-d9a0ca420ca9",
+        "ticks": 300,
+        "columns": 9,
+        "overrunMs": 0,
+        "windowMs": 9999.835693999994,
+        "windowStartedAtMs": 43115.973316,
+        "windowEndedAtMs": 53115.80901,
+        "worldStep_samples": 300,
+        "worldStep_meanMs": 0.20043816333314074,
+        "worldStep_p95UpperMs": 0.5,
+        "worldStep_p99UpperMs": 1.1,
+        "worldStep_maxMs": 1.6019280000036815,
+        "observerStep_samples": 0,
+        "observerStep_meanMs": 0,
+        "observerStep_p95UpperMs": 0,
+        "observerStep_p99UpperMs": 0,
+        "observerStep_maxMs": 0,
+        "workerTurn_samples": 2324,
+        "workerTurn_meanMs": 0.07121795008614702,
+        "workerTurn_p95UpperMs": 0.25,
+        "workerTurn_p99UpperMs": 0.75,
+        "workerTurn_maxMs": 9.954248000001826,
+        "generationJob_samples": 18,
+        "generationJob_meanMs": 4.004163777778254,
+        "generationJob_p95UpperMs": 7.382315999995626,
+        "generationJob_p99UpperMs": 7.382315999995626,
+        "generationJob_maxMs": 7.382315999995626,
+        "command_samples": 210,
+        "command_meanMs": 0.04871337619035674,
+        "command_p95UpperMs": 0.1,
+        "command_p99UpperMs": 0.85,
+        "command_maxMs": 2.8932540000023437
+      }
+    },
+    {
+      "event": "VOXEL_ROOM_METRICS",
+      "context": {
+        "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077",
+        "worldId": "e0f56ccc-8b40-48b7-ac8f-d9a0ca420ca9",
+        "ticks": 300,
+        "columns": 9,
+        "overrunMs": 0,
+        "windowMs": 9999.587450000006,
+        "windowStartedAtMs": 53115.80901,
+        "windowEndedAtMs": 63115.39646,
+        "worldStep_samples": 300,
+        "worldStep_meanMs": 0.16105610666682585,
+        "worldStep_p95UpperMs": 0.3,
+        "worldStep_p99UpperMs": 0.5,
+        "worldStep_maxMs": 0.828403999999864,
+        "observerStep_samples": 0,
+        "observerStep_meanMs": 0,
+        "observerStep_p95UpperMs": 0,
+        "observerStep_p99UpperMs": 0,
+        "observerStep_maxMs": 0,
+        "workerTurn_samples": 2312,
+        "workerTurn_meanMs": 0.06116803157431108,
+        "workerTurn_p95UpperMs": 0.2,
+        "workerTurn_p99UpperMs": 0.3,
+        "workerTurn_maxMs": 7.855677999999898,
+        "generationJob_samples": 18,
+        "generationJob_meanMs": 4.0284350555553425,
+        "generationJob_p95UpperMs": 6.974913999998535,
+        "generationJob_p99UpperMs": 6.974913999998535,
+        "generationJob_maxMs": 6.974913999998535,
+        "command_samples": 210,
+        "command_meanMs": 0.021958214285890176,
+        "command_p95UpperMs": 0.05,
+        "command_p99UpperMs": 0.1,
+        "command_maxMs": 0.6711639999994077
+      }
+    },
+    {
+      "event": "VOXEL_ADMISSION_ISSUED",
+      "context": {
+        "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077"
+      }
+    },
+    {
+      "event": "VOXEL_ROOM_METRICS",
+      "context": {
+        "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077",
+        "worldId": "e0f56ccc-8b40-48b7-ac8f-d9a0ca420ca9",
+        "ticks": 300,
+        "columns": 0,
+        "overrunMs": 0,
+        "windowMs": 9999.793166000003,
+        "windowStartedAtMs": 63115.39646,
+        "windowEndedAtMs": 73115.189626,
+        "worldStep_samples": 300,
+        "worldStep_meanMs": 0.2001432233332646,
+        "worldStep_p95UpperMs": 0.4,
+        "worldStep_p99UpperMs": 1.25,
+        "worldStep_maxMs": 4.86150300000736,
+        "observerStep_samples": 0,
+        "observerStep_meanMs": 0,
+        "observerStep_p95UpperMs": 0,
+        "observerStep_p99UpperMs": 0,
+        "observerStep_maxMs": 0,
+        "workerTurn_samples": 2331,
+        "workerTurn_meanMs": 0.08285333891047102,
+        "workerTurn_p95UpperMs": 0.2,
+        "workerTurn_p99UpperMs": 0.8,
+        "workerTurn_maxMs": 13.416665000011562,
+        "generationJob_samples": 18,
+        "generationJob_meanMs": 6.026937888889934,
+        "generationJob_p95UpperMs": 13.405143999989377,
+        "generationJob_p99UpperMs": 13.405143999989377,
+        "generationJob_maxMs": 13.405143999989377,
+        "command_samples": 209,
+        "command_meanMs": 0.028850272727245135,
+        "command_p95UpperMs": 0.05,
+        "command_p99UpperMs": 0.2,
+        "command_maxMs": 0.8995640000066487
+      }
+    },
+    {
+      "event": "VOXEL_ROOM_EXITED",
+      "context": {
+        "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077",
+        "code": 0
+      }
+    }
+  ],
+  "remainingRooms": 0
+}

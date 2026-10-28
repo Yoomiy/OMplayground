@@ -1,0 +1,576 @@
+{
+  "result": "ALTERNATING_PACKAGED_128_PLAYER_SAMPLES_PASS",
+  "scope": "Three alternating before/after pairs, independent process per run; 3s endpoint warmup and 10s sample, startup/warmup included in worker metrics. Co-located loopback fixtures; no rich activity, real school network or physical capacity signoff.",
+  "results": [
+    {
+      "pair": 0,
+      "old": true,
+      "report": {
+        "result": "LOOPBACK_SURVIVAL_LOAD_COMPLETED",
+        "startedAt": "2026-10-27T14:20:23.202Z",
+        "buildId": "3ea11984a11a76d7d2993a55a882ed985827a6d1440e3336f3e8cf0612f5f508",
+        "releaseRoot": "/tmp/voxel-room-reuse-before-release",
+        "host": {
+          "node": "v24.21.0",
+          "arch": "arm64",
+          "cpu": "Neoverse-N1",
+          "logicalCpus": 2,
+          "availableParallelism": 2
+        },
+        "samplingSeconds": 10,
+        "scope": "Packaged gateway/native room workers with co-located real loopback WebSocket load clients, development identity fixture, natural survival movement/turning/jumping. No hosted writes, school Auth/SQL/Storage, crafting/TNT, browser/SFU, physical devices, impairment or deployment-capacity qualification.",
+        "profiles": [
+          {
+            "rooms": 1,
+            "playersPerRoom": 128,
+            "totalPlayers": 128,
+            "inputBatchHz": 29.98859247736913,
+            "skippedInputBatches": 1,
+            "joinedMs": 1709.3164849999998,
+            "joinMs": {
+              "samples": 128,
+              "mean": 1640.3073481328126,
+              "p95": 1667.514326,
+              "p99": 1667.6572070000002,
+              "max": 1708.8078019999998
+            },
+            "sampleMs": 10003.803954,
+            "ackMs": {
+              "samples": 19200,
+              "mean": 89.48988839849007,
+              "p95": 116.71683499999926,
+              "p99": 138.0354559999996,
+              "max": 163.29549599999882
+            },
+            "tickRate": {
+              "samples": 128,
+              "mean": 29.788668527519924,
+              "p95": 29.788668527520006,
+              "p99": 29.788668527520006,
+              "max": 29.788668527520006
+            },
+            "messages": 38400,
+            "wireBytes": 169611728,
+            "resyncs": 0,
+            "gatewayEventLoopP99Ms": 39.616511,
+            "roomMetrics": [
+              {
+                "buildId": "3ea11984a11a76d7d2993a55a882ed985827a6d1440e3336f3e8cf0612f5f508",
+                "worldId": "81bf49be-2df5-4200-b61d-ad5eea6049bc",
+                "ticks": 298,
+                "columns": 9,
+                "overrunMs": 66.66666666666667,
+                "windowMs": 10026.907462000001,
+                "worldStep_samples": 298,
+                "worldStep_meanMs": 16.56411187919462,
+                "worldStep_p95UpperMs": 30.55,
+                "worldStep_p99UpperMs": 47.15,
+                "worldStep_maxMs": 113.05545700000016,
+                "observerStep_samples": 0,
+                "observerStep_meanMs": 0,
+                "observerStep_p95UpperMs": 0,
+                "observerStep_p99UpperMs": 0,
+                "observerStep_maxMs": 0,
+                "workerTurn_samples": 1303,
+                "workerTurn_meanMs": 3.920242503453559,
+                "workerTurn_p95UpperMs": 23.55,
+                "workerTurn_p99UpperMs": 32.2,
+                "workerTurn_maxMs": 113.10569699999996,
+                "generationJob_samples": 9,
+                "generationJob_meanMs": 7.6074806666666115,
+                "generationJob_p95UpperMs": 23.160589999999956,
+                "generationJob_p99UpperMs": 23.160589999999956,
+                "generationJob_maxMs": 23.160589999999956,
+                "command_samples": 34048,
+                "command_meanMs": 0.015238415560389363,
+                "command_p95UpperMs": 0.05,
+                "command_p99UpperMs": 0.05,
+                "command_maxMs": 12.716940000000022
+              }
+            ],
+            "cleanup": {
+              "rooms": 0,
+              "closedClients": 128
+            }
+          }
+        ],
+        "finishedAt": "2026-10-27T14:20:38.001Z"
+      }
+    },
+    {
+      "pair": 0,
+      "old": false,
+      "report": {
+        "result": "LOOPBACK_SURVIVAL_LOAD_COMPLETED",
+        "startedAt": "2026-10-27T14:20:38.324Z",
+        "buildId": "6b20c88f7d8c9e7b6158c26d02524c24a419cc03b5fc9b2d53a90c083066da47",
+        "releaseRoot": "current",
+        "host": {
+          "node": "v24.21.0",
+          "arch": "arm64",
+          "cpu": "Neoverse-N1",
+          "logicalCpus": 2,
+          "availableParallelism": 2
+        },
+        "samplingSeconds": 10,
+        "scope": "Packaged gateway/native room workers with co-located real loopback WebSocket load clients, development identity fixture, natural survival movement/turning/jumping. No hosted writes, school Auth/SQL/Storage, crafting/TNT, browser/SFU, physical devices, impairment or deployment-capacity qualification.",
+        "profiles": [
+          {
+            "rooms": 1,
+            "playersPerRoom": 128,
+            "totalPlayers": 128,
+            "inputBatchHz": 29.998460886966352,
+            "skippedInputBatches": 0,
+            "joinedMs": 1576.294334,
+            "joinMs": {
+              "samples": 128,
+              "mean": 1071.8417750546873,
+              "p95": 1525.18613,
+              "p99": 1526.3743359999999,
+              "max": 1526.560817
+            },
+            "sampleMs": 10000.513063999999,
+            "ackMs": {
+              "samples": 19200,
+              "mean": 96.45651385937522,
+              "p95": 114.40694299999996,
+              "p99": 120.20637199999965,
+              "max": 128.19428900000003
+            },
+            "tickRate": {
+              "samples": 128,
+              "mean": 29.79847114771985,
+              "p95": 29.79847114771991,
+              "p99": 29.79847114771991,
+              "max": 29.79847114771991
+            },
+            "messages": 38400,
+            "wireBytes": 166737904,
+            "resyncs": 0,
+            "gatewayEventLoopP99Ms": 29.802495,
+            "roomMetrics": [
+              {
+                "buildId": "6b20c88f7d8c9e7b6158c26d02524c24a419cc03b5fc9b2d53a90c083066da47",
+                "worldId": "53b142cc-3c94-433d-88b4-28350cbe8d53",
+                "ticks": 300,
+                "columns": 9,
+                "overrunMs": 0,
+                "windowMs": 10012.128317,
+                "worldStep_samples": 300,
+                "worldStep_meanMs": 11.955078973333286,
+                "worldStep_p95UpperMs": 26.1,
+                "worldStep_p99UpperMs": 35.5,
+                "worldStep_maxMs": 65.45167100000003,
+                "observerStep_samples": 0,
+                "observerStep_meanMs": 0,
+                "observerStep_p95UpperMs": 0,
+                "observerStep_p99UpperMs": 0,
+                "observerStep_maxMs": 0,
+                "workerTurn_samples": 1599,
+                "workerTurn_meanMs": 2.374625620387754,
+                "workerTurn_p95UpperMs": 17.5,
+                "workerTurn_p99UpperMs": 26.6,
+                "workerTurn_maxMs": 66.32171500000004,
+                "generationJob_samples": 9,
+                "generationJob_meanMs": 9.338364333333313,
+                "generationJob_p95UpperMs": 13.80410500000005,
+                "generationJob_p99UpperMs": 13.80410500000005,
+                "generationJob_maxMs": 13.80410500000005,
+                "command_samples": 33920,
+                "command_meanMs": 0.014066923113211519,
+                "command_p95UpperMs": 0.05,
+                "command_p99UpperMs": 0.05,
+                "command_maxMs": 6.079829000000245
+              }
+            ],
+            "cleanup": {
+              "rooms": 0,
+              "closedClients": 128
+            }
+          }
+        ],
+        "finishedAt": "2026-10-27T14:20:52.965Z"
+      }
+    },
+    {
+      "pair": 1,
+      "old": false,
+      "report": {
+        "result": "LOOPBACK_SURVIVAL_LOAD_COMPLETED",
+        "startedAt": "2026-10-27T14:20:53.270Z",
+        "buildId": "6b20c88f7d8c9e7b6158c26d02524c24a419cc03b5fc9b2d53a90c083066da47",
+        "releaseRoot": "current",
+        "host": {
+          "node": "v24.21.0",
+          "arch": "arm64",
+          "cpu": "Neoverse-N1",
+          "logicalCpus": 2,
+          "availableParallelism": 2
+        },
+        "samplingSeconds": 10,
+        "scope": "Packaged gateway/native room workers with co-located real loopback WebSocket load clients, development identity fixture, natural survival movement/turning/jumping. No hosted writes, school Auth/SQL/Storage, crafting/TNT, browser/SFU, physical devices, impairment or deployment-capacity qualification.",
+        "profiles": [
+          {
+            "rooms": 1,
+            "playersPerRoom": 128,
+            "totalPlayers": 128,
+            "inputBatchHz": 30.001150175095074,
+            "skippedInputBatches": 0,
+            "joinedMs": 1699.2087980000001,
+            "joinMs": {
+              "samples": 128,
+              "mean": 1476.3644109374995,
+              "p95": 1648.5071970000001,
+              "p99": 1649.321042,
+              "max": 1649.573483
+            },
+            "sampleMs": 9999.616622999998,
+            "ackMs": {
+              "samples": 19200,
+              "mean": 60.126934222031196,
+              "p95": 70.92233699999997,
+              "p99": 76.64088499999889,
+              "max": 103.30145099999936
+            },
+            "tickRate": {
+              "samples": 128,
+              "mean": 29.801142507261034,
+              "p95": 29.80114250726111,
+              "p99": 29.80114250726111,
+              "max": 29.80114250726111
+            },
+            "messages": 38400,
+            "wireBytes": 166708596,
+            "resyncs": 0,
+            "gatewayEventLoopP99Ms": 25.903103,
+            "roomMetrics": [
+              {
+                "buildId": "6b20c88f7d8c9e7b6158c26d02524c24a419cc03b5fc9b2d53a90c083066da47",
+                "worldId": "92348af3-60a5-4a39-a062-7cadc9230a9e",
+                "ticks": 300,
+                "columns": 9,
+                "overrunMs": 0,
+                "windowMs": 10010.130592,
+                "worldStep_samples": 300,
+                "worldStep_meanMs": 9.157726366666637,
+                "worldStep_p95UpperMs": 20.45,
+                "worldStep_p99UpperMs": 29.85,
+                "worldStep_maxMs": 71.85794099999998,
+                "observerStep_samples": 0,
+                "observerStep_meanMs": 0,
+                "observerStep_p95UpperMs": 0,
+                "observerStep_p99UpperMs": 0,
+                "observerStep_maxMs": 0,
+                "workerTurn_samples": 1893,
+                "workerTurn_meanMs": 1.5563139746434225,
+                "workerTurn_p95UpperMs": 12.45,
+                "workerTurn_p99UpperMs": 20.1,
+                "workerTurn_maxMs": 72.07450199999994,
+                "generationJob_samples": 9,
+                "generationJob_meanMs": 8.052296222222228,
+                "generationJob_p95UpperMs": 20.97253999999998,
+                "generationJob_p99UpperMs": 20.97253999999998,
+                "generationJob_maxMs": 20.97253999999998,
+                "command_samples": 34048,
+                "command_meanMs": 0.012373822691491303,
+                "command_p95UpperMs": 0.05,
+                "command_p99UpperMs": 0.05,
+                "command_maxMs": 8.43820100000005
+              }
+            ],
+            "cleanup": {
+              "rooms": 0,
+              "closedClients": 128
+            }
+          }
+        ],
+        "finishedAt": "2026-10-27T14:21:08.029Z"
+      }
+    },
+    {
+      "pair": 1,
+      "old": true,
+      "report": {
+        "result": "LOOPBACK_SURVIVAL_LOAD_COMPLETED",
+        "startedAt": "2026-10-27T14:21:08.353Z",
+        "buildId": "3ea11984a11a76d7d2993a55a882ed985827a6d1440e3336f3e8cf0612f5f508",
+        "releaseRoot": "/tmp/voxel-room-reuse-before-release",
+        "host": {
+          "node": "v24.21.0",
+          "arch": "arm64",
+          "cpu": "Neoverse-N1",
+          "logicalCpus": 2,
+          "availableParallelism": 2
+        },
+        "samplingSeconds": 10,
+        "scope": "Packaged gateway/native room workers with co-located real loopback WebSocket load clients, development identity fixture, natural survival movement/turning/jumping. No hosted writes, school Auth/SQL/Storage, crafting/TNT, browser/SFU, physical devices, impairment or deployment-capacity qualification.",
+        "profiles": [
+          {
+            "rooms": 1,
+            "playersPerRoom": 128,
+            "totalPlayers": 128,
+            "inputBatchHz": 29.999710712789593,
+            "skippedInputBatches": 0,
+            "joinedMs": 1638.718111,
+            "joinMs": {
+              "samples": 128,
+              "mean": 1363.1410594609372,
+              "p95": 1585.940341,
+              "p99": 1587.8925100000001,
+              "max": 1588.120951
+            },
+            "sampleMs": 10000.096430000001,
+            "ackMs": {
+              "samples": 19200,
+              "mean": 57.07422389317699,
+              "p95": 66.22103499999957,
+              "p99": 76.83916499999941,
+              "max": 98.96222999999918
+            },
+            "tickRate": {
+              "samples": 128,
+              "mean": 29.799712641371023,
+              "p95": 29.799712641370995,
+              "p99": 29.799712641370995,
+              "max": 29.799712641370995
+            },
+            "messages": 38400,
+            "wireBytes": 166885620,
+            "resyncs": 0,
+            "gatewayEventLoopP99Ms": 25.690111,
+            "roomMetrics": [
+              {
+                "buildId": "3ea11984a11a76d7d2993a55a882ed985827a6d1440e3336f3e8cf0612f5f508",
+                "worldId": "8cbd9504-a433-4e17-94c1-c016bb01e4bc",
+                "ticks": 299,
+                "columns": 9,
+                "overrunMs": 0,
+                "windowMs": 9999.451947000001,
+                "worldStep_samples": 299,
+                "worldStep_meanMs": 12.824535742474934,
+                "worldStep_p95UpperMs": 22.5,
+                "worldStep_p99UpperMs": 40.45,
+                "worldStep_maxMs": 107.76623299999983,
+                "observerStep_samples": 0,
+                "observerStep_meanMs": 0,
+                "observerStep_p95UpperMs": 0,
+                "observerStep_p99UpperMs": 0,
+                "observerStep_maxMs": 0,
+                "workerTurn_samples": 1604,
+                "workerTurn_meanMs": 2.497693463840408,
+                "workerTurn_p95UpperMs": 16.8,
+                "workerTurn_p99UpperMs": 22.95,
+                "workerTurn_maxMs": 107.99635399999988,
+                "generationJob_samples": 9,
+                "generationJob_meanMs": 6.948139666666647,
+                "generationJob_p95UpperMs": 17.415322999999944,
+                "generationJob_p99UpperMs": 17.415322999999944,
+                "generationJob_maxMs": 17.415322999999944,
+                "command_samples": 33694,
+                "command_meanMs": 0.012209483409514804,
+                "command_p95UpperMs": 0.05,
+                "command_p99UpperMs": 0.05,
+                "command_maxMs": 6.9253929999999855
+              }
+            ],
+            "cleanup": {
+              "rooms": 0,
+              "closedClients": 128
+            }
+          }
+        ],
+        "finishedAt": "2026-10-27T14:21:23.039Z"
+      }
+    },
+    {
+      "pair": 2,
+      "old": true,
+      "report": {
+        "result": "LOOPBACK_SURVIVAL_LOAD_COMPLETED",
+        "startedAt": "2026-10-27T14:21:23.353Z",
+        "buildId": "3ea11984a11a76d7d2993a55a882ed985827a6d1440e3336f3e8cf0612f5f508",
+        "releaseRoot": "/tmp/voxel-room-reuse-before-release",
+        "host": {
+          "node": "v24.21.0",
+          "arch": "arm64",
+          "cpu": "Neoverse-N1",
+          "logicalCpus": 2,
+          "availableParallelism": 2
+        },
+        "samplingSeconds": 10,
+        "scope": "Packaged gateway/native room workers with co-located real loopback WebSocket load clients, development identity fixture, natural survival movement/turning/jumping. No hosted writes, school Auth/SQL/Storage, crafting/TNT, browser/SFU, physical devices, impairment or deployment-capacity qualification.",
+        "profiles": [
+          {
+            "rooms": 1,
+            "playersPerRoom": 128,
+            "totalPlayers": 128,
+            "inputBatchHz": 30.088510362317983,
+            "skippedInputBatches": 0,
+            "joinedMs": 1602.40386,
+            "joinMs": {
+              "samples": 128,
+              "mean": 1207.2956118515624,
+              "p95": 1570.710829,
+              "p99": 1572.087676,
+              "max": 1572.433078
+            },
+            "sampleMs": 10003.818613,
+            "ackMs": {
+              "samples": 19200,
+              "mean": 88.4914704242708,
+              "p95": 114.14602300000024,
+              "p99": 119.97229100000004,
+              "max": 141.35051199999998
+            },
+            "tickRate": {
+              "samples": 128,
+              "mean": 29.78862487697919,
+              "p95": 29.788624876979263,
+              "p99": 29.788624876979263,
+              "max": 29.788624876979263
+            },
+            "messages": 38400,
+            "wireBytes": 166836084,
+            "resyncs": 0,
+            "gatewayEventLoopP99Ms": 42.827775,
+            "roomMetrics": [
+              {
+                "buildId": "3ea11984a11a76d7d2993a55a882ed985827a6d1440e3336f3e8cf0612f5f508",
+                "worldId": "21771e31-2351-4f8b-901c-db6fb29f7ea4",
+                "ticks": 299,
+                "columns": 9,
+                "overrunMs": 33.333333333333336,
+                "windowMs": 10004.110573,
+                "worldStep_samples": 299,
+                "worldStep_meanMs": 16.752473140468226,
+                "worldStep_p95UpperMs": 28.85,
+                "worldStep_p99UpperMs": 38.85,
+                "worldStep_maxMs": 124.43403199999989,
+                "observerStep_samples": 0,
+                "observerStep_meanMs": 0,
+                "observerStep_p95UpperMs": 0,
+                "observerStep_p99UpperMs": 0,
+                "observerStep_maxMs": 0,
+                "workerTurn_samples": 1310,
+                "workerTurn_meanMs": 3.952361696183204,
+                "workerTurn_p95UpperMs": 24.5,
+                "workerTurn_p99UpperMs": 30.15,
+                "workerTurn_maxMs": 124.47851200000014,
+                "generationJob_samples": 9,
+                "generationJob_meanMs": 6.43168388888892,
+                "generationJob_p95UpperMs": 16.97043999999994,
+                "generationJob_p99UpperMs": 16.97043999999994,
+                "generationJob_maxMs": 16.97043999999994,
+                "command_samples": 34176,
+                "command_meanMs": 0.012997873829588466,
+                "command_p95UpperMs": 0.05,
+                "command_p99UpperMs": 0.05,
+                "command_maxMs": 8.775040999999987
+              }
+            ],
+            "cleanup": {
+              "rooms": 0,
+              "closedClients": 128
+            }
+          }
+        ],
+        "finishedAt": "2026-10-27T14:21:38.002Z"
+      }
+    },
+    {
+      "pair": 2,
+      "old": false,
+      "report": {
+        "result": "LOOPBACK_SURVIVAL_LOAD_COMPLETED",
+        "startedAt": "2026-10-27T14:21:38.314Z",
+        "buildId": "6b20c88f7d8c9e7b6158c26d02524c24a419cc03b5fc9b2d53a90c083066da47",
+        "releaseRoot": "current",
+        "host": {
+          "node": "v24.21.0",
+          "arch": "arm64",
+          "cpu": "Neoverse-N1",
+          "logicalCpus": 2,
+          "availableParallelism": 2
+        },
+        "samplingSeconds": 10,
+        "scope": "Packaged gateway/native room workers with co-located real loopback WebSocket load clients, development identity fixture, natural survival movement/turning/jumping. No hosted writes, school Auth/SQL/Storage, crafting/TNT, browser/SFU, physical devices, impairment or deployment-capacity qualification.",
+        "profiles": [
+          {
+            "rooms": 1,
+            "playersPerRoom": 128,
+            "totalPlayers": 128,
+            "inputBatchHz": 30.000507254576764,
+            "skippedInputBatches": 0,
+            "joinedMs": 1578.064744,
+            "joinMs": {
+              "samples": 128,
+              "mean": 1428.8538294609375,
+              "p95": 1527.580824,
+              "p99": 1528.459389,
+              "max": 1528.6272700000002
+            },
+            "sampleMs": 9999.830918,
+            "ackMs": {
+              "samples": 19200,
+              "mean": 95.14514160875008,
+              "p95": 116.24039300000004,
+              "p99": 125.75399799999923,
+              "max": 140.7385089999998
+            },
+            "tickRate": {
+              "samples": 128,
+              "mean": 29.800503872879645,
+              "p95": 29.800503872879588,
+              "p99": 29.800503872879588,
+              "max": 29.800503872879588
+            },
+            "messages": 38400,
+            "wireBytes": 171673844,
+            "resyncs": 0,
+            "gatewayEventLoopP99Ms": 36.700159,
+            "roomMetrics": [
+              {
+                "buildId": "6b20c88f7d8c9e7b6158c26d02524c24a419cc03b5fc9b2d53a90c083066da47",
+                "worldId": "fb7c6f6e-28d9-4f6f-9ce9-abff6cae9639",
+                "ticks": 300,
+                "columns": 9,
+                "overrunMs": 0,
+                "windowMs": 10014.146104000001,
+                "worldStep_samples": 300,
+                "worldStep_meanMs": 13.067991356666674,
+                "worldStep_p95UpperMs": 29.1,
+                "worldStep_p99UpperMs": 41.1,
+                "worldStep_maxMs": 118.20812299999989,
+                "observerStep_samples": 0,
+                "observerStep_meanMs": 0,
+                "observerStep_p95UpperMs": 0,
+                "observerStep_p99UpperMs": 0,
+                "observerStep_maxMs": 0,
+                "workerTurn_samples": 1522,
+                "workerTurn_meanMs": 2.6948182917214165,
+                "workerTurn_p95UpperMs": 19.55,
+                "workerTurn_p99UpperMs": 29.25,
+                "workerTurn_maxMs": 119.91049100000009,
+                "generationJob_samples": 9,
+                "generationJob_meanMs": 7.105086999999975,
+                "generationJob_p95UpperMs": 17.292761999999925,
+                "generationJob_p99UpperMs": 17.292761999999925,
+                "generationJob_maxMs": 17.292761999999925,
+                "command_samples": 34269,
+                "command_meanMs": 0.01389528407598719,
+                "command_p95UpperMs": 0.05,
+                "command_p99UpperMs": 0.05,
+                "command_maxMs": 8.852002000000084
+              }
+            ],
+            "cleanup": {
+              "rooms": 0,
+              "closedClients": 128
+            }
+          }
+        ],
+        "finishedAt": "2026-10-27T14:21:52.961Z"
+      }
+    }
+  ]
+}

@@ -1,0 +1,217 @@
+{
+  "result": "PASS",
+  "scope": "Loopback development policy, two software-rendered Chromium clients; functional evidence only",
+  "buildId": "901ab685a7af21749774a31480af07dcce4b154537c86fdd90ff7bf21eded6d2",
+  "engineHash": "084b17c0ae40222777a0225f6fc186a9903ac19d9c455aae025188185ea250ab",
+  "contentHash": "0e18a28a479058f6af964ead4081e464697e59fb5c842cf96c91a9fff3c61980",
+  "browser": "156.0.8078.4",
+  "moved": 0.4316673473074473,
+  "jumpHeight": 1.181666666666672,
+  "clients": [
+    {
+      "disposed": false,
+      "inputMode": "desktop",
+      "touch": {
+        "x": 0,
+        "z": 0,
+        "jump": false,
+        "sneak": false,
+        "sprint": false
+      },
+      "focused": false,
+      "visible": "visible",
+      "hasFocus": true,
+      "lastFrame": 87440.5,
+      "resources": {
+        "geometries": 19,
+        "textures": 4,
+        "workers": 1
+      },
+      "actorId": "0559773f-4215-476e-8dd7-95128c5ff7ab",
+      "worldId": "049e155e-330e-4454-bf90-9fcbfbde687b",
+      "body": {
+        "position": [
+          49.8829,
+          68,
+          0.3006
+        ],
+        "onGround": 1,
+        "frozen": 1,
+        "flying": 0,
+        "velocity": [
+          0,
+          0,
+          0
+        ]
+      },
+      "view": {
+        "yaw": -0.48000000000000004,
+        "pitch": -0.7
+      },
+      "lastResult": null,
+      "recentEdits": [],
+      "status": "paused",
+      "epoch": 6,
+      "phase": "playing",
+      "position": [
+        49.8829,
+        68,
+        0.3006
+      ],
+      "selected": 4,
+      "players": 2,
+      "inputLag": 0,
+      "correction": 0,
+      "columns": 49,
+      "collisionColumns": 30,
+      "meshed": 9,
+      "workers": 1,
+      "activeJobs": 0,
+      "stream": {
+        "discardedJobs": 0,
+        "installed": 30,
+        "meshJobs": 10,
+        "generationJobs": 30,
+        "mainWorkMs": 0.9000000953674316
+      },
+      "render": {
+        "uploadedBytes": 3147368,
+        "columns": 9,
+        "drawCalls": 19,
+        "triangles": 15970,
+        "uploadMs": 0.19999980926513672
+      },
+      "target": [
+        48,
+        67,
+        -2
+      ],
+      "targetState": 5,
+      "targetNormal": [
+        0,
+        1,
+        0
+      ],
+      "actionPending": 0
+    },
+    {
+      "disposed": false,
+      "inputMode": "desktop",
+      "touch": {
+        "x": 0,
+        "z": 0,
+        "jump": false,
+        "sneak": false,
+        "sprint": false
+      },
+      "focused": false,
+      "visible": "visible",
+      "hasFocus": true,
+      "lastFrame": 81466.7,
+      "resources": {
+        "geometries": 25,
+        "textures": 4,
+        "workers": 1
+      },
+      "actorId": "9bfa1ae4-b5d6-4a20-befd-26299be64357",
+      "worldId": "049e155e-330e-4454-bf90-9fcbfbde687b",
+      "body": {
+        "position": [
+          49.5,
+          68.005,
+          0.5
+        ],
+        "onGround": 0,
+        "frozen": 1,
+        "flying": 0,
+        "velocity": [
+          0,
+          0,
+          0
+        ]
+      },
+      "view": {
+        "yaw": 0,
+        "pitch": 0
+      },
+      "lastResult": null,
+      "recentEdits": [
+        {
+          "cell": [
+            48,
+            68,
+            -2
+          ],
+          "state": 4,
+          "revision": 1
+        },
+        {
+          "cell": [
+            48,
+            68,
+            -2
+          ],
+          "state": 0,
+          "revision": 2
+        }
+      ],
+      "status": "paused",
+      "epoch": 2,
+      "phase": "playing",
+      "position": [
+        49.5,
+        68.005,
+        0.5
+      ],
+      "selected": 24,
+      "players": 2,
+      "inputLag": 0,
+      "correction": 0,
+      "columns": 49,
+      "collisionColumns": 49,
+      "meshed": 25,
+      "workers": 1,
+      "activeJobs": 0,
+      "stream": {
+        "discardedJobs": 0,
+        "installed": 49,
+        "meshJobs": 43,
+        "generationJobs": 49,
+        "mainWorkMs": 0.10000014305114746
+      },
+      "render": {
+        "uploadedBytes": 3196648,
+        "columns": 25,
+        "drawCalls": 25,
+        "triangles": 18678,
+        "uploadMs": 0.20000004768371582
+      },
+      "target": [
+        49,
+        69,
+        -4
+      ],
+      "targetState": 12,
+      "targetNormal": [
+        0,
+        0,
+        1
+      ],
+      "actionPending": 0
+    }
+  ],
+  "cleanup": [
+    {
+      "geometries": 0,
+      "textures": 0,
+      "workers": 0
+    },
+    {
+      "geometries": 0,
+      "textures": 0,
+      "workers": 0
+    }
+  ],
+  "inputMethod": "Trusted pointer capture and jump; DOM keyboard/relative-mouse events through normal runtime listeners for held walking and aim",
+  "errors": []
+}

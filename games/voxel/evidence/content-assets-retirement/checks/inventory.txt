@@ -1,0 +1,5 @@
+
+> @playground/voxel@0.1.0 inventory:legacy
+> node tools/inventory-legacy-content.ts
+
+Inventoried 111 blocks, 44 items, 42 recipes

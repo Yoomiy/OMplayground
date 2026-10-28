@@ -1,0 +1,16 @@
+{
+  "buildId": "8fbded24fedc1e469a5534f11b870fbfa3124d4d9c16ba72871b948707261788",
+  "startedAt": "2026-10-23T10:39:04.137Z",
+  "active": null,
+  "checks": [
+    {
+      "script": "test:equipment:browser",
+      "path": "/tmp/voxel-appearance-pre-catalog-history/voxel-appearance-suite-test-equipment-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-23T10:39:04.137Z",
+      "finishedAt": "2026-10-23T10:41:18.156Z",
+      "durationMs": 134019
+    }
+  ]
+}

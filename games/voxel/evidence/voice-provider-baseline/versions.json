@@ -1,0 +1,6 @@
+{
+  "livekit-client": "2.19.1",
+  "livekit-server-sdk": "2.15.4",
+  "@livekit/protocol": "1.46.4",
+  "ws": "8.20.0"
+}

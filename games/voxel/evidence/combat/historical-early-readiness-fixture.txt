@@ -1,0 +1,282 @@
+
+> check:voxel
+> npm --prefix games/voxel run check
+
+
+> @playground/voxel@0.1.0 check
+> npm run build && npm run typecheck && npm run check:boundaries && npm test && npm run test:engine && npm run test:wasm && npm run test:integration && npm run test:server-bundle
+
+
+> @playground/voxel@0.1.0 build
+> npm run content && npm run build:engine && node tools/build-manifest.mjs && npm run build:client && npm run build:server && node tools/release-manifest.mjs
+
+
+> @playground/voxel@0.1.0 content
+> node tools/compile-content.ts
+
+Compiled 31 block states; content 588521eddc90
+
+> @playground/voxel@0.1.0 build:engine
+> node tools/build-engine.mjs
+
+[INFO]: 🎯  Checking for the Wasm target...
+[INFO]: 🌀  Compiling to Wasm...
+    Finished `release` profile [optimized] target(s) in 0.01s
+[INFO]: ⬇️  Installing wasm-bindgen...
+[INFO]: Optimizing wasm binaries with `wasm-opt`...
+[INFO]: Optional field missing from Cargo.toml: 'repository'. This is not necessary, but recommended
+[INFO]: ✨   Done in 8.76s
+[INFO]: 📦   Your wasm pkg is ready to publish at engine/pkg.
+Voxel build a3db04da64a3
+
+> @playground/voxel@0.1.0 build:client
+> vite build
+
+vite v8.3.5 building client environment for production...
+transforming...
+✓ 41 modules transformed.
+rendering chunks...
+computing gzip size...
+dist-client/index.html                              1.74 kB │ gzip:   0.88 kB
+dist-client/assets/engine-worker-DsbFhM1d.js       13.07 kB
+dist-client/assets/voxel_engine_bg-DS1_wqc4.wasm  537.72 kB │ gzip: 207.89 kB
+dist-client/assets/index-5w2pNf9N.css               4.69 kB │ gzip:   1.63 kB
+dist-client/assets/index-C74SVRVS.js              659.19 kB │ gzip: 172.74 kB
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 354ms
+
+> @playground/voxel@0.1.0 build:server
+> node tools/build-server.mjs
+
+Built voxel gateway and room worker
+Matched client/server release a3db04da64a3
+
+> @playground/voxel@0.1.0 typecheck
+> tsc --noEmit
+
+
+> @playground/voxel@0.1.0 check:boundaries
+> node tools/check-boundaries.mjs
+
+Voxel import boundaries pass
+
+> @playground/voxel@0.1.0 test
+> node --test tests/*.test.ts
+
+✔ input bursts cannot buy more simulated movement time (19.681695ms)
+✔ fresh queued input proves liveness while consumed aim stays authoritative; rejected packets never renew it (0.464242ms)
+✔ queues expire, transient presses clear, overflow requests resync, epochs invalidate (0.420322ms)
+✔ positions, durations, client clocks, and nonfinite controls are rejected (0.488122ms)
+✔ epoch resets retain consumed look direction while discarding pending view and movement (1.122485ms)
+✔ scheduler bounds stalls without an unbounded catch-up queue (0.414282ms)
+✔ evicted command results cannot execute again, including after reconnect (0.395042ms)
+✔ body ray chooses actual bounded intersections including parallel, grazing and inside rays (1.232006ms)
+✔ combat cooldown, hit recovery and respawn protection advance only by simulation steps and attacks abandon protection (0.682724ms)
+✔ owned weapon wear commits once after accepted damage and stale/rejected strikes leave ownership unchanged (20.112057ms)
+✔ combat profiles and wire carry intentions only and reject forged target, damage, reach, clock and hit effects (3.997099ms)
+✔ semantic manifest and IDs are deterministic across authoring order (25.815884ms)
+✔ compiler assigns ordinary states across the u8 boundary with no reserved stock pool (15.110753ms)
+✔ unknown references, duplicate states, malformed shapes, and recipes fail the build (2.724733ms)
+✔ room-time atmosphere is deterministic, bounded, cyclic and weather transitions are continuous (5.848068ms)
+✔ presentation clock aligns late joiners, rejects stale ticks, freezes on stalls and resets for a new world (0.409202ms)
+✔ welcome requires matching environment format and valid authoritative ticks; clients cannot set world time (1.381087ms)
+✔ a delayed receipt cannot leave remote movement and look stuck behind after healthy snapshots resume (1.413207ms)
+✔ extrapolation is bounded, frozen bodies do not coast, and removed actors release interpolation state (1.259127ms)
+✔ stack instance validation rejects forged counts/metadata and compiler enforces equipment/durable outputs (4.754943ms)
+✔ split/merge/swap/equip conserve owned items, reject partial overflow, and snapshots cannot mutate authority (3.362456ms)
+✔ 2x2 recipes translate/mirror, batch atomically, and never consume ingredients when output is full (3.572658ms)
+✔ 3x3 crafting requires a reachable live station and creates a bounded durable instance (0.674003ms)
+✔ simultaneous chest withdrawals serialize by revisions and cannot duplicate or erase items (1.096646ms)
+✔ failed grants and stale revisions do not partially install; disconnect preserves grids/equipment and closes shared access (0.689163ms)
+✔ old chest incarnations conflict even with identical revisions; abandoned crafting ingredients stay recoverable (0.437722ms)
+✔ inventory wire intents reject client results, unknown fields, forged slots and malformed owned instances (1.375047ms)
+✔ gameplay schema rejects dev commands, forged positions/clocks, and oversize input batches (3.980459ms)
+✔ binary subscription baselines preserve high states and reject format/length/index corruption (1.258726ms)
+✔ acknowledgement includes discarded controls and worker identities include every freshness boundary (0.674603ms)
+✔ owned placement commits one item with the world, rejects stale selection/revision, and rolls back a failed edit (3.072215ms)
+✔ mining requirements/speed come from content and tool wear breaks the final durable instance exactly once (1.189726ms)
+✔ partial pickups preserve remainder and durable metadata, and failed throw callbacks do not consume the bag (2.883934ms)
+✔ mining and drop protocol carries intents only, bounds replication batches and rejects forged completion/positions (1.365007ms)
+✔ vitals timers, regeneration, effort, food cooldown and starvation use fixed simulation steps (5.069745ms)
+✔ fall peaks survive a stop, water/ladder reset them and death/respawn retain exact room durations (1.117845ms)
+✔ food consumes one owned item only after accepted effect; death drains every private area without duplication (21.094221ms)
+✔ bounded data-driven equipment profiles and vitals wire reject forged modifiers, health and food awards (4.035419ms)
+ℹ tests 38
+ℹ suites 0
+ℹ pass 38
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1922.446484
+
+> @playground/voxel@0.1.0 test:engine
+> cargo test --release --locked --manifest-path engine/Cargo.toml
+
+    Finished `release` profile [optimized] target(s) in 0.01s
+     Running unittests src/lib.rs (engine/target/release/deps/voxel_engine-4a50f397ddddc515)
+
+running 82 tests
+test blocks::tests::ids_match_table ... ok
+test blocks::tests::variants_fill_their_ranges ... ok
+test blocks::tests::game_blocks_follow_the_built_in_ones ... ok
+test cull::tests::occlusion_matches_frustum_in_open_air ... ok
+test cull::tests::shadow_camera_projects_center_to_middle ... ok
+test damage::tests::blasts_take_a_ragged_sphere ... ok
+test damage::tests::boxes_cover_exactly_what_is_left ... ok
+test damage::tests::capsules_take_a_rounded_channel ... ok
+test damage::tests::changes_round_trip ... ok
+test entities::tests::arrows_hit_bodies_and_walls ... ok
+test entities::tests::bodies_chase_the_nearest_player_or_their_target ... ok
+test blocks::tests::wrong_game_blocks_are_refused ... ok
+test entities::tests::bodies_climb_single_steps ... ok
+test entities::tests::bodies_find_a_player_standing_on_a_slab_or_a_stair ... ok
+test entities::tests::melee_pick_respects_walls ... ok
+test entities::tests::navigation_fields_take_turns ... ok
+test entities::tests::projectiles_hit_other_players_not_their_shooter ... ok
+test entitytex::tests::contract ... ok
+test entitytex::tests::preview ... ignored
+test gen::map_tests::map ... ignored
+test gen::tests::biome_distribution ... ok
+test gen::tests::blueprints_stamp_and_terraform ... ok
+test entities::tests::bodies_path_around_a_wall_to_the_player ... ok
+test gen::tests::deterministic_and_sane ... ok
+test gen::tests::border_trees_agree ... ok
+test gen::tests::void_ground_is_a_plain_slab_shaped_by_terraforms ... ok
+test gen::tests::void_world_has_only_structures ... ok
+test json::tests::reads_what_the_platform_writes ... ok
+test json::tests::refuses_what_isnt_json ... ok
+test mesher::tests::damaged_blocks_mesh_what_is_left ... ok
+test gen::tests::timing ... ok
+test mesher::tests::game_blocks_mesh_like_built_in_ones ... ok
+test mesher::tests::damaged_column_timing ... ok
+test mesher::tests::greedy_merges_flat_layer ... ok
+test mesher::tests::mesh_flat_region ... ok
+test mesher::tests::game_shapes_leave_built_in_meshes_alone ... ok
+test mesher::tests::mesh_generated_timing ... ok
+test movers::tests::a_body_lands_on_a_mover_and_rides_it ... ok
+test movers::tests::a_mover_pushes_a_body_it_runs_into ... ok
+test movers::tests::a_mover_that_jumps_into_a_body_pushes_it ... ok
+test movers::tests::a_rider_jumping_on_a_moving_deck_lands_where_they_jumped ... ok
+test movers::tests::frozen_on_deck_still_rides ... ok
+test movers::tests::overlap_counts_blocks_in_the_ground ... ok
+test movers::tests::rays_stop_at_movers ... ok
+test movers::tests::riders_go_with_a_mover_moved_far_at_once ... ok
+test movers::tests::stepping_off_takes_the_decks_motion ... ok
+test movers::tests::walking_across_a_turned_deck_does_not_catch_on_seams ... ok
+test movers::tests::walking_up_a_low_lip_onto_a_deck ... ok
+test movers::tests::walking_up_and_down_a_tilted_deck ... ok
+test noise::tests::noise_range ... ok
+test mesher::tests::undamaged_meshes_are_unchanged ... ok
+test shapes::tests::built_in_tables_are_unchanged ... ok
+test shapes::tests::fences_join_stop_bodies_and_let_rays_between_their_rails ... ok
+test shapes::tests::game_shapes_are_built ... ok
+test shapes::tests::ladders_climb_hold_and_let_down_slowly ... ok
+test shapes::tests::panes_are_thin_walls ... ok
+test shapes::tests::slabs_and_stairs_fill_their_sides ... ok
+test shapes::tests::transforms_cover_every_orientation ... ok
+test shapes::tests::turned_models_keep_their_textures_the_same_way_round ... ok
+test shapes::tests::wrong_shapes_are_refused ... ok
+test state_width::high_states_survive_generation_storage_and_edits ... ok
+test texgen::tests::contract ... ok
+test texgen::tests::preview ... ignored
+test world::tests::a_block_carved_to_nothing_is_air_and_reverts_whole ... ok
+test shapes::tests::built_in_physics_and_rays_are_unchanged ... ok
+test world::tests::carving_takes_bits_once_and_only_where_it_may ... ok
+test world::tests::damage_replicates_exactly_and_idempotently ... ok
+test world::tests::edits_survive_reload ... ok
+test world::tests::blasts_leave_a_ragged_crater_and_the_ground_whole ... ok
+test world::tests::mirrored_edits_wait_for_their_column ... ok
+test world::tests::mantles_onto_ledges_within_reach ... ok
+test world::tests::player_lands_on_ground ... ok
+test world::tests::rays_and_sight_pass_through_holes ... ok
+test world::tests::rays_come_out_of_walls_where_the_material_ends ... ok
+test world::tests::players_stop_at_whats_left_and_walk_through_holes ... ok
+test world::tests::revert_restores_generated_blocks ... ok
+test world::tests::rays_hit_model_boxes ... ok
+test world::tests::settling_off_a_mover_in_a_hole_does_not_trap ... ok
+test world::tests::slides_bleed_speed_away ... ok
+test world::tests::step_scales_gravity_and_control ... ok
+test world::tests::walks_up_slabs_and_stairs_but_not_blocks ... ok
+test world::tests::wrapped_regions_see_the_other_end ... ok
+
+test result: ok. 79 passed; 0 failed; 3 ignored; 0 measured; 0 filtered out; finished in 0.94s
+
+   Doc-tests voxel_engine
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+> @playground/voxel@0.1.0 test:wasm
+> node --test tests/wasm/*.test.ts
+
+✔ real Wasm combat uses owned weapons/armor once, fixed cooldowns and an independent replay boundary after eviction (99.7134ms)
+✔ solid occlusion, partial slab geometry, reach, mode and independent source/target combat permission control damage (54.668702ms)
+✔ attack waits for consumed aim, rejects stale input and cannot turn a future aim packet into immediate damage (23.441353ms)
+✔ melee death drops personal state once and the same connection respawns only after collision readiness with protection (53.912499ms)
+✔ nonfatal knockback changes velocity without minting motion time and reconciles through a fresh damage epoch (22.108906ms)
+✖ respawn searches past a flooded or lava-filled spawn cell before offering collision readiness (20.634019ms)
+✔ grounded flight survives input delay, takes off, and lands on descent (45.86314ms)
+✔ natural-world jump/walk and camera-relative culling remain correct through a negative column boundary (269.274855ms)
+✔ hidden observer bodies never block creative placement (0.538803ms)
+✔ prediction replays equipment and hunger profiles through epoch changes with delayed snapshots (93.63441ms)
+✔ prediction replays delayed snapshots within one centimeter on an unchanged world (44.180692ms)
+✔ real WebSocket bursts cannot accelerate actual Wasm physics (1211.181264ms)
+✔ actual Wasm round-trips high IDs through generation, blueprints, edits, unload, and mesh input (70.65466ms)
+✔ high-state collision, selection, skylight/block light, AO, and packed mesh match equivalent low states (71.475544ms)
+✔ Wasm rejects version mismatches and corrupt/truncated buffers without partially changing state (32.861038ms)
+✔ liquid behavior is independent of old stock IDs and non-solid ladders stay passable (18.337928ms)
+✔ edits arriving during generation cannot be overwritten, and unload/reload rejects old incarnations (24.94032ms)
+✔ a neighboring edit invalidates an in-flight mesh even when its own column revision is unchanged (71.778185ms)
+✔ authoritative native falls apply damage, equipped perks rotate prediction epoch and final-use boots break once (124.011516ms)
+✔ inventory freeze leaves actual water/lava hazards running while room pause freezes vitals exactly (42.031882ms)
+✔ real lava death drains owned grids/equipment once, rejects dead commands and respawns through fresh collision readiness (32.307555ms)
+✔ food transactions replay once across eviction and hunger sprint permission changes use fresh baselines (249.710961ms)
+✔ real Wasm mining earns fixed world ticks despite action bursts, ignores unrelated edits and yields one competing pickup (31.472671ms)
+✔ mining cancels on stale input, replacement at the same cell, focus epoch and changed owned tool (16.58172ms)
+✔ survival forbids catalog/flight/instant removal, consumes placement atomically and cannot replay a dropped stack (15.200433ms)
+✔ real engine enforces tool requirements, wears the final tool once and prevents mining completion during room pause (12.832582ms)
+✔ drop pickups obey solid occlusion and capacity; pause freezes expiry and small-body sweeps match slab collision (20.389818ms)
+✔ read-only participants cannot collect drops or keep a shared container view after capability revocation (15.666835ms)
+✔ two miners racing one block commit one drop and one tool wear, including cached replay after completion (12.383059ms)
+✔ fall history survives focus and room pause, vitals remain private, and fresh spawn after reservation expiry starts a new fall segment (43.490849ms)
+ℹ tests 30
+ℹ suites 0
+ℹ pass 29
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5158.071043
+
+✖ failing tests:
+
+test at tests/wasm/combat.test.ts:239:1
+✖ respawn searches past a flooded or lava-filled spawn cell before offering collision readiness (20.634019ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'preparing'
+  - 'playing'
+  
+      at TestContext.<anonymous> (file:///home/ubuntu/OMplayground/games/voxel/tests/wasm/combat.test.ts:261:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'preparing',
+    expected: 'playing',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

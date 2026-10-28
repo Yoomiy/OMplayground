@@ -1,0 +1,3002 @@
+[
+  {
+    "path": "apps/web/dist/assets/AdminPage-Kf7p1dZk.js",
+    "sha256": "2171ac8c681ca04a6e67742f8ca6ff8fd4496aacfee48a4f802e51379bc21929"
+  },
+  {
+    "path": "apps/web/dist/assets/AlgesEscapadeSolo-BYA0UvfN.js",
+    "sha256": "c99446648045df53f37a0bd7c4ad0fff88205cff22dc643de6bed26b66f4d176"
+  },
+  {
+    "path": "apps/web/dist/assets/AllColorsInControlSolo-7eBing3m.js",
+    "sha256": "7dc1438c794b787d09f8a1f47093d4c2a263df77feb0fd1a56496efee2bbe4a3"
+  },
+  {
+    "path": "apps/web/dist/assets/ar-SA-G6X2FPQ2-CZqte5XX.js",
+    "sha256": "1f4ac65a373291b093dafa50b42ea38b7891d2dd8b30c3738082917d85e019e4"
+  },
+  {
+    "path": "apps/web/dist/assets/arc-DuNcsm6B.js",
+    "sha256": "87363e93547d2ff928d64698ef3ceb139f3edd3016683aec6c0bccc65aef0450"
+  },
+  {
+    "path": "apps/web/dist/assets/architectureDiagram-3BPJPVTR-D0RQo8nE.js",
+    "sha256": "b28185e4f617509a9f71f23df3290c1b298bfd3ba8ce85f4a6bfcf97ed6633e8"
+  },
+  {
+    "path": "apps/web/dist/assets/Assistant-Bold-gm-uSS1B.woff2",
+    "sha256": "e0cdd332ce039770e93ec44336b6db65f931940f42b0342aad35a06e7f991d29"
+  },
+  {
+    "path": "apps/web/dist/assets/Assistant-Medium-DrcxCXg3.woff2",
+    "sha256": "81a9f280ce6a790f20ca8cd521183caa430f1f7fdc0752c36ef1cc6dc828ac57"
+  },
+  {
+    "path": "apps/web/dist/assets/Assistant-Regular-DVxZuzxb.woff2",
+    "sha256": "76945f09225aae65bdbd204cb4ac40d4caa4ff67150e5074bab1a04d1b778fc3"
+  },
+  {
+    "path": "apps/web/dist/assets/Assistant-SemiBold-SCI4bEL9.woff2",
+    "sha256": "bba47a7d1b185a4a2e0d265ec82aeac5dbc2dc9cb0f482a2ff57cbdfe4e5045d"
+  },
+  {
+    "path": "apps/web/dist/assets/az-AZ-76LH7QW2-Bn_tMskb.js",
+    "sha256": "0350fe33dbab3261f76d14da0ed7fe71cbf1d0a69473bd83031416938eda9025"
+  },
+  {
+    "path": "apps/web/dist/assets/Ball2BoxSolo-D__oSSv6.js",
+    "sha256": "9c752543b86e0a16b896582f86bdc5bfc0087e13e8e3f3e0c569da94d9352d8f"
+  },
+  {
+    "path": "apps/web/dist/assets/BalloonPopSolo-Bxv6d1N6.js",
+    "sha256": "5aeee68f3b582d2c4da7b0ae52c870a29ec0fe4b7baaefb2f7b2d42ee6ed3ed7"
+  },
+  {
+    "path": "apps/web/dist/assets/bg-BG-XCXSNQG7-DTRGXODH.js",
+    "sha256": "5e5b499dba1e0981723ebacb69da06220a17dc66b9cffa302e11f795c0d6fa7b"
+  },
+  {
+    "path": "apps/web/dist/assets/blockDiagram-GPEHLZMM-GPUIhg11.js",
+    "sha256": "19725c48ce9e6bba0a1015e041c911bced16eece29bea320cf2156d188e95500"
+  },
+  {
+    "path": "apps/web/dist/assets/bn-BD-2XOGV67Q-DfJUhE_s.js",
+    "sha256": "607c16479e393dc6578b2b33c38e03a1dffb3add4a7cb54297f8c1d9a7d02090"
+  },
+  {
+    "path": "apps/web/dist/assets/BreakoutMpBoard-BthHo49d.js",
+    "sha256": "8a0a86d322cd324d9c3ee273ac56ae0b2b40aea2d560de33be9413ecdb7c00eb"
+  },
+  {
+    "path": "apps/web/dist/assets/BreakoutSolo-BVnktViT.js",
+    "sha256": "38b9b5bafbd37e61f1b162809eed5440f3dcb9a52f4b8f5e240eda9a1e9f2cf4"
+  },
+  {
+    "path": "apps/web/dist/assets/c4Diagram-AAUBKEIU-uq7cKRQ4.js",
+    "sha256": "c0480a8daf6312a2c9b6e477ac8a6fe74863059401f8277eab0a099a6b72cc35"
+  },
+  {
+    "path": "apps/web/dist/assets/ca-ES-6MX7JW3Y-DrrNLg2V.js",
+    "sha256": "c094549d624d7dc2e835c10e8894e9a042c27ee3366ac6ecbdfea3ea6a1a2b6b"
+  },
+  {
+    "path": "apps/web/dist/assets/channel-CG5tednb.js",
+    "sha256": "408f8f63307929374cb5efc4a76ecdfc9aa2de4d63c5d9c22e235238427ec316"
+  },
+  {
+    "path": "apps/web/dist/assets/ChessBoard-CzZnokq7.js",
+    "sha256": "73057f2bf452b2917445466811c25991b13d10e6c51a34a55594c23c5ad08ec0"
+  },
+  {
+    "path": "apps/web/dist/assets/ChessSolo-BxCCr4g5.js",
+    "sha256": "7d21e6591da2cc48133cf7d4d18e95816de963997a7697053592dd3972931244"
+  },
+  {
+    "path": "apps/web/dist/assets/ChromavescenceSolo-iDtHmqTK.js",
+    "sha256": "46bc79713690d0890f094af57a9ddcb1a81d1b0a3176e81d1e9ad938dde92320"
+  },
+  {
+    "path": "apps/web/dist/assets/chunk-2J33WTMH-YRPesxR-.js",
+    "sha256": "93788df4bbabc9e4d6bad0fd11b9e9e68c16bb96e8127ab3611de0939e2f5367"
+  },
+  {
+    "path": "apps/web/dist/assets/chunk-4BX2VUAB-CZWwzVPr.js",
+    "sha256": "0ba9a1e423957df8ac1f9c11191bfdf7d2c12efcbf4b9a7d8353a57f803b1a4f"
+  },
+  {
+    "path": "apps/web/dist/assets/chunk-55IACEB6-BvnbsKue.js",
+    "sha256": "d90954866a91267a8c5bfc67de0f29c762bc15a479044f02f8cb456c49232d57"
+  },
+  {
+    "path": "apps/web/dist/assets/chunk-727SXJPM-DC2HGaM9.js",
+    "sha256": "fe51e3a5aa83ecdd915286d13d31003026026a4c831733f59cc3b119b409404a"
+  },
+  {
+    "path": "apps/web/dist/assets/chunk-AQP2D5EJ-By9VuSx8.js",
+    "sha256": "2b0fc4fabd4191ec8d20ec1f52da765c7f350829ad0ef1ff6e633e2932f6b2ca"
+  },
+  {
+    "path": "apps/web/dist/assets/chunk-FMBD7UC4-zg4SHBRn.js",
+    "sha256": "64d0291b2c146669bbbe2db33f44b788fcc8ac722680ab345d37a065219aa4c7"
+  },
+  {
+    "path": "apps/web/dist/assets/chunk-ND2GUHAM-DbILZUB7.js",
+    "sha256": "d859f086cae1064fba91e572ca06fba9704bdbbbe00644c1cc58534ab424d12d"
+  },
+  {
+    "path": "apps/web/dist/assets/chunk-QZHKN3VN-CyKiybhW.js",
+    "sha256": "f372015c428282445df4a5c672804800bed9e37c1626113aa77d903bc6622c80"
+  },
+  {
+    "path": "apps/web/dist/assets/classDiagram-4FO5ZUOK-Co9jqjqQ.js",
+    "sha256": "fc5865633924ce03a9f411df41d9aea3deb4017583dc8da1516fb543044a1d49"
+  },
+  {
+    "path": "apps/web/dist/assets/classDiagram-v2-Q7XG4LA2-Co9jqjqQ.js",
+    "sha256": "fc5865633924ce03a9f411df41d9aea3deb4017583dc8da1516fb543044a1d49"
+  },
+  {
+    "path": "apps/web/dist/assets/ClassroomEndedPage-DnK4zFSM.js",
+    "sha256": "4d23abd2bc6cca2c187f264ec28e2fd57aad1695a228114c18560220adaf4b75"
+  },
+  {
+    "path": "apps/web/dist/assets/ClassroomPage-BJ4ykke9.js",
+    "sha256": "27789c0d4b96594e4accbc7e8c74ddf2fa7719d1983b27fe2867fa3d80499bad"
+  },
+  {
+    "path": "apps/web/dist/assets/ConnectFourBoard-BiI-zZKk.js",
+    "sha256": "9e08f851ded7037f053823c8a5a3d2e8cffe260dd9c9472150776c44e65c0b2c"
+  },
+  {
+    "path": "apps/web/dist/assets/ConnectTheDotsSolo-CWx1OJo_.js",
+    "sha256": "d4d2bc4fe42742e0a8e1119772d21e75059ec55ebc9bd4847c287f368e5ea73f"
+  },
+  {
+    "path": "apps/web/dist/assets/cose-bilkent-S5V4N54A-BoMrQKap.js",
+    "sha256": "ec2348b079ea8036f510d8656ca2a98382fad9f32eb5deed0ed9fd3879412126"
+  },
+  {
+    "path": "apps/web/dist/assets/cs-CZ-2BRQDIVT-CrBHiGP6.js",
+    "sha256": "7b14d1495866f9782c1c930afa46f10cf807b5c5792f521a50ec7cd10acbb9c4"
+  },
+  {
+    "path": "apps/web/dist/assets/cytoscape.esm-nFXppDBa.js",
+    "sha256": "02d8c38d5dc8b8ff82b290ec117ecf8f6936d5033e373262673a0f6e0936eadd"
+  },
+  {
+    "path": "apps/web/dist/assets/da-DK-5WZEPLOC-B00t5J_v.js",
+    "sha256": "326b689e927d39fcb0baceb76c2c40a3bcb961f1c346ff59664c20adeba306c1"
+  },
+  {
+    "path": "apps/web/dist/assets/dagre-BM42HDAG-BFrFYliw.js",
+    "sha256": "b01b4c8bde4645164008c189ea399f33bc818bded56381aa904e021323279c08"
+  },
+  {
+    "path": "apps/web/dist/assets/de-DE-XR44H4JA-BuqocXou.js",
+    "sha256": "47c6f73cdf57a2b96b43b7748b561c68ea5bdf45636aa5c737408cb8a993cc2d"
+  },
+  {
+    "path": "apps/web/dist/assets/defaultLocale-DX6XiGOO.js",
+    "sha256": "0cefbd76f932c4eea4758d28169802589b1ad15b46607253de4bd82328998ece"
+  },
+  {
+    "path": "apps/web/dist/assets/diagram-2AECGRRQ-DxhbbDxq.js",
+    "sha256": "0bdf90e301b5244c0e9ecdd4d69c3abbe63b8cd04989437a46a634f29ce7fbb8"
+  },
+  {
+    "path": "apps/web/dist/assets/diagram-5GNKFQAL-DKvjqcrx.js",
+    "sha256": "e016b18b7cc92f4af5f2210e7e42e9f8bbf98af916f652b7172709a7934f0120"
+  },
+  {
+    "path": "apps/web/dist/assets/diagram-KO2AKTUF-B3AVBMYX.js",
+    "sha256": "45045d41188740a12ff42a566fad4e47960f80cb8b41e3d2c591c68836ffc522"
+  },
+  {
+    "path": "apps/web/dist/assets/diagram-LMA3HP47-CgYIxaCb.js",
+    "sha256": "e97451c3e1ada752436409e17dd1443fbc1e8192f4611dbaf9d2f4973c94d744"
+  },
+  {
+    "path": "apps/web/dist/assets/diagram-OG6HWLK6-jVdoLEFB.js",
+    "sha256": "cca70ccd13c7e067c038632e50b8d86dfcd55a602c9240ddf4bfbe6538725975"
+  },
+  {
+    "path": "apps/web/dist/assets/directory-open-01563666-DWU9wJ6I.js",
+    "sha256": "968285b95dadf87ac5f4a9690d6b7a60d45d7e1587a5f36bd470dfc6a9748cc5"
+  },
+  {
+    "path": "apps/web/dist/assets/directory-open-4ed118d0-CunoC1EB.js",
+    "sha256": "29fb7f4b70a38cb36ac0e6956b474b4dd12822dcc6e47fb7b89a4f4c238c2f4d"
+  },
+  {
+    "path": "apps/web/dist/assets/DrawingBoard-C512Eb8c.js",
+    "sha256": "478f20ecba1170a0dcfc851cd12d39ebfcb939d27626f631924edf396cba5bb3"
+  },
+  {
+    "path": "apps/web/dist/assets/DrawingBoard-dvxEtgue.css",
+    "sha256": "183939ceb78811549f49718a7bd7e20af5ae2aa2a87d475936ad6bcc48fcb722"
+  },
+  {
+    "path": "apps/web/dist/assets/DrawingSolo-gJTCmZ_l.js",
+    "sha256": "4ec023bf9622e99a89bf7f61a5cfad6d9b23bb8185260d48d1618c92929618b6"
+  },
+  {
+    "path": "apps/web/dist/assets/el-GR-BZB4AONW-DGL0a6FA.js",
+    "sha256": "c6732f8fbfc2467e60548a4fcaa8320a8b5fa63bf28c1b6304beef8c4b2fa79a"
+  },
+  {
+    "path": "apps/web/dist/assets/embed-B7bCmZcH.js",
+    "sha256": "82e68c3a29526bd2f77c239ddb3d0d188f8c5a6d8cac181401fbae20d6efd14b"
+  },
+  {
+    "path": "apps/web/dist/assets/embed-DVW6RJqP.css",
+    "sha256": "708cffb3ae60cca7871296dce5a5cc10568a23f978b4aab138cfee65032511a8"
+  },
+  {
+    "path": "apps/web/dist/assets/engine-worker-CQrkI0k9.js",
+    "sha256": "b9a8fc1f8eed79922ee019869d7057f81ad1bf4e2c6b01ec27debf50cb685c3d"
+  },
+  {
+    "path": "apps/web/dist/assets/erDiagram-TEJ5UH35-CMfbI5-G.js",
+    "sha256": "663e96e030d144573c538d8b656aaf0ac9166022d745b40b8cc15f10ec5a4a05"
+  },
+  {
+    "path": "apps/web/dist/assets/es-ES-U4NZUMDT-Bdg4QnwA.js",
+    "sha256": "93c8c1f9c4f2d42289220fe9ecfa0345caf3f7d2069e06ae08785bd4653cf044"
+  },
+  {
+    "path": "apps/web/dist/assets/eu-ES-A7QVB2H4-BiVOeZh4.js",
+    "sha256": "af4f0ca0683a57c331509e11209e91df76c8cd8c4b1a37535cea18944d402fa7"
+  },
+  {
+    "path": "apps/web/dist/assets/fa-IR-HGAKTJCU-DzxOwyul.js",
+    "sha256": "bff01cc95cde40d973956896d449d8e3c570606593cba4e76884cb0dc28b79b3"
+  },
+  {
+    "path": "apps/web/dist/assets/fi-FI-Z5N7JZ37-7nBMWkqa.js",
+    "sha256": "2c5f71a3aa910b4838fbf2dc05f6466128cb5620db9cb9927be4641fd0f816df"
+  },
+  {
+    "path": "apps/web/dist/assets/file-open-002ab408-DIuFHtCF.js",
+    "sha256": "5f6e37729707b2414d48289f30ba5470e0632a99b0b14322cee97b958a85a3bd"
+  },
+  {
+    "path": "apps/web/dist/assets/file-open-7c801643-684qeFg4.js",
+    "sha256": "0861cb89ded530588a30f6d99f21226748c4aee45253f6bae705bf2ddb9919b4"
+  },
+  {
+    "path": "apps/web/dist/assets/file-save-3189631c-C1wFhQhH.js",
+    "sha256": "5e2a49a1ae8ca0d22e25ce8c06d26b7a7e840b4898c1232b87d79dbe98c8b316"
+  },
+  {
+    "path": "apps/web/dist/assets/file-save-745eba88-Bb9F9Kg7.js",
+    "sha256": "c7b54920d662e13b2e3f1584937af89b8a87eabd5544cad6ee8fa5967802d487"
+  },
+  {
+    "path": "apps/web/dist/assets/flowDiagram-I6XJVG4X-CGKysEMz.js",
+    "sha256": "8049804f123177e0e04ef402ee7578b215864c30304aed9aa4443f896d800b6a"
+  },
+  {
+    "path": "apps/web/dist/assets/fr-FR-RHASNOE6-Cuks1W1D.js",
+    "sha256": "dce7d36557ade0e11c5bd34cbb8940b7da87ab380200db7bc8d65ccce10782b4"
+  },
+  {
+    "path": "apps/web/dist/assets/FriendsDeprecatedPage-CBV6C8Lu.js",
+    "sha256": "eb229271466f79828c07e16405f992c6ccec4f24ee904e72acdc76b22d970acb"
+  },
+  {
+    "path": "apps/web/dist/assets/Game2048Solo-xYqbt3gv.js",
+    "sha256": "6a42143447f5e21e0b2f8d692329fc43cf29bba4e8cec806a0e19b73abccfb46"
+  },
+  {
+    "path": "apps/web/dist/assets/GameSessionInspector-BqcHThBa.js",
+    "sha256": "47df93797c23c587e2ddfcffbd72fdf8816a0669326585311acb131de142c491"
+  },
+  {
+    "path": "apps/web/dist/assets/ganttDiagram-6RSMTGT7-DdTSzDV9.js",
+    "sha256": "e4342b9235c0d91efc67b94d69c5b0cdb577ca76dfba0a595510e8ae420c9c02"
+  },
+  {
+    "path": "apps/web/dist/assets/GetThatBitSolo-BYIhSYrX.js",
+    "sha256": "3221a4ba481253fb10dd2ac2e46e5c1704a8c5f20f4ccfa560a198687bdcb07b"
+  },
+  {
+    "path": "apps/web/dist/assets/gitGraphDiagram-PVQCEYII-BmpMIiBU.js",
+    "sha256": "eb081b064fce9d49a7dfbbb3443c34af7682d7b3d3dbccd4c313e2454a241ec9"
+  },
+  {
+    "path": "apps/web/dist/assets/gl-ES-HMX3MZ6V-CxJSEpxI.js",
+    "sha256": "0ba2c20ad8c5bfa28c579eaf6760bc67c84ff75441eb5c441ed6026fcb3060fe"
+  },
+  {
+    "path": "apps/web/dist/assets/graph--OzhPTMs.js",
+    "sha256": "5261fc87111fd83a6182da4c8e0489ff6b8e23ae9dceef7525d7b203aa14146e"
+  },
+  {
+    "path": "apps/web/dist/assets/GravvitySolo-D37sYwhl.js",
+    "sha256": "f258609bc257cdf57607db1220307632e85daaf1d0dc66bfa3fcb840c83df96a"
+  },
+  {
+    "path": "apps/web/dist/assets/he-IL-6SHJWFNN-BKku-q3F.js",
+    "sha256": "fbe7df8b3b7921f1752aef2f9e438e4654b7eab306a7565ed6c7f5e0a0b91b3b"
+  },
+  {
+    "path": "apps/web/dist/assets/HexGLSolo-CH3kFjLb.js",
+    "sha256": "03dc6b5c4f1cdbc004abe5b8a6be6116caed1be765abddb458e5f4a6ec1f6f19"
+  },
+  {
+    "path": "apps/web/dist/assets/hi-IN-IWLTKZ5I-c5nfNwWP.js",
+    "sha256": "0c4af8a285dd4347c5b00b7c4444d92d3666b0bf5dff9041e6634ea25a719fd1"
+  },
+  {
+    "path": "apps/web/dist/assets/hu-HU-A5ZG7DT2-BryOlaKm.js",
+    "sha256": "7f4c6016759900d3055103e7bb33aff7244089c03772a705569475927e97d980"
+  },
+  {
+    "path": "apps/web/dist/assets/id-ID-SAP4L64H-rnwVE_DD.js",
+    "sha256": "4c8c1b9ea268a58fa843c98ea40ca6ce002a55f4d3fab6edb4270a9c922c4b7e"
+  },
+  {
+    "path": "apps/web/dist/assets/image-blob-reduce.esm-D6s-rqMO.js",
+    "sha256": "8080989385ba4b34f074cb03de2a192fdc3d4eb924c10268c46612f662c4022c"
+  },
+  {
+    "path": "apps/web/dist/assets/InboxPage-DdQe8PVk.js",
+    "sha256": "51e204c9ac474d46d7501887af7e11aa665d84121f5655146ac9a360ada40563"
+  },
+  {
+    "path": "apps/web/dist/assets/index-2XBCymhB.css",
+    "sha256": "9543551f192a2cfe82a41a512b81bbe3facc3c4dd115cb5c33b72c5c5f3fd97d"
+  },
+  {
+    "path": "apps/web/dist/assets/index-Cmvj0ytI.js",
+    "sha256": "f59f0d5d5d5b8f48f8f53fd034ea869d47a78c32e676f3997c9f4cd98725c772"
+  },
+  {
+    "path": "apps/web/dist/assets/index-FJwvLjpa.js",
+    "sha256": "02ffc545dda5877fefda04e43f2d697223c142d7cc7542628d490921f74b8f9a"
+  },
+  {
+    "path": "apps/web/dist/assets/infoDiagram-5YYISTIA-C35_OyW3.js",
+    "sha256": "abc9090979bc3b2e6aed93be0fd347ae4cac1643e7f9062e6745ad2e821e7209"
+  },
+  {
+    "path": "apps/web/dist/assets/init-Gi6I4Gst.js",
+    "sha256": "379fa880c14ad48f43b0c23ff56b30b2b808e8460fd9f9cad8bf7cb278c5b814"
+  },
+  {
+    "path": "apps/web/dist/assets/ishikawaDiagram-YF4QCWOH-Ct0LHjDy.js",
+    "sha256": "5ac9f1db04c1201709d49ba6fa3bc4346501ec22afcb419a5b380678d398c435"
+  },
+  {
+    "path": "apps/web/dist/assets/it-IT-JPQ66NNP-JBRkxbGO.js",
+    "sha256": "1f1225939d030515ec3a3b978b2bd8f35d0719a121ddac4b69246b5c424ca1d1"
+  },
+  {
+    "path": "apps/web/dist/assets/ja-JP-DBVTYXUO-D1cmhj_Y.js",
+    "sha256": "08ce0bc0a885fdba22397727e0550b91a3330bad2af9d1d7ea7e42c8989197cd"
+  },
+  {
+    "path": "apps/web/dist/assets/JoinByCodePage-Phnx9Nio.js",
+    "sha256": "c57654360a37cd70eb6e4edcafa4b8087e5dac2ece4886f24e49cc626b7f5b21"
+  },
+  {
+    "path": "apps/web/dist/assets/journeyDiagram-JHISSGLW-2n3dGL5Y.js",
+    "sha256": "98b41cad60fba4b0d925b2c19327cadd4f66a2b31e78832117f7f0063291f040"
+  },
+  {
+    "path": "apps/web/dist/assets/kaa-6HZHGXH3-94g1B1b-.js",
+    "sha256": "39eadfc3295fcc3bd6e220e8ff5d4fd24c66a08f58fda318e1982a76700a386e"
+  },
+  {
+    "path": "apps/web/dist/assets/kab-KAB-ZGHBKWFO-CIW6TPX1.js",
+    "sha256": "822cac871cd116b60d1da7038ee6c0b04b53523a8ad84855e1feaf9f11496ad4"
+  },
+  {
+    "path": "apps/web/dist/assets/kanban-definition-UN3LZRKU-Qj-Eiz6N.js",
+    "sha256": "64d729b0bad3da80b06abd349fd824d1639f35dfc21f1c1ad04d30034cf5e0fd"
+  },
+  {
+    "path": "apps/web/dist/assets/katex-HP8lGamR.js",
+    "sha256": "0b89c21cb463fd8180e300cb79a3e9e538accb78df5bdec67f0cbba4bdb7949e"
+  },
+  {
+    "path": "apps/web/dist/assets/kk-KZ-P5N5QNE5-DhvbRlEe.js",
+    "sha256": "84347ff08e6320b9af8c365970c4fa7380640327f2e859c008d04410b2e4f3cc"
+  },
+  {
+    "path": "apps/web/dist/assets/km-KH-HSX4SM5Z-CklBaDpM.js",
+    "sha256": "9178b68f9046c4ca4afdfb45cdd530a1a9f93f76b57022fd6a8dbab8220258a6"
+  },
+  {
+    "path": "apps/web/dist/assets/ko-KR-MTYHY66A-Bz_vbdA4.js",
+    "sha256": "fc5a9cdb57e6f3a8a689598d822d737572e5cfbbfe6648610a698625b24ed23d"
+  },
+  {
+    "path": "apps/web/dist/assets/ku-TR-6OUDTVRD-CDrEM3RN.js",
+    "sha256": "ef6e64a14f0a928f93372b04c0c578cffbac6a122b3bd7f7200383f66afc18fe"
+  },
+  {
+    "path": "apps/web/dist/assets/layout-SsrduOYp.js",
+    "sha256": "3ca0ed2a2fae4e1be6e78dd3e1823f02c84d4e60fea91aa5f77f740e46e0ac82"
+  },
+  {
+    "path": "apps/web/dist/assets/linear-Bs43hrwi.js",
+    "sha256": "a36f546c09dcb711bc3627a8405d7cfb863eb24e1940d9f5a9f18eafcef1467e"
+  },
+  {
+    "path": "apps/web/dist/assets/livekit-client.esm-UEx6wa4N.js",
+    "sha256": "7d17f5a5adefc5fd1e125c0580a21324bb190a92552f34cc3fcdd09f7e983974"
+  },
+  {
+    "path": "apps/web/dist/assets/lt-LT-XHIRWOB4-DNM077uK.js",
+    "sha256": "b938f7df76d6634bf039c33cd42d25a86bf1e51e58bb47cfe716335d9ed4c4d3"
+  },
+  {
+    "path": "apps/web/dist/assets/lv-LV-5QDEKY6T-DkGjCSAj.js",
+    "sha256": "355cbbaa83e9cd59160767e7283a070e49a87eeb859b249dedb324bb0c25f26a"
+  },
+  {
+    "path": "apps/web/dist/assets/MemoryBoard-DW35-N6p.js",
+    "sha256": "f5a162adc8757296886812f0ea07a405cae9b3b32ab83318ba1ee1ea7110b526"
+  },
+  {
+    "path": "apps/web/dist/assets/mindmap-definition-RKZ34NQL-n3H98_Gj.js",
+    "sha256": "203488b8516d7dcbcfa228d6fad47d3e9c4453a3a279e445a70d2b8db7520ad9"
+  },
+  {
+    "path": "apps/web/dist/assets/mr-IN-CRQNXWMA-DYDYTadY.js",
+    "sha256": "a572f7c27bd61d4b33284c0bb642a254ae19a1e7a127e888a8b05623e6d48bba"
+  },
+  {
+    "path": "apps/web/dist/assets/my-MM-5M5IBNSE-ECPGndB4.js",
+    "sha256": "89235d15530c4cd286116dba5737024c920480c7c317f9952069ad2e4a97e134"
+  },
+  {
+    "path": "apps/web/dist/assets/nb-NO-T6EIAALU-CBEWpv4J.js",
+    "sha256": "19ba3a20bb5acf562c9c48b517f3723c0ca229f0204b6e7d5f497a199f36d06b"
+  },
+  {
+    "path": "apps/web/dist/assets/nl-NL-IS3SIHDZ-4TsBp12U.js",
+    "sha256": "d57df7b39ef739a871310d5c9ccc0c416f7035f07c01c4c6f5bbb36334c9514f"
+  },
+  {
+    "path": "apps/web/dist/assets/nn-NO-6E72VCQL-JLsQnctO.js",
+    "sha256": "c2429a91a36a46cc3818eaf904116561d998993e2e8b795d61d4814a4e37a36a"
+  },
+  {
+    "path": "apps/web/dist/assets/oc-FR-POXYY2M6-GEH9KCk3.js",
+    "sha256": "d4be3a502b6ac3ddecd4110a89c2dd6996580a3239e5463b458bb01a1514b7e2"
+  },
+  {
+    "path": "apps/web/dist/assets/OctogoneSolo-D7KRrgEC.js",
+    "sha256": "84bb742f07b413e51e6c1ae1af2ea516370dba434ff392e045c4c75e4a8589cb"
+  },
+  {
+    "path": "apps/web/dist/assets/ordinal-Cboi1Yqb.js",
+    "sha256": "71be569ce2355b7f256a834b3a4c11668fe80a880b3587c1b3b14e9e5dedf478"
+  },
+  {
+    "path": "apps/web/dist/assets/pa-IN-N4M65BXN-DFy93HSz.js",
+    "sha256": "4b077d08ae69760f9142ede0f83b313496e66ac39d57d0a2d019b9ae400a1592"
+  },
+  {
+    "path": "apps/web/dist/assets/PacmanCanvasSolo-C43c43H5.js",
+    "sha256": "237da22e341fa77ed1fc3bb11b4b03da4cccd0fc6e22453871f2a08cbd582f8f"
+  },
+  {
+    "path": "apps/web/dist/assets/percentages-BXMCSKIN-BGyEW7mD.js",
+    "sha256": "e439ff9d8c838117e7743a74c1329e76539ef378eeb3e71f3629d473fab175fa"
+  },
+  {
+    "path": "apps/web/dist/assets/pica-CNDMTI5k.js",
+    "sha256": "714b82962329d1d566e8c32ceada70b21e857af61af17a37ff935416f8a059a7"
+  },
+  {
+    "path": "apps/web/dist/assets/pieDiagram-4H26LBE5-3zVuV_75.js",
+    "sha256": "9d28501cf19dd444f2b3fce268fd64afab76530cffb6e93396e4fa4b0344cea8"
+  },
+  {
+    "path": "apps/web/dist/assets/pl-PL-T2D74RX3-Bq5gRPBu.js",
+    "sha256": "8e37b3a4fd613b758edf2e3277f8f290ffeef80ec03ffe2ed6b9efbba55cb266"
+  },
+  {
+    "path": "apps/web/dist/assets/PlayPage-fXKoCo5i.js",
+    "sha256": "68c93d785e383926966f10370e93b60466ada86e45b0542fa90c186d46a57562"
+  },
+  {
+    "path": "apps/web/dist/assets/profileApi-DavzZFSq.js",
+    "sha256": "65dccd083e1b4580ef2fc76b730fd588460c2316e792ea5d8f4ceecc26c1c7d4"
+  },
+  {
+    "path": "apps/web/dist/assets/ProfilePage-B32DAeRA.js",
+    "sha256": "132207c97f07af2dc25688bd28ace53e4d736e8cd2c4002a42c7d5a641b91d5c"
+  },
+  {
+    "path": "apps/web/dist/assets/pt-BR-5N22H2LF-BR8UhWSf.js",
+    "sha256": "0095d14a1dcf75ef77e505b3828d88ae7a361c55999cd925f43af9732b94e5a7"
+  },
+  {
+    "path": "apps/web/dist/assets/pt-PT-UZXXM6DQ-CjACChQq.js",
+    "sha256": "64326055510b3e9ce7ffb80c7b7f0ad4ab58d5c1db8c708fdfc9b9d0f9255b4a"
+  },
+  {
+    "path": "apps/web/dist/assets/PublicProfilePage-DYPzzHnH.js",
+    "sha256": "25901800855a4da5aba0f156a9d60d5534a95d092e10226bc2c7c481fc333a39"
+  },
+  {
+    "path": "apps/web/dist/assets/quadrantDiagram-W4KKPZXB-BxWEundz.js",
+    "sha256": "8252b52526f14743d919e1d728672e37215412d50bf8df28b844e49ebd0d9928"
+  },
+  {
+    "path": "apps/web/dist/assets/react-vendor-Mngj-Wa9.js",
+    "sha256": "d3933129cc066da3f58c9057395537cb250fce10c5d45071d50567cd44b45d23"
+  },
+  {
+    "path": "apps/web/dist/assets/requirementDiagram-4Y6WPE33-7f-JkX2l.js",
+    "sha256": "14d28af7e66fb98ff35d94f5a6ed93e74310416e5e5193b7424135c5fc059e85"
+  },
+  {
+    "path": "apps/web/dist/assets/ro-RO-JPDTUUEW-CYDI6S86.js",
+    "sha256": "64e5796b110e121c2caee7bc98152a9788f42be9a8744913410e3fa774cb890e"
+  },
+  {
+    "path": "apps/web/dist/assets/roundRect-mAH3dD0p.js",
+    "sha256": "5af26e9bebb775d4bcab82e005eb5bd47a4a1527c5dc8a42bf776c86dfc121d6"
+  },
+  {
+    "path": "apps/web/dist/assets/router-vendor-nkvnK_5w.js",
+    "sha256": "5a82eb302f2453a856dfa4574b0fd0c0aa18c13c2730c036c1135abe6ab95969"
+  },
+  {
+    "path": "apps/web/dist/assets/ru-RU-B4JR7IUQ-CLiByqng.js",
+    "sha256": "75f29d0ae026ce5ec793bf568c4563747014da9f159429d301217ddc87f53c40"
+  },
+  {
+    "path": "apps/web/dist/assets/sankeyDiagram-5OEKKPKP-BKX3Benr.js",
+    "sha256": "1f7b3a95733217a21fc1a4f56349c0c4126608a81f9f45a14237c402522eae0b"
+  },
+  {
+    "path": "apps/web/dist/assets/sequenceDiagram-3UESZ5HK-CKS2-Iys.js",
+    "sha256": "eaecb87eaca2e63b8064d77100cb9d93a55e13171b5adb0c8291b8115fbff97f"
+  },
+  {
+    "path": "apps/web/dist/assets/si-LK-N5RQ5JYF-CBSdzRGo.js",
+    "sha256": "30f9a0338ff437bb65e5aa4ca426fe35f04c9788ce83f2131cf0fba3427767db"
+  },
+  {
+    "path": "apps/web/dist/assets/SimonSolo-C43T12iE.js",
+    "sha256": "200cd8b385b2e78157ed13eef38575587cd00b086659bb604311ea221c0ba2cb"
+  },
+  {
+    "path": "apps/web/dist/assets/sk-SK-C5VTKIMK-Bh8TsCV2.js",
+    "sha256": "7d5040a6fc82d7609fd9fe517af871e9f8cfc7c8958c6781dcbc5f07324e75e0"
+  },
+  {
+    "path": "apps/web/dist/assets/sl-SI-NN7IZMDC-yGBql2gD.js",
+    "sha256": "aadcea794462d074db2952cb7d0e0b8b0640b936f7a8de5c909da47da67795c3"
+  },
+  {
+    "path": "apps/web/dist/assets/SnakeSolo-DRPh5Qbb.js",
+    "sha256": "62c5b6adc1f4075fc0656c2355ab3fc23bc1fd06c9ce8407f3f6a8d79bee0d05"
+  },
+  {
+    "path": "apps/web/dist/assets/socket-vendor-BIIei4U1.js",
+    "sha256": "7b47026ceb2f650debca4a74c0791eaaee2852d420a821ccc7c49b5a958b38f7"
+  },
+  {
+    "path": "apps/web/dist/assets/SoloGameContainer-CXMbqDy0.js",
+    "sha256": "5fc4298aa13fcec38626956df5f676697781ed8c7431ea871e73ceca8e84b062"
+  },
+  {
+    "path": "apps/web/dist/assets/stateDiagram-AJRCARHV-wWIztMsN.js",
+    "sha256": "622ab49fef7590560d4ddd472dc85d5e8aa767e3e71e6f4ea6a0635a2630ecec"
+  },
+  {
+    "path": "apps/web/dist/assets/stateDiagram-v2-BHNVJYJU-B12yAYRC.js",
+    "sha256": "7f9eac5f208b08ade381693db37362802060a387ca6a9a8b52c8af8b64eceaa5"
+  },
+  {
+    "path": "apps/web/dist/assets/subset-shared.chunk-CFMl-yKm.js",
+    "sha256": "92410e01dc69d3949996fd76caced520e26eb43e92c7d40c8bce4cd66e9781e8"
+  },
+  {
+    "path": "apps/web/dist/assets/subset-worker.chunk-BGtENlqW.js",
+    "sha256": "0be16b48cb708eee6e37b06766eec932a013afea22a8a287be74e918ccf0026d"
+  },
+  {
+    "path": "apps/web/dist/assets/supabase-vendor-Bj90UvkW.js",
+    "sha256": "ad84583eb503b9b96cd657e6aeac0e298859f3a6fddd32a674c932e4cf432607"
+  },
+  {
+    "path": "apps/web/dist/assets/SuperTuxClassicSolo-Djvvjn4P.js",
+    "sha256": "8b59e8992340eec8525160c7ba22a516fec967158f734d994b6e232b049669c1"
+  },
+  {
+    "path": "apps/web/dist/assets/sv-SE-XGPEYMSR-DiYolQbN.js",
+    "sha256": "b696bd2ca34575e25ba63566965020c6e44f596e26ac7be64a9b106820cbb1a8"
+  },
+  {
+    "path": "apps/web/dist/assets/ta-IN-2NMHFXQM-SYhGItyQ.js",
+    "sha256": "b6309926de5e4a3eb6d8478932687d375862010f6727c2ae8adea6e43bc81bb9"
+  },
+  {
+    "path": "apps/web/dist/assets/TeacherPage-BnK5G7OA.js",
+    "sha256": "cf71f72540cd1ee8101d6498552582114642e24be20c2a87bff570ef658d9adf"
+  },
+  {
+    "path": "apps/web/dist/assets/th-TH-HPSO5L25-ehgA9hve.js",
+    "sha256": "4b87571aeaa73fd6655333d9ff370ed7db4b9429af76e58d4f5c5ccbfaa20647"
+  },
+  {
+    "path": "apps/web/dist/assets/TicTacToeBoard-feHvXOAr.js",
+    "sha256": "fc75101044739ed95a2cc7b1b25a9d3aa2d3524953ecc93bb24b3b2a20f2c4ed"
+  },
+  {
+    "path": "apps/web/dist/assets/timeline-definition-PNZ67QCA-Br6Ok8s9.js",
+    "sha256": "ace6db70824a6f3f3ace885c7732e20855c7fa46d9811a7c78709b1d9c2f2e6b"
+  },
+  {
+    "path": "apps/web/dist/assets/tr-TR-DEFEU3FU-DNKHElNG.js",
+    "sha256": "fb0af2ab83219a0f480c42830b14649521b98d48dc4ef6a23e1cb9beb89fe411"
+  },
+  {
+    "path": "apps/web/dist/assets/uk-UA-QMV73CPH-DymzMmBE.js",
+    "sha256": "c6f2f3c82faaef643be61d29bdeef4c19a7092d14af28cbe186863265cf6337d"
+  },
+  {
+    "path": "apps/web/dist/assets/useSoloAutoSave-BqpCVxTW.js",
+    "sha256": "dd4a324ee9d2aac097d878731c123121ba77404608316066ef1358e522ac76f3"
+  },
+  {
+    "path": "apps/web/dist/assets/vennDiagram-CIIHVFJN-g01TVp3J.js",
+    "sha256": "2357348deddac87e8d8dd539f7dcef6fe7463102142b1fb4345ece3322e79db4"
+  },
+  {
+    "path": "apps/web/dist/assets/vi-VN-M7AON7JQ-8JAD8N_R.js",
+    "sha256": "093f6b5e725c56dd5dd89f98fef85d56a85e369abf71d94c41b3c42c62cdaf1e"
+  },
+  {
+    "path": "apps/web/dist/assets/voxel_engine_bg-1ejYMYOZ.wasm",
+    "sha256": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+  },
+  {
+    "path": "apps/web/dist/assets/VoxelSessionContainer-BHD1Hu6H.css",
+    "sha256": "caaf964986b1e0c8109b1354a491fe2824414f351bca9d0ad2f5336cc81411f4"
+  },
+  {
+    "path": "apps/web/dist/assets/VoxelSessionContainer-DES1g5KU.js",
+    "sha256": "cccb0a0bceb2f8aae4e76b94aea10e15564ae15d38705c834774d240daba04aa"
+  },
+  {
+    "path": "apps/web/dist/assets/wardley-L42UT6IY-DSGPzdvz.js",
+    "sha256": "ac7295d3a585496dafcf6424c4ffcf1f0efb4bac611595eeec19e369dd8b717a"
+  },
+  {
+    "path": "apps/web/dist/assets/wardleyDiagram-YWT4CUSO-DMeHdRhL.js",
+    "sha256": "9286f88727ff71f8d70d1816b83413a9191d7ef3d2abcdc18e6789a311bcbd20"
+  },
+  {
+    "path": "apps/web/dist/assets/WhackAMoleSolo-D1z9TVg1.js",
+    "sha256": "ead4a6e02bfd246d3fdf21ba748fecbb459c3069bed31ed26d3f91e72b14f9b8"
+  },
+  {
+    "path": "apps/web/dist/assets/xychartDiagram-2RQKCTM6-xKl_rwZb.js",
+    "sha256": "59b175f38934d584584f91ea90f4de406e147017bc713cd81278537e05c80f69"
+  },
+  {
+    "path": "apps/web/dist/assets/zh-CN-LNUGB5OW-D_6P8fhZ.js",
+    "sha256": "4392c160f7b3fa9bab3bbd1ee250686a3af33a61bb68f11aad338ab8ecec766e"
+  },
+  {
+    "path": "apps/web/dist/assets/zh-HK-E62DVLB3--SK5u1Fw.js",
+    "sha256": "7b44a1589ac8cadc0d15910e26d094d13d146b92cae5a0961c9826cf7d76af59"
+  },
+  {
+    "path": "apps/web/dist/assets/zh-TW-RAJ6MFWO-DrFHMhxG.js",
+    "sha256": "2617d7a275a21ed3775a1e503f61270c6989d1323d55e0eb38d31d75147316e4"
+  },
+  {
+    "path": "apps/web/dist/games/rocket-arena.png",
+    "sha256": "29096b4a27baab6b11d07aa7c55107d4492543b608008908c5042512ae7835ef"
+  },
+  {
+    "path": "apps/web/dist/games/wobble-rush.png",
+    "sha256": "560007b4f302dc33ed0604c2d2380efef51dedc92f0a4a61a5d60982e38f8d95"
+  },
+  {
+    "path": "apps/web/dist/index.html",
+    "sha256": "4435665ca2ae92a553eca22933d9f6b2368c2e9ca5e7427517a1f711e540e8c5"
+  },
+  {
+    "path": "apps/web/dist/legacy/2048/favicon.ico",
+    "sha256": "392935e5853c28b5cd4ebd9ee2fc06bcfd87523c1e4bf059d948dcd0b5708b00"
+  },
+  {
+    "path": "apps/web/dist/legacy/2048/index.html",
+    "sha256": "c38d5095bf84eef685cd7f4afc97887aef6b170925c04c6e548b6e2f3c0a4e71"
+  },
+  {
+    "path": "apps/web/dist/legacy/2048/js/animframe_polyfill.js",
+    "sha256": "b97db8f8973c6c883d415e376f15ba657971e5704c8ecfd62e62a9adfec2792e"
+  },
+  {
+    "path": "apps/web/dist/legacy/2048/js/application.js",
+    "sha256": "75232b1743b18c3abde1324b628df8901e3634b1acc64e77a9de5810739fdce0"
+  },
+  {
+    "path": "apps/web/dist/legacy/2048/js/bind_polyfill.js",
+    "sha256": "90e671a58a24122ffac4fc28b9a967a3769398c906c348568bf731118d7fdf52"
+  },
+  {
+    "path": "apps/web/dist/legacy/2048/js/classlist_polyfill.js",
+    "sha256": "6abb09a37567fb3735e95d7096d30a01190a8eee016c781d51ae6b8b037261cd"
+  },
+  {
+    "path": "apps/web/dist/legacy/2048/js/game_manager.js",
+    "sha256": "b4cef767c132c649054338cc3426d2d1da0c593eb6b15a148334d6ebd24f994f"
+  },
+  {
+    "path": "apps/web/dist/legacy/2048/js/grid.js",
+    "sha256": "169428f5ff7f726c38112fcf1c918028cbca3a1d9f9239838fbc7eb4396b9f9a"
+  },
+  {
+    "path": "apps/web/dist/legacy/2048/js/html_actuator.js",
+    "sha256": "67b796d4f640b927e517b2281f8230c4f65c08b07558001e2c0dc9ea2e2145cf"
+  },
+  {
+    "path": "apps/web/dist/legacy/2048/js/keyboard_input_manager.js",
+    "sha256": "7d579ab5b67dddf339cf28a7d06e4e24eca08b0187204ce352d67c49ae1e48de"
+  },
+  {
+    "path": "apps/web/dist/legacy/2048/js/local_storage_manager.js",
+    "sha256": "8e12c6a9aa34097c0b634b1f6690da091b1b4ac158ff914097a8ac83c86b5bc6"
+  },
+  {
+    "path": "apps/web/dist/legacy/2048/js/tile.js",
+    "sha256": "13699e51d62179a6d36874108831a29901a98d6e11329918e64cfb5ee82d58e3"
+  },
+  {
+    "path": "apps/web/dist/legacy/2048/meta/apple-touch-icon.png",
+    "sha256": "d7b9d5872e420480a4b93134b095dbbe8f035fdf9ec2154971bc28e0a4d897b2"
+  },
+  {
+    "path": "apps/web/dist/legacy/2048/meta/apple-touch-startup-image-640x1096.png",
+    "sha256": "76eede71ed7b0fdf2995352fd685498a70cbb9109fb09fd693ef79e6f2cee6a6"
+  },
+  {
+    "path": "apps/web/dist/legacy/2048/meta/apple-touch-startup-image-640x920.png",
+    "sha256": "a5c99e300ae48deec8a3d7e8598093ee60747d094ba6ad8d8f5e0c910afcd694"
+  },
+  {
+    "path": "apps/web/dist/legacy/2048/style/fonts/clear-sans.css",
+    "sha256": "ada5fc5f508d57bf4f8d32ac354f1ebfc25b75c991948aa920f9d25defea5307"
+  },
+  {
+    "path": "apps/web/dist/legacy/2048/style/fonts/ClearSans-Bold-webfont.eot",
+    "sha256": "820a4c29047173d9284d9cdba13e8c2788b76b06cf2efb7b3d2841966a11b2c5"
+  },
+  {
+    "path": "apps/web/dist/legacy/2048/style/fonts/ClearSans-Bold-webfont.svg",
+    "sha256": "a669c919329969e1538d8bce550d37495587be1aceb587242eac901f4abaae36"
+  },
+  {
+    "path": "apps/web/dist/legacy/2048/style/fonts/ClearSans-Bold-webfont.woff",
+    "sha256": "b16e36cc53aa72023c67ab31c38290de77905dd2285f331189b2236100b8f849"
+  },
+  {
+    "path": "apps/web/dist/legacy/2048/style/fonts/ClearSans-Light-webfont.eot",
+    "sha256": "77ef51b080b166fcf499df857408a5ba77acc5289053a8684d152aa0a2741e06"
+  },
+  {
+    "path": "apps/web/dist/legacy/2048/style/fonts/ClearSans-Light-webfont.svg",
+    "sha256": "5080487cca23fe9b6dae38256b7b4f6ff714e91861ccb9f01c43b9ef84069f71"
+  },
+  {
+    "path": "apps/web/dist/legacy/2048/style/fonts/ClearSans-Light-webfont.woff",
+    "sha256": "465697ff07395574f9771970ca020bf64019dfbd96c2c64ba419c5d074336d90"
+  },
+  {
+    "path": "apps/web/dist/legacy/2048/style/fonts/ClearSans-Regular-webfont.eot",
+    "sha256": "4d1fe136c3c876669fbfb56c419ca7d875bce3c133999021b67588520d98963d"
+  },
+  {
+    "path": "apps/web/dist/legacy/2048/style/fonts/ClearSans-Regular-webfont.svg",
+    "sha256": "5d7fbc7adb4b5909809d02e48db0981c11ff99981b9e2bdecbca51d90cb057b3"
+  },
+  {
+    "path": "apps/web/dist/legacy/2048/style/fonts/ClearSans-Regular-webfont.woff",
+    "sha256": "8c94cd2fdc93f5a86f1761c0ce14bb695f20e16dc1a585ccad7f0289bd3dbc76"
+  },
+  {
+    "path": "apps/web/dist/legacy/2048/style/helpers.scss",
+    "sha256": "4ff6b7bd784c8c914f3a62be3c492e276b36ad4bf47170d74247234e6920bdc5"
+  },
+  {
+    "path": "apps/web/dist/legacy/2048/style/main.css",
+    "sha256": "2e0fd51d6950afe1cb0af861f92b9d01111e56b825aa46de9475e8afa1a13f1b"
+  },
+  {
+    "path": "apps/web/dist/legacy/2048/style/main.scss",
+    "sha256": "197c634a51c1b8063515d18e628e22c85d6a6f75c78f8e63f911c6234d6aabe6"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/css/main.css",
+    "sha256": "52d685e13abbef2d8c0e9e65e540cfeefb6061b5c0ca819656de663ccf2bb35d"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/apple-touch-icon-114x114.png",
+    "sha256": "0ad8877cb9560a53f4452a32e960cf00e8232980e805ad555ed26b91e94dea10"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/apple-touch-icon-72x72.png",
+    "sha256": "c9c6f2ca982e4381e197366f7286fc0b9b1a9ba5fbaf4e365c8e74a1c7762a4f"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/bg.png",
+    "sha256": "29dca00ebb27217ce4546512b124d4af25a89991772a6b4e28f6e58783dcfce3"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/blank.png",
+    "sha256": "d354020e718be23d4fe14afdf4a5062551f0fa1c9c90ba230d5b802b0d43b758"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/door.png",
+    "sha256": "fb72d9480743011172aa84db58b03a5ece4dd5c0060deb5fdd2848882d55463e"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/end.png",
+    "sha256": "6f39959c08e6c66807b3a7c5da11c9debefbb500c52cfd69fdc4b379b276a91b"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/favicon.ico",
+    "sha256": "4a89d1b5d99001234ee737f2b87d4477e565ea464c947ba5928c129a7182da4b"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/game-window.png",
+    "sha256": "fe08bd3c7c7b5bd753bc098fa10a5a04c2e958b89d3c415ca9ade2059440ef58"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/goal.png",
+    "sha256": "22421ce82f3c5df2c09a8a831caea13e34d68b238c0b1d1672a3fbd984733f95"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/loading-text.png",
+    "sha256": "57e958a7316bbcc56166c040780a4522cb4107b1111cd0a40d9eb1965327632d"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/loading.gif",
+    "sha256": "4f975219f373a411b05c789b2826f4fc5ed43d0bd0302245f1116879c3d56fec"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/menu-button.png",
+    "sha256": "03d36bd84fd676054de4e72f2e90a184226eb4d5b38cc92d63347e44ba9a416c"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/new-game.png",
+    "sha256": "9f270f48d7e579dfcb99d80543b21d3124586922f820c0221857e8ef894e25b2"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/next-button.png",
+    "sha256": "17464ba921cd2a219267210cb2d0e1e894a6193ee4b77ea2e8ac4337b484a954"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/platform-left.png",
+    "sha256": "be8bcb50833677f1d56bd4f67e51461ec8fd03ed5112dd632962a5654ffb44a5"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/platform-middle.png",
+    "sha256": "1bd8ed9a560abb63277337fd52b5a49ffbb13c7a77eb9335b7f6a9e847b1a98c"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/platform-right.png",
+    "sha256": "9db022f57adffcf7b488a698b04913eaed5410a7d18be75e4a961ec83eafcf3b"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/player.png",
+    "sha256": "8398e21dcf22badb65d02f42e7869d37e3185363fd541396041c5dc3aa24b5e8"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/reset.png",
+    "sha256": "69e24c7ee2189423f1ee0417eac82af8e12ac507c2502ed3463ee3144c4cf2b9"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/scorecard-background.png",
+    "sha256": "8a00a1f073e84781e8cc4a7f1523ffff33895084529f994a7919846db09cb63a"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/screenshot-1.png",
+    "sha256": "d8a653791baf63e079fce82d90686dc2ccd8b0115fcb2576a4e984202ff4546e"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/screenshot-2.png",
+    "sha256": "004968096c6d6be95a3a3d06d85c4c52610bdd8ff6785163b3b6af5a4a2c9a1c"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/screenshot-3.png",
+    "sha256": "8abeed0f78bea6ba0196676e176aa4987d2a1ceabf3900a82133a411ae60a2f2"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/screenshot-4.png",
+    "sha256": "325335dfce6fdb9e65c68e0757566143a0ec453a747c2261184b22d5e772f07f"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/selected.png",
+    "sha256": "d7d595760c2651354c4833f7ab330ad4ae31ec1c70c7b1ddf33ca6dd90682071"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/splash-screen.png",
+    "sha256": "2d53d9f39455a4ed84cb45bcf4654b462b7fda27c021827ac2ccd61cfe3782b1"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/star-off.png",
+    "sha256": "89bdde239993abc2c826722347d07b8bcaf1035089ce74d9e1c6601e38bc40e8"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/star-on.png",
+    "sha256": "4934d755c5a47aa48da5d77b7c3f56b718d373e967565db9da4a3000c66d49be"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/switch.png",
+    "sha256": "d3d0910686bd50e2c3d58ffa36a805151dbd04898eb083a9bd99c745629c65a4"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/img/touch-icon-iphone.png",
+    "sha256": "3ec72caeaa360077a866d780fe31cd288e2418a0289e8880aa274f83e55fe093"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/index.htm",
+    "sha256": "bb19551dd80cfc388074753c80c950986087bfc1f1dc24fcdb3e3aec8b85597d"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/js/gamejs/gamejs.min.js",
+    "sha256": "752064b8b481ecfae303740a77c6b9624a28df2e7a4704b8b63b9ca3f0d2d720"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/js/gamejs/yabble.js",
+    "sha256": "1ed3281715a4e10551bd718ebd83ea2d967a72ccf0f370fa857f74cfa5a76ac8"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/js/jquery-1.8.2.js",
+    "sha256": "3cde70627fff099f4c6b7ef38e52c9bcf0f95f10a1db59e3ae19e66936673b07"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/js/lib/block.js",
+    "sha256": "db3ed3ef440cedb65791852be6a0eea6c90f28db30d2542266fcde6a2528d479"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/js/lib/camera.js",
+    "sha256": "563c638e93b6aaf57f12cb77e83367804e9b6d636299e2f449bec9e20a314721"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/js/lib/door.js",
+    "sha256": "fe5c69743554a545703098996bda55b1498569aa6e6c4da0491eeb2f7b0710d9"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/js/lib/gates/andGate.js",
+    "sha256": "80123c82220fecb574286a3c6a2843da0cbec8fe01e5fc2d45c35c9eda983071"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/js/lib/gates/notGate.js",
+    "sha256": "c0ae7851ba1a5a8c18597b362b1bf9b4acad90c5c84ab09c18c7f1c506ddb19f"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/js/lib/gates/orGate.js",
+    "sha256": "83fd5fadb289d87561594fd4042da9d23bb5b2c1740d62e715e449dc9a5e0d10"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/js/lib/goal.js",
+    "sha256": "f6c75bcc2f7e504e0c4bd06110afae7c3c4107fb4904ad03b667c1cdaacf6bba"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/js/lib/io.js",
+    "sha256": "fc0dc3a3843dd9e59b5c7e9ca82537758c2c5d50a296881cbef8c155b72b65e7"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/js/lib/levels/level_1.js",
+    "sha256": "8f218783e8a9f8214d997e06870190e9f08f561c2abfa14aae145357a375beb1"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/js/lib/levels/level_2.js",
+    "sha256": "622ba371ebc5acbb7930a77f708c138f77ce4c428cff8706fb5b8968e672192d"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/js/lib/levels/level_3.js",
+    "sha256": "b56a13bcb3302e7e74acad265281e800248485d104b8741f04b17b1a8071bbd8"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/js/lib/levels/level_4.js",
+    "sha256": "63b13581483b0a5b55e6e81b6508214b77d2586572e8e513afeb1804afd7b51d"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/js/lib/levels/level_5.js",
+    "sha256": "232c7effad90d1eb76ef80bf00244639a863870f4378297932db081c36357d29"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/js/lib/lever.js",
+    "sha256": "d50551916b9d518fc9e984d5631443e88466893102c373c211218036f29674e2"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/js/lib/menu.js",
+    "sha256": "039ddd9bddd53fa2ba373442f352ce0b588f81b050141802fb6274daec2aee3b"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/js/lib/menuItem.js",
+    "sha256": "378c99d7776040ecb4f0086049823f490dcb2f496432f383b1226d6f9e4a00d8"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/js/lib/platform.js",
+    "sha256": "4c06061edf9fe2e3ecaeceed867458e591c5979907f92ea20be7bb7c45cbb111"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/js/lib/playable.js",
+    "sha256": "9e493d8053aaa6bb4e20c4ca3af26ef2fac8ca0de21c758f4f5f449fd5bbbd9f"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/js/lib/player.js",
+    "sha256": "228139a048548dfa325783d80103717a83f25af2b6f2890db69dc1df00924f9d"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/js/lib/scorecard.js",
+    "sha256": "e20fe222e9e49d512c54e83d3a917cee0c9eb7884d0ca7c71f085fbaf219f9d4"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/js/lib/startMenu.js",
+    "sha256": "a18ff619e9389db283534d22c702ca70a0a52b5f1ca11a621f0a9e69a015d551"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/js/lib/tooltip.js",
+    "sha256": "411dbb1e1c0664cab7d36a674a7978a299f8a6290d40404e0c14419c73a77e34"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/js/lib/utils.js",
+    "sha256": "25952041724943f010ca7ef2428159446317482bcccb79672648d2d70900e3b0"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/js/lib/world.js",
+    "sha256": "ef841f3a1edbacb0b342c563812310e65679b99ea5c3c210901a0e0d9192eda2"
+  },
+  {
+    "path": "apps/web/dist/legacy/alges-escapade/js/main.js",
+    "sha256": "e1adb07fb7ca9408b2dac2ac58e8af474d9fe9b7f2d71377de8fb5ccd7bc12b4"
+  },
+  {
+    "path": "apps/web/dist/legacy/all-colors-in-control/index.apple-touch-icon.png",
+    "sha256": "42ada2b76cdc3486de06db0eadb42ff5c254aff11db17a105d21c6e4cf0622f0"
+  },
+  {
+    "path": "apps/web/dist/legacy/all-colors-in-control/index.audio.worklet.js",
+    "sha256": "8b3e52c1f0806bc623f174cfa2989ba1d6f63e44022d7923580579a1b88cab37"
+  },
+  {
+    "path": "apps/web/dist/legacy/all-colors-in-control/index.html",
+    "sha256": "43b285ba9c42ff7b0868afcb02309294f61e5ae85deef195bd5899e0d9e5a111"
+  },
+  {
+    "path": "apps/web/dist/legacy/all-colors-in-control/index.icon.png",
+    "sha256": "75094867aa22d597075144dc6a0b7eeeace347eff79469b3fff8bfb918b065a4"
+  },
+  {
+    "path": "apps/web/dist/legacy/all-colors-in-control/index.js",
+    "sha256": "8e515babe04058fca9668d31fcb4e59048ce659cecf9331b4e93fcfd4a36c975"
+  },
+  {
+    "path": "apps/web/dist/legacy/all-colors-in-control/index.pck",
+    "sha256": "dac8edd683478b14724a9c20a547beceb174cc4d165ab67cb406057bfbf6ac32"
+  },
+  {
+    "path": "apps/web/dist/legacy/all-colors-in-control/index.png",
+    "sha256": "3cb4495c0b98dfbe4b663cbf2b6836473572339beb66d902367893162a70be0e"
+  },
+  {
+    "path": "apps/web/dist/legacy/all-colors-in-control/index.wasm",
+    "sha256": "af1e6208f15da2d5a49a6064d541ec8701351f321fff5f922a0e013d24a66bad"
+  },
+  {
+    "path": "apps/web/dist/legacy/ball2box/index.apple-touch-icon.png",
+    "sha256": "d58ca3b605f5cf082e25cd5a4707f7c4e27398485c893d271b00c757030b3729"
+  },
+  {
+    "path": "apps/web/dist/legacy/ball2box/index.audio.worklet.js",
+    "sha256": "8b3e52c1f0806bc623f174cfa2989ba1d6f63e44022d7923580579a1b88cab37"
+  },
+  {
+    "path": "apps/web/dist/legacy/ball2box/index.html",
+    "sha256": "af43c97863014d82de0d330d349fe7624f073d835f0e7f602901317c3e18f788"
+  },
+  {
+    "path": "apps/web/dist/legacy/ball2box/index.icon.png",
+    "sha256": "c935ef3cb9bb2d1ea22c014a123e9551ba0278f2a6da8d009895a7a55f06d737"
+  },
+  {
+    "path": "apps/web/dist/legacy/ball2box/index.js",
+    "sha256": "8e515babe04058fca9668d31fcb4e59048ce659cecf9331b4e93fcfd4a36c975"
+  },
+  {
+    "path": "apps/web/dist/legacy/ball2box/index.pck",
+    "sha256": "f2a42986b6d412729425734848e6fcba2f5c9f024ce36515e8fd26b8269edd0a"
+  },
+  {
+    "path": "apps/web/dist/legacy/ball2box/index.png",
+    "sha256": "3cb4495c0b98dfbe4b663cbf2b6836473572339beb66d902367893162a70be0e"
+  },
+  {
+    "path": "apps/web/dist/legacy/ball2box/index.wasm",
+    "sha256": "af1e6208f15da2d5a49a6064d541ec8701351f321fff5f922a0e013d24a66bad"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/background-normal.png",
+    "sha256": "e34b5c4a12b3870fb4b478ae91f50497a018f9bdd26475388948cd8d364b47ed"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/background-self-normal.png",
+    "sha256": "cc50583a6d444ffff15aaf361f81e09dbcb4baf6dcf248bcf38430878db96d55"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/background-self.png",
+    "sha256": "bf6eb71cf69b7a0002e43dc701a17bd078d70af09aedd0ebeb436073df64edfb"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/background.png",
+    "sha256": "d95da2e574bfc4c452037e60240451d9b803512498ca952f43e4323cf13a894f"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/ball.png",
+    "sha256": "335defe9ef6b36e8a52d2bccaab07c4cc35037833a72d3c759208d98076e40a1"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/bonus-coin-001.png",
+    "sha256": "b4451e594dab3fb975a19a30ef58c36828fcdc2e6019f6e8ff5dec9300e88967"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/bonus-coin-002.png",
+    "sha256": "864ce483e0a224635d69f238ff03edd944e6a4201c20fc6215ff0a7d6469c6e3"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/bonus-coin-003.png",
+    "sha256": "46a28ffbe4c041aac5b2629a0692649cfbc46642a34be24f3d71618214a8eb99"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/bonus-coin-004.png",
+    "sha256": "79a4f824a132c5497a9906b4f53f74129f10e32068cab2e719197924ccf67d20"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/bonus-coin-005.png",
+    "sha256": "7c7fba445505fc18febe81c4fc41cce225ae6ccdb20025e11b789b5b308614a8"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/bonus-coin-006.png",
+    "sha256": "523b6b5be605d2e5a106810e3cbf0f1cd859524161a6e598cf2e6fefb7ac1288"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/bonus-coin-007.png",
+    "sha256": "b8a092fe29629ccaed60adf7da5f336d436f5f9e64f47836385b4215e2a7a07e"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/bonus-coin-008.png",
+    "sha256": "1ae7159bb7c88587e51c5e1ac14561ac0fc8da1e0b748532950d76c44fcdde97"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/bonus-coin-009.png",
+    "sha256": "9aa07e8eb7bb02df0b904b32632f63157af49deb54b95b0a9dea4e591c12e703"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/bonus-coin-010.png",
+    "sha256": "3ded36bc5bc7d1a0550813180b277cdf9cdc5101a3993a895a0501e36ab0fdb9"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/bonus-coin-011.png",
+    "sha256": "b21f8bbc14885e71eaa08eefd344501c3ec3295585aebcd7ece397d552bb662a"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/bonus-coin-012.png",
+    "sha256": "b52d5c414d611998facd41b29bb43251b85235e243c0852148f7f5a8b39388bb"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/bonus-coin-013.png",
+    "sha256": "1d0b68b79705e3d70c25e6542252a2cf8e5a807f3fe3a02e6f3dbd8501b37fe6"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/bonus-coin-014.png",
+    "sha256": "d1e13e8e9c15172224b769bb7863ba74b75f1874188fcb0be0691d01b62daf44"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/bonus-coin-015.png",
+    "sha256": "590e2a39c28804e332255b45f78b0cb9be6197cd81cb6e4eb3224bac6a558b0d"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/bonus-coin-016.png",
+    "sha256": "f4dd2310edb5160c8f97ff0432662b5e5fcf569ecb18b8345c0a4d818edcef45"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/bonus-coin-2.png",
+    "sha256": "9f1d03282bf369d3a1e7e7700d258e343c1f2c61ceb55da5903ca62f17348732"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/bonus-coin-3.png",
+    "sha256": "4840bbe35a386e311a7e37241c869f9976f2e4f9f1b99aa843cb25226a4456a7"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/bonus-coin-4.png",
+    "sha256": "9f1d03282bf369d3a1e7e7700d258e343c1f2c61ceb55da5903ca62f17348732"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/bonus-coin.png",
+    "sha256": "d394478e4789d8381e5ceb09b52a54f2d3ea269c493473712f54f0391a8a02d1"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/bonus-powerup-container-neutral.png",
+    "sha256": "4a2c933b5c7c1e1cd6bccc3c1e5facc9ced6e966df6434421cd1f5845b86c560"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/bonus-powerup-core-neutral.png",
+    "sha256": "d01269ab8951e9a13888dd26ed0ff8e3c9a1d1c23c8c2390c271179ac1422cf4"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/bonus-powerup-neutral.png",
+    "sha256": "1243bf523a265b47d6f43be6c0438b492c8e3f0fa9a8c7c7ee6955f1f7a2be68"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/bonus-powerup-particle.png",
+    "sha256": "11ba04650eaeef91fb2823a23a4fb027c5d1690494cfef205675d15de46b184d"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/bonus.png",
+    "sha256": "70b6d59b41e2d9b96165b937312b6170accb2f50196eb4bc57f27f5b21a5a3d2"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/brick-4-001.png",
+    "sha256": "a68b001be31fed0703403b55917e2d2f2903a3b247ace0ba40c2650bee49fcf2"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/brick-4-002.png",
+    "sha256": "1fe29ecab735bfdbd6ffd41589c6c666e7971d53df9fa3178528adbe2a87e2b0"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/brick-color-blue.png",
+    "sha256": "5b7bc8907efef3f33cce972f3314b6d8b3367e2cb62fe01b0431b018e8173e5f"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/brick-color-green.png",
+    "sha256": "1e7f95465b68b40e6406bbce26d25064b9c26d04031aa471db734b05359105c5"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/brick-color-orange.png",
+    "sha256": "27c1924c8ac150bc78003ae847076982faa2a21420572f18f1aecc98ce8bf286"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/brick-color-purple.png",
+    "sha256": "0739046130aa612d6bc6ea4f67b86a24d36f4395ed9ab1870eb084964c42bb8d"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/brick-color-red.png",
+    "sha256": "2194656cbf228e02a16607a25a618feea4599dc249aba9b91e69da01d5876225"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/brick-fire.png",
+    "sha256": "51d554faf620290634959f3c353da4de8e295f02b5696bcd6524e3613a456a11"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/brick-ice.png",
+    "sha256": "a69b04bc186ae1c766c790a89781a303214117a30d42afdc4c07395e07212baf"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/brick-sand.png",
+    "sha256": "55c83597f01ec5540f590707bd84a846258a4cbfef790588c02b0554a0090133"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/brick-star.png",
+    "sha256": "2638bc31a1cba413056daab5a5a91a0787571634d0600537b7a0221b55703cf7"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/brick-stone-001.png",
+    "sha256": "70dba04c394cd086a4bbbf1b75b91535aaa3664c571fd656e8d4348d3f693839"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/brick-stone-002.png",
+    "sha256": "1221b4a151fe7b5b5544413f120b53bc2c59ce9a7c5d1b95d2b4f161de5d8834"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/brick-stone-003.png",
+    "sha256": "0c05f412d0d5d4ad5eeec34d1149427502da60b79e6dedbd41e5a7686b6ae49c"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/brick.png",
+    "sha256": "ebfffe15bc6bea552ab0eb0470d0533d4d8795395a7bc06ebfbd249ed32d6838"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/brickdeco001-normal.png",
+    "sha256": "48f13c60bb6bda05eb75f44011d9869152951b7c570efc280c1ba63d417f8e1c"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/brickdeco001.png",
+    "sha256": "ab30dffde129ae3bb9c46f167f5425ce88cccd3c184f9f9fbfe907d3d25ef459"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/brickdeco002-normal.png",
+    "sha256": "ff35e3effe75b916d09fa18e65b1fcc00bc3c21e472324ea47274b38c52313b8"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/brickdeco002.png",
+    "sha256": "2f600ecfbd7d444df43fbda4959fecf6cb4e711747546b3114b328731cb4b6a7"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/bullet.png",
+    "sha256": "c2a9e3e16ffd847b9df2554e36c6ee528df78548621ee5de39cacc0d427d88b9"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/effect-fire.png",
+    "sha256": "bc4a68f6a9723431b51a1d5b73cfccb44e8e701b071765f99d804f0513a14cdd"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/effect-freeze.png",
+    "sha256": "f32b99d9b3ced27f4ccc3b1615125b04f94f0beaecea06d5fa8b66b5f5e9e3fa"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/effect-shoot.png",
+    "sha256": "c92343a9c7a2156a5140d4613498f306a514aa66b23d278c9bbbf39e34c7bb64"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/effect-sticky.png",
+    "sha256": "53e4ca49da40348394f2dfceefe00916935b8bf4a0dd974eb8e8b0c1a41de8c0"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/empty-cursor.png",
+    "sha256": "c0a3c62e7cb8de09669bc015878f8d9fde16c683dffcb56612cc7b5e0d70a465"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-001.png",
+    "sha256": "09dd8a7bfca155f7b0e5826468efb1afa1158950ef4cb8f63b0717c7a4d81614"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-002.png",
+    "sha256": "186ff918fb42cb2f80425a26b4bfadc170f12b6352a3d8c63ddb5b5e2132d9d3"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-003.png",
+    "sha256": "28edfff3b1de90b3e7269064eeb2e31e7ef8da2c8f7f3b418956afdbb37fe8c6"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-004.png",
+    "sha256": "64a0f29002dfe219e0224c69d01806a83cc3d2f72e60b8ee14b639c32a75ecee"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-005.png",
+    "sha256": "47836b2b78e4a670e94a4735df57e956723767c5acffae079eef83f211a119b8"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-006.png",
+    "sha256": "bf261203e145ddcd60b1179b38b8157815dd143b87e6b0acd0d05f90523e311b"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-007.png",
+    "sha256": "c18eba11bbc95a897362e196ac38ff55995ab17a571140c21c33010a6f06472d"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-008.png",
+    "sha256": "d54f8ef25fc5ebcdf66b455dd93648cb633cd6c9dbd9c0cf5fca7e6e6c9cc9ff"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-009.png",
+    "sha256": "6c5a6f065d3c516ed7999f22af81bd5091ccbc2a78e9635e7e76af47869d76dd"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-010.png",
+    "sha256": "995767f33238d79a77bd7f28ae6aacb73f1bdd13f4838cc0ce5fa2c78fdbe452"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-011.png",
+    "sha256": "ed393933bd9437b1f2fe583a046ca1b86efc7d6b306e9d9194707aa653900a69"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-012.png",
+    "sha256": "203384aa3b743aa3b999f84e64fb35d327fb7c89eeb453f4dd0ce099628606e8"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-013.png",
+    "sha256": "8d94759bb3e38da6ceb6a7079ea5ae29a94818676347fd6623a0d4d767928c64"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-014.png",
+    "sha256": "4b5dc15437beedf69173a2679a76c0e79806411227c1a95c88bcbdb0d60fbe50"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-015.png",
+    "sha256": "6cc62e48b808bc93378213d24f9f16c531344f269eb217843759c3b74d4a151c"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-016.png",
+    "sha256": "ebb8cf616af0917d83eabef19dbeac6bb2f7de7ca0f1eab7d202939fab709ff0"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-017.png",
+    "sha256": "9d4077afd3a510e3aa05bfb3f08eae123d634629d7f77ea9246b1ec50de52bbc"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-018.png",
+    "sha256": "d3c73b51da1b20fdff8c7dcdb028274311dce7704fcf186dace81bfad8b9d68f"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-019.png",
+    "sha256": "d12b7f7d973b1c4752f050515cd65300267ef4df897bd719374b87da66241c39"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-020.png",
+    "sha256": "70a425f5fe48b9cc6beb642c8e9e3771b46462c45b7f1b433e52adc5706fb01e"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-021.png",
+    "sha256": "aaee2bde1a3cb8ab22c44bcaf08f1431af4d3e826442e9df72e3ff5ada91f134"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-022.png",
+    "sha256": "a0593582e3ebea725b1feee0028f0b7b6add043df14a9c1dde3171deda8173c8"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-023.png",
+    "sha256": "94badf80bb450a88a742bf321c298d3bdf2fb9a1613f18dee59b53a79ff1197e"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-024.png",
+    "sha256": "bd260e12e88c660675e1a4653d8a98ee1e8c20b2aeb064cf507fed824ef90e1b"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-025.png",
+    "sha256": "afa0649328ed01014f41af12ae86f4602255be05296547ffb7d58e29a5e29719"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-026.png",
+    "sha256": "dfbad75c960715483bd66280090dab88c538991dd87d31a34209f10bf3400846"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-027.png",
+    "sha256": "b0b480c55064885547563cc1fa675b62f17f4e423ca0800860440e75738fda73"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-028.png",
+    "sha256": "1fc2d867bded046a8501d8211b0b3065dadf35464c067bfe296ed7ab4afd20c0"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-029.png",
+    "sha256": "686d98a1a77621b0ccf964041c4b53c395fee25bb514dc58bd7cea4845528bfc"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-030.png",
+    "sha256": "a1ec12c90b79078d75d88f50ee97c310ebfb4f32c94a32cf50a670b46fe55ede"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-031.png",
+    "sha256": "0f52e1112ea66e096de6afdc970f0af0219cbdc1f357800ebd19f1ff0ae3437b"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-032.png",
+    "sha256": "616d29163792ba7ced0b7b0dd52340132c575087a142db36c98ccdeb0ae7cb9e"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-033.png",
+    "sha256": "0523c5776122c458145bb19996e5c9f315baae67fd8d8284aa6cc919a45aa784"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-034.png",
+    "sha256": "57dc5f294fdc42256bd64b3c83f05cd6b07ec99aa9500a3f8074ee8d24c28352"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-035.png",
+    "sha256": "8a4f6bacc5dc2a5d3fb2eb6e23a316ebec98c881b4933e728624db733cda2a62"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/expl1-036.png",
+    "sha256": "bfac55815e8c93c56339cea76bb3a7f45268b8c86494107e768c3d55d8bb7034"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/level000.json",
+    "sha256": "75e0095114d4e6575fe6ec255d07c75411361ab5039e91db00583a58269fe498"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/level001.json",
+    "sha256": "87682d0af6d36a4747cd82823ba61a50b7f16dedd2ac689e5acb13f16dc5ba83"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/level002.json",
+    "sha256": "a71ec1406bdd17cb69658c6288bfdcea8358761c006aa9f38966853479b38981"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/level003.json",
+    "sha256": "5eb4b6d1aa5b5bed7f8d3b0a34a937a68184e582a3f0eb249f943b1688f0d636"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/leveldebug.json",
+    "sha256": "feb5d6423fb868ecb7a78ffb21e756755698586d4b979b08fc8d771f7af4b38b"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/paddle001.png",
+    "sha256": "fb34cfe37ef7a093b16844751cfc51c366593bedb60e53e6447d75497779ea3f"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/Prop - Basic Pleasure.mp3",
+    "sha256": "4888ad8f53a3b1cd5b49f0e0555796fcaaed46c68d9bbbdffe46040da604a662"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/site-powerup-breakout-blue.png",
+    "sha256": "14e4154f343506e0b25ba92bd89b7fa436643fa69796ad465430266b31ee5b70"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/site-powerup-breakout-green.png",
+    "sha256": "e4b7afea635e694988e8c9410be1824db1ea8caab2bf5d890d8c09083556d8ab"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/site-powerup-breakout-red.png",
+    "sha256": "f797bf9b0eaf5735902cdd2799a687330c054a431b4f0ccabe50cf15c941cb27"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/site-powerup-breakout-yellow.png",
+    "sha256": "5ff5b38a2f77f947749a4281ce647c215504556474cb5f6987a1c7a9ca6f99f2"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/sound-effect-coin.wav",
+    "sha256": "240e2c6f6979d628859f0bc67e92b3868c40bf09a50bcec530d552b3a2bf8ece"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/sound-effect-explosion.wav",
+    "sha256": "db27f0485ffeb1ca643ff8c15d3871c0ba6018763542525e4acab4e7b94ce282"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/sound-effect-pickup-negative.mp3",
+    "sha256": "01522e86fd76c8bb4296e21345ce1af1b0e907f7176b7f82abc84ce9663d586b"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/sound-effect-pickup.mp3",
+    "sha256": "4339702d87d07acef9b10cd515cdea1d4321ff985225228c5ee80adccfa0628d"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/sound-effect-shoot.mp3",
+    "sha256": "ef1f2630705734216cec2376a52e46770245adbb60a43542041c0323e243f1d6"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/sound-effect-winner.mp3",
+    "sha256": "ffedd0c266f4d624392bd29e53026eeb696d70b229b9cd72b8b846520bde9f85"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/tiled-background-normal.png",
+    "sha256": "3dde951311576499ac05b3d1eff586df8cb92762f0e7de8329ecc52c74598805"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/assets/tiled-background.png",
+    "sha256": "fdabba28cc14aa4f19e175651ffdf9749c6b8c59dc01ecd2372c78ae4cd6af71"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.Asset.js",
+    "sha256": "11cad717146ddd4ed993d2ca70e7520bac3c8389e3447606b1ae57749ff8d686"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.AssetBackground.js",
+    "sha256": "934142a76f0701f863403868fb0d874a940034f8c386682d1cb9d9c1b3d4c673"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.AssetFire.js",
+    "sha256": "21508ce1f4cfef3ddf2f9b8a8c7d989d25e5782f850c2559fc7d5df513f27420"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.Ball.js",
+    "sha256": "6f7cc1012bbf27e9c36078b4c7cdf61266f7280c7bd7a6ba64e415f1c31a5cfb"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.Bonus.js",
+    "sha256": "9437f4ed360485891d7f43f984acae7a44427e1ad7a8457e3b24957b342119fa"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.BonusCoin.js",
+    "sha256": "206ecd2ada2847555a5949e4aed859789b5106946d4e610e7687e8917ca182e9"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.BonusFire.js",
+    "sha256": "d84961495c3299e471122673bd64f932d625754c960c0273f0d8de0f4b9a7a13"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.BonusFreeze.js",
+    "sha256": "4ba7bbf8ac1dded76cf1539aba53ae9445474b5699874d3f0e44e62e1363bb8e"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.BonusShoot.js",
+    "sha256": "27b2064e3c4abcc698c5b0afbe91e42c9cece5e977a00753167a717307f394d8"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.BonusSticky.js",
+    "sha256": "d3782735657e3a99ec272c5d9cecf2aee7bd40417910876a0d0d83fac6954d12"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.Brick.js",
+    "sha256": "4e6cc7297a8b81e89855b14d9be892bb8feef75e186b7f22f1ecb9d5d4069461"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.BrickColorOrange.js",
+    "sha256": "7b95d3d6ed1cabe81977f50f316ed1730f1b9385a340e9febf98d4587c7dfaf0"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.BrickColorPurple.js",
+    "sha256": "aa19c257b93feb9a431b79deff8eaa08d49d8642a8458bcf09d47b0df6152679"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.BrickColorRed.js",
+    "sha256": "d99f5a084ee1e31eec6e6e5d55a282e9ce5f2801f6cbacdc23040f7ff241e817"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.BrickDeco.js",
+    "sha256": "60f461895206ea05c1b73e6272b41ad9a444e6d0e2eff6873b960f18f0cc063f"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.BrickFire.js",
+    "sha256": "0d0d6e9e4289eae6a5d85a7aec4651d72860ea1c9ba0e85ffa64b85d2e50637a"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.BrickFourStones.js",
+    "sha256": "1ed3649fe77895b23d3dbec992ee3a33ecf4ae9bc6fd55a476e000fa5181bd02"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.BrickIce.js",
+    "sha256": "54a685e56ef39c68a09467600914f32782a971ec341b4f9953e2d1e33c8a4436"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.BrickSand.js",
+    "sha256": "1b973a733b30e085f4bbaaf44cc5082351a6780dc860d18ad96f3e882f50b38d"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.BrickStar.js",
+    "sha256": "731c7a1cd6b8b2da0c6330b6c465a28d45001e1f8804c491bd4670be4e19ec16"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.BrickStone.js",
+    "sha256": "a738d7297329e0c0b6eccbd7987ca36b200b68f8dd024a193e0035f341dcd263"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.Bullet.js",
+    "sha256": "977287d3d3f988508b469b17f7dd72f1f3a4f4b87d3ad761287666066e48448b"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.EffectPickup.js",
+    "sha256": "f5906ab6c83fa44bf5747f530abed0adf589f3cdbb9ed632212f40b52ef34bec"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.EffectSparkles.js",
+    "sha256": "0d8ee0d8af693862ed1b2151d685879beec87c200b82916a17602c54b6cbf466"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.Element.js",
+    "sha256": "06fa9c0e24b01dc4683223bcdbacf988ee184d319c3035feeccdaed5e54b8a7a"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.Explosion.js",
+    "sha256": "cc7dfabb26fdb2ece6bd9e00bbeb12014fcf8e4f40bab788c29ac670449bdc61"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.js",
+    "sha256": "565b4488808eca5d5b848a0f641e3253935115daec108b5c5ab863893a4d67c9"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.Paddle.js",
+    "sha256": "f761ac2c7584f0bc88d94f339db0be1ae9512d552090f11ece2d5cd29b04c247"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.Text.js",
+    "sha256": "6f012a9ae1293bc4fe1180051e6ef40b45889da3c2c8081a63492b051b605374"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.TextBonus.js",
+    "sha256": "704f070569610fe8689af0aea8da3f401ebf608a84f09e7218adfafc93bfe1c9"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/BreakOut.TextScore.js",
+    "sha256": "aac69ca38321277333c60b5b313b19dc8ce1560a4c60010dc39168b94db7b783"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/game.css",
+    "sha256": "6fdeeca81d46a47a874b90f94af42fe964ccc410790a87ddeaeb444062780e66"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/game.js",
+    "sha256": "7d49ce6dd0f869d906446a2d8f05cb23650349c2aa0c63b85075b40924d8deb5"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/howler.js",
+    "sha256": "f94f3e923fd88f27821f6517e251e50351ee8848496cd921d225d46a788a54be"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/index.html",
+    "sha256": "a8ca8291af3d0d70a41542e913c4e372fc6f501141a1bbea638d49fb48ec4e31"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/lib.js",
+    "sha256": "0d5ae9d2b3b234f4dc27bb2dd327fec51c299164eb6e6b124312698ffedc7ebb"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/multiplayer.js",
+    "sha256": "01196a26b471b91d6cbd612638492b7c7cc456985b7a1612863e61476ad18bcc"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/pixi.js",
+    "sha256": "04f4c8dc4d2be554e4781ce2611021156da4fd7e97e4e4d10cfd1a5cd062d6d3"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/pixi.lights.js",
+    "sha256": "79f35e66a5478b6567f98a09936cde71eb7b6913d6bc38f8e9edf13a1d70dacf"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/randomcolor.js",
+    "sha256": "b772c8e3eb27cad6b97860187d93fc73943cc48964ecc7ff09f26ba92a4010b3"
+  },
+  {
+    "path": "apps/web/dist/legacy/breakout/thumbnail.png",
+    "sha256": "e381d8263a4a66f8170c001fd1b9326aa5f2946d242148a9053cf1c0d3c68338"
+  },
+  {
+    "path": "apps/web/dist/legacy/chromavescence/index.apple-touch-icon.png",
+    "sha256": "ac4ed5a9b088db4dac0361035c340a83ed424275faf035f5fa7ad064301cfe4c"
+  },
+  {
+    "path": "apps/web/dist/legacy/chromavescence/index.audio.position.worklet.js",
+    "sha256": "347b512529c5dca302093f7b9de6d184dd09d10e9a6fba62cbab098a891b2368"
+  },
+  {
+    "path": "apps/web/dist/legacy/chromavescence/index.audio.worklet.js",
+    "sha256": "5b476a9c9ce642c0ee4256436d1bc31d9c38f868aca0f9a8e2a57c18d2dec2a3"
+  },
+  {
+    "path": "apps/web/dist/legacy/chromavescence/index.html",
+    "sha256": "1db8ef9bc670f9f20bb426526a0974093bc97238a533dc6c4ddc842290d1d527"
+  },
+  {
+    "path": "apps/web/dist/legacy/chromavescence/index.icon.png",
+    "sha256": "38598b076a35443fc21d052bed932d2d27bdf51ba4800ffc27e9de3edfe38375"
+  },
+  {
+    "path": "apps/web/dist/legacy/chromavescence/index.js",
+    "sha256": "19eb180d568bb8e17bcf4c72ca034ed3af44deeb90304deefee4e665562dfe31"
+  },
+  {
+    "path": "apps/web/dist/legacy/chromavescence/index.pck",
+    "sha256": "9243d0a2e0668aab00fa4798b88c82e4e9c82e4629c966885f7a1a0c30d7e562"
+  },
+  {
+    "path": "apps/web/dist/legacy/chromavescence/index.png",
+    "sha256": "3cb4495c0b98dfbe4b663cbf2b6836473572339beb66d902367893162a70be0e"
+  },
+  {
+    "path": "apps/web/dist/legacy/chromavescence/index.wasm",
+    "sha256": "60e0c995c94fc53192ac43727948f10ba52aac640b61f0e78783945146da1e22"
+  },
+  {
+    "path": "apps/web/dist/legacy/connect-the-dots/index.apple-touch-icon.png",
+    "sha256": "abc30c4bbf56a7bbac2c7af125cb221caaf6aa1ffc204b42a2d212719b8851ea"
+  },
+  {
+    "path": "apps/web/dist/legacy/connect-the-dots/index.apple-touch-icon.png.import",
+    "sha256": "845d790ab1e1350685aea2c88fc95ec9aec723ec6c9236dd6c24f37b13284934"
+  },
+  {
+    "path": "apps/web/dist/legacy/connect-the-dots/index.audio.worklet.js",
+    "sha256": "8b3e52c1f0806bc623f174cfa2989ba1d6f63e44022d7923580579a1b88cab37"
+  },
+  {
+    "path": "apps/web/dist/legacy/connect-the-dots/index.html",
+    "sha256": "71d00e194593a1dfdcec6d3748702e360b2ad7f22afb2ccb9c4086c3ccd10344"
+  },
+  {
+    "path": "apps/web/dist/legacy/connect-the-dots/index.icon.png",
+    "sha256": "2c160bfdb8d0423b958083202dc7b58d499cbef22f28d2a58626884378ce9b7f"
+  },
+  {
+    "path": "apps/web/dist/legacy/connect-the-dots/index.icon.png.import",
+    "sha256": "949c2f14f047b8e210f26b149a60d0ed1f83aeee96db90fc3e0253b3ebb3be0a"
+  },
+  {
+    "path": "apps/web/dist/legacy/connect-the-dots/index.js",
+    "sha256": "8e515babe04058fca9668d31fcb4e59048ce659cecf9331b4e93fcfd4a36c975"
+  },
+  {
+    "path": "apps/web/dist/legacy/connect-the-dots/index.pck",
+    "sha256": "b163d6ca19158aedabaab8eb28341ee200fb1fcacef7c1fe5f0d43fef7d1cba8"
+  },
+  {
+    "path": "apps/web/dist/legacy/connect-the-dots/index.png",
+    "sha256": "3cb4495c0b98dfbe4b663cbf2b6836473572339beb66d902367893162a70be0e"
+  },
+  {
+    "path": "apps/web/dist/legacy/connect-the-dots/index.png.import",
+    "sha256": "f6f1c0918333c349488e525a7c62e976401620979f904f4c1b1fda6768ec559e"
+  },
+  {
+    "path": "apps/web/dist/legacy/connect-the-dots/index.wasm",
+    "sha256": "af1e6208f15da2d5a49a6064d541ec8701351f321fff5f922a0e013d24a66bad"
+  },
+  {
+    "path": "apps/web/dist/legacy/get-that-bit/index.apple-touch-icon.png",
+    "sha256": "2850ba6658f48abdcfd6ae52355bf99dd2f25ea7bd2299d7144aa554d81f4bcc"
+  },
+  {
+    "path": "apps/web/dist/legacy/get-that-bit/index.audio.position.worklet.js",
+    "sha256": "347b512529c5dca302093f7b9de6d184dd09d10e9a6fba62cbab098a891b2368"
+  },
+  {
+    "path": "apps/web/dist/legacy/get-that-bit/index.audio.worklet.js",
+    "sha256": "5b476a9c9ce642c0ee4256436d1bc31d9c38f868aca0f9a8e2a57c18d2dec2a3"
+  },
+  {
+    "path": "apps/web/dist/legacy/get-that-bit/index.html",
+    "sha256": "98b030377895ff534a6e619a777e754a85b1ec9f7df5307e8f7a4ece5286aea5"
+  },
+  {
+    "path": "apps/web/dist/legacy/get-that-bit/index.icon.png",
+    "sha256": "487a6f1915e7cafe2faad14dd29af69ce549f6017e1bd5d05deddd947860968e"
+  },
+  {
+    "path": "apps/web/dist/legacy/get-that-bit/index.js",
+    "sha256": "19eb180d568bb8e17bcf4c72ca034ed3af44deeb90304deefee4e665562dfe31"
+  },
+  {
+    "path": "apps/web/dist/legacy/get-that-bit/index.pck",
+    "sha256": "6314436768d983dc951c0890bf976c9123be0dc4c1e424a58dce9a4623efa237"
+  },
+  {
+    "path": "apps/web/dist/legacy/get-that-bit/index.png",
+    "sha256": "3cb4495c0b98dfbe4b663cbf2b6836473572339beb66d902367893162a70be0e"
+  },
+  {
+    "path": "apps/web/dist/legacy/get-that-bit/index.wasm",
+    "sha256": "60e0c995c94fc53192ac43727948f10ba52aac640b61f0e78783945146da1e22"
+  },
+  {
+    "path": "apps/web/dist/legacy/gravvity/index.apple-touch-icon.png",
+    "sha256": "52c7c8b04a351eabfba56001529ccc51a71ca9d891cea1ef09bb67ba28c9b22a"
+  },
+  {
+    "path": "apps/web/dist/legacy/gravvity/index.audio.position.worklet.js",
+    "sha256": "347b512529c5dca302093f7b9de6d184dd09d10e9a6fba62cbab098a891b2368"
+  },
+  {
+    "path": "apps/web/dist/legacy/gravvity/index.audio.worklet.js",
+    "sha256": "5b476a9c9ce642c0ee4256436d1bc31d9c38f868aca0f9a8e2a57c18d2dec2a3"
+  },
+  {
+    "path": "apps/web/dist/legacy/gravvity/index.html",
+    "sha256": "a40a1a1208f6eb71c103baaccb5885d4c6b09818a5806958926682949b48a96a"
+  },
+  {
+    "path": "apps/web/dist/legacy/gravvity/index.icon.png",
+    "sha256": "e0fed4450c6caf01d0734d695eafe8f2fa9ab37246853cea1d79103ebe1f99e4"
+  },
+  {
+    "path": "apps/web/dist/legacy/gravvity/index.js",
+    "sha256": "19eb180d568bb8e17bcf4c72ca034ed3af44deeb90304deefee4e665562dfe31"
+  },
+  {
+    "path": "apps/web/dist/legacy/gravvity/index.pck",
+    "sha256": "f8ffdef94ebe0c079a199f385645199ee095e02e64a1204ef72fc4af703b5bd8"
+  },
+  {
+    "path": "apps/web/dist/legacy/gravvity/index.png",
+    "sha256": "3cb4495c0b98dfbe4b663cbf2b6836473572339beb66d902367893162a70be0e"
+  },
+  {
+    "path": "apps/web/dist/legacy/gravvity/index.wasm",
+    "sha256": "60e0c995c94fc53192ac43727948f10ba52aac640b61f0e78783945146da1e22"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/.htaccess",
+    "sha256": "19041ef9c5e19fe866898e18d00a38c321257eda273f3ed0d449c6cd6ea5233a"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/audio/bg.ogg",
+    "sha256": "63aa572885b9b00cacedcb2a30be5a6722472ee41c4e6d36b48f628ab13c793f"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/audio/boost.ogg",
+    "sha256": "c66da128697a4a2c0202777c5d8661e3b5c7b7e84fc544624af29cfed9861ac3"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/audio/crash.ogg",
+    "sha256": "ed32078e8d37b0710a134baa011e2549e1ec6b3455c891f4af6bacb451bef2d0"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/audio/destroyed.ogg",
+    "sha256": "1c8f9fa046dd44cb253b5013153ffdd413f2661910fae6e6831aa4c9da146d89"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/audio/LICENSE",
+    "sha256": "b79b53d1fde5c46ef08480782e97ecb47b36cad370c0caadb2e931aeca241177"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/audio/wind.ogg",
+    "sha256": "7502fba01bd10d5a1b58e5f8cc5f67e2f1f96a7a148b01c582fe292dea68ec28"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore/Audio.js",
+    "sha256": "2ba7a7e0eee04dfc8988cb9bb0b6df29d7982c811f5e76643f490566bf7a362f"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore/hexgl/CameraChase.js",
+    "sha256": "a6a4451424dd8fe04f85bafe0744886214a42556daacbfab6179173f2323439d"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore/hexgl/Gameplay.js",
+    "sha256": "af5cdfb88de18864d56e40b84bcf1aba31b9c00694556670e69f699248bd67f9"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore/hexgl/HexGL.js",
+    "sha256": "da97be44e061d0bbafe1b67fe1a48546064b9c4846bc1721230e35b415b1408e"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore/hexgl/HUD.js",
+    "sha256": "d534035779f49e3ee94542b800fe38d528efbba46dcc0eb661ff065afa57750f"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore/hexgl/Ladder.js",
+    "sha256": "9553fdf058d36f510a94c5c9374b13ce9e648abc0e9c551ccf041af7b0377761"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore/hexgl/RaceData.js",
+    "sha256": "9c7ad50f7210c93956d7507a7d7249e77929d494e178beeacf7495d0d8e24324"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore/hexgl/ShipControls.js",
+    "sha256": "aebd62ff65d587be6fc03af409465d4dec681ea78cada2aea47966c58ffdf8fe"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore/hexgl/ShipEffects.js",
+    "sha256": "d15a500c8ab1951ddcbed09e5e7e468c0264fbe6b71923a0033281b20420e6d9"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore/hexgl/tracks/Cityscape.js",
+    "sha256": "d4611e5848261a9fd4c67c8988edfbca0d004e26511a03ffefc2e65239950195"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore/threejs/Loader.js",
+    "sha256": "0255a9088dcd6331eefebdcc8e95ef7da8e17d465527688c4cf2650aa1244308"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore/threejs/Particles.js",
+    "sha256": "9143e1a15c9a267d8bd07f291ed8f18a018b2fae7d7cb4fdf7f545e415b9a9e4"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore/threejs/Preloader.js",
+    "sha256": "dd6404a394d93aa7f97f531ae0c0839f6a2a2da71bf4aed00246d7cb743f6ac5"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore/threejs/RenderManager.js",
+    "sha256": "d02836ef698dd1075e9a0570d446cb37efc57d7f417c3db52700859a9a62cbbe"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore/threejs/Shaders.js",
+    "sha256": "04b696528279872d78fb78e44c6ad837625f45fa3b1ff9753ee478ff7a0b13ec"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore.coffee/controllers/GamepadController.coffee",
+    "sha256": "0cdf768955252adc930fdb06e3770fde1debfc24b41a5895922bbda1b9ea1b13"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore.coffee/controllers/GamepadController.js",
+    "sha256": "e7a03bdc5a4652c9ebad4f77629740eb328f03dda7833148d1a4baa31ac87a62"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore.coffee/controllers/OrientationController.coffee",
+    "sha256": "e7a074e5f8c052fc89e0f931f1c25ef8ad1c1ab76824f67a0079955a13512f4d"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore.coffee/controllers/OrientationController.js",
+    "sha256": "a5c2d500f79c7c4ee5660a24e077b49b2c456360f22b27f131170f35139ab771"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore.coffee/controllers/TouchController.coffee",
+    "sha256": "6d79161bd9a407a86ec56b523ff5d53ffe0122c6b2b4e603ead385b21ac9e44e"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore.coffee/controllers/TouchController.js",
+    "sha256": "1db3ab648f25e9e172f0b7493815975362c7674ffef6bae524d60cd68f691754"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore.coffee/ImageData.coffee",
+    "sha256": "a20160e8971e55bbea9ff0cf5d3c67023f3104aba0b879855426fdd5de77fd22"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore.coffee/ImageData.js",
+    "sha256": "b7e3af56f51f72b98ec2b15b38652ec126938a573df2524875cfd52c2bae3499"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore.coffee/tests.html",
+    "sha256": "786385a06655a6b30a93a5967efcc50568679890f12a93c4c996b6da527c7c6f"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore.coffee/threejs/Particles.coffee",
+    "sha256": "e261f56d4e502c25abfc5845480f670a3b8097711d6f1e725dba8707d0e0ab15"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore.coffee/threejs/Particles.js",
+    "sha256": "20a5884b35c36f518e3b8c6c87b0de3d9325441c6ecb727b982c3d71e53fedf2"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore.coffee/Timer.coffee",
+    "sha256": "eef8a41b03366cc20e9ffe66870330bf86b4b39266410bf5a3ccdf22f97a6c24"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore.coffee/Timer.js",
+    "sha256": "e9ec5818ec0550fd97fab5783bcfb24e2a16255b79257de9cb5d9ec37e2c3a5f"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore.coffee/Utils.coffee",
+    "sha256": "0e7e77477bcfb322731aee9fe3d0091cca23363b98dbade77220bcf541a22a2c"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/bkcore.coffee/Utils.js",
+    "sha256": "a942b74004524b86370579ffc137b231ebd520a818bcc086b76641584771ae65"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/cache.appcache",
+    "sha256": "28ddad41b95e1fbb1925eafd7dcfa38a63b00c4956ab8d7d3cc774d1d4137f2b"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/css/BebasNeue-webfont.eot",
+    "sha256": "3a0bad208ed2d43496c5675dfd4be7f6ad150a037ceeeaf1d892d19744110921"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/css/BebasNeue-webfont.svg",
+    "sha256": "1ad7b0b3f4d72a1ff17e45ab91ec3ad197b6c50986e1af6595c0b1a8a5683169"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/css/BebasNeue-webfont.ttf",
+    "sha256": "259646f9f827abfe5975cee51dfb7973a084a247245935aff3e48f909a41fbd2"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/css/BebasNeue-webfont.woff",
+    "sha256": "0cc7740c9468aaae51503c1e2a06376b3c946ff587e8eddf5265f92fd5508b2c"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/css/bg.jpg",
+    "sha256": "a0115fb8416731a935346b745f4540f8306cd74a5364949a9d6cc9ec05481f1d"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/css/fonts.css",
+    "sha256": "43c33e4b24263f3592346795492892b399faa72685db5818730e219b3e063a79"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/css/help-0.png",
+    "sha256": "244f40a36dc01b8df22c976bb44a2f9ca39e0b941267f46b812aa58a3b7502e7"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/css/help-1.png",
+    "sha256": "4b40843d9f0504bfdd07854cceee9f1b0defcc00da078e0d27caa0f77e9737c8"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/css/help-2.png",
+    "sha256": "0f5a40c51451b6798b90a1e441ddaffc501878b00e55b9aa37198d0d2a1c0ae2"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/css/help-3.png",
+    "sha256": "9f139889d5e3145f462dd4338618a66b13a98d98b6b58369b9fc132a0afcfb8d"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/css/mobile-controls-1.jpg",
+    "sha256": "bb8a10c8416a0c1d6a0f7d9bbb45eec380d2a06ae3e970be63a4efae5db2b567"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/css/mobile-controls-2.jpg",
+    "sha256": "0d952f18c66020a2faca3f72497082f3acbaddc04015f5abc3c216c880f4d106"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/css/mobile-over.jpg",
+    "sha256": "dbac60b60af3e1c9ea3e597c2be8b5a37d0d7f264ae32e844cbf360b1ff1c807"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/css/mobile.jpg",
+    "sha256": "47a8905d72243b83964700a26cf62830abf8e69498f27658ea2620a732393d0e"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/css/multi.css",
+    "sha256": "a0987fc5b4629c6a7446d3d47d3a797092547c4e6d42679ae877ed541019823e"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/css/title.png",
+    "sha256": "8e5ebfe834b7a7a8ab7dc54b049051dd6230181ad36dcf4fbc433a5fd5802d93"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/css/touchcontroller.css",
+    "sha256": "4e3d37c825e32b85730b3336ccb7cf28de80c9aa73d1a085b8de5af900923a1c"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/favicon.png",
+    "sha256": "8c6244cf639579bfe7af926ae5f7d0a39eff4c490e9fc41f12444573fd298cca"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/geometries/bonus/base/base.js",
+    "sha256": "79485de286a2e950284d54e1e789d85c7f6c84727e3239942412607ad0e05dca"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/geometries/booster/booster.js",
+    "sha256": "3d032b38292fba7edd0f4d517e738c605c24713bee1cafed90c11689d5ccdea1"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/geometries/ships/feisar/feisar.js",
+    "sha256": "5a97ef50a510e2d1ff3628ee13210a27666139ee07783fe67374b34773dcc716"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/geometries/tracks/cityscape/bonus/speed.js",
+    "sha256": "5f59eca92bfdba8350a0731e6a4757c26996a50ffa3ae57f4ed9ad1b3925b805"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/geometries/tracks/cityscape/scrapers1.js",
+    "sha256": "3ed663ec33f3282f0bb111ddf78e5c523aa2a85eef6a78dc687f10b94f3bda91"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/geometries/tracks/cityscape/scrapers2.js",
+    "sha256": "0fa57ea89932f78816b9e81128216970a3a7ea882986e3d2c32988e33e4aa7df"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/geometries/tracks/cityscape/start.js",
+    "sha256": "93077d9b8285850e799942d3816bcd302b95738f3d0aea1c701f2e4c7ef70f55"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/geometries/tracks/cityscape/startbanner.js",
+    "sha256": "46ef976e97dbb5f53c9f47ba96784c749aa752ae6e10e179c78ad705599f8829"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/geometries/tracks/cityscape/track.js",
+    "sha256": "194637db9a5cb1b219180c64f727567f4050d36fa1a6d0f6341e382c059d8a55"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/geometries/tracks/edge/track.js",
+    "sha256": "ff510e0794ad32de707a616a2b6dc57ca857f7a6e0bcb6e83eb406eb84327929"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/icon_128.png",
+    "sha256": "8e9d6a06b3515ab697fb066c2b071ad0bb39b8178d10082060ed0e48ef9b59e0"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/icon_256.png",
+    "sha256": "6280caad320dbb9f193f61131a76e62a173dfad1a08db264d9d771e78e3f1046"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/icon_32.png",
+    "sha256": "94149159a70fa52d86ea13d5fca3883008eba162e0917ad9c4e470f16cb76979"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/icon_64.png",
+    "sha256": "2f1f265be64f17787604e10f5244e59ba369ec663c243e174a9500ca59d8574a"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/index.html",
+    "sha256": "edaff81a3178f4be598bab1025913e2425a970e4a8ef5289ac3515e63150e161"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/launch.coffee",
+    "sha256": "3d31433344cdda2ca4b92f8c96edc84ed16d6915e813434bb9320574fcfb32fe"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/launch.js",
+    "sha256": "580eee5954003b5fb92c74bf19d965ff440d084c867dfa805e4ce6ee731d62e1"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/DAT.GUI.min.js",
+    "sha256": "4c4281d3de0016a5abcc848e4e8955dc9336a03af4de8fd393f295da29bf6125"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/Detector.js",
+    "sha256": "dd181eab6e27989bfdeac832c9da42f66c44758d8ffadff7f77457d6610de9e9"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/Editor_files/ace.js",
+    "sha256": "c99dbd23e106bef465072e11f2eef70bcaeeb94f28a74a08d8ed7a6f07448f4b"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/Editor_files/App.js",
+    "sha256": "bbc4d3d64f6e8c8700532005ecb283c82c4f9e438e57f7bc820bffc63eef3f8d"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/Editor_files/CanvasRenderer.js",
+    "sha256": "3cdb229bbd0e9bdcb72978b6f61da483e309277c214691bdc1c1b5cf96f287f1"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/Editor_files/class.js",
+    "sha256": "b1d59902d0ac29a609b5ddf413f5056c80c579f4b62157929531ad91d3726dea"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/Editor_files/Diagram.js",
+    "sha256": "90c91764076b7344e7cb0d82d610d0a97ceebc2cdea3bdde6031a2692f256e06"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/Editor_files/editor.css",
+    "sha256": "e557d918c2aca27edb258ba302fff39c15a895dfa315eb05658ceb02dce79df7"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/Editor_files/font.css",
+    "sha256": "055b7cd0bdaf79e1e911668ba017a1da75d4a8606e7c4a851c00b6d5d13a327a"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/Editor_files/gamecore.js",
+    "sha256": "d18d2189d5ff099f6077ea4c5e28753919022d40338c9391a26f671565fcc4c7"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/Editor_files/hashlist.js",
+    "sha256": "63bc2a974a59b07f3df110f768d4ce1b0e9aaa3c874c3974dee53e3be499b582"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/Editor_files/Iterator.js",
+    "sha256": "69920abfcb3a1a0f6fa8faa235881e04e1062e88b7037dd339c9579cc27802ce"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/Editor_files/jhashtable.js",
+    "sha256": "24cdcb87728a023b2613c90ee354cd5ff66bf7a108704cd78f3ed72a31f46458"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/Editor_files/jquery-1.8.js",
+    "sha256": "f23d4b309b72743aa8afe1f8c98a25b3ee31246fa572c66d9d8cb1982cae4fbc"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/Editor_files/kinetic.js",
+    "sha256": "3882c436c20ed5fc0379d59054a23f0031805fd79c0e295d290ccc454716fe4a"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/Editor_files/Links.js",
+    "sha256": "dbcb5c6e60e32708b5d6351ff3ddd226d05c5702a176e4e6a6c9232fe109187c"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/Editor_files/main.css",
+    "sha256": "5d03258a203839c06218fa88e5db3e75861cf9ef1e9de5c0f528f5d7e9f0defd"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/Editor_files/mode-json.js",
+    "sha256": "5c94f0be3334448a8c5757a07a1d34e3c8cc962f70aa0af2ca3e63a30d5427f3"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/Editor_files/ModuleList.js",
+    "sha256": "8bfa04226471dd7c10a520040bf789fc430398306c38593d553f6df2241078da"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/Editor_files/Node.js",
+    "sha256": "c1add2bfc2368fda4a579c42b5e746b34945257893858750e7734808534b206c"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/Editor_files/Parser.js",
+    "sha256": "82b7b48481735ca00ef224cf28965a84688c27f12db15f2e530e28010ab8ae88"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/Editor_files/pooled.js",
+    "sha256": "3b047301331537211f32b4e320f937fc18d47a996981b2501815c8910d7723fe"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/Editor_files/Project.js",
+    "sha256": "268efeb50b0d0da8b44276d01e2db0dd326880982b069683d3c73d55d7a0d500"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/Editor_files/theme-monokai.js",
+    "sha256": "a5d1e272f4a57c75e04401077fb46dd0af7b13edd21ef418e0cf38e2307f141d"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/Editor_files/Timer.js",
+    "sha256": "03f8fb19627f6138a7d7c5da05d2c3507387bcc6e789fa736949d458bffc3cb4"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/Editor.html",
+    "sha256": "4607771e6568bc2b0694147cd3cd88c39d2924dd7e33f3a16c0f4c4aa74fce03"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/leap-0.4.1.min.js",
+    "sha256": "e612e0d6c8aa6bb09bb9ec72c92ba8df38a3cfb095f9c4b95444e1a9de177366"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/postprocessing/BloomPass.js",
+    "sha256": "3df2a886402c90dd198070ebfacdab10114547caf90b66c687ba4e6ccddfaa5e"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/postprocessing/DotScreenPass.js",
+    "sha256": "070514f29559c54f5a19283b8cb5715b593e23c1cca86aa707df19d164869252"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/postprocessing/EffectComposer.js",
+    "sha256": "5ef32e9ca4ab457c637857649fb43a1d0c211d6993ceb4a683a530b4517d43f8"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/postprocessing/FilmPass.js",
+    "sha256": "c66cf0018607c371d0e98310da2f2e3a4c7e433bbd171f5f676a70e4c6b3638a"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/postprocessing/MaskPass.js",
+    "sha256": "af1fa148f551c698fce232dae34bd81bf3aae4508756d1b652b0c4e64495ce84"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/postprocessing/RenderPass.js",
+    "sha256": "fe15aea230242197c8f8978bfa1692be81f18cffb031fd946ec7a08facfe12f6"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/postprocessing/SavePass.js",
+    "sha256": "23fc12426398cda4562e6b62b980abe0021e5f4e35f75210564418d1931f7a1e"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/postprocessing/ShaderPass.js",
+    "sha256": "eae0a08e085bc0116ad8469b690c6d62ba3e72f16a7e1d9924ee585d08415591"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/postprocessing/TexturePass.js",
+    "sha256": "268d12da6ebb7f01a977524222b924d552bb8b969a05c641458bc0930784f0c9"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/ShaderExtras.js",
+    "sha256": "ffe28733951beccdf438ae9728a055dbf7ad8069b59ece9c0f337baab67160a7"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/Stats.js",
+    "sha256": "956fe0f777f224eef8c2f5580723990c30dd7caf916c64bcb0b0e873990fc1cb"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/Three.dev.js",
+    "sha256": "4a5b751fbff62706df4d5f13191111e9d8a5d94b063acbb85593794290d3000d"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/libs/Three.r53.js",
+    "sha256": "1089bcaab2a23a3edf11837dcc93ba2b7916e11d3430e3d0b77cacbbb0473bb5"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/LICENSE",
+    "sha256": "546e4044d830dc6153713f0512c09042b9cc49b7f902f654a5a1d3b41ca07db1"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/manifest.webapp",
+    "sha256": "f2e131a8394f84eacc288ff3dffbb17c13fe47f6bd672e862ad6ba2f7e60b364"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/package.webapp",
+    "sha256": "29a8c7e66f771d02cf4759ad1f410bf48b6934569e5b75e36b797d879ca35613"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/README.md",
+    "sha256": "bc5a138aacde2ba3a13292faf6529c15ffefe5d59f73bfe3b66508caa3ddbf6e"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/replays/cityscape-casual/bkcore.replay.json",
+    "sha256": "73ac69e71f9d537f2f78f1ff63859c59eb56198da71e48ab007fbceac79f7ba7"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/bonus/base/diffuse.jpg",
+    "sha256": "3e612bad2f6756df128232b969877116bc1d4115fb007fcd27597ede0dcbe880"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/bonus/base/normal.jpg",
+    "sha256": "c379c2f8525d290f8b55519ca915c4730f6f1dafdf9c6af27c97c6b225b424db"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/bonus/base/specular.jpg",
+    "sha256": "9ecb56d2784694ad632dd80e726a318db97d58ac03d07e521355c205d1ea946e"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/checker.png",
+    "sha256": "04b43b41afe039f455877c8c0312ec42e4cf5427b1c19fbc45cdba127783860b"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/hud/hex.jpg",
+    "sha256": "56d74bedd3fac0ae10000bfb7ba16b848e431f9bdb265bd7e5c0f3a3661b58d3"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/hud/hud-bg.png",
+    "sha256": "f52649f88f5275485d677699f6195313721895874abbe0d33e8b3c6a866913ea"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/hud/hud-fg-shield.png",
+    "sha256": "cf44acdbc864ce6634b973b5e91376cf0aee2f03d105395fce9b35cd56a39e44"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/hud/hud-fg-speed.png",
+    "sha256": "c5eab0f5815d001acf26f87f80c9df0c873c55dcb622860cc8519d20fc7d801b"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/particles/cloud - Copie.png",
+    "sha256": "ece213192f6a85fa093a03e59801f76b1065cff00eea91f8dc0c2453479341d3"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/particles/cloud.png",
+    "sha256": "c8e56519bbfd3e42d0c1aff8249e43d2e5a2946f5109dcdfe3574d8219ca65b3"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/particles/damage.png",
+    "sha256": "cf5173906b08e8c1693928f4e63482d30d65e6eacba5c5d4345395f3375cad1d"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/particles/spark - Copie.png",
+    "sha256": "204e02e6664497b22e62bb905cae3e2c319639b3f488e287fa0eeef62a19a1ef"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/particles/spark.png",
+    "sha256": "9f90354a518db007118cc76875a3e8d4fa570437b1608d317fa5071cb9bd7ace"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/ships/feisar/booster/booster.png",
+    "sha256": "8427219b736170a8f3ecd54e0b241ffd020a442fcfd2b7b6b0abdb18e02f5b22"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/ships/feisar/booster/boostersprite.jpg",
+    "sha256": "c811eff6d9ebf4a07f32c7ef31db72d7dd6ddb4b80e93e85cccc2046cc1f9016"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/ships/feisar/diffuse.jpg",
+    "sha256": "b8e1effc02e62b7c79f134427971f4fb48ce2ad81410d1e1bba2dcb0601dbd84"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/ships/feisar/normal.jpg",
+    "sha256": "51832d00c6704ffc4c28806a4c1f65ce90b0ae3d8f9628d48c04bfd2700f75b4"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/ships/feisar/specular.jpg",
+    "sha256": "aa9404d803bae9f16cd92d965ebcae407e8616008eff5e332d26639ec509bea2"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/skybox/dawnclouds/nx.jpg",
+    "sha256": "178887c0403f41a269ff00c7d4261dd56b74c304ffaeea962822dd6e7fb7caaf"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/skybox/dawnclouds/ny.jpg",
+    "sha256": "7afdda2733fe370d4927244b3541ea5070b1f15a392a234dc31ec1d0006ac6a0"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/skybox/dawnclouds/nz.jpg",
+    "sha256": "5e5ba7b8955522e8d86ffb303c201548209df1a7d7177565c7be29103619a17e"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/skybox/dawnclouds/px.jpg",
+    "sha256": "57d99274a0a845efa6f2becf2c95e5016162eace1407cc72451287be3c7b96a2"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/skybox/dawnclouds/py.jpg",
+    "sha256": "c206d7eeec43a778e038c771532c733ef3c13a345b35717446bc05162ab5b6ba"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/skybox/dawnclouds/pz.jpg",
+    "sha256": "b4880fa714eddcef261700a98af318b476b9053f23f1b39091036a9e70e91110"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/tracks/cityscape/collision.png",
+    "sha256": "9a3452d7c092d02cd02c8f0595f2a1306eae38c263c47c5777b8233fd6bfadde"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/tracks/cityscape/diffuse.jpg",
+    "sha256": "ead336170dd1547d729c05e4d2d25e7355b4154c65b08bcd2da5fcf78cfbce26"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/tracks/cityscape/height.png",
+    "sha256": "b04ec5cafad024c8ebd761453173c9b5d7e982a157263ec3f54e369c27ab38a8"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/tracks/cityscape/normal.jpg",
+    "sha256": "edd6dd342419f9138f1ec7e9bddacd631b1b615ec5fcf04a598d08a9326ea573"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/tracks/cityscape/scrapers1/diffuse.jpg",
+    "sha256": "9308b3d62dffc4a45e687f0d009de2a7fc268577a0562865df749ad7002ce665"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/tracks/cityscape/scrapers1/normal.jpg",
+    "sha256": "06b70ea74ed7c1583f2fba092016c03cc9cd09b855f7bf3d590ffffb95549fd3"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/tracks/cityscape/scrapers1/specular.jpg",
+    "sha256": "544794d4b1d734b1342782c11f1dce6bf3085adce4f51f3aa9c277660469f3c5"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/tracks/cityscape/scrapers2/diffuse.jpg",
+    "sha256": "a97fb5c44d94daa14becaeecdfb1fee9b463a2e3162ac8f869fda61c6063358a"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/tracks/cityscape/scrapers2/normal.jpg",
+    "sha256": "26160538d8c2b3493ecb038138531cc8c8d897fec651c395efdec00c717837f8"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/tracks/cityscape/scrapers2/specular.jpg",
+    "sha256": "9a9d0cb1caae0835de6c7fb2eb08e44a148f7bc616e7ec1b26a0dadfb1465725"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/tracks/cityscape/specular.jpg",
+    "sha256": "dfbbd750acd2da0178c72f0365cd4c590121cc772afaa49ac92ac14bd345ee03"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/tracks/cityscape/start/diffuse.jpg",
+    "sha256": "b8b83099e11861c5a07793c2f7cc7ead27b537b34d8e12b5492a073faebd94ae"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/tracks/cityscape/start/normal.jpg",
+    "sha256": "31253c93db5deeb50f41204e2cb9f470e5c9636fede56121c1185f2c7a919132"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/tracks/cityscape/start/specular.jpg",
+    "sha256": "f51e7d7e1c9eef829fbd2cd4810ef46f2a8b4c6be1027533dea8db280f224be1"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures/tracks/cityscape/start/start.jpg",
+    "sha256": "c810d525868b4698b42c2637847d144eda271d089484c87b87d19af3ce07e269"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/bonus/base/diffuse.jpg",
+    "sha256": "19218aeaacf874cd9aca081912567acc38a95a1577f91bd92dc2b7a53834c9eb"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/bonus/base/normal.jpg",
+    "sha256": "c379c2f8525d290f8b55519ca915c4730f6f1dafdf9c6af27c97c6b225b424db"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/bonus/base/specular.jpg",
+    "sha256": "9ecb56d2784694ad632dd80e726a318db97d58ac03d07e521355c205d1ea946e"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/checker.png",
+    "sha256": "04b43b41afe039f455877c8c0312ec42e4cf5427b1c19fbc45cdba127783860b"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/hud/hex.jpg",
+    "sha256": "56d74bedd3fac0ae10000bfb7ba16b848e431f9bdb265bd7e5c0f3a3661b58d3"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/hud/hud-bg.png",
+    "sha256": "f52649f88f5275485d677699f6195313721895874abbe0d33e8b3c6a866913ea"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/hud/hud-fg-shield.png",
+    "sha256": "cf44acdbc864ce6634b973b5e91376cf0aee2f03d105395fce9b35cd56a39e44"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/hud/hud-fg-speed.png",
+    "sha256": "c5eab0f5815d001acf26f87f80c9df0c873c55dcb622860cc8519d20fc7d801b"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/particles/cloud - Copie.png",
+    "sha256": "ece213192f6a85fa093a03e59801f76b1065cff00eea91f8dc0c2453479341d3"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/particles/cloud.png",
+    "sha256": "c8e56519bbfd3e42d0c1aff8249e43d2e5a2946f5109dcdfe3574d8219ca65b3"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/particles/damage.png",
+    "sha256": "cf5173906b08e8c1693928f4e63482d30d65e6eacba5c5d4345395f3375cad1d"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/particles/spark - Copie.png",
+    "sha256": "204e02e6664497b22e62bb905cae3e2c319639b3f488e287fa0eeef62a19a1ef"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/particles/spark.png",
+    "sha256": "9f90354a518db007118cc76875a3e8d4fa570437b1608d317fa5071cb9bd7ace"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/ships/feisar/booster/booster.png",
+    "sha256": "0750767f8996ad2d4797152874401a57aac0df90c4b2e39542252ec48e09ab79"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/ships/feisar/booster/boostersprite.jpg",
+    "sha256": "bd1b08f8f30650463b80e19e42f99a97372854a20ed0a390cc3c376ea267c32b"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/ships/feisar/diffuse.jpg",
+    "sha256": "92ef78fbb14042c3f6cb935faa9a50ef3f469141e91ff2c14164990ca4084fe3"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/ships/feisar/normal.jpg",
+    "sha256": "51832d00c6704ffc4c28806a4c1f65ce90b0ae3d8f9628d48c04bfd2700f75b4"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/ships/feisar/specular.jpg",
+    "sha256": "aa9404d803bae9f16cd92d965ebcae407e8616008eff5e332d26639ec509bea2"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/skybox/dawnclouds/nx.jpg",
+    "sha256": "12b1ce6c91aa3aaf258a8a5944df739a6c1cc76e89d4d7119d1f795a30fc1bf2"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/skybox/dawnclouds/ny.jpg",
+    "sha256": "e18fe2206b63d3df2c879f5e0b9937a61d99734b6c43ac288226c58d2418d23e"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/skybox/dawnclouds/nz.jpg",
+    "sha256": "00dddd1b715d5877af2a74c014ff6e47891f07435b471d213cd0673a8c47f2b2"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/skybox/dawnclouds/px.jpg",
+    "sha256": "bf20acd6817c9e7073e485bbe2d2ce56dacff73c021c2b613ba072ba2df2b754"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/skybox/dawnclouds/py.jpg",
+    "sha256": "16f0d692af0b80e46929d8d8a7e596123c76729cc5eb7dfd1c9184b115dd143a"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/skybox/dawnclouds/pz.jpg",
+    "sha256": "b850b5e882889df26be9289d7c25ba30524b37e56bc2075b968a83197ad977f3"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/tracks/cityscape/collision.png",
+    "sha256": "9a3452d7c092d02cd02c8f0595f2a1306eae38c263c47c5777b8233fd6bfadde"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/tracks/cityscape/diffuse.jpg",
+    "sha256": "524ee7d00a296e6536f1f76646c6d842a5f57e02ad5c40a8d8fcf6a6f5ffc6be"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/tracks/cityscape/height.png",
+    "sha256": "b04ec5cafad024c8ebd761453173c9b5d7e982a157263ec3f54e369c27ab38a8"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/tracks/cityscape/normal.jpg",
+    "sha256": "edd6dd342419f9138f1ec7e9bddacd631b1b615ec5fcf04a598d08a9326ea573"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/tracks/cityscape/scrapers1/diffuse.jpg",
+    "sha256": "e740901dbe1ea7e0f33132ce5bfeb6fe543a00f868649e21701dbc4da374edcf"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/tracks/cityscape/scrapers1/normal.jpg",
+    "sha256": "06b70ea74ed7c1583f2fba092016c03cc9cd09b855f7bf3d590ffffb95549fd3"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/tracks/cityscape/scrapers1/specular.jpg",
+    "sha256": "544794d4b1d734b1342782c11f1dce6bf3085adce4f51f3aa9c277660469f3c5"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/tracks/cityscape/scrapers2/diffuse.jpg",
+    "sha256": "3f369d9cad864afe2873da621e84ce2f17410c9ef88c2437a765102ba61b9088"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/tracks/cityscape/scrapers2/normal.jpg",
+    "sha256": "26160538d8c2b3493ecb038138531cc8c8d897fec651c395efdec00c717837f8"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/tracks/cityscape/scrapers2/specular.jpg",
+    "sha256": "9a9d0cb1caae0835de6c7fb2eb08e44a148f7bc616e7ec1b26a0dadfb1465725"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/tracks/cityscape/specular.jpg",
+    "sha256": "dfbbd750acd2da0178c72f0365cd4c590121cc772afaa49ac92ac14bd345ee03"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/tracks/cityscape/start/diffuse.jpg",
+    "sha256": "b8b83099e11861c5a07793c2f7cc7ead27b537b34d8e12b5492a073faebd94ae"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/tracks/cityscape/start/normal.jpg",
+    "sha256": "31253c93db5deeb50f41204e2cb9f470e5c9636fede56121c1185f2c7a919132"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/tracks/cityscape/start/specular.jpg",
+    "sha256": "f51e7d7e1c9eef829fbd2cd4810ef46f2a8b4c6be1027533dea8db280f224be1"
+  },
+  {
+    "path": "apps/web/dist/legacy/hexgl/textures.full/tracks/cityscape/start/start.jpg",
+    "sha256": "c810d525868b4698b42c2637847d144eda271d089484c87b87d19af3ce07e269"
+  },
+  {
+    "path": "apps/web/dist/legacy/minecraft/thumbnail.png",
+    "sha256": "7e3160eb5ca43bf930f1dd7c72307641963bcd19f67b2e641e1f4bfd3bb75a9c"
+  },
+  {
+    "path": "apps/web/dist/legacy/octogone/index.apple-touch-icon.png",
+    "sha256": "5fa83ebb17309fc148a0059ccd8ee6b1035c58b293a6204ca18c5f4b0bf14409"
+  },
+  {
+    "path": "apps/web/dist/legacy/octogone/index.audio.position.worklet.js",
+    "sha256": "347b512529c5dca302093f7b9de6d184dd09d10e9a6fba62cbab098a891b2368"
+  },
+  {
+    "path": "apps/web/dist/legacy/octogone/index.audio.worklet.js",
+    "sha256": "5b476a9c9ce642c0ee4256436d1bc31d9c38f868aca0f9a8e2a57c18d2dec2a3"
+  },
+  {
+    "path": "apps/web/dist/legacy/octogone/index.html",
+    "sha256": "a4c550efcbbc331e8065908d409f48d5e30fa7f99e692870ebb057983cfbc95a"
+  },
+  {
+    "path": "apps/web/dist/legacy/octogone/index.icon.png",
+    "sha256": "5de998a978760e7f98bcedc28ef09fa67c33c95b100a045ff0e1b1315b2f7efb"
+  },
+  {
+    "path": "apps/web/dist/legacy/octogone/index.js",
+    "sha256": "19eb180d568bb8e17bcf4c72ca034ed3af44deeb90304deefee4e665562dfe31"
+  },
+  {
+    "path": "apps/web/dist/legacy/octogone/index.pck",
+    "sha256": "86719ae8e05d4e65033c057abc0b770b6c061061d9e6a717d15dbd83f98151a8"
+  },
+  {
+    "path": "apps/web/dist/legacy/octogone/index.png",
+    "sha256": "3cb4495c0b98dfbe4b663cbf2b6836473572339beb66d902367893162a70be0e"
+  },
+  {
+    "path": "apps/web/dist/legacy/octogone/index.wasm",
+    "sha256": "60e0c995c94fc53192ac43727948f10ba52aac640b61f0e78783945146da1e22"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/ads.txt",
+    "sha256": "89ab48829745109a80226c94f5b7d1904e4784f4bcaca8a431c45e483c96a418"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/bump_version.sh",
+    "sha256": "1a8744633f3067019fd8d69b55d330a0264ac4dbc8aea8307c676674f8d1a300"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/cache.manifest",
+    "sha256": "90db16520a703d15ce08d137857763a8a92dc5386d53cd0c51c12bc6d53953d7"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/data/db-handler.php",
+    "sha256": "7c877184534e85a77941a5420cca0e836f225bcdbc8149d50473094bd54fcc93"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/data/map.json",
+    "sha256": "7b5c34dd9dddb52f3caed2e6b80d4dd2cee7a7741a1959f4f8a77ed16453506d"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/fonts/PressStart2Play.eot",
+    "sha256": "7c914715775413b6fa879312f2b1e9af6d32685026c1fcb75868a8fa9e066d68"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/fonts/PressStart2Play.ttf",
+    "sha256": "b174abf3418df4e47064b7cd3c31f525c4c60aad14b53aa4dd2f27f7683f92d9"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/fonts/PressStart2Play.woff",
+    "sha256": "1bf7eadbb70e697e510f95199f67d9f14b9e5e9555314e84d3f673a74b487b1a"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/googlee6aee5a894225e60.html",
+    "sha256": "14ccb24ba91cabdfd347a0034ba8ea4ce20127a409bad37392e224f8a402ade5"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/img/audio-icon-mute.png",
+    "sha256": "2c7450c69da868735a822745390f365f005be3a4c7ffeaabf6cdb53a40e12419"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/img/audio-icon.png",
+    "sha256": "b73542b25c442acbad89eef010fa6c98ee78c6006263aaba15454277f71b70a2"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/img/bg-pattern-black.png",
+    "sha256": "f36a8356fd02fb76ecfe1e4ca9a09ac267cf732b41aa1be5be582f24e2e7e68d"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/img/blinky.svg",
+    "sha256": "2f531d1dfa3542bfdc9f8b5c899f4e5659bb5ffbb1e35ccf4a884bea473f09b8"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/img/clyde.svg",
+    "sha256": "f4f0a4ef61c3dee68717158d26d797343a0e1e9d6ac7ae5992bdf5816aa39910"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/img/dazzled.svg",
+    "sha256": "1969a764d7cb2cd07e840bac207f182dc1b50ffb02176175228c0fbfb158979f"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/img/dazzled2.svg",
+    "sha256": "db5f29b1effdb2c63ab939918d9d01db9e54c8b6001e63c379a48f48abb21a86"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/img/dead.svg",
+    "sha256": "cecf6a1b40aca2ea1070edacba6dbbe6c8fe4285f274685bf4cf97cf5635c0ee"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/img/heart.png",
+    "sha256": "5f2d2e3e9da12e120bae3a6fe720db47310a1608ad7c7f6e4ec851d2f4c2c862"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/img/Icon-106x106.png",
+    "sha256": "815dbcf2f1db17dc657645eb528f117e752b4928661bc2e18d8e30ca46dfb319"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/img/icon-128_old.png",
+    "sha256": "63ab0b3bb6cb3c72b23c519e7784ea50fc7ea4800eb407579e5aa7fe0d04661a"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/img/icon-128.png",
+    "sha256": "d40830b395283cd787df3f4eee30382ec717fd0c282d8c15e1f22340fde0e076"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/img/Icon-130x130.png",
+    "sha256": "af0c29ceab3a32a1417d18829b795e15efb03d7e3e1c9d0a37f2a789e71697b6"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/img/Icon-150x130.png",
+    "sha256": "375eb8536c8a540d02ae4b3eb69646a06e5863f190ab4beabf65dbe9b2804df0"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/img/Icon-200x200.png",
+    "sha256": "f4f9c7edd71d82eb9c5daff99f45bd55dd19e503ed348e4dbd3638033573b475"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/img/Icon-300x300.png",
+    "sha256": "d00ba6dd6a4f89ee43b58687df5a772f3c38587d6f8bd7719b8b178ea56c0b4c"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/img/Icon-32x32.png",
+    "sha256": "b8b826b16478b2578fbeeea127f51570cf053453e3eed91538316c2e3487a70a"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/img/Icon-512x512.png",
+    "sha256": "833cd61e1645d531ab7c1cdf87b29384256719f7121602ffb763eb1d0adef07f"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/img/inky.svg",
+    "sha256": "9c3c6e2d36e09adb093a36b630af62e8006fb9fbd764e688709a902037d934c7"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/img/instructions/instructions_chase.PNG",
+    "sha256": "2f1592217eca153b1843f288a76518529184adeeea1f8fb387ba211a8e92f5a7"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/img/instructions/instructions_powerpill.PNG",
+    "sha256": "72d70f6e2c0ec6a18314d134c52ff73f3b59f95ea08acfa8a3d9709217e74c28"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/img/instructions/instructions_scatter.PNG",
+    "sha256": "de102b94dafd388290a7fd371ab083e958895fb110dd66177d669cdea06f8c3a"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/img/Pacman-Icon.svg",
+    "sha256": "6be869f7554a5f5e806b3a59e4bc38e0c2345205228a9e8c08e12f604dc7c320"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/img/pinky.svg",
+    "sha256": "673ec44c79199c74b2ec802795005714092c5248acc26fd79ce1cd873c8a9f60"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/img/platzh1rsch-logo.png",
+    "sha256": "a134f7e3f19a84fae5d6b0a6963c8ffc5c1cb8e65e1804fb593554d5423ab7e4"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/index.html",
+    "sha256": "05e60fe282bdf544d8fd1b9321ed0d80f2e4d38fe7069f68834de03650b7d1b4"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/js/jquery-1.10.2.min.js",
+    "sha256": "0ba081f546084bd5097aa8a73c75931d5aa1fc4d6e846e53c21f98e6a1509988"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/js/jquery.hammer.min.js",
+    "sha256": "07c46c44d68ef5261add9e1a39ade6ea29c213f3359a990e77f6ed192521981c"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/js/pacman/ghost.js",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/js/pacman/pacman.js",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/js/virtualjoystick.js",
+    "sha256": "f3f7b4907996e0f4d06215d0761b2f8ed6d9047f70eaafcf10e1668eaf924375"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/LICENSE.md",
+    "sha256": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/manifest.json",
+    "sha256": "33b05ebec40b6817c2f92afc8509459acc5e2474bf05a233fd2bde92d485ac22"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/mp3/die.mp3",
+    "sha256": "48e688a3d2dea1133bf792fd5297ddc308ca9cbc7d21a26272539e74f77375b8"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/mp3/eatghost.mp3",
+    "sha256": "a0e3ef65b14bb01f97e72d66dfde0b66ee0983f0c9ed2a04757f68bd3326ba14"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/mp3/powerpill.mp3",
+    "sha256": "96882350de5de74ff50c0582e5c9cb51882a5efab035a7a3904373548490a5c1"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/mp3/theme.mp3",
+    "sha256": "b722b9bf99e1aa0dda603953244a25c89df8c54d4b327f92e6d025e05814a4d8"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/mp3/waka.mp3",
+    "sha256": "4fdf8ea3eb46f7a9a96b1fd7ef29afff7a5246211d92991ef7f9b67476ee80ce"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/package-lock.json",
+    "sha256": "61651c6103d83ab7e34fef22a6341fa8e0c48bc9fd4f6b5365d302395fb7fede"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/package.json",
+    "sha256": "d29774f93e79f431a764cde3930e7c8ca6f6d24959a9594890fd222d001309a7"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/pacman-canvas.css",
+    "sha256": "2a0c6b9ccfa680be88980fd1e221358799e5a6f9b61435eb3c7775f3599551e6"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/pacman-canvas.js",
+    "sha256": "6f0de0c43e483bc6071990e5546552e5861e41d30d1dcf9d42c59fbfc5466285"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/pacman-canvas.test.js",
+    "sha256": "25d7a2f2c34de44f4da9506c0f49bde7b6bf812074a797515eec7012091f564c"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/pacman-canvas.webapp",
+    "sha256": "140f81453d1cd93224a98a4ccd33c6bba178f8a48527ebeace3dacdc9b11c1cd"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/README.md",
+    "sha256": "297862f2e818fb61fb62abbf841b3a5f6224214db2616f7f07c70003209ff6eb"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/server.js",
+    "sha256": "fc2973f23b73be500f31d4a311398eca9dd8414d67ba4ab8c2c6cbbdf1fb81be"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/style.css",
+    "sha256": "7d1403248fd1ed65212bbfddcb824b7f0c87d607783a8dbc71352d998e563d93"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/wav/die.wav",
+    "sha256": "aa0a16b61d8be9ef1d27083cdb5ae483c37d6dc9241e6df883617c6fb1305510"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/wav/eatghost.wav",
+    "sha256": "f0cef0217d33fe647cb333c81f3d4c11c6a1798b14c16b533be7ff36892d5496"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/wav/powerpill.wav",
+    "sha256": "416d0689708a89334c0f52a3f0d3ec221a649f8fe5b63b1f307de8cd8a7a2f89"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/wav/theme.wav",
+    "sha256": "7d82cce6defbfce1ef7d999ce8a573dbcf1688b9f5fd0e96567791c2f7d644d1"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/wav/waka.wav",
+    "sha256": "577264ee57ca4dc7f9c45901428e1d656494954a55ece29614dadbda4522f56a"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/web-app-manifest.json",
+    "sha256": "984e459ab5a72ad2f423400ae544e730e2120cd5ab9e933d6dd39e35fc965139"
+  },
+  {
+    "path": "apps/web/dist/legacy/pacman-canvas/webpack.config.js",
+    "sha256": "c9a4db28bc1dead7a07fb9fca97297bc2baeb618256eda82db2bcbba665af2c7"
+  },
+  {
+    "path": "apps/web/dist/legacy/supertux-classic/index.apple-touch-icon.png",
+    "sha256": "1591cd86298b3bc1739173afbfe61e584f153bfcba55a10a1111f3dac7933961"
+  },
+  {
+    "path": "apps/web/dist/legacy/supertux-classic/index.audio.worklet.js",
+    "sha256": "8b3e52c1f0806bc623f174cfa2989ba1d6f63e44022d7923580579a1b88cab37"
+  },
+  {
+    "path": "apps/web/dist/legacy/supertux-classic/index.html",
+    "sha256": "066bd8f15233cce396f4132861b8ac25c7ca566b34ced59008349bf573378dc5"
+  },
+  {
+    "path": "apps/web/dist/legacy/supertux-classic/index.icon.png",
+    "sha256": "b206655c79492f5e5896c3e1c8b8e0eaefe8c939c13df43fbbde1cfb9e77b8bb"
+  },
+  {
+    "path": "apps/web/dist/legacy/supertux-classic/index.js",
+    "sha256": "8e515babe04058fca9668d31fcb4e59048ce659cecf9331b4e93fcfd4a36c975"
+  },
+  {
+    "path": "apps/web/dist/legacy/supertux-classic/index.pck",
+    "sha256": "d5aeefab6481f783d2ce5ed6240b2c8b3b15aa169257114c5e44529e9f0f01c4"
+  },
+  {
+    "path": "apps/web/dist/legacy/supertux-classic/index.png",
+    "sha256": "3cb4495c0b98dfbe4b663cbf2b6836473572339beb66d902367893162a70be0e"
+  },
+  {
+    "path": "apps/web/dist/legacy/supertux-classic/index.wasm",
+    "sha256": "af1e6208f15da2d5a49a6064d541ec8701351f321fff5f922a0e013d24a66bad"
+  },
+  {
+    "path": "apps/web/dist/stockfish/stockfish.js",
+    "sha256": "2278005057f381491f1c9bb3e44c9f5920b3a00bef9759e33cc6582769a1f1fe"
+  },
+  {
+    "path": "apps/web/dist/stockfish/stockfish.wasm",
+    "sha256": "a8fbc05ec6920b56d7485826dcb02c5ffd2826bcbf751cf973046f237a9096f1"
+  },
+  {
+    "path": "apps/web/dist/voxel-browser-boundary.json",
+    "sha256": "9076e79bec7b4b994de5f72670ffd02dcfd5231af5c52079fe1efa2a3215015d"
+  }
+]

@@ -1,0 +1,59 @@
+{
+  "buildId": "3ea11984a11a76d7d2993a55a882ed985827a6d1440e3336f3e8cf0612f5f508",
+  "engineHash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388",
+  "contentHash": "368b605ac5bdf5ff6fcf4af02f7174cbc6d39b5110f48e0a41b231a0a6479464",
+  "clientHash": "6db648d4b0a0731e21fa7f52ab0128ba7cba12118fc3ad9b1b962cf9ea11ac4e",
+  "serverHash": "e6a47ee3db32e4757d5d8746152f8b1a94eff4423189a609e31d5ec3f4202eab",
+  "client": [
+    {
+      "path": "assets/engine-worker-DYAFKrDe.js",
+      "hash": "99d3377c134578cd5e9bdd923e7707547e62c3a2a0a1a64c90adec5f1121bf04"
+    },
+    {
+      "path": "assets/index-5w2pNf9N.css",
+      "hash": "2b1c35f291993017e6b64ee082d5b043f59edef25e5d29d5239bc23fab798eac"
+    },
+    {
+      "path": "assets/index-ClwRdzEW.js",
+      "hash": "211407677d8eb39cf339ccbc18c99622b548aee8445ca58212ecc3726a6e799b"
+    },
+    {
+      "path": "assets/voxel_engine_bg-1ejYMYOZ.wasm",
+      "hash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "index.html",
+      "hash": "9fce3ddb2f654eb6f9de48b4345af7a43c53ad929d24b6049ec1fa450265574a"
+    }
+  ],
+  "server": [
+    {
+      "path": "build.json",
+      "hash": "9c91fa03b191de8615a65ac81226707317b7752342072866dd012d0fb264d12a"
+    },
+    {
+      "path": "content.json",
+      "hash": "87da078927c9df8366a815c868478e71f559da83e4785447a8edb3e505dba250"
+    },
+    {
+      "path": "engine.wasm",
+      "hash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "gateway.js",
+      "hash": "ed6e0bc84ba007f6165b1651b771149efa3d862bf360c5c1b83f4b235dbeee62"
+    },
+    {
+      "path": "gateway.js.map",
+      "hash": "efd2c7504534c5fe5f48868056a8de58aad61265400da6268de490c646f94a0d"
+    },
+    {
+      "path": "room-worker.js",
+      "hash": "b92db784f57e65a1a6ea9c6eeff33ae84bf97d8371b4bf67d8a0e095d8900231"
+    },
+    {
+      "path": "room-worker.js.map",
+      "hash": "f34c38f2aec94b81c80b20853387828b47817381b2f2fa8087d83897f141b323"
+    }
+  ]
+}

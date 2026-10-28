@@ -1,0 +1,115 @@
+{
+  "result": "FAIL",
+  "startedAt": "2026-10-27T18:40:10.774Z",
+  "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077",
+  "configuration": {
+    "seconds": 10,
+    "roomCount": 1,
+    "playerCount": 2,
+    "ioMs": 5
+  },
+  "host": {
+    "node": "v24.21.0",
+    "arch": "arm64",
+    "cpu": "Neoverse-N1",
+    "logicalCpus": 2,
+    "availableParallelism": 2
+  },
+  "scope": "Packaged gateway/native workers, UUID actors, ordinary survival inputs/actions, fixture-owned kits and prepared natural-world work platforms, contested containers and commit/worker-crash recovery. Delayed in-memory metadata/object contract backend with advancing clock; no actual Supabase/Auth/SQL/Storage/SFU, rendering, real devices/networks, TNT or school-capacity signoff.",
+  "failure": {
+    "phase": "load",
+    "message": "movement timeout da8f9c61-bea8-4155-87bf-1994b302dcb2: {\"body\":[-5.5,160,-6.6889],\"point\":[-5.5,160,-6.5]}",
+    "stack": "Error: movement timeout da8f9c61-bea8-4155-87bf-1994b302dcb2: {\"body\":[-5.5,160,-6.6889],\"point\":[-5.5,160,-6.5]}\n    at go (file:///home/ubuntu/OMplayground/games/voxel/tools/benchmark-survival-workers.ts:344:15)\n    at runNextTicks (node:internal/process/task_queues:65:5)\n    at listOnTimeout (node:internal/timers:644:9)\n    at process.processTimers (node:internal/timers:618:7)\n    at async mineAndPlace (file:///home/ubuntu/OMplayground/games/voxel/tools/benchmark-survival-workers.ts:380:3)\n    at async Promise.all (index 0)\n    at async file:///home/ubuntu/OMplayground/games/voxel/tools/benchmark-survival-workers.ts:589:5"
+  },
+  "finishedAt": "2026-10-27T18:40:18.576Z",
+  "peers": [
+    {
+      "id": "da8f9c61-bea8-4155-87bf-1994b302dcb2",
+      "messages": 197,
+      "bytes": 42709,
+      "resyncs": 0,
+      "retainedEvents": 197,
+      "retainedHighWater": 197,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 112,
+        "meanMs": 5.622957642857136,
+        "p95UpperMs": 8.85,
+        "p99UpperMs": 9.8,
+        "maxMs": 9.894447000000014
+      },
+      "commandMs": {
+        "samples": 2,
+        "meanMs": 2.2928115000000275,
+        "p95UpperMs": 2.3805320000000165,
+        "p99UpperMs": 2.3805320000000165,
+        "maxMs": 2.3805320000000165
+      },
+      "outcomes": {
+        "selected": 1,
+        "mining": 1
+      },
+      "lastBaseline": {
+        "reason": "focus",
+        "phase": "playing",
+        "epoch": 8,
+        "position": [
+          -5.5,
+          160,
+          -4.5
+        ]
+      }
+    },
+    {
+      "id": "539c7305-d60a-4448-bfac-3f814f55fe7c",
+      "messages": 197,
+      "bytes": 42695,
+      "resyncs": 0,
+      "retainedEvents": 197,
+      "retainedHighWater": 197,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 112,
+        "meanMs": 5.533429294642856,
+        "p95UpperMs": 8.75,
+        "p99UpperMs": 9.8,
+        "maxMs": 9.845527000000402
+      },
+      "commandMs": {
+        "samples": 2,
+        "meanMs": 2.3304114999999683,
+        "p95UpperMs": 2.350251999999955,
+        "p99UpperMs": 2.350251999999955,
+        "maxMs": 2.350251999999955
+      },
+      "outcomes": {
+        "selected": 1,
+        "mining": 1
+      },
+      "lastBaseline": {
+        "reason": "focus",
+        "phase": "playing",
+        "epoch": 9,
+        "position": [
+          0.5,
+          160,
+          -4.5
+        ]
+      }
+    }
+  ],
+  "cleanup": {
+    "rooms": 0,
+    "closedClients": 2,
+    "totalClients": 2,
+    "pendingWaiters": 0
+  },
+  "storage": {
+    "objects": 8,
+    "bytes": 15793,
+    "puts": 8,
+    "commits": 2
+  }
+}

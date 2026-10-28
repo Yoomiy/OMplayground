@@ -1,0 +1,260 @@
+{
+  "result": "PASS_WITH_SERVICE_AND_DEVICE_LIMITATIONS",
+  "capturedAt": "2026-10-24T21:38:53.452277+00:00",
+  "buildId": "afd3a9b33e5e2c39f88b4e0f31fa53fdaa0b1605aef14a3621f948666174ca77",
+  "runtimeHash": "130b6cffcfced6a8eb60df26f941e4952b014a5f76c31c1e5b21f73f0b764860",
+  "engineHash": "1e3f1e257d7326182e52736112b4a585b5809173a7f6f6d3fee34e52f414b7b6",
+  "contentHash": "368b605ac5bdf5ff6fcf4af02f7174cbc6d39b5110f48e0a41b231a0a6479464",
+  "checksExitCode": 0,
+  "matchedReleaseFiles": 12,
+  "counts": {
+    "domain": 72,
+    "nativePassed": 79,
+    "nativeIgnored": 3,
+    "actualWasm": 74,
+    "sourceIntegration": 17,
+    "packagedIntegration": 17
+  },
+  "browserExitCodes": [
+    {
+      "script": "test:creative:browser",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "script": "test:inventory:browser",
+      "code": 0,
+      "signal": null
+    }
+  ],
+  "limitations": "Injected storage/metadata contract fixture, not Supabase/Postgres. No actual provider transaction, private-bucket, retention, deployment-overlap or school lifecycle qualification. Two ordinary built-client regressions only; no durable-backend browser proof and no new full eleven-scenario browser suite. Software Chromium creative frame gap 700 ms; hardware/input/audio/latency/capacity remain open. Full rewrite remains incomplete.",
+  "screenshots": [
+    {
+      "path": "creative.png",
+      "script": "test:creative:browser",
+      "startedAt": "2026-10-24T21:35:03.659Z",
+      "finishedAt": "2026-10-24T21:35:37.933Z",
+      "sourceModifiedAt": "2026-10-24T21:35:36.714565+00:00"
+    },
+    {
+      "path": "inventory-crafting.png",
+      "script": "test:inventory:browser",
+      "startedAt": "2026-10-24T21:35:59.782Z",
+      "finishedAt": "2026-10-24T21:36:22.647Z",
+      "sourceModifiedAt": "2026-10-24T21:36:17.163758+00:00"
+    },
+    {
+      "path": "inventory-chest.png",
+      "script": "test:inventory:browser",
+      "startedAt": "2026-10-24T21:35:59.782Z",
+      "finishedAt": "2026-10-24T21:36:22.647Z",
+      "sourceModifiedAt": "2026-10-24T21:36:20.194773+00:00"
+    }
+  ],
+  "scenarios": [
+    {
+      "path": "tests/wasm/checkpoint-room.test.ts",
+      "hash": "7d45d0c17db36f7290ad4131d7105b9ba2888c017f69efb080655a5589ad6b3f"
+    },
+    {
+      "path": "tests/wasm/checkpoint-storage.test.ts",
+      "hash": "c00cbd9ceac43fe52f9bb687d950bdd2445aed48fa0ebdd23083b76060ac600f"
+    },
+    {
+      "path": "tests/wasm/checkpoint-world.test.ts",
+      "hash": "a3e09a521c4f0ede81e3d501ee1a3c5fc52c572cbc31b0f99308c7b7a76680a0"
+    },
+    {
+      "path": "tests/wasm/checkpoint-objects.test.ts",
+      "hash": "d70b92f4eea3941edab28f2fd7eba060e36c7ea0f6763f6b42cfb9ff19e52f4a"
+    },
+    {
+      "path": "tests/inventory-checkpoint.test.ts",
+      "hash": "00ce5d4b90fcb199b78dff65e08cb94a9216c285698950af7e28056a82a6ff34"
+    },
+    {
+      "path": "tests/object-checkpoint.test.ts",
+      "hash": "e31493333ff67994db851edc00e878e4c4e129c80042e148caaaa49c6808d450"
+    },
+    {
+      "path": "tests/vitals-checkpoint.test.ts",
+      "hash": "bf852d933452d300b8b75062b30d3f8bf65d23762bfd254a1aa74afe044d9703"
+    },
+    {
+      "path": "tests/integration/durability.test.ts",
+      "hash": "7b63493a0130ad8b3d357bd41ad3bced662429099b240950ac5b726aae19af78"
+    },
+    {
+      "path": "tests/integration/worker-checkpoint.test.ts",
+      "hash": "d24d0a80c195a156103fceffe775315bb7fe70395368345e4971b5c1194b69c4"
+    },
+    {
+      "path": "tests/integration/creative.test.ts",
+      "hash": "4e26e08e831e475b298400e78872da8729f0894ba9889f8c8b800fd24608dea3"
+    },
+    {
+      "path": "tests/fixtures/checkpoint-storage.ts",
+      "hash": "d8739843d477dec79588bb95e45e246e46c4c95e43238890376d06bf47196666"
+    },
+    {
+      "path": "tests/fixtures/socket-probe.ts",
+      "hash": "e64b9a2c2d922d1e1b4887560aa71445ec1383c86f2045828fd5181c45543941"
+    },
+    {
+      "path": "tools/browser-creative.ts",
+      "hash": "cc21b2ce090ef378f965457ece975237f69f21932fc5653cf88616955fbf4ba6"
+    },
+    {
+      "path": "tools/browser-inventory.ts",
+      "hash": "9462cbefd476f824e8b665e923b974909487d377e1499b163e188bdfbb7dc693"
+    },
+    {
+      "path": "tools/browser-harness.ts",
+      "hash": "6b5f9fde3719606b6d5488f09e7219da7e01bd68d0a0299c46e4f3a72d398e49"
+    }
+  ],
+  "sourceArchive": {
+    "path": "source.tar.gz",
+    "layout": "repository-relative",
+    "verifiedSourceFiles": 190,
+    "verification": "All archived regular files compared byte-for-byte with the workspace at capture"
+  },
+  "files": [
+    {
+      "path": "README.md",
+      "hash": "1c30d2fa46b395113cf571a7aa82c4a5e7ab379c21e8b2257eef46e66353f2c2"
+    },
+    {
+      "path": "browser-creative.json",
+      "hash": "9b410e36cf39d04749eb2cb31dea838a2ee9f99f18869e4d252dcff0f5af7bb0"
+    },
+    {
+      "path": "browser-inventory.json",
+      "hash": "18fbbdb4604a9cf9beccbfe6c9e3af06715699f4dae565280537f640126963c3"
+    },
+    {
+      "path": "browser-suite.json",
+      "hash": "7c56a885fbfb7c7c4081450e731b4c0aa0732124ae926f16b4ba7eb263cc20ff"
+    },
+    {
+      "path": "build.json",
+      "hash": "074b997fea763d54e69d678edafc63061331b92786703600082a62c93c1f4ea6"
+    },
+    {
+      "path": "capture.py",
+      "hash": "439f78a47b0417475fa2da85cc336d834a8d9db60ea3dd3666c377c2debe9ed0"
+    },
+    {
+      "path": "check-exit.json",
+      "hash": "d7d356e9bfcf4c40e8bdc298acfb9f821e0500db22ce1df8d32155048de283ea"
+    },
+    {
+      "path": "check.txt",
+      "hash": "c33c9f8405d15a9255919f32a42029a137ad156fd0c0117a963cc1a3f21c7bea"
+    },
+    {
+      "path": "content.json",
+      "hash": "87da078927c9df8366a815c868478e71f559da83e4785447a8edb3e505dba250"
+    },
+    {
+      "path": "creative.png",
+      "hash": "5e4b33da0e8fb2d5984176593b1b325ac2d19d44f0b47fdcefe576156f455f7a"
+    },
+    {
+      "path": "inventory-chest.png",
+      "hash": "31cb480440a37d41be2d39171c314e9bb88dd1ede2b93024dfd5fdc1f20c6d1c"
+    },
+    {
+      "path": "inventory-crafting.png",
+      "hash": "2dfe7a610ac1600ce8e6d37c84ce50dcba864115e6a8205a460c02dc9afc7949"
+    },
+    {
+      "path": "release.json",
+      "hash": "fb3548ef47e2d393cb7e2614aa8b9ae7134c734a43c2040701c521ff56bc4483"
+    },
+    {
+      "path": "release/client/assets/engine-worker-DYAFKrDe.js",
+      "hash": "99d3377c134578cd5e9bdd923e7707547e62c3a2a0a1a64c90adec5f1121bf04"
+    },
+    {
+      "path": "release/client/assets/index-5w2pNf9N.css",
+      "hash": "2b1c35f291993017e6b64ee082d5b043f59edef25e5d29d5239bc23fab798eac"
+    },
+    {
+      "path": "release/client/assets/index-B9YbP9zk.js",
+      "hash": "3e047a8a721a5db37e4019cfe660d667f089fc925590664fbefd28875949b84b"
+    },
+    {
+      "path": "release/client/assets/voxel_engine_bg-BvdFu1AO.wasm",
+      "hash": "1e3f1e257d7326182e52736112b4a585b5809173a7f6f6d3fee34e52f414b7b6"
+    },
+    {
+      "path": "release/client/index.html",
+      "hash": "c6541d113ff962976e37f0d48d3551df488c83edfe6e2beee1a10a2e465d6f43"
+    },
+    {
+      "path": "release/server/build.json",
+      "hash": "074b997fea763d54e69d678edafc63061331b92786703600082a62c93c1f4ea6"
+    },
+    {
+      "path": "release/server/content.json",
+      "hash": "87da078927c9df8366a815c868478e71f559da83e4785447a8edb3e505dba250"
+    },
+    {
+      "path": "release/server/engine.wasm",
+      "hash": "1e3f1e257d7326182e52736112b4a585b5809173a7f6f6d3fee34e52f414b7b6"
+    },
+    {
+      "path": "release/server/gateway.js",
+      "hash": "a4954ee647bd12f6e3ffc6f7d507d282366f6236634eb3da06d5b0c60848998e"
+    },
+    {
+      "path": "release/server/gateway.js.map",
+      "hash": "2bdef9fdf647710e66074172473a917f50872d952852ba901f4eb66abc4325f5"
+    },
+    {
+      "path": "release/server/room-worker.js",
+      "hash": "3260c28d043487af4fd9cb7e00744919528750d74cd734c70bd257321706a562"
+    },
+    {
+      "path": "release/server/room-worker.js.map",
+      "hash": "d3d14f32bdc05d0ac32a33fce53e9cb420f96bde05254366abc07d83df4f7cba"
+    },
+    {
+      "path": "run-browser.mjs",
+      "hash": "c8c7b43ab629b48611e1ba1c436646cdbfede83cfdad25f1bec01815dc2e5521"
+    },
+    {
+      "path": "run-check.mjs",
+      "hash": "d641ae3c5b48f5c5cc5775e7b461bd55a50353137a7a02e65343112b54feb644"
+    },
+    {
+      "path": "source-inputs.json",
+      "hash": "7bd59ce728046e7e73b9174e0e7ec0d462a3662846c928dae169f3570fcf9307"
+    },
+    {
+      "path": "source-release-verification.json",
+      "hash": "5a308570ee0b4e9166e3f93ac108b47305275997e3bb608931e9968e821e8d2f"
+    },
+    {
+      "path": "source.tar.gz",
+      "hash": "929869bb90832439f3ae244f8b0e3e3fb15ab7b7457eb845ab23ef2ac1713526"
+    },
+    {
+      "path": "test-creative-browser-exit.json",
+      "hash": "f193f1f97f5fe3dd33006b4a5a9c8740640b3fc9d3c2c5ce067f4cb6e5d26d33"
+    },
+    {
+      "path": "test-creative-browser.txt",
+      "hash": "a85812e7eacc12c0d8819bba644ccf5f59eef40c517cb44c22ff64b33fcd7572"
+    },
+    {
+      "path": "test-inventory-browser-exit.json",
+      "hash": "e06c10c375dc44d73a52a2628a466c2bd25591802e6b01ae03f36ef8ecc1b659"
+    },
+    {
+      "path": "test-inventory-browser.txt",
+      "hash": "770f74744d7ca9abacbe1fd41c1041264d9cb104d0bc25cf717bc9d08d1816fc"
+    }
+  ]
+}

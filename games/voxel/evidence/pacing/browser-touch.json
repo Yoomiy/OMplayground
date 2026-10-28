@@ -1,0 +1,103 @@
+{
+  "result": "PASS",
+  "scope": "Emulated tablet with actual multi-touch, dispatched blur lifecycle event and actual software WebGL context loss; functional evidence only",
+  "buildId": "a84fb40c469df630934467b6bf5289ed132a0f5de9a8ac60f5665554822ce4e1",
+  "engineHash": "084b17c0ae40222777a0225f6fc186a9903ac19d9c455aae025188185ea250ab",
+  "contentHash": "0e18a28a479058f6af964ead4081e464697e59fb5c842cf96c91a9fff3c61980",
+  "browser": "156.0.8078.4",
+  "moved": 1.0369552832344056,
+  "jumpHeight": 0.4166666666666572,
+  "beforeLook": {
+    "yaw": 0,
+    "pitch": 0
+  },
+  "afterLook": {
+    "yaw": 0.2,
+    "pitch": 0.1
+  },
+  "diagnostics": {
+    "disposed": false,
+    "inputMode": "touch",
+    "renderLimitHz": 10,
+    "touch": {
+      "x": 0,
+      "z": 0,
+      "jump": false,
+      "sneak": false,
+      "sprint": false
+    },
+    "focused": false,
+    "visible": "visible",
+    "hasFocus": true,
+    "lastFrame": 13753.4,
+    "resources": {
+      "geometries": 0,
+      "textures": 0,
+      "workers": 1
+    },
+    "actorId": "3dc53dcb-74f2-47e4-b79a-2ea72df6db40",
+    "worldId": "976fd9cf-b6eb-46fd-b8c3-74244a76ccd3",
+    "body": {
+      "position": [
+        53.1494,
+        71.3333,
+        0.7001
+      ],
+      "onGround": 0,
+      "frozen": 1,
+      "flying": 1,
+      "velocity": [
+        0,
+        0,
+        0
+      ]
+    },
+    "view": {
+      "yaw": 0.2,
+      "pitch": 0.1
+    },
+    "lastResult": null,
+    "recentEdits": [],
+    "status": "error",
+    "epoch": 6,
+    "phase": "playing",
+    "position": [
+      53.1494,
+      71.3333,
+      0.7001
+    ],
+    "selected": 24,
+    "players": 1,
+    "inputLag": 0,
+    "correction": 0,
+    "columns": 49,
+    "collisionColumns": 49,
+    "meshed": 25,
+    "workers": 1,
+    "activeJobs": 0,
+    "stream": {
+      "discardedJobs": 0,
+      "installed": 49,
+      "meshJobs": 25,
+      "generationJobs": 49,
+      "mainWorkMs": 0.10000014305114746
+    },
+    "render": {
+      "uploadedBytes": 1831816,
+      "columns": 25,
+      "drawCalls": 20,
+      "triangles": 19190,
+      "uploadMs": 0.20000004768371582
+    },
+    "target": null,
+    "targetState": null,
+    "targetNormal": null,
+    "actionPending": 0
+  },
+  "cleanup": {
+    "geometries": 0,
+    "textures": 0,
+    "workers": 0
+  },
+  "errors": []
+}

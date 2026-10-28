@@ -1,0 +1,118 @@
+{
+  "result": "PASS",
+  "scope": "Normal server-owned world initialization, software-rendered night/weather and teardown; no hardware performance claim",
+  "browser": "156.0.8078.4",
+  "results": [
+    {
+      "name": "clear-night",
+      "initialTick": 11000,
+      "buildId": "e4f100782c6972d28d3a854f5492ec47a6fc29aad21b89b117a08af096b8ea29",
+      "engineHash": "1e3f1e257d7326182e52736112b4a585b5809173a7f6f6d3fee34e52f414b7b6",
+      "contentHash": "368b605ac5bdf5ff6fcf4af02f7174cbc6d39b5110f48e0a41b231a0a6479464",
+      "environment": {
+        "tick": 11026.51,
+        "seconds": 367.55033333333336,
+        "dayFraction": 0.5262919444444445,
+        "daylight": 0.06,
+        "sun": [
+          -0.9447863925283151,
+          -0.15751147626088363,
+          0.2873478855663454
+        ],
+        "sky": [
+          0.06290397379039891,
+          0.08073601612898527,
+          0.1318560362902169
+        ],
+        "rain": 0,
+        "wind": [
+          -0.09681483233576553,
+          -0.2839487422754283
+        ],
+        "openSky": true
+      },
+      "atmosphere": {
+        "rainLines": 0,
+        "stars": true,
+        "clouds": 16,
+        "sun": false,
+        "moon": true
+      },
+      "render": {
+        "uploadedBytes": 691992,
+        "columns": 9,
+        "drawCalls": 3,
+        "triangles": 192,
+        "uploadMs": 0.20000004768371582,
+        "prepareMs": 470.2999999523163,
+        "gpu": {
+          "submitted": 4,
+          "skipped": 52,
+          "pending": 1,
+          "failures": 0
+        }
+      },
+      "cleanup": {
+        "geometries": 0,
+        "textures": 0,
+        "workers": 0
+      }
+    },
+    {
+      "name": "rain-night",
+      "initialTick": 55000,
+      "buildId": "e4f100782c6972d28d3a854f5492ec47a6fc29aad21b89b117a08af096b8ea29",
+      "engineHash": "1e3f1e257d7326182e52736112b4a585b5809173a7f6f6d3fee34e52f414b7b6",
+      "contentHash": "368b605ac5bdf5ff6fcf4af02f7174cbc6d39b5110f48e0a41b231a0a6479464",
+      "environment": {
+        "tick": 55028.10799999714,
+        "seconds": 1834.2702666665714,
+        "dayFraction": 0.7485585555554761,
+        "daylight": 0.06,
+        "sun": [
+          -0.008674782421580957,
+          -0.9577870017965835,
+          0.2873478855663454
+        ],
+        "sky": [
+          0.03508499999999999,
+          0.04733999999999999,
+          0.07370999999999998
+        ],
+        "rain": 1,
+        "wind": [
+          -0.35498771856447364,
+          -1.0411453883432373
+        ],
+        "openSky": true
+      },
+      "atmosphere": {
+        "rainLines": 96,
+        "stars": false,
+        "clouds": 16,
+        "sun": false,
+        "moon": true
+      },
+      "render": {
+        "uploadedBytes": 691992,
+        "columns": 9,
+        "drawCalls": 7,
+        "triangles": 3838,
+        "uploadMs": 0.40000009536743164,
+        "prepareMs": 275.19999980926514,
+        "gpu": {
+          "submitted": 8,
+          "skipped": 30,
+          "pending": 1,
+          "failures": 0
+        }
+      },
+      "cleanup": {
+        "geometries": 0,
+        "textures": 0,
+        "workers": 0
+      }
+    }
+  ],
+  "errors": []
+}

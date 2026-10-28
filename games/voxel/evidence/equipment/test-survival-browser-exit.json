@@ -1,0 +1,10 @@
+{
+  "script": "test:survival:browser",
+  "path": "/tmp/voxel-equipment-suite-test-survival-browser.log",
+  "code": 0,
+  "signal": null,
+  "startedAt": "2026-10-23T10:09:15.467Z",
+  "finishedAt": "2026-10-23T10:11:21.069Z",
+  "durationMs": 125601,
+  "buildId": "97603656240f4114699c26afdb40c03852735e6ebee1c8ed06e2984118c0dd9c"
+}

@@ -1,0 +1,24 @@
+
+> @playground/voxel@0.1.0 test:creative:browser
+> node tools/browser-creative.ts
+
+180 Opening creative client
+3038 Creative client ready
+3092 Opening creative client
+7086 Creative client ready
+8581 Testing jump [49.5,68,0.5]
+8805 Dispatching jump key
+14017 Jump key delivered
+21315 Testing movement
+40946 Testing shared edits
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+page.waitForFunction: Timeout 10000ms exceeded.
+    at /home/ubuntu/OMplayground/games/voxel/tools/browser-creative.ts:178:11 {
+  log: [],
+  name: 'TimeoutError'
+}
+
+Node.js v24.21.0

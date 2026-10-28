@@ -1,0 +1,16 @@
+{"result":"FAIL","failure":{"phase":"one-second-input-stall","message":"short stall left persistent acknowledgement backlog","stack":"AssertionError [ERR_ASSERTION]: short stall left persistent acknowledgement backlog\n    at file:///home/ubuntu/OMplayground/games/voxel/tools/browser-input-stalls.ts:213:3"}}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: short stall left persistent acknowledgement backlog
+    at file:///home/ubuntu/OMplayground/games/voxel/tools/browser-input-stalls.ts:213:3 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.21.0

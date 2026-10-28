@@ -1,0 +1,12 @@
+file:///tmp/voxel-reference-fixture-iohAym/games/voxel/tools/inventory-legacy-content.ts:15
+    throw new Error(`Frozen legacy source changed: ${path}`);
+          ^
+
+Error: Frozen legacy source changed: games/voxel/docs/legacy-content-reference/blocks.ts.txt
+    at read (file:///tmp/voxel-reference-fixture-iohAym/games/voxel/tools/inventory-legacy-content.ts:15:11)
+    at file:///tmp/voxel-reference-fixture-iohAym/games/voxel/tools/inventory-legacy-content.ts:58:16
+    at ModuleJob.run (node:internal/modules/esm/module_job:561:25)
+    at async node:internal/modules/esm/loader:647:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.21.0

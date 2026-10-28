@@ -1,0 +1,345 @@
+{
+  "result": "LOCAL_PASS_WITH_PENDING_HOSTED_CHAT_AND_DEVICE_QUALIFICATION",
+  "capturedAt": "2026-10-26T14:39:31.987384+00:00",
+  "buildId": "bedd62f9b37b2a071c498413c7352033ccd97e94f2bd976101259481c789d3f8",
+  "engineHash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388",
+  "contentHash": "368b605ac5bdf5ff6fcf4af02f7174cbc6d39b5110f48e0a41b231a0a6479464",
+  "protocol": 13,
+  "counts": {
+    "domain": 86,
+    "native": 80,
+    "nativeIgnored": 3,
+    "wasm": 84,
+    "sourceIntegration": 40,
+    "packagedIntegration": 40,
+    "sdkAndPolicy": 38,
+    "schoolGateway": 7,
+    "postgresSdk": 50,
+    "web": 94,
+    "renderedContexts": 3
+  },
+  "sourceFiles": 665,
+  "hostedSchemas": 6,
+  "chatMigration": {
+    "path": "supabase/migrations/20261025070000_voxel_chat.sql",
+    "sha256": "f3de58fecd2634105fe4b25ce7875b308ba9eca7c428c43c3552f00f26a0ed5b",
+    "locallyQualified": true,
+    "hostedApplied": false
+  },
+  "agentRemoteApplicationWrites": false,
+  "deployment": false,
+  "browserMouseAcknowledged": true,
+  "priorModerationArchiveUnchanged": true,
+  "limitations": [
+    "Fixture Auth/PostgREST/Storage over actual SQL/SDK/packaged workers, not actual authenticated catalog shell or hosted recovery",
+    "First six hosted schemas/private bucket ready; seventh chat RPC missing, guarded startup refuses to listen",
+    "Software browser functionality only; earlier status-selector and fullscreen Exit failures retained, input qualification remains open",
+    "Rewritten voice grant/mute enforcement, hosted classroom/browser/WebRTC/container, survival balance/bucket UI, device/network/capacity and cutover remain required"
+  ],
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "15519b0351cf7b65f66b6e2b36d5383206911c1fefe77785f902e5e5b31aa79b"
+    },
+    {
+      "path": "audit.py",
+      "sha256": "43b1e3cfb5da6f2c8d2d8f5dac38381d92c913414f5056cda7404f8d1d4192d0"
+    },
+    {
+      "path": "browser-mouse-exit-failure.txt",
+      "sha256": "f9bfcd39a0619b09fc727fa75843384aa1cafedf758c770fbeb101b093daff40"
+    },
+    {
+      "path": "browser-react.json",
+      "sha256": "bc975182fc46e2a7d10248b9e6c920bfcffeadc6c8556d774cad230aedde1bba"
+    },
+    {
+      "path": "browser-status-markup-failure.txt",
+      "sha256": "7cb307e9ea2c6e349a2b44247dc973d1395c2710b8cbe01c293fe3a775cbf803"
+    },
+    {
+      "path": "browser.txt",
+      "sha256": "e4b090cfef6c5d428ced1bf8f2b72a6d35d454d381fdbab9c5d9b90d39872fd0"
+    },
+    {
+      "path": "build.json",
+      "sha256": "05f314672ee7773ffabc895b1e2aca1f091f5a8e75179c9747608ebc29e2d4b4"
+    },
+    {
+      "path": "capture.py",
+      "sha256": "a1f19b4bc058a3ac9a0b3857ce9367acc1163287f1d636294772bdbce154d6f5"
+    },
+    {
+      "path": "check-exit.json",
+      "sha256": "5d5465126e6838b4d37f9d2f729922ea9a2a417940e754ef45b9ce7ff0bdc792"
+    },
+    {
+      "path": "content.json",
+      "sha256": "87da078927c9df8366a815c868478e71f559da83e4785447a8edb3e505dba250"
+    },
+    {
+      "path": "contract.txt",
+      "sha256": "8e87996660ec2a0c59ca7b71435132818895e2b8b7604907fca1da868f56c12d"
+    },
+    {
+      "path": "core-complete-check.txt",
+      "sha256": "a9da282ba0fe7b9673596d4528fb72effa6d6ec05c142e1599ad5af56e456b68"
+    },
+    {
+      "path": "hosted-ready.json",
+      "sha256": "95f15be488d29c7ce820604b040cf77a410527b4564fd3dc773b11be6f1daf98"
+    },
+    {
+      "path": "migration-history-read.json",
+      "sha256": "3638da4656074094fa10dd6095079305710ee3dc712245ea36230888aa61a4f9"
+    },
+    {
+      "path": "migration-history-read.sql",
+      "sha256": "db880bdf5d67019232f9f7deb9d7d286b753faaca5c3d96f869e10516452a46b"
+    },
+    {
+      "path": "postgres-final-start.txt",
+      "sha256": "66afd0411ccc09366e99fdd99b85f21899c8d2d064f5835126859618802153ad"
+    },
+    {
+      "path": "postgres-start.txt",
+      "sha256": "66afd0411ccc09366e99fdd99b85f21899c8d2d064f5835126859618802153ad"
+    },
+    {
+      "path": "postgres-stop.txt",
+      "sha256": "ca19178a35ab4153b75b494963b66ce8243e1b94c173107c87b44d09db23652d"
+    },
+    {
+      "path": "postgres-targeted.txt",
+      "sha256": "050667d53397e3ece10ea9115b246bf087bb352d5be7f1099ba73981a05f5fbe"
+    },
+    {
+      "path": "postgres.txt",
+      "sha256": "706ef122ef760b136ec8bf17e53f641045614e45d40dd1a7c24bf7d23c982008"
+    },
+    {
+      "path": "react-chat.png",
+      "sha256": "1c5fc41cc0e173a7d40a2cba2d7e94b6f862a6b4c34613d1ecd2971f4e5401a2"
+    },
+    {
+      "path": "react-fixture/assets/embed-BbfR4Nnp.css",
+      "sha256": "88cf956a48a285c6e672ae7387cbdaa256a319b20328632c5aff65ea426abae7"
+    },
+    {
+      "path": "react-fixture/assets/embed-PNbuKWtV.js",
+      "sha256": "93026a50efd14674566a19c4a833d325d2d40e5f8620b2b4bfb159f7f93dd12d"
+    },
+    {
+      "path": "react-fixture/assets/engine-worker-DPFd4qax.js",
+      "sha256": "4fb4aae45165a42ca55545e132de209d72dc6557be1d4704e7682774dd17c18c"
+    },
+    {
+      "path": "react-fixture/assets/index-CeR0GFEN.css",
+      "sha256": "1162c55c8f1197647977529eb4cb1b87463891f7557327d41e87acdf58cf27f0"
+    },
+    {
+      "path": "react-fixture/assets/index-DX1E3u4D.js",
+      "sha256": "e88f80c49653af17fa6eb648d4364bb98bf268e143a84942870c810a56a7e03b"
+    },
+    {
+      "path": "react-fixture/assets/voxel_engine_bg-1ejYMYOZ.wasm",
+      "sha256": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "react-fixture/index.html",
+      "sha256": "fa8e11d399a851b4a41cc288be274c64fda71e275a383b107053e1b9a5c24b88"
+    },
+    {
+      "path": "react-inventory.png",
+      "sha256": "850b11aab77fa2bfc0ee1f0f2e98dbbde8ee2b83ec5098097f85fde44e325da5"
+    },
+    {
+      "path": "react-mobile.png",
+      "sha256": "602b44b738370220a2d8041cc75e54d268c1fcff5ffa31142a8ffcae9b0541b9"
+    },
+    {
+      "path": "react-moderation.png",
+      "sha256": "9a64f90e0d3f0acf84ed026e741f529b2acb492106e5f6cc936d793b16fc4e3c"
+    },
+    {
+      "path": "react-observer.png",
+      "sha256": "544c306d8afa985cf48f540450217754ce832fdb758abbf82d7465cdf2bcbc84"
+    },
+    {
+      "path": "react-playing.png",
+      "sha256": "5a0576157c041f35aede21c9c65fe2490df1da289666261a318c9ee913799298"
+    },
+    {
+      "path": "react-staff.png",
+      "sha256": "7d78433efdbb259fc53ffaac4fff1b969937475fd976544d6b6a5378d655e020"
+    },
+    {
+      "path": "release.json",
+      "sha256": "b75e2c6ccfca3c1d1e4dc0133d1281024778f91e8e9cd7cd5e1533bc3e2808f4"
+    },
+    {
+      "path": "release/client/assets/engine-worker-DYAFKrDe.js",
+      "sha256": "99d3377c134578cd5e9bdd923e7707547e62c3a2a0a1a64c90adec5f1121bf04"
+    },
+    {
+      "path": "release/client/assets/index-5w2pNf9N.css",
+      "sha256": "2b1c35f291993017e6b64ee082d5b043f59edef25e5d29d5239bc23fab798eac"
+    },
+    {
+      "path": "release/client/assets/index-ko27OIlk.js",
+      "sha256": "7aa4cdb32cbfd7ae722fa5a0aea9999fd072e075579ca8a7a7ecae3867faec39"
+    },
+    {
+      "path": "release/client/assets/voxel_engine_bg-1ejYMYOZ.wasm",
+      "sha256": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "release/client/index.html",
+      "sha256": "567035740f848bfb022c6a868b7c7aced35e2e0d169e470f42b4bf56b8d5e6c0"
+    },
+    {
+      "path": "release/server/build.json",
+      "sha256": "05f314672ee7773ffabc895b1e2aca1f091f5a8e75179c9747608ebc29e2d4b4"
+    },
+    {
+      "path": "release/server/content.json",
+      "sha256": "87da078927c9df8366a815c868478e71f559da83e4785447a8edb3e505dba250"
+    },
+    {
+      "path": "release/server/engine.wasm",
+      "sha256": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "release/server/gateway.js",
+      "sha256": "643488b5003f1b20d26ee891ef837e1b1ce35facdcbc63bac483055f526a4d3a"
+    },
+    {
+      "path": "release/server/gateway.js.map",
+      "sha256": "3bcf1c4e785f4f5fc455afdffa6a25e0fefdd090a7749d381bd0650ab8aa740f"
+    },
+    {
+      "path": "release/server/room-worker.js",
+      "sha256": "7ac9d7794a6e92ac1d3d058c77752d36a5f4b04f817e65d0beab0abab347a8a1"
+    },
+    {
+      "path": "release/server/room-worker.js.map",
+      "sha256": "214e9ec96368b382204672087066eb68c04dc5e9740a311bdced9dbeddd2b119"
+    },
+    {
+      "path": "run-check.mjs",
+      "sha256": "e3e428d850fc02f249c7c0535cf4c0bc9095d4fb76d583950040ab782328ace8"
+    },
+    {
+      "path": "school-gateway.txt",
+      "sha256": "53577512715ea744b6dca1567773ae4ebafc87fb0f18c426fe0fa36dece928f0"
+    },
+    {
+      "path": "sdk.txt",
+      "sha256": "87ad9341bc33896400e7fe915d86c165c688ccd5f687d2c979532a73e753d1c0"
+    },
+    {
+      "path": "service-types.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "source-inputs.json",
+      "sha256": "3e1e82a4091bd05d72394e40cae7dd4db31733cf64f93a993a8c255882968892"
+    },
+    {
+      "path": "source-release-verification.json",
+      "sha256": "83499818aa2d11c6c1254e59b6724ed878fec078aa69c04d1fd8f429d9191bce"
+    },
+    {
+      "path": "source.tar.gz",
+      "sha256": "56d612c725758e7473c95a896abb2a664d7dfa7c00ea83a0f3cc28732d3c9ee3"
+    },
+    {
+      "path": "startup-missing.json",
+      "sha256": "4f71efbfbe78fb9abe65f471d3e1970cd9dbbbac5d71e36ebd71bca30c149336"
+    },
+    {
+      "path": "startup-missing.log",
+      "sha256": "ae45945a0adca23bfcac29f7178ab3eed6eca120ce150c7c954522297b2d6d05"
+    },
+    {
+      "path": "startup-missing.mjs",
+      "sha256": "151e5e72c2703133d636c4e289384ec57d25432c66b48fcd1e457b951ef0722c"
+    },
+    {
+      "path": "target-match.json",
+      "sha256": "cd94a608bdbeaeff793561066e455d3c0078a540de70c094346578c1367696e8"
+    },
+    {
+      "path": "web-build.txt",
+      "sha256": "13e78bb775bde899ce1c8559449166f6e5fc7e38448cdc1574c0296e40ad62ef"
+    },
+    {
+      "path": "web-production-inventory.json",
+      "sha256": "99492a9a6094f9ebd4613b17a5ac61aff4520974153b54a2622b6aa56861dd67"
+    },
+    {
+      "path": "web-production/assets/ClassroomPage-WpzJ9u4n.js",
+      "sha256": "4f1c41cefd958b7424f32283d3c54c53a77e9eae22d1368ea34fafead96564bd"
+    },
+    {
+      "path": "web-production/assets/TeacherPage-vKpIiALB.js",
+      "sha256": "648f2c44c3717e626c71766a42c3ca5e19b5d853080b457238921066e6a72480"
+    },
+    {
+      "path": "web-production/assets/VoxelSessionContainer-B_QGJo5h.css",
+      "sha256": "cd5287e5bedfa829c96d966e215ec37f08db6d5eedeef303605196b170e3c868"
+    },
+    {
+      "path": "web-production/assets/VoxelSessionContainer-C0c-9lAU.js",
+      "sha256": "f1df7596b3df79722b313bda6bc797146950590618af79f43e5d465819ff503c"
+    },
+    {
+      "path": "web-production/assets/embed-BU2p8fUG.js",
+      "sha256": "2bc95545683b36d395d35aeadb9464844dd82f27d1b84c6b6d6cc261b91187bc"
+    },
+    {
+      "path": "web-production/assets/embed-DVW6RJqP.css",
+      "sha256": "708cffb3ae60cca7871296dce5a5cc10568a23f978b4aab138cfee65032511a8"
+    },
+    {
+      "path": "web-production/assets/engine-worker-CQrkI0k9.js",
+      "sha256": "b9a8fc1f8eed79922ee019869d7057f81ad1bf4e2c6b01ec27debf50cb685c3d"
+    },
+    {
+      "path": "web-production/assets/index-B67zMzFf.js",
+      "sha256": "e0664a7e4882b21ce01733c57f44692d02ab37e03a70d44eb46303fb169727aa"
+    },
+    {
+      "path": "web-production/assets/index-BGQaXMoy.css",
+      "sha256": "c28358398e78e5b873c447e77c61eeff30cbb6b06e529e751448437786b2acce"
+    },
+    {
+      "path": "web-production/assets/index-Czp4so9n.js",
+      "sha256": "6e74fbc9366cf2758304a7f7de9c6d2973e0c43021edc9ee1a95b4326f4f9f1b"
+    },
+    {
+      "path": "web-production/assets/voxel_engine_bg-1ejYMYOZ.wasm",
+      "sha256": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "web-production/index.html",
+      "sha256": "92deb9766897980e9cc2ec34a2b4553df14e3c7240985a18ed142c016bcd1a63"
+    },
+    {
+      "path": "web-production/voxel-browser-boundary.json",
+      "sha256": "b72771b12bd1f5ddbbc547ed79f4f781192833ca8f62956da24f5e57f6dacec0"
+    },
+    {
+      "path": "web-tests.txt",
+      "sha256": "b9e383325fdb2ef2765123b6fb92a970b50b04348aa68b5103d70978cf3e5fcf"
+    },
+    {
+      "path": "web-types-uuid-inference-failure.txt",
+      "sha256": "b43ad625b037a958693b71fc4a6f341bb55cd1fe904cc7ac0d8087a741ee7f86"
+    },
+    {
+      "path": "web-types.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

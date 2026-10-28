@@ -1,0 +1,44 @@
+{
+  "name": "playground-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "postinstall": "cd \"$(npm prefix)\" && npx --no-install patch-package",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "dev:web": "npm run dev -w @playground/web",
+    "dev:server": "npm run dev -w @playground/game-server",
+    "dev:minecraft": "npm run dev -w @playground/minecraft-server",
+    "dev:rocket": "node scripts/dev-rocket.mjs",
+    "lint": "npm run lint --workspaces --if-present",
+    "borrow-voxel-textures": "tsx scripts/borrow-voxel-textures.ts",
+    "borrow-voxel-audio": "tsx scripts/borrow-voxel-audio.ts",
+    "dev:wobble": "node scripts/dev-wobble.mjs",
+    "build:voxel": "npm --prefix games/voxel run build",
+    "check:voxel": "npm --prefix games/voxel run check",
+    "test:voxel:browser": "npm --prefix games/voxel run test:browser",
+    "test:voxel:creative": "npm --prefix games/voxel run test:creative:browser",
+    "test:voxel:touch": "npm --prefix games/voxel run test:touch:browser",
+    "test:voxel:environment": "npm --prefix games/voxel run test:environment:browser",
+    "test:voxel:presentation": "npm --prefix games/voxel run test:presentation:browser",
+    "test:voxel:recovery": "npm --prefix games/voxel run test:recovery:browser",
+    "test:voxel:inventory": "npm --prefix games/voxel run test:inventory:browser",
+    "test:voxel:survival": "npm --prefix games/voxel run test:survival:browser",
+    "test:voxel:tnt": "npm --prefix games/voxel run test:tnt:browser",
+    "test:voxel:equipment": "npm --prefix games/voxel run test:equipment:browser",
+    "test:voxel:combat": "npm --prefix games/voxel run test:combat:browser",
+    "dev:voxel": "npm run build:voxel && npm --prefix games/voxel run dev",
+    "dev:classroom": "npm run dev --workspace @playground/classroom-server"
+  },
+  "devDependencies": {
+    "tsx": "^4.22.3",
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "livekit-server-sdk": "^2.15.4",
+    "patch-package": "^8.0.1"
+  }
+}

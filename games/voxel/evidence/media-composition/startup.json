@@ -1,0 +1,23 @@
+{
+  "result": "READ_ONLY_EIGHT_SCHEMA_PACKAGED_STARTUP_PASS",
+  "checkedAt": "2026-10-27T00:38:15.688Z",
+  "buildId": "5d89f56af88a8d1a456575052791a13f560bef75acac7144ebcb19882ced7247",
+  "statusRpcs": [
+    "voxel_persistence_status",
+    "voxel_session_projection_status",
+    "voxel_roster_status",
+    "voxel_controls_status",
+    "voxel_staff_status",
+    "voxel_moderation_status",
+    "voxel_chat_status",
+    "voxel_media_status"
+  ],
+  "health": 200,
+  "ready": 200,
+  "rooms": 0,
+  "closed": true,
+  "remoteApplicationWrites": false,
+  "events": [
+    "VOXEL_SERVICE_STARTED"
+  ]
+}

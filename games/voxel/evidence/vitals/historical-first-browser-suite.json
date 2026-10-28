@@ -1,0 +1,29 @@
+{
+  "buildId": "e2584dd96619c6614e245ac18843c9296a9459d90561d77034b82fa6a91b668d",
+  "startedAt": "2026-10-22T18:10:50.187Z",
+  "active": null,
+  "checks": [
+    {
+      "script": "test:survival:browser",
+      "path": "/tmp/voxel-vitals-suite-test-survival-browser.log",
+      "code": 0,
+      "signal": null,
+      "durationMs": 133590
+    },
+    {
+      "script": "test:touch:browser",
+      "path": "/tmp/voxel-vitals-suite-test-touch-browser.log",
+      "code": 0,
+      "signal": null,
+      "durationMs": 22527
+    },
+    {
+      "script": "test:creative:browser",
+      "path": "/tmp/voxel-vitals-suite-test-creative-browser.log",
+      "code": 1,
+      "signal": null,
+      "durationMs": 81823
+    }
+  ],
+  "finishedAt": "2026-10-22T18:14:48.132Z"
+}

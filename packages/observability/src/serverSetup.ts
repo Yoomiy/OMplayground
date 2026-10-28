@@ -8,7 +8,7 @@ import {
   correlationMiddleware,
   createHttpLogger,
   attachSocketCorrelation,
-  logSocketDisconnect
+  logSocketDisconnect,
 } from "./correlation";
 import { StatsCollector } from "./statsCollector";
 import { requireAdmin } from "./adminAuth";
@@ -21,18 +21,18 @@ export interface ObservabilityContext {
 }
 
 export function createObservabilityContext(
-  service: ServiceName
+  service: ServiceName,
 ): ObservabilityContext {
   process.env.SERVICE_NAME = service;
   return {
     logger: createLogger(service),
-    stats: new StatsCollector(service)
+    stats: new StatsCollector(service),
   };
 }
 
 export function initObservability(
   app: Express,
-  io: Server,
+  io: Server | null,
   options: {
     service: ServiceName;
     supabaseAdmin: SupabaseClient | null;
@@ -50,7 +50,7 @@ export function initObservability(
     skipCorrelation?: boolean;
     skipHttpLogger?: boolean;
     livekitWebhook?: { apiKey: string; apiSecret: string };
-  }
+  },
 ): ObservabilityContext {
   const logger = options.logger ?? createLogger(options.service);
   const stats = options.stats ?? new StatsCollector(options.service);
@@ -64,7 +64,7 @@ export function initObservability(
       logger,
       stats,
       apiKey: options.livekitWebhook.apiKey,
-      apiSecret: options.livekitWebhook.apiSecret
+      apiSecret: options.livekitWebhook.apiSecret,
     });
   }
   if (!options.skipHttpLogger) {
@@ -82,32 +82,32 @@ export function initObservability(
         } catch (err) {
           logger.error({
             message: "onAdminStatsQuery failed",
-            err: logError(err)
+            err: logError(err),
           });
         }
       }
-      const voice = options.voiceStats
-        ? await options.voiceStats()
-        : undefined;
+      const voice = options.voiceStats ? await options.voiceStats() : undefined;
       res.json(stats.snapshot(options.listRooms, voice));
-    }
+    },
   );
 
-  attachSocketCorrelation(io);
+  if (io) {
+    attachSocketCorrelation(io);
 
-  io.on("connection", (socket) => {
-    stats.onConnection();
+    io.on("connection", (socket) => {
+      stats.onConnection();
 
-    socket.on("disconnect", (reason) => {
-      stats.onDisconnect();
-      logSocketDisconnect(
-        logger,
-        socket,
-        reason,
-        socket.data.userId as string | undefined
-      );
+      socket.on("disconnect", (reason) => {
+        stats.onDisconnect();
+        logSocketDisconnect(
+          logger,
+          socket,
+          reason,
+          socket.data.userId as string | undefined,
+        );
+      });
     });
-  });
+  }
 
   return { logger, stats };
 }

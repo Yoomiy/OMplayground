@@ -1,0 +1,133 @@
+{
+  "result": "WIRE_EQUIVALENT_SURVIVAL_COMPARISON_PASS",
+  "startedAt": "2026-10-27T13:45:57.611Z",
+  "scope": "Comparative direct GameRoom survival simulation/input/actual worker JSON and chunk encoding; synthetic time, natural terrain, dense jumping/turning actors, plus fixture-owned equipment/crafting/drops/TNT. Excludes sockets, real worker scheduling, IO, school Auth, browser/voice, network and deployment capacity.",
+  "buildId": "5886a6dc973378530fbe79b71c007eccfdd440fdbde064dc3cd2938ea363aa57",
+  "engineHash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388",
+  "contentHash": "368b605ac5bdf5ff6fcf4af02f7174cbc6d39b5110f48e0a41b231a0a6479464",
+  "sourceSha256": {
+    "baseline": "d500b9b4b5798d9e59b96dec35ed9ade8c60e6818bfc8292ce4c098f47133cbf",
+    "current": "67bae02b3c3eed0b23e8667d4443583d3b1d8eb38884f1dcca724ce09ed7d504",
+    "encoder": "aca0009154b0ab2f321b7e51bbdb2874e227a0773fe5a0d5754f13ffdb3f747d"
+  },
+  "host": {
+    "node": "v24.21.0",
+    "arch": "arm64",
+    "cpu": "Neoverse-N1",
+    "logicalCpus": 2,
+    "availableParallelism": 2
+  },
+  "warmupTicks": 90,
+  "measuredTicks": 600,
+  "repeats": 1,
+  "profiles": [
+    128
+  ],
+  "results": [
+    {
+      "players": 128,
+      "scene": "dense-motion",
+      "optimized": false,
+      "tickMs": {
+        "samples": 600,
+        "mean": 17.089364171666638,
+        "p95": 32.58031799999981,
+        "p99": 34.86832999999933,
+        "max": 40.414316000000326
+      },
+      "messages": 76800,
+      "wireBytes": 433259624,
+      "transcriptSha256": "dffbf1228f7b5e89808dd08c337357f350f461657e79f3ece0458e9ad67d805f",
+      "crafting": 0,
+      "explosions": 0,
+      "generationBatches": 0,
+      "generationMs": null,
+      "columns": 9,
+      "liveDrops": 0,
+      "wasmHighWaterBytes": 2031616,
+      "repeat": 0
+    },
+    {
+      "players": 128,
+      "scene": "dense-motion",
+      "optimized": true,
+      "tickMs": {
+        "samples": 600,
+        "mean": 9.650065060000054,
+        "p95": 14.550430999999662,
+        "p99": 15.76583600000049,
+        "max": 16.510600000001432
+      },
+      "messages": 76800,
+      "wireBytes": 433259624,
+      "transcriptSha256": "dffbf1228f7b5e89808dd08c337357f350f461657e79f3ece0458e9ad67d805f",
+      "crafting": 0,
+      "explosions": 0,
+      "generationBatches": 0,
+      "generationMs": null,
+      "columns": 9,
+      "liveDrops": 0,
+      "wasmHighWaterBytes": 2031616,
+      "repeat": 0
+    },
+    {
+      "players": 128,
+      "scene": "craft-drops-tnt",
+      "optimized": false,
+      "tickMs": {
+        "samples": 600,
+        "mean": 24.797347259999963,
+        "p95": 54.260182999998506,
+        "p99": 63.00986599999305,
+        "max": 66.86576399999467
+      },
+      "messages": 96256,
+      "wireBytes": 480603672,
+      "transcriptSha256": "d948b777fee755a08367e385bafa9f1c2878263057b32751d28836f1735cc9ce",
+      "crafting": 320,
+      "explosions": 12,
+      "generationBatches": 3,
+      "generationMs": {
+        "samples": 3,
+        "mean": 6.984594000000167,
+        "p95": 7.0185139999994135,
+        "p99": 7.0185139999994135,
+        "max": 7.0185139999994135
+      },
+      "columns": 9,
+      "liveDrops": 499,
+      "wasmHighWaterBytes": 2162688,
+      "repeat": 0
+    },
+    {
+      "players": 128,
+      "scene": "craft-drops-tnt",
+      "optimized": true,
+      "tickMs": {
+        "samples": 600,
+        "mean": 16.993704493333315,
+        "p95": 39.272830000001704,
+        "p99": 45.11333900000318,
+        "max": 54.19182300000102
+      },
+      "messages": 96256,
+      "wireBytes": 480603672,
+      "transcriptSha256": "d948b777fee755a08367e385bafa9f1c2878263057b32751d28836f1735cc9ce",
+      "crafting": 320,
+      "explosions": 12,
+      "generationBatches": 3,
+      "generationMs": {
+        "samples": 3,
+        "mean": 6.9421006666695275,
+        "p95": 6.974554000000353,
+        "p99": 6.974554000000353,
+        "max": 6.974554000000353
+      },
+      "columns": 9,
+      "liveDrops": 499,
+      "wasmHighWaterBytes": 2162688,
+      "repeat": 0
+    }
+  ],
+  "finishedAt": "2026-10-27T13:46:47.020Z"
+}

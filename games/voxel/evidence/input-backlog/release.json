@@ -1,0 +1,59 @@
+{
+  "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc",
+  "engineHash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388",
+  "contentHash": "368b605ac5bdf5ff6fcf4af02f7174cbc6d39b5110f48e0a41b231a0a6479464",
+  "clientHash": "ebb05faab352935ff4b64de3cc2dd6b9821b008645dabb845e15e0882c0621a6",
+  "serverHash": "ad61082ae37e72e1effa68a50848c8da0b6f574be91ac98f3abf6d98a9e1ed30",
+  "client": [
+    {
+      "path": "assets/engine-worker-DYAFKrDe.js",
+      "hash": "99d3377c134578cd5e9bdd923e7707547e62c3a2a0a1a64c90adec5f1121bf04"
+    },
+    {
+      "path": "assets/index-5w2pNf9N.css",
+      "hash": "2b1c35f291993017e6b64ee082d5b043f59edef25e5d29d5239bc23fab798eac"
+    },
+    {
+      "path": "assets/index-BQrZpw9v.js",
+      "hash": "90ad8e73c0ad65c8729753e198df91bfb03d85fb7ec2553240763b50f0a8a945"
+    },
+    {
+      "path": "assets/voxel_engine_bg-1ejYMYOZ.wasm",
+      "hash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "index.html",
+      "hash": "b2d86c10e264819a69dda03c6e952dfe9eb43c048b9775f83d7f38a7b27b30ff"
+    }
+  ],
+  "server": [
+    {
+      "path": "build.json",
+      "hash": "fe481e2ee2a04cadc2aa65be948110b4262c676bbe32b952c506e2ce2b54ff80"
+    },
+    {
+      "path": "content.json",
+      "hash": "87da078927c9df8366a815c868478e71f559da83e4785447a8edb3e505dba250"
+    },
+    {
+      "path": "engine.wasm",
+      "hash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "gateway.js",
+      "hash": "3710cde61ef24e61e572c85ab31fd1c087aa8b64d7cebb90445d2bda47dff67a"
+    },
+    {
+      "path": "gateway.js.map",
+      "hash": "3535a7fd6a4f76cf58ce097ea23c57a14d6530ee79d333c51b93d814cb2efb4a"
+    },
+    {
+      "path": "room-worker.js",
+      "hash": "19c59f88b30ee408934fc4bd59bf95ada1764f54b6085c7b292153ca646f3f1d"
+    },
+    {
+      "path": "room-worker.js.map",
+      "hash": "69a3ec9525554673e68dfcfef0f3bb9b6a4d0160a6067a665a4780f266d68dfd"
+    }
+  ]
+}

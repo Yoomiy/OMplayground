@@ -1,0 +1,622 @@
+{
+  "result": "PASS",
+  "scope": "Normal public runtime control interface and authoritative flight; avatar instance coordinates across a real origin shift, held shapes, resource plateau and cleanup in software Chromium",
+  "buildId": "0f33682a9fc3c187f9ab396491392118761a1bafe0b1cc712ba566a128c7e6b4",
+  "engineHash": "7688702bb6a210b9ac77384f44e7a8f7feca2f9036df7b9230cbe923cde80f49",
+  "contentHash": "9919b63bb600baf7d1bdbc1bee44d97b74057ee661cdf4515eba0d56baeb62a0",
+  "browser": "156.0.8078.4",
+  "originBefore": {
+    "x": 48,
+    "z": 0
+  },
+  "originAfter": {
+    "x": 32,
+    "z": 0
+  },
+  "rendered": {
+    "id": "1b24ab45-0a64-4b51-aab2-7fc4a7f69a25",
+    "head": [
+      17.5,
+      71.04669952392578,
+      0.5
+    ],
+    "yaw": -1.5707963267948966
+  },
+  "selected": [
+    {
+      "family": "stone_slab",
+      "state": 27,
+      "geometries": 71
+    },
+    {
+      "family": "oak_stairs",
+      "state": 18,
+      "geometries": 71
+    },
+    {
+      "family": "ladder",
+      "state": 9,
+      "geometries": 71
+    },
+    {
+      "family": "torch",
+      "state": 29,
+      "geometries": 71
+    },
+    {
+      "family": "short_grass",
+      "state": 25,
+      "geometries": 71
+    },
+    {
+      "family": "glass",
+      "state": 5,
+      "geometries": 71
+    },
+    {
+      "family": "water",
+      "state": 30,
+      "geometries": 71
+    },
+    {
+      "family": "stone_slab",
+      "state": 27,
+      "geometries": 71
+    }
+  ],
+  "diagnostics": [
+    {
+      "disposed": false,
+      "inputMode": "touch",
+      "mode": "creative",
+      "mining": {
+        "target": null,
+        "elapsed": 0,
+        "total": 0
+      },
+      "vitals": {
+        "version": 1,
+        "health": 20,
+        "food": 20,
+        "air": 300,
+        "dead": false,
+        "respawnIn": 0
+      },
+      "miningHeld": false,
+      "drops": [],
+      "selectedSlot": 0,
+      "environment": {
+        "tick": 827.5930000042915,
+        "seconds": 27.586433333476386,
+        "dayFraction": 0.24298869444456367,
+        "daylight": 1,
+        "sun": [
+          0.04218179262621001,
+          0.9568970106711536,
+          0.2873478855663454
+        ],
+        "sky": [
+          0.59,
+          0.76,
+          0.88
+        ],
+        "rain": 0,
+        "wind": [
+          -0.09681483233576553,
+          -0.2839487422754283
+        ],
+        "openSky": true
+      },
+      "atmosphere": {
+        "rainLines": 0,
+        "stars": false,
+        "clouds": 16,
+        "sun": true,
+        "moon": false
+      },
+      "avatars": {
+        "visible": 1,
+        "capacity": 8,
+        "samples": [
+          {
+            "id": "1b24ab45-0a64-4b51-aab2-7fc4a7f69a25",
+            "head": [
+              17.5,
+              71.04669952392578,
+              0.5
+            ],
+            "yaw": -1.5707963267948966
+          }
+        ]
+      },
+      "renderOrigin": {
+        "x": 32,
+        "z": 0
+      },
+      "feedback": {
+        "held": {
+          "state": 27,
+          "itemType": null,
+          "visible": true,
+          "swings": 0
+        },
+        "effects": {
+          "live": 0,
+          "bursts": 0
+        },
+        "drops": {
+          "visible": 0,
+          "kinds": 0
+        }
+      },
+      "audio": {
+        "supported": true,
+        "contexts": 1,
+        "state": "running",
+        "active": true,
+        "muted": false,
+        "voices": 0,
+        "effects": 0,
+        "gain": 0.2199999988079071,
+        "dropped": 0,
+        "listener": [
+          37.32830047607422,
+          119.75330352783203,
+          0.5
+        ],
+        "lastSource": null
+      },
+      "renderLimitHz": 30,
+      "touch": {
+        "x": 0,
+        "z": 0,
+        "jump": false,
+        "sneak": false,
+        "sprint": false
+      },
+      "focused": true,
+      "visible": "visible",
+      "hasFocus": true,
+      "lastFrame": 29625.9,
+      "lastUpdate": 29686.799999952316,
+      "resources": {
+        "geometries": 71,
+        "textures": 5,
+        "workers": 1
+      },
+      "actorId": "40459856-34b9-4f0f-b2c2-0fcff7f8ed56",
+      "worldId": "08d9fb26-07fa-4ffb-9a2f-ffcb57cd304f",
+      "body": {
+        "position": [
+          37.3283,
+          118.1333,
+          0.5
+        ],
+        "onGround": 0,
+        "frozen": 0,
+        "flying": 1,
+        "velocity": [
+          0,
+          0,
+          0
+        ]
+      },
+      "view": {
+        "yaw": 1.5707963267948966,
+        "pitch": -1.3281877294110729
+      },
+      "lastResult": null,
+      "inventory": {
+        "version": 2,
+        "catalog": true,
+        "revision": 0,
+        "selected": 0,
+        "bag": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "craft2": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "craft3": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "equipment": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "station": "personal",
+        "container": null
+      },
+      "inventoryOpen": false,
+      "inventoryPending": false,
+      "recentEdits": [],
+      "status": "playing",
+      "epoch": 4,
+      "phase": "playing",
+      "position": [
+        37.3283,
+        118.1333,
+        0.5
+      ],
+      "selected": 27,
+      "players": 2,
+      "inputLag": 9,
+      "correction": 0,
+      "columns": 49,
+      "collisionColumns": 49,
+      "meshed": 30,
+      "workers": 1,
+      "activeJobs": 0,
+      "stream": {
+        "discardedJobs": 0,
+        "installed": 56,
+        "meshJobs": 30,
+        "generationJobs": 56,
+        "mainWorkMs": 0.5999999046325684
+      },
+      "render": {
+        "uploadedBytes": 2102632,
+        "columns": 30,
+        "drawCalls": 76,
+        "triangles": 58050,
+        "uploadMs": 0.20000004768371582
+      },
+      "target": null,
+      "targetState": null,
+      "targetNormal": null,
+      "actionPending": 0,
+      "queuedAction": null,
+      "actionSequence": 0,
+      "lastReceivedAgoMs": 63.5
+    },
+    {
+      "disposed": false,
+      "inputMode": "touch",
+      "mode": "creative",
+      "mining": {
+        "target": null,
+        "elapsed": 0,
+        "total": 0
+      },
+      "vitals": {
+        "version": 1,
+        "health": 20,
+        "food": 20,
+        "air": 300,
+        "dead": false,
+        "respawnIn": 0
+      },
+      "miningHeld": false,
+      "drops": [],
+      "selectedSlot": 0,
+      "environment": {
+        "tick": 827.872000002861,
+        "seconds": 27.5957333334287,
+        "dayFraction": 0.24299644444452392,
+        "daylight": 1,
+        "sun": [
+          0.04213519677686309,
+          0.9568990635658107,
+          0.2873478855663454
+        ],
+        "sky": [
+          0.59,
+          0.76,
+          0.88
+        ],
+        "rain": 0,
+        "wind": [
+          -0.09681483233576553,
+          -0.2839487422754283
+        ],
+        "openSky": true
+      },
+      "atmosphere": {
+        "rainLines": 0,
+        "stars": false,
+        "clouds": 16,
+        "sun": true,
+        "moon": false
+      },
+      "avatars": {
+        "visible": 1,
+        "capacity": 8,
+        "samples": [
+          {
+            "id": "40459856-34b9-4f0f-b2c2-0fcff7f8ed56",
+            "head": [
+              -10.671699523925781,
+              119.71330261230469,
+              0.5
+            ],
+            "yaw": 1.5707963267948966
+          }
+        ]
+      },
+      "renderOrigin": {
+        "x": 48,
+        "z": 0
+      },
+      "feedback": {
+        "held": {
+          "state": 26,
+          "itemType": null,
+          "visible": false,
+          "swings": 0
+        },
+        "effects": {
+          "live": 0,
+          "bursts": 0
+        },
+        "drops": {
+          "visible": 0,
+          "kinds": 0
+        }
+      },
+      "audio": {
+        "supported": true,
+        "contexts": 1,
+        "state": "running",
+        "active": false,
+        "muted": false,
+        "voices": 0,
+        "effects": 0,
+        "gain": 0,
+        "dropped": 0,
+        "listener": [
+          49.5,
+          71.08670043945312,
+          0.5
+        ],
+        "lastSource": null
+      },
+      "renderLimitHz": 10,
+      "touch": {
+        "x": 0,
+        "z": 0,
+        "jump": false,
+        "sneak": false,
+        "sprint": false
+      },
+      "focused": false,
+      "visible": "visible",
+      "hasFocus": true,
+      "lastFrame": 26372,
+      "lastUpdate": 26476,
+      "resources": {
+        "geometries": 29,
+        "textures": 5,
+        "workers": 1
+      },
+      "actorId": "1b24ab45-0a64-4b51-aab2-7fc4a7f69a25",
+      "worldId": "08d9fb26-07fa-4ffb-9a2f-ffcb57cd304f",
+      "body": {
+        "position": [
+          49.5,
+          69.4667,
+          0.5
+        ],
+        "onGround": 0,
+        "frozen": 1,
+        "flying": 1,
+        "velocity": [
+          0,
+          0,
+          0
+        ]
+      },
+      "view": {
+        "yaw": -1.5707963267948966,
+        "pitch": 1.3251073636091422
+      },
+      "lastResult": null,
+      "inventory": {
+        "version": 2,
+        "catalog": true,
+        "revision": 0,
+        "selected": 0,
+        "bag": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "craft2": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "craft3": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "equipment": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "station": "personal",
+        "container": null
+      },
+      "inventoryOpen": false,
+      "inventoryPending": false,
+      "recentEdits": [],
+      "status": "paused",
+      "epoch": 7,
+      "phase": "playing",
+      "position": [
+        49.5,
+        69.4667,
+        0.5
+      ],
+      "selected": 26,
+      "players": 2,
+      "inputLag": 0,
+      "correction": 0,
+      "columns": 49,
+      "collisionColumns": 49,
+      "meshed": 25,
+      "workers": 1,
+      "activeJobs": 0,
+      "stream": {
+        "discardedJobs": 0,
+        "installed": 49,
+        "meshJobs": 25,
+        "generationJobs": 49,
+        "mainWorkMs": 0.09999990463256836
+      },
+      "render": {
+        "uploadedBytes": 1832152,
+        "columns": 25,
+        "drawCalls": 17,
+        "triangles": 7612,
+        "uploadMs": 0.5
+      },
+      "target": null,
+      "targetState": null,
+      "targetNormal": null,
+      "actionPending": 0,
+      "queuedAction": null,
+      "actionSequence": 0,
+      "lastReceivedAgoMs": 65.09999990463257
+    }
+  ],
+  "cleanup": [
+    {
+      "geometries": 0,
+      "textures": 0,
+      "workers": 0,
+      "audio": {
+        "supported": true,
+        "contexts": 0,
+        "state": "closed",
+        "active": false,
+        "muted": false,
+        "voices": 0,
+        "effects": 0,
+        "gain": 0,
+        "dropped": 0,
+        "listener": [
+          37.3283,
+          119.75330000000001,
+          0.5
+        ],
+        "lastSource": null
+      }
+    },
+    {
+      "geometries": 0,
+      "textures": 0,
+      "workers": 0,
+      "audio": {
+        "supported": true,
+        "contexts": 0,
+        "state": "closed",
+        "active": false,
+        "muted": false,
+        "voices": 0,
+        "effects": 0,
+        "gain": 0,
+        "dropped": 0,
+        "listener": [
+          49.5,
+          71.08670000000001,
+          0.5
+        ],
+        "lastSource": null
+      }
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,86 @@
+{
+  "buildId": "32f0fda71111b20ba54d355f17d09e645ad87f58b7f19440e0e3141ae695d6c0",
+  "results": [
+    {
+      "name": "school-gateway",
+      "log": "/tmp/voxel-lifecycle-school-gateway.log",
+      "exitCode": 0,
+      "signal": null,
+      "startedAt": "2026-10-25T12:13:59.910Z",
+      "finishedAt": "2026-10-25T12:14:13.641Z",
+      "durationMs": 13731
+    },
+    {
+      "name": "postgres-start",
+      "log": "/tmp/voxel-lifecycle-postgres-start.log",
+      "exitCode": 0,
+      "signal": null,
+      "startedAt": "2026-10-25T12:14:13.645Z",
+      "finishedAt": "2026-10-25T12:14:13.758Z",
+      "durationMs": 113
+    },
+    {
+      "name": "postgres",
+      "log": "/tmp/voxel-lifecycle-postgres.log",
+      "exitCode": 0,
+      "signal": null,
+      "startedAt": "2026-10-25T12:14:13.759Z",
+      "finishedAt": "2026-10-25T12:14:20.792Z",
+      "durationMs": 7033
+    },
+    {
+      "name": "postgres-stop",
+      "log": "/tmp/voxel-lifecycle-postgres-stop.log",
+      "exitCode": 0,
+      "signal": null,
+      "startedAt": "2026-10-25T12:14:20.793Z",
+      "finishedAt": "2026-10-25T12:14:20.896Z",
+      "durationMs": 103
+    },
+    {
+      "name": "observer",
+      "log": "/tmp/voxel-lifecycle-observer.log",
+      "exitCode": 0,
+      "signal": null,
+      "startedAt": "2026-10-25T12:14:20.897Z",
+      "finishedAt": "2026-10-25T12:14:30.427Z",
+      "durationMs": 9530
+    },
+    {
+      "name": "creative",
+      "log": "/tmp/voxel-lifecycle-creative.log",
+      "exitCode": 0,
+      "signal": null,
+      "startedAt": "2026-10-25T12:14:30.427Z",
+      "finishedAt": "2026-10-25T12:15:18.376Z",
+      "durationMs": 47949
+    },
+    {
+      "name": "inventory",
+      "log": "/tmp/voxel-lifecycle-inventory.log",
+      "exitCode": 0,
+      "signal": null,
+      "startedAt": "2026-10-25T12:15:18.377Z",
+      "finishedAt": "2026-10-25T12:15:41.854Z",
+      "durationMs": 23477
+    },
+    {
+      "name": "tnt",
+      "log": "/tmp/voxel-lifecycle-tnt.log",
+      "exitCode": 0,
+      "signal": null,
+      "startedAt": "2026-10-25T12:15:41.854Z",
+      "finishedAt": "2026-10-25T12:16:57.829Z",
+      "durationMs": 75975
+    },
+    {
+      "name": "release",
+      "log": "/tmp/voxel-lifecycle-release.log",
+      "exitCode": 0,
+      "signal": null,
+      "startedAt": "2026-10-25T12:16:57.829Z",
+      "finishedAt": "2026-10-25T12:16:58.159Z",
+      "durationMs": 330
+    }
+  ]
+}

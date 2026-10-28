@@ -1,0 +1,69 @@
+
+> @playground/voxel@0.1.0 test
+> node --test tests/*.test.ts
+
+✔ input bursts cannot buy more simulated movement time (19.43065ms)
+✔ queues expire, transient presses clear, overflow requests resync, epochs invalidate (0.424762ms)
+✔ positions, durations, client clocks, and nonfinite controls are rejected (0.411522ms)
+✔ epoch resets retain consumed look direction while discarding pending view and movement (1.003444ms)
+✔ scheduler bounds stalls without an unbounded catch-up queue (0.458962ms)
+✔ evicted command results cannot execute again, including after reconnect (0.433722ms)
+✔ semantic manifest and IDs are deterministic across authoring order (23.026427ms)
+✔ compiler assigns ordinary states across the u8 boundary with no reserved stock pool (11.723895ms)
+✔ unknown references, duplicate states, malformed shapes, and recipes fail the build (2.542492ms)
+✔ room-time atmosphere is deterministic, bounded, cyclic and weather transitions are continuous (5.071584ms)
+✔ presentation clock aligns late joiners, rejects stale ticks, freezes on stalls and resets for a new world (0.391082ms)
+✔ welcome requires matching environment format and valid authoritative ticks; clients cannot set world time (0.780204ms)
+✔ a delayed receipt cannot leave remote movement and look stuck behind after healthy snapshots resume (1.354286ms)
+✔ extrapolation is bounded, frozen bodies do not coast, and removed actors release interpolation state (0.957764ms)
+✔ stack instance validation rejects forged counts/metadata and compiler enforces equipment/durable outputs (3.287775ms)
+✔ split/merge/swap/equip conserve owned items, reject partial overflow, and snapshots cannot mutate authority (1.808288ms)
+✔ 2x2 recipes translate/mirror, batch atomically, and never consume ingredients when output is full (2.32257ms)
+✔ 3x3 crafting requires a reachable live station and creates a bounded durable instance (0.661523ms)
+✔ simultaneous chest withdrawals serialize by revisions and cannot duplicate or erase items (0.724524ms)
+✔ failed grants and stale revisions do not partially install; disconnect preserves grids/equipment and closes shared access (0.421242ms)
+✔ old chest incarnations conflict even with identical revisions; abandoned crafting ingredients stay recoverable (0.511483ms)
+✔ inventory wire intents reject client results, unknown fields, forged slots and malformed owned instances (1.140445ms)
+✔ gameplay schema rejects dev commands, forged positions/clocks, and oversize input batches (1.745768ms)
+✔ binary subscription baselines preserve high states and reject format/length/index corruption (2.594933ms)
+✔ acknowledgement includes discarded controls and worker identities include every freshness boundary (0.654083ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1078.770779
+
+> @playground/voxel@0.1.0 test:integration
+> node --test tests/integration/*.test.ts
+
+✔ real inventory commands craft once across cache eviction/reconnect and shared chest withdrawals cannot duplicate (526.66673ms)
+✔ room-owned world clock survives late joins/reconnects and rejects browser time changes (345.697889ms)
+✔ supervised creative room shares authoritative edits, admits late joins/reconnects, and rejects replay/time forgery (313.906501ms)
+✔ the actual gateway bounds burst movement time and enforces participant/observer capabilities (2857.95222ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4310.154498
+
+> @playground/voxel@0.1.0 test:server-bundle
+> node tools/test-server-bundle.mjs
+
+✔ real inventory commands craft once across cache eviction/reconnect and shared chest withdrawals cannot duplicate (473.583644ms)
+✔ room-owned world clock survives late joins/reconnects and rejects browser time changes (285.618209ms)
+✔ supervised creative room shares authoritative edits, admits late joins/reconnects, and rejects replay/time forgery (263.862268ms)
+✔ the actual gateway bounds burst movement time and enforces participant/observer capabilities (2819.972768ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4093.916177

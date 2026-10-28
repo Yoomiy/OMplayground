@@ -1,0 +1,11 @@
+file:///home/ubuntu/OMplayground/apps/voxel-server/src/school-media.ts:129
+    throw new Error("Voice configuration required");
+          ^
+
+Error: Voice configuration required
+    at voiceConfig (file:///home/ubuntu/OMplayground/apps/voxel-server/src/school-media.ts:129:11)
+    at startVoxelService (file:///home/ubuntu/OMplayground/apps/voxel-server/src/service.ts:125:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///tmp/voxel-held-startup.mjs:7:11
+
+Node.js v24.21.0

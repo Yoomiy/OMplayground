@@ -1,0 +1,8 @@
+scripts/borrow-voxel-textures.ts:3: * apps/web/public/minecraft-assets/. Idempotent; logs skips and missing files.
+scripts/borrow-voxel-textures.ts:5: * Usage: pnpm exec tsx scripts/borrow-voxel-textures.ts
+scripts/borrow-voxel-textures.ts:13:const DEST_DIR = path.join(REPO_ROOT, "apps/web/public/minecraft-assets");
+scripts/borrow-voxel-audio.ts:2: * Copy all .ogg audio from sourceCode/voxelsrv into apps/web/public/minecraft-assets/sounds/.
+scripts/borrow-voxel-audio.ts:5: * Usage: pnpm borrow-voxel-audio
+scripts/borrow-voxel-audio.ts:13:const DEST_ROOT = path.join(REPO_ROOT, "apps/web/public/minecraft-assets/sounds");
+package.json:16:    "borrow-voxel-textures": "tsx scripts/borrow-voxel-textures.ts",
+package.json:17:    "borrow-voxel-audio": "tsx scripts/borrow-voxel-audio.ts",

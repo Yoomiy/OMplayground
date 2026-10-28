@@ -1,0 +1,18 @@
+
+> @playground/web@0.0.1 test
+> vitest run --reporter=dot
+
+
+ RUN  v3.2.4 /home/ubuntu/OMplayground/apps/web
+
+stderr | src/games/voxel/worldgenPool.test.ts > WorldgenWorkerPool > handles worker error events and triggers synchronous fallback
+Worldgen Web Worker 0 encountered an error: { message: 'Worker crashed' }
+Falling back to synchronous chunk generation for chunk c_error_test due to worker error.
+
+····················································································································································································
+
+ Test Files  28 passed (28)
+      Tests  180 passed (180)
+   Start at  02:37:06
+   Duration  12.78s (transform 1.32s, setup 0ms, collect 2.85s, tests 381ms, environment 9ms, prepare 3.27s)
+

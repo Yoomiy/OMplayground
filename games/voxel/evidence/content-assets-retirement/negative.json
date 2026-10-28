@@ -1,0 +1,31 @@
+{
+  "result": "FROZEN_SOURCE_REGENERATION_AND_AUDIT_REJECT_CORRUPTION",
+  "stage": "/tmp/voxel-reference-fixture-iohAym",
+  "runs": [
+    {
+      "name": "fixture-regenerate",
+      "exitCode": 0,
+      "log": "/tmp/voxel-legacy-content-fixture-regenerate.log",
+      "sha256": "f94d9b415abf5bd192b82a98303d6d0247ee1939151b57940cfebbaa65f22b4a"
+    },
+    {
+      "name": "fixture-audit",
+      "exitCode": 0,
+      "log": "/tmp/voxel-legacy-content-fixture-audit.log",
+      "sha256": "1e9934d61dc73e72b1fd37a2d1ac822c54c60cd10caf70ac74e637325176b714"
+    },
+    {
+      "name": "corrupt-regenerate",
+      "exitCode": 1,
+      "log": "/tmp/voxel-legacy-content-corrupt-regenerate.log",
+      "sha256": "ef906952d6f10aa5eaeebb6f36adf2c7058a3415f3dd4bd924a7636127fd89fe"
+    },
+    {
+      "name": "corrupt-audit",
+      "exitCode": 1,
+      "log": "/tmp/voxel-legacy-content-corrupt-audit.log",
+      "sha256": "b63aa01be27d85e9c6329f3c415c510329f5c079af9774520a6e1cc508641295"
+    }
+  ],
+  "liveSourceUnchanged": true
+}

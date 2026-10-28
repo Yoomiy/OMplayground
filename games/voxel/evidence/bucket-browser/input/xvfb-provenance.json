@@ -1,0 +1,6 @@
+{
+  "source": "Official Ubuntu xvfb 2:21.1.12-1ubuntu1.9 arm64 package, extracted under /tmp",
+  "originalSha256": "b41ff22341d3d9e9093261164295cfbddfe10225a94f9b6c45851f5f3de9c525",
+  "temporarySha256": "544c0d7c88a9e0873c240733d6aaab66efdf4964b9887379dc386d6f430eb1ba",
+  "change": "One same-length compiler-directory string /usr/bin -> /tmp/vkb; the installed system and packaged original are unchanged."
+}

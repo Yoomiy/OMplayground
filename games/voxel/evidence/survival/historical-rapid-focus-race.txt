@@ -1,0 +1,16 @@
+
+> @playground/voxel@0.1.0 test:touch:browser
+> node tools/browser-touch.ts
+
+Rapid resume/pause diagnostics {"disposed":false,"inputMode":"touch","mode":"creative","mining":{"target":null,"elapsed":0,"total":0},"miningHeld":false,"drops":[],"selectedSlot":0,"environment":{"tick":180.855,"seconds":6.028499999999999,"dayFraction":0.22502375,"daylight":1,"sun":[0.14969586834445028,0.9460562032253429,0.2873478855663454],"sky":[0.59,0.76,0.88],"rain":0,"wind":[-0.09681483233576553,-0.2839487422754283],"openSky":true},"atmosphere":{"rainLines":0,"stars":false,"clouds":16,"sun":true,"moon":false},"avatars":{"visible":0,"capacity":8,"samples":[]},"renderOrigin":{"x":48,"z":0},"feedback":{"held":{"state":-1,"itemType":null,"visible":false,"swings":0},"effects":{"live":0,"bursts":0},"drops":{"visible":0,"kinds":0}},"audio":{"supported":true,"contexts":1,"state":"running","active":false,"muted":false,"voices":0,"effects":0,"gain":0,"dropped":0,"listener":[49.5,69.62000274658203,0.5],"lastSource":null},"renderLimitHz":10,"touch":{"x":0,"z":0,"jump":false,"sneak":false,"sprint":false},"focused":false,"visible":"visible","hasFocus":true,"lastFrame":7912.3,"lastUpdate":8104.700000047684,"resources":{"geometries":27,"textures":5,"workers":1},"actorId":"c8cce0fb-9067-48df-afea-5bfc772bb2cb","worldId":"b64c4108-7f06-453c-9e7b-194eb70fe510","body":{"position":[49.5,68,0.5],"onGround":1,"frozen":0,"flying":0,"velocity":[0,0,0]},"view":{"yaw":0,"pitch":0},"lastResult":null,"inventory":{"version":2,"catalog":true,"revision":0,"selected":0,"bag":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"craft2":[null,null,null,null],"craft3":[null,null,null,null,null,null,null,null,null],"equipment":[null,null,null,null,null],"station":"personal","container":null},"inventoryOpen":false,"inventoryPending":false,"recentEdits":[],"status":"paused","epoch":2,"phase":"playing","position":[49.5,68,0.5],"selected":26,"players":1,"inputLag":0,"correction":0,"columns":49,"collisionColumns":49,"meshed":25,"workers":1,"activeJobs":0,"stream":{"discardedJobs":0,"installed":49,"meshJobs":25,"generationJobs":49,"mainWorkMs":0},"render":{"uploadedBytes":1832152,"columns":25,"drawCalls":25,"triangles":18862,"uploadMs":0.09999990463256836},"target":[49,69,-4],"targetState":14,"targetNormal":[0,0,1],"actionPending":0}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+page.waitForFunction: Timeout 5000ms exceeded.
+    at /home/ubuntu/OMplayground/games/voxel/tools/browser-touch.ts:56:16 {
+  log: [],
+  name: 'TimeoutError'
+}
+
+Node.js v24.21.0

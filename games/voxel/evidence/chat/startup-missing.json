@@ -1,0 +1,17 @@
+{
+  "result": "EXPECTED_NOT_READY",
+  "missing": "voxel_chat_status",
+  "remoteStatusCalls": [
+    "voxel_chat_status",
+    "voxel_controls_status",
+    "voxel_moderation_status",
+    "voxel_persistence_status",
+    "voxel_roster_status",
+    "voxel_session_projection_status",
+    "voxel_staff_status"
+  ],
+  "listenerAttempts": 0,
+  "serviceCreated": false,
+  "remoteApplicationWrites": 0,
+  "checkedAt": "2026-10-26T14:33:40.081Z"
+}

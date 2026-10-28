@@ -1,0 +1,160 @@
+.voxel-touch {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  direction: ltr;
+}
+.voxel-touch[hidden] {
+  display: none;
+}
+.voxel-touch-aim {
+  position: absolute;
+  inset: 0 0 0 50%;
+  pointer-events: auto;
+  touch-action: none;
+}
+.voxel-touch-stick {
+  position: absolute;
+  left: max(16px, env(safe-area-inset-left));
+  bottom: max(104px, calc(88px + env(safe-area-inset-bottom)));
+  width: clamp(96px, 20vw, 140px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 2px solid #ffffff60;
+  background: #1026339c;
+  pointer-events: auto;
+  touch-action: none;
+}
+.voxel-touch-knob {
+  position: absolute;
+  width: 36%;
+  height: 36%;
+  left: 32%;
+  top: 32%;
+  border-radius: 50%;
+  background: #d9edf0c9;
+  pointer-events: none;
+}
+.voxel-touch-actions {
+  position: absolute;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(104px, calc(88px + env(safe-area-inset-bottom)));
+  display: grid;
+  grid-template-columns: repeat(2, minmax(64px, 1fr));
+  gap: 6px;
+  max-width: min(45vw, 260px);
+  direction: rtl;
+}
+.voxel-touch-actions button {
+  min-height: 44px;
+  padding: 8px;
+  font-size: 12px;
+  pointer-events: auto;
+  touch-action: none;
+  background: #214456db;
+}
+.voxel-touch-actions button.held,
+.voxel-touch-actions button[aria-pressed='true'] {
+  background: #476050;
+  border-color: #f3cf7c;
+}
+@media (max-height: 460px) {
+  .voxel-touch-actions {
+    grid-template-columns: repeat(3, 1fr);
+    max-width: min(55vw, 350px);
+    bottom: 80px;
+  }
+  .voxel-touch-stick {
+    width: 96px;
+    bottom: 80px;
+  }
+}
+.voxel-inventory {
+  width: min(900px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  overflow: auto;
+  color: #f1f6ef;
+  background: #152e3c;
+  border: 1px solid #a6c5c0;
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 20px 90px #0009;
+}
+.voxel-inventory::backdrop {
+  background: #061019a6;
+}
+.voxel-inventory header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.voxel-inventory h2 {
+  margin: 0;
+  font-size: 22px;
+}
+.voxel-inventory h3 {
+  margin: 14px 0 8px;
+  font-size: 16px;
+}
+.inventory-hint {
+  color: #c5d8d9;
+  font-size: 13px;
+}
+.inventory-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+}
+.inventory-body > section:first-child,
+.inventory-body > details {
+  width: 100%;
+}
+.inventory-grid {
+  direction: ltr;
+  display: grid;
+  grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
+  gap: 4px;
+}
+.inventory-grid button {
+  direction: rtl;
+  min-width: 48px;
+  min-height: 46px;
+  max-width: 88px;
+  padding: 5px;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.inventory-grid button[aria-pressed='true'] {
+  background: #68715b;
+  outline: 2px solid #f3cf7c;
+}
+.voxel-inventory button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+.voxel-inventory select {
+  min-height: 44px;
+  padding: 6px;
+  font: inherit;
+  margin-inline-end: 8px;
+  max-width: 180px;
+}
+#inventory-craft {
+  margin-top: 8px;
+}
+@media (max-width: 560px) {
+  .voxel-inventory {
+    padding: 12px;
+  }
+  .inventory-grid button {
+    min-width: 0;
+    min-height: 44px;
+    font-size: 10px;
+  }
+  .inventory-body {
+    gap: 6px 12px;
+  }
+}

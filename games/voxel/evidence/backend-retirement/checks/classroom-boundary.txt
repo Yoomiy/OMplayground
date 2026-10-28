@@ -1,0 +1,5 @@
+
+> @playground/classroom-server@0.1.0 verify:boundary
+> NODE_ENV=production node tools/verify-boundary.cjs
+
+{"result":"PASS","sourceModules":15,"classroomRoutes":20,"gameImports":0,"productionFiles":30}

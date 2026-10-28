@@ -1,0 +1,20 @@
+
+> @playground/voxel-server@0.1.0 pretypecheck
+> npm run build:shared
+
+
+> @playground/voxel-server@0.1.0 build:shared
+> npm --prefix ../.. run build --workspace @playground/game-logic && npm --prefix ../.. run build --workspace @playground/observability
+
+
+> @playground/game-logic@0.0.1 build
+> tsc -p tsconfig.json
+
+
+> @playground/observability@0.0.1 build
+> tsc -p tsconfig.json
+
+
+> @playground/voxel-server@0.1.0 typecheck
+> tsc --noEmit
+

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { getVoxelServerUrl } from "@/lib/voxelServerUrl";
+import { getClassroomServerUrl } from "@/lib/classroomServerUrl";
 import { cn } from "@/lib/cn";
 import { kidFieldInputClass } from "@/lib/fieldStyles";
 import { formatClassroomActivity, formatClassroomFullDate } from "@/lib/classroomActivityTime";
@@ -100,7 +100,7 @@ export function ClassroomAdminExplorer() {
         page: String(page),
         pageSize: String(PAGE_SIZE)
       });
-      const response = await fetch(`${getVoxelServerUrl()}/rtc/admin/classroom-records?${query}`, { headers: await authHeaders() });
+      const response = await fetch(`${getClassroomServerUrl()}/rtc/admin/classroom-records?${query}`, { headers: await authHeaders() });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.error || "טעינת רשומות הכיתות נכשלה.");
       setRecords(body.items ?? []);
@@ -115,7 +115,7 @@ export function ClassroomAdminExplorer() {
   const loadDetail = useCallback(async (id: string) => {
     setDetailLoading(true);
     try {
-      const response = await fetch(`${getVoxelServerUrl()}/rtc/admin/classroom-records/${id}`, { headers: await authHeaders() });
+      const response = await fetch(`${getClassroomServerUrl()}/rtc/admin/classroom-records/${id}`, { headers: await authHeaders() });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.error || "טעינת פרטי הכיתה נכשלה.");
       setDetail(body);
@@ -172,7 +172,7 @@ export function ClassroomAdminExplorer() {
 
   const endClassroom = async (roomCode: string) => {
     if (!window.confirm("לסגור את הכיתה כעת? הרשומה והיסטוריית הנוכחות יישמרו.")) return;
-    const response = await fetch(`${getVoxelServerUrl()}/rtc/classroom-end`, {
+    const response = await fetch(`${getClassroomServerUrl()}/rtc/classroom-end`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ roomCode })
@@ -184,7 +184,7 @@ export function ClassroomAdminExplorer() {
 
   const removeRecord = async (id: string) => {
     if (!window.confirm("להסיר לצמיתות את רשומת הכיתה ואת היסטוריית הנוכחות שלה?")) return;
-    const response = await fetch(`${getVoxelServerUrl()}/rtc/admin/classroom-records/${id}`, {
+    const response = await fetch(`${getClassroomServerUrl()}/rtc/admin/classroom-records/${id}`, {
       method: "DELETE",
       headers: await authHeaders()
     });

@@ -1,0 +1,173 @@
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
+import { GameSessionContainer } from "@/game/GameSessionContainer";
+import { createVoxelApi } from "@/game/voxel/session-api";
+import { getVoxelRuntimeUrl } from "@/lib/voxelRuntimeUrl";
+const VoxelSessionContainer = lazy(
+  () => import("@/game/voxel/VoxelSessionContainer"),
+);
+import { RocketSessionContainer } from "@/game/RocketSessionContainer";
+import { WobbleSessionContainer } from "@/game/WobbleSessionContainer";
+import { KidDesktopShell } from "@/components/KidDesktopShell";
+import { supabase } from "@/lib/supabase";
+import { useProfile } from "@/hooks/useProfile";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { classroomDrawingRoomCode } from "@/lib/drawingSessionScope";
+
+function PlayPage() {
+  const { sessionId } = useParams();
+  const [searchParams] = useSearchParams();
+  const { profile } = useProfile();
+  const { isAdmin } = useIsAdmin();
+  const [gameName, setGameName] = useState<string>("");
+  const [gameUrl, setGameUrl] = useState<string | null>(null);
+  const [classroomRoomCode, setClassroomRoomCode] = useState<string | null>(
+    null,
+  );
+  const [sessionResolved, setSessionResolved] = useState(false);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    let cancelled = false;
+    setSessionResolved(false);
+    setClassroomRoomCode(null);
+    void (async () => {
+      const { data } = await supabase
+        .from("game_sessions")
+        .select("invitation_code, games ( name_he, game_url )")
+        .eq("id", sessionId)
+        .maybeSingle();
+      if (cancelled) return;
+      setClassroomRoomCode(
+        classroomDrawingRoomCode(
+          (data as { invitation_code?: unknown } | null)?.invitation_code,
+        ),
+      );
+      const games = (
+        data as {
+          games?: { name_he?: string; game_url?: string } | null;
+        } | null
+      )?.games;
+      setGameName(games?.name_he ?? "");
+      let url = games?.game_url ?? null;
+      // Staff observation can cross the browser table's partition policy. The
+      // independent service verifies its own school scope before returning UI data.
+      if (!url) {
+        try {
+          const api = createVoxelApi({
+            serverUrl: getVoxelRuntimeUrl(),
+            room: sessionId,
+            getToken: async () => {
+              const result = await supabase.auth.getSession();
+              if (result.error || !result.data.session)
+                throw new Error("UNAUTHORIZED");
+              return result.data.session.access_token;
+            },
+          });
+          await api.session();
+          url = "minecraft";
+        } catch {
+          /* An unavailable/unreadable session is shown below, never guessed as a board game. */
+        }
+      }
+      if (cancelled) return;
+      setGameUrl(url);
+      setSessionResolved(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId]);
+
+  const { backHref, backLabel } = useMemo(() => {
+    if (isAdmin) {
+      return { backHref: "/admin", backLabel: "ניהול" };
+    }
+    if (profile?.role === "teacher") {
+      return searchParams.get("mode") === "player"
+        ? { backHref: "/home", backLabel: "מגרש המשחקים" }
+        : { backHref: "/teacher", backLabel: "לוח מורה" };
+    }
+    return { backHref: "/home", backLabel: "בית" };
+  }, [isAdmin, profile?.role, searchParams]);
+
+  if (!sessionId) {
+    return (
+      <p className="p-6 text-sm font-bold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/30 rounded-2xl max-w-md mx-auto mt-10 text-center shadow-sm">
+        חסר מזהה מפגש
+      </p>
+    );
+  }
+
+  if (!sessionResolved) {
+    return (
+      <p className="p-6 text-center text-sm font-bold text-slate-600 dark:text-white/60">
+        טוען חדר…
+      </p>
+    );
+  }
+
+  if (classroomRoomCode) {
+    return (
+      <Navigate
+        to={`/classroom/${encodeURIComponent(classroomRoomCode)}`}
+        replace
+      />
+    );
+  }
+
+  if (!gameUrl)
+    return (
+      <main dir="rtl" className="p-8 text-center">
+        <p>המפגש אינו זמין.</p>
+        <Link to={backHref}>{backLabel}</Link>
+      </main>
+    );
+  // The rewritten runtime owns its canvas and school HUD within this session route.
+  if (gameUrl === "minecraft") {
+    return (
+      <Suspense fallback={<p className="p-6 text-center">מכינים את העולם…</p>}>
+        <VoxelSessionContainer sessionId={sessionId} />
+      </Suspense>
+    );
+  }
+  if (gameUrl === "rocket-arena") {
+    return (
+      <RocketSessionContainer
+        sessionId={sessionId}
+        backHref={backHref}
+        backLabel={backLabel}
+      />
+    );
+  }
+  if (gameUrl === "wobble-rush") {
+    return (
+      <WobbleSessionContainer
+        sessionId={sessionId}
+        backHref={backHref}
+        backLabel={backLabel}
+      />
+    );
+  }
+
+  return (
+    <KidDesktopShell
+      title={gameName || "משחק"}
+      subtitle="חדר משחק"
+      actions={
+        <Link
+          to={backHref}
+          className="rounded-xl bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/20 hover:bg-slate-200 dark:hover:bg-white/15 px-4 py-2 text-xs font-black text-slate-800 dark:text-white hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 flex items-center justify-center min-h-10 shadow-sm"
+        >
+          {backLabel}
+        </Link>
+      }
+      contentClassName="min-h-[calc(100vh-136px)]"
+    >
+      <GameSessionContainer sessionId={sessionId} />
+    </KidDesktopShell>
+  );
+}
+
+export default PlayPage;
+export { PlayPage };

@@ -1,0 +1,96 @@
+
+> @playground/voxel-server@0.1.0 pretest
+> npm run build:shared
+
+
+> @playground/voxel-server@0.1.0 build:shared
+> npm --prefix ../.. run build --workspace @playground/game-logic && npm --prefix ../.. run build --workspace @playground/observability
+
+
+> @playground/game-logic@0.0.1 build
+> tsc -p tsconfig.json
+
+
+> @playground/observability@0.0.1 build
+> tsc -p tsconfig.json
+
+
+> @playground/voxel-server@0.1.0 test
+> node --test tests/*.test.ts
+
+✔ hosted qualification scope allows its status/room/object requests and refuses global cleanup (35.159963ms)
+✔ hosted qualification scope rejects other sessions, actors, graphs and namespaces (9.335643ms)
+✔ hosted qualification reads are limited to exact own row IDs and configured provider (4.31322ms)
+✔ cleanup SQL rejects untrusted interpolation before any query is available (0.861444ms)
+✔ a verified active child gets a short private authorization with no name, inventory or capacity query (117.835469ms)
+✔ disabled accounts cannot fall through into admin access; each authorization reads current identity and profile (20.922138ms)
+✔ staff observe across partitions without gameplay grants; teacher participation follows the normal gender rule (15.02803ms)
+✔ closed rooms require current membership, a current invitation, or an accepted challenge (35.905408ms)
+✔ paused sessions preserve roster/host access and staff inspection, while ended or wrong-game sessions never start (41.146632ms)
+✔ class exceptions override recess defaults and conflicting or unavailable schedules fail closed (37.080733ms)
+✔ authorization cannot cross a schedule minute, JWT expiry, or an overlong provider read (19.697932ms)
+✔ private owned-object eligibility ignores offline recess time, but never ignores membership removal or a provider outage (12.020336ms)
+✔ authority comes from platform rows, never forged claims, extra request fields or a headcount ceiling (11.836655ms)
+✔ schedule interpretation retains Jerusalem time across summer and winter offsets (25.244357ms)
+✔ a continuous recess interval renews across ordinary minutes while the actual closing boundary remains authoritative (17.669442ms)
+✔ a private grant refreshes current policy and cannot be redirected by mutating its original request (11.577774ms)
+✔ central room policy reads fresh session state independently of player admission and treats deletion/completion as terminal (5.789347ms)
+✔ unavailable or overlong session reads cannot renew central room permission (1.295926ms)
+✔ a completed school session remains a terminal revalidation reason rather than a generic permission or provider failure (4.998183ms)
+✔ an empty invitation value never opens a closed room (2.438931ms)
+✔ roster revisions fence old open-room tickets while actor and passive ownership renewal require accepted membership (77.939123ms)
+✔ removal generations revoke earlier actor/owner proofs without disrupting peers and bans deny fresh admission until explicit unban/readmission (117.547947ms)
+✔ missing, inconsistent or overlong access-policy reads cannot grant or renew school authority (10.045367ms)
+✔ control rejects extra intent fields before identity or allocation (44.920689ms)
+✔ queued control repeats fresh authority and a revoked teacher cannot execute its earlier grant (23.74983ms)
+✔ pause save failure has no completion receipt and a prior committed receipt replays without reading the ended session (18.786327ms)
+✔ read-only session inspection follows live school scope and allows completed roster/staff without granting admission (130.85849ms)
+✖ operations require fresh admin identity and expose only a read-only snapshot (95.752526ms)
+✔ staff policy rechecks queued role authority and never dispatches browser-supplied actors or coordinates (125.611745ms)
+✔ staff completion preserves the request identity and reports applied without claiming a checkpoint save (18.833928ms)
+✔ unknown dispatch in another owner epoch stays unconfirmed and malformed installation replies fail closed (22.595065ms)
+✔ production listener rejects wildcard, path, insecure and credential origins and requires a concrete port (18.030964ms)
+✔ release inventory corruption is rejected before importing executable gateway code (286.257693ms)
+✔ startup verifies every schema and fails before listening when controls are absent (71.571653ms)
+✔ installed SDK sends canonical service RPCs with a secret apikey and accepts only coherent immutable lease replies (105.276771ms)
+✔ create-only uploads copy bytes before IO and verify a duplicate object before marking it ready (15.261271ms)
+✔ provider errors cannot expose credentials and an unavailable provider respects the request deadline (33.007633ms)
+✔ failed Storage cleanup retains its catalog claim; completion only follows a successful API deletion (8.212039ms)
+✔ configuration rejects missing, public or legacy API keys and nonsecure remote endpoints (0.321922ms)
+✔ the shared server SDK preserves an explicit user bearer token for identity verification (1.696328ms)
+✔ session SDK sends fenced identities, deduplicates presence and excludes observers from membership writes (58.284911ms)
+✔ session SDK rejects malformed installation/policy replies and request-start deadlines never extend during IO (12.367178ms)
+✔ session SDK treats explicit fencing as false and provider failures expose only a machine code (6.981793ms)
+✔ media signaling withholds refreshed/migrated SFU credentials and strips unknown nested extensions (7.027553ms)
+✔ media signaling rejects forged publication sources and metadata mutation while preserving audio requests (2.558532ms)
+✔ compressed media joins cannot override server identity metadata, resume old bindings or bypass source grants (8.386119ms)
+✔ rewritten join queries retain SDK padding for every compressed length (20.624177ms)
+✔ single-use media tickets bridge real signaling while keeping reusable provider credentials out of browser frames (336.538527ms)
+✔ late policy replies cannot revive an expired unused media ticket or allocate an upstream connection (466.928375ms)
+✔ mute fences a consumed ticket still awaiting policy IO, and a delayed pre-command grant cannot escape the barrier (261.078017ms)
+✔ the signaling worker ends provider media on its own deadline while the gateway event loop is blocked (1327.250784ms)
+ℹ tests 51
+ℹ suites 0
+ℹ pass 50
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8408.763972
+
+✖ failing tests:
+
+test at tests/school-operations.test.ts:7:1
+✖ operations require fresh admin identity and expose only a read-only snapshot (95.752526ms)
+  Error: invalid service API route
+      at Object.createGateway (file:///home/ubuntu/OMplayground/games/voxel/dist-server/gateway.js:1206:13)
+      at TestContext.<anonymous> (file:///home/ubuntu/OMplayground/apps/voxel-server/tests/school-operations.test.ts:21:33)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+npm error Lifecycle script `test` failed with error:
+npm error code 1
+npm error path /home/ubuntu/OMplayground/apps/voxel-server
+npm error workspace @playground/voxel-server@0.1.0
+npm error location /home/ubuntu/OMplayground/apps/voxel-server
+npm error command failed
+npm error command sh -c node --test tests/*.test.ts

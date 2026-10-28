@@ -1,0 +1,271 @@
+{
+  "kind": "legacy-backend-removal",
+  "head": "b0ccf90a83581460827f2c5a8f5d21c80612ebf6",
+  "backup": "/tmp/voxel-legacy-backend-before",
+  "files": [
+    {
+      "path": "apps/minecraft-server/TODO.txt",
+      "sha256": "d8e5e3c74584f8e43b847de408dee6e383fd50fce3f8bd93eed18be381b1747b",
+      "bytes": 705,
+      "lines": 20
+    },
+    {
+      "path": "apps/minecraft-server/jest.config.cjs",
+      "sha256": "50a3a18ae902d8cf15d3066b504e055c250b4e7c1d1998d98d60e2d03d6ef7aa",
+      "bytes": 266,
+      "lines": 14
+    },
+    {
+      "path": "apps/minecraft-server/package.json",
+      "sha256": "f7bd0510bf96b3083ba096559beda674e3de600d9c7c41267ee66aac5d6241a3",
+      "bytes": 1566,
+      "lines": 42
+    },
+    {
+      "path": "apps/minecraft-server/src/authCache.ts",
+      "sha256": "d3b71f1f7b7136716b8cf258c0add8d6175866c40845781bdf0f4563e8551c5a",
+      "bytes": 2205,
+      "lines": 73
+    },
+    {
+      "path": "apps/minecraft-server/src/blockBreakDrops.test.ts",
+      "sha256": "04b209b3533b3c28dcc91f8302344761b9cf871b8007a544da0e448ee5e3c9e7",
+      "bytes": 1525,
+      "lines": 44
+    },
+    {
+      "path": "apps/minecraft-server/src/breakMining.test.ts",
+      "sha256": "edeff159bae0a4fba9458c06f50e3b5b441816c560b80e4c7749d0b0a7b885be",
+      "bytes": 4184,
+      "lines": 121
+    },
+    {
+      "path": "apps/minecraft-server/src/breakMining.ts",
+      "sha256": "9a2bea16c721dff94669cbf458a4200340f8b5142884f08f83abd43f733709d1",
+      "bytes": 3906,
+      "lines": 138
+    },
+    {
+      "path": "apps/minecraft-server/src/closedSessionAccess.ts",
+      "sha256": "75bd3ca56cd56edc321e2aac295160168241f10281a99bea0f62ecad120bcf7b",
+      "bytes": 643,
+      "lines": 25
+    },
+    {
+      "path": "apps/minecraft-server/src/death.test.ts",
+      "sha256": "474e3de2aa404bd4fd0dd5dc081f1a87f1df30fbe16254b0b4236da2e5cf34e2",
+      "bytes": 2728,
+      "lines": 74
+    },
+    {
+      "path": "apps/minecraft-server/src/death.ts",
+      "sha256": "637da1ef9ba3ca0def7d1c6fe1cea5f4aa4d61812927884e864ea5d51b175c50",
+      "bytes": 4326,
+      "lines": 140
+    },
+    {
+      "path": "apps/minecraft-server/src/drops.test.ts",
+      "sha256": "828ec0dcd83afaeaeb7138770810a5a2992ef71c0ae08be7a2fc9e2fdaaf1395",
+      "bytes": 10047,
+      "lines": 284
+    },
+    {
+      "path": "apps/minecraft-server/src/drops.ts",
+      "sha256": "6e567c4a4cbf0f7597de5a107b87e191572df90280d15c3612f2a27caedda33b",
+      "bytes": 18513,
+      "lines": 670
+    },
+    {
+      "path": "apps/minecraft-server/src/fpsAggregator.ts",
+      "sha256": "065c6ce0166d732d16bc3b7dae338535c10d910505a4c73ec2e8c1b051272c9e",
+      "bytes": 2162,
+      "lines": 86
+    },
+    {
+      "path": "apps/minecraft-server/src/health.test.ts",
+      "sha256": "ea545617daec2a58da9aa324a20567b0af4e5a4828a8dab35119482c1a1c136f",
+      "bytes": 500,
+      "lines": 15
+    },
+    {
+      "path": "apps/minecraft-server/src/index.ts",
+      "sha256": "e85a09e5643510cfd734937d26bf493a5b46d05c2120be29ec1d04cbb6ca62d3",
+      "bytes": 93095,
+      "lines": 2978
+    },
+    {
+      "path": "apps/minecraft-server/src/inventory.test.ts",
+      "sha256": "a8ed9ef1db098addf2aa7179dfd4a8e2752827b94f018f559233e00137ee4f70",
+      "bytes": 16515,
+      "lines": 455
+    },
+    {
+      "path": "apps/minecraft-server/src/inventory.ts",
+      "sha256": "274d0d39929bbe10c4f917dc0840a9ffc3e30497e321393ad231b981904dadb8",
+      "bytes": 29422,
+      "lines": 941
+    },
+    {
+      "path": "apps/minecraft-server/src/launchTracker.ts",
+      "sha256": "7ff5e1f54226a47b1ebc424ebe2a04fdf16dff2c0f8458a8b222082b2f31be38",
+      "bytes": 1255,
+      "lines": 39
+    },
+    {
+      "path": "apps/minecraft-server/src/livekitService.test.ts",
+      "sha256": "d0574348d41457a0f6a7eeea740ba99bcb132644f3f07d076992306f0446bd61",
+      "bytes": 2687,
+      "lines": 111
+    },
+    {
+      "path": "apps/minecraft-server/src/livekitService.ts",
+      "sha256": "d03e9d4e249020d12c668dfd663a8b5474ae1418e0496e7b0ed3dddd7331f4dc",
+      "bytes": 3371,
+      "lines": 123
+    },
+    {
+      "path": "apps/minecraft-server/src/perks.test.ts",
+      "sha256": "8277247f1ebf855471a467b28455d290cae2514d88082a10befa97a71fb8ab03",
+      "bytes": 3459,
+      "lines": 121
+    },
+    {
+      "path": "apps/minecraft-server/src/perks.ts",
+      "sha256": "db02c1018dae49a3405bc61136ac9322776335120e5e63343b7dbe74c05beb91",
+      "bytes": 4003,
+      "lines": 129
+    },
+    {
+      "path": "apps/minecraft-server/src/protocol.ts",
+      "sha256": "32a4d3f5dbda9b56d56ce103aa849d1afcf1985c662c6f4c88dd9e88c0dedad7",
+      "bytes": 8022,
+      "lines": 337
+    },
+    {
+      "path": "apps/minecraft-server/src/recess.test.ts",
+      "sha256": "114ed37b992a6a250c64c043400eb51c77f9a1b6c615ebf5643cc4c3db5d2bc2",
+      "bytes": 643,
+      "lines": 19
+    },
+    {
+      "path": "apps/minecraft-server/src/recess.ts",
+      "sha256": "c1cea1e0aafbe4ba73c8e18424cb94d8052f3d1c6a80c884caee64c41fdc2213",
+      "bytes": 1491,
+      "lines": 59
+    },
+    {
+      "path": "apps/minecraft-server/src/recessSweep.test.ts",
+      "sha256": "17aa35ad9719007b0d66e9a92dfd595ea2ec93ed2641e3aa2dd8f6d47639ae43",
+      "bytes": 1763,
+      "lines": 34
+    },
+    {
+      "path": "apps/minecraft-server/src/recessSweep.ts",
+      "sha256": "9b67096b58954bf2cca23f57a7b70d9fa4ab50964aa1610484289eeda0ea8b28",
+      "bytes": 1634,
+      "lines": 54
+    },
+    {
+      "path": "apps/minecraft-server/src/room.test.ts",
+      "sha256": "4912970ed0dfbdb537b39524c5269a7968b1a40ae2a78db24e02a6200436053d",
+      "bytes": 13073,
+      "lines": 420
+    },
+    {
+      "path": "apps/minecraft-server/src/room.ts",
+      "sha256": "16458d7370024d3d35bfe6991fb2d96e5744d1f4cdde45dadd572a1746de3850",
+      "bytes": 22458,
+      "lines": 682
+    },
+    {
+      "path": "apps/minecraft-server/src/roomIsolation.test.ts",
+      "sha256": "8ea2ea8bd097748df1b059f709021416e0f2227733332bcf93d2b0976823a269",
+      "bytes": 2991,
+      "lines": 95
+    },
+    {
+      "path": "apps/minecraft-server/src/sessionPersistence.test.ts",
+      "sha256": "fed7ecf62f7268204830a3822e9fecaa1bc170b87ee9a8afbcbf6df0b5ee25e0",
+      "bytes": 6912,
+      "lines": 228
+    },
+    {
+      "path": "apps/minecraft-server/src/sessionPersistence.ts",
+      "sha256": "057e067b3fa24440f91a5451e9f2f9a2c43e8a22730b7e2e1579818d2f1562bb",
+      "bytes": 7899,
+      "lines": 269
+    },
+    {
+      "path": "apps/minecraft-server/src/socket.d.ts",
+      "sha256": "60433dd1912b50f53427eb126ff776d7793bf492887ca319f98bfad890f31a58",
+      "bytes": 191,
+      "lines": 11
+    },
+    {
+      "path": "apps/minecraft-server/src/tick.test.ts",
+      "sha256": "10e4ad4a17cfa37255646335b797e44ee700c11af0b7942a46638fe937d0896f",
+      "bytes": 3512,
+      "lines": 115
+    },
+    {
+      "path": "apps/minecraft-server/src/tick.ts",
+      "sha256": "e897743e97b862034293e11d71165da4a5fb6e372e1b8af4fd146711b19dfda2",
+      "bytes": 3988,
+      "lines": 130
+    },
+    {
+      "path": "apps/minecraft-server/src/tnt.test.ts",
+      "sha256": "3402d88feeb41cb36239416dca12edadfbcb9f8b1a1f9ac7eb359c6e4a81f3dc",
+      "bytes": 2581,
+      "lines": 76
+    },
+    {
+      "path": "apps/minecraft-server/src/tnt.ts",
+      "sha256": "33a2f5043bff93b324af840feb798191082df0b1efc6a256be36ff72ebeadd57",
+      "bytes": 4251,
+      "lines": 137
+    },
+    {
+      "path": "apps/minecraft-server/src/vitals.test.ts",
+      "sha256": "e48449f7fe560f915cfb0e8e2b6843c4984f33a065b65c1da3b7c010924410ac",
+      "bytes": 1990,
+      "lines": 73
+    },
+    {
+      "path": "apps/minecraft-server/src/vitals.ts",
+      "sha256": "a9101f81c2461e14b2cd8efadc346b4edf577205152002b417bdce0bfc4e4fb9",
+      "bytes": 4431,
+      "lines": 140
+    },
+    {
+      "path": "apps/minecraft-server/src/weather.test.ts",
+      "sha256": "7dd4f90ef737ae8c0aa44fdcec7f59730483b82756796c8938815f902e89c9ee",
+      "bytes": 1953,
+      "lines": 56
+    },
+    {
+      "path": "apps/minecraft-server/src/weather.ts",
+      "sha256": "ff76d7c3d75e8bf09abd70762beb180338c8cd4682c5f835a828fb26db0b184d",
+      "bytes": 2904,
+      "lines": 83
+    },
+    {
+      "path": "apps/minecraft-server/src/world.test.ts",
+      "sha256": "7be424f5809122962edb0e575f68515e8b86764e82a01e4555426d74069b0646",
+      "bytes": 6461,
+      "lines": 180
+    },
+    {
+      "path": "apps/minecraft-server/src/world.ts",
+      "sha256": "91a5bd12b3a1830524fad1317a66d62d58c7b929d1bc3eab5e7c81a06e4da288",
+      "bytes": 6079,
+      "lines": 225
+    },
+    {
+      "path": "apps/minecraft-server/tsconfig.json",
+      "sha256": "a9528bb5c382acb02ddefa6a65f593484e404c2ff02f9ff534a85f8c7c8baf18",
+      "bytes": 315,
+      "lines": 15
+    }
+  ]
+}

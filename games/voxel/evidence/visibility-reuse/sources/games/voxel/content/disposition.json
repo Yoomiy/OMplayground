@@ -1,0 +1,2540 @@
+{
+  "schema": 1,
+  "scope": "Development release content decisions. This inventory does not close content completion until every retained target, required behavior, obtainability and balance check passes.",
+  "sources": [
+    {
+      "path": "packages/voxel-content/src/blocks.ts",
+      "hash": "1a7b273a058d02198284fbfec4ac3223ae349806c285d371e2bc0e199dc36a36"
+    },
+    {
+      "path": "packages/voxel-content/src/items.ts",
+      "hash": "f39a45143e2af3bd6f1b1d16d3d6de020c431acc85e473b3bde7cc8e6d64480d"
+    },
+    {
+      "path": "packages/voxel-content/src/recipes.ts",
+      "hash": "64a67c04cd74b4d8dce0aa1c763c65fb637fbf55b414694ad6abb693d23e8b98"
+    }
+  ],
+  "entries": [
+    {
+      "category": "blocks",
+      "legacyKey": "AIR",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "air"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 0
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "GRASS",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "grass_block"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 1
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "DIRT",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "dirt"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 2
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "STONE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "stone"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 3
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "WOOD",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "oak_log"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 4
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "LEAVES",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "oak_leaves"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 5
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "SAND",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "sand"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 6
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "WATER",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "water"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 7
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "GLASS",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "glass"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 8
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "COBBLESTONE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "cobblestone"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 9
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "OAK_PLANKS",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "oak_planks"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 10
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "SAPLING",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "sapling"
+        }
+      ],
+      "reason": "Retain the decorative cross-shaped seedling; automatic tree growth is not introduced by this content decision.",
+      "legacyId": 11
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "GRAVEL",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "gravel"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 12
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "GOLD_ORE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "gold_ore"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 13
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "IRON_ORE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "iron_ore"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 14
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "COAL_ORE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "coal_ore"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 15
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "SPONGE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "sponge"
+        }
+      ],
+      "reason": "Retain the porous decorative building material; the old registry had no absorption contract, and dynamic fluid absorption is outside this preset.",
+      "legacyId": 16
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "RED_WOOL",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "red_wool"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 17
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "ORANGE_WOOL",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "orange_wool"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 18
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "YELLOW_WOOL",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "yellow_wool"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 19
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "LIME_WOOL",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "lime_wool"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 20
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "GREEN_WOOL",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "green_wool"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 21
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "CYAN_WOOL",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "cyan_wool"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 22
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "BLUE_WOOL",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "blue_wool"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 23
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "PURPLE_WOOL",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "purple_wool"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 24
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "MAGENTA_WOOL",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "magenta_wool"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 25
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "PINK_WOOL",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "pink_wool"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 26
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "BLACK_WOOL",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "black_wool"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 27
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "GRAY_WOOL",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "gray_wool"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 28
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "WHITE_WOOL",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "white_wool"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 29
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "DANDELION",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "dandelion"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 30
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "ROSE",
+      "decision": "replace",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "poppy"
+        }
+      ],
+      "reason": "Use the native procedural poppy for the red flower/pigment role.",
+      "legacyId": 31
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "BROWN_MUSHROOM",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "brown_mushroom"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 32
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "RED_MUSHROOM",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "red_mushroom"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 33
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "GOLD_BLOCK",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "gold_block"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 34
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "IRON_BLOCK",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "iron_block"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 35
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "STONE_SLAB",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "stone_slab"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 36
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "BRICKS",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "bricks"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 37
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "TNT",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "tnt"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 38
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "BOOKSHELF",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "bookshelf"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 39
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "MOSSY_COBBLESTONE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "mossy_cobblestone"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 40
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "OBSIDIAN",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "obsidian"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 41
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "BEDROCK",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "bedrock"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 42
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "BIRCH_LOG",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "birch_log"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 43
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "BIRCH_PLANKS",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "birch_planks"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 44
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "BIRCH_LEAVES",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "birch_leaves"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 45
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "SPRUCE_LOG",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "spruce_log"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 46
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "SPRUCE_PLANKS",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "spruce_planks"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 47
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "SPRUCE_LEAVES",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "spruce_leaves"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 48
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "GRASS_SNOW",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "snowy_grass"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 49
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "BARRIER",
+      "decision": "remove",
+      "targets": [],
+      "reason": "Remove the invisible debug building block; authoritative world bounds and unloaded-terrain collision provide the boundary contract.",
+      "legacyId": 50
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "SNOW",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "snow"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 51
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "CACTUS",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "cactus"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 52
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "DEADBUSH",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "dead_bush"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 53
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "CRAFTING",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "crafting_table"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 54
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "STONEBRICK",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "stone_bricks"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 55
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "BROWN_WOOL",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "brown_wool"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 56
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "LIGHT_BLUE_WOOL",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "light_blue_wool"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 57
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "WHITE_STAINED_GLASS",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "white_stained_glass"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 58
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "YELLOW_STAINED_GLASS",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "yellow_stained_glass"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 59
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "RED_STAINED_GLASS",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "red_stained_glass"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 60
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "PURPLE_STAINED_GLASS",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "purple_stained_glass"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 61
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "PINK_STAINED_GLASS",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "pink_stained_glass"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 62
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "ORANGE_STAINED_GLASS",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "orange_stained_glass"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 63
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "MAGENTA_STAINED_GLASS",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "magenta_stained_glass"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 64
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "LIME_STAINED_GLASS",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "lime_stained_glass"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 65
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "LIGHT_BLUE_STAINED_GLASS",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "light_blue_stained_glass"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 66
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "GREEN_STAINED_GLASS",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "green_stained_glass"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 67
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "GRAY_STAINED_GLASS",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "gray_stained_glass"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 68
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "CYAN_STAINED_GLASS",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "cyan_stained_glass"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 69
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "BROWN_STAINED_GLASS",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "brown_stained_glass"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 70
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "BLUE_STAINED_GLASS",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "blue_stained_glass"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 71
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "BLACK_STAINED_GLASS",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "black_stained_glass"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 72
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "SANDSTONE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "sandstone"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 73
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "DIAMOND_ORE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "diamond_ore"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 74
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "DIAMOND_BLOCK",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "diamond_block"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 75
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "LAPIS_ORE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "lapis_ore"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 76
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "LAPIS_BLOCK",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "lapis_block"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 77
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "MOSSY_STONEBRICKS",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "mossy_stone_bricks"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 78
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "WHITE_CONCRETE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "white_concrete"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 79
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "YELLOW_CONCRETE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "yellow_concrete"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 80
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "RED_CONCRETE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "red_concrete"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 81
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "PURPLE_CONCRETE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "purple_concrete"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 82
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "PINK_CONCRETE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "pink_concrete"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 83
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "ORANGE_CONCRETE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "orange_concrete"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 84
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "MAGENTA_CONCRETE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "magenta_concrete"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 85
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "LIME_CONCRETE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "lime_concrete"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 86
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "LIGHT_BLUE_CONCRETE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "light_blue_concrete"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 87
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "GREEN_CONCRETE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "green_concrete"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 88
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "GRAY_CONCRETE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "gray_concrete"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 89
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "CYAN_CONCRETE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "cyan_concrete"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 90
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "BROWN_CONCRETE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "brown_concrete"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 91
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "BLUE_CONCRETE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "blue_concrete"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 92
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "BLACK_CONCRETE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "black_concrete"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 93
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "PUMPKIN",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "pumpkin"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 94
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "ICE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "ice"
+        }
+      ],
+      "reason": "Retain a solid translucent ice building block and frozen-biome material; automatic weather-driven freezing remains outside the basic-weather scope.",
+      "legacyId": 95
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "GRASS_YELLOW",
+      "decision": "combine",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "grass_block"
+        }
+      ],
+      "reason": "Use the shared grass/leaf family and biome tint instead of duplicate yellow material identities.",
+      "legacyId": 96
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "GRASS_PLANT_YELLOW",
+      "decision": "combine",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "short_grass"
+        }
+      ],
+      "reason": "Use the shared grass/leaf family and biome tint instead of duplicate yellow material identities.",
+      "legacyId": 97
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "LEAVES_YELLOW",
+      "decision": "combine",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "oak_leaves"
+        }
+      ],
+      "reason": "Use the shared grass/leaf family and biome tint instead of duplicate yellow material identities.",
+      "legacyId": 98
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "GRASS_PLANT",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "short_grass"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 99
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "LADDER",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "ladder"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 100
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "TORCH",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "torch"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 101
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "CHEST",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "chest"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 102
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "MELON",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "melon"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 103
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "CAKE",
+      "decision": "combine",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "cake"
+        }
+      ],
+      "reason": "Replace placed bite-count block variants with one portable cake food stack; eating remains an owner-authorized transaction.",
+      "legacyId": 104
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "SUGAR_CANE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "block",
+          "key": "sugar_cane"
+        }
+      ],
+      "reason": "Retain the building material and its visible/physical identity in the unified authored registry.",
+      "legacyId": 105
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "CAKE_5",
+      "decision": "combine",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "cake"
+        }
+      ],
+      "reason": "Replace placed bite-count block variants with one portable cake food stack; eating remains an owner-authorized transaction.",
+      "legacyId": 106
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "CAKE_4",
+      "decision": "combine",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "cake"
+        }
+      ],
+      "reason": "Replace placed bite-count block variants with one portable cake food stack; eating remains an owner-authorized transaction.",
+      "legacyId": 107
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "CAKE_3",
+      "decision": "combine",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "cake"
+        }
+      ],
+      "reason": "Replace placed bite-count block variants with one portable cake food stack; eating remains an owner-authorized transaction.",
+      "legacyId": 108
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "CAKE_2",
+      "decision": "combine",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "cake"
+        }
+      ],
+      "reason": "Replace placed bite-count block variants with one portable cake food stack; eating remains an owner-authorized transaction.",
+      "legacyId": 109
+    },
+    {
+      "category": "blocks",
+      "legacyKey": "CAKE_1",
+      "decision": "combine",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "cake"
+        }
+      ],
+      "reason": "Replace placed bite-count block variants with one portable cake food stack; eating remains an owner-authorized transaction.",
+      "legacyId": 110
+    },
+    {
+      "category": "items",
+      "legacyKey": "STICK",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "stick"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 100
+    },
+    {
+      "category": "items",
+      "legacyKey": "PLANKS",
+      "decision": "combine",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "oak_planks"
+        }
+      ],
+      "reason": "Use one placeable plank stack / one durable firestarter identity instead of a duplicate material/ignition representation.",
+      "legacyId": 101
+    },
+    {
+      "category": "items",
+      "legacyKey": "WOODEN_PICKAXE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "wooden_pickaxe"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 102
+    },
+    {
+      "category": "items",
+      "legacyKey": "STONE_PICKAXE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "stone_pickaxe"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 103
+    },
+    {
+      "category": "items",
+      "legacyKey": "IRON_PICKAXE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "iron_pickaxe"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 104
+    },
+    {
+      "category": "items",
+      "legacyKey": "WOODEN_AXE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "wooden_axe"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 105
+    },
+    {
+      "category": "items",
+      "legacyKey": "STONE_AXE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "stone_axe"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 106
+    },
+    {
+      "category": "items",
+      "legacyKey": "WOODEN_SHOVEL",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "wooden_shovel"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 107
+    },
+    {
+      "category": "items",
+      "legacyKey": "STONE_SHOVEL",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "stone_shovel"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 108
+    },
+    {
+      "category": "items",
+      "legacyKey": "BUCKET",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "bucket"
+        }
+      ],
+      "reason": "Retain reusable owned water collection/placement with container exchange, terrain revisions and permissions; content completion requires this behavior to be implemented and tested.",
+      "legacyId": 109,
+      "requires": [
+        "bucket_transfer"
+      ]
+    },
+    {
+      "category": "items",
+      "legacyKey": "WATER_BUCKET",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "water_bucket"
+        }
+      ],
+      "reason": "Retain reusable owned water collection/placement with container exchange, terrain revisions and permissions; content completion requires this behavior to be implemented and tested.",
+      "legacyId": 110,
+      "requires": [
+        "bucket_transfer"
+      ]
+    },
+    {
+      "category": "items",
+      "legacyKey": "IRON_INGOT",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "iron_ingot"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 111
+    },
+    {
+      "category": "items",
+      "legacyKey": "DIAMOND",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "diamond"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 112
+    },
+    {
+      "category": "items",
+      "legacyKey": "COAL",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "coal"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 113
+    },
+    {
+      "category": "items",
+      "legacyKey": "FLINT",
+      "decision": "combine",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "firestarter"
+        }
+      ],
+      "reason": "Consolidate loose flint into the reusable stone-and-stick firestarter recipe; no otherwise unused flint resource is required.",
+      "legacyId": 114
+    },
+    {
+      "category": "items",
+      "legacyKey": "WHEAT",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "wheat"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 115
+    },
+    {
+      "category": "items",
+      "legacyKey": "BREAD",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "bread"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 116
+    },
+    {
+      "category": "items",
+      "legacyKey": "APPLE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "apple"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 117
+    },
+    {
+      "category": "items",
+      "legacyKey": "DIAMOND_PICKAXE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "diamond_pickaxe"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 118
+    },
+    {
+      "category": "items",
+      "legacyKey": "DIAMOND_AXE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "diamond_axe"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 119
+    },
+    {
+      "category": "items",
+      "legacyKey": "SWIFT_PICKAXE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "swift_pickaxe"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 120
+    },
+    {
+      "category": "items",
+      "legacyKey": "FLINT_AND_STEEL",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "firestarter"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 121
+    },
+    {
+      "category": "items",
+      "legacyKey": "HEAVY_SHIELD",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "heavy_shield"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 122
+    },
+    {
+      "category": "items",
+      "legacyKey": "FEATHER_FALLING_TALISMAN",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "feather_talisman"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 123
+    },
+    {
+      "category": "items",
+      "legacyKey": "HELIOS_MEDALLION",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "helios_medallion"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 124
+    },
+    {
+      "category": "items",
+      "legacyKey": "HELIUM_BOOTS",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "helium_boots"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 125
+    },
+    {
+      "category": "items",
+      "legacyKey": "GLOW_TALISMAN",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "glow_talisman"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 126
+    },
+    {
+      "category": "items",
+      "legacyKey": "GOLD_INGOT",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "gold_ingot"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 127
+    },
+    {
+      "category": "items",
+      "legacyKey": "IRON_AXE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "iron_axe"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 128
+    },
+    {
+      "category": "items",
+      "legacyKey": "SUGAR",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "sugar"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 129
+    },
+    {
+      "category": "items",
+      "legacyKey": "COCOA_BEANS",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "cocoa_beans"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 130
+    },
+    {
+      "category": "items",
+      "legacyKey": "EGG",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "egg"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 131
+    },
+    {
+      "category": "items",
+      "legacyKey": "RAW_MEAT",
+      "decision": "replace",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "potato"
+        }
+      ],
+      "reason": "The plant-based school preset consolidates parallel meat/beef nutrition tiers into grain/bread and potato/baked-potato roles; animals and hunting are outside release scope.",
+      "legacyId": 132
+    },
+    {
+      "category": "items",
+      "legacyKey": "COOKED_MEAT",
+      "decision": "replace",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "baked_potato"
+        }
+      ],
+      "reason": "The plant-based school preset consolidates parallel meat/beef nutrition tiers into grain/bread and potato/baked-potato roles; animals and hunting are outside release scope.",
+      "legacyId": 133
+    },
+    {
+      "category": "items",
+      "legacyKey": "RAW_BEEF",
+      "decision": "replace",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "wheat"
+        }
+      ],
+      "reason": "The plant-based school preset consolidates parallel meat/beef nutrition tiers into grain/bread and potato/baked-potato roles; animals and hunting are outside release scope.",
+      "legacyId": 134
+    },
+    {
+      "category": "items",
+      "legacyKey": "COOKED_BEEF",
+      "decision": "replace",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "bread"
+        }
+      ],
+      "reason": "The plant-based school preset consolidates parallel meat/beef nutrition tiers into grain/bread and potato/baked-potato roles; animals and hunting are outside release scope.",
+      "legacyId": 135
+    },
+    {
+      "category": "items",
+      "legacyKey": "COOKIE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "cookie"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 136
+    },
+    {
+      "category": "items",
+      "legacyKey": "MELON_SLICE",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "melon_slice"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 137
+    },
+    {
+      "category": "items",
+      "legacyKey": "CARROT",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "carrot"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 138
+    },
+    {
+      "category": "items",
+      "legacyKey": "GOLDEN_CARROT",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "golden_carrot"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 139
+    },
+    {
+      "category": "items",
+      "legacyKey": "POTATO",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "potato"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 140
+    },
+    {
+      "category": "items",
+      "legacyKey": "BAKED_POTATO",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "baked_potato"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 141
+    },
+    {
+      "category": "items",
+      "legacyKey": "POISONOUS_POTATO",
+      "decision": "remove",
+      "targets": [],
+      "reason": "Omit the negative-nutrition trap from the school preset; ordinary and baked potatoes retain the root-food progression.",
+      "legacyId": 142
+    },
+    {
+      "category": "items",
+      "legacyKey": "GUNPOWDER",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "item",
+          "key": "gunpowder"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model.",
+      "legacyId": 143
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "oak_log_to_planks",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "oak_planks"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "birch_log_to_planks",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "birch_planks"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "spruce_log_to_planks",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "spruce_planks"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "crafting_table",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "crafting_table"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "planks_to_sticks",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "stick"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "wooden_pickaxe",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "wooden_pickaxe"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "stone_pickaxe",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "stone_pickaxe"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "iron_pickaxe",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "iron_pickaxe"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "diamond_pickaxe",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "diamond_pickaxe"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "wooden_axe",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "wooden_axe"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "stone_axe",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "stone_axe"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "iron_axe",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "iron_axe"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "diamond_axe",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "diamond_axe"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "wooden_shovel",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "wooden_shovel"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "stone_shovel",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "stone_shovel"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "bread",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "bread"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "helium_boots",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "helium_boots"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "swift_pickaxe",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "swift_pickaxe"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "coal_ore_to_coal",
+      "decision": "replace",
+      "targets": [
+        {
+          "kind": "loot",
+          "key": "coal_ore",
+          "itemType": "coal"
+        }
+      ],
+      "reason": "Harvest the material from the ore through authoritative tier-gated mining rather than a second ore-conversion recipe."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "iron_ore_to_ingot",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "iron_ingot"
+        }
+      ],
+      "reason": "Retain ore refining with an explicit fuel ingredient and room-owned atomic crafting."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "gold_ore_to_ingot",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "gold_ingot"
+        }
+      ],
+      "reason": "Retain ore refining with an explicit fuel ingredient and room-owned atomic crafting."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "diamond_ore_to_diamond",
+      "decision": "replace",
+      "targets": [
+        {
+          "kind": "loot",
+          "key": "diamond_ore",
+          "itemType": "diamond"
+        }
+      ],
+      "reason": "Harvest the material from the ore through authoritative tier-gated mining rather than a second ore-conversion recipe."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "bucket",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "bucket"
+        }
+      ],
+      "reason": "Retain the iron bucket recipe with reusable fluid-container behavior; a catalog-only bucket is insufficient.",
+      "requires": [
+        "bucket_transfer"
+      ]
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "flint_and_steel",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "firestarter"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "ladder",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "ladder"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "torch",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "torch"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "chest",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "chest"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "heavy_shield",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "heavy_shield"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "feather_falling_talisman",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "feather_talisman"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "helios_medallion",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "helios_medallion"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "glow_talisman",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "glow_talisman"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "sugar_from_cane",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "sugar"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "cookie",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "cookie"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "melon_block_to_slices",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "melon_slices"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "melon_slices_to_block",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "melon_block"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "cake",
+      "decision": "replace",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "cake"
+        }
+      ],
+      "reason": "Craft a portable owned cake serving instead of a placed mutable bite-state block."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "golden_carrot",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "golden_carrot"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "cook_meat",
+      "decision": "replace",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "baked_potato"
+        }
+      ],
+      "reason": "Use plant-based baking/bread progression for the retained nutrition role; no animal food chain is required."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "cook_beef",
+      "decision": "replace",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "bread"
+        }
+      ],
+      "reason": "Use plant-based baking/bread progression for the retained nutrition role; no animal food chain is required."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "bake_potato",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "baked_potato"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "gunpowder",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "gunpowder"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    },
+    {
+      "category": "recipes",
+      "legacyKey": "tnt",
+      "decision": "retain",
+      "targets": [
+        {
+          "kind": "recipe",
+          "key": "tnt"
+        }
+      ],
+      "reason": "Retain the tool, material, food or crafting role through the unified owned stack and recipe model."
+    }
+  ]
+}

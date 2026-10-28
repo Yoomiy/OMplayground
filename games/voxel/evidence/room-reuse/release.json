@@ -1,0 +1,59 @@
+{
+  "buildId": "6b20c88f7d8c9e7b6158c26d02524c24a419cc03b5fc9b2d53a90c083066da47",
+  "engineHash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388",
+  "contentHash": "368b605ac5bdf5ff6fcf4af02f7174cbc6d39b5110f48e0a41b231a0a6479464",
+  "clientHash": "3240a80674002d0bddc6f92347bd10bf31a85175002b2afb074ddf7d68789dd7",
+  "serverHash": "f1bd47effae9e25a592dd3bae2c879725fc330e8cf477be8c6dd571c76db23d0",
+  "client": [
+    {
+      "path": "assets/engine-worker-DYAFKrDe.js",
+      "hash": "99d3377c134578cd5e9bdd923e7707547e62c3a2a0a1a64c90adec5f1121bf04"
+    },
+    {
+      "path": "assets/index-5w2pNf9N.css",
+      "hash": "2b1c35f291993017e6b64ee082d5b043f59edef25e5d29d5239bc23fab798eac"
+    },
+    {
+      "path": "assets/index-DODjfXZ2.js",
+      "hash": "8e4cfb5683d32b37a19cb50931135c619dcb2fbe2ed2a38f8ef051323a959df2"
+    },
+    {
+      "path": "assets/voxel_engine_bg-1ejYMYOZ.wasm",
+      "hash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "index.html",
+      "hash": "9863fbc0cf56032e002520ad5700a42da8b1963b9c7a790f7925c6aa6b476b4d"
+    }
+  ],
+  "server": [
+    {
+      "path": "build.json",
+      "hash": "17be9f14e659fcca4144aa7354a4ac0541170c8eb45732135607ecdcb68c4150"
+    },
+    {
+      "path": "content.json",
+      "hash": "87da078927c9df8366a815c868478e71f559da83e4785447a8edb3e505dba250"
+    },
+    {
+      "path": "engine.wasm",
+      "hash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "gateway.js",
+      "hash": "ed6e0bc84ba007f6165b1651b771149efa3d862bf360c5c1b83f4b235dbeee62"
+    },
+    {
+      "path": "gateway.js.map",
+      "hash": "efd2c7504534c5fe5f48868056a8de58aad61265400da6268de490c646f94a0d"
+    },
+    {
+      "path": "room-worker.js",
+      "hash": "8c25cb78297a7c6e7fc6ef0bb73ee9e63a44b32ffb5a0eb26a604eac1acd6c0b"
+    },
+    {
+      "path": "room-worker.js.map",
+      "hash": "1b27d57ba1c09d5ace96fbfdd7531e5a693c6f06cffe72adcf13735e12cad52c"
+    }
+  ]
+}

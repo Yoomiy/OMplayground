@@ -1,0 +1,15 @@
+{
+  "result": "INCOMPLETE",
+  "room": "voxel-ui-qualification-b71e6280-29a2-484f-8048-2d0e0ee23e22",
+  "schoolDatabaseWrites": 0,
+  "scope": "Actual React voice panel/coordinator, generated browser audio and configured SFU; school/Auth/SQL and game poses are fixtures, not deployment or physical-device qualification",
+  "noAutomaticMicrophone": true,
+  "permissionDenial": true,
+  "stage": "generated-media",
+  "error": {
+    "name": "AssertionError",
+    "description": "The expression evaluated to a falsy value:\n\n  assert(near > 0.002)\n"
+  },
+  "cleaned": true,
+  "checkedAt": "2026-10-26T19:38:31.699Z"
+}

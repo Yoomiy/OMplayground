@@ -1,0 +1,101 @@
+{
+  "capturedAt": "2026-10-22T13:30:05.435Z",
+  "result": "PASS_WITH_RETAINED_BROWSER_FAILURE",
+  "buildId": "6026fc56edb2a79e548ac84792a98e968b5acfa850c3858abd38b99f0f0e4e56",
+  "engineHash": "084b17c0ae40222777a0225f6fc186a9903ac19d9c455aae025188185ea250ab",
+  "contentHash": "51dc81994a301b7cf19e657603e85f54d8c850f978268aaf4333e5097cc9e647",
+  "matchedReleaseFiles": 12,
+  "checksExitCode": 0,
+  "passingReports": [
+    "browser-wasm",
+    "browser-touch",
+    "browser-environment",
+    "browser-presentation",
+    "browser-worker-recovery",
+    "browser-creative"
+  ],
+  "creativeRetry": "PASS",
+  "limitation": "The original desktop run timed out on reconnect amid severe software-browser stalls. Preserve the failure even if the repeat passes; no hardware performance, reliable reconnect latency or device qualification claim.",
+  "files": [
+    {
+      "path": "avatar-held.png",
+      "hash": "e10f12e885325a6994a0838009b03c54bc11ff79bed7496ffd25a3ea88d473ea"
+    },
+    {
+      "path": "browser-creative-failed.txt",
+      "hash": "8b27aa14ab8943567232875e81e13ae1c3be9364ee7aeebf10c86420b569d291"
+    },
+    {
+      "path": "browser-creative-retry.txt",
+      "hash": "49a2e2391cbf134ce98d8e2b91e41b4ed267e798475c352a3d29ae1195667099"
+    },
+    {
+      "path": "browser-creative.json",
+      "hash": "d817bc54ebedc30c8497f02ecf7011cccab4ea4b0ca3f5eac5d6c0af273b7412"
+    },
+    {
+      "path": "browser-environment.json",
+      "hash": "7919f4b1eb9d730ec70b6230ff95b71bdf20ab070495e52ff5b1e28dd1e8cc25"
+    },
+    {
+      "path": "browser-environment.txt",
+      "hash": "74835b04719744611db5bea8fa643ebfa4434949c23e69d5951162ddb238f037"
+    },
+    {
+      "path": "browser-presentation.json",
+      "hash": "0aec388671546ff1ef2990070ec058690d0cfa2a8b8ff0d21861d9b69ed7f99c"
+    },
+    {
+      "path": "browser-presentation.txt",
+      "hash": "29ea38f4d4fda75ecde6ed0b3db56ea669ec5045936e2dab361c556959d7f2a2"
+    },
+    {
+      "path": "browser-touch.json",
+      "hash": "229200d765bf4c3862128bc89481105ef95436f1b0f21f51ef1d1b1f2cbfe823"
+    },
+    {
+      "path": "browser-touch.txt",
+      "hash": "0d40981824e13958d64d3a4f69091e6bc374025a7534e3dc4e59614776e7fa4e"
+    },
+    {
+      "path": "browser-wasm.json",
+      "hash": "bf4d4943ea455bbf99613e113c276b4e378d979066035d1f121ec3ca30905897"
+    },
+    {
+      "path": "browser-wasm.txt",
+      "hash": "ea0af7110c68ea813c2f2d80e3f8d2a62a41a93b9a63814606c946114b98595b"
+    },
+    {
+      "path": "browser-worker-recovery.json",
+      "hash": "405139ccf632499221e6812388ba364e3373c0a099410645de170ea41976b79d"
+    },
+    {
+      "path": "browser-worker-recovery.txt",
+      "hash": "dca103c15b7e9ddf6ee0780f7fe9a684cdfc6aec63b1fad70cf1be3f0f62f1e6"
+    },
+    {
+      "path": "build.json",
+      "hash": "04d8b4e0d3780ce0d566f3eb9c19e176954dc8fa283fec38643baa144b42ab57"
+    },
+    {
+      "path": "check.txt",
+      "hash": "e229b26b67681cde95a32decc38043f3e13eb5ac8d8e78580cad2ed13628074d"
+    },
+    {
+      "path": "clear-night.png",
+      "hash": "0e1ff9e8246fd94391d8915f4ae51e117b3ffdf6df41466ca5cac1e872762e8e"
+    },
+    {
+      "path": "rain-night.png",
+      "hash": "1b7f80464ae69fc0c515f30eb1a4280f930ce3bb74555e3c14691c2b987698fa"
+    },
+    {
+      "path": "release.json",
+      "hash": "2ca1a1d881d74e3f6211876571ad06945f7b18b2fb658d17a936fcda37819b8e"
+    },
+    {
+      "path": "source-release-verification.json",
+      "hash": "ab978f8d08fbb5a037e62dbe0994099be9f00d1b7ac837952b7e59f05010499e"
+    }
+  ]
+}

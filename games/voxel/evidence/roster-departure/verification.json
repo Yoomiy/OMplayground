@@ -1,0 +1,321 @@
+{
+  "result": "LOCAL_PASS_WITH_HOSTED_ROSTER_INPUT_AND_DEVICE_LIMITATIONS",
+  "capturedAt": "2026-10-25T21:31:06.456047+00:00",
+  "buildId": "34251aac77af9364bb083ce50bdbb406dc0cb61ec8bbcfe3ac58a249bec3535c",
+  "engineHash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388",
+  "contentHash": "368b605ac5bdf5ff6fcf4af02f7174cbc6d39b5110f48e0a41b231a0a6479464",
+  "counts": {
+    "domain": 81,
+    "native": 80,
+    "nativeIgnored": 3,
+    "wasm": 80,
+    "sourceIntegration": 36,
+    "packagedIntegration": 36,
+    "sdkAndPolicy": 33,
+    "schoolGateway": 7,
+    "postgresSdk": 30,
+    "web": 88,
+    "renderedContexts": 3
+  },
+  "sourceFiles": 516,
+  "agentRemoteChangesThisPhase": {
+    "schemaWrites": false,
+    "objectWrites": false,
+    "rowWrites": false
+  },
+  "hostedMigrations": {
+    "appliedBy": "user",
+    "versions": [
+      "20261025010000",
+      "20261025020000",
+      "20261025030000"
+    ],
+    "firstThreeReadOnlyReadiness": true,
+    "privateBucket": true
+  },
+  "rosterMigration": {
+    "path": "supabase/migrations/20261025040000_voxel_roster_departure.sql",
+    "sha256": "9561b3660e75636a277fa2c2ac9e070fa68d2bc8bc01062f96dba10a70076d8b",
+    "locallyQualified": true,
+    "hostedApplied": false
+  },
+  "browserMouseAcknowledged": true,
+  "priorEvidence": [
+    "games/voxel/evidence/react-session/verification.json",
+    "games/voxel/evidence/lifecycle-controls/verification.json",
+    "games/voxel/evidence/offline-owner/verification.json"
+  ],
+  "limitations": [
+    "Built React StrictMode fixture with real local SQL/SDK/packaged workers but fixture Auth/PostgREST/Storage, not the real authenticated catalog-shell or a hosted school journey",
+    "Current hosted checks are read-only: first three schemas/private bucket ready, fourth roster RPC missing; full hosted school/SDK/Storage/worker recovery and deployment/provider failure remain unqualified",
+    "Earlier locator-click acknowledgement failures remain retained and their cause unproven; final direct trusted physical mouse dispatch and touch disposal pass, protocol acknowledgement separately recorded",
+    "Software Chromium functional evidence, not full prior browser suite, hardware/OS-focus/frame/input/network/capacity qualification",
+    "Hosted roster installation, remaining staff teleport/mode/removal/bans/moderation, chat, enforced LiveKit media/proximity, classroom extraction, survival balance/bucket UI, release and cutover/removal remain unfinished"
+  ],
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "46d2bfdb002bbd6dd34bc1b0479c33e77fab8e348b6d76a401baddf1ee691537"
+    },
+    {
+      "path": "browser-mouse-ack-failure.txt",
+      "sha256": "4b2d751f140c4e3d228ee817eb72b05ee255968fb8cb0732acb28d71336bf66a"
+    },
+    {
+      "path": "browser-mouse-move-ack-failure.txt",
+      "sha256": "acc9f45de47373945c4cee975b1a2600d7c18273dd14b6754d2ccc11b8525170"
+    },
+    {
+      "path": "browser-react.json",
+      "sha256": "90ba3c1025448f12b3ad6b55f678cc45ea752d354463736ee27da1c99caf1646"
+    },
+    {
+      "path": "browser.txt",
+      "sha256": "7c5b2d12382e040dc8701236d36261ae8a19e2068df85a3919b1680c9b0dfe12"
+    },
+    {
+      "path": "build.json",
+      "sha256": "eb5eaf225c76074114446eebcdcb6cdf35663296163171ad146cf30bf3ca0bfe"
+    },
+    {
+      "path": "capture.py",
+      "sha256": "5b614d1e9495cc773c2f7f5b0084fdb70558801d19bb876da71f57d9354f5c7d"
+    },
+    {
+      "path": "check-exit.json",
+      "sha256": "41dc6aa8479117ef176016d8ddd5efb037090566fff57c99dccf0e1a282cef14"
+    },
+    {
+      "path": "content.json",
+      "sha256": "87da078927c9df8366a815c868478e71f559da83e4785447a8edb3e505dba250"
+    },
+    {
+      "path": "core-complete-check.txt",
+      "sha256": "1576825c0cfb2d6a334befd6ff6257a912c6a5bed7cc252d573cf3608bddf1d3"
+    },
+    {
+      "path": "exit-input-failure.json",
+      "sha256": "9aaff4cb9a08e2f78cd7a84599d1270cb7b6c94c79cec3bf097933015d736d65"
+    },
+    {
+      "path": "exit-no-input-failure.json",
+      "sha256": "71237c1190624ae43aadc8e6171439be0deddc0893a22f857b62c70435e2c87a"
+    },
+    {
+      "path": "fullscreen-repro.json",
+      "sha256": "96e795730113d583f428c37462fce93d3cd4166fadb9eb8af7481ef59caa91e3"
+    },
+    {
+      "path": "fullscreen-repro.log",
+      "sha256": "fa568b78ed42a8ef3e4c56c4e977a5864a06463723a937db62a0f022e0b9db1b"
+    },
+    {
+      "path": "fullscreen-repro.mjs",
+      "sha256": "b74464cf238858c8bd49bf87e23413448e1342675daa0490a8c24c4f022e35cd"
+    },
+    {
+      "path": "hosted-ready.json",
+      "sha256": "f599b44d9f7a339b965da432b1dd946874d21c6f92c4afad9d0e5711261619fe"
+    },
+    {
+      "path": "postgres-start.txt",
+      "sha256": "66afd0411ccc09366e99fdd99b85f21899c8d2d064f5835126859618802153ad"
+    },
+    {
+      "path": "postgres-stop.txt",
+      "sha256": "ca19178a35ab4153b75b494963b66ce8243e1b94c173107c87b44d09db23652d"
+    },
+    {
+      "path": "postgres.txt",
+      "sha256": "2c23d26d916dd30315a3c8c7c6843293bb91558771c2f80a9de1132244e3d115"
+    },
+    {
+      "path": "react-fixture/assets/embed-BbfR4Nnp.css",
+      "sha256": "88cf956a48a285c6e672ae7387cbdaa256a319b20328632c5aff65ea426abae7"
+    },
+    {
+      "path": "react-fixture/assets/embed-CmtY6yhF.js",
+      "sha256": "fa409b140f2e9fb0b6a1908eec89da7fae664f17f993e9347e6f25daa194be55"
+    },
+    {
+      "path": "react-fixture/assets/engine-worker-DPFd4qax.js",
+      "sha256": "4fb4aae45165a42ca55545e132de209d72dc6557be1d4704e7682774dd17c18c"
+    },
+    {
+      "path": "react-fixture/assets/index-3DlPHagu.css",
+      "sha256": "ab9a9bfa8b144e8f98db8ecb8ca6bbe6d84fde449e8bc1362ad0875a480811b2"
+    },
+    {
+      "path": "react-fixture/assets/index-UYQJVqjC.js",
+      "sha256": "95b5487b18f08a96154fab88dce660a070b43e6c79ba800e0fee4146a235f1b6"
+    },
+    {
+      "path": "react-fixture/assets/voxel_engine_bg-1ejYMYOZ.wasm",
+      "sha256": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "react-fixture/index.html",
+      "sha256": "effc3ace33f9dd095582bedf4453365b2c5c724a20e15325d432be161742564d"
+    },
+    {
+      "path": "react-inventory.png",
+      "sha256": "458e27594728b2a5d32fc0d3eed93faa2e22979f3be356535b8635ed9405a3bf"
+    },
+    {
+      "path": "react-mobile.png",
+      "sha256": "bb31e968b85373fcc70c572e70e912e1f3abee158039daadb97552dbec20481e"
+    },
+    {
+      "path": "react-observer.png",
+      "sha256": "b03f687d5534d3912b1771a5a99bea0d65b3e4830252eaf64d6f057f67a61503"
+    },
+    {
+      "path": "react-playing.png",
+      "sha256": "10b67c0c5e83a037f1f35174c6294f49d42de1f68b56487671f85c8326cb0ece"
+    },
+    {
+      "path": "release.json",
+      "sha256": "beda73b6d9d31671fbb4e9d85d69a2866afea1524cb9ad0a8901ff5195624ce6"
+    },
+    {
+      "path": "release/client/assets/engine-worker-DYAFKrDe.js",
+      "sha256": "99d3377c134578cd5e9bdd923e7707547e62c3a2a0a1a64c90adec5f1121bf04"
+    },
+    {
+      "path": "release/client/assets/index-5w2pNf9N.css",
+      "sha256": "2b1c35f291993017e6b64ee082d5b043f59edef25e5d29d5239bc23fab798eac"
+    },
+    {
+      "path": "release/client/assets/index-CzBcUT7W.js",
+      "sha256": "f95c651b6f6a493f29bb30bce086e8c2b2dafde90f63ceb3b4e7fae2067b9ec8"
+    },
+    {
+      "path": "release/client/assets/voxel_engine_bg-1ejYMYOZ.wasm",
+      "sha256": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "release/client/index.html",
+      "sha256": "0a0f30124675643baaabe5d292d3b6c9c1ebec93edea2a341be31c38589d57cd"
+    },
+    {
+      "path": "release/server/build.json",
+      "sha256": "eb5eaf225c76074114446eebcdcb6cdf35663296163171ad146cf30bf3ca0bfe"
+    },
+    {
+      "path": "release/server/content.json",
+      "sha256": "87da078927c9df8366a815c868478e71f559da83e4785447a8edb3e505dba250"
+    },
+    {
+      "path": "release/server/engine.wasm",
+      "sha256": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "release/server/gateway.js",
+      "sha256": "3255c9a6a9e3b740dce72fa09cc87ba4ab9d2b0e15a794ed9853c3eea92ffbf2"
+    },
+    {
+      "path": "release/server/gateway.js.map",
+      "sha256": "f9a37edfc93eac5fb8ca625cb496ca784d5408a1ef6aed74ba8b420f71aebb21"
+    },
+    {
+      "path": "release/server/room-worker.js",
+      "sha256": "fa00088491ec8ec3b010c4e509d4cdb70d182af02290c36e031b6a927927f1dc"
+    },
+    {
+      "path": "release/server/room-worker.js.map",
+      "sha256": "5b008de0fa78cd0c1877080eca5db3b908b50a8c9157457a89551c8a2d3dca20"
+    },
+    {
+      "path": "run-check.mjs",
+      "sha256": "53ed6d1cdeeb4387b8a2055aa564d4d2e0c6212712b599762995a40fe3c37fd1"
+    },
+    {
+      "path": "school-gateway-roster-fixture-failure.txt",
+      "sha256": "0cd9ec68675467029e79d79b1d09dbccf5373e5047e144036a701dc45bca3a58"
+    },
+    {
+      "path": "school-gateway.txt",
+      "sha256": "825b3168de7c219d03b33262017a5d7c695ff1ca905ec265117d7908be40585d"
+    },
+    {
+      "path": "sdk.txt",
+      "sha256": "8e645621346a7d2aa588de5507ce92543c584fe229eec2a3a84a0d68233a2d70"
+    },
+    {
+      "path": "source-inputs.json",
+      "sha256": "48c570b8f7990afd51a4a8da880e8807d8df01446c4a649f6500a1eb1d4453a8"
+    },
+    {
+      "path": "source-release-verification.json",
+      "sha256": "02e9e6bc052bfff3a853241d04d7451408821a3ee8e6947900f13c3be54fa4d8"
+    },
+    {
+      "path": "source.tar.gz",
+      "sha256": "494e84887813912e768eaa7916e556bd17297a41fae6d472a786b1a394863610"
+    },
+    {
+      "path": "types.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "web-build.txt",
+      "sha256": "5e5848bffc4e1d69988e6f03ce381b9181a6cf8d7ec3ab0080979154c83f00ad"
+    },
+    {
+      "path": "web-production-inventory.json",
+      "sha256": "c4eea851f805761fb980a5635e43dd5b670da3c0c7005711e21759a82702b7ea"
+    },
+    {
+      "path": "web-production/assets/VoxelSessionContainer-Bpf-fer6.js",
+      "sha256": "e1a90e56f445fc204c4d7466735ad628c06ee648f9c68005ab0744551c4328bf"
+    },
+    {
+      "path": "web-production/assets/VoxelSessionContainer-Bv3h0R31.css",
+      "sha256": "2f3c1fac4fac3bb648e50ed6058471887c3786ef24e28a54bdc15132933b2916"
+    },
+    {
+      "path": "web-production/assets/embed-BnBhPLto.js",
+      "sha256": "350a6b5cdf01c5296e33646413d78e98368b500e4bff0722712d3b906129a15e"
+    },
+    {
+      "path": "web-production/assets/embed-DVW6RJqP.css",
+      "sha256": "708cffb3ae60cca7871296dce5a5cc10568a23f978b4aab138cfee65032511a8"
+    },
+    {
+      "path": "web-production/assets/engine-worker-CQrkI0k9.js",
+      "sha256": "b9a8fc1f8eed79922ee019869d7057f81ad1bf4e2c6b01ec27debf50cb685c3d"
+    },
+    {
+      "path": "web-production/assets/index-BGQaXMoy.css",
+      "sha256": "c28358398e78e5b873c447e77c61eeff30cbb6b06e529e751448437786b2acce"
+    },
+    {
+      "path": "web-production/assets/index-CCXjhRn9.js",
+      "sha256": "61f853b379a169ca46f355e3259b446308d7cd14d6c87aeb24ca9f6403db97a5"
+    },
+    {
+      "path": "web-production/assets/index-cpSVxdVT.js",
+      "sha256": "85c09daed39ff489a6d76581ef2c3582a7a489e1792e96c0909a157c528233db"
+    },
+    {
+      "path": "web-production/assets/voxel_engine_bg-1ejYMYOZ.wasm",
+      "sha256": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "web-production/index.html",
+      "sha256": "02a5c8dec3eed41e01709202b7ce0f979fcb4382fff3395e022dedec92e82bb9"
+    },
+    {
+      "path": "web-production/voxel-browser-boundary.json",
+      "sha256": "2c5e116643e9e3e8af35e0edc7548c581255a99c11e1fac0900bc933da48825a"
+    },
+    {
+      "path": "web-tests.txt",
+      "sha256": "ba2cbeb49883f863e39421471e35c2faaabc0f1cd595df5a5b46e9bb0627ed9f"
+    },
+    {
+      "path": "web-types.txt",
+      "sha256": "7bd25f652371bbfad4e2ddc3bcefe9c162e92233e7fcee4d6432f2c125c25282"
+    }
+  ]
+}

@@ -1,0 +1,509 @@
+{
+  "result": "PASS",
+  "scope": "Natural empty-inventory survival: six logs, shore sand and shallow river stone; owned pickaxe, charcoal, powder, firestarter and TNT crafting; consumed placement and actual touch ignition, fixed fuse, crater and teardown; no creative grants or test-only world mutations; software Chromium functional check only",
+  "buildId": "059ee0d9b8588154f7e16d39a1e12c33a83ad78b19eb1037a87ea48bffd343f9",
+  "engineHash": "c4d1f0e3e9ed29879bd949576b0e2db0cb243cba0aa74085f5e06eee0d05fbc6",
+  "contentHash": "9b4f0e7f6a00dd75e362ebd8d9db524403ccff2e3fe92a35db5f208d1f8b93dc",
+  "browser": "156.0.8078.4",
+  "harvested": [
+    {
+      "target": [
+        49,
+        68,
+        -4
+      ],
+      "visible": {
+        "drop": {
+          "id": "drop-1",
+          "revision": 9,
+          "stack": {
+            "itemType": "oak_log",
+            "count": 1
+          },
+          "position": [
+            49.5,
+            68,
+            -3.5
+          ]
+        },
+        "origin": {
+          "x": 48,
+          "z": 0
+        },
+        "feedback": {
+          "visible": 1,
+          "kinds": 1
+        }
+      },
+      "inventoryRevision": 1
+    },
+    {
+      "target": [
+        49,
+        69,
+        -4
+      ],
+      "visible": null,
+      "inventoryRevision": 2
+    },
+    {
+      "target": [
+        49,
+        70,
+        -4
+      ],
+      "visible": null,
+      "inventoryRevision": 3
+    },
+    {
+      "target": [
+        49,
+        71,
+        -4
+      ],
+      "visible": null,
+      "inventoryRevision": 4
+    },
+    {
+      "target": [
+        49,
+        72,
+        -4
+      ],
+      "visible": null,
+      "inventoryRevision": 5
+    },
+    {
+      "target": [
+        49,
+        73,
+        -4
+      ],
+      "visible": {
+        "drop": {
+          "id": "drop-8",
+          "revision": 13,
+          "stack": {
+            "itemType": "oak_log",
+            "count": 1
+          },
+          "position": [
+            49.5,
+            72.24666666666667,
+            -3.5
+          ]
+        },
+        "origin": {
+          "x": 48,
+          "z": -16
+        },
+        "feedback": {
+          "visible": 1,
+          "kinds": 1
+        }
+      },
+      "inventoryRevision": 8
+    }
+  ],
+  "cleared": [
+    {
+      "cell": [
+        49,
+        71,
+        -3
+      ],
+      "family": "oak_leaves"
+    }
+  ],
+  "placement": {
+    "type": "result",
+    "epoch": 4,
+    "sequence": 2,
+    "status": "applied",
+    "outcome": {
+      "ok": true,
+      "reason": "edited",
+      "cell": [
+        49,
+        68,
+        -5
+      ],
+      "state": 3,
+      "revision": 9
+    }
+  },
+  "food": null,
+  "explosive": {
+    "resources": [
+      {
+        "cell": [
+          46,
+          63,
+          7
+        ],
+        "kind": "sand"
+      },
+      {
+        "cell": [
+          45,
+          63,
+          7
+        ],
+        "kind": "sand"
+      },
+      {
+        "cell": [
+          44,
+          63,
+          7
+        ],
+        "kind": "sand"
+      },
+      {
+        "cell": [
+          43,
+          63,
+          7
+        ],
+        "kind": "sand"
+      },
+      {
+        "cell": [
+          43,
+          60,
+          12
+        ],
+        "kind": "stone"
+      },
+      {
+        "cell": [
+          44,
+          60,
+          13
+        ],
+        "kind": "stone"
+      },
+      {
+        "cell": [
+          45,
+          61,
+          12
+        ],
+        "kind": "sand",
+        "purpose": "occlusion"
+      },
+      {
+        "cell": [
+          45,
+          60,
+          13
+        ],
+        "kind": "stone"
+      }
+    ],
+    "placed": [
+      51,
+      68,
+      -4
+    ],
+    "primed": {
+      "bodies": [
+        {
+          "id": "tnt-1",
+          "revision": 19,
+          "state": 29,
+          "position": [
+            51.5,
+            68,
+            -3.5
+          ],
+          "remaining": 101,
+          "total": 120
+        }
+      ],
+      "feedback": {
+        "held": {
+          "state": 0,
+          "itemType": "firestarter",
+          "visible": true,
+          "swings": 47
+        },
+        "effects": {
+          "live": 12,
+          "bursts": 19,
+          "hits": 0,
+          "explosions": 0
+        },
+        "drops": {
+          "visible": 0,
+          "kinds": 0
+        },
+        "explosives": {
+          "visible": 1,
+          "capacity": 8,
+          "flashing": 1
+        }
+      },
+      "audio": {
+        "supported": true,
+        "contexts": 1,
+        "state": "running",
+        "active": true,
+        "muted": false,
+        "voices": 0,
+        "effects": 37,
+        "gain": 0.2199999988079071,
+        "dropped": 0,
+        "listener": [
+          49.499900817871094,
+          69.62000274658203,
+          -3.122999906539917
+        ],
+        "lastSource": [
+          51.5,
+          68.5,
+          -3.5
+        ]
+      }
+    },
+    "event": {
+      "type": "explosion",
+      "sequence": 1,
+      "id": "tnt-1",
+      "position": [
+        51.5,
+        68.45,
+        -3.5
+      ],
+      "radius": 3,
+      "removed": 11,
+      "cancelled": false,
+      "columns": [
+        {
+          "x": 3,
+          "z": -1,
+          "revision": 12
+        }
+      ]
+    },
+    "feedback": {
+      "held": {
+        "state": 0,
+        "itemType": "firestarter",
+        "visible": true,
+        "swings": 47
+      },
+      "effects": {
+        "live": 0,
+        "bursts": 21,
+        "hits": 1,
+        "explosions": 1
+      },
+      "drops": {
+        "visible": 0,
+        "kinds": 0
+      },
+      "explosives": {
+        "visible": 1,
+        "capacity": 8,
+        "flashing": 1
+      }
+    },
+    "audio": {
+      "supported": true,
+      "contexts": 1,
+      "state": "running",
+      "active": true,
+      "muted": false,
+      "voices": 2,
+      "effects": 39,
+      "gain": 0.2199999988079071,
+      "dropped": 0,
+      "listener": [
+        49.45815658569336,
+        69.6568374633789,
+        -3.1151316165924072
+      ],
+      "lastSource": [
+        49.499942779541016,
+        68.9000015258789,
+        -3.1229827404022217
+      ]
+    },
+    "vitals": {
+      "version": 2,
+      "health": 8,
+      "food": 19,
+      "air": 300,
+      "dead": false,
+      "respawnIn": 0,
+      "attackCooldown": 0,
+      "protection": 0
+    }
+  },
+  "completed": {
+    "inventory": {
+      "version": 2,
+      "catalog": false,
+      "revision": 76,
+      "selected": 3,
+      "bag": [
+        {
+          "count": 10,
+          "itemType": "oak_planks"
+        },
+        {
+          "itemType": "oak_leaves",
+          "count": 2
+        },
+        {
+          "itemType": "apple",
+          "count": 2
+        },
+        {
+          "count": 1,
+          "instance": {
+            "durability": 63
+          },
+          "itemType": "firestarter"
+        },
+        {
+          "count": 1,
+          "instance": {
+            "durability": 52
+          },
+          "itemType": "wooden_pickaxe"
+        },
+        {
+          "count": 1,
+          "itemType": "stick"
+        },
+        {
+          "itemType": "sand",
+          "count": 1
+        },
+        {
+          "itemType": "crafting_table",
+          "count": 1
+        },
+        {
+          "count": 1,
+          "itemType": "gunpowder"
+        },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "craft2": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "craft3": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "equipment": [
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "station": "personal",
+      "container": null
+    },
+    "feedback": {
+      "held": {
+        "state": 0,
+        "itemType": "firestarter",
+        "visible": true,
+        "swings": 47
+      },
+      "effects": {
+        "live": 0,
+        "bursts": 21,
+        "hits": 1,
+        "explosions": 1
+      },
+      "drops": {
+        "visible": 7,
+        "kinds": 1
+      },
+      "explosives": {
+        "visible": 0,
+        "capacity": 0,
+        "flashing": 0
+      }
+    },
+    "vitals": {
+      "version": 2,
+      "health": 8,
+      "food": 19,
+      "air": 300,
+      "dead": false,
+      "respawnIn": 0,
+      "attackCooldown": 0,
+      "protection": 0
+    }
+  },
+  "cleanup": {
+    "geometries": 0,
+    "textures": 0,
+    "workers": 0,
+    "audio": {
+      "supported": true,
+      "contexts": 0,
+      "state": "closed",
+      "active": false,
+      "muted": false,
+      "voices": 0,
+      "effects": 39,
+      "gain": 0,
+      "dropped": 0,
+      "listener": [
+        48.9556,
+        69.62,
+        -3.0204
+      ],
+      "lastSource": [
+        49.499942779541016,
+        68.9000015258789,
+        -3.1229827404022217
+      ]
+    }
+  },
+  "errors": []
+}

@@ -1,0 +1,237 @@
+{
+  "candidates": [
+    "apps/web/src/game/MinecraftSessionContainer.tsx",
+    "apps/web/src/games/MinecraftClient.tsx",
+    "apps/web/src/games/voxel/audioManager.test.ts",
+    "apps/web/src/games/voxel/audioManager.ts",
+    "apps/web/src/games/voxel/breakCrackOverlay.ts",
+    "apps/web/src/games/voxel/heldItemView.test.ts",
+    "apps/web/src/games/voxel/heldItemView.ts",
+    "apps/web/src/games/voxel/hud/BlockHotbarHud.tsx",
+    "apps/web/src/games/voxel/hud/ChatOverlay.tsx",
+    "apps/web/src/games/voxel/hud/SurvivalVitalsHud.tsx",
+    "apps/web/src/games/voxel/hud/TeacherDashboard.tsx",
+    "apps/web/src/games/voxel/hud/VoiceWidget.tsx",
+    "apps/web/src/games/voxel/hud/hudConstants.ts",
+    "apps/web/src/games/voxel/hud/hudUtils.tsx",
+    "apps/web/src/games/voxel/movementConfig.test.ts",
+    "apps/web/src/games/voxel/movementConfig.ts",
+    "apps/web/src/games/voxel/noaVoxelVisual.ts",
+    "apps/web/src/games/voxel/voxelAvatarAnimation.ts",
+    "apps/web/src/games/voxel/voxelEntityCatalog.ts",
+    "apps/web/src/games/voxel/voxelJsonModel.ts",
+    "apps/web/src/games/voxel/voxelObjectMesher.ts",
+    "apps/web/src/games/voxel/worldgen.worker.ts",
+    "apps/web/src/games/voxel/worldgenPool.test.ts",
+    "apps/web/src/games/voxel/worldgenPool.ts",
+    "apps/web/src/hooks/useLiveKitProximity.ts",
+    "apps/web/src/hooks/useVoxelSocket.ts",
+    "apps/web/src/lib/voxelCraftingPreview.ts",
+    "apps/web/src/lib/voxelProtocol.ts",
+    "apps/web/src/lib/voxelServerUrl.ts"
+  ],
+  "externalIncoming": [
+    {
+      "from": "apps/web/src/utils/telemetry.ts",
+      "spec": "@/lib/voxelServerUrl",
+      "to": "apps/web/src/lib/voxelServerUrl.ts"
+    }
+  ],
+  "packageConsumers": [
+    {
+      "from": "apps/web/src/games/MinecraftClient.tsx",
+      "spec": "@babylonjs/core/Meshes/mesh",
+      "to": "apps/web/node_modules/@babylonjs/core/Meshes/mesh.d.ts"
+    },
+    {
+      "from": "apps/web/src/games/MinecraftClient.tsx",
+      "spec": "@playground/voxel-content",
+      "to": "packages/voxel-content/src/index.ts"
+    },
+    {
+      "from": "apps/web/src/games/MinecraftClient.tsx",
+      "spec": "noa-engine",
+      "to": "node_modules/noa-engine/dist/src/index.d.ts"
+    },
+    {
+      "from": "apps/web/src/games/MinecraftClient.tsx",
+      "spec": "@babylonjs/core",
+      "to": "apps/web/node_modules/@babylonjs/core/index.d.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/audioManager.ts",
+      "spec": "@playground/voxel-content",
+      "to": "packages/voxel-content/src/index.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/breakCrackOverlay.ts",
+      "spec": "@babylonjs/core/Meshes/mesh",
+      "to": "apps/web/node_modules/@babylonjs/core/Meshes/mesh.d.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/breakCrackOverlay.ts",
+      "spec": "@babylonjs/core/scene",
+      "to": "apps/web/node_modules/@babylonjs/core/scene.d.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/breakCrackOverlay.ts",
+      "spec": "@babylonjs/core/Materials/standardMaterial",
+      "to": "apps/web/node_modules/@babylonjs/core/Materials/standardMaterial.d.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/breakCrackOverlay.ts",
+      "spec": "@babylonjs/core/Materials/Textures/texture",
+      "to": "apps/web/node_modules/@babylonjs/core/Materials/Textures/texture.d.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/breakCrackOverlay.ts",
+      "spec": "@babylonjs/core",
+      "to": "apps/web/node_modules/@babylonjs/core/index.d.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/breakCrackOverlay.ts",
+      "spec": "@playground/voxel-content",
+      "to": "packages/voxel-content/src/index.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/heldItemView.ts",
+      "spec": "@babylonjs/core/Cameras/camera",
+      "to": "apps/web/node_modules/@babylonjs/core/Cameras/camera.d.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/heldItemView.ts",
+      "spec": "@babylonjs/core/Materials/standardMaterial",
+      "to": "apps/web/node_modules/@babylonjs/core/Materials/standardMaterial.d.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/heldItemView.ts",
+      "spec": "@babylonjs/core/Materials/Textures/texture",
+      "to": "apps/web/node_modules/@babylonjs/core/Materials/Textures/texture.d.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/heldItemView.ts",
+      "spec": "@babylonjs/core/Maths/math.color",
+      "to": "apps/web/node_modules/@babylonjs/core/Maths/math.color.d.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/heldItemView.ts",
+      "spec": "@babylonjs/core/Meshes/mesh",
+      "to": "apps/web/node_modules/@babylonjs/core/Meshes/mesh.d.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/heldItemView.ts",
+      "spec": "@babylonjs/core/Meshes/meshBuilder",
+      "to": "apps/web/node_modules/@babylonjs/core/Meshes/meshBuilder.d.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/heldItemView.ts",
+      "spec": "@babylonjs/core/Meshes/transformNode",
+      "to": "apps/web/node_modules/@babylonjs/core/Meshes/transformNode.d.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/heldItemView.ts",
+      "spec": "@babylonjs/core/scene",
+      "to": "apps/web/node_modules/@babylonjs/core/scene.d.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/hud/hudConstants.ts",
+      "spec": "@playground/voxel-content",
+      "to": "packages/voxel-content/src/index.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/hud/hudUtils.tsx",
+      "spec": "@playground/voxel-content",
+      "to": "packages/voxel-content/src/index.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/movementConfig.test.ts",
+      "spec": "@playground/voxel-content",
+      "to": "packages/voxel-content/src/index.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/movementConfig.ts",
+      "spec": "@playground/voxel-content",
+      "to": "packages/voxel-content/src/index.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/noaVoxelVisual.ts",
+      "spec": "@babylonjs/core/Meshes/mesh",
+      "to": "apps/web/node_modules/@babylonjs/core/Meshes/mesh.d.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/noaVoxelVisual.ts",
+      "spec": "@babylonjs/core/Meshes/transformNode",
+      "to": "apps/web/node_modules/@babylonjs/core/Meshes/transformNode.d.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/voxelAvatarAnimation.ts",
+      "spec": "@babylonjs/core/Meshes/mesh",
+      "to": "apps/web/node_modules/@babylonjs/core/Meshes/mesh.d.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/voxelJsonModel.ts",
+      "spec": "@babylonjs/core/Maths/math.color",
+      "to": "apps/web/node_modules/@babylonjs/core/Maths/math.color.d.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/voxelJsonModel.ts",
+      "spec": "@babylonjs/core/Maths/math.vector",
+      "to": "apps/web/node_modules/@babylonjs/core/Maths/math.vector.d.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/voxelJsonModel.ts",
+      "spec": "@babylonjs/core/Meshes/mesh",
+      "to": "apps/web/node_modules/@babylonjs/core/Meshes/mesh.d.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/voxelJsonModel.ts",
+      "spec": "@babylonjs/core/Meshes/meshBuilder",
+      "to": "apps/web/node_modules/@babylonjs/core/Meshes/meshBuilder.d.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/voxelJsonModel.ts",
+      "spec": "@babylonjs/core/scene",
+      "to": "apps/web/node_modules/@babylonjs/core/scene.d.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/voxelJsonModel.ts",
+      "spec": "@babylonjs/core/Materials/standardMaterial",
+      "to": "apps/web/node_modules/@babylonjs/core/Materials/standardMaterial.d.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/voxelJsonModel.ts",
+      "spec": "@babylonjs/core/Materials/Textures/texture",
+      "to": "apps/web/node_modules/@babylonjs/core/Materials/Textures/texture.d.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/voxelObjectMesher.ts",
+      "spec": "@babylonjs/core/Particles/solidParticleSystem",
+      "to": "apps/web/node_modules/@babylonjs/core/Particles/solidParticleSystem.d.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/worldgen.worker.ts",
+      "spec": "@playground/voxel-content",
+      "to": "packages/voxel-content/src/index.ts"
+    },
+    {
+      "from": "apps/web/src/games/voxel/worldgenPool.ts",
+      "spec": "@playground/voxel-content",
+      "to": "packages/voxel-content/src/index.ts"
+    },
+    {
+      "from": "apps/web/src/lib/voxelCraftingPreview.ts",
+      "spec": "@playground/voxel-content",
+      "to": "packages/voxel-content/src/index.ts"
+    },
+    {
+      "from": "apps/web/src/lib/voxelProtocol.ts",
+      "spec": "@playground/voxel-content",
+      "to": "packages/voxel-content/src/index.ts"
+    },
+    {
+      "from": "apps/web/src/lib/voxelProtocol.ts",
+      "spec": "@playground/voxel-content",
+      "to": "packages/voxel-content/src/index.ts"
+    }
+  ]
+}

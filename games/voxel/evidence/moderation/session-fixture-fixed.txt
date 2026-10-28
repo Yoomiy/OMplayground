@@ -1,0 +1,9 @@
+✔ school SDK/native worker preserve an accepted guest through paused renewal/reconnect, hide staff, reassign host and save empty presence (8665.352704ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9405.768828

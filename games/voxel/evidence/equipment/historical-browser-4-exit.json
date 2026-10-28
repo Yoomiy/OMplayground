@@ -1,0 +1,10 @@
+{
+  "script": "test:tnt:browser",
+  "path": "/tmp/voxel-equipment-suite-test-tnt-browser.log",
+  "code": 0,
+  "signal": null,
+  "startedAt": "2026-10-23T10:05:57.913Z",
+  "finishedAt": "2026-10-23T10:07:15.394Z",
+  "durationMs": 77480,
+  "buildId": "97603656240f4114699c26afdb40c03852735e6ebee1c8ed06e2984118c0dd9c"
+}

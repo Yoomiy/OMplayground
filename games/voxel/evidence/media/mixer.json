@@ -1,0 +1,162 @@
+{
+  "result": "PASS",
+  "scope": "Real software-Chromium WebAudio mixing with generated MediaStream tones; no SFU, microphone, physical output or device performance qualification",
+  "browser": "156.0.8078.4",
+  "cycles": [
+    {
+      "near": 0.03728536698617915,
+      "occluded": 0.006781078336811807,
+      "distant": 0,
+      "shifted": 0.03717208219910962,
+      "muted": 0,
+      "restored": 0.037205365529812746,
+      "unavailable": 0,
+      "replaced": 0.037286410187951424,
+      "before": {
+        "disposed": false,
+        "context": "running",
+        "tracks": 1,
+        "nodes": 6,
+        "outputs": 1,
+        "inputs": 1,
+        "blockedInputs": 0,
+        "outputSelection": true
+      },
+      "removed": {
+        "disposed": false,
+        "context": "running",
+        "tracks": 0,
+        "nodes": 2,
+        "outputs": 1,
+        "inputs": 0,
+        "blockedInputs": 0,
+        "outputSelection": true
+      },
+      "closed": {
+        "disposed": true,
+        "context": "closed",
+        "tracks": 0,
+        "nodes": 0,
+        "outputs": 0,
+        "inputs": 0,
+        "blockedInputs": 0,
+        "outputSelection": false
+      },
+      "inputPreserved": true,
+      "sameClose": true,
+      "outputs": 0,
+      "outputStopped": true,
+      "invalidOutputRejected": true,
+      "generator": "closed",
+      "measuring": "closed"
+    },
+    {
+      "near": 0.03718197811907657,
+      "occluded": 0.006797885555146876,
+      "distant": 0,
+      "shifted": 0.03727698253966738,
+      "muted": 0,
+      "restored": 0.03727917337118212,
+      "unavailable": 0,
+      "replaced": 0.037233565164529324,
+      "before": {
+        "disposed": false,
+        "context": "running",
+        "tracks": 1,
+        "nodes": 6,
+        "outputs": 1,
+        "inputs": 1,
+        "blockedInputs": 0,
+        "outputSelection": true
+      },
+      "removed": {
+        "disposed": false,
+        "context": "running",
+        "tracks": 0,
+        "nodes": 2,
+        "outputs": 1,
+        "inputs": 0,
+        "blockedInputs": 0,
+        "outputSelection": true
+      },
+      "closed": {
+        "disposed": true,
+        "context": "closed",
+        "tracks": 0,
+        "nodes": 0,
+        "outputs": 0,
+        "inputs": 0,
+        "blockedInputs": 0,
+        "outputSelection": false
+      },
+      "inputPreserved": true,
+      "sameClose": true,
+      "outputs": 0,
+      "outputStopped": true,
+      "invalidOutputRejected": true,
+      "generator": "closed",
+      "measuring": "closed"
+    },
+    {
+      "near": 0.03718197811907657,
+      "occluded": 0.006797885555146876,
+      "distant": 0,
+      "shifted": 0.03727698253966738,
+      "muted": 0,
+      "restored": 0.037272830751048036,
+      "unavailable": 0,
+      "replaced": 0.037233565164529324,
+      "before": {
+        "disposed": false,
+        "context": "running",
+        "tracks": 1,
+        "nodes": 6,
+        "outputs": 1,
+        "inputs": 1,
+        "blockedInputs": 0,
+        "outputSelection": true
+      },
+      "removed": {
+        "disposed": false,
+        "context": "running",
+        "tracks": 0,
+        "nodes": 2,
+        "outputs": 1,
+        "inputs": 0,
+        "blockedInputs": 0,
+        "outputSelection": true
+      },
+      "closed": {
+        "disposed": true,
+        "context": "closed",
+        "tracks": 0,
+        "nodes": 0,
+        "outputs": 0,
+        "inputs": 0,
+        "blockedInputs": 0,
+        "outputSelection": false
+      },
+      "inputPreserved": true,
+      "sameClose": true,
+      "outputs": 0,
+      "outputStopped": true,
+      "invalidOutputRejected": true,
+      "generator": "closed",
+      "measuring": "closed"
+    }
+  ],
+  "late": {
+    "activated": false,
+    "stats": {
+      "disposed": true,
+      "context": "closed",
+      "tracks": 0,
+      "nodes": 0,
+      "outputs": 0,
+      "inputs": 0,
+      "blockedInputs": 0,
+      "outputSelection": false
+    }
+  },
+  "errors": []
+}

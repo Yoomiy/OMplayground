@@ -1,0 +1,19 @@
+vite v6.4.2 building for production...
+transforming...
+✓ 82 modules transformed.
+rendering chunks...
+computing gzip size...
+built/index.html                                0.34 kB │ gzip:   0.25 kB
+built/assets/engine-worker-DPFd4qax.js         10.94 kB
+built/assets/voxel_engine_bg-1ejYMYOZ.wasm    550.36 kB │ gzip: 210.28 kB
+built/assets/embed-BbfR4Nnp.css                 3.21 kB │ gzip:   1.05 kB
+built/assets/index-CeR0GFEN.css                 7.16 kB │ gzip:   1.80 kB
+built/assets/index-DX1E3u4D.js              1,072.57 kB │ gzip: 179.38 kB
+built/assets/embed-PNbuKWtV.js              1,404.75 kB │ gzip: 266.07 kB
+✓ built in 4.11s
+Staff teleport {"from":[117.02861584409372,81.205,0.5],"to":[49.5,70,0.5],"target":[49.5,68,0.5],"epoch":12,"unloads":77}
+Before exit {"visible":"visible","focused":true,"fullscreen":true}
+Before mouse dispatch {"position":{"x":492,"y":39},"target":{"tag":"BUTTON","text":"יציאה"},"fullscreen":"voxel-session","dialogs":[{"open":false,"label":"voxel-chat-title"},{"open":false,"label":"voxel-staff-title"},{"open":false,"label":"voxel-end-title"},{"open":false,"label":"inventory-title"}],"exits":1,"geometry":[{"rect":{"x":464,"y":19,"width":56,"height":40,"top":19,"right":520,"bottom":59,"left":464},"pointer":"auto"}]}
+Before exit {"visible":"visible","focused":true,"fullscreen":false}
+React StrictMode cancellation, owned HUD/inventory/fullscreen, SQL save failure/retry, paused teacher flight, resume/end and complete teardown pass
+React fixture browser disconnected

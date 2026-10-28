@@ -1,0 +1,11 @@
+✔ shared drop replicas retain immutable public ownership across viewers, movement, partial pickup and recovery (3.417416ms)
+✔ replica radius queries preserve insertion order and exact inclusion boundaries (0.758923ms)
+✔ subscription reuse preserves column crossing, explicit resync, reconnect and same-column teleport incarnations (120.91241ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 943.590003

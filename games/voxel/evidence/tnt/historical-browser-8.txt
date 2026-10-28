@@ -1,0 +1,29 @@
+
+> @playground/voxel@0.1.0 test:creative:browser
+> node tools/browser-creative.ts
+
+182 Opening creative client
+3128 Creative client ready
+3214 Opening creative client
+7378 Creative client ready
+8528 Testing jump [49.5,68,0.5]
+11332 Dispatching jump key
+49997 Jump key delivered
+51818 Testing movement
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: client must walk
+    at file:///home/ubuntu/OMplayground/games/voxel/tools/browser-creative.ts:127:10
+    at runNextTicks (node:internal/process/task_queues:65:5)
+    at process.processImmediate (node:internal/timers:541:9) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.21.0

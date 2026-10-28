@@ -1,0 +1,25 @@
+[
+  {
+    "extra": [],
+    "webgl2": false
+  },
+  {
+    "extra": [
+      "--use-gl=angle"
+    ],
+    "webgl2": false
+  },
+  {
+    "extra": [
+      "--disable-gpu-compositing"
+    ],
+    "webgl2": false
+  },
+  {
+    "extra": [
+      "--use-gl=angle",
+      "--disable-gpu-compositing"
+    ],
+    "webgl2": false
+  }
+]

@@ -1,0 +1,166 @@
+{
+  "result": "FAIL",
+  "startedAt": "2026-10-27T18:40:59.698Z",
+  "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077",
+  "configuration": {
+    "seconds": 10,
+    "roomCount": 1,
+    "playerCount": 2,
+    "ioMs": 5
+  },
+  "host": {
+    "node": "v24.21.0",
+    "arch": "arm64",
+    "cpu": "Neoverse-N1",
+    "logicalCpus": 2,
+    "availableParallelism": 2
+  },
+  "scope": "Packaged gateway/native workers, UUID actors, ordinary survival inputs/actions, fixture-owned kits and prepared natural-world work platforms, contested containers and commit/worker-crash recovery. Delayed in-memory metadata/object contract backend with advancing clock; no actual Supabase/Auth/SQL/Storage/SFU, rendering, real devices/networks, TNT or school-capacity signoff.",
+  "failure": {
+    "phase": "load",
+    "message": "{\"type\":\"result\",\"epoch\":8,\"sequence\":4,\"status\":\"applied\",\"outcome\":{\"ok\":false,\"reason\":\"out_of_reach\"}}",
+    "stack": "AssertionError [ERR_ASSERTION]: {\"type\":\"result\",\"epoch\":8,\"sequence\":4,\"status\":\"applied\",\"outcome\":{\"ok\":false,\"reason\":\"out_of_reach\"}}\n    at mineAndPlace (file:///home/ubuntu/OMplayground/games/voxel/tools/benchmark-survival-workers.ts:402:5)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async Promise.all (index 0)\n    at async file:///home/ubuntu/OMplayground/games/voxel/tools/benchmark-survival-workers.ts:589:5"
+  },
+  "finishedAt": "2026-10-27T18:41:01.251Z",
+  "peers": [
+    {
+      "id": "303871d4-85ba-4827-ae35-e3b55c19c409",
+      "messages": 107,
+      "bytes": 16523,
+      "resyncs": 0,
+      "retainedEvents": 107,
+      "retainedHighWater": 107,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 19,
+        "meanMs": 29.07043410526317,
+        "p95UpperMs": 31.201908000000003,
+        "p99UpperMs": 31.201908000000003,
+        "maxMs": 31.201908000000003
+      },
+      "commandMs": {
+        "samples": 4,
+        "meanMs": 1.7402879999999357,
+        "p95UpperMs": 2.2787700000000086,
+        "p99UpperMs": 2.2787700000000086,
+        "maxMs": 2.2787700000000086
+      },
+      "outcomes": {
+        "selected": 2,
+        "mining": 1,
+        "out_of_reach": 1
+      },
+      "inventorySummary": {
+        "revision": 7,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 64
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 16
+          },
+          {
+            "itemType": "cobblestone",
+            "count": 1
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "focus",
+        "phase": "playing",
+        "epoch": 8,
+        "position": [
+          -5.5,
+          160,
+          -4.5
+        ]
+      }
+    },
+    {
+      "id": "589e4714-1450-4ee2-9ce7-f6627bfa82cb",
+      "messages": 106,
+      "bytes": 16403,
+      "resyncs": 0,
+      "retainedEvents": 106,
+      "retainedHighWater": 106,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 19,
+        "meanMs": 29.099173157894782,
+        "p95UpperMs": 31.11438700000008,
+        "p99UpperMs": 31.11438700000008,
+        "maxMs": 31.11438700000008
+      },
+      "commandMs": {
+        "samples": 3,
+        "meanMs": 1.8577686666666295,
+        "p95UpperMs": 2.327810999999997,
+        "p99UpperMs": 2.327810999999997,
+        "maxMs": 2.327810999999997
+      },
+      "outcomes": {
+        "selected": 2,
+        "mining": 1
+      },
+      "inventorySummary": {
+        "revision": 7,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 64
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 16
+          },
+          {
+            "itemType": "cobblestone",
+            "count": 1
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "focus",
+        "phase": "playing",
+        "epoch": 9,
+        "position": [
+          0.5,
+          160,
+          -4.5
+        ]
+      }
+    }
+  ],
+  "cleanup": {
+    "rooms": 0,
+    "closedClients": 2,
+    "totalClients": 2,
+    "pendingWaiters": 0
+  },
+  "storage": {
+    "objects": 8,
+    "bytes": 15803,
+    "puts": 8,
+    "commits": 2
+  }
+}

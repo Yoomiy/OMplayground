@@ -1,0 +1,6 @@
+
+> @playground/voxel@0.1.0 test:recovery:browser
+> node tools/browser-worker-recovery.ts
+
+Actual transient worker failure, bounded retry/reconnect and teardown pass
+Actual permanent worker failure, bounded retry/reconnect and teardown pass

@@ -1,0 +1,60 @@
+
+> @playground/voxel-server@0.1.0 pretest
+> npm run build:shared
+
+
+> @playground/voxel-server@0.1.0 build:shared
+> npm --prefix ../.. run build --workspace @playground/game-logic && npm --prefix ../.. run build --workspace @playground/observability
+
+
+> @playground/game-logic@0.0.1 build
+> tsc -p tsconfig.json
+
+
+> @playground/observability@0.0.1 build
+> tsc -p tsconfig.json
+
+
+> @playground/voxel-server@0.1.0 test
+> node --test tests/*.test.ts
+
+✔ a verified active child gets a short private authorization with no name, inventory or capacity query (284.990924ms)
+✔ disabled accounts cannot fall through into admin access; each authorization reads current identity and profile (38.918067ms)
+✔ staff observe across partitions without gameplay grants; teacher participation follows the normal gender rule (43.511768ms)
+✔ closed rooms require current membership, a current invitation, or an accepted challenge (70.321016ms)
+✔ paused sessions preserve roster/host access and staff inspection, while ended or wrong-game sessions never start (40.435673ms)
+✔ class exceptions override recess defaults and conflicting or unavailable schedules fail closed (50.411122ms)
+✔ authorization cannot cross a schedule minute, JWT expiry, or an overlong provider read (42.249162ms)
+✔ private owned-object eligibility ignores offline recess time, but never ignores membership removal or a provider outage (19.587773ms)
+✔ authority comes from platform rows, never forged claims, extra request fields or a headcount ceiling (25.659163ms)
+✔ schedule interpretation retains Jerusalem time across summer and winter offsets (26.515447ms)
+✔ a continuous recess interval renews across ordinary minutes while the actual closing boundary remains authoritative (23.416352ms)
+✔ a private grant refreshes current policy and cannot be redirected by mutating its original request (27.422732ms)
+✔ central room policy reads fresh session state independently of player admission and treats deletion/completion as terminal (11.754256ms)
+✔ unavailable or overlong session reads cannot renew central room permission (5.241985ms)
+✔ a completed school session remains a terminal revalidation reason rather than a generic permission or provider failure (14.254629ms)
+✔ an empty invitation value never opens a closed room (3.612737ms)
+✔ control rejects extra intent fields before identity or allocation (128.372535ms)
+✔ queued control repeats fresh authority and a revoked teacher cannot execute its earlier grant (95.764779ms)
+✔ pause save failure has no completion receipt and a prior committed receipt replays without reading the ended session (72.862909ms)
+✔ read-only session inspection follows live school scope and allows completed roster/staff without granting admission (302.246526ms)
+✔ production listener rejects wildcard, path, insecure and credential origins and requires a concrete port (12.768822ms)
+✔ release inventory corruption is rejected before importing executable gateway code (323.537149ms)
+✔ startup verifies every schema and fails before listening when controls are absent (163.381662ms)
+✔ installed SDK sends canonical service RPCs with a secret apikey and accepts only coherent immutable lease replies (197.268464ms)
+✔ create-only uploads copy bytes before IO and verify a duplicate object before marking it ready (34.924687ms)
+✔ provider errors cannot expose credentials and an unavailable provider respects the request deadline (43.569129ms)
+✔ failed Storage cleanup retains its catalog claim; completion only follows a successful API deletion (16.987042ms)
+✔ configuration rejects missing, public or legacy API keys and nonsecure remote endpoints (0.343601ms)
+✔ the shared server SDK preserves an explicit user bearer token for identity verification (3.606217ms)
+✔ session SDK sends fenced identities, deduplicates presence and excludes observers from membership writes (93.556328ms)
+✔ session SDK rejects malformed installation/policy replies and request-start deadlines never extend during IO (26.458486ms)
+✔ session SDK treats explicit fencing as false and provider failures expose only a machine code (10.992973ms)
+ℹ tests 32
+ℹ suites 0
+ℹ pass 32
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6485.159477

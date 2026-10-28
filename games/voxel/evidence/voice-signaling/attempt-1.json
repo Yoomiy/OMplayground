@@ -1,0 +1,39 @@
+{
+  "result": "INCOMPLETE",
+  "room": "voxel-escrow-qualification-0bc5d1b0-eb89-4f4d-b772-c3e15f5a6233",
+  "schoolDatabaseWrites": 0,
+  "scope": "Actual self-hosted LiveKit, private signaling worker and generated test audio; no school/Auth/UI deployment qualification",
+  "initial": {
+    "connected": true,
+    "canPublish": true,
+    "expiresAt": 1793034899201,
+    "serverInfo": {
+      "version": "1.12.0",
+      "edition": 0,
+      "protocol": 17
+    }
+  },
+  "initialTrackPublished": true,
+  "replayBeforeExpiry": true,
+  "cachedTicketReplay": {
+    "connected": false,
+    "error": {
+      "name": "ConnectionError",
+      "code": 1
+    }
+  },
+  "directSfuReplay": {
+    "connected": false,
+    "error": {
+      "name": "ConnectionError",
+      "code": 1
+    }
+  },
+  "onlyOpaqueInSdk": true,
+  "stage": "cohort-mute",
+  "error": {
+    "name": "Error"
+  },
+  "cleaned": true,
+  "checkedAt": "2026-10-26T17:14:57.635Z"
+}

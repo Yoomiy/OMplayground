@@ -1,0 +1,33 @@
+{
+  "result": "SERVER_MUTE_VERIFIED_TOKEN_REVOCATION_UNAVAILABLE",
+  "capturedAt": "2026-10-26T16:39:22.319625+00:00",
+  "serverInfo": {
+    "version": "1.12.0",
+    "edition": 0,
+    "protocol": 17
+  },
+  "cleaned": true,
+  "schoolDatabaseWrites": 0,
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "2a0abf59afd4eb1f37d4f134cd3dadc3c369e646bfa5fbf59f5619c49ae59bac"
+    },
+    {
+      "path": "probe.json",
+      "sha256": "a830dc8296fdea4f06cf3b8c38543aac89a65230433762bf2a30e1739c245b4a"
+    },
+    {
+      "path": "probe.ts",
+      "sha256": "60971c16ed6eba73f401011e5747cc5168be90e24e958d4650188c28450f6a24"
+    },
+    {
+      "path": "probe.txt",
+      "sha256": "ec255a80c712f4c3ec840b149f6e32cdd8d48e479d84cb40631deb8c232a435d"
+    },
+    {
+      "path": "versions.json",
+      "sha256": "d01d6b8d462522f081e230f63122c759e77eedbad4abe332c27c020823473029"
+    }
+  ]
+}

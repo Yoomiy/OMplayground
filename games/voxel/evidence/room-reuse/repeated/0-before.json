@@ -1,0 +1,91 @@
+{
+  "result": "LOOPBACK_SURVIVAL_LOAD_COMPLETED",
+  "startedAt": "2026-10-27T14:20:23.202Z",
+  "buildId": "3ea11984a11a76d7d2993a55a882ed985827a6d1440e3336f3e8cf0612f5f508",
+  "releaseRoot": "/tmp/voxel-room-reuse-before-release",
+  "host": {
+    "node": "v24.21.0",
+    "arch": "arm64",
+    "cpu": "Neoverse-N1",
+    "logicalCpus": 2,
+    "availableParallelism": 2
+  },
+  "samplingSeconds": 10,
+  "scope": "Packaged gateway/native room workers with co-located real loopback WebSocket load clients, development identity fixture, natural survival movement/turning/jumping. No hosted writes, school Auth/SQL/Storage, crafting/TNT, browser/SFU, physical devices, impairment or deployment-capacity qualification.",
+  "profiles": [
+    {
+      "rooms": 1,
+      "playersPerRoom": 128,
+      "totalPlayers": 128,
+      "inputBatchHz": 29.98859247736913,
+      "skippedInputBatches": 1,
+      "joinedMs": 1709.3164849999998,
+      "joinMs": {
+        "samples": 128,
+        "mean": 1640.3073481328126,
+        "p95": 1667.514326,
+        "p99": 1667.6572070000002,
+        "max": 1708.8078019999998
+      },
+      "sampleMs": 10003.803954,
+      "ackMs": {
+        "samples": 19200,
+        "mean": 89.48988839849007,
+        "p95": 116.71683499999926,
+        "p99": 138.0354559999996,
+        "max": 163.29549599999882
+      },
+      "tickRate": {
+        "samples": 128,
+        "mean": 29.788668527519924,
+        "p95": 29.788668527520006,
+        "p99": 29.788668527520006,
+        "max": 29.788668527520006
+      },
+      "messages": 38400,
+      "wireBytes": 169611728,
+      "resyncs": 0,
+      "gatewayEventLoopP99Ms": 39.616511,
+      "roomMetrics": [
+        {
+          "buildId": "3ea11984a11a76d7d2993a55a882ed985827a6d1440e3336f3e8cf0612f5f508",
+          "worldId": "81bf49be-2df5-4200-b61d-ad5eea6049bc",
+          "ticks": 298,
+          "columns": 9,
+          "overrunMs": 66.66666666666667,
+          "windowMs": 10026.907462000001,
+          "worldStep_samples": 298,
+          "worldStep_meanMs": 16.56411187919462,
+          "worldStep_p95UpperMs": 30.55,
+          "worldStep_p99UpperMs": 47.15,
+          "worldStep_maxMs": 113.05545700000016,
+          "observerStep_samples": 0,
+          "observerStep_meanMs": 0,
+          "observerStep_p95UpperMs": 0,
+          "observerStep_p99UpperMs": 0,
+          "observerStep_maxMs": 0,
+          "workerTurn_samples": 1303,
+          "workerTurn_meanMs": 3.920242503453559,
+          "workerTurn_p95UpperMs": 23.55,
+          "workerTurn_p99UpperMs": 32.2,
+          "workerTurn_maxMs": 113.10569699999996,
+          "generationJob_samples": 9,
+          "generationJob_meanMs": 7.6074806666666115,
+          "generationJob_p95UpperMs": 23.160589999999956,
+          "generationJob_p99UpperMs": 23.160589999999956,
+          "generationJob_maxMs": 23.160589999999956,
+          "command_samples": 34048,
+          "command_meanMs": 0.015238415560389363,
+          "command_p95UpperMs": 0.05,
+          "command_p99UpperMs": 0.05,
+          "command_maxMs": 12.716940000000022
+        }
+      ],
+      "cleanup": {
+        "rooms": 0,
+        "closedClients": 128
+      }
+    }
+  ],
+  "finishedAt": "2026-10-27T14:20:38.001Z"
+}

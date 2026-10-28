@@ -1,0 +1,24 @@
+PASS apps/minecraft-server/src/inventory.test.ts (13.91 s)
+PASS apps/minecraft-server/src/room.test.ts
+PASS apps/minecraft-server/src/drops.test.ts
+PASS apps/minecraft-server/src/sessionPersistence.test.ts
+PASS apps/minecraft-server/src/world.test.ts
+PASS apps/minecraft-server/src/breakMining.test.ts
+PASS apps/minecraft-server/src/tick.test.ts
+PASS apps/minecraft-server/src/perks.test.ts
+PASS apps/minecraft-server/src/roomIsolation.test.ts
+PASS apps/minecraft-server/src/death.test.ts
+PASS apps/minecraft-server/src/livekitService.test.ts
+PASS apps/minecraft-server/src/tnt.test.ts
+PASS apps/minecraft-server/src/vitals.test.ts
+PASS apps/minecraft-server/src/weather.test.ts
+PASS apps/minecraft-server/src/recessSweep.test.ts
+PASS apps/minecraft-server/src/blockBreakDrops.test.ts
+PASS apps/minecraft-server/src/recess.test.ts
+PASS apps/minecraft-server/src/health.test.ts
+
+Test Suites: 18 passed, 18 total
+Tests:       120 passed, 120 total
+Snapshots:   0 total
+Time:        27.111 s
+Ran all test suites.

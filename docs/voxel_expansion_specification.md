@@ -1,5 +1,7 @@
 # Voxel Survival Expansion: Comprehensive Architectural Specification
 
+> **Historical implementation design, superseded 2026-10-28.** The old NOA/Babylon client has been retired. Use [the runtime rewrite](voxel-runtime-rewrite-proposal.md), compiled content/disposition under `games/voxel/content`, and [the new runtime guide](../games/voxel/README.md) for current contracts. The legacy IDs, paths and engine-specific instructions below are research context, not compatibility or release requirements.
+
 This document provides a highly detailed, non-corner-cutting architectural blueprint for implementing four major gameplay systems in the Voxel Survival Multiplayer game:
 1. **Multi-Biome World Generation (WorldGen)**
 2. **Upgraded Tools & Usage (Animation, Perks, and Crafting Table)**

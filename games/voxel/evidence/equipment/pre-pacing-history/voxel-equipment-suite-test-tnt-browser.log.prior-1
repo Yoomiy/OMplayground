@@ -1,0 +1,31 @@
+
+> @playground/voxel@0.1.0 test:tnt:browser
+> VOXEL_SURVIVAL_TNT=1 node tools/browser-survival.ts
+
+Harvesting natural log 1 with actual held touch input
+Harvesting natural log 2 with actual held touch input
+Harvesting natural log 3 with actual held touch input
+Harvesting natural log 4 with actual held touch input
+Harvesting natural log 5 with actual held touch input
+Harvesting natural log 6 with actual held touch input
+Harvesting nearby natural foliage for an owned apple
+Crafting owned logs into a workbench, sticks and pickaxe
+Gathering natural shore sand and shallow river stone with owned tools
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: resource travel: {"disposed":false,"inputMode":"touch","mode":"survival","mining":{"target":null,"elapsed":0,"total":0},"vitals":{"version":2,"health":20,"food":20,"air":300,"dead":false,"respawnIn":0,"attackCooldown":0,"protection":0},"combat":true,"hit":null,"lastHitEvent":null,"lastExplosionEvent":null,"explosives":[],"canIgnite":true,"miningHeld":false,"drops":[],"selectedSlot":4,"environment":{"tick":2978.7080000042915,"seconds":99.29026666680971,"dayFraction":0.3027418888890081,"daylight":1,"sun":[-0.31163350878437934,0.9057128401779929,0.2873478855663454],"sky":[0.59,0.76,0.88],"rain":0,"wind":[-0.09681483233576553,-0.2839487422754283],"openSky":false},"atmosphere":{"rainLines":0,"stars":false,"clouds":16,"sun":true,"moon":false},"avatars":{"visible":0,"capacity":8,"samples":[]},"renderOrigin":{"x":32,"z":-16},"feedback":{"held":{"state":0,"itemType":"wooden_pickaxe","visible":true,"swings":19},"effects":{"live":0,"bursts":9,"hits":0,"explosions":0},"drops":{"visible":0,"kinds":0},"explosives":{"visible":0,"capacity":0,"flashing":0},"vision":false},"audio":{"supported":true,"contexts":1,"state":"running","active":true,"muted":false,"voices":0,"effects":17,"gain":0.2199999988079071,"dropped":0,"listener":[46.50019073486328,69.62000274658203,-3.299999952316284],"lastSource":[47.47902297973633,67.0199966430664,-5.504137992858887]},"renderLimitHz":30,"touch":{"x":0,"z":0,"jump":false,"sneak":false,"sprint":false},"focused":true,"visible":"visible","hasFocus":true,"lastFrame":101365,"lastUpdate":101354.30000019073,"resources":{"geometries":70,"textures":5,"workers":1},"actorId":"74127df2-bc06-41d7-9070-f8f9b24dd1e0","worldId":"eaa7a906-3ed0-4ff3-9dff-6f84beac7e27","body":{"position":[46.5002,68,-3.3],"onGround":1,"inWater":0,"eyesInWater":0,"frozen":0,"flying":0,"velocity":[0,0,0]},"view":{"yaw":-3.141576702099028,"pitch":-0.3},"lastResult":{"type":"result","epoch":6,"sequence":1,"status":"applied","outcome":{"ok":true,"reason":"selected"}},"inventory":{"version":2,"catalog":false,"revision":33,"selected":4,"bag":[{"count":11,"itemType":"oak_planks"},{"itemType":"oak_leaves","count":2},{"itemType":"apple","count":2},{"itemType":"oak_log","count":1},{"count":1,"instance":{"durability":60},"itemType":"wooden_pickaxe"},{"count":2,"itemType":"stick"},null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"craft2":[null,null,null,null],"craft3":[null,null,null,null,null,null,null,null,null],"equipment":[null,null,null,null,null],"station":"personal","container":null},"inventoryOpen":false,"inventoryPending":false,"recentEdits":[{"cell":[49,68,-4],"state":0,"revision":1},{"cell":[49,69,-4],"state":0,"revision":2},{"cell":[49,70,-4],"state":0,"revision":3},{"cell":[49,71,-4],"state":0,"revision":4},{"cell":[49,72,-4],"state":0,"revision":5},{"cell":[49,71,-3],"state":0,"revision":6},{"cell":[49,73,-4],"state":0,"revision":7},{"cell":[49,69,-8],"state":0,"revision":8},{"cell":[49,67,-8],"state":3,"revision":9}],"status":"playing","epoch":6,"phase":"playing","position":[46.50019160985921,68,-3.3],"selected":0,"players":1,"inputLag":2,"correction":0.000008390140791902923,"columns":49,"collisionColumns":49,"meshed":35,"workers":1,"activeJobs":0,"stream":{"discardedJobs":0,"installed":63,"meshJobs":116,"generationJobs":63,"mainWorkMs":0.09999990463256836},"render":{"uploadedBytes":8515528,"columns":35,"drawCalls":43,"triangles":34224,"uploadMs":0.2999999523162842},"target":[46,69,-3],"targetState":13,"targetNormal":[0,0,-1],"actionPending":0,"queuedAction":null,"actionSequence":1,"lastReceivedAgoMs":0.2999999523162842}
+    at walkTo (file:///home/ubuntu/OMplayground/games/voxel/tools/browser-survival.ts:563:14)
+    at runNextTicks (node:internal/process/task_queues:65:5)
+    at process.processImmediate (node:internal/timers:541:9)
+    at async file:///home/ubuntu/OMplayground/games/voxel/tools/browser-survival.ts:591:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.21.0

@@ -1,0 +1,34 @@
+{
+  "result": "FAIL",
+  "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077",
+  "seed": {
+    "worldId": "world-52ec6395-44ca-4b6f-81b2-7837087cd9ab",
+    "columns": 49,
+    "entries": 16384,
+    "baselineBytes": 4818072
+  },
+  "holds": [],
+  "maxBufferedBytes": 1081735,
+  "events": [
+    {
+      "name": "VOXEL_BACKPRESSURE_RECOVERY",
+      "context": {
+        "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077",
+        "worldId": "world-52ec6395-44ca-4b6f-81b2-7837087cd9ab",
+        "bufferedBytes": 1081718
+      }
+    }
+  ],
+  "readers": [
+    {
+      "frames": 49,
+      "closeCode": 1006
+    },
+    {
+      "frames": 39,
+      "closeCode": 1013
+    }
+  ],
+  "remainingRooms": 0,
+  "scope": "Local prepared edited checkpoint, actual TCP read suspension and native workers. Contract persistence; no hosted or physical school network qualification."
+}

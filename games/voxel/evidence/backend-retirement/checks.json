@@ -1,0 +1,102 @@
+{
+  "recordedAt": "2026-10-28T10:57:51.999Z",
+  "scope": "Observed local tool process completions; no hosted mutations",
+  "checks": [
+    {
+      "name": "web-tests",
+      "command": "npm test --workspace @playground/web",
+      "log": "/tmp/voxel-legacy-backend-web-tests.log",
+      "observedToolSession": 86038,
+      "observedExitCode": 0,
+      "sha256": "d7330b5082bebfd9e2665ce34eb73d392b3fc239ebf974a2cdd637ef0402d2d8"
+    },
+    {
+      "name": "web-types",
+      "command": "tsc --noEmit -p apps/web/tsconfig.json",
+      "log": "/tmp/voxel-legacy-backend-web-types.log",
+      "observedToolSession": 20214,
+      "observedExitCode": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "service-types",
+      "command": "tsc --noEmit -p apps/voxel-server/tsconfig.json",
+      "log": "/tmp/voxel-legacy-backend-service-types.log",
+      "observedToolSession": 66412,
+      "observedExitCode": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "web-build",
+      "command": "npm run build --workspace @playground/web",
+      "log": "/tmp/voxel-legacy-backend-web-build.log",
+      "observedToolSession": 95910,
+      "observedExitCode": 0,
+      "sha256": "b4180aea11bd5b9db098d23bd1c2f9a51a13501d549da907c985a4985099df35"
+    },
+    {
+      "name": "classroom-build",
+      "command": "npm run build --workspace @playground/classroom-server",
+      "log": "/tmp/voxel-legacy-backend-classroom-build.log",
+      "observedToolSession": 89580,
+      "observedExitCode": 0,
+      "sha256": "3362cf1ce6590a10d4fba0f1d45ea9b2846b5207742917fd5a5b73f5e6501c35"
+    },
+    {
+      "name": "observability-tests",
+      "command": "jest --runInBand (packages/observability)",
+      "log": "/tmp/voxel-legacy-backend-observability-tests.log",
+      "observedToolSession": 40225,
+      "observedExitCode": 0,
+      "sha256": "536790f3a37d98f73ebe81b7232ad334984cb77b989e078981e07abc1167a045"
+    },
+    {
+      "name": "classroom-tests",
+      "command": "node --experimental-vm-modules jest --runInBand (apps/classroom-server)",
+      "log": "/tmp/voxel-legacy-backend-classroom-tests.log",
+      "observedToolSession": 62407,
+      "observedExitCode": 0,
+      "sha256": "9d532d5378e5bfc6c57a7574ba92995671e854b0b7a4f6be1c76e0be59dea08f"
+    },
+    {
+      "name": "classroom-boundary",
+      "command": "npm run verify:boundary --workspace @playground/classroom-server",
+      "log": "/tmp/voxel-legacy-backend-classroom-boundary.log",
+      "observedToolSession": 98801,
+      "observedExitCode": 0,
+      "sha256": "e76faff5de94a11189823a0f2d30a2fbd4002c53269af8886e31a3e9ad79b5a0"
+    },
+    {
+      "name": "voxel-service-tests",
+      "command": "node --test apps/voxel-server/tests/*.test.ts",
+      "log": "/tmp/voxel-legacy-backend-service-tests.log",
+      "observedToolSession": 96583,
+      "observedExitCode": 0,
+      "sha256": "d9180382c93162082a504db3f11efa35bcf429f720b56d184767b319b75ad304"
+    },
+    {
+      "name": "lock",
+      "command": "npm install --package-lock-only --ignore-scripts --offline",
+      "log": "/tmp/voxel-legacy-backend-lock.log",
+      "observedToolSession": 15852,
+      "observedExitCode": 0,
+      "sha256": "7a2921d2a27d31f6e5ebfc5b42ab19c8b50462c779361daf18c7671299d682de"
+    },
+    {
+      "name": "postgres-service",
+      "command": "node --test apps/voxel-server/tests/postgres/service.test.ts",
+      "log": "/tmp/voxel-legacy-backend-postgres-service.log",
+      "observedToolSession": 7649,
+      "observedExitCode": 0,
+      "sha256": "fde8d371d300d0f2c540a380b000df0a143232ae46c1421c52561a6078170fdc"
+    },
+    {
+      "name": "react",
+      "command": "node apps/web/tools/voxel-react-browser.ts",
+      "log": "/tmp/voxel-legacy-backend-react.log",
+      "observedToolSession": 7649,
+      "observedExitCode": 0,
+      "sha256": "986dc1cc56afdd538c03afdd272baf350a9ef793b58dca58c1cbd47f4a14238f"
+    }
+  ]
+}

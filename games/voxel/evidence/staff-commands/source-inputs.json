@@ -1,0 +1,2105 @@
+{
+  "layout": "repository-relative",
+  "files": [
+    {
+      "path": ".github/workflows/voxel.yml",
+      "sha256": "344fbe0264a65d7bf8eb07d654d40bc8fbd9139448ec5f572ea2895d1ee4177d"
+    },
+    {
+      "path": "apps/voxel-server/README.md",
+      "sha256": "37f969250a567632411447444d9610caa3ddad524b4eccf0d30a9cdca54f6b14"
+    },
+    {
+      "path": "apps/voxel-server/docs/lifecycle-controls.md",
+      "sha256": "c9fe31cfe91da7f7398c29a9fcf47450b0ab21483ebc948674f292d28a4184e8"
+    },
+    {
+      "path": "apps/voxel-server/docs/production-service.md",
+      "sha256": "045f00bb0d79f87522e57e040362b6b14538962e35db748f6406054d573f64fc"
+    },
+    {
+      "path": "apps/voxel-server/docs/roster-departure.md",
+      "sha256": "8418401e2f8ce16b6e4211cecf25aeb20adfbffe8f7c1516f6742d71869bd5c5"
+    },
+    {
+      "path": "apps/voxel-server/docs/school-admission.md",
+      "sha256": "0b0775cc0550578507fbff4ec88b80bfb585668e11b01be699284e0384ba26e8"
+    },
+    {
+      "path": "apps/voxel-server/docs/session-projection.md",
+      "sha256": "c99f10d1b4016e6c799bd246bf7f60f3793c63a0430440821a0472aa91d40763"
+    },
+    {
+      "path": "apps/voxel-server/docs/staff-commands.md",
+      "sha256": "67063118604e85097701b1327d82a038849f2c8cb6deac671389e0e508c63e6a"
+    },
+    {
+      "path": "apps/voxel-server/package.json",
+      "sha256": "ec9756095c438e2b7c1a3e1809dd8d22a7ab686443ce2d8d746e0db6a393d6f0"
+    },
+    {
+      "path": "apps/voxel-server/src/index.ts",
+      "sha256": "02e6cee87836d308a2e2b9ba4285f662f97f90d42205ec059bac0d80dc16a43f"
+    },
+    {
+      "path": "apps/voxel-server/src/release.ts",
+      "sha256": "87e26c588c4e0ce4f375e415913c2eb99763d51948864787dbac6198f16c646d"
+    },
+    {
+      "path": "apps/voxel-server/src/school-access.ts",
+      "sha256": "bc66b3849390d3598fb595ba6540e61c83b9482b8eb808db16c789bb6edcdb89"
+    },
+    {
+      "path": "apps/voxel-server/src/school-admission.ts",
+      "sha256": "045a142ecfbb5efc375b32c2230dcfa977c7a691b08466891633390b036b70fa"
+    },
+    {
+      "path": "apps/voxel-server/src/school-control.ts",
+      "sha256": "da79fc4b551a7cad9ca960a99ba0009af2e51b2cc90d91b1a37793d08188ab20"
+    },
+    {
+      "path": "apps/voxel-server/src/school-roster.ts",
+      "sha256": "de875350c26cd634bc4daf0df1465f657cdc72dd65ac5c687f0cbb3173246228"
+    },
+    {
+      "path": "apps/voxel-server/src/school-session.ts",
+      "sha256": "547ed471383603bce953ad06a39ce3bf6a8a623e19350c4c62d1cbc2a8d42039"
+    },
+    {
+      "path": "apps/voxel-server/src/school-staff.ts",
+      "sha256": "5e9ef5cb214220a9bee734abb804adb66e4d56b041ff94f8233e232fb6537cc6"
+    },
+    {
+      "path": "apps/voxel-server/src/service.ts",
+      "sha256": "d676a9e47cb2cafd1374fc25ab84ceaebf01105e27c290b0247112a0a96be0f9"
+    },
+    {
+      "path": "apps/voxel-server/src/supabase-persistence.ts",
+      "sha256": "d66bd15a9b839302140daf5670676cdfdb47b7b8bfff26dcc2685c3f889484c0"
+    },
+    {
+      "path": "apps/voxel-server/src/supabase-sessions.ts",
+      "sha256": "2b765b041e560494e01fbc7d6ece388c96ac51968b077c9b315ee4df1d0c5d4a"
+    },
+    {
+      "path": "apps/voxel-server/tests/control-bootstrap.sql",
+      "sha256": "8317af0ad647757b621d5f7b5435dc805e8e66cacc57baa158b48b04c8e461a8"
+    },
+    {
+      "path": "apps/voxel-server/tests/helpers/postgres.ts",
+      "sha256": "8024edda0df30f2876c677392205070147c9371a5f5d443af5eccab6779829df"
+    },
+    {
+      "path": "apps/voxel-server/tests/helpers/school-fixture.ts",
+      "sha256": "afb7a9b8465decf9e4124aac72e6b81566e107718405a6b6b6332e8751d36a49"
+    },
+    {
+      "path": "apps/voxel-server/tests/helpers/school-sql-fixture.ts",
+      "sha256": "fdbdac2a1b73eea25776666a62296766587cea6035e33c5a014360a6642e8ae9"
+    },
+    {
+      "path": "apps/voxel-server/tests/helpers/supabase-wire.ts",
+      "sha256": "9b6664ab37e51949ecb7b109b781610a9ebd1c8c8c65c166616ea928ee414419"
+    },
+    {
+      "path": "apps/voxel-server/tests/hosted/checkpoint-rollback.sql",
+      "sha256": "7155a176fb9b35bd2a357b948fe4ca34895b0743cbda96b692416b26b4f93a07"
+    },
+    {
+      "path": "apps/voxel-server/tests/integration/school-gateway.test.ts",
+      "sha256": "e8ec1f5643834a59bc74c2ba7a87a5895ad1a96b2f2bb1f83968a88dc8eec38c"
+    },
+    {
+      "path": "apps/voxel-server/tests/postgres/controls.test.ts",
+      "sha256": "321d60c7159a27e3a032dc483b087015555ca037a643b51ea08584ccefbe5196"
+    },
+    {
+      "path": "apps/voxel-server/tests/postgres/persistence.test.ts",
+      "sha256": "84853c817e0a795b788faa02feec981ceabf87ce858321ca3287cecb8f617d12"
+    },
+    {
+      "path": "apps/voxel-server/tests/postgres/roster.test.ts",
+      "sha256": "8dc115b86206c12f97a0c9840617415e4df28aba47c56b7e598b353f7dde45e6"
+    },
+    {
+      "path": "apps/voxel-server/tests/postgres/sdk-gateway.test.ts",
+      "sha256": "5158ef5f4dfbfb6d2db0e9c35d037a8fb57a4375b53a5a0221e1188585a6905d"
+    },
+    {
+      "path": "apps/voxel-server/tests/postgres/service.test.ts",
+      "sha256": "8614049792462dd4caee3e015ea47fcdc782dfd3bcd842c8c532bb83676944be"
+    },
+    {
+      "path": "apps/voxel-server/tests/postgres/session-read.test.ts",
+      "sha256": "51e036486b38563eeff4ce02e7d544407f8c358de4980da45d63be19829abe87"
+    },
+    {
+      "path": "apps/voxel-server/tests/postgres/sessions.test.ts",
+      "sha256": "119b693d5c8cb2d109a87e98ad84382835985afeafd8d66b93a9d0d1457e98b2"
+    },
+    {
+      "path": "apps/voxel-server/tests/postgres/staff.test.ts",
+      "sha256": "8081930f63734161b6e4986ca1106761fcb7440b4db21d8abbf8dcc3626269f8"
+    },
+    {
+      "path": "apps/voxel-server/tests/schema-bootstrap.sql",
+      "sha256": "4264e9415727183815c0acc3cb73afc0368d986c5593e507dcb0b0b29439a429"
+    },
+    {
+      "path": "apps/voxel-server/tests/school-access.test.ts",
+      "sha256": "2d17fe631a128629bc9386f6805e2a2c9f60909c85ab8b0301bb6eda3972dd97"
+    },
+    {
+      "path": "apps/voxel-server/tests/school-control.test.ts",
+      "sha256": "fb8a63eb71b183c25a157d4989888996ee62c61c62e28604fdd9a6f18ab91932"
+    },
+    {
+      "path": "apps/voxel-server/tests/school-inspection.test.ts",
+      "sha256": "f541df0bfa7a562c60a1cef6deff884c929687fecbd413d4bc410c54f92d72bb"
+    },
+    {
+      "path": "apps/voxel-server/tests/school-staff.test.ts",
+      "sha256": "d1acd44b9b766e874be256fea0b6fb3b1bda5b53cda6f4acc796cf49ee5c70ef"
+    },
+    {
+      "path": "apps/voxel-server/tests/service.test.ts",
+      "sha256": "fd3946055bf88e76d6f6e572a1632c2572522c061330a6f73d26deb11347114e"
+    },
+    {
+      "path": "apps/voxel-server/tests/session-bootstrap.sql",
+      "sha256": "1eaaedac7db0737bb41028459dda3684f3d5ddbda75f413747cc80bccc7a175a"
+    },
+    {
+      "path": "apps/voxel-server/tests/supabase-persistence.test.ts",
+      "sha256": "be5333296b0cf6b4452088f545f111bedc523a440e017405dd332aa77ac723c7"
+    },
+    {
+      "path": "apps/voxel-server/tests/supabase-sessions.test.ts",
+      "sha256": "a411a847ea337dcf6bc3ef067d7f7fedd0c50002b9f31ff2aa8c492806c425af"
+    },
+    {
+      "path": "apps/voxel-server/tools/browser-lifecycle.ts",
+      "sha256": "2c53ffb044bf5abe85cff3163e7b9dc71daeb911d7812a220dc3996022ef28d9"
+    },
+    {
+      "path": "apps/voxel-server/tools/browser-school.ts",
+      "sha256": "616206757327dc14ce1ef8d4b0a411a76908f1acf112bbe7d33cbb5a66112291"
+    },
+    {
+      "path": "apps/voxel-server/tools/check-live-storage.ts",
+      "sha256": "9090388ed893dbdefeea2d4a9e535b0e59cccb6be3c1fdeb2856cb7ff8ac1e22"
+    },
+    {
+      "path": "apps/voxel-server/tools/check-supabase.ts",
+      "sha256": "e5c78b2dcd6411285804f8281dc051222df54f4da89a2e3cce4015e6337d6aa0"
+    },
+    {
+      "path": "apps/voxel-server/tsconfig.json",
+      "sha256": "34fa7e7c8c685c6c9c7d3193cec014703177d17cd853b91939d5950db5f23db5"
+    },
+    {
+      "path": "apps/web/index.html",
+      "sha256": "d4f7b33b4ac0fe6745fe4bc9a5ee6c870ffef9cdebf3fbc1d69c68729c3dc8cf"
+    },
+    {
+      "path": "apps/web/package.json",
+      "sha256": "527ede5a3d90b9fdaad59c1aaa338d1c00065975bfa62683be977df0d7509864"
+    },
+    {
+      "path": "apps/web/src/App.tsx",
+      "sha256": "28e1e10f4dddb1cee3776f286764212dc27d548126489a51a84523a808016ef8"
+    },
+    {
+      "path": "apps/web/src/components/AdminFeedbackSection.tsx",
+      "sha256": "cad3b84973de6d0b032ab9c738f41a967980c3cb0d0459f91cfe2a0b617112b0"
+    },
+    {
+      "path": "apps/web/src/components/AdminStatsSection.tsx",
+      "sha256": "18a9328ceba81eab68a3434712f87f12f4b00a47d232c14c9723b786742aaf92"
+    },
+    {
+      "path": "apps/web/src/components/ClassroomAdminExplorer.tsx",
+      "sha256": "10a91fdf5d04654fe63cb29fbcb6fa562121827db52545eec3bcc43e6d931b79"
+    },
+    {
+      "path": "apps/web/src/components/ClassroomCameraRail.test.ts",
+      "sha256": "3cb747b263ec133730dbfcdab70059a31fe75d7f94a6a794307abc1f09fa8026"
+    },
+    {
+      "path": "apps/web/src/components/ClassroomCameraRail.tsx",
+      "sha256": "aa026ba340b94a5f6232285e52bc0cf01785f72990046e1b71ca1b26804415ec"
+    },
+    {
+      "path": "apps/web/src/components/ClassroomPresentationPublisher.tsx",
+      "sha256": "85bedf8f80ecbec81e0a9c709cb6e9dee84d0355075173361fc66472fef7c4a5"
+    },
+    {
+      "path": "apps/web/src/components/ClassroomPresentationReceiver.tsx",
+      "sha256": "9b905f19db5b69770080723008d936294039ce7df9da38a72bf5d1c682d07538"
+    },
+    {
+      "path": "apps/web/src/components/ComposeMessage.tsx",
+      "sha256": "9e8f16360588ec6a6a24886d7d7d931876d95c5543329b1dfc31901bc9dfe698"
+    },
+    {
+      "path": "apps/web/src/components/ErrorBoundary.tsx",
+      "sha256": "1601f523a8646022e46e8a49300b99f0b459f8c0a9dc1a9ebe30309095641d2c"
+    },
+    {
+      "path": "apps/web/src/components/FeedbackModal.tsx",
+      "sha256": "23cc9eee7f679ce969d25e6f0dc0c9c682f778e39d7eac8892b5ae7dadbaa179"
+    },
+    {
+      "path": "apps/web/src/components/FeedbackTrigger.tsx",
+      "sha256": "5b07435c548e2d687e9d36b3b2e4d4f6aa6d86121632163896f8535f8fbf0056"
+    },
+    {
+      "path": "apps/web/src/components/FriendRequestPopup.tsx",
+      "sha256": "d0533e42bec734dd3f84051a0188708d38fb10182f96805f40594053984b83ec"
+    },
+    {
+      "path": "apps/web/src/components/GameSessionInspector.tsx",
+      "sha256": "18431231c26350a4c14eafb209fe2452e7ed74b9c80e25f2172ecbffa707940b"
+    },
+    {
+      "path": "apps/web/src/components/GameVoicePanel.tsx",
+      "sha256": "aea3501d95d347739756112a566f06d3528b6b430f85c7b4217e383c10d9bf82"
+    },
+    {
+      "path": "apps/web/src/components/KidActionSheet.tsx",
+      "sha256": "05034b24e8871e00ee0d27c37de68a564a586794af1e28f5f00c606fa5e9cead"
+    },
+    {
+      "path": "apps/web/src/components/KidAvatar.tsx",
+      "sha256": "2b0e786487613f07fa694b41ffc6baa2f8cf71cbc009d0db9ffa7a5471df6c02"
+    },
+    {
+      "path": "apps/web/src/components/KidDesktopShell.tsx",
+      "sha256": "83b59b6f2e7e0b107e742136deccfd5d7d1d349453de9f26571bfbc7680d8ea0"
+    },
+    {
+      "path": "apps/web/src/components/OnlineKids.tsx",
+      "sha256": "8458d05036454e5c556e552e634481df8efc0788c9dd771632d05716956ce331"
+    },
+    {
+      "path": "apps/web/src/components/PasswordInput.tsx",
+      "sha256": "1d0725b5dfa63849fe9ed2e409a5b5b4cfc04496bd3f0b9e9efb67bb21d1a41b"
+    },
+    {
+      "path": "apps/web/src/components/PendingChallengeBanner.tsx",
+      "sha256": "07563e4b0849b3122f18f1f4d2483a3d70d1f568b4ceaea95b7a9cc600f21c94"
+    },
+    {
+      "path": "apps/web/src/components/ThemeToggle.tsx",
+      "sha256": "497788dc9be779cbd8439c8ab457a8a067b7c688448a3b3f105b985b79bfa47b"
+    },
+    {
+      "path": "apps/web/src/components/presentationViewport.test.ts",
+      "sha256": "e1ab0a60416403509b17cc077f37195217362fd78c800a48d1c42382235bd09d"
+    },
+    {
+      "path": "apps/web/src/components/presentationViewport.ts",
+      "sha256": "c971878d397eebdd96748e20688a38373e17f72e5a2bcfb8510358b351688479"
+    },
+    {
+      "path": "apps/web/src/components/ui/button.tsx",
+      "sha256": "cc7cbc1a2db0ca16df9292bfc8e52bf26548c37a02214755fb9c7c6329535cd1"
+    },
+    {
+      "path": "apps/web/src/context/ThemeContext.tsx",
+      "sha256": "c8b16b41286247684f4619f71a8c9ed53a4993ecaa18a230635e9b58014e74f4"
+    },
+    {
+      "path": "apps/web/src/game/GameSessionContainer.tsx",
+      "sha256": "ce1b06b5101fb3928720d1997ab31359904894185a47827b2b21c57e4de4b30b"
+    },
+    {
+      "path": "apps/web/src/game/MinecraftSessionContainer.tsx",
+      "sha256": "b7c73f01ed2ef1c6403c380bb47fe45b16b2e80cd86466cf046d4f42b8e95204"
+    },
+    {
+      "path": "apps/web/src/game/RocketRoomRoster.tsx",
+      "sha256": "1a636ec6c23596b89d2ab3228bd6077ad36215ff8901b07061d77bce7f4d5946"
+    },
+    {
+      "path": "apps/web/src/game/RocketSessionContainer.tsx",
+      "sha256": "341d3eda68a94d5abec893e9cda0871400ab39ca3627f7d13b09d96b57b3a56f"
+    },
+    {
+      "path": "apps/web/src/game/SessionChatPanel.tsx",
+      "sha256": "6b59129c270f90eb9d14a1844f69a9d48ee6a111b8a34daa8723e29e201e510f"
+    },
+    {
+      "path": "apps/web/src/game/SoloGameContainer.tsx",
+      "sha256": "19e5eeb9dacb569620dd7c381cb75df44ba076489799d0aa237629aa257f66c2"
+    },
+    {
+      "path": "apps/web/src/game/WobbleRematchControls.tsx",
+      "sha256": "55df4ce4356c5066142dc35d89f24cdb7575a64e49de618fcb04b21ca6699e35"
+    },
+    {
+      "path": "apps/web/src/game/WobbleSessionContainer.tsx",
+      "sha256": "391352ac714c2f25de8f4dbc23cc0459cc6d83e41f7481fb2f004338c69ab26d"
+    },
+    {
+      "path": "apps/web/src/game/lazyBoards.tsx",
+      "sha256": "c9460ee299562df38ccf1771bc5be32ada0af90435a851509fd915d57741af2f"
+    },
+    {
+      "path": "apps/web/src/game/legacyWasmTeardown.test.ts",
+      "sha256": "39f30583c5fa34461e32fbaa4cb8c382ca11120584604f13e211be3b6189ce42"
+    },
+    {
+      "path": "apps/web/src/game/legacyWasmTeardown.ts",
+      "sha256": "abe526f635e8a0884739e11ff2dbccc7926bfa41ad2d898b0174440f8009faa1"
+    },
+    {
+      "path": "apps/web/src/game/voxel/README.md",
+      "sha256": "73c119243254930123b3c5198ae933339a829aa266ddde5d1f4723d05fa33e62"
+    },
+    {
+      "path": "apps/web/src/game/voxel/VoxelSessionContainer.tsx",
+      "sha256": "023e26eef055d569a55d1b86dfbc9236790dcf48216711e0a73d3c418ee9212d"
+    },
+    {
+      "path": "apps/web/src/game/voxel/VoxelSurface.tsx",
+      "sha256": "5feb20abef041e93a5b01f15a624209adbce329ad93a05ea8ab3ed63dad587fc"
+    },
+    {
+      "path": "apps/web/src/game/voxel/session-api.test.ts",
+      "sha256": "7b67a5198a3327c7736fb8d547dc69e9a371f2d7ac076566c7e5bc3d7c69d1f2"
+    },
+    {
+      "path": "apps/web/src/game/voxel/session-api.ts",
+      "sha256": "c75ac8b3fb636b94cbd6fe1f85d38884e4e2e5ab6f0e089daaab04cd5ed0c8f1"
+    },
+    {
+      "path": "apps/web/src/game/voxel/session-projection.test.ts",
+      "sha256": "16a11f751ab84c5f39077d6ac709e86284554ab683be9b0afb84801c649cbc92"
+    },
+    {
+      "path": "apps/web/src/game/voxel/session-projection.ts",
+      "sha256": "a527ab1bf14be997a9c667afd1cc289d8178d678ceb98c8d1af6420999f6558c"
+    },
+    {
+      "path": "apps/web/src/game/voxel/voxel-session.css",
+      "sha256": "79072a06ef8eb57045829a2c4b49f23640a6dad0a03b3d2584c6ea6a3ea63a38"
+    },
+    {
+      "path": "apps/web/src/games-solo/AlgesEscapadeSolo.tsx",
+      "sha256": "cdd99dcd09412b3a3f52782d70ffb917a1e05d951ec3394b787b4c3714e7511b"
+    },
+    {
+      "path": "apps/web/src/games-solo/AllColorsInControlSolo.tsx",
+      "sha256": "86d326618be41594ea8303b3c9dc57e18656b8d8103c11fe1970c192bb7536be"
+    },
+    {
+      "path": "apps/web/src/games-solo/Ball2BoxSolo.tsx",
+      "sha256": "335077a582bbd786d8cab0f319012671b0fae4237e4649337119b612db7f60fb"
+    },
+    {
+      "path": "apps/web/src/games-solo/BalloonPopSolo.tsx",
+      "sha256": "2ec618682eb606ba6b974aeff4e93ba862ccc2d782f96f66b6c9ff244a529ff4"
+    },
+    {
+      "path": "apps/web/src/games-solo/BreakoutSolo.tsx",
+      "sha256": "9090ced8a7447c73987462abbff1b11481cba6453294aa1ab74c580d972da10c"
+    },
+    {
+      "path": "apps/web/src/games-solo/ChessSolo.tsx",
+      "sha256": "e58892c7a2e43c734865d8e77cf98ba365517cd9ec7911c0b5c499253e21e95e"
+    },
+    {
+      "path": "apps/web/src/games-solo/ChromavescenceSolo.tsx",
+      "sha256": "6bd190a94f3d57b6a10db4268563df2fdabdd70849625b94d1d82cc32c47ae4a"
+    },
+    {
+      "path": "apps/web/src/games-solo/ConnectTheDotsSolo.tsx",
+      "sha256": "5de83cb4155636d889b120a3e26961175f2720a5bb1e57079b8a5779da108285"
+    },
+    {
+      "path": "apps/web/src/games-solo/DrawingSolo.tsx",
+      "sha256": "2fb21334f661bdde3c8df6ba8bb6dc9c15d1cf2767dbdb0d12d26aeaaea762f5"
+    },
+    {
+      "path": "apps/web/src/games-solo/Game2048Solo.tsx",
+      "sha256": "6b3d0b10e0af3b353568a86795fcf582b6fd374a257475a0f17fd3360ff83b43"
+    },
+    {
+      "path": "apps/web/src/games-solo/GetThatBitSolo.tsx",
+      "sha256": "465de120a64e7f3c328f5bd6ce83e5e78c4d68807c3943ba8ac2ca3d01d76f36"
+    },
+    {
+      "path": "apps/web/src/games-solo/GravvitySolo.tsx",
+      "sha256": "16714c6c355a82b050799e4cab0e5314db6d6ba9de70ed3fb497bab1e628f536"
+    },
+    {
+      "path": "apps/web/src/games-solo/HexGLSolo.tsx",
+      "sha256": "c928d7f6f593b9bf05f6a051a01a99fcc9cf7661a62e1ee1f55e44b41e636efe"
+    },
+    {
+      "path": "apps/web/src/games-solo/OctogoneSolo.tsx",
+      "sha256": "fa12935d3281b8bae463f871c7dc1bc4ba12c8ccaf7f876a92b5e5991531941c"
+    },
+    {
+      "path": "apps/web/src/games-solo/PacmanCanvasSolo.tsx",
+      "sha256": "988ceff5a1d813cc357fa9f3456bee3ceef66dfd45e8924d188c19bb79cae478"
+    },
+    {
+      "path": "apps/web/src/games-solo/SimonSolo.tsx",
+      "sha256": "d2295221c999fcc49471939cd95361e3dd4a02a992595325c83263e35fbe02db"
+    },
+    {
+      "path": "apps/web/src/games-solo/SnakeSolo.tsx",
+      "sha256": "36dd0fd8589c8fd929e472f05c099bc7c0bbbd58ca7caab0038202a6f4dfdccd"
+    },
+    {
+      "path": "apps/web/src/games-solo/SuperTuxClassicSolo.tsx",
+      "sha256": "7853ea61b55ddbb7501d0e29628879d55df646c1b79f0b56ca4050be50759fec"
+    },
+    {
+      "path": "apps/web/src/games-solo/WhackAMoleSolo.tsx",
+      "sha256": "67d888edababd9f5a055445e5e2e8258fe2b98f580d4923a080cfa921d987147"
+    },
+    {
+      "path": "apps/web/src/games/BreakoutMpBoard.tsx",
+      "sha256": "4b7c9308f26e366e5a393b108b68b68972da9a275525c78f7e2136fec2c055b9"
+    },
+    {
+      "path": "apps/web/src/games/ChessBoard.tsx",
+      "sha256": "b850c918911a7791792e2c60c204fbf23f1f300406897bca0c76cbfe9e8772fc"
+    },
+    {
+      "path": "apps/web/src/games/ConnectFourBoard.tsx",
+      "sha256": "48a365074c5a6bbe0fb381cb7c96bfbc9fed6c41898db67e893cef70999daa0d"
+    },
+    {
+      "path": "apps/web/src/games/DrawingBoard.tsx",
+      "sha256": "ba727276394917120dd57fd8b8dc045e41ab80a692f018c4a5f83b99f296ad5d"
+    },
+    {
+      "path": "apps/web/src/games/MemoryBoard.tsx",
+      "sha256": "3213f6435f4e783fac929fa6364a2019e253ab9a19ecb77301d79cde75248ca3"
+    },
+    {
+      "path": "apps/web/src/games/MinecraftClient.tsx",
+      "sha256": "6bb172f035fd0bc21d84c74a26ad2705f684c16e3141a7bfafb71eda8c04c46f"
+    },
+    {
+      "path": "apps/web/src/games/TicTacToeBoard.tsx",
+      "sha256": "4fa51c4f080788c4d9ffb5c7c3f1d8882c889e2871fc131ed6eecfefd6139c57"
+    },
+    {
+      "path": "apps/web/src/games/chess/chessEngine.test.ts",
+      "sha256": "dc16e23ac4fdfb85d6c2c4b76f1ea69a9f8d3edcdd9c54d5b3a081f2c8cde61d"
+    },
+    {
+      "path": "apps/web/src/games/chess/useStockfishEngine.ts",
+      "sha256": "ee722f4f7ac42ef816d2e9c2b2b6dade9762260482cf11f69fabbe52fc60f129"
+    },
+    {
+      "path": "apps/web/src/games/chessCburnettPieces.tsx",
+      "sha256": "e3127e4d9bff195938286cf63d62495466899a4ef68b0b68c30b36ebb4e27b1e"
+    },
+    {
+      "path": "apps/web/src/games/chessSounds.test.ts",
+      "sha256": "830f13a0196cfa386640df3396a25f6f989227d030c8f10fb2cfba4405e7bbcd"
+    },
+    {
+      "path": "apps/web/src/games/chessSounds.ts",
+      "sha256": "1ba35956fede75814adda13aae46e51fd672db074d1ec51179690fd1bcc88943"
+    },
+    {
+      "path": "apps/web/src/games/drawing/DrawingBoard.tsx",
+      "sha256": "b06ea88a9e60a5d038e5627462cafef3f53db4999fa587cd4a0e743e99f2922a"
+    },
+    {
+      "path": "apps/web/src/games/drawing/DrawingCanvas.tsx",
+      "sha256": "75da51e34eaea91d14ea20bdda158b5d78c973bd5fcb8c3ea183636678ec576f"
+    },
+    {
+      "path": "apps/web/src/games/drawing/drawingImages.ts",
+      "sha256": "497e7c18bd090e009d68452b2a54702900975ba4009ab4a0523622a4ec2ac970"
+    },
+    {
+      "path": "apps/web/src/games/drawing/drawingMode.ts",
+      "sha256": "d8f1dff4fb2862673e09b455fef93b93d7351612a28e0d1628e8da7cb03df1ff"
+    },
+    {
+      "path": "apps/web/src/games/drawing/drawingSync.ts",
+      "sha256": "8df9256f6ef4ec657748285fe63a1ea42e97bbde517bbf2dd330aece8388e914"
+    },
+    {
+      "path": "apps/web/src/games/drawing/drawingViewportSync.test.ts",
+      "sha256": "10fbe1e35a9fa7a2fac8a269623136b8bcee2f7f24ff7eae935770fb7cb12b3d"
+    },
+    {
+      "path": "apps/web/src/games/drawing/drawingViewportSync.ts",
+      "sha256": "fbc782b1eb235077bf401ede33528e545eba0a4c7252433e9ae15a59d91bf7e8"
+    },
+    {
+      "path": "apps/web/src/games/drawing/localDrawingPersistence.test.ts",
+      "sha256": "aeed1305247c8c91c81951c48aa04eb0080510cf7d7c1811242bef6e887f3f8a"
+    },
+    {
+      "path": "apps/web/src/games/drawing/localDrawingPersistence.ts",
+      "sha256": "2cc26b84d60f227a80f85510fe69f8a5d9a3f81867850b1cfd2fb9de7da38b7d"
+    },
+    {
+      "path": "apps/web/src/games/drawing/yjsSyncHelper.ts",
+      "sha256": "79f4067557df5454aaddbdcce29a1d47e4d29c424e4b686c9ecb1209ca37043f"
+    },
+    {
+      "path": "apps/web/src/games/minecraftSurvivalHelpHe.ts",
+      "sha256": "b5830b7d777b3191b7cbe3a7884952b793a38594e504594dca9f3bfb400b01e3"
+    },
+    {
+      "path": "apps/web/src/games/voxel/audioManager.test.ts",
+      "sha256": "94d4193894749cff0e5e7954dade2372d3924d75e914fa6ad1094c962a44e35a"
+    },
+    {
+      "path": "apps/web/src/games/voxel/audioManager.ts",
+      "sha256": "a0cf325f3dd8b124a4b168de62abb7b1f7386a15419fb826ae1debe3b9fa1a8f"
+    },
+    {
+      "path": "apps/web/src/games/voxel/breakCrackOverlay.ts",
+      "sha256": "de0dfd5310961bbb26d089bd7671beb567b1955900bd15f59467aa568f770b52"
+    },
+    {
+      "path": "apps/web/src/games/voxel/heldItemView.test.ts",
+      "sha256": "e584a713aff09682d7f3538e77ff13b7c5a5d343d4fbb2bc4ec16ee8ff00b976"
+    },
+    {
+      "path": "apps/web/src/games/voxel/heldItemView.ts",
+      "sha256": "e621c71df50bdcc1530e0e9ef31d83637979f5cf4ce9c502175293a19c43391d"
+    },
+    {
+      "path": "apps/web/src/games/voxel/hud/BlockHotbarHud.tsx",
+      "sha256": "b9727f92dfe7726c1c9ddb94b54f255979570f573a1be585d35882f498a39e4b"
+    },
+    {
+      "path": "apps/web/src/games/voxel/hud/ChatOverlay.tsx",
+      "sha256": "530a7b1a3bb3c28fdff3ead3d9826a3c2fe11372450d10c12ca11ba01cbd4ef3"
+    },
+    {
+      "path": "apps/web/src/games/voxel/hud/SurvivalVitalsHud.tsx",
+      "sha256": "ae2a095f04211e3b8eaebba74e1fccef81cbd8ec00ec057f098b16fcb838ea48"
+    },
+    {
+      "path": "apps/web/src/games/voxel/hud/TeacherDashboard.tsx",
+      "sha256": "2fca26133765fc60524a52d42e3b3395f001157e3d00fc0a87e8564eb9a95cc2"
+    },
+    {
+      "path": "apps/web/src/games/voxel/hud/VoiceWidget.tsx",
+      "sha256": "4fbd15115cad3e3ec9c48e5fe510223eca2ef5d1934479a8557b444af77938a7"
+    },
+    {
+      "path": "apps/web/src/games/voxel/hud/hudConstants.ts",
+      "sha256": "c88a1dda4a2af15a75e3e04e157852f8b233284de3b7281121bb3edc9c86e713"
+    },
+    {
+      "path": "apps/web/src/games/voxel/hud/hudUtils.tsx",
+      "sha256": "e2015c1212d4fdcfb00d4217ac552bce87e8727764ad1108006be14ac8fe5cef"
+    },
+    {
+      "path": "apps/web/src/games/voxel/movementConfig.test.ts",
+      "sha256": "2aee592acdd0aed047f3907f8422b55f242deeaa953cc3bb94fe67be3f235843"
+    },
+    {
+      "path": "apps/web/src/games/voxel/movementConfig.ts",
+      "sha256": "8f1f4f90a4916b79a7a3d61a32e9bf393df774d43962eafdd29958b38f7268bd"
+    },
+    {
+      "path": "apps/web/src/games/voxel/noaVoxelVisual.ts",
+      "sha256": "e4aaab1018374459e1f1119779f4586b5c20fa0688ac443fa6e320ab2818bed9"
+    },
+    {
+      "path": "apps/web/src/games/voxel/voxelAvatarAnimation.ts",
+      "sha256": "053938acf8a2d5d8a552da1e0bb6d94d6393fb69ea96235b0ef64b3aaa3168e6"
+    },
+    {
+      "path": "apps/web/src/games/voxel/voxelEntityCatalog.ts",
+      "sha256": "99bc9bf0417621fc7f3abf2a31dd97c4a4e8bc58bb68ed70dc1922507dccbaa5"
+    },
+    {
+      "path": "apps/web/src/games/voxel/voxelJsonModel.ts",
+      "sha256": "b10eec4b465dfe919f065ae6264579ca48d5172d4cffc9e8c2dc19c2d7d49e59"
+    },
+    {
+      "path": "apps/web/src/games/voxel/voxelObjectMesher.ts",
+      "sha256": "125e1362b0cd1f6a6e36ded41651296eb811d2b0d1a0c18d841b4df5ea860bfb"
+    },
+    {
+      "path": "apps/web/src/games/voxel/worldgen.worker.ts",
+      "sha256": "45e2a7d2f0a6ce3e25283304f30ff5de2ec345a2ec2bf7ba17013faab00ad3db"
+    },
+    {
+      "path": "apps/web/src/games/voxel/worldgenPool.test.ts",
+      "sha256": "12c35c8c9b684df37b45fa67887cc68d67ad5dc9d49fa7d2ea42de3007621bed"
+    },
+    {
+      "path": "apps/web/src/games/voxel/worldgenPool.ts",
+      "sha256": "93b7e170176889f50c5c1259b9630beb13ccef8d1d42c5559b81b208043cfcc1"
+    },
+    {
+      "path": "apps/web/src/hooks/useAuth.tsx",
+      "sha256": "de5c161641d3a6cc6218148daec7aee60392037489127072de72df32ef384927"
+    },
+    {
+      "path": "apps/web/src/hooks/useFriendships.ts",
+      "sha256": "da60fe11ced23ab61c22c326c78879ed7c001984ece96d0f6f733d81aa5f4e63"
+    },
+    {
+      "path": "apps/web/src/hooks/useGameVoiceChat.ts",
+      "sha256": "38a7bd2d13e5d991ce30a5b16e51a14b7fb8463500b1d7ff877c8a9b3bc3ddfb"
+    },
+    {
+      "path": "apps/web/src/hooks/useInbox.tsx",
+      "sha256": "86881cdefbbfd0b4dd2efbefb91b9802cdcf572458dd1a43eaacb9e9e776e5df"
+    },
+    {
+      "path": "apps/web/src/hooks/useIsAdmin.ts",
+      "sha256": "9b626b36b16f2ebb858a8fa58a7ec2463213d285712007f4e62026fa09f8ce73"
+    },
+    {
+      "path": "apps/web/src/hooks/useLiveKitProximity.ts",
+      "sha256": "72b9086fd4fccbe3a2130fcce069757c2f5e0eaad4c1d73f7720232876b69bd5"
+    },
+    {
+      "path": "apps/web/src/hooks/useMyPausedGames.ts",
+      "sha256": "70b307b8605e34e1b35399a45932bfb9d0b2216bfc9a7fad64656e46852cfd01"
+    },
+    {
+      "path": "apps/web/src/hooks/useOnlineKids.ts",
+      "sha256": "1b7fb03c430e51e1d66fb78f0b2cf5ebc8faaf225d364187cfe8c2943549142b"
+    },
+    {
+      "path": "apps/web/src/hooks/useOpenGames.ts",
+      "sha256": "35afa7a3e03dd7e96f88e5a817c0cc0d3ddfcc27b9688bf4dd073433f6c82af5"
+    },
+    {
+      "path": "apps/web/src/hooks/usePendingChallenge.ts",
+      "sha256": "06f50b2f1e652a39ee09028210bfc2be1ee2cca642bdc557741ef61c14cf4c86"
+    },
+    {
+      "path": "apps/web/src/hooks/usePendingFriendRequest.ts",
+      "sha256": "e0fe238bcb1f00a3b6835995cd106b099629474d14c26ee61af9346e64f8b9fe"
+    },
+    {
+      "path": "apps/web/src/hooks/usePersistedSessionChat.ts",
+      "sha256": "4f5958b8b2ef27e80cd1d9da33054cbe8ac81ec98f04d2a0bc449df7fa1757c0"
+    },
+    {
+      "path": "apps/web/src/hooks/usePlaygroundAccess.ts",
+      "sha256": "2db45eb5335b56f53f83ee36e6b00bd7d5b2179373c51d2a711e2079546f27b7"
+    },
+    {
+      "path": "apps/web/src/hooks/usePlaygroundUser.tsx",
+      "sha256": "78d26ffca6c80fb2cefa40d072a98e49bbc5ef7d434e3776c0f5aff6e30ec70c"
+    },
+    {
+      "path": "apps/web/src/hooks/usePresence.tsx",
+      "sha256": "97f163244b86d1e72159a2bb7c28f2ee7c03b1a233070a8cc65a9ff9d032b6b2"
+    },
+    {
+      "path": "apps/web/src/hooks/useProfile.ts",
+      "sha256": "304ec00500a6e1841cb0d2f105b0bb52c098300a4785f04c1350dc08e21dbfd4"
+    },
+    {
+      "path": "apps/web/src/hooks/useRocketSession.ts",
+      "sha256": "dc6e382cf66e76912cd5e834bef53fe5babb2e2f57ae408214a2ab426cf2c628"
+    },
+    {
+      "path": "apps/web/src/hooks/useSoloAutoSave.ts",
+      "sha256": "1dae0fd173f8a025b5fc249f0b073f99c22ce9b41c459d00fbb5d0e9e327145d"
+    },
+    {
+      "path": "apps/web/src/hooks/useTeacherSessionChat.ts",
+      "sha256": "775f7718ea95221032dd64b58a2fa9e37ae736888ac65485ba880e31a9e4eda1"
+    },
+    {
+      "path": "apps/web/src/hooks/useVoxelSocket.ts",
+      "sha256": "b39d5333e55601eaf0bcf36a494d361c824080d494a4b2704578ef3c466b8fb3"
+    },
+    {
+      "path": "apps/web/src/hooks/useWobbleSession.ts",
+      "sha256": "906657652eee02a3e10108f6fd35cb2caaffe523e343508da52df6c3d16dd667"
+    },
+    {
+      "path": "apps/web/src/index.css",
+      "sha256": "46e69cc5348bfb4d59b7d89d6eef323b21469f25d1e031fc361db81934b199b5"
+    },
+    {
+      "path": "apps/web/src/lib/adminStats.ts",
+      "sha256": "54f1e7a8c5acdd884a8a09bb7bb80933ff957f9d4b1e4d9fd1b0cc3dfcc4885b"
+    },
+    {
+      "path": "apps/web/src/lib/challengeApi.ts",
+      "sha256": "f1bd5eadff97fe4c3563a5020d01378ccc82514e538d44e7e5282cda85d9e406"
+    },
+    {
+      "path": "apps/web/src/lib/classroomActivityTime.test.ts",
+      "sha256": "5dc60bae57e4a8720af03eba2f3808931254233edb558c29f77d0ae8717f8ee1"
+    },
+    {
+      "path": "apps/web/src/lib/classroomActivityTime.ts",
+      "sha256": "33c02c4997f008a2fbdfe4b22dcb9fe0170eda2cc9f6ba8306bbf96c0b07eaa1"
+    },
+    {
+      "path": "apps/web/src/lib/classroomChatStorage.test.ts",
+      "sha256": "0d0278642f19160172c014d1d39047618ad456041059f3205727d1cd16092c7e"
+    },
+    {
+      "path": "apps/web/src/lib/classroomChatStorage.ts",
+      "sha256": "f75c5b0b72b90a2b43c42e804c1aba8017e61092091baa67a64813fa8dd73ebc"
+    },
+    {
+      "path": "apps/web/src/lib/classroomDrawingViewport.test.ts",
+      "sha256": "f71ea069f8f6cfe09f28caf95d14db8f995d136f1e3e6e491166b4ed70b18bd1"
+    },
+    {
+      "path": "apps/web/src/lib/classroomDrawingViewport.ts",
+      "sha256": "78ff14ddd41cb6f62fa5a60fa165e18dac631b24f382b153ed9bda0eaa5ee37c"
+    },
+    {
+      "path": "apps/web/src/lib/classroomHands.test.ts",
+      "sha256": "2bbac1082f6ba01041589d46d8cf17fd25c5a1d0742f4b3718e3b564ecb989bc"
+    },
+    {
+      "path": "apps/web/src/lib/classroomHands.ts",
+      "sha256": "669a9a651482e727798f850ba93824ad805a4f0eee3c2d97ac8886231fa1d7e0"
+    },
+    {
+      "path": "apps/web/src/lib/classroomLayout.test.ts",
+      "sha256": "f4b854657f29a04d8142a0aacf1b9cd4805641b14c3675ddc6490e6f71d108a6"
+    },
+    {
+      "path": "apps/web/src/lib/classroomLayout.ts",
+      "sha256": "0948044d5e50fdefb8dcb667f26bf8eda44649638d9c6f4829a8a462076e6d5f"
+    },
+    {
+      "path": "apps/web/src/lib/classroomLifecycle.test.ts",
+      "sha256": "f647064f9712fc0a9cd49dd6225064fa4bdaabb911d8184f275387dc093ab01c"
+    },
+    {
+      "path": "apps/web/src/lib/classroomLifecycle.ts",
+      "sha256": "f01a6b62e2022b5dfceb0e1f12bbef3b9e84a02e322a78508a3233949022389c"
+    },
+    {
+      "path": "apps/web/src/lib/classroomMediaLibrary.ts",
+      "sha256": "02f6f1486bbc3f6f9af98f189260454ca4ed0d7d9d058fbf80e9e6e31ea9a44f"
+    },
+    {
+      "path": "apps/web/src/lib/cn.ts",
+      "sha256": "d1f1e0d62cb8d8d1e04c26e14de842d8a151f75812d81b046c65b5d1fe8e4b27"
+    },
+    {
+      "path": "apps/web/src/lib/drawingSessionScope.test.ts",
+      "sha256": "0cccd554fee944d912fcdacd6ec32add7517052699f7e7cad3e0a6259cad97d2"
+    },
+    {
+      "path": "apps/web/src/lib/drawingSessionScope.ts",
+      "sha256": "3f8d221796a7b0c19e3878f81a9962cf02dec984c2b6297b8c8203b17b43976d"
+    },
+    {
+      "path": "apps/web/src/lib/fieldStyles.ts",
+      "sha256": "9ad91821fe88b211dd5b8a0d89e0e8c6c4314fc0d74c7357a03279098bd01b14"
+    },
+    {
+      "path": "apps/web/src/lib/friendsApi.ts",
+      "sha256": "364488e7e9bbfc7733c8ca21741936bab287f36e587376afbfc31c72641c96c9"
+    },
+    {
+      "path": "apps/web/src/lib/friendsDeprecation.ts",
+      "sha256": "ac1231833ad81591e3c6e95d4e506688d22903291fa8dbea03a5f93e701c2875"
+    },
+    {
+      "path": "apps/web/src/lib/lazyImport.ts",
+      "sha256": "3089f74c116ebad2832d0bda824193d74caf0454cf56325b4d8fd399b41476ea"
+    },
+    {
+      "path": "apps/web/src/lib/messagesApi.ts",
+      "sha256": "5cf71c8136cf00064e876126ee112e35ee2a8fae652557c1f62ba88003034b26"
+    },
+    {
+      "path": "apps/web/src/lib/pausedSessionActions.ts",
+      "sha256": "1630bcac5402d27813c41647d14385387e19e9992ebc48a46f96f15ff19eac7c"
+    },
+    {
+      "path": "apps/web/src/lib/profileApi.ts",
+      "sha256": "98cb064edbb74e1a10278f0255b959a5eb0748a36e9e16d1cc52e875009ac93d"
+    },
+    {
+      "path": "apps/web/src/lib/recess.ts",
+      "sha256": "e3330b4fa5de4300a4e20f26d7fcaaf0d8435c3de6239454610545c7d2252f4c"
+    },
+    {
+      "path": "apps/web/src/lib/recessAccess.test.ts",
+      "sha256": "b39961a6c9bd359a9e6128718136ac6d3e5039a04ddd2f0daa93dccf94eb6892"
+    },
+    {
+      "path": "apps/web/src/lib/recessAccess.ts",
+      "sha256": "8592e3f4be72d149a008500b4ce72e9efc1e361e2b49f2c991b27d053641d742"
+    },
+    {
+      "path": "apps/web/src/lib/rocketProtocol.test.ts",
+      "sha256": "b30d47d4792a429d35eb6ffec79b4feeca52c11ec26a7b2d86b5fe6bd2f9fea6"
+    },
+    {
+      "path": "apps/web/src/lib/rocketProtocol.ts",
+      "sha256": "3f543199347cbba1ec672f6f8d4766dfadde9f0869ef729ea074764cc15b242c"
+    },
+    {
+      "path": "apps/web/src/lib/sessionPresence.test.ts",
+      "sha256": "696b16fbc88b03edc7510acdcc5764105b7b5c47513e993b384522b8a58e966f"
+    },
+    {
+      "path": "apps/web/src/lib/sessionPresence.ts",
+      "sha256": "465391f3bb324c89dd1283822d8c0090b74c7c9df593b457be074e1fb32abdb2"
+    },
+    {
+      "path": "apps/web/src/lib/soloDrawingDraftStore.ts",
+      "sha256": "4162776b22adbd23e1ef70d0bae4a2443c1054d2f1580724a5a0227147be2775"
+    },
+    {
+      "path": "apps/web/src/lib/soloGameSaves.ts",
+      "sha256": "f0b720358b0443c31caa51cec5dc9a80843798c64fd9100011065bb0ad4770da"
+    },
+    {
+      "path": "apps/web/src/lib/supabase.ts",
+      "sha256": "799e39d5027008dce97e80dbfeab9f2e56d837f58504fbcb3cc0c0133cc49e0e"
+    },
+    {
+      "path": "apps/web/src/lib/teacherSessionFilter.test.ts",
+      "sha256": "df945abcc160c5fa9fc4bdb112fb1f420ddb4049c9ad796b5e1d699339a35740"
+    },
+    {
+      "path": "apps/web/src/lib/teacherSessionFilter.ts",
+      "sha256": "c703022bdc5309e1313a43b72ec3d7aba6bff00557a292cf72cd925d1d8a608d"
+    },
+    {
+      "path": "apps/web/src/lib/username.ts",
+      "sha256": "d7aee3adc6996f84b7bae2981198885e6497af10e1bc4fe669ad28147e613472"
+    },
+    {
+      "path": "apps/web/src/lib/voxelCraftingPreview.ts",
+      "sha256": "a09e2c78b8dc85f601e0790743dff85f50586eb5a85bc7033a510b158e52f537"
+    },
+    {
+      "path": "apps/web/src/lib/voxelProtocol.ts",
+      "sha256": "b03d1d756921f453f2b0a1dcfbafdc26afd5a8c1df5aadfe5221d18da4c54b5f"
+    },
+    {
+      "path": "apps/web/src/lib/voxelRuntimeUrl.ts",
+      "sha256": "21b463c1a207af79406532f147e3a45007ae1db4bc842e06e13b2bb0dfc00340"
+    },
+    {
+      "path": "apps/web/src/lib/voxelServerUrl.ts",
+      "sha256": "dba103df9f37a356c6ec26edcbc1d3535487669fda73c4355bd8bac22dbf15f2"
+    },
+    {
+      "path": "apps/web/src/lib/wobbleProtocol.ts",
+      "sha256": "144930f8fb32b592fca5231846d6144b9123c68818b0fb556dbd92c6abe4c15d"
+    },
+    {
+      "path": "apps/web/src/main.tsx",
+      "sha256": "dcdde3be03422e612414fb5c8b4f825412963ea9d9b60551ba5b581a7a0c499e"
+    },
+    {
+      "path": "apps/web/src/pages/AdminPage.tsx",
+      "sha256": "55add88e792d4c531d6d42f452c3c907a2a48320a6692176cedaf185d4275579"
+    },
+    {
+      "path": "apps/web/src/pages/ClassroomEndedPage.tsx",
+      "sha256": "a30768164002b91da3f1abc2725cdbadb82c6fd26caeca23c502ce7117a10973"
+    },
+    {
+      "path": "apps/web/src/pages/ClassroomPage.tsx",
+      "sha256": "7503040ff0440414b665327f5426525c2bb906b8d426734c9f18f41e10197e68"
+    },
+    {
+      "path": "apps/web/src/pages/FriendsDeprecatedPage.tsx",
+      "sha256": "32db5affecf1dc4850486f8414d2407484b5f03dd686f5efde7a69e092b8bd13"
+    },
+    {
+      "path": "apps/web/src/pages/FriendsPage.tsx",
+      "sha256": "52ec1d7c62abb6fe735ef78986a9c5d3329f4e49820bb79ecd87369ed2df6ce1"
+    },
+    {
+      "path": "apps/web/src/pages/HomePage.tsx",
+      "sha256": "13b2f8438e6462425d0b46873b72f8526c59283ef710fe4b4f9fb67cbd41b85e"
+    },
+    {
+      "path": "apps/web/src/pages/InboxPage.tsx",
+      "sha256": "c9484cd797696e11ed46c8facb5f42bff0dd7e542429bc6c6bab1fd89a76d8cb"
+    },
+    {
+      "path": "apps/web/src/pages/JoinByCodePage.tsx",
+      "sha256": "fda687fb78f9258673fef51870b77d5f4558593af5cb64f5068959aca628c892"
+    },
+    {
+      "path": "apps/web/src/pages/LoginPage.tsx",
+      "sha256": "792c8ebd83c00864406cc099667e007759b01a6265c8633c4ed0b82e4a0b742d"
+    },
+    {
+      "path": "apps/web/src/pages/PlayPage.tsx",
+      "sha256": "ea78bedd64e9b9f3b7eb038aa5f2cab9072e49744e7deb3f99059b30c70dab31"
+    },
+    {
+      "path": "apps/web/src/pages/ProfilePage.tsx",
+      "sha256": "d846bbc89b8529820a52b4e0b78d13ddef4f756167f0b5616e7ac437f2dddb36"
+    },
+    {
+      "path": "apps/web/src/pages/PublicProfilePage.tsx",
+      "sha256": "34d763d80ad56e8ad79e9957309c0c36405696728ccfc574e70a0229f90d3c1f"
+    },
+    {
+      "path": "apps/web/src/pages/TeacherPage.tsx",
+      "sha256": "f87322e303a0d987a8b07fb56bbe6d059719042427df76e1d59dbfa9379809d9"
+    },
+    {
+      "path": "apps/web/src/utils/correlation.ts",
+      "sha256": "5d270cc472dbc1f9e070b88b226fa3b0dedd199b08d02cbf5f9f7e3a2b478c85"
+    },
+    {
+      "path": "apps/web/src/utils/diagnostics.ts",
+      "sha256": "d3b4b6418ea58400d5ba2bae5a0008bfc039d5abfd3f85bb81a79ebaceb1bcae"
+    },
+    {
+      "path": "apps/web/src/utils/telemetry.test.ts",
+      "sha256": "3b9a98c7ea28f1efc2482cff5f74487bd2609ee9e4e8400168419e2932653d2d"
+    },
+    {
+      "path": "apps/web/src/utils/telemetry.ts",
+      "sha256": "8a9b3732589899ced1cde587d1f332b52ef44e424b3906239f53f687b7f76ada"
+    },
+    {
+      "path": "apps/web/src/vite-env.d.ts",
+      "sha256": "7a8bc08ded0719cc5061752d8a55972ab1c8495abcf4e6911a8141d40191a42e"
+    },
+    {
+      "path": "apps/web/tools/voxel-react-browser.ts",
+      "sha256": "889b30ca0cdccd232dbc73aa8aff8b6e99de0129260de5b066483a95586cfbcc"
+    },
+    {
+      "path": "apps/web/tsconfig.json",
+      "sha256": "2f2013d26c870bfd271aa9d8eec40a9435c89e3f23a485ef9780885129cdcec7"
+    },
+    {
+      "path": "apps/web/vite.config.ts",
+      "sha256": "6792ee717c862058ff138dd979df47c49ad50fd2722e720e4e2d36438c80d640"
+    },
+    {
+      "path": "docs/adr/002-voxel-native-websocket.md",
+      "sha256": "832c836308d94fcffe7259d253de6b6f9700e45b78c5016722d3b0b641440778"
+    },
+    {
+      "path": "docs/voxel-runtime-rewrite-progress.md",
+      "sha256": "ffe9d1adc294ffd8bd9d4cdc7c5af4ca15925e8ab4487cb384eaad090748e5e2"
+    },
+    {
+      "path": "docs/voxel-runtime-rewrite-proposal.md",
+      "sha256": "685a37d6492bc284eae2b6618e713133a4c8436a64fae853b131508de529c2ac"
+    },
+    {
+      "path": "games/voxel/LICENSE",
+      "sha256": "4c89ee97bee29e2bd7dcd9567a06c1fee5fb8ab7c5c35ca4a153543524b6f07f"
+    },
+    {
+      "path": "games/voxel/README.md",
+      "sha256": "579e999fc2076474c2da2daadfd12b7ab0b9db9ccb510ac72a1b2fa53fd5ccce"
+    },
+    {
+      "path": "games/voxel/UPSTREAM.md",
+      "sha256": "f3b2aace3c043fe80f259938bca0ae7fc242357df51a03ff7062bd5437894bb7"
+    },
+    {
+      "path": "games/voxel/content/availability.ts",
+      "sha256": "d754150797d63c9cef758df559e1b60d1101f5cd9f6b0903e10ddfd1878246d2"
+    },
+    {
+      "path": "games/voxel/content/building.ts",
+      "sha256": "17060999c435f365196f55496ab65aa790e9c6f9bb132cb256fd822b228aadf1"
+    },
+    {
+      "path": "games/voxel/content/disposition.json",
+      "sha256": "87f7ddbfee48f7981fa7859e23720e8f02e5547a4511caaadf7524b6e724422a"
+    },
+    {
+      "path": "games/voxel/content/helpers.ts",
+      "sha256": "d98a5bcb8f6e3261c75d7a3d09f06c33556e71ac4be070dad750465b96a3f10b"
+    },
+    {
+      "path": "games/voxel/content/index.ts",
+      "sha256": "7eb57f7ceb440136ff112b7228adcebfd9a07eae58bd4e53881be2ceeb98fa76"
+    },
+    {
+      "path": "games/voxel/content/legacy-inventory.json",
+      "sha256": "e303c3b100db96a2af847726d13ec1d0a4802af9fe8518456df31586e818763c"
+    },
+    {
+      "path": "games/voxel/content/progression.ts",
+      "sha256": "9f69ff4345d6ff5257998a9cd56cd8450e4f4ac56fd14ed48092aa784cd3566c"
+    },
+    {
+      "path": "games/voxel/content/texture-layers.json",
+      "sha256": "65faced3a69a67fe9f1f62830c43c2b5b64c070fea9e0d5b98ce81592058a6f6"
+    },
+    {
+      "path": "games/voxel/docs/avatar-appearance.md",
+      "sha256": "5ba7d1930f07c62cc86b5b3268329cd37e6883bcbb79ba27dc8bbe66dc11e023"
+    },
+    {
+      "path": "games/voxel/docs/checkpoint-state.md",
+      "sha256": "9a12938a820aa8528ce4ff506911fcbf8a3f9f01d3788fde788fae70fc9a95d2"
+    },
+    {
+      "path": "games/voxel/docs/combat-rules.md",
+      "sha256": "34cb70d8f04aa3cb5fa90263825b7e78358d5961fdb5109fc00e62b47ce21446"
+    },
+    {
+      "path": "games/voxel/docs/content-progression.md",
+      "sha256": "ab9e655c0506a3f3e2794ade5d38acf5b04eb88c2c67997aeead81f09ea788b6"
+    },
+    {
+      "path": "games/voxel/docs/equipment-rules.md",
+      "sha256": "3cbd265e6531fd173e440037a2b06cabfd3510cf77cc4fb9537814d1922cd3f6"
+    },
+    {
+      "path": "games/voxel/docs/explosive-rules.md",
+      "sha256": "35a0c1eed64824c9e84e08498c8d2a9082014a6475899c633b189b572a6e58ff"
+    },
+    {
+      "path": "games/voxel/docs/room-lifecycle.md",
+      "sha256": "e4340bdbd0d29f71c8753295b6b0030d2049e291e72c10d073b4d49c6933e7ec"
+    },
+    {
+      "path": "games/voxel/docs/survival-rules.md",
+      "sha256": "80466e2b5df92094cf5ebbcda622b953fdb38c56bba6e56158a207476b4546e5"
+    },
+    {
+      "path": "games/voxel/engine/Cargo.lock",
+      "sha256": "95c5d9290ae14570e949b2cc3a6b13048503279423099313ad34023acaacd479"
+    },
+    {
+      "path": "games/voxel/engine/Cargo.toml",
+      "sha256": "c39b7dd9eb1e2efb24b1874b6f3c310fb8944722109fcca052c31bbfcfe8982a"
+    },
+    {
+      "path": "games/voxel/engine/LICENSE",
+      "sha256": "4c89ee97bee29e2bd7dcd9567a06c1fee5fb8ab7c5c35ca4a153543524b6f07f"
+    },
+    {
+      "path": "games/voxel/engine/src/blocks.rs",
+      "sha256": "7ec09fe0dfcabb8e224e3367475a623197814c44350756127b85b038bb8667c2"
+    },
+    {
+      "path": "games/voxel/engine/src/cull.rs",
+      "sha256": "4d2a7d284afbe5a3bd729cfc3db96d52249ac244ecf9242edde1bb6d048bdfa3"
+    },
+    {
+      "path": "games/voxel/engine/src/damage.rs",
+      "sha256": "a3e821f81e33a67066ddda4bc77077b85a16cd28957996fb953dd57c2cb94c1a"
+    },
+    {
+      "path": "games/voxel/engine/src/entities.rs",
+      "sha256": "11676a5179be78dd834425a78ee3a8e932a61bb84e7f4bc6788f9c2c18ad193f"
+    },
+    {
+      "path": "games/voxel/engine/src/entitytex.rs",
+      "sha256": "6a9b140af7a84925b8101393a84cb9d47ecebf7f3fc1e2e03990ae4f42d5300c"
+    },
+    {
+      "path": "games/voxel/engine/src/formats.rs",
+      "sha256": "5609c43dc1a72342aaa94ed61c8230a80d159d18ff343cd33ae7a6033bec03fc"
+    },
+    {
+      "path": "games/voxel/engine/src/gen.rs",
+      "sha256": "1b2aea7ca673f3a9bc127bc8bbf2e13e88fec624efa050a11f9e8aa4dc422cfc"
+    },
+    {
+      "path": "games/voxel/engine/src/json.rs",
+      "sha256": "899ac70a7bcfe3c7884d39f5928d2588e0cbb2905ffca6194a47ff87bb19d704"
+    },
+    {
+      "path": "games/voxel/engine/src/lib.rs",
+      "sha256": "b73939ec0b52f61975da30552b75269636bfcc99542a5ed4a712012a43a4f01f"
+    },
+    {
+      "path": "games/voxel/engine/src/mesher.rs",
+      "sha256": "a39ca4f0c42a3cf086ec329b86dfa0c614b963f31f828b5fb33fc7bf01aae780"
+    },
+    {
+      "path": "games/voxel/engine/src/movers.rs",
+      "sha256": "2b271360c0c701b11d7a41b28f983616e665919a21983e1ac05fc1edaab2fc01"
+    },
+    {
+      "path": "games/voxel/engine/src/noise.rs",
+      "sha256": "11c293fb988cd355efb153972914f597d7c088d6ccb5c961fbfe62181782c466"
+    },
+    {
+      "path": "games/voxel/engine/src/noisetex.rs",
+      "sha256": "368256f94fbd74146a65364b38bcee22630f654d1b31eae76968dd438fdaa513"
+    },
+    {
+      "path": "games/voxel/engine/src/shapes.rs",
+      "sha256": "2bc4d554009240683d7731792fe5ca738ff1f8f1b91df84772fb01a30f099551"
+    },
+    {
+      "path": "games/voxel/engine/src/state_width.rs",
+      "sha256": "4aa4ac8f12fd2ce83797a4fe7b88849c8ac3dd79ec4839969ad8726e4746c0ab"
+    },
+    {
+      "path": "games/voxel/engine/src/testutil.rs",
+      "sha256": "b045762fc131d14ae2024dd20782027e79fea54e8a64f60f46e145ec7bc489fa"
+    },
+    {
+      "path": "games/voxel/engine/src/texgen.rs",
+      "sha256": "0fdb3764339c65d7593d45b74a497672d3e232e81e560e703cb7d9f1dac05d6f"
+    },
+    {
+      "path": "games/voxel/engine/src/world.rs",
+      "sha256": "7315169f7aad3977a140fe4fe53a35c5dad7de3ce6310ae659b69c00cd0c10a0"
+    },
+    {
+      "path": "games/voxel/index.html",
+      "sha256": "dba6e114b79c88820709640f4c0079745db763b03b96b3e507f753a9ee141e61"
+    },
+    {
+      "path": "games/voxel/package-lock.json",
+      "sha256": "8f291cbe2b0130c7b28c738c476684f9326d8b8682f3e95dad0a96b87d635f56"
+    },
+    {
+      "path": "games/voxel/package.json",
+      "sha256": "a0e5aff1a7f21df7aef0fb6d1c0df3e5daa772f9f20096f1ff0cb81946702de6"
+    },
+    {
+      "path": "games/voxel/src/client/assets.d.ts",
+      "sha256": "417a1e13efdd3daf20309c7097a2df58a7170c83c76f3c98edd3e2842209d376"
+    },
+    {
+      "path": "games/voxel/src/client/content-labels.ts",
+      "sha256": "6c2a7aa28b6f4b15875ceef6e02733798a3bf3e9b96d19894afe25b8a140e539"
+    },
+    {
+      "path": "games/voxel/src/client/dev-entry.ts",
+      "sha256": "d1d0ccb519a11ddd7831cc8ad5ff180cc6d502fb09a3d516f1d665bdb6281cd7"
+    },
+    {
+      "path": "games/voxel/src/client/embed.ts",
+      "sha256": "6df6b9583010ab2e684368913eb218e285585a3c4a8578a0d31ec836dbec183c"
+    },
+    {
+      "path": "games/voxel/src/client/engine.ts",
+      "sha256": "c103397109709c63148cffe9ab84933e4d35fd87118d48b827f5c2cf90f08116"
+    },
+    {
+      "path": "games/voxel/src/client/interpolation.ts",
+      "sha256": "618cc2de934f80ac9f2fa4dc59dbc92066c9d85de528f5fba6b0166593d53f9b"
+    },
+    {
+      "path": "games/voxel/src/client/inventory-controls.ts",
+      "sha256": "20cd8b57605747f595b82a0ba8555c6db303585f82d25c8d2ded73589480be38"
+    },
+    {
+      "path": "games/voxel/src/client/inventory.css",
+      "sha256": "29ebcfb226280c9bf16e6f6085d4b9a84b8500073b4a5549302a4088fe27b47b"
+    },
+    {
+      "path": "games/voxel/src/client/item-description.ts",
+      "sha256": "935ac9ce1b03187748aaa392ccee9657945294e225cb908baca45c426f3224eb"
+    },
+    {
+      "path": "games/voxel/src/client/palette.ts",
+      "sha256": "cccc9b3c2a2cfaa51cc6acfc15a128bd236d7a20d145e997f3373d7f04b2f289"
+    },
+    {
+      "path": "games/voxel/src/client/prediction.ts",
+      "sha256": "ba385bbfc230e9611378b37a1b0a788294c83143d8d38e7a293f23111161e93f"
+    },
+    {
+      "path": "games/voxel/src/client/runtime.ts",
+      "sha256": "19e7b0cffe82b2909340714e8a071331800fa5aff33b26ad1d3b9640f7e61d01"
+    },
+    {
+      "path": "games/voxel/src/client/style.css",
+      "sha256": "bda30689a1e2f48879a62208da0d32fbb48dc11a69d2bf859c7bfd7c96d9300c"
+    },
+    {
+      "path": "games/voxel/src/client/touch-controls.css",
+      "sha256": "f5628f9dc85a4c8ae10f047ec44bfe5d53eeafc0684f33f4c8c37bdedd2f78d3"
+    },
+    {
+      "path": "games/voxel/src/client/touch-controls.ts",
+      "sha256": "4418b20ddc2146432aa236055519c2ee4929592827c5639e5fb130afe598458b"
+    },
+    {
+      "path": "games/voxel/src/client/world-audio.ts",
+      "sha256": "5d09f1cb6b7691943dd8a9c02cf1e3bcb0c380946a5e7e115c5aa9650c4ef3f2"
+    },
+    {
+      "path": "games/voxel/src/client/world-clock.ts",
+      "sha256": "16fbfe10a03b947c2ad8cefbd8e4e701170fd9dfcd70c9fac986395dfd6a83a3"
+    },
+    {
+      "path": "games/voxel/src/render/avatar-equipment.ts",
+      "sha256": "49ae5cc8369774019a51320a49e957bf6a675ab70824170ea56133e708630415"
+    },
+    {
+      "path": "games/voxel/src/render/avatar-motion.ts",
+      "sha256": "5cc8183ba90997b05c5301ae6be73db22325a7c587a99b84a4829e3ff46d5462"
+    },
+    {
+      "path": "games/voxel/src/render/avatars.ts",
+      "sha256": "0fd3fdd58fe732db4f5e2431c7fbf06cbf611b4eda60f7f66f00a6898983c766"
+    },
+    {
+      "path": "games/voxel/src/render/drops.ts",
+      "sha256": "c561ea072b809ef3f314ff718f349e4ec9e144c73a85940d7272bc2e92b85bf5"
+    },
+    {
+      "path": "games/voxel/src/render/edit-effects.ts",
+      "sha256": "f4879d161078dd44fbd146f0f5162eced2f9d1fbec6af4451db04f1c4ef9cca2"
+    },
+    {
+      "path": "games/voxel/src/render/environment.ts",
+      "sha256": "731a245ee92f84a530f33d9da889272d62c9160d28ae713beafe70d70ae74ac9"
+    },
+    {
+      "path": "games/voxel/src/render/explosives.ts",
+      "sha256": "8e181f770fc5c7bb6d41d47fa1f1e88b6ed47bf9ba2e311d490035b11cbbbf1d"
+    },
+    {
+      "path": "games/voxel/src/render/gpu-pacing.ts",
+      "sha256": "c3502d2d84f01df0f49cd87931eade94db2349d187522769a8dc131cd47d4d9d"
+    },
+    {
+      "path": "games/voxel/src/render/held-block.ts",
+      "sha256": "22406a67e99b7c16a5c717dddbd7efb8298ab7bd30b28e4f36742ee4473a424f"
+    },
+    {
+      "path": "games/voxel/src/render/shaders/common.glsl",
+      "sha256": "7bf0a4b7f797d4fd63281be9158908ffd238a4e75f5cdc9ed04b91f2595613b1"
+    },
+    {
+      "path": "games/voxel/src/render/shaders/vertex_unpack.glsl",
+      "sha256": "947678393c774ad450835fa68a7292e8dc9857299e7cf9481e19667b0dc373b0"
+    },
+    {
+      "path": "games/voxel/src/render/terrain.ts",
+      "sha256": "43da9c1e74e13b29c2ef835bb7e5d8b6bda58e0e85d39dc9a9f100a3f414ab69"
+    },
+    {
+      "path": "games/voxel/src/server/admission.ts",
+      "sha256": "6d7161dffd2fe232dfdfdf9c1f05e32b2be75d8b11abcc22942f2378bb7ec45e"
+    },
+    {
+      "path": "games/voxel/src/server/checkpoint-storage.ts",
+      "sha256": "7f4f3782f6d97c7cc717a31470658477c4cc559e2337a754cfe5c4c4e4105538"
+    },
+    {
+      "path": "games/voxel/src/server/control.ts",
+      "sha256": "6935054ce89481f417db4f4e1e16285c32626a1d28a91bf8775accb98d3a322a"
+    },
+    {
+      "path": "games/voxel/src/server/gateway.ts",
+      "sha256": "0db964a565617fb87664f3b1155ff3469c9ac50beeec007b094cd392f1799681"
+    },
+    {
+      "path": "games/voxel/src/server/owner-authorization.ts",
+      "sha256": "b95d2b615755b10cdcecc018bbb43cc4254ebdb578698b80da83e2ecbe747871"
+    },
+    {
+      "path": "games/voxel/src/server/room-durability.ts",
+      "sha256": "4eb34dd0494e704c35eeef69e90952fc745e99e6051d478581799e7514bf5e86"
+    },
+    {
+      "path": "games/voxel/src/server/room-policy.ts",
+      "sha256": "d8886191fda505bb3592a8009af2caef9aec56803c1834d6adaf9ab71d99e652"
+    },
+    {
+      "path": "games/voxel/src/server/room-worker-protocol.ts",
+      "sha256": "5110035f31f9bfbf1d386f031b1afe2ee87281c738dcff54bf45ac243125dabb"
+    },
+    {
+      "path": "games/voxel/src/server/room-worker.ts",
+      "sha256": "a635559f403a45bcb44b3efc83283139b2b82d0a520a4057deeb946225142e10"
+    },
+    {
+      "path": "games/voxel/src/server/session-projection.ts",
+      "sha256": "b5516bdaf278771d234b7cf2f3e52f3f87ea46cd3e66cbbd7131daeda6f7cf36"
+    },
+    {
+      "path": "games/voxel/src/shared/appearance.ts",
+      "sha256": "dc6d14cf996a9d9a316c081ceee7ece23b6a0f42bd39355a6b6802ca4913e8bc"
+    },
+    {
+      "path": "games/voxel/src/shared/chunk-wire.ts",
+      "sha256": "2f98529c462d123ed260cf96f54f1f1c85dea7c944070b76a9a28faedebede1e"
+    },
+    {
+      "path": "games/voxel/src/shared/combat.ts",
+      "sha256": "e4cfe75bfaac26d9134cd8b1935482e82e049c2006429a50687b56b1ddacecd4"
+    },
+    {
+      "path": "games/voxel/src/shared/content.ts",
+      "sha256": "f5213cd9e38195bac70e6548e9b2e6c12c1a131fc4f9a6fbbcf8de80fa121045"
+    },
+    {
+      "path": "games/voxel/src/shared/engine-port.ts",
+      "sha256": "88cfd1efeb71b32e7f62da4e0bb651a77ec7792e166fe878952c802313e77f19"
+    },
+    {
+      "path": "games/voxel/src/shared/environment.ts",
+      "sha256": "9f4239603f127b07b5aa59ffc813233fe08e49942455452e78037758fac4eca7"
+    },
+    {
+      "path": "games/voxel/src/shared/explosives.ts",
+      "sha256": "b56df9363bc59723a4c5841d3784267c55af444c164dfdb4aeb396869c3db03d"
+    },
+    {
+      "path": "games/voxel/src/shared/gameplay.ts",
+      "sha256": "4be5e09f3726b64b19fd1c05fcf3118e63c8784144198a5232902c4fb9f52a99"
+    },
+    {
+      "path": "games/voxel/src/shared/input.ts",
+      "sha256": "30cdf7c507ab2fe30c93ccd974fcb5e8cc6b9262eef9f92dd99079b783bd40da"
+    },
+    {
+      "path": "games/voxel/src/shared/inventory.ts",
+      "sha256": "87db9eb0e653a1f53a570f8291d88aa5a62decb3810382657bb53a71235cb194"
+    },
+    {
+      "path": "games/voxel/src/shared/lifecycle.ts",
+      "sha256": "c346b2e48d5c0cc3493d38fe2c298cc965613c1a36814f14dd179f8928fdc183"
+    },
+    {
+      "path": "games/voxel/src/shared/loot.ts",
+      "sha256": "d6f273d5b1bcab38f0736c0379fc3ed2d1f3a289c80f96931af07333866f1893"
+    },
+    {
+      "path": "games/voxel/src/shared/movement.ts",
+      "sha256": "40327b858c2722514c40aa3a5717bc92c9808f31f731e3b0581ab8581da7663b"
+    },
+    {
+      "path": "games/voxel/src/shared/protocol.ts",
+      "sha256": "9234d2e4dcd018ab2327adc76c7fd534ecf71ac920a273b48f5597fa898b4b3c"
+    },
+    {
+      "path": "games/voxel/src/shared/recipes.ts",
+      "sha256": "5396639bfcf1332ca519137ffc155f12ec192dd0011bb5f7d0a3a3c55365a5e5"
+    },
+    {
+      "path": "games/voxel/src/shared/staff.ts",
+      "sha256": "a249bb1dcc0a72677f3bf7c84d3f7b617e27393f5cfd2b7cc32ef03a4dbdd320"
+    },
+    {
+      "path": "games/voxel/src/shared/vitals.ts",
+      "sha256": "dd04b2e83faf9625cf14071e8e20e9d3c8c6f49a90d559708fc53524820a11d7"
+    },
+    {
+      "path": "games/voxel/src/sim/action-ledger.ts",
+      "sha256": "aeedf61456858c4d290ae26550fb5c54495b0f0b20e2f6e8dbac3bb086ae96e8"
+    },
+    {
+      "path": "games/voxel/src/sim/blast.ts",
+      "sha256": "66ad564fb9cfc4f207ce20ab8a98f4d7fcbd651416f15f91550f367b56cfad2c"
+    },
+    {
+      "path": "games/voxel/src/sim/checkpoint-values.ts",
+      "sha256": "85605b99079c62fa617a3e7c8118378eb855dae89482cdf7a0abd0d516c91472"
+    },
+    {
+      "path": "games/voxel/src/sim/drops.ts",
+      "sha256": "ff843f5c26fbd5d7f11493ccef4abcc24b4d34fa53207ddbe456bd4fd16e2bde"
+    },
+    {
+      "path": "games/voxel/src/sim/explosives.ts",
+      "sha256": "e571da5405bb50114a9ba6d813e4e758a65916dd2cffd2bfa77ab8864a6bd782"
+    },
+    {
+      "path": "games/voxel/src/sim/game-room.ts",
+      "sha256": "d500b9b4b5798d9e59b96dec35ed9ade8c60e6818bfc8292ce4c098f47133cbf"
+    },
+    {
+      "path": "games/voxel/src/sim/input-queue.ts",
+      "sha256": "f8ee910aec45d540933072d82d26cfe1f5b19cabb39b4facd8fdc71618d72ab7"
+    },
+    {
+      "path": "games/voxel/src/sim/inventory.ts",
+      "sha256": "878756952a9c55cdaaec45e102db197c8514b0ed1f6e984690dbbd44f33a9a38"
+    },
+    {
+      "path": "games/voxel/src/sim/mining.ts",
+      "sha256": "aa8d1688135257b2fda5a8d8c50a96de73fb4b18408babcc98fc65f22145be7a"
+    },
+    {
+      "path": "games/voxel/src/sim/movement-room.ts",
+      "sha256": "09d45fb6069ada6aa17eecf23f623083341247d0977060b78e1b3e9da46b6a43"
+    },
+    {
+      "path": "games/voxel/src/sim/room-checkpoint.ts",
+      "sha256": "749b6d8a895fcee994d6a114d0f3daac5ca72ea9553719012b14383cf2969637"
+    },
+    {
+      "path": "games/voxel/src/sim/scheduler.ts",
+      "sha256": "772e38263f9e795cb81dff99679f8167910088e09c8b9f71ee917b20ef4868e1"
+    },
+    {
+      "path": "games/voxel/src/sim/sunlight.ts",
+      "sha256": "392c373253a40a50d97071e10630cea050dadf1479177dc38daae427adf8acbe"
+    },
+    {
+      "path": "games/voxel/src/sim/vitals.ts",
+      "sha256": "34dcab275128f6f7e88ddf17ec64b93aeb9c94fedcdf66f5b1fe6185525cff48"
+    },
+    {
+      "path": "games/voxel/src/sim/world-store.ts",
+      "sha256": "e2662d389c047bb99fb1f9fc3649e0378851a4e7d801f9149afabcd575f614df"
+    },
+    {
+      "path": "games/voxel/src/world/engine-worker.ts",
+      "sha256": "27d38c30deccfd65028dc6959e690039f5032c76f3d4270a98b62f5bbe46b604"
+    },
+    {
+      "path": "games/voxel/src/world/jobs.ts",
+      "sha256": "d0f820555e3378e44e260eb081184b3b78fb2e4f3ba0e34cb49af64879e6569b"
+    },
+    {
+      "path": "games/voxel/src/world/stream.ts",
+      "sha256": "8527e308d708bc817f5d21665ae03465593d40cb830e24610f0f7b4290d0614b"
+    },
+    {
+      "path": "games/voxel/src/world/worker-pool.ts",
+      "sha256": "d13f5ce5c7275a01e3a1fe8ea8a5e9ea6d9300b2075ec7da8844bc61a430b98e"
+    },
+    {
+      "path": "games/voxel/tests/admission.test.ts",
+      "sha256": "f125b9dd190e838a07bc9f4cb6231ee4f5c0b92f5460fc190b27574a4ed6041b"
+    },
+    {
+      "path": "games/voxel/tests/appearance.test.ts",
+      "sha256": "1aeb12b6126af8435e649c3894b3b72b9430da638ac7f612d53a0c0e7602a557"
+    },
+    {
+      "path": "games/voxel/tests/authority.test.ts",
+      "sha256": "9ed448f1e4750de57774216f4d2ec7ad24adbb2587acec3b2535c2f603e1b916"
+    },
+    {
+      "path": "games/voxel/tests/avatar-equipment.test.ts",
+      "sha256": "625df0b722938a97e1d4f567cbef9fa6a18af937e55d008c65abbcd970baedac"
+    },
+    {
+      "path": "games/voxel/tests/combat.test.ts",
+      "sha256": "81ed0bdec2053df956aa86864a6f820a59aaeeb7165814748b6b55eb5c43797c"
+    },
+    {
+      "path": "games/voxel/tests/content-progression.test.ts",
+      "sha256": "4c18f829cb1bf4abf71fd4e229e0044bd33dd1211fccdeb61a4e7d103effb235"
+    },
+    {
+      "path": "games/voxel/tests/content.test.ts",
+      "sha256": "ece6da0634717225d968408e360d576c04abc0ffe9155b2af5204e7438d71a39"
+    },
+    {
+      "path": "games/voxel/tests/environment.test.ts",
+      "sha256": "61f3609e9b8fc8dd10fbc0b0a803a285a885aeff07543c3921287686f98e820b"
+    },
+    {
+      "path": "games/voxel/tests/equipment.test.ts",
+      "sha256": "7e6a26e296ea618a94619186fc6d5a66d5e8a79a0cee12eb606a9eb7ac6b0549"
+    },
+    {
+      "path": "games/voxel/tests/explosives.test.ts",
+      "sha256": "30d6d982706dc49d7c748adbd640fcf4e3d835f84698c0c9074ed0a0db8b5c94"
+    },
+    {
+      "path": "games/voxel/tests/fixtures/checkpoint-storage.ts",
+      "sha256": "d8739843d477dec79588bb95e45e246e46c4c95e43238890376d06bf47196666"
+    },
+    {
+      "path": "games/voxel/tests/fixtures/socket-probe.ts",
+      "sha256": "e64b9a2c2d922d1e1b4887560aa71445ec1383c86f2045828fd5181c45543941"
+    },
+    {
+      "path": "games/voxel/tests/gpu-pacing.test.ts",
+      "sha256": "8bc36ba13ab2e48d781da6b85ef719e044b21c3683e8da06e94a10aa152435c4"
+    },
+    {
+      "path": "games/voxel/tests/integration/admission-allocation.test.ts",
+      "sha256": "698e4f2351625e5744f15b35b9db9fd735367ab4c86b692250a2ba0bfb955f28"
+    },
+    {
+      "path": "games/voxel/tests/integration/admission.test.ts",
+      "sha256": "7ea333797ac3d07f6b1c5896c1d2c0497fdc47f7d6818acd9f7f79116b77b4f7"
+    },
+    {
+      "path": "games/voxel/tests/integration/control.test.ts",
+      "sha256": "7e64e35b7d06d24bce784b1aa2711bb5fbcc1dfa5da56a3fa43cfb6a4aef07bd"
+    },
+    {
+      "path": "games/voxel/tests/integration/creative.test.ts",
+      "sha256": "0a59aab30d4349b85d2017162c198412250b0325398ccd014591d6d44a290820"
+    },
+    {
+      "path": "games/voxel/tests/integration/durability.test.ts",
+      "sha256": "b025d7a091687f573a4ff28d7405d0833b829d720bf1f28b03ee3a38aba1b27a"
+    },
+    {
+      "path": "games/voxel/tests/integration/lifecycle.test.ts",
+      "sha256": "c08f2bbbb29fca202395e2a737180561732c99d73d3b4ad4d6d8090671b098dd"
+    },
+    {
+      "path": "games/voxel/tests/integration/session-projection.test.ts",
+      "sha256": "54fcfef68aa430fadb97877f837d0aeda20fe4a6775df3d9c729a9232d49178e"
+    },
+    {
+      "path": "games/voxel/tests/integration/staff.test.ts",
+      "sha256": "7150413e75ba214455c3d3c785f5171218d144aa08a7c0a57fdd7baf02605826"
+    },
+    {
+      "path": "games/voxel/tests/integration/worker-checkpoint.test.ts",
+      "sha256": "9fa32b538c72e39cafe2794e2c09912a0b3472f10a30afda6cb6ee2879e4b1aa"
+    },
+    {
+      "path": "games/voxel/tests/interpolation.test.ts",
+      "sha256": "e10057e419232ecbc08e1c192420fe197f75778e3615a455cca11a21ac646630"
+    },
+    {
+      "path": "games/voxel/tests/inventory-checkpoint.test.ts",
+      "sha256": "00ce5d4b90fcb199b78dff65e08cb94a9216c285698950af7e28056a82a6ff34"
+    },
+    {
+      "path": "games/voxel/tests/inventory.test.ts",
+      "sha256": "63bd93b2caba65120f6b84c2e97faadd327dbd473a31012d48794ce7b98f9118"
+    },
+    {
+      "path": "games/voxel/tests/lifecycle.test.ts",
+      "sha256": "ecd739b3a376d656dacc685a90ff1b3f817428f3c480b5d4207a45a1e7386f2e"
+    },
+    {
+      "path": "games/voxel/tests/object-checkpoint.test.ts",
+      "sha256": "e31493333ff67994db851edc00e878e4c4e129c80042e148caaaa49c6808d450"
+    },
+    {
+      "path": "games/voxel/tests/owner-authorization.test.ts",
+      "sha256": "d5621c4e632c3f0e7a93301a44ad4d456aff428a2a83e831d4dc9676dc10badf"
+    },
+    {
+      "path": "games/voxel/tests/protocol.test.ts",
+      "sha256": "527a280f8be2de49c75e0dd8f747d9111599433abed139de841e9a512d78c49d"
+    },
+    {
+      "path": "games/voxel/tests/session-projection.test.ts",
+      "sha256": "3665e9cc73cee7a23ce617e4cc49f06053271a6e90b75c3d2c3a811cd03874a6"
+    },
+    {
+      "path": "games/voxel/tests/staff.test.ts",
+      "sha256": "2c75a88e2560c2629aa40ac517180d7831ebccdd709b17530d5510c8ef81ea02"
+    },
+    {
+      "path": "games/voxel/tests/survival.test.ts",
+      "sha256": "4cacaca4366367f168f58a1c6ee18a281fc3d14a6563564a950e6484b2aec5f2"
+    },
+    {
+      "path": "games/voxel/tests/vitals-checkpoint.test.ts",
+      "sha256": "bf852d933452d300b8b75062b30d3f8bf65d23762bfd254a1aa74afe044d9703"
+    },
+    {
+      "path": "games/voxel/tests/vitals.test.ts",
+      "sha256": "e162a1393869d6b6c5a571bd7af85c0b0c0b913a3341fab94b68b560ea8dfba4"
+    },
+    {
+      "path": "games/voxel/tests/wasm/appearance.test.ts",
+      "sha256": "9466a07dd6033ae5caf7d833ed56b63183f491ffca110c64478e71dcf83ae58c"
+    },
+    {
+      "path": "games/voxel/tests/wasm/buckets.test.ts",
+      "sha256": "5baa5bad0099bb5830a9c027e8fdbca9f7964dcea01f04030bc9cdf212c4f1c9"
+    },
+    {
+      "path": "games/voxel/tests/wasm/checkpoint-objects.test.ts",
+      "sha256": "d70b92f4eea3941edab28f2fd7eba060e36c7ea0f6763f6b42cfb9ff19e52f4a"
+    },
+    {
+      "path": "games/voxel/tests/wasm/checkpoint-room.test.ts",
+      "sha256": "7d45d0c17db36f7290ad4131d7105b9ba2888c017f69efb080655a5589ad6b3f"
+    },
+    {
+      "path": "games/voxel/tests/wasm/checkpoint-storage.test.ts",
+      "sha256": "c00cbd9ceac43fe52f9bb687d950bdd2445aed48fa0ebdd23083b76060ac600f"
+    },
+    {
+      "path": "games/voxel/tests/wasm/checkpoint-world.test.ts",
+      "sha256": "a3e09a521c4f0ede81e3d501ee1a3c5fc52c572cbc31b0f99308c7b7a76680a0"
+    },
+    {
+      "path": "games/voxel/tests/wasm/combat.test.ts",
+      "sha256": "293e72d5642685415145b825f841421741e2e064d45c2560523bf7cd7c58197b"
+    },
+    {
+      "path": "games/voxel/tests/wasm/equipment.test.ts",
+      "sha256": "d31a621da12da02d9dade5372acd10ca7bfcd78d7d7990ac440143b017fb8e80"
+    },
+    {
+      "path": "games/voxel/tests/wasm/explosives.test.ts",
+      "sha256": "65274f7f4f444889f06356d05b774a85ab3cac1d7329dbab0d9f27dbd5b3bf68"
+    },
+    {
+      "path": "games/voxel/tests/wasm/fixture.ts",
+      "sha256": "6e4009d88e43b9ecaa6b6f145b9859629e6b758528dc0b2f598c141b2bbdd2cf"
+    },
+    {
+      "path": "games/voxel/tests/wasm/flight.test.ts",
+      "sha256": "b71f1106e841a5de3f97a8e63d1629e04f31849177ed4ab8b68d7edc4eaee90a"
+    },
+    {
+      "path": "games/voxel/tests/wasm/lifecycle.test.ts",
+      "sha256": "8a71d0c93a58de30ca40d5ab398681212d69867e7d33d5d3419ad0f871c2b053"
+    },
+    {
+      "path": "games/voxel/tests/wasm/natural.test.ts",
+      "sha256": "38943785db4cb76ec0e8423cd06d6683f6d06d2d5aa76972ee11321b351968aa"
+    },
+    {
+      "path": "games/voxel/tests/wasm/prediction.test.ts",
+      "sha256": "af491b505fcaec432ed7d94335d0e3e8e9dedfd003bd509c26164a4263d6cd8c"
+    },
+    {
+      "path": "games/voxel/tests/wasm/progression.test.ts",
+      "sha256": "650de1317c604fbae964789318f9321edec6e3a4c8e297c672a7b70bf9dba046"
+    },
+    {
+      "path": "games/voxel/tests/wasm/room-fixture.ts",
+      "sha256": "ebb99d2a003a272e1a2db24999d67132d2142b5fddb1afb96246189b4e9f36a2"
+    },
+    {
+      "path": "games/voxel/tests/wasm/socket.test.ts",
+      "sha256": "2998387e5320b92e9df7551971d748c026fae4f7e69c8fffefc863c6f8e72b81"
+    },
+    {
+      "path": "games/voxel/tests/wasm/staff.test.ts",
+      "sha256": "cbcd9aa7cda989d153042246aecbeab062a01adb8ef4b3b3c2ff559d067b7229"
+    },
+    {
+      "path": "games/voxel/tests/wasm/storage.test.ts",
+      "sha256": "e9c9354417b68993a0c4a1bd40a184bba3c6e84b05fc394a8b4114a272b2b84c"
+    },
+    {
+      "path": "games/voxel/tests/wasm/stream.test.ts",
+      "sha256": "0e59141de25d1a457aae6d589fa7858f61fdf0542478a79834a75d93431f43b9"
+    },
+    {
+      "path": "games/voxel/tests/wasm/survival.test.ts",
+      "sha256": "ba6466b47780f7603fe0382a793c4bb2a9f4680bc3b628f7336d337aa6b48622"
+    },
+    {
+      "path": "games/voxel/tools/benchmark-engine.ts",
+      "sha256": "b51cf428e5bbbc8e6038b1cc10a3f116adc24308c039ce809efd3fe90bddcec8"
+    },
+    {
+      "path": "games/voxel/tools/browser-combat.ts",
+      "sha256": "2e1db43ff7d9442ed997bc4de2909a666e8b13a729559446eee128ec725636d0"
+    },
+    {
+      "path": "games/voxel/tools/browser-creative.ts",
+      "sha256": "cc21b2ce090ef378f965457ece975237f69f21932fc5653cf88616955fbf4ba6"
+    },
+    {
+      "path": "games/voxel/tools/browser-environment.ts",
+      "sha256": "c5baa674174283c6a79fc31aeef2f9f0488a9af59032ba31f2f440988e6522d0"
+    },
+    {
+      "path": "games/voxel/tools/browser-harness.ts",
+      "sha256": "3676c6815df84ec9f2968fdd8b2730c16c92586255bdd0b1f8ca17d39b0838ac"
+    },
+    {
+      "path": "games/voxel/tools/browser-inventory.ts",
+      "sha256": "9462cbefd476f824e8b665e923b974909487d377e1499b163e188bdfbb7dc693"
+    },
+    {
+      "path": "games/voxel/tools/browser-presentation.ts",
+      "sha256": "d839498abf9ea070cbb6dcb79812667d26813db5401f6f00a686e05f1029eedc"
+    },
+    {
+      "path": "games/voxel/tools/browser-remote-equipment.ts",
+      "sha256": "4f0737496a817660903e039a19a231c34bf87b61d705ae7223f7a8d140a9744d"
+    },
+    {
+      "path": "games/voxel/tools/browser-smoke.ts",
+      "sha256": "e14e614fb0a99dab8a4aecfaa6d1b8b9528c87e57db51cb433351aa967b665da"
+    },
+    {
+      "path": "games/voxel/tools/browser-survival.ts",
+      "sha256": "45169586cf358fa028505f2d16139fcf12a8e9d8d5a50a9fbb0d3988e171ff59"
+    },
+    {
+      "path": "games/voxel/tools/browser-touch.ts",
+      "sha256": "674ed5b901219a003f4039c0914699be41e60f6d29d58b79362b2631edd7c169"
+    },
+    {
+      "path": "games/voxel/tools/browser-worker-recovery.ts",
+      "sha256": "4e2645298e9a184e654bfbaf725e4934aac885c33860570ec972c4a6093e98ea"
+    },
+    {
+      "path": "games/voxel/tools/build-engine.mjs",
+      "sha256": "c7670b48c2ea41bb2a694ef73c1d86479d9a909dd655e8a08a53ab276a15dbb4"
+    },
+    {
+      "path": "games/voxel/tools/build-manifest.mjs",
+      "sha256": "5923b10b8e472901015ac3d8d0bebb97cce1018f18c7414f0a89baf182bc1fc3"
+    },
+    {
+      "path": "games/voxel/tools/build-server.mjs",
+      "sha256": "c71529316d90c8dd5a2f30ca5dabcf31e722e0cb5dfa94a43fb0bd71bbd0807b"
+    },
+    {
+      "path": "games/voxel/tools/check-boundaries.mjs",
+      "sha256": "d250987d657cf609155909a6d3a6356c55fd5d156718c74f9f72ad40fcfd43b7"
+    },
+    {
+      "path": "games/voxel/tools/check-content-disposition.ts",
+      "sha256": "cdeaa8da1927f079cacdff6c66583de1dd57acf908f329b20a36d0dca89e156c"
+    },
+    {
+      "path": "games/voxel/tools/compile-content.ts",
+      "sha256": "a2d95118b716f1c244fa82045d37038e65677a854a02bb0f199d6fd58269365e"
+    },
+    {
+      "path": "games/voxel/tools/dev.ts",
+      "sha256": "f054cd8e87301d91d49c8ef81680368b8586bf729574487c7f6765d3293b931a"
+    },
+    {
+      "path": "games/voxel/tools/development-admission.ts",
+      "sha256": "df14c1561b249069b8bc3f6c5645807d0d222b733739e295bace336c2b4b1ff9"
+    },
+    {
+      "path": "games/voxel/tools/inventory-legacy-content.ts",
+      "sha256": "cd5cac6ba786ebeadc4ff18fecd6baef43119a53b59f3570672c0a599412daac"
+    },
+    {
+      "path": "games/voxel/tools/release-manifest.mjs",
+      "sha256": "4fc580d822690d2fba62a511e339e68a6d6ef80a77c49632b85262a34da48478"
+    },
+    {
+      "path": "games/voxel/tools/survey-content.ts",
+      "sha256": "3c5771a7351430ef1da721dbaa7e3c1a5a0d2f512e4c97dcfb5097aa82bc1fd4"
+    },
+    {
+      "path": "games/voxel/tools/test-server-bundle.mjs",
+      "sha256": "9c709127ebdbd762bd5b87082059730c43f781dc9ee6b4628534a39dc48d46bc"
+    },
+    {
+      "path": "games/voxel/tools/verify-release.mjs",
+      "sha256": "ef3e306e45cc6d28965586a6b91c56e8c1ebcdcbac7b8eee731964aa172338b8"
+    },
+    {
+      "path": "games/voxel/tools/wasm-scenario.mjs",
+      "sha256": "f5e33f3770c3bb2aaf384e4ed3d41e0d33951967970e0e9f8a2323e9934ce33a"
+    },
+    {
+      "path": "games/voxel/tsconfig.json",
+      "sha256": "d439f8d41f864dc8e69dcfaa30360ffa09a24afe0dd34f2e568ad97169e40775"
+    },
+    {
+      "path": "games/voxel/vite.config.ts",
+      "sha256": "d58fac22e92ecd44a39385a2e24308177b771d07d77933af403c1ef5be4f69a2"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "0f94317a72c5113815b8186df002985a7de387c0d64a901d39cf5ad590ce23ca"
+    },
+    {
+      "path": "package.json",
+      "sha256": "c6c02027285acf0231395242122644ca50bc0868a741ae861ff684d9ef657f3a"
+    },
+    {
+      "path": "packages/game-logic/package.json",
+      "sha256": "978903f64623c3a11a69f1df83cdd026a7cc5bda3ef90981fad6278add9e72e9"
+    },
+    {
+      "path": "packages/game-logic/src/breakoutMp.test.ts",
+      "sha256": "999c0d4fc7660806f599bc880db2707daa5f9d50c343874e265049529a5d8fff"
+    },
+    {
+      "path": "packages/game-logic/src/breakoutMp.ts",
+      "sha256": "f17325cc7db5d0a2c6f199dfbc7a086d24686d27343d00e0e27a2f3a81435f64"
+    },
+    {
+      "path": "packages/game-logic/src/chess.test.ts",
+      "sha256": "2d09e45dc88c06c53b7785571633482e3e9e7092f42621d5fe9cb7e85873324f"
+    },
+    {
+      "path": "packages/game-logic/src/chess.ts",
+      "sha256": "513a53092d1b6f393d8c7778c73e78ccf667e423b570fe553e5a2aaece86365d"
+    },
+    {
+      "path": "packages/game-logic/src/connectfour.test.ts",
+      "sha256": "f7f6b0efea6ee8687221a1b8784a62d415e84f5ec3a060e6f9931ba57df5482e"
+    },
+    {
+      "path": "packages/game-logic/src/connectfour.ts",
+      "sha256": "334c1f17c93564ccb47a1d712db9c8a44ef2f0cd9ed90b1f05627ccf4097b10e"
+    },
+    {
+      "path": "packages/game-logic/src/drawing.test.ts",
+      "sha256": "25b095740e011e09559bab44b49f537f0a0254784255fcc52371ffd96e21c741"
+    },
+    {
+      "path": "packages/game-logic/src/drawing.ts",
+      "sha256": "9c1fb27368abafef251d5bda2acf4ce0c0fb3490f6fde2042eefce9c9129771d"
+    },
+    {
+      "path": "packages/game-logic/src/index.ts",
+      "sha256": "2cdfe1b2d0f9dfaaad02cb5b1c818e170d290d86fec64876bc79fca1883179d1"
+    },
+    {
+      "path": "packages/game-logic/src/memory.test.ts",
+      "sha256": "9a4c02b4196e6a5fcaeb5a62fcf42f1517b805ec78f5552ee9ba332a5907cdb4"
+    },
+    {
+      "path": "packages/game-logic/src/memory.ts",
+      "sha256": "bc2ba686e9148cb54644adb486aa486f793128eed446effff2134550895ebd57"
+    },
+    {
+      "path": "packages/game-logic/src/recessSchedule.test.ts",
+      "sha256": "94800280ad1d98b27bf9c2d6280850efc0e9b2db52f21001b60ba396bed47e4c"
+    },
+    {
+      "path": "packages/game-logic/src/recessSchedule.ts",
+      "sha256": "f8d76be9a13b3c2d1ea20dd61115299f9d4954c75d767f8006367f7633c93095"
+    },
+    {
+      "path": "packages/game-logic/src/registry.ts",
+      "sha256": "43cfe30956bb4d2018c95d856a18ebda4aa5588d1746f680344725693703d8e8"
+    },
+    {
+      "path": "packages/game-logic/src/tictactoe.test.ts",
+      "sha256": "7fcfa1435c6e7336286e0b4101691c38e2c4ef84145452371db0dcd3d659b81c"
+    },
+    {
+      "path": "packages/game-logic/src/tictactoe.ts",
+      "sha256": "ec24a5353f6811b6d207bdf87f839b5f1e6805765454ec752621c84a66b3ade2"
+    },
+    {
+      "path": "packages/game-logic/tsconfig.json",
+      "sha256": "9b88f991239524c071eb06de2f24c94ae4323d2ddf9bd27cac8341311007d32c"
+    },
+    {
+      "path": "packages/observability/jest.config.js",
+      "sha256": "c9a54e148e517639de526ffe8b08a56e400ceada276bd9a89053cb0464880b53"
+    },
+    {
+      "path": "packages/observability/package.json",
+      "sha256": "1afc59dfcb81ae7f48710c2ac2360022a64152903e197a6f3bc7e11bed9fed5c"
+    },
+    {
+      "path": "packages/observability/src/__tests__/classroomAdmissionIp.test.ts",
+      "sha256": "9b07cee3a1d002881016b13e0e9034815cd51cd193900cf280c1fa0a6fa3f692"
+    },
+    {
+      "path": "packages/observability/src/__tests__/classroomWebhook.test.ts",
+      "sha256": "247006c27cecafac29b2e031922d2d641c59ea371862dac0ab7b2b31f45e6df2"
+    },
+    {
+      "path": "packages/observability/src/__tests__/clientIp.test.ts",
+      "sha256": "7f65d4c74087b37d96132a8c165b9366436749b4df7803e39acc4ee734d54e27"
+    },
+    {
+      "path": "packages/observability/src/__tests__/observability.test.ts",
+      "sha256": "fd060476a6558a32355a837ac30b104bd91fcf170269c3c31d981282b0524e29"
+    },
+    {
+      "path": "packages/observability/src/__tests__/processLifecycle.test.ts",
+      "sha256": "dc400462605ea61f6ac52ac0c001e41d7e37c2888020bcb14c06144bf47a47f0"
+    },
+    {
+      "path": "packages/observability/src/adminAuth.ts",
+      "sha256": "43159aef0aa45a342f11b478a48cd68b940bf35b9bde80f631a3bd9127bb14c3"
+    },
+    {
+      "path": "packages/observability/src/auditMetadata.ts",
+      "sha256": "7602992d460d2d9c426f283b1d662cd0c3a1fcc62d09e0958b978c6277f9053f"
+    },
+    {
+      "path": "packages/observability/src/classroomAdmissionIp.ts",
+      "sha256": "7603c0dd4da32cd7e5ff1fb040d611013779c0360e0d5a8f370eb1b1d259a320"
+    },
+    {
+      "path": "packages/observability/src/clientIp.ts",
+      "sha256": "eb6d0c5d01e69842a1cafcca372cabd4428ac770e0608096706c8f39583c7205"
+    },
+    {
+      "path": "packages/observability/src/correlation.ts",
+      "sha256": "eb09eb3789e4c1b959a2f81e55002b1dd46d1427150b912f1abebd64517b7c03"
+    },
+    {
+      "path": "packages/observability/src/error.ts",
+      "sha256": "148b7f760dc9a33b8705bdb22ddb633030470f33a0bf627203f078db926ff77d"
+    },
+    {
+      "path": "packages/observability/src/index.ts",
+      "sha256": "518481bf07f89c236cdefd2634b25a681548e0f0bfb3358a87a51fe845ddf576"
+    },
+    {
+      "path": "packages/observability/src/livekitVoiceStats.ts",
+      "sha256": "719e1554d6770b523f1eb5a1221c624e64166af8cb83c0548b8e56d2e3828a7c"
+    },
+    {
+      "path": "packages/observability/src/livekitWebhook.ts",
+      "sha256": "32eba417baeec8e9f5087521d73588e37c1618f76ed1ef68d85ddb33a68fee7f"
+    },
+    {
+      "path": "packages/observability/src/logger.ts",
+      "sha256": "47a38192f19808f2820f1c463b3a1a2301e4eefc560c75f56f988b7d6a556cc7"
+    },
+    {
+      "path": "packages/observability/src/operational.ts",
+      "sha256": "1684bf509eec85582c984be6ccc77ff6af31554d62d74dcff903810ddcf500a1"
+    },
+    {
+      "path": "packages/observability/src/processLifecycle.ts",
+      "sha256": "9ae33a49a50d933f5b42cb86466fdba7e353f1a31c599012d38766d9c9b812ea"
+    },
+    {
+      "path": "packages/observability/src/serverSetup.ts",
+      "sha256": "d427ca5a8afa21f38aba0890e3391bad37f13b423a7518c5d00bd1e1dbf99b7f"
+    },
+    {
+      "path": "packages/observability/src/socketLifecycle.ts",
+      "sha256": "0d2010d4a9707b052bfca2bcda872f04c3daf8a0e83c2e7c7f735e825eebec7c"
+    },
+    {
+      "path": "packages/observability/src/statsCollector.ts",
+      "sha256": "5aa38f5f7910b1a63932f687ce90a819a6c29183b3a63a370c5840bc97d5d7bb"
+    },
+    {
+      "path": "packages/observability/src/telemetryIngest.ts",
+      "sha256": "e07fd77b639d9f6f6f78b7abddbfda74c974b30269ef5b1c7f25932335ffd314"
+    },
+    {
+      "path": "packages/observability/tsconfig.json",
+      "sha256": "9b88f991239524c071eb06de2f24c94ae4323d2ddf9bd27cac8341311007d32c"
+    },
+    {
+      "path": "packages/voxel-content/package.json",
+      "sha256": "6ddaf700596c5435d1bd21b6ed0496e37eba5f2f62783ec780882820f2ada09f"
+    },
+    {
+      "path": "packages/voxel-content/src/biomes.ts",
+      "sha256": "2b1fceafa9e6e126ec4ec800ad88f6087d7ef06e274a42317f7dc078a9506ee6"
+    },
+    {
+      "path": "packages/voxel-content/src/blockAudio.ts",
+      "sha256": "c30502d759235c6586fbe0ae1d3d32d20f97cfbb02aae745ff03f394b3a60091"
+    },
+    {
+      "path": "packages/voxel-content/src/blockBreakDrops.test.ts",
+      "sha256": "288e29e6bef380c7d5694bff9fe35c37cf7dcf0b3f288aac35a303344d6625b1"
+    },
+    {
+      "path": "packages/voxel-content/src/blockBreakDrops.ts",
+      "sha256": "da4c6288eb301928ad513e289d988dedb8495ee78b7ae26ddf51dae771b1a475"
+    },
+    {
+      "path": "packages/voxel-content/src/blockClientCatalog.test.ts",
+      "sha256": "b034099a62511410d658f5262d7fda0725fb5c992c4ed2b26faacf67cfc68018"
+    },
+    {
+      "path": "packages/voxel-content/src/blockClientCatalog.ts",
+      "sha256": "bfd010890429e94306fa6914694fa2f7b76d1e4c3c55f1b2b6f22df45f41eff0"
+    },
+    {
+      "path": "packages/voxel-content/src/blockMiningMeta.ts",
+      "sha256": "45caa14848983364e1fd8425cc86138459a70ff56d9f22baff8e7dbb83ae6638"
+    },
+    {
+      "path": "packages/voxel-content/src/blocks.test.ts",
+      "sha256": "08ef29898ccc9209a029a87591e71ada29d7ef79ddfecd41158dfcdea51ecd18"
+    },
+    {
+      "path": "packages/voxel-content/src/blocks.ts",
+      "sha256": "1a7b273a058d02198284fbfec4ac3223ae349806c285d371e2bc0e199dc36a36"
+    },
+    {
+      "path": "packages/voxel-content/src/index.ts",
+      "sha256": "d56a63dcee0b45a422ffd1ec20236fdd4c9f752281687449419068b7a4d5ed81"
+    },
+    {
+      "path": "packages/voxel-content/src/items.test.ts",
+      "sha256": "8a6dd6672ec579ec49adff177aa4ff1c1fd21058da1d2fdb5b655a8df5e331ed"
+    },
+    {
+      "path": "packages/voxel-content/src/items.ts",
+      "sha256": "f39a45143e2af3bd6f1b1d16d3d6de020c431acc85e473b3bde7cc8e6d64480d"
+    },
+    {
+      "path": "packages/voxel-content/src/mining.test.ts",
+      "sha256": "e142e12019d594cd9645a698a74dc49b7e97a754ab43ad758b6b5248d4d6d1b8"
+    },
+    {
+      "path": "packages/voxel-content/src/mining.ts",
+      "sha256": "e58fc8749f6e5c99ae1a30d0483d333ba993dabea5959e861c9c373d2b280aa4"
+    },
+    {
+      "path": "packages/voxel-content/src/movementPerks.test.ts",
+      "sha256": "93906e17b0ec1da20f5e7f87860b1203af8143bbc7098e869cb5e94411a79a5b"
+    },
+    {
+      "path": "packages/voxel-content/src/movementPerks.ts",
+      "sha256": "afc096e6a39eae7bde49fa60b49bebcfd9aa50fc27b98c0fbe7b981ca60cedee"
+    },
+    {
+      "path": "packages/voxel-content/src/recipes.test.ts",
+      "sha256": "d5fefc9bc81ec71babb400dd9b1e5e7cf5a2841beddb804f178a6b8d41231c2e"
+    },
+    {
+      "path": "packages/voxel-content/src/recipes.ts",
+      "sha256": "64a67c04cd74b4d8dce0aa1c763c65fb637fbf55b414694ad6abb693d23e8b98"
+    },
+    {
+      "path": "packages/voxel-content/src/weather.test.ts",
+      "sha256": "7109acb7c396b8690c55bb35add88ae5501c63db1a08c6b4b413dac7a3e0544b"
+    },
+    {
+      "path": "packages/voxel-content/src/weather.ts",
+      "sha256": "3c437218e5c3bdeb7cfb0dcf7b7e619353637fcdd96237d470dfe715b7d35059"
+    },
+    {
+      "path": "packages/voxel-content/src/worldgen.test.ts",
+      "sha256": "eab6b5845e487be70a317d5dd6092876c158fe2f270f6388f6aaf9f73716c952"
+    },
+    {
+      "path": "packages/voxel-content/src/worldgen.ts",
+      "sha256": "5c65d25486261866ca4c8e276b56ac5ff996b4ac72cd71dde27aaa7d1c4c2720"
+    },
+    {
+      "path": "packages/voxel-content/src/worldgenNoise.ts",
+      "sha256": "4362a5ec3758b47c26c541458ace21c1e520f61136ce8638904e1357c2313b0a"
+    },
+    {
+      "path": "packages/voxel-content/tsconfig.json",
+      "sha256": "00e69af88367fa398ec47684bc82f73cf6cdee06b4cddb474b99c379a93645cd"
+    },
+    {
+      "path": "supabase/migrations/20261025010000_voxel_checkpoint_storage.sql",
+      "sha256": "ed7e06017888eab5899b0fb3837c3a12791b46895f4ff362dcbe3966e8d8f240"
+    },
+    {
+      "path": "supabase/migrations/20261025020000_voxel_session_projection.sql",
+      "sha256": "e1ef579079c1783e74deac88f29b70390df74244d5a6ee9fbd8d91905ec9439a"
+    },
+    {
+      "path": "supabase/migrations/20261025030000_voxel_session_controls.sql",
+      "sha256": "ba0e8c7f342000ef11b09c1a5fcb6bef74e97c9abb62a4a074b6553a59461fec"
+    },
+    {
+      "path": "supabase/migrations/20261025040000_voxel_roster_departure.sql",
+      "sha256": "9561b3660e75636a277fa2c2ac9e070fa68d2bc8bc01062f96dba10a70076d8b"
+    },
+    {
+      "path": "supabase/migrations/20261025050000_voxel_staff_commands.sql",
+      "sha256": "6d4e8d867cfc3fb3350d600294e3d642593f2faa808fb33fc346d67c66bbea32"
+    }
+  ]
+}

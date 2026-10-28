@@ -1,0 +1,2255 @@
+{
+  "cleaned": true,
+  "rooms": [
+    "voxel-v13-a87db502-d3df-4e78-b00e-7c493aa7c475-1"
+  ],
+  "schoolDatabaseWrites": 0,
+  "voice": {
+    "enabled": true,
+    "databaseErrors": [
+      {
+        "rpc": "voxel_media_authorize",
+        "code": "42501",
+        "message": "media admission revoked"
+      }
+    ],
+    "responses": [
+      {
+        "page": "kid",
+        "operation": "voice-ticket",
+        "code": "NOT_IN_ROOM",
+        "time": 10235.288629
+      },
+      {
+        "page": "kid",
+        "operation": "media-moderate",
+        "code": "FORBIDDEN",
+        "time": 21991.716911
+      },
+      {
+        "page": "teacher",
+        "operation": "media-moderate",
+        "code": "MEDIA_UNCONFIRMED",
+        "time": 22205.283918
+      },
+      {
+        "page": "kid",
+        "operation": "voice-ticket",
+        "code": "NOT_IN_ROOM",
+        "time": 50142.653939
+      }
+    ],
+    "actualGamePoses": {
+      "listener": {
+        "position": [
+          49.5,
+          69.625,
+          0.5
+        ],
+        "forward": [
+          0,
+          0,
+          -1
+        ],
+        "up": [
+          0,
+          1,
+          0
+        ]
+      },
+      "sources": [
+        {
+          "id": "116d616a-db05-4d12-b08a-b6dafbeb4d45",
+          "position": [
+            49.5,
+            69.625,
+            0.5
+          ],
+          "gain": 1,
+          "occluded": false
+        }
+      ]
+    },
+    "nearSamples": [
+      0.04909912719249483
+    ],
+    "hiddenStaff": true,
+    "lostMuteReply": true,
+    "retrySameRequest": true,
+    "studentModerationDenied": true,
+    "noGameplayReadmissionOnMute": true,
+    "beforeGameResume": {
+      "phase": "playing",
+      "inputMode": "desktop",
+      "maxTouchPoints": 0,
+      "coarse": false,
+      "lifecycle": "playing",
+      "focused": false,
+      "inventoryPending": false,
+      "inventoryOpen": false,
+      "keys": [],
+      "events": [
+        {
+          "type": "hud",
+          "status": "connecting",
+          "lifecycle": "preparing",
+          "role": "participant",
+          "inventoryOpen": false,
+          "inventoryPending": false,
+          "pointerLocked": false,
+          "generation": 1,
+          "time": 3253.0999999046326
+        },
+        {
+          "type": "hud",
+          "status": "loading",
+          "lifecycle": "preparing",
+          "role": "participant",
+          "inventoryOpen": false,
+          "inventoryPending": false,
+          "pointerLocked": false,
+          "generation": 1,
+          "time": 3546
+        },
+        {
+          "type": "hud",
+          "status": "loading",
+          "lifecycle": "recovering",
+          "role": "participant",
+          "inventoryOpen": false,
+          "inventoryPending": false,
+          "pointerLocked": false,
+          "generation": 1,
+          "time": 3565.2999999523163
+        },
+        {
+          "type": "hud",
+          "status": "loading",
+          "lifecycle": "playing",
+          "role": "participant",
+          "inventoryOpen": false,
+          "inventoryPending": false,
+          "pointerLocked": false,
+          "generation": 1,
+          "time": 3660.699999809265
+        },
+        {
+          "type": "hud",
+          "status": "paused",
+          "lifecycle": "playing",
+          "role": "participant",
+          "inventoryOpen": false,
+          "inventoryPending": false,
+          "pointerLocked": false,
+          "generation": 1,
+          "time": 4011.699999809265
+        },
+        {
+          "type": "command",
+          "command": "pause",
+          "generation": 1,
+          "time": 9964.699999809265
+        }
+      ],
+      "visible": "visible",
+      "hasFocus": true,
+      "active": "BUTTON",
+      "dialogs": [
+        {
+          "open": false,
+          "label": "voxel-voice-title"
+        },
+        {
+          "open": false,
+          "label": "voxel-chat-title"
+        },
+        {
+          "open": false,
+          "label": "voxel-staff-title"
+        },
+        {
+          "open": false,
+          "label": "voxel-end-title"
+        },
+        {
+          "open": false,
+          "label": "inventory-title"
+        }
+      ]
+    },
+    "farDistance": 66.85446515333291,
+    "nativeFarSceneSilent": true,
+    "banRevokedVoice": true,
+    "bannedProviderIdentityAbsent": true,
+    "terminalOwnerClosed": true,
+    "fixtureTiming": {
+      "eventLoopMaxMs": 123.600895,
+      "eventLoopMeanMs": 20.696976531365312,
+      "slowestDatabase": [
+        {
+          "elapsed": 78.51230500001111
+        },
+        {
+          "elapsed": 59.922772999998415
+        },
+        {
+          "elapsed": 41.67660399999295,
+          "rpc": "voxel_commit_checkpoint"
+        },
+        {
+          "elapsed": 38.741230000014184,
+          "rpc": "voxel_media_authorize"
+        },
+        {
+          "elapsed": 38.384227999995346,
+          "rpc": "voxel_prepare_object"
+        },
+        {
+          "elapsed": 31.54315399999905
+        },
+        {
+          "elapsed": 29.534825000009732
+        },
+        {
+          "elapsed": 29.12850299999991
+        },
+        {
+          "elapsed": 28.601899999994203,
+          "rpc": "voxel_project_session"
+        },
+        {
+          "elapsed": 25.964326999994228,
+          "rpc": "voxel_project_session"
+        },
+        {
+          "elapsed": 24.048117999998794
+        },
+        {
+          "elapsed": 23.59803500000271,
+          "rpc": "voxel_project_session"
+        }
+      ]
+    },
+    "finalNativeFrames": [
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "lifecycle",
+        "time": 11662.605353,
+        "reason": "policy_unavailable"
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 11683.345134,
+        "epoch": 1
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 11739.033048,
+        "epoch": 2,
+        "phase": "preparing",
+        "reason": "pause",
+        "frozen": 1
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 11751.485429,
+        "epoch": 2
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "lifecycle",
+        "time": 11751.607309,
+        "reason": "allowed"
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 11812.87553,
+        "epoch": 2,
+        "phase": "preparing",
+        "reason": "join",
+        "frozen": 1
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 11815.458023,
+        "epoch": 2
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 12103.751637,
+        "epoch": 2,
+        "phase": "playing",
+        "reason": "ready",
+        "frozen": 1
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 12107.804617,
+        "epoch": 2
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "lifecycle",
+        "time": 17156.427148,
+        "reason": "allowed"
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 17164.027386,
+        "epoch": 3
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 17185.709812,
+        "epoch": 3,
+        "phase": "preparing",
+        "reason": "join",
+        "frozen": 1
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 17188.465506,
+        "epoch": 3
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 17573.273234,
+        "epoch": 3,
+        "phase": "playing",
+        "reason": "ready",
+        "frozen": 1
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 17579.955746,
+        "epoch": 3
+      },
+      {
+        "page": "kid",
+        "direction": "framesent",
+        "type": "focus",
+        "time": 29131.992618,
+        "epoch": 2,
+        "active": true
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 29132.020138,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "focus",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 29132.088938,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framesent",
+        "type": "focus",
+        "time": 30373.136026,
+        "epoch": 4,
+        "active": false
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 30373.156706,
+        "epoch": 5,
+        "phase": "playing",
+        "reason": "focus",
+        "frozen": 1
+      },
+      {
+        "page": "kid",
+        "direction": "framesent",
+        "type": "inventory",
+        "time": 30373.171746,
+        "epoch": 5,
+        "kind": "open"
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 30373.284026,
+        "epoch": 5
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 30373.359827,
+        "epoch": 5
+      },
+      {
+        "page": "kid",
+        "direction": "framesent",
+        "type": "inventory",
+        "time": 30498.806882,
+        "epoch": 5,
+        "kind": "close"
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 30511.800626,
+        "epoch": 5
+      },
+      {
+        "page": "kid",
+        "direction": "framesent",
+        "type": "inventory",
+        "time": 30736.83197,
+        "epoch": 5,
+        "kind": "open"
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 30793.712849,
+        "epoch": 5
+      },
+      {
+        "page": "kid",
+        "direction": "framesent",
+        "type": "inventory",
+        "time": 32857.32109,
+        "epoch": 5,
+        "kind": "close"
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 32866.164974,
+        "epoch": 5
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 33301.920471,
+        "epoch": 6,
+        "phase": "playing",
+        "reason": "mode",
+        "frozen": 1
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 33313.088646,
+        "epoch": 7,
+        "phase": "playing",
+        "reason": "mode",
+        "frozen": 1
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 33323.146215,
+        "epoch": 7
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 33326.845393,
+        "epoch": 6
+      },
+      {
+        "page": "kid",
+        "direction": "framesent",
+        "type": "inventory",
+        "time": 33549.321365,
+        "epoch": 6,
+        "kind": "open"
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 33618.241583,
+        "epoch": 6
+      },
+      {
+        "page": "kid",
+        "direction": "framesent",
+        "type": "inventory",
+        "time": 33955.489797,
+        "epoch": 6,
+        "kind": "give"
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 34020.354235,
+        "epoch": 6
+      },
+      {
+        "page": "kid",
+        "direction": "framesent",
+        "type": "inventory",
+        "time": 34201.815085,
+        "epoch": 6,
+        "kind": "close"
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 34235.57509,
+        "epoch": 6
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 34552.262964,
+        "epoch": 9,
+        "phase": "playing",
+        "reason": "mode",
+        "frozen": 1
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 34552.289204,
+        "epoch": 8,
+        "phase": "playing",
+        "reason": "mode",
+        "frozen": 1
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 34559.811521,
+        "epoch": 9
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 34567.524519,
+        "epoch": 8
+      },
+      {
+        "page": "teacher",
+        "direction": "framesent",
+        "type": "focus",
+        "time": 35037.437223,
+        "epoch": 9,
+        "active": true
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 35054.048625,
+        "epoch": 10,
+        "phase": "playing",
+        "reason": "focus",
+        "frozen": 0
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 35054.938509,
+        "epoch": 10
+      },
+      {
+        "page": "teacher",
+        "direction": "framesent",
+        "type": "focus",
+        "time": 43177.859946,
+        "epoch": 10,
+        "active": false
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 43186.650149,
+        "epoch": 11,
+        "phase": "playing",
+        "reason": "focus",
+        "frozen": 1
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 43194.753789,
+        "epoch": 11
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 43420.668977,
+        "epoch": 12,
+        "phase": "preparing",
+        "reason": "teleport",
+        "frozen": 1
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 43420.695457,
+        "epoch": 12
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 43420.728617,
+        "epoch": 12,
+        "phase": "preparing",
+        "reason": "join",
+        "frozen": 1
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 43425.161399,
+        "epoch": 12
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 43704.885811,
+        "epoch": 12,
+        "phase": "playing",
+        "reason": "ready",
+        "frozen": 1
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 43712.104766,
+        "epoch": 12
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "error",
+        "time": 46609.423134,
+        "code": "UNAUTHORIZED"
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "lifecycle",
+        "time": 46618.79466,
+        "reason": "no_participants"
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "lifecycle",
+        "time": 46863.48506,
+        "reason": "no_participants"
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "lifecycle",
+        "time": 46864.698906,
+        "reason": "allowed"
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 46864.730466,
+        "epoch": 14
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 46895.816978,
+        "epoch": 15,
+        "phase": "preparing",
+        "reason": "pause",
+        "frozen": 1
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 46900.17044,
+        "epoch": 15
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "lifecycle",
+        "time": 46905.556626,
+        "reason": "allowed"
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 46907.163354,
+        "epoch": 15,
+        "phase": "preparing",
+        "reason": "join",
+        "frozen": 1
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 46911.291094,
+        "epoch": 15
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 47222.655421,
+        "epoch": 15,
+        "phase": "playing",
+        "reason": "ready",
+        "frozen": 1
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 47232.039067,
+        "epoch": 15
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "error",
+        "time": 49266.150401,
+        "code": "UNAUTHORIZED"
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "lifecycle",
+        "time": 49270.759304,
+        "reason": "no_participants"
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "lifecycle",
+        "time": 50871.776674,
+        "reason": "no_participants"
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 50872.440797,
+        "epoch": 17
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "lifecycle",
+        "time": 50878.323946,
+        "reason": "allowed"
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 50893.964703,
+        "epoch": 18,
+        "phase": "preparing",
+        "reason": "pause",
+        "frozen": 1
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 50905.197158,
+        "epoch": 18
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "lifecycle",
+        "time": 50908.418614,
+        "reason": "allowed"
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 50908.439854,
+        "epoch": 18,
+        "phase": "preparing",
+        "reason": "join",
+        "frozen": 1
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 50914.144002,
+        "epoch": 18
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 51205.117509,
+        "epoch": 18,
+        "phase": "playing",
+        "reason": "ready",
+        "frozen": 1
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 51217.782571,
+        "epoch": 18
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 67413.056208,
+        "epoch": 19,
+        "phase": "paused",
+        "reason": "pause",
+        "frozen": 1
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 67468.626321,
+        "epoch": 19
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "lifecycle",
+        "time": 67470.102928,
+        "reason": "manual"
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "lifecycle",
+        "time": 67470.123048,
+        "reason": "manual"
+      },
+      {
+        "page": "teacher",
+        "direction": "framesent",
+        "type": "focus",
+        "time": 68004.884789,
+        "epoch": 12,
+        "active": true
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 68014.924558,
+        "epoch": 20,
+        "phase": "playing",
+        "reason": "focus",
+        "frozen": 0
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 68031.219478,
+        "epoch": 20
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "lifecycle",
+        "time": 69294.269069,
+        "reason": "session"
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "lifecycle",
+        "time": 69294.754112,
+        "reason": "session"
+      },
+      {
+        "page": "teacher",
+        "direction": "framesent",
+        "type": "focus",
+        "time": 69364.048691,
+        "epoch": 20,
+        "active": false
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 69376.432912,
+        "epoch": 21,
+        "phase": "playing",
+        "reason": "focus",
+        "frozen": 1
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 69380.203971,
+        "epoch": 21
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 71793.803001,
+        "epoch": 22,
+        "phase": "playing",
+        "reason": "pause",
+        "frozen": 1
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "lifecycle",
+        "time": 71798.334383,
+        "reason": "allowed"
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 71799.088867,
+        "epoch": 22
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "lifecycle",
+        "time": 71808.067311,
+        "reason": "allowed"
+      },
+      {
+        "page": "kid",
+        "direction": "framesent",
+        "type": "focus",
+        "time": 71968.010735,
+        "epoch": 22,
+        "active": true
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 72017.693218,
+        "epoch": 23,
+        "phase": "playing",
+        "reason": "focus",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 72019.788469,
+        "epoch": 23
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "lifecycle",
+        "time": 89269.885126,
+        "reason": "manual"
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 89271.949176,
+        "epoch": 26,
+        "phase": "paused",
+        "reason": "pause",
+        "frozen": 1
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 89272.011817,
+        "epoch": 26
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "lifecycle",
+        "time": 89272.048977,
+        "reason": "ended"
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "error",
+        "time": 89272.059017,
+        "code": "SESSION_ENDED"
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 89276.86864,
+        "epoch": 24,
+        "phase": "paused",
+        "reason": "pause",
+        "frozen": 1
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 89276.88604,
+        "epoch": 24
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "lifecycle",
+        "time": 89276.906961,
+        "reason": "manual"
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 89276.915481,
+        "epoch": 25,
+        "phase": "paused",
+        "reason": "pause",
+        "frozen": 1
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 89276.923521,
+        "epoch": 25
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "lifecycle",
+        "time": 89276.940001,
+        "reason": "ended"
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "error",
+        "time": 89276.946161,
+        "code": "SESSION_ENDED"
+      }
+    ],
+    "finalGameStates": [
+      {
+        "phase": "preparing",
+        "inputMode": "desktop",
+        "lifecycle": "ended",
+        "focused": false,
+        "body": null,
+        "inventoryOpen": false,
+        "inventoryPending": false,
+        "lastReceivedAgoMs": 8926.699999809265,
+        "keys": [
+          {
+            "type": "keydown",
+            "code": "KeyE",
+            "time": 22227.799999952316,
+            "repeat": false,
+            "target": "BODY",
+            "trusted": true,
+            "focus": true,
+            "active": "BODY",
+            "pointer": "CANVAS"
+          },
+          {
+            "type": "keyup",
+            "code": "KeyE",
+            "time": 22284.199999809265,
+            "repeat": false,
+            "target": "BUTTON",
+            "trusted": true,
+            "focus": true,
+            "active": "BUTTON"
+          },
+          {
+            "type": "keydown",
+            "code": "KeyS",
+            "time": 67089.09999990463,
+            "repeat": false,
+            "target": "BODY",
+            "trusted": true,
+            "focus": true,
+            "active": "BODY",
+            "pointer": "CANVAS"
+          },
+          {
+            "type": "keyup",
+            "code": "KeyS",
+            "time": 76471.5,
+            "repeat": false,
+            "target": "BODY",
+            "trusted": true,
+            "focus": true,
+            "active": "BODY",
+            "pointer": "CANVAS"
+          }
+        ],
+        "events": [
+          {
+            "type": "hud",
+            "status": "connecting",
+            "lifecycle": "preparing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 3253.0999999046326
+          },
+          {
+            "type": "hud",
+            "status": "loading",
+            "lifecycle": "preparing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 3546
+          },
+          {
+            "type": "hud",
+            "status": "loading",
+            "lifecycle": "recovering",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 3565.2999999523163
+          },
+          {
+            "type": "hud",
+            "status": "loading",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 3660.699999809265
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 4011.699999809265
+          },
+          {
+            "type": "command",
+            "command": "pause",
+            "generation": 1,
+            "time": 9964.699999809265
+          },
+          {
+            "type": "command",
+            "command": "resume",
+            "generation": 1,
+            "time": 20914.89999985695
+          },
+          {
+            "type": "pointerlockchange",
+            "time": 20953.39999985695,
+            "focus": true,
+            "pointer": "CANVAS"
+          },
+          {
+            "type": "hud",
+            "status": "playing",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": true,
+            "generation": 1,
+            "time": 20961.5
+          },
+          {
+            "type": "command",
+            "command": "inventory",
+            "kind": "open",
+            "generation": 1,
+            "time": 22228
+          },
+          {
+            "type": "hud",
+            "status": "playing",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": true,
+            "inventoryPending": false,
+            "pointerLocked": true,
+            "generation": 1,
+            "time": 22234.299999952316
+          },
+          {
+            "type": "hud",
+            "status": "playing",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": true,
+            "inventoryPending": true,
+            "pointerLocked": true,
+            "generation": 1,
+            "time": 22238.799999952316
+          },
+          {
+            "type": "pointerlockchange",
+            "time": 22247.299999952316,
+            "focus": true
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": true,
+            "inventoryPending": true,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 22250
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": true,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 22254.299999952316
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": true,
+            "inventoryPending": true,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 22255.799999952316
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": true,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 22271.39999985695
+          },
+          {
+            "type": "command",
+            "command": "inventory",
+            "kind": "close",
+            "generation": 1,
+            "time": 22392.599999904633
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 22392.89999985695
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": true,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 22396.5
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 22414.5
+          },
+          {
+            "type": "command",
+            "command": "inventory",
+            "kind": "open",
+            "generation": 1,
+            "time": 22617.199999809265
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": true,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 22627.5
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": true,
+            "inventoryPending": true,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 22630.799999952316
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": true,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 22660.39999985695
+          },
+          {
+            "type": "command",
+            "command": "inventory",
+            "kind": "close",
+            "generation": 1,
+            "time": 24737
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 24741.099999904633
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": true,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 24746.5
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 24763.099999904633
+          },
+          {
+            "type": "command",
+            "command": "inventory",
+            "kind": "open",
+            "generation": 1,
+            "time": 25404.099999904633
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": true,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 25426.099999904633
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": true,
+            "inventoryPending": true,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 25434.5
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": true,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 25482
+          },
+          {
+            "type": "command",
+            "command": "inventory",
+            "kind": "give",
+            "generation": 1,
+            "time": 25808.5
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": true,
+            "inventoryPending": true,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 25825.39999985695
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": true,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 25895.799999952316
+          },
+          {
+            "type": "command",
+            "command": "inventory",
+            "kind": "close",
+            "generation": 1,
+            "time": 26085.299999952316
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 26091.599999904633
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": true,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 26098.39999985695
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 26123.299999952316
+          },
+          {
+            "type": "hud",
+            "status": "error",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 38515.39999985695
+          },
+          {
+            "type": "hud",
+            "status": "connecting",
+            "lifecycle": "preparing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 38686
+          },
+          {
+            "type": "hud",
+            "status": "loading",
+            "lifecycle": "preparing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 38754.39999985695
+          },
+          {
+            "type": "hud",
+            "status": "loading",
+            "lifecycle": "paused",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 38762.39999985695
+          },
+          {
+            "type": "hud",
+            "status": "loading",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 38814.699999809265
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 39131.09999990463
+          },
+          {
+            "type": "hud",
+            "status": "error",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 41175
+          },
+          {
+            "type": "hud",
+            "status": "connecting",
+            "lifecycle": "preparing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 42396.799999952316
+          },
+          {
+            "type": "hud",
+            "status": "error",
+            "lifecycle": "preparing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 42432.299999952316
+          },
+          {
+            "type": "hud",
+            "status": "connecting",
+            "lifecycle": "preparing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 42713.59999990463
+          },
+          {
+            "type": "hud",
+            "status": "loading",
+            "lifecycle": "preparing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 42768.699999809265
+          },
+          {
+            "type": "hud",
+            "status": "loading",
+            "lifecycle": "paused",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 42772.699999809265
+          },
+          {
+            "type": "hud",
+            "status": "loading",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 42816.699999809265
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 43113.699999809265
+          },
+          {
+            "type": "command",
+            "command": "pause",
+            "generation": 1,
+            "time": 47165.5
+          },
+          {
+            "type": "command",
+            "command": "pause",
+            "generation": 1,
+            "time": 47849.39999985695
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "paused",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 59342.09999990463
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 63716.39999985695
+          },
+          {
+            "type": "command",
+            "command": "resume",
+            "generation": 1,
+            "time": 63846.299999952316
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": true,
+            "generation": 1,
+            "time": 63862.39999985695
+          },
+          {
+            "type": "pointerlockchange",
+            "time": 63862.5,
+            "focus": true,
+            "pointer": "CANVAS"
+          },
+          {
+            "type": "hud",
+            "status": "playing",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": true,
+            "generation": 1,
+            "time": 63869.799999952316
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": true,
+            "generation": 1,
+            "time": 80778.19999980927
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "paused",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": true,
+            "generation": 1,
+            "time": 80794
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "ended",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": true,
+            "generation": 1,
+            "time": 80811
+          },
+          {
+            "type": "hud",
+            "status": "error",
+            "lifecycle": "ended",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": true,
+            "generation": 1,
+            "time": 80816.79999995232
+          },
+          {
+            "type": "pointerlockchange",
+            "time": 82780.69999980927,
+            "focus": true
+          }
+        ],
+        "voice": {
+          "disposed": true,
+          "phase": "off",
+          "room": "disconnected",
+          "remoteParticipants": 0,
+          "pendingDisconnects": 0,
+          "capturePending": false,
+          "microphoneTracks": 0,
+          "timers": 0,
+          "audio": {
+            "disposed": true,
+            "context": "closed",
+            "tracks": 0,
+            "nodes": 0,
+            "outputs": 0,
+            "inputs": 0,
+            "blockedInputs": 0,
+            "outputSelection": false
+          }
+        }
+      },
+      {
+        "phase": "preparing",
+        "inputMode": "touch",
+        "lifecycle": "ended",
+        "focused": false,
+        "body": null,
+        "inventoryOpen": false,
+        "inventoryPending": false,
+        "lastReceivedAgoMs": 9324.099999904633,
+        "keys": [],
+        "events": [
+          {
+            "type": "hud",
+            "status": "connecting",
+            "lifecycle": "preparing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 4460.299999952316
+          },
+          {
+            "type": "hud",
+            "status": "connecting",
+            "lifecycle": "preparing",
+            "role": "observer",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 4603.700000047684
+          },
+          {
+            "type": "hud",
+            "status": "loading",
+            "lifecycle": "preparing",
+            "role": "observer",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 4620.299999952316
+          },
+          {
+            "type": "hud",
+            "status": "loading",
+            "lifecycle": "playing",
+            "role": "observer",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 4632.599999904633
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "observer",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 5048.200000047684
+          },
+          {
+            "type": "command",
+            "command": "pause",
+            "generation": 1,
+            "time": 6682.399999856949
+          },
+          {
+            "type": "command",
+            "command": "pause",
+            "generation": 1,
+            "time": 20564.200000047684
+          },
+          {
+            "type": "command",
+            "command": "pause",
+            "generation": 1,
+            "time": 20672.799999952316
+          },
+          {
+            "type": "command",
+            "command": "pause",
+            "generation": 1,
+            "time": 21829.099999904633
+          },
+          {
+            "type": "command",
+            "command": "pause",
+            "generation": 1,
+            "time": 21949.599999904633
+          },
+          {
+            "type": "command",
+            "command": "resume",
+            "generation": 1,
+            "time": 22494.599999904633
+          },
+          {
+            "type": "hud",
+            "status": "playing",
+            "lifecycle": "playing",
+            "role": "observer",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 22508.89999985695
+          },
+          {
+            "type": "command",
+            "command": "resume",
+            "generation": 1,
+            "time": 22608.700000047684
+          },
+          {
+            "type": "command",
+            "command": "resume",
+            "generation": 1,
+            "time": 24276.799999952316
+          },
+          {
+            "type": "command",
+            "command": "pause",
+            "generation": 1,
+            "time": 30634.700000047684
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "observer",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 30641.89999985695
+          },
+          {
+            "type": "command",
+            "command": "pause",
+            "generation": 1,
+            "time": 30751
+          },
+          {
+            "type": "hud",
+            "status": "loading",
+            "lifecycle": "playing",
+            "role": "observer",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 30885.799999952316
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "observer",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 31181.89999985695
+          },
+          {
+            "type": "command",
+            "command": "pause",
+            "generation": 1,
+            "time": 33813.299999952316
+          },
+          {
+            "type": "command",
+            "command": "pause",
+            "generation": 1,
+            "time": 33896
+          },
+          {
+            "type": "command",
+            "command": "pause",
+            "generation": 1,
+            "time": 34028.5
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "paused",
+            "role": "observer",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 34089.09999990463
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "observer",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 34336.59999990463
+          },
+          {
+            "type": "command",
+            "command": "pause",
+            "generation": 1,
+            "time": 36627.700000047684
+          },
+          {
+            "type": "command",
+            "command": "pause",
+            "generation": 1,
+            "time": 36699.59999990463
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "paused",
+            "role": "observer",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 36746.39999985695
+          },
+          {
+            "type": "command",
+            "command": "pause",
+            "generation": 1,
+            "time": 38077.299999952316
+          },
+          {
+            "type": "command",
+            "command": "pause",
+            "generation": 1,
+            "time": 38164.59999990463
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "observer",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 38352.5
+          },
+          {
+            "type": "command",
+            "command": "pause",
+            "generation": 1,
+            "time": 43559
+          },
+          {
+            "type": "command",
+            "command": "pause",
+            "generation": 1,
+            "time": 54797.200000047684
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "paused",
+            "role": "observer",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 54903.09999990463
+          },
+          {
+            "type": "command",
+            "command": "pause",
+            "generation": 1,
+            "time": 55074.5
+          },
+          {
+            "type": "command",
+            "command": "resume",
+            "generation": 1,
+            "time": 55474.200000047684
+          },
+          {
+            "type": "hud",
+            "status": "playing",
+            "lifecycle": "paused",
+            "role": "observer",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 55479.89999985695
+          },
+          {
+            "type": "command",
+            "command": "resume",
+            "generation": 1,
+            "time": 55541.59999990463
+          },
+          {
+            "type": "command",
+            "command": "pause",
+            "generation": 1,
+            "time": 56826.299999952316
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "paused",
+            "role": "observer",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 56831.59999990463
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "observer",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 59274.89999985695
+          },
+          {
+            "type": "command",
+            "command": "pause",
+            "generation": 1,
+            "time": 75568
+          },
+          {
+            "type": "command",
+            "command": "pause",
+            "generation": 1,
+            "time": 75754.20000004768
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "paused",
+            "role": "observer",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 75900.5
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "ended",
+            "role": "observer",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 75981.70000004768
+          },
+          {
+            "type": "hud",
+            "status": "error",
+            "lifecycle": "ended",
+            "role": "observer",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 75989.09999990463
+          }
+        ],
+        "voice": {
+          "disposed": true,
+          "phase": "off",
+          "room": "disconnected",
+          "remoteParticipants": 0,
+          "pendingDisconnects": 0,
+          "capturePending": false,
+          "microphoneTracks": 0,
+          "timers": 0,
+          "audio": {
+            "disposed": true,
+            "context": "closed",
+            "tracks": 0,
+            "nodes": 0,
+            "outputs": 0,
+            "inputs": 0,
+            "blockedInputs": 0,
+            "outputSelection": false
+          }
+        }
+      }
+    ]
+  },
+  "checkedAt": "2026-10-27T00:35:11.566Z"
+}

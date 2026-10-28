@@ -1,0 +1,8 @@
+
+> @playground/voxel@0.1.0 test:combat:browser
+> node tools/browser-combat.ts
+
+Opening victim inventory and positioning attacker using public movement
+Sending a real touch attack, then ordinary public attack intents at authoritative readiness
+Respawning the same built client through the normal UI and collision-readiness exchange
+Authoritative combat, death, same-connection respawn and teardown pass

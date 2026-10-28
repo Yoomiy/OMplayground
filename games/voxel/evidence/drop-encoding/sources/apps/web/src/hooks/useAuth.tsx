@@ -1,0 +1,68 @@
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode
+} from "react";
+import type { Session, User } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
+import { reportCaughtError } from "@/utils/telemetry";
+
+type AuthContextValue = {
+  session: Session | null;
+  user: User | null;
+  /** False only after the first `getSession()` completes */
+  loading: boolean;
+};
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    void supabase.auth
+      .getSession()
+      .then(({ data, error }) => {
+        if (error) throw error;
+        if (!cancelled) {
+          setSession(data.session ?? null);
+          setUser(data.session?.user ?? null);
+        }
+      })
+      .catch((error) => {
+        reportCaughtError("Authentication session lookup failed", error, { appArea: "auth", operation: "get-session" });
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
+      setSession(next);
+      setUser(next?.user ?? null);
+    });
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
+  const value = useMemo(
+    () => ({ session, user, loading }),
+    [session, user, loading]
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth(): AuthContextValue {
+  const ctx = useContext(AuthContext);
+  if (!ctx) {
+    throw new Error("useAuth must be used within AuthProvider");
+  }
+  return ctx;
+}

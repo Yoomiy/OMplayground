@@ -1,0 +1,200 @@
+{
+  "buildId": "059ee0d9b8588154f7e16d39a1e12c33a83ad78b19eb1037a87ea48bffd343f9",
+  "startedAt": "2026-10-22T20:01:05.509Z",
+  "active": null,
+  "checks": [
+    {
+      "script": "test:combat:browser",
+      "path": "/tmp/voxel-tnt-suite-test-combat-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-22T20:23:49.686Z",
+      "finishedAt": "2026-10-22T20:24:38.306Z",
+      "durationMs": 48620
+    },
+    {
+      "script": "test:survival:browser",
+      "path": "/tmp/voxel-tnt-suite-test-survival-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-22T20:24:39.933Z",
+      "finishedAt": "2026-10-22T20:26:53.498Z",
+      "durationMs": 133564
+    },
+    {
+      "script": "test:touch:browser",
+      "path": "/tmp/voxel-tnt-suite-test-touch-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-22T20:26:55.426Z",
+      "finishedAt": "2026-10-22T20:27:14.771Z",
+      "durationMs": 19346
+    },
+    {
+      "script": "test:creative:browser",
+      "path": "/tmp/voxel-tnt-suite-test-creative-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-22T20:30:07.942Z",
+      "finishedAt": "2026-10-22T20:32:25.867Z",
+      "durationMs": 137924
+    },
+    {
+      "script": "test:inventory:browser",
+      "path": "/tmp/voxel-tnt-suite-test-inventory-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-22T20:32:45.561Z",
+      "finishedAt": "2026-10-22T20:33:35.557Z",
+      "durationMs": 49996
+    },
+    {
+      "script": "test:presentation:browser",
+      "path": "/tmp/voxel-tnt-suite-test-presentation-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-22T20:33:37.241Z",
+      "finishedAt": "2026-10-22T20:34:11.120Z",
+      "durationMs": 33879
+    },
+    {
+      "script": "test:environment:browser",
+      "path": "/tmp/voxel-tnt-suite-test-environment-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-22T20:34:12.826Z",
+      "finishedAt": "2026-10-22T20:34:27.912Z",
+      "durationMs": 15086
+    },
+    {
+      "script": "test:recovery:browser",
+      "path": "/tmp/voxel-tnt-suite-test-recovery-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-22T20:34:29.993Z",
+      "finishedAt": "2026-10-22T20:34:40.193Z",
+      "durationMs": 10199
+    },
+    {
+      "script": "test:browser",
+      "path": "/tmp/voxel-tnt-suite-test-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-22T20:34:42.324Z",
+      "finishedAt": "2026-10-22T20:34:44.400Z",
+      "durationMs": 2076
+    },
+    {
+      "script": "test:tnt:browser",
+      "path": "/tmp/voxel-tnt-suite-test-tnt-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-22T20:34:46.329Z",
+      "finishedAt": "2026-10-22T20:37:26.093Z",
+      "durationMs": 159764
+    }
+  ],
+  "historicalChecks": [
+    {
+      "script": "test:tnt:browser",
+      "path": "/tmp/voxel-tnt-suite-test-tnt-browser.log",
+      "code": 1,
+      "signal": null,
+      "startedAt": "2026-10-22T20:01:05.509Z",
+      "finishedAt": "2026-10-22T20:01:49.491Z",
+      "durationMs": 43982,
+      "retainedLog": "/tmp/voxel-tnt-suite-test-tnt-browser.log.prior-0"
+    },
+    {
+      "script": "test:tnt:browser",
+      "path": "/tmp/voxel-tnt-suite-test-tnt-browser.log",
+      "code": 1,
+      "signal": null,
+      "startedAt": "2026-10-22T20:02:15.201Z",
+      "finishedAt": "2026-10-22T20:04:12.691Z",
+      "durationMs": 117490,
+      "retainedLog": "/tmp/voxel-tnt-suite-test-tnt-browser.log.prior-1"
+    },
+    {
+      "script": "test:tnt:browser",
+      "path": "/tmp/voxel-tnt-suite-test-tnt-browser.log",
+      "code": 1,
+      "signal": null,
+      "startedAt": "2026-10-22T20:04:59.524Z",
+      "finishedAt": "2026-10-22T20:05:32.194Z",
+      "durationMs": 32670,
+      "retainedLog": "/tmp/voxel-tnt-suite-test-tnt-browser.log.prior-2"
+    },
+    {
+      "script": "test:tnt:browser",
+      "path": "/tmp/voxel-tnt-suite-test-tnt-browser.log",
+      "code": 1,
+      "signal": null,
+      "startedAt": "2026-10-22T20:06:22.693Z",
+      "finishedAt": "2026-10-22T20:07:52.391Z",
+      "durationMs": 89697,
+      "retainedLog": "/tmp/voxel-tnt-suite-test-tnt-browser.log.prior-3"
+    },
+    {
+      "script": "test:tnt:browser",
+      "path": "/tmp/voxel-tnt-suite-test-tnt-browser.log",
+      "code": 1,
+      "signal": null,
+      "startedAt": "2026-10-22T20:08:39.157Z",
+      "finishedAt": "2026-10-22T20:10:05.744Z",
+      "durationMs": 86587,
+      "retainedLog": "/tmp/voxel-tnt-suite-test-tnt-browser.log.prior-4"
+    },
+    {
+      "script": "test:tnt:browser",
+      "path": "/tmp/voxel-tnt-suite-test-tnt-browser.log",
+      "code": 1,
+      "signal": null,
+      "startedAt": "2026-10-22T20:11:02.370Z",
+      "finishedAt": "2026-10-22T20:12:44.522Z",
+      "durationMs": 102152,
+      "retainedLog": "/tmp/voxel-tnt-suite-test-tnt-browser.log.prior-5"
+    },
+    {
+      "script": "test:tnt:browser",
+      "path": "/tmp/voxel-tnt-suite-test-tnt-browser.log",
+      "code": 1,
+      "signal": null,
+      "startedAt": "2026-10-22T20:14:02.629Z",
+      "finishedAt": "2026-10-22T20:15:55.163Z",
+      "durationMs": 112534,
+      "retainedLog": "/tmp/voxel-tnt-suite-test-tnt-browser.log.prior-6"
+    },
+    {
+      "script": "test:tnt:browser",
+      "path": "/tmp/voxel-tnt-suite-test-tnt-browser.log",
+      "code": 1,
+      "signal": null,
+      "startedAt": "2026-10-22T20:17:03.190Z",
+      "finishedAt": "2026-10-22T20:17:31.558Z",
+      "durationMs": 28368,
+      "retainedLog": "/tmp/voxel-tnt-suite-test-tnt-browser.log.prior-7"
+    },
+    {
+      "script": "test:creative:browser",
+      "path": "/tmp/voxel-tnt-suite-test-creative-browser.log",
+      "code": 1,
+      "signal": null,
+      "startedAt": "2026-10-22T20:27:16.682Z",
+      "finishedAt": "2026-10-22T20:29:06.276Z",
+      "durationMs": 109594,
+      "retainedLog": "/tmp/voxel-tnt-suite-test-creative-browser.log.prior-8"
+    },
+    {
+      "script": "test:tnt:browser",
+      "path": "/tmp/voxel-tnt-suite-test-tnt-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-22T20:19:11.736Z",
+      "finishedAt": "2026-10-22T20:21:54.733Z",
+      "durationMs": 162996,
+      "retainedLog": "/tmp/voxel-tnt-suite-test-tnt-browser.log.prior-9"
+    }
+  ],
+  "finishedAt": "2026-10-22T20:37:26.093Z"
+}

@@ -1,0 +1,9 @@
+✔ production composition verifies real schemas, serves authenticated APIs without a prototype launcher and drains idempotently (389.651095ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1269.398983

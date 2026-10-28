@@ -3,12 +3,44 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/supabase", () => ({
   supabase: { auth: { getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }) } }
 }));
-vi.mock("@/lib/voxelServerUrl", () => ({ getVoxelServerUrl: () => "https://voxel.example" }));
+vi.mock("@/lib/classroomServerUrl", () => ({ getClassroomServerUrl: vi.fn(() => "https://classroom.example") }));
 vi.mock("@/utils/correlation", () => ({ getCorrelationId: () => "c-test" }));
 
-import { flushTelemetry, installGlobalTelemetry, reportTelemetry } from "./telemetry";
+import { getClassroomServerUrl } from "@/lib/classroomServerUrl";
+import { flushTelemetry, installGlobalTelemetry, reportTelemetry, setShellTelemetryTarget } from "./telemetry";
 
 describe("client telemetry queue", () => {
+  it("routes classroom and shell errors to the independent classroom service", async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal("fetch", fetchMock);
+    const restore = setShellTelemetryTarget("classroom-server");
+    try {
+      reportTelemetry({ level: "error", message: "classroom-shell" });
+      reportTelemetry({ level: "error", message: "classroom-explicit" }, "classroom-server");
+      await flushTelemetry();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock.mock.calls[0][0]).toBe("https://classroom.example/api/telemetry");
+      expect(JSON.parse(fetchMock.mock.calls[0][1].body).logs.map((log: { message: string }) => log.message))
+        .toEqual(["classroom-shell", "classroom-explicit"]);
+    } finally {
+      restore();
+    }
+  });
+
+  it("retains the classroom queue after missing configuration and recovers", async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal("fetch", fetchMock);
+    vi.mocked(getClassroomServerUrl).mockImplementationOnce(() => { throw new Error("CLASSROOM_CONFIGURATION"); });
+    reportTelemetry({ level: "error", message: "classroom-config-retry" }, "classroom-server");
+    await flushTelemetry("classroom-server");
+    expect(fetchMock).not.toHaveBeenCalled();
+    await flushTelemetry("classroom-server");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).logs[0].message).toBe("classroom-config-retry");
+  });
+
   afterEach(() => {
     vi.clearAllTimers();
     vi.useRealTimers();

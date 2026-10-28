@@ -1,0 +1,228 @@
+{
+  "result": "PASS_WITH_RETAINED_DEVELOPMENT_FAILURES",
+  "capturedAt": "2026-10-22T17:47:13.880Z",
+  "buildId": "37a9e3788eddb78445d9ebeb495735b31f59847e034d033a4ff19e7fc077f576",
+  "engineHash": "7688702bb6a210b9ac77384f44e7a8f7feca2f9036df7b9230cbe923cde80f49",
+  "contentHash": "c2ed76b95f1df88d5c2e1b852d1f866a6f323483260b6dcad903cfe64d35b6c6",
+  "matchedReleaseFiles": 12,
+  "checksExitCode": 0,
+  "browserExitCodes": [
+    {
+      "script": "test:touch:browser",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "script": "test:survival:browser",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "script": "test:creative:browser",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "script": "test:inventory:browser",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "script": "test:presentation:browser",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "script": "test:environment:browser",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "script": "test:recovery:browser",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "script": "test:browser",
+      "code": 0,
+      "signal": null
+    }
+  ],
+  "limitations": "Software Chromium/SwiftShader functional evidence. Hardware performance/input/audio, OS focus, long-session load, persistence and school-service integration remain unqualified. Historical failure logs retain their original identities and do not describe the final build.",
+  "scenarios": [
+    {
+      "path": "tests/survival.test.ts",
+      "hash": "4cacaca4366367f168f58a1c6ee18a281fc3d14a6563564a950e6484b2aec5f2"
+    },
+    {
+      "path": "tests/wasm/survival.test.ts",
+      "hash": "73845c0597e933ce4cb2d621e07de0b15c822d10a099af29e293e27db6646a7b"
+    },
+    {
+      "path": "tests/authority.test.ts",
+      "hash": "9ed448f1e4750de57774216f4d2ec7ad24adbb2587acec3b2535c2f603e1b916"
+    },
+    {
+      "path": "tests/integration/creative.test.ts",
+      "hash": "bc27d08e6906b1cf6b6d50d322555825e29fa865ee19d56e24590302b5394d14"
+    },
+    {
+      "path": "tools/browser-survival.ts",
+      "hash": "5a7b02939bc70031c4d1ca04b16af022b635a65dac6a9a486fee2e9ebd9118c2"
+    },
+    {
+      "path": "tools/browser-touch.ts",
+      "hash": "674ed5b901219a003f4039c0914699be41e60f6d29d58b79362b2631edd7c169"
+    },
+    {
+      "path": "tools/browser-creative.ts",
+      "hash": "d645935c6ec757a60a8fac4b851ff738f8a294928971a90a7c9511dce83bb531"
+    },
+    {
+      "path": "tools/browser-inventory.ts",
+      "hash": "1f0c37580bb0b47cf0ec0651696a19cfa7d8179b5a87793d8d7a1afbe6cbc48e"
+    },
+    {
+      "path": "tools/browser-presentation.ts",
+      "hash": "d3e4db711bb1357d68dbfa28b7e539148e03e2792f4bb9c576a4b29eeae04903"
+    },
+    {
+      "path": "tools/browser-environment.ts",
+      "hash": "c5baa674174283c6a79fc31aeef2f9f0488a9af59032ba31f2f440988e6522d0"
+    },
+    {
+      "path": "tools/browser-worker-recovery.ts",
+      "hash": "4e2645298e9a184e654bfbaf725e4934aac885c33860570ec972c4a6093e98ea"
+    },
+    {
+      "path": "tools/browser-smoke.ts",
+      "hash": "e14e614fb0a99dab8a4aecfaa6d1b8b9528c87e57db51cb433351aa967b665da"
+    },
+    {
+      "path": "tools/wasm-scenario.mjs",
+      "hash": "77f489a6b5c36055d713b2782fe94c8df7b825f35566b34aec7aed97dc87317c"
+    }
+  ],
+  "files": [
+    {
+      "path": "browser-creative.json",
+      "hash": "2b8048f10379ddbacdfe0a2823196445071163c2c1d16ab601c2f827c5d40e9d"
+    },
+    {
+      "path": "browser-environment.json",
+      "hash": "6b9f37a46651cf5993bf0907a1b0351ae8ab4ef7b30d569933b439bbef392cfa"
+    },
+    {
+      "path": "browser-inventory.json",
+      "hash": "8ce4eb0bb6ac2e7bb678c06851b4bda4fcce09c49fd869b8e06d547e661627e2"
+    },
+    {
+      "path": "browser-presentation.json",
+      "hash": "1eaa383a0bbb72cfde22c118ea47c039d017fb6d8a5dc822ff54588f5d70cc2c"
+    },
+    {
+      "path": "browser-suite.json",
+      "hash": "6be06ed51b098beaa1a81b8446f990d4d8999851505add19c1c1d168a20d2a93"
+    },
+    {
+      "path": "browser-survival.json",
+      "hash": "2030370455854ec2bba57a18f0fe45f7a43713729381548ee0241a38c5f9d583"
+    },
+    {
+      "path": "browser-touch.json",
+      "hash": "26d684428864ac45a9eb4a8b02ad3b36c1a189592aa5e81a053f3cf3f6eac3cb"
+    },
+    {
+      "path": "browser-wasm.json",
+      "hash": "ec1c00f03b152e00cf0fb37ee98fe7e7c98ee187dd9c96fc5c56daa182499698"
+    },
+    {
+      "path": "browser-worker-recovery.json",
+      "hash": "fddfe87497c714b3e7ed171c883b71c98aaab92896ba6246f307f77c4df6551c"
+    },
+    {
+      "path": "build.json",
+      "hash": "c7661903eb38a6b7203ea51fc8fd7dfa35886e1ad9486a43c5a14f43706aff56"
+    },
+    {
+      "path": "check-exit.json",
+      "hash": "29a7c9a5bcf41bdaf0d451febc2ddc638cc73cda517ace1851ef5b5e39ba1a33"
+    },
+    {
+      "path": "check.txt",
+      "hash": "68f43dc5c02b6b8575a7365bb38ce9d905611d548db1979fde6347d5fe131ea1"
+    },
+    {
+      "path": "historical-browser-harvest-route.txt",
+      "hash": "39d179820c6b6f985cad33862cd8e72fe34c1ad118847613cd718678b88c7bdc"
+    },
+    {
+      "path": "historical-mining-input-stale.txt",
+      "hash": "faad343733bee057bdae18a114491c46d85a2a746cfdf6185ed2223908204902"
+    },
+    {
+      "path": "historical-mining-liveness.txt",
+      "hash": "5743dd4dbbe89a603dc8574561c04b7d19cbb96c78b1c2aef77f409308f24465"
+    },
+    {
+      "path": "historical-rapid-focus-race.txt",
+      "hash": "2c2630eab243b0198280a2973a37bdf08c2c548e43fa71fcda27e806a4b3e9a5"
+    },
+    {
+      "path": "historical-snapshot-comparison.txt",
+      "hash": "5f343264f0d060d2ce13602a880cafd93589002be99f221144168f99dded85e6"
+    },
+    {
+      "path": "release.json",
+      "hash": "95f74fec3651f93bb7a1c30e65b71bca613e065211fe0c01b167cad2650804e5"
+    },
+    {
+      "path": "source-release-verification.json",
+      "hash": "b7d29f26805d46ed553c5f670d1531e92b4f283eff0657aff5cb004a48e0fbbb"
+    },
+    {
+      "path": "survival-crafting.png",
+      "hash": "0ca7de92333434a7b4a941018f1e11f165a0aff40f2ccad16da4c5246e3ad5ee"
+    },
+    {
+      "path": "survival-drop.png",
+      "hash": "9903eb8099c5c5622e40b1da6ac7fc41d998a8c500a280ea563467ba6a67d708"
+    },
+    {
+      "path": "survival-tool.png",
+      "hash": "4ca5eec9db0b4f4148e71f0bae55f8352c24a4ceffaaf82e453265e06c158a54"
+    },
+    {
+      "path": "test-browser.txt",
+      "hash": "d748fd6cbb5caa64c0a06157dc6276d8248b7d20833a96bea594bb1804b25823"
+    },
+    {
+      "path": "test-creative-browser.txt",
+      "hash": "ff2d9823c76e952b55b29f2963ce6fdc8a011ea03d649f797bc47ad909fd513a"
+    },
+    {
+      "path": "test-environment-browser.txt",
+      "hash": "74835b04719744611db5bea8fa643ebfa4434949c23e69d5951162ddb238f037"
+    },
+    {
+      "path": "test-inventory-browser.txt",
+      "hash": "770f74744d7ca9abacbe1fd41c1041264d9cb104d0bc25cf717bc9d08d1816fc"
+    },
+    {
+      "path": "test-presentation-browser.txt",
+      "hash": "29ea38f4d4fda75ecde6ed0b3db56ea669ec5045936e2dab361c556959d7f2a2"
+    },
+    {
+      "path": "test-recovery-browser.txt",
+      "hash": "dca103c15b7e9ddf6ee0780f7fe9a684cdfc6aec63b1fad70cf1be3f0f62f1e6"
+    },
+    {
+      "path": "test-survival-browser.txt",
+      "hash": "c9ae6a90206ad348e1bcba175235df4d86f112d9677700df402af01aaadde8f1"
+    },
+    {
+      "path": "test-touch-browser.txt",
+      "hash": "0d40981824e13958d64d3a4f69091e6bc374025a7534e3dc4e59614776e7fa4e"
+    }
+  ]
+}

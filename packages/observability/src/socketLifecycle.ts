@@ -17,17 +17,6 @@ const GAME_SERVER_EVENTS = new Set([
   "SPECTATE",
   "CLASSROOM_WHITEBOARD_POLICY_REFRESH"
 ]);
-const MINECRAFT_SERVER_EVENTS = new Set([
-  "JOIN_ROOM",
-  "LEAVE_ROOM",
-  "PAUSE_GAME",
-  "RESUME_GAME",
-  "STOP_GAME",
-  "SET_GAME_MODE",
-  "SWITCH_TEACHER",
-  "MUTE_ALL"
-]);
-
 export interface SocketEventOutcome {
   ok: boolean;
   code?: string;
@@ -36,7 +25,7 @@ export interface SocketEventOutcome {
 }
 
 export function shouldLogSocketEvent(service: ServiceName, event: string): boolean {
-  return (service === "minecraft-server" ? MINECRAFT_SERVER_EVENTS : GAME_SERVER_EVENTS).has(event);
+  return service === "game-server" && GAME_SERVER_EVENTS.has(event);
 }
 
 export function installSocketExceptionGuard(

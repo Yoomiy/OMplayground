@@ -1,0 +1,153 @@
+{
+  "startedAt": "2026-10-28T11:09:51.866Z",
+  "checks": [
+    {
+      "name": "inventory",
+      "command": "npm",
+      "args": [
+        "--prefix",
+        "games/voxel",
+        "run",
+        "inventory:legacy"
+      ],
+      "startedAt": "2026-10-28T11:09:51.867Z",
+      "endedAt": "2026-10-28T11:09:52.481Z",
+      "exitCode": 0,
+      "log": "/tmp/voxel-legacy-content-inventory.log",
+      "sha256": "4f620255217ab1d9f7a195ff651ed3997b3ba1d88b0a6eb608f4332a1ab09959"
+    },
+    {
+      "name": "content",
+      "command": "npm",
+      "args": [
+        "--prefix",
+        "games/voxel",
+        "run",
+        "check:content:complete"
+      ],
+      "startedAt": "2026-10-28T11:09:52.482Z",
+      "endedAt": "2026-10-28T11:09:52.904Z",
+      "exitCode": 0,
+      "log": "/tmp/voxel-legacy-content-content.log",
+      "sha256": "2a6a1e0693cb6eb7b8bb5cd62fccef9cac4682451e5bd8a32c2435d195788c99"
+    },
+    {
+      "name": "boundaries",
+      "command": "npm",
+      "args": [
+        "--prefix",
+        "games/voxel",
+        "run",
+        "check:boundaries"
+      ],
+      "startedAt": "2026-10-28T11:09:52.904Z",
+      "endedAt": "2026-10-28T11:09:53.803Z",
+      "exitCode": 0,
+      "log": "/tmp/voxel-legacy-content-boundaries.log",
+      "sha256": "e0b1c1f9497060693be9dd0221c7dfbc008c644cd8e89796a38877b09101d370"
+    },
+    {
+      "name": "release",
+      "command": "node",
+      "args": [
+        "games/voxel/tools/verify-release.mjs"
+      ],
+      "startedAt": "2026-10-28T11:09:53.805Z",
+      "endedAt": "2026-10-28T11:09:54.130Z",
+      "exitCode": 0,
+      "log": "/tmp/voxel-legacy-content-release.log",
+      "sha256": "3404d28b85be96b112a6c20b4cd3ce56698d317b92076bebe0ff9d7e4190f0e6"
+    },
+    {
+      "name": "game-types",
+      "command": "node",
+      "args": [
+        "games/voxel/node_modules/typescript/bin/tsc",
+        "--noEmit",
+        "-p",
+        "games/voxel/tsconfig.json"
+      ],
+      "startedAt": "2026-10-28T11:09:54.131Z",
+      "endedAt": "2026-10-28T11:10:02.152Z",
+      "exitCode": 0,
+      "log": "/tmp/voxel-legacy-content-game-types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "domain",
+      "command": "npm",
+      "args": [
+        "--prefix",
+        "games/voxel",
+        "test"
+      ],
+      "startedAt": "2026-10-28T11:10:02.153Z",
+      "endedAt": "2026-10-28T11:10:12.982Z",
+      "exitCode": 0,
+      "log": "/tmp/voxel-legacy-content-domain.log",
+      "sha256": "f792716b9dcafe086350a8958e430a8ae78b7a5c261366bad07a6423677fec15"
+    },
+    {
+      "name": "wasm",
+      "command": "npm",
+      "args": [
+        "--prefix",
+        "games/voxel",
+        "run",
+        "test:wasm"
+      ],
+      "startedAt": "2026-10-28T11:10:12.983Z",
+      "endedAt": "2026-10-28T11:10:29.922Z",
+      "exitCode": 0,
+      "log": "/tmp/voxel-legacy-content-wasm.log",
+      "sha256": "e36b4e3ab16f9a7cdcce98c8db9dfd31af879b4c21c9ce0b8efd3f36ca3c3cd9"
+    },
+    {
+      "name": "web-types",
+      "command": "node",
+      "args": [
+        "node_modules/typescript/bin/tsc",
+        "--noEmit",
+        "-p",
+        "apps/web/tsconfig.json"
+      ],
+      "startedAt": "2026-10-28T11:10:29.923Z",
+      "endedAt": "2026-10-28T11:10:44.729Z",
+      "exitCode": 0,
+      "log": "/tmp/voxel-legacy-content-web-types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "service-types",
+      "command": "node",
+      "args": [
+        "node_modules/typescript/bin/tsc",
+        "--noEmit",
+        "-p",
+        "apps/voxel-server/tsconfig.json"
+      ],
+      "startedAt": "2026-10-28T11:10:44.730Z",
+      "endedAt": "2026-10-28T11:10:50.118Z",
+      "exitCode": 0,
+      "log": "/tmp/voxel-legacy-content-service-types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "web-build",
+      "command": "npm",
+      "args": [
+        "run",
+        "build",
+        "--workspace",
+        "@playground/web"
+      ],
+      "startedAt": "2026-10-28T11:10:50.119Z",
+      "endedAt": "2026-10-28T11:11:26.243Z",
+      "exitCode": 0,
+      "log": "/tmp/voxel-legacy-content-web-build.log",
+      "sha256": "1c5d4e5b0dfa3a46ac725cd73bd12fd2505e39449d7fd398fc26b0aa2d763964"
+    }
+  ],
+  "endedAt": "2026-10-28T11:11:26.243Z",
+  "result": "FROZEN_REFERENCE_CONTENT_TYPES_DOMAIN_WASM_AND_APP_PASS"
+}

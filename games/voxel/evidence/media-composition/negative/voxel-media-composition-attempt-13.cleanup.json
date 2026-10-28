@@ -1,0 +1,1320 @@
+{
+  "cleaned": true,
+  "rooms": [
+    "voxel-v13-eaac8287-b346-4c85-aacc-a411a513898d-1"
+  ],
+  "schoolDatabaseWrites": 0,
+  "voice": {
+    "enabled": true,
+    "databaseErrors": [
+      {
+        "rpc": "voxel_media_authorize",
+        "code": "42501",
+        "message": "media admission revoked"
+      }
+    ],
+    "responses": [
+      {
+        "page": "kid",
+        "operation": "voice-ticket",
+        "code": "NOT_IN_ROOM",
+        "time": 9928.612212
+      },
+      {
+        "page": "kid",
+        "operation": "media-moderate",
+        "code": "FORBIDDEN",
+        "time": 24385.901964
+      },
+      {
+        "page": "teacher",
+        "operation": "media-moderate",
+        "code": "MEDIA_UNCONFIRMED",
+        "time": 25668.295546
+      }
+    ],
+    "actualGamePoses": {
+      "listener": {
+        "position": [
+          49.5,
+          69.625,
+          0.5
+        ],
+        "forward": [
+          0,
+          0,
+          -1
+        ],
+        "up": [
+          0,
+          1,
+          0
+        ]
+      },
+      "sources": [
+        {
+          "id": "86cd02ea-c3d5-44ba-b82b-a615d1508cb7",
+          "position": [
+            49.5,
+            69.625,
+            0.5
+          ],
+          "gain": 1,
+          "occluded": false
+        }
+      ]
+    },
+    "nearSamples": [
+      0.049118768007242
+    ],
+    "hiddenStaff": true,
+    "lostMuteReply": true,
+    "retrySameRequest": true,
+    "studentModerationDenied": true,
+    "noGameplayReadmissionOnMute": true,
+    "beforeGameResume": {
+      "phase": "playing",
+      "inputMode": "desktop",
+      "maxTouchPoints": 0,
+      "coarse": false,
+      "lifecycle": "playing",
+      "focused": false,
+      "inventoryPending": false,
+      "inventoryOpen": false,
+      "keys": [],
+      "events": [
+        {
+          "type": "hud",
+          "status": "connecting",
+          "lifecycle": "preparing",
+          "role": "participant",
+          "inventoryOpen": false,
+          "inventoryPending": false,
+          "pointerLocked": false,
+          "generation": 1,
+          "time": 3256.2000000476837
+        },
+        {
+          "type": "hud",
+          "status": "loading",
+          "lifecycle": "preparing",
+          "role": "participant",
+          "inventoryOpen": false,
+          "inventoryPending": false,
+          "pointerLocked": false,
+          "generation": 1,
+          "time": 3858.600000143051
+        },
+        {
+          "type": "hud",
+          "status": "loading",
+          "lifecycle": "recovering",
+          "role": "participant",
+          "inventoryOpen": false,
+          "inventoryPending": false,
+          "pointerLocked": false,
+          "generation": 1,
+          "time": 3871.2000000476837
+        },
+        {
+          "type": "hud",
+          "status": "loading",
+          "lifecycle": "playing",
+          "role": "participant",
+          "inventoryOpen": false,
+          "inventoryPending": false,
+          "pointerLocked": false,
+          "generation": 1,
+          "time": 3947.2000000476837
+        },
+        {
+          "type": "hud",
+          "status": "paused",
+          "lifecycle": "playing",
+          "role": "participant",
+          "inventoryOpen": false,
+          "inventoryPending": false,
+          "pointerLocked": false,
+          "generation": 1,
+          "time": 4337.100000143051
+        },
+        {
+          "type": "command",
+          "command": "pause",
+          "generation": 1,
+          "time": 10541.300000190735
+        }
+      ],
+      "visible": "visible",
+      "hasFocus": true,
+      "active": "BUTTON",
+      "dialogs": [
+        {
+          "open": false,
+          "label": "voxel-voice-title"
+        },
+        {
+          "open": false,
+          "label": "voxel-chat-title"
+        },
+        {
+          "open": false,
+          "label": "voxel-staff-title"
+        },
+        {
+          "open": false,
+          "label": "voxel-end-title"
+        },
+        {
+          "open": false,
+          "label": "inventory-title"
+        }
+      ]
+    },
+    "failedInventoryKey": {
+      "phase": "playing",
+      "inputMode": "desktop",
+      "maxTouchPoints": 0,
+      "coarse": false,
+      "lifecycle": "playing",
+      "focused": false,
+      "inventoryPending": false,
+      "inventoryOpen": false,
+      "keys": [
+        {
+          "type": "keydown",
+          "code": "KeyE",
+          "time": 31346.900000095367,
+          "repeat": false,
+          "target": "BODY",
+          "trusted": true,
+          "focus": true,
+          "active": "BODY",
+          "pointer": "CANVAS"
+        },
+        {
+          "type": "keyup",
+          "code": "KeyE",
+          "time": 49748.200000047684,
+          "repeat": false,
+          "target": "BODY",
+          "trusted": true,
+          "focus": true,
+          "active": "BODY",
+          "pointer": "CANVAS"
+        }
+      ],
+      "events": [
+        {
+          "type": "hud",
+          "status": "connecting",
+          "lifecycle": "preparing",
+          "role": "participant",
+          "inventoryOpen": false,
+          "inventoryPending": false,
+          "pointerLocked": false,
+          "generation": 1,
+          "time": 3256.2000000476837
+        },
+        {
+          "type": "hud",
+          "status": "loading",
+          "lifecycle": "preparing",
+          "role": "participant",
+          "inventoryOpen": false,
+          "inventoryPending": false,
+          "pointerLocked": false,
+          "generation": 1,
+          "time": 3858.600000143051
+        },
+        {
+          "type": "hud",
+          "status": "loading",
+          "lifecycle": "recovering",
+          "role": "participant",
+          "inventoryOpen": false,
+          "inventoryPending": false,
+          "pointerLocked": false,
+          "generation": 1,
+          "time": 3871.2000000476837
+        },
+        {
+          "type": "hud",
+          "status": "loading",
+          "lifecycle": "playing",
+          "role": "participant",
+          "inventoryOpen": false,
+          "inventoryPending": false,
+          "pointerLocked": false,
+          "generation": 1,
+          "time": 3947.2000000476837
+        },
+        {
+          "type": "hud",
+          "status": "paused",
+          "lifecycle": "playing",
+          "role": "participant",
+          "inventoryOpen": false,
+          "inventoryPending": false,
+          "pointerLocked": false,
+          "generation": 1,
+          "time": 4337.100000143051
+        },
+        {
+          "type": "command",
+          "command": "pause",
+          "generation": 1,
+          "time": 10541.300000190735
+        },
+        {
+          "type": "command",
+          "command": "resume",
+          "generation": 1,
+          "time": 25587.200000047684
+        },
+        {
+          "type": "pointerlockchange",
+          "time": 25673.400000095367,
+          "focus": true,
+          "pointer": "CANVAS"
+        },
+        {
+          "type": "hud",
+          "status": "playing",
+          "lifecycle": "playing",
+          "role": "participant",
+          "inventoryOpen": false,
+          "inventoryPending": false,
+          "pointerLocked": true,
+          "generation": 1,
+          "time": 25693.700000047684
+        },
+        {
+          "type": "hud",
+          "status": "error",
+          "lifecycle": "playing",
+          "role": "participant",
+          "inventoryOpen": false,
+          "inventoryPending": false,
+          "pointerLocked": true,
+          "generation": 1,
+          "time": 29980.700000047684
+        }
+      ],
+      "visible": "visible",
+      "hasFocus": true,
+      "active": "BODY",
+      "pointer": "CANVAS",
+      "dialogs": [
+        {
+          "open": false,
+          "label": "voxel-voice-title"
+        },
+        {
+          "open": false,
+          "label": "voxel-chat-title"
+        },
+        {
+          "open": false,
+          "label": "voxel-staff-title"
+        },
+        {
+          "open": false,
+          "label": "voxel-end-title"
+        },
+        {
+          "open": false,
+          "label": "inventory-title"
+        }
+      ]
+    },
+    "fixtureTiming": {
+      "eventLoopMaxMs": 1210.056703,
+      "eventLoopMeanMs": 42.9197378556947,
+      "slowestDatabase": [
+        {
+          "elapsed": 1758.4229320000013
+        },
+        {
+          "elapsed": 1481.296441999999
+        },
+        {
+          "elapsed": 1426.196404000002,
+          "rpc": "voxel_session_policy"
+        },
+        {
+          "elapsed": 1387.4869319999998
+        },
+        {
+          "elapsed": 1039.6520189999937
+        },
+        {
+          "elapsed": 1006.6206909999892
+        },
+        {
+          "elapsed": 952.6068259999956
+        },
+        {
+          "elapsed": 839.5505080000003
+        },
+        {
+          "elapsed": 824.5589550000004
+        },
+        {
+          "elapsed": 817.7108389999994
+        },
+        {
+          "elapsed": 802.2049649999972
+        },
+        {
+          "elapsed": 744.5092399999994
+        }
+      ]
+    },
+    "finalNativeFrames": [
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "lifecycle",
+        "time": 11655.007794,
+        "reason": "policy_unavailable"
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 11655.091714,
+        "epoch": 1
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 11750.049824,
+        "epoch": 2,
+        "phase": "preparing",
+        "reason": "pause",
+        "frozen": 1
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 11750.116344,
+        "epoch": 2
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "lifecycle",
+        "time": 11750.310745,
+        "reason": "allowed"
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 11803.94193,
+        "epoch": 2,
+        "phase": "preparing",
+        "reason": "join",
+        "frozen": 1
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 11818.837004,
+        "epoch": 2
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 12087.755415,
+        "epoch": 2,
+        "phase": "playing",
+        "reason": "ready",
+        "frozen": 1
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 12105.705503,
+        "epoch": 2
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "lifecycle",
+        "time": 17291.984559,
+        "reason": "allowed"
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 17297.960229,
+        "epoch": 3
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 17304.36286,
+        "epoch": 3,
+        "phase": "preparing",
+        "reason": "join",
+        "frozen": 1
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 17307.189594,
+        "epoch": 3
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 17694.828632,
+        "epoch": 3,
+        "phase": "playing",
+        "reason": "ready",
+        "frozen": 1
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 17704.736521,
+        "epoch": 3
+      },
+      {
+        "page": "kid",
+        "direction": "framesent",
+        "type": "focus",
+        "time": 33608.691685,
+        "epoch": 2,
+        "active": true
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 33949.130408,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "focus",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 34054.279448,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 36535.631114,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "resync",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 36535.755555,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 36535.827235,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "resync",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 36535.837235,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 36535.850596,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "resync",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 36535.858996,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 36535.871996,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "resync",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 36535.880836,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 36535.902956,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "resync",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 36535.911676,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 36535.924556,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "resync",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 36535.933276,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 36535.945916,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "resync",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 36535.954236,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 36535.966636,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "resync",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 36535.975076,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 36535.988316,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "resync",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 36535.996836,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 36536.009396,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "resync",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 36536.017956,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 36536.031196,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "resync",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 36536.039356,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 36536.052437,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "resync",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 36536.060357,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 36536.073557,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "resync",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 36536.082237,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 36536.095557,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "resync",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 36536.104557,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 36536.117037,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "resync",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 36536.125357,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 36951.038248,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "resync",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 36951.066168,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 36951.278289,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "resync",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 37059.422544,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 37060.65911,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "resync",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 37060.69127,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 37060.70659,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "resync",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 37060.71659,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 37060.73067,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "resync",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 37060.73947,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 37060.75263,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "resync",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 37060.76175,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 37060.77443,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "resync",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 37060.78319,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 37296.372515,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "resync",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 37296.394795,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 37297.604001,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "resync",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 37297.649841,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 37440.627068,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "resync",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 37440.657428,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 37440.677468,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "resync",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 37440.687188,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 37440.701028,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "resync",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 37939.793415,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 37939.825975,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "resync",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 37939.836935,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "baseline",
+        "time": 37939.873816,
+        "epoch": 4,
+        "phase": "playing",
+        "reason": "resync",
+        "frozen": 0
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "inventory",
+        "time": 37939.907736,
+        "epoch": 4
+      },
+      {
+        "page": "kid",
+        "direction": "framereceived",
+        "type": "error",
+        "time": 37940.021536,
+        "code": "UNAUTHORIZED"
+      },
+      {
+        "page": "teacher",
+        "direction": "framereceived",
+        "type": "lifecycle",
+        "time": 38015.51375,
+        "reason": "no_participants"
+      }
+    ],
+    "finalGameStates": [
+      {
+        "phase": "playing",
+        "inputMode": "desktop",
+        "lifecycle": "playing",
+        "focused": false,
+        "body": {
+          "position": [
+            49.5,
+            68,
+            0.5
+          ],
+          "onGround": 1,
+          "inWater": 0,
+          "eyesInWater": 0,
+          "frozen": 0,
+          "flying": 0,
+          "velocity": [
+            0,
+            0,
+            0
+          ]
+        },
+        "inventoryOpen": false,
+        "inventoryPending": false,
+        "lastReceivedAgoMs": 41904.10000014305,
+        "keys": [
+          {
+            "type": "keydown",
+            "code": "KeyE",
+            "time": 31346.900000095367,
+            "repeat": false,
+            "target": "BODY",
+            "trusted": true,
+            "focus": true,
+            "active": "BODY",
+            "pointer": "CANVAS"
+          },
+          {
+            "type": "keyup",
+            "code": "KeyE",
+            "time": 49748.200000047684,
+            "repeat": false,
+            "target": "BODY",
+            "trusted": true,
+            "focus": true,
+            "active": "BODY",
+            "pointer": "CANVAS"
+          }
+        ],
+        "events": [
+          {
+            "type": "hud",
+            "status": "connecting",
+            "lifecycle": "preparing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 3256.2000000476837
+          },
+          {
+            "type": "hud",
+            "status": "loading",
+            "lifecycle": "preparing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 3858.600000143051
+          },
+          {
+            "type": "hud",
+            "status": "loading",
+            "lifecycle": "recovering",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 3871.2000000476837
+          },
+          {
+            "type": "hud",
+            "status": "loading",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 3947.2000000476837
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 4337.100000143051
+          },
+          {
+            "type": "command",
+            "command": "pause",
+            "generation": 1,
+            "time": 10541.300000190735
+          },
+          {
+            "type": "command",
+            "command": "resume",
+            "generation": 1,
+            "time": 25587.200000047684
+          },
+          {
+            "type": "pointerlockchange",
+            "time": 25673.400000095367,
+            "focus": true,
+            "pointer": "CANVAS"
+          },
+          {
+            "type": "hud",
+            "status": "playing",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": true,
+            "generation": 1,
+            "time": 25693.700000047684
+          },
+          {
+            "type": "hud",
+            "status": "error",
+            "lifecycle": "playing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": true,
+            "generation": 1,
+            "time": 29980.700000047684
+          }
+        ],
+        "voice": {
+          "disposed": false,
+          "phase": "reconnecting",
+          "room": "disconnected",
+          "remoteParticipants": 0,
+          "pendingDisconnects": 0,
+          "capturePending": false,
+          "microphoneTracks": 0,
+          "timers": 2,
+          "audio": {
+            "disposed": false,
+            "context": "running",
+            "tracks": 0,
+            "nodes": 2,
+            "outputs": 1,
+            "inputs": 0,
+            "blockedInputs": 0,
+            "outputSelection": true
+          }
+        }
+      },
+      {
+        "phase": "playing",
+        "inputMode": "touch",
+        "lifecycle": "paused",
+        "focused": false,
+        "body": {
+          "position": [
+            49.5,
+            68.005,
+            0.5
+          ],
+          "onGround": 0,
+          "inWater": 0,
+          "eyesInWater": 0,
+          "frozen": 1,
+          "flying": 1,
+          "velocity": [
+            0,
+            0,
+            0
+          ]
+        },
+        "inventoryOpen": false,
+        "inventoryPending": false,
+        "lastReceivedAgoMs": 42.19999980926514,
+        "keys": [],
+        "events": [
+          {
+            "type": "hud",
+            "status": "connecting",
+            "lifecycle": "preparing",
+            "role": "participant",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 4273.900000095367
+          },
+          {
+            "type": "hud",
+            "status": "connecting",
+            "lifecycle": "preparing",
+            "role": "observer",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 4731.099999904633
+          },
+          {
+            "type": "hud",
+            "status": "loading",
+            "lifecycle": "preparing",
+            "role": "observer",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 4734.299999952316
+          },
+          {
+            "type": "hud",
+            "status": "loading",
+            "lifecycle": "playing",
+            "role": "observer",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 4754.099999904633
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "playing",
+            "role": "observer",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 5193.400000095367
+          },
+          {
+            "type": "command",
+            "command": "pause",
+            "generation": 1,
+            "time": 8210.900000095367
+          },
+          {
+            "type": "hud",
+            "status": "paused",
+            "lifecycle": "paused",
+            "role": "observer",
+            "inventoryOpen": false,
+            "inventoryPending": false,
+            "pointerLocked": false,
+            "generation": 1,
+            "time": 25385.299999952316
+          }
+        ],
+        "voice": {
+          "disposed": false,
+          "phase": "connected",
+          "room": "connected",
+          "remoteParticipants": 0,
+          "pendingDisconnects": 0,
+          "capturePending": false,
+          "microphoneTracks": 0,
+          "timers": 1,
+          "audio": {
+            "disposed": false,
+            "context": "running",
+            "tracks": 0,
+            "nodes": 2,
+            "outputs": 1,
+            "inputs": 0,
+            "blockedInputs": 0,
+            "outputSelection": true
+          }
+        }
+      }
+    ]
+  },
+  "checkedAt": "2026-10-27T00:29:46.315Z"
+}

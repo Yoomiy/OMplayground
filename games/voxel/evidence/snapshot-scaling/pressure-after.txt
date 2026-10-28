@@ -1,0 +1,10 @@
+✔ temporary output pressure cannot silently lose a final actor delta while healthy peers continue (711.832361ms)
+✔ snapshot pressure above the shared output budget closes only that peer and readmission receives a fresh baseline (506.243419ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1543.569815

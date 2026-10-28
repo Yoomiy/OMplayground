@@ -1,0 +1,7 @@
+
+> @playground/voxel@0.1.0 test:presentation:browser
+> node tools/browser-presentation.ts
+
+Crossing a chunk origin using ordinary authorized flight controls
+Cycling held shapes without retaining old geometry
+Avatar origin shift, held shape cycling and cleanup pass

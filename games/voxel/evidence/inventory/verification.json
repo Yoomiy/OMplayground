@@ -1,0 +1,98 @@
+{
+  "result": "PASS_WITH_RETAINED_TOUCH_FAILURE",
+  "capturedAt": "2026-10-22T14:07:32.762Z",
+  "buildId": "03f08068b9be5ef1b0fb6adbfd3ba270762bf502a39eb6850f260d15c0b0606f",
+  "engineHash": "084b17c0ae40222777a0225f6fc186a9903ac19d9c455aae025188185ea250ab",
+  "contentHash": "77266ab65d26c121b49fe7b15c7ebd4636c1c28847d2c57bfedb94d2293402ee",
+  "matchedReleaseFiles": 12,
+  "checksExitCode": 0,
+  "finalDomainSocketsExitCode": 0,
+  "inventoryBrowserExitCode": 0,
+  "finalTouchExitCode": 0,
+  "parityExitCode": 0,
+  "retainedFailure": "The first touch run cleared input but failed the stop-distance assertion. The diagnostic repeat passed without changing that bound. Final test waits for grounded rest before applying the same bound, matching the intentional airborne-momentum contract. The first failure lacked body diagnostics, so its cause remains unproven.",
+  "scenarios": [
+    {
+      "path": "tests/inventory.test.ts",
+      "hash": "a331dfb0ad452811d44a1e7b608799f02f8670769fe00114f2cf910012490f6f"
+    },
+    {
+      "path": "tests/integration/creative.test.ts",
+      "hash": "bedf462df7e5f9d7757297f40dc7bcf3b06d156b4989f774d1945ecd2df6f83d"
+    },
+    {
+      "path": "tools/browser-inventory.ts",
+      "hash": "1f0c37580bb0b47cf0ec0651696a19cfa7d8179b5a87793d8d7a1afbe6cbc48e"
+    },
+    {
+      "path": "tools/browser-touch.ts",
+      "hash": "f749e393c8c705053dc2ae7c7ad39cb21ef42105500c6110d6e09ab600cbf87d"
+    },
+    {
+      "path": "tools/browser-smoke.ts",
+      "hash": "e14e614fb0a99dab8a4aecfaa6d1b8b9528c87e57db51cb433351aa967b665da"
+    }
+  ],
+  "files": [
+    {
+      "path": "browser-inventory.json",
+      "hash": "534d78848dde4723e951a274e87394de355c86a50491c861da30daa8077cd500"
+    },
+    {
+      "path": "browser-inventory.txt",
+      "hash": "770f74744d7ca9abacbe1fd41c1041264d9cb104d0bc25cf717bc9d08d1816fc"
+    },
+    {
+      "path": "browser-touch-diagnostic-repeat.txt",
+      "hash": "0d40981824e13958d64d3a4f69091e6bc374025a7534e3dc4e59614776e7fa4e"
+    },
+    {
+      "path": "browser-touch-failed.txt",
+      "hash": "6077804a323190e899b69367ca2833dc6f9a0470235d3d1c235b04e466dcd6dd"
+    },
+    {
+      "path": "browser-touch-final.txt",
+      "hash": "0d40981824e13958d64d3a4f69091e6bc374025a7534e3dc4e59614776e7fa4e"
+    },
+    {
+      "path": "browser-touch.json",
+      "hash": "dd3c9c1512f08751c0a2fa0e62bddb676bd7bd02293286a7a8fb51385d3a1426"
+    },
+    {
+      "path": "browser-wasm.json",
+      "hash": "1b09dcb52b5ab7012e19dc6dfbc658329fae178889fd76377b1a8b6682c6d0ad"
+    },
+    {
+      "path": "browser-wasm.txt",
+      "hash": "d748fd6cbb5caa64c0a06157dc6276d8248b7d20833a96bea594bb1804b25823"
+    },
+    {
+      "path": "build.json",
+      "hash": "82c1abef180e5ec4241a2a65c5a806bf14cb03f24e5753c9ecf5aed41c188a0b"
+    },
+    {
+      "path": "check.txt",
+      "hash": "ad7374d08736879aa8d33ba5a62a668f2bc1f25614bcf3f0126b78ae0e3d063f"
+    },
+    {
+      "path": "domain-sockets-final.txt",
+      "hash": "7b6d813df592abc84c1868c2729993b4e60d4e3cc11a5878d6cefe063269f25e"
+    },
+    {
+      "path": "inventory-chest.png",
+      "hash": "6a42d5d731aacc45e7fd5f79732bf588b2d7ab004b4f2836d0d94f7a3fd94177"
+    },
+    {
+      "path": "inventory-crafting.png",
+      "hash": "1feb10489703cce13747dc1ae30bc37bbeac3e7c55d6f67bbd97c34ec197a851"
+    },
+    {
+      "path": "release.json",
+      "hash": "5cc670bd12aeb663bb77a0667dbbd1e0945cb7272a0625a86aad5265b93fca52"
+    },
+    {
+      "path": "source-release-verification.json",
+      "hash": "71678c27b6b14f410ebc1032a02ee9d9482f2ec84adfd53e537c95e209e3c71a"
+    }
+  ]
+}

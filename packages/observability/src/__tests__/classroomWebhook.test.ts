@@ -30,7 +30,7 @@ describe("classroom connection evidence", () => {
     const logger = { info: jest.fn(), warn: jest.fn(), error: jest.fn() };
     const onVerifiedEvent = jest.fn().mockRejectedValueOnce(new Error("database unavailable")).mockResolvedValue(undefined);
     const app = express();
-    mountLiveKitWebhook(app, { logger: logger as unknown as Logger, stats: new StatsCollector("minecraft-server"),
+    mountLiveKitWebhook(app, { logger: logger as unknown as Logger, stats: new StatsCollector("classroom-server"),
       apiKey: "key", apiSecret: "secret", onVerifiedEvent });
     await request(app).post("/webhooks/livekit").set("content-type", "application/webhook+json").send("{}").expect(500);
     await request(app).post("/webhooks/livekit").set("content-type", "application/webhook+json").send("{}").expect(200);
@@ -47,7 +47,7 @@ describe("classroom connection evidence", () => {
     const logger = { info: jest.fn(), warn: jest.fn(), error: jest.fn() };
     const app = express();
     const onVerifiedEvent = jest.fn();
-    mountLiveKitWebhook(app, { logger: logger as unknown as Logger, stats: new StatsCollector("minecraft-server"),
+    mountLiveKitWebhook(app, { logger: logger as unknown as Logger, stats: new StatsCollector("classroom-server"),
       apiKey: "key", apiSecret: "secret", onVerifiedEvent });
     await request(app).post("/webhooks/livekit").set("content-type", "application/webhook+json").send("{}").expect(400);
     expect(logger.info).not.toHaveBeenCalled();
@@ -65,7 +65,7 @@ describe("classroom connection evidence", () => {
     } as never);
     const logger = { info: jest.fn(), warn: jest.fn(), error: jest.fn() };
     const app = express();
-    mountLiveKitWebhook(app, { logger: logger as unknown as Logger, stats: new StatsCollector("minecraft-server"),
+    mountLiveKitWebhook(app, { logger: logger as unknown as Logger, stats: new StatsCollector("classroom-server"),
       apiKey: "key", apiSecret: "secret" });
     await request(app).post("/webhooks/livekit").set("content-type", "application/webhook+json").send("{}").expect(200);
     expect(logger.info).toHaveBeenCalledTimes(1);

@@ -1,6 +1,8 @@
 # Voxel runtime experiments
 
-Experimental work only, on `research/voxel-runtime-rewrite`. No application integration, production fixes, save migration, or backward compatibility work. Existing worlds are disposable test worlds.
+Historical experiment recorded before the rewrite. Its candidate probes and results remain evidence; the application now uses the rewritten runtime. See [current implementation progress](../../docs/voxel-runtime-rewrite-progress.md).
+
+At the time, this was experimental work only, on `research/voxel-runtime-rewrite`. No application integration, production fixes, save migration, or backward compatibility work. Existing worlds are disposable test worlds.
 
 Follow-on design: [full voxel rewrite proposal](../../docs/voxel-runtime-rewrite-proposal.md). It proposes a new architecture; existing code has no preservation requirement.
 
@@ -102,6 +104,6 @@ node scripts/headless.mjs tests/headless/predict.ts tests/headless/multiplayer.t
 
 The input-time test is expected to fail until the candidate bug is fixed. Its observations are written before the assertion. Main probe output defaults to `/tmp/voxel-runtime-blockyard-results.json` (override with `PROBE_OUTPUT`); socket observations go to `/tmp/voxel-runtime-input-time-socket.json`.
 
-From Playground, run `node_modules/.bin/tsx research/voxel-runtime/current-worldgen.ts` for the current-generator sample. For browser smoke, start the candidate with `node scripts/dev.mjs --port 5193 --server-port 8893 sandbox --rooms 1 --data /tmp/voxel-runtime-browser-data --new`, then run `browser-smoke.cjs` with `PLAYWRIGHT_MODULE` pointing to an installed Playwright package. `PROBE_URL`, `PROBE_OUTPUT`, and `PROBE_SCREENSHOT` are optional overrides. The local server is stopped at the end of this evaluation.
+The old Playground generator probe is preserved as `legacy-current-worldgen.ts.txt`; it no longer runs from this branch because its package is retired. To reproduce that historical baseline, use a separate Playground checkout at the recorded baseline commit, restore this text snapshot as `research/voxel-runtime/current-worldgen.ts` there, install that checkout's dependencies and run `node_modules/.bin/tsx research/voxel-runtime/current-worldgen.ts`. For browser smoke, start the candidate with `node scripts/dev.mjs --port 5193 --server-port 8893 sandbox --rooms 1 --data /tmp/voxel-runtime-browser-data --new`, then run `browser-smoke.cjs` with `PLAYWRIGHT_MODULE` pointing to an installed Playwright package. `PROBE_URL`, `PROBE_OUTPUT`, and `PROBE_SCREENSHOT` are optional overrides. The local server is stopped at the end of this evaluation.
 
 Actual GPU performance, our survival gameplay integration, long sessions, and multi-room capacity remain unproven. Those belong in a later implementation spike once we decide to proceed, rather than extending this exploratory work.

@@ -1,0 +1,33 @@
+
+> @playground/voxel@0.1.0 test:equipment:browser
+> VOXEL_SURVIVAL_EQUIPMENT=1 node tools/browser-survival.ts
+
+Harvesting natural log 1 with actual held touch input
+Harvesting natural log 2 with actual held touch input
+Harvesting natural log 3 with actual held touch input
+Harvesting natural log 4 with actual held touch input
+Harvesting natural log 5 with actual held touch input
+Harvesting natural log 6 with actual held touch input
+Harvesting natural log 7 with actual held touch input
+Harvesting natural log 8 with actual held touch input
+Harvesting natural log 9 with actual held touch input
+Harvesting nearby natural foliage for an owned apple
+Crafting owned logs into a workbench, sticks and pickaxe
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+false !== true
+
+    at file:///home/ubuntu/OMplayground/games/voxel/tools/browser-survival.ts:451:10 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.21.0

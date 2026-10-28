@@ -1,0 +1,38 @@
+✔ fenced SQL commands deny nonhosts, recheck host/role, order idempotent requests and audit staff exactly once (281.464571ms)
+✔ control completion cannot claim an uncommitted save; fresh expiry and stale owners cannot mutate intent (1178.792895ms)
+✔ real school HTTP controls fail unsaved, retry once, resume, end with a committed receipt and replay after terminal retirement (1820.112488ms)
+✔ real concurrent acquisition yields one owner; retry is idempotent and expired takeover retains world identity (95.11993ms)
+✔ renewal checks the database clock after waiting for the owner row lock (504.701507ms)
+✔ two transactions racing one sequence commit one whole graph and exact retry cannot duplicate history (189.509216ms)
+✔ expired or replaced owner cannot commit, renew or release the new epoch (189.822698ms)
+✔ corrupt graph suffixes or unconfirmed uploads roll back pointer, history and every reference (267.914827ms)
+✔ browser roles cannot read metadata or execute RPCs; service writes require RPCs and the bucket is private (104.404414ms)
+✔ retention keeps active/shared objects; garbage claims fence uploads and stale deletion workers (388.145396ms)
+✔ cleanup skips uncommitted graph locks and rechecks references before claiming deletion (458.86225ms)
+✔ session removal retains orphan object addresses for subsequent Storage cleanup (118.681961ms)
+✔ old active references cannot starve a bounded garbage-collection batch (1922.247011ms)
+✔ commit rechecks expiry after object locks and cannot leave partial history after a delayed upload lock (557.453356ms)
+✔ self-departure reassigns the host with fresh aligned names and revision-fences old admissions; retry cannot remove a later rejoin (256.438053ms)
+✔ connected participants and live last-owner retirement cannot be dismissed; the released empty roster becomes terminal without claiming a save (211.131919ms)
+✔ departure checks fresh profiles, scope and the database clock after a row-lock wait, with atomic rollback (636.056689ms)
+✔ the real SDK/HTTP self-departure route binds the verified subject, rejects forged targets and allocates no worker (245.758163ms)
+✔ a never-opened roster receives guarded metadata without a worker and browser roles cannot read departure receipts or undo removal (167.969515ms)
+✔ membership acceptance rechecks its own proof expiry after waiting for the session row even with a live owner (539.546672ms)
+✔ an active child can remove their own old partition membership without gaining cross-partition play authority (123.894746ms)
+✔ real SDK and PostgreSQL carry a committed room across worker failure, ambiguous commit and new ownership (1163.624464ms)
+✔ production composition verifies real schemas, serves authenticated APIs without a prototype launcher and drains idempotently (161.474044ms)
+✔ scoped session API reads real metadata across staff partitions and completed rosters without allocating or exposing diagnostic payloads (498.570798ms)
+✔ SDK projection persists accepted membership and derives aligned presence/names and host reassignment without exposing staff (369.023825ms)
+✔ out-of-order, expired, released and replaced owner projections cannot overwrite newer state; completion is irreversible (273.999936ms)
+✔ database checks lease expiry after row-lock wait and pause intent denies late newcomer acceptance (592.549242ms)
+✔ all session mutations recheck lease expiry after waiting for the platform session row (1690.636396ms)
+✔ browser roles and browser-invoked legacy definer RPCs cannot write allocated sessions; unrelated sessions retain policy (158.785791ms)
+✔ school SDK/native worker preserve an accepted guest through paused renewal/reconnect, hide staff, reassign host and save empty presence (8547.76099ms)
+ℹ tests 30
+ℹ suites 0
+ℹ pass 30
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 27760.939821

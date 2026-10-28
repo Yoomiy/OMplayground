@@ -1,0 +1,43 @@
+
+> @playground/voxel-server@0.1.0 pretest
+> npm run build:policy
+
+
+> @playground/voxel-server@0.1.0 build:policy
+> npm --prefix ../.. run build --workspace @playground/game-logic
+
+
+> @playground/game-logic@0.0.1 build
+> tsc -p tsconfig.json
+
+
+> @playground/voxel-server@0.1.0 test
+> node --test tests/*.test.ts
+
+✔ a verified active child gets a short private authorization with no name, inventory or capacity query (65.914242ms)
+✔ disabled accounts cannot fall through into admin access; each authorization reads current identity and profile (9.461526ms)
+✔ staff observe across partitions without gameplay grants; teacher participation follows the normal gender rule (11.293815ms)
+✔ closed rooms require current membership, a current invitation, or an accepted challenge (19.418535ms)
+✔ paused sessions preserve roster/host access and staff inspection, while ended or wrong-game sessions never start (11.463176ms)
+✔ class exceptions override recess defaults and conflicting or unavailable schedules fail closed (15.426835ms)
+✔ authorization cannot cross a schedule minute, JWT expiry, or an overlong provider read (10.544051ms)
+✔ private owned-object eligibility ignores offline recess time, but never ignores membership removal or a provider outage (5.512346ms)
+✔ authority comes from platform rows, never forged claims, extra request fields or a headcount ceiling (4.612942ms)
+✔ schedule interpretation retains Jerusalem time across summer and winter offsets (9.284485ms)
+✔ a continuous recess interval renews across ordinary minutes while the actual closing boundary remains authoritative (6.933873ms)
+✔ a private grant refreshes current policy and cannot be redirected by mutating its original request (7.943398ms)
+✔ an empty invitation value never opens a closed room (1.955249ms)
+✔ installed SDK sends canonical service RPCs with a secret apikey and accepts only coherent immutable lease replies (48.240035ms)
+✔ create-only uploads copy bytes before IO and verify a duplicate object before marking it ready (11.593136ms)
+✔ provider errors cannot expose credentials and an unavailable provider respects the request deadline (30.057786ms)
+✔ failed Storage cleanup retains its catalog claim; completion only follows a successful API deletion (6.198311ms)
+✔ configuration rejects missing, public or legacy API keys and nonsecure remote endpoints (0.359042ms)
+✔ the shared server SDK preserves an explicit user bearer token for identity verification (1.741849ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 19
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 713.173279

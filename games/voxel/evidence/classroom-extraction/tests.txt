@@ -1,0 +1,63 @@
+
+> @playground/classroom-server@0.1.0 pretest
+> npm run build
+
+
+> @playground/classroom-server@0.1.0 prebuild
+> npm --prefix ../.. run build -w @playground/observability
+
+
+> @playground/observability@0.0.1 build
+> tsc -p tsconfig.json
+
+
+> @playground/classroom-server@0.1.0 build
+> tsc -p tsconfig.json
+
+
+> @playground/classroom-server@0.1.0 test
+> node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --config jest.config.cjs --runInBand
+
+(node:669577) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+PASS src/service.test.ts
+PASS src/classroomPresence.test.ts
+PASS src/classroomSecurity.test.ts
+PASS src/livekitService.test.ts
+PASS src/classroomAttendance.test.ts
+[11:30:45.008] [32mINFO[39m:
+    [35mservice[39m: "classroom-server"
+    [35menvironment[39m: "test"
+    [35mprotocol[39m: "webrtc"
+    [35mroomCode[39m: "class-demo"
+    [35mmessage[39m: "Classroom presence transition observed"
+    [35mcontext[39m: {
+      "occurredAt": "2026-08-18T15:00:00.000Z",
+      "roomSid": "RM_demo",
+      "participantSid": "PA_demo",
+      "participantIdentity": "guest-demo",
+      "participantKey": "guest:class-demo:abc",
+      "admissionLink": "unavailable",
+      "ipStatus": "unavailable",
+      "ipSource": "unavailable",
+      "ipObservation": "admission",
+      "ipUnavailableReason": "admission_not_cached",
+      "event": "CLASSROOM_PARTICIPANT_JOINED",
+      "status": "success",
+      "evidenceSource": "reconciliation",
+      "observedAt": "2026-10-26T09:30:45.008Z",
+      "timeAccuracy": "livekit_join_time",
+      "reason": "present_in_livekit_snapshot"
+    }
+PASS src/classroomPresenterAssignment.test.ts
+PASS src/classroomDelegates.test.ts
+PASS src/classroomPresentation.test.ts
+PASS src/classroomBoardToken.test.ts
+PASS src/classroomParticipantBlocks.test.ts
+PASS src/classroomDrawingSession.test.ts
+
+Test Suites: 11 passed, 11 total
+Tests:       69 passed, 69 total
+Snapshots:   0 total
+Time:        7.239 s, estimated 11 s
+Ran all test suites.

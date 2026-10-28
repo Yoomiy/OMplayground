@@ -1,0 +1,15 @@
+
+> @playground/observability@0.0.1 test
+> jest --runInBand processLifecycle
+
+PASS src/__tests__/processLifecycle.test.ts
+  process drain status
+    ✓ exits unsuccessfully when a normal termination cannot finish its drain (7 ms)
+    ✓ a successful termination exits normally after its drain resolves (3 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       2 passed, 2 total
+Snapshots:   0 total
+Time:        5.06 s
+Ran all test suites matching /processLifecycle/i.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?

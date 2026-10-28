@@ -1,0 +1,17 @@
+vite v6.4.2 building for production...
+transforming...
+✓ 78 modules transformed.
+rendering chunks...
+computing gzip size...
+built/index.html                                0.34 kB │ gzip:   0.25 kB
+built/assets/engine-worker-DPFd4qax.js         10.94 kB
+built/assets/voxel_engine_bg-1ejYMYOZ.wasm    550.36 kB │ gzip: 210.28 kB
+built/assets/embed-BbfR4Nnp.css                 3.21 kB │ gzip:   1.05 kB
+built/assets/index-ByHhsCCP.css                 6.06 kB │ gzip:   1.57 kB
+built/assets/index-BWm7sI-H.js              1,046.08 kB │ gzip: 174.92 kB
+built/assets/embed-DO0s2AZb.js              1,404.75 kB │ gzip: 266.07 kB
+✓ built in 4.18s
+Staff teleport {"from":[114.8066333333334,81.605,0.5],"to":[49.5,70,0.5],"target":[49.5,68,0.5],"epoch":12,"unloads":77}
+Before exit {"visible":"visible","focused":true,"fullscreen":true}
+Before exit {"visible":"visible","focused":true,"fullscreen":false}
+React StrictMode cancellation, owned HUD/inventory/fullscreen, SQL save failure/retry, paused teacher flight, resume/end and complete teardown pass

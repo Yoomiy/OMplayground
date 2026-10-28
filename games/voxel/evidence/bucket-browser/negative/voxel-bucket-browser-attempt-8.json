@@ -1,0 +1,591 @@
+{
+  "stage": "pointer locked",
+  "error": "AssertionError [ERR_ASSERTION]: scripted CDP coordinates must remain in the viewport: {\"x\":741.0681626123087,\"y\":697.5}",
+  "state": {
+    "disposed": false,
+    "inputMode": "desktop",
+    "mode": "survival",
+    "lifecycle": "playing",
+    "worldPauseReason": "allowed",
+    "worldTick": 3150.0989999985695,
+    "mining": {
+      "target": null,
+      "elapsed": 0,
+      "total": 0
+    },
+    "vitals": {
+      "version": 2,
+      "health": 20,
+      "food": 19,
+      "air": 300,
+      "dead": false,
+      "respawnIn": 0,
+      "attackCooldown": 0,
+      "protection": 0
+    },
+    "combat": true,
+    "hit": null,
+    "lastHitEvent": null,
+    "lastExplosionEvent": null,
+    "explosives": [],
+    "canIgnite": true,
+    "miningHeld": false,
+    "drops": [],
+    "selectedSlot": 0,
+    "environment": {
+      "tick": 3150.0059999942778,
+      "seconds": 105.00019999980925,
+      "dayFraction": 0.3075001666665077,
+      "daylight": 1,
+      "sun": [
+        -0.3385684348166829,
+        0.8959925265348656,
+        0.2873478855663454
+      ],
+      "sky": [
+        0.59,
+        0.76,
+        0.88
+      ],
+      "rain": 0,
+      "wind": [
+        -0.09681483233576553,
+        -0.2839487422754283
+      ],
+      "openSky": true
+    },
+    "atmosphere": {
+      "rainLines": 0,
+      "stars": false,
+      "clouds": 16,
+      "sun": true,
+      "moon": false
+    },
+    "avatars": {
+      "visible": 0,
+      "capacity": 8,
+      "samples": [],
+      "equipment": {
+        "visible": 0,
+        "held": 0,
+        "worn": 0,
+        "kinds": 0,
+        "capacity": 0,
+        "samples": []
+      }
+    },
+    "renderOrigin": {
+      "x": 32,
+      "z": 0
+    },
+    "feedback": {
+      "held": {
+        "state": 1,
+        "itemType": null,
+        "visible": false,
+        "swings": 0
+      },
+      "effects": {
+        "live": 0,
+        "bursts": 0,
+        "hits": 0,
+        "explosions": 0
+      },
+      "drops": {
+        "visible": 0,
+        "kinds": 0
+      },
+      "explosives": {
+        "visible": 0,
+        "capacity": 0,
+        "flashing": 0
+      },
+      "vision": false
+    },
+    "audio": {
+      "supported": true,
+      "contexts": 1,
+      "state": "running",
+      "active": true,
+      "muted": false,
+      "voices": 0,
+      "effects": 0,
+      "gain": 0.2199999988079071,
+      "dropped": 0,
+      "listener": [
+        46.54010009765625,
+        64.62000274658203,
+        8.35949993133545
+      ],
+      "lastSource": null
+    },
+    "renderLimitHz": 30,
+    "touch": {
+      "x": 0,
+      "z": 0,
+      "jump": false,
+      "sneak": false,
+      "sprint": false
+    },
+    "focused": true,
+    "visible": "visible",
+    "hasFocus": true,
+    "lastFrame": 4195.6,
+    "lastUpdate": 4864.099999904633,
+    "resources": {
+      "geometries": 9,
+      "textures": 5,
+      "workers": 1
+    },
+    "actorId": "093aee4d-b5c8-4a6a-99d7-803d8d461017",
+    "worldId": "0c5e31e0-d222-41e5-83a2-82c2823c5f9c",
+    "body": {
+      "position": [
+        46.5401,
+        63,
+        8.3595
+      ],
+      "onGround": 1,
+      "inWater": 0,
+      "eyesInWater": 0,
+      "frozen": 0,
+      "flying": 0,
+      "velocity": [
+        0,
+        0,
+        0
+      ]
+    },
+    "view": {
+      "yaw": 0,
+      "pitch": 0
+    },
+    "lastResult": {
+      "type": "result",
+      "epoch": 31,
+      "sequence": 1,
+      "status": "applied",
+      "outcome": {
+        "ok": true,
+        "reason": "selected"
+      }
+    },
+    "inventory": {
+      "version": 2,
+      "catalog": false,
+      "revision": 108,
+      "selected": 0,
+      "bag": [
+        {
+          "itemType": "bucket",
+          "count": 1
+        },
+        {
+          "itemType": "cocoa_beans",
+          "count": 1
+        },
+        {
+          "count": 1,
+          "instance": {
+            "durability": 51
+          },
+          "itemType": "wooden_pickaxe"
+        },
+        {
+          "count": 1,
+          "itemType": "charcoal"
+        },
+        {
+          "itemType": "sand",
+          "count": 5
+        },
+        null,
+        {
+          "itemType": "plant_fiber",
+          "count": 3
+        },
+        {
+          "count": 1,
+          "instance": {
+            "durability": 122
+          },
+          "itemType": "stone_pickaxe"
+        },
+        {
+          "count": 4,
+          "itemType": "spruce_planks"
+        },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "craft2": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "craft3": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "equipment": [
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "station": "personal",
+      "container": null
+    },
+    "inventoryOpen": false,
+    "inventoryPending": false,
+    "recentEdits": [],
+    "status": "playing",
+    "epoch": 31,
+    "phase": "playing",
+    "position": [
+      46.5401,
+      63,
+      8.3595
+    ],
+    "selected": 0,
+    "players": 1,
+    "inputLag": 8,
+    "correction": 0,
+    "columns": 49,
+    "collisionColumns": 49,
+    "meshed": 25,
+    "workers": 1,
+    "activeJobs": 0,
+    "stream": {
+      "discardedJobs": 0,
+      "installed": 49,
+      "meshJobs": 25,
+      "generationJobs": 49,
+      "mainWorkMs": 0.10000014305114746
+    },
+    "render": {
+      "uploadedBytes": 1754312,
+      "columns": 25,
+      "drawCalls": 5,
+      "triangles": 1782,
+      "uploadMs": 0.20000004768371582,
+      "prepareMs": 377.90000009536743,
+      "gpu": {
+        "submitted": 4,
+        "skipped": 54,
+        "pending": 1,
+        "failures": 0
+      }
+    },
+    "target": [
+      46,
+      64,
+      4
+    ],
+    "targetState": 39,
+    "targetNormal": [
+      0,
+      0,
+      1
+    ],
+    "actionPending": 0,
+    "queuedAction": null,
+    "actionSequence": 1,
+    "lastReceivedAgoMs": 3.3999998569488525
+  },
+  "events": [
+    {
+      "type": "mousemove",
+      "trusted": true,
+      "button": 0,
+      "movementX": 811,
+      "movementY": 97
+    },
+    {
+      "type": "mousedown",
+      "trusted": true,
+      "button": 0,
+      "movementX": 0,
+      "movementY": 0
+    },
+    {
+      "type": "mouseup",
+      "trusted": true,
+      "button": 0,
+      "movementX": 0,
+      "movementY": 0
+    },
+    {
+      "type": "mousemove",
+      "trusted": true,
+      "button": 0,
+      "movementX": -811,
+      "movementY": -97
+    },
+    {
+      "type": "mousemove",
+      "trusted": true,
+      "button": 0,
+      "movementX": 0,
+      "movementY": 0
+    },
+    {
+      "type": "mousemove",
+      "trusted": true,
+      "button": 0,
+      "movementX": 0,
+      "movementY": 0
+    },
+    {
+      "type": "mousemove",
+      "trusted": true,
+      "button": 0,
+      "movementX": 0,
+      "movementY": 0
+    },
+    {
+      "type": "mousemove",
+      "trusted": true,
+      "button": 0,
+      "movementX": 0,
+      "movementY": 0
+    },
+    {
+      "type": "mousemove",
+      "trusted": true,
+      "button": 0,
+      "movementX": 0,
+      "movementY": 0
+    },
+    {
+      "type": "mousemove",
+      "trusted": true,
+      "button": 0,
+      "movementX": 0,
+      "movementY": 0
+    },
+    {
+      "type": "mousemove",
+      "trusted": true,
+      "button": 0,
+      "movementX": 0,
+      "movementY": 0
+    },
+    {
+      "type": "mousemove",
+      "trusted": true,
+      "button": 0,
+      "movementX": 0,
+      "movementY": 0
+    },
+    {
+      "type": "mousemove",
+      "trusted": true,
+      "button": 0,
+      "movementX": 0,
+      "movementY": 0
+    },
+    {
+      "type": "mousemove",
+      "trusted": true,
+      "button": 0,
+      "movementX": 0,
+      "movementY": 0
+    },
+    {
+      "type": "mousemove",
+      "trusted": true,
+      "button": 0,
+      "movementX": 0,
+      "movementY": 0
+    },
+    {
+      "type": "mousemove",
+      "trusted": true,
+      "button": 0,
+      "movementX": 0,
+      "movementY": 0
+    },
+    {
+      "type": "mousemove",
+      "trusted": true,
+      "button": 0,
+      "movementX": 0,
+      "movementY": 0
+    },
+    {
+      "type": "mousemove",
+      "trusted": true,
+      "button": 0,
+      "movementX": 0,
+      "movementY": 0
+    },
+    {
+      "type": "mousemove",
+      "trusted": true,
+      "button": 0,
+      "movementX": 0,
+      "movementY": 0
+    },
+    {
+      "type": "mousemove",
+      "trusted": true,
+      "button": 0,
+      "movementX": 0,
+      "movementY": 0
+    },
+    {
+      "type": "mousemove",
+      "trusted": true,
+      "button": 0,
+      "movementX": 0,
+      "movementY": 0
+    },
+    {
+      "type": "mousemove",
+      "trusted": true,
+      "button": 0,
+      "movementX": 787,
+      "movementY": 297
+    },
+    {
+      "type": "mousemove",
+      "trusted": true,
+      "button": 0,
+      "movementX": -787,
+      "movementY": -297
+    },
+    {
+      "type": "mousemove",
+      "trusted": true,
+      "button": 0,
+      "movementX": 0,
+      "movementY": 0
+    },
+    {
+      "type": "mousemove",
+      "trusted": true,
+      "button": 0,
+      "movementX": 0,
+      "movementY": 0
+    },
+    {
+      "type": "mousemove",
+      "trusted": true,
+      "button": 0,
+      "movementX": 0,
+      "movementY": 0
+    },
+    {
+      "type": "mousemove",
+      "trusted": true,
+      "button": 0,
+      "movementX": 764,
+      "movementY": 497
+    },
+    {
+      "type": "mousemove",
+      "trusted": true,
+      "button": 0,
+      "movementX": -764,
+      "movementY": -497
+    }
+  ],
+  "errors": [],
+  "requests": [
+    {
+      "path": "/",
+      "event": "request",
+      "at": 103543.14066
+    },
+    {
+      "path": "/assets/index-BOJUFUTy.js",
+      "event": "request",
+      "at": 103572.678002
+    },
+    {
+      "path": "/assets/index-5w2pNf9N.css",
+      "event": "request",
+      "at": 103572.727162
+    },
+    {
+      "path": "/",
+      "event": "requestfinished",
+      "at": 103572.757683
+    },
+    {
+      "path": "/assets/index-5w2pNf9N.css",
+      "event": "requestfinished",
+      "at": 103577.253384
+    },
+    {
+      "path": "/assets/index-BOJUFUTy.js",
+      "event": "requestfinished",
+      "at": 103623.620448
+    },
+    {
+      "path": "/assets/voxel_engine_bg-1ejYMYOZ.wasm",
+      "event": "request",
+      "at": 103872.119486
+    },
+    {
+      "path": "/assets/voxel_engine_bg-1ejYMYOZ.wasm",
+      "event": "requestfinished",
+      "at": 103892.528264
+    },
+    {
+      "path": "/api/voxel/admission",
+      "event": "request",
+      "at": 104465.462026
+    },
+    {
+      "path": "/api/voxel/admission",
+      "event": "requestfinished",
+      "at": 104525.649836
+    },
+    {
+      "path": "/assets/engine-worker-DYAFKrDe.js",
+      "event": "request",
+      "at": 104564.669824
+    },
+    {
+      "path": "/assets/engine-worker-DYAFKrDe.js",
+      "event": "requestfinished",
+      "at": 105050.347886
+    }
+  ]
+}

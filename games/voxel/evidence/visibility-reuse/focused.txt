@@ -1,0 +1,10 @@
+✔ snapshot pose reuse preserves exact per-viewer wire history, circle boundaries, quantization and hidden staff (244.023374ms)
+✔ real room shares identical deltas across viewers without changing visibility or private self (46.554024ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1361.222671

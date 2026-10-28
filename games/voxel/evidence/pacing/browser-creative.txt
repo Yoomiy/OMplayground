@@ -1,0 +1,20 @@
+
+> @playground/voxel@0.1.0 test:creative:browser
+> node tools/browser-creative.ts
+
+167 Opening creative client
+2836 Creative client ready
+2894 Opening creative client
+5866 Creative client ready
+6056 Testing jump [49.5,68.005,0.5]
+6440 Dispatching jump key
+9395 Jump key delivered
+13958 Testing movement
+20349 Testing shared edits
+26380 Testing reconnect
+26383 Pointer lock released
+26415 Reconnect requested
+31445 Reconnect diagnostic {"disposed":false,"inputMode":"desktop","renderLimitHz":10,"touch":{"x":0,"z":0,"jump":false,"sneak":false,"sprint":false},"focused":false,"visible":"visible","hasFocus":true,"lastFrame":27842,"resources":{"geometries":2,"textures":4,"workers":1},"actorId":"ab53c54a-11aa-4939-b8f2-1adba1e30a84","worldId":"0844198f-142f-473e-9d7a-03d52a3386f8","body":{"position":[50.3634,68,0.5],"onGround":1,"frozen":1,"flying":0,"velocity":[0,0,0]},"view":{"yaw":0,"pitch":-0.6980000000000001},"lastResult":null,"recentEdits":[],"status":"loading","epoch":6,"phase":"preparing","position":[50.3634,68,0.5],"selected":4,"players":2,"inputLag":0,"correction":0,"columns":49,"collisionColumns":2,"meshed":0,"workers":1,"activeJobs":0,"stream":{"discardedJobs":0,"installed":2,"meshJobs":0,"generationJobs":2,"mainWorkMs":2.0999999046325684},"render":{"uploadedBytes":2245712,"columns":0,"drawCalls":2,"triangles":12,"uploadMs":0.2999999523162842},"target":[50,67,-2],"targetState":5,"targetNormal":[0,1,0],"actionPending":0}
+39415 Reconnect diagnostic {"disposed":false,"inputMode":"desktop","renderLimitHz":10,"touch":{"x":0,"z":0,"jump":false,"sneak":false,"sprint":false},"focused":false,"visible":"visible","hasFocus":true,"lastFrame":37574.9,"resources":{"geometries":2,"textures":4,"workers":1},"actorId":"ab53c54a-11aa-4939-b8f2-1adba1e30a84","worldId":"0844198f-142f-473e-9d7a-03d52a3386f8","body":{"position":[50.3634,68,0.5],"onGround":1,"frozen":1,"flying":0,"velocity":[0,0,0]},"view":{"yaw":0,"pitch":-0.6980000000000001},"lastResult":null,"recentEdits":[],"status":"loading","epoch":6,"phase":"preparing","position":[50.3634,68,0.5],"selected":4,"players":2,"inputLag":0,"correction":0,"columns":49,"collisionColumns":4,"meshed":0,"workers":1,"activeJobs":1,"stream":{"discardedJobs":0,"installed":4,"meshJobs":0,"generationJobs":5,"mainWorkMs":0.8999998569488525},"render":{"uploadedBytes":2245712,"columns":0,"drawCalls":2,"triangles":12,"uploadMs":0.2999999523162842},"target":[50,67,-2],"targetState":5,"targetNormal":[0,1,0],"actionPending":0}
+41003 Reconnect ready
+Two-client creative browser smoke passes

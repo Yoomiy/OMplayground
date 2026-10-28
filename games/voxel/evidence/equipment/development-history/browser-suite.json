@@ -1,0 +1,38 @@
+{
+  "buildId": "86867e2526ee2bd87915e065d8d4ff2e050af8b510e20a6a99b96e50eb50d9b5",
+  "startedAt": "2026-10-22T21:07:31.183Z",
+  "active": null,
+  "checks": [
+    {
+      "script": "test:equipment:browser",
+      "path": "/tmp/voxel-equipment-pre-description-history/voxel-equipment-suite-test-equipment-browser.log",
+      "code": 1,
+      "signal": null,
+      "startedAt": "2026-10-22T21:12:31.782Z",
+      "finishedAt": "2026-10-22T21:14:01.844Z",
+      "durationMs": 90061
+    }
+  ],
+  "historicalChecks": [
+    {
+      "script": "test:equipment:browser",
+      "path": "/tmp/voxel-equipment-pre-description-history/voxel-equipment-suite-test-equipment-browser.log",
+      "code": 1,
+      "signal": null,
+      "startedAt": "2026-10-22T21:07:31.183Z",
+      "finishedAt": "2026-10-22T21:08:27.780Z",
+      "durationMs": 56597,
+      "retainedLog": "/tmp/voxel-equipment-pre-description-history/voxel-equipment-suite-test-equipment-browser.log.prior-0"
+    },
+    {
+      "script": "test:equipment:browser",
+      "path": "/tmp/voxel-equipment-pre-description-history/voxel-equipment-suite-test-equipment-browser.log",
+      "code": 1,
+      "signal": null,
+      "startedAt": "2026-10-22T21:10:08.627Z",
+      "finishedAt": "2026-10-22T21:10:49.803Z",
+      "durationMs": 41175,
+      "retainedLog": "/tmp/voxel-equipment-pre-description-history/voxel-equipment-suite-test-equipment-browser.log.prior-1"
+    }
+  ]
+}

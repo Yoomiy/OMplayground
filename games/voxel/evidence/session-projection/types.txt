@@ -1,0 +1,16 @@
+
+> @playground/voxel-server@0.1.0 pretypecheck
+> npm run build:policy
+
+
+> @playground/voxel-server@0.1.0 build:policy
+> npm --prefix ../.. run build --workspace @playground/game-logic
+
+
+> @playground/game-logic@0.0.1 build
+> tsc -p tsconfig.json
+
+
+> @playground/voxel-server@0.1.0 typecheck
+> tsc --noEmit
+

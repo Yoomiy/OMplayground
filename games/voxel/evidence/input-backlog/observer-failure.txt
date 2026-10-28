@@ -1,0 +1,19 @@
+{"result":"FAIL","failure":{"phase":"five-second-input-stall","message":"Expected values to be strictly equal:\n\n616 !== 615\n","stack":"AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n616 !== 615\n\n    at file:///home/ubuntu/OMplayground/games/voxel/tools/browser-input-stalls.ts:243:10"}}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+616 !== 615
+
+    at file:///home/ubuntu/OMplayground/games/voxel/tools/browser-input-stalls.ts:243:10 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 616,
+  expected: 615,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.21.0

@@ -1,0 +1,59 @@
+{
+  "buildId": "6026fc56edb2a79e548ac84792a98e968b5acfa850c3858abd38b99f0f0e4e56",
+  "engineHash": "084b17c0ae40222777a0225f6fc186a9903ac19d9c455aae025188185ea250ab",
+  "contentHash": "51dc81994a301b7cf19e657603e85f54d8c850f978268aaf4333e5097cc9e647",
+  "clientHash": "c4febd87fa2bf1c2a05c2328f5fbbd985ac012a28b33f7845e4dbaaeb7c5da11",
+  "serverHash": "21d4591df487c74372bb6f74d12f0e8e5f74cd55356045933898cdd6b2983799",
+  "client": [
+    {
+      "path": "assets/engine-worker-DxOfAKDT.js",
+      "hash": "095d015627c7f8c86c24e25b285b781330ff575530cc643604bf1496ba284abb"
+    },
+    {
+      "path": "assets/index-ClXz-5rR.js",
+      "hash": "79463b3a5a36158e60569bd98e352c1ab0ff3a63e41974277789029ea65581a1"
+    },
+    {
+      "path": "assets/index-DSI9LkOd.css",
+      "hash": "97b6cefd7cc1eceb78afadb87ceef924a94011a9bec1167f55eb242313ab3afb"
+    },
+    {
+      "path": "assets/voxel_engine_bg-TEYnAou6.wasm",
+      "hash": "084b17c0ae40222777a0225f6fc186a9903ac19d9c455aae025188185ea250ab"
+    },
+    {
+      "path": "index.html",
+      "hash": "9549df34bc4eef69f7b98b1849011fcba6ae8c208f54905da33e2b7704b14e0c"
+    }
+  ],
+  "server": [
+    {
+      "path": "build.json",
+      "hash": "04d8b4e0d3780ce0d566f3eb9c19e176954dc8fa283fec38643baa144b42ab57"
+    },
+    {
+      "path": "content.json",
+      "hash": "7e21da2c1b0b5680e874127006ccf8a3ade3d612e00297d9daed0aa787fbc0d9"
+    },
+    {
+      "path": "engine.wasm",
+      "hash": "084b17c0ae40222777a0225f6fc186a9903ac19d9c455aae025188185ea250ab"
+    },
+    {
+      "path": "gateway.js",
+      "hash": "0b150e17c1ab8dd3f0fb74a077dc160d29a4f19b73411044e12e0b406e936e68"
+    },
+    {
+      "path": "gateway.js.map",
+      "hash": "5a0034b16e766ba7ffd8d49060b7b2e7a1ab6b2fb01d591fc0b25f9939d6a002"
+    },
+    {
+      "path": "room-worker.js",
+      "hash": "52dcc91c5c6f2a09a000b232a34530024e6f4e222eff0fae5482470c95d38b87"
+    },
+    {
+      "path": "room-worker.js.map",
+      "hash": "b0026cc77c38fab50d5e6bd49bf4dd297f562edb85c94df8ced7310f939f74bb"
+    }
+  ]
+}

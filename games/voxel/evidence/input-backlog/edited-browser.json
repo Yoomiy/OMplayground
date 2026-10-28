@@ -1,0 +1,162 @@
+{
+  "result": "BROWSER_EDITED_WORLD_TCP_STALL_AND_RECONNECT_PASS",
+  "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc",
+  "seed": {
+    "worldId": "world-68b7b435-8895-403f-bd8a-1a9d2545f8ea",
+    "columns": 49,
+    "entries": 16384,
+    "baselineBytes": 4818072
+  },
+  "startedAt": "2026-10-27T21:16:09.548Z",
+  "scope": "Unchanged built client/release Wasm and packaged gateway/native workers, prepared 4.8 MB edited checkpoint, actual loopback TCP read suspension. Fixture admission and in-memory persistence contracts; software Chromium, no hosted/school-device/network performance qualification.",
+  "cold": {
+    "elapsedMs": 10514.023263,
+    "tcpHeldMs": 1001.1541980000002,
+    "columns": 49,
+    "collisionColumns": 49,
+    "meshed": 25,
+    "owners": {
+      "openedSockets": 1,
+      "closedSockets": 0,
+      "createdWorkers": 1,
+      "closedWorkers": 0,
+      "liveWorkers": 1
+    }
+  },
+  "stall": {
+    "heldMs": 5015.544354,
+    "recoveredAfterReleaseMs": 121.63879299999826,
+    "stalePosition": [
+      64.07811990871426,
+      68,
+      0.5
+    ],
+    "latePosition": [
+      64.07811990871426,
+      68,
+      0.5
+    ],
+    "inputLagWhenStalled": 91,
+    "inputLagLate": 91,
+    "recoveredInputLag": 5,
+    "correction": 0
+  },
+  "reconnect": {
+    "oldEpoch": 4,
+    "newEpoch": 8,
+    "columns": 49,
+    "collisionColumns": 49,
+    "meshed": 25,
+    "owners": {
+      "openedSockets": 2,
+      "closedSockets": 1,
+      "createdWorkers": 2,
+      "closedWorkers": 1,
+      "liveWorkers": 1
+    }
+  },
+  "cleanup": {
+    "resources": {
+      "geometries": 0,
+      "textures": 0,
+      "workers": 0
+    },
+    "audio": "closed",
+    "owners": {
+      "openedSockets": 2,
+      "closedSockets": 2,
+      "createdWorkers": 2,
+      "closedWorkers": 2,
+      "liveWorkers": 0
+    }
+  },
+  "finishedAt": "2026-10-27T21:16:33.310Z",
+  "errors": [],
+  "events": [
+    {
+      "event": "VOXEL_ADMISSION_ISSUED",
+      "context": {
+        "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc"
+      }
+    },
+    {
+      "event": "VOXEL_ROOM_READY",
+      "context": {
+        "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc"
+      }
+    },
+    {
+      "event": "VOXEL_ADMISSION_ISSUED",
+      "context": {
+        "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc"
+      }
+    },
+    {
+      "event": "VOXEL_ROOM_METRICS",
+      "context": {
+        "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc",
+        "worldId": "world-68b7b435-8895-403f-bd8a-1a9d2545f8ea",
+        "ticks": 297,
+        "columns": 12,
+        "overrunMs": 333.3333333333333,
+        "windowMs": 10000.808442000001,
+        "windowStartedAtMs": 4727.719033,
+        "windowEndedAtMs": 14728.527475,
+        "worldStep_samples": 297,
+        "worldStep_meanMs": 0.22112006060608655,
+        "worldStep_p95UpperMs": 0.75,
+        "worldStep_p99UpperMs": 1.6,
+        "worldStep_maxMs": 3.282535999999709,
+        "observerStep_samples": 0,
+        "observerStep_meanMs": 0,
+        "observerStep_p95UpperMs": 0,
+        "observerStep_p99UpperMs": 0,
+        "observerStep_maxMs": 0,
+        "workerTurn_samples": 1963,
+        "workerTurn_meanMs": 0.8017467218542913,
+        "workerTurn_p95UpperMs": 0.2,
+        "workerTurn_p99UpperMs": 0.8,
+        "workerTurn_maxMs": 193.2377809999998,
+        "generationJob_samples": 12,
+        "generationJob_meanMs": 122.82525825,
+        "generationJob_p95UpperMs": 192.76233899999988,
+        "generationJob_p99UpperMs": 192.76233899999988,
+        "generationJob_maxMs": 192.76233899999988,
+        "command_samples": 129,
+        "command_meanMs": 1.8012208062015092,
+        "command_p95UpperMs": 5.05,
+        "command_p99UpperMs": 20.45,
+        "command_maxMs": 21.618625999999495
+      }
+    },
+    {
+      "event": "VOXEL_ADMISSION_ISSUED",
+      "context": {
+        "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc"
+      }
+    },
+    {
+      "event": "VOXEL_CHECKPOINT_COMMITTED",
+      "context": {
+        "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc",
+        "worldId": "world-68b7b435-8895-403f-bd8a-1a9d2545f8ea",
+        "sequence": 2
+      }
+    },
+    {
+      "event": "VOXEL_ROOM_EXITED",
+      "context": {
+        "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc",
+        "code": 0
+      }
+    },
+    {
+      "event": "VOXEL_ROOM_SAVED_AND_RELEASED",
+      "context": {
+        "buildId": "7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc",
+        "worldId": "world-68b7b435-8895-403f-bd8a-1a9d2545f8ea"
+      }
+    }
+  ],
+  "remainingRooms": 0
+}

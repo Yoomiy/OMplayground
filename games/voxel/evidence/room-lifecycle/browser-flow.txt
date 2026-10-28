@@ -1,0 +1,5 @@
+
+> @playground/voxel-server@0.1.0 test:browser:lifecycle
+> node tools/browser-lifecycle.ts
+
+Central pause, frozen world time, teacher flight, explicit child resume, terminal session and teardown pass

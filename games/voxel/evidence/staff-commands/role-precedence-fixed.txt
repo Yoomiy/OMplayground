@@ -1,0 +1,9 @@
+✔ SQL inactive or demoted kid-profile rows cannot fall through to a second admin profile for staff or lifecycle authority (273.431833ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 948.95716

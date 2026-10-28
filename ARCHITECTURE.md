@@ -1,8 +1,8 @@
 # The Playground — Architecture & Product Guide
 
-> **מגרש המשחקים** — school multiplayer platform (grades 1–7), Hebrew RTL UI.  
+> **מגרש המשחקים** — private-school multiplayer platform, Hebrew RTL UI.
 > Kids play **only during recess** (`Asia/Jerusalem`). Teachers and platform admins bypass the gate.  
-> **Last updated:** June 2026. Aligns with `.cursor/rules/playground-project.mdc` and `playground-architecture.mdc`.
+> **Last updated:** 2026-10-28. The voxel client on this branch uses the rewritten runtime; hosted/backend cutover is still pending. PCs are the primary device target; large synthetic scale and mobile/tablet qualification are not release requirements.
 
 **More docs:** [`docs/README.md`](docs/README.md) — index of ADRs, ops, and design specs.
 
@@ -17,8 +17,8 @@
 | **Recess-gated access** | Kids cannot log in outside active recess windows. Teachers/admins bypass. |
 | **Supabase Auth** | Username login → `[username]@playground.school.local` (Auth API only; never shown in UI). |
 | **Gender separation** | Games, sessions, presence, and social data partitioned by `boy` / `girl`. |
-| **Authoritative servers** | Live multiplayer state in Railway Node (Socket.io), not Postgres ticks. |
-| **Dual game servers** | Board games → `game-server`; voxel Minecraft → `minecraft-server`. |
+| **Authoritative servers** | Live state belongs to Node game services, not Postgres ticks or browser-reported positions. |
+| **Separate services** | Boards → `game-server`; rewritten voxel → `voxel-server`; classroom/RTC → `classroom-server`. The legacy game client/backend source is retired; hosted routing cutover remains pending. |
 
 ### Stack
 
@@ -27,20 +27,21 @@
 | Frontend | React 18, Vite, TypeScript, Tailwind, shadcn/ui (`apps/web`) |
 | Data | Supabase (Postgres, Auth, Realtime, RLS) |
 | Board multiplayer | Socket.io → `apps/game-server` (`:8080`) |
-| Voxel multiplayer | Socket.io → `apps/minecraft-server` (`:8081`) |
-| Voice (voxel) | LiveKit SFU; `POST /rtc/token` on minecraft-server |
-| Shared packages | `game-logic`, `voxel-content`, `observability` |
-| Deploy | Vercel (web), Railway (both Node services) |
+| Voxel multiplayer | Native WebSocket → `apps/voxel-server`; room workers and shared Rust/Wasm simulation under `games/voxel` |
+| Voice/classrooms | LiveKit SFU with separately authorized voxel and classroom media adapters |
+| Shared packages | `game-logic`, `observability`; legacy content is frozen text for the offline disposition audit, with no executable workspace |
+| Deploy | Web and independent Node services; operational cutover to the rewritten voxel/classroom services remains pending |
 
 ### Monorepo layout
 
 ```text
-apps/web | apps/game-server | apps/minecraft-server
-packages/game-logic | packages/voxel-content | packages/observability
+apps/web | apps/game-server | apps/voxel-server | apps/classroom-server
+games/voxel                      # engine, content, simulation and imperative client
+packages/game-logic | packages/observability
 supabase/migrations
 ```
 
-Key frontend entry points: `GameSessionContainer` + `BOARD_REGISTRY`, `MinecraftSessionContainer`, `SoloGameContainer`, `usePresence`, `AdminPage`, `TeacherPage`.
+Key frontend entry points: `GameSessionContainer` + `BOARD_REGISTRY`, `game/voxel/VoxelSessionContainer`, `SoloGameContainer`, `usePresence`, `AdminPage`, `TeacherPage`. The old NOA/Babylon client/container/socket hook and Minecraft backend workspace have been removed. Classroom error reports use the classroom service; admin stats independently query game, voxel and classroom services.
 
 ---
 
@@ -60,19 +61,23 @@ Key frontend entry points: `GameSessionContainer` + `BOARD_REGISTRY`, `Minecraft
 │  Railway :8080  │
 └─────────────────┘
 
-         │ Socket.io  VITE_VOXEL_SERVER_URL
+         │ native WebSocket  VITE_VOXEL_RUNTIME_SERVER_URL
          ▼
 ┌─────────────────┐         LiveKit SFU (WebRTC voice)
-│ minecraft-server│ ◄──── POST /rtc/token, webhooks
-│  Railway :8081  │
+│  voxel-server  │ ◄──── scoped media authorization, checkpoints and room workers
+│                │
 └─────────────────┘
+
+Classroom/RTC HTTP endpoints use VITE_CLASSROOM_SERVER_URL → classroom-server.
+Both media adapters use LiveKit without sharing the voxel simulation process.
 ```
 
 | Env var | Target |
 |---------|--------|
 | `VITE_GAME_SERVER_URL` | `apps/game-server` |
-| `VITE_VOXEL_SERVER_URL` | `apps/minecraft-server` |
-| `LIVEKIT_URL` / `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` | `apps/game-server` and `apps/minecraft-server` |
+| `VITE_VOXEL_RUNTIME_SERVER_URL` | `apps/voxel-server` |
+| `VITE_CLASSROOM_SERVER_URL` | `apps/classroom-server` |
+| `LIVEKIT_URL` / `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` | Relevant server-side media adapters; never browser secrets |
 
 ---
 
@@ -86,10 +91,10 @@ Key frontend entry points: `GameSessionContainer` + `BOARD_REGISTRY`, `Minecraft
 | Live match / tick state | No | Yes |
 | In-game chat | Persisted | Relay + batch persist |
 | Solo saves | `solo_game_saves` | No |
-| Voxel world/inventory | Snapshots at boundaries | Authoritative tick loop |
+| Voxel world/inventory | Private immutable Storage objects plus fenced Postgres checkpoint pointers/owner leases | Coherent snapshots from authoritative 30 Hz room workers |
 | LiveKit tokens | Roster validation | Mint + webhooks |
 
-**Hot path:** No per-tick Postgres writes. Persist at boundaries (pause, complete, disconnect, chat batches). Solo games never touch Railway.
+**Hot path:** No per-tick Postgres writes. Boards persist at their boundaries; voxel autosaves coherent checkpoints every 15 seconds and acknowledges pause/stop saving only after commit. Solo games never use the multiplayer services.
 
 ---
 
@@ -145,7 +150,6 @@ Key frontend entry points: `GameSessionContainer` + `BOARD_REGISTRY`, `Minecraft
 | Server | Rooms |
 |---|---|
 | game-server | `session:{sessionId}` |
-| minecraft-server | `voxel:{sessionId}`, `voxel-snapshot:*`, `voxel-snapshot-teacher:*` |
 
 **game-server events**
 
@@ -154,7 +158,7 @@ Key frontend entry points: `GameSessionContainer` + `BOARD_REGISTRY`, `Minecraft
 | `JOIN_ROOM`, `LEAVE_ROOM`, `INTENT_GAME`, `CHAT_MESSAGE` | `ROOM_SNAPSHOT`, `ROOM_EVENT`, `ROOM_ERROR` |
 | `PAUSE_GAME`, `RESUME_GAME`, `STOP_GAME`, `REMATCH`, `SPECTATE` | `LIVE_DELTA` (drawing, breakout), `CHAT_MESSAGE` |
 
-minecraft-server uses tick snapshots and voxel intents — not `GameModule`. Voice: LiveKit room `voxel-session-{sessionId}`.
+Rewritten voxel has its own native WebSocket protocol and accepted ADR (`docs/adr/002-voxel-native-websocket.md`). Bearer-authenticated admission yields single-use tickets; control frames contain inputs, not positions or durations. Matching engine/content/build identities, actor epochs and revisioned binary column baselines fence joins/reconnects. This is separate from the board Socket.io contract and `GameModule`.
 
 ---
 
@@ -169,7 +173,7 @@ HomePage splits catalog by `games.is_multiplayer`.
 | chess, tictactoe, connectfour, memory | 2 players |
 | drawing | 1–10; `LIVE_DELTA` |
 | breakout | Code exists; **catalog hidden** until sync fixed |
-| minecraft | Routed to `minecraft-server` |
+| minecraft | Rewritten `VoxelSessionContainer` → `voxel-server` |
 
 Lifecycle: `waiting → playing → paused | completed`. Paused: roster-only rejoin; auto-resume when all reconnect.
 
@@ -179,7 +183,7 @@ Lifecycle: `waiting → playing → paused | completed`. Paused: roster-only rej
 
 ### Voxel
 
-`MinecraftClient.tsx` (noa), worldgen Web Worker, `useLiveKitProximity`. Teacher spectators get filtered snapshots. See § Voxel teacher below.
+`apps/web/src/game/voxel/VoxelSessionContainer` owns the React HUD/session journey around the imperative runtime in `games/voxel`. The new client uses Three.js, bounded generation/mesh workers and the same release Wasm as Node prediction/authority. Content is compiled from `games/voxel/content`; old numeric IDs and protocol types are not adapters. See `games/voxel/README.md`, `games/voxel/docs/pc-school.md` and the rewrite proposal. Historical scale results do not block the private-school release.
 
 Add games: `.cursor/skills/playground-add-game/SKILL.md`.
 
@@ -197,7 +201,7 @@ Add games: `.cursor/skills/playground-add-game/SKILL.md`.
 
 ## 10. Teacher & admin
 
-**Teacher:** `TeacherPage` lists sessions; observes via `/play/:sessionId`; chat moderation RPCs; voxel spectator/teleport/`SWITCH_TEACHER_MODE`.
+**Teacher:** `TeacherPage` lists sessions and observes via `/play/:sessionId`; the voxel adapter provides capability-checked observation/play, teleport, room controls and persisted moderation.
 
 **Admin:** `AdminPage` — kid CRUD, CSV import (`import-bulk-kids` Edge Function), games, recess, reports, `audit_log`, live stats tab (`AdminStatsSection`), operations RPCs.
 
@@ -219,9 +223,9 @@ Supabase JWT; gender checks on join + LiveKit tokens; server-authoritative game 
 
 ## 13. Observability & ops
 
-`packages/observability`: Pino, correlation IDs, `/api/admin/stats`, client `/api/telemetry` ingest, LiveKit webhook + voice stats. Wired on **both** Railway services.
+`packages/observability` supplies shared Pino/correlation/process handling and existing operational HTTP routes. Rewritten voxel emits bounded room/worker/queue/checkpoint timing and audit events with build/epoch context. It does not log each input, chat body or voice content. The shared legacy telemetry URL helper remains until backend operational routing is retired.
 
-**Admin Stats & Telemetry Persistence:**
+**Legacy operational stats retained during backend cutover:**
 - **In-Memory Buffering**: To prevent per-tick database writes, client FPS metrics and player launches are aggregated in-memory on the servers (`launchTracker.ts`, `fpsAggregator.ts`) and flushed to Supabase (`game_launch_stats`, `minecraft_fps_stats`) at session boundaries.
 - **Disconnect Flushing**: When a player disconnects leaving a room empty, the server auto-flushes their accumulated stats to the database. For Minecraft, this flush has a 1-second delay (`setTimeout`) to ensure the final clientside unmount telemetry fetch (sent via `keepalive` fetch) arrives and is ingested.
 - **Live Admin Flushing**: When an admin loads or refreshes the stats page, the server intercepts the stats request and invokes a non-destructive flush (`onAdminStatsQuery` hook) of all active game rooms. This flushes active launch/FPS metrics to the database without deleting active session keys from memory.
@@ -233,19 +237,20 @@ process are documented in `docs/LOGGING.md`.
 
 ---
 
-## 14. Scaling & tokens
+## 14. School hosting & tokens
 
-Single Railway instance per service initially; later sticky sessions + Redis Socket.io adapter.
+Use the private school's ordinary sessions as the operational target. No synthetic-scale gate, horizontal-scaling project or Redis adapter is required for the voxel rewrite. Preserve game/service isolation and ordinary bounded work queues.
 
-- CORS per server via `CORS_ORIGIN`.
-- Browser: anon key only.
+- Configure allowed origins per service; rewritten voxel uses `VOXEL_ALLOWED_ORIGINS`.
+- Browser: Supabase publishable key; backend secret keys stay server-side.
 - Game servers: `access_token` in Socket.io `auth`.
+- Voxel: bearer admission followed by a short-lived, single-use native WebSocket ticket.
 
 ---
 
 ## 15. Voxel teacher & spectator
 
-Teachers bypass capacity; invisible to students (double-channel snapshots). Spectator flight; `SWITCH_TEACHER_MODE` when room has capacity. Host-drop isolation preserves student host when only teachers remain. LiveKit token path mirrors `JOIN_ROOM` gates.
+Teacher/admin abilities are explicit server capabilities. Hidden observers are non-colliding, excluded from student replication and denied survival actions. Trusted mode/teleport/pause/moderation commands are scoped and audited; admission and reconnect revalidate school/recess/membership. There are no voxel player/observer/room headcount ceilings. LiveKit grants follow the separately checked media policy. The actual hosted journey remains a release validation task.
 
 ---
 

@@ -1,0 +1,4 @@
+{"players":16,"samples":600,"p95":1.370845999999915,"p99":2.0576500000000237,"max":3.4950169999999616,"mean":0.9413126083333322,"messages":5552,"wireBytes":0,"columns":9,"wasmHighWaterBytes":2031616}
+{"players":32,"samples":600,"p95":2.800373000000036,"p99":3.9726200000000063,"max":6.06962899999985,"mean":1.9378096733333288,"messages":11616,"wireBytes":0,"columns":9,"wasmHighWaterBytes":2031616}
+{"players":64,"samples":600,"p95":6.439311000000089,"p99":7.739798000000064,"max":9.200685000000249,"mean":4.328043169999986,"messages":25280,"wireBytes":0,"columns":9,"wasmHighWaterBytes":2031616}
+{"players":128,"samples":600,"p95":17.95912700000008,"p99":19.061971999999514,"max":25.899085000000014,"mean":11.407695634999998,"messages":100864,"wireBytes":0,"columns":9,"wasmHighWaterBytes":2031616}

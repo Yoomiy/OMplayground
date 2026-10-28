@@ -1,0 +1,119 @@
+{
+  "buildId": "70127a28adf5c606b47b7f9bd749ca39397b964869f3fa4f13db4c2c96dc8957",
+  "startedAt": "2026-10-23T11:17:03.796Z",
+  "active": null,
+  "checks": [
+    {
+      "script": "test:creative:browser",
+      "path": "/tmp/voxel-appearance-suite-test-creative-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-23T11:18:48.119Z",
+      "finishedAt": "2026-10-23T11:19:23.449Z",
+      "durationMs": 35330
+    },
+    {
+      "script": "test:presentation:browser",
+      "path": "/tmp/voxel-appearance-suite-test-presentation-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-23T11:21:11.644Z",
+      "finishedAt": "2026-10-23T11:21:41.261Z",
+      "durationMs": 29616
+    },
+    {
+      "script": "test:equipment:browser",
+      "path": "/tmp/voxel-appearance-suite-test-equipment-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-23T11:21:44.093Z",
+      "finishedAt": "2026-10-23T11:23:58.113Z",
+      "durationMs": 134020
+    },
+    {
+      "script": "test:survival:browser",
+      "path": "/tmp/voxel-appearance-suite-test-survival-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-23T11:24:00.566Z",
+      "finishedAt": "2026-10-23T11:26:28.236Z",
+      "durationMs": 147670
+    },
+    {
+      "script": "test:tnt:browser",
+      "path": "/tmp/voxel-appearance-suite-test-tnt-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-23T11:26:31.270Z",
+      "finishedAt": "2026-10-23T11:27:51.638Z",
+      "durationMs": 80368
+    },
+    {
+      "script": "test:combat:browser",
+      "path": "/tmp/voxel-appearance-suite-test-combat-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-23T11:27:54.084Z",
+      "finishedAt": "2026-10-23T11:28:17.860Z",
+      "durationMs": 23776
+    },
+    {
+      "script": "test:touch:browser",
+      "path": "/tmp/voxel-appearance-suite-test-touch-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-23T11:28:21.174Z",
+      "finishedAt": "2026-10-23T11:28:33.759Z",
+      "durationMs": 12585
+    },
+    {
+      "script": "test:inventory:browser",
+      "path": "/tmp/voxel-appearance-suite-test-inventory-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-23T11:28:35.620Z",
+      "finishedAt": "2026-10-23T11:29:01.522Z",
+      "durationMs": 25902
+    },
+    {
+      "script": "test:environment:browser",
+      "path": "/tmp/voxel-appearance-suite-test-environment-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-23T11:29:03.951Z",
+      "finishedAt": "2026-10-23T11:29:15.520Z",
+      "durationMs": 11569
+    },
+    {
+      "script": "test:recovery:browser",
+      "path": "/tmp/voxel-appearance-suite-test-recovery-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-23T11:29:18.057Z",
+      "finishedAt": "2026-10-23T11:29:27.214Z",
+      "durationMs": 9155
+    },
+    {
+      "script": "test:browser",
+      "path": "/tmp/voxel-appearance-suite-test-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-23T11:29:34.527Z",
+      "finishedAt": "2026-10-23T11:29:36.569Z",
+      "durationMs": 2042
+    }
+  ],
+  "historicalChecks": [
+    {
+      "script": "test:creative:browser",
+      "path": "/tmp/voxel-appearance-suite-test-creative-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-23T11:17:03.797Z",
+      "finishedAt": "2026-10-23T11:17:30.657Z",
+      "durationMs": 26860,
+      "retainedLog": "/tmp/voxel-appearance-suite-test-creative-browser.log.prior-0"
+    }
+  ],
+  "finishedAt": "2026-10-23T11:29:36.569Z"
+}

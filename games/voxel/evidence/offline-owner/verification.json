@@ -1,0 +1,201 @@
+{
+  "result": "PASS_WITH_HOSTED_ORCHESTRATION_LIFECYCLE_AND_DEVICE_LIMITATIONS",
+  "capturedAt": "2026-10-25T11:06:01.010102+00:00",
+  "buildId": "2a953cea1c40134830081d96ca8a4b8433a6f5340955389b0350a6fdc7e943f2",
+  "engineHash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388",
+  "contentHash": "368b605ac5bdf5ff6fcf4af02f7174cbc6d39b5110f48e0a41b231a0a6479464",
+  "counts": {
+    "domain": 75,
+    "native": 80,
+    "nativeIgnored": 3,
+    "wasm": 78,
+    "sourceIntegration": 26,
+    "packagedIntegration": 26,
+    "sdkAndSchoolPolicy": 19,
+    "schoolGateway": 5,
+    "postgresSdk": 12,
+    "hostedSqlChecks": 9
+  },
+  "sourceFiles": 229,
+  "remoteChanges": {
+    "migrationAppliedBy": "user",
+    "codexMigrationApplied": false,
+    "oneQualificationObjectCreatedAndRemoved": true,
+    "hostedSqlRolledBack": true,
+    "fixtureSessionAbsent": true
+  },
+  "hostedInstallation": {
+    "result": "PASS",
+    "schema": 1,
+    "privateBucket": true,
+    "checkedAt": "2026-10-25T10:53:29.584Z"
+  },
+  "limitations": [
+    "Hosted SQL uses fixture object metadata, separate from the real Storage-byte check; no full hosted SDK/Storage/worker recovery proof",
+    "School Auth/PostgREST and local combined-test Storage bytes are fixtures",
+    "Two rendered regressions on software Chromium; not all eleven scenarios or hardware/input/capacity qualification",
+    "Central room lifecycle, fenced status projection, abandoned cold allocations, React, moderation/chat, LiveKit and classroom extraction unfinished"
+  ],
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "616a686ca40ed5faf4370eb9b4f5259f14dee11f1d620992e01864ead26c9f1c"
+    },
+    {
+      "path": "browser-observer.txt",
+      "sha256": "a4f9f7e11369ac1323707a42062cddd4d6a05185b28fd66692ea1f377da91720"
+    },
+    {
+      "path": "browser-release.txt",
+      "sha256": "106f1a18c1707fdf56e7f0e26925ffdb31ff15e576ce201b25a93c1d76fd0b77"
+    },
+    {
+      "path": "browser-school.json",
+      "sha256": "23e56443ccec02b6720a8cf0d1c8a9bb06ec74a9e643534a4d351d3c21599cf3"
+    },
+    {
+      "path": "browser-suite.json",
+      "sha256": "c05aab23b6f2e313d3cadd15acb3aeb89b2a86c154177299371fee68572b3466"
+    },
+    {
+      "path": "browser-tnt.json",
+      "sha256": "3326de7b0b1b17c7ae5e010954de1e7c02cdce4b8e9293f6aa678c2b05dcc09b"
+    },
+    {
+      "path": "browser-tnt.txt",
+      "sha256": "53ce977d9f33d546eb0e47046aa5280c61c7bfdb0cd7f752293396abdddcd74a"
+    },
+    {
+      "path": "build.json",
+      "sha256": "fe7eb93fff31547da1ab8ed6519ac4b557401bee332a9cd1380a355f771a275f"
+    },
+    {
+      "path": "capture.py",
+      "sha256": "0a41b37820b3e3a0b9bc66c2d067852705b16b25192cff2b65cc22d0f4cce130"
+    },
+    {
+      "path": "check-exit.json",
+      "sha256": "5bb602559ddd3ac94ead7ab5d7c6443ab4b79e5ce706480e9d8740131f9bf9b3"
+    },
+    {
+      "path": "check.txt",
+      "sha256": "996f9aa669477462cd3a3adde9ef3e9edef015c6d361c8a9dcd7db46b89144a7"
+    },
+    {
+      "path": "content.json",
+      "sha256": "87da078927c9df8366a815c868478e71f559da83e4785447a8edb3e505dba250"
+    },
+    {
+      "path": "hosted-sql.json",
+      "sha256": "c424098e20abdc3fb92e75267832382539529fd7fe89b8385bfbdf54610be4eb"
+    },
+    {
+      "path": "hosted-status.json",
+      "sha256": "086d570893d15d428d8c9c1bd58907d2f176ddb93f2aca8e4d7c5f6b2d7b2822"
+    },
+    {
+      "path": "hosted-target-match.json",
+      "sha256": "cdd914726ddaca976034c87c15232f8bf310d1b267899898f47a67652e6af534"
+    },
+    {
+      "path": "live-storage.json",
+      "sha256": "5d193c6bb907c8172ca15216f20bac7d0c17f26198a6f7b17698dd8a6f04676d"
+    },
+    {
+      "path": "platform-postgres.txt",
+      "sha256": "4022c5159adee042299802ba3c39d44a8b87331755c3b567e2ab2fd5768ef640"
+    },
+    {
+      "path": "platform-school-gateway.txt",
+      "sha256": "2bc52db6239e0f9f85951eae514c3c0d8a4443eaacc386c06827c5718beaf256"
+    },
+    {
+      "path": "platform-sdk.txt",
+      "sha256": "2e9ab79b6b6bf12be8dfd9153485fd4bf4bc3c566b954a1e7fe921c34aba33ff"
+    },
+    {
+      "path": "release.json",
+      "sha256": "a481e6bd1f95a20524d0c86145f6754b0b46bcf8f4f1b42ef9a3ea91a4f33554"
+    },
+    {
+      "path": "release/client/assets/engine-worker-DYAFKrDe.js",
+      "sha256": "99d3377c134578cd5e9bdd923e7707547e62c3a2a0a1a64c90adec5f1121bf04"
+    },
+    {
+      "path": "release/client/assets/index-5w2pNf9N.css",
+      "sha256": "2b1c35f291993017e6b64ee082d5b043f59edef25e5d29d5239bc23fab798eac"
+    },
+    {
+      "path": "release/client/assets/index-VReS-qDB.js",
+      "sha256": "c7ff94e65c91ceca7a0f15f906d21b85962b95f0f15b1232ed3461b7e79a58d2"
+    },
+    {
+      "path": "release/client/assets/voxel_engine_bg-1ejYMYOZ.wasm",
+      "sha256": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "release/client/index.html",
+      "sha256": "84c99aac5ec723471da19b8b5cf0e0479c47bc6efb9ac8e04e0454aa473698da"
+    },
+    {
+      "path": "release/server/build.json",
+      "sha256": "fe7eb93fff31547da1ab8ed6519ac4b557401bee332a9cd1380a355f771a275f"
+    },
+    {
+      "path": "release/server/content.json",
+      "sha256": "87da078927c9df8366a815c868478e71f559da83e4785447a8edb3e505dba250"
+    },
+    {
+      "path": "release/server/engine.wasm",
+      "sha256": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "release/server/gateway.js",
+      "sha256": "c3ec4d8b45cbed4a0997b45a1cd31ffab5e8456ce8124986bec8f38f8ae9536f"
+    },
+    {
+      "path": "release/server/gateway.js.map",
+      "sha256": "cccf24f32bc5282f1c49f93f60b4a1c48e6009c833dd2a17c301af15b638f64a"
+    },
+    {
+      "path": "release/server/room-worker.js",
+      "sha256": "75db24a88a9d69cddf8e8637ab906e0df19f559044b8cb9c2d2aab28fc267da9"
+    },
+    {
+      "path": "release/server/room-worker.js.map",
+      "sha256": "f8cc9c00aaafe792fd2202587f5b710e4b5617c429eb082b51df276296f817e6"
+    },
+    {
+      "path": "run-browser.mjs",
+      "sha256": "309ef65903732df34b59390cdac8079e88d7941f823f175387b7e27068818112"
+    },
+    {
+      "path": "run-check.mjs",
+      "sha256": "0a45b0507760eadbb5623de9df36507ced58cc074074b76a154b0022acc5cb73"
+    },
+    {
+      "path": "school-observer.png",
+      "sha256": "6b75487c5630ec3c5bd5f8941d349be0743710c252ba31932384c455142660e3"
+    },
+    {
+      "path": "source-inputs.json",
+      "sha256": "aed0e974129858b113e925b9a6318846cb1cda85a9d1d1942038fefe442aa95a"
+    },
+    {
+      "path": "source-release-verification.json",
+      "sha256": "75eb905e59f5b7bdc88d2666ad9994426b0a49d0c99e1d1793d86ef95e883ac8"
+    },
+    {
+      "path": "source.tar.gz",
+      "sha256": "94e924a377589b5ec3d6b94729453c6adce57f99a2c5556f446d2491523c17ff"
+    },
+    {
+      "path": "tnt-crater.png",
+      "sha256": "ca36f6ba2f150bde5a11b7c6325707ce49b11770fd58fb7ff979e940288d2384"
+    },
+    {
+      "path": "tnt-fuse.png",
+      "sha256": "87a3cea0caa444b7d3db8d51b76cab7c5afcc95ca46fe1668f012f48c2cb2125"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "node": "v24.21.0",
+  "livekit-client": "2.19.1",
+  "livekit-server-sdk": "2.15.4",
+  "@livekit/protocol": "1.46.4",
+  "ws": "8.20.0",
+  "react": "18.3.1",
+  "vite": "6.4.2",
+  "playwright": "1.64.0",
+  "gameWs": "8.21.3"
+}

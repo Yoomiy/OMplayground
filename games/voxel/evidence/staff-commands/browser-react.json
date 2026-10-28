@@ -1,0 +1,261 @@
+{
+  "result": "PASS",
+  "mouseClickAcknowledged": true,
+  "buildId": "66a9ff4dc9d4a0a38acdffdb68a05776d271c445395bd1d1a3d379208b584e68",
+  "engineHash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388",
+  "contentHash": "368b605ac5bdf5ff6fcf4af02f7174cbc6d39b5110f48e0a41b231a0a6479464",
+  "browser": "156.0.8078.4",
+  "scope": "Built React development StrictMode fixture, actual native packaged worker and SDK/PostgreSQL; fixture Auth/PostgREST/Storage transports, not full hosted shell or hardware qualification",
+  "lateMountCancelled": true,
+  "strictMode": true,
+  "fullscreenInventory": true,
+  "playerTouchLayout": [
+    {
+      "control": "joystick",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "jump",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "sneak",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "sprint",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "תקיפה (Q)",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "הצתה (G)",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "בנייה",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "mine",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "השהיה",
+      "overlap": 0,
+      "reachable": true
+    }
+  ],
+  "playerTouchMovement": true,
+  "rosterReceipt": {
+    "left": true,
+    "ended": true,
+    "revision": 1,
+    "requestId": "1645a2a3-f683-48bc-9220-b238defea0fe"
+  },
+  "staffReceipts": [
+    {
+      "result": {
+        "ok": true,
+        "reason": "mode"
+      },
+      "command": {
+        "kind": "mode",
+        "mode": "creative"
+      },
+      "completed": true
+    },
+    {
+      "result": {
+        "ok": true,
+        "reason": "mode"
+      },
+      "command": {
+        "kind": "mode",
+        "mode": "survival"
+      },
+      "completed": true
+    },
+    {
+      "result": {
+        "ok": true,
+        "reason": "teleport"
+      },
+      "command": {
+        "kind": "teleport",
+        "target": "a2732d6e-27b2-4f44-a3c2-4128927e1a26"
+      },
+      "completed": true
+    }
+  ],
+  "staffModeAndTeleport": true,
+  "staffTeleportTravel": {
+    "from": [
+      114.8066333333334,
+      81.605,
+      0.5
+    ],
+    "to": [
+      49.5,
+      70,
+      0.5
+    ],
+    "originBefore": {
+      "x": 96,
+      "z": 0
+    },
+    "originAfter": {
+      "x": 48,
+      "z": 0
+    },
+    "unloads": 77
+  },
+  "failedSaveNotConfirmed": true,
+  "expectedControlFailureResponses": 1,
+  "expectedBrowserNetworkErrors": 1,
+  "sameRequestRetry": true,
+  "teacherRise": 2.2169769010603204,
+  "noAutomaticReadmission": true,
+  "receipts": [
+    {
+      "action": "pause",
+      "completed": true,
+      "savedSequence": 3
+    },
+    {
+      "action": "resume",
+      "completed": true,
+      "savedSequence": null
+    },
+    {
+      "action": "end",
+      "completed": true,
+      "savedSequence": 5
+    }
+  ],
+  "cleanup": [
+    {
+      "resources": {
+        "geometries": 0,
+        "textures": 0,
+        "workers": 0
+      },
+      "audio": "closed"
+    },
+    {
+      "resources": {
+        "geometries": 0,
+        "textures": 0,
+        "workers": 0
+      },
+      "audio": "closed"
+    },
+    {
+      "resources": {
+        "geometries": 0,
+        "textures": 0,
+        "workers": 0
+      },
+      "audio": "closed"
+    }
+  ],
+  "exitInteractions": [
+    "mouse click while fullscreen",
+    "touch tap"
+  ],
+  "exitInputEvents": [
+    {
+      "type": "pointerdown",
+      "trusted": true,
+      "tag": "BUTTON",
+      "text": "יציאה",
+      "fullscreen": true,
+      "pointerLock": false,
+      "time": 55463.89999985695
+    },
+    {
+      "type": "mousedown",
+      "trusted": true,
+      "tag": "BUTTON",
+      "text": "יציאה",
+      "fullscreen": true,
+      "pointerLock": false,
+      "time": 55469.200000047684
+    },
+    {
+      "type": "pointerup",
+      "trusted": true,
+      "tag": "BUTTON",
+      "text": "יציאה",
+      "fullscreen": true,
+      "pointerLock": false,
+      "time": 55470
+    },
+    {
+      "type": "mouseup",
+      "trusted": true,
+      "tag": "BUTTON",
+      "text": "יציאה",
+      "fullscreen": true,
+      "pointerLock": false,
+      "time": 55470.09999990463
+    },
+    {
+      "type": "click",
+      "trusted": true,
+      "tag": "BUTTON",
+      "text": "יציאה",
+      "fullscreen": true,
+      "pointerLock": false,
+      "time": 55470.299999952316
+    },
+    {
+      "type": "fullscreenchange",
+      "trusted": true,
+      "fullscreen": false,
+      "pointerLock": false,
+      "time": 55897.700000047684
+    }
+  ],
+  "errors": [],
+  "clientArtifacts": [
+    {
+      "path": "/assets/embed-BbfR4Nnp.css",
+      "sha256": "88cf956a48a285c6e672ae7387cbdaa256a319b20328632c5aff65ea426abae7"
+    },
+    {
+      "path": "/assets/embed-DO0s2AZb.js",
+      "sha256": "4efe013aa342a11d1b6c50d51aef6853d5e4390aa6c23c997a3e32b3bc4fcd70"
+    },
+    {
+      "path": "/assets/engine-worker-DPFd4qax.js",
+      "sha256": "4fb4aae45165a42ca55545e132de209d72dc6557be1d4704e7682774dd17c18c"
+    },
+    {
+      "path": "/assets/index-BWm7sI-H.js",
+      "sha256": "bf1924217e417386f1463bfe37bb519990318889410180a1c0dce6b9b7a04c4c"
+    },
+    {
+      "path": "/assets/index-ByHhsCCP.css",
+      "sha256": "79072a06ef8eb57045829a2c4b49f23640a6dad0a03b3d2584c6ea6a3ea63a38"
+    },
+    {
+      "path": "/assets/voxel_engine_bg-1ejYMYOZ.wasm",
+      "sha256": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "/index.html",
+      "sha256": "870e01085e141330039de1402dda3e13ec151f3ba70607a5c1585bfdf8b0b044"
+    }
+  ]
+}

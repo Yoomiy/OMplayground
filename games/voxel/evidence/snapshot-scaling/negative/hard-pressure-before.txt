@@ -1,0 +1,30 @@
+✖ snapshot pressure above the shared output budget closes only that peer and readmission receives a fresh baseline (4583.250655ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4922.381153
+
+✖ failing tests:
+
+test at games/voxel/tests/integration/backpressure.test.ts:145:1
+✖ snapshot pressure above the shared output budget closes only that peer and readmission receives a fresh baseline (4583.250655ms)
+  Error [AbortError]: The operation was aborted
+      at AbortSignal.abortListener (node:events:1036:14)
+      at [nodejs.internal.kHybridDispatch] (node:internal/event_target:848:20)
+      at AbortSignal.dispatchEvent (node:internal/event_target:789:26)
+      at runAbort (node:internal/abort_controller:554:10)
+      at abortSignal (node:internal/abort_controller:518:3)
+      at Timeout._onTimeout (node:internal/abort_controller:208:7)
+      at listOnTimeout (node:internal/timers:685:17)
+      at process.processTimers (node:internal/timers:618:7) {
+    code: 'ABORT_ERR',
+    [cause]: TimeoutError: The operation was aborted due to timeout
+        at new DOMException (node:internal/per_context/domexception:76:18)
+        at Timeout._onTimeout (node:internal/abort_controller:210:9)
+        at listOnTimeout (node:internal/timers:685:17)
+        at process.processTimers (node:internal/timers:618:7)
+  }

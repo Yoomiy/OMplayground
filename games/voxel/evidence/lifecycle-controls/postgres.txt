@@ -1,0 +1,30 @@
+✔ fenced SQL commands deny nonhosts, recheck host/role, order idempotent requests and audit staff exactly once (556.092107ms)
+✔ control completion cannot claim an uncommitted save; fresh expiry and stale owners cannot mutate intent (1304.521136ms)
+✔ real school HTTP controls fail unsaved, retry once, resume, end with a committed receipt and replay after terminal retirement (2904.473929ms)
+✔ real concurrent acquisition yields one owner; retry is idempotent and expired takeover retains world identity (260.078727ms)
+✔ renewal checks the database clock after waiting for the owner row lock (681.298227ms)
+✔ two transactions racing one sequence commit one whole graph and exact retry cannot duplicate history (683.155276ms)
+✔ expired or replaced owner cannot commit, renew or release the new epoch (650.055638ms)
+✔ corrupt graph suffixes or unconfirmed uploads roll back pointer, history and every reference (1255.32346ms)
+✔ browser roles cannot read metadata or execute RPCs; service writes require RPCs and the bucket is private (669.002968ms)
+✔ retention keeps active/shared objects; garbage claims fence uploads and stale deletion workers (1332.976752ms)
+✔ cleanup skips uncommitted graph locks and rechecks references before claiming deletion (717.942763ms)
+✔ session removal retains orphan object addresses for subsequent Storage cleanup (384.390323ms)
+✔ old active references cannot starve a bounded garbage-collection batch (7383.487329ms)
+✔ commit rechecks expiry after object locks and cannot leave partial history after a delayed upload lock (715.12203ms)
+✔ real SDK and PostgreSQL carry a committed room across worker failure, ambiguous commit and new ownership (4520.421438ms)
+✔ production composition verifies real schemas, serves authenticated APIs without a prototype launcher and drains idempotently (862.140574ms)
+✔ SDK projection persists accepted membership and derives aligned presence/names and host reassignment without exposing staff (803.578894ms)
+✔ out-of-order, expired, released and replaced owner projections cannot overwrite newer state; completion is irreversible (801.630885ms)
+✔ database checks lease expiry after row-lock wait and pause intent denies late newcomer acceptance (842.082559ms)
+✔ all session mutations recheck lease expiry after waiting for the platform session row (2635.043477ms)
+✔ browser roles and browser-invoked legacy definer RPCs cannot write allocated sessions; unrelated sessions retain policy (401.858527ms)
+✔ school SDK/native worker preserve an accepted guest through paused renewal/reconnect, hide staff, reassign host and save empty presence (10207.746835ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 47827.677569

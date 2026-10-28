@@ -1,0 +1,6 @@
+
+> @playground/voxel@0.1.0 test:environment:browser
+> node tools/browser-environment.ts
+
+Rendered clear-night and disposed all owned resources
+Rendered rain-night and disposed all owned resources

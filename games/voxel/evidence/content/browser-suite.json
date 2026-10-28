@@ -1,0 +1,139 @@
+{
+  "buildId": "e4f100782c6972d28d3a854f5492ec47a6fc29aad21b89b117a08af096b8ea29",
+  "startedAt": "2026-10-24T17:10:57.924Z",
+  "active": null,
+  "checks": [
+    {
+      "script": "test:browser",
+      "path": "/tmp/voxel-content-suite-test-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-24T17:10:57.925Z",
+      "finishedAt": "2026-10-24T17:11:00.207Z",
+      "durationMs": 2282
+    },
+    {
+      "script": "test:creative:browser",
+      "path": "/tmp/voxel-content-suite-test-creative-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-24T17:11:00.252Z",
+      "finishedAt": "2026-10-24T17:11:46.338Z",
+      "durationMs": 46086
+    },
+    {
+      "script": "test:touch:browser",
+      "path": "/tmp/voxel-content-suite-test-touch-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-24T17:12:13.762Z",
+      "finishedAt": "2026-10-24T17:12:26.499Z",
+      "durationMs": 12736
+    },
+    {
+      "script": "test:environment:browser",
+      "path": "/tmp/voxel-content-suite-test-environment-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-24T17:12:26.542Z",
+      "finishedAt": "2026-10-24T17:12:38.121Z",
+      "durationMs": 11578
+    },
+    {
+      "script": "test:presentation:browser",
+      "path": "/tmp/voxel-content-suite-test-presentation-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-24T17:12:38.170Z",
+      "finishedAt": "2026-10-24T17:13:03.592Z",
+      "durationMs": 25422
+    },
+    {
+      "script": "test:recovery:browser",
+      "path": "/tmp/voxel-content-suite-test-recovery-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-24T17:13:28.364Z",
+      "finishedAt": "2026-10-24T17:13:37.502Z",
+      "durationMs": 9137
+    },
+    {
+      "script": "test:inventory:browser",
+      "path": "/tmp/voxel-content-suite-test-inventory-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-24T17:13:37.545Z",
+      "finishedAt": "2026-10-24T17:14:01.293Z",
+      "durationMs": 23748
+    },
+    {
+      "script": "test:combat:browser",
+      "path": "/tmp/voxel-content-suite-test-combat-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-24T17:14:01.338Z",
+      "finishedAt": "2026-10-24T17:14:23.698Z",
+      "durationMs": 22360
+    },
+    {
+      "script": "test:equipment:browser",
+      "path": "/tmp/voxel-content-suite-test-equipment-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-24T17:21:36.531Z",
+      "finishedAt": "2026-10-24T17:23:43.279Z",
+      "durationMs": 126748
+    },
+    {
+      "script": "test:survival:browser",
+      "path": "/tmp/voxel-content-suite-test-survival-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-24T17:24:46.239Z",
+      "finishedAt": "2026-10-24T17:27:09.347Z",
+      "durationMs": 143107
+    },
+    {
+      "script": "test:tnt:browser",
+      "path": "/tmp/voxel-content-suite-test-tnt-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-24T17:27:09.393Z",
+      "finishedAt": "2026-10-24T17:28:25.643Z",
+      "durationMs": 76250
+    }
+  ],
+  "historicalChecks": [
+    {
+      "script": "test:equipment:browser",
+      "path": "/tmp/voxel-content-suite-test-equipment-browser.log",
+      "code": 1,
+      "signal": null,
+      "startedAt": "2026-10-24T17:19:11.246Z",
+      "finishedAt": "2026-10-24T17:19:31.682Z",
+      "durationMs": 20436,
+      "retainedLog": "/tmp/voxel-content-suite-test-equipment-browser.log.prior-0"
+    },
+    {
+      "script": "test:survival:browser",
+      "path": "/tmp/voxel-content-suite-test-survival-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-24T17:14:30.773Z",
+      "finishedAt": "2026-10-24T17:16:53.101Z",
+      "durationMs": 142328,
+      "retainedLog": "/tmp/voxel-content-suite-test-survival-browser.log.prior-1"
+    },
+    {
+      "script": "test:tnt:browser",
+      "path": "/tmp/voxel-content-suite-test-tnt-browser.log",
+      "code": 0,
+      "signal": null,
+      "startedAt": "2026-10-24T17:17:38.989Z",
+      "finishedAt": "2026-10-24T17:18:51.414Z",
+      "durationMs": 72425,
+      "retainedLog": "/tmp/voxel-content-suite-test-tnt-browser.log.prior-2"
+    }
+  ],
+  "finishedAt": "2026-10-24T17:28:25.643Z"
+}

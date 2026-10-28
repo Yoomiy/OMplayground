@@ -1,0 +1,376 @@
+{
+  "result": "PACKAGED_SUSTAINED_SURVIVAL_AND_COMMITTED_CRASH_RECOVERY_PASS",
+  "startedAt": "2026-10-27T18:51:40.032Z",
+  "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077",
+  "configuration": {
+    "seconds": 10,
+    "roomCount": 1,
+    "playerCount": 2,
+    "ioMs": 5
+  },
+  "host": {
+    "node": "v24.21.0",
+    "arch": "arm64",
+    "cpu": "Neoverse-N1",
+    "logicalCpus": 2,
+    "availableParallelism": 2
+  },
+  "scope": "Packaged gateway/native workers, UUID actors, ordinary survival inputs/actions, fixture-owned kits and prepared natural-world work platforms, contested containers and commit/worker-crash recovery. Delayed in-memory metadata/object contract backend with advancing clock; no actual Supabase/Auth/SQL/Storage/SFU, rendering, real devices/networks, TNT or school-capacity signoff.",
+  "sample": {
+    "startedAtMs": 637.260108,
+    "endedAtMs": 11523.511348,
+    "elapsedMs": 10886.25124
+  },
+  "counts": {
+    "rounds": 3,
+    "mined": 6,
+    "placed": 6,
+    "crafted": 7,
+    "consumed": 2,
+    "containerRaces": 3,
+    "containerConflicts": 3,
+    "cachedReplays": 10,
+    "hits": 3,
+    "staleEpochReplays": 2,
+    "skippedInputBatches": 0
+  },
+  "roomMetrics": [
+    {
+      "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077",
+      "worldId": "world-993f5ce0-3885-4ed3-8ff6-cdc8ceeb7049",
+      "ticks": 299,
+      "columns": 9,
+      "overrunMs": 0,
+      "windowMs": 10000.158469999998,
+      "windowStartedAtMs": 582.724249,
+      "windowEndedAtMs": 10582.882719,
+      "worldStep_samples": 299,
+      "worldStep_meanMs": 0.33951973913040245,
+      "worldStep_p95UpperMs": 0.65,
+      "worldStep_p99UpperMs": 1.4,
+      "worldStep_maxMs": 3.5634569999999712,
+      "observerStep_samples": 0,
+      "observerStep_meanMs": 0,
+      "observerStep_p95UpperMs": 0,
+      "observerStep_p99UpperMs": 0,
+      "observerStep_maxMs": 0,
+      "workerTurn_samples": 2347,
+      "workerTurn_meanMs": 0.07510962931401677,
+      "workerTurn_p95UpperMs": 0.35,
+      "workerTurn_p99UpperMs": 0.7,
+      "workerTurn_maxMs": 7.777156999999988,
+      "generationJob_samples": 15,
+      "generationJob_meanMs": 2.5585162000000006,
+      "generationJob_p95UpperMs": 6.920513000000028,
+      "generationJob_p99UpperMs": 6.920513000000028,
+      "generationJob_maxMs": 6.920513000000028,
+      "command_samples": 684,
+      "command_meanMs": 0.047456764619871555,
+      "command_p95UpperMs": 0.2,
+      "command_p99UpperMs": 0.75,
+      "command_maxMs": 4.255339999999933
+    }
+  ],
+  "steadyRoomMetrics": [],
+  "events": [
+    {
+      "name": "VOXEL_ROOM_FAILED",
+      "context": {
+        "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077",
+        "connections": 2
+      }
+    }
+  ],
+  "rooms": [
+    {
+      "room": "993f5ce0-3885-4ed3-8ff6-cdc8ceeb7049",
+      "worldId": "world-993f5ce0-3885-4ed3-8ff6-cdc8ceeb7049",
+      "ownerEpoch": 3,
+      "checkpointSequence": 4,
+      "readbackChecks": 0,
+      "maxDurableLagSeconds": 10.866666666666667
+    }
+  ],
+  "finishedAt": "2026-10-27T18:51:53.884Z",
+  "peers": [
+    {
+      "id": "829d9d42-0cef-4ddc-8e17-5fd22be354ea",
+      "messages": 373,
+      "bytes": 100492,
+      "resyncs": 0,
+      "retainedEvents": 256,
+      "retainedHighWater": 256,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 163,
+        "meanMs": 34.439949398773,
+        "p95UpperMs": 40.6,
+        "p99UpperMs": 41.75,
+        "maxMs": 42.28479999999945
+      },
+      "commandMs": {
+        "samples": 39,
+        "meanMs": 1.1345961794871404,
+        "p95UpperMs": 2.5,
+        "p99UpperMs": 2.5066120000000183,
+        "maxMs": 2.5066120000000183
+      },
+      "outcomes": {
+        "selected": 7,
+        "mining": 3,
+        "edited": 3,
+        "move": 12,
+        "craft": 6,
+        "opened": 3,
+        "closed": 3,
+        "eaten": 1,
+        "hit": 1
+      },
+      "inventorySummary": {
+        "revision": 32,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 61
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 15
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 12
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 13,
+        "position": [
+          -5.6665,
+          160,
+          -4.523
+        ]
+      }
+    },
+    {
+      "id": "ea768f4f-11d9-4a70-851b-8401d0d21813",
+      "messages": 429,
+      "bytes": 102260,
+      "resyncs": 0,
+      "retainedEvents": 256,
+      "retainedHighWater": 256,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 163,
+        "meanMs": 36.40327971779137,
+        "p95UpperMs": 40.55,
+        "p99UpperMs": 41.7,
+        "maxMs": 42.238241000000926
+      },
+      "commandMs": {
+        "samples": 35,
+        "meanMs": 1.2165784571429346,
+        "p95UpperMs": 2.6,
+        "p99UpperMs": 3.051495000000159,
+        "maxMs": 3.051495000000159
+      },
+      "outcomes": {
+        "selected": 8,
+        "mining": 3,
+        "edited": 3,
+        "move": 3,
+        "craft": 6,
+        "opened": 3,
+        "conflict": 3,
+        "closed": 3,
+        "eaten": 1,
+        "hit": 2
+      },
+      "inventorySummary": {
+        "revision": 27,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 61
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 15
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 12
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 14,
+        "position": [
+          0.6409,
+          160,
+          -4.5088
+        ]
+      }
+    },
+    {
+      "id": "829d9d42-0cef-4ddc-8e17-5fd22be354ea",
+      "messages": 122,
+      "bytes": 18514,
+      "resyncs": 0,
+      "retainedEvents": 122,
+      "retainedHighWater": 122,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 0,
+        "meanMs": 0,
+        "p95UpperMs": 0,
+        "p99UpperMs": 0,
+        "maxMs": 0
+      },
+      "commandMs": {
+        "samples": 4,
+        "meanMs": 0.9537147500004721,
+        "p95UpperMs": 1.1559660000002623,
+        "p99UpperMs": 1.1559660000002623,
+        "maxMs": 1.1559660000002623
+      },
+      "outcomes": {
+        "stale_epoch": 1,
+        "move": 1,
+        "craft": 2
+      },
+      "inventorySummary": {
+        "revision": 34,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 60
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 15
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 16
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 22,
+        "position": [
+          -5.6665,
+          160,
+          -4.523
+        ]
+      }
+    },
+    {
+      "id": "ea768f4f-11d9-4a70-851b-8401d0d21813",
+      "messages": 116,
+      "bytes": 16702,
+      "resyncs": 0,
+      "retainedEvents": 116,
+      "retainedHighWater": 116,
+      "pendingWaiters": 0,
+      "lostAckSamples": 0,
+      "ackMs": {
+        "samples": 0,
+        "meanMs": 0,
+        "p95UpperMs": 0,
+        "p99UpperMs": 0,
+        "maxMs": 0
+      },
+      "commandMs": {
+        "samples": 1,
+        "meanMs": 0.97728399999869,
+        "p95UpperMs": 0.97728399999869,
+        "p99UpperMs": 0.97728399999869,
+        "maxMs": 0.97728399999869
+      },
+      "outcomes": {
+        "stale_epoch": 1
+      },
+      "inventorySummary": {
+        "revision": 27,
+        "items": [
+          {
+            "itemType": "stone_pickaxe",
+            "count": 1
+          },
+          {
+            "itemType": "oak_log",
+            "count": 61
+          },
+          {
+            "itemType": "iron_ingot",
+            "count": 31
+          },
+          {
+            "itemType": "apple",
+            "count": 15
+          },
+          {
+            "itemType": "oak_planks",
+            "count": 12
+          }
+        ]
+      },
+      "lastBaseline": {
+        "reason": "pause",
+        "phase": "paused",
+        "epoch": 23,
+        "position": [
+          0.6409,
+          160,
+          -4.5088
+        ]
+      }
+    }
+  ],
+  "cleanup": {
+    "rooms": 0,
+    "closedClients": 4,
+    "totalClients": 4,
+    "pendingWaiters": 0
+  },
+  "storage": {
+    "objects": 10,
+    "bytes": 24897,
+    "puts": 10,
+    "commits": 4
+  }
+}

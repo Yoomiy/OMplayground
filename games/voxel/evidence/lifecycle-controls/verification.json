@@ -1,0 +1,183 @@
+{
+  "result": "PASS_WITH_PLATFORM_HOSTED_AND_DEVICE_LIMITATIONS",
+  "capturedAt": "2026-10-25T16:26:44.465854+00:00",
+  "buildId": "faeeb224e6cea88b3e370b82ba8682175a365803c3e39bcce1af2ed8e1186ad6",
+  "engineHash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388",
+  "contentHash": "368b605ac5bdf5ff6fcf4af02f7174cbc6d39b5110f48e0a41b231a0a6479464",
+  "counts": {
+    "domain": 80,
+    "native": 80,
+    "nativeIgnored": 3,
+    "wasm": 80,
+    "sourceIntegration": 36,
+    "packagedIntegration": 36,
+    "sdkAndPolicy": 31,
+    "schoolGateway": 6,
+    "postgresSdk": 22,
+    "sharedLifecycle": 2,
+    "renderedScenarios": 1
+  },
+  "sourceFiles": 285,
+  "remoteChangesThisPhase": {
+    "schemaWrites": false,
+    "objectWrites": false,
+    "rowWrites": false
+  },
+  "projectionMigration": {
+    "path": "supabase/migrations/20261025020000_voxel_session_projection.sql",
+    "sha256": "e1ef579079c1783e74deac88f29b70390df74244d5a6ee9fbd8d91905ec9439a",
+    "locallyQualified": true,
+    "hostedApplied": false
+  },
+  "controlsMigration": {
+    "path": "supabase/migrations/20261025030000_voxel_session_controls.sql",
+    "sha256": "ba0e8c7f342000ef11b09c1a5fcb6bef74e97c9abb62a4a074b6553a59461fec",
+    "locallyQualified": true,
+    "hostedApplied": false
+  },
+  "priorEvidence": [
+    "games/voxel/evidence/session-projection/verification.json",
+    "games/voxel/evidence/room-lifecycle/verification.json",
+    "games/voxel/evidence/offline-owner/verification.json"
+  ],
+  "limitations": [
+    "Projection and control migrations are local only; earlier user-applied checkpoint migration is unchanged",
+    "School Auth/PostgREST transport reads real local PostgreSQL rows through fixtures; combined Storage bytes remain a fixture; no full hosted school/worker recovery proof",
+    "One current-release rendered scenario on software Chromium, not all previous browser scenarios or device/frame/input/network/capacity qualification",
+    "React/presence expiry UI, remaining teacher teleport/mode/moderation/media controls, chat, LiveKit, classroom extraction, hosted recovery and release qualification unfinished"
+  ],
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "a4c56409705ffda0b4f7bbfca7ad8b89afe9fcf3d45d0d2295b259a408d2c10f"
+    },
+    {
+      "path": "browser-direction-failure.txt",
+      "sha256": "0c9a1cbbe578cf83d1e7cb7582837474f60d2a7b529a9e1b57b6563333397b7e"
+    },
+    {
+      "path": "browser-lifecycle.json",
+      "sha256": "80981fc9b74e5100b3bf628ba4102467e0807f1d0a4402bf09a2be6b81cb11d1"
+    },
+    {
+      "path": "browser-lifecycle.txt",
+      "sha256": "175511e82534dae5a436947af397ed545a242f240fe43f7316aff998c0599560"
+    },
+    {
+      "path": "build.json",
+      "sha256": "ff37a751d389d8aa7a6d5a6b8aa216a8f4aadcee8f92fe539879d5cc546de079"
+    },
+    {
+      "path": "capture.py",
+      "sha256": "28f78515b1f80d2351776d2f29e32345601f8d26afbaa8f85b6ab3e7b29ccfd4"
+    },
+    {
+      "path": "check-exit.json",
+      "sha256": "5a137417172f360da5677cc5588822a46ceb800e2deb5d2f54e6481a4fda94a0"
+    },
+    {
+      "path": "check.txt",
+      "sha256": "43084a9407480bfb3a7f1ebf630b4e4748191d037f3c0694ad8fe4702f3f7cc7"
+    },
+    {
+      "path": "content.json",
+      "sha256": "87da078927c9df8366a815c868478e71f559da83e4785447a8edb3e505dba250"
+    },
+    {
+      "path": "postgres-stop.txt",
+      "sha256": "ca19178a35ab4153b75b494963b66ce8243e1b94c173107c87b44d09db23652d"
+    },
+    {
+      "path": "postgres.txt",
+      "sha256": "5494b67567a46ec7ac5a235260720b62bfd782110aac4cc16936990bb20b37dc"
+    },
+    {
+      "path": "process-lifecycle.txt",
+      "sha256": "8a187616834c95c1528cc6e4f12c439f49cf92b75361e137456d1c65e4c9d8e2"
+    },
+    {
+      "path": "release.json",
+      "sha256": "40d234a515c43020b9bdfa222c5d67ba32ee3bd6711cf94f55ac7fa06f4f9a24"
+    },
+    {
+      "path": "release/client/assets/engine-worker-DYAFKrDe.js",
+      "sha256": "99d3377c134578cd5e9bdd923e7707547e62c3a2a0a1a64c90adec5f1121bf04"
+    },
+    {
+      "path": "release/client/assets/index-5w2pNf9N.css",
+      "sha256": "2b1c35f291993017e6b64ee082d5b043f59edef25e5d29d5239bc23fab798eac"
+    },
+    {
+      "path": "release/client/assets/index-D8GQLaY-.js",
+      "sha256": "904516dfe45b12685e13cf15cf73386aa1d4d9a8928c9ea54659775dac536914"
+    },
+    {
+      "path": "release/client/assets/voxel_engine_bg-1ejYMYOZ.wasm",
+      "sha256": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "release/client/index.html",
+      "sha256": "2c33f11f9fd3afb7336fdb18b459e92adf0661a25adf9fb85c730ca22a8c1b9f"
+    },
+    {
+      "path": "release/server/build.json",
+      "sha256": "ff37a751d389d8aa7a6d5a6b8aa216a8f4aadcee8f92fe539879d5cc546de079"
+    },
+    {
+      "path": "release/server/content.json",
+      "sha256": "87da078927c9df8366a815c868478e71f559da83e4785447a8edb3e505dba250"
+    },
+    {
+      "path": "release/server/engine.wasm",
+      "sha256": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "release/server/gateway.js",
+      "sha256": "59d7a1a4eaba34d87ea1cdfcfa18dc58722564a7f67e1729c3034a81c27d16c3"
+    },
+    {
+      "path": "release/server/gateway.js.map",
+      "sha256": "4e7881eeadcb87f8c5fc0f30aa1550576588f9f8c6f4be246e22db5f356854a0"
+    },
+    {
+      "path": "release/server/room-worker.js",
+      "sha256": "9af6136b3f63f40a73d81a7eb9e9285320f480448da997f0febb5b792194ba04"
+    },
+    {
+      "path": "release/server/room-worker.js.map",
+      "sha256": "c7d9f7efd2c7e56ef00b2cc6098ef5d43a2b2e054bf40cfd02bdc4f0336f1217"
+    },
+    {
+      "path": "run-check.mjs",
+      "sha256": "807f93ebb6f57f330de2a9b342585e9db34a3b6724de8c845959f63d4983df33"
+    },
+    {
+      "path": "school-gateway.txt",
+      "sha256": "c02c3f0d8b860613096e8087da6d6e862b175dc6e6b0a0296cf7a3a45a068a72"
+    },
+    {
+      "path": "school-lifecycle-paused.png",
+      "sha256": "c82258ff639475a4b969fa54f9a6d1acf1690bc4654621fcd851dafd6c8e4902"
+    },
+    {
+      "path": "sdk.txt",
+      "sha256": "78f9034b5f7143ed0e2927704797c8474272bedebfd7eac940007cae413efdd1"
+    },
+    {
+      "path": "source-inputs.json",
+      "sha256": "6ada505cfaaea63729781773e4ebd8ce9e6ca58c2ab3cc76561e8d58aa19ef26"
+    },
+    {
+      "path": "source-release-verification.json",
+      "sha256": "5cb61f05858947bf02ae5363302c46372a602c1e12662ca520a8caed2a5a74df"
+    },
+    {
+      "path": "source.tar.gz",
+      "sha256": "c8a5613071182f73be06b6c3ca079b68a9177b58cd477de919b61cbf2128e2e5"
+    },
+    {
+      "path": "types.txt",
+      "sha256": "1a0dc5fed45ae2bedd882c376dc0a00912a5f05d858a3a5d028e6091d7f3f966"
+    }
+  ]
+}

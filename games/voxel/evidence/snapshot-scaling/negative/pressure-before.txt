@@ -1,0 +1,37 @@
+✖ temporary output pressure cannot silently lose a final actor delta while healthy peers continue (10649.246527ms)
+✖ snapshot pressure above the shared output budget closes only that peer and readmission receives a fresh baseline (247.656418ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 11223.314073
+
+✖ failing tests:
+
+test at games/voxel/tests/integration/backpressure.test.ts:94:1
+✖ temporary output pressure cannot silently lose a final actor delta while healthy peers continue (10649.246527ms)
+  Error: socket event timeout
+      at Timeout._onTimeout (file:///home/ubuntu/OMplayground/games/voxel/tests/fixtures/socket-probe.ts:41:16)
+      at listOnTimeout (node:internal/timers:685:17)
+      at process.processTimers (node:internal/timers:618:7)
+
+test at games/voxel/tests/integration/backpressure.test.ts:145:1
+✖ snapshot pressure above the shared output budget closes only that peer and readmission receives a fresh baseline (247.656418ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert(h.events.includes('VOXEL_BACKPRESSURE_RECOVERY'))
+  
+      at TestContext.<anonymous> (file:///home/ubuntu/OMplayground/games/voxel/tests/integration/backpressure.test.ts:166:7)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

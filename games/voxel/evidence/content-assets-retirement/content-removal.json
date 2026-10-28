@@ -1,0 +1,188 @@
+{
+  "head": "b0ccf90a83581460827f2c5a8f5d21c80612ebf6",
+  "backup": "/tmp/voxel-legacy-content-before",
+  "files": [
+    {
+      "path": "packages/voxel-content/jest.config.cjs",
+      "sha256": "50a3a18ae902d8cf15d3066b504e055c250b4e7c1d1998d98d60e2d03d6ef7aa",
+      "bytes": 266,
+      "lines": 14,
+      "gitCommit": "b0ccf90a83581460827f2c5a8f5d21c80612ebf6"
+    },
+    {
+      "path": "packages/voxel-content/package.json",
+      "sha256": "6ddaf700596c5435d1bd21b6ed0496e37eba5f2f62783ec780882820f2ada09f",
+      "bytes": 412,
+      "lines": 18,
+      "gitCommit": "b0ccf90a83581460827f2c5a8f5d21c80612ebf6"
+    },
+    {
+      "path": "packages/voxel-content/src/biomes.ts",
+      "sha256": "2b1fceafa9e6e126ec4ec800ad88f6087d7ef06e274a42317f7dc078a9506ee6",
+      "bytes": 2968,
+      "lines": 129,
+      "gitCommit": "b0ccf90a83581460827f2c5a8f5d21c80612ebf6"
+    },
+    {
+      "path": "packages/voxel-content/src/blockAudio.ts",
+      "sha256": "c30502d759235c6586fbe0ae1d3d32d20f97cfbb02aae745ff03f394b3a60091",
+      "bytes": 5523,
+      "lines": 203,
+      "gitCommit": "b0ccf90a83581460827f2c5a8f5d21c80612ebf6"
+    },
+    {
+      "path": "packages/voxel-content/src/blockBreakDrops.test.ts",
+      "sha256": "288e29e6bef380c7d5694bff9fe35c37cf7dcf0b3f288aac35a303344d6625b1",
+      "bytes": 1504,
+      "lines": 41,
+      "gitCommit": "b0ccf90a83581460827f2c5a8f5d21c80612ebf6"
+    },
+    {
+      "path": "packages/voxel-content/src/blockBreakDrops.ts",
+      "sha256": "da4c6288eb301928ad513e289d988dedb8495ee78b7ae26ddf51dae771b1a475",
+      "bytes": 4191,
+      "lines": 123,
+      "gitCommit": "b0ccf90a83581460827f2c5a8f5d21c80612ebf6"
+    },
+    {
+      "path": "packages/voxel-content/src/blockClientCatalog.test.ts",
+      "sha256": "b034099a62511410d658f5262d7fda0725fb5c992c4ed2b26faacf67cfc68018",
+      "bytes": 2364,
+      "lines": 69,
+      "gitCommit": "b0ccf90a83581460827f2c5a8f5d21c80612ebf6"
+    },
+    {
+      "path": "packages/voxel-content/src/blockClientCatalog.ts",
+      "sha256": "bfd010890429e94306fa6914694fa2f7b76d1e4c3c55f1b2b6f22df45f41eff0",
+      "bytes": 31112,
+      "lines": 1131,
+      "gitCommit": "b0ccf90a83581460827f2c5a8f5d21c80612ebf6"
+    },
+    {
+      "path": "packages/voxel-content/src/blockMiningMeta.ts",
+      "sha256": "45caa14848983364e1fd8425cc86138459a70ff56d9f22baff8e7dbb83ae6638",
+      "bytes": 9871,
+      "lines": 133,
+      "gitCommit": "b0ccf90a83581460827f2c5a8f5d21c80612ebf6"
+    },
+    {
+      "path": "packages/voxel-content/src/blocks.test.ts",
+      "sha256": "08ef29898ccc9209a029a87591e71ada29d7ef79ddfecd41158dfcdea51ecd18",
+      "bytes": 6375,
+      "lines": 151,
+      "gitCommit": "b0ccf90a83581460827f2c5a8f5d21c80612ebf6"
+    },
+    {
+      "path": "packages/voxel-content/src/blocks.ts",
+      "sha256": "1a7b273a058d02198284fbfec4ac3223ae349806c285d371e2bc0e199dc36a36",
+      "bytes": 14188,
+      "lines": 273,
+      "gitCommit": "b0ccf90a83581460827f2c5a8f5d21c80612ebf6"
+    },
+    {
+      "path": "packages/voxel-content/src/index.ts",
+      "sha256": "d56a63dcee0b45a422ffd1ec20236fdd4c9f752281687449419068b7a4d5ed81",
+      "bytes": 2764,
+      "lines": 150,
+      "gitCommit": "b0ccf90a83581460827f2c5a8f5d21c80612ebf6"
+    },
+    {
+      "path": "packages/voxel-content/src/items.test.ts",
+      "sha256": "8a6dd6672ec579ec49adff177aa4ff1c1fd21058da1d2fdb5b655a8df5e331ed",
+      "bytes": 3865,
+      "lines": 84,
+      "gitCommit": "b0ccf90a83581460827f2c5a8f5d21c80612ebf6"
+    },
+    {
+      "path": "packages/voxel-content/src/items.ts",
+      "sha256": "f39a45143e2af3bd6f1b1d16d3d6de020c431acc85e473b3bde7cc8e6d64480d",
+      "bytes": 10549,
+      "lines": 478,
+      "gitCommit": "b0ccf90a83581460827f2c5a8f5d21c80612ebf6"
+    },
+    {
+      "path": "packages/voxel-content/src/mining.test.ts",
+      "sha256": "e142e12019d594cd9645a698a74dc49b7e97a754ab43ad758b6b5248d4d6d1b8",
+      "bytes": 1894,
+      "lines": 55,
+      "gitCommit": "b0ccf90a83581460827f2c5a8f5d21c80612ebf6"
+    },
+    {
+      "path": "packages/voxel-content/src/mining.ts",
+      "sha256": "e58fc8749f6e5c99ae1a30d0483d333ba993dabea5959e861c9c373d2b280aa4",
+      "bytes": 4159,
+      "lines": 144,
+      "gitCommit": "b0ccf90a83581460827f2c5a8f5d21c80612ebf6"
+    },
+    {
+      "path": "packages/voxel-content/src/movementPerks.test.ts",
+      "sha256": "93906e17b0ec1da20f5e7f87860b1203af8143bbc7098e869cb5e94411a79a5b",
+      "bytes": 3639,
+      "lines": 107,
+      "gitCommit": "b0ccf90a83581460827f2c5a8f5d21c80612ebf6"
+    },
+    {
+      "path": "packages/voxel-content/src/movementPerks.ts",
+      "sha256": "afc096e6a39eae7bde49fa60b49bebcfd9aa50fc27b98c0fbe7b981ca60cedee",
+      "bytes": 1661,
+      "lines": 54,
+      "gitCommit": "b0ccf90a83581460827f2c5a8f5d21c80612ebf6"
+    },
+    {
+      "path": "packages/voxel-content/src/recipes.test.ts",
+      "sha256": "d5fefc9bc81ec71babb400dd9b1e5e7cf5a2841beddb804f178a6b8d41231c2e",
+      "bytes": 13888,
+      "lines": 410,
+      "gitCommit": "b0ccf90a83581460827f2c5a8f5d21c80612ebf6"
+    },
+    {
+      "path": "packages/voxel-content/src/recipes.ts",
+      "sha256": "64a67c04cd74b4d8dce0aa1c763c65fb637fbf55b414694ad6abb693d23e8b98",
+      "bytes": 16372,
+      "lines": 553,
+      "gitCommit": "b0ccf90a83581460827f2c5a8f5d21c80612ebf6"
+    },
+    {
+      "path": "packages/voxel-content/src/weather.test.ts",
+      "sha256": "7109acb7c396b8690c55bb35add88ae5501c63db1a08c6b4b413dac7a3e0544b",
+      "bytes": 506,
+      "lines": 11,
+      "gitCommit": "b0ccf90a83581460827f2c5a8f5d21c80612ebf6"
+    },
+    {
+      "path": "packages/voxel-content/src/weather.ts",
+      "sha256": "3c437218e5c3bdeb7cfb0dcf7b7e619353637fcdd96237d470dfe715b7d35059",
+      "bytes": 511,
+      "lines": 15,
+      "gitCommit": "b0ccf90a83581460827f2c5a8f5d21c80612ebf6"
+    },
+    {
+      "path": "packages/voxel-content/src/worldgen.test.ts",
+      "sha256": "eab6b5845e487be70a317d5dd6092876c158fe2f270f6388f6aaf9f73716c952",
+      "bytes": 8451,
+      "lines": 246,
+      "gitCommit": "b0ccf90a83581460827f2c5a8f5d21c80612ebf6"
+    },
+    {
+      "path": "packages/voxel-content/src/worldgen.ts",
+      "sha256": "5c65d25486261866ca4c8e276b56ac5ff996b4ac72cd71dde27aaa7d1c4c2720",
+      "bytes": 21719,
+      "lines": 640,
+      "gitCommit": "b0ccf90a83581460827f2c5a8f5d21c80612ebf6"
+    },
+    {
+      "path": "packages/voxel-content/src/worldgenNoise.ts",
+      "sha256": "4362a5ec3758b47c26c541458ace21c1e520f61136ce8638904e1357c2313b0a",
+      "bytes": 1430,
+      "lines": 41,
+      "gitCommit": "b0ccf90a83581460827f2c5a8f5d21c80612ebf6"
+    },
+    {
+      "path": "packages/voxel-content/tsconfig.json",
+      "sha256": "00e69af88367fa398ec47684bc82f73cf6cdee06b4cddb474b99c379a93645cd",
+      "bytes": 372,
+      "lines": 17,
+      "gitCommit": "b0ccf90a83581460827f2c5a8f5d21c80612ebf6"
+    }
+  ]
+}

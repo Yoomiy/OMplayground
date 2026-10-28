@@ -1,0 +1,123 @@
+{
+  "result": "PASS",
+  "scope": "Two real built natural survival clients with empty inventories; normal movement/look, actual touch attack and public attack intents; frozen inventory remains vulnerable, authoritative hit feedback/death, same-connection UI respawn/collision readiness/protection and teardown; no grants, client-selected victims, clock overrides or test-only mutations; software rendering only",
+  "buildId": "a3db04da64a32a2ca7dcda54cc9cbf7959b3ec0647e777300982d55eda3f337f",
+  "engineHash": "7688702bb6a210b9ac77384f44e7a8f7feca2f9036df7b9230cbe923cde80f49",
+  "contentHash": "588521eddc90e2f18154e597ec568c6b1592f558542dcf29f615b6bfc972d2bc",
+  "browser": "156.0.8078.4",
+  "firstHit": {
+    "type": "hit",
+    "sequence": 1,
+    "attacker": "bb0549dc-6a3f-4bc5-9a80-fb6b9109b8aa",
+    "target": "344c1625-cd75-47d6-9195-371fdf7b9683",
+    "position": [
+      49.5,
+      68.7514479944465,
+      0.7999002443868393
+    ],
+    "damage": 2,
+    "dead": false
+  },
+  "dead": {
+    "epoch": 13,
+    "vitals": {
+      "version": 2,
+      "health": 0,
+      "food": 20,
+      "air": 300,
+      "dead": true,
+      "respawnIn": 54,
+      "attackCooldown": 0,
+      "protection": 0
+    },
+    "frozen": 1
+  },
+  "respawn": {
+    "epoch": 14,
+    "vitals": {
+      "version": 2,
+      "health": 20,
+      "food": 20,
+      "air": 300,
+      "dead": false,
+      "respawnIn": 0,
+      "attackCooldown": 0,
+      "protection": 58
+    },
+    "trace": {
+      "minimumHealth": 0,
+      "sawDead": true,
+      "sawPreparing": true,
+      "maxProtection": 60
+    }
+  },
+  "feedback": [
+    {
+      "effects": {
+        "live": 0,
+        "bursts": 10,
+        "hits": 10
+      },
+      "audioEffects": 10
+    },
+    {
+      "effects": {
+        "live": 0,
+        "bursts": 10,
+        "hits": 10
+      },
+      "audioEffects": 0
+    }
+  ],
+  "cleanup": [
+    {
+      "geometries": 0,
+      "textures": 0,
+      "workers": 0,
+      "audio": {
+        "supported": true,
+        "contexts": 0,
+        "state": "closed",
+        "active": false,
+        "muted": false,
+        "voices": 0,
+        "effects": 10,
+        "gain": 0,
+        "dropped": 0,
+        "listener": [
+          49.5,
+          68.62,
+          2.6766
+        ],
+        "lastSource": [
+          49.5,
+          68.75144958496094,
+          0.799900233745575
+        ]
+      }
+    },
+    {
+      "geometries": 0,
+      "textures": 0,
+      "workers": 0,
+      "audio": {
+        "supported": true,
+        "contexts": 0,
+        "state": "closed",
+        "active": false,
+        "muted": false,
+        "voices": 0,
+        "effects": 0,
+        "gain": 0,
+        "dropped": 0,
+        "listener": [
+          49.5,
+          69.62,
+          0.5
+        ],
+        "lastSource": null
+      }
+    }
+  ],
+  "errors": []
+}

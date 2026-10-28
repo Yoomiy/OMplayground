@@ -1,0 +1,7 @@
+
+> @playground/voxel@0.1.0 survey:content
+> node tools/survey-content.ts
+
+Seed 4242: 111 bounded columns, 34 families, missing none
+Seed 42: 112 bounded columns, 35 families, missing none
+Seed 20261024: 109 bounded columns, 34 families, missing none

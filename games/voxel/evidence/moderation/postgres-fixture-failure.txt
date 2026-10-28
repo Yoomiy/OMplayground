@@ -1,0 +1,260 @@
+✔ fenced SQL commands deny nonhosts, recheck host/role, order idempotent requests and audit staff exactly once (280.732867ms)
+✔ control completion cannot claim an uncommitted save; fresh expiry and stale owners cannot mutate intent (1850.136037ms)
+✔ real school HTTP controls fail unsaved, retry once, resume, end with a committed receipt and replay after terminal retirement (5614.167256ms)
+✔ SQL removal commits one access boundary and audit, fences old acceptance/presence and permits an explicit fresh rejoin (508.126998ms)
+✔ SQL ban survives an expired owner and denies matching-generation admission and child-host controls until explicit unban and rejoin (480.852227ms)
+✔ SQL moderation requires fresh staff, cannot target staff and is inaccessible to browser roles or direct service table reads (253.840338ms)
+✔ SQL moderation rechecks proof expiry after session and audit waits and rolls back every policy/audit boundary (510.883292ms)
+✔ lifting an already absent ban does not revoke a current admission or rotate unrelated tickets (683.71632ms)
+✔ real SDK/SQL/worker moderation rejects child-host commands, disconnects old admissions and safely replays after remove/ban/unban and explicit rejoin (2645.374493ms)
+✔ a staff ban on a never-allocated room creates guarded metadata without an owner or world save (295.749379ms)
+✔ real concurrent acquisition yields one owner; retry is idempotent and expired takeover retains world identity (100.04848ms)
+✔ renewal checks the database clock after waiting for the owner row lock (514.78379ms)
+✔ two transactions racing one sequence commit one whole graph and exact retry cannot duplicate history (213.646746ms)
+✔ expired or replaced owner cannot commit, renew or release the new epoch (196.567423ms)
+✔ corrupt graph suffixes or unconfirmed uploads roll back pointer, history and every reference (274.673638ms)
+✔ browser roles cannot read metadata or execute RPCs; service writes require RPCs and the bucket is private (109.325164ms)
+✔ retention keeps active/shared objects; garbage claims fence uploads and stale deletion workers (499.519037ms)
+✔ cleanup skips uncommitted graph locks and rechecks references before claiming deletion (464.837791ms)
+✔ session removal retains orphan object addresses for subsequent Storage cleanup (135.170048ms)
+✔ old active references cannot starve a bounded garbage-collection batch (2114.749108ms)
+✔ commit rechecks expiry after object locks and cannot leave partial history after a delayed upload lock (557.095073ms)
+✔ self-departure reassigns the host with fresh aligned names and revision-fences old admissions; retry cannot remove a later rejoin (265.078992ms)
+✔ connected participants and live last-owner retirement cannot be dismissed; the released empty roster becomes terminal without claiming a save (233.041918ms)
+✔ departure checks fresh profiles, scope and the database clock after a row-lock wait, with atomic rollback (642.322202ms)
+✔ the real SDK/HTTP self-departure route binds the verified subject, rejects forged targets and allocates no worker (250.873084ms)
+✔ a never-opened roster receives guarded metadata without a worker and browser roles cannot read departure receipts or undo removal (168.80805ms)
+✔ membership acceptance rechecks its own proof expiry after waiting for the session row even with a live owner (550.526722ms)
+✔ an active child can remove their own old partition membership without gaining cross-partition play authority (126.075085ms)
+✔ real SDK and PostgreSQL carry a committed room across worker failure, ambiguous commit and new ownership (1163.219302ms)
+✔ production composition verifies real schemas, serves authenticated APIs without a prototype launcher and drains idempotently (199.542678ms)
+✔ scoped session API reads real metadata across staff partitions and completed rosters without allocating or exposing diagnostic payloads (533.58136ms)
+✔ SDK projection persists accepted membership and derives aligned presence/names and host reassignment without exposing staff (368.201687ms)
+✔ out-of-order, expired, released and replaced owner projections cannot overwrite newer state; completion is irreversible (293.364448ms)
+✔ database checks lease expiry after row-lock wait and pause intent denies late newcomer acceptance (597.98087ms)
+✔ all session mutations recheck lease expiry after waiting for the platform session row (1715.098351ms)
+✔ browser roles and browser-invoked legacy definer RPCs cannot write allocated sessions; unrelated sessions retain policy (183.559121ms)
+✖ school SDK/native worker preserve an accepted guest through paused renewal/reconnect, hide staff, reassign host and save empty presence (144.258212ms)
+✔ SQL staff authority is fresh, audit is idempotent and application receipts never claim a checkpoint (349.923199ms)
+✔ SQL dispatched commands cannot execute or complete under a replacement owner; a fresh explicit request remains possible (188.102342ms)
+✔ SQL staff proofs and completion recheck the clock after platform/audit row waits and roll back partial results (1092.867605ms)
+✔ native SDK/SQL staff controls change mode and teleport only the verified hidden staff actor with one audited receipt (1338.903546ms)
+✔ SQL inactive or demoted kid-profile rows cannot fall through to a second admin profile for staff or lifecycle authority (301.496047ms)
+ℹ tests 42
+ℹ suites 0
+ℹ pass 41
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 35491.542588
+
+✖ failing tests:
+
+test at apps/voxel-server/tests/postgres/sessions.test.ts:274:1
+✖ school SDK/native worker preserve an accepted guest through paused renewal/reconnect, hide staff, reassign host and save empty presence (144.258212ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  503 !== 200
+  
+      at connectAs (file:///home/ubuntu/OMplayground/apps/voxel-server/tests/postgres/sessions.test.ts:397:14)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///home/ubuntu/OMplayground/apps/voxel-server/tests/postgres/sessions.test.ts:421:20)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 503,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+d82899eaf'::uuid,p_owner => '6bc882b8-e1ee-4078-9c86-f5f092a324b1'::uuid,p_epoch => '1'::bigint,p_actor => '1f92963d-4df9-46ba-9903-c08d6f0d4f24'::uuid,p_request => '2428a63f-edfc-405a-9a11-84169ab5fd75'::uuid,p_action => 'resume'::text,p_authorized_until => '2026-10-26T10:49:55.018Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:49:55.483 IST [674993] ERROR:  voxel owner unavailable
+2026-10-26 12:49:55.483 IST [674993] CONTEXT:  PL/pgSQL function public.voxel_begin_control(uuid,uuid,uuid,bigint,uuid,uuid,text,timestamp with time zone) line 13 at RAISE
+2026-10-26 12:49:55.483 IST [674993] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_begin_control(p_session => 'dfc3c5a0-0ff1-49e2-9876-e56e17a73b8b'::uuid,p_world => '3cd17831-5d55-46cf-bcdb-780d82899eaf'::uuid,p_owner => '6bc882b8-e1ee-4078-9c86-f5f092a324b1'::uuid,p_epoch => '1'::bigint,p_actor => '1f92963d-4df9-46ba-9903-c08d6f0d4f24'::uuid,p_request => '6ff22c0f-23cd-4547-81fa-71c641fbd9d0'::uuid,p_action => 'end'::text,p_authorized_until => '2026-10-26T10:49:59.947Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:49:56.478 IST [675015] ERROR:  voxel owner unavailable
+2026-10-26 12:49:56.478 IST [675015] CONTEXT:  PL/pgSQL function public.voxel_finish_control(uuid,uuid,uuid,bigint,uuid,uuid,bigint) line 18 at RAISE
+2026-10-26 12:49:56.478 IST [675015] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_finish_control(p_session => 'fc7db76b-aef9-4792-9b3d-292250ee2bcf'::uuid,p_world => '677fff99-1cfd-416a-926d-5a97410e0a27'::uuid,p_owner => '462d068d-f345-44c9-a93e-2eb73375bd0b'::uuid,p_epoch => '1'::bigint,p_actor => 'bcda3898-0092-4e70-a70e-76cac0abb60a'::uuid,p_request => '42525bfa-a466-4c32-bc5c-e2bd43f4cb79'::uuid,p_saved => NULL::bigint))),'null'::jsonb)
+2026-10-26 12:50:02.175 IST [671154] LOG:  checkpoint starting: immediate force wait
+2026-10-26 12:50:02.202 IST [671154] LOG:  checkpoint complete: wrote 8 buffers (0.0%); 0 WAL file(s) added, 0 removed, 1 recycled; write=0.005 s, sync=0.006 s, total=0.027 s; sync files=8, longest=0.005 s, average=0.001 s; distance=4932 kB, estimate=4932 kB; lsn=0/20255A70, redo lsn=0/20255A38
+2026-10-26 12:50:04.124 IST [675332] ERROR:  moderation conflict
+2026-10-26 12:50:04.124 IST [675332] CONTEXT:  PL/pgSQL function public.voxel_moderate(uuid,uuid,uuid,uuid,text,timestamp with time zone) line 27 at RAISE
+2026-10-26 12:50:04.124 IST [675332] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_moderate(p_session => '6dbb1501-295c-4820-9ee5-5082020a8070'::uuid,p_request => 'c335885a-569b-45a0-a4b7-10bb7cbb0a46'::uuid,p_actor => 'dc9ce3c2-05c5-4c41-a71e-4090bc6dc3ab'::uuid,p_target => 'b7593e25-fea9-42cc-9b7f-b5ff7cc81def'::uuid,p_action => 'ban'::text,p_authorized_until => '2026-10-26T10:50:08.608Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:50:04.390 IST [675352] ERROR:  voxel control forbidden
+2026-10-26 12:50:04.390 IST [675352] CONTEXT:  PL/pgSQL function public.voxel_begin_control(uuid,uuid,uuid,bigint,uuid,uuid,text,timestamp with time zone) line 19 at RAISE
+2026-10-26 12:50:04.390 IST [675352] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_begin_control(p_session => '516d59f9-8b9a-440c-9854-80a47848d17c'::uuid,p_world => '4c7fa300-beb3-4437-81b2-e40ef9dd55d2'::uuid,p_owner => 'ef0a0429-e009-4366-9370-5486afb68115'::uuid,p_epoch => '1'::bigint,p_actor => 'ac3c1ca3-8fed-4d63-82d7-ad6ab8c3eb74'::uuid,p_request => 'f64e81a3-e57a-4976-8a45-86979dd44145'::uuid,p_action => 'pause'::text,p_authorized_until => '2026-10-26T10:50:08.839Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:50:04.739 IST [675374] ERROR:  moderation forbidden
+2026-10-26 12:50:04.739 IST [675374] CONTEXT:  PL/pgSQL function public.voxel_moderate(uuid,uuid,uuid,uuid,text,timestamp with time zone) line 21 at RAISE
+2026-10-26 12:50:04.739 IST [675374] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_moderate(p_session => '5547da64-b358-4345-9dc0-dba68a497358'::uuid,p_request => 'b7790dfd-05f3-499b-a1ef-a0678b9f1c46'::uuid,p_actor => '9c33c653-ba14-4492-bd41-bdd42d73c606'::uuid,p_target => 'be2fb88b-ec07-46dc-8185-a7c250ab5361'::uuid,p_action => 'ban'::text,p_authorized_until => '2026-10-26T10:50:09.207Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:50:04.760 IST [675376] ERROR:  moderation target forbidden
+2026-10-26 12:50:04.760 IST [675376] CONTEXT:  PL/pgSQL function public.voxel_moderate(uuid,uuid,uuid,uuid,text,timestamp with time zone) line 35 at RAISE
+2026-10-26 12:50:04.760 IST [675376] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_moderate(p_session => '5547da64-b358-4345-9dc0-dba68a497358'::uuid,p_request => '84353a6b-7bc0-4137-9953-b0674a7862ce'::uuid,p_actor => '06a10ae5-8b04-4a85-b73d-923699e080ba'::uuid,p_target => 'ab7dd16a-17a2-4fa3-a1d4-9b763fdab425'::uuid,p_action => 'ban'::text,p_authorized_until => '2026-10-26T10:50:09.242Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:50:04.799 IST [675380] ERROR:  moderation forbidden
+2026-10-26 12:50:04.799 IST [675380] CONTEXT:  PL/pgSQL function public.voxel_moderate(uuid,uuid,uuid,uuid,text,timestamp with time zone) line 21 at RAISE
+2026-10-26 12:50:04.799 IST [675380] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_moderate(p_session => '5547da64-b358-4345-9dc0-dba68a497358'::uuid,p_request => 'c21bbfe1-132a-4289-ab68-0120a299b747'::uuid,p_actor => 'ab7dd16a-17a2-4fa3-a1d4-9b763fdab425'::uuid,p_target => '9c33c653-ba14-4492-bd41-bdd42d73c606'::uuid,p_action => 'remove'::text,p_authorized_until => '2026-10-26T10:50:09.281Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:50:04.829 IST [675384] ERROR:  permission denied for function voxel_actor_policy
+2026-10-26 12:50:04.829 IST [675384] STATEMENT:  SET ROLE anon;SELECT coalesce(to_jsonb((public.voxel_actor_policy(p_session => '5547da64-b358-4345-9dc0-dba68a497358'::uuid,p_actor => '9c33c653-ba14-4492-bd41-bdd42d73c606'::uuid))),'null'::jsonb)
+2026-10-26 12:50:04.841 IST [675386] ERROR:  permission denied for function voxel_actor_policy
+2026-10-26 12:50:04.841 IST [675386] STATEMENT:  SET ROLE authenticated;SELECT coalesce(to_jsonb((public.voxel_actor_policy(p_session => '5547da64-b358-4345-9dc0-dba68a497358'::uuid,p_actor => '9c33c653-ba14-4492-bd41-bdd42d73c606'::uuid))),'null'::jsonb)
+2026-10-26 12:50:04.852 IST [675388] ERROR:  permission denied for table voxel_actor_access
+2026-10-26 12:50:04.852 IST [675388] STATEMENT:  SET ROLE service_role;SELECT * FROM public.voxel_actor_access
+2026-10-26 12:50:04.865 IST [675390] ERROR:  permission denied for table voxel_moderation_commands
+2026-10-26 12:50:04.865 IST [675390] STATEMENT:  SET ROLE service_role;SELECT * FROM public.voxel_moderation_commands
+2026-10-26 12:50:05.146 IST [675406] ERROR:  moderation authorization expired
+2026-10-26 12:50:05.146 IST [675406] CONTEXT:  PL/pgSQL function public.voxel_moderate(uuid,uuid,uuid,uuid,text,timestamp with time zone) line 23 at RAISE
+2026-10-26 12:50:05.146 IST [675406] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_moderate(p_session => '95b37f11-d803-490c-b311-df3bea50b66e'::uuid,p_actor => '732a8e6d-3a75-4848-8304-e9c047587dd1'::uuid,p_target => 'f87a15ff-715e-43db-b2df-a652ddce7fe8'::uuid,p_request => '83bcd917-b227-4650-93b3-0cb9cbed8f89'::uuid,p_action => 'ban'::text,p_authorized_until => '2026-10-26T10:50:05.054Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:50:05.332 IST [675410] ERROR:  moderation authorization expired
+2026-10-26 12:50:05.332 IST [675410] CONTEXT:  PL/pgSQL function public.voxel_moderate(uuid,uuid,uuid,uuid,text,timestamp with time zone) line 47 at RAISE
+2026-10-26 12:50:05.332 IST [675410] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_moderate(p_session => '95b37f11-d803-490c-b311-df3bea50b66e'::uuid,p_request => '9651b4df-df22-401d-a6a2-f41a23145edb'::uuid,p_actor => '732a8e6d-3a75-4848-8304-e9c047587dd1'::uuid,p_target => 'f87a15ff-715e-43db-b2df-a652ddce7fe8'::uuid,p_action => 'ban'::text,p_authorized_until => '2026-10-26T10:50:05.246Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:50:09.001 IST [675645] ERROR:  voxel session changes require the authoritative service
+2026-10-26 12:50:09.001 IST [675645] CONTEXT:  PL/pgSQL function public.voxel_guard_session_write() line 7 at RAISE
+2026-10-26 12:50:09.001 IST [675645] STATEMENT:  SET ROLE authenticated;UPDATE public.game_sessions SET voxel_roster_revision=0 WHERE id='78a04615-5814-4143-a399-4d0512b21819'
+2026-10-26 12:50:09.022 IST [671154] LOG:  checkpoint starting: immediate force wait
+2026-10-26 12:50:09.033 IST [671154] LOG:  checkpoint complete: wrote 7 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.003 s, sync=0.003 s, total=0.012 s; sync files=7, longest=0.002 s, average=0.001 s; distance=4903 kB, estimate=4929 kB; lsn=0/2071F8E0, redo lsn=0/2071F8A8
+2026-10-26 12:50:10.469 IST [675756] ERROR:  checkpoint object not ready
+2026-10-26 12:50:10.469 IST [675756] CONTEXT:  PL/pgSQL function public.voxel_commit_checkpoint(uuid,uuid,uuid,bigint,bigint,jsonb,jsonb) line 29 at RAISE
+2026-10-26 12:50:10.469 IST [675756] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_commit_checkpoint(p_session => '2be1c758-e6ff-4336-b90b-c07160b6a37a'::uuid,p_world => 'b3ebbb99-061a-41f2-9a56-64c50bf6c86e'::uuid,p_owner => 'd7a0a91e-fc4a-44bb-9a86-d42f898e93f1'::uuid,p_epoch => '1'::bigint,p_previous => '0'::bigint,p_pointer => '{"ownerEpoch":1,"sequence":1,"object":{"key":"v1/9307bcb5aaefea959feebee123d9e6245fdb90262aa61202de8c644eeee8a76b/d4695e121540c8325d0faa185d3e1192fb77413d9bdad8197a896330769de4ae.json","sha256":"d4695e121540c8325d0faa185d3e1192fb77413d9bdad8197a896330769de4ae","bytes":10}}'::jsonb,p_objects => '[{"key":"v1/9307bcb5aaefea959feebee123d9e6245fdb90262aa61202de8c644eeee8a76b/d4695e121540c8325d0faa185d3e1192fb77413d9bdad8197a896330769de4ae.json","sha256":"d4695e121540c8325d0faa185d3e1192fb77413d9bdad8197a896330769de4ae","bytes":10},{"key":"v1/9307bcb5aaefea959feebee123d9e6245fdb90262aa61202de8c644eeee8a76b/bd0920ef5433c279462329b702750c9fef644c95a0bdfa20fbeda3c564cc696a.json","sha256":"bd0920ef5433c279462329b702750c9fef644c95a0bdfa20fbeda3c564cc696a","bytes":14}]'::jsonb))),'null'::jsonb)
+2026-10-26 12:50:10.517 IST [675764] ERROR:  invalid checkpoint graph object
+2026-10-26 12:50:10.517 IST [675764] CONTEXT:  PL/pgSQL function public.voxel_commit_checkpoint(uuid,uuid,uuid,bigint,bigint,jsonb,jsonb) line 24 at RAISE
+2026-10-26 12:50:10.517 IST [675764] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_commit_checkpoint(p_session => '2be1c758-e6ff-4336-b90b-c07160b6a37a'::uuid,p_world => 'b3ebbb99-061a-41f2-9a56-64c50bf6c86e'::uuid,p_owner => 'd7a0a91e-fc4a-44bb-9a86-d42f898e93f1'::uuid,p_epoch => '1'::bigint,p_previous => '0'::bigint,p_pointer => '{"ownerEpoch":1,"sequence":1,"object":{"key":"v1/9307bcb5aaefea959feebee123d9e6245fdb90262aa61202de8c644eeee8a76b/d4695e121540c8325d0faa185d3e1192fb77413d9bdad8197a896330769de4ae.json","sha256":"d4695e121540c8325d0faa185d3e1192fb77413d9bdad8197a896330769de4ae","bytes":10}}'::jsonb,p_objects => '[{"key":"v1/9307bcb5aaefea959feebee123d9e6245fdb90262aa61202de8c644eeee8a76b/d4695e121540c8325d0faa185d3e1192fb77413d9bdad8197a896330769de4ae.json","sha256":"d4695e121540c8325d0faa185d3e1192fb77413d9bdad8197a896330769de4ae","bytes":10},{"key":"v1/9307bcb5aaefea959feebee123d9e6245fdb90262aa61202de8c644eeee8a76b/d4695e121540c8325d0faa185d3e1192fb77413d9bdad8197a896330769de4ae.json","sha256":"d4695e121540c8325d0faa185d3e1192fb77413d9bdad8197a896330769de4ae","bytes":10}]'::jsonb))),'null'::jsonb)
+2026-10-26 12:50:10.561 IST [675772] ERROR:  invalid checkpoint graph object
+2026-10-26 12:50:10.561 IST [675772] CONTEXT:  PL/pgSQL function public.voxel_commit_checkpoint(uuid,uuid,uuid,bigint,bigint,jsonb,jsonb) line 24 at RAISE
+2026-10-26 12:50:10.561 IST [675772] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_commit_checkpoint(p_session => '2be1c758-e6ff-4336-b90b-c07160b6a37a'::uuid,p_world => 'b3ebbb99-061a-41f2-9a56-64c50bf6c86e'::uuid,p_owner => 'd7a0a91e-fc4a-44bb-9a86-d42f898e93f1'::uuid,p_epoch => '1'::bigint,p_previous => '0'::bigint,p_pointer => '{"ownerEpoch":1,"sequence":1,"object":{"key":"v1/9307bcb5aaefea959feebee123d9e6245fdb90262aa61202de8c644eeee8a76b/d4695e121540c8325d0faa185d3e1192fb77413d9bdad8197a896330769de4ae.json","sha256":"d4695e121540c8325d0faa185d3e1192fb77413d9bdad8197a896330769de4ae","bytes":10}}'::jsonb,p_objects => '[{"key":"v1/9307bcb5aaefea959feebee123d9e6245fdb90262aa61202de8c644eeee8a76b/d4695e121540c8325d0faa185d3e1192fb77413d9bdad8197a896330769de4ae.json","sha256":"d4695e121540c8325d0faa185d3e1192fb77413d9bdad8197a896330769de4ae","bytes":10},{"key":"v1/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/d4695e121540c8325d0faa185d3e1192fb77413d9bdad8197a896330769de4ae.json","sha256":"d4695e121540c8325d0faa185d3e1192fb77413d9bdad8197a896330769de4ae","bytes":10}]'::jsonb))),'null'::jsonb)
+2026-10-26 12:50:10.640 IST [675784] ERROR:  manifest absent from graph
+2026-10-26 12:50:10.640 IST [675784] CONTEXT:  PL/pgSQL function public.voxel_commit_checkpoint(uuid,uuid,uuid,bigint,bigint,jsonb,jsonb) line 31 at RAISE
+2026-10-26 12:50:10.640 IST [675784] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_commit_checkpoint(p_session => '2be1c758-e6ff-4336-b90b-c07160b6a37a'::uuid,p_world => 'b3ebbb99-061a-41f2-9a56-64c50bf6c86e'::uuid,p_owner => 'd7a0a91e-fc4a-44bb-9a86-d42f898e93f1'::uuid,p_epoch => '1'::bigint,p_previous => '0'::bigint,p_pointer => '{"ownerEpoch":1,"sequence":1,"object":{"key":"v1/9307bcb5aaefea959feebee123d9e6245fdb90262aa61202de8c644eeee8a76b/d4695e121540c8325d0faa185d3e1192fb77413d9bdad8197a896330769de4ae.json","sha256":"d4695e121540c8325d0faa185d3e1192fb77413d9bdad8197a896330769de4ae","bytes":10}}'::jsonb,p_objects => '[{"key":"v1/9307bcb5aaefea959feebee123d9e6245fdb90262aa61202de8c644eeee8a76b/9ebf7435cb5813fbc008ea3b8c25b0c5130c06dc4d9cc6db3f7c18f95a71780c.json","sha256":"9ebf7435cb5813fbc008ea3b8c25b0c5130c06dc4d9cc6db3f7c18f95a71780c","bytes":10}]'::jsonb))),'null'::jsonb)
+2026-10-26 12:50:10.682 IST [675790] ERROR:  permission denied for table voxel_worlds
+2026-10-26 12:50:10.682 IST [675790] STATEMENT:  SET ROLE anon;SELECT * FROM public.voxel_worlds
+2026-10-26 12:50:10.693 IST [675792] ERROR:  permission denied for function voxel_acquire_room
+2026-10-26 12:50:10.693 IST [675792] STATEMENT:  SET ROLE anon;SELECT coalesce(to_jsonb((public.voxel_acquire_room(p_session => '3b610403-a2c7-430d-bb20-56ea62cf65ad'::uuid,p_owner => 'f6917e52-bd1c-4ebb-898b-aaef85641d73'::uuid))),'null'::jsonb)
+2026-10-26 12:50:10.703 IST [675794] ERROR:  permission denied for function voxel_persistence_status
+2026-10-26 12:50:10.703 IST [675794] STATEMENT:  SET ROLE anon;SELECT coalesce(to_jsonb((public.voxel_persistence_status())),'null'::jsonb)
+2026-10-26 12:50:10.713 IST [675796] ERROR:  permission denied for table voxel_worlds
+2026-10-26 12:50:10.713 IST [675796] STATEMENT:  SET ROLE authenticated;SELECT * FROM public.voxel_worlds
+2026-10-26 12:50:10.723 IST [675798] ERROR:  permission denied for function voxel_acquire_room
+2026-10-26 12:50:10.723 IST [675798] STATEMENT:  SET ROLE authenticated;SELECT coalesce(to_jsonb((public.voxel_acquire_room(p_session => '3b610403-a2c7-430d-bb20-56ea62cf65ad'::uuid,p_owner => 'f6917e52-bd1c-4ebb-898b-aaef85641d73'::uuid))),'null'::jsonb)
+2026-10-26 12:50:10.732 IST [675800] ERROR:  permission denied for function voxel_persistence_status
+2026-10-26 12:50:10.732 IST [675800] STATEMENT:  SET ROLE authenticated;SELECT coalesce(to_jsonb((public.voxel_persistence_status())),'null'::jsonb)
+2026-10-26 12:50:10.742 IST [675802] ERROR:  permission denied for table voxel_worlds
+2026-10-26 12:50:10.742 IST [675802] STATEMENT:  SET ROLE service_role;UPDATE public.voxel_worlds SET checkpoint_sequence=99
+2026-10-26 12:50:14.553 IST [671154] LOG:  checkpoint starting: immediate force wait
+2026-10-26 12:50:14.567 IST [671154] LOG:  checkpoint complete: wrote 11 buffers (0.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.004 s, sync=0.002 s, total=0.015 s; sync files=9, longest=0.001 s, average=0.001 s; distance=4751 kB, estimate=4911 kB; lsn=0/20BC3710, redo lsn=0/20BC36D8
+2026-10-26 12:50:15.322 IST [676250] ERROR:  departure conflict
+2026-10-26 12:50:15.322 IST [676250] CONTEXT:  PL/pgSQL function public.voxel_leave_roster(uuid,uuid,uuid,timestamp with time zone) line 29 at RAISE
+2026-10-26 12:50:15.322 IST [676250] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_leave_roster(p_session => 'e814d8c5-205b-48ce-84a4-889033ef006a'::uuid,p_actor => '2081c9f1-ddf2-4ace-a56a-d8dc9d418d7d'::uuid,p_request => '7c501037-6967-4be3-b588-350dc457ae02'::uuid,p_authorized_until => '2026-10-26T10:50:19.810Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:50:15.411 IST [676262] ERROR:  permission denied for function voxel_accept_member
+2026-10-26 12:50:15.411 IST [676262] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_accept_member(p_session => 'e814d8c5-205b-48ce-84a4-889033ef006a'::uuid,p_world => 'f69dfcde-8246-4be1-b46b-43b1b2bb6653'::uuid,p_owner => '05a9de8f-0c04-4f15-af96-c93100986c7b'::uuid,p_epoch => '1'::bigint,p_actor => '87a31338-1c2e-4209-9df5-f8e88b25f8a0'::uuid))),'null'::jsonb)
+2026-10-26 12:50:15.423 IST [676264] ERROR:  permission denied for function voxel_leave_roster
+2026-10-26 12:50:15.423 IST [676264] STATEMENT:  SET ROLE authenticated;SELECT coalesce(to_jsonb((public.voxel_leave_roster(p_session => 'e814d8c5-205b-48ce-84a4-889033ef006a'::uuid,p_actor => '2081c9f1-ddf2-4ace-a56a-d8dc9d418d7d'::uuid,p_request => 'c063faff-4ca6-4c0d-8790-5ec9c8dfad32'::uuid,p_authorized_until => '2026-10-26T10:50:19.912Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:50:15.557 IST [676280] ERROR:  participant connected
+2026-10-26 12:50:15.557 IST [676280] CONTEXT:  PL/pgSQL function public.voxel_leave_roster(uuid,uuid,uuid,timestamp with time zone) line 37 at RAISE
+2026-10-26 12:50:15.557 IST [676280] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_leave_roster(p_session => 'd209ac38-d879-4462-a3af-a7724e20e49b'::uuid,p_actor => 'b57a1c24-3ae3-4ab7-8e54-bcbdbeefb93e'::uuid,p_request => '6e574476-fc08-4c28-9fa7-f10605f5733a'::uuid,p_authorized_until => '2026-10-26T10:50:20.041Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:50:15.588 IST [676284] ERROR:  room retirement pending
+2026-10-26 12:50:15.588 IST [676284] CONTEXT:  PL/pgSQL function public.voxel_leave_roster(uuid,uuid,uuid,timestamp with time zone) line 48 at RAISE
+2026-10-26 12:50:15.588 IST [676284] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_leave_roster(p_session => 'd209ac38-d879-4462-a3af-a7724e20e49b'::uuid,p_actor => 'b57a1c24-3ae3-4ab7-8e54-bcbdbeefb93e'::uuid,p_request => '6e574476-fc08-4c28-9fa7-f10605f5733a'::uuid,p_authorized_until => '2026-10-26T10:50:20.073Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:50:15.768 IST [676308] ERROR:  departure denied
+2026-10-26 12:50:15.768 IST [676308] CONTEXT:  PL/pgSQL function public.voxel_leave_roster(uuid,uuid,uuid,timestamp with time zone) line 33 at RAISE
+2026-10-26 12:50:15.768 IST [676308] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_leave_roster(p_session => '05d00b08-56db-4053-a7f4-621718f7aaa3'::uuid,p_actor => 'cda907cc-e3a2-49c0-9a4f-fcb8c02571d7'::uuid,p_request => 'c40f9a83-ffdd-42db-b9f3-48dd957b7f4e'::uuid,p_authorized_until => '2026-10-26T10:50:20.254Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:50:15.787 IST [676310] ERROR:  departure authorization expired
+2026-10-26 12:50:15.787 IST [676310] CONTEXT:  PL/pgSQL function public.voxel_leave_roster(uuid,uuid,uuid,timestamp with time zone) line 26 at RAISE
+2026-10-26 12:50:15.787 IST [676310] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_leave_roster(p_session => '05d00b08-56db-4053-a7f4-621718f7aaa3'::uuid,p_actor => 'eca760a6-aa78-4cad-8d48-55c7ad7d87dc'::uuid,p_request => 'f6a9c72e-2c0b-4a63-91c5-e3c7be43251b'::uuid,p_authorized_until => '2026-10-26T10:50:15.770Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:50:15.802 IST [676312] ERROR:  departure authorization expired
+2026-10-26 12:50:15.802 IST [676312] CONTEXT:  PL/pgSQL function public.voxel_leave_roster(uuid,uuid,uuid,timestamp with time zone) line 26 at RAISE
+2026-10-26 12:50:15.802 IST [676312] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_leave_roster(p_session => '05d00b08-56db-4053-a7f4-621718f7aaa3'::uuid,p_actor => 'eca760a6-aa78-4cad-8d48-55c7ad7d87dc'::uuid,p_request => '09e2c83b-19e9-474b-834e-0512c726f517'::uuid,p_authorized_until => '2026-10-26T10:50:25.789Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:50:15.830 IST [676316] ERROR:  departure denied
+2026-10-26 12:50:15.830 IST [676316] CONTEXT:  PL/pgSQL function public.voxel_leave_roster(uuid,uuid,uuid,timestamp with time zone) line 23 at RAISE
+2026-10-26 12:50:15.830 IST [676316] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_leave_roster(p_session => '05d00b08-56db-4053-a7f4-621718f7aaa3'::uuid,p_actor => 'eca760a6-aa78-4cad-8d48-55c7ad7d87dc'::uuid,p_request => '2ff93028-938c-4b9e-ba28-0e71191c3583'::uuid,p_authorized_until => '2026-10-26T10:50:20.317Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:50:16.309 IST [676324] ERROR:  departure authorization expired
+2026-10-26 12:50:16.309 IST [676324] CONTEXT:  PL/pgSQL function public.voxel_leave_roster(uuid,uuid,uuid,timestamp with time zone) line 26 at RAISE
+2026-10-26 12:50:16.309 IST [676324] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_leave_roster(p_session => '05d00b08-56db-4053-a7f4-621718f7aaa3'::uuid,p_actor => 'eca760a6-aa78-4cad-8d48-55c7ad7d87dc'::uuid,p_request => '5593140d-c2af-4482-a659-17518706c583'::uuid,p_authorized_until => '2026-10-26T10:50:16.063Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:50:16.508 IST [676344] ERROR:  departure denied
+2026-10-26 12:50:16.508 IST [676344] CONTEXT:  PL/pgSQL function public.voxel_leave_roster(uuid,uuid,uuid,timestamp with time zone) line 33 at RAISE
+2026-10-26 12:50:16.508 IST [676344] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_leave_roster(p_session => '49da2eba-fb0d-49ba-abf7-4f209ed91140'::uuid,p_actor => '101ee671-668a-46a2-ad43-085b2115eb43'::uuid,p_request => 'ca6bffcb-cbd7-4f6c-9f82-677acb40d2b2'::uuid,p_authorized_until => '2026-10-26T10:50:21.468Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:50:16.731 IST [676366] ERROR:  voxel session changes require the authoritative service
+2026-10-26 12:50:16.731 IST [676366] CONTEXT:  PL/pgSQL function public.voxel_guard_session_write() line 7 at RAISE
+2026-10-26 12:50:16.731 IST [676366] STATEMENT:  SET ROLE authenticated;UPDATE public.game_sessions SET voxel_roster_revision=0 WHERE id='b4939df4-7119-4463-924d-d268f0a71e32'
+2026-10-26 12:50:16.744 IST [676368] ERROR:  permission denied for table voxel_roster_departures
+2026-10-26 12:50:16.744 IST [676368] STATEMENT:  SET ROLE authenticated;SELECT * FROM public.voxel_roster_departures
+2026-10-26 12:50:16.756 IST [676370] ERROR:  permission denied for function voxel_leave_roster
+2026-10-26 12:50:16.756 IST [676370] STATEMENT:  SET ROLE anon;SELECT coalesce(to_jsonb((public.voxel_leave_roster(p_session => 'b4939df4-7119-4463-924d-d268f0a71e32'::uuid,p_actor => '14fcb577-4f84-4d7c-809b-a2da13273b5d'::uuid,p_request => '69a512ce-608e-46c1-aef1-11dea274de1d'::uuid,p_authorized_until => '2026-10-26T10:50:21.245Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:50:17.449 IST [671154] LOG:  checkpoint starting: immediate force wait
+2026-10-26 12:50:17.465 IST [671154] LOG:  checkpoint complete: wrote 7 buffers (0.0%); 0 WAL file(s) added, 0 removed, 1 recycled; write=0.003 s, sync=0.002 s, total=0.016 s; sync files=7, longest=0.002 s, average=0.001 s; distance=4875 kB, estimate=4907 kB; lsn=0/210865B0, redo lsn=0/21086578
+2026-10-26 12:50:19.213 IST [671154] LOG:  checkpoint starting: immediate force wait
+2026-10-26 12:50:19.225 IST [671154] LOG:  checkpoint complete: wrote 7 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.004 s, sync=0.002 s, total=0.013 s; sync files=7, longest=0.002 s, average=0.001 s; distance=4505 kB, estimate=4867 kB; lsn=0/214ECCB8, redo lsn=0/214ECC80
+2026-10-26 12:50:20.046 IST [671154] LOG:  checkpoint starting: immediate force wait
+2026-10-26 12:50:20.059 IST [671154] LOG:  checkpoint complete: wrote 7 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.003 s, sync=0.003 s, total=0.014 s; sync files=7, longest=0.003 s, average=0.001 s; distance=4854 kB, estimate=4866 kB; lsn=0/219AA568, redo lsn=0/219AA530
+2026-10-26 12:50:21.286 IST [671154] LOG:  checkpoint starting: immediate force wait
+2026-10-26 12:50:21.299 IST [671154] LOG:  checkpoint complete: wrote 11 buffers (0.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.004 s, sync=0.002 s, total=0.013 s; sync files=8, longest=0.002 s, average=0.001 s; distance=4860 kB, estimate=4865 kB; lsn=0/21E69910, redo lsn=0/21E698D8
+2026-10-26 12:50:24.935 IST [676799] ERROR:  voxel session changes require the authoritative service
+2026-10-26 12:50:24.935 IST [676799] CONTEXT:  PL/pgSQL function public.voxel_guard_session_write() line 7 at RAISE
+2026-10-26 12:50:24.935 IST [676799] STATEMENT:  SET ROLE authenticated;UPDATE public.game_sessions SET status='playing' WHERE id='2757bf65-6df0-4115-88e0-bf7535efd9e9'
+2026-10-26 12:50:24.950 IST [676801] ERROR:  voxel session changes require the authoritative service
+2026-10-26 12:50:24.950 IST [676801] CONTEXT:  PL/pgSQL function public.voxel_guard_session_write() line 7 at RAISE
+2026-10-26 12:50:24.950 IST [676801] STATEMENT:  SET ROLE authenticated;DELETE FROM public.game_sessions WHERE id='2757bf65-6df0-4115-88e0-bf7535efd9e9'
+2026-10-26 12:50:24.966 IST [676803] ERROR:  voxel session changes require the authoritative service
+2026-10-26 12:50:24.966 IST [676803] CONTEXT:  PL/pgSQL function public.voxel_guard_session_write() line 7 at RAISE
+	SQL function "fixture_legacy_pause" statement 1
+2026-10-26 12:50:24.966 IST [676803] STATEMENT:  SET ROLE authenticated;SELECT public.fixture_legacy_pause('2757bf65-6df0-4115-88e0-bf7535efd9e9')
+2026-10-26 12:50:24.978 IST [676805] ERROR:  permission denied for function voxel_project_session
+2026-10-26 12:50:24.978 IST [676805] STATEMENT:  SET ROLE authenticated;SELECT coalesce(to_jsonb((public.voxel_project_session(p_session => '2757bf65-6df0-4115-88e0-bf7535efd9e9'::uuid,p_world => '699a9175-e0f6-46a1-8671-921d35333e36'::uuid,p_owner => 'feae34a9-f539-4691-8add-a190827419cf'::uuid,p_epoch => '1'::bigint,p_sequence => '1'::bigint,p_state => 'ended'::text,p_participants => ARRAY[]::uuid[]))),'null'::jsonb)
+2026-10-26 12:50:25.185 IST [671154] LOG:  checkpoint starting: immediate force wait
+2026-10-26 12:50:25.202 IST [671154] LOG:  checkpoint complete: wrote 7 buffers (0.0%); 0 WAL file(s) added, 0 removed, 1 recycled; write=0.004 s, sync=0.002 s, total=0.017 s; sync files=7, longest=0.002 s, average=0.001 s; distance=4685 kB, estimate=4847 kB; lsn=0/222FCF10, redo lsn=0/222FCED8
+2026-10-26 12:50:25.962 IST [676868] ERROR:  staff command forbidden
+2026-10-26 12:50:25.962 IST [676868] CONTEXT:  PL/pgSQL function public.voxel_begin_staff(uuid,uuid,uuid,bigint,uuid,uuid,jsonb,timestamp with time zone) line 24 at RAISE
+2026-10-26 12:50:25.962 IST [676868] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_begin_staff(p_session => 'a7f47f51-b37a-4481-8751-55cc3e16cff5'::uuid,p_world => '84168041-5705-4f45-b45a-fd1cca2696dd'::uuid,p_owner => '691dbe56-d59e-4175-a10c-8671ecce7ae2'::uuid,p_epoch => '1'::bigint,p_actor => 'b9526573-1a7e-4162-a390-268585f71dc0'::uuid,p_request => 'eb76d464-dc19-40de-89c6-a60de2147c66'::uuid,p_command => '{"kind":"mode","mode":"creative"}'::jsonb,p_authorized_until => '2026-10-26T10:50:30.446Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:50:26.044 IST [676878] ERROR:  staff command conflict
+2026-10-26 12:50:26.044 IST [676878] CONTEXT:  PL/pgSQL function public.voxel_begin_staff(uuid,uuid,uuid,bigint,uuid,uuid,jsonb,timestamp with time zone) line 28 at RAISE
+2026-10-26 12:50:26.044 IST [676878] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_begin_staff(p_session => 'a7f47f51-b37a-4481-8751-55cc3e16cff5'::uuid,p_world => '84168041-5705-4f45-b45a-fd1cca2696dd'::uuid,p_owner => '691dbe56-d59e-4175-a10c-8671ecce7ae2'::uuid,p_epoch => '1'::bigint,p_actor => '9dd19e11-1f0a-4fa4-a0e8-1ba36ee7efd4'::uuid,p_request => '10a2f8a2-4d3b-4513-a7c4-bca77ddc1768'::uuid,p_command => '{"kind":"mode","mode":"creative"}'::jsonb,p_authorized_until => '2026-10-26T10:50:30.525Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:50:26.060 IST [676880] ERROR:  staff command conflict
+2026-10-26 12:50:26.060 IST [676880] CONTEXT:  PL/pgSQL function public.voxel_begin_staff(uuid,uuid,uuid,bigint,uuid,uuid,jsonb,timestamp with time zone) line 28 at RAISE
+2026-10-26 12:50:26.060 IST [676880] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_begin_staff(p_session => 'a7f47f51-b37a-4481-8751-55cc3e16cff5'::uuid,p_world => '84168041-5705-4f45-b45a-fd1cca2696dd'::uuid,p_owner => '691dbe56-d59e-4175-a10c-8671ecce7ae2'::uuid,p_epoch => '1'::bigint,p_actor => 'a7811dc2-feed-44f7-ae96-f1777a0d78f2'::uuid,p_request => '10a2f8a2-4d3b-4513-a7c4-bca77ddc1768'::uuid,p_command => '{"kind":"teleport","target":"spawn"}'::jsonb,p_authorized_until => '2026-10-26T10:50:30.546Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:50:26.077 IST [676882] ERROR:  invalid staff command
+2026-10-26 12:50:26.077 IST [676882] CONTEXT:  PL/pgSQL function public.voxel_begin_staff(uuid,uuid,uuid,bigint,uuid,uuid,jsonb,timestamp with time zone) line 11 at RAISE
+2026-10-26 12:50:26.077 IST [676882] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_begin_staff(p_session => 'a7f47f51-b37a-4481-8751-55cc3e16cff5'::uuid,p_world => '84168041-5705-4f45-b45a-fd1cca2696dd'::uuid,p_owner => '691dbe56-d59e-4175-a10c-8671ecce7ae2'::uuid,p_epoch => '1'::bigint,p_actor => 'a7811dc2-feed-44f7-ae96-f1777a0d78f2'::uuid,p_request => '3d87ccc6-8247-4c0b-afda-63a4febc4f2a'::uuid,p_command => '{"kind":"teleport","target":"spawn","position":[1,2,3]}'::jsonb,p_authorized_until => '2026-10-26T10:50:30.561Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:50:26.090 IST [676884] ERROR:  staff result conflict
+2026-10-26 12:50:26.090 IST [676884] CONTEXT:  PL/pgSQL function public.voxel_finish_staff(uuid,uuid,uuid,bigint,uuid,uuid,jsonb) line 17 at RAISE
+2026-10-26 12:50:26.090 IST [676884] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_finish_staff(p_session => 'a7f47f51-b37a-4481-8751-55cc3e16cff5'::uuid,p_world => '84168041-5705-4f45-b45a-fd1cca2696dd'::uuid,p_owner => '691dbe56-d59e-4175-a10c-8671ecce7ae2'::uuid,p_epoch => '1'::bigint,p_actor => 'a7811dc2-feed-44f7-ae96-f1777a0d78f2'::uuid,p_request => '10a2f8a2-4d3b-4513-a7c4-bca77ddc1768'::uuid,p_result => '{"ok":true,"reason":"teleport"}'::jsonb))),'null'::jsonb)
+2026-10-26 12:50:26.199 IST [676898] ERROR:  permission denied for function voxel_staff_receipt
+2026-10-26 12:50:26.199 IST [676898] STATEMENT:  SET ROLE authenticated;SELECT coalesce(to_jsonb((public.voxel_staff_receipt(p_session => 'a7f47f51-b37a-4481-8751-55cc3e16cff5'::uuid,p_request => '10a2f8a2-4d3b-4513-a7c4-bca77ddc1768'::uuid,p_actor => 'a7811dc2-feed-44f7-ae96-f1777a0d78f2'::uuid))),'null'::jsonb)
+2026-10-26 12:50:26.230 IST [676902] ERROR:  staff command forbidden
+2026-10-26 12:50:26.230 IST [676902] CONTEXT:  PL/pgSQL function public.voxel_begin_staff(uuid,uuid,uuid,bigint,uuid,uuid,jsonb,timestamp with time zone) line 24 at RAISE
+2026-10-26 12:50:26.230 IST [676902] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_begin_staff(p_session => 'a7f47f51-b37a-4481-8751-55cc3e16cff5'::uuid,p_world => '84168041-5705-4f45-b45a-fd1cca2696dd'::uuid,p_owner => '691dbe56-d59e-4175-a10c-8671ecce7ae2'::uuid,p_epoch => '1'::bigint,p_actor => 'a7811dc2-feed-44f7-ae96-f1777a0d78f2'::uuid,p_request => '862f2158-d198-40f0-949e-c75f5bf6e3b2'::uuid,p_command => '{"kind":"mode","mode":"creative"}'::jsonb,p_authorized_until => '2026-10-26T10:50:30.715Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:50:26.388 IST [676921] ERROR:  staff owner unavailable
+2026-10-26 12:50:26.388 IST [676921] CONTEXT:  PL/pgSQL function public.voxel_finish_staff(uuid,uuid,uuid,bigint,uuid,uuid,jsonb) line 14 at RAISE
+2026-10-26 12:50:26.388 IST [676921] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_finish_staff(p_session => '390d9bc9-473b-4e96-9561-27865b3276c4'::uuid,p_world => 'f50f084a-9c94-42df-a171-0715ee0a0b2d'::uuid,p_owner => '5fdbcfba-d130-461b-96ea-c197f995cc0f'::uuid,p_epoch => '2'::bigint,p_actor => 'f545cb2f-c778-4da1-9e64-55d36c1e33f4'::uuid,p_request => 'd5bebdac-4f7c-4d6f-b135-eca8429af1e9'::uuid,p_result => '{"ok":true,"reason":"teleport"}'::jsonb))),'null'::jsonb)
+2026-10-26 12:50:26.952 IST [676939] ERROR:  staff authorization expired
+2026-10-26 12:50:26.952 IST [676939] CONTEXT:  PL/pgSQL function public.voxel_begin_staff(uuid,uuid,uuid,bigint,uuid,uuid,jsonb,timestamp with time zone) line 20 at RAISE
+2026-10-26 12:50:26.952 IST [676939] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_begin_staff(p_session => '33296d95-a15e-472e-b854-5565dd6f5973'::uuid,p_world => '3e3196db-a164-4dad-9371-852b92b4ed18'::uuid,p_owner => '2c0ea1d1-29b3-42e5-8a9f-7ff12f715547'::uuid,p_epoch => '1'::bigint,p_actor => '450fd7ef-2482-4285-bc2c-e948312791b8'::uuid,p_request => 'f718b5c2-e48e-4c96-83da-883ada3336e3'::uuid,p_command => '{"kind":"mode","mode":"creative"}'::jsonb,p_authorized_until => '2026-10-26T10:50:26.704Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:50:27.482 IST [676955] ERROR:  staff owner unavailable
+2026-10-26 12:50:27.482 IST [676955] CONTEXT:  PL/pgSQL function public.voxel_finish_staff(uuid,uuid,uuid,bigint,uuid,uuid,jsonb) line 24 at RAISE
+2026-10-26 12:50:27.482 IST [676955] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_finish_staff(p_session => '33296d95-a15e-472e-b854-5565dd6f5973'::uuid,p_world => '3e3196db-a164-4dad-9371-852b92b4ed18'::uuid,p_owner => '2c0ea1d1-29b3-42e5-8a9f-7ff12f715547'::uuid,p_epoch => '1'::bigint,p_actor => '450fd7ef-2482-4285-bc2c-e948312791b8'::uuid,p_request => 'c5133ed8-d9d5-4f2d-925f-04ccae03dfd5'::uuid,p_result => '{"ok":true,"reason":"mode"}'::jsonb))),'null'::jsonb)
+2026-10-26 12:50:28.950 IST [677076] ERROR:  staff command forbidden
+2026-10-26 12:50:28.950 IST [677076] CONTEXT:  PL/pgSQL function public.voxel_begin_staff(uuid,uuid,uuid,bigint,uuid,uuid,jsonb,timestamp with time zone) line 24 at RAISE
+2026-10-26 12:50:28.950 IST [677076] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_begin_staff(p_session => 'e5784cdc-d917-4dca-a199-e1ba82865878'::uuid,p_world => 'fe9dfe16-6da0-4254-86e3-3d0544d78720'::uuid,p_owner => 'd97742d6-85f7-4f24-8301-5fc5b6d9a3a4'::uuid,p_epoch => '1'::bigint,p_actor => 'f75c6169-42af-4971-a11e-d5ba52121099'::uuid,p_request => '99869127-4ef2-4459-aa52-f2f62b8cbfd5'::uuid,p_command => '{"kind":"mode","mode":"creative"}'::jsonb,p_authorized_until => '2026-10-26T10:50:33.434Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:50:28.967 IST [677078] ERROR:  voxel control forbidden
+2026-10-26 12:50:28.967 IST [677078] CONTEXT:  PL/pgSQL function public.voxel_begin_control(uuid,uuid,uuid,bigint,uuid,uuid,text,timestamp with time zone) line 19 at RAISE
+2026-10-26 12:50:28.967 IST [677078] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_begin_control(p_session => 'e5784cdc-d917-4dca-a199-e1ba82865878'::uuid,p_world => 'fe9dfe16-6da0-4254-86e3-3d0544d78720'::uuid,p_owner => 'd97742d6-85f7-4f24-8301-5fc5b6d9a3a4'::uuid,p_epoch => '1'::bigint,p_actor => 'f75c6169-42af-4971-a11e-d5ba52121099'::uuid,p_request => '38d6176c-4efd-4928-9b3a-84dcc9235194'::uuid,p_action => 'pause'::text,p_authorized_until => '2026-10-26T10:50:33.452Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:50:28.999 IST [677082] ERROR:  staff command forbidden
+2026-10-26 12:50:28.999 IST [677082] CONTEXT:  PL/pgSQL function public.voxel_begin_staff(uuid,uuid,uuid,bigint,uuid,uuid,jsonb,timestamp with time zone) line 24 at RAISE
+2026-10-26 12:50:28.999 IST [677082] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_begin_staff(p_session => 'e5784cdc-d917-4dca-a199-e1ba82865878'::uuid,p_world => 'fe9dfe16-6da0-4254-86e3-3d0544d78720'::uuid,p_owner => 'd97742d6-85f7-4f24-8301-5fc5b6d9a3a4'::uuid,p_epoch => '1'::bigint,p_actor => 'f75c6169-42af-4971-a11e-d5ba52121099'::uuid,p_request => 'd2e45bb5-7d54-4c81-ab1b-d5aa09b6f052'::uuid,p_command => '{"kind":"mode","mode":"creative"}'::jsonb,p_authorized_until => '2026-10-26T10:50:33.483Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:50:29.016 IST [677084] ERROR:  voxel control forbidden
+2026-10-26 12:50:29.016 IST [677084] CONTEXT:  PL/pgSQL function public.voxel_begin_control(uuid,uuid,uuid,bigint,uuid,uuid,text,timestamp with time zone) line 19 at RAISE
+2026-10-26 12:50:29.016 IST [677084] STATEMENT:  SET ROLE service_role;SELECT coalesce(to_jsonb((public.voxel_begin_control(p_session => 'e5784cdc-d917-4dca-a199-e1ba82865878'::uuid,p_world => 'fe9dfe16-6da0-4254-86e3-3d0544d78720'::uuid,p_owner => 'd97742d6-85f7-4f24-8301-5fc5b6d9a3a4'::uuid,p_epoch => '1'::bigint,p_actor => 'f75c6169-42af-4971-a11e-d5ba52121099'::uuid,p_request => '03c52ee4-aedd-4b12-826f-6781cc8b6668'::uuid,p_action => 'pause'::text,p_authorized_until => '2026-10-26T10:50:33.500Z'::timestamptz))),'null'::jsonb)
+2026-10-26 12:50:29.130 IST [677098] ERROR:  permission denied for function voxel_actor_kind
+2026-10-26 12:50:29.130 IST [677098] STATEMENT:  SET ROLE authenticated;SELECT public.voxel_actor_kind('f75c6169-42af-4971-a11e-d5ba52121099');RESET ROLE
+2026-10-26 12:50:29.142 IST [677100] ERROR:  permission denied for function voxel_actor_kind
+2026-10-26 12:50:29.142 IST [677100] STATEMENT:  SET ROLE anon;SELECT public.voxel_actor_kind('f75c6169-42af-4971-a11e-d5ba52121099');RESET ROLE
+2026-10-26 12:50:29.154 IST [677102] ERROR:  permission denied for function voxel_actor_kind
+2026-10-26 12:50:29.154 IST [677102] STATEMENT:  SET ROLE service_role;SELECT public.voxel_actor_kind('f75c6169-42af-4971-a11e-d5ba52121099');RESET ROLE
+2026-10-26 12:50:29.168 IST [671154] LOG:  checkpoint starting: immediate force wait
+2026-10-26 12:50:29.185 IST [671154] LOG:  checkpoint complete: wrote 12 buffers (0.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.004 s, sync=0.003 s, total=0.017 s; sync files=9, longest=0.002 s, average=0.001 s; distance=4950 kB, estimate=4950 kB; lsn=0/227D2A10, redo lsn=0/227D29D8
+2026-10-26 12:55:29.285 IST [671154] LOG:  checkpoint starting: time
+2026-10-26 12:55:29.400 IST [671154] LOG:  checkpoint complete: wrote 2 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.106 s, sync=0.003 s, total=0.116 s; sync files=2, longest=0.002 s, average=0.002 s; distance=0 kB, estimate=4455 kB; lsn=0/227D2B98, redo lsn=0/227D2B60
+2026-10-26 12:56:03.689 IST [671153] LOG:  received fast shutdown request
+2026-10-26 12:56:03.692 IST [671153] LOG:  aborting any active transactions
+2026-10-26 12:56:03.696 IST [671153] LOG:  background worker "logical replication launcher" (PID 671159) exited with exit code 1
+2026-10-26 12:56:03.696 IST [671154] LOG:  shutting down
+2026-10-26 12:56:03.698 IST [671154] LOG:  checkpoint starting: shutdown immediate
+2026-10-26 12:56:03.711 IST [671154] LOG:  checkpoint complete: wrote 0 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.001 s, total=0.015 s; sync files=0, longest=0.000 s, average=0.000 s; distance=0 kB, estimate=4010 kB; lsn=0/227D2C48, redo lsn=0/227D2C48
+2026-10-26 12:56:03.718 IST [671153] LOG:  database system is shut down

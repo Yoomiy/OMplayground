@@ -1,0 +1,20 @@
+✖ edited checkpoints stream all columns through one/five-second real TCP read stalls and reconnect while a healthy peer continues (4929.675774ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5417.134129
+
+✖ failing tests:
+
+test at games/voxel/tests/integration/column-drain.test.ts:93:1
+✖ edited checkpoints stream all columns through one/five-second real TCP read stalls and reconnect while a healthy peer continues (4929.675774ms)
+  Error: socket closed 1013
+      at Reader.until (file:///home/ubuntu/OMplayground/games/voxel/tests/integration/column-drain.test.ts:70:47)
+      at async Reader.ready (file:///home/ubuntu/OMplayground/games/voxel/tests/integration/column-drain.test.ts:76:5)
+      at async TestContext.<anonymous> (file:///home/ubuntu/OMplayground/games/voxel/tests/integration/column-drain.test.ts:167:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)

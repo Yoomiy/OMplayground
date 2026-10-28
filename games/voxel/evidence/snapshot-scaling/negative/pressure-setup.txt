@@ -1,0 +1,32 @@
+✖ temporary output pressure cannot silently lose a final actor delta while healthy peers continue (51.81101ms)
+✖ snapshot pressure above the shared output budget closes only that peer and readmission receives a fresh baseline (21.604664ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 446.004786
+
+✖ failing tests:
+
+test at games/voxel/tests/integration/backpressure.test.ts:97:1
+✖ temporary output pressure cannot silently lose a final actor delta while healthy peers continue (51.81101ms)
+  Error: socket hang up
+      at Socket.socketOnEnd (node:_http_client:790:25)
+      at Socket.emit (node:events:526:24)
+      at endReadableNT (node:internal/streams/readable:1764:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    code: 'ECONNRESET'
+  }
+
+test at games/voxel/tests/integration/backpressure.test.ts:148:1
+✖ snapshot pressure above the shared output budget closes only that peer and readmission receives a fresh baseline (21.604664ms)
+  Error: socket hang up
+      at Socket.socketOnEnd (node:_http_client:790:25)
+      at Socket.emit (node:events:526:24)
+      at endReadableNT (node:internal/streams/readable:1764:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    code: 'ECONNRESET'
+  }

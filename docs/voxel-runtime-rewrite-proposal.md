@@ -1,10 +1,10 @@
 # Voxel game rewrite proposal
 
-**Status:** Proposed; implementation and deployment are not authorized by this document.
+**Status:** Implementation is in progress under the user's rewrite request; operational cutover remains pending. Current user scope clarifications are recorded below.
 
 **Date:** 2026-10-21.
 
-**Working branch:** `research/voxel-runtime-rewrite`.
+**Working branch:** `dev/voxel-runtime-rewrite`.
 
 **Evidence:** Exploratory measurements summarized in section 2; supporting raw research artifacts are maintained separately from this document.
 
@@ -55,7 +55,11 @@ These are recommendations for the rewrite, not claims that the implementation al
 | UI | A rewritten React HUD and session view around an imperative game runtime | Consistent Hebrew/accessibility behavior without putting the game loop in React. |
 | Existing saves/protocols | Reset test state at cutover; no compatibility layer | The game is unlaunched and the user explicitly waived backward compatibility. |
 
-**User decision: no maximum-player, observer-count, or maximum-room caps.** Do not inherit Blockyard's player/room defaults, add configurable headcount ceilings, or turn a benchmark workload into a join restriction. The 16-player experiment is one measured sample, not a proposed maximum. Measure progressively larger workloads and use the results to improve or scale the implementation. This does not claim unlimited physical capacity. Input queues, message sizes, worker scheduling, and other internal work budgets are separate implementation concerns, not player/room-count caps.
+**User decision: no maximum-player, observer-count, or maximum-room caps.** Do not inherit Blockyard's player/room defaults, add configurable headcount ceilings, or turn a benchmark workload into a join restriction. The 16-player experiment is one measured sample, not a proposed maximum. Input queues, message sizes, worker scheduling, and other internal work budgets are separate implementation concerns, not player/room-count caps.
+
+**User clarification — 2026-10-28: this is a private-school application, without a scale-building requirement.** Prioritize complete student/teacher workflows and reliable play, voice, saving and recovery on school devices. The 128-player profiles are historical diagnostics; their performance is not a release gate. Stop progressively larger synthetic load experiments and do not add scaling infrastructure for this rewrite. Validate ordinary school use without introducing headcount restrictions.
+
+**Device clarification — 2026-10-28: students mostly use PCs.** Desktop keyboard/mouse input and school PC browsers are the release focus. Mobile/tablet compatibility and performance are optional; do not add work or block release for that matrix. Retain existing touch behavior where practical.
 
 The world size and launch device floor remain proposed product defaults to ratify before release. Expected participation and simultaneous sessions are workload inputs for testing and infrastructure planning, not limits on allowed users or rooms.
 
@@ -85,7 +89,7 @@ There is no automatic feature-parity requirement with every current edge case. T
 | Weather-driven block simulation and elaborate weather effects | Deferred proposal, requiring product acceptance of that scope reduction. |
 | Teacher observation/play modes, room controls, supervision and moderation | Required; capabilities enforced by the backend. |
 | Proximity voice, mute controls, chat | Required; retain LiveKit as the media service with new engine-independent adapters. |
-| Hebrew UI, RTL text/layout, pointer lock, fullscreen, keyboard/mouse and touch controls | Required for the chosen launch device matrix. World axes, movement, and camera are not mirrored for RTL. |
+| Hebrew UI, RTL text/layout, pointer lock, fullscreen and keyboard/mouse controls | Required on school PCs. Existing touch controls are best-effort; mobile/tablet compatibility is not a release gate. World axes, movement, and camera are not mirrored for RTL. |
 | Saved sessions, reconnect, room pause, recess closure, recovery after restart | Required against the new persistence/lifecycle model. |
 | Mobs, vehicles, guns, micro-voxel destruction, public matchmaking, user-uploaded games | Outside this rewrite's release scope unless separately requested. |
 
@@ -252,7 +256,7 @@ Represent room host and teacher/admin abilities as explicit capabilities. Host o
 
 Define lifecycle centrally: preparing, playing, paused, ended, and recovering. The gateway projects these to the platform's session statuses; browsers cannot independently persist conflicting states. Recess closure revokes gameplay/input and follows the chosen pause/save policy. A transient reconnect ticket cannot override expired recess, removed membership, or revoked staff authority. Last-player departure saves and releases the room; host departure reassigns allowed controls without changing simulation ownership.
 
-Keep LiveKit for media because changing the renderer gives no reason to replace a working SFU. Rewrite proximity audio against semantic player transforms and a world-occlusion query. Teacher mute controls require enforcement through server-issued grants/moderation policy as appropriate, not merely a cooperative local mute flag. Test browser permission denial, output selection, reconnect and mobile audio activation. Chat remains platform-moderated and appropriately persisted.
+Keep LiveKit for media because changing the renderer gives no reason to replace a working SFU. Rewrite proximity audio against semantic player transforms and a world-occlusion query. Teacher mute controls require enforcement through server-issued grants/moderation policy as appropriate, not merely a cooperative local mute flag. Test PC browser permission denial, output selection and reconnect. Mobile audio activation is optional. Chat remains platform-moderated and appropriately persisted.
 
 Extract the classroom/RTC responsibilities currently mixed into `apps/minecraft-server/src/index.ts` into a dedicated classroom service. Classrooms must not inherit voxel room CPU costs, restart behavior, or its release cadence. The voxel gateway owns its own token authorization endpoint; share small policy/token helpers only where genuinely common. HTTP paths can be routed to the appropriate service without requiring the same process. No classroom behavior is removed by retiring the old game server.
 
@@ -276,13 +280,13 @@ Each stage produces a reviewable result; none makes an unfinished game productio
 | --- | --- | --- |
 | 0. Foundation and decisions | Import pinned subsystems with provenance; content/registry contract; fix input-time accounting; pin artifacts; record product defaults | Reproducible build; an early real-device candidate baseline before extensive format changes; above-255 block/state round trips; burst invariant passes; native failure disposition documented; baseline Wasm/browser checks pass. |
 | 1. Authoritative creative slice | Fixed-step room, new protocol, prediction/interpolation, minimal content, worker streaming, targeting/building | Two clients walk, jump, build, remove blocks, join late and reconnect; no forged movement, stale job overwrite, or duplicated command effects. |
-| 2. Representative world and presentation | Terrain preset/bounds, shape/texture pipeline, voxel light, avatars/held tools, touch/input lifecycle | Representative school hardware meets initial frame/loading budgets; edits across chunk/light boundaries and travel/unload remain correct. Reject the foundation here if necessary. |
+| 2. Representative world and presentation | Terrain preset/bounds, shape/texture pipeline, voxel light, avatars/held tools, desktop input lifecycle | Representative school PCs meet initial frame/loading budgets; edits across chunk/light boundaries and travel/unload remain correct. Reject the foundation here if necessary. |
 | 3. Survival game | Unified inventories, crafting, containers, equipment/perks, hunger/food, mining, drops, combat/death, TNT | Scenario tests cover the complete survival loop; concurrent inventories cannot duplicate items; content disposition is complete and balancing is reviewed. |
 | 4. School integration and saves | New session/HUD adapter, admission, staff roles, voice/chat, recess lifecycle, checkpoint/recovery; classroom service split | Student/staff workflows, save/restart, disconnects and access revocation pass with the actual app; classroom regressions pass separately. |
-| 5. Capacity and release qualification | Progressive workload profiles, multiple rooms, real devices/networks, failure recovery, scaling behavior | Signed-off feature matrix and device floor; measured performance and scaling across increasing player/room counts without headcount-based join restrictions; durability gates below; no untriaged authority/data-loss defects. |
+| 5. School release qualification | Complete student/teacher journeys, supported school devices/networks, save and failure recovery | Signed-off feature matrix and device floor; usable performance during ordinary school play; durability gates below; no untriaged authority/data-loss defects. Large synthetic workloads and scaling infrastructure are not exit requirements. |
 | 6. Cutover and retirement | Enable new catalog/runtime path for fresh test sessions, route services, remove old voxel runtime and obsolete docs | New path is independently operable; classroom service is healthy; old NOA/socket/content code and unused dependencies are removed; architecture/docs/skills reflect reality. |
 
-Critical path: registry and time contract → playable authoritative slice → real-device verdict → survival and school lifecycle → capacity qualification → cutover. Do not port the full old content set before establishing the new foundations. Do not defer persistence, teacher modes or voice until after calling the game complete.
+Critical path: registry and time contract → playable authoritative slice → real-device verdict → survival and school lifecycle → school release qualification → cutover. Do not port the full old content set before establishing the new foundations. Do not defer persistence, teacher modes or voice until after calling the game complete.
 
 Effort is concentrated in registry widening, robust time/reconnect semantics, coherent survival transactions, checkpointing, and real-device presentation—not in changing import names. A calendar estimate should be made after stage 0 exposes the actual engine-format patch and stage 1 demonstrates the new control loop. Assigning precise dates from the short exploratory benchmark would be misleading.
 
@@ -292,16 +296,16 @@ These are proposed engineering targets, not results already achieved. Confirm th
 
 | Concern | Proposed gate |
 | --- | --- |
-| Typical supported school laptop | During prescribed movement/building scenarios, foreground frame time p95 ≤16.7 ms and p99 ≤33.3 ms at the documented quality profile. |
-| Lowest supported mobile/tablet | Frame time p95 ≤33.3 ms and p99 ≤66.7 ms at the low profile; usable touch controls, text and inventory. Select actual devices before using this as a release gate. |
+| Supported school PC | During prescribed movement/building scenarios, foreground frame time p95 ≤16.7 ms and p99 ≤33.3 ms at the documented quality profile. |
+| Mobile/tablet | Optional compatibility; no mobile/tablet performance matrix or release gate is required. |
 | Main-thread streaming work | Ordinary upload/installation budget targets 2 ms/frame; no recurring game-caused >50 ms long tasks while moving/building after initial loading. Record initial compilation separately. |
 | Join readiness | Proposed cold join ≤8 seconds and warm rejoin ≤3 seconds on the specified 10 Mbps/100 ms test profile; readiness means safe collision plus a usable nearby world, not an empty HUD. |
-| School workload | At the agreed school workload scenario, target integrated 30 Hz tick p95 ≤10 ms, p99 ≤20 ms; no persistent input/save/replication backlog. Continue profiling larger workloads; the scenario does not become a player cap. |
+| School workload | During ordinary school play, target integrated 30 Hz tick p95 ≤10 ms, p99 ≤20 ms; no persistent input/save/replication backlog. The 128-player diagnostic is not a release gate and does not become a player cap. |
 | Authority | Burst/time-forgery tests, repeated/stale commands, unauthorized role/actions and reach checks pass; no queue length or client timestamp can create movement time. |
 | Prediction | Fixed-trace agreement within a defined small tolerance (initial target 1 cm) on unchanged worlds; corrections bounded under network impairment; report input/ack lag as well as positional error. |
 | Durability | Crash/restart restores a coherent committed checkpoint; healthy durable lag ≤30 seconds; pause/stop never report saved before commit. |
 | Memory | Repeated travel/join/leave cycles plateau in tracked owned buffers/resources and loaded-section counts; Wasm high-water retention is distinguished from live allocation leaks. Establish memory budgets from stage 2/5 measurements without converting them into fixed player/room counts. |
-| Multiple rooms | Profile progressively increasing concurrent rooms and players on the intended deployment host, including the expected school workload and headroom. Record scaling needs and resource behavior; do not enforce a room-count or player-count ceiling. |
+| Multiple rooms | Verify session isolation, teacher controls, saves and cleanup when school sessions coexist. No progressive scale target, scaling infrastructure or room/player-count ceiling is required. |
 
 Use a fixed set of benchmark scenes and scripted paths: varied materials and shapes; dense plants; underground emitters; container/crafting activity; repeated placement/removal; TNT bursts; rapid travel and observer teleportation. Add a sustained multiplayer survival scene, not only a flat movement loop. Record quality settings, resolution, device, browser/build, warmup, sample durations, percentiles, traffic and background-tab status. Software-rendered checks remain functional evidence only.
 
@@ -323,8 +327,8 @@ Rollback means disabling voxel admission or deploying the previous **new-stack**
 
 ## 16. Remaining decisions and stop conditions
 
-Before release, ratify: the bounded-world default and size; expected typical/peak participation and school concurrency for workload testing; actual device/browser floor; deferred weather scope; required art/content set; and the acceptable recovery-loss window. Player and room caps are explicitly excluded by the user decision above. The proposal supplies other defaults without treating the existing implementation as the answer.
+Before release, ratify: the bounded-world default and size; actual device/browser floor; deferred weather scope; required art/content set; and the acceptable recovery-loss window. Use ordinary private-school sessions as qualification context; large-scale capacity planning is not a release requirement. Player and room caps are explicitly excluded by the user decision above. The proposal supplies other defaults without treating the existing implementation as the answer.
 
 Reconsider the candidate foundation if Uint16 conversion makes the engine substantially harder to maintain, representative devices fail basic rendering budgets after sensible quality reductions, or survival/prediction integration requires replacing most supposedly reusable engine contracts. Record those costs and choose an alternative at the early gates rather than continuing because of time already invested.
 
-This is a reviewable design and implementation sequence. Preparing it leaves the current app untouched; it does not start implementation, deploy services, publish a site, or delete test data.
+This document defines the implementation requirements and current user scope. See [rewrite progress](voxel-runtime-rewrite-progress.md) for implemented work and evidence. It does not itself deploy services, publish a site or delete test data.

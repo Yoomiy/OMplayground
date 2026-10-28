@@ -1,0 +1,152 @@
+import { useEffect, useRef, useState } from "react";
+import { useSoloAutoSave } from "@/hooks/useSoloAutoSave";
+import {
+  isJsonObject,
+  type JsonValue,
+  type SoloGameSaveControls
+} from "@/lib/soloGameSaves";
+
+const ROUND_MS = 30_000;
+const MOLE_REROLL_MS = 800;
+
+interface MoleState {
+  activeCell: number;
+  score: number;
+  timeLeftMs: number;
+  status: "playing" | "done";
+}
+
+function randomCell(exclude: number): number {
+  let n = Math.floor(Math.random() * 9);
+  if (n === exclude) n = (n + 1) % 9;
+  return n;
+}
+
+function initialState(saved?: JsonValue | null): MoleState {
+  if (
+    isJsonObject(saved) &&
+    typeof saved.activeCell === "number" &&
+    typeof saved.score === "number" &&
+    typeof saved.timeLeftMs === "number" &&
+    saved.status === "playing"
+  ) {
+    return {
+      activeCell: saved.activeCell,
+      score: saved.score,
+      timeLeftMs: Math.max(0, Math.min(ROUND_MS, saved.timeLeftMs)),
+      status: "playing"
+    };
+  }
+  return {
+    activeCell: Math.floor(Math.random() * 9),
+    score: 0,
+    timeLeftMs: ROUND_MS,
+    status: "playing"
+  };
+}
+
+export function WhackAMoleSolo({ save }: { save: SoloGameSaveControls }) {
+  const initial = useRef(initialState(save.savedState));
+  const [state, setState] = useState<MoleState>(initial.current);
+  const startedAtRef = useRef<number>(
+    Date.now() - (ROUND_MS - initial.current.timeLeftMs)
+  );
+  useSoloAutoSave(
+    save,
+    state as unknown as JsonValue,
+    state.status === "playing"
+  );
+
+  useEffect(() => {
+    if (state.status === "done") void save.clearSave();
+  }, [save, state.status]);
+
+  // Time-left tick: compute from absolute start time to avoid drift.
+  useEffect(() => {
+    if (state.status !== "playing") return undefined;
+    const id = window.setInterval(() => {
+      const elapsed = Date.now() - startedAtRef.current;
+      const left = Math.max(0, ROUND_MS - elapsed);
+      setState((s) =>
+        s.status === "playing"
+          ? { ...s, timeLeftMs: left, status: left <= 0 ? "done" : "playing" }
+          : s
+      );
+    }, 200);
+    return () => window.clearInterval(id);
+  }, [state.status]);
+
+  // Mole re-roll: only while playing.
+  useEffect(() => {
+    if (state.status !== "playing") return undefined;
+    const id = window.setInterval(() => {
+      setState((s) =>
+        s.status === "playing"
+          ? { ...s, activeCell: randomCell(s.activeCell) }
+          : s
+      );
+    }, MOLE_REROLL_MS);
+    return () => window.clearInterval(id);
+  }, [state.status]);
+
+  const whack = (cell: number) => {
+    if (state.status !== "playing") return;
+    if (cell !== state.activeCell) return;
+    setState((s) => ({
+      ...s,
+      score: s.score + 1,
+      activeCell: randomCell(cell)
+    }));
+  };
+
+  const reset = () => {
+    void save.clearSave();
+    startedAtRef.current = Date.now();
+    setState({
+      activeCell: Math.floor(Math.random() * 9),
+      score: 0,
+      timeLeftMs: ROUND_MS,
+      status: "playing"
+    });
+  };
+
+  return (
+    <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-md p-5 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+      <div className="flex w-full items-center justify-between text-sm font-bold text-white/80">
+        <span>ניקוד: {state.score}</span>
+        <span>זמן: {(state.timeLeftMs / 1000).toFixed(1)}s</span>
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        {Array.from({ length: 9 }, (_, i) => {
+          const isActive = state.activeCell === i && state.status === "playing";
+          return (
+            <button
+              key={i}
+              type="button"
+              aria-label={`תא ${i}${isActive ? " — חפרפרת" : ""}`}
+              disabled={state.status !== "playing"}
+              className="flex h-20 w-20 items-center justify-center rounded-full border border-white/10 bg-white/5 text-3xl shadow-inner transition hover:bg-white/10 hover:scale-[1.04] active:scale-[0.96] duration-200 disabled:opacity-30 disabled:hover:scale-100"
+              onClick={() => whack(i)}
+            >
+              {isActive ? "🐹" : ""}
+            </button>
+          );
+        })}
+      </div>
+      {state.status === "done" ? (
+        <div className="flex flex-col items-center gap-2">
+          <p className="text-lg font-black text-white">
+            המשחק הסתיים · {state.score} נק'
+          </p>
+          <button
+            type="button"
+            className="rounded-2xl bg-gradient-to-r from-violet-500 to-indigo-500 border border-violet-400/50 px-6 py-2.5 text-sm font-black text-white shadow-[0_4px_12px_rgba(139,92,246,0.3)] hover:-translate-y-0.5 transition duration-200"
+            onClick={reset}
+          >
+            שחק שוב 🔁
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}

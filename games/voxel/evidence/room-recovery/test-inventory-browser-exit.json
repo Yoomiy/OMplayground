@@ -1,0 +1,10 @@
+{
+  "script": "test:inventory:browser",
+  "path": "/tmp/voxel-whole-room-suite-test-inventory-browser.log",
+  "code": 0,
+  "signal": null,
+  "startedAt": "2026-10-24T21:35:59.782Z",
+  "finishedAt": "2026-10-24T21:36:22.647Z",
+  "durationMs": 22865,
+  "buildId": "afd3a9b33e5e2c39f88b4e0f31fa53fdaa0b1605aef14a3621f948666174ca77"
+}

@@ -1,0 +1,495 @@
+{
+  "result": "PASS",
+  "mouseClickAcknowledged": true,
+  "buildId": "5d89f56af88a8d1a456575052791a13f560bef75acac7144ebcb19882ced7247",
+  "engineHash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388",
+  "contentHash": "368b605ac5bdf5ff6fcf4af02f7174cbc6d39b5110f48e0a41b231a0a6479464",
+  "browser": "156.0.8078.4",
+  "scope": "Built React development StrictMode fixture, actual native packaged worker and SDK/PostgreSQL; fixture Auth/PostgREST/Storage transports, not full hosted shell or hardware qualification",
+  "lateMountCancelled": true,
+  "strictMode": true,
+  "fullscreenInventory": true,
+  "terminalGameOwnersReleased": true,
+  "playerTouchLayout": [
+    {
+      "control": "joystick",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "jump",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "sneak",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "sprint",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "תקיפה (Q)",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "הצתה (G)",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "בנייה",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "mine",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "השהיה",
+      "overlap": 0,
+      "reachable": true
+    }
+  ],
+  "playerTouchMovement": true,
+  "rosterReceipt": {
+    "left": true,
+    "ended": true,
+    "revision": 1,
+    "requestId": "2f947195-c0b0-496d-8a66-9c4cd5a644a8"
+  },
+  "staffReceipts": [
+    {
+      "result": {
+        "ok": true,
+        "reason": "mode"
+      },
+      "command": {
+        "kind": "mode",
+        "mode": "creative"
+      },
+      "completed": true
+    },
+    {
+      "result": {
+        "ok": true,
+        "reason": "mode"
+      },
+      "command": {
+        "kind": "mode",
+        "mode": "survival"
+      },
+      "completed": true
+    },
+    {
+      "result": {
+        "ok": true,
+        "reason": "teleport"
+      },
+      "command": {
+        "kind": "teleport",
+        "target": "116d616a-db05-4d12-b08a-b6dafbeb4d45"
+      },
+      "completed": true
+    }
+  ],
+  "moderationReceipts": [
+    {
+      "action": "remove",
+      "banned": false,
+      "revision": 1,
+      "requestId": "a1d022b3-38dd-4d5d-8237-18bce8bac46a"
+    },
+    {
+      "action": "ban",
+      "banned": true,
+      "revision": 2,
+      "requestId": "f35652cb-008a-4678-be14-d9fd2dc2fdee"
+    },
+    {
+      "action": "unban",
+      "banned": false,
+      "revision": 3,
+      "requestId": "2e3ac57a-417a-4003-b110-d57be34752e8"
+    }
+  ],
+  "moderationFlow": true,
+  "chatFlow": true,
+  "voice": {
+    "enabled": true,
+    "databaseErrors": [
+      {
+        "rpc": "voxel_media_authorize",
+        "code": "42501",
+        "message": "media admission revoked"
+      }
+    ],
+    "responses": [
+      {
+        "page": "kid",
+        "operation": "voice-ticket",
+        "code": "NOT_IN_ROOM",
+        "time": 10235.288629
+      },
+      {
+        "page": "kid",
+        "operation": "media-moderate",
+        "code": "FORBIDDEN",
+        "time": 21991.716911
+      },
+      {
+        "page": "teacher",
+        "operation": "media-moderate",
+        "code": "MEDIA_UNCONFIRMED",
+        "time": 22205.283918
+      },
+      {
+        "page": "kid",
+        "operation": "voice-ticket",
+        "code": "NOT_IN_ROOM",
+        "time": 50142.653939
+      }
+    ],
+    "actualGamePoses": {
+      "listener": {
+        "position": [
+          49.5,
+          69.625,
+          0.5
+        ],
+        "forward": [
+          0,
+          0,
+          -1
+        ],
+        "up": [
+          0,
+          1,
+          0
+        ]
+      },
+      "sources": [
+        {
+          "id": "116d616a-db05-4d12-b08a-b6dafbeb4d45",
+          "position": [
+            49.5,
+            69.625,
+            0.5
+          ],
+          "gain": 1,
+          "occluded": false
+        }
+      ]
+    },
+    "nearSamples": [
+      0.04909912719249483
+    ],
+    "hiddenStaff": true,
+    "lostMuteReply": true,
+    "retrySameRequest": true,
+    "studentModerationDenied": true,
+    "noGameplayReadmissionOnMute": true,
+    "beforeGameResume": {
+      "phase": "playing",
+      "inputMode": "desktop",
+      "maxTouchPoints": 0,
+      "coarse": false,
+      "lifecycle": "playing",
+      "focused": false,
+      "inventoryPending": false,
+      "inventoryOpen": false,
+      "keys": [],
+      "events": [
+        {
+          "type": "hud",
+          "status": "connecting",
+          "lifecycle": "preparing",
+          "role": "participant",
+          "inventoryOpen": false,
+          "inventoryPending": false,
+          "pointerLocked": false,
+          "generation": 1,
+          "time": 3253.0999999046326
+        },
+        {
+          "type": "hud",
+          "status": "loading",
+          "lifecycle": "preparing",
+          "role": "participant",
+          "inventoryOpen": false,
+          "inventoryPending": false,
+          "pointerLocked": false,
+          "generation": 1,
+          "time": 3546
+        },
+        {
+          "type": "hud",
+          "status": "loading",
+          "lifecycle": "recovering",
+          "role": "participant",
+          "inventoryOpen": false,
+          "inventoryPending": false,
+          "pointerLocked": false,
+          "generation": 1,
+          "time": 3565.2999999523163
+        },
+        {
+          "type": "hud",
+          "status": "loading",
+          "lifecycle": "playing",
+          "role": "participant",
+          "inventoryOpen": false,
+          "inventoryPending": false,
+          "pointerLocked": false,
+          "generation": 1,
+          "time": 3660.699999809265
+        },
+        {
+          "type": "hud",
+          "status": "paused",
+          "lifecycle": "playing",
+          "role": "participant",
+          "inventoryOpen": false,
+          "inventoryPending": false,
+          "pointerLocked": false,
+          "generation": 1,
+          "time": 4011.699999809265
+        },
+        {
+          "type": "command",
+          "command": "pause",
+          "generation": 1,
+          "time": 9964.699999809265
+        }
+      ],
+      "visible": "visible",
+      "hasFocus": true,
+      "active": "BUTTON",
+      "dialogs": [
+        {
+          "open": false,
+          "label": "voxel-voice-title"
+        },
+        {
+          "open": false,
+          "label": "voxel-chat-title"
+        },
+        {
+          "open": false,
+          "label": "voxel-staff-title"
+        },
+        {
+          "open": false,
+          "label": "voxel-end-title"
+        },
+        {
+          "open": false,
+          "label": "inventory-title"
+        }
+      ]
+    },
+    "farDistance": 66.85446515333291,
+    "nativeFarSceneSilent": true,
+    "banRevokedVoice": true,
+    "bannedProviderIdentityAbsent": true,
+    "terminalOwnerClosed": true
+  },
+  "expectedVoiceFailures": [
+    "NOT_IN_ROOM",
+    "FORBIDDEN",
+    "NOT_IN_ROOM"
+  ],
+  "mediaRequests": [
+    {
+      "requestId": "b8a3ecd8-c72e-4e1f-8cf4-e34f52a380cf",
+      "action": "mute",
+      "target": null
+    },
+    {
+      "requestId": "26b5a702-0a1f-4c20-b5ab-c7ef2bbc9653",
+      "action": "mute",
+      "target": "116d616a-db05-4d12-b08a-b6dafbeb4d45"
+    },
+    {
+      "requestId": "26b5a702-0a1f-4c20-b5ab-c7ef2bbc9653",
+      "action": "mute",
+      "target": "116d616a-db05-4d12-b08a-b6dafbeb4d45"
+    },
+    {
+      "requestId": "ddbccd49-410e-4b38-a8b6-36dba443402a",
+      "action": "unmute",
+      "target": "116d616a-db05-4d12-b08a-b6dafbeb4d45"
+    }
+  ],
+  "expectedFailedMediaReplies": 1,
+  "chatRetrySameRequest": true,
+  "chatEscapedText": true,
+  "chatHiddenStaffReadOnly": true,
+  "chatPersistedAfterReopen": true,
+  "chatDeleteAndClear": true,
+  "expectedChatFailureResponses": 1,
+  "moderationRetrySameRequest": true,
+  "moderationInventoryPreserved": true,
+  "expectedModerationFailureResponses": 1,
+  "expectedBannedAdmissionResponses": 1,
+  "expectedBannedSessionResponses": 2,
+  "staffModeAndTeleport": true,
+  "staffTeleportTravel": {
+    "from": [
+      114.80666666666671,
+      80.9383,
+      0.5
+    ],
+    "to": [
+      49.5,
+      70,
+      0.5
+    ],
+    "originBefore": {
+      "x": 96,
+      "z": 0
+    },
+    "originAfter": {
+      "x": 112,
+      "z": 0
+    },
+    "unloads": 77
+  },
+  "failedSaveNotConfirmed": true,
+  "expectedControlFailureResponses": 1,
+  "expectedBrowserNetworkErrors": 10,
+  "sameRequestRetry": true,
+  "teacherRise": 2.3473712706875602,
+  "noAutomaticReadmission": true,
+  "receipts": [
+    {
+      "action": "pause",
+      "completed": true,
+      "savedSequence": 5
+    },
+    {
+      "action": "resume",
+      "completed": true,
+      "savedSequence": null
+    },
+    {
+      "action": "end",
+      "completed": true,
+      "savedSequence": 8
+    }
+  ],
+  "cleanup": [
+    {
+      "resources": {
+        "geometries": 0,
+        "textures": 0,
+        "workers": 0
+      },
+      "audio": "closed"
+    },
+    {
+      "resources": {
+        "geometries": 0,
+        "textures": 0,
+        "workers": 0
+      },
+      "audio": "closed"
+    },
+    {
+      "resources": {
+        "geometries": 0,
+        "textures": 0,
+        "workers": 0
+      },
+      "audio": "closed"
+    }
+  ],
+  "exitInteractions": [
+    "mouse click after session end",
+    "touch tap"
+  ],
+  "exitInputEvents": [
+    {
+      "type": "pointerdown",
+      "trusted": true,
+      "tag": "BUTTON",
+      "text": "יציאה",
+      "fullscreen": false,
+      "pointerLock": false,
+      "time": 86406.89999985695
+    },
+    {
+      "type": "mousedown",
+      "trusted": true,
+      "tag": "BUTTON",
+      "text": "יציאה",
+      "fullscreen": false,
+      "pointerLock": false,
+      "time": 86407.89999985695
+    },
+    {
+      "type": "pointerup",
+      "trusted": true,
+      "tag": "BUTTON",
+      "text": "יציאה",
+      "fullscreen": false,
+      "pointerLock": false,
+      "time": 86408.59999990463
+    },
+    {
+      "type": "mouseup",
+      "trusted": true,
+      "tag": "BUTTON",
+      "text": "יציאה",
+      "fullscreen": false,
+      "pointerLock": false,
+      "time": 86409
+    },
+    {
+      "type": "click",
+      "trusted": true,
+      "tag": "BUTTON",
+      "text": "יציאה",
+      "fullscreen": false,
+      "pointerLock": false,
+      "time": 86409.5
+    }
+  ],
+  "errors": [],
+  "clientArtifacts": [
+    {
+      "path": "/assets/embed-BbfR4Nnp.css",
+      "sha256": "88cf956a48a285c6e672ae7387cbdaa256a319b20328632c5aff65ea426abae7"
+    },
+    {
+      "path": "/assets/embed-CLSAVB7J.js",
+      "sha256": "b0ddddc7ee08124eb769c5e13fbf758d6bb2591876202b6d79e7b6df301605d1"
+    },
+    {
+      "path": "/assets/engine-worker-DPFd4qax.js",
+      "sha256": "4fb4aae45165a42ca55545e132de209d72dc6557be1d4704e7682774dd17c18c"
+    },
+    {
+      "path": "/assets/index-B4ayC7BY.js",
+      "sha256": "277aa2127e607dc0f5da62c2d67f2fb9dc2fbb4a169a27fbe89e7fc43417ba23"
+    },
+    {
+      "path": "/assets/index-Du1El44h.css",
+      "sha256": "d68de63ff6c14c0edf74ff3e5f6f90c7d95bb654b34c05c1e0e862af808de020"
+    },
+    {
+      "path": "/assets/voxel_engine_bg-1ejYMYOZ.wasm",
+      "sha256": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "/index.html",
+      "sha256": "1004b2d8aeea7bfaa959cfadf02e0e1218063a84680f10183d219bf9d1f2977a"
+    }
+  ]
+}

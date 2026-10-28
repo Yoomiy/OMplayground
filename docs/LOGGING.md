@@ -321,7 +321,8 @@ classroom admission and connection evidence through the shared Pino logger.
   `ipUnavailableReason: admission_not_cached`; earlier retained admission logs
   can still be searched. IPs are never copied into participant metadata or
   attendance tables.
-  These records belong to `service=minecraft-server`; a drawing socket's
+  These records belong to `service=classroom-server` after the independent
+  service cutover (historical records use `minecraft-server`); a drawing socket's
   `DISCONNECT` record in `game-server` is not a classroom departure.
 - `CLASSROOM_PARTICIPANT_BLOCKED` and `CLASSROOM_PARTICIPANT_REMOVED`: successful
   moderation boundaries, with actor and target identities, classroom and

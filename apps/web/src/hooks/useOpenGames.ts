@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { freshSessionPresence } from "@/lib/sessionPresence";
 
 export interface OpenGameRow {
   id: string;
@@ -9,6 +10,7 @@ export interface OpenGameRow {
   player_ids: string[];
   player_names: string[];
   connected_player_names: string[];
+  voxel_presence_expires_at: string | null;
   status: "waiting" | "playing" | "paused" | "completed";
   is_open: boolean;
   gender: "boy" | "girl";
@@ -47,7 +49,7 @@ export function useOpenGames(userId: string | undefined, gender: "boy" | "girl" 
       const { data } = await supabase
         .from("game_sessions")
         .select(
-          "id, game_id, host_id, host_name, player_ids, player_names, connected_player_names, status, is_open, gender, invitation_code, host_grade, created_at, games ( name_he, game_url, max_players )"
+          "id, game_id, host_id, host_name, player_ids, player_names, connected_player_names, voxel_presence_expires_at, status, is_open, gender, invitation_code, host_grade, created_at, games ( name_he, game_url, max_players )"
         )
         .eq("is_open", true)
         .in("status", ["waiting", "playing"])
@@ -56,13 +58,11 @@ export function useOpenGames(userId: string | undefined, gender: "boy" | "girl" 
       if (cancelled) return;
       const filtered = ((data ?? []) as unknown as OpenGameRow[]).filter((r) => {
         if (r.player_ids.includes(userId)) return false;
-        const isFull =
-          (r.connected_player_names?.length ?? 0) >= (r.games?.max_players ?? Number.MAX_SAFE_INTEGER);
-        // Minecraft keeps its dedicated join behavior, so a full voxel room
-        // must not advertise the shared-game spectator route.
-        return !(r.games?.game_url === "minecraft" && isFull);
+        // Voxel admission has no player-count ceiling. Board games retain their
+        // existing join/spectator choice in the catalog UI.
+        return true;
       });
-      setRows(filtered);
+      setRows(filtered.map(row=>freshSessionPresence(row)));
       setLoading(false);
     };
 
@@ -109,14 +109,15 @@ export function useOpenGames(userId: string | undefined, gender: "boy" | "girl" 
             setRows(prev =>
               prev.map(r => {
                 if (r.id === newRow.id) {
-                  return {
+                  return freshSessionPresence({
                     ...r,
                     status: newRow.status,
                     is_open: newRow.is_open,
                     player_ids: newRow.player_ids,
                     player_names: newRow.player_names,
-                    connected_player_names: newRow.connected_player_names
-                  };
+                    connected_player_names: newRow.connected_player_names,
+                    voxel_presence_expires_at:newRow.voxel_presence_expires_at
+                  });
                 }
                 return r;
               })
@@ -142,7 +143,11 @@ export function useOpenGames(userId: string | undefined, gender: "boy" | "girl" 
       )
       .subscribe();
 
+    const presenceTimer=window.setInterval(()=>setRows(current=>{
+      const next=current.map(row=>freshSessionPresence(row));return next.some((row,index)=>row!==current[index])?next:current;
+    }),1000);
     return () => {
+      window.clearInterval(presenceTimer);
       cancelled = true;
       if (refetchTimerRef.current !== null) {
         window.clearTimeout(refetchTimerRef.current);

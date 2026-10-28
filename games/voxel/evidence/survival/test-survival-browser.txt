@@ -1,0 +1,9 @@
+
+> @playground/voxel@0.1.0 test:survival:browser
+> node tools/browser-survival.ts
+
+Harvesting natural log 1 with actual held touch input
+Harvesting natural log 2 with actual held touch input
+Harvesting natural log 3 with actual held touch input
+Crafting owned logs into a workbench, sticks and a wooden pickaxe
+Natural mining, pickups, owned crafting/placement and held tool pass

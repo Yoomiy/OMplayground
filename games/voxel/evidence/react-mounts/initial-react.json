@@ -1,0 +1,667 @@
+{
+  "result": "PASS",
+  "mouseClickAcknowledged": true,
+  "buildId": "543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077",
+  "engineHash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388",
+  "contentHash": "368b605ac5bdf5ff6fcf4af02f7174cbc6d39b5110f48e0a41b231a0a6479464",
+  "browser": "156.0.8078.4",
+  "scope": "Built React development StrictMode fixture, actual native packaged worker and SDK/PostgreSQL; fixture Auth/PostgREST/Storage transports, not full hosted shell or hardware qualification",
+  "lateMountCancelled": true,
+  "strictMode": true,
+  "fullscreenInventory": true,
+  "terminalGameOwnersReleased": true,
+  "playerTouchLayout": [
+    {
+      "control": "joystick",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "jump",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "sneak",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "sprint",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "תקיפה (Q)",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "הצתה (G)",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "בנייה",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "mine",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "השהיה",
+      "overlap": 0,
+      "reachable": true
+    }
+  ],
+  "playerTouchMovement": true,
+  "repeatedMounts": {
+    "result": "REPEATED_REACT_SURFACE_OWNERSHIP_AND_UI_TEARDOWN_PASS",
+    "cycles": 6,
+    "samples": [
+      {
+        "cycle": 0,
+        "actorId": "4636ea6d-7416-45ec-b80a-a94d764a092d",
+        "worldId": "fdb2fad9-65a5-4507-9cd0-2839ab055359",
+        "epoch": 3,
+        "mounted": {
+          "resources": {
+            "geometries": 21,
+            "textures": 5,
+            "workers": 1
+          },
+          "columns": 49,
+          "collisionColumns": 49,
+          "memory": {
+            "wasm": [
+              5636096
+            ],
+            "gpuBuffers": {
+              "created": 62,
+              "deleted": 5,
+              "live": 57,
+              "bytes": 556804,
+              "peakBytes": 557740
+            }
+          },
+          "owners": {
+            "openedSockets": 1,
+            "closedSockets": 0,
+            "createdWorkers": 1,
+            "closedWorkers": 0,
+            "liveWorkers": 1
+          }
+        },
+        "unmounted": {
+          "resources": {
+            "geometries": 0,
+            "textures": 0,
+            "workers": 0
+          },
+          "audio": "closed",
+          "memory": {
+            "wasm": [
+              5636096
+            ],
+            "gpuBuffers": {
+              "created": 62,
+              "deleted": 62,
+              "live": 0,
+              "bytes": 0,
+              "peakBytes": 557740
+            }
+          },
+          "owners": {
+            "openedSockets": 1,
+            "closedSockets": 1,
+            "createdWorkers": 1,
+            "closedWorkers": 1,
+            "liveWorkers": 0
+          }
+        }
+      },
+      {
+        "cycle": 1,
+        "actorId": "4636ea6d-7416-45ec-b80a-a94d764a092d",
+        "worldId": "fdb2fad9-65a5-4507-9cd0-2839ab055359",
+        "epoch": 9,
+        "mounted": {
+          "resources": {
+            "geometries": 21,
+            "textures": 5,
+            "workers": 1
+          },
+          "columns": 49,
+          "collisionColumns": 49,
+          "memory": {
+            "wasm": [
+              5636096
+            ],
+            "gpuBuffers": {
+              "created": 124,
+              "deleted": 67,
+              "live": 57,
+              "bytes": 556804,
+              "peakBytes": 1115480
+            }
+          },
+          "owners": {
+            "openedSockets": 2,
+            "closedSockets": 1,
+            "createdWorkers": 2,
+            "closedWorkers": 1,
+            "liveWorkers": 1
+          }
+        },
+        "unmounted": {
+          "resources": {
+            "geometries": 0,
+            "textures": 0,
+            "workers": 0
+          },
+          "audio": "closed",
+          "memory": {
+            "wasm": [
+              5636096
+            ],
+            "gpuBuffers": {
+              "created": 124,
+              "deleted": 124,
+              "live": 0,
+              "bytes": 0,
+              "peakBytes": 1115480
+            }
+          },
+          "owners": {
+            "openedSockets": 2,
+            "closedSockets": 2,
+            "createdWorkers": 2,
+            "closedWorkers": 2,
+            "liveWorkers": 0
+          }
+        }
+      },
+      {
+        "cycle": 2,
+        "actorId": "4636ea6d-7416-45ec-b80a-a94d764a092d",
+        "worldId": "fdb2fad9-65a5-4507-9cd0-2839ab055359",
+        "epoch": 15,
+        "mounted": {
+          "resources": {
+            "geometries": 21,
+            "textures": 5,
+            "workers": 1
+          },
+          "columns": 49,
+          "collisionColumns": 49,
+          "memory": {
+            "wasm": [
+              5636096
+            ],
+            "gpuBuffers": {
+              "created": 187,
+              "deleted": 130,
+              "live": 57,
+              "bytes": 556804,
+              "peakBytes": 1673220
+            }
+          },
+          "owners": {
+            "openedSockets": 3,
+            "closedSockets": 2,
+            "createdWorkers": 3,
+            "closedWorkers": 2,
+            "liveWorkers": 1
+          }
+        },
+        "unmounted": {
+          "resources": {
+            "geometries": 0,
+            "textures": 0,
+            "workers": 0
+          },
+          "audio": "closed",
+          "memory": {
+            "wasm": [
+              5636096
+            ],
+            "gpuBuffers": {
+              "created": 187,
+              "deleted": 187,
+              "live": 0,
+              "bytes": 0,
+              "peakBytes": 1673220
+            }
+          },
+          "owners": {
+            "openedSockets": 3,
+            "closedSockets": 3,
+            "createdWorkers": 3,
+            "closedWorkers": 3,
+            "liveWorkers": 0
+          }
+        }
+      },
+      {
+        "cycle": 3,
+        "actorId": "4636ea6d-7416-45ec-b80a-a94d764a092d",
+        "worldId": "fdb2fad9-65a5-4507-9cd0-2839ab055359",
+        "epoch": 21,
+        "mounted": {
+          "resources": {
+            "geometries": 21,
+            "textures": 5,
+            "workers": 1
+          },
+          "columns": 49,
+          "collisionColumns": 49,
+          "memory": {
+            "wasm": [
+              5636096
+            ],
+            "gpuBuffers": {
+              "created": 249,
+              "deleted": 192,
+              "live": 57,
+              "bytes": 556804,
+              "peakBytes": 2230960
+            }
+          },
+          "owners": {
+            "openedSockets": 4,
+            "closedSockets": 3,
+            "createdWorkers": 4,
+            "closedWorkers": 3,
+            "liveWorkers": 1
+          }
+        },
+        "unmounted": {
+          "resources": {
+            "geometries": 0,
+            "textures": 0,
+            "workers": 0
+          },
+          "audio": "closed",
+          "memory": {
+            "wasm": [
+              5636096
+            ],
+            "gpuBuffers": {
+              "created": 249,
+              "deleted": 249,
+              "live": 0,
+              "bytes": 0,
+              "peakBytes": 2230960
+            }
+          },
+          "owners": {
+            "openedSockets": 4,
+            "closedSockets": 4,
+            "createdWorkers": 4,
+            "closedWorkers": 4,
+            "liveWorkers": 0
+          }
+        }
+      },
+      {
+        "cycle": 4,
+        "actorId": "4636ea6d-7416-45ec-b80a-a94d764a092d",
+        "worldId": "fdb2fad9-65a5-4507-9cd0-2839ab055359",
+        "epoch": 27,
+        "mounted": {
+          "resources": {
+            "geometries": 21,
+            "textures": 5,
+            "workers": 1
+          },
+          "columns": 49,
+          "collisionColumns": 49,
+          "memory": {
+            "wasm": [
+              5636096
+            ],
+            "gpuBuffers": {
+              "created": 311,
+              "deleted": 254,
+              "live": 57,
+              "bytes": 556804,
+              "peakBytes": 2788700
+            }
+          },
+          "owners": {
+            "openedSockets": 5,
+            "closedSockets": 4,
+            "createdWorkers": 5,
+            "closedWorkers": 4,
+            "liveWorkers": 1
+          }
+        },
+        "unmounted": {
+          "resources": {
+            "geometries": 0,
+            "textures": 0,
+            "workers": 0
+          },
+          "audio": "closed",
+          "memory": {
+            "wasm": [
+              5636096
+            ],
+            "gpuBuffers": {
+              "created": 311,
+              "deleted": 311,
+              "live": 0,
+              "bytes": 0,
+              "peakBytes": 2788700
+            }
+          },
+          "owners": {
+            "openedSockets": 5,
+            "closedSockets": 5,
+            "createdWorkers": 5,
+            "closedWorkers": 5,
+            "liveWorkers": 0
+          }
+        }
+      },
+      {
+        "cycle": 5,
+        "actorId": "4636ea6d-7416-45ec-b80a-a94d764a092d",
+        "worldId": "fdb2fad9-65a5-4507-9cd0-2839ab055359",
+        "epoch": 33,
+        "mounted": {
+          "resources": {
+            "geometries": 21,
+            "textures": 5,
+            "workers": 1
+          },
+          "columns": 49,
+          "collisionColumns": 49,
+          "memory": {
+            "wasm": [
+              5636096
+            ],
+            "gpuBuffers": {
+              "created": 373,
+              "deleted": 316,
+              "live": 57,
+              "bytes": 556804,
+              "peakBytes": 3346440
+            }
+          },
+          "owners": {
+            "openedSockets": 6,
+            "closedSockets": 5,
+            "createdWorkers": 6,
+            "closedWorkers": 5,
+            "liveWorkers": 1
+          }
+        },
+        "unmounted": {
+          "resources": {
+            "geometries": 0,
+            "textures": 0,
+            "workers": 0
+          },
+          "audio": "closed",
+          "memory": {
+            "wasm": [
+              5636096
+            ],
+            "gpuBuffers": {
+              "created": 373,
+              "deleted": 373,
+              "live": 0,
+              "bytes": 0,
+              "peakBytes": 3346440
+            }
+          },
+          "owners": {
+            "openedSockets": 6,
+            "closedSockets": 6,
+            "createdWorkers": 6,
+            "closedWorkers": 6,
+            "liveWorkers": 0
+          }
+        }
+      }
+    ],
+    "scope": "Same-page actual StrictMode VoxelSurface mounts via rendered exit/re-entry buttons, native packaged room workers and local SDK/SQL fixture. Instrumented GL ownership and actual socket/worker teardown; no hosted Auth/Storage, SFU, physical hardware or general heap-leak qualification."
+  },
+  "rosterReceipt": {
+    "left": true,
+    "ended": true,
+    "revision": 1,
+    "requestId": "658f70ea-c6d6-47ea-9cbc-deb6b722cf54"
+  },
+  "staffReceipts": [
+    {
+      "result": {
+        "ok": true,
+        "reason": "mode"
+      },
+      "command": {
+        "kind": "mode",
+        "mode": "creative"
+      },
+      "completed": true
+    },
+    {
+      "result": {
+        "ok": true,
+        "reason": "mode"
+      },
+      "command": {
+        "kind": "mode",
+        "mode": "survival"
+      },
+      "completed": true
+    },
+    {
+      "result": {
+        "ok": true,
+        "reason": "teleport"
+      },
+      "command": {
+        "kind": "teleport",
+        "target": "4636ea6d-7416-45ec-b80a-a94d764a092d"
+      },
+      "completed": true
+    }
+  ],
+  "moderationReceipts": [
+    {
+      "action": "remove",
+      "banned": false,
+      "revision": 1,
+      "requestId": "c3e6ab4c-b00b-4b36-ac87-6dfec30f9835"
+    },
+    {
+      "action": "ban",
+      "banned": true,
+      "revision": 2,
+      "requestId": "f0fe928b-1e20-419a-a738-dc21e07fd396"
+    },
+    {
+      "action": "unban",
+      "banned": false,
+      "revision": 3,
+      "requestId": "b3daf150-cac7-4d71-a9d4-179fd999ebd5"
+    }
+  ],
+  "moderationFlow": true,
+  "chatFlow": true,
+  "voice": {
+    "enabled": false
+  },
+  "expectedVoiceFailures": [],
+  "mediaRequests": [],
+  "expectedFailedMediaReplies": 0,
+  "chatRetrySameRequest": true,
+  "chatEscapedText": true,
+  "chatHiddenStaffReadOnly": true,
+  "chatPersistedAfterReopen": true,
+  "chatDeleteAndClear": true,
+  "expectedChatFailureResponses": 1,
+  "moderationRetrySameRequest": true,
+  "moderationInventoryPreserved": true,
+  "expectedModerationFailureResponses": 1,
+  "expectedBannedAdmissionResponses": 1,
+  "expectedBannedSessionResponses": 0,
+  "staffModeAndTeleport": true,
+  "staffTeleportTravel": {
+    "from": [
+      114.80660000000003,
+      80.9383,
+      0.5
+    ],
+    "to": [
+      49.5,
+      70,
+      0.5
+    ],
+    "originBefore": {
+      "x": 96,
+      "z": 0
+    },
+    "originAfter": {
+      "x": 112,
+      "z": 0
+    },
+    "unloads": 77
+  },
+  "failedSaveNotConfirmed": true,
+  "expectedControlFailureResponses": 1,
+  "expectedBrowserNetworkErrors": 4,
+  "sameRequestRetry": true,
+  "teacherRise": 2.8729692848890664,
+  "noAutomaticReadmission": true,
+  "receipts": [
+    {
+      "action": "pause",
+      "completed": true,
+      "savedSequence": 4
+    },
+    {
+      "action": "resume",
+      "completed": true,
+      "savedSequence": null
+    },
+    {
+      "action": "end",
+      "completed": true,
+      "savedSequence": 6
+    }
+  ],
+  "cleanup": [
+    {
+      "resources": {
+        "geometries": 0,
+        "textures": 0,
+        "workers": 0
+      },
+      "audio": "closed"
+    },
+    {
+      "resources": {
+        "geometries": 0,
+        "textures": 0,
+        "workers": 0
+      },
+      "audio": "closed"
+    },
+    {
+      "resources": {
+        "geometries": 0,
+        "textures": 0,
+        "workers": 0
+      },
+      "audio": "closed"
+    }
+  ],
+  "exitInteractions": [
+    "mouse click after session end",
+    "touch tap"
+  ],
+  "exitInputEvents": [
+    {
+      "type": "pointerdown",
+      "trusted": true,
+      "tag": "BUTTON",
+      "text": "יציאה",
+      "fullscreen": false,
+      "pointerLock": false,
+      "time": 59601.200000047684
+    },
+    {
+      "type": "mousedown",
+      "trusted": true,
+      "tag": "BUTTON",
+      "text": "יציאה",
+      "fullscreen": false,
+      "pointerLock": false,
+      "time": 59603.90000009537
+    },
+    {
+      "type": "pointerup",
+      "trusted": true,
+      "tag": "BUTTON",
+      "text": "יציאה",
+      "fullscreen": false,
+      "pointerLock": false,
+      "time": 59604.299999952316
+    },
+    {
+      "type": "mouseup",
+      "trusted": true,
+      "tag": "BUTTON",
+      "text": "יציאה",
+      "fullscreen": false,
+      "pointerLock": false,
+      "time": 59604.5
+    },
+    {
+      "type": "click",
+      "trusted": true,
+      "tag": "BUTTON",
+      "text": "יציאה",
+      "fullscreen": false,
+      "pointerLock": false,
+      "time": 59604.59999990463
+    }
+  ],
+  "errors": [],
+  "clientArtifacts": [
+    {
+      "path": "/assets/embed-BbfR4Nnp.css",
+      "sha256": "88cf956a48a285c6e672ae7387cbdaa256a319b20328632c5aff65ea426abae7"
+    },
+    {
+      "path": "/assets/embed-CCfFkP5Z.js",
+      "sha256": "5985fa862d48deeecf7dfc3153cdba82dab056e307fcebc2963c36ad4af456d2"
+    },
+    {
+      "path": "/assets/engine-worker-DPFd4qax.js",
+      "sha256": "4fb4aae45165a42ca55545e132de209d72dc6557be1d4704e7682774dd17c18c"
+    },
+    {
+      "path": "/assets/index-CFsM5zdg.js",
+      "sha256": "d77f19b041ede543416cee3894e0a139b4a69c9824ff38ec2a0bffb50aab6de6"
+    },
+    {
+      "path": "/assets/index-Du1El44h.css",
+      "sha256": "d68de63ff6c14c0edf74ff3e5f6f90c7d95bb654b34c05c1e0e862af808de020"
+    },
+    {
+      "path": "/assets/voxel_engine_bg-1ejYMYOZ.wasm",
+      "sha256": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "/index.html",
+      "sha256": "b864ee3700a5a1af8eb8153a28bbf3ae526fb92d38c3c0811b57d4d31ca5dc39"
+    }
+  ]
+}

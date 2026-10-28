@@ -1,0 +1,12 @@
+[
+  {
+    "display": ":0",
+    "webgl2": true,
+    "renderer": "WebKit WebGL"
+  },
+  {
+    "display": ":1",
+    "webgl2": true,
+    "renderer": "WebKit WebGL"
+  }
+]

@@ -1,0 +1,15 @@
+✔ benchmark windows exclude startup and partial intervals, preserving separate room reports at exact boundaries (1.716489ms)
+✔ benchmark windows cannot infer containment from missing or invalid worker bounds (0.688284ms)
+✔ immutable drop JSON is reused across viewers and passes, preserving split/reset/removal and historical revisions (1.469168ms)
+✔ mutable drop views and shallowly frozen views never reuse stale nested data (0.300002ms)
+✔ snapshot encoding preserves every delta shape, split message, self and escaped identity (3.143336ms)
+✔ shared actor deltas serialize once per pass while private self never crosses viewers (0.459442ms)
+✔ a different viewer delta for the same actor never reuses omitted fields or another baseline (0.325682ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 323.689235

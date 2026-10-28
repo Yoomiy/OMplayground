@@ -1,0 +1,783 @@
+{
+  "result": "PASS_WITH_RETAINED_DEVELOPMENT_HISTORY",
+  "capturedAt": "2026-10-24T17:30:10.484Z",
+  "buildId": "e4f100782c6972d28d3a854f5492ec47a6fc29aad21b89b117a08af096b8ea29",
+  "engineHash": "1e3f1e257d7326182e52736112b4a585b5809173a7f6f6d3fee34e52f414b7b6",
+  "contentHash": "368b605ac5bdf5ff6fcf4af02f7174cbc6d39b5110f48e0a41b231a0a6479464",
+  "matchedReleaseFiles": 12,
+  "checksExitCode": 0,
+  "browserExitCodes": [
+    {
+      "script": "test:browser",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "script": "test:creative:browser",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "script": "test:touch:browser",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "script": "test:environment:browser",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "script": "test:presentation:browser",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "script": "test:recovery:browser",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "script": "test:inventory:browser",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "script": "test:combat:browser",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "script": "test:equipment:browser",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "script": "test:survival:browser",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "script": "test:tnt:browser",
+      "code": 0,
+      "signal": null
+    }
+  ],
+  "limitations": "Functional software Chromium/SwiftShader and controlled native progression evidence. All 197 legacy entries have explicit checked decisions. The potential-source graph and three-seed survey do not prove natural cave travel, every seed, quantities or final balance. Bucket UI, hardware performance/touch/audio, OS focus, latency, long-session load, durable timers/checkpoints, school/platform integration and cutover remain unqualified. Earlier test/fixture failures are retained separately from final release outcomes.",
+  "screenshots": [
+    {
+      "path": "survival-drop.png",
+      "script": "test:tnt:browser",
+      "startedAt": "2026-10-24T17:27:09.393Z",
+      "finishedAt": "2026-10-24T17:28:25.643Z",
+      "sourceModifiedAt": "2026-10-24T17:27:19.901Z"
+    },
+    {
+      "path": "survival-crafting.png",
+      "script": "test:tnt:browser",
+      "startedAt": "2026-10-24T17:27:09.393Z",
+      "finishedAt": "2026-10-24T17:28:25.643Z",
+      "sourceModifiedAt": "2026-10-24T17:27:39.782Z"
+    },
+    {
+      "path": "survival-tool.png",
+      "script": "test:tnt:browser",
+      "startedAt": "2026-10-24T17:27:09.393Z",
+      "finishedAt": "2026-10-24T17:28:25.643Z",
+      "sourceModifiedAt": "2026-10-24T17:27:40.628Z"
+    },
+    {
+      "path": "tnt-fuse.png",
+      "script": "test:tnt:browser",
+      "startedAt": "2026-10-24T17:27:09.393Z",
+      "finishedAt": "2026-10-24T17:28:25.643Z",
+      "sourceModifiedAt": "2026-10-24T17:28:22.011Z"
+    },
+    {
+      "path": "tnt-crater.png",
+      "script": "test:tnt:browser",
+      "startedAt": "2026-10-24T17:27:09.393Z",
+      "finishedAt": "2026-10-24T17:28:25.643Z",
+      "sourceModifiedAt": "2026-10-24T17:28:24.609Z"
+    },
+    {
+      "path": "combat-death.png",
+      "script": "test:combat:browser",
+      "startedAt": "2026-10-24T17:14:01.338Z",
+      "finishedAt": "2026-10-24T17:14:23.698Z",
+      "sourceModifiedAt": "2026-10-24T17:14:20.167Z"
+    },
+    {
+      "path": "combat-respawn.png",
+      "script": "test:combat:browser",
+      "startedAt": "2026-10-24T17:14:01.338Z",
+      "finishedAt": "2026-10-24T17:14:23.698Z",
+      "sourceModifiedAt": "2026-10-24T17:14:22.197Z"
+    },
+    {
+      "path": "equipment-night-before.png",
+      "script": "test:equipment:browser",
+      "startedAt": "2026-10-24T17:21:36.531Z",
+      "finishedAt": "2026-10-24T17:23:43.279Z",
+      "sourceModifiedAt": "2026-10-24T17:23:19.234Z"
+    },
+    {
+      "path": "equipment-night-after.png",
+      "script": "test:equipment:browser",
+      "startedAt": "2026-10-24T17:21:36.531Z",
+      "finishedAt": "2026-10-24T17:23:43.279Z",
+      "sourceModifiedAt": "2026-10-24T17:23:20.510Z"
+    },
+    {
+      "path": "remote-equipment-night.png",
+      "script": "test:equipment:browser",
+      "startedAt": "2026-10-24T17:21:36.531Z",
+      "finishedAt": "2026-10-24T17:23:43.279Z",
+      "sourceModifiedAt": "2026-10-24T17:23:29.943Z"
+    },
+    {
+      "path": "remote-equipment-survival.png",
+      "script": "test:survival:browser",
+      "startedAt": "2026-10-24T17:24:46.239Z",
+      "finishedAt": "2026-10-24T17:27:09.347Z",
+      "sourceModifiedAt": "2026-10-24T17:27:00.375Z"
+    },
+    {
+      "path": "avatar-held.png",
+      "script": "test:presentation:browser",
+      "startedAt": "2026-10-24T17:12:38.170Z",
+      "finishedAt": "2026-10-24T17:13:03.592Z",
+      "sourceModifiedAt": "2026-10-24T17:13:01.939Z"
+    },
+    {
+      "path": "remote-equipment-creative.png",
+      "script": "test:presentation:browser",
+      "startedAt": "2026-10-24T17:12:38.170Z",
+      "finishedAt": "2026-10-24T17:13:03.592Z",
+      "sourceModifiedAt": "2026-10-24T17:13:02.477Z"
+    }
+  ],
+  "scenarios": [
+    {
+      "path": "tests/content-progression.test.ts",
+      "hash": "4c18f829cb1bf4abf71fd4e229e0044bd33dd1211fccdeb61a4e7d103effb235"
+    },
+    {
+      "path": "tests/wasm/buckets.test.ts",
+      "hash": "5baa5bad0099bb5830a9c027e8fdbca9f7964dcea01f04030bc9cdf212c4f1c9"
+    },
+    {
+      "path": "tests/wasm/progression.test.ts",
+      "hash": "650de1317c604fbae964789318f9321edec6e3a4c8e297c672a7b70bf9dba046"
+    },
+    {
+      "path": "tools/check-content-disposition.ts",
+      "hash": "cdeaa8da1927f079cacdff6c66583de1dd57acf908f329b20a36d0dca89e156c"
+    },
+    {
+      "path": "tools/survey-content.ts",
+      "hash": "3c5771a7351430ef1da721dbaa7e3c1a5a0d2f512e4c97dcfb5097aa82bc1fd4"
+    },
+    {
+      "path": "tests/appearance.test.ts",
+      "hash": "1aeb12b6126af8435e649c3894b3b72b9430da638ac7f612d53a0c0e7602a557"
+    },
+    {
+      "path": "tests/avatar-equipment.test.ts",
+      "hash": "625df0b722938a97e1d4f567cbef9fa6a18af937e55d008c65abbcd970baedac"
+    },
+    {
+      "path": "tests/wasm/appearance.test.ts",
+      "hash": "9466a07dd6033ae5caf7d833ed56b63183f491ffca110c64478e71dcf83ae58c"
+    },
+    {
+      "path": "tools/browser-remote-equipment.ts",
+      "hash": "4f0737496a817660903e039a19a231c34bf87b61d705ae7223f7a8d140a9744d"
+    },
+    {
+      "path": "tests/gpu-pacing.test.ts",
+      "hash": "8bc36ba13ab2e48d781da6b85ef719e044b21c3683e8da06e94a10aa152435c4"
+    },
+    {
+      "path": "tests/equipment.test.ts",
+      "hash": "7e6a26e296ea618a94619186fc6d5a66d5e8a79a0cee12eb606a9eb7ac6b0549"
+    },
+    {
+      "path": "tests/wasm/equipment.test.ts",
+      "hash": "d31a621da12da02d9dade5372acd10ca7bfcd78d7d7990ac440143b017fb8e80"
+    },
+    {
+      "path": "tests/explosives.test.ts",
+      "hash": "30d6d982706dc49d7c748adbd640fcf4e3d835f84698c0c9074ed0a0db8b5c94"
+    },
+    {
+      "path": "tests/wasm/explosives.test.ts",
+      "hash": "1247014fb70a118095fcc80a0efa4d7a89e6a4cd9675e23771ce5f7d322f4e1c"
+    },
+    {
+      "path": "tests/combat.test.ts",
+      "hash": "81ed0bdec2053df956aa86864a6f820a59aaeeb7165814748b6b55eb5c43797c"
+    },
+    {
+      "path": "tests/wasm/combat.test.ts",
+      "hash": "293e72d5642685415145b825f841421741e2e064d45c2560523bf7cd7c58197b"
+    },
+    {
+      "path": "tests/wasm/room-fixture.ts",
+      "hash": "7ef627e904ac4a3070e2e4cf7077c833a681f87c84b283a9967d786a9b72ef5f"
+    },
+    {
+      "path": "tests/wasm/fixture.ts",
+      "hash": "6e4009d88e43b9ecaa6b6f145b9859629e6b758528dc0b2f598c141b2bbdd2cf"
+    },
+    {
+      "path": "tools/browser-combat.ts",
+      "hash": "2e1db43ff7d9442ed997bc4de2909a666e8b13a729559446eee128ec725636d0"
+    },
+    {
+      "path": "tools/browser-harness.ts",
+      "hash": "6b5f9fde3719606b6d5488f09e7219da7e01bd68d0a0299c46e4f3a72d398e49"
+    },
+    {
+      "path": "tests/vitals.test.ts",
+      "hash": "e162a1393869d6b6c5a571bd7af85c0b0c0b913a3341fab94b68b560ea8dfba4"
+    },
+    {
+      "path": "tests/wasm/prediction.test.ts",
+      "hash": "af491b505fcaec432ed7d94335d0e3e8e9dedfd003bd509c26164a4263d6cd8c"
+    },
+    {
+      "path": "tests/survival.test.ts",
+      "hash": "4cacaca4366367f168f58a1c6ee18a281fc3d14a6563564a950e6484b2aec5f2"
+    },
+    {
+      "path": "tests/wasm/survival.test.ts",
+      "hash": "ba6466b47780f7603fe0382a793c4bb2a9f4680bc3b628f7336d337aa6b48622"
+    },
+    {
+      "path": "tests/authority.test.ts",
+      "hash": "9ed448f1e4750de57774216f4d2ec7ad24adbb2587acec3b2535c2f603e1b916"
+    },
+    {
+      "path": "tests/integration/creative.test.ts",
+      "hash": "4e26e08e831e475b298400e78872da8729f0894ba9889f8c8b800fd24608dea3"
+    },
+    {
+      "path": "tools/browser-survival.ts",
+      "hash": "45169586cf358fa028505f2d16139fcf12a8e9d8d5a50a9fbb0d3988e171ff59"
+    },
+    {
+      "path": "tools/browser-touch.ts",
+      "hash": "674ed5b901219a003f4039c0914699be41e60f6d29d58b79362b2631edd7c169"
+    },
+    {
+      "path": "tools/browser-creative.ts",
+      "hash": "cc21b2ce090ef378f965457ece975237f69f21932fc5653cf88616955fbf4ba6"
+    },
+    {
+      "path": "tools/browser-inventory.ts",
+      "hash": "9462cbefd476f824e8b665e923b974909487d377e1499b163e188bdfbb7dc693"
+    },
+    {
+      "path": "tools/browser-presentation.ts",
+      "hash": "d839498abf9ea070cbb6dcb79812667d26813db5401f6f00a686e05f1029eedc"
+    },
+    {
+      "path": "tools/browser-environment.ts",
+      "hash": "c5baa674174283c6a79fc31aeef2f9f0488a9af59032ba31f2f440988e6522d0"
+    },
+    {
+      "path": "tools/browser-worker-recovery.ts",
+      "hash": "4e2645298e9a184e654bfbaf725e4934aac885c33860570ec972c4a6093e98ea"
+    },
+    {
+      "path": "tools/browser-smoke.ts",
+      "hash": "e14e614fb0a99dab8a4aecfaa6d1b8b9528c87e57db51cb433351aa967b665da"
+    },
+    {
+      "path": "tools/wasm-scenario.mjs",
+      "hash": "5c531722b1d7be58e651550fd3583eeb280245123920d270c0267a84f6ceebc0"
+    }
+  ],
+  "files": [
+    {
+      "path": "README.md",
+      "hash": "e662403af4980af0db99545dc22dfea4f365c6d68b938089be5de37404e90af3"
+    },
+    {
+      "path": "archive.py",
+      "hash": "fe17aaef6aae910fedb221d1e093b2b865349fee1c0b1d689d101d53a8641e48"
+    },
+    {
+      "path": "avatar-held.png",
+      "hash": "35edc0607273002f6f57a9ffe28f991a433e870f9997d00a80d27d88879d134d"
+    },
+    {
+      "path": "browser-combat.json",
+      "hash": "44bea5c257a33353beb8f449a61cbfbeb5ab946daaf51143914f503ec85b5ff9"
+    },
+    {
+      "path": "browser-creative.json",
+      "hash": "577366dec8ca11ea05b36c3c2a4a8a3d7585c7ff2788f95e257b7f23fb83a9bf"
+    },
+    {
+      "path": "browser-environment.json",
+      "hash": "7077165e8e5e3afd24cbc82c543e33431aa2e1eb8df67bb2b2350af58e88d3c4"
+    },
+    {
+      "path": "browser-equipment.json",
+      "hash": "622e712b3c944d860fe804358555d23f8383a591b860cedf8ed36a9eeeab1a8a"
+    },
+    {
+      "path": "browser-inventory.json",
+      "hash": "9f26831373e1ca485aff01d0c3d71536ba0121f89aa48303b1b9e2b446b0853f"
+    },
+    {
+      "path": "browser-presentation.json",
+      "hash": "47df9c4cfc01b28d0c61067dfb9827ca50c2af0297efd98199e07e2657935cdf"
+    },
+    {
+      "path": "browser-suite.json",
+      "hash": "e4da2440d983c53d7ad32f392e7e5459a675d93c98b9f02c84f2378f0e14e148"
+    },
+    {
+      "path": "browser-survival.json",
+      "hash": "e2660255431f1e19c3d71e8114147297dc8b7baa1b4249102b4756fc8e133b29"
+    },
+    {
+      "path": "browser-tnt.json",
+      "hash": "25607953cdd7df4d5791793e5c7a6d7264e71631a916102bcd4b54255b4e28d1"
+    },
+    {
+      "path": "browser-touch.json",
+      "hash": "a6ba4dd22e2499128435e9758d96ed7e468c91367069c2fd66b43b8df03d8095"
+    },
+    {
+      "path": "browser-wasm.json",
+      "hash": "88181537bba478c138f457ee9586f1515ea90469c235b5a54e33ec7ab77006a0"
+    },
+    {
+      "path": "browser-worker-recovery.json",
+      "hash": "730fcd79e9f7d817d2073e03479932c6cb51d6157d5f601377a1017d0a5476ad"
+    },
+    {
+      "path": "build.json",
+      "hash": "41f9b0e683a8dcaab00c6973617f3c665b5039de11c72af2e9e44b3c6df568d7"
+    },
+    {
+      "path": "capture.mjs",
+      "hash": "d27f804bf771f6a46e18f74007d8880be0a727874823393a0cdd33cc85393533"
+    },
+    {
+      "path": "check-exit.json",
+      "hash": "13027077ec1e4321bfe9eae8f8d405440a1e2782fb82eb39c162030fc43ce990"
+    },
+    {
+      "path": "check.txt",
+      "hash": "6f0574c7e0455f7bb2b22005957ea7f9b676a29f19881be4f744750a8f109eae"
+    },
+    {
+      "path": "combat-death.png",
+      "hash": "11f7bd0fd7c5d82e36eda286f10e244dc1f4c8b1988f8ba5d3b8d6c9bcf13147"
+    },
+    {
+      "path": "combat-respawn.png",
+      "hash": "569828dcdc812d4dbe2b88ea5e3cb584b5d09b71949f4516f2846899082c6556"
+    },
+    {
+      "path": "content-disposition.json",
+      "hash": "f23039f54051d63e627a93a4379bc367ea1202e5f47e2b2792a1e89f97b2e1be"
+    },
+    {
+      "path": "content-survey.json",
+      "hash": "aecc9b6a6351433222e7d4806c8396e2f81e5b9047577d54f2b4ba63f896af71"
+    },
+    {
+      "path": "disposition.json",
+      "hash": "87f7ddbfee48f7981fa7859e23720e8f02e5547a4511caaadf7524b6e724422a"
+    },
+    {
+      "path": "equipment-night-after.png",
+      "hash": "15798e877cd98cc318e19df4179cd1a5591bc6809d75ca6a9ebf0228d4e29cae"
+    },
+    {
+      "path": "equipment-night-before.png",
+      "hash": "a7e3c3c7bce7275cef23f20ac962f30c969c4d580f3767a5df405aaaace26dc0"
+    },
+    {
+      "path": "historical-browser-0-exit.json",
+      "hash": "095d99b4e588eceaf69222e0e4a43af234fbe74954836bcef9587efb8a8a1679"
+    },
+    {
+      "path": "historical-browser-0.txt",
+      "hash": "7bf799c04a17aef8735884ff8e39dfd716a82b92b12d4889378b7137943ab90e"
+    },
+    {
+      "path": "historical-browser-1-exit.json",
+      "hash": "09411ad0c59f1f152b2ea6a064b96e163929d4e5af134e789b851c2a44e52700"
+    },
+    {
+      "path": "historical-browser-1.txt",
+      "hash": "fbf17ba76070d29bbd326653b8952a4ba0093bf403d61b740915574d8ed6f63a"
+    },
+    {
+      "path": "historical-browser-2-exit.json",
+      "hash": "3a76cb91cb0e1933572c007e905ea1923e0dfbd896e4bf6b3830b153454340aa"
+    },
+    {
+      "path": "historical-browser-2.txt",
+      "hash": "d643b2c8011ca4e1496bd0f0bf83b81e0ac675894b4a94cec8458fcf93ca87ac"
+    },
+    {
+      "path": "plant-obstruction-driver.ts",
+      "hash": "f75e1a9aa0d9982d655930462545d7eae6f08365109c0eaf2d8c66f8ffc96f62"
+    },
+    {
+      "path": "pre-alias-history/README.txt",
+      "hash": "a1dfba7b37a5675ce7064a11e8f0c814a625093831adeae912167514f899f8b7"
+    },
+    {
+      "path": "pre-alias-history/artifacts/build.json",
+      "hash": "887173a846379d0accc990b6d45e64b0e06d7c0ad9ea5772fc68ba73b0652519"
+    },
+    {
+      "path": "pre-alias-history/artifacts/content.json",
+      "hash": "8f16f2b701eebe06bc7d6c4e3fe1d2f50d3d00a787b1daa2bde2fed656f663b0"
+    },
+    {
+      "path": "pre-alias-history/artifacts/release.json",
+      "hash": "d67eefb55f9883522307d44395c2bdeccf3230d141c05932625e834f8d7bd1fb"
+    },
+    {
+      "path": "pre-alias-history/source.tar.gz",
+      "hash": "6a7ca96dc3b6653ac1f0d46fe8cb35d545bb0f08547466c34a93312ebfeb50ab"
+    },
+    {
+      "path": "pre-alias-history/test-results/browser-wasm.json",
+      "hash": "e268a70a06c298900c08ba06e34b7e1b1466d2ad9fad0ee4fcbaa83bd28ee9c4"
+    },
+    {
+      "path": "pre-alias-history/test-results/content-disposition.json",
+      "hash": "ea7e194a7ebb74ee63e8a38dca3619c58c241e6270b94b8a3aa21a79fd6c9283"
+    },
+    {
+      "path": "pre-alias-history/test-results/content-survey.json",
+      "hash": "b4da3dd28b6f790ffbed8ba616751ad269ae56fff7a5e45602ffb7f8548312eb"
+    },
+    {
+      "path": "pre-alias-history/test-results/release-verification.json",
+      "hash": "5d16fcb0023f95975af3f48b2d79f05fd546b7e3a0497a526d1458f22b074b9a"
+    },
+    {
+      "path": "pre-alias-history/voxel-content-browser-suite.json",
+      "hash": "3f40cb719b1690a822305e71db8218c7f517b58fce77937df0915cf5dbf4fb74"
+    },
+    {
+      "path": "pre-alias-history/voxel-content-complete-check.exit.json",
+      "hash": "eebbd788502fc40ecd7e3053bbdd506ac7372afa694a2a8cb5feea7a246cc01b"
+    },
+    {
+      "path": "pre-alias-history/voxel-content-complete-check.log",
+      "hash": "d53a9fcc1a6b3770baf1475114d2da2db9d633971f834d3544d3eb48d6d624c0"
+    },
+    {
+      "path": "pre-alias-history/voxel-content-suite-test-browser.log",
+      "hash": "7452e89600bb48020536bf35df3cb09953ac0f365352df216efd61a79ef61d07"
+    },
+    {
+      "path": "pre-alias-history/voxel-content-suite-test-browser.log.exit.json",
+      "hash": "110d951d8102c26496070c8c744740fc9b01334f0eae81fda61bed6e6d3b01e3"
+    },
+    {
+      "path": "pre-alias-history/voxel-content-suite-test-creative-browser.log",
+      "hash": "1b3e701397eeedb81b88af9db0d117216032e433e544ff1901107bed1387d230"
+    },
+    {
+      "path": "pre-alias-history/voxel-content-suite-test-creative-browser.log.exit.json",
+      "hash": "8c105a1850db6bde3a03d9283880ab486509add6b0d7e9792557f0334b66c74b"
+    },
+    {
+      "path": "pre-check-history/README.txt",
+      "hash": "7ebebe500bb992a0c491e5c7efb061ad9cb419adec363dd68dd7e6ff2c12f047"
+    },
+    {
+      "path": "pre-check-history/progression-before-duration-fix.test.ts",
+      "hash": "fb5cc475a26a8df5b466172e8506798e646cdb214637c4a514347232015416cf"
+    },
+    {
+      "path": "pre-check-history/tests/content-progression.test.ts",
+      "hash": "241da9cc5f1a95662974045b0ecc21f5497d3ddfa3c8509806d40a059a43c1c4"
+    },
+    {
+      "path": "pre-check-history/tests/wasm/buckets.test.ts",
+      "hash": "5baa5bad0099bb5830a9c027e8fdbca9f7964dcea01f04030bc9cdf212c4f1c9"
+    },
+    {
+      "path": "pre-check-history/tests/wasm/progression.test.ts",
+      "hash": "de2fc048bfd4d6009d8e956f62bf1742477d7012cf22eea011c989b17c81713d"
+    },
+    {
+      "path": "pre-check-history/texgen-with-cutout-classification.rs",
+      "hash": "0fdb3764339c65d7593d45b74a497672d3e232e81e560e703cb7d9f1dac05d6f"
+    },
+    {
+      "path": "pre-check-history/voxel-content-build.log",
+      "hash": "1d7226c8736ec2419d37f3bb3902bb71f0793b4d80eb1dd0917ab0af466aff2b"
+    },
+    {
+      "path": "pre-check-history/voxel-content-complete-check.exit.json.forage-duration",
+      "hash": "12486d56538c942353c0c408f8acef6d5694fe2314e371e75b91c3d63e5e3456"
+    },
+    {
+      "path": "pre-check-history/voxel-content-complete-check.exit.json.native-cutout",
+      "hash": "1be0eb485bee31383fa4053b74182086b0df2a6e6e217e360db52390310a3dda"
+    },
+    {
+      "path": "pre-check-history/voxel-content-complete-check.log",
+      "hash": "09c79a8715e8a9e845d10fa7183dd855e9925135119818fd0ecbc94a3c84be83"
+    },
+    {
+      "path": "pre-check-history/voxel-content-complete-check.log.forage-duration",
+      "hash": "c915de2eda1f6da8c18972b46a4487e530a9dc42816fa3815871724098a08afa"
+    },
+    {
+      "path": "pre-check-history/voxel-content-complete-check.log.native-cutout",
+      "hash": "bcfaadf25c9e4fc1f6cc3b5f7a8306703858a837b45503b1d8472e2c2ae00797"
+    },
+    {
+      "path": "pre-check-history/voxel-content-domain.log",
+      "hash": "581f755d353821f53a9b32806e48666e3f669fc817a3163ec1715ef1d09a6204"
+    },
+    {
+      "path": "pre-check-history/voxel-content-progression.log",
+      "hash": "99f26e19cb21a65d6ea55ec85d0a99772a93921ff8ad6c218d03a2665d34cbd8"
+    },
+    {
+      "path": "pre-check-history/voxel-content-survey.log",
+      "hash": "bbb375ddb8cd035ed1318ff003266fa362079d613e7a4cdb881f69fce9a7a12d"
+    },
+    {
+      "path": "pre-check-history/voxel-content-typecheck.log",
+      "hash": "21cea8a3e2196d1b7de75e5f8d836783780f6a146c00b366c5df64ff6606f63e"
+    },
+    {
+      "path": "pre-check-history/voxel-content-wasm.log",
+      "hash": "f02f5979d55c365eb3803ed0fd6533209f059fefe383416e41e56e37f85cf7a0"
+    },
+    {
+      "path": "pre-palette-history/README.txt",
+      "hash": "dbce853ccb79920b68e8bff098dc13c85cf1d6bbafd919d08ae8cd447b053746"
+    },
+    {
+      "path": "pre-palette-history/artifacts/build.json",
+      "hash": "7eefe7c1db00d7c9fcb43f6c9d9c2055bdfdbb63bb7d2dc93ee23346a233e751"
+    },
+    {
+      "path": "pre-palette-history/artifacts/content.json",
+      "hash": "87da078927c9df8366a815c868478e71f559da83e4785447a8edb3e505dba250"
+    },
+    {
+      "path": "pre-palette-history/artifacts/release.json",
+      "hash": "7e7cff667aace4b0d13896337c1784a4617d4d2490762012d60d94a0385e0bc0"
+    },
+    {
+      "path": "pre-palette-history/source.tar.gz",
+      "hash": "fef696d7675a4c333ffbb4a7ef3f42cba68b00cadd9446aca11343c22d0028b8"
+    },
+    {
+      "path": "pre-palette-history/test-results/content-disposition.json",
+      "hash": "67210e6b30f2a3416a69883b55c364363687c2936d97204718e5a300dfb4c6e8"
+    },
+    {
+      "path": "pre-palette-history/test-results/content-survey.json",
+      "hash": "ae1f2bdb5e5899cef674a6b353e9daa1db0439f65684caf502c984209727715f"
+    },
+    {
+      "path": "pre-palette-history/voxel-content-browser-suite.json",
+      "hash": "d5b665927bbe4183cfd58b7c519f2f746093de41ab6f4e55218c119267d12c61"
+    },
+    {
+      "path": "pre-palette-history/voxel-content-complete-check.exit.json",
+      "hash": "b30bad3994f175b12261f60965d8a15c90c90982913b842979c5873e97e9b728"
+    },
+    {
+      "path": "pre-palette-history/voxel-content-complete-check.log",
+      "hash": "1be882f3ffdf5277f1ebcf01e8b9e33994078fa3431458f2942fe8b007cc8eb6"
+    },
+    {
+      "path": "pre-palette-history/voxel-content-suite-test-browser.log",
+      "hash": "7452e89600bb48020536bf35df3cb09953ac0f365352df216efd61a79ef61d07"
+    },
+    {
+      "path": "pre-palette-history/voxel-content-suite-test-browser.log.exit.json",
+      "hash": "cdb1877e13b7b98bfac4db183fd2822dd7ddf1da5de9764af8d8dc24d71cd624"
+    },
+    {
+      "path": "pre-palette-history/voxel-content-suite-test-creative-browser.log",
+      "hash": "387b23185bb06b0ee349577d0e5f15342209b1c3ead95cafeafeff5ac703333c"
+    },
+    {
+      "path": "pre-palette-history/voxel-content-suite-test-creative-browser.log.exit.json",
+      "hash": "2bcf8e3e098b27601d36ed90f84e6c3af48933989d18b2a7538e7d5982c931cf"
+    },
+    {
+      "path": "progression-targeted.txt",
+      "hash": "00a47c5c9355356cbc78e0ed19e4f2ffa5d29cb9f391b3f2fb611d2879705936"
+    },
+    {
+      "path": "release.json",
+      "hash": "b16948337b2001f91203fc7bc07c386fdde56f86306e1bf0e969df0c6e2191fe"
+    },
+    {
+      "path": "remote-equipment-creative.png",
+      "hash": "a330352c6fa97793e65412575975e410d67477f9fd1148e51be3a3c5076fd13a"
+    },
+    {
+      "path": "remote-equipment-night.png",
+      "hash": "a6823506a244f3f3ca3e644ee5616fe684155b2b9f66e1e42cb2e98e674306ab"
+    },
+    {
+      "path": "remote-equipment-survival.png",
+      "hash": "a7f6eb163062ddab0ccf35491b33463faff3a8b6f4378bdddd1fb92732206ec2"
+    },
+    {
+      "path": "run-browser.mjs",
+      "hash": "db3c181dc6b07639be96895f8d83afffffbb63c6ff80f24b820906a08a6ab2f4"
+    },
+    {
+      "path": "run-check.mjs",
+      "hash": "7936fccf1be96f4a9a80bdac7e49e8778db985c59453c6fd6e9cfe324a9a0881"
+    },
+    {
+      "path": "source-inputs.json",
+      "hash": "045a8df819b46aa8b1a2a8dcca4563378e1866565959cef8eb44679e78fdc18e"
+    },
+    {
+      "path": "source-release-verification.json",
+      "hash": "8878164d1fa797e57623b70aad8484f6cf37e389ecce420037a99943d5f46122"
+    },
+    {
+      "path": "source.tar.gz",
+      "hash": "023f1a69a5df36347f215a6a4dc39ac7a9734783a77237f982491f7eb9cb248f"
+    },
+    {
+      "path": "survey.txt",
+      "hash": "db0738353c73e12b86d802fbbad33ca482f9718ede4e0d098037d16be508a253"
+    },
+    {
+      "path": "survival-crafting.png",
+      "hash": "3f19ca58ad1201a1293cb5291e17aa25bfa45bce8e09debc0fd65fcba39fe4f6"
+    },
+    {
+      "path": "survival-drop.png",
+      "hash": "47e5014051e9d0c9b251636aeaba61fadaf40b88ec7c2a8cd44654b8f4464bfb"
+    },
+    {
+      "path": "survival-tool.png",
+      "hash": "fd036d3018830021115a225831d91ec022dcec741168bfd04f377c98ce2561b2"
+    },
+    {
+      "path": "test-browser-exit.json",
+      "hash": "4ef5efa32a0b03c3838869e92f04c754cfc8eb9a3a9bfa59beb60d9864b29edd"
+    },
+    {
+      "path": "test-browser.txt",
+      "hash": "7452e89600bb48020536bf35df3cb09953ac0f365352df216efd61a79ef61d07"
+    },
+    {
+      "path": "test-combat-browser-exit.json",
+      "hash": "b02664e93d12976930d2a23e1723682237919cb2c252f6e24f03524fd90c4dc4"
+    },
+    {
+      "path": "test-combat-browser.txt",
+      "hash": "95370081eb8636a37c459bdab36740b797750b98899e1bc49c0eca2220d4d258"
+    },
+    {
+      "path": "test-creative-browser-exit.json",
+      "hash": "c62293cff9b91ade2fc07bc93bab8d00eadff3fa80fc5ef147952e9cfe862264"
+    },
+    {
+      "path": "test-creative-browser.txt",
+      "hash": "1cf2519d303d24af1d26712841090a8067eeb49f6ed1e6606e94656d98eb70ef"
+    },
+    {
+      "path": "test-environment-browser-exit.json",
+      "hash": "5e9296c0417e066383eed55560e5bd24a03c1b06ac329e7774a029667cf3f6c2"
+    },
+    {
+      "path": "test-environment-browser.txt",
+      "hash": "74835b04719744611db5bea8fa643ebfa4434949c23e69d5951162ddb238f037"
+    },
+    {
+      "path": "test-equipment-browser-exit.json",
+      "hash": "d997c506d0cc3ec69abc7a770d5b80009a7b1e356c3d6048a2609e906fbcece5"
+    },
+    {
+      "path": "test-equipment-browser.txt",
+      "hash": "4bc12548939c1129007cb60e04f36e322f6caf6a34043190abcd26dcbba8f342"
+    },
+    {
+      "path": "test-inventory-browser-exit.json",
+      "hash": "d7102be2fa67c5c102806a6cbd964cfb35e3300827491b3526b133d03f2b0c86"
+    },
+    {
+      "path": "test-inventory-browser.txt",
+      "hash": "770f74744d7ca9abacbe1fd41c1041264d9cb104d0bc25cf717bc9d08d1816fc"
+    },
+    {
+      "path": "test-presentation-browser-exit.json",
+      "hash": "750580007a6db697bda0e775e4c4ee16117006a5d52deea88690c98e11871bd2"
+    },
+    {
+      "path": "test-presentation-browser.txt",
+      "hash": "29ea38f4d4fda75ecde6ed0b3db56ea669ec5045936e2dab361c556959d7f2a2"
+    },
+    {
+      "path": "test-recovery-browser-exit.json",
+      "hash": "9279f6d33ffe221c963380a338c3d53b53e871cd09f62fe11433b22682ee1572"
+    },
+    {
+      "path": "test-recovery-browser.txt",
+      "hash": "dca103c15b7e9ddf6ee0780f7fe9a684cdfc6aec63b1fad70cf1be3f0f62f1e6"
+    },
+    {
+      "path": "test-survival-browser-exit.json",
+      "hash": "1ba56940decb4230162366d5e169bd878a772f01de3b4aefc7736d15c12ec89e"
+    },
+    {
+      "path": "test-survival-browser.txt",
+      "hash": "fbf17ba76070d29bbd326653b8952a4ba0093bf403d61b740915574d8ed6f63a"
+    },
+    {
+      "path": "test-tnt-browser-exit.json",
+      "hash": "6cb97e4333d1ee988dfb77bf36dee0c878d635691c03f51d6f6da7db3fb63206"
+    },
+    {
+      "path": "test-tnt-browser.txt",
+      "hash": "594f33ef37d6e3471192b3d6bc3c0eeb65db1791000a9e0413f59bb34282470f"
+    },
+    {
+      "path": "test-touch-browser-exit.json",
+      "hash": "7a6eddac0ed5cbf8068f594ff10dd64f441c08b4887c7bb66ebe1c55a911b635"
+    },
+    {
+      "path": "test-touch-browser.txt",
+      "hash": "0d40981824e13958d64d3a4f69091e6bc374025a7534e3dc4e59614776e7fa4e"
+    },
+    {
+      "path": "tnt-crater.png",
+      "hash": "3d33c0dbf94ea5871075799ca4473e3033cd4acd94d6ad38e64a5d86ad3779f8"
+    },
+    {
+      "path": "tnt-fuse.png",
+      "hash": "db10d5358b79bc3b3ad77e03632a52848130a72469349baff7a5f0af62d8f34d"
+    }
+  ],
+  "sourceArchive": {
+    "path": "source.tar.gz",
+    "layout": "repository-relative",
+    "purpose": "Preserve the exact verified milestone sources, tests, content, toolchain inputs and provenance before later development",
+    "verifiedSourceFiles": 173,
+    "verification": "Every archived regular file matched the workspace byte-for-byte at capture; all evidence and scenario hashes also matched"
+  }
+}

@@ -1,0 +1,33 @@
+✔ school admission supports the configured browser origin and rejects foreign preflights before authenticating (326.829777ms)
+✔ an inactive account or rotated invitation cannot consume an earlier ticket and allocates no world (239.597486ms)
+✔ school staff observe invisibly and fly in survival while player participation retains school partition rules (1157.745724ms)
+✖ the school SDK refreshes an offline TNT owner, holds through profile outages and fizzles after account deactivation (4949.775157ms)
+✔ recess closure pauses earned world time and TNT while staff inspect; earlier tickets cannot override it and fresh admission resumes (3280.927671ms)
+✔ connected school accounts lose authority on revocation and provider outages close with a retryable recovery reason (5365.379115ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 5
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 16100.008318
+
+✖ failing tests:
+
+test at apps/voxel-server/tests/integration/school-gateway.test.ts:324:1
+✖ the school SDK refreshes an offline TNT owner, holds through profile outages and fizzles after account deactivation (4949.775157ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  46 !== 0
+  
+      at TestContext.<anonymous> (file:///home/ubuntu/OMplayground/apps/voxel-server/tests/integration/school-gateway.test.ts:362:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 46,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

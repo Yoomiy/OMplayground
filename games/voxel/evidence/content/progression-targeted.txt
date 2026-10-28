@@ -1,0 +1,11 @@
+✔ weighted mining loot uses the committed revision once and a failed native edit awards nothing (109.121041ms)
+✔ empty owned inventory progresses through native harvest, placed workbench, four tool tiers, refining, armor, bucket and cooked food (279.100974ms)
+✔ actual Wasm emits distinct complete texture palettes and stained glass remains solid, transparent and stationary (33.158119ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 974.157097

@@ -1,0 +1,94 @@
+{
+  "result": "PASS",
+  "buildId": "784ee64fa87cc28b1a9612fc508a90d4e99b6a312467773da627320a00644d02",
+  "browser": "156.0.8078.4",
+  "scope": "Built observer touch/keyboard flight in survival, role-specific HUD, live account revocation and teardown; fixture Auth/PostgREST, software Chromium",
+  "flying": {
+    "body": {
+      "position": [
+        49.5,
+        68,
+        0.5
+      ],
+      "onGround": 0,
+      "inWater": 0,
+      "eyesInWater": 0,
+      "frozen": 0,
+      "flying": 1,
+      "velocity": [
+        0,
+        0,
+        0
+      ]
+    },
+    "combat": false,
+    "canIgnite": false
+  },
+  "status": "החיבור לעולם הופסק. אפשר להתחבר מחדש.",
+  "controls": [
+    {
+      "type": "focus",
+      "epoch": 1,
+      "active": true
+    },
+    {
+      "type": "flight",
+      "epoch": 2,
+      "sequence": 1,
+      "on": false
+    },
+    {
+      "type": "flight",
+      "epoch": 3,
+      "sequence": 1,
+      "on": true
+    },
+    {
+      "type": "flight",
+      "epoch": 4,
+      "sequence": 1,
+      "on": false
+    }
+  ],
+  "keys": [
+    {
+      "code": "KeyF",
+      "key": "f",
+      "mode": "touch",
+      "focused": true,
+      "status": "playing"
+    },
+    {
+      "code": "KeyF",
+      "key": "f",
+      "mode": "touch",
+      "focused": true,
+      "status": "playing"
+    }
+  ],
+  "cleanup": {
+    "resources": {
+      "geometries": 0,
+      "textures": 0,
+      "workers": 0
+    },
+    "audio": {
+      "supported": true,
+      "contexts": 0,
+      "state": "closed",
+      "active": false,
+      "muted": false,
+      "voices": 0,
+      "effects": 0,
+      "gain": 0,
+      "dropped": 0,
+      "listener": [
+        49.5,
+        69.62,
+        0.5
+      ],
+      "lastSource": null
+    }
+  },
+  "errors": []
+}

@@ -1,0 +1,552 @@
+{
+  "state": {
+    "disposed": false,
+    "inputMode": "touch",
+    "mode": "survival",
+    "lifecycle": "playing",
+    "worldPauseReason": "allowed",
+    "worldTick": 3240.555,
+    "mining": {
+      "target": null,
+      "elapsed": 0,
+      "total": 0
+    },
+    "vitals": {
+      "version": 2,
+      "health": 20,
+      "food": 19,
+      "air": 300,
+      "dead": false,
+      "respawnIn": 0,
+      "attackCooldown": 0,
+      "protection": 0
+    },
+    "combat": true,
+    "hit": null,
+    "lastHitEvent": null,
+    "lastExplosionEvent": null,
+    "explosives": [],
+    "canIgnite": true,
+    "miningHeld": false,
+    "drops": [],
+    "selectedSlot": 7,
+    "environment": {
+      "tick": 3240.075,
+      "seconds": 108.0025,
+      "dayFraction": 0.31000208333333334,
+      "daylight": 1,
+      "sun": [
+        -0.35261103022663465,
+        0.8905597419730256,
+        0.2873478855663454
+      ],
+      "sky": [
+        0.59,
+        0.76,
+        0.88
+      ],
+      "rain": 0,
+      "wind": [
+        -0.09681483233576553,
+        -0.2839487422754283
+      ],
+      "openSky": true
+    },
+    "atmosphere": {
+      "rainLines": 0,
+      "stars": false,
+      "clouds": 16,
+      "sun": true,
+      "moon": false
+    },
+    "avatars": {
+      "visible": 0,
+      "capacity": 8,
+      "samples": [],
+      "equipment": {
+        "visible": 0,
+        "held": 0,
+        "worn": 0,
+        "kinds": 0,
+        "capacity": 0,
+        "samples": []
+      }
+    },
+    "renderOrigin": {
+      "x": 48,
+      "z": -16
+    },
+    "feedback": {
+      "held": {
+        "state": 0,
+        "itemType": "stone_pickaxe",
+        "visible": true,
+        "swings": 46
+      },
+      "effects": {
+        "live": 0,
+        "bursts": 24,
+        "hits": 0,
+        "explosions": 0
+      },
+      "drops": {
+        "visible": 0,
+        "kinds": 0
+      },
+      "explosives": {
+        "visible": 0,
+        "capacity": 0,
+        "flashing": 0
+      },
+      "vision": false
+    },
+    "audio": {
+      "supported": true,
+      "contexts": 1,
+      "state": "running",
+      "active": true,
+      "muted": false,
+      "voices": 0,
+      "effects": 48,
+      "gain": 0.2199999988079071,
+      "dropped": 0,
+      "listener": [
+        58.4911994934082,
+        61.619998931884766,
+        -0.5029000043869019
+      ],
+      "lastSource": [
+        58.5,
+        60.5,
+        -0.5
+      ]
+    },
+    "renderLimitHz": 30,
+    "touch": {
+      "x": 0,
+      "z": 0,
+      "jump": false,
+      "sneak": false,
+      "sprint": false
+    },
+    "focused": true,
+    "visible": "visible",
+    "hasFocus": true,
+    "lastFrame": 112141.5,
+    "lastUpdate": 112159.79999995232,
+    "resources": {
+      "geometries": 70,
+      "textures": 5,
+      "workers": 1
+    },
+    "actorId": "500325a2-e666-48a3-834b-afc2d0f48be6",
+    "worldId": "cfa84173-28f6-4cd3-a8cb-e6c90fd1fa85",
+    "body": {
+      "position": [
+        58.4912,
+        60,
+        -0.5029
+      ],
+      "onGround": 1,
+      "inWater": 0,
+      "eyesInWater": 0,
+      "frozen": 0,
+      "flying": 0,
+      "velocity": [
+        0,
+        0,
+        0
+      ]
+    },
+    "view": {
+      "yaw": 1.8891339251599748,
+      "pitch": -1.55
+    },
+    "lastResult": {
+      "type": "result",
+      "epoch": 8,
+      "sequence": 23,
+      "status": "retired"
+    },
+    "inventory": {
+      "version": 2,
+      "catalog": false,
+      "revision": 77,
+      "selected": 7,
+      "bag": [
+        {
+          "count": 5,
+          "itemType": "spruce_planks"
+        },
+        {
+          "itemType": "cocoa_beans",
+          "count": 1
+        },
+        {
+          "count": 1,
+          "instance": {
+            "durability": 51
+          },
+          "itemType": "wooden_pickaxe"
+        },
+        {
+          "itemType": "dirt",
+          "count": 4
+        },
+        {
+          "itemType": "sand",
+          "count": 5
+        },
+        {
+          "itemType": "stone",
+          "count": 1
+        },
+        {
+          "itemType": "plant_fiber",
+          "count": 2
+        },
+        {
+          "count": 1,
+          "instance": {
+            "durability": 124
+          },
+          "itemType": "stone_pickaxe"
+        },
+        {
+          "count": 4,
+          "itemType": "charcoal"
+        },
+        {
+          "itemType": "iron_ore",
+          "count": 2
+        },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "craft2": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "craft3": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "equipment": [
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "station": "personal",
+      "container": null
+    },
+    "inventoryOpen": false,
+    "inventoryPending": false,
+    "recentEdits": [
+      {
+        "cell": [
+          49,
+          68,
+          -4
+        ],
+        "state": 0,
+        "revision": 1
+      },
+      {
+        "cell": [
+          49,
+          69,
+          -4
+        ],
+        "state": 0,
+        "revision": 2
+      },
+      {
+        "cell": [
+          49,
+          70,
+          -4
+        ],
+        "state": 0,
+        "revision": 3
+      },
+      {
+        "cell": [
+          49,
+          71,
+          -4
+        ],
+        "state": 0,
+        "revision": 4
+      },
+      {
+        "cell": [
+          49,
+          72,
+          -4
+        ],
+        "state": 0,
+        "revision": 5
+      },
+      {
+        "cell": [
+          49,
+          73,
+          -4
+        ],
+        "state": 0,
+        "revision": 6
+      },
+      {
+        "cell": [
+          49,
+          68,
+          -5
+        ],
+        "state": 23,
+        "revision": 7
+      },
+      {
+        "cell": [
+          46,
+          63,
+          7
+        ],
+        "state": 0,
+        "revision": 1
+      },
+      {
+        "cell": [
+          45,
+          63,
+          7
+        ],
+        "state": 0,
+        "revision": 2
+      },
+      {
+        "cell": [
+          44,
+          63,
+          7
+        ],
+        "state": 0,
+        "revision": 3
+      },
+      {
+        "cell": [
+          43,
+          63,
+          7
+        ],
+        "state": 0,
+        "revision": 4
+      },
+      {
+        "cell": [
+          43,
+          60,
+          12
+        ],
+        "state": 0,
+        "revision": 5
+      },
+      {
+        "cell": [
+          44,
+          60,
+          13
+        ],
+        "state": 0,
+        "revision": 6
+      },
+      {
+        "cell": [
+          45,
+          61,
+          12
+        ],
+        "state": 0,
+        "revision": 7
+      },
+      {
+        "cell": [
+          45,
+          60,
+          13
+        ],
+        "state": 0,
+        "revision": 8
+      },
+      {
+        "cell": [
+          49,
+          67,
+          2
+        ],
+        "state": 0,
+        "revision": 1
+      },
+      {
+        "cell": [
+          58,
+          67,
+          -1
+        ],
+        "state": 0,
+        "revision": 8
+      },
+      {
+        "cell": [
+          58,
+          66,
+          -1
+        ],
+        "state": 0,
+        "revision": 9
+      },
+      {
+        "cell": [
+          58,
+          65,
+          -1
+        ],
+        "state": 0,
+        "revision": 10
+      },
+      {
+        "cell": [
+          58,
+          64,
+          -1
+        ],
+        "state": 0,
+        "revision": 11
+      },
+      {
+        "cell": [
+          58,
+          63,
+          -1
+        ],
+        "state": 0,
+        "revision": 12
+      },
+      {
+        "cell": [
+          58,
+          62,
+          -1
+        ],
+        "state": 0,
+        "revision": 13
+      },
+      {
+        "cell": [
+          58,
+          61,
+          -1
+        ],
+        "state": 0,
+        "revision": 14
+      },
+      {
+        "cell": [
+          58,
+          60,
+          -1
+        ],
+        "state": 0,
+        "revision": 15
+      }
+    ],
+    "status": "playing",
+    "epoch": 8,
+    "phase": "playing",
+    "position": [
+      58.4912,
+      60,
+      -0.5029
+    ],
+    "selected": 0,
+    "players": 1,
+    "inputLag": 8,
+    "correction": 0,
+    "columns": 49,
+    "collisionColumns": 49,
+    "meshed": 35,
+    "workers": 1,
+    "activeJobs": 0,
+    "stream": {
+      "discardedJobs": 0,
+      "installed": 84,
+      "meshJobs": 266,
+      "generationJobs": 84,
+      "mainWorkMs": 0.09999990463256836
+    },
+    "render": {
+      "uploadedBytes": 19381152,
+      "columns": 35,
+      "drawCalls": 12,
+      "triangles": 4614,
+      "uploadMs": 0.20000004768371582,
+      "prepareMs": 556.7999999523163,
+      "gpu": {
+        "submitted": 471,
+        "skipped": 685,
+        "pending": 1,
+        "failures": 0
+      }
+    },
+    "target": [
+      58,
+      59,
+      -1
+    ],
+    "targetState": 109,
+    "targetNormal": [
+      0,
+      1,
+      0
+    ],
+    "actionPending": 0,
+    "queuedAction": null,
+    "actionSequence": 24,
+    "lastReceivedAgoMs": 18.5
+  },
+  "trace": []
+}
