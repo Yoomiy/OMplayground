@@ -58,6 +58,9 @@ jobs:
           PGPASSWORD: postgres
       - run: npm run lint --workspace @playground/web
       - run: npm test --workspace @playground/web
+        env:
+          VITE_SUPABASE_URL: https://school.invalid
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_fixture
       - run: npm run build --workspace @playground/web
         env:
           VITE_SUPABASE_URL: https://school.invalid
