@@ -1,0 +1,668 @@
+{
+  "schema": 1,
+  "buildId": "c293fe5e2511d2bc656ea33756509e834b8761fc743a9d2d8a4e83cebd2ad799",
+  "engineHash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388",
+  "contentHash": "368b605ac5bdf5ff6fcf4af02f7174cbc6d39b5110f48e0a41b231a0a6479464",
+  "files": [
+    {
+      "path": "apps/voxel-server/package.json",
+      "hash": "d089f480fc5bf4159afa7e5ff946ad274ad2ab0cc036970bbb5bf6d424d78282"
+    },
+    {
+      "path": "apps/voxel-server/src/index.ts",
+      "hash": "02e6cee87836d308a2e2b9ba4285f662f97f90d42205ec059bac0d80dc16a43f"
+    },
+    {
+      "path": "apps/voxel-server/src/release.ts",
+      "hash": "87e26c588c4e0ce4f375e415913c2eb99763d51948864787dbac6198f16c646d"
+    },
+    {
+      "path": "apps/voxel-server/src/school-access.ts",
+      "hash": "92413f2f0898bbb5f0330d2d84c5dc233ee8906b3561aedaf775b482571e825c"
+    },
+    {
+      "path": "apps/voxel-server/src/school-admission.ts",
+      "hash": "045a142ecfbb5efc375b32c2230dcfa977c7a691b08466891633390b036b70fa"
+    },
+    {
+      "path": "apps/voxel-server/src/school-chat.ts",
+      "hash": "a087dcdda88fd5018252fac1afaf6dc8bb6ea9ba2e70f842293ac6bcd40a73fb"
+    },
+    {
+      "path": "apps/voxel-server/src/school-control.ts",
+      "hash": "da79fc4b551a7cad9ca960a99ba0009af2e51b2cc90d91b1a37793d08188ab20"
+    },
+    {
+      "path": "apps/voxel-server/src/school-media.ts",
+      "hash": "2f1fa44aaef491c2204cf836ab8dfb214851cca18cf88c5f01cf0cb4823edfeb"
+    },
+    {
+      "path": "apps/voxel-server/src/school-moderation.ts",
+      "hash": "26f66931e2c1b009b9f5185532be450fb206e126dbb6615bc8e2769913c5883f"
+    },
+    {
+      "path": "apps/voxel-server/src/school-operations.ts",
+      "hash": "dd4951022687d90f098d408d065c3a6fb4880bdba4ef1b24fa24e5e2d5dbc6cc"
+    },
+    {
+      "path": "apps/voxel-server/src/school-roster.ts",
+      "hash": "de875350c26cd634bc4daf0df1465f657cdc72dd65ac5c687f0cbb3173246228"
+    },
+    {
+      "path": "apps/voxel-server/src/school-session.ts",
+      "hash": "547ed471383603bce953ad06a39ce3bf6a8a623e19350c4c62d1cbc2a8d42039"
+    },
+    {
+      "path": "apps/voxel-server/src/school-staff.ts",
+      "hash": "5e9ef5cb214220a9bee734abb804adb66e4d56b041ff94f8233e232fb6537cc6"
+    },
+    {
+      "path": "apps/voxel-server/src/service.ts",
+      "hash": "de24794490abb8534ee7075a7fe67d31c34110a16fcf7c904eaf8cb0f2e05ae0"
+    },
+    {
+      "path": "apps/voxel-server/src/supabase-persistence.ts",
+      "hash": "d66bd15a9b839302140daf5670676cdfdb47b7b8bfff26dcc2685c3f889484c0"
+    },
+    {
+      "path": "apps/voxel-server/src/supabase-sessions.ts",
+      "hash": "2b765b041e560494e01fbc7d6ece388c96ac51968b077c9b315ee4df1d0c5d4a"
+    },
+    {
+      "path": "apps/voxel-server/src/voice-signal-messages.ts",
+      "hash": "f7415e8503ccc28a6b6f282596a97a282bf52eeb9e0d08e42995db8cd20815eb"
+    },
+    {
+      "path": "apps/voxel-server/src/voice-signal-protocol.ts",
+      "hash": "aaad5e852fd3a46594a989eb71d137704028a691b13ff9ce33b75328d7bc6532"
+    },
+    {
+      "path": "apps/voxel-server/src/voice-signal-worker.ts",
+      "hash": "d36dd6ec26530ac9ea6c6c4c8af6fa576174b2cecc593fb38d2c546dfaa38b7c"
+    },
+    {
+      "path": "apps/voxel-server/src/voice-signaling.ts",
+      "hash": "df04255b14891c350fe61dc57b39bdcedf7092018ef58dab708b55398320ef9b"
+    },
+    {
+      "path": "games/voxel/artifacts/build.json",
+      "hash": "4e60334b8c8fce6b231967b0c81bd7135ee35c50517e12504aa7632873c19774"
+    },
+    {
+      "path": "games/voxel/artifacts/content.json",
+      "hash": "87da078927c9df8366a815c868478e71f559da83e4785447a8edb3e505dba250"
+    },
+    {
+      "path": "games/voxel/artifacts/release.json",
+      "hash": "3a835aa11a1de76b8b84b390c49feb67594db9c1503c2e866c63d9d4c148c859"
+    },
+    {
+      "path": "games/voxel/config/world.json",
+      "hash": "2520fa123a2b06d7c845523df65b6c0bea849cbd6ffc9ba15a5c27f15b6df7e6"
+    },
+    {
+      "path": "games/voxel/dist-server/build.json",
+      "hash": "4e60334b8c8fce6b231967b0c81bd7135ee35c50517e12504aa7632873c19774"
+    },
+    {
+      "path": "games/voxel/dist-server/content.json",
+      "hash": "87da078927c9df8366a815c868478e71f559da83e4785447a8edb3e505dba250"
+    },
+    {
+      "path": "games/voxel/dist-server/engine.wasm",
+      "hash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "games/voxel/dist-server/gateway.js",
+      "hash": "ab0d037b55d190bc9352c1a23b0f33ac5c50403473fbd9e8743507aec92417b3"
+    },
+    {
+      "path": "games/voxel/dist-server/gateway.js.map",
+      "hash": "aad8d48ee388ed347ef44926c78f37446139f64fe4e9540b04cc62f3c16c57e8"
+    },
+    {
+      "path": "games/voxel/dist-server/room-worker.js",
+      "hash": "df2c8433c15827b856a98eebd50b6efd7240310275937860b3aebffd3e747051"
+    },
+    {
+      "path": "games/voxel/dist-server/room-worker.js.map",
+      "hash": "5bb2866abe50129c89151fc9311071b4ba8fd9d8ae75bec67e5ac0a4353df85c"
+    },
+    {
+      "path": "games/voxel/engine/LICENSE",
+      "hash": "4c89ee97bee29e2bd7dcd9567a06c1fee5fb8ab7c5c35ca4a153543524b6f07f"
+    },
+    {
+      "path": "games/voxel/LICENSE",
+      "hash": "4c89ee97bee29e2bd7dcd9567a06c1fee5fb8ab7c5c35ca4a153543524b6f07f"
+    },
+    {
+      "path": "games/voxel/package-lock.json",
+      "hash": "8f291cbe2b0130c7b28c738c476684f9326d8b8682f3e95dad0a96b87d635f56"
+    },
+    {
+      "path": "games/voxel/package.json",
+      "hash": "9ea607144759141e0e0d699043de9f0340bc0c33e3d297b1fac6118dc346876b"
+    },
+    {
+      "path": "games/voxel/src/server/admission.ts",
+      "hash": "d91eae4b8cf1c8c19f41b4afb00ac312cff5b884b1f11d904490951c82965b7d"
+    },
+    {
+      "path": "games/voxel/src/server/session-projection.ts",
+      "hash": "b5516bdaf278771d234b7cf2f3e52f3f87ea46cd3e66cbbd7131daeda6f7cf36"
+    },
+    {
+      "path": "games/voxel/src/shared/appearance.ts",
+      "hash": "dc6d14cf996a9d9a316c081ceee7ece23b6a0f42bd39355a6b6802ca4913e8bc"
+    },
+    {
+      "path": "games/voxel/src/shared/chat.ts",
+      "hash": "4ec59912af23d7cc7df6d5890437eae814b1a7c85908ee92908dd11fddb9c073"
+    },
+    {
+      "path": "games/voxel/src/shared/chunk-wire.ts",
+      "hash": "30f7554bbf04b8a89df374e3b09be913d188c60741199af58c91344efcd227ee"
+    },
+    {
+      "path": "games/voxel/src/shared/combat.ts",
+      "hash": "e4cfe75bfaac26d9134cd8b1935482e82e049c2006429a50687b56b1ddacecd4"
+    },
+    {
+      "path": "games/voxel/src/shared/content.ts",
+      "hash": "f5213cd9e38195bac70e6548e9b2e6c12c1a131fc4f9a6fbbcf8de80fa121045"
+    },
+    {
+      "path": "games/voxel/src/shared/engine-port.ts",
+      "hash": "88cfd1efeb71b32e7f62da4e0bb651a77ec7792e166fe878952c802313e77f19"
+    },
+    {
+      "path": "games/voxel/src/shared/environment.ts",
+      "hash": "9f4239603f127b07b5aa59ffc813233fe08e49942455452e78037758fac4eca7"
+    },
+    {
+      "path": "games/voxel/src/shared/explosives.ts",
+      "hash": "b56df9363bc59723a4c5841d3784267c55af444c164dfdb4aeb396869c3db03d"
+    },
+    {
+      "path": "games/voxel/src/shared/gameplay.ts",
+      "hash": "4be5e09f3726b64b19fd1c05fcf3118e63c8784144198a5232902c4fb9f52a99"
+    },
+    {
+      "path": "games/voxel/src/shared/input.ts",
+      "hash": "30cdf7c507ab2fe30c93ccd974fcb5e8cc6b9262eef9f92dd99079b783bd40da"
+    },
+    {
+      "path": "games/voxel/src/shared/inventory.ts",
+      "hash": "87db9eb0e653a1f53a570f8291d88aa5a62decb3810382657bb53a71235cb194"
+    },
+    {
+      "path": "games/voxel/src/shared/lifecycle.ts",
+      "hash": "c346b2e48d5c0cc3493d38fe2c298cc965613c1a36814f14dd179f8928fdc183"
+    },
+    {
+      "path": "games/voxel/src/shared/loot.ts",
+      "hash": "d6f273d5b1bcab38f0736c0379fc3ed2d1f3a289c80f96931af07333866f1893"
+    },
+    {
+      "path": "games/voxel/src/shared/media.ts",
+      "hash": "df6629f90df8e8aa74dc92bae32b3359fe62566aecc68cffa6db7e5e10cca92a"
+    },
+    {
+      "path": "games/voxel/src/shared/moderation.ts",
+      "hash": "728a48c6a6e73e19d6b192221ca66d0c3ae2a9f5479cc776027505dead2a77f0"
+    },
+    {
+      "path": "games/voxel/src/shared/movement.ts",
+      "hash": "2a9ae0a8688dcca570c489633cd967edafbb0186ae6fc97b4d60988158d236ef"
+    },
+    {
+      "path": "games/voxel/src/shared/protocol.ts",
+      "hash": "6a01eedb1306f2caf1829bcdda620faa76eb8ff89a1cb7c6e217db295591169f"
+    },
+    {
+      "path": "games/voxel/src/shared/recipes.ts",
+      "hash": "5396639bfcf1332ca519137ffc155f12ec192dd0011bb5f7d0a3a3c55365a5e5"
+    },
+    {
+      "path": "games/voxel/src/shared/staff.ts",
+      "hash": "a249bb1dcc0a72677f3bf7c84d3f7b617e27393f5cfd2b7cc32ef03a4dbdd320"
+    },
+    {
+      "path": "games/voxel/src/shared/vitals.ts",
+      "hash": "dd04b2e83faf9625cf14071e8e20e9d3c8c6f49a90d559708fc53524820a11d7"
+    },
+    {
+      "path": "games/voxel/src/shared/world-bounds.ts",
+      "hash": "0a081b520e2ad9faee5589852f8136d2fc2eab00084493129935ff9f21b5125d"
+    },
+    {
+      "path": "games/voxel/UPSTREAM.md",
+      "hash": "f3b2aace3c043fe80f259938bca0ae7fc242357df51a03ff7062bd5437894bb7"
+    },
+    {
+      "path": "healthcheck.mjs",
+      "hash": "ae599a8142accd0f2b950d772ca80d453e9acef39c0601e79ef4f53135bc649a"
+    },
+    {
+      "path": "package-lock.json",
+      "hash": "f104f0904c43228d7f4e10331f8088c0a118fc4c167436850e1975953b269b4d"
+    },
+    {
+      "path": "package.json",
+      "hash": "3420f621ba464b810719f6f2f63c8e433280311d7cd72507c52e268aec83a41e"
+    },
+    {
+      "path": "packages/game-logic/dist/breakoutMp.d.ts",
+      "hash": "c3d35e78a9a759e0a7ecd8ac7359d77db96e661fb294188626369e29c262c508"
+    },
+    {
+      "path": "packages/game-logic/dist/breakoutMp.d.ts.map",
+      "hash": "d962735032a98ddc3a72f570591d185275481aba22b5c452d81c66cd1922cad6"
+    },
+    {
+      "path": "packages/game-logic/dist/breakoutMp.js",
+      "hash": "64855cd234538afed6292741ea843fe9218219790b85689f4c6ef27fe2bf9f7b"
+    },
+    {
+      "path": "packages/game-logic/dist/breakoutMp.js.map",
+      "hash": "471153ae0caa1e67b0f125acd87bb13b278e91fbbff4c9da41210c0050a16101"
+    },
+    {
+      "path": "packages/game-logic/dist/chess.d.ts",
+      "hash": "f38c619581d95c1170a487a464c3f1f22e687734004ad89374f1e2a8e7b1c840"
+    },
+    {
+      "path": "packages/game-logic/dist/chess.d.ts.map",
+      "hash": "1da767029bdd120b164aa906ea5fc7d152ac6c8c0d0e3f907ff8bf8bb0625765"
+    },
+    {
+      "path": "packages/game-logic/dist/chess.js",
+      "hash": "062ff42b439da4343352fc3cf0a20c1a7a9e4f7702850ff5e0b006e43f8d5138"
+    },
+    {
+      "path": "packages/game-logic/dist/chess.js.map",
+      "hash": "95c0332a31713c75356abe149fb20db9161aeffb7e307f3f79446608f1e87671"
+    },
+    {
+      "path": "packages/game-logic/dist/connectfour.d.ts",
+      "hash": "9c7d4152763564786a12d64e7e6c18244cf61edff2e286b20f2bb7c8589d26f8"
+    },
+    {
+      "path": "packages/game-logic/dist/connectfour.d.ts.map",
+      "hash": "7cd0bc252251140537f5f3f802f613190d4cc716fc7204888b660feb9346b52f"
+    },
+    {
+      "path": "packages/game-logic/dist/connectfour.js",
+      "hash": "470c694f770200d6982821e95ff2cd5736d498851257a39a6de6de08d51457c9"
+    },
+    {
+      "path": "packages/game-logic/dist/connectfour.js.map",
+      "hash": "af0faff643888ec5823df28d6a1a59724713aa4be8e6bd91a24e2297def0106d"
+    },
+    {
+      "path": "packages/game-logic/dist/drawing.d.ts",
+      "hash": "1b94afdd4f8a7ae8fcdfd697cb65478a0ce622daa30a158c631157738e3254ff"
+    },
+    {
+      "path": "packages/game-logic/dist/drawing.d.ts.map",
+      "hash": "b656893dceefa50e7264fc1598e9aa74cf91a36c733e9bbe37a968347ac93635"
+    },
+    {
+      "path": "packages/game-logic/dist/drawing.js",
+      "hash": "cfaf11196229e89077bddbfb407bce392d0409cbb734f61323fc31c1891ac2bd"
+    },
+    {
+      "path": "packages/game-logic/dist/drawing.js.map",
+      "hash": "575573a6e6d585c924b6fa9e05dc452573a6ec6e311310313151aae80c7f85ce"
+    },
+    {
+      "path": "packages/game-logic/dist/index.d.ts",
+      "hash": "b65a1543ff9d0e334e5885a7a2ebaf5374f90e269abf35c8f9d805142693f956"
+    },
+    {
+      "path": "packages/game-logic/dist/index.d.ts.map",
+      "hash": "c8b8daa2a56c32fc7d1f7ac9ee322b9f645c3d128cb89925e1248828ddc2401d"
+    },
+    {
+      "path": "packages/game-logic/dist/index.js",
+      "hash": "f5f42004fce3d9bc6c714887e98db13e7d0774ca5851b2a53260c030f727ef0a"
+    },
+    {
+      "path": "packages/game-logic/dist/index.js.map",
+      "hash": "3deb6f3a80933798df1614de7116ed07ad8d8d1327b3ff9cecca97c791644203"
+    },
+    {
+      "path": "packages/game-logic/dist/memory.d.ts",
+      "hash": "e00a80d639d27531f197ed12a247f2587d04bedafb699a35c56c1ab6289d4a9a"
+    },
+    {
+      "path": "packages/game-logic/dist/memory.d.ts.map",
+      "hash": "e423d52f4161c32297371f1c0205175a49c5afc98027d71767eacf6231bfc12d"
+    },
+    {
+      "path": "packages/game-logic/dist/memory.js",
+      "hash": "38840c6663755ad85f178c4c9d24a8214bd5082d0e7df9e411310f95f630925b"
+    },
+    {
+      "path": "packages/game-logic/dist/memory.js.map",
+      "hash": "04150623e110a74963730c97abcc6174b15313a21fba3c89a56090f63038e645"
+    },
+    {
+      "path": "packages/game-logic/dist/recessSchedule.d.ts",
+      "hash": "222f837d6460dad4fc7932da98786ae270abc8bce6caa5b871b2893600792071"
+    },
+    {
+      "path": "packages/game-logic/dist/recessSchedule.d.ts.map",
+      "hash": "ee9fb5a51bb0739f87d371360fc12b916f8d6ecc642f71843bb5ac9e4e41c78a"
+    },
+    {
+      "path": "packages/game-logic/dist/recessSchedule.js",
+      "hash": "226d17fa600ec795803e6f79871b4568b9f294fdf0056d9f731390fe8e523ec4"
+    },
+    {
+      "path": "packages/game-logic/dist/recessSchedule.js.map",
+      "hash": "b7704a143224804ffd97544fb123282d13c168077e887e8185889bd38b8a4d18"
+    },
+    {
+      "path": "packages/game-logic/dist/registry.d.ts",
+      "hash": "4141f2f90ff9c4952b8dd4e6c3c17a63ea526b0b25e9f8a6748dae9675e3b607"
+    },
+    {
+      "path": "packages/game-logic/dist/registry.d.ts.map",
+      "hash": "4a976a830ed748dd148428eac5dbd607be4750b82ee7f28da6fcf14b593b5d44"
+    },
+    {
+      "path": "packages/game-logic/dist/registry.js",
+      "hash": "c02ee6acc2237550cc484756fbc0de1ee7787265b37d05927a9a8988b97fa8c7"
+    },
+    {
+      "path": "packages/game-logic/dist/registry.js.map",
+      "hash": "1aae26f9ea1889651a9b57bbdcff0f0a1457bb3a533eec44657593f5ce6b81ba"
+    },
+    {
+      "path": "packages/game-logic/dist/tictactoe.d.ts",
+      "hash": "46cb3520a420cc0920d3a6f416afcaa728a83d6bab69fec3b13a6a3e9c865c64"
+    },
+    {
+      "path": "packages/game-logic/dist/tictactoe.d.ts.map",
+      "hash": "5fb29a3316b4b0a24c9ad1c4c7e2a40828e6efd019acb4c9238b734acca28091"
+    },
+    {
+      "path": "packages/game-logic/dist/tictactoe.js",
+      "hash": "7c0502893b0e4f9c182fbd7abdc08db7d53cd9cfb2552bdbf4ad30c66311c0a1"
+    },
+    {
+      "path": "packages/game-logic/dist/tictactoe.js.map",
+      "hash": "33dc0c76f78e385e0aabb2e5eee01e8c0d26316e6bbb413652bcfcb83887219f"
+    },
+    {
+      "path": "packages/game-logic/package.json",
+      "hash": "978903f64623c3a11a69f1df83cdd026a7cc5bda3ef90981fad6278add9e72e9"
+    },
+    {
+      "path": "packages/observability/dist/adminAuth.d.ts",
+      "hash": "177a8ca7f7c8545ce9a1ffbf5ca23b3767155d1d73e5cf7b56f660fd53dafb7b"
+    },
+    {
+      "path": "packages/observability/dist/adminAuth.d.ts.map",
+      "hash": "004546c714cd1ac2feb53bf09f349a1a4b33b1b7f675d973e92087d42927bb26"
+    },
+    {
+      "path": "packages/observability/dist/adminAuth.js",
+      "hash": "dc4e6e1761c6c4d43aafa2ace0d2a28a7fa1bde23baf726eb523417dc3c4dff8"
+    },
+    {
+      "path": "packages/observability/dist/adminAuth.js.map",
+      "hash": "59ff6c2d4fe8b00ac6e50b5cb74eb8285cbe1dfceb5f40cf6db2b706976e4afe"
+    },
+    {
+      "path": "packages/observability/dist/auditMetadata.d.ts",
+      "hash": "d1fec4c470b65d1839f17836b9b749cb0ccdba56a8397498dc9d3d055b8ee8bf"
+    },
+    {
+      "path": "packages/observability/dist/auditMetadata.d.ts.map",
+      "hash": "f1736612803f9e49c25511f8958c70dc4211a5547eb65f2384a1bf64ffdd9189"
+    },
+    {
+      "path": "packages/observability/dist/auditMetadata.js",
+      "hash": "324580518cb309b448ec4bab8767ecf3ee73da7ee3aa0961b8bb0e998128f8db"
+    },
+    {
+      "path": "packages/observability/dist/auditMetadata.js.map",
+      "hash": "1e0eea2783eb79ac527aa352fa3ac53b80ee22967a07205dbf7dae6c28b9f955"
+    },
+    {
+      "path": "packages/observability/dist/classroomAdmissionIp.d.ts",
+      "hash": "dbafc3afc78761dc77abb0626c2f124ab89ae8d432ae380aa4329a905eca6636"
+    },
+    {
+      "path": "packages/observability/dist/classroomAdmissionIp.d.ts.map",
+      "hash": "ade1ec6ffa4cd4c55a79869115f2c7ebf1ea101d5724491f7f29e7d8f82f75f4"
+    },
+    {
+      "path": "packages/observability/dist/classroomAdmissionIp.js",
+      "hash": "d7d837bbdb8e0ac5ab42f935298d750cc653a4778b94f033c68ce56415ebdd5e"
+    },
+    {
+      "path": "packages/observability/dist/classroomAdmissionIp.js.map",
+      "hash": "ccdd818cbca7d734a85f1d365f68107b919386bb709c62d669b10c440abde0cf"
+    },
+    {
+      "path": "packages/observability/dist/clientIp.d.ts",
+      "hash": "95c3a3ffabc7abedd119b3886994b907ccd4501e47148165679e8a35c849a207"
+    },
+    {
+      "path": "packages/observability/dist/clientIp.d.ts.map",
+      "hash": "d942152ec508b33ddabf99fea8d3e4a31cc994182ff4de967f9923788fa4cdc2"
+    },
+    {
+      "path": "packages/observability/dist/clientIp.js",
+      "hash": "f0968063006eaf5ddb1bc61d31f374c1349b712d0ece1fd8d4e3c03a6f76cff0"
+    },
+    {
+      "path": "packages/observability/dist/clientIp.js.map",
+      "hash": "c3c2ae5f6809f44e1ea03b9546ff9db56f420a66ff4ea93ea3e6c098e5bb6892"
+    },
+    {
+      "path": "packages/observability/dist/correlation.d.ts",
+      "hash": "eeb1779d0647d6cbb2f1ed0238cd15b95ea3a43411b810a45ee90def8f8ff1c5"
+    },
+    {
+      "path": "packages/observability/dist/correlation.d.ts.map",
+      "hash": "93dee39bffa7ba6d9ba3a75520d421cb6446aa2afbcd00c1f6d563e48bb307f4"
+    },
+    {
+      "path": "packages/observability/dist/correlation.js",
+      "hash": "ee60568e9dcb9e78933f5565fc693d5137696ec5abcbe423a6940d9b954f0353"
+    },
+    {
+      "path": "packages/observability/dist/correlation.js.map",
+      "hash": "ba0f652433b5eaf1bb0eddd4a7f2eda0261ccb883145ebeb3583eec8e3599d2c"
+    },
+    {
+      "path": "packages/observability/dist/error.d.ts",
+      "hash": "5259a7eac7a420bcceccfc19cac0d0c34bd2b8399814e3299b7c5b1785422872"
+    },
+    {
+      "path": "packages/observability/dist/error.d.ts.map",
+      "hash": "9fbfbaa6e60c4c2f7f2d0efa64b62d94197bde76db7a6d4a0c12a2e20a1d49fb"
+    },
+    {
+      "path": "packages/observability/dist/error.js",
+      "hash": "f6ceea6ef5b88cf1aa702e50977cab69b4a3a409bb0f1c52ad9f863806d4b5e6"
+    },
+    {
+      "path": "packages/observability/dist/error.js.map",
+      "hash": "54f6adf7d60aa9dad516c3cc82c9f82f3bfa243fec0025c3d36234358abc4edb"
+    },
+    {
+      "path": "packages/observability/dist/index.d.ts",
+      "hash": "f9711f95c30c3e81ece977b3918058e5196030c995ecc5187a1701932dd9f4a1"
+    },
+    {
+      "path": "packages/observability/dist/index.d.ts.map",
+      "hash": "59b25565cad0d89a4577b1bfe5a90bd554532bc716edbda31c7dbfee24423b2f"
+    },
+    {
+      "path": "packages/observability/dist/index.js",
+      "hash": "8db0981da2f00e337628f7449128b035d430ce6c010e4e702d8f5d57c793d7d5"
+    },
+    {
+      "path": "packages/observability/dist/index.js.map",
+      "hash": "2fc3d8511bd739f208b1c65051a8345968a1ca4f34ec3a1cb3a939027e0bb396"
+    },
+    {
+      "path": "packages/observability/dist/livekitVoiceStats.d.ts",
+      "hash": "601ea55782cca1227538dc882c4e7cc03f3212177c0a71c492669cbd874062d7"
+    },
+    {
+      "path": "packages/observability/dist/livekitVoiceStats.d.ts.map",
+      "hash": "8aa30bc95d14e1ddee1a0ab3a0c5342840e57c60e8dd89b222ecce666dcad001"
+    },
+    {
+      "path": "packages/observability/dist/livekitVoiceStats.js",
+      "hash": "8c32e5a70ec75654fbc3926e752402902b6b620ba4541838a6cc5903d2d611c8"
+    },
+    {
+      "path": "packages/observability/dist/livekitVoiceStats.js.map",
+      "hash": "934d2279d4e561dc0b50f2cdc3d41a08c1b2d27824c9568683b7737e1c5d9e31"
+    },
+    {
+      "path": "packages/observability/dist/livekitWebhook.d.ts",
+      "hash": "0064e286174f80c36583e26f48574e84d48c9da893efe3b7781786c02468be40"
+    },
+    {
+      "path": "packages/observability/dist/livekitWebhook.d.ts.map",
+      "hash": "37de871835cf2fe633140f6857834134885de404e740e7d9324ed195b0231e71"
+    },
+    {
+      "path": "packages/observability/dist/livekitWebhook.js",
+      "hash": "3da4c71b733832828c816796c2986decf70f661ebaceb8fe19d4669cd975fbe3"
+    },
+    {
+      "path": "packages/observability/dist/livekitWebhook.js.map",
+      "hash": "8d1088b16830f08072786f5ad3b8148b1c0d0bd2b7aaa1097b6c5f5c59f92c4a"
+    },
+    {
+      "path": "packages/observability/dist/logger.d.ts",
+      "hash": "d8124a1b53ebcecf390fa6d512b6e0e53167d181336f432bf6176fb4a578f9d9"
+    },
+    {
+      "path": "packages/observability/dist/logger.d.ts.map",
+      "hash": "d7e654be1bba4eff9154e0b717f9471998474c43cf6ed0f6963c5a79eb21be61"
+    },
+    {
+      "path": "packages/observability/dist/logger.js",
+      "hash": "418004bb1b971f2b3fc77fe1f076b8783549a3dd186945db31e8a62d4dfa9901"
+    },
+    {
+      "path": "packages/observability/dist/logger.js.map",
+      "hash": "770568ff5c55733082f6ecdf13133e378d011b090ca07a448ae9699d5fcfed4c"
+    },
+    {
+      "path": "packages/observability/dist/operational.d.ts",
+      "hash": "e8307503f73ea45f2a5b2e05a7bfd6510ddaaa9eb074a5ffda4d5406f22230e1"
+    },
+    {
+      "path": "packages/observability/dist/operational.d.ts.map",
+      "hash": "2feeaf73b117cec9251e667ee33a5dab37e006abb709934bb55ecb74b5664d56"
+    },
+    {
+      "path": "packages/observability/dist/operational.js",
+      "hash": "c4a4e688fe8fa0870bf503fa23f934cfb0025f8f0606d96ca195633b17cd693f"
+    },
+    {
+      "path": "packages/observability/dist/operational.js.map",
+      "hash": "c11166562a2bcdde849c512f8fce5a19572e079f301a11388226ff4fe02cc067"
+    },
+    {
+      "path": "packages/observability/dist/processLifecycle.d.ts",
+      "hash": "7f4467a48ff1f6a7d5febcf3da57554792fe3e3828b0d18aa1157d2348c640c6"
+    },
+    {
+      "path": "packages/observability/dist/processLifecycle.d.ts.map",
+      "hash": "5bab3868945d93ad364fa72020d35956671ff56a579da499ac94aa679aee3d5e"
+    },
+    {
+      "path": "packages/observability/dist/processLifecycle.js",
+      "hash": "2751bee139c8675ef3268a82f4c538d49a464e9d95e61ca4421db625b6b73484"
+    },
+    {
+      "path": "packages/observability/dist/processLifecycle.js.map",
+      "hash": "745893e5ba4948f1c8796c90ac0c88e1b48c6bf106843e0bf6fcd0f380b26ee2"
+    },
+    {
+      "path": "packages/observability/dist/serverSetup.d.ts",
+      "hash": "1e4f20d3b8477cccf74a3c52f45675279e0eb3adce22adea874d2222b96c97ae"
+    },
+    {
+      "path": "packages/observability/dist/serverSetup.d.ts.map",
+      "hash": "0801359da9bb8b64c9c19f0350e188b4197a328b7f7b3f5189b5aa5e16c02d16"
+    },
+    {
+      "path": "packages/observability/dist/serverSetup.js",
+      "hash": "e0ff3c91c8f83d8863b9afad41b49c3303ab539fc32928bc4f10d4af35c78414"
+    },
+    {
+      "path": "packages/observability/dist/serverSetup.js.map",
+      "hash": "e4f29163570e9b5645c91c82c097a688e72aeddc0cd95d4013a0a168cd85c0d6"
+    },
+    {
+      "path": "packages/observability/dist/socketLifecycle.d.ts",
+      "hash": "a72d5656f443970d51c01abcd1f740032daaf383d747401e5ca4cfb8df77e80f"
+    },
+    {
+      "path": "packages/observability/dist/socketLifecycle.d.ts.map",
+      "hash": "7190d292ae03f4bdbecd02ce943723f4653547983e3297182c244f9a69665c93"
+    },
+    {
+      "path": "packages/observability/dist/socketLifecycle.js",
+      "hash": "eb0d4cee404a70318f43cf077645cfb6a9e0c4da46c23f4a871dc4a9e6ebb806"
+    },
+    {
+      "path": "packages/observability/dist/socketLifecycle.js.map",
+      "hash": "9e453625867592ebba23975eee0bc9802945cb308737c94632d0ed26b70670d9"
+    },
+    {
+      "path": "packages/observability/dist/statsCollector.d.ts",
+      "hash": "6b7ed6966c6b86986610944a6efd1b166ccaef28933f8f47657175b559d47e7f"
+    },
+    {
+      "path": "packages/observability/dist/statsCollector.d.ts.map",
+      "hash": "04ef8c91f11ba0018f502a312f7a5eb6c5206e685e65974b40658e81d096bacb"
+    },
+    {
+      "path": "packages/observability/dist/statsCollector.js",
+      "hash": "ee5ad14a9e9edc11eac735314624c895d10099227521fc8f1a87cc7a4ad4357e"
+    },
+    {
+      "path": "packages/observability/dist/statsCollector.js.map",
+      "hash": "4a9fab5fbeb7715269f5c165a30c54ddf83f301a23db5e344e364fc85563e2d4"
+    },
+    {
+      "path": "packages/observability/dist/telemetryIngest.d.ts",
+      "hash": "a4000f236f23218884c7a3eef0b75f322a17be0dad1d659be8bca4313cfada66"
+    },
+    {
+      "path": "packages/observability/dist/telemetryIngest.d.ts.map",
+      "hash": "c694af359bb4dde26e256dc6b8ad61d02aae85d7e02b9cc2360ccb69c889d6f5"
+    },
+    {
+      "path": "packages/observability/dist/telemetryIngest.js",
+      "hash": "b28ced3873529a8fd327c5b50b8f9310788656ed946e544ae6bd58d96700ff10"
+    },
+    {
+      "path": "packages/observability/dist/telemetryIngest.js.map",
+      "hash": "5dd5f7f3ef27d06039e0efc4399d6601d0e60c31ec6d76a08457f0a55a4b86f6"
+    },
+    {
+      "path": "packages/observability/package.json",
+      "hash": "1afc59dfcb81ae7f48710c2ac2360022a64152903e197a6f3bc7e11bed9fed5c"
+    },
+    {
+      "path": "verify-runtime.mjs",
+      "hash": "a3468326cb2c32f070806136822cb2e6d3d6dfd775c94a93a5819c64636ef146"
+    }
+  ]
+}

@@ -100,6 +100,12 @@ jobs:
       - run: npm run test:voxel:equipment
       - run: npm run test:voxel:combat
       - run: npm --prefix games/voxel run benchmark:engine
+      - name: Assemble matched production runtime
+        run: npm run package:voxel-server
+      - name: Build voxel service image
+        run: docker build -f apps/voxel-server/Dockerfile -t playground-voxel .
+      - name: Verify image startup and graceful drain with fixture providers
+        run: node apps/voxel-server/tools/smoke-package.mjs --container playground-voxel > apps/voxel-server/test-results/container-package.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:

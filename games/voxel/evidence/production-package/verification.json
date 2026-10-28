@@ -1,0 +1,80 @@
+{
+  "schema": 1,
+  "capturedAt": "2026-10-28T16:02:49.734927+00:00",
+  "baseCommit": "13e3c968ab73ac63d9320f89a8944522796ddbce",
+  "scope": "Native isolated production package and prepared, unexecuted Docker/CI integration",
+  "buildId": "c293fe5e2511d2bc656ea33756509e834b8761fc743a9d2d8a4e83cebd2ad799",
+  "sources": [
+    {
+      "path": "package.json",
+      "sha256": "3420f621ba464b810719f6f2f63c8e433280311d7cd72507c52e268aec83a41e"
+    },
+    {
+      "path": ".github/workflows/voxel.yml",
+      "sha256": "f4683a5dcbb2f902a40c5e68d746f3454358217535a59900651f3a03bb519000"
+    },
+    {
+      "path": "apps/voxel-server/Dockerfile",
+      "sha256": "30d35632aa20237e5389c73c35a19da4650a95c4191010d44755f461b693396c"
+    },
+    {
+      "path": "apps/voxel-server/Dockerfile.dockerignore",
+      "sha256": "5387ba44f6f409270c844992d3e648f7975d076aba79018ef9f304c520361e1b"
+    },
+    {
+      "path": "apps/voxel-server/tools/package-release.ts",
+      "sha256": "664d212561b44c59f912f2148e0191b9ee553b3cda5ffe86284d6b68713dd370"
+    },
+    {
+      "path": "apps/voxel-server/tools/verify-runtime.mjs",
+      "sha256": "a3468326cb2c32f070806136822cb2e6d3d6dfd775c94a93a5819c64636ef146"
+    },
+    {
+      "path": "apps/voxel-server/tools/healthcheck.mjs",
+      "sha256": "ae599a8142accd0f2b950d772ca80d453e9acef39c0601e79ef4f53135bc649a"
+    },
+    {
+      "path": "apps/voxel-server/tools/smoke-package.mjs",
+      "sha256": "ab03993dea32b865589b5e743b871184c4ba56d5552922cdb8c5241bbdebcf86"
+    },
+    {
+      "path": "apps/voxel-server/tests/integration/package.test.ts",
+      "sha256": "783ac273e601039cfe360dacd762e148c606c8557b3fdb8c98923f38a6f118c0"
+    },
+    {
+      "path": "apps/voxel-server/docs/packaging.md",
+      "sha256": "ca1eab21c8fb1156050a604fdfe49342005566961c61bcf4e4590592a3bbec7e"
+    },
+    {
+      "path": "docs/voxel-staging-handoff.md",
+      "sha256": "c45a82a449afba5e4e3787367d81beaa10807004c891ea5c60aee6494f01bf85"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "integration.txt",
+      "sha256": "32e770441a2fe4662ebe228e6933b0317cd3f7b4d1a8ea7dd15ea49ec815fbf8"
+    },
+    {
+      "path": "package-build.txt",
+      "sha256": "7917bf87010a31c7ddbd5e0c9d2dce20e33bbe9af9ba926356ed417856eea31e"
+    },
+    {
+      "path": "service-types.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "native-report.json",
+      "sha256": "85fda9541588d73944a303a2befe0461442b8bd2b49ad01587ee13d6bbb65c06"
+    },
+    {
+      "path": "runtime-package.json",
+      "sha256": "a185f94b276eca2c9ffb19e207a3f8825352b21c87a1049925619f0bce4d0138"
+    }
+  ],
+  "nativePackage": "PASS",
+  "containerBuild": "NOT_RUN_DOCKER_UNAVAILABLE",
+  "hostedWrites": false,
+  "sfuQualified": false,
+  "deployment": false
+}

@@ -1860,6 +1860,35 @@ feature/balance review and release decisions still require evidence. PC input is
 primary; mobile/tablet and large synthetic scale are not new release gates, and
 no headcount caps are introduced.
 
+## 2026-10-28 — Explicit production package and container preparation
+
+Checkpoint `13e3c96` records the full rewrite and staging handoff. The follow-up
+[production package](../apps/voxel-server/docs/packaging.md) assembles an explicit
+165-file allowlist from the matched game release, school source, shared compiled
+packages, dependency lockfiles and notices. It excludes development dependencies,
+credentials, tests, historical archives and local build caches. Its byte inventory
+and existing game release checks reject deliberate service-code and Wasm changes.
+
+The isolated package test installs only production dependencies from the existing
+offline npm cache, verifies that installation did not change inventoried files,
+starts the actual production entry outside the checkout, exercises the real
+signaling worker, checks all eight schema RPCs through local HTTP fixtures,
+health/readiness, missing prototype launcher and unauthorized admin/media paths,
+then proves graceful SIGTERM exit and PID cleanup. The complete service integration
+suite now passes nine tests. The public `package:voxel-server` command builds,
+typechecks and assembles the runtime successfully. Game build `c293fe5e2511` is
+unchanged; no new core/browser test claim is inferred from this packaging check.
+
+The Dockerfile consumes that assembled directory, installs production dependencies,
+verifies it and uses a separate non-root Node runtime stage, direct entry and
+readiness healthcheck. A Dockerfile-specific allowlist restricts the context; an
+optional session CA is mounted only in the networked build step with TLS enabled.
+CI now builds the image and runs the fixture smoke in a read-only container.
+Docker CLI and socket are absent locally: native package qualification passes,
+but no container run or selected-host deployment is claimed. No hosted requests,
+SQL, application data, catalog changes, push or deployment is performed. Hosted
+Auth/game/SFU/recovery, physical PCs, product decisions and cutover remain open.
+
 ## 2026-10-28 — Configurable world profile and single-port local development
 
 The [shared world profile](../games/voxel/docs/world-profile.md) now controls

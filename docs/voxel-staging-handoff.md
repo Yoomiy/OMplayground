@@ -43,7 +43,11 @@ dependencies and credentials are intentionally ignored by Git. Do not deploy
 only the TypeScript source and expect startup to rebuild missing artifacts.
 The production web build and service startup reject mismatched artifacts.
 Keep the repository-relative layout for the initial source-based deployment.
-Hosting/container packaging still needs qualification on the selected platform.
+For a smaller deployable directory, run `npm run package:voxel-server` after the
+game build, then follow [production packaging](../apps/voxel-server/docs/packaging.md).
+It includes a Dockerfile and fixture-only image smoke test. The isolated native
+package passes locally; Docker validation awaits CI or a Docker-equipped host.
+Hosting/routing still needs qualification on the selected platform.
 
 The committed default world is 512×512×256. Change the
 [shared world profile](../games/voxel/docs/world-profile.md) before building both

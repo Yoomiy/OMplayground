@@ -1,0 +1,30 @@
+
+> @playground/voxel-server@0.1.0 test:integration
+> node --test tests/integration/*.test.ts
+
+local driver: welcome
+local driver: ready
+local driver: natural_target_selected
+local driver: mining_accepted
+local driver: mined_drop_published
+local driver: earned_item_collected
+local driver: drained
+local driver: welcome
+local driver: ready
+✔ hosted journey mining driver earns a natural item and restores ownership with packaged workers using a local contract backend (1968.292136ms)
+✔ isolated production package installs only runtime dependencies, verifies integrity and drains without checkout files (5814.421054ms)
+✔ school admission supports the configured browser origin and rejects foreign preflights before authenticating (100.096883ms)
+✔ an inactive account or rotated invitation cannot consume an earlier ticket and allocates no world (74.029357ms)
+✔ school staff observe invisibly and fly in survival while player participation retains school partition rules (275.896731ms)
+✔ the school SDK refreshes an offline TNT owner, holds through profile outages and fizzles after account deactivation (4734.448165ms)
+✔ recess closure pauses earned world time and TNT while staff inspect; earlier tickets cannot override it and fresh admission resumes (2920.906454ms)
+✔ connected school accounts lose authority on revocation and provider outages close with a retryable recovery reason (5143.70762ms)
+✔ accepted membership removal revokes a connected open-room child and a prior unaccepted ticket cannot restore it (2602.842919ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 24419.096945

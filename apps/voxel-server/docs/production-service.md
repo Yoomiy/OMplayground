@@ -17,6 +17,10 @@ npm run build --workspace @playground/voxel-server
 npm start --workspace @playground/voxel-server
 ```
 
+For an explicitly assembled runtime directory and container build, see
+[production packaging](packaging.md). It retains matching manifests and workers
+without copying the development checkout or credentials into the runtime image.
+
 The service requires `SUPABASE_URL`, server-only `SUPABASE_SECRET_KEY` and
 `VOXEL_ALLOWED_ORIGINS` (comma-separated exact origins), plus `LIVEKIT_URL`,
 `LIVEKIT_API_KEY` and server-only `LIVEKIT_API_SECRET`. Production origins must
