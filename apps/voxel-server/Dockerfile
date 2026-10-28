@@ -3,9 +3,7 @@
 FROM node:24.21.0-bookworm-slim AS build
 WORKDIR /app
 COPY . ./
-RUN --mount=type=secret,id=proxy_ca \
-    if [ -f /run/secrets/proxy_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/proxy_ca; fi; \
-    npm ci --workspace @playground/voxel-server --workspace @playground/game-logic --workspace @playground/observability --include-workspace-root=false --ignore-scripts --no-audit --no-fund \
+RUN npm ci --workspace @playground/voxel-server --workspace @playground/game-logic --workspace @playground/observability --include-workspace-root=false --ignore-scripts --no-audit --no-fund \
     && npm ci --prefix games/voxel --ignore-scripts --no-audit --no-fund
 RUN node games/voxel/tools/release-snapshot.mjs restore \
     && npm run build --workspace @playground/game-logic \
@@ -15,9 +13,7 @@ RUN node games/voxel/tools/release-snapshot.mjs restore \
 FROM node:24.21.0-bookworm-slim AS dependencies
 WORKDIR /app
 COPY --from=build /app/apps/voxel-server/dist/runtime/ ./
-RUN --mount=type=secret,id=proxy_ca \
-    if [ -f /run/secrets/proxy_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/proxy_ca; fi; \
-    npm ci --workspace @playground/voxel-server --workspace @playground/game-logic --workspace @playground/observability --include-workspace-root=false --omit=dev --ignore-scripts --no-audit --no-fund \
+RUN npm ci --workspace @playground/voxel-server --workspace @playground/game-logic --workspace @playground/observability --include-workspace-root=false --omit=dev --ignore-scripts --no-audit --no-fund \
     && npm ci --prefix games/voxel --omit=dev --ignore-scripts --no-audit --no-fund \
     && node verify-runtime.mjs
 
