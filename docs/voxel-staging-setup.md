@@ -5,6 +5,32 @@ The user will configure/create hosting services manually. Use branch
 PR after staging works. The current release uses the existing 512×512 world,
 visual/audio weather and snapshot recovery defaults.
 
+## Current staging backends
+
+Both services were deployed from `dev/staging` and returned HTTP 200 from
+`/health` and `/ready` on 2026-10-28:
+
+| Service | Public origin / frontend variable |
+| --- | --- |
+| Voxel | `VITE_VOXEL_RUNTIME_SERVER_URL=https://voxel-server-dev.up.railway.app` |
+| Classroom | `VITE_CLASSROOM_SERVER_URL=https://classroom-server-dev.up.railway.app` |
+
+Use the intended staging frontend origin in the shared `CORS_ORIGIN`, referenced
+by voxel's `VOXEL_ALLOWED_ORIGINS`. A generated Vercel preview hostname is a
+different origin from a stable staging domain; the generated preview checked on
+that date required Vercel sign-in and was not allowed by either backend's CORS.
+
+For local development, use [`apps/web/.env.example`](../apps/web/.env.example)
+and [`npm run dev:app`](local-development.md), with local frontend URL overrides
+left empty so Vite routes to the local services.
+
+The [voxel CI run for staging commit `0fcf84a`](https://github.com/Yoomiy/OMplayground/actions/runs/40757368780)
+passed both runtime and image jobs on 2026-10-28. This includes source/packaged
+integration, PostgreSQL, web tests/build, browser journeys, desktop survival over
+a delayed connection, and clean image startup/readiness/graceful shutdown with
+fixture providers. The intended staging frontend origin still needs a CORS check,
+followed by the manual teacher/student staging journey in step 4.
+
 ## 1. Railway: voxel service
 
 Create or repoint the staging voxel service in the existing Railway project.

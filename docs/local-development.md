@@ -28,6 +28,7 @@ This is the normal school app using the configured Supabase and LiveKit services
 saved worlds and school actions persist in that configured project. No SQL or
 deployment change is part of the launcher. Local app testing still enforces school
 access rules; use an existing teacher/admin account when testing outside recess. Configuration examples are in
+[`apps/web/.env.example`](../apps/web/.env.example),
 `apps/voxel-server/.env.example` and `apps/classroom-server/.env.example`.
 
 Check configuration/build/port availability without starting the services or
