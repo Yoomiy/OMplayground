@@ -1,0 +1,596 @@
+{
+  "schema": 1,
+  "buildId": "c293fe5e2511d2bc656ea33756509e834b8761fc743a9d2d8a4e83cebd2ad799",
+  "inputs": [
+    {
+      "path": "LICENSE",
+      "hash": "4c89ee97bee29e2bd7dcd9567a06c1fee5fb8ab7c5c35ca4a153543524b6f07f"
+    },
+    {
+      "path": "UPSTREAM.md",
+      "hash": "f3b2aace3c043fe80f259938bca0ae7fc242357df51a03ff7062bd5437894bb7"
+    },
+    {
+      "path": "config/world.json",
+      "hash": "2520fa123a2b06d7c845523df65b6c0bea849cbd6ffc9ba15a5c27f15b6df7e6"
+    },
+    {
+      "path": "content/availability.ts",
+      "hash": "d754150797d63c9cef758df559e1b60d1101f5cd9f6b0903e10ddfd1878246d2"
+    },
+    {
+      "path": "content/building.ts",
+      "hash": "17060999c435f365196f55496ab65aa790e9c6f9bb132cb256fd822b228aadf1"
+    },
+    {
+      "path": "content/disposition.json",
+      "hash": "7a87567295d573bc50cae7d02fec5df40104fecac016b28819cce0b4cbe2e900"
+    },
+    {
+      "path": "content/helpers.ts",
+      "hash": "d98a5bcb8f6e3261c75d7a3d09f06c33556e71ac4be070dad750465b96a3f10b"
+    },
+    {
+      "path": "content/index.ts",
+      "hash": "7eb57f7ceb440136ff112b7228adcebfd9a07eae58bd4e53881be2ceeb98fa76"
+    },
+    {
+      "path": "content/legacy-inventory.json",
+      "hash": "adefb5496bd00319ecb7e0b9fa5902d003a0bea1de9bdba3b434bcd5b973257b"
+    },
+    {
+      "path": "content/progression.ts",
+      "hash": "9f69ff4345d6ff5257998a9cd56cd8450e4f4ac56fd14ed48092aa784cd3566c"
+    },
+    {
+      "path": "content/texture-layers.json",
+      "hash": "65faced3a69a67fe9f1f62830c43c2b5b64c070fea9e0d5b98ce81592058a6f6"
+    },
+    {
+      "path": "engine/Cargo.lock",
+      "hash": "95c5d9290ae14570e949b2cc3a6b13048503279423099313ad34023acaacd479"
+    },
+    {
+      "path": "engine/Cargo.toml",
+      "hash": "c39b7dd9eb1e2efb24b1874b6f3c310fb8944722109fcca052c31bbfcfe8982a"
+    },
+    {
+      "path": "engine/LICENSE",
+      "hash": "4c89ee97bee29e2bd7dcd9567a06c1fee5fb8ab7c5c35ca4a153543524b6f07f"
+    },
+    {
+      "path": "engine/rust-toolchain.toml",
+      "hash": "60c5407645e5d56f600e6ae713f0afc4aebbb858c5ceeef4a79c22b7dd2b51c9"
+    },
+    {
+      "path": "engine/src/blocks.rs",
+      "hash": "7ec09fe0dfcabb8e224e3367475a623197814c44350756127b85b038bb8667c2"
+    },
+    {
+      "path": "engine/src/cull.rs",
+      "hash": "4d2a7d284afbe5a3bd729cfc3db96d52249ac244ecf9242edde1bb6d048bdfa3"
+    },
+    {
+      "path": "engine/src/damage.rs",
+      "hash": "a3e821f81e33a67066ddda4bc77077b85a16cd28957996fb953dd57c2cb94c1a"
+    },
+    {
+      "path": "engine/src/entities.rs",
+      "hash": "11676a5179be78dd834425a78ee3a8e932a61bb84e7f4bc6788f9c2c18ad193f"
+    },
+    {
+      "path": "engine/src/entitytex.rs",
+      "hash": "6a9b140af7a84925b8101393a84cb9d47ecebf7f3fc1e2e03990ae4f42d5300c"
+    },
+    {
+      "path": "engine/src/formats.rs",
+      "hash": "5609c43dc1a72342aaa94ed61c8230a80d159d18ff343cd33ae7a6033bec03fc"
+    },
+    {
+      "path": "engine/src/gen.rs",
+      "hash": "1b2aea7ca673f3a9bc127bc8bbf2e13e88fec624efa050a11f9e8aa4dc422cfc"
+    },
+    {
+      "path": "engine/src/json.rs",
+      "hash": "899ac70a7bcfe3c7884d39f5928d2588e0cbb2905ffca6194a47ff87bb19d704"
+    },
+    {
+      "path": "engine/src/lib.rs",
+      "hash": "b73939ec0b52f61975da30552b75269636bfcc99542a5ed4a712012a43a4f01f"
+    },
+    {
+      "path": "engine/src/mesher.rs",
+      "hash": "a39ca4f0c42a3cf086ec329b86dfa0c614b963f31f828b5fb33fc7bf01aae780"
+    },
+    {
+      "path": "engine/src/movers.rs",
+      "hash": "2b271360c0c701b11d7a41b28f983616e665919a21983e1ac05fc1edaab2fc01"
+    },
+    {
+      "path": "engine/src/noise.rs",
+      "hash": "11c293fb988cd355efb153972914f597d7c088d6ccb5c961fbfe62181782c466"
+    },
+    {
+      "path": "engine/src/noisetex.rs",
+      "hash": "368256f94fbd74146a65364b38bcee22630f654d1b31eae76968dd438fdaa513"
+    },
+    {
+      "path": "engine/src/shapes.rs",
+      "hash": "2bc4d554009240683d7731792fe5ca738ff1f8f1b91df84772fb01a30f099551"
+    },
+    {
+      "path": "engine/src/state_width.rs",
+      "hash": "4aa4ac8f12fd2ce83797a4fe7b88849c8ac3dd79ec4839969ad8726e4746c0ab"
+    },
+    {
+      "path": "engine/src/testutil.rs",
+      "hash": "b045762fc131d14ae2024dd20782027e79fea54e8a64f60f46e145ec7bc489fa"
+    },
+    {
+      "path": "engine/src/texgen.rs",
+      "hash": "0fdb3764339c65d7593d45b74a497672d3e232e81e560e703cb7d9f1dac05d6f"
+    },
+    {
+      "path": "engine/src/world.rs",
+      "hash": "7315169f7aad3977a140fe4fe53a35c5dad7de3ce6310ae659b69c00cd0c10a0"
+    },
+    {
+      "path": "package-lock.json",
+      "hash": "8f291cbe2b0130c7b28c738c476684f9326d8b8682f3e95dad0a96b87d635f56"
+    },
+    {
+      "path": "package.json",
+      "hash": "af942baa68ecb465dc26be5191f5f9ad9f46e09b1b48cc1aae72c6796e02789a"
+    },
+    {
+      "path": "src/client/assets.d.ts",
+      "hash": "417a1e13efdd3daf20309c7097a2df58a7170c83c76f3c98edd3e2842209d376"
+    },
+    {
+      "path": "src/client/content-labels.ts",
+      "hash": "6c2a7aa28b6f4b15875ceef6e02733798a3bf3e9b96d19894afe25b8a140e539"
+    },
+    {
+      "path": "src/client/dev-entry.ts",
+      "hash": "d1d0ccb519a11ddd7831cc8ad5ff180cc6d502fb09a3d516f1d665bdb6281cd7"
+    },
+    {
+      "path": "src/client/embed.ts",
+      "hash": "b48da258b5c8b7a93196d4a805bf84084ba2f655803ccca5f406b0b248ca33ea"
+    },
+    {
+      "path": "src/client/engine.ts",
+      "hash": "c103397109709c63148cffe9ab84933e4d35fd87118d48b827f5c2cf90f08116"
+    },
+    {
+      "path": "src/client/interpolation.ts",
+      "hash": "618cc2de934f80ac9f2fa4dc59dbc92066c9d85de528f5fba6b0166593d53f9b"
+    },
+    {
+      "path": "src/client/inventory-controls.ts",
+      "hash": "20cd8b57605747f595b82a0ba8555c6db303585f82d25c8d2ded73589480be38"
+    },
+    {
+      "path": "src/client/inventory.css",
+      "hash": "29ebcfb226280c9bf16e6f6085d4b9a84b8500073b4a5549302a4088fe27b47b"
+    },
+    {
+      "path": "src/client/item-description.ts",
+      "hash": "935ac9ce1b03187748aaa392ccee9657945294e225cb908baca45c426f3224eb"
+    },
+    {
+      "path": "src/client/palette.ts",
+      "hash": "cccc9b3c2a2cfaa51cc6acfc15a128bd236d7a20d145e997f3373d7f04b2f289"
+    },
+    {
+      "path": "src/client/prediction.ts",
+      "hash": "ffced0decda9c91e0a761ced8f0b19807a477e07d839012c35fd2c3ba04b4d6b"
+    },
+    {
+      "path": "src/client/runtime.ts",
+      "hash": "af631e00f3e1b9e1ec64c62db47584ce2efd3cb67f69fb41de9e5e053eaf3327"
+    },
+    {
+      "path": "src/client/style.css",
+      "hash": "bda30689a1e2f48879a62208da0d32fbb48dc11a69d2bf859c7bfd7c96d9300c"
+    },
+    {
+      "path": "src/client/touch-controls.css",
+      "hash": "f5628f9dc85a4c8ae10f047ec44bfe5d53eeafc0684f33f4c8c37bdedd2f78d3"
+    },
+    {
+      "path": "src/client/touch-controls.ts",
+      "hash": "4418b20ddc2146432aa236055519c2ee4929592827c5639e5fb130afe598458b"
+    },
+    {
+      "path": "src/client/voice-scene.ts",
+      "hash": "f624bec5b801e5cf7e387a4248ea6c214ce0c989930a05e6ae54824c139f82b2"
+    },
+    {
+      "path": "src/client/world-audio.ts",
+      "hash": "5d09f1cb6b7691943dd8a9c02cf1e3bcb0c380946a5e7e115c5aa9650c4ef3f2"
+    },
+    {
+      "path": "src/client/world-clock.ts",
+      "hash": "16fbfe10a03b947c2ad8cefbd8e4e701170fd9dfcd70c9fac986395dfd6a83a3"
+    },
+    {
+      "path": "src/render/avatar-equipment.ts",
+      "hash": "49ae5cc8369774019a51320a49e957bf6a675ab70824170ea56133e708630415"
+    },
+    {
+      "path": "src/render/avatar-motion.ts",
+      "hash": "5cc8183ba90997b05c5301ae6be73db22325a7c587a99b84a4829e3ff46d5462"
+    },
+    {
+      "path": "src/render/avatars.ts",
+      "hash": "0fd3fdd58fe732db4f5e2431c7fbf06cbf611b4eda60f7f66f00a6898983c766"
+    },
+    {
+      "path": "src/render/drops.ts",
+      "hash": "c561ea072b809ef3f314ff718f349e4ec9e144c73a85940d7272bc2e92b85bf5"
+    },
+    {
+      "path": "src/render/edit-effects.ts",
+      "hash": "f4879d161078dd44fbd146f0f5162eced2f9d1fbec6af4451db04f1c4ef9cca2"
+    },
+    {
+      "path": "src/render/environment.ts",
+      "hash": "731a245ee92f84a530f33d9da889272d62c9160d28ae713beafe70d70ae74ac9"
+    },
+    {
+      "path": "src/render/explosives.ts",
+      "hash": "8e181f770fc5c7bb6d41d47fa1f1e88b6ed47bf9ba2e311d490035b11cbbbf1d"
+    },
+    {
+      "path": "src/render/gpu-pacing.ts",
+      "hash": "c3502d2d84f01df0f49cd87931eade94db2349d187522769a8dc131cd47d4d9d"
+    },
+    {
+      "path": "src/render/held-block.ts",
+      "hash": "4779a9064c7fde7bc3826cdc658f4d61bb11737dc234921229113a682bb9a8f6"
+    },
+    {
+      "path": "src/render/shaders/common.glsl",
+      "hash": "7bf0a4b7f797d4fd63281be9158908ffd238a4e75f5cdc9ed04b91f2595613b1"
+    },
+    {
+      "path": "src/render/shaders/vertex_unpack.glsl",
+      "hash": "947678393c774ad450835fa68a7292e8dc9857299e7cf9481e19667b0dc373b0"
+    },
+    {
+      "path": "src/render/terrain.ts",
+      "hash": "43da9c1e74e13b29c2ef835bb7e5d8b6bda58e0e85d39dc9a9f100a3f414ab69"
+    },
+    {
+      "path": "src/server/admission.ts",
+      "hash": "d91eae4b8cf1c8c19f41b4afb00ac312cff5b884b1f11d904490951c82965b7d"
+    },
+    {
+      "path": "src/server/checkpoint-storage.ts",
+      "hash": "7f4f3782f6d97c7cc717a31470658477c4cc559e2337a754cfe5c4c4e4105538"
+    },
+    {
+      "path": "src/server/control.ts",
+      "hash": "6935054ce89481f417db4f4e1e16285c32626a1d28a91bf8775accb98d3a322a"
+    },
+    {
+      "path": "src/server/gateway.ts",
+      "hash": "476d615a2ba6d776b2b03efcc9dc6529700dee7cbc22c82e600601814331a05e"
+    },
+    {
+      "path": "src/server/owner-authorization.ts",
+      "hash": "b95d2b615755b10cdcecc018bbb43cc4254ebdb578698b80da83e2ecbe747871"
+    },
+    {
+      "path": "src/server/room-durability.ts",
+      "hash": "4eb34dd0494e704c35eeef69e90952fc745e99e6051d478581799e7514bf5e86"
+    },
+    {
+      "path": "src/server/room-policy.ts",
+      "hash": "d8886191fda505bb3592a8009af2caef9aec56803c1834d6adaf9ab71d99e652"
+    },
+    {
+      "path": "src/server/room-worker-protocol.ts",
+      "hash": "415cf8dfa1f16da8928e65e61d06419d5a32960efd21f62768697d39f2c5ea71"
+    },
+    {
+      "path": "src/server/room-worker.ts",
+      "hash": "de5eb44dcbb57bd90db7a079326970f475be8e574e6e6e068694c954603e239d"
+    },
+    {
+      "path": "src/server/session-projection.ts",
+      "hash": "b5516bdaf278771d234b7cf2f3e52f3f87ea46cd3e66cbbd7131daeda6f7cf36"
+    },
+    {
+      "path": "src/server/snapshot-encoder.ts",
+      "hash": "07a2e205eb1abc1f040797d32025ba90eb0776f1e53fe878bc9f1680824594ed"
+    },
+    {
+      "path": "src/server/timing-histogram.ts",
+      "hash": "c14ec8b5934bdf88262d1e30ec85acc7ac12648bbf0c810bafc11a722a774938"
+    },
+    {
+      "path": "src/shared/appearance.ts",
+      "hash": "dc6d14cf996a9d9a316c081ceee7ece23b6a0f42bd39355a6b6802ca4913e8bc"
+    },
+    {
+      "path": "src/shared/chat.ts",
+      "hash": "4ec59912af23d7cc7df6d5890437eae814b1a7c85908ee92908dd11fddb9c073"
+    },
+    {
+      "path": "src/shared/chunk-wire.ts",
+      "hash": "30f7554bbf04b8a89df374e3b09be913d188c60741199af58c91344efcd227ee"
+    },
+    {
+      "path": "src/shared/combat.ts",
+      "hash": "e4cfe75bfaac26d9134cd8b1935482e82e049c2006429a50687b56b1ddacecd4"
+    },
+    {
+      "path": "src/shared/content.ts",
+      "hash": "f5213cd9e38195bac70e6548e9b2e6c12c1a131fc4f9a6fbbcf8de80fa121045"
+    },
+    {
+      "path": "src/shared/engine-port.ts",
+      "hash": "88cfd1efeb71b32e7f62da4e0bb651a77ec7792e166fe878952c802313e77f19"
+    },
+    {
+      "path": "src/shared/environment.ts",
+      "hash": "9f4239603f127b07b5aa59ffc813233fe08e49942455452e78037758fac4eca7"
+    },
+    {
+      "path": "src/shared/explosives.ts",
+      "hash": "b56df9363bc59723a4c5841d3784267c55af444c164dfdb4aeb396869c3db03d"
+    },
+    {
+      "path": "src/shared/gameplay.ts",
+      "hash": "4be5e09f3726b64b19fd1c05fcf3118e63c8784144198a5232902c4fb9f52a99"
+    },
+    {
+      "path": "src/shared/input.ts",
+      "hash": "30cdf7c507ab2fe30c93ccd974fcb5e8cc6b9262eef9f92dd99079b783bd40da"
+    },
+    {
+      "path": "src/shared/inventory.ts",
+      "hash": "87db9eb0e653a1f53a570f8291d88aa5a62decb3810382657bb53a71235cb194"
+    },
+    {
+      "path": "src/shared/lifecycle.ts",
+      "hash": "c346b2e48d5c0cc3493d38fe2c298cc965613c1a36814f14dd179f8928fdc183"
+    },
+    {
+      "path": "src/shared/loot.ts",
+      "hash": "d6f273d5b1bcab38f0736c0379fc3ed2d1f3a289c80f96931af07333866f1893"
+    },
+    {
+      "path": "src/shared/media.ts",
+      "hash": "df6629f90df8e8aa74dc92bae32b3359fe62566aecc68cffa6db7e5e10cca92a"
+    },
+    {
+      "path": "src/shared/moderation.ts",
+      "hash": "728a48c6a6e73e19d6b192221ca66d0c3ae2a9f5479cc776027505dead2a77f0"
+    },
+    {
+      "path": "src/shared/movement.ts",
+      "hash": "2a9ae0a8688dcca570c489633cd967edafbb0186ae6fc97b4d60988158d236ef"
+    },
+    {
+      "path": "src/shared/protocol.ts",
+      "hash": "6a01eedb1306f2caf1829bcdda620faa76eb8ff89a1cb7c6e217db295591169f"
+    },
+    {
+      "path": "src/shared/recipes.ts",
+      "hash": "5396639bfcf1332ca519137ffc155f12ec192dd0011bb5f7d0a3a3c55365a5e5"
+    },
+    {
+      "path": "src/shared/staff.ts",
+      "hash": "a249bb1dcc0a72677f3bf7c84d3f7b617e27393f5cfd2b7cc32ef03a4dbdd320"
+    },
+    {
+      "path": "src/shared/vitals.ts",
+      "hash": "dd04b2e83faf9625cf14071e8e20e9d3c8c6f49a90d559708fc53524820a11d7"
+    },
+    {
+      "path": "src/shared/world-bounds.ts",
+      "hash": "0a081b520e2ad9faee5589852f8136d2fc2eab00084493129935ff9f21b5125d"
+    },
+    {
+      "path": "src/sim/action-ledger.ts",
+      "hash": "aeedf61456858c4d290ae26550fb5c54495b0f0b20e2f6e8dbac3bb086ae96e8"
+    },
+    {
+      "path": "src/sim/blast.ts",
+      "hash": "66ad564fb9cfc4f207ce20ab8a98f4d7fcbd651416f15f91550f367b56cfad2c"
+    },
+    {
+      "path": "src/sim/checkpoint-values.ts",
+      "hash": "85605b99079c62fa617a3e7c8118378eb855dae89482cdf7a0abd0d516c91472"
+    },
+    {
+      "path": "src/sim/drops.ts",
+      "hash": "5ec9c3f96fb8c69468fe0ca3dbb0b3fc6b400206f8dc4ece07c1abe2e5689b54"
+    },
+    {
+      "path": "src/sim/explosives.ts",
+      "hash": "e571da5405bb50114a9ba6d813e4e758a65916dd2cffd2bfa77ab8864a6bd782"
+    },
+    {
+      "path": "src/sim/game-room.ts",
+      "hash": "6e723c42c7c90c5d2de32892172318e89d0db72dad2a13b3c4855bd85b823ba6"
+    },
+    {
+      "path": "src/sim/input-queue.ts",
+      "hash": "2f2dbd2c7bb432799ce9a8af31092240ec3d816bc0e54cbf178f97377adc31bb"
+    },
+    {
+      "path": "src/sim/inventory.ts",
+      "hash": "878756952a9c55cdaaec45e102db197c8514b0ed1f6e984690dbbd44f33a9a38"
+    },
+    {
+      "path": "src/sim/mining.ts",
+      "hash": "aa8d1688135257b2fda5a8d8c50a96de73fb4b18408babcc98fc65f22145be7a"
+    },
+    {
+      "path": "src/sim/movement-room.ts",
+      "hash": "09d45fb6069ada6aa17eecf23f623083341247d0977060b78e1b3e9da46b6a43"
+    },
+    {
+      "path": "src/sim/room-checkpoint.ts",
+      "hash": "749b6d8a895fcee994d6a114d0f3daac5ca72ea9553719012b14383cf2969637"
+    },
+    {
+      "path": "src/sim/scheduler.ts",
+      "hash": "772e38263f9e795cb81dff99679f8167910088e09c8b9f71ee917b20ef4868e1"
+    },
+    {
+      "path": "src/sim/sunlight.ts",
+      "hash": "392c373253a40a50d97071e10630cea050dadf1479177dc38daae427adf8acbe"
+    },
+    {
+      "path": "src/sim/vitals.ts",
+      "hash": "34dcab275128f6f7e88ddf17ec64b93aeb9c94fedcdf66f5b1fe6185525cff48"
+    },
+    {
+      "path": "src/sim/world-store.ts",
+      "hash": "295c43181a8d0f4bb3701731b730ae796e99a2ef3c405f6a8559e0b9bd42df69"
+    },
+    {
+      "path": "src/world/engine-worker.ts",
+      "hash": "27d38c30deccfd65028dc6959e690039f5032c76f3d4270a98b62f5bbe46b604"
+    },
+    {
+      "path": "src/world/jobs.ts",
+      "hash": "d0f820555e3378e44e260eb081184b3b78fb2e4f3ba0e34cb49af64879e6569b"
+    },
+    {
+      "path": "src/world/stream.ts",
+      "hash": "8527e308d708bc817f5d21665ae03465593d40cb830e24610f0f7b4290d0614b"
+    },
+    {
+      "path": "src/world/worker-pool.ts",
+      "hash": "d13f5ce5c7275a01e3a1fe8ea8a5e9ea6d9300b2075ec7da8844bc61a430b98e"
+    },
+    {
+      "path": "tools/build-engine.mjs",
+      "hash": "c7670b48c2ea41bb2a694ef73c1d86479d9a909dd655e8a08a53ab276a15dbb4"
+    },
+    {
+      "path": "tools/build-manifest.mjs",
+      "hash": "58fc41c824358d9d88dda69c9c184eab1444003d9c68dcd0fdd22df7283e0f0a"
+    },
+    {
+      "path": "tools/compile-content.ts",
+      "hash": "a2d95118b716f1c244fa82045d37038e65677a854a02bb0f199d6fd58269365e"
+    },
+    {
+      "path": "tools/release-manifest.mjs",
+      "hash": "4fc580d822690d2fba62a511e339e68a6d6ef80a77c49632b85262a34da48478"
+    },
+    {
+      "path": "tools/verify-release.mjs",
+      "hash": "488fef67863f23d606c066c05db5853401e38e4e07d63c00840f34135ccf9548"
+    }
+  ],
+  "files": [
+    {
+      "path": "artifacts/bindings-df0ef34a38d5b9a1f0a16a665bd7eec398736c2eacea98dbb1ec5a4fd0cd32e1.js",
+      "hash": "df0ef34a38d5b9a1f0a16a665bd7eec398736c2eacea98dbb1ec5a4fd0cd32e1"
+    },
+    {
+      "path": "artifacts/build.json",
+      "hash": "4e60334b8c8fce6b231967b0c81bd7135ee35c50517e12504aa7632873c19774"
+    },
+    {
+      "path": "artifacts/content-bindings.ts",
+      "hash": "dd46aff5eeee79aa4dd436163f9d0109291de404d39862ba7cbd1553f3dfc7f5"
+    },
+    {
+      "path": "artifacts/content.json",
+      "hash": "87da078927c9df8366a815c868478e71f559da83e4785447a8edb3e505dba250"
+    },
+    {
+      "path": "artifacts/engine-cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388.wasm",
+      "hash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "artifacts/release.json",
+      "hash": "3a835aa11a1de76b8b84b390c49feb67594db9c1503c2e866c63d9d4c148c859"
+    },
+    {
+      "path": "dist-client/assets/engine-worker-DYAFKrDe.js",
+      "hash": "99d3377c134578cd5e9bdd923e7707547e62c3a2a0a1a64c90adec5f1121bf04"
+    },
+    {
+      "path": "dist-client/assets/index-5w2pNf9N.css",
+      "hash": "2b1c35f291993017e6b64ee082d5b043f59edef25e5d29d5239bc23fab798eac"
+    },
+    {
+      "path": "dist-client/assets/index-DYQxVQuG.js",
+      "hash": "7ce7e9d68089b977404a41e7d49eb99129431c6fe3ccc28f071c005ca23b0cfc"
+    },
+    {
+      "path": "dist-client/assets/voxel_engine_bg-1ejYMYOZ.wasm",
+      "hash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "dist-client/index.html",
+      "hash": "031827a6afe81c554b14d4992755de8f21d2b53520cd811a5535a7880e93d482"
+    },
+    {
+      "path": "dist-server/build.json",
+      "hash": "4e60334b8c8fce6b231967b0c81bd7135ee35c50517e12504aa7632873c19774"
+    },
+    {
+      "path": "dist-server/content.json",
+      "hash": "87da078927c9df8366a815c868478e71f559da83e4785447a8edb3e505dba250"
+    },
+    {
+      "path": "dist-server/engine.wasm",
+      "hash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "dist-server/gateway.js",
+      "hash": "ab0d037b55d190bc9352c1a23b0f33ac5c50403473fbd9e8743507aec92417b3"
+    },
+    {
+      "path": "dist-server/gateway.js.map",
+      "hash": "aad8d48ee388ed347ef44926c78f37446139f64fe4e9540b04cc62f3c16c57e8"
+    },
+    {
+      "path": "dist-server/room-worker.js",
+      "hash": "df2c8433c15827b856a98eebd50b6efd7240310275937860b3aebffd3e747051"
+    },
+    {
+      "path": "dist-server/room-worker.js.map",
+      "hash": "5bb2866abe50129c89151fc9311071b4ba8fd9d8ae75bec67e5ac0a4353df85c"
+    },
+    {
+      "path": "engine/pkg/.gitignore",
+      "hash": "684888c0ebb17f374298b65ee2807526c066094c701bcc7ebbe1c1095f494fc1"
+    },
+    {
+      "path": "engine/pkg/LICENSE",
+      "hash": "4c89ee97bee29e2bd7dcd9567a06c1fee5fb8ab7c5c35ca4a153543524b6f07f"
+    },
+    {
+      "path": "engine/pkg/package.json",
+      "hash": "d53182fc903c41302cbfdc3c77cac07dc0c849e0d44ac0a29e9283d7490d3216"
+    },
+    {
+      "path": "engine/pkg/voxel_engine.d.ts",
+      "hash": "d8d2aedd992911296e0cfd2fabe19860255214e62db242bfe175feea9763aabc"
+    },
+    {
+      "path": "engine/pkg/voxel_engine.js",
+      "hash": "df0ef34a38d5b9a1f0a16a665bd7eec398736c2eacea98dbb1ec5a4fd0cd32e1"
+    },
+    {
+      "path": "engine/pkg/voxel_engine_bg.wasm",
+      "hash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "engine/pkg/voxel_engine_bg.wasm.d.ts",
+      "hash": "21fde3902624992cb42d37c65b28f8bfa4f24315c60e0b39e6c222cfdd0761ce"
+    }
+  ]
+}

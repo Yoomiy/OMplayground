@@ -1,0 +1,452 @@
+/* tslint:disable */
+/* eslint-disable */
+
+/**
+ * Lighting + meshing (one per worker).
+ */
+export class ChunkMesher {
+    free(): void;
+    [Symbol.dispose](): void;
+    mesh(region: Uint8Array): Uint32Array;
+    constructor();
+}
+
+/**
+ * Visibility culling over registered chunk meshes.
+ */
+export class Culler {
+    free(): void;
+    [Symbol.dispose](): void;
+    /**
+     * Slot capacity; output arrays hold 6 (main) / 4 (shadow) words per slot.
+     */
+    capacity(): number;
+    cull(vp: Float64Array, cx: number, cy: number, cz: number, radius: number, occlusion: boolean): void;
+    cull_shadow(vp: Float64Array, cx: number, cy: number, cz: number, radius: number): void;
+    constructor();
+    out_ptr(): number;
+    out_shadow_ptr(): number;
+    remove_column(cx: number, cz: number): void;
+    set_column(cx: number, cz: number, header: Uint32Array): number;
+    visible_sections(): number;
+}
+
+/**
+ * Stateless terrain generator (one per worker).
+ */
+export class TerrainGen {
+    free(): void;
+    [Symbol.dispose](): void;
+    /**
+     * Stamp a game structure during generation. `data` is (y * sz + z) * sx + x; 65535 = keep.
+     */
+    add_blueprint(ox: number, oy: number, oz: number, sx: number, sy: number, sz: number, data: Uint16Array): void;
+    /**
+     * Flatten terrain to `height` inside `radius`, blending over `blend` blocks.
+     */
+    add_terraform(cx: number, cz: number, radius: number, blend: number, height: number): void;
+    /**
+     * [x, y, z] of a pleasant spawn column.
+     */
+    find_spawn(): Int32Array;
+    generate(cx: number, cz: number): Uint8Array;
+    constructor(seed: number);
+    set_flat(height: number): void;
+    set_void(): void;
+    set_void_ground(y: number, top: number, fill: number, depth: number): void;
+}
+
+/**
+ * A world: block storage, edits, raycasts, the players' physics bodies (by slot) and the
+ * entity simulation.
+ */
+export class VoxelWorld {
+    free(): void;
+    [Symbol.dispose](): void;
+    /**
+     * Damage from the simulation's copy of the world (`carve`'s changes, `export_damage`), here
+     * too. Returns the loaded columns whose meshes change: [cx, cz, relight] triples, relight 1
+     * where a block went altogether (remesh around it: its light changed).
+     */
+    apply_damage(data: Uint8Array): Int32Array;
+    /**
+     * A blast's crater (`World::blast`): a ragged sphere of little voxels `radius` round (x, y, z),
+     * its edge wandering by `roughness` of that (the same for the same `seed`), out of the
+     * carvable blocks among `cells` (x, y, z triples). Returns what `carve` returns.
+     */
+    blast(x: number, y: number, z: number, radius: number, roughness: number, seed: number, cells: Int32Array): Uint8Array;
+    bodies_ptr(): number;
+    body_capacity(): number;
+    /**
+     * [ride, x, y, z] for an entity body: the mover it rides (0 for none) and where it is on it.
+     */
+    body_ride(i: number): Float64Array;
+    body_stride(): number;
+    /**
+     * Whether `carve` and `blast` can take bits out of the block at (x, y, z).
+     */
+    carvable(x: number, y: number, z: number): boolean;
+    /**
+     * Take a capsule of little voxels out of the destructible blocks it reaches: from (x, y, z)
+     * along (dx, dy, dz) for `depth` blocks, `radius` round. Returns [removed u32, n u32, then n
+     * blocks left with nothing (air now, an edit) as x, y, z, the block it was (i32 each), then
+     * the changes to the rest for other copies of the world (`apply_damage`)], little-endian.
+     */
+    carve(x: number, y: number, z: number, dx: number, dy: number, dz: number, radius: number, depth: number): Uint8Array;
+    clear_edits(): void;
+    /**
+     * How high the collision of the block at (x, y, z) reaches above the bottom of its cell, in
+     * blocks: 0 if nothing there is solid, 1 for a full block, 0.5 for a bottom slab, 1.5 for a
+     * fence; a fence as it's joined there, a carved block as what's left of it. Unloaded columns
+     * count as solid.
+     */
+    collision_top(x: number, y: number, z: number): number;
+    column_count(): number;
+    /**
+     * How many blocks are damaged.
+     */
+    damage_count(): number;
+    /**
+     * How many of a block's 4096 little voxels are left: fewer once it's been carved, 4096 for
+     * a block that hasn't (whatever it is).
+     */
+    damage_left(x: number, y: number, z: number): number;
+    edit_count(): number;
+    /**
+     * All the damage, for `apply_damage` in a copy of the world that has none (a late joiner).
+     */
+    export_damage(): Uint8Array;
+    export_edits(): Uint8Array;
+    extract_region(cx: number, cz: number): Uint8Array;
+    /**
+     * `extract_region` for a world drawn repeated along x (`period` columns from column `x0`): a
+     * neighbour past either end is the column at the other end.
+     */
+    extract_region_wrapped(cx: number, cz: number, x0: number, period: number): Uint8Array;
+    forget_column(cx: number, cz: number): void;
+    /**
+     * Block id; 65535 when the column is not loaded.
+     */
+    get_block(x: number, y: number, z: number): number;
+    has_column(cx: number, cz: number): boolean;
+    import_edits(data: Uint8Array): void;
+    insert_column(cx: number, cz: number, data: Uint8Array): void;
+    /**
+     * [sky, block] light estimate (0..1) at a block position.
+     */
+    light_probe(x: number, y: number, z: number): Float32Array;
+    /**
+     * Whether the segment between two points is free of solid blocks.
+     */
+    line_clear(ax: number, ay: number, az: number, bx: number, by: number, bz: number): boolean;
+    /**
+     * An edit from the simulation's copy of the world: applied now if loaded, else when the
+     * column loads. True if the block changed now.
+     */
+    mirror_block(x: number, y: number, z: number, b: number): boolean;
+    /**
+     * Add (or replace) a mover: `cells` holds 1 for each solid cell of an `sx` x `sy` x `sz` grid
+     * (index `(y * sz + z) * sx + x`); the model's origin is at grid point (`px`, `py`, `pz`) and
+     * a cell is `unit` model units across.
+     */
+    mover_add(id: number, sx: number, sy: number, sz: number, cells: Uint16Array, px: number, py: number, pz: number, unit: number): void;
+    /**
+     * The mover whose cells hold this point, or 0.
+     */
+    mover_at(x: number, y: number, z: number): number;
+    mover_count(): number;
+    /**
+     * How many of a mover's blocks would be in the world's solid blocks with it at this pose
+     * (position, rotation, scale): 0 when it's clear.
+     */
+    mover_overlap(id: number, x: number, y: number, z: number, qx: number, qy: number, qz: number, qw: number, scale: number): number;
+    /**
+     * Where a mover is now: position, rotation (unit quaternion) and scale. `snap` places it
+     * without motion (new, teleported): nothing riding it is carried and nobody is pushed.
+     */
+    mover_pose(id: number, x: number, y: number, z: number, qx: number, qy: number, qz: number, qw: number, scale: number, snap: boolean): void;
+    /**
+     * [mover id or 0, distance] for the first mover along a ray within `max_dist`.
+     */
+    mover_raycast(ox: number, oy: number, oz: number, dx: number, dy: number, dz: number, max_dist: number): Float64Array;
+    mover_remove(id: number): void;
+    /**
+     * The movers have moved (`mover_pose`) over `dt` seconds: carry what rides them, push what
+     * they ran into, and start measuring their motion afresh.
+     */
+    movers_carry(dt: number): void;
+    /**
+     * `movers_carry` without the carrying (a client's copy of the world, which only predicts).
+     */
+    movers_settle(dt: number): void;
+    constructor();
+    /**
+     * [body index or -1, distance] for the first body hit by a ray before any solid block.
+     */
+    pick_body(ox: number, oy: number, oz: number, dx: number, dy: number, dz: number, max_dist: number, pad: number): Float64Array;
+    /**
+     * A new player body at (x, y, z); returns its slot (slots of removed players are reused).
+     */
+    player_add(x: number, y: number, z: number): number;
+    /**
+     * Whether a player's body (0.6 x 1.8 x 0.6) fits with its feet at (x, y, z): no solid block,
+     * block model or mover in the way (unloaded columns count as solid).
+     */
+    player_fits(x: number, y: number, z: number): boolean;
+    /**
+     * Add a velocity change to a player (knockback, launch pads).
+     */
+    player_impulse(i: number, vx: number, vy: number, vz: number): void;
+    /**
+     * Whether block `id` at (x, y, z) would overlap any player's body (only its solid boxes:
+     * a bottom slab leaves room above it). By id, not what's there: the block would be new, and
+     * whole.
+     */
+    player_overlaps(x: number, y: number, z: number, id: number): boolean;
+    player_remove(i: number): void;
+    player_reset(i: number, x: number, y: number, z: number): void;
+    /**
+     * Put a player's body back exactly as `player_state` described it (client-side prediction
+     * starts again from the server's word).
+     */
+    player_restore(i: number, s: Float64Array): void;
+    /**
+     * [x, y, z, vx, vy, vz, on_ground, in_water, eyes_in_water, in_lava, flying, bob, frozen,
+     * ride, ride_x, ride_y, ride_z] (the mover they ride, 0 for none, and where they are on it)
+     */
+    player_state(i: number): Float64Array;
+    /**
+     * One step of a player's movement. Gravity, control and ground-jump power are per-step
+     * multipliers. Returns whether native ground takeoff occurred. Jump power never applies
+     * to water/lava swimming, flight or an airborne press.
+     */
+    player_step(i: number, wish_x: number, wish_z: number, jump: boolean, sneak: boolean, sprint: boolean, slide: boolean, speed: number, gravity: number, control: number, jump_power: number, dt: number): boolean;
+    /**
+     * How a player moves: [walk, sprint, sneak, jump, gravity, ground_accel, air_accel,
+     * edge_guard (0/1), mantle, slide_friction] (see `world::Tuning`). Kept across `player_reset`.
+     */
+    player_tune(i: number, t: Float64Array): void;
+    /**
+     * Whether a point is inside solid material: a solid block's collision boxes, less what's been
+     * shot out of it. Unloaded columns count as air.
+     */
+    point_solid(x: number, y: number, z: number): boolean;
+    projectile_capacity(): number;
+    projectile_stride(): number;
+    projectiles_ptr(): number;
+    /**
+     * A ray that went into material at (ox, oy, oz): [found, distance, nx, ny, nz], how far along
+     * it comes out into the open and the face it comes out of (see `World::ray_exit`); found 0
+     * when it's still in material after `max`.
+     */
+    ray_exit(ox: number, oy: number, oz: number, dx: number, dy: number, dz: number, max: number): Float64Array;
+    /**
+     * [hit, bx, by, bz, nx, ny, nz, block, distance]
+     */
+    raycast(ox: number, oy: number, oz: number, dx: number, dy: number, dz: number, max_dist: number): Float64Array;
+    /**
+     * [hit, bx, by, bz, nx, ny, nz, block, distance], including liquid surfaces.
+     */
+    raycast_liquids(ox: number, oy: number, oz: number, dx: number, dy: number, dz: number, max_dist: number): Float64Array;
+    /**
+     * Force a navigation-field rebuild toward the players now.
+     */
+    rebuild_flow(): void;
+    remove_column(cx: number, cz: number): void;
+    /**
+     * Undo this session's edits; returns the loaded columns that changed as [cx, cz, ...].
+     */
+    revert_edits(): Int32Array;
+    set_block(x: number, y: number, z: number, b: number): boolean;
+    /**
+     * Which blocks `carve` can take bits out of: `ids` has 1 for each destructible block id (by
+     * id; all 0 or empty turns carving off), and only blocks higher than `above`. Solid opaque
+     * cubes only, whatever it says.
+     */
+    set_destructible(above: number, ids: Uint8Array): void;
+    set_flying(i: number, on: boolean): void;
+    set_frozen(i: number, on: boolean): void;
+    /**
+     * A spectator (on) or a player again: see `world::Player::ghost`. Flying either way; off, they fall.
+     */
+    set_ghost(i: number, on: boolean): void;
+    /**
+     * Advance bodies (navigation, physics, separation) and projectiles.
+     */
+    step_entities(dt: number): void;
+    /**
+     * Shape-aware motion for small server-owned bodies. Positions use feet coordinates.
+     * No entity or simulation clock is allocated by this compute operation.
+     */
+    sweep_body(x: number, y: number, z: number, dx: number, dy: number, dz: number, half_width: number, height: number): Float64Array;
+    /**
+     * The boxes you aim at in the block at (x, y, z), 6 numbers each (1/16 of a block within its
+     * cell): a fence or pane as it's joined there. Empty for air.
+     */
+    target_boxes(x: number, y: number, z: number): Uint8Array;
+}
+
+export function block_registry_json(): string;
+
+export function chunk_header_bytes(): number;
+
+/**
+ * Built-in entity atlas (monster skins + item sprites): 256x256 RGBA albedo followed by
+ * 256x256 single-channel emissive.
+ */
+export function entity_textures(): Uint8Array;
+
+/**
+ * Albedo layers followed by material layers (see `texgen`).
+ */
+export function generate_textures(): Uint8Array;
+
+export function mesh_header_words(): number;
+
+export function noise_texture(size: number): Uint8Array;
+
+export function sea_level(): number;
+
+/**
+ * Install the complete compiled content manifest once in this Wasm instance.
+ */
+export function set_content(json: string): number;
+
+/**
+ * View (16) + projection (16) matrices of a texel-snapped orthographic shadow camera.
+ */
+export function shadow_camera(to_sun: Float64Array, center: Float64Array, radius: number, depth: number, resolution: number): Float64Array;
+
+export function texture_layer_count(): number;
+
+export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
+
+export interface InitOutput {
+    readonly memory: WebAssembly.Memory;
+    readonly __wbg_chunkmesher_free: (a: number, b: number) => void;
+    readonly __wbg_culler_free: (a: number, b: number) => void;
+    readonly __wbg_terraingen_free: (a: number, b: number) => void;
+    readonly __wbg_voxelworld_free: (a: number, b: number) => void;
+    readonly block_registry_json: () => [number, number];
+    readonly chunk_header_bytes: () => number;
+    readonly chunkmesher_mesh: (a: number, b: number, c: number) => [number, number, number, number];
+    readonly chunkmesher_new: () => number;
+    readonly culler_capacity: (a: number) => number;
+    readonly culler_cull: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => void;
+    readonly culler_cull_shadow: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => void;
+    readonly culler_new: () => number;
+    readonly culler_out_ptr: (a: number) => number;
+    readonly culler_out_shadow_ptr: (a: number) => number;
+    readonly culler_remove_column: (a: number, b: number, c: number) => void;
+    readonly culler_set_column: (a: number, b: number, c: number, d: number, e: number) => number;
+    readonly culler_visible_sections: (a: number) => number;
+    readonly entity_textures: () => [number, number];
+    readonly generate_textures: () => [number, number];
+    readonly mesh_header_words: () => number;
+    readonly noise_texture: (a: number) => [number, number];
+    readonly sea_level: () => number;
+    readonly set_content: (a: number, b: number) => [number, number, number];
+    readonly shadow_camera: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => [number, number];
+    readonly terraingen_add_blueprint: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => [number, number];
+    readonly terraingen_add_terraform: (a: number, b: number, c: number, d: number, e: number, f: number) => void;
+    readonly terraingen_find_spawn: (a: number) => [number, number];
+    readonly terraingen_generate: (a: number, b: number, c: number) => [number, number];
+    readonly terraingen_new: (a: number) => number;
+    readonly terraingen_set_flat: (a: number, b: number) => void;
+    readonly terraingen_set_void: (a: number) => void;
+    readonly terraingen_set_void_ground: (a: number, b: number, c: number, d: number, e: number) => void;
+    readonly texture_layer_count: () => number;
+    readonly voxelworld_apply_damage: (a: number, b: number, c: number) => [number, number];
+    readonly voxelworld_blast: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => [number, number];
+    readonly voxelworld_bodies_ptr: (a: number) => number;
+    readonly voxelworld_body_capacity: (a: number) => number;
+    readonly voxelworld_body_ride: (a: number, b: number) => [number, number];
+    readonly voxelworld_body_stride: (a: number) => number;
+    readonly voxelworld_carvable: (a: number, b: number, c: number, d: number) => number;
+    readonly voxelworld_carve: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => [number, number];
+    readonly voxelworld_clear_edits: (a: number) => void;
+    readonly voxelworld_collision_top: (a: number, b: number, c: number, d: number) => number;
+    readonly voxelworld_column_count: (a: number) => number;
+    readonly voxelworld_damage_count: (a: number) => number;
+    readonly voxelworld_damage_left: (a: number, b: number, c: number, d: number) => number;
+    readonly voxelworld_edit_count: (a: number) => number;
+    readonly voxelworld_export_damage: (a: number) => [number, number];
+    readonly voxelworld_export_edits: (a: number) => [number, number];
+    readonly voxelworld_extract_region: (a: number, b: number, c: number) => [number, number];
+    readonly voxelworld_extract_region_wrapped: (a: number, b: number, c: number, d: number, e: number) => [number, number];
+    readonly voxelworld_forget_column: (a: number, b: number, c: number) => void;
+    readonly voxelworld_get_block: (a: number, b: number, c: number, d: number) => number;
+    readonly voxelworld_has_column: (a: number, b: number, c: number) => number;
+    readonly voxelworld_import_edits: (a: number, b: number, c: number) => [number, number];
+    readonly voxelworld_insert_column: (a: number, b: number, c: number, d: number, e: number) => [number, number];
+    readonly voxelworld_light_probe: (a: number, b: number, c: number, d: number) => [number, number];
+    readonly voxelworld_line_clear: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => number;
+    readonly voxelworld_mirror_block: (a: number, b: number, c: number, d: number, e: number) => number;
+    readonly voxelworld_mover_add: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number) => void;
+    readonly voxelworld_mover_at: (a: number, b: number, c: number, d: number) => number;
+    readonly voxelworld_mover_count: (a: number) => number;
+    readonly voxelworld_mover_overlap: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number) => number;
+    readonly voxelworld_mover_pose: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number) => void;
+    readonly voxelworld_mover_raycast: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => [number, number];
+    readonly voxelworld_mover_remove: (a: number, b: number) => void;
+    readonly voxelworld_movers_carry: (a: number, b: number) => void;
+    readonly voxelworld_movers_settle: (a: number, b: number) => void;
+    readonly voxelworld_new: () => number;
+    readonly voxelworld_pick_body: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => [number, number];
+    readonly voxelworld_player_add: (a: number, b: number, c: number, d: number) => number;
+    readonly voxelworld_player_fits: (a: number, b: number, c: number, d: number) => number;
+    readonly voxelworld_player_impulse: (a: number, b: number, c: number, d: number, e: number) => void;
+    readonly voxelworld_player_overlaps: (a: number, b: number, c: number, d: number, e: number) => number;
+    readonly voxelworld_player_remove: (a: number, b: number) => void;
+    readonly voxelworld_player_reset: (a: number, b: number, c: number, d: number, e: number) => void;
+    readonly voxelworld_player_restore: (a: number, b: number, c: number, d: number) => void;
+    readonly voxelworld_player_state: (a: number, b: number) => [number, number];
+    readonly voxelworld_player_step: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number, l: number, m: number) => number;
+    readonly voxelworld_player_tune: (a: number, b: number, c: number, d: number) => void;
+    readonly voxelworld_point_solid: (a: number, b: number, c: number, d: number) => number;
+    readonly voxelworld_projectile_capacity: (a: number) => number;
+    readonly voxelworld_projectile_stride: (a: number) => number;
+    readonly voxelworld_projectiles_ptr: (a: number) => number;
+    readonly voxelworld_ray_exit: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => [number, number];
+    readonly voxelworld_raycast: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => [number, number];
+    readonly voxelworld_raycast_liquids: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => [number, number];
+    readonly voxelworld_rebuild_flow: (a: number) => void;
+    readonly voxelworld_remove_column: (a: number, b: number, c: number) => void;
+    readonly voxelworld_revert_edits: (a: number) => [number, number];
+    readonly voxelworld_set_block: (a: number, b: number, c: number, d: number, e: number) => number;
+    readonly voxelworld_set_destructible: (a: number, b: number, c: number, d: number) => void;
+    readonly voxelworld_set_flying: (a: number, b: number, c: number) => void;
+    readonly voxelworld_set_frozen: (a: number, b: number, c: number) => void;
+    readonly voxelworld_set_ghost: (a: number, b: number, c: number) => void;
+    readonly voxelworld_step_entities: (a: number, b: number) => void;
+    readonly voxelworld_sweep_body: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => [number, number, number, number];
+    readonly voxelworld_target_boxes: (a: number, b: number, c: number, d: number) => [number, number];
+    readonly __wbindgen_externrefs: WebAssembly.Table;
+    readonly __wbindgen_free: (a: number, b: number, c: number) => void;
+    readonly __wbindgen_malloc: (a: number, b: number) => number;
+    readonly __externref_table_dealloc: (a: number) => void;
+    readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
+    readonly __wbindgen_start: () => void;
+}
+
+export type SyncInitInput = BufferSource | WebAssembly.Module;
+
+/**
+ * Instantiates the given `module`, which can either be bytes or
+ * a precompiled `WebAssembly.Module`.
+ *
+ * @param {{ module: SyncInitInput }} module - Passing `SyncInitInput` directly is deprecated.
+ *
+ * @returns {InitOutput}
+ */
+export function initSync(module: { module: SyncInitInput } | SyncInitInput): InitOutput;
+
+/**
+ * If `module_or_path` is {RequestInfo} or {URL}, makes a request and
+ * for everything else, calls `WebAssembly.instantiate` directly.
+ *
+ * @param {{ module_or_path: InitInput | Promise<InitInput> }} module_or_path - Passing `InitInput` directly is deprecated.
+ *
+ * @returns {Promise<InitOutput>}
+ */
+export default function __wbg_init (module_or_path?: { module_or_path: InitInput | Promise<InitInput> } | InitInput | Promise<InitInput>): Promise<InitOutput>;

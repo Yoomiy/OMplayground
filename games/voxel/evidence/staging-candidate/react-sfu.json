@@ -1,0 +1,624 @@
+{
+  "result": "PASS",
+  "mouseClickAcknowledged": true,
+  "buildId": "c293fe5e2511d2bc656ea33756509e834b8761fc743a9d2d8a4e83cebd2ad799",
+  "engineHash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388",
+  "contentHash": "368b605ac5bdf5ff6fcf4af02f7174cbc6d39b5110f48e0a41b231a0a6479464",
+  "browser": "156.0.8078.4",
+  "scope": "Built React development StrictMode fixture, actual native packaged worker and SDK/PostgreSQL; fixture Auth/PostgREST/Storage transports, not full hosted shell or hardware qualification",
+  "lateMountCancelled": true,
+  "strictMode": true,
+  "fullscreenInventory": true,
+  "terminalGameOwnersReleased": true,
+  "playerTouchLayout": [
+    {
+      "control": "joystick",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "jump",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "sneak",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "sprint",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "תקיפה (Q)",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "הצתה (G)",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "בנייה",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "mine",
+      "overlap": 0,
+      "reachable": true
+    },
+    {
+      "control": "השהיה",
+      "overlap": 0,
+      "reachable": true
+    }
+  ],
+  "playerTouchMovement": true,
+  "repeatedMounts": {
+    "result": "REPEATED_REACT_SURFACE_OWNERSHIP_AND_UI_TEARDOWN_PASS",
+    "cycles": 2,
+    "samples": [
+      {
+        "cycle": 0,
+        "actorId": "daea3ced-9409-4eb5-8806-79df2ea2dfab",
+        "worldId": "0096f639-7ba6-41ab-817a-b4c8cad365a8",
+        "epoch": 3,
+        "mounted": {
+          "resources": {
+            "geometries": 21,
+            "textures": 5,
+            "workers": 1
+          },
+          "columns": 49,
+          "collisionColumns": 49,
+          "memory": {
+            "wasm": [
+              5636096
+            ],
+            "gpuBuffers": {
+              "created": 62,
+              "deleted": 5,
+              "live": 57,
+              "bytes": 556804,
+              "peakBytes": 557740
+            }
+          },
+          "owners": {
+            "openedSockets": 1,
+            "closedSockets": 0,
+            "createdWorkers": 1,
+            "closedWorkers": 0,
+            "liveWorkers": 1
+          }
+        },
+        "unmounted": {
+          "resources": {
+            "geometries": 0,
+            "textures": 0,
+            "workers": 0
+          },
+          "audio": "closed",
+          "memory": {
+            "wasm": [
+              5636096
+            ],
+            "gpuBuffers": {
+              "created": 62,
+              "deleted": 62,
+              "live": 0,
+              "bytes": 0,
+              "peakBytes": 557740
+            }
+          },
+          "owners": {
+            "openedSockets": 1,
+            "closedSockets": 1,
+            "createdWorkers": 1,
+            "closedWorkers": 1,
+            "liveWorkers": 0
+          }
+        }
+      },
+      {
+        "cycle": 1,
+        "actorId": "daea3ced-9409-4eb5-8806-79df2ea2dfab",
+        "worldId": "0096f639-7ba6-41ab-817a-b4c8cad365a8",
+        "epoch": 9,
+        "mounted": {
+          "resources": {
+            "geometries": 21,
+            "textures": 5,
+            "workers": 1
+          },
+          "columns": 49,
+          "collisionColumns": 49,
+          "memory": {
+            "wasm": [
+              5636096
+            ],
+            "gpuBuffers": {
+              "created": 124,
+              "deleted": 67,
+              "live": 57,
+              "bytes": 556804,
+              "peakBytes": 557740
+            }
+          },
+          "owners": {
+            "openedSockets": 2,
+            "closedSockets": 1,
+            "createdWorkers": 2,
+            "closedWorkers": 1,
+            "liveWorkers": 1
+          }
+        },
+        "unmounted": {
+          "resources": {
+            "geometries": 0,
+            "textures": 0,
+            "workers": 0
+          },
+          "audio": "closed",
+          "memory": {
+            "wasm": [
+              5636096
+            ],
+            "gpuBuffers": {
+              "created": 124,
+              "deleted": 124,
+              "live": 0,
+              "bytes": 0,
+              "peakBytes": 557740
+            }
+          },
+          "owners": {
+            "openedSockets": 2,
+            "closedSockets": 2,
+            "createdWorkers": 2,
+            "closedWorkers": 2,
+            "liveWorkers": 0
+          }
+        }
+      }
+    ],
+    "scope": "Same-page actual StrictMode VoxelSurface mounts via rendered exit/re-entry buttons, native packaged room workers and local SDK/SQL fixture. Instrumented GL ownership and actual socket/worker teardown; no hosted Auth/Storage, SFU, physical hardware or general heap-leak qualification."
+  },
+  "rosterReceipt": {
+    "left": true,
+    "ended": true,
+    "revision": 1,
+    "requestId": "26dd8537-c728-47c4-941c-df760ded5174"
+  },
+  "staffReceipts": [
+    {
+      "result": {
+        "ok": true,
+        "reason": "mode"
+      },
+      "command": {
+        "kind": "mode",
+        "mode": "creative"
+      },
+      "completed": true
+    },
+    {
+      "result": {
+        "ok": true,
+        "reason": "mode"
+      },
+      "command": {
+        "kind": "mode",
+        "mode": "survival"
+      },
+      "completed": true
+    },
+    {
+      "result": {
+        "ok": true,
+        "reason": "teleport"
+      },
+      "command": {
+        "kind": "teleport",
+        "target": "daea3ced-9409-4eb5-8806-79df2ea2dfab"
+      },
+      "completed": true
+    }
+  ],
+  "moderationReceipts": [
+    {
+      "action": "remove",
+      "banned": false,
+      "revision": 1,
+      "requestId": "9c0fbdad-9dab-448c-8795-570d92631f8a"
+    },
+    {
+      "action": "ban",
+      "banned": true,
+      "revision": 2,
+      "requestId": "a422fdc3-95c9-4adc-a6ad-d0438f1b1aeb"
+    },
+    {
+      "action": "unban",
+      "banned": false,
+      "revision": 3,
+      "requestId": "158de596-606b-4d29-8bc4-2dc48d2bc58b"
+    }
+  ],
+  "moderationFlow": true,
+  "chatFlow": true,
+  "voice": {
+    "enabled": true,
+    "databaseErrors": [
+      {
+        "rpc": "voxel_media_authorize",
+        "code": "42501",
+        "message": "media admission revoked"
+      }
+    ],
+    "responses": [
+      {
+        "page": "kid",
+        "operation": "voice-ticket",
+        "code": "NOT_IN_ROOM",
+        "time": 10005.358824
+      },
+      {
+        "page": "kid",
+        "operation": "media-moderate",
+        "code": "FORBIDDEN",
+        "time": 21782.496199
+      },
+      {
+        "page": "teacher",
+        "operation": "media-moderate",
+        "code": "MEDIA_UNCONFIRMED",
+        "time": 22030.68563
+      },
+      {
+        "page": "kid",
+        "operation": "voice-ticket",
+        "code": "NOT_IN_ROOM",
+        "time": 59465.142133
+      }
+    ],
+    "actualGamePoses": {
+      "listener": {
+        "position": [
+          49.5,
+          69.625,
+          0.5
+        ],
+        "forward": [
+          0,
+          0,
+          -1
+        ],
+        "up": [
+          0,
+          1,
+          0
+        ]
+      },
+      "sources": [
+        {
+          "id": "daea3ced-9409-4eb5-8806-79df2ea2dfab",
+          "position": [
+            49.5,
+            69.625,
+            0.5
+          ],
+          "gain": 1,
+          "occluded": false
+        }
+      ]
+    },
+    "nearSamples": [
+      0.04930920118861924
+    ],
+    "hiddenStaff": true,
+    "lostMuteReply": true,
+    "retrySameRequest": true,
+    "studentModerationDenied": true,
+    "noGameplayReadmissionOnMute": true,
+    "beforeGameResume": {
+      "phase": "playing",
+      "inputMode": "desktop",
+      "maxTouchPoints": 0,
+      "coarse": false,
+      "lifecycle": "playing",
+      "focused": false,
+      "inventoryPending": false,
+      "inventoryOpen": false,
+      "keys": [],
+      "events": [
+        {
+          "type": "hud",
+          "status": "connecting",
+          "lifecycle": "preparing",
+          "role": "participant",
+          "inventoryOpen": false,
+          "inventoryPending": false,
+          "pointerLocked": false,
+          "generation": 1,
+          "time": 3099.4000000953674
+        },
+        {
+          "type": "hud",
+          "status": "loading",
+          "lifecycle": "preparing",
+          "role": "participant",
+          "inventoryOpen": false,
+          "inventoryPending": false,
+          "pointerLocked": false,
+          "generation": 1,
+          "time": 3438
+        },
+        {
+          "type": "hud",
+          "status": "loading",
+          "lifecycle": "recovering",
+          "role": "participant",
+          "inventoryOpen": false,
+          "inventoryPending": false,
+          "pointerLocked": false,
+          "generation": 1,
+          "time": 3450.7999999523163
+        },
+        {
+          "type": "hud",
+          "status": "loading",
+          "lifecycle": "playing",
+          "role": "participant",
+          "inventoryOpen": false,
+          "inventoryPending": false,
+          "pointerLocked": false,
+          "generation": 1,
+          "time": 3558
+        },
+        {
+          "type": "hud",
+          "status": "paused",
+          "lifecycle": "playing",
+          "role": "participant",
+          "inventoryOpen": false,
+          "inventoryPending": false,
+          "pointerLocked": false,
+          "generation": 1,
+          "time": 3901.5
+        },
+        {
+          "type": "command",
+          "command": "pause",
+          "generation": 1,
+          "time": 9835.5
+        }
+      ],
+      "visible": "visible",
+      "hasFocus": true,
+      "active": "BUTTON",
+      "dialogs": [
+        {
+          "open": false,
+          "label": "voxel-voice-title"
+        },
+        {
+          "open": false,
+          "label": "voxel-chat-title"
+        },
+        {
+          "open": false,
+          "label": "voxel-staff-title"
+        },
+        {
+          "open": false,
+          "label": "voxel-end-title"
+        },
+        {
+          "open": false,
+          "label": "inventory-title"
+        }
+      ]
+    },
+    "farDistance": 66.98850751454327,
+    "nativeFarSceneSilent": true,
+    "banRevokedVoice": true,
+    "bannedProviderIdentityAbsent": true,
+    "terminalOwnerClosed": true
+  },
+  "expectedVoiceFailures": [
+    "NOT_IN_ROOM",
+    "FORBIDDEN",
+    "NOT_IN_ROOM"
+  ],
+  "mediaRequests": [
+    {
+      "requestId": "ab5de7c3-4e6e-4b31-8fd7-6a8454e8ca02",
+      "action": "mute",
+      "target": null
+    },
+    {
+      "requestId": "20190a42-9395-44d8-86b3-a6a2fb671226",
+      "action": "mute",
+      "target": "daea3ced-9409-4eb5-8806-79df2ea2dfab"
+    },
+    {
+      "requestId": "20190a42-9395-44d8-86b3-a6a2fb671226",
+      "action": "mute",
+      "target": "daea3ced-9409-4eb5-8806-79df2ea2dfab"
+    },
+    {
+      "requestId": "2c47c3f9-4333-465e-919f-1f4658728d66",
+      "action": "unmute",
+      "target": "daea3ced-9409-4eb5-8806-79df2ea2dfab"
+    }
+  ],
+  "expectedFailedMediaReplies": 1,
+  "chatRetrySameRequest": true,
+  "chatEscapedText": true,
+  "chatHiddenStaffReadOnly": true,
+  "chatPersistedAfterReopen": true,
+  "chatDeleteAndClear": true,
+  "expectedChatFailureResponses": 1,
+  "moderationRetrySameRequest": true,
+  "moderationInventoryPreserved": true,
+  "expectedModerationFailureResponses": 1,
+  "expectedBannedAdmissionResponses": 1,
+  "expectedBannedSessionResponses": 1,
+  "staffModeAndTeleport": true,
+  "staffTeleportTravel": {
+    "from": [
+      114.80660000000003,
+      81.0717,
+      0.5
+    ],
+    "to": [
+      49.5,
+      70,
+      0.5
+    ],
+    "originBefore": {
+      "x": 112,
+      "z": 0
+    },
+    "originAfter": {
+      "x": 48,
+      "z": 0
+    },
+    "unloads": 77
+  },
+  "failedSaveNotConfirmed": true,
+  "expectedControlFailureResponses": 1,
+  "expectedBrowserNetworkErrors": 9,
+  "sameRequestRetry": true,
+  "teacherRise": 2.2169074126320822,
+  "noAutomaticReadmission": true,
+  "receipts": [
+    {
+      "action": "pause",
+      "completed": true,
+      "savedSequence": 6
+    },
+    {
+      "action": "resume",
+      "completed": true,
+      "savedSequence": null
+    },
+    {
+      "action": "end",
+      "completed": true,
+      "savedSequence": 8
+    }
+  ],
+  "cleanup": [
+    {
+      "resources": {
+        "geometries": 0,
+        "textures": 0,
+        "workers": 0
+      },
+      "audio": "closed"
+    },
+    {
+      "resources": {
+        "geometries": 0,
+        "textures": 0,
+        "workers": 0
+      },
+      "audio": "closed"
+    },
+    {
+      "resources": {
+        "geometries": 0,
+        "textures": 0,
+        "workers": 0
+      },
+      "audio": "closed"
+    }
+  ],
+  "exitInteractions": [
+    "mouse click after session end",
+    "touch tap"
+  ],
+  "exitInputEvents": [
+    {
+      "type": "pointerdown",
+      "trusted": true,
+      "tag": "BUTTON",
+      "text": "יציאה",
+      "fullscreen": false,
+      "pointerLock": false,
+      "time": 92623.29999995232
+    },
+    {
+      "type": "mousedown",
+      "trusted": true,
+      "tag": "BUTTON",
+      "text": "יציאה",
+      "fullscreen": false,
+      "pointerLock": false,
+      "time": 92624.09999990463
+    },
+    {
+      "type": "pointerup",
+      "trusted": true,
+      "tag": "BUTTON",
+      "text": "יציאה",
+      "fullscreen": false,
+      "pointerLock": false,
+      "time": 92625.79999995232
+    },
+    {
+      "type": "mouseup",
+      "trusted": true,
+      "tag": "BUTTON",
+      "text": "יציאה",
+      "fullscreen": false,
+      "pointerLock": false,
+      "time": 92626.09999990463
+    },
+    {
+      "type": "click",
+      "trusted": true,
+      "tag": "BUTTON",
+      "text": "יציאה",
+      "fullscreen": false,
+      "pointerLock": false,
+      "time": 92626.20000004768
+    }
+  ],
+  "errors": [],
+  "clientArtifacts": [
+    {
+      "path": "/assets/embed-BbfR4Nnp.css",
+      "sha256": "88cf956a48a285c6e672ae7387cbdaa256a319b20328632c5aff65ea426abae7"
+    },
+    {
+      "path": "/assets/embed-XOrmj1kr.js",
+      "sha256": "58cf7ec14faae637f76957cfa88bc92b39c42a1af6a9c3acc6cc84d32d84925c"
+    },
+    {
+      "path": "/assets/engine-worker-DPFd4qax.js",
+      "sha256": "4fb4aae45165a42ca55545e132de209d72dc6557be1d4704e7682774dd17c18c"
+    },
+    {
+      "path": "/assets/index-BI1NryoK.css",
+      "sha256": "95b51702c53b47fc69da88fc0d997dea35a454115cf3e51455e3a5e9d20d4937"
+    },
+    {
+      "path": "/assets/index-DnaEGm0_.js",
+      "sha256": "ebe404a1c05b725ed4f263884c2185ee15b72fdb47a288219bb07571c800f3e4"
+    },
+    {
+      "path": "/assets/voxel_engine_bg-1ejYMYOZ.wasm",
+      "sha256": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "/index.html",
+      "sha256": "a0b522bfa7b23e39e51972b178e090e0204a7e3d22039981af4e86cc0986865a"
+    }
+  ]
+}

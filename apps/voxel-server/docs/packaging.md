@@ -1,20 +1,24 @@
 # Production runtime package
 
-Build the game release once, then assemble the voxel service from that release:
+Fresh hosting checkouts restore the published, source-matched game release:
 
 ```sh
-npm run build:voxel
+npm ci --prefix games/voxel --include=dev --ignore-scripts
+npm --prefix games/voxel run restore:release
 npm run package:voxel-server
 ```
 
-The second command builds/typechecks the shared packages and school service,
+The packaging command builds/typechecks the shared packages and school service,
 verifies the current game source/content/release identities, and replaces only
 its generated `apps/voxel-server/dist/runtime` directory after assembly succeeds.
 It copies an explicit allowlist: service source, shared compiled packages, school
 validators, game gateway/worker/Wasm, release manifests, pinned dependency manifests
 and provenance. It does not copy `.env`, local dependencies, caches, historical
 evidence, browser bundles, Rust build outputs or tests. Node **24.21.0** runs the
-service's erasable TypeScript directly; Rust is needed at game build time only.
+service's erasable TypeScript directly. Rust is needed only when rebuilding a
+changed engine release, not for normal hosting builds. After changing game
+source/content/configuration or Rust, run `build:voxel`/`check:voxel` and then
+`npm --prefix games/voxel run freeze:release` before publishing the new snapshot.
 
 `runtime-package.json` inventories the package bytes and game build ID. The included
 `verify-runtime.mjs` checks the inventory (excluding installed `node_modules`),
@@ -38,19 +42,21 @@ tool with the absolute path to this runtime directory instead.
 
 ## Container
 
-From the repository root after packaging:
+From a clean repository root, with no prebuilt local output required:
 
 ```sh
 docker build -f apps/voxel-server/Dockerfile -t playground-voxel .
 node apps/voxel-server/tools/smoke-package.mjs --container playground-voxel
 ```
 
-The Dockerfile installs only production dependencies from both lockfiles, verifies
-the package, and uses a separate Node runtime stage with the `node` user and a
+The Dockerfile restores the checked-in release in a builder stage and assembles
+the runtime. A dependency stage installs only production dependencies from both
+lockfiles and verifies the package. A separate runtime stage uses the `node` user and a
 direct Node entry point. Its readiness healthcheck follows `PORT`. Its
 [Dockerfile-specific ignore file](https://docs.docker.com/build/concepts/context/#filename-and-location)
-restricts the context to the assembled runtime, so the repository's large evidence
-archives and credential files are not build inputs. Provider credentials are
+restricts the context to the required service/game/shared source and published
+release. Historical evidence, local outputs, dependencies and credential files
+are not build inputs. Provider credentials are
 supplied by the target's runtime environment, never build arguments.
 
 On managed build hosts with a session CA, preserve the configured proxy and pass

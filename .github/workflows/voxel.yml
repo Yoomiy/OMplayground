@@ -36,6 +36,7 @@ jobs:
       - run: npm ci --workspace @playground/voxel-server --workspace @playground/game-logic --workspace @playground/observability --workspace @playground/web --include-workspace-root=false --ignore-scripts
       - run: npm run check:voxel
       - run: npm --prefix games/voxel run verify:release
+      - run: npm --prefix games/voxel run test:release
       - name: Packaged survival, autosave and crash recovery
         run: |
           npm --prefix games/voxel run benchmark:survival:workers

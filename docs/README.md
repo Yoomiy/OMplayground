@@ -17,6 +17,7 @@ Canonical product + architecture guide: **[`ARCHITECTURE.md`](../ARCHITECTURE.md
 | [`Voxel runtime`](../games/voxel/README.md) | Current engine/content/client/server commands and implementation contracts |
 | [`Local development`](local-development.md) | One-command app dev stack and the replacement for `dev:minecraft` |
 | [`Voxel staging handoff`](voxel-staging-handoff.md) | Checkpoint build order, service routing, environment and remaining staging checks |
+| [`Staging setup`](voxel-staging-setup.md) | Manual Railway/Vercel settings for `dev/staging`, before the PR to main |
 | [`Asset retirement`](../games/voxel/docs/asset-retirement.md) | Removed unused old textures/audio/import tooling; preserved other public assets |
 | [`Content retirement`](../games/voxel/docs/content-retirement.md) | Removed legacy content workspace; frozen source/disposition provenance |
 | [`Backend retirement`](../games/voxel/docs/backend-retirement.md) | Retired backend workspace; independent classroom telemetry and admin operations |

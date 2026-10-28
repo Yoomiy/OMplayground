@@ -1,6 +1,7 @@
 {
   "name": "playground-monorepo",
   "private": true,
+  "engines": { "node": "24.x" },
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -35,7 +36,8 @@
     "dev:voxel-server": "node scripts/dev-service-start.mjs voxel",
     "predev:classroom": "npm run build --workspace @playground/observability",
     "test:dev": "node --test scripts/dev-app.test.mjs scripts/dev-proxy.test.mjs",
-    "package:voxel-server": "npm run build --workspace @playground/voxel-server && node apps/voxel-server/tools/package-release.ts"
+    "package:voxel-server": "npm run build --workspace @playground/voxel-server && node apps/voxel-server/tools/package-release.ts",
+    "build:staging:web": "npm ci --prefix games/voxel --include=dev --ignore-scripts --no-audit --no-fund && npm --prefix games/voxel run restore:release && npm run build --workspace @playground/web"
   },
   "devDependencies": {
     "tsx": "^4.22.3",

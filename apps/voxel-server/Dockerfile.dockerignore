@@ -1,11 +1,27 @@
-# Only the explicitly assembled runtime is sent to the Docker builder.
+# Only source and the published release required by this service are sent.
 **
+!package.json
+!package-lock.json
 !apps/
 !apps/voxel-server/
-!apps/voxel-server/dist/
-!apps/voxel-server/dist/runtime/
-!apps/voxel-server/dist/runtime/**
+!apps/voxel-server/**
+!packages/
+!packages/game-logic/
+!packages/game-logic/**
+!packages/observability/
+!packages/observability/**
+!games/
+!games/voxel/
+!games/voxel/**
 **/node_modules
+**/dist
+**/test-results
 **/.env
 **/.env.*
 **/*.log
+games/voxel/evidence
+games/voxel/artifacts
+games/voxel/engine/pkg
+games/voxel/engine/target
+games/voxel/dist-client
+games/voxel/dist-server

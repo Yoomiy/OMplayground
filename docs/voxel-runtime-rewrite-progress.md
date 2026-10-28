@@ -1941,6 +1941,41 @@ teacher and classroom work from remaining hosted browser/SFU/classroom, actual
 PC/network, balance/product and cutover qualification. Historical archives stay
 unchanged. No additional hosted mutation, push or deployment is performed.
 
+## 2026-10-28 — Launch direction, current SFU pass and clean hosting builds
+
+The user wants to launch with the current defaults and will configure/create
+hosting services manually. The agreed path is `dev/staging`, functional staging
+checks, then a PR to `main`. No further product-signoff questionnaire or larger
+qualification project is a prerequisite to preparing that staging deployment.
+
+The current-build React/native/local-SQL/configured-LiveKit browser flow passes
+with generated audio. Near audio is measured, distance removes subscription,
+staff are hidden, committed mute-reply loss retries with the same UUID, a banned
+identity is confirmed absent at the provider, and terminal metadata closes owned
+game/media resources. Trusted Exit and two remounts pass; all tracked resources
+close. Its single unique SFU room is deleted and absence verified; the owned
+private PostgreSQL cluster stops. Fixture Auth/PostgREST/Storage remain explicit;
+this does not combine actual hosted school Auth and SFU in one test.
+
+Fresh hosting checkouts previously lacked ignored generated game artifacts.
+The published source-matched release now carries the same validated Wasm/content/
+client/server files through Git. Restoration verifies source/compiler/toolchain
+inputs, payload checksums and paths before replacing generated output, then runs
+full release verification. Two tests prove a clean temporary source checkout
+without Rust/npm dependencies restores correctly and that source/corruption/
+traversal errors preserve existing output. The exact `build:staging:web` command
+passes; Vercel config retains SPA rewrites and uses Node 24. The source-based
+voxel Dockerfile assembles its runtime itself, and both service Docker contexts
+exclude credentials, local outputs and historical evidence. No Rust install is
+needed on the hosting build servers for the published release.
+
+See [manual staging setup](voxel-staging-setup.md) and
+[candidate evidence](../games/voxel/evidence/staging-candidate/README.md).
+Game build `c293fe5e2511` is unchanged. Docker execution remains for CI/Railway;
+actual hosting URLs and user school-PC flows are checked during staging. No
+Railway/Vercel service is created or configured by the agent, and main remains
+unchanged pending the user's staging result.
+
 ## 2026-10-28 — Configurable world profile and single-port local development
 
 The [shared world profile](../games/voxel/docs/world-profile.md) now controls
