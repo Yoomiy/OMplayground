@@ -149,6 +149,50 @@ test("closed rooms require current membership, a current invitation, or an accep
   );
 });
 
+test("a presence pause permits new admission only with fresh playing intent and normal invitation policy", async () => {
+  const f = fixture();
+  f.state.session.status = "paused";
+  f.state.sessionPolicy = { state: "playing" };
+  assert.equal(
+    (await f.access.authorize(f.token(f.guest), { room: f.room })).actor.id,
+    f.guest,
+  );
+  f.state.session.is_open = false;
+  await assert.rejects(
+    f.access.authorize(f.token(f.guest), { room: f.room }),
+    rejected("SESSION_CLOSED"),
+  );
+  await f.access.authorize(f.token(f.guest), {
+    room: f.room,
+    invitationCode: "join-test",
+  });
+  f.state.sessionPolicy = { state: "paused" };
+  await assert.rejects(
+    f.access.authorize(f.token(f.guest), {
+      room: f.room,
+      invitationCode: "join-test",
+    }),
+    rejected("PAUSED_ROSTER"),
+  );
+  f.state.sessionPolicy = { state: "ended" };
+  await assert.rejects(
+    f.access.authorize(f.token(f.guest), { room: f.room }),
+    rejected("SESSION_ENDED"),
+  );
+  for (const value of [null, {}, { state: "unknown" }]) {
+    f.state.sessionPolicy = value;
+    await assert.rejects(
+      f.access.authorize(f.token(f.guest), { room: f.room }),
+      SchoolUnavailable,
+    );
+  }
+  f.state.outage = "voxel_session_policy";
+  await assert.rejects(
+    f.access.authorize(f.token(f.guest), { room: f.room }),
+    SchoolUnavailable,
+  );
+});
+
 test("paused sessions preserve roster/host access and staff inspection, while ended or wrong-game sessions never start", async () => {
   const f = fixture();
   f.state.session.status = "paused";

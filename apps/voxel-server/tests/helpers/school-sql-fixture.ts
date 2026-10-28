@@ -33,7 +33,9 @@ export function schoolSqlFixture(
             aud: "authenticated",
             role: "authenticated",
           };
-        } else if (path === "voxel_actor_policy") {
+        } else if (
+          ["voxel_actor_policy", "voxel_session_policy"].includes(path)
+        ) {
           data = await db.rpcAsync(
             path,
             (await request.json()) as Record<string, unknown>,
