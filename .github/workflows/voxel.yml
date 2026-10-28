@@ -33,7 +33,7 @@ jobs:
           toolchain: 1.99.1
           targets: wasm32-unknown-unknown
       - run: npm ci --prefix games/voxel
-      - run: npm ci --workspace @playground/voxel-server --workspace @playground/game-logic --workspace @playground/observability --workspace @playground/web --include-workspace-root=false --ignore-scripts
+      - run: npm ci --workspace @playground/voxel-server --workspace @playground/game-logic --workspace @playground/observability --workspace @playground/web --include-workspace-root=true --ignore-scripts
       - run: npm run check:voxel
       - run: npm --prefix games/voxel run verify:release
       - run: npm --prefix games/voxel run test:release

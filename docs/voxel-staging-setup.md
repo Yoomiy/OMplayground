@@ -5,6 +5,35 @@ The user will configure/create hosting services manually. Use branch
 PR after staging works. The current release uses the existing 512×512 world,
 visual/audio weather and snapshot recovery defaults.
 
+## Current staging backends
+
+Both services were deployed from `dev/staging` and returned HTTP 200 from
+`/health` and `/ready` on 2026-10-28:
+
+| Service | Public origin / frontend variable |
+| --- | --- |
+| Voxel | `VITE_VOXEL_RUNTIME_SERVER_URL=https://voxel-server-dev.up.railway.app` |
+| Classroom | `VITE_CLASSROOM_SERVER_URL=https://classroom-server-dev.up.railway.app` |
+
+Use the intended staging frontend origin in the shared `CORS_ORIGIN`, referenced
+by voxel's `VOXEL_ALLOWED_ORIGINS`. The user selected
+`https://o-mplayground-game-server-git-dev-staging-yoomiys-projects.vercel.app`.
+Both backends returned HTTP 204 with that exact `Access-Control-Allow-Origin`
+on 2026-10-28. The frontend redirects to Vercel sign-in for unauthenticated
+requests. A generated per-deployment preview hostname is a different origin
+and was not allowed by either backend's CORS.
+
+For local development, use [`apps/web/.env.example`](../apps/web/.env.example)
+and [`npm run dev:app`](local-development.md), with local frontend URL overrides
+left empty so Vite routes to the local services.
+
+The [voxel CI run for staging commit `0fcf84a`](https://github.com/Yoomiy/OMplayground/actions/runs/40757368780)
+passed both runtime and image jobs on 2026-10-28. This includes source/packaged
+integration, PostgreSQL, web tests/build, browser journeys, desktop survival over
+a delayed connection, and clean image startup/readiness/graceful shutdown with
+fixture providers. The selected staging frontend origin passed its CORS check;
+the manual teacher/student staging journey in step 4 is still pending.
+
 ## 1. Railway: voxel service
 
 Create or repoint the staging voxel service in the existing Railway project.
@@ -65,6 +94,15 @@ signing configuration from the current environment. See the service's
 [environment example](../apps/classroom-server/.env.example).
 
 Classroom webhooks belong at this service's `/webhooks/livekit`, not voxel.
+For the user's self-hosted LiveKit, add
+`https://classroom-server-dev.up.railway.app/webhooks/livekit` to the existing
+`webhook.urls` list. Use the existing `webhook.api_key` when it matches classroom's
+`LIVEKIT_API_KEY` and matching `LIVEKIT_API_SECRET`. Apply the configuration through
+the normal LiveKit deployment process. Keep the current production URL during
+staging. This is the same signed webhook implementation formerly mounted in the
+old Minecraft service; its destination moves to the independent classroom service.
+See [LiveKit's self-hosted webhook configuration](https://docs.livekit.io/intro/basics/rooms-participants-tracks/webhooks-events/).
+
 Use the provider projects intended for staging: these are normal services with
 background room/checkpoint maintenance, not provider-free test fixtures.
 Keep the board service's CORS and shared classroom signing settings aligned.
@@ -108,6 +146,8 @@ the staging web URL with a staging teacher, create/open a fresh voxel session,
 and test joining, walking/mining/building, inventory/crafting, voice, chat,
 pause/resume, exit/rejoin and a backend restart. Student admission still follows
 the configured recess and school rules; teacher testing works outside recess.
+Teachers initially observe without editing. For mining/building, choose
+**הצטרפות כשחקן/ית** to enter as a player in the teacher's configured partition.
 Also open a classroom to check media/presentation and the board service route.
 
 Current automated evidence includes the approved actual hosted Auth/Storage

@@ -1,5 +1,35 @@
 # Local app development
 
+## Fresh clone
+
+Check out `dev/staging` and use Node **24.21.0**. From the repository root:
+
+```sh
+npm ci
+npm ci --prefix games/voxel --ignore-scripts
+npm --prefix games/voxel run restore:release
+```
+
+Restore your private local configuration into `apps/web/.env`,
+`apps/game-server/.env`, `apps/voxel-server/.env` and
+`apps/classroom-server/.env`. Copy the values from your working setup, or use
+the available frontend/voxel/classroom `.env.example` files as templates. Use the
+Supabase publishable key in the frontend and server-only Supabase/LiveKit keys in
+the backend files. Leave the frontend service URL overrides empty for local
+proxies.
+
+The restore command verifies the checked-in, source-matched game release and
+creates the ignored Wasm/client/server outputs. This startup path needs no Rust
+toolchain. It refuses a source mismatch; game edits need the full rebuild
+described below.
+
+If `node -p 'process.features.typescript'` reports `false`, release restoration
+uses the root project's existing `tsx` loader. Install root development
+dependencies with `npm ci` before restoring. The dev launchers also load `tsx`
+explicitly for service configuration and release verification.
+
+## Start the app
+
 Run the full app with Node 24.21.0:
 
 ```sh
@@ -28,6 +58,7 @@ This is the normal school app using the configured Supabase and LiveKit services
 saved worlds and school actions persist in that configured project. No SQL or
 deployment change is part of the launcher. Local app testing still enforces school
 access rules; use an existing teacher/admin account when testing outside recess. Configuration examples are in
+[`apps/web/.env.example`](../apps/web/.env.example),
 `apps/voxel-server/.env.example` and `apps/classroom-server/.env.example`.
 
 Check configuration/build/port availability without starting the services or
@@ -46,10 +77,9 @@ URL settings override those defaults. The combined launcher clears those three
 browser URL overrides for its own web process so stale production URLs cannot
 bypass the local services.
 
-The current workspace already has a verified game release. On a fresh checkout,
-install root/game dependencies and run `npm run build:voxel` once with the pinned
-[engine toolchain](../games/voxel/UPSTREAM.md). Stop the stack and rebuild it after engine, content, world-profile or shared
-simulation changes, then restart `dev:app`. Service-only edits use the normal
+Stop the stack and run `npm run build:voxel` with the pinned
+[engine toolchain](../games/voxel/UPSTREAM.md) after engine, content, world-profile
+or shared simulation changes, then restart `dev:app`. Service-only edits use the normal
 watcher. A missing
 or stale release fails preflight rather than starting a mismatched build.
 

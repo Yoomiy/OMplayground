@@ -37,9 +37,14 @@ export function sourceInventory(root = game) {
   return paths.sort().map((path) => ({ path, hash: digest(read(root, path)) }));
 }
 function verifyCurrent(root) {
-  execFileSync(process.execPath, [fileURLToPath(new URL('tools/verify-release.mjs', root))], {
-    stdio: 'pipe',
-  });
+  // Native TypeScript may be unavailable or disabled. The normal Node path stays
+  // dependency-free; local installs can use the existing root tsx dependency.
+  const loader = process.features.typescript ? [] : ['--import', import.meta.resolve('tsx')];
+  execFileSync(
+    process.execPath,
+    [...loader, fileURLToPath(new URL('tools/verify-release.mjs', root))],
+    { stdio: 'pipe', encoding: 'utf8' },
+  );
 }
 /** Explicit release-maintainer command, after a full matched build/check. */
 export function freezeRelease(root = game) {
