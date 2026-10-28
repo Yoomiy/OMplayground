@@ -214,6 +214,19 @@ export class SurvivalPeer {
     this.commandMs.record(performance.now() - started);
     const reason = result.outcome?.reason ?? result.status;
     this.outcomes[reason] = (this.outcomes[reason] ?? 0) + 1;
+    if (message.type === 'inventory') {
+      // The server sends the receipt before its refreshed private view. They
+      // can arrive in separate socket reads; the next command must use that
+      // view, including after cached or rejected commands with no revision bump.
+      const receipt = this.events.find((row) => row.event === result);
+      assert(receipt, 'retained inventory receipt');
+      await this.event(
+        (event): event is Extract<ServerMessage, { type: 'inventory' }> =>
+          'type' in event && event.type === 'inventory' && event.epoch === this.epoch,
+        receipt.serial,
+        'inventory following command result',
+      );
+    }
     return { message, result };
   }
   request(make: (epoch: number, sequence: number) => Action) {
