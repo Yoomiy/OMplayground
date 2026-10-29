@@ -18,9 +18,10 @@ export class ItemIcons {
     this.camera.position.set(2, 1.6, 2.6);
     this.camera.lookAt(0, 0, 0);
   }
-  get(itemType: string): string | null {
+  get(itemType: string, cachedOnly = false): string | null {
     const cached = this.cache.get(itemType);
     if (cached) return cached;
+    if (cachedOnly) return null;
     const item = this.items.find((item) => item.itemType === itemType);
     if (!item || this.renderer.getContext().isContextLost()) return null;
     const geometry = itemGeometry(item, this.blocks);

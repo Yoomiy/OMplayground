@@ -110,6 +110,7 @@ type Actor = {
   nextSubscription: number;
   visible: Map<string, ActorState>;
   catalogItem: string | null;
+  catalogUsesBag: boolean;
   catalogSequence: number;
   pending: Map<
     number,
@@ -444,6 +445,7 @@ export class GameRoom {
       nextSubscription: 0,
       visible: new Map(),
       catalogItem: old?.catalogItem ?? null,
+      catalogUsesBag: old?.catalogUsesBag ?? false,
       catalogSequence: 0,
       pending: new Map(),
       mining: null,
@@ -554,6 +556,7 @@ export class GameRoom {
         this.content.items.find((item) => item.places === block.name);
       if (!item) return;
       a.catalogItem = item.itemType;
+      a.catalogUsesBag = false;
       a.catalogSequence = message.sequence;
       return;
     }
@@ -649,6 +652,8 @@ export class GameRoom {
                   },
                 )
               : this.inventories.transact(a.id, operation, this.mode === 'creative');
+        if (outcome.ok && operation.kind === 'select' && this.mode === 'creative')
+          a.catalogUsesBag = true;
         if (outcome.containerChanged)
           for (const id of this.inventories.viewers(outcome.containerChanged)) {
             const viewer = this.actors.get(id);
@@ -1006,6 +1011,7 @@ export class GameRoom {
         a.movement = this.movementProfile(a);
         a.saved = this.store.world.player_state(a.slot);
         a.catalogItem = null;
+        a.catalogUsesBag = false;
       }
       for (const a of connected) {
         this.send(a, {
@@ -1975,7 +1981,7 @@ export class GameRoom {
             yaw: other.controls.yaw,
             pitch: other.controls.pitch,
             appearance:
-              this.mode === 'survival'
+              this.mode === 'survival' || other.catalogUsesBag
                 ? this.inventories.appearance(other.id)
                 : { ...this.inventories.appearance(other.id), held: other.catalogItem },
           },

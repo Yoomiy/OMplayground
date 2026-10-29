@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "buildId": "8beabee44d43b4a0a0ceb1b26d534e45b540247dcd9da1d9f5c87dd7a73f124d",
+  "buildId": "58715c185d44cb1e7334e401fb337bcdab45ab5db94af96614f9b32aad6994e3",
   "inputs": [
     {
       "path": "LICENSE",
@@ -156,7 +156,7 @@
     },
     {
       "path": "src/client/dev-entry.ts",
-      "hash": "d1d0ccb519a11ddd7831cc8ad5ff180cc6d502fb09a3d516f1d665bdb6281cd7"
+      "hash": "f27422042dec5649e4fcf5c8b4a930c78cd51af88a164257fc5b6d2995706216"
     },
     {
       "path": "src/client/embed.ts",
@@ -172,7 +172,7 @@
     },
     {
       "path": "src/client/inventory-controls.ts",
-      "hash": "a8b74139d4e853c730b537aa43bb0ebe2bc1731cdd8a9db1901a4beaf1637dec"
+      "hash": "15d9597e384af98a8a498c5324dd87cef5fc80041f3a43f627cf06891ba290b9"
     },
     {
       "path": "src/client/inventory.css",
@@ -196,7 +196,7 @@
     },
     {
       "path": "src/client/runtime.ts",
-      "hash": "0551745f894bb76f3d2565ebcb122fb0d76799917f37bf39c22c6e9b14069fbd"
+      "hash": "c990700d6ce48b35410d41e71714973034c9a6d1c6d65d7f2e57858e7246802f"
     },
     {
       "path": "src/client/style.css",
@@ -209,6 +209,10 @@
     {
       "path": "src/client/touch-controls.ts",
       "hash": "4418b20ddc2146432aa236055519c2ee4929592827c5639e5fb130afe598458b"
+    },
+    {
+      "path": "src/client/visible-item-icons.ts",
+      "hash": "1851a5b6f4e3d53d29e8a0b922b9efeb9b5efbd3c8ae239a5d9697ca6ec10a70"
     },
     {
       "path": "src/client/voice-scene.ts",
@@ -260,7 +264,7 @@
     },
     {
       "path": "src/render/item-icons.ts",
-      "hash": "c5f6eaa335532130bba00dfd394194f69f59fb9087d4991983c8caca27db7cc6"
+      "hash": "02dc60e3cc3c4b227b82dd568d0ae9996e03ad9636522f447bb008acfd5d0a46"
     },
     {
       "path": "src/render/mining-cracks.ts",
@@ -276,7 +280,7 @@
     },
     {
       "path": "src/render/terrain.ts",
-      "hash": "a85c41eb66a32c1b529de84ed7bf55022226ff3b4b93ef211e470ec0894678dc"
+      "hash": "a13484948866ffb9d9e4da6430278579375b570255a6fb6bda40903d64b5aa6f"
     },
     {
       "path": "src/server/admission.ts",
@@ -432,7 +436,7 @@
     },
     {
       "path": "src/sim/game-room.ts",
-      "hash": "4b35aa4e1af635be6d0a5dd30f5a9f7b622f527cc4268e7fb81c72cf9dc6fb07"
+      "hash": "ddeda91f1097fa9caa503f9c006c6359998a6afc4c84636a6acd7950639bcdca"
     },
     {
       "path": "src/sim/input-queue.ts",
@@ -514,7 +518,7 @@
     },
     {
       "path": "artifacts/build.json",
-      "hash": "f18075972b28c4eeaf0eb5b6c8613f54bc5b194b5c719056ce67e2ffecfacdca"
+      "hash": "52c8f06def66fb30560e121cea040841b8482aef1af3710062efa956ed5c8be3"
     },
     {
       "path": "artifacts/content-bindings.ts",
@@ -530,19 +534,19 @@
     },
     {
       "path": "artifacts/release.json",
-      "hash": "4679d35a02947752b45f49d32c3d07e9566686a40aa86e2802f11c6fae08a504"
+      "hash": "4c1ce84372ce2f34e491f07b29433c38bb0402706e16ccaa2d01e3f1fd44bdda"
     },
     {
       "path": "dist-client/assets/engine-worker-DYAFKrDe.js",
       "hash": "99d3377c134578cd5e9bdd923e7707547e62c3a2a0a1a64c90adec5f1121bf04"
     },
     {
-      "path": "dist-client/assets/index-BIs8EFlx.js",
-      "hash": "ecef46aaef370a5d9fe6d17e418afb259cbd4a60c567d3a7c4152bba8b8c8d27"
-    },
-    {
       "path": "dist-client/assets/index-BJR-UF1b.css",
       "hash": "ed44b97ecc09afb9f18f4ab10516ebcd08f0d94a8dd526fcd7c83528abcf5d37"
+    },
+    {
+      "path": "dist-client/assets/index-BeoO4WCB.js",
+      "hash": "1d5e4d24fbbd1f0d60cbb59d979001a074e4a0f72d5489d154843e2d557a9a1a"
     },
     {
       "path": "dist-client/assets/voxel_engine_bg-1ejYMYOZ.wasm",
@@ -550,11 +554,11 @@
     },
     {
       "path": "dist-client/index.html",
-      "hash": "b629ab1b24406584a70fc71fe7901d25a3a692de281d028061edd548e3c0a6d2"
+      "hash": "b1e7d7e505c55ccd4550a9e2e7c4ea5ca4aff25148e594f0284c9764f9d8d904"
     },
     {
       "path": "dist-server/build.json",
-      "hash": "f18075972b28c4eeaf0eb5b6c8613f54bc5b194b5c719056ce67e2ffecfacdca"
+      "hash": "52c8f06def66fb30560e121cea040841b8482aef1af3710062efa956ed5c8be3"
     },
     {
       "path": "dist-server/content.json",
@@ -574,11 +578,11 @@
     },
     {
       "path": "dist-server/room-worker.js",
-      "hash": "7ebe8f9af6611147f9779a1368ac2b7fc2d198d5e59ceaf1db787f1a3715875e"
+      "hash": "ae342f5e594eca2534aa354855aa585253e3db1b29ce8f0ff9bc0ffa1741736f"
     },
     {
       "path": "dist-server/room-worker.js.map",
-      "hash": "b8fe44ba049528bef26c7e1771bb01e6b4365fcc0fa4edcdb2bdcb5652011fb7"
+      "hash": "77c4b0b74569b416f83a92d0fe87561f3d33dc7fad231eb5f9ee3f3390594966"
     },
     {
       "path": "engine/pkg/.gitignore",

@@ -31,6 +31,16 @@ Repairs for the 2026-10-29 source review of `90fe575`. The first batch is `6af81
 
 ## Release and next step
 
-The matched published game release is `8beabee44d43b4a0a0ceb1b26d534e45b540247dcd9da1d9f5c87dd7a73f124d`.
+The matched published game release is `58715c185d44cb1e7334e401fb337bcdab45ab5db94af96614f9b32aad6994e3`.
 
-Terrain artwork continues to use the procedural world-texture pipeline (UI-13). Continue with concrete staging feedback, then the requested main PR and manual deployment walkthrough. No additional broad qualification loop is required for these presentation repairs.
+Terrain artwork continues to use the procedural world-texture pipeline (UI-13). Next is local play feedback; `dev/staging` stays untouched under the user's explicit instruction. The main PR and deployment walkthrough still depend on their later staging confirmation. No additional broad qualification loop is required for these presentation repairs.
+
+## Follow-up fixes review
+
+Addressed the two findings and thumbnail concern in the user's `tmp/voxel-rewrite-fixes-review.md`:
+
+- Shift-click continues through compatible stacks and then empty destinations. Each move waits for the server's result and fresh inventory view, verifies the source reduction and revision, and then uses that new revision. Rejection, unexpected ownership changes, closing the inventory and session changes stop the chain. No stacks are changed optimistically.
+- Creative players can put any item in bag slots 1–9, select it and use **החזקה מהתיק**. The hotbar then shows those nine owned slots; number keys and hotbar buttons select tools, blocks or an empty hand through the existing authoritative selection transaction. First- and third-person presentation use the selected item, and remote appearance follows current ownership. Choosing a catalog block returns to the building palette, including when choosing the same block as before. Inventory help explains both routes.
+- Catalog and recipe slots reuse cached images immediately. Uncached thumbnails are requested only for visible slots, with at most one request per animation frame. Scrolling, search, closing and disposal update or cancel pending work. Opening the catalog no longer synchronously renders all 172 thumbnails.
+
+Focused checks passed: game TypeScript, the five native appearance tests (including creative tool/palette switching and rejected selection), an actual-DOM check using the authoritative inventory model with delayed result/view delivery, and a built-client/native-room browser check of visible held tools, number-key selection and return to the block palette. The DOM check reproduced the review's 64/60-log setup and completed moves of 4 and 60 at successive revisions; rejection and close stopped further moves. It also confirmed that uncached offscreen catalog items were not generated and search results loaded when visible. These software-browser checks establish behavior, not school-PC GPU timing. Matched client/server packaging and the published snapshot are updated; the engine and content are unchanged.

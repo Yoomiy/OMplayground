@@ -193,7 +193,22 @@ test('creative palette selection validates catalog blocks, keeps worn ownership,
       (e) => e.type === 'actor_joined' && e.actor.id === 'a',
     );
     assert.ok(joined && joined.type === 'actor_joined');
-    assert.equal(joined.actor.appearance.held, 'glass');
+    assert.equal(joined.actor.appearance.held, 'wooden_pickaxe');
+    assert.equal(joined.actor.appearance.equipment.feet, 'trail_boots');
+    // Owned selection and palette selection are separate routes. A later
+    // palette message returns to unlimited building without changing the bag.
+    select(content.defaults.glass, 1000001);
+    f.tick(4);
+    assert.equal(appearance()?.held, 'glass');
+    const rejected = f.send({
+      type: 'inventory',
+      epoch: f.player().epoch,
+      sequence: f.next(),
+      operation: { kind: 'select', slot: 0, revision: 999999 },
+    });
+    assert.equal(rejected.outcome?.ok, false);
+    f.tick(4);
+    assert.equal(appearance()?.held, 'glass', 'a rejected selection cannot change the hand');
   } finally {
     f.room.dispose();
   }

@@ -102,7 +102,7 @@ export type RuntimeOptions = {
 };
 export type VoxelRuntime = {
   command(command: RuntimeCommand): void;
-  itemIcon(itemType: string): string | null;
+  itemIcon(itemType: string, cachedOnly?: boolean): string | null;
   subscribe(listener: (state: HudState) => void): () => void;
   dispose(): void;
   debug(): unknown;
@@ -257,6 +257,24 @@ export async function mountVoxel(
   const worldActions = new Set<number>();
   let inventoryEpoch = 0,
     inventorySequence = 0;
+  let creativeBagHotbar = false,
+    inventorySelectionPending = false;
+  const usesBagHotbar = () => hud.mode === 'survival' || creativeBagHotbar;
+  const bagHotbar = (view: InventoryView) =>
+    view.bag.slice(0, 9).map((stack, index) => {
+      const item = content.items.find((i) => i.itemType === stack?.itemType);
+      const state = item?.places
+        ? content.blocks.findIndex((b) => b.name === item.places && b.placeable !== false)
+        : 0;
+      return {
+        key: index,
+        slot: index,
+        state: Math.max(0, state),
+        family: stack?.itemType ?? '',
+        labelKey: item?.labelKey ?? 'item.empty',
+        count: stack?.count ?? 0,
+      };
+    });
   let pendingInventoryOpen: Extract<InventoryCommand, { kind: 'open' }> | null = null;
   let focusPending = false;
   let footTravel = 0,
@@ -350,6 +368,7 @@ export async function mountVoxel(
     blastPatches.clear();
     inventoryEpoch = 0;
     inventorySequence = 0;
+    inventorySelectionPending = false;
     pendingInventoryOpen = null;
     focusPending = false;
     publish({
@@ -381,6 +400,7 @@ export async function mountVoxel(
   const syncPalette = () => {
     if (
       hud.mode !== 'creative' ||
+      creativeBagHotbar ||
       phase !== 'playing' ||
       !prediction ||
       socket?.readyState !== WebSocket.OPEN
@@ -520,6 +540,7 @@ export async function mountVoxel(
     }
     if (event.type === 'rules') {
       if (!prediction || event.epoch <= prediction.currentEpoch) return;
+      creativeBagHotbar = inventorySelectionPending = false;
       publish({
         mode: event.mode,
         combat: event.combat,
@@ -548,21 +569,8 @@ export async function mountVoxel(
         return;
       }
       inventoryEpoch = event.epoch;
-      if (hud.mode === 'survival') {
-        const bar = event.view.bag.slice(0, 9).map((stack, index) => {
-          const item = content.items.find((i) => i.itemType === stack?.itemType);
-          const state = item?.places
-            ? content.blocks.findIndex((b) => b.name === item.places && b.placeable !== false)
-            : 0;
-          return {
-            key: index,
-            slot: index,
-            state: Math.max(0, state),
-            family: stack?.itemType ?? '',
-            labelKey: item?.labelKey ?? 'item.empty',
-            count: stack?.count ?? 0,
-          };
-        });
+      if (usesBagHotbar()) {
+        const bar = bagHotbar(event.view);
         publish({
           inventory: event.view,
           hotbar: bar,
@@ -585,12 +593,15 @@ export async function mountVoxel(
         return;
       }
       actorId = event.actorId;
+      if (event.mode !== hud.mode) creativeBagHotbar = false;
       publish({
         mode: event.mode,
         role: event.role,
         combat: event.combat,
         canIgnite: event.explosives,
-        ...(event.mode === 'survival' ? { hotbar: [], selected: 0 } : { hotbar }),
+        ...(event.mode === 'survival' || creativeBagHotbar
+          ? { hotbar: [], selected: 0 }
+          : { hotbar }),
       });
       worldId = event.worldId;
       environmentSeed = event.seed;
@@ -660,6 +671,7 @@ export async function mountVoxel(
         mineRetryAt = 0;
         lastResult = null;
         inventorySequence = 0;
+        inventorySelectionPending = false;
         publish({ inventoryPending: false });
       }
       // A newer baseline can retire an in-flight opposite focus request. Reassert
@@ -763,7 +775,12 @@ export async function mountVoxel(
           lastMineKey = '';
           mineRetryAt = performance.now() + 150;
         }
-        if (event.sequence === inventorySequence) publish({ inventoryPending: false });
+        if (event.sequence === inventorySequence) {
+          if (inventorySelectionPending && event.status === 'applied' && event.outcome?.ok)
+            creativeBagHotbar = true;
+          inventorySelectionPending = false;
+          publish({ inventoryPending: false });
+        }
         lastResult = event;
         if (worldActions.delete(event.sequence)) actionPending = worldActions.size;
         if (event.outcome && !event.outcome.ok) {
@@ -1303,12 +1320,11 @@ export async function mountVoxel(
               speed: state ? Math.hypot(state[3], state[5]) : 0,
               flying: state?.[10] === 1,
               appearance: {
-                held:
-                  hud.mode === 'survival'
-                    ? (hud.inventory?.bag[hud.selectedSlot]?.itemType ?? null)
-                    : (content.items.find(
-                        (item) => item.places === content.blocks[hud.selected]?.name,
-                      )?.itemType ?? null),
+                held: usesBagHotbar()
+                  ? (hud.inventory?.bag[hud.selectedSlot]?.itemType ?? null)
+                  : (content.items.find(
+                      (item) => item.places === content.blocks[hud.selected]?.name,
+                    )?.itemType ?? null),
                 equipment: Object.fromEntries(
                   EQUIPMENT.map((slot, index) => [
                     slot,
@@ -1325,8 +1341,7 @@ export async function mountVoxel(
         state: hud.selected,
         speed: state ? Math.hypot(state[3], state[5]) : 0,
         active: focused && phase === 'playing' && hud.role === 'participant' && !fatalRecovery,
-        itemType:
-          hud.mode === 'survival' ? (hud.inventory?.bag[hud.selectedSlot]?.itemType ?? null) : null,
+        itemType: usesBagHotbar() ? (hud.inventory?.bag[hud.selectedSlot]?.itemType ?? null) : null,
         drops: [...dropped.values()],
         explosives: [...primed.values()],
         vision:
@@ -1402,7 +1417,7 @@ export async function mountVoxel(
     if (event.code === 'KeyG' && !event.repeat) command({ type: 'ignite' });
     if (/^Digit[1-9]$/.test(event.code)) {
       const index = Number(event.code.slice(-1)) - 1;
-      if (hud.mode === 'survival') command({ type: 'select-slot', slot: index });
+      if (usesBagHotbar()) command({ type: 'select-slot', slot: index });
       else {
         const selected = hotbar[index];
         if (selected) command({ type: 'select', state: selected.state });
@@ -1525,6 +1540,7 @@ export async function mountVoxel(
       return;
     if (operation.kind !== 'open' && inventoryEpoch !== prediction.currentEpoch) return;
     inventorySequence = ++actionSequence;
+    inventorySelectionPending = operation.kind === 'select' && hud.mode === 'creative';
     publish({ inventoryPending: true });
     send({
       type: 'inventory',
@@ -1605,13 +1621,7 @@ export async function mountVoxel(
       return;
     }
     if (cmd.type === 'select-slot') {
-      if (
-        hud.mode === 'survival' &&
-        hud.inventory &&
-        Number.isInteger(cmd.slot) &&
-        cmd.slot >= 0 &&
-        cmd.slot < 9
-      )
+      if (hud.inventory && Number.isInteger(cmd.slot) && cmd.slot >= 0 && cmd.slot < 9)
         sendInventory({ kind: 'select', slot: cmd.slot, revision: hud.inventory.revision });
       return;
     }
@@ -1633,6 +1643,7 @@ export async function mountVoxel(
     if (
       cmd.type === 'select' &&
       hud.mode === 'creative' &&
+      !hud.inventoryPending &&
       palette.some((i) => i.state === cmd.state)
     ) {
       if (!hotbar.some((item) => item.state === cmd.state)) {
@@ -1642,6 +1653,9 @@ export async function mountVoxel(
         );
         hotbar[index] = palette.find((item) => item.state === cmd.state)!;
       }
+      creativeBagHotbar = false;
+      // Returning to the same palette block must still replace an owned hand.
+      if (paletteSent) paletteSent = { ...paletteSent, state: -1 };
       publish({ selected: cmd.state, hotbar: [...hotbar] });
       syncPalette();
     } else if (cmd.type === 'interact') {
@@ -1742,7 +1756,7 @@ export async function mountVoxel(
   animation = requestAnimationFrame(frame);
   const runtime: VoxelRuntime = {
     command,
-    itemIcon: (itemType) => renderer.itemIcon(itemType),
+    itemIcon: (itemType, cachedOnly) => renderer.itemIcon(itemType, cachedOnly),
     voiceScene() {
       if (
         disposed ||

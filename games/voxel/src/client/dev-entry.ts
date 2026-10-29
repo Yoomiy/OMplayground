@@ -95,13 +95,13 @@ try {
         button = document.createElement('button');
         buttons.set(item.key, button);
         bar.append(button);
-        button.onclick = () =>
-          runtime!.command(
-            item.slot === null
-              ? { type: 'select', state: item.state }
-              : { type: 'select-slot', slot: item.slot },
-          );
       }
+      button.onclick = () =>
+        runtime!.command(
+          item.slot === null
+            ? { type: 'select', state: item.state }
+            : { type: 'select-slot', slot: item.slot },
+        );
       const text = `${item.slot === null ? '' : `${item.slot + 1}. `}${item.family ? (names[item.family] ?? item.family) : 'יד ריקה'}${item.count ? ` ×${item.count}` : ''}`;
       if (button.textContent !== text) button.textContent = text;
       const selected =

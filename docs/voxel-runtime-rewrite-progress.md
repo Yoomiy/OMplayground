@@ -2053,3 +2053,9 @@ feedback clear stale hints. Status text changes only when its content changes.
 Strict game types and the rebuilt matched release pass; no broad test rerun is
 used for this small presentation change. The user explicitly forbids pushing
 `dev/staging`; these repairs remain local for manual feedback.
+
+## 2026-10-29 — Follow-up inventory review repairs
+
+Addressed `tmp/voxel-rewrite-fixes-review.md`: Shift-click now spans destinations using acknowledged revisions, creative bag items have an authoritative selection/held-item route with a return to the block palette, and uncached catalog/recipe thumbnails generate only when visible, one per frame. The game TypeScript check, five focused native appearance tests, delayed-response DOM inventory check and built-client held-item browser check pass. No broad qualification suite was rerun. Matched client/server release: `58715c185d44cb1e7334e401fb337bcdab45ab5db94af96614f9b32aad6994e3`; existing engine and content reused unchanged.
+
+Changes remain local. The user's prohibition on pushing `dev/staging` remains in force. See `docs/voxel-ui-review-follow-up.md` for the behavior and check scope.

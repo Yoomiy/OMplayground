@@ -161,8 +161,8 @@ export class TerrainRenderer {
     this.swingAt = now;
     this.held.swing(now);
   }
-  itemIcon(itemType: string): string | null {
-    return this.disposed ? null : this.icons.get(itemType);
+  itemIcon(itemType: string, cachedOnly = false): string | null {
+    return this.disposed ? null : this.icons.get(itemType, cachedOnly);
   }
   mining(progress: number): void {
     this.cracks.progress(progress);

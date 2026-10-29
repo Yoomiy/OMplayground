@@ -5,6 +5,7 @@ import type { ContentManifest } from '../shared/content.ts';
 import type { HudState, VoxelRuntime } from './runtime.ts';
 import { describeItem } from './item-description.ts';
 import { fillItemSlot } from './item-slot.ts';
+import { VisibleItemIcons } from './visible-item-icons.ts';
 import './inventory.css';
 
 /** Optional DOM adapter. All writes are public runtime intents, never optimistic stack changes. */
@@ -55,7 +56,7 @@ export function mountInventoryControls(
   itemDetails.setAttribute('aria-live', 'polite');
   itemDetails.hidden = true;
   const discard = button('השלכת פריט מהערימה שנבחרה', () => {
-    if (selected?.area === 'bag' && hud.inventory && !hud.inventoryPending)
+    if (selected?.area === 'bag' && hud.inventory && !busy())
       runtime.command({
         type: 'inventory',
         operation: {
@@ -79,12 +80,22 @@ export function mountInventoryControls(
   body.className = 'inventory-body';
   dialog.append(top, message, hint, itemDetails, discard, eat, body);
   dialogHost.append(dialog);
+  const thumbnails = new VisibleItemIcons(dialog, (itemType, cachedOnly) =>
+    runtime.itemIcon(itemType, cachedOnly),
+  );
   let hud: HudState,
     selected: SlotRef | null = null,
     previous: InventoryView | null = null,
     disposed = false;
   let catalogChoice = content.items[0]?.itemType ?? '';
   let localNotice: { text: string; until: number } | null = null;
+  let transfer: {
+    from: SlotRef;
+    stack: NonNullable<Slot>;
+    destinations: SlotRef[];
+    containerId: string | null;
+    waiting: { view: InventoryView; count: number; before: number } | null;
+  } | null = null;
   let selectedCount = 0,
     recipesOpen = false,
     recipeSearch = '',
@@ -100,10 +111,11 @@ export function mountInventoryControls(
     localNotice = { text, until: performance.now() + 3000 };
     renderMessage();
   };
-  const busy = () =>
+  const unavailable = () =>
     hud.inventoryPending ||
     hud.lifecycle !== 'playing' ||
     !['playing', 'paused'].includes(hud.status);
+  const busy = () => unavailable() || transfer !== null;
   const label = (itemType: string) =>
     labels[itemType] ??
     content.items.find((item) => item.itemType === itemType)?.labelKey ??
@@ -114,7 +126,7 @@ export function mountInventoryControls(
       : (hud.inventory?.[ref.area][ref.slot] ?? null);
   const activate = (ref: SlotRef, one: boolean) => {
     const view = hud.inventory;
-    if (!view || hud.inventoryPending) return;
+    if (!view || busy()) return;
     if (!selected) {
       const source = readSlot(ref);
       if (source) {
@@ -136,7 +148,7 @@ export function mountInventoryControls(
   function move(from: SlotRef, to: SlotRef, count: number) {
     const view = hud.inventory,
       source = readSlot(from);
-    if (!view || busy() || !source) return;
+    if (!view || unavailable() || !source) return;
     selected = null;
     if (source)
       runtime.command({
@@ -170,15 +182,62 @@ export function mountInventoryControls(
       destinations = view.bag.flatMap((_, slot) =>
         ref.area !== 'bag' || slot < 9 !== ref.slot < 9 ? [{ area: 'bag' as const, slot }] : [],
       );
+    selected = null;
+    transfer = {
+      from: ref,
+      stack: { ...stack },
+      destinations,
+      containerId: view.container?.id ?? null,
+      waiting: null,
+    };
+    advanceTransfer();
+  }
+  function advanceTransfer() {
+    const job = transfer,
+      view = hud.inventory;
+    if (!job || !view || disposed) return;
+    if (!hud.inventoryOpen || unavailable() || (view.container?.id ?? null) !== job.containerId) {
+      if (!hud.inventoryPending) transfer = null;
+      return;
+    }
+    const stack = readSlot(job.from);
+    if (job.waiting) {
+      // A result clears pending before its inventory view arrives. Wait for that
+      // fresh view, then verify this exact move before sending another revision.
+      const sent = job.waiting;
+      if (view === sent.view) return;
+      if (
+        view.revision !== sent.view.revision + 1 ||
+        (stack?.count ?? 0) !== sent.before - sent.count ||
+        (stack && !sameStack(stack, job.stack))
+      ) {
+        transfer = null;
+        render();
+        return;
+      }
+      job.waiting = null;
+    }
+    if (!stack || !sameStack(stack, job.stack)) {
+      transfer = null;
+      render();
+      return;
+    }
+    const item = recipeItems.get(stack.itemType)!;
     const target =
-      destinations.find((target) => {
+      job.destinations.find((target) => {
         const other = readSlot(target);
         return other && sameStack(other, stack) && other.count < item.maxStack;
-      }) ?? destinations.find((target) => !readSlot(target));
+      }) ?? job.destinations.find((target) => !readSlot(target));
     if (target) {
       const other = readSlot(target);
-      move(ref, target, Math.min(stack.count, item.maxStack - (other?.count ?? 0)));
-    } else notify('אין משבצת פנויה להעברה מהירה');
+      const count = Math.min(stack.count, item.maxStack - (other?.count ?? 0));
+      job.waiting = { view, count, before: stack.count };
+      move(job.from, target, count);
+    } else {
+      transfer = null;
+      notify('אין משבצת פנויה להעברה מהירה');
+      render();
+    }
   }
   function slots(title: string, area: InventoryArea, values: readonly Slot[], columns: number) {
     const section = document.createElement('section'),
@@ -266,10 +325,24 @@ export function mountInventoryControls(
       area = focus?.dataset.area,
       index = focus?.dataset.slot;
     const scrollTop = dialog.scrollTop;
+    thumbnails.reset();
     body.replaceChildren();
     const view = hud.inventory;
     if (!view) return;
-    slots('תיק', 'bag', view.bag, 9);
+    const bag = slots('תיק', 'bag', view.bag, 9);
+    if (hud.mode === 'creative') {
+      const hold = button('החזקה מהתיק (משבצות 1–9)', () => {
+        if (selected?.area !== 'bag' || selected.slot >= 9 || busy()) return;
+        runtime.command({ type: 'select-slot', slot: selected.slot });
+      });
+      hold.id = 'inventory-hold';
+      hold.disabled = busy() || selected?.area !== 'bag' || selected.slot >= 9;
+      const help = document.createElement('p');
+      help.className = 'inventory-hint';
+      help.textContent =
+        'כדי להחזיק כלי או פריט, העבירו אותו למשבצות 1–9, בחרו אותו ולחצו על החזקה מהתיק. לחזרה לסרגל בלוקים, בחרו בלוק בקטלוג.';
+      bag.append(hold, help);
+    }
     slots('ציוד', 'equipment', view.equipment, EQUIPMENT.length);
     const size = view.station === 'workbench' ? 3 : 2,
       grid = size === 3 ? view.craft3 : view.craft2;
@@ -311,6 +384,7 @@ export function mountInventoryControls(
       catalog.id = 'inventory-catalog';
       catalog.className = 'inventory-catalog-grid';
       const drawCatalog = () => {
+        thumbnails.forget(catalog);
         catalog.replaceChildren();
         for (const item of content.items.filter((item) =>
           `${label(item.itemType)} ${item.itemType}`
@@ -327,7 +401,8 @@ export function mountInventoryControls(
           choice.title = label(item.itemType);
           choice.setAttribute('aria-label', label(item.itemType));
           choice.setAttribute('aria-pressed', String(catalogChoice === item.itemType));
-          fillItemSlot(choice, item, null, runtime.itemIcon(item.itemType));
+          fillItemSlot(choice, item, null, null);
+          thumbnails.observe(choice, item.itemType);
           catalog.append(choice);
         }
       };
@@ -344,7 +419,7 @@ export function mountInventoryControls(
         if (state >= 0) {
           runtime.command({ type: 'select', state });
           runtime.command({ type: 'inventory', operation: { kind: 'close' } });
-        } else notify('הפריט הזה אינו בלוק. אפשר להוסיף אותו לתיק.');
+        } else notify('הוסיפו את הפריט לתיק, העבירו למשבצות 1–9 ובחרו החזקה מהתיק.');
       });
       choose.disabled = busy();
       const grant = button('הוספה לתיק', () => {
@@ -383,6 +458,7 @@ export function mountInventoryControls(
     const recipeList = document.createElement('div');
     recipeList.className = 'inventory-recipe-list';
     const drawRecipes = () => {
+      thumbnails.forget(recipeList);
       recipeList.replaceChildren();
       for (const recipe of content.recipes.filter((recipe) =>
         `${label(recipe.result.itemType)} ${recipe.result.itemType}`
@@ -416,19 +492,16 @@ export function mountInventoryControls(
             node.dataset.missing = 'true';
             missing = true;
           }
-          fillItemSlot(node, item, null, item ? runtime.itemIcon(item.itemType) : null);
+          fillItemSlot(node, item, null, null);
+          if (item) thumbnails.observe(node, item.itemType);
           node.title = ingredient
             ? `${item ? label(item.itemType) : ingredient}${ingredient.startsWith('#') ? ' (או פריט מקביל)' : ''}${owned ? '' : ' · חסר בתיק'}`
             : 'משבצת ריקה';
           grid.append(node);
         }
         const result = document.createElement('span');
-        fillItemSlot(
-          result,
-          recipeItems.get(recipe.result.itemType),
-          recipe.result,
-          runtime.itemIcon(recipe.result.itemType),
-        );
+        fillItemSlot(result, recipeItems.get(recipe.result.itemType), recipe.result, null);
+        thumbnails.observe(result, recipe.result.itemType);
         result.title = label(recipe.result.itemType);
         const availability = document.createElement('p');
         availability.textContent =
@@ -483,14 +556,17 @@ export function mountInventoryControls(
     )
       localNotice = null;
     hud = state;
+    if (!state.inventoryOpen || statusChanged || state.inventory === null) transfer = null;
     if (state.inventoryOpen && !dialog.open) {
       dialog.showModal();
       close.focus();
     }
     if (!state.inventoryOpen && dialog.open) {
+      thumbnails.reset();
       dialog.close();
       selected = null;
     }
+    if (transfer && !state.inventoryPending) queueMicrotask(advanceTransfer);
     const available =
       state.inventory !== null &&
       state.lifecycle === 'playing' &&
@@ -537,6 +613,8 @@ export function mountInventoryControls(
     dispose() {
       if (disposed) return;
       disposed = true;
+      transfer = null;
+      thumbnails.reset();
       unsubscribe();
       window.removeEventListener('keydown', key);
       dialog.removeEventListener('cancel', cancel);
