@@ -243,7 +243,8 @@ try {
   await touch('touchCancel', []);
   await tap('#resume');
   await page.waitForFunction(() => (window as any).voxel.debug().body?.frozen === 0);
-  console.log('Testing WebGL loss latch');
+  console.log('Testing WebGL loss and restoration');
+  const beforeGraphicsLoss = await debug();
   await page.evaluate(() => {
     const gl = document.querySelector('canvas')!.getContext('webgl2')!;
     (window as any).loss = gl.getExtension('WEBGL_lose_context');
@@ -254,7 +255,17 @@ try {
   await tap('#resume');
   assert.equal((await debug()).focused, false, 'resume cannot bypass lost-context recovery');
   await page.evaluate(() => (window as any).loss.restoreContext());
-  await page.waitForFunction(() => (window as any).voxel.debug().status === 'error');
+  await page.waitForFunction(() => {
+    const d = (window as any).voxel.debug();
+    return d.graphics === 'ready' && d.status === 'paused';
+  });
+  const restored = await debug();
+  assert.equal(restored.worldId, beforeGraphicsLoss.worldId);
+  assert.equal(restored.actorId, beforeGraphicsLoss.actorId);
+  assert.equal(restored.focused, false);
+  assert.deepEqual(restored.inventory, beforeGraphicsLoss.inventory);
+  await tap('#resume');
+  await page.waitForFunction(() => (window as any).voxel.debug().body?.frozen === 0);
   const diagnostics = await debug();
   await page.evaluate(() => {
     (window as any).voxel.dispose();

@@ -301,7 +301,9 @@ export function worldItemMaterial(
   const block = blocks.find((block) =>
     item.model === 'bucket'
       ? block.name === item.material
-      : block.name === item.places && block.placeable !== false,
+      : item.places
+        ? block.name === item.places && block.placeable !== false
+        : block.name === item.material,
   );
   material.uniforms.uCutout.value = block?.layer === 1 ? 1 : 0;
   material.uniforms.uTint.value = block?.tint ? (block.layer === 1 ? 2 : 1) : 0;
@@ -394,6 +396,7 @@ export class HeldBlockRenderer {
       (item?.model === 'bucket' && this.blocks.find((block) => block.name === item.material)) ||
       (item?.places &&
         this.blocks.find((block) => block.name === item.places && block.placeable !== false)) ||
+      (item?.material && this.blocks.find((block) => block.name === item.material)) ||
       this.blocks[state];
     if (definition && (state !== this.state || itemType !== this.itemType)) {
       this.block.geometry.dispose();
@@ -419,13 +422,14 @@ export class HeldBlockRenderer {
       swing = t < 1 ? Math.sin(t * Math.PI) : 0;
     const bob = Math.min(1, speed / 4) * Math.sin(now / 95);
     const bucket = item?.model === 'bucket';
+    const emptyHand = !item && (!definition || definition.shape === 'air');
     // The fixed vertical FOV gives portrait viewports less horizontal room.
     // Keep the hand beside the reticle instead of cropping the item off-screen.
     const widthScale = Math.min(1, aspect / (4 / 3));
     this.grip.scale.setScalar(Math.max(0.65, widthScale));
     this.grip.position.set(
       (0.34 - swing * 0.1) * widthScale - (1 - widthScale) * 0.1,
-      -0.29 + bob * 0.012 - swing * 0.07,
+      (emptyHand ? -0.2 : -0.29) + bob * 0.012 + swing * (emptyHand ? 0.08 : 0.04),
       -0.7 + swing * (bucket ? 0.06 : 0.18),
     );
     // Show the contents above the near rim even while the bucket is at rest.

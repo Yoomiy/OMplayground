@@ -482,9 +482,9 @@ export function createVoxelApi(options: {
           (Number.isSafeInteger(result.savedSequence) &&
             (result.savedSequence as number) > 0)
         ) ||
-        (action === "resume"
-          ? result.saved !== false || result.savedSequence !== null
-          : result.saved !== true || result.savedSequence === null)
+        result.saved !== (result.savedSequence !== null) ||
+        (action === "resume" && result.saved !== false) ||
+        (action === "pause" && result.saved !== true)
       )
         throw new VoxelApiError("PROTOCOL", true);
       return result as ControlReceipt;

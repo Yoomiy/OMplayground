@@ -2015,3 +2015,112 @@ mutation is performed by these checks. The previous content/assets evidence
 archive remains an immutable historical baseline; its live-source comparison
 does not describe these later changes. Hosted and physical-PC qualification,
 balance review and operational cutover remain open.
+
+
+## 2026-10-29: UI review follow-up
+
+The first repair batch (`6af8112`) restores item imagery, durability/vitals,
+visual recipes, inventory transfers, direct station use, compact HUD layout,
+visible action feedback, and bounded mining interruption/release tolerance.
+The follow-up adds collision-aware third-person camera controls and local
+avatar/equipment presentation, plus recovery of a running graphics context
+without discarding its loaded world or owned inventory. Input remains frozen
+through graphics loss and the player explicitly resumes afterward.
+
+The current matched published release is
+`8beabee44d43b4a0a0ceb1b26d534e45b540247dcd9da1d9f5c87dd7a73f124d`.
+The unchanged Wasm engine and its input/artifact hashes match the prior release;
+client/server bundles and the release snapshot are rebuilt together. This
+executor has no Rust compiler, so no fresh engine compilation is claimed.
+
+The two actual-Wasm camera tests pass, as do strict game/web types. Focused
+production-React/native-worker browser checks cover the 3×3 workbench,
+third-person avatar/held item, a real context-loss/restoration cycle retaining
+32 planks and 49 columns with no readmission/remount, explicit resume, and
+continuous mining feedback. Graphics recovery/mining use the existing 0.5
+render-scale / 30 Hz options under software Chromium. These checks do not
+establish physical school-PC performance. See
+[UI review follow-up](voxel-ui-review-follow-up.md) for details.
+
+The user reports that the app starts and asks to launch with less repeated
+testing. Use focused checks for concrete fixes and normal staging feedback.
+Staging repairs are batched; the main PR and manual deployment walkthrough
+follow the user's confirmation that staging works.
+
+A local inventory-feedback follow-up preserves quick-transfer/catalog hints for
+three seconds across routine HUD refreshes. New operations and authoritative
+feedback clear stale hints. Status text changes only when its content changes.
+Strict game types and the rebuilt matched release pass; no broad test rerun is
+used for this small presentation change. The user explicitly forbids pushing
+`dev/staging`; these repairs remain local for manual feedback.
+
+## 2026-10-29 — Follow-up inventory review repairs
+
+Addressed `tmp/voxel-rewrite-fixes-review.md`: Shift-click now spans destinations using acknowledged revisions, creative bag items have an authoritative selection/held-item route with a return to the block palette, and uncached catalog/recipe thumbnails generate only when visible, one per frame. The game TypeScript check, five focused native appearance tests, delayed-response DOM inventory check and built-client held-item browser check pass. No broad qualification suite was rerun. Matched client/server release: `58715c185d44cb1e7334e401fb337bcdab45ab5db94af96614f9b32aad6994e3`; existing engine and content reused unchanged.
+
+Changes remain local. The user's prohibition on pushing `dev/staging` remains in force. See `docs/voxel-ui-review-follow-up.md` for the behavior and check scope.
+
+## 2026-10-29 — Local-play entry and recovery feedback
+
+Removed the initial world-entry confirmation and redundant mining progress bar. Plants break immediately through authoritative validation without a timed job/crack view. Recovery releases pointer lock, preserves error state and offers only the appropriate action. Authorization deadlines remain fail-closed; missed renewal is retryable through fresh admission. Safe disconnect-code/reason events distinguish later exits from normal empty-room saving. The supplied logs establish clean retirement, while the initial disconnect trigger remains unproven.
+
+Game/web types, focused native mining/expiry checks and a production-React/native-room local browser flow pass. The browser flow kept a connection through periodic saving, then restored the same saved world and 64 logs through manual and automatic fresh admissions after forced disconnects. Current matched release: `5ee78c6d15b18a4448b1a92f6777bf7747b08f737d4f85255403f5d219f8f9b3`. The plant content update requires a fresh test session; no old checkpoint is migrated or deleted. Engine sources/Wasm are unchanged. No broad suite, hosted mutation, log-level change or staging push was performed.
+
+## 2026-10-29 — Crafting, guide and end-session feedback
+
+Restored the old inventory's parchment/wood presentation, crafting/result-first layout, separate bag/hotbar and categorized recipe book. Stack selection now remains in hand for repeated one-item placements, including clicks queued while an authoritative transaction is pending. Recipe preparation arranges ingredients through acknowledged moves; crafting still uses the authoritative result operation. Basic/available recipes sort first. The six-topic guide explains progression, transfers, controls and actual current equipment values. H/T/E shortcuts, arrow movement, Q drop and middle-click selection restore familiar desktop workflows.
+
+Explicit “סיום המפגש” skips the final checkpoint throughout control, room retirement and drain. Pause still requires a committed save; normal disconnect saving remains. Existing/in-flight autosaves are not deleted or reversed. The user applied `20261029160000_voxel_end_without_checkpoint.sql`; ownership, audit and idempotency remain enforced, with older saved-end receipts still accepted.
+
+Focused types, control/receipt checks, an isolated PostgreSQL migration check and two local browser/model flows pass. The production React/native-room flow crafted a table and ended through the actual session button with zero subsequent checkpoint requests. Desktop screenshots were reviewed. No hosted mutation or broad qualification matrix was run. See [UI review follow-up](voxel-ui-review-follow-up.md) for scope and limits.
+
+Matched release: `cff3c428323c1a660d06f63fdebd4801a74faca4e5ca7bfd02906087c4154868`. This batch changes neither content nor engine/protocol and needs no additional world reset. Changes remain local under the user's no-staging-push instruction; normal local feedback is the next step.
+
+## 2026-10-29 — Authorization-driven rejoin loop
+
+The user's new logs locate repeated recoverable disconnects in authorization renewal, followed by ordinary empty-room saving and automatic readmission. A regression reproduction failed on the prior code: startup-aged proofs waited half their remaining lifetime, and subsequent renewal scheduling ignored time spent obtaining request-start-bounded school proofs.
+
+Renew immediately after attachment and reserve measured provider latency on later checks. Retry temporary errors only inside the still-valid proof, retaining its original independent expiry. Actual denial/capability changes remain immediate, and late responses cannot revive expired authority. Disconnect events include safe authorization cause/duration fields; shared logging behavior is unchanged.
+
+The aged-proof reproduction, transient-error/denial check and native durable-room scenario with slow membership acceptance plus repeated one-second reads pass. Existing revocation, expired-response and terminal-completion checks pass, as do game/service types and matched client/server packaging. The room retains the same worker and owner. These are focused local checks with no hosted writes or broad qualification rerun.
+
+Matched release: `a0fe518cf938d99a9197513bc4a7aff78217db7db0a70c3095eb49e3f81bad55`. Engine, content and protocol are unchanged. Restart/reload locally; no migration or further world reset is required. Changes remain local and no staging push was made.
+
+## 2026-10-29 — Inventory layout and selection movement
+
+Compared directly with the old client and restored its compact 640px inventory, 40px gray beveled slots, crafting-first/equipment/storage order, and separate 440px recipe-book window. The main panel and its status/details/actions keep fixed space through selection. The hotbar stays at the bottom with storage scrolling above it. Slot buttons persist across selection and authoritative acknowledgments; catalog choices no longer replace the list or reset scrolling. Recipe previews/cards are compact and use a consistent ingredient → output row.
+
+E/Esc navigates back from the recipe book to inventory, then back to play. Recipe preparation returns to the crafting grid. Closing chat/voice restores game control. Numpad digits and NumpadEnter restore the legacy shortcuts. Escape can restore keyboard control without a fresh pointer-lock activation; the next world click captures the mouse. Help hides the unrelated entry prompt behind it.
+
+Focused delayed-response inventory checks retain identical panel/grid/slot geometry and original slot buttons through stack distribution, recipe preparation, crafting and rejection. The production React/native-worker flow and 1366×850 screenshot review cover the separate book and return-to-game controls. Game/web types and matched packaging pass; no hosted writes or broad gameplay suite was run. See [UI review follow-up](voxel-ui-review-follow-up.md).
+
+Matched release: `596d8ffc6b18024f391e27cf7c26a3a40bf82b806abe88168ac2737f92fbb80c`. Engine/content/protocol and prior authorization/end-session fixes remain intact. No migration, world reset or staging push.
+
+## 2026-10-29 — Play feedback and single-game presentation
+
+Centered inventory carry/drag previews, increased the correct tool's reward to roughly nine times bare-hand speed on wood/ground, removed plant/leaf box presentation, and applied authored item-material tint/cutout to fibers and other material-backed models. Mining remains server-authoritative; instant plants, required tool tiers and tool wear are retained.
+
+Chat/audio now follow the old compact dark widgets. Chat has a draggable header, Enter/send and a live minimized preview; audio shows core controls first and collapses settings/moderation. M uses the existing microphone permission flow. The app/guide no longer exposes creative/survival labels or a gameplay-mode switch; developer fixtures retain internal setup commands. Explicit session-end text and its button consistently describe ending without continuation, with pause saving for later.
+
+Game/web types, focused tool/material checks, four native mining checks, cursor/layout flow and production React/native-room presentation checks pass. Screenshots include compact chat/audio and green held fibers/item thumbnails. No hosted write or SFU/media matrix was run. The user's single remaining disconnect shows expired authorization during slow/unavailable policy reads; this batch preserves those deadlines and makes no provider-outage cure claim.
+
+Matched release: `97e41770853caa0eb4768e5b7784d3b065d00be776b92f8e059d703ae4397795`. Content/engine/protocol are unchanged and existing saves remain compatible. No migration, world reset or staging push. See [UI follow-up](voxel-ui-review-follow-up.md) for scope and evidence.
+
+## 2026-10-29 — Loading palette and terrain explanation
+
+Removed the pre-welcome creative HUD/palette flash: startup now uses normal gameplay defaults with an empty hotbar and no selected block. The school server supplies the actual rules; terrain starts from its welcome seed. Game types and matched packaging pass for release `c36e8047624d2b4afac1752eaf97687fb0a05ab5ff51af17b6730b61f9f89911`. No engine/content/protocol change, migration, reset or push.
+
+Current fresh-room seed remains the gateway default `4242`, so new sessions begin with identical base terrain while their saved edits remain separate. The Rust generator uses deterministic climate/height/density noise, biome surfaces, caves, ores, vegetation and bedrock in independent 16×16×256 columns. The playable square is 512×512. Distinct new maps would require a seed chosen and persisted per new world; that behavior was not changed in this UI fix.
+
+
+## Streamed exploration and distinct new-world seeds
+
+The user requested auditing the 512×512 fence and removing it if streaming did not need it. The server loads nearby 3×3 columns per actor; the browser unloads distant render columns, and checkpoints retain edits rather than a generated map. No capacity or delta-storage requirement justifies the old fence. The profile now selects streamed terrain. Height remains 256. A shared guard at ±999,984 blocks stays inside the published native body-sweep API's ±1,000,000 coordinate contract; it also stays below the generator's f32 integer precision horizon. The engine is unchanged.
+
+Compatible old centered finite saves expand on restore, retaining their original seed, edits, player positions and inventory. Content/engine/generator compatibility checks remain. New school worlds reserve a unique uint32 seed transactionally before their first checkpoint. A noncycling database sequence, bijective permutation and unique constraint prevent collisions/reuse, including across service instances. Seed 4242 is excluded for historical worlds. Restarting before the first checkpoint reuses the reservation. Saved worlds use their embedded seed. Standalone development fallback derives a stable seed from world identity; explicit development overrides remain available for deterministic fixtures.
+
+The user confirmed applying `20261029220000_voxel_unique_world_seeds.sql` locally/staging. Its new RPC preserves the existing lease/fencing checks and leaves the old RPC and saves intact. Startup checks for the installed seed schema. No hosted writes were made by these checks.
+
+Focused checks pass: game/service types; 13 checkpoint/inventory/survival checks; six service persistence checks; actual published-Wasm movement and drops near the numeric guard, wire validation, old-bounds expansion and far-edit socket recovery; distinct reserved seeds, worker termination before the first save and committed-seed restart. The latter flows also pass against the packaged gateway. Isolated PostgreSQL/PGlite verifies 32 distinct seeds, idempotence, ownership fencing, pre-checkpoint restart, legacy saves and browser-role denial. A permanent PostgreSQL integration case covers reservation and concurrent distinct-world allocation; the PostgreSQL CLI suite was not run in this executor. No broad browser or scale suite was added.
+
+Matched release: `c6a2adac33c3ec1f094cd76d3ff7465686ee8c13b5df6174af20ff67c2871a02`. Restart the local stack and refresh the browser; no world reset is required. This is committed locally with no staging push.

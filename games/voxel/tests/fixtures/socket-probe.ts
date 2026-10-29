@@ -41,11 +41,15 @@ export class SocketProbe {
       };
       const timer = setTimeout(() => {
         this.listeners.delete(check);
-        const recent = this.events.slice(-12).map((event) =>
-          'type' in event
-            ? event.type === 'error' ? `error:${event.code}` : event.type
-            : `chunk:${event.x},${event.z}`,
-        );
+        const recent = this.events
+          .slice(-12)
+          .map((event) =>
+            'type' in event
+              ? event.type === 'error'
+                ? `error:${event.code}`
+                : event.type
+              : `chunk:${event.x},${event.z}`,
+          );
         timeout.message += ` (state=${this.socket.readyState}; recent=${recent.join(',')})`;
         reject(timeout);
       }, 10000);
@@ -76,11 +80,21 @@ export class SocketProbe {
       assert.ok(current);
       return { ...column, revision: current.revision };
     });
-    this.send({ type: 'ready', epoch: baseline.epoch, columns });
-    return this.wait(
-      (event): event is Extract<ServerMessage, { type: 'baseline' }> =>
-        'type' in event && event.type === 'baseline' && event.reason === 'ready',
-    );
+    const ready = { type: 'ready' as const, epoch: baseline.epoch, columns };
+    this.send(ready);
+    // Like the browser, retry while the authority finishes its local terrain.
+    // A safe spawn can cross a column edge after the initial generation pass.
+    const retry = setInterval(() => {
+      if (this.socket.readyState === WebSocket.OPEN) this.send(ready);
+    }, 300);
+    try {
+      return await this.wait(
+        (event): event is Extract<ServerMessage, { type: 'baseline' }> =>
+          'type' in event && event.type === 'baseline' && event.reason === 'ready',
+      );
+    } finally {
+      clearInterval(retry);
+    }
   }
 }
 export async function connectProbe(origin: string, room: string, states: number, actor = 'a') {

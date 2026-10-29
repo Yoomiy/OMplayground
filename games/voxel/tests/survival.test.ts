@@ -1,9 +1,29 @@
 import assert from 'node:assert/strict';
+import { BOUNDS } from '../src/shared/world-bounds.ts';
 import { test } from 'node:test';
 import { source } from '../content/index.ts';
 import { compileContent } from '../tools/compile-content.ts';
 import { Inventories } from '../src/sim/inventory.ts';
 import { miningPlan } from '../src/sim/mining.ts';
+
+test('the proper wooden tool has a clear advantage over bare hands and unrelated tools on wood and ground', () => {
+  const blocks = new Map(source.blocks.map((block) => [block.family, block]));
+  const axe = source.items.find((item) => item.itemType === 'wooden_axe');
+  const shovel = source.items.find((item) => item.itemType === 'wooden_shovel');
+  for (const [family, correct, wrong] of [
+    ['oak_log', axe, shovel],
+    ['oak_planks', axe, shovel],
+    ['dirt', shovel, axe],
+    ['grass_block', shovel, axe],
+    ['sand', shovel, axe],
+  ] as const) {
+    const block = blocks.get(family)!;
+    const bare = miningPlan(block, undefined).ticks;
+    assert.ok(bare >= miningPlan(block, correct).ticks * 8, `${family}: noticeable tool reward`);
+    assert.equal(miningPlan(block, wrong).ticks, bare);
+  }
+  assert.equal(miningPlan(blocks.get('short_grass')!, undefined).ticks, 1);
+});
 import { parseClientMessage, parseServerMessage } from '../src/shared/protocol.ts';
 const content = compileContent(source).manifest;
 const inventory = () => {
@@ -146,7 +166,10 @@ test('mining and drop protocol carries intents only, bounds replication batches 
     { seconds: 0 },
   ])
     assert.equal(parseClientMessage(JSON.stringify({ ...message, ...extra })), null);
-  assert.equal(parseClientMessage(JSON.stringify({ ...message, target: [256, 64, 0] })), null);
+  assert.equal(
+    parseClientMessage(JSON.stringify({ ...message, target: [BOUNDS.maxX, 64, 0] })),
+    null,
+  );
   assert.ok(
     parseServerMessage(
       JSON.stringify({ type: 'mining', epoch: 1, target: null, total: 0, elapsed: 0 }),

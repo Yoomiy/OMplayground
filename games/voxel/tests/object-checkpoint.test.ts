@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { BOUNDS } from '../src/shared/world-bounds.ts';
 import { test } from 'node:test';
 import { source } from '../content/index.ts';
 import { compileContent } from '../tools/compile-content.ts';
@@ -89,7 +90,7 @@ test('drop recovery rejects corrupt stacks, duplicate identities, impossible del
     (v) => (v.entries[0].id = 'drop-01'),
     (v) => (v.entries[0].stack.count = 65),
     (v) => (v.entries[0].stack = Object.create(v.entries[0].stack)),
-    (v) => (v.entries[0].position = [256, 65, 0]),
+    (v) => (v.entries[0].position = [BOUNDS.maxX, 65, 0]),
     (v) => (v.entries[0].position = Array(3)),
     (v) => (v.entries[0].velocity = [13, 0, 0]),
     (v) => (v.entries[0].revision = Infinity),

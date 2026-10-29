@@ -11,6 +11,10 @@ export type Authorization = Readonly<{
 }>;
 export type AdmissionGrant = Authorization &
   Readonly<{ revalidate: (stage?: 'ticket' | 'actor') => Promise<Authorization | null> }>;
+type AuthorizationFailure = Readonly<{
+  authorizationFailure: 'expired' | 'denied' | 'changed' | 'session_ended';
+  renewalMs: number;
+}>;
 export class SessionEnded extends Error {
   readonly code = 'SESSION_ENDED';
   constructor() {
@@ -79,14 +83,22 @@ export class ConnectionAuthorization {
   private renewal: ReturnType<typeof setTimeout> | null = null;
   private expiry: ReturnType<typeof setTimeout> | null = null;
   private closed = false;
+  private renewalStarted: number | null = null;
+  private renewalMs = 0;
   private readonly initialMembershipRevision: number;
   private apply: (deadline: number) => void;
-  private lost: (reason: 'UNAUTHORIZED' | 'RECOVERING' | 'SESSION_ENDED') => void;
+  private lost: (
+    reason: 'UNAUTHORIZED' | 'RECOVERING' | 'SESSION_ENDED',
+    detail: AuthorizationFailure,
+  ) => void;
   constructor(
     grant: AdmissionGrant,
     current: Authorization,
     apply: (deadline: number) => void,
-    lost: (reason: 'UNAUTHORIZED' | 'RECOVERING' | 'SESSION_ENDED') => void,
+    lost: (
+      reason: 'UNAUTHORIZED' | 'RECOVERING' | 'SESSION_ENDED',
+      detail: AuthorizationFailure,
+    ) => void,
   ) {
     this.grant = grant;
     this.current = current;
@@ -94,7 +106,9 @@ export class ConnectionAuthorization {
     this.apply = apply;
     this.lost = lost;
     this.deadline = performance.now() + current.expiresAt - Date.now();
-    this.schedule();
+    // Allocation and membership IO can consume most of the ticket proof. Start
+    // its first connected check now, while that proof is still valid.
+    this.schedule(true);
   }
   get until() {
     return this.deadline;
@@ -111,41 +125,68 @@ export class ConnectionAuthorization {
   }
   valid() {
     if (!this.closed && performance.now() < this.deadline) return true;
-    if (!this.closed) this.fail('UNAUTHORIZED');
+    if (!this.closed) this.fail('RECOVERING');
     return false;
   }
-  private schedule() {
+  private schedule(immediate = false) {
     const remaining = this.deadline - performance.now();
-    this.expiry = setTimeout(() => this.fail('UNAUTHORIZED'), Math.max(0, remaining));
-    this.renewal = setTimeout(() => void this.renew(), Math.max(0, remaining / 2));
+    // A missed renewal stops authority at the same deadline, but is not a
+    // confirmed revocation. A fresh admission may retry after the outage.
+    this.expiry = setTimeout(() => this.fail('RECOVERING'), Math.max(0, remaining));
+    // School proofs expire from request START, not response arrival. Reserve
+    // the observed provider duration as well as half the remaining lifetime.
+    this.renewal = setTimeout(
+      () => void this.renew(),
+      immediate ? 0 : Math.max(0, remaining / 2 - this.renewalMs),
+    );
   }
   private async renew() {
     if (!this.valid()) return;
+    this.renewalStarted = performance.now();
     try {
       const value = await this.grant.revalidate('actor');
       if (!this.valid()) return;
       if (value === null) {
-        this.fail('UNAUTHORIZED');
+        this.fail('UNAUTHORIZED', 'denied');
         return;
       }
       const next = readAuthorization(value, Date.now(), this.current.actor.id);
       if (JSON.stringify(next.actor) !== JSON.stringify(this.current.actor)) {
-        this.fail('UNAUTHORIZED');
+        this.fail('UNAUTHORIZED', 'changed');
         return; // Changed participation/capabilities require a fresh baseline.
       }
       if (this.expiry) clearTimeout(this.expiry);
+      this.renewalMs = performance.now() - this.renewalStarted;
+      this.renewalStarted = null;
       this.current = next;
       this.deadline = performance.now() + next.expiresAt - Date.now();
       this.apply(this.deadline);
       this.schedule();
     } catch (error) {
-      if (this.valid()) this.fail(isSessionEnded(error) ? 'SESSION_ENDED' : 'RECOVERING');
+      if (!this.valid()) return;
+      if (isSessionEnded(error)) this.fail('SESSION_ENDED', 'session_ended');
+      else {
+        // A transient provider error does not revoke an unexpired proof. Retry
+        // without moving its independent expiry or allowing late resurrection.
+        this.renewal = setTimeout(
+          () => void this.renew(),
+          Math.min(250, Math.max(1, (this.deadline - performance.now()) / 2)),
+        );
+      }
     }
   }
-  private fail(reason: 'UNAUTHORIZED' | 'RECOVERING' | 'SESSION_ENDED') {
+  private fail(
+    reason: 'UNAUTHORIZED' | 'RECOVERING' | 'SESSION_ENDED',
+    authorizationFailure: AuthorizationFailure['authorizationFailure'] = 'expired',
+  ) {
     if (this.closed) return;
     this.close();
-    this.lost(reason);
+    this.lost(reason, {
+      authorizationFailure,
+      renewalMs: Math.round(
+        this.renewalStarted === null ? this.renewalMs : performance.now() - this.renewalStarted,
+      ),
+    });
   }
   close() {
     this.closed = true;

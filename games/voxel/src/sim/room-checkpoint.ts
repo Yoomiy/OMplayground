@@ -1,4 +1,5 @@
 import { BOUNDS, GENERATOR_VERSION } from '../shared/protocol.ts';
+import { compatibleCheckpointBounds } from '../shared/world-bounds.ts';
 import type { BuildIdentity } from '../shared/protocol.ts';
 import type { ContentManifest } from '../shared/content.ts';
 import type { GameMode } from '../shared/gameplay.ts';
@@ -110,9 +111,7 @@ export function readRoomCheckpoint(
     typeof value.sourceBuildId !== 'string' ||
     !/^[a-f0-9]{64}$/.test(value.sourceBuildId) ||
     !checkpointObject(value.bounds, Object.keys(BOUNDS)) ||
-    !Object.entries(BOUNDS).every(
-      ([key, n]) => (value.bounds as Record<string, unknown>)[key] === n,
-    ) ||
+    !compatibleCheckpointBounds(value.bounds) ||
     !['creative', 'survival'].includes(value.mode as string) ||
     !checkpointInteger(value.tick, 0, Number.MAX_SAFE_INTEGER - 9000) ||
     !checkpointInteger(value.epoch, 0, Number.MAX_SAFE_INTEGER - 2) ||

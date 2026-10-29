@@ -6,13 +6,13 @@ import { schoolFixture } from "./helpers/school-fixture.ts";
 import { SupabaseControls, schoolControl } from "../src/school-control.ts";
 import { createSupabaseServerClient } from "../src/supabase-persistence.ts";
 import type { RoomControl } from "../../../games/voxel/src/server/control.ts";
-function fixture() {
+function fixture(action: "pause" | "end" = "pause") {
   const f = schoolFixture(),
     calls: string[] = [],
     id = randomUUID(),
     state = { old: null as unknown };
   const accepted = {
-    action: "pause",
+    action,
     completed: false,
     savedSequence: null,
     revision: 1,
@@ -34,7 +34,11 @@ function fixture() {
             ? state.old
             : name === "voxel_begin_control"
               ? accepted
-              : { ...accepted, completed: true, savedSequence: 3 };
+              : {
+                  ...accepted,
+                  completed: true,
+                  savedSequence: action === "pause" ? 3 : null,
+                };
         return new Response(JSON.stringify(data), {
           headers: { "Content-Type": "application/json" },
         });
@@ -57,7 +61,7 @@ function fixture() {
   const request = {
     headers: { authorization: "Bearer " + f.token(f.teacher) },
   } as unknown as IncomingMessage;
-  const input = { room: f.room, requestId: id, action: "pause" },
+  const input = { room: f.room, requestId: id, action },
     policy = schoolControl(f.access, store);
   const context: RoomControl = {
     lease: {
@@ -112,6 +116,24 @@ test("queued control repeats fresh authority and a revoked teacher cannot execut
   assert.equal(h.status, 403);
   assert.deepEqual(h.calls, ["voxel_control_receipt"]);
 });
+test("explicit end acknowledges completion without calling world saving", async () => {
+  const h = fixture("end");
+  const grant = await h.policy(h.request, h.input, h.response);
+  assert.ok(grant);
+  let ended = false;
+  const result = (await grant.execute({
+    ...h.context,
+    savePaused: async () => assert.fail("end must not save"),
+    end: () => {
+      ended = true;
+    },
+  })) as { saved: boolean; savedSequence: number | null };
+  assert.equal(ended, true);
+  assert.equal(result.saved, false);
+  assert.equal(result.savedSequence, null);
+  assert.ok(h.calls.includes("voxel_finish_control"));
+});
+
 test("pause save failure has no completion receipt and a prior committed receipt replays without reading the ended session", async () => {
   const h = fixture(),
     grant = await h.policy(h.request, h.input, h.response);

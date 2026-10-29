@@ -182,7 +182,7 @@ export function mountTouchControls(host: HTMLElement, runtime: VoxelRuntime) {
   button('מטה / התכופפות', () => {}, 'sneak');
   button('ריצה', () => {}, 'sprint');
   const flight = button('תעופה', () => runtime.command({ type: 'flight' }));
-  const attack = button('תקיפה (Q)', () => runtime.command({ type: 'attack' }));
+  const attack = button('תקיפה (X)', () => runtime.command({ type: 'attack' }));
   const ignite = button('הצתה (G)', () => runtime.command({ type: 'ignite' }));
   button('בנייה', () => runtime.command({ type: 'interact', kind: 'place' }));
   button('כרייה / הסרה', () => {}, 'mine');

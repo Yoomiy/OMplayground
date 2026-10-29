@@ -15,6 +15,8 @@ import type { ExplosiveView } from '../shared/explosives.ts';
 import { HeldBlockRenderer } from './held-block.ts';
 import { GpuFramePacer } from './gpu-pacing.ts';
 import { EditEffects } from './edit-effects.ts';
+import { ItemIcons } from './item-icons.ts';
+import { MiningCracks } from './mining-cracks.ts';
 const precision =
   'precision highp float; precision highp int; precision highp sampler2D; precision highp sampler2DArray;\n';
 // Packed decoding, shape UVs, light/AO fields and animation derive from the pinned Blockyard pipeline.
@@ -76,6 +78,8 @@ export class TerrainRenderer {
   private memory: WebAssembly.Memory;
   private uniforms: Record<string, THREE.IUniform>;
   private highlight = new THREE.Group();
+  private cracks = new MiningCracks();
+  private icons: ItemIcons;
   private avatars: AvatarRenderer;
   private environment: EnvironmentRenderer;
   private sky = new THREE.Color();
@@ -86,6 +90,7 @@ export class TerrainRenderer {
   private disposed = false;
   private scale: number;
   private gpu: GpuFramePacer;
+  private swingAt = -Infinity;
   readonly stats = {
     uploadedBytes: 0,
     columns: 0,
@@ -130,6 +135,12 @@ export class TerrainRenderer {
   contextLost(): void {
     this.gpu.reset();
   }
+  contextRestored(): void {
+    // Three rebuilds programs/buffers/textures from their retained CPU data.
+    // The biome atlas is updated by GPU copies during play, so retain its data too.
+    this.gpu.reset();
+    this.biome.needsUpdate = true;
+  }
   get atmosphere() {
     return { ...this.environment.stats };
   }
@@ -143,12 +154,21 @@ export class TerrainRenderer {
       drops: { ...this.drops.stats },
       explosives: { ...this.explosives.stats },
       vision: this.uniforms.uVision?.value === 1,
+      miningCracks: this.cracks.group.visible,
     };
   }
   swing(now: number): void {
+    this.swingAt = now;
     this.held.swing(now);
   }
+  itemIcon(itemType: string, cachedOnly = false): string | null {
+    return this.disposed ? null : this.icons.get(itemType, cachedOnly);
+  }
+  mining(progress: number): void {
+    this.cracks.progress(progress);
+  }
   resetPresentation(): void {
+    this.swingAt = -Infinity;
     this.avatars.clear();
     this.held.clear();
     this.effects.clear();
@@ -204,6 +224,8 @@ export class TerrainRenderer {
     };
     const albedo = texture(pixels.slice(0, size), true),
       material = texture(pixels.slice(size, size * 2), false);
+    this.icons = new ItemIcons(this.gl, blocks, items, albedo, material);
+    this.scene.add(this.cracks.group);
     const lookBytes = new Uint8Array(1024 * 4);
     for (let i = 0; i < 1024; i++) {
       lookBytes[i * 4] = i & 255;
@@ -271,18 +293,22 @@ export class TerrainRenderer {
   }
   tint(x: number, z: number, raw: Uint8Array): void {
     const rgb = raw.subarray(8, 8 + 768);
+    const atlasX = (((x * 16) % 1024) + 1024) % 1024,
+      atlasZ = (((z * 16) % 1024) + 1024) % 1024;
     for (let i = 0; i < 256; i++) {
       this.tileData[i * 4] = rgb[i * 3];
       this.tileData[i * 4 + 1] = rgb[i * 3 + 1];
       this.tileData[i * 4 + 2] = rgb[i * 3 + 2];
       this.tileData[i * 4 + 3] = 255;
     }
-    this.gl.copyTextureToTexture(
-      this.tile,
-      this.biome,
-      null,
-      new THREE.Vector2((((x * 16) % 1024) + 1024) % 1024, (((z * 16) % 1024) + 1024) % 1024),
-    );
+    const atlas = this.biome.image.data as Uint8Array;
+    for (let row = 0; row < 16; row++)
+      atlas.set(
+        this.tileData.subarray(row * 64, (row + 1) * 64),
+        ((atlasZ + row) * 1024 + atlasX) * 4,
+      );
+    if (this.gl.getContext().isContextLost()) return;
+    this.gl.copyTextureToTexture(this.tile, this.biome, null, new THREE.Vector2(atlasX, atlasZ));
   }
   install(x: number, z: number, data: Uint32Array): void {
     const start = performance.now();
@@ -345,6 +371,7 @@ export class TerrainRenderer {
     this.stats.columns = this.columns.size;
   }
   target(boxes: readonly (readonly number[])[], cell: readonly number[] | null): void {
+    this.cracks.target(boxes, cell, this.origin);
     for (const child of [...this.highlight.children]) {
       this.highlight.remove(child);
       const line = child as THREE.LineSegments;
@@ -388,6 +415,8 @@ export class TerrainRenderer {
       drops: readonly DropView[];
       explosives: readonly ExplosiveView[];
       vision: boolean;
+      eye: readonly number[];
+      self: AvatarPose | null;
     },
   ): void {
     if (this.disposed) return;
@@ -396,7 +425,7 @@ export class TerrainRenderer {
       const ox = Math.floor(position[0] / 16) * 16,
         oz = Math.floor(position[2] / 16) * 16;
       if (ox !== this.origin.x || oz !== this.origin.z) {
-        for (const child of this.highlight.children) {
+        for (const child of [...this.highlight.children, ...this.cracks.group.children]) {
           child.position.x += this.origin.x - ox;
           child.position.z += this.origin.z - oz;
         }
@@ -404,15 +433,12 @@ export class TerrainRenderer {
         for (const c of this.columns.values())
           for (const m of c.meshes) if (m) m.position.set(c.x * 16 - ox, 0, c.z * 16 - oz);
       }
-      this.camera.position.set(position[0] - ox, position[1] + 1.62, position[2] - oz);
+      const eye = view.eye;
+      this.camera.position.set(eye[0] - ox, eye[1], eye[2] - oz);
       this.camera.rotation.order = 'YXZ';
       this.camera.rotation.set(pitch, -yaw, 0, 'YXZ');
       this.camera.updateMatrixWorld();
-      (this.uniforms.uCamera.value as THREE.Vector3).set(
-        position[0],
-        position[1] + 1.62,
-        position[2],
-      );
+      (this.uniforms.uCamera.value as THREE.Vector3).set(eye[0], eye[1], eye[2]);
       this.uniforms.uTime.value = environment.seconds;
       this.uniforms.uDaylight.value = environment.daylight * (1 - environment.rain * 0.35);
       this.uniforms.uVision.value = Number(view.vision);
@@ -427,18 +453,12 @@ export class TerrainRenderer {
       );
       this.sky.setRGB(...environment.sky);
       this.gl.setClearColor(this.sky);
-      this.environment.update(environment, this.camera, position, openSky);
+      const cameraFeet = [eye[0], eye[1] - 1.62, eye[2]];
+      this.environment.update(environment, this.camera, cameraFeet, openSky);
       const vp = new THREE.Matrix4()
         .multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse)
         .multiply(new THREE.Matrix4().makeTranslation(-ox, 0, -oz));
-      this.culler.cull(
-        new Float64Array(vp.elements),
-        position[0],
-        position[1] + 1.62,
-        position[2],
-        4,
-        true,
-      );
+      this.culler.cull(new Float64Array(vp.elements), eye[0], eye[1], eye[2], 4, true);
       const ranges = new Uint32Array(
         this.memory.buffer,
         this.culler.out_ptr(),
@@ -453,7 +473,18 @@ export class TerrainRenderer {
           mesh.geometry.setDrawRange(ranges[at], ranges[at + 1]);
         }
       const itemLight = view.vision ? 1 : environment.daylight;
-      this.avatars.update(remote, this.origin, position, environment.seconds, itemLight);
+      const actionTime = (now - this.swingAt) / 260;
+      const self = view.self && {
+        ...view.self,
+        actionSwing: actionTime >= 0 && actionTime < 1 ? Math.sin(actionTime * Math.PI) * 0.8 : 0,
+      };
+      this.avatars.update(
+        self ? [...remote, self] : remote,
+        this.origin,
+        cameraFeet,
+        environment.seconds,
+        itemLight,
+      );
       this.effects.frame(now, this.origin, itemLight);
       this.drops.update(view.drops, this.origin, environment.seconds, itemLight);
       this.explosives.update(view.explosives, this.origin, itemLight);
@@ -467,7 +498,7 @@ export class TerrainRenderer {
         view.speed,
         now,
         itemLight,
-        view.active,
+        view.active && !self,
         view.itemType,
       );
       this.stats.drawCalls = calls + (drawn ? this.gl.info.render.calls : 0);
@@ -482,6 +513,8 @@ export class TerrainRenderer {
     for (const c of [...this.columns.values()]) this.remove(c.x, c.z);
     this.target([], null);
     this.environment.dispose();
+    this.icons.dispose();
+    this.cracks.dispose();
     this.held.dispose();
     this.drops.dispose();
     this.explosives.dispose();

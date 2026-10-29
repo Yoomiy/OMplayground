@@ -110,6 +110,7 @@ type Actor = {
   nextSubscription: number;
   visible: Map<string, ActorState>;
   catalogItem: string | null;
+  catalogUsesBag: boolean;
   catalogSequence: number;
   pending: Map<
     number,
@@ -125,6 +126,8 @@ type Actor = {
         cellRevision: number;
         slot: number;
         stack: Slot;
+        interruptedAt: number | null;
+        released: boolean;
       })
     | null;
   visibleDrops: Map<string, number>;
@@ -442,6 +445,7 @@ export class GameRoom {
       nextSubscription: 0,
       visible: new Map(),
       catalogItem: old?.catalogItem ?? null,
+      catalogUsesBag: old?.catalogUsesBag ?? false,
       catalogSequence: 0,
       pending: new Map(),
       mining: null,
@@ -552,6 +556,7 @@ export class GameRoom {
         this.content.items.find((item) => item.places === block.name);
       if (!item) return;
       a.catalogItem = item.itemType;
+      a.catalogUsesBag = false;
       a.catalogSequence = message.sequence;
       return;
     }
@@ -647,6 +652,8 @@ export class GameRoom {
                   },
                 )
               : this.inventories.transact(a.id, operation, this.mode === 'creative');
+        if (outcome.ok && operation.kind === 'select' && this.mode === 'creative')
+          a.catalogUsesBag = true;
         if (outcome.containerChanged)
           for (const id of this.inventories.viewers(outcome.containerChanged)) {
             const viewer = this.actors.get(id);
@@ -704,7 +711,10 @@ export class GameRoom {
       }
       const result = a.ledger.run(message.epoch, message.sequence, () => {
         if (message.type === 'mining' && message.target === null) {
-          this.cancelMining(a);
+          // A release just before completion may finish only the final two earned
+          // world ticks. Reach, tool, focus and fresh input still gate every tick.
+          if (a.mining && a.mining.total - a.mining.elapsed <= 2) a.mining.released = true;
+          else this.cancelMining(a);
           return { ok: true, reason: 'cancelled' };
         }
         if (a.phase !== 'playing' || !a.focused || (this.paused && a.role === 'participant'))
@@ -1001,6 +1011,7 @@ export class GameRoom {
         a.movement = this.movementProfile(a);
         a.saved = this.store.world.player_state(a.slot);
         a.catalogItem = null;
+        a.catalogUsesBag = false;
       }
       for (const a of connected) {
         this.send(a, {
@@ -1551,6 +1562,7 @@ export class GameRoom {
       !!previous.stack === !!held.stack &&
       (!held.stack || sameStack(previous.stack!, held.stack))
     ) {
+      previous.released = false;
       this.miningView(a);
       return { ok: true, reason: 'mining' };
     }
@@ -1562,8 +1574,13 @@ export class GameRoom {
       stack: held.stack,
       elapsed: 0,
       total: plan.ticks,
+      interruptedAt: null,
+      released: false,
     };
-    this.miningView(a);
+    // Zero-duration plants still use the authoritative reach/tool/mutation
+    // checks, but never publish an active crack overlay or wait for work ticks.
+    if (rule.mining.seconds === 0) this.advanceMining(a, now);
+    else this.miningView(a);
     return { ok: true, reason: 'mining' };
   }
   private advanceMining(a: Actor, now: number): void {
@@ -1574,8 +1591,6 @@ export class GameRoom {
       !a.focused ||
       !a.capabilities.build ||
       a.role !== 'participant' ||
-      !a.queue.active(now) ||
-      !this.aimed(a, job.target) ||
       this.store.world.get_block(job.target[0], job.target[1], job.target[2]) !== job.state ||
       this.store.cellRevision(job.target[0], job.target[1], job.target[2]) !== job.cellRevision ||
       held.slot !== job.slot ||
@@ -1586,6 +1601,15 @@ export class GameRoom {
       this.cancelMining(a);
       return;
     }
+    // Movement still expires after 100 ms. A brief packet gap or edge-of-block
+    // ray disagreement pauses mining progress rather than throwing it away.
+    // No work is earned while interrupted; sustained loss cancels the job.
+    if (!a.queue.active(now) || !this.aimed(a, job.target)) {
+      job.interruptedAt ??= now;
+      if (job.released || now - job.interruptedAt >= 200) this.cancelMining(a);
+      return;
+    }
+    job.interruptedAt = null;
     job.elapsed++;
     if (job.elapsed < job.total) {
       if (job.elapsed % 3 === 0) this.miningView(a);
@@ -1960,7 +1984,7 @@ export class GameRoom {
             yaw: other.controls.yaw,
             pitch: other.controls.pitch,
             appearance:
-              this.mode === 'survival'
+              this.mode === 'survival' || other.catalogUsesBag
                 ? this.inventories.appearance(other.id)
                 : { ...this.inventories.appearance(other.id), held: other.catalogItem },
           },

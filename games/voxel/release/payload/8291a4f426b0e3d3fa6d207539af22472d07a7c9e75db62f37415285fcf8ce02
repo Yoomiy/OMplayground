@@ -1520,20 +1520,25 @@ function matchRecipe(grid, size, recipes, items) {
 
 // config/world.json
 var world_default = {
-  size: 512
+  horizontal: "streamed"
 };
 
 // src/shared/world-bounds.ts
-if (Object.keys(world_default).length !== 1 || !Number.isSafeInteger(world_default.size) || world_default.size < 64 || world_default.size > 65536 || world_default.size % 32 !== 0)
-  throw new Error("World size must be a multiple of 32 between 64 and 65536 blocks");
-var half = world_default.size / 2;
+if (Object.keys(world_default).length !== 1 || world_default.horizontal !== "streamed")
+  throw new Error("World profile must use streamed horizontal terrain");
+var horizontal = 1e6 - 16;
 var BOUNDS = Object.freeze({
-  minX: -half,
-  minZ: -half,
-  maxX: half,
-  maxZ: half,
+  minX: -horizontal,
+  minZ: -horizontal,
+  maxX: horizontal,
+  maxZ: horizontal,
   height: 256
 });
+function compatibleCheckpointBounds(value) {
+  if (Object.entries(BOUNDS).every(([key2, n]) => value[key2] === n)) return true;
+  const { minX, minZ, maxX, maxZ, height } = value;
+  return typeof maxX === "number" && Number.isInteger(maxX) && maxX >= 32 && maxX <= 32768 && maxX % 16 === 0 && minX === -maxX && minZ === -maxX && maxZ === maxX && height === BOUNDS.height;
+}
 
 // src/shared/movement.ts
 var DEFAULT_MOVEMENT = Object.freeze({
@@ -2154,9 +2159,7 @@ function readRoomCheckpoint(value, content, build) {
     "inventories",
     "drops",
     "explosives"
-  ]) || value.schema !== 1 || !checkpointIdentity(value.worldId) || !checkpointInteger(value.seed, 0, 4294967295) || value.preset !== "blockyard-natural-v2" || value.generatorVersion !== GENERATOR_VERSION || value.contentHash !== content.hash || value.engineHash !== build.engineHash || typeof value.sourceBuildId !== "string" || !/^[a-f0-9]{64}$/.test(value.sourceBuildId) || !checkpointObject(value.bounds, Object.keys(BOUNDS)) || !Object.entries(BOUNDS).every(
-    ([key2, n]) => value.bounds[key2] === n
-  ) || !["creative", "survival"].includes(value.mode) || !checkpointInteger(value.tick, 0, Number.MAX_SAFE_INTEGER - 9e3) || !checkpointInteger(value.epoch, 0, Number.MAX_SAFE_INTEGER - 2) || typeof value.paused !== "boolean" || !checkpointInteger(value.hitSequence) || !checkpointInteger(value.explosionSequence) || !checkpointPosition(value.spawn) || !Array.isArray(value.players))
+  ]) || value.schema !== 1 || !checkpointIdentity(value.worldId) || !checkpointInteger(value.seed, 0, 4294967295) || value.preset !== "blockyard-natural-v2" || value.generatorVersion !== GENERATOR_VERSION || value.contentHash !== content.hash || value.engineHash !== build.engineHash || typeof value.sourceBuildId !== "string" || !/^[a-f0-9]{64}$/.test(value.sourceBuildId) || !checkpointObject(value.bounds, Object.keys(BOUNDS)) || !compatibleCheckpointBounds(value.bounds) || !["creative", "survival"].includes(value.mode) || !checkpointInteger(value.tick, 0, Number.MAX_SAFE_INTEGER - 9e3) || !checkpointInteger(value.epoch, 0, Number.MAX_SAFE_INTEGER - 2) || typeof value.paused !== "boolean" || !checkpointInteger(value.hitSequence) || !checkpointInteger(value.explosionSequence) || !checkpointPosition(value.spawn) || !Array.isArray(value.players))
     return invalid();
   const ids = /* @__PURE__ */ new Set(), players = [];
   for (const p of value.players) {
@@ -2846,10 +2849,16 @@ var Drops = class _Drops {
 
 // src/sim/mining.ts
 function miningPlan(block, item) {
-  const tool = item?.tool, correct = !!tool && tool.kind === block.mining.tool && tool.tier >= (block.mining.tier ?? 0);
+  const preferred = block.mining.tool ?? (block.soundGroup === "wood" ? "axe" : block.family === "grass_block" || ["sand", "gravel"].includes(block.soundGroup ?? "") ? "shovel" : block.soundGroup === "stone" ? "pickaxe" : void 0);
+  const tool = item?.tool, correct = !!tool && tool.kind === preferred && tool.tier >= (block.mining.tier ?? 0);
   return {
     allowed: !block.mining.requiresTool || correct,
-    ticks: Math.max(1, Math.ceil(block.mining.seconds * WORLD_HZ / (correct ? tool.speed : 1)))
+    // Bare hands/wrong tools are deliberately slow on tool-specific materials.
+    // Starting resources remain obtainable; the proper wooden tool is ~9× faster.
+    ticks: Math.max(
+      1,
+      Math.ceil(block.mining.seconds * WORLD_HZ / (correct ? tool.speed : preferred ? 1 / 3 : 1))
+    )
   };
 }
 
@@ -3350,6 +3359,7 @@ var GameRoom = class _GameRoom {
       nextSubscription: 0,
       visible: /* @__PURE__ */ new Map(),
       catalogItem: old?.catalogItem ?? null,
+      catalogUsesBag: old?.catalogUsesBag ?? false,
       catalogSequence: 0,
       pending: /* @__PURE__ */ new Map(),
       mining: null,
@@ -3446,6 +3456,7 @@ var GameRoom = class _GameRoom {
       const item = block && block.placeable !== false && block.shape !== "air" && this.content.items.find((item2) => item2.places === block.name);
       if (!item) return;
       a.catalogItem = item.itemType;
+      a.catalogUsesBag = false;
       a.catalogSequence = message.sequence;
       return;
     }
@@ -3526,6 +3537,8 @@ var GameRoom = class _GameRoom {
             ]);
           }
         ) : this.inventories.transact(a.id, operation, this.mode === "creative");
+        if (outcome.ok && operation.kind === "select" && this.mode === "creative")
+          a.catalogUsesBag = true;
         if (outcome.containerChanged)
           for (const id of this.inventories.viewers(outcome.containerChanged)) {
             const viewer = this.actors.get(id);
@@ -3567,7 +3580,8 @@ var GameRoom = class _GameRoom {
       }
       const result = a.ledger.run(message.epoch, message.sequence, () => {
         if (message.type === "mining" && message.target === null) {
-          this.cancelMining(a);
+          if (a.mining && a.mining.total - a.mining.elapsed <= 2) a.mining.released = true;
+          else this.cancelMining(a);
           return { ok: true, reason: "cancelled" };
         }
         if (a.phase !== "playing" || !a.focused || this.paused && a.role === "participant")
@@ -3832,6 +3846,7 @@ var GameRoom = class _GameRoom {
         a2.movement = this.movementProfile(a2);
         a2.saved = this.store.world.player_state(a2.slot);
         a2.catalogItem = null;
+        a2.catalogUsesBag = false;
       }
       for (const a2 of connected) {
         this.send(a2, {
@@ -4263,6 +4278,7 @@ var GameRoom = class _GameRoom {
     if (!plan.allowed) return { ok: false, reason: "tool_required" };
     const cellRevision = this.store.cellRevision(...target), previous = a.mining;
     if (previous && previous.target.every((v, i) => v === target[i]) && previous.cellRevision === cellRevision && previous.slot === held.slot && !!previous.stack === !!held.stack && (!held.stack || sameStack(previous.stack, held.stack))) {
+      previous.released = false;
       this.miningView(a);
       return { ok: true, reason: "mining" };
     }
@@ -4273,19 +4289,28 @@ var GameRoom = class _GameRoom {
       slot: held.slot,
       stack: held.stack,
       elapsed: 0,
-      total: plan.ticks
+      total: plan.ticks,
+      interruptedAt: null,
+      released: false
     };
-    this.miningView(a);
+    if (rule.mining.seconds === 0) this.advanceMining(a, now);
+    else this.miningView(a);
     return { ok: true, reason: "mining" };
   }
   advanceMining(a, now) {
     const job = a.mining;
     if (!job) return;
     const held = this.inventories.held(a.id);
-    if (!a.focused || !a.capabilities.build || a.role !== "participant" || !a.queue.active(now) || !this.aimed(a, job.target) || this.store.world.get_block(job.target[0], job.target[1], job.target[2]) !== job.state || this.store.cellRevision(job.target[0], job.target[1], job.target[2]) !== job.cellRevision || held.slot !== job.slot || !!held.stack !== !!job.stack || held.stack && !sameStack(held.stack, job.stack) || !this.inventories.canBreak(job.target)) {
+    if (!a.focused || !a.capabilities.build || a.role !== "participant" || this.store.world.get_block(job.target[0], job.target[1], job.target[2]) !== job.state || this.store.cellRevision(job.target[0], job.target[1], job.target[2]) !== job.cellRevision || held.slot !== job.slot || !!held.stack !== !!job.stack || held.stack && !sameStack(held.stack, job.stack) || !this.inventories.canBreak(job.target)) {
       this.cancelMining(a);
       return;
     }
+    if (!a.queue.active(now) || !this.aimed(a, job.target)) {
+      job.interruptedAt ??= now;
+      if (job.released || now - job.interruptedAt >= 200) this.cancelMining(a);
+      return;
+    }
+    job.interruptedAt = null;
     job.elapsed++;
     if (job.elapsed < job.total) {
       if (job.elapsed % 3 === 0) this.miningView(a);
@@ -4545,10 +4570,10 @@ var GameRoom = class _GameRoom {
       if (rule?.support === "below" && this.store.world.collision_top(x, y - 1, z) < 1)
         return { ok: false, reason: "support" };
       const facing = ["north", "east", "south", "west"][(Math.round(c.yaw / (Math.PI / 2)) + 4) % 4];
-      const half2 = hit[5] < 0 || hit[5] === 0 && (p[1] + 1.62 + dy * hit[8]) % 1 > 0.5 ? "top" : "bottom";
+      const half = hit[5] < 0 || hit[5] === 0 && (p[1] + 1.62 + dy * hit[8]) % 1 > 0.5 ? "top" : "bottom";
       let variant = "";
-      if (requested.shape === "stairs") variant = `facing=${facing},half=${half2}`;
-      else if (requested.shape === "slab") variant = `half=${half2}`;
+      if (requested.shape === "stairs") variant = `facing=${facing},half=${half}`;
+      else if (requested.shape === "slab") variant = `half=${half}`;
       else if (requested.climbable)
         variant = `facing=${hit[4] === 1 ? "east" : hit[4] === -1 ? "west" : hit[6] === 1 ? "south" : "north"}`;
       state = variant ? this.content.blocks.findIndex((b) => b.name === requested.name && b.state === variant) : m.state;
@@ -4599,7 +4624,7 @@ var GameRoom = class _GameRoom {
           state: this.state(other, poses.get(other.id)),
           yaw: other.controls.yaw,
           pitch: other.controls.pitch,
-          appearance: this.mode === "survival" ? this.inventories.appearance(other.id) : { ...this.inventories.appearance(other.id), held: other.catalogItem }
+          appearance: this.mode === "survival" || other.catalogUsesBag ? this.inventories.appearance(other.id) : { ...this.inventories.appearance(other.id), held: other.catalogItem }
         }
       ])
     );
@@ -4955,7 +4980,7 @@ try {
         authorizations.delete(connection);
         chunkInFlight.delete(connection);
         room.disconnect(connection, now);
-        send({ type: "close", connection, reason: "UNAUTHORIZED" });
+        send({ type: "close", connection, reason: "RECOVERING" });
       }
   };
   let ticks = 0, overrunMs = 0, closed = false, lastCheckpoint = 0;

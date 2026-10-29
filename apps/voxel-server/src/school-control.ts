@@ -34,7 +34,7 @@ function receipt(value: unknown): Receipt {
       (Number.isSafeInteger(v.savedSequence) && (v.savedSequence as number) > 0)
     ) ||
     (v.action === "resume" && v.savedSequence !== null) ||
-    (v.action !== "resume" && v.completed && v.savedSequence === null)
+    (v.action === "pause" && v.completed && v.savedSequence === null)
   )
     throw new PersistenceError("control_protocol");
   return Object.freeze(v) as Receipt;
@@ -204,9 +204,9 @@ export function schoolControl(
               };
             let saved: number | null = null;
             if (action === "resume") control.resume();
+            else if (action === "end") control.end();
             else {
               saved = (await control.savePaused()).sequence;
-              if (action === "end") control.end();
             }
             const result = await commands.finish(
               control.lease,

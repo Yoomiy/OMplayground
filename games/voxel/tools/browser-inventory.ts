@@ -52,19 +52,23 @@ try {
     );
   });
   assert.equal(
-    await page.locator('.voxel-inventory').evaluate((dialog: HTMLDialogElement) => dialog.open),
+    await page
+      .locator('.voxel-inventory:not(.voxel-recipe-book)')
+      .evaluate((dialog: HTMLDialogElement) => dialog.open),
     true,
   );
   const settled = () => page.waitForFunction(() => !(window as any).voxel.debug().inventoryPending);
   const give = async (itemType: string) => {
+    await page.getByRole('button', { name: 'קטלוג פריטים', exact: true }).tap();
     const previous = (await debug()).inventory.revision;
-    await page.locator('#inventory-catalog').selectOption(itemType);
+    await page.locator(`#inventory-catalog [data-item="${itemType}"]`).tap();
     await page.locator('#inventory-give').tap();
     await page.waitForFunction(
       (revision) => (window as any).voxel.debug().inventory.revision > revision,
       previous,
     );
     await settled();
+    await page.getByRole('button', { name: 'מלאי ויצירה', exact: true }).tap();
   };
   const move = async (
     area: string,

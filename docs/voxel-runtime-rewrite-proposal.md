@@ -49,7 +49,7 @@ These are recommendations for the rewrite, not claims that the implementation al
 | Time | 30 Hz authoritative world tick, two fixed 60 Hz player-movement steps per tick | A single movement contract can be replayed by the client at render-independent input intervals. |
 | Network cadence | Sample controls at 60 Hz, batch at 30 Hz; begin with 15 Hz remote snapshots | Separate input, simulation, replication, and rendering costs; tune from measured behavior. |
 | Block storage | Uint16 block-state IDs, with one compiled content manifest | Remove the candidate's small custom-block pool and our duplicated render/gameplay definitions. |
-| World shape | Start with 256-block height; propose a configurable 512×512 playable area | Retain the engine's vertical format while bounding exploration, memory, persistence, and supervision costs. |
+| World shape | 256-block height with streamed horizontal terrain | Generate/load nearby columns and persist edits. Retain only the current native physics coordinate guard near ±1 million blocks. |
 | Persistence | Immutable checkpoint data in private Supabase Storage, committed through a small Postgres manifest/pointer | Durable recovery without local-disk assumptions or a growing `game_sessions.game_state` blob. |
 | Isolation | One simulation worker per active room, supervised by a thin gateway | Keep room computation away from socket/admission work and unrelated classroom services. |
 | UI | A rewritten React HUD and session view around an imperative game runtime | Consistent Hebrew/accessibility behavior without putting the game loop in React. |
@@ -62,6 +62,8 @@ These are recommendations for the rewrite, not claims that the implementation al
 **Device clarification — 2026-10-28: students mostly use PCs.** Desktop keyboard/mouse input and school PC browsers are the release focus. Mobile/tablet compatibility and performance are optional; do not add work or block release for that matrix. Retain existing touch behavior where practical.
 
 **Launch direction — 2026-10-28:** The user asked to proceed toward launch with the current candidate, rather than extend product qualification. It uses a 512×512 world, visual/audio weather and a healthy-service checkpoint recovery target of at most 30 seconds of unsaved progress. Continue manual staging validation with these defaults; do not introduce another product-ratification questionnaire. Expected participation and simultaneous sessions are workload inputs, not limits on allowed users or rooms.
+
+**World update — 2026-10-29:** The user requested removing the 512×512 fence after auditing streaming and delta persistence, and distinct seeds for new worlds. Terrain now streams without that gameplay fence, within the published native physics coordinate range. Supabase reserves a unique seed before a new world's first checkpoint; existing saves keep their seed and progress and expand. This supersedes the earlier horizontal-size default.
 
 ### Alternatives considered
 
@@ -86,7 +88,7 @@ There is no automatic feature-parity requirement with every current edge case. T
 | Tool wear, food, health/hunger, fall damage, combat, death/respawn, TNT | Required, with server-owned outcomes and deliberate tuning. |
 | Equipment perks | Retain the intended capabilities through data-driven modifiers; old constants and implementation details are negotiable. |
 | Terrain, biomes, day/night, ambient audio, basic weather presentation | Use candidate generation/art foundations; redesign terrain composition and visual style as needed. |
-| Weather-driven block simulation and elaborate weather effects | Deferred proposal, requiring product acceptance of that scope reduction. |
+| Weather-driven block simulation and elaborate weather effects | Deferred for the first release under the launch direction above; weather has visual/audio presentation without changing blocks. |
 | Teacher observation/play modes, room controls, supervision and moderation | Required; capabilities enforced by the backend. |
 | Proximity voice, mute controls, chat | Required; retain LiveKit as the media service with new engine-independent adapters. |
 | Hebrew UI, RTL text/layout, pointer lock, fullscreen and keyboard/mouse controls | Required on school PCs. Existing touch controls are best-effort; mobile/tablet compatibility is not a release gate. World axes, movement, and camera are not mirrored for RTL. |
@@ -216,7 +218,7 @@ Scope replication deliberately:
 
 ## 9. World streaming, rendering and presentation
 
-Keep sparse 16³ sections grouped into columns, deterministic seed/config generation, and chunk-indexed edits. Hot world queries read loaded block buffers rather than rerunning procedural generation. Generation and edit storage remain bounded by the playable area and loaded radius.
+Keep sparse 16³ sections grouped into columns, deterministic seed/config generation, and chunk-indexed edits. Hot world queries read loaded block buffers rather than rerunning procedural generation. Generation stays bounded by nearby loaded columns. Persistent edit storage grows with actual modifications, independently of the former playable square.
 
 Every browser job identifies the world instance, chunk incarnation, content/generator versions, and revision. Cancelling/reloading a chunk invalidates its old incarnation. Validate identity on generation results as well as mesh results. Worker failure retries are bounded; freeze movement into unavailable terrain and show recovery state instead of installing empty data or generating synchronously as a fallback.
 
@@ -238,9 +240,9 @@ Persist world ID, schema/generator/content versions, seed, preset/bounds, simula
 
 Create immutable checkpoint objects in private storage. Reuse unchanged chunk references; write dirty chunks and one coherent actor/container/timer snapshot from the same simulation boundary. Upload objects first, then commit a Postgres manifest and advance the active checkpoint pointer in one transaction. Compare owner epoch and checkpoint sequence so late writes cannot replace newer state. Upload success alone does not make a checkpoint active. Clean abandoned/unreferenced objects asynchronously after a retention window.
 
-Use the gateway for asynchronous storage IO; snapshot construction must not stall rendering or the room tick. The worker captures/copies or transfers an immutable snapshot so subsequent mutations cannot change an in-flight save. Bound pending snapshots and coalesce autosaves without losing explicitly requested pause/stop saves.
+Use the gateway for asynchronous storage IO; snapshot construction must not stall rendering or the room tick. The worker captures/copies or transfers an immutable snapshot so subsequent mutations cannot change an in-flight save. Bound pending snapshots and coalesce autosaves without losing explicitly requested pause or service-drain saves.
 
-Proposed autosave interval: 15 seconds, with a launch target of no more than 30 seconds of durable lag during healthy operation. Accepted gameplay commands are not all synchronously durable: a crash can lose changes since the last committed checkpoint. Pause/stop/last-player-leave acknowledge successful saving only after commit; failures display an unsaved/retrying state and preserve the last valid checkpoint. A forced shutdown can still lose unsaved changes. If a tighter recovery objective is required, add a durable command journal deliberately instead of implying snapshots provide zero-loss recovery.
+Proposed autosave interval: 15 seconds, with a launch target of no more than 30 seconds of durable lag during healthy operation. Accepted gameplay commands are not all synchronously durable: a crash can lose changes since the last committed checkpoint. Pause, service drain and ordinary last-player-leave acknowledge successful saving only after commit; failures display an unsaved/retrying state and preserve the last valid checkpoint. **User direction — 2026-10-29:** explicit “סיום המפגש” ends without requesting a final checkpoint and must not report that it saved. It does not delete previous checkpoints or undo an autosave already in flight. Pause remains the action for saving a session for continuation. A forced shutdown can still lose unsaved changes. If a tighter recovery objective is required, add a durable command journal deliberately instead of implying snapshots provide zero-loss recovery.
 
 ### One owner per world
 
@@ -294,6 +296,8 @@ Effort is concentrated in registry widening, robust time/reconnect semantics, co
 
 These are proposed engineering targets, not results already achieved. Confirm the actual school device/network matrix and expected simultaneous sessions before release qualification; do not infer school capacity from a 16-player flat-world probe.
 
+**Validation direction — 2026-10-29:** The user reports that the app starts, wants to launch, and asked to reduce repeated testing. Reuse existing CI and recorded evidence; check the specific behavior changed by a fix and address concrete staging feedback. Do not repeatedly run this entire matrix or introduce new workload/device questionnaires as launch prerequisites. Software-rendered browser checks still do not establish physical-PC performance.
+
 | Concern | Proposed gate |
 | --- | --- |
 | Supported school PC | During prescribed movement/building scenarios, foreground frame time p95 ≤16.7 ms and p99 ≤33.3 ms at the documented quality profile. |
@@ -303,7 +307,7 @@ These are proposed engineering targets, not results already achieved. Confirm th
 | School workload | During ordinary school play, target integrated 30 Hz tick p95 ≤10 ms, p99 ≤20 ms; no persistent input/save/replication backlog. The 128-player diagnostic is not a release gate and does not become a player cap. |
 | Authority | Burst/time-forgery tests, repeated/stale commands, unauthorized role/actions and reach checks pass; no queue length or client timestamp can create movement time. |
 | Prediction | Fixed-trace agreement within a defined small tolerance (initial target 1 cm) on unchanged worlds; corrections bounded under network impairment; report input/ack lag as well as positional error. |
-| Durability | Crash/restart restores a coherent committed checkpoint; healthy durable lag ≤30 seconds; pause/stop never report saved before commit. |
+| Durability | Crash/restart restores a coherent committed checkpoint; healthy durable lag ≤30 seconds; pause/drain never report saved before commit. Explicit session end requests no final save and does not claim one. |
 | Memory | Repeated travel/join/leave cycles plateau in tracked owned buffers/resources and loaded-section counts; Wasm high-water retention is distinguished from live allocation leaks. Establish memory budgets from stage 2/5 measurements without converting them into fixed player/room counts. |
 | Multiple rooms | Verify session isolation, teacher controls, saves and cleanup when school sessions coexist. No progressive scale target, scaling infrastructure or room/player-count ceiling is required. |
 
@@ -325,9 +329,9 @@ Retire `apps/minecraft-server` only after classroom/RTC responsibilities have th
 
 Rollback means disabling voxel admission or deploying the previous **new-stack** build with compatible checkpoint formats. It does not mean silently reverting to the old NOA game. During prelaunch development, explicit test-world resets remain acceptable; after real users begin, storage/build compatibility and recovery need a deliberate version policy. Waiving compatibility with today's test worlds does not waive future player-data correctness.
 
-## 16. Remaining decisions and stop conditions
+## 16. Launch defaults and stop conditions
 
-Before release, ratify: the bounded-world default and size; actual device/browser floor; deferred weather scope; required art/content set; and the acceptable recovery-loss window. Use ordinary private-school sessions as qualification context; large-scale capacity planning is not a release requirement. Player and room caps are explicitly excluded by the user decision above. The proposal supplies other defaults without treating the existing implementation as the answer.
+Proceed with the user's launch direction: streamed terrain with distinct new-world seeds, school PCs as the primary devices, visual/audio weather, the compiled content set with its recorded legacy-content dispositions, and a healthy-service recovery target of at most 30 seconds of unsaved progress. Continue through staging feedback and the requested manual deployment walkthrough using those defaults. Player and room caps are excluded. The user configures hosting services; a PR to main follows their confirmation that staging works.
 
 Reconsider the candidate foundation if Uint16 conversion makes the engine substantially harder to maintain, representative devices fail basic rendering budgets after sensible quality reductions, or survival/prediction integration requires replacing most supposedly reusable engine contracts. Record those costs and choose an alternative at the early gates rather than continuing because of time already invested.
 

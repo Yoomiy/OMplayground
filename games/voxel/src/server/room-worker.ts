@@ -213,7 +213,7 @@ try {
         authorizations.delete(connection);
         chunkInFlight.delete(connection);
         room.disconnect(connection, now);
-        send({ type: 'close', connection, reason: 'UNAUTHORIZED' });
+        send({ type: 'close', connection, reason: 'RECOVERING' });
       }
   };
   let ticks = 0,

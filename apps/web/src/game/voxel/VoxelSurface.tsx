@@ -8,6 +8,7 @@ import "./voxel-session.css";
 import { VoxelModeration } from "./VoxelModeration";
 import { VoxelChat } from "./VoxelChat";
 import { VoxelVoice } from "./VoxelVoice";
+import { VoxelHelp } from "./VoxelHelp";
 
 type BrowserModule = typeof import("@playground/voxel-runtime");
 type ControlState = {
@@ -43,6 +44,7 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
     onExit,
   } = props;
   const header = useRef<HTMLElement>(null);
+  const menu = useRef<HTMLDetailsElement>(null);
   const root = useRef<HTMLElement>(null),
     world = useRef<HTMLDivElement>(null),
     inventoryHost = useRef<HTMLDivElement>(null);
@@ -58,6 +60,7 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
     [help, setHelp] = useState(false),
     [now, setNow] = useState(Date.now);
   const [endConfirmed, setEndConfirmed] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
   const endDialog = useRef<HTMLDialogElement>(null),
     controlAbort = useRef<AbortController | null>(null);
   const controlPending = useRef(false),
@@ -98,6 +101,33 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
       runtime.current?.command(value),
     [],
   );
+  const closeHelp = useCallback(() => {
+    setHelp(false);
+    command({ type: "resume" });
+  }, [command]);
+  useEffect(() => {
+    const key = (event: KeyboardEvent) => {
+      if (
+        !runtime.current ||
+        event.repeat ||
+        event.code !== "KeyH" ||
+        (event.target instanceof HTMLElement &&
+          event.target.closest(
+            'input, textarea, select, [contenteditable="true"]',
+          )) ||
+        root.current?.querySelector("dialog[open]")
+      )
+        return;
+      event.preventDefault();
+      if (help) closeHelp();
+      else {
+        command({ type: "pause" });
+        setHelp(true);
+      }
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, [help, command, closeHelp]);
   useEffect(() => {
     const abort = new AbortController();
     let owned: VoxelRuntime | null = null,
@@ -142,6 +172,7 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
         fullscreenElement: root.current,
         renderScale: matchMedia("(pointer: coarse)").matches ? 0.75 : 1,
         renderHz: matchMedia("(pointer: coarse)").matches ? 30 : 60,
+        autoEnter: true,
         admit: async () => {
           try {
             const result = await api.admit(abort.signal);
@@ -253,7 +284,10 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
     errorCode === "SESSION_ENDED" ||
     session?.status === "completed";
   useEffect(() => {
-    if (terminal) releaseRuntime.current?.();
+    if (terminal) {
+      setHelp(false);
+      releaseRuntime.current?.();
+    }
   }, [terminal, api]);
   const canControl = !!session && (isStaff || session.hostId === userId);
   const connected = currentPresence(session, now);
@@ -276,7 +310,11 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
         id,
         state: "pending",
         text:
-          action === "resume" ? "מחדשים את המפגש…" : "ממתינים לאישור שמירה…",
+          action === "resume"
+            ? "מחדשים את המפגש…"
+            : action === "end"
+              ? "מסיימים את המפגש…"
+              : "ממתינים לאישור שמירה…",
       });
       try {
         const receipt = await api.control(action, id, abort.signal);
@@ -290,7 +328,7 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
             : action === "resume"
               ? "המפגש חודש. לחצו על כניסה לעולם כדי להמשיך."
               : action === "end"
-                ? "המפגש הסתיים והשמירה אושרה."
+                ? "המפגש הסתיים. אפשר לפתוח מפגש חדש."
                 : "המפגש הושהה והשמירה אושרה.",
         });
         if (action === "end" && receipt.current) setEndConfirmed(true);
@@ -304,7 +342,9 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
           id,
           state: uncertain ? "unconfirmed" : "done",
           text: uncertain
-            ? "לא התקבל אישור להשלמת הפעולה. השמירה טרם אושרה; אפשר לנסות שוב."
+            ? action === "end"
+              ? "לא התקבל אישור לסיום המפגש. אפשר לנסות שוב."
+              : "לא התקבל אישור להשלמת הפעולה. השמירה טרם אושרה; אפשר לנסות שוב."
             : admissionMessage(code),
         });
         callbacks.current.onDiagnostic?.("control", code, identity.current);
@@ -400,7 +440,13 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
     !!mountError ||
     !!errorCode ||
     !hud ||
-    (hud.status !== "playing" && !hud.inventoryOpen);
+    (hud.status !== "playing" && !hud.inventoryOpen && !help && !panelOpen);
+  useEffect(() => {
+    if (hud?.status === "playing") {
+      if (menu.current) menu.current.open = false;
+      setHelp(false);
+    }
+  }, [hud?.status]);
   const statusText = terminal
     ? "המפגש הסתיים"
     : (mountError ??
@@ -414,14 +460,16 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
               : "מכינים את העולם…")));
   const canEnter =
     !!hud &&
+    hud.graphics === "ready" &&
     !terminal &&
     !errorCode &&
     !mountError &&
-    hud.status !== "dead" &&
+    hud.status === "paused" &&
     (hud.lifecycle === "playing" ||
       (hud.role === "observer" && hud.lifecycle === "paused"));
   const reconnect =
     !!hud &&
+    ["ready", "failed"].includes(hud.graphics) &&
     !terminal &&
     ![
       "UNAUTHORIZED",
@@ -433,14 +481,14 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
       "MODE_DENIED",
     ].includes(errorCode ?? "") &&
     ["error", "recovering", "stalled"].includes(hud.status);
-  const title =
-    hud?.role === "observer"
-      ? "תצפית נסתרת בעולם"
-      : hud?.mode === "creative"
-        ? "עולם הבנייה"
-        : "עולם ההישרדות";
+  const title = "מיינקראפט";
   const selectedItem = browser?.content.items.find(
     (item) => item.itemType === hud?.inventory?.bag[hud.selectedSlot]?.itemType,
+  );
+  const selectedHotbarItem = hud?.hotbar.find((item) =>
+    item.slot === null
+      ? item.state === hud.selected
+      : item.slot === hud.selectedSlot,
   );
   return (
     <section
@@ -455,54 +503,7 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
         className={`voxel-session__world${terminal ? " voxel-session__world--ended" : ""}`}
       />
       <header ref={header} className="voxel-session__header">
-        <div>
-          <h1>{title}</h1>
-          <p>
-            {hud && (
-              <span>
-                {hud.mode === "creative" ? "מצב יצירתי" : "מצב שרידות"} ·{" "}
-              </span>
-            )}
-            {session
-              ? `מארח: ${session.hostName} · ${connected.length} שחקנים מחוברים`
-              : "טוענים פרטי מפגש…"}
-          </p>
-        </div>
-        <nav aria-label="כלי העולם">
-          <button
-            type="button"
-            onClick={() => {
-              command({ type: "pause" });
-              onExit();
-            }}
-          >
-            יציאה
-          </button>
-          <button type="button" onClick={() => command({ type: "fullscreen" })}>
-            מסך מלא
-          </button>
-          <button
-            type="button"
-            aria-expanded={help}
-            onClick={() => {
-              command({ type: "pause" });
-              setHelp((value) => !value);
-            }}
-          >
-            עזרה
-          </button>
-          {hud?.effectsAvailable && (
-            <button
-              type="button"
-              aria-pressed={!hud.effectsMuted}
-              onClick={() =>
-                command({ type: "mute-effects", muted: !hud.effectsMuted })
-              }
-            >
-              קולות משחק: {hud.effectsMuted ? "כבויים" : "פעילים"}
-            </button>
-          )}
-        </nav>
+        <h1>{title}</h1>
         <VoxelVoice
           api={api}
           isStaff={isStaff}
@@ -514,11 +515,24 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
             ["playing", "paused", "dead"].includes(hud.status)
           }
           scene={() => runtime.current?.voiceScene() ?? null}
-          onOpen={() => command({ type: "pause" })}
+          onOpen={() => {
+            setPanelOpen(true);
+            command({ type: "pause" });
+          }}
+          onResume={() => {
+            setPanelOpen(false);
+            command({ type: "resume" });
+          }}
         />
         <VoxelChat
           api={api}
           isStaff={isStaff}
+          active={
+            !!hud &&
+            !terminal &&
+            !errorCode &&
+            ["playing", "paused", "dead"].includes(hud.status)
+          }
           canSend={
             !!hud &&
             hud.role === "participant" &&
@@ -526,162 +540,229 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
             !errorCode &&
             ["playing", "paused", "dead"].includes(hud.status)
           }
-          onOpen={() => command({ type: "pause" })}
+          onOpen={() => {
+            setPanelOpen(true);
+            command({ type: "pause" });
+          }}
+          onResume={() => {
+            setPanelOpen(false);
+            command({ type: "resume" });
+          }}
         />
-        {canControl && !terminal && (
-          <nav aria-label="ניהול המפגש">
-            <button
-              type="button"
-              disabled={
-                control?.state === "pending" ||
-                staffState?.state === "pending" ||
-                moderationBusy
-              }
-              onClick={() =>
-                void executeControl(
-                  hud?.lifecycle === "paused" ? "resume" : "pause",
-                )
-              }
-            >
-              {hud?.lifecycle === "paused" ? "חידוש המפגש" : "השהיית המפגש"}
-            </button>
-            <button
-              type="button"
-              disabled={
-                control?.state === "pending" ||
-                staffState?.state === "pending" ||
-                moderationBusy
-              }
-              onClick={() => {
-                command({ type: "pause" });
-                endDialog.current?.showModal();
-              }}
-            >
-              סיום המפגש
-            </button>
-          </nav>
-        )}
-        {isStaff && hud && !terminal && (
-          <details className="voxel-session__staff">
-            <summary>כלי מורה</summary>
-            <button
-              type="button"
-              disabled={
-                control?.state === "pending" ||
-                staffState?.state === "pending" ||
-                moderationBusy
-              }
-              onClick={() => {
-                command({ type: "pause" });
-                setStaffDraft({
-                  kind: "mode",
-                  mode: hud.mode === "survival" ? "creative" : "survival",
-                });
-                staffDialog.current?.showModal();
-              }}
-            >
-              {hud.mode === "survival"
-                ? "מעבר למצב יצירתי"
-                : "מעבר למצב שרידות"}
-            </button>
-            <label>
-              יעד להשתגרות
-              <select
-                aria-label="יעד להשתגרות"
-                value={staffTarget}
-                onChange={(event) => setStaffTarget(event.target.value)}
+        <details
+          ref={menu}
+          className="voxel-session__menu"
+          onToggle={(event) => {
+            if (event.currentTarget.open) command({ type: "pause" });
+          }}
+        >
+          <summary>☰ תפריט</summary>
+          <div className="voxel-session__menu-body">
+            <div>
+              <h1>{title}</h1>
+              <p>
+                {session
+                  ? `מארח: ${session.hostName} · ${connected.length} שחקנים מחוברים`
+                  : "טוענים פרטי מפגש…"}
+              </p>
+            </div>
+            <nav aria-label="כלי העולם">
+              <button
+                type="button"
+                onClick={() => {
+                  command({ type: "pause" });
+                  onExit();
+                }}
               >
-                <option value="spawn">נקודת ההתחלה</option>
-                {connected
-                  .filter((actor) => actor.id !== userId)
-                  .map((actor) => (
-                    <option key={actor.id} value={actor.id}>
-                      {actor.name}
-                    </option>
-                  ))}
-              </select>
-            </label>
-            <button
-              type="button"
-              disabled={
-                control?.state === "pending" ||
-                staffState?.state === "pending" ||
-                moderationBusy
-              }
-              onClick={() => {
-                command({ type: "pause" });
-                setStaffDraft({ kind: "teleport", target: staffTarget });
-                staffDialog.current?.showModal();
-              }}
-            >
-              השתגרות ליעד
-            </button>
-            <VoxelModeration
-              api={api}
-              busy={
-                control?.state === "pending" ||
-                staffState?.state === "pending" ||
-                moderationBusy
-              }
-              acquire={acquireModeration}
-              onPause={() => command({ type: "pause" })}
-              onFailure={(code) =>
-                callbacks.current.onDiagnostic?.(
-                  "staff_moderation",
-                  code,
-                  identity.current,
-                )
-              }
-            />
-          </details>
-        )}
-        {!terminal && (
-          <nav aria-label="אופן השתתפות">
-            {" "}
-            {isStaff &&
-              onParticipation &&
-              (hud?.role === "participant" || canChoosePlayer) && (
+                יציאה
+              </button>
+              <button
+                type="button"
+                onClick={() => command({ type: "fullscreen" })}
+              >
+                מסך מלא
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  command({
+                    type: "camera",
+                    distance: hud?.cameraDistance ? 0 : 4,
+                  })
+                }
+              >
+                {hud?.cameraDistance ? "מבט ראשון" : "מבט שלישי"}
+              </button>
+              <button
+                type="button"
+                aria-expanded={help}
+                onClick={() => {
+                  if (help) closeHelp();
+                  else {
+                    command({ type: "pause" });
+                    setHelp(true);
+                  }
+                }}
+              >
+                עזרה (H)
+              </button>
+              {hud?.effectsAvailable && (
                 <button
                   type="button"
-                  onClick={() => {
-                    command({ type: "pause" });
-                    onParticipation(
-                      hud?.role === "observer" ? "player" : "observer",
-                    );
-                  }}
+                  aria-pressed={!hud.effectsMuted}
+                  onClick={() =>
+                    command({ type: "mute-effects", muted: !hud.effectsMuted })
+                  }
                 >
-                  {hud?.role === "observer"
-                    ? "הצטרפות כשחקן/ית"
-                    : "מעבר לתצפית נסתרת"}
+                  קולות משחק: {hud.effectsMuted ? "כבויים" : "פעילים"}
                 </button>
               )}
-          </nav>
-        )}
+            </nav>
+            {canControl && !terminal && (
+              <nav aria-label="ניהול המפגש">
+                <button
+                  type="button"
+                  disabled={
+                    control?.state === "pending" ||
+                    staffState?.state === "pending" ||
+                    moderationBusy
+                  }
+                  onClick={() =>
+                    void executeControl(
+                      hud?.lifecycle === "paused" ? "resume" : "pause",
+                    )
+                  }
+                >
+                  {hud?.lifecycle === "paused" ? "חידוש המפגש" : "השהיית המפגש"}
+                </button>
+                <button
+                  type="button"
+                  disabled={
+                    control?.state === "pending" ||
+                    staffState?.state === "pending" ||
+                    moderationBusy
+                  }
+                  onClick={() => {
+                    command({ type: "pause" });
+                    endDialog.current?.showModal();
+                  }}
+                >
+                  סיום המפגש
+                </button>
+              </nav>
+            )}
+            {isStaff && hud && !terminal && (
+              <details className="voxel-session__staff">
+                <summary>כלי מורה</summary>
+                <label>
+                  יעד להשתגרות
+                  <select
+                    aria-label="יעד להשתגרות"
+                    value={staffTarget}
+                    onChange={(event) => setStaffTarget(event.target.value)}
+                  >
+                    <option value="spawn">נקודת ההתחלה</option>
+                    {connected
+                      .filter((actor) => actor.id !== userId)
+                      .map((actor) => (
+                        <option key={actor.id} value={actor.id}>
+                          {actor.name}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  disabled={
+                    control?.state === "pending" ||
+                    staffState?.state === "pending" ||
+                    moderationBusy
+                  }
+                  onClick={() => {
+                    command({ type: "pause" });
+                    setStaffDraft({ kind: "teleport", target: staffTarget });
+                    staffDialog.current?.showModal();
+                  }}
+                >
+                  השתגרות ליעד
+                </button>
+                <VoxelModeration
+                  api={api}
+                  busy={
+                    control?.state === "pending" ||
+                    staffState?.state === "pending" ||
+                    moderationBusy
+                  }
+                  acquire={acquireModeration}
+                  onPause={() => command({ type: "pause" })}
+                  onFailure={(code) =>
+                    callbacks.current.onDiagnostic?.(
+                      "staff_moderation",
+                      code,
+                      identity.current,
+                    )
+                  }
+                />
+              </details>
+            )}
+            {!terminal && (
+              <nav aria-label="אופן השתתפות">
+                {" "}
+                {isStaff &&
+                  onParticipation &&
+                  (hud?.role === "participant" || canChoosePlayer) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        command({ type: "pause" });
+                        onParticipation(
+                          hud?.role === "observer" ? "player" : "observer",
+                        );
+                      }}
+                    >
+                      {hud?.role === "observer"
+                        ? "הצטרפות כשחקן/ית"
+                        : "מעבר לתצפית נסתרת"}
+                    </button>
+                  )}
+              </nav>
+            )}
+          </div>
+        </details>
       </header>
-      {help && (
-        <aside className="voxel-session__help" aria-label="הוראות משחק">
-          <h2>איך משחקים?</h2>
-          <p>
-            WASD לתנועה, עכבר למבט, רווח לקפיצה ו־E לפתיחת התיק. במגע משתמשים
-            בג׳ויסטיק ובכפתורים שעל המסך.
+      <VoxelHelp
+        open={help}
+        items={browser?.content.items ?? []}
+        labels={browser?.ITEM_LABELS ?? {}}
+        onClose={closeHelp}
+        canUseInventory={
+          hud?.role === "participant" && hud?.lifecycle === "playing"
+        }
+        onInventory={() => {
+          setHelp(false);
+          command({
+            type: "inventory",
+            operation: { kind: "open", target: null },
+          });
+        }}
+      />
+      {!showStatus &&
+        !panelOpen &&
+        !help &&
+        hud?.message &&
+        !hud.inventoryOpen && (
+          <p
+            className="voxel-session__feedback"
+            role="status"
+            aria-live="polite"
+          >
+            {hud.message}
           </p>
-          <p>
-            לחיצה שמאלית לכרייה, לחיצה ימנית לבנייה או שימוש, Q לתקיפה ו־R
-            לאכילה. התיק מציג מתכונים, ציוד ופרטי חפצים.
-          </p>
-          <p>
-            פתיחת התיק או יציאה מלכידת העכבר עוצרות רק אתכם. תצפית מורה נשארת
-            נסתרת; העולם מתקדם רק עם שחקנים מורשים.
-          </p>
-          <button type="button" onClick={() => setHelp(false)}>
-            סגירת העזרה
-          </button>
-        </aside>
-      )}
+        )}
       {showStatus && (
         <div className="voxel-session__status" role="status" aria-live="polite">
           <p>{statusText}</p>
-          {mountError && (
+          {(mountError || (hud && hud.graphics !== "ready")) && (
             <button type="button" onClick={() => location.reload()}>
               טעינה מחדש
             </button>
@@ -696,7 +777,9 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
               type="button"
               onClick={() => command({ type: "reconnect" })}
             >
-              התחברות מחדש
+              {hud?.graphics === "failed"
+                ? "ניסיון נוסף לשחזור התצוגה"
+                : "התחברות מחדש"}
             </button>
           )}
           {hud?.status === "dead" && (
@@ -773,14 +856,8 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
         className="voxel-session__dialog"
         aria-labelledby="voxel-staff-title"
       >
-        <h2 id="voxel-staff-title">
-          {staffDraft?.kind === "mode" ? "לשנות את מצב העולם?" : "להשתגר ליעד?"}
-        </h2>
-        <p>
-          {staffDraft?.kind === "mode"
-            ? "המצב ישתנה עבור כל המשתתפים. התיקים יישמרו והשליטה תחודש בכניסה מפורשת. מי שנפלו עדיין צריכים לחזור דרך כפתור החזרה."
-            : "רק המיקום שלכם ישתנה. השליטה תחודש לאחר טעינת השטח וכניסה מפורשת."}
-        </p>
+        <h2 id="voxel-staff-title">להשתגר ליעד?</h2>
+        <p>רק המיקום שלכם ישתנה. לאחר טעינת השטח אפשר להמשיך לשחק.</p>
         <button type="button" onClick={() => staffDialog.current?.close()}>
           ביטול
         </button>
@@ -803,10 +880,37 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
         hud.role === "participant" &&
         (hud.mode === "survival" || hud.status === "dead") && (
           <aside className="voxel-session__vitals" aria-label="מצב השחקן">
-            <span>בריאות {hud.vitals.health}/20</span>
-            <span>מזון {hud.vitals.food}/20</span>
+            <label className="voxel-session__vital voxel-session__vital--health">
+              <span aria-hidden="true">♥</span>
+              <meter
+                aria-label="בריאות"
+                min={0}
+                max={20}
+                value={hud.vitals.health}
+              />
+              <small>{hud.vitals.health}/20</small>
+            </label>
+            <label className="voxel-session__vital voxel-session__vital--food">
+              <span>מזון</span>
+              <meter
+                aria-label="מזון"
+                min={0}
+                max={20}
+                value={hud.vitals.food}
+              />
+              <small>{hud.vitals.food}/20</small>
+            </label>
             {hud.vitals.air < 300 && (
-              <span>אוויר {Math.ceil(hud.vitals.air / 30)}</span>
+              <label className="voxel-session__vital voxel-session__vital--air">
+                <span>אוויר</span>
+                <meter
+                  aria-label="אוויר"
+                  min={0}
+                  max={300}
+                  value={hud.vitals.air}
+                />
+                <small>{Math.ceil(hud.vitals.air / 30)} שנ׳</small>
+              </label>
             )}
             <button
               type="button"
@@ -821,53 +925,90 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
             </button>
           </aside>
         )}
-      {hud?.mining.target && (
-        <progress
-          className="voxel-session__mining"
-          aria-label="התקדמות כרייה"
-          max={hud.mining.total || 1}
-          value={hud.mining.elapsed}
-        />
-      )}
       <footer
         className="voxel-session__bottom"
         hidden={terminal || hud?.role === "observer"}
       >
+        <span className="voxel-session__selected-item">
+          {selectedHotbarItem?.family &&
+            (browser?.ITEM_LABELS[selectedHotbarItem.family] ??
+              selectedHotbarItem.family)}
+        </span>
         <div ref={inventoryHost} className="voxel-session__inventory-tools" />
         <div
           className="voxel-session__hotbar"
           role="toolbar"
           aria-label="חפצים זמינים"
         >
-          {hud?.hotbar.map((item) => (
-            <button
-              type="button"
-              key={item.key}
-              disabled={
-                (hud.role === "participant" && hud.lifecycle !== "playing") ||
-                hud.inventoryPending ||
-                hud.status === "dead"
-              }
-              aria-pressed={
-                item.slot === null
-                  ? item.state === hud.selected
-                  : item.slot === hud.selectedSlot
-              }
-              onClick={() =>
-                command(
+          {hud?.hotbar.map((item, index) => {
+            const stack =
+              item.slot === null ? null : hud.inventory?.bag[item.slot];
+            const definition = browser?.content.items.find((entry) =>
+              item.slot === null
+                ? entry.places === item.family
+                : entry.itemType === item.family,
+            );
+            const name = definition
+              ? (browser?.ITEM_LABELS[definition.itemType] ??
+                definition.labelKey)
+              : "יד ריקה";
+            const icon =
+              definition && runtime.current?.itemIcon(definition.itemType);
+            const durability = stack?.instance?.durability;
+            const ratio =
+              durability !== undefined && definition?.durability
+                ? durability / definition.durability
+                : null;
+            return (
+              <button
+                className="voxel-item-slot"
+                title={`${index + 1}. ${name}${item.count ? ` ×${item.count}` : ""}${durability !== undefined ? ` · עמידות ${durability}/${definition?.durability}` : ""}`}
+                aria-label={`${index + 1}. ${name}${item.count ? ` ×${item.count}` : ""}`}
+                type="button"
+                key={item.key}
+                disabled={
+                  (hud.role === "participant" && hud.lifecycle !== "playing") ||
+                  hud.inventoryPending ||
+                  hud.status === "dead"
+                }
+                aria-pressed={
                   item.slot === null
-                    ? { type: "select", state: item.state }
-                    : { type: "select-slot", slot: item.slot },
-                )
-              }
-            >
-              {item.slot === null ? "" : `${item.slot + 1}. `}
-              {item.family
-                ? (browser?.ITEM_LABELS[item.family] ?? item.family)
-                : "יד ריקה"}
-              {item.count ? ` ×${item.count}` : ""}
-            </button>
-          ))}
+                    ? item.state === hud.selected
+                    : item.slot === hud.selectedSlot
+                }
+                onClick={() =>
+                  command(
+                    item.slot === null
+                      ? { type: "select", state: item.state }
+                      : { type: "select-slot", slot: item.slot },
+                  )
+                }
+              >
+                <span className="voxel-item-slot__key" aria-hidden="true">
+                  {index + 1}
+                </span>
+                {icon && <img src={icon} alt="" draggable={false} />}
+                {!!item.count && item.count > 1 && (
+                  <span className="voxel-item-slot__count" aria-hidden="true">
+                    {item.count}
+                  </span>
+                )}
+                {ratio !== null && (
+                  <span
+                    className="voxel-item-slot__durability"
+                    aria-hidden="true"
+                  >
+                    <span
+                      style={{
+                        width: `${ratio * 100}%`,
+                        background: `hsl(${Math.round(ratio * 110)} 65% 55%)`,
+                      }}
+                    />
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </footer>
       <dialog
@@ -876,7 +1017,10 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
         aria-labelledby="voxel-end-title"
       >
         <h2 id="voxel-end-title">לסיים את המפגש?</h2>
-        <p>השמירה תאושר לפני סיום המפגש וניתוק המשתתפים.</p>
+        <p>
+          סיום המפגש מנתק את המשתתפים ולא ניתן לחדש אותו. כדי לשמור ולחזור מאוחר
+          יותר, בחרו בהשהיית המפגש.
+        </p>
         <button type="button" onClick={() => endDialog.current?.close()}>
           ביטול
         </button>
@@ -887,7 +1031,7 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
             void executeControl("end");
           }}
         >
-          שמירה וסיום
+          סיום המפגש
         </button>
       </dialog>
     </section>

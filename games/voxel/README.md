@@ -124,10 +124,11 @@ and removes the old content workspace. [Asset retirement](docs/asset-retirement.
 removes unused old media/import tooling after source and read-only catalog/avatar
 checks. Actual hosted routing cutover remains separate work.
 
-The [shared world profile](docs/world-profile.md) makes the playable square size a
-build setting while retaining the 512×512 default and height 256. Geometry,
-streaming, wire validation and saves share those bounds, and the profile enters
-the build fingerprint. Stop/rebuild/restart the dev stack after changing it.
+The [shared world profile](docs/world-profile.md) uses streamed terrain without
+the former 512×512 gameplay fence. Height remains 256; a numeric guard stays
+inside the published native physics range near ±1 million blocks. New school
+worlds reserve distinct seeds in Supabase before their first checkpoint.
+Existing saves retain their seed and progress and expand beyond the old edge.
 
 `build` compiles content, builds release Wasm and writes `artifacts/build.json`
 plus a content-hashed Wasm file, browser bundle, headless gateway/room-worker bundle

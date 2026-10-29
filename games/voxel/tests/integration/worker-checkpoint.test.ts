@@ -564,7 +564,7 @@ test(
       Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1200);
       const closed = await peer.wait(
         (event): event is Extract<FromRoom, { type: 'close' }> =>
-          event.type === 'close' && event.reason === 'UNAUTHORIZED',
+          event.type === 'close' && event.reason === 'RECOVERING',
       );
       assert.equal(closed.connection, 'expired');
       peer.send({

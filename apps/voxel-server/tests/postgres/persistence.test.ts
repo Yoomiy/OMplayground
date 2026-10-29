@@ -74,6 +74,41 @@ const activeSequence = (lease: RoomLease) =>
     `SELECT checkpoint_sequence FROM public.voxel_worlds WHERE session_id=${literal(lease.room)}`,
   );
 
+test("new worlds reserve distinct seeds before saving and keep them across ownership changes", async () => {
+  const room = db.session(),
+    owner = randomUUID();
+  const claim = (session: string, ownerId: string): RoomLease =>
+    db.rpc("voxel_acquire_seeded_room", {
+      p_session: session,
+      p_owner: ownerId,
+    });
+  const lease = claim(room, owner);
+  assert.equal(lease.checkpoint, null);
+  assert.ok(Number.isSafeInteger(lease.seed));
+  assert.notEqual(lease.seed, 4242);
+  assert.equal(claim(room, owner).seed, lease.seed);
+  assert.equal(claim(room, randomUUID()), null);
+  db.rpc("voxel_release_room", ownership(lease));
+  assert.equal(claim(room, randomUUID()).seed, lease.seed);
+  const independent = await Promise.all(
+    Array.from({ length: 8 }, () =>
+      db.rpcAsync("voxel_acquire_seeded_room", {
+        p_session: db.session(),
+        p_owner: randomUUID(),
+      }),
+    ),
+  );
+  assert.equal(
+    new Set([lease.seed, ...independent.map((value) => value.seed)]).size,
+    9,
+  );
+  const legacy = acquire(),
+    root = ready(legacy, "legacy saved seed");
+  assert.equal(commit(legacy, 0, pointer(legacy, 1, root), [root]), true);
+  assert.equal(claim(legacy.room, legacy.owner).seed, null);
+  assert.equal("seed" in acquire(legacy.room, legacy.owner), false);
+});
+
 test("real concurrent acquisition yields one owner; retry is idempotent and expired takeover retains world identity", async () => {
   const room = db.session(),
     a = randomUUID(),

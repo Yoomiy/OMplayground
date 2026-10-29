@@ -181,6 +181,24 @@ describe("rewritten voxel service contract", () => {
       participation: "observer",
     });
   });
+  it("accepts an acknowledged end without inventing a world save", async () => {
+    const value = {
+      requestId: id,
+      action: "end",
+      completed: true,
+      saved: false,
+      savedSequence: null,
+      revision: 3,
+      current: true,
+    };
+    const api = createVoxelApi({
+      room,
+      serverUrl: "https://voxel.example",
+      getToken: async () => "fixture",
+      request: async () => response(value),
+    });
+    expect(await api.control("end", id)).toEqual(value);
+  });
   it("accepts committed save receipts and preserves the same request identity on retries", async () => {
     const calls: unknown[] = [],
       value = {

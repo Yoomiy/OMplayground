@@ -78,7 +78,14 @@ acceptance and operational cutover remain open. Legacy voxel code is retired.
 There are no player, observer, object or room-count admission caps.
 
 Mode changes keep existing deaths until ordinary respawn, including after reconnect.
-The HUD names the current mode and hides live survival vitals in creative while
-retaining the death/respawn view. Staff feedback stacks with lifecycle save feedback
-so an unconfirmed save remains visible. Neither mode nor teleport receipts claim
-saving; pause/end keep their existing committed-save acknowledgements.
+The app presents one game, Minecraft, without creative/survival labels or a mode
+switch. Internal developer fixtures retain mode commands. Staff feedback stacks
+with lifecycle feedback so an unconfirmed pause save remains visible. Pause
+requires a committed save; explicit end closes the session without requesting a
+final checkpoint. Teleport and internal mode receipts do not claim saving.
+
+Chat uses a compact draggable card, Enter to send, and a minimized four-message
+preview refreshed every ten seconds while connected (three seconds when open).
+Audio exposes joining, microphone and speaker controls first; device settings and
+staff moderation are collapsed. M toggles the microphone through the same media
+permission checks. Neither widget starts recording without a user action.

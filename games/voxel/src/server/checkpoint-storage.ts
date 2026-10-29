@@ -14,6 +14,8 @@ export type CheckpointPointer = Readonly<{
 export type RoomLease = Readonly<{
   room: string;
   worldId: string;
+  /** Reserved before first startup by school persistence; null for legacy saves. */
+  seed?: number | null;
   owner: string;
   epoch: number;
   sequence: number;

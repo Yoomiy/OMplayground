@@ -16,6 +16,7 @@ try {
   runtime = await mountVoxel(host, {
     renderScale: new URL(location.href).searchParams.get('quality') === 'low' ? 0.5 : 1,
     renderHz: new URL(location.href).searchParams.get('quality') === 'low' ? 30 : 60,
+    autoEnter: true,
     socketUrl: `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/voxel`,
     admit: async () => {
       const response = await fetch('/api/voxel/admission', {
@@ -36,7 +37,7 @@ try {
       state.mode === 'survival' ? 'עולם ההישרדות' : 'עולם הבנייה';
     document.querySelector('.toolbar small')!.textContent =
       state.mode === 'survival'
-        ? 'WASD לתנועה · רווח לקפיצה · לחיצה שמאלית לכרייה או תקיפה · Q לתקיפה · ימנית לבנייה · R לאכילה'
+        ? 'WASD או חיצים לתנועה · רווח לקפיצה · שמאלי לכרייה או תקיפה · Q להשלכה · X לתקיפה · ימנית לבנייה · R לאכילה'
         : 'WASD לתנועה · רווח לקפיצה · F לתעופה · לחיצה שמאלית להסרה · ימנית לבנייה';
     const vitals = document.querySelector<HTMLElement>('#vitals')!;
     const eat = document.querySelector<HTMLButtonElement>('#eat')!;
@@ -77,11 +78,6 @@ try {
     if (environment)
       environment.textContent = `${String(state.environment.hour).padStart(2, '0')}:00 · ${state.environment.rain ? 'גשם' : state.environment.daytime ? 'יום בהיר' : 'לילה בהיר'}`;
     status.textContent = state.message || `${state.players} בעולם${state.flying ? ' · תעופה' : ''}`;
-    const mining = document.querySelector<HTMLProgressElement>('#mining');
-    if (mining) {
-      mining.hidden = !state.mining.target;
-      mining.value = state.mining.total ? state.mining.elapsed / state.mining.total : 0;
-    }
     if (
       buttons.size !== state.hotbar.length ||
       state.hotbar.some((item) => !buttons.has(item.key))
@@ -95,13 +91,13 @@ try {
         button = document.createElement('button');
         buttons.set(item.key, button);
         bar.append(button);
-        button.onclick = () =>
-          runtime!.command(
-            item.slot === null
-              ? { type: 'select', state: item.state }
-              : { type: 'select-slot', slot: item.slot },
-          );
       }
+      button.onclick = () =>
+        runtime!.command(
+          item.slot === null
+            ? { type: 'select', state: item.state }
+            : { type: 'select-slot', slot: item.slot },
+        );
       const text = `${item.slot === null ? '' : `${item.slot + 1}. `}${item.family ? (names[item.family] ?? item.family) : 'יד ריקה'}${item.count ? ` ×${item.count}` : ''}`;
       if (button.textContent !== text) button.textContent = text;
       const selected =

@@ -19,7 +19,7 @@ import { SocketProbe, connectProbe } from './socket-probe.ts';
 const json = (path: string) => JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8'));
 const build = json('../../artifacts/build.json') as BuildIdentity;
 const content = json('../../artifacts/content.json') as ContentManifest;
-const size = json('../../config/world.json').size as number;
+const size = BOUNDS.maxX - BOUNDS.minX;
 engine.initSync({
   module: readFileSync(new URL('../../engine/pkg/voxel_engine_bg.wasm', import.meta.url)),
 });
@@ -129,36 +129,6 @@ function restore(value: unknown) {
     throw error;
   }
 }
-const previous = json('./default512-checkpoint.json');
-assert.equal(
-  previous.sourceBuildId,
-  '7c770c2043d14dd98de19162a7f173e17c3b82a8fbb3e497ad0188089c721dcc',
-);
-if (size === 512) {
-  const resumed = restore(previous);
-  try {
-    const saved = resumed.checkpoint(0);
-    assert.deepEqual(saved.bounds, previous.bounds);
-    assert.deepEqual(saved.inventories, previous.inventories);
-    assert.deepEqual(saved.world, previous.world);
-    assert.deepEqual(
-      saved.players.map((p) => [p.id, p.state, p.vitals]),
-      previous.players.map((p: { id: string; state: number[]; vitals: unknown }) => [
-        p.id,
-        p.state,
-        p.vitals,
-      ]),
-    );
-  } finally {
-    resumed.dispose();
-  }
-} else
-  assert.throws(
-    () => restore(previous),
-    /checkpoint/,
-    'a different profile cannot silently resize a saved world',
-  );
-
 const backend = new MemoryCheckpoints(),
   roomId = '33333333-3333-4333-8333-333333333333';
 const lease = (await backend.acquire(roomId, 'seed'))!;
@@ -170,6 +140,26 @@ const cell: [number, number, number] = [BOUNDS.maxX - 2, 200, 2];
 let editedState = stone;
 try {
   room.join(actor, 'fixture', 0);
+  room.inventories.receive(actor.id, { itemType: 'oak_log', count: 4 });
+  const legacy = {
+    ...room.checkpoint(0),
+    bounds: { minX: -256, minZ: -256, maxX: 256, maxZ: 256, height: 256 },
+  };
+  const expanded = restore(legacy);
+  try {
+    const saved = expanded.checkpoint(0);
+    assert.deepEqual(saved.bounds, BOUNDS);
+    assert.equal(saved.seed, legacy.seed);
+    assert.deepEqual(saved.inventories, legacy.inventories);
+    assert.deepEqual(saved.world, legacy.world);
+    assert.deepEqual(
+      saved.players.map(({ reservationMs, ...player }) => player),
+      legacy.players.map(({ reservationMs, ...player }) => player),
+    );
+  } finally {
+    expanded.dispose();
+  }
+
   const current = room.actors.get(actor.id)!;
   const state = world.player_state(current.slot);
   state.set([BOUNDS.maxX - 4, 200, 0.5, 0, 0, 0]);
@@ -202,7 +192,8 @@ try {
   room.dispose();
 }
 
-const { createGateway }: typeof import('../../src/server/gateway.ts') = process.env.VOXEL_TEST_BUNDLE
+const { createGateway }: typeof import('../../src/server/gateway.ts') = process.env
+  .VOXEL_TEST_BUNDLE
   ? await import(new URL('../../dist-server/gateway.js', import.meta.url).href)
   : await import('../../src/server/gateway.ts');
 const grant = () => ({ actor, expiresAt: Date.now() + 30000 });
@@ -226,7 +217,7 @@ try {
   const wrong = new SocketProbe(origin.replace('http:', 'ws:') + '/voxel', content.blocks.length);
   probes.push(wrong);
   await once(wrong.socket, 'open');
-  wrong.send({ type: 'hello', ticket: ticket.ticket, buildId: previous.sourceBuildId });
+  wrong.send({ type: 'hello', ticket: ticket.ticket, buildId: '0'.repeat(64) });
   assert.equal((await wrong.event('error')).code, 'INCOMPATIBLE');
   assert.equal(gateway.rooms.size, 0);
   const probe = await connectProbe(origin, roomId, content.blocks.length, actor.id);
@@ -251,12 +242,12 @@ assert.equal(gateway.rooms.size, 0);
 assert.equal(gateway.sockets.clients.size, 0);
 console.log(
   JSON.stringify({
-    result: 'CONFIGURED_WORLD_AUTHORITY_WIRE_DROPS_CHECKPOINT_AND_GATEWAY_PASS',
+    result: 'STREAMED_WORLD_AUTHORITY_WIRE_DROPS_CHECKPOINT_AND_GATEWAY_PASS',
     size,
     buildId: build.buildId,
     limits,
     maxColumn,
-    oldDefaultCheckpoint: size === 512 ? 'restored' : 'rejected-profile-mismatch',
+    oldDefaultCheckpoint: 'expanded-with-seed-and-progress-preserved',
     packaged: !!process.env.VOXEL_TEST_BUNDLE,
     cleanup: { rooms: 0, sockets: 0 },
   }),

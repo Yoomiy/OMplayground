@@ -63,6 +63,42 @@ const count = (room: string, table = "voxel_session_commands") =>
     `SELECT count(*) FROM public.${table} WHERE ${table === "audit_log" ? "entity_id" : "session_id"}=${literal(room)}`,
   );
 
+test("explicit end completes without a checkpoint while pause still requires one", () => {
+  const paused = fixture(),
+    pauseId = randomUUID();
+  begin(paused, paused.teacher, "pause", pauseId);
+  assert.throws(
+    () =>
+      db.rpc("voxel_finish_control", {
+        ...own(paused.lease),
+        p_request: pauseId,
+        p_actor: paused.teacher,
+        p_saved: null,
+      }),
+    /55000|uncommitted/,
+  );
+  const ended = fixture(),
+    id = randomUUID();
+  begin(ended, ended.teacher, "end", id);
+  const args = {
+    ...own(ended.lease),
+    p_request: id,
+    p_actor: ended.teacher,
+    p_saved: null,
+  };
+  const receipt = db.rpc("voxel_finish_control", args);
+  assert.equal(receipt.completed, true);
+  assert.equal(receipt.savedSequence, null);
+  assert.deepEqual(db.rpc("voxel_finish_control", args), receipt);
+  assert.equal(count(ended.room, "audit_log"), 1);
+  assert.equal(
+    db.value(
+      `SELECT count(*) FROM public.voxel_checkpoints WHERE world_id=${literal(ended.lease.worldId)}`,
+    ),
+    0,
+  );
+});
+
 test("fenced SQL commands deny nonhosts, recheck host/role, order idempotent requests and audit staff exactly once", () => {
   const f = fixture(),
     id = randomUUID();
@@ -328,8 +364,8 @@ test(
       const endId = randomUUID(),
         ended = await post(f.teacher, "end", endId);
       assert.equal(ended.status, 200);
-      assert.equal(ended.value.saved, true);
-      assert.ok(ended.value.savedSequence > paused.value.savedSequence);
+      assert.equal(ended.value.saved, false);
+      assert.equal(ended.value.savedSequence, null);
       await until(() => gateway.rooms.size === 0);
       assert.equal((await p.event("error")).code, "SESSION_ENDED");
       const replay = await post(f.teacher, "end", endId);

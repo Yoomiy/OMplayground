@@ -24,6 +24,7 @@ import { recordClassroomAttendanceWebhook } from "./classroomAttendance";
 import { classroomVoiceStats } from "./livekitService";
 import { mountClassroomRoutes } from "./routes";
 import type { ClassroomConfig } from "./config";
+import { ClassroomReadinessError } from "./readinessError";
 
 /** HTTP/RTC only. Importing this module creates no listener, timer or game world. */
 export function createClassroomService(options: {
@@ -149,18 +150,22 @@ export function createClassroomService(options: {
   async function verifyBackends() {
     // Read-only connectivity and base-schema checks, never provision a room.
     const result = await Promise.allSettled([
-      supabaseAdmin
-        .from("classroom_sessions")
-        .select("id,room_code,status,settings")
-        .limit(1)
-        .abortSignal(AbortSignal.timeout(5000))
-        .retry(false)
+      Promise.resolve(
+        supabaseAdmin
+          .from("classroom_sessions")
+          .select("id,room_code,status,settings")
+          .limit(1)
+          .abortSignal(AbortSignal.timeout(5000))
+          .retry(false),
+      )
         .then((value) => {
-          if (value.error)
-            throw new Error("Classroom database readiness failed");
+          if (value.error) throw value.error;
+        })
+        .catch((error: unknown) => {
+          throw new ClassroomReadinessError("database", error);
         }),
-      media.listRooms().catch(() => {
-        throw new Error("Classroom media readiness failed");
+      media.listRooms().catch((error: unknown) => {
+        throw new ClassroomReadinessError("media", error);
       }),
     ]);
     backendReady = result.every((value) => value.status === "fulfilled");
