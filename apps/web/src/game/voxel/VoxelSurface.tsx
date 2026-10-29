@@ -8,6 +8,7 @@ import "./voxel-session.css";
 import { VoxelModeration } from "./VoxelModeration";
 import { VoxelChat } from "./VoxelChat";
 import { VoxelVoice } from "./VoxelVoice";
+import { VoxelHelp } from "./VoxelHelp";
 
 type BrowserModule = typeof import("@playground/voxel-runtime");
 type ControlState = {
@@ -99,6 +100,33 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
       runtime.current?.command(value),
     [],
   );
+  const closeHelp = useCallback(() => {
+    setHelp(false);
+    command({ type: "resume" });
+  }, [command]);
+  useEffect(() => {
+    const key = (event: KeyboardEvent) => {
+      if (
+        !runtime.current ||
+        event.repeat ||
+        event.code !== "KeyH" ||
+        (event.target instanceof HTMLElement &&
+          event.target.closest(
+            'input, textarea, select, [contenteditable="true"]',
+          )) ||
+        root.current?.querySelector("dialog[open]")
+      )
+        return;
+      event.preventDefault();
+      if (help) closeHelp();
+      else {
+        command({ type: "pause" });
+        setHelp(true);
+      }
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, [help, command, closeHelp]);
   useEffect(() => {
     const abort = new AbortController();
     let owned: VoxelRuntime | null = null,
@@ -255,7 +283,10 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
     errorCode === "SESSION_ENDED" ||
     session?.status === "completed";
   useEffect(() => {
-    if (terminal) releaseRuntime.current?.();
+    if (terminal) {
+      setHelp(false);
+      releaseRuntime.current?.();
+    }
   }, [terminal, api]);
   const canControl = !!session && (isStaff || session.hostId === userId);
   const connected = currentPresence(session, now);
@@ -278,7 +309,11 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
         id,
         state: "pending",
         text:
-          action === "resume" ? "מחדשים את המפגש…" : "ממתינים לאישור שמירה…",
+          action === "resume"
+            ? "מחדשים את המפגש…"
+            : action === "end"
+              ? "מסיימים את המפגש…"
+              : "ממתינים לאישור שמירה…",
       });
       try {
         const receipt = await api.control(action, id, abort.signal);
@@ -292,7 +327,7 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
             : action === "resume"
               ? "המפגש חודש. לחצו על כניסה לעולם כדי להמשיך."
               : action === "end"
-                ? "המפגש הסתיים והשמירה אושרה."
+                ? "המפגש הסתיים. העולם לא נשמר להמשך."
                 : "המפגש הושהה והשמירה אושרה.",
         });
         if (action === "end" && receipt.current) setEndConfirmed(true);
@@ -306,7 +341,9 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
           id,
           state: uncertain ? "unconfirmed" : "done",
           text: uncertain
-            ? "לא התקבל אישור להשלמת הפעולה. השמירה טרם אושרה; אפשר לנסות שוב."
+            ? action === "end"
+              ? "לא התקבל אישור לסיום המפגש. אפשר לנסות שוב."
+              : "לא התקבל אישור להשלמת הפעולה. השמירה טרם אושרה; אפשר לנסות שוב."
             : admissionMessage(code),
         });
         callbacks.current.onDiagnostic?.("control", code, identity.current);
@@ -550,11 +587,14 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
                 type="button"
                 aria-expanded={help}
                 onClick={() => {
-                  command({ type: "pause" });
-                  setHelp((value) => !value);
+                  if (help) closeHelp();
+                  else {
+                    command({ type: "pause" });
+                    setHelp(true);
+                  }
                 }}
               >
-                עזרה
+                עזרה (H)
               </button>
               {hud?.effectsAvailable && (
                 <button
@@ -700,37 +740,22 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
           </div>
         </details>
       </header>
-      {help && (
-        <aside className="voxel-session__help" aria-label="הוראות משחק">
-          <h2>איך משחקים?</h2>
-          <p>
-            WASD לתנועה, עכבר למבט, רווח לקפיצה ו־E לפתיחת התיק. במגע משתמשים
-            בג׳ויסטיק ובכפתורים שעל המסך.
-          </p>
-          <p>
-            בהישרדות מחזיקים לחיצה שמאלית עד לסיום הכרייה. לחיצה ימנית בונה או
-            פותחת תיבה ושולחן יצירה; Shift ולחיצה ימנית בונים לידם. Q לתקיפה, R
-            לאכילה ו־G להצתת TNT עם כלי מתאים. התיק מציג מתכונים, ציוד ופרטי
-            חפצים.
-          </p>
-          <p>
-            Ctrl לריצה, Shift להתגנבות, 1–9 לבחירת משבצת. במצב יצירתי F מפעיל
-            ומכבה תעופה; רווח לעלייה ו־Shift לירידה. בקטלוג שבתיק אפשר לחפש בלוק
-            ולבחור אותו לסרגל. Esc משחרר את העכבר.
-          </p>
-          <p>
-            גלילת הגלגלת מקרבת ומרחיקה את המצלמה. V מחליף בין מבט ראשון למבט
-            שלישי.
-          </p>
-          <p>
-            פתיחת התיק או יציאה מלכידת העכבר עוצרות רק אתכם. תצפית מורה נשארת
-            נסתרת; העולם מתקדם רק עם שחקנים מורשים.
-          </p>
-          <button type="button" onClick={() => setHelp(false)}>
-            סגירת העזרה
-          </button>
-        </aside>
-      )}
+      <VoxelHelp
+        open={help}
+        items={browser?.content.items ?? []}
+        labels={browser?.ITEM_LABELS ?? {}}
+        onClose={closeHelp}
+        canUseInventory={
+          hud?.role === "participant" && hud?.lifecycle === "playing"
+        }
+        onInventory={() => {
+          setHelp(false);
+          command({
+            type: "inventory",
+            operation: { kind: "open", target: null },
+          });
+        }}
+      />
       {!showStatus && hud?.message && !hud.inventoryOpen && (
         <p className="voxel-session__feedback" role="status" aria-live="polite">
           {hud.message}
@@ -1000,7 +1025,10 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
         aria-labelledby="voxel-end-title"
       >
         <h2 id="voxel-end-title">לסיים את המפגש?</h2>
-        <p>השמירה תאושר לפני סיום המפגש וניתוק המשתתפים.</p>
+        <p>
+          סיום המפגש מנתק את המשתתפים ללא שמירת העולם להמשך. כדי לשמור ולחזור
+          מאוחר יותר, בחרו בהשהיית המפגש.
+        </p>
         <button type="button" onClick={() => endDialog.current?.close()}>
           ביטול
         </button>

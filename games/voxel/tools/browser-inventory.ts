@@ -57,6 +57,7 @@ try {
   );
   const settled = () => page.waitForFunction(() => !(window as any).voxel.debug().inventoryPending);
   const give = async (itemType: string) => {
+    await page.getByRole('button', { name: 'קטלוג יצירתי', exact: true }).tap();
     const previous = (await debug()).inventory.revision;
     await page.locator(`#inventory-catalog [data-item="${itemType}"]`).tap();
     await page.locator('#inventory-give').tap();
@@ -65,6 +66,7 @@ try {
       previous,
     );
     await settled();
+    await page.getByRole('button', { name: 'מלאי ויצירה', exact: true }).tap();
   };
   const move = async (
     area: string,

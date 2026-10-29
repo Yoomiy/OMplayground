@@ -5,7 +5,7 @@ Repairs for the 2026-10-29 source review of `90fe575`. The first batch is `6af81
 | Review findings | Implemented behavior |
 | --- | --- |
 | UI-01, UI-06 | Item thumbnails use the actual world models and textures. Hotbar and inventory show stack counts and durability. Survival health, food and air have graphical meters; air also shows seconds. |
-| UI-02, UI-03, UI-05 | Compact nine-slot hotbar, stone-colored inventory and smaller floating header. Session management lives in a menu. Mining progress stays beside the crosshair. |
+| UI-02, UI-03, UI-05 | Compact nine-slot hotbar, parchment/wood inventory and smaller floating header. Session management lives in a menu. Timed mining uses target cracks without an extra progress bar. |
 | UI-04 | Confirmed mining progress drives a target-shaped crack overlay, repeating arm swings and digging effects. |
 | UI-07, BUG-06 | Empty equipment destinations show their names. Selecting an item highlights compatible equipment destinations. |
 | UI-08, BUG-05 | Searchable visual recipe grids, result thumbnails and ingredient availability. Recipe expansion/search survive pending transactions and inventory revisions. |
@@ -31,7 +31,7 @@ Repairs for the 2026-10-29 source review of `90fe575`. The first batch is `6af81
 
 ## Release and next step
 
-The matched published game release is `5ee78c6d15b18a4448b1a92f6777bf7747b08f737d4f85255403f5d219f8f9b3`.
+The matched published game release is `cff3c428323c1a660d06f63fdebd4801a74faca4e5ca7bfd02906087c4154868`.
 
 Terrain artwork continues to use the procedural world-texture pipeline (UI-13). Next is local play feedback; `dev/staging` stays untouched under the user's explicit instruction. The main PR and deployment walkthrough still depend on their later staging confirmation. No additional broad qualification loop is required for these presentation repairs.
 
@@ -56,3 +56,23 @@ Removed the redundant mining progress bar from app and sandbox. Grass, flowers, 
 Focused validation passed: game/web TypeScript; actual-Wasm plant and ordinary-mining checks; gateway and independent-worker authorization-expiry checks; production React/native-room browser flow using in-memory checkpoint storage. The browser flow entered directly, used keyboard controls, retained the connection through a real periodic checkpoint, released captured mouse input after a server rejection, restored the saved world through an actual reconnect-button click, and recovered automatically after abrupt transport loss. It retained 64 owned logs across three admissions with one runtime mount. This is local functional evidence, not a hosted-network or school-device performance claim.
 
 The matched release is `5ee78c6d15b18a4448b1a92f6777bf7747b08f737d4f85255403f5d219f8f9b3`. Plant tuning changes the content hash; use a fresh test session when trying this release. Existing checkpoints are not migrated or deleted. The engine is unchanged and its published Wasm is reused. Staging and log-level handling remain untouched.
+
+## Legacy UI parity and explicit session end
+
+The next local-play report identified remaining regressions against the old game. The old inventory and guide were compared directly in source. This batch restores the following concrete workflows; it does not claim that every legacy presentation detail has been restored.
+
+| Workflow | Current behavior |
+| --- | --- |
+| Inventory layout/theme | Parchment and wood panels, beveled image slots, crafting/result at the top, three bag rows and a separate numbered hotbar. Creative catalog has its own tab. Header, menus, chat and help use the same palette. |
+| Stack distribution | Selected stacks remain in hand after placing one item. Rapid right-clicks across destinations queue against acknowledged revisions. Right-clicking the source selects half; clicking the source again cancels. Rejection retains a valid selection and stops queued moves. |
+| Recipe discovery | Available recipes and basic progression come first. Categories cover tools/equipment, building, food/materials and all recipes. Search, ingredient availability and station requirements remain visible. |
+| Recipe preparation | “סידור ברשת” returns existing ingredients to the bag, then places the recipe through ordinary authoritative moves. Creating the result remains an explicit result-slot click. A full bag or missing ingredients produces guidance rather than discarding items. |
+| Guide | Six familiar topics: controls, crafting, tools, building, food and equipment. The crafting page explains log → planks → table and splitting a stack. Tool/equipment values come from the current content definitions. |
+| Desktop controls | H toggles help, T/Enter opens chat, E closes inventory and returns mouse control. Arrow movement, Q drop, X attack and middle-click block selection are available alongside existing controls. |
+| End versus pause | “סיום המפגש” ends without requesting a final checkpoint. “השהיית המפגש” still requires a committed save. Autosaves already in flight may finish; previous checkpoints are not deleted. Ordinary last-player departure and service drain retain saving. |
+
+The user confirmed applying `20261029160000_voxel_end_without_checkpoint.sql`. It permits a null checkpoint only for end/resume, retaining ownership/epoch fencing, audited receipts and pause durability. It also accepts historical saved-end receipts from older servers.
+
+Focused checks: strict game/web/service types; end/pause unit and receipt checks; actual PostgreSQL semantics in an isolated PGlite instance; a delayed-response authoritative inventory DOM flow distributing a stack across four cells and crafting a table; and a production React/native-room browser flow exercising the guide, shortcuts, recipe arrangement, table result and explicit end. The latter observed zero new checkpoint requests after end was accepted. Desktop screenshots at 1366×850 were reviewed. Persistence/lifecycle fixtures were local; these checks made no hosted writes and do not establish school-PC GPU performance. Existing PostgreSQL integration tests were updated but their CLI suite was not rerun.
+
+Matched release: `cff3c428323c1a660d06f63fdebd4801a74faca4e5ca7bfd02906087c4154868`. Content, engine and protocol are unchanged from the prior entry/recovery release, so this batch does not require another world reset. No broad qualification rerun, log-level change or staging push was performed.

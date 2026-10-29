@@ -144,6 +144,31 @@ export function VoxelChat({
     }
   };
   const locked = notice?.state === "pending" || notice?.state === "unconfirmed";
+  const opening = useRef({ onOpen, canSend, open });
+  opening.current = { onOpen, canSend, open };
+  useEffect(() => {
+    const key = (event: KeyboardEvent) => {
+      const current = opening.current;
+      if (
+        event.repeat ||
+        !["KeyT", "Enter"].includes(event.code) ||
+        !current.canSend ||
+        current.open ||
+        document.querySelector(".voxel-session dialog[open]") ||
+        (event.target instanceof HTMLElement &&
+          event.target.closest(
+            'input, textarea, select, button, a, [contenteditable="true"]',
+          ))
+      )
+        return;
+      event.preventDefault();
+      current.onOpen();
+      setOpen(true);
+      dialog.current?.showModal();
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, []);
   return (
     <>
       <button

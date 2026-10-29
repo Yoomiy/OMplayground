@@ -941,9 +941,12 @@ try {
   await kidPage
     .getByRole("button", { name: "תיק ויצירה (E)", exact: true })
     .click();
+  await kidPage
+    .getByRole("button", { name: "קטלוג יצירתי", exact: true })
+    .click();
   await kidPage.locator("#inventory-catalog").waitFor();
   const giveRevision = (await debug(kidPage)).inventory.revision;
-  await kidPage.locator("#inventory-catalog").selectOption("oak_log");
+  await kidPage.locator('#inventory-catalog [data-item="oak_log"]').click();
   await kidPage.locator("#inventory-give").click();
   await kidPage.waitForFunction((revision) => {
     const d = (window as any).surfaceRuntime.debug();

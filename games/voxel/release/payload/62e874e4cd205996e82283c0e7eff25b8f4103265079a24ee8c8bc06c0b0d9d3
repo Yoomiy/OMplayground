@@ -1398,7 +1398,7 @@ async function createGateway(options) {
       return waiting;
     }
     const task = (async () => {
-      await handle.durability?.save(true);
+      if (!handle.ending) await handle.durability?.save(true);
       await handle.projection?.finish();
       if (handle.closing) return;
       handle.closing = true;
@@ -1419,9 +1419,12 @@ async function createGateway(options) {
       });
       await handle.durability?.close();
       for (const [key, value] of rooms) if (value === handle) rooms.delete(key);
-      event(handle.durability ? "VOXEL_ROOM_SAVED_AND_RELEASED" : "VOXEL_EMPTY_ROOM_STOPPED", {
-        worldId: handle.worldId
-      });
+      event(
+        handle.ending ? "VOXEL_SESSION_ENDED" : handle.durability ? "VOXEL_ROOM_SAVED_AND_RELEASED" : "VOXEL_EMPTY_ROOM_STOPPED",
+        {
+          worldId: handle.worldId
+        }
+      );
     })().finally(() => {
       handle.idle = null;
       if (handle.closing) {
@@ -1510,6 +1513,7 @@ async function createGateway(options) {
       durability,
       rejectStartup: () => reject(new Error("room failed")),
       retiring: false,
+      ending: false,
       idle: null,
       hasJoined: false,
       controlBusy: null,
@@ -1578,6 +1582,7 @@ async function createGateway(options) {
       } else if (message.type === "session-projection") {
         handle.projection?.offer(message);
       } else if (message.type === "session-ended") {
+        handle.ending = true;
         handle.projection?.offer({ state: "ended", participants: [] });
         void retireRoom(handle);
       } else if (message.type === "owner-authorization-needed") {
@@ -1636,6 +1641,7 @@ async function createGateway(options) {
         const c = connections.get(message.connection);
         if (!c || c.room !== handle || c.socket.readyState !== WebSocket.OPEN) return;
         if (message.type === "close") {
+          if (message.reason === "SESSION_ENDED") handle.ending = true;
           event("VOXEL_ACTOR_DISCONNECTED", {
             worldId: handle.worldId,
             reason: message.reason,
@@ -1736,6 +1742,7 @@ async function createGateway(options) {
           },
           end: () => {
             if (!room.durability.owned() || room.closing) throw new Error("room ownership lost");
+            room.ending = true;
             room.worker.postMessage({ type: "end" });
           }
         });
@@ -2116,7 +2123,7 @@ async function createGateway(options) {
   const autosave = setInterval(() => {
     for (const handle of rooms.values())
       if (handle.durability && !handle.closing && handle.retiring) void retireRoom(handle);
-      else if (handle.durability && !handle.closing)
+      else if (handle.durability && !handle.closing && !handle.ending)
         void handle.durability.save(false).then(
           (pointer) => event("VOXEL_CHECKPOINT_COMMITTED", {
             worldId: handle.worldId,
@@ -2161,7 +2168,7 @@ async function createGateway(options) {
       const handles = [...rooms.values()];
       const saved = await Promise.allSettled(
         handles.map(async (handle) => {
-          await handle.durability?.save(true);
+          if (!handle.ending) await handle.durability?.save(true);
           await handle.projection?.finish();
         })
       );

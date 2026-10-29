@@ -110,6 +110,15 @@ export class PostgresTestDatabase {
     this.installModeration();
     this.installChat();
     this.installMedia();
+    this.exec(
+      readFileSync(
+        new URL(
+          "../../../../supabase/migrations/20261029160000_voxel_end_without_checkpoint.sql",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    );
   }
   installChat() {
     this.exec(

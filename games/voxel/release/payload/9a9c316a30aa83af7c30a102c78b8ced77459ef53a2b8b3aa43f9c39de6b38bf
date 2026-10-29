@@ -1,21 +1,21 @@
 {
-  "buildId": "5ee78c6d15b18a4448b1a92f6777bf7747b08f737d4f85255403f5d219f8f9b3",
+  "buildId": "cff3c428323c1a660d06f63fdebd4801a74faca4e5ca7bfd02906087c4154868",
   "engineHash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388",
   "contentHash": "2d930b06841018cd0cb4adc65905432e4ffedc3ea2d112bb7ff65a811165307c",
-  "clientHash": "069e4251874c5bf0db672378fb41356dcce123424c67efc82fef600b75ff7b43",
-  "serverHash": "fcc4708c202a8fbc882ce3d1ba07c9c3551c7633ba3b435a3059c203b956848c",
+  "clientHash": "da164417063ac24c8281e0cff90ae64df1ab16457d2780b75c576109011e71f0",
+  "serverHash": "113fa4113655a14d9604477b4eaf3690ba755f6fb13f3efe178012214eb65e5f",
   "client": [
     {
       "path": "assets/engine-worker-DYAFKrDe.js",
       "hash": "99d3377c134578cd5e9bdd923e7707547e62c3a2a0a1a64c90adec5f1121bf04"
     },
     {
-      "path": "assets/index-BBQBQESg.js",
-      "hash": "bfaf173249ed4d235ff7afad95f52bf79c563175ea9bd41deff60368327d9013"
+      "path": "assets/index-Cs1na6Sb.css",
+      "hash": "71bc1c00ada28a34cac8c5976388cd23a17caf35f8a665f8ca99c68c75c1de51"
     },
     {
-      "path": "assets/index-viklwn8F.css",
-      "hash": "cb2878c4ea8f1a7af1f925348a86a4667fe6e25072963f4fd425f8dca60f5917"
+      "path": "assets/index-ygjCXsqG.js",
+      "hash": "0e4cc93dfec46d87a50a84227ab192185126624fddc09c644ffeb89aa432c1d9"
     },
     {
       "path": "assets/voxel_engine_bg-1ejYMYOZ.wasm",
@@ -23,13 +23,13 @@
     },
     {
       "path": "index.html",
-      "hash": "dba2bd93a8774cddd79ea253e9e0d24262a1b50a4ba45630eb1e928e4ecd1388"
+      "hash": "b49c0a7008fea259e0b454da84f78ddf48ae50756d1a8f613a9d3c3f5f2c6a58"
     }
   ],
   "server": [
     {
       "path": "build.json",
-      "hash": "40a4014f44c00d89bf7eeabbad59c8a01f459abc683822b8f14a0f2a5336408b"
+      "hash": "9031a700c4311a8fe25abc988ec48cb40733bba870c2d0b1967c3e3bef4bb61e"
     },
     {
       "path": "content.json",
@@ -41,11 +41,11 @@
     },
     {
       "path": "gateway.js",
-      "hash": "46f1f4d6ac5643965b06a36dbf7bfc8be120e5cc7b314f8945e1f3efafdc722d"
+      "hash": "62e874e4cd205996e82283c0e7eff25b8f4103265079a24ee8c8bc06c0b0d9d3"
     },
     {
       "path": "gateway.js.map",
-      "hash": "8deb3c0c33db64bf91ddff38f329a9da23ecdcc41a0262358f241899ee6d1163"
+      "hash": "2347bfa0f85ac41a797119c0ba1eaec660e53033db34d8d4ff5299d10c26b9dd"
     },
     {
       "path": "room-worker.js",

@@ -37,7 +37,7 @@ try {
       state.mode === 'survival' ? 'עולם ההישרדות' : 'עולם הבנייה';
     document.querySelector('.toolbar small')!.textContent =
       state.mode === 'survival'
-        ? 'WASD לתנועה · רווח לקפיצה · לחיצה שמאלית לכרייה או תקיפה · Q לתקיפה · ימנית לבנייה · R לאכילה'
+        ? 'WASD או חיצים לתנועה · רווח לקפיצה · שמאלי לכרייה או תקיפה · Q להשלכה · X לתקיפה · ימנית לבנייה · R לאכילה'
         : 'WASD לתנועה · רווח לקפיצה · F לתעופה · לחיצה שמאלית להסרה · ימנית לבנייה';
     const vitals = document.querySelector<HTMLElement>('#vitals')!;
     const eat = document.querySelector<HTMLButtonElement>('#eat')!;

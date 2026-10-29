@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "buildId": "5ee78c6d15b18a4448b1a92f6777bf7747b08f737d4f85255403f5d219f8f9b3",
+  "buildId": "cff3c428323c1a660d06f63fdebd4801a74faca4e5ca7bfd02906087c4154868",
   "inputs": [
     {
       "path": "LICENSE",
@@ -156,7 +156,7 @@
     },
     {
       "path": "src/client/dev-entry.ts",
-      "hash": "75f706fbcb90c890949dd9796646df7f2b631344a7c11795afdfa7a358dc5c24"
+      "hash": "2f4aa691c75ed6bfb8dcd2683f2dbf64cfa75543ea70042cf3573387c3994f37"
     },
     {
       "path": "src/client/embed.ts",
@@ -172,11 +172,11 @@
     },
     {
       "path": "src/client/inventory-controls.ts",
-      "hash": "15d9597e384af98a8a498c5324dd87cef5fc80041f3a43f627cf06891ba290b9"
+      "hash": "86e80eb8c330c2e765e3ede93378353618c9c0b133cd894787f1431767a1ff40"
     },
     {
       "path": "src/client/inventory.css",
-      "hash": "bb73032af1b47ac121ab13f976b289baed6a661ebc963028cea0d377308721a3"
+      "hash": "e0ca8a829a35e250503b1051b8ab4a019ba02b1aa6ad9ea523267218f10678b1"
     },
     {
       "path": "src/client/item-description.ts",
@@ -195,8 +195,12 @@
       "hash": "ffced0decda9c91e0a761ced8f0b19807a477e07d839012c35fd2c3ba04b4d6b"
     },
     {
+      "path": "src/client/recipe-book.ts",
+      "hash": "6c7374c7e0ca748c03ec3749bf9b2e83178b01e3cc96507248c63d43b7d776b0"
+    },
+    {
       "path": "src/client/runtime.ts",
-      "hash": "31797e8399206926ba6fe6455108c26aaaa69d708255db46f33e8bf05156ba4b"
+      "hash": "13eefa74cb5be0e6c2eee2372e1cf8305f683daa37ca212b3a38b839e38dd90a"
     },
     {
       "path": "src/client/style.css",
@@ -208,7 +212,7 @@
     },
     {
       "path": "src/client/touch-controls.ts",
-      "hash": "4418b20ddc2146432aa236055519c2ee4929592827c5639e5fb130afe598458b"
+      "hash": "47297bd5efc511c9ea8588a24809c02a172e0a2be27d9729ce0d9ba79790d43f"
     },
     {
       "path": "src/client/visible-item-icons.ts",
@@ -296,7 +300,7 @@
     },
     {
       "path": "src/server/gateway.ts",
-      "hash": "d9553c3c4eee668e3938355290f03e03a8e4491fb1e5957ec819ffc50fe223c3"
+      "hash": "75968bf9ed2ea4f1d5237ce46a39d888d372da1e19cb179ed5c5fd53aee1de13"
     },
     {
       "path": "src/server/owner-authorization.ts",
@@ -518,7 +522,7 @@
     },
     {
       "path": "artifacts/build.json",
-      "hash": "40a4014f44c00d89bf7eeabbad59c8a01f459abc683822b8f14a0f2a5336408b"
+      "hash": "9031a700c4311a8fe25abc988ec48cb40733bba870c2d0b1967c3e3bef4bb61e"
     },
     {
       "path": "artifacts/content-bindings.ts",
@@ -534,19 +538,19 @@
     },
     {
       "path": "artifacts/release.json",
-      "hash": "016601e9440296c59da3545821c9f0004b3722ae39e5be87adcd3ef8bc4cb1c5"
+      "hash": "9a9c316a30aa83af7c30a102c78b8ced77459ef53a2b8b3aa43f9c39de6b38bf"
     },
     {
       "path": "dist-client/assets/engine-worker-DYAFKrDe.js",
       "hash": "99d3377c134578cd5e9bdd923e7707547e62c3a2a0a1a64c90adec5f1121bf04"
     },
     {
-      "path": "dist-client/assets/index-BBQBQESg.js",
-      "hash": "bfaf173249ed4d235ff7afad95f52bf79c563175ea9bd41deff60368327d9013"
+      "path": "dist-client/assets/index-Cs1na6Sb.css",
+      "hash": "71bc1c00ada28a34cac8c5976388cd23a17caf35f8a665f8ca99c68c75c1de51"
     },
     {
-      "path": "dist-client/assets/index-viklwn8F.css",
-      "hash": "cb2878c4ea8f1a7af1f925348a86a4667fe6e25072963f4fd425f8dca60f5917"
+      "path": "dist-client/assets/index-ygjCXsqG.js",
+      "hash": "0e4cc93dfec46d87a50a84227ab192185126624fddc09c644ffeb89aa432c1d9"
     },
     {
       "path": "dist-client/assets/voxel_engine_bg-1ejYMYOZ.wasm",
@@ -554,11 +558,11 @@
     },
     {
       "path": "dist-client/index.html",
-      "hash": "dba2bd93a8774cddd79ea253e9e0d24262a1b50a4ba45630eb1e928e4ecd1388"
+      "hash": "b49c0a7008fea259e0b454da84f78ddf48ae50756d1a8f613a9d3c3f5f2c6a58"
     },
     {
       "path": "dist-server/build.json",
-      "hash": "40a4014f44c00d89bf7eeabbad59c8a01f459abc683822b8f14a0f2a5336408b"
+      "hash": "9031a700c4311a8fe25abc988ec48cb40733bba870c2d0b1967c3e3bef4bb61e"
     },
     {
       "path": "dist-server/content.json",
@@ -570,11 +574,11 @@
     },
     {
       "path": "dist-server/gateway.js",
-      "hash": "46f1f4d6ac5643965b06a36dbf7bfc8be120e5cc7b314f8945e1f3efafdc722d"
+      "hash": "62e874e4cd205996e82283c0e7eff25b8f4103265079a24ee8c8bc06c0b0d9d3"
     },
     {
       "path": "dist-server/gateway.js.map",
-      "hash": "8deb3c0c33db64bf91ddff38f329a9da23ecdcc41a0262358f241899ee6d1163"
+      "hash": "2347bfa0f85ac41a797119c0ba1eaec660e53033db34d8d4ff5299d10c26b9dd"
     },
     {
       "path": "dist-server/room-worker.js",

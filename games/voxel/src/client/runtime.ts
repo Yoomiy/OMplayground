@@ -79,6 +79,7 @@ export type RuntimeCommand =
   | { type: 'eat' }
   | { type: 'respawn' }
   | { type: 'attack' }
+  | { type: 'drop' }
   | { type: 'ignite' }
   | { type: 'interact'; kind: 'place' | 'remove' }
   | { type: 'flight' }
@@ -1432,6 +1433,13 @@ export async function mountVoxel(
         event.target.closest('input, textarea, select, [contenteditable="true"], dialog[open]'))
     )
       return;
+    const movementCode =
+      (
+        { ArrowUp: 'KeyW', ArrowDown: 'KeyS', ArrowLeft: 'KeyA', ArrowRight: 'KeyD' } as Record<
+          string,
+          string
+        >
+      )[event.code] ?? event.code;
     if (
       [
         'Space',
@@ -1443,11 +1451,11 @@ export async function mountVoxel(
         'ShiftRight',
         'ControlLeft',
         'ControlRight',
-      ].includes(event.code)
+      ].includes(movementCode)
     ) {
       event.preventDefault();
       if (event.code === 'Space' && !keys.has('Space')) jump = true;
-      keys.add(event.code);
+      keys.add(movementCode);
     }
     if (event.code === 'KeyF' && !event.repeat) command({ type: 'flight' });
     if (event.code === 'KeyV' && !event.repeat) {
@@ -1455,7 +1463,8 @@ export async function mountVoxel(
       command({ type: 'camera', distance: hud.cameraDistance > 0 ? 0 : 4 });
     }
     if (event.code === 'KeyR' && !event.repeat) command({ type: 'eat' });
-    if (event.code === 'KeyQ' && !event.repeat) command({ type: 'attack' });
+    if (event.code === 'KeyQ' && !event.repeat) command({ type: 'drop' });
+    if (event.code === 'KeyX' && !event.repeat) command({ type: 'attack' });
     if (event.code === 'KeyG' && !event.repeat) command({ type: 'ignite' });
     if (/^Digit[1-9]$/.test(event.code)) {
       const index = Number(event.code.slice(-1)) - 1;
@@ -1466,7 +1475,15 @@ export async function mountVoxel(
       }
     }
   };
-  const onKeyUp = (event: KeyboardEvent) => keys.delete(event.code);
+  const onKeyUp = (event: KeyboardEvent) =>
+    keys.delete(
+      (
+        { ArrowUp: 'KeyW', ArrowDown: 'KeyS', ArrowLeft: 'KeyA', ArrowRight: 'KeyD' } as Record<
+          string,
+          string
+        >
+      )[event.code] ?? event.code,
+    );
   const onMouseMove = (event: MouseEvent) => {
     if (!ownsPointerLock()) return;
     look(event.movementX, event.movementY);
@@ -1526,6 +1543,22 @@ export async function mountVoxel(
       else queuedAction = 'remove';
     }
     if (event.button === 2) command({ type: 'interact', kind: 'place' });
+    if (event.button === 1 && target) {
+      const family = content.blocks[world.get_block(...target)]?.name;
+      if (hud.mode === 'creative') {
+        const choice = palette.find((item) => item.family === family);
+        if (choice) command({ type: 'select', state: choice.state });
+      } else {
+        const slot =
+          hud.inventory?.bag
+            .slice(0, 9)
+            .findIndex(
+              (stack) =>
+                content.items.find((item) => item.itemType === stack?.itemType)?.places === family,
+            ) ?? -1;
+        if (slot >= 0) command({ type: 'select-slot', slot });
+      }
+    }
   };
   const onPointerLockError = (error: unknown) => {
     if (
@@ -1639,6 +1672,16 @@ export async function mountVoxel(
         lastMineKey = '';
         queuedAction = 'attack';
       }
+      return;
+    }
+    if (cmd.type === 'drop') {
+      if (focused && usesBagHotbar() && hud.inventory?.bag[hud.selectedSlot])
+        sendInventory({
+          kind: 'drop',
+          slot: hud.selectedSlot,
+          count: 1,
+          revision: hud.inventory.revision,
+        });
       return;
     }
     if (cmd.type === 'eat') {
