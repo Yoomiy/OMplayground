@@ -58,7 +58,7 @@ try {
   const settled = () => page.waitForFunction(() => !(window as any).voxel.debug().inventoryPending);
   const give = async (itemType: string) => {
     const previous = (await debug()).inventory.revision;
-    await page.locator('#inventory-catalog').selectOption(itemType);
+    await page.locator(`#inventory-catalog [data-item="${itemType}"]`).tap();
     await page.locator('#inventory-give').tap();
     await page.waitForFunction(
       (revision) => (window as any).voxel.debug().inventory.revision > revision,

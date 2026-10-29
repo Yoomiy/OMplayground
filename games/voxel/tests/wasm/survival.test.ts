@@ -263,6 +263,7 @@ test('mining cancels on stale input, replacement at the same cell, focus epoch a
     f.start(cell);
     f.tick(5);
     f.elapse(200);
+    f.elapse(200);
     assert.equal(f.player().mining, null);
     assert.equal(f.room.drops.size, 0);
     f.aim(cell);
@@ -309,6 +310,71 @@ test('mining cancels on stale input, replacement at the same cell, focus epoch a
     assert.equal(f.room.drops.size, 0);
   } finally {
     f.room.dispose();
+  }
+});
+test('brief input gaps and aim misses pause earned mining work, while sustained loss cancels', () => {
+  const f = fixture();
+  try {
+    const cell = f.target();
+    f.aim(cell);
+    f.start(cell);
+    f.tick(5);
+    const controls = f.controls.get('a')!;
+    f.controls.delete('a');
+    f.tick(4);
+    const earned = f.player().mining!.elapsed;
+    f.tick(2);
+    assert.equal(f.player().mining!.elapsed, earned, 'no work while input is stale');
+    f.controls.set('a', controls);
+    f.tick();
+    assert.equal(f.player().mining!.elapsed, earned + 1, 'resume without restarting');
+    f.controls.set('a', { ...controls, yaw: controls.yaw + 0.6 });
+    f.tick(3);
+    assert.equal(f.player().mining!.elapsed, earned + 1, 'no work while looking away');
+    f.controls.set('a', controls);
+    f.tick();
+    assert.equal(f.player().mining!.elapsed, earned + 2);
+    f.controls.delete('a');
+    f.tick(12);
+    assert.equal(f.player().mining, null, 'sustained input loss cancels');
+    assert.equal(f.room.drops.size, 0);
+  } finally {
+    f.room.dispose();
+  }
+});
+test('near-completion release earns at most the final two valid ticks; early release cancels', () => {
+  for (const remaining of [2, 3]) {
+    const f = fixture();
+    try {
+      const cell = f.target();
+      f.aim(cell);
+      f.start(cell);
+      f.tick(f.player().mining!.total - remaining);
+      f.send({
+        type: 'mining',
+        epoch: f.player().epoch,
+        sequence: f.next(),
+        inputSequence: 0,
+        target: null,
+        revision: 0,
+        inventoryRevision: 0,
+      });
+      if (remaining === 2) {
+        assert.notEqual(f.player().mining, null);
+        f.tick();
+        assert.notEqual(f.store.world.get_block(...cell), 0);
+        f.tick();
+        assert.equal(f.store.world.get_block(...cell), 0);
+        assert.equal(f.room.drops.size, 1);
+      } else {
+        assert.equal(f.player().mining, null);
+        f.tick(4);
+        assert.notEqual(f.store.world.get_block(...cell), 0);
+        assert.equal(f.room.drops.size, 0);
+      }
+    } finally {
+      f.room.dispose();
+    }
   }
 });
 test('survival forbids catalog/flight/instant removal, consumes placement atomically and cannot replay a dropped stack', () => {

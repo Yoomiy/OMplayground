@@ -1,15 +1,17 @@
-import { EQUIPMENT, matchRecipe } from '../shared/inventory.ts';
+import { EQUIPMENT, matchRecipe, sameStack } from '../shared/inventory.ts';
+import { ingredientMatches } from '../shared/recipes.ts';
 import type { InventoryArea, InventoryView, Slot, SlotRef } from '../shared/inventory.ts';
 import type { ContentManifest } from '../shared/content.ts';
 import type { HudState, VoxelRuntime } from './runtime.ts';
 import { describeItem } from './item-description.ts';
+import { fillItemSlot } from './item-slot.ts';
 import './inventory.css';
 
 /** Optional DOM adapter. All writes are public runtime intents, never optimistic stack changes. */
 export function mountInventoryControls(
   toolbar: HTMLElement,
   runtime: VoxelRuntime,
-  content: Pick<ContentManifest, 'items' | 'recipes'>,
+  content: Pick<ContentManifest, 'items' | 'recipes' | 'blocks'>,
   labels: Readonly<Record<string, string>>,
   dialogHost: HTMLElement = toolbar.ownerDocument.body,
 ) {
@@ -42,11 +44,12 @@ export function mountInventoryControls(
   const top = document.createElement('header');
   top.append(heading, use, close);
   const message = document.createElement('p');
+  message.className = 'inventory-notice';
   message.setAttribute('role', 'status');
   const hint = document.createElement('p');
   hint.className = 'inventory-hint';
   hint.textContent =
-    'בחרו ערימה ואז משבצת יעד. לחיצה ימנית או Shift מעבירים פריט אחד. פתיחת התיק משאירה את שאר העולם פעיל.';
+    'גררו פריטים או בחרו ערימה ואז יעד. לחיצה ימנית בוחרת חצי ערימה או מעבירה פריט אחד. Shift ולחיצה מעבירים במהירות. העולם ממשיך לפעול כשהתיק פתוח.';
   const itemDetails = document.createElement('p');
   itemDetails.id = 'inventory-item-details';
   itemDetails.setAttribute('aria-live', 'polite');
@@ -81,6 +84,10 @@ export function mountInventoryControls(
     previous: InventoryView | null = null,
     disposed = false;
   let catalogChoice = content.items[0]?.itemType ?? '';
+  let selectedCount = 0,
+    recipesOpen = false,
+    recipeSearch = '',
+    catalogSearch = '';
   const busy = () =>
     hud.inventoryPending ||
     hud.lifecycle !== 'playing' ||
@@ -97,7 +104,11 @@ export function mountInventoryControls(
     const view = hud.inventory;
     if (!view || hud.inventoryPending) return;
     if (!selected) {
-      if (readSlot(ref)) selected = ref;
+      const source = readSlot(ref);
+      if (source) {
+        selected = ref;
+        selectedCount = one ? Math.ceil(source.count / 2) : source.count;
+      }
       render();
       return;
     }
@@ -106,22 +117,57 @@ export function mountInventoryControls(
       render();
       return;
     }
-    const source = readSlot(selected);
+    const from = selected;
+    selected = null;
+    move(from, ref, one ? 1 : selectedCount);
+  };
+  function move(from: SlotRef, to: SlotRef, count: number) {
+    const view = hud.inventory,
+      source = readSlot(from);
+    if (!view || busy() || !source) return;
+    selected = null;
     if (source)
       runtime.command({
         type: 'inventory',
         operation: {
           kind: 'move',
-          from: selected,
-          to: ref,
-          count: one ? 1 : source.count,
+          from,
+          to,
+          count: Math.min(count, source.count),
           revision: view.revision,
           containerId: view.container?.id ?? null,
           containerRevision: view.container?.revision ?? null,
         },
       });
-    selected = null;
-  };
+  }
+  function quickMove(ref: SlotRef) {
+    const view = hud.inventory,
+      stack = readSlot(ref);
+    if (!view || busy() || !stack) return;
+    const item = recipeItems.get(stack.itemType)!;
+    let destinations: SlotRef[];
+    if (ref.area === 'bag' && view.container)
+      destinations = view.container.slots.map((_, slot) => ({ area: 'container', slot }));
+    else if (
+      ref.area === 'bag' &&
+      item.equipment &&
+      !view.equipment[EQUIPMENT.indexOf(item.equipment)]
+    )
+      destinations = [{ area: 'equipment', slot: EQUIPMENT.indexOf(item.equipment) }];
+    else
+      destinations = view.bag.flatMap((_, slot) =>
+        ref.area !== 'bag' || slot < 9 !== ref.slot < 9 ? [{ area: 'bag' as const, slot }] : [],
+      );
+    const target =
+      destinations.find((target) => {
+        const other = readSlot(target);
+        return other && sameStack(other, stack) && other.count < item.maxStack;
+      }) ?? destinations.find((target) => !readSlot(target));
+    if (target) {
+      const other = readSlot(target);
+      move(ref, target, Math.min(stack.count, item.maxStack - (other?.count ?? 0)));
+    } else message.textContent = 'אין משבצת פנויה להעברה מהירה';
+  }
   function slots(title: string, area: InventoryArea, values: readonly Slot[], columns: number) {
     const section = document.createElement('section'),
       titleNode = document.createElement('h3');
@@ -142,15 +188,47 @@ export function mountInventoryControls(
       const description = stack
         ? `${label(stack.itemType)} ×${stack.count}${stack.instance?.durability ? ` · עמידות ${stack.instance.durability}` : ''}${item && describeItem(item) ? ` · ${describeItem(item)}` : ''}`
         : 'ריק';
-      b.textContent = stack ? `${label(stack.itemType)} ×${stack.count}` : '—';
+      fillItemSlot(
+        b,
+        item || undefined,
+        stack,
+        stack ? runtime.itemIcon(stack.itemType) : null,
+        area === 'equipment' ? equipmentLabel : '',
+      );
+      if (area === 'bag' && index < 9) {
+        const number = document.createElement('span');
+        number.className = 'voxel-item-slot__key';
+        number.textContent = String(index + 1);
+        b.append(number);
+      }
       b.title = description;
       b.setAttribute('aria-label', `${title} ${equipmentLabel}: ${description}`);
       b.disabled = busy();
       b.setAttribute('aria-pressed', String(selected?.area === area && selected.slot === index));
-      b.addEventListener('click', (event) => activate(ref, event.shiftKey));
+      if (area === 'equipment' && selected) {
+        const selectedItem = recipeItems.get(readSlot(selected)?.itemType ?? '');
+        b.dataset.compatible = String(selectedItem?.equipment === EQUIPMENT[index]);
+      }
+      b.addEventListener('click', (event) =>
+        event.shiftKey ? quickMove(ref) : activate(ref, false),
+      );
       b.addEventListener('contextmenu', (event) => {
         event.preventDefault();
         activate(ref, true);
+      });
+      b.draggable = !!stack && !busy();
+      b.addEventListener('dragstart', (event) => {
+        selected = ref;
+        selectedCount = stack?.count ?? 0;
+        event.dataTransfer?.setData('text/plain', JSON.stringify(ref));
+        if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
+      });
+      b.addEventListener('dragover', (event) => {
+        if (selected && !busy()) event.preventDefault();
+      });
+      b.addEventListener('drop', (event) => {
+        event.preventDefault();
+        if (selected && (selected.area !== area || selected.slot !== index)) activate(ref, false);
       });
       grid.append(b);
     });
@@ -164,7 +242,8 @@ export function mountInventoryControls(
     itemDetails.textContent = item ? `${label(item.itemType)}: ${describeItem(item)}` : '';
     itemDetails.hidden = !item || !describeItem(item);
     discard.disabled = selected?.area !== 'bag' || busy();
-    eat.hidden = hud.mode !== 'survival';
+    discard.hidden = selected?.area !== 'bag';
+    eat.hidden = hud.mode !== 'survival' || selected?.area !== 'bag';
     eat.disabled =
       selected?.area !== 'bag' ||
       !content.items.find((i) => i.itemType === (selected ? readSlot(selected)?.itemType : null))
@@ -174,6 +253,7 @@ export function mountInventoryControls(
     const focus = document.activeElement as HTMLElement | null,
       area = focus?.dataset.area,
       index = focus?.dataset.slot;
+    const scrollTop = dialog.scrollTop;
     body.replaceChildren();
     const view = hud.inventory;
     if (!view) return;
@@ -208,21 +288,53 @@ export function mountInventoryControls(
       const section = document.createElement('section'),
         title = document.createElement('h3');
       title.textContent = 'קטלוג יצירתי';
-      const select = document.createElement('select');
-      select.id = 'inventory-catalog';
-      select.setAttribute('aria-label', 'פריט מהקטלוג היצירתי');
-      for (const item of content.items) {
-        const option = document.createElement('option');
-        option.value = item.itemType;
-        option.textContent = label(item.itemType);
-        select.append(option);
-      }
-      select.value = catalogChoice;
-      select.addEventListener('change', () => {
-        catalogChoice = select.value;
+      section.className = 'inventory-catalog';
+      const search = document.createElement('input');
+      search.type = 'search';
+      search.id = 'inventory-catalog-search';
+      search.placeholder = 'חיפוש פריטים ובלוקים…';
+      search.setAttribute('aria-label', 'חיפוש בקטלוג היצירתי');
+      search.value = catalogSearch;
+      const catalog = document.createElement('div');
+      catalog.id = 'inventory-catalog';
+      catalog.className = 'inventory-catalog-grid';
+      const drawCatalog = () => {
+        catalog.replaceChildren();
+        for (const item of content.items.filter((item) =>
+          `${label(item.itemType)} ${item.itemType}`
+            .toLocaleLowerCase()
+            .includes(catalogSearch.toLocaleLowerCase()),
+        )) {
+          const choice = button('', () => {
+            catalogChoice = item.itemType;
+            drawCatalog();
+          });
+          choice.dataset.item = item.itemType;
+          choice.title = label(item.itemType);
+          choice.setAttribute('aria-label', label(item.itemType));
+          choice.setAttribute('aria-pressed', String(catalogChoice === item.itemType));
+          fillItemSlot(choice, item, null, runtime.itemIcon(item.itemType));
+          catalog.append(choice);
+        }
+      };
+      search.addEventListener('input', () => {
+        catalogSearch = search.value;
+        drawCatalog();
       });
+      drawCatalog();
+      const choose = button('בחירת בלוק לסרגל', () => {
+        const item = recipeItems.get(catalogChoice);
+        const state = content.blocks.findIndex(
+          (block) => block.name === item?.places && block.placeable !== false,
+        );
+        if (state >= 0) {
+          runtime.command({ type: 'select', state });
+          runtime.command({ type: 'inventory', operation: { kind: 'close' } });
+        } else message.textContent = 'הפריט הזה אינו בלוק. אפשר להוסיף אותו לתיק.';
+      });
+      choose.disabled = busy();
       const grant = button('הוספה לתיק', () => {
-        const item = content.items.find((i) => i.itemType === select.value);
+        const item = recipeItems.get(catalogChoice);
         if (item)
           runtime.command({
             type: 'inventory',
@@ -236,30 +348,110 @@ export function mountInventoryControls(
       });
       grant.id = 'inventory-give';
       grant.disabled = busy();
-      section.append(title, select, grant);
+      section.append(title, search, catalog, choose, grant);
       body.append(section);
     }
     const recipes = document.createElement('details'),
       summary = document.createElement('summary');
     summary.textContent = 'מתכונים';
+    recipes.className = 'inventory-recipes';
+    recipes.open = recipesOpen;
+    recipes.addEventListener('toggle', () => {
+      recipesOpen = recipes.open;
+    });
     recipes.append(summary);
-    for (const recipe of content.recipes) {
-      const line = document.createElement('p');
-      line.textContent = `${label(recipe.result.itemType)} ×${recipe.result.count} (${recipe.size}×${recipe.size}): ${Array.from(
-        { length: recipe.size },
-        (_, y) =>
-          recipe.ingredients
-            .slice(y * recipe.size, (y + 1) * recipe.size)
-            .map((item) => (item ? label(item) : '—'))
-            .join(' / '),
-      ).join(' · ')}`;
-      recipes.append(line);
-    }
+    const search = document.createElement('input');
+    search.type = 'search';
+    search.id = 'inventory-recipe-search';
+    search.placeholder = 'חיפוש מתכון…';
+    search.setAttribute('aria-label', 'חיפוש מתכונים');
+    search.value = recipeSearch;
+    const recipeList = document.createElement('div');
+    recipeList.className = 'inventory-recipe-list';
+    const drawRecipes = () => {
+      recipeList.replaceChildren();
+      for (const recipe of content.recipes.filter((recipe) =>
+        `${label(recipe.result.itemType)} ${recipe.result.itemType}`
+          .toLocaleLowerCase()
+          .includes(recipeSearch.toLocaleLowerCase()),
+      )) {
+        const card = document.createElement('article');
+        card.className = 'inventory-recipe';
+        const name = document.createElement('h4');
+        name.textContent = `${label(recipe.result.itemType)} ×${recipe.result.count}`;
+        const grid = document.createElement('div');
+        grid.className = 'inventory-recipe-grid';
+        grid.dir = 'ltr';
+        grid.style.setProperty('--columns', String(recipe.size));
+        const available = new Map<string, number>();
+        for (const stack of [...view.bag, ...view.craft2, ...view.craft3])
+          if (stack)
+            available.set(stack.itemType, (available.get(stack.itemType) ?? 0) + stack.count);
+        let missing = false;
+        for (const ingredient of recipe.ingredients) {
+          const node = document.createElement('span');
+          const matching = ingredient
+            ? content.items.filter((item) =>
+                ingredientMatches(ingredient, item.itemType, recipeItems),
+              )
+            : [];
+          const owned = matching.find((item) => (available.get(item.itemType) ?? 0) > 0);
+          const item = owned ?? matching[0];
+          if (owned) available.set(owned.itemType, available.get(owned.itemType)! - 1);
+          if (ingredient && !owned) {
+            node.dataset.missing = 'true';
+            missing = true;
+          }
+          fillItemSlot(node, item, null, item ? runtime.itemIcon(item.itemType) : null);
+          node.title = ingredient
+            ? `${item ? label(item.itemType) : ingredient}${ingredient.startsWith('#') ? ' (או פריט מקביל)' : ''}${owned ? '' : ' · חסר בתיק'}`
+            : 'משבצת ריקה';
+          grid.append(node);
+        }
+        const result = document.createElement('span');
+        fillItemSlot(
+          result,
+          recipeItems.get(recipe.result.itemType),
+          recipe.result,
+          runtime.itemIcon(recipe.result.itemType),
+        );
+        result.title = label(recipe.result.itemType);
+        const availability = document.createElement('p');
+        availability.textContent =
+          recipe.size === 3 && view.station !== 'workbench'
+            ? 'נדרש שולחן יצירה 3×3'
+            : missing
+              ? 'חסרים מרכיבים'
+              : 'כל המרכיבים בתיק';
+        card.append(name, grid, document.createTextNode(' → '), result, availability);
+        recipeList.append(card);
+      }
+    };
+    search.addEventListener('input', () => {
+      recipeSearch = search.value;
+      drawRecipes();
+    });
+    // Generate recipe thumbnails only when the reference panel is used.
+    recipes.addEventListener('toggle', () => {
+      if (recipes.open) drawRecipes();
+    });
+    if (recipesOpen) drawRecipes();
+    recipes.append(search, recipeList);
     body.append(recipes);
     if (area && index)
       body.querySelector<HTMLButtonElement>(`[data-area="${area}"][data-slot="${index}"]`)?.focus();
+    else if (focus?.id === 'inventory-recipe-search' || focus?.id === 'inventory-catalog-search') {
+      const input = body.querySelector<HTMLInputElement>(`#${focus.id}`);
+      input?.focus();
+      input?.setSelectionRange(
+        focus instanceof HTMLInputElement ? focus.selectionStart : null,
+        focus instanceof HTMLInputElement ? focus.selectionEnd : null,
+      );
+    }
+    dialog.scrollTop = scrollTop;
   }
   const unsubscribe = runtime.subscribe((state) => {
+    const opening = !hud?.inventoryOpen && state.inventoryOpen;
     const pendingChanged = hud?.inventoryPending !== state.inventoryPending;
     const statusChanged = hud?.status !== state.status || hud?.lifecycle !== state.lifecycle;
     const foodChanged = hud?.vitals?.food !== state.vitals?.food;
@@ -283,7 +475,10 @@ export function mountInventoryControls(
       : state.message.startsWith('לחצו על העולם')
         ? ''
         : state.message;
-    if (state.inventory !== previous || pendingChanged || statusChanged || foodChanged) {
+    if (
+      state.inventoryOpen &&
+      (opening || state.inventory !== previous || pendingChanged || statusChanged || foodChanged)
+    ) {
       if (
         state.inventory?.revision !== previous?.revision ||
         state.inventory?.container?.id !== previous?.container?.id
@@ -301,6 +496,7 @@ export function mountInventoryControls(
     if (
       event.repeat ||
       event.code !== 'KeyE' ||
+      (!dialog.open && !!dialogHost.querySelector('dialog[open]')) ||
       (event.target instanceof HTMLElement &&
         ['INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName))
     )

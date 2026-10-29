@@ -97,6 +97,7 @@ export type RuntimeOptions = {
 };
 export type VoxelRuntime = {
   command(command: RuntimeCommand): void;
+  itemIcon(itemType: string): string | null;
   subscribe(listener: (state: HudState) => void): () => void;
   dispose(): void;
   debug(): unknown;
@@ -167,7 +168,9 @@ export async function mountVoxel(
     daytime: environment.sun[1] >= 0,
     rain: environment.rain > 0.2,
   });
-  const hotbar = creativePalette(content);
+  const palette = creativePalette(content);
+  const hotbar = palette.slice(0, 9);
+  hotbar[0] = palette.find((item) => item.family === 'stone') ?? hotbar[0];
   let hud: HudState = {
     mode: 'creative',
     role: 'participant',
@@ -234,11 +237,15 @@ export async function mountVoxel(
   let updateTimer: ReturnType<typeof setInterval> | null = null;
   let paletteSent: { epoch: number; sequence: number; state: number } | null = null;
   let noticeUntil = 0;
+  let pointerLockProblem: string | null = null;
   let miningHeld = false,
     miningSingle = false,
     lastMineKey = '';
   let mineRequest = 0,
     mineRetryAt = 0;
+  let miningCandidate = '',
+    miningCandidateAt = 0,
+    lastMiningSwing = -Infinity;
   const dropped = new Map<string, DropView>();
   const worldActions = new Set<number>();
   let inventoryEpoch = 0,
@@ -656,7 +663,7 @@ export async function mountVoxel(
               ? 'מכינים את העולם…'
               : focused
                 ? ''
-                : 'לחצו על העולם כדי להמשיך',
+                : (pointerLockProblem ?? 'לחצו על העולם כדי להמשיך'),
         flying: event.state[10] === 1,
       });
       if (pendingInventoryOpen) {
@@ -756,7 +763,7 @@ export async function mountVoxel(
             not_food: 'הפריט שנבחר אינו מזון',
             cooldown: 'המתינו מעט לפני אכילה נוספת',
           };
-          noticeUntil = performance.now() + 1800;
+          noticeUntil = performance.now() + 3000;
           publish({ message: notices[event.outcome.reason] ?? 'לא ניתן לבצע את הפעולה כאן' });
         }
       }
@@ -1057,10 +1064,17 @@ export async function mountVoxel(
     const stack = hud.inventory.bag[hud.inventory.selected];
     const key = `${target.join(',')}:${world.get_block(...target)}:${hud.inventory.selected}:${stack?.itemType ?? ''}:${stack?.instance?.durability ?? 0}`;
     if (key !== lastMineKey) {
+      // Predicted aim can briefly cross a block edge. Require a stable new
+      // target before replacing an in-progress job; the server still checks reach.
+      if (hud.mining.target && key !== miningCandidate) {
+        miningCandidate = key;
+        miningCandidateAt = performance.now();
+      }
+      if (hud.mining.target && performance.now() - miningCandidateAt < 80) return;
       lastMineKey = key;
+      miningCandidate = '';
       sendMining([...target]);
-      renderer.swing(performance.now());
-    }
+    } else miningCandidate = '';
   }
   function updateTarget(position: ArrayLike<number>) {
     const selected = hud.inventory?.bag[hud.selectedSlot],
@@ -1155,6 +1169,26 @@ export async function mountVoxel(
       }
       if (now - lastSend >= 1000 / 30) flush();
       miningControl(ready && !stalled, sampled);
+      const visiblyMining =
+        miningHeld &&
+        focused &&
+        ready &&
+        !stalled &&
+        !fatalRecovery &&
+        phase === 'playing' &&
+        hud.mining.target &&
+        target &&
+        hud.mining.target.every((value, axis) => value === target![axis]);
+      renderer.mining(visiblyMining ? hud.mining.elapsed / Math.max(1, hud.mining.total) : 0);
+      if (visiblyMining && now - lastMiningSwing >= 280) {
+        renderer.swing(now);
+        audio.effect(
+          target!.map((value) => value + 0.5),
+          soundGroups.get(content.blocks[world.get_block(...target!)]?.name) ?? 'stone',
+          false,
+        );
+        lastMiningSwing = now;
+      }
       state = world.player_state(prediction.slot);
       lastPosition = Array.from(state.subarray(0, 3));
       if (
@@ -1313,6 +1347,7 @@ export async function mountVoxel(
       return;
     }
     const locked = ownsPointerLock();
+    if (locked) pointerLockProblem = null;
     focus(locked && document.visibilityState === 'visible');
     publish({
       pointerLocked: locked,
@@ -1328,7 +1363,7 @@ export async function mountVoxel(
           ? 'העולם מושהה.'
           : locked
             ? ''
-            : 'לחצו על העולם כדי להמשיך',
+            : (pointerLockProblem ?? 'לחצו על העולם כדי להמשיך'),
     });
   };
   const onMouseDown = (event: MouseEvent) => {
@@ -1342,6 +1377,18 @@ export async function mountVoxel(
       else queuedAction = 'remove';
     }
     if (event.button === 2) command({ type: 'interact', kind: 'place' });
+  };
+  const onPointerLockError = (error: unknown) => {
+    if (disposed || fatalRecovery || hud.lifecycle === 'ended' || phase === 'dead') return;
+    diagnose('pointer_lock', error);
+    pointerLockProblem =
+      'העכבר לא נלכד. לחצו שוב על כניסה לעולם; אם יצאתם עם Esc, המתינו רגע ונסו שוב.';
+    focus(false);
+    if (ownsPointerLock()) document.exitPointerLock();
+    publish({
+      status: 'paused',
+      message: pointerLockProblem,
+    });
   };
   const onMouseUp = (event: MouseEvent) => {
     if (event.button === 0) command({ type: 'mine', active: false });
@@ -1474,15 +1521,30 @@ export async function mountVoxel(
     if (
       cmd.type === 'select' &&
       hud.mode === 'creative' &&
-      hotbar.some((i) => i.state === cmd.state)
+      palette.some((i) => i.state === cmd.state)
     ) {
-      publish({ selected: cmd.state });
+      if (!hotbar.some((item) => item.state === cmd.state)) {
+        const index = Math.max(
+          0,
+          hotbar.findIndex((item) => item.state === hud.selected),
+        );
+        hotbar[index] = palette.find((item) => item.state === cmd.state)!;
+      }
+      publish({ selected: cmd.state, hotbar: [...hotbar] });
       syncPalette();
     } else if (cmd.type === 'interact') {
       const item = content.items.find(
         (item) => item.itemType === hud.inventory?.bag[hud.selectedSlot]?.itemType,
       );
-      if (cmd.kind === 'place' && hud.mode === 'survival' && item?.igniter)
+      const station =
+        target &&
+        content.behavior.find(
+          (block) => block.family === content.blocks[world.get_block(...target!)]?.name,
+        )?.interaction;
+      const sneaking = keys.has('ShiftLeft') || keys.has('ShiftRight') || touch.sneak;
+      if (cmd.kind === 'place' && station && !sneaking && hud.role === 'participant')
+        openInventory({ kind: 'open', target: [...target!] });
+      else if (cmd.kind === 'place' && hud.mode === 'survival' && item?.igniter)
         command({ type: 'ignite' });
       else if (cmd.kind === 'place' && hud.mode === 'survival' && item?.collects)
         queuedAction = 'collect';
@@ -1491,6 +1553,7 @@ export async function mountVoxel(
       if (hud.lifecycle === 'ended' || (hud.role === 'participant' && hud.lifecycle !== 'playing'))
         return;
       if (hud.inventoryOpen || phase === 'dead') return;
+      pointerLockProblem = null;
       audio.unlock();
       if (inputMode === 'touch') {
         focus(document.visibilityState === 'visible' && document.hasFocus());
@@ -1498,11 +1561,9 @@ export async function mountVoxel(
       } else if (typeof canvas.requestPointerLock === 'function') {
         // The browser API exists in both void and Promise-returning forms.
         try {
-          void Promise.resolve(canvas.requestPointerLock()).catch((error) =>
-            diagnose('pointer_lock', error),
-          );
+          void Promise.resolve(canvas.requestPointerLock()).catch(onPointerLockError);
         } catch (error) {
-          diagnose('pointer_lock', error);
+          onPointerLockError(error);
         }
       } else
         publish({
@@ -1556,6 +1617,7 @@ export async function mountVoxel(
   window.addEventListener('blur', onBlur);
   document.addEventListener('visibilitychange', onVisibility);
   document.addEventListener('pointerlockchange', onPointerLock);
+  document.addEventListener('pointerlockerror', onPointerLockError);
   canvas.addEventListener('mousedown', onMouseDown);
   canvas.addEventListener('contextmenu', onContext);
   canvas.addEventListener('webglcontextlost', onContextLost);
@@ -1564,6 +1626,7 @@ export async function mountVoxel(
   animation = requestAnimationFrame(frame);
   const runtime: VoxelRuntime = {
     command,
+    itemIcon: (itemType) => renderer.itemIcon(itemType),
     voiceScene() {
       if (
         disposed ||
@@ -1702,6 +1765,7 @@ export async function mountVoxel(
       window.removeEventListener('blur', onBlur);
       document.removeEventListener('visibilitychange', onVisibility);
       document.removeEventListener('pointerlockchange', onPointerLock);
+      document.removeEventListener('pointerlockerror', onPointerLockError);
       canvas.removeEventListener('mousedown', onMouseDown);
       canvas.removeEventListener('contextmenu', onContext);
       canvas.removeEventListener('webglcontextlost', onContextLost);

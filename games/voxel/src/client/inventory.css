@@ -1,87 +1,256 @@
 .voxel-inventory {
-  width: min(900px, calc(100vw - 24px));
-  max-height: calc(100dvh - 24px);
+  width: min(850px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  box-sizing: border-box;
   overflow: auto;
-  color: #f1f6ef;
-  background: #152e3c;
-  border: 1px solid #a6c5c0;
-  border-radius: 16px;
+  color: #292720;
+  background: #c9c3b4;
+  border: 3px solid #403e36;
+  border-radius: 4px;
   padding: 18px;
-  box-shadow: 0 20px 90px #0009;
+  box-shadow:
+    inset 2px 2px #eeeadf,
+    inset -2px -2px #817d71,
+    0 20px 90px #0009;
+  font-family: inherit;
 }
 .voxel-inventory::backdrop {
-  background: #061019a6;
+  background: #10130f99;
 }
 .voxel-inventory header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   gap: 12px;
 }
 .voxel-inventory h2 {
-  margin: 0;
-  font-size: 22px;
+  margin: 0 auto 0 0;
+  font-size: 21px;
 }
 .voxel-inventory h3 {
   margin: 14px 0 8px;
-  font-size: 16px;
+  font-size: 15px;
+}
+.voxel-inventory button:not(.voxel-item-slot) {
+  color: #f7f4e9;
+  background: #4b5041;
+  border: 2px solid #30372c;
+  border-radius: 3px;
+  padding: 6px 10px;
+  min-height: 36px;
+  cursor: pointer;
+}
+.voxel-inventory button:not(.voxel-item-slot):hover {
+  background: #636c52;
+}
+.voxel-inventory button {
+  font: inherit;
+}
+.voxel-inventory button:focus-visible {
+  outline: 3px solid #34683b;
+  outline-offset: 2px;
 }
 .inventory-hint {
-  color: #c5d8d9;
+  color: #49483e;
+  font-size: 12px;
+  line-height: 1.6;
+}
+#inventory-item-details {
   font-size: 13px;
 }
 .inventory-body {
   display: flex;
   flex-wrap: wrap;
+  align-items: start;
   gap: 8px 24px;
 }
 .inventory-body > section:first-child,
-.inventory-body > details {
+.inventory-body > details,
+.inventory-catalog {
   width: 100%;
 }
 .inventory-grid {
   direction: ltr;
   display: grid;
-  grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
+  grid-template-columns: repeat(var(--columns), 52px);
   gap: 4px;
 }
-.inventory-grid button {
-  direction: rtl;
-  min-width: 48px;
-  min-height: 46px;
-  max-width: 88px;
-  padding: 5px;
-  font-size: 11px;
-  overflow-wrap: anywhere;
+.voxel-item-slot,
+.voxel-session .voxel-item-slot {
+  display: inline-flex;
+  position: relative;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  flex: 0 0 52px;
+  width: 52px;
+  height: 52px;
+  min-height: 52px;
+  min-width: 0;
+  padding: 2px;
+  border-radius: 2px;
+  border: 2px solid;
+  border-color: #646459 #eeebdf #eeebdf #646459;
+  background: #aaa797;
+  color: #282b22;
+  vertical-align: middle;
 }
-.inventory-grid button[aria-pressed='true'] {
-  background: #68715b;
-  outline: 2px solid #f3cf7c;
+.voxel-item-slot img {
+  width: 44px;
+  height: 44px;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+.voxel-item-slot__empty {
+  font-size: 10px;
+  line-height: 1.15;
+  padding: 2px;
+  opacity: 0.75;
+}
+.voxel-item-slot__key {
+  position: absolute;
+  top: 1px;
+  left: 3px;
+  font: bold 10px monospace;
+  pointer-events: none;
+}
+.voxel-item-slot__count {
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  color: white;
+  font: bold 13px monospace;
+  text-shadow:
+    1px 1px #171b14,
+    -1px -1px #171b14;
+  pointer-events: none;
+}
+.voxel-item-slot__durability {
+  position: absolute;
+  bottom: 1px;
+  left: 5px;
+  right: 5px;
+  height: 3px;
+  background: #30332b;
+  pointer-events: none;
+}
+.voxel-item-slot__durability > span {
+  display: block;
+  height: 100%;
+}
+.voxel-item-slot:hover,
+.voxel-session .voxel-item-slot:hover {
+  background: #c5c4ae;
+}
+.voxel-item-slot[aria-pressed='true'],
+.voxel-session .voxel-item-slot[aria-pressed='true'] {
+  outline: 2px solid #fff7cf;
+  outline-offset: 1px;
+  background: #c5c4ae;
+  border-color: #555744;
+}
+.voxel-item-slot[data-compatible='true'] {
+  box-shadow: inset 0 0 0 2px #477b43;
+}
+.voxel-item-slot[data-compatible='false'] {
+  opacity: 0.5;
 }
 .voxel-inventory button:disabled {
   opacity: 0.55;
-  cursor: wait;
+  cursor: default;
 }
-.voxel-inventory select {
-  min-height: 44px;
-  padding: 6px;
+.voxel-inventory input[type='search'] {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  margin: 10px 0;
+  border: 2px solid #827e70;
+  border-radius: 2px;
+  padding: 8px;
+  background: #f2eee1;
+  color: #282b22;
   font: inherit;
-  margin-inline-end: 8px;
-  max-width: 180px;
+}
+.inventory-catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 52px);
+  max-height: 230px;
+  overflow: auto;
+  gap: 5px;
+  padding: 4px;
+  margin-bottom: 10px;
 }
 #inventory-craft {
   margin-top: 8px;
+}
+.inventory-recipes {
+  border-top: 2px solid #aaa493;
+  margin-top: 12px;
+  padding-top: 10px;
+}
+.inventory-recipes summary {
+  cursor: pointer;
+  font-weight: bold;
+}
+.inventory-recipe-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
+  gap: 12px;
+}
+.inventory-recipe {
+  padding: 10px;
+  background: #dcd6c7;
+  border: 1px solid #a49e8c;
+}
+.inventory-recipe h4 {
+  margin: 0 0 10px;
+  font-size: 13px;
+}
+.inventory-recipe-grid {
+  display: inline-grid;
+  grid-template-columns: repeat(var(--columns), 38px);
+  gap: 2px;
+  vertical-align: middle;
+}
+.inventory-recipe .voxel-item-slot {
+  width: 38px;
+  height: 38px;
+  min-height: 38px;
+}
+.inventory-recipe .voxel-item-slot img {
+  width: 32px;
+  height: 32px;
+}
+.inventory-recipe [data-missing='true'] {
+  box-shadow: inset 0 0 0 1px #aa5d4a;
+}
+.inventory-recipe p {
+  font-size: 11px;
+  margin: 8px 0 0;
 }
 @media (max-width: 560px) {
   .voxel-inventory {
     padding: 12px;
   }
-  .inventory-grid button {
-    min-width: 0;
-    min-height: 44px;
-    font-size: 10px;
+  .inventory-grid {
+    grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
+  }
+  .inventory-grid .voxel-item-slot {
+    width: 100%;
+    height: 42px;
+    min-height: 42px;
+  }
+  .inventory-grid .voxel-item-slot img {
+    width: 34px;
+    height: 34px;
   }
   .inventory-body {
     gap: 6px 12px;
   }
+}
+.inventory-notice:empty {
+  display: none;
+}
+.inventory-body > section:first-child {
+  display: grid;
+  justify-content: center;
 }

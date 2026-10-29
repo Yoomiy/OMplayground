@@ -3567,7 +3567,8 @@ var GameRoom = class _GameRoom {
       }
       const result = a.ledger.run(message.epoch, message.sequence, () => {
         if (message.type === "mining" && message.target === null) {
-          this.cancelMining(a);
+          if (a.mining && a.mining.total - a.mining.elapsed <= 2) a.mining.released = true;
+          else this.cancelMining(a);
           return { ok: true, reason: "cancelled" };
         }
         if (a.phase !== "playing" || !a.focused || this.paused && a.role === "participant")
@@ -4263,6 +4264,7 @@ var GameRoom = class _GameRoom {
     if (!plan.allowed) return { ok: false, reason: "tool_required" };
     const cellRevision = this.store.cellRevision(...target), previous = a.mining;
     if (previous && previous.target.every((v, i) => v === target[i]) && previous.cellRevision === cellRevision && previous.slot === held.slot && !!previous.stack === !!held.stack && (!held.stack || sameStack(previous.stack, held.stack))) {
+      previous.released = false;
       this.miningView(a);
       return { ok: true, reason: "mining" };
     }
@@ -4273,7 +4275,9 @@ var GameRoom = class _GameRoom {
       slot: held.slot,
       stack: held.stack,
       elapsed: 0,
-      total: plan.ticks
+      total: plan.ticks,
+      interruptedAt: null,
+      released: false
     };
     this.miningView(a);
     return { ok: true, reason: "mining" };
@@ -4282,10 +4286,16 @@ var GameRoom = class _GameRoom {
     const job = a.mining;
     if (!job) return;
     const held = this.inventories.held(a.id);
-    if (!a.focused || !a.capabilities.build || a.role !== "participant" || !a.queue.active(now) || !this.aimed(a, job.target) || this.store.world.get_block(job.target[0], job.target[1], job.target[2]) !== job.state || this.store.cellRevision(job.target[0], job.target[1], job.target[2]) !== job.cellRevision || held.slot !== job.slot || !!held.stack !== !!job.stack || held.stack && !sameStack(held.stack, job.stack) || !this.inventories.canBreak(job.target)) {
+    if (!a.focused || !a.capabilities.build || a.role !== "participant" || this.store.world.get_block(job.target[0], job.target[1], job.target[2]) !== job.state || this.store.cellRevision(job.target[0], job.target[1], job.target[2]) !== job.cellRevision || held.slot !== job.slot || !!held.stack !== !!job.stack || held.stack && !sameStack(held.stack, job.stack) || !this.inventories.canBreak(job.target)) {
       this.cancelMining(a);
       return;
     }
+    if (!a.queue.active(now) || !this.aimed(a, job.target)) {
+      job.interruptedAt ??= now;
+      if (job.released || now - job.interruptedAt >= 200) this.cancelMining(a);
+      return;
+    }
+    job.interruptedAt = null;
     job.elapsed++;
     if (job.elapsed < job.total) {
       if (job.elapsed % 3 === 0) this.miningView(a);

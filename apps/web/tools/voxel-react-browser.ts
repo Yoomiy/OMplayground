@@ -62,6 +62,12 @@ import { VoiceSignaling } from "../../voxel-server/src/voice-signaling.ts";
 import { RoomServiceClient } from "livekit-server-sdk";
 import type { GatewayOptions } from "../../../games/voxel/src/server/gateway.ts";
 
+async function openSessionMenu(page: import("playwright").Page) {
+  const menu = page.locator(".voxel-session__menu");
+  if (!(await menu.evaluate((node) => (node as HTMLDetailsElement).open)))
+    await menu.locator(":scope > summary").click();
+}
+
 const web = fileURLToPath(new URL("../", import.meta.url)),
   repo = fileURLToPath(new URL("../../../", import.meta.url));
 const temp = mkdtempSync(join(tmpdir(), "voxel-react-browser-")),
@@ -606,6 +612,7 @@ try {
       throw new Error("React fixture did not request its engine");
     }),
   ]);
+  await openSessionMenu(kidPage);
   await kidPage.getByRole("button", { name: "יציאה", exact: true }).click();
   releaseWasm();
   await kidPage.getByText("המפגש נסגר", { exact: true }).waitFor();
@@ -894,6 +901,7 @@ try {
     return d.inventoryOpen && d.body?.frozen === 1;
   });
   await kidPage.getByRole("button", { name: "סגירה", exact: true }).click();
+  await openSessionMenu(kidPage);
   await kidPage.getByRole("button", { name: "מסך מלא", exact: true }).click();
   await kidPage.waitForFunction(() =>
     document.fullscreenElement?.classList.contains("voxel-session"),
@@ -915,7 +923,9 @@ try {
     beforeStaff = await debug(teacherPage),
     ownedBeforeStaff = (await debug(kidPage)).inventory.bag;
   await teacherPage.bringToFront();
+  await openSessionMenu(teacherPage);
   await teacherPage.getByText("כלי מורה", { exact: true }).tap();
+  await openSessionMenu(teacherPage);
   await teacherPage
     .getByRole("button", { name: "מעבר למצב יצירתי", exact: true })
     .tap();
@@ -949,6 +959,7 @@ try {
   await kidPage.getByRole("button", { name: "סגירה", exact: true }).click();
   await teacherPage.bringToFront();
 
+  await openSessionMenu(teacherPage);
   await teacherPage
     .getByRole("button", { name: "מעבר למצב שרידות", exact: true })
     .tap();
@@ -963,6 +974,7 @@ try {
   assert.equal((await debug(kidPage)).focused, false);
   // Move through normal touch input far enough to unload the destination's
   // former subscription before testing teleport readiness and origin reset.
+  await openSessionMenu(teacherPage);
   await teacherPage.getByText("כלי מורה", { exact: true }).tap();
   await teacherPage
     .getByRole("button", { name: "כניסה לתצפית", exact: true })
@@ -1071,6 +1083,7 @@ try {
     voiceEvidence.farDistance = distance;
     voiceEvidence.nativeFarSceneSilent = true;
   }
+  await openSessionMenu(teacherPage);
   await teacherPage.getByText("כלי מורה", { exact: true }).tap();
   await teacherPage
     .getByLabel("יעד להשתגרות", { exact: true })
@@ -1124,6 +1137,7 @@ try {
   await teacherPage.screenshot({
     path: join(web, "test-results/voxel-react-staff.png"),
   });
+  await openSessionMenu(teacherPage);
   await teacherPage.getByText("כלי מורה", { exact: true }).tap();
   const staffReceipts = db.value(
     `SELECT jsonb_agg(jsonb_build_object('command',command,'completed',completed,'result',result) ORDER BY revision) FROM public.voxel_staff_commands WHERE session_id=${literal(room)}`,
@@ -1135,6 +1149,7 @@ try {
   const moderationAdmissionsBefore = admissions.length;
   const moderationInventoryBefore = (await debug(kidPage)).inventory.bag;
   let lastJoinedEpoch = (await debug(kidPage)).epoch;
+  await openSessionMenu(teacherPage);
   await teacherPage.getByText("כלי מורה", { exact: true }).tap();
   await teacherPage.getByText("ניהול משתתפים", { exact: true }).tap();
   await teacherPage
@@ -1311,6 +1326,7 @@ try {
   await teacherPage.screenshot({
     path: join(web, "test-results/voxel-react-moderation.png"),
   });
+  await openSessionMenu(teacherPage);
   await teacherPage.getByText("כלי מורה", { exact: true }).tap();
   // Persisted chat uses visible owned dialogs and the real SQL/SDK boundary.
   const chatText = "<img src=x onerror=alert(1)> שלום 🙂";
@@ -1422,6 +1438,7 @@ try {
     .getByRole("button", { name: "סגירת הצ׳אט", exact: true })
     .tap();
   wire.control.failUpload = true;
+  await openSessionMenu(teacherPage);
   await teacherPage
     .getByRole("button", { name: "השהיית המפגש", exact: true })
     .click();
@@ -1481,6 +1498,7 @@ try {
   await teacherPage.screenshot({
     path: join(web, "test-results/voxel-react-observer.png"),
   });
+  await openSessionMenu(teacherPage);
   await teacherPage
     .getByRole("button", { name: "חידוש המפגש", exact: true })
     .tap();
@@ -1505,6 +1523,7 @@ try {
   await kidPage.screenshot({
     path: join(web, "test-results/voxel-react-playing.png"),
   });
+  await openSessionMenu(teacherPage);
   await teacherPage
     .getByRole("button", { name: "סיום המפגש", exact: true })
     .tap();
@@ -1579,6 +1598,7 @@ try {
       ),
     );
     await page.bringToFront();
+    await openSessionMenu(page);
     const exit = page.getByRole("button", { name: "יציאה", exact: true });
     if (page === kidPage) {
       await page.exposeFunction(

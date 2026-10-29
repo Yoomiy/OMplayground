@@ -15,6 +15,8 @@ import type { ExplosiveView } from '../shared/explosives.ts';
 import { HeldBlockRenderer } from './held-block.ts';
 import { GpuFramePacer } from './gpu-pacing.ts';
 import { EditEffects } from './edit-effects.ts';
+import { ItemIcons } from './item-icons.ts';
+import { MiningCracks } from './mining-cracks.ts';
 const precision =
   'precision highp float; precision highp int; precision highp sampler2D; precision highp sampler2DArray;\n';
 // Packed decoding, shape UVs, light/AO fields and animation derive from the pinned Blockyard pipeline.
@@ -76,6 +78,8 @@ export class TerrainRenderer {
   private memory: WebAssembly.Memory;
   private uniforms: Record<string, THREE.IUniform>;
   private highlight = new THREE.Group();
+  private cracks = new MiningCracks();
+  private icons: ItemIcons;
   private avatars: AvatarRenderer;
   private environment: EnvironmentRenderer;
   private sky = new THREE.Color();
@@ -148,6 +152,12 @@ export class TerrainRenderer {
   swing(now: number): void {
     this.held.swing(now);
   }
+  itemIcon(itemType: string): string | null {
+    return this.disposed ? null : this.icons.get(itemType);
+  }
+  mining(progress: number): void {
+    this.cracks.progress(progress);
+  }
   resetPresentation(): void {
     this.avatars.clear();
     this.held.clear();
@@ -204,6 +214,8 @@ export class TerrainRenderer {
     };
     const albedo = texture(pixels.slice(0, size), true),
       material = texture(pixels.slice(size, size * 2), false);
+    this.icons = new ItemIcons(this.gl, blocks, items, albedo, material);
+    this.scene.add(this.cracks.group);
     const lookBytes = new Uint8Array(1024 * 4);
     for (let i = 0; i < 1024; i++) {
       lookBytes[i * 4] = i & 255;
@@ -345,6 +357,7 @@ export class TerrainRenderer {
     this.stats.columns = this.columns.size;
   }
   target(boxes: readonly (readonly number[])[], cell: readonly number[] | null): void {
+    this.cracks.target(boxes, cell, this.origin);
     for (const child of [...this.highlight.children]) {
       this.highlight.remove(child);
       const line = child as THREE.LineSegments;
@@ -396,7 +409,7 @@ export class TerrainRenderer {
       const ox = Math.floor(position[0] / 16) * 16,
         oz = Math.floor(position[2] / 16) * 16;
       if (ox !== this.origin.x || oz !== this.origin.z) {
-        for (const child of this.highlight.children) {
+        for (const child of [...this.highlight.children, ...this.cracks.group.children]) {
           child.position.x += this.origin.x - ox;
           child.position.z += this.origin.z - oz;
         }
@@ -482,6 +495,8 @@ export class TerrainRenderer {
     for (const c of [...this.columns.values()]) this.remove(c.x, c.z);
     this.target([], null);
     this.environment.dispose();
+    this.icons.dispose();
+    this.cracks.dispose();
     this.held.dispose();
     this.drops.dispose();
     this.explosives.dispose();
