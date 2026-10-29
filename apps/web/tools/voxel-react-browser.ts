@@ -1505,9 +1505,7 @@ try {
   );
   assert.equal((await debug(kidPage)).focused, false);
   await kidPage.bringToFront();
-  await kidPage
-    .getByRole("button", { name: "כניסה לעולם", exact: true })
-    .click();
+  await kidPage.locator(".voxel-session__world canvas").click();
   await kidPage.waitForFunction(
     () => (window as any).surfaceRuntime.debug().focused,
   );

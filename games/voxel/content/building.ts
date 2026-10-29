@@ -137,10 +137,7 @@ export const buildingBlocks: BlockDefinition[] = [
       }),
       {
         soundGroup: 'grass',
-        drops: [
-          { itemType: `${wood}_leaves`, count: 1 },
-          { itemType: 'apple', count: 1 },
-        ],
+        drops: [{ itemType: `${wood}_leaves`, count: 1 }],
       },
     ),
   ]),

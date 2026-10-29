@@ -1,6 +1,10 @@
 import { useState } from "react";
-import type { ItemDefinition } from "../../../../../games/voxel/src/shared/content";
+import type {
+  ItemDefinition,
+  BlockDefinition,
+} from "../../../../../games/voxel/src/shared/content";
 import { describeItem } from "../../../../../games/voxel/src/client/item-description";
+import { preferredMiningTool } from "../../../../../games/voxel/src/shared/mining-rules";
 
 const tabs = [
   ["controls", "מקשים"],
@@ -15,6 +19,7 @@ const tabs = [
 export function VoxelHelp({
   open,
   items,
+  behavior,
   labels,
   onClose,
   onInventory,
@@ -22,6 +27,7 @@ export function VoxelHelp({
 }: {
   open: boolean;
   items: readonly ItemDefinition[];
+  behavior: readonly Omit<BlockDefinition, "variants">[];
   labels: Readonly<Record<string, string>>;
   onClose: () => void;
   onInventory: () => void;
@@ -30,6 +36,43 @@ export function VoxelHelp({
   const [tab, setTab] = useState<(typeof tabs)[number][0]>("controls");
   if (!open) return null;
   const name = (item: ItemDefinition) => labels[item.itemType] ?? item.labelKey;
+  const required = new Map<
+    string,
+    { tool: string; tier: number; blocks: string[] }
+  >();
+  const first = [
+    "stone",
+    "coal_ore",
+    "cobblestone",
+    "iron_ore",
+    "gold_ore",
+    "lapis_ore",
+    "diamond_ore",
+    "obsidian",
+  ];
+  const order = (family: string) =>
+    first.includes(family) ? first.indexOf(family) : first.length;
+  for (const block of [...behavior].sort(
+    (a, b) => order(a.family) - order(b.family),
+  )) {
+    if (!block.mining.requiresTool) continue;
+    const kind = preferredMiningTool(block),
+      tier = block.mining.tier ?? 0;
+    const tool = items
+      .filter(
+        (item) =>
+          item.tool && item.tool.kind === kind && item.tool.tier >= tier,
+      )
+      .sort((a, b) => a.tool!.tier - b.tool!.tier)[0];
+    if (!tool) continue;
+    const group = required.get(tool.itemType) ?? {
+      tool: name(tool),
+      tier: tool.tool!.tier,
+      blocks: [],
+    };
+    group.blocks.push(labels[block.family] ?? block.family);
+    required.set(tool.itemType, group);
+  }
   return (
     <aside className="voxel-session__help" aria-label="מדריך המשחק">
       <header>
@@ -79,7 +122,10 @@ export function VoxelHelp({
                 <dt>שמאלי</dt>
                 <dd>כרייה (החזק), או תקיפת שחקן מכוון כשקרבות מופעלים</dd>
                 <dt>ימני</dt>
-                <dd>הנחת בלוק, פתיחת שולחן יצירה או תיבה, ושימוש בדלי</dd>
+                <dd>
+                  אכילת המזון שביד, הנחת בלוק, פתיחת שולחן יצירה או תיבה, ושימוש
+                  בדלי
+                </dd>
                 <dt>1–9</dt>
                 <dd>בחירת משבצת בסרגל המהיר</dd>
                 <dt>אמצעי</dt>
@@ -95,7 +141,7 @@ export function VoxelHelp({
                 <dt>T / Enter</dt>
                 <dd>פתיחת הצ׳אט</dd>
                 <dt>H / Esc</dt>
-                <dd>מדריך המשחק / שחרור העכבר</dd>
+                <dd>מדריך המשחק / שחרור העכבר בלי לצאת מהעולם</dd>
               </dl>
             </section>
             <section>
@@ -168,6 +214,46 @@ export function VoxelHelp({
               </p>
             </section>
             <section>
+              <h3>איזה כלי צריך לכרייה?</h3>
+              <p>
+                הטבלה מציגה את הכלי החלש ביותר שמספיק. אפשר להשתמש גם בכלי מאותו
+                סוג מחומר חזק יותר. בלי הכלי הנדרש הבלוק לא יישבר.
+              </p>
+              <table>
+                <thead>
+                  <tr>
+                    <th>מה כורים</th>
+                    <th style={{ minWidth: "6rem" }}>הכלי הנדרש לפחות</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...required]
+                    .sort((a, b) => a[1].tier - b[1].tier)
+                    .map(([key, group]) => (
+                      <tr key={key}>
+                        <td>
+                          {group.blocks.slice(0, 4).join(" · ")}
+                          {group.blocks.length > 4 && (
+                            <details>
+                              <summary>
+                                ועוד {group.blocks.length - 4} סוגי בלוקים
+                              </summary>
+                              <p>{group.blocks.slice(4).join(" · ")}</p>
+                            </details>
+                          )}
+                        </td>
+                        <td>{group.tool}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+              <p>
+                גזעים, לוחות, שולחנות ותיבות: גרזן. עפר, חול וחצץ: את. אפשר
+                לכרות אותם גם ביד, אבל הכלי המתאים מהיר בהרבה. צמחים, לפידים
+                וסולמות נאספים מיד בלי כלי.
+              </p>
+            </section>
+            <section>
               <h3>הכלים במשחק</h3>
               <table>
                 <thead>
@@ -180,6 +266,7 @@ export function VoxelHelp({
                 <tbody>
                   {items
                     .filter((item) => item.tool)
+                    .sort((a, b) => a.tool!.tier - b.tool!.tier)
                     .map((item) => (
                       <tr key={item.itemType}>
                         <td>{name(item)}</td>
@@ -236,14 +323,16 @@ export function VoxelHelp({
             <section>
               <h3>מזון והתאוששות</h3>
               <p>
-                מד המזון נפרד ממד החיים. בחרו אוכל בסרגל ולחצו R, או בחרו אוכל
-                במלאי ולחצו על אכילה. מזון מספיק מאפשר התאוששות וריצה. נפילה,
+                מד המזון נפרד ממד החיים. בחרו אוכל בסרגל ולחצו ימנית כדי לאכול.
+                אפשר גם ללחוץ R. לחיצה על Esc רק משחררת את העכבר, ואז אפשר
+                להשתמש בכפתור האכילה. מזון מספיק מאפשר התאוששות וריצה. נפילה,
                 טביעה, לבה, פיצוצים וקרבות עלולים לפגוע בחיים.
               </p>
               <p>
-                אספו פריטים שנופלים לידכם ובדקו בספר המתכונים מאכלים ובישול. מד
-                האוויר מציין כמה זמן נשאר מתחת למים. אחרי נפילה חוזרים דרך כפתור
-                החזרה לעולם; פריטים שנפלו נשארים בעולם.
+                תפוחים מופיעים לעיתים רחוקות בעלי אלון. אספו פריטים שנופלים
+                לידכם ובדקו בספר המתכונים מאכלים ובישול. מד האוויר מציין כמה זמן
+                נשאר מתחת למים. אחרי נפילה חוזרים דרך כפתור החזרה לעולם; פריטים
+                שנפלו נשארים בעולם.
               </p>
             </section>
             <section>

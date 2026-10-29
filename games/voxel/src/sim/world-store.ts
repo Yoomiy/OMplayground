@@ -1,3 +1,4 @@
+import { compatibleCheckpointContent } from '../shared/checkpoint-content.ts';
 import { around, columnKey, inBounds, BOUNDS } from '../shared/protocol.ts';
 import { localIndex, worldCell, MAX_COLUMN_REVISION } from '../shared/chunk-wire.ts';
 import type { ContentManifest } from '../shared/content.ts';
@@ -65,7 +66,7 @@ export class WorldStore {
     if (
       !checkpointObject(value, ['schema', 'contentHash', 'columns']) ||
       value.schema !== 1 ||
-      value.contentHash !== content.hash ||
+      !compatibleCheckpointContent(value.contentHash, content) ||
       !Array.isArray(value.columns)
     )
       return invalid();

@@ -1,3 +1,4 @@
+import { compatibleCheckpointContent } from '../shared/checkpoint-content.ts';
 import { createHash } from 'node:crypto';
 import { readRoomCheckpoint } from '../sim/room-checkpoint.ts';
 import type { RoomCheckpoint, RoomCheckpointInput } from '../sim/room-checkpoint.ts';
@@ -148,7 +149,7 @@ export class CheckpointStorage {
       manifest.sequence !== pointer.sequence ||
       !checkpointObject(manifest.world, ['schema', 'contentHash', 'columns']) ||
       manifest.world.schema !== 1 ||
-      manifest.world.contentHash !== this.content.hash ||
+      !compatibleCheckpointContent(manifest.world.contentHash, this.content) ||
       !manifest.room ||
       typeof manifest.room !== 'object' ||
       Array.isArray(manifest.room) ||
@@ -163,13 +164,14 @@ export class CheckpointStorage {
       this.build,
     );
     if (room.worldId !== this.worldId) throw new Error('checkpoint world mismatch');
-    const refs = manifest.world.columns as StoredObject[];
+    const refs = manifest.world.columns as StoredObject[],
+      savedContentHash = manifest.world.contentHash;
     const columns = await eachObject(refs, async (ref) => {
       const value = await this.read(ref);
       if (
         !checkpointObject(value, ['schema', 'contentHash', 'column']) ||
         value.schema !== 1 ||
-        value.contentHash !== this.content.hash
+        value.contentHash !== savedContentHash
       )
         throw new Error('invalid checkpoint column object');
       return value.column;

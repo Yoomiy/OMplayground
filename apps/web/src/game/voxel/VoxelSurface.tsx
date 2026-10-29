@@ -435,12 +435,21 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
       );
     return () => clearTimeout(timer);
   }, [staffState]);
+  const mouseReleased =
+    hud?.status === "paused" &&
+    hud.graphics === "ready" &&
+    (hud.lifecycle === "playing" ||
+      (hud.role === "observer" && hud.lifecycle === "paused"));
   const showStatus =
     terminal ||
     !!mountError ||
     !!errorCode ||
     !hud ||
-    (hud.status !== "playing" && !hud.inventoryOpen && !help && !panelOpen);
+    (hud.status !== "playing" &&
+      !mouseReleased &&
+      !hud.inventoryOpen &&
+      !help &&
+      !panelOpen);
   useEffect(() => {
     if (hud?.status === "playing") {
       if (menu.current) menu.current.open = false;
@@ -733,6 +742,7 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
       <VoxelHelp
         open={help}
         items={browser?.content.items ?? []}
+        behavior={browser?.content.behavior ?? []}
         labels={browser?.ITEM_LABELS ?? {}}
         onClose={closeHelp}
         canUseInventory={
@@ -917,7 +927,7 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
               disabled={
                 !selectedItem?.food ||
                 hud.vitals.food === 20 ||
-                hud.status !== "playing"
+                (hud.status !== "playing" && !mouseReleased)
               }
               onClick={() => command({ type: "eat" })}
             >
