@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "buildId": "c6a2adac33c3ec1f094cd76d3ff7465686ee8c13b5df6174af20ff67c2871a02",
+  "buildId": "8658d3b91ebdaeeb4df5c82be0e829bb0f6944043f01a3871eb42e186615b8e8",
   "inputs": [
     {
       "path": "LICENSE",
@@ -200,7 +200,7 @@
     },
     {
       "path": "src/client/runtime.ts",
-      "hash": "8a108e699c8c3dd2a506c8859992e6cfc970b0287519145e627ec84a1e6652ee"
+      "hash": "d3b2bc5462af7407c9b32f00b26e93d8f621a0f63fa5cd62fa933c323f38ef83"
     },
     {
       "path": "src/client/style.css",
@@ -224,7 +224,7 @@
     },
     {
       "path": "src/client/world-audio.ts",
-      "hash": "5d09f1cb6b7691943dd8a9c02cf1e3bcb0c380946a5e7e115c5aa9650c4ef3f2"
+      "hash": "99fc56ca9f6351f22c07c2b898f31a9bcfe4e016a3738783579866bf9829f9ec"
     },
     {
       "path": "src/client/world-clock.ts",
@@ -522,7 +522,7 @@
     },
     {
       "path": "artifacts/build.json",
-      "hash": "a6bcb5576f7854ebca4d9adf5d32c0967842b1d3a45c14e699053ac0bbf21ab4"
+      "hash": "edd826ff4aefe5ed30d665437f5a9eb3585cab13b911d1461d0e2d6a5bb90a81"
     },
     {
       "path": "artifacts/content-bindings.ts",
@@ -538,15 +538,15 @@
     },
     {
       "path": "artifacts/release.json",
-      "hash": "69734f93a761efebf4c17be8a740bfd2c6840dc62d59da8d00aa354734e1ace0"
+      "hash": "cc70ded2d11bdc1268015494ac1a991a6c91d0569edaf8fb0a734c3b79ae9cd1"
     },
     {
       "path": "dist-client/assets/engine-worker-DYAFKrDe.js",
       "hash": "99d3377c134578cd5e9bdd923e7707547e62c3a2a0a1a64c90adec5f1121bf04"
     },
     {
-      "path": "dist-client/assets/index-BB3OulOK.js",
-      "hash": "c3b487c4b176f1594b9a6cbdc9555b6cec52be9ca7f342eb51ad91664d126703"
+      "path": "dist-client/assets/index-Cd0K0y0_.js",
+      "hash": "e1c7fc655238326a661ac8e4672cf1141162332dc5dd62e3d37562e47a676521"
     },
     {
       "path": "dist-client/assets/index-P3AiFv1J.css",
@@ -558,11 +558,11 @@
     },
     {
       "path": "dist-client/index.html",
-      "hash": "904a25de82ba94f1b53f8ba5bad4569af4066f5dc22ea2283bd0c7df6d8f0e3a"
+      "hash": "512dd8d8496df9850270a1eac32f849bcdd02c0fdfe79d4e4c4d7f54a2db1d13"
     },
     {
       "path": "dist-server/build.json",
-      "hash": "a6bcb5576f7854ebca4d9adf5d32c0967842b1d3a45c14e699053ac0bbf21ab4"
+      "hash": "edd826ff4aefe5ed30d665437f5a9eb3585cab13b911d1461d0e2d6a5bb90a81"
     },
     {
       "path": "dist-server/content.json",

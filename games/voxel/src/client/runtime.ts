@@ -1435,6 +1435,7 @@ export async function mountVoxel(
         event.target.closest('input, textarea, select, [contenteditable="true"], dialog[open]'))
     )
       return;
+    audio.unlock();
     const movementCode =
       (
         { ArrowUp: 'KeyW', ArrowDown: 'KeyS', ArrowLeft: 'KeyA', ArrowRight: 'KeyD' } as Record<
@@ -1535,6 +1536,7 @@ export async function mountVoxel(
     });
   };
   const onMouseDown = (event: MouseEvent) => {
+    audio.unlock();
     if (inputMode === 'touch') return;
     if (!ownsPointerLock()) {
       command({ type: 'resume' });

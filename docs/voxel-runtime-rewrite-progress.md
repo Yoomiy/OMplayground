@@ -2124,3 +2124,18 @@ The user confirmed applying `20261029220000_voxel_unique_world_seeds.sql` locall
 Focused checks pass: game/service types; 13 checkpoint/inventory/survival checks; six service persistence checks; actual published-Wasm movement and drops near the numeric guard, wire validation, old-bounds expansion and far-edit socket recovery; distinct reserved seeds, worker termination before the first save and committed-seed restart. The latter flows also pass against the packaged gateway. Isolated PostgreSQL/PGlite verifies 32 distinct seeds, idempotence, ownership fencing, pre-checkpoint restart, legacy saves and browser-role denial. A permanent PostgreSQL integration case covers reservation and concurrent distinct-world allocation; the PostgreSQL CLI suite was not run in this executor. No broad browser or scale suite was added.
 
 Matched release: `c6a2adac33c3ec1f094cd76d3ff7465686ee8c13b5df6174af20ff67c2871a02`. Restart the local stack and refresh the browser; no world reset is required. This is committed locally with no staging push.
+
+
+## Voice signaling and game-audio activation
+
+The user reported Vite WebSocket hang-ups on `/voxel-media/rtc/v1`, a subsequent ticket-validation 401, and silent game effects. The current branch was first merged locally into `dev/staging` at `fb0ae1d`; no push was made.
+
+A focused regression reproduces a voice proof race: the game connection renews while the separate school authorization read is running, but voice still rejects the expiry sampled before IO. Voice now uses the fresh school result and the current same game connection. Connection/cohort loss, expired school proofs, media revisions and independent worker deadlines still fail closed. A second regression reproduces successful slow media reads exhausting the proof when renewal waits half the remaining lifetime. Renewal now reserves its measured provider duration. Both regressions fail against the previous code and pass after the changes.
+
+A media handshake whose ticket expires during policy IO now sends an explicit 401 rather than destroying the socket with no HTTP response. Late replies still cannot allocate a connection. `VOXEL_VOICE_CONNECTION_FAILED` logs fixed phase/reason codes and an upstream status when available, without request URLs, tickets or credentials. Existing logging formats/levels are retained. Consumed tickets remain single-use, so a fallback validation 401 alone does not establish an incorrect LiveKit secret.
+
+Automatic world entry did not create/unlock game audio. A normal focused movement key or world click now unlocks the effects context; an already-running context is reused. A software-browser check used automatic entry with no resume command, pressed W and measured a real footstep waveform after the master output (RMS about 0.001). Muting measured zero; disposal closed the context.
+
+Validation: game/service types, 11 focused media checks, existing dev-proxy routing extended to `/rtc/v1`, and a real Vite → packaged gateway → signaling worker → local provider binary join pass. The proxy flow verifies the private provider credential is substituted upstream and a consumed browser ticket cannot validate again. These checks made no hosted calls and do not prove the user's self-hosted SFU/ICE deployment is healthy. No broad browser/media suite was run.
+
+Matched release: `8658d3b91ebdaeeb4df5c82be0e829bb0f6944043f01a3871eb42e186615b8e8`. Restart the stack and refresh the browser. No migration, environment change or world reset is required. The fixes are committed locally and merged into local `dev/staging` without pushing.

@@ -295,3 +295,47 @@ test("the signaling worker ends provider media on its own deadline while the gat
     await fixture.terminate();
   }
 });
+
+test("slow media policy reads renew before the current proof expires", async () => {
+  const upstream = new WebSocketServer({ port: 0, host: "127.0.0.1" });
+  await once(upstream, "listening");
+  const address = upstream.address();
+  assert(address && typeof address === "object");
+  upstream.on("connection", (socket) =>
+    socket.send(
+      new SignalResponse({
+        message: { case: "join", value: { serverVersion: "fixture" } },
+      }).toBinary(),
+    ),
+  );
+  const server = await edge(`ws://127.0.0.1:${address.port}`);
+  let client: WebSocket | undefined,
+    calls = 0;
+  try {
+    const { ticket } = server.relay.issue({
+      scope: randomUUID(),
+      token: "private-latency-fixture",
+      publish: false,
+      expiresAt: Date.now() + 4000,
+      revalidate: async () => {
+        calls++;
+        const expiresAt = Date.now() + 1100;
+        await new Promise((resolve) => setTimeout(resolve, 400));
+        return { expiresAt };
+      },
+    });
+    const connected = probe(server.origin + "?access_token=" + ticket);
+    client = connected.socket;
+    assert.equal(await connected.opened, 101);
+    await wait(() => connected.frames.length > 0);
+    await new Promise((resolve) => setTimeout(resolve, 1300));
+    assert.ok(calls >= 3);
+    assert.equal(server.relay.stats.sessions, 1);
+    assert.equal(client.readyState, WebSocket.OPEN);
+  } finally {
+    client?.terminate();
+    await server.close();
+    for (const socket of upstream.clients) socket.terminate();
+    await new Promise<void>((resolve) => upstream.close(() => resolve()));
+  }
+});
