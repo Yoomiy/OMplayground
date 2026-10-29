@@ -86,3 +86,21 @@ or stale release fails preflight rather than starting a mismatched build.
 `npm run dev:voxel` remains the separate game-only sandbox at
 http://127.0.0.1:5194. It is useful for isolated mechanics and does not start the
 school app or use Supabase admission.
+
+## Classroom startup failures
+
+`Classroom media readiness failed (HTTP 401)` means the read-only LiveKit API
+check was rejected. Confirm `LIVEKIT_URL` reaches your LiveKit server's API and
+`LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` match one entry in that server's `keys`
+configuration. A proxy authentication gate or incorrect server clock can also
+reject the token. The service must reach `/twirp/livekit.RoomService/ListRooms`;
+successful WebSocket connectivity alone does not establish API access.
+
+Set these values in `apps/classroom-server/.env`. The launcher also loads the old
+Minecraft and voxel env files as fallbacks, so check for stale overrides. Values
+already exported in the shell take precedence over env files. Stop and rerun
+`npm run dev:app` after editing env files; Node's source watcher does not reload
+the launcher's env-file configuration.
+
+Readiness errors include safe HTTP/error codes and guidance; upstream response
+bodies and credentials are omitted.

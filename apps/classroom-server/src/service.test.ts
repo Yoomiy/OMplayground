@@ -77,6 +77,7 @@ async function fixture(background = false) {
     query: string;
   }> = [];
   let failReadiness = false;
+  let failMedia = false;
   let failAttendance = false;
   let blockAttendance: Promise<void> | undefined;
   let attendanceEntered: () => void = () => {};
@@ -118,6 +119,14 @@ async function fixture(background = false) {
       return;
     }
     if (url.pathname === "/twirp/livekit.RoomService/ListRooms") {
+      if (failMedia) {
+        res.statusCode = 401;
+        reply({
+          code: "unauthenticated",
+          msg: "fixture-private-upstream-payload",
+        });
+        return;
+      }
       try {
         await new TokenVerifier(
           fixtureEnv.LIVEKIT_API_KEY,
@@ -231,6 +240,9 @@ async function fixture(background = false) {
     client,
     failReadiness: () => {
       failReadiness = true;
+    },
+    failMedia: () => {
+      failMedia = true;
     },
     failAttendance: () => {
       failAttendance = true;
@@ -531,6 +543,32 @@ test("a failed backend probe prevents listening and keeps readiness unavailable"
           c.path === "/twirp/livekit.RoomService/ListRooms",
       ),
     ).toBe(true);
+  } finally {
+    await f.close();
+  }
+});
+
+test("a rejected LiveKit readiness probe exposes safe status and configuration guidance", async () => {
+  const f = await fixture();
+  try {
+    f.failMedia();
+    const error = await f.service.listen().catch((error: unknown) => error);
+    expect(error).toMatchObject({
+      backend: "media",
+      httpStatus: 401,
+      code: "unauthenticated",
+    });
+    expect((error as Error).message).toContain("HTTP 401");
+    expect((error as Error).message).toContain("LIVEKIT_API_SECRET");
+    const serialized = JSON.stringify(pino.stdSerializers.err(error as Error));
+    for (const secret of [
+      "fixture-private-upstream-payload",
+      fixtureEnv.LIVEKIT_API_SECRET,
+      fixtureEnv.LIVEKIT_API_KEY,
+    ])
+      expect(serialized).not.toContain(secret);
+    expect(f.service.server.listening).toBe(false);
+    await request(f.service.app).get("/ready").expect(503, { ok: false });
   } finally {
     await f.close();
   }
