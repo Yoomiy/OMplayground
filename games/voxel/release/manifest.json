@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "buildId": "ac2f7fb648a0afc81aea795dc1f9a975c06388368fa0163229ef17f9b55af8c1",
+  "buildId": "8beabee44d43b4a0a0ceb1b26d534e45b540247dcd9da1d9f5c87dd7a73f124d",
   "inputs": [
     {
       "path": "LICENSE",
@@ -172,7 +172,7 @@
     },
     {
       "path": "src/client/inventory-controls.ts",
-      "hash": "46786ce86ce69c2d54a55ea6cf2daf580d76728b9b7534632af7e4dddb8480b5"
+      "hash": "a8b74139d4e853c730b537aa43bb0ebe2bc1731cdd8a9db1901a4beaf1637dec"
     },
     {
       "path": "src/client/inventory.css",
@@ -514,7 +514,7 @@
     },
     {
       "path": "artifacts/build.json",
-      "hash": "4a812ebd15c5d043751c9c1ab01e1c3cee6b4a7814aab034f703756d95fbe13e"
+      "hash": "f18075972b28c4eeaf0eb5b6c8613f54bc5b194b5c719056ce67e2ffecfacdca"
     },
     {
       "path": "artifacts/content-bindings.ts",
@@ -530,19 +530,19 @@
     },
     {
       "path": "artifacts/release.json",
-      "hash": "f6524ffead18cffd74f1c4663299e2e391af9d63e0b29d23f6ce5b14af6efdaf"
+      "hash": "4679d35a02947752b45f49d32c3d07e9566686a40aa86e2802f11c6fae08a504"
     },
     {
       "path": "dist-client/assets/engine-worker-DYAFKrDe.js",
       "hash": "99d3377c134578cd5e9bdd923e7707547e62c3a2a0a1a64c90adec5f1121bf04"
     },
     {
-      "path": "dist-client/assets/index-BJR-UF1b.css",
-      "hash": "ed44b97ecc09afb9f18f4ab10516ebcd08f0d94a8dd526fcd7c83528abcf5d37"
+      "path": "dist-client/assets/index-BIs8EFlx.js",
+      "hash": "ecef46aaef370a5d9fe6d17e418afb259cbd4a60c567d3a7c4152bba8b8c8d27"
     },
     {
-      "path": "dist-client/assets/index-CBvZKdhK.js",
-      "hash": "56f5d2ac47f9037be8f620fb3042ac21e59950d28839ad28cc89b527eb6f84ff"
+      "path": "dist-client/assets/index-BJR-UF1b.css",
+      "hash": "ed44b97ecc09afb9f18f4ab10516ebcd08f0d94a8dd526fcd7c83528abcf5d37"
     },
     {
       "path": "dist-client/assets/voxel_engine_bg-1ejYMYOZ.wasm",
@@ -550,11 +550,11 @@
     },
     {
       "path": "dist-client/index.html",
-      "hash": "a020f55dd7230d5e0e139175ffe44908d1f8a00d18d86f5a7019cc116dadd5b1"
+      "hash": "b629ab1b24406584a70fc71fe7901d25a3a692de281d028061edd548e3c0a6d2"
     },
     {
       "path": "dist-server/build.json",
-      "hash": "4a812ebd15c5d043751c9c1ab01e1c3cee6b4a7814aab034f703756d95fbe13e"
+      "hash": "f18075972b28c4eeaf0eb5b6c8613f54bc5b194b5c719056ce67e2ffecfacdca"
     },
     {
       "path": "dist-server/content.json",

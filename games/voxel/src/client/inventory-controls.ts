@@ -84,10 +84,22 @@ export function mountInventoryControls(
     previous: InventoryView | null = null,
     disposed = false;
   let catalogChoice = content.items[0]?.itemType ?? '';
+  let localNotice: { text: string; until: number } | null = null;
   let selectedCount = 0,
     recipesOpen = false,
     recipeSearch = '',
     catalogSearch = '';
+  const renderMessage = () => {
+    const local = localNotice && performance.now() < localNotice.until ? localNotice.text : null;
+    const text = hud.inventoryPending
+      ? 'ממתינים לעדכון…'
+      : (local ?? (hud.message.startsWith('לחצו על העולם') ? '' : hud.message));
+    if (message.textContent !== text) message.textContent = text;
+  };
+  const notify = (text: string) => {
+    localNotice = { text, until: performance.now() + 3000 };
+    renderMessage();
+  };
   const busy = () =>
     hud.inventoryPending ||
     hud.lifecycle !== 'playing' ||
@@ -166,7 +178,7 @@ export function mountInventoryControls(
     if (target) {
       const other = readSlot(target);
       move(ref, target, Math.min(stack.count, item.maxStack - (other?.count ?? 0)));
-    } else message.textContent = 'אין משבצת פנויה להעברה מהירה';
+    } else notify('אין משבצת פנויה להעברה מהירה');
   }
   function slots(title: string, area: InventoryArea, values: readonly Slot[], columns: number) {
     const section = document.createElement('section'),
@@ -307,6 +319,8 @@ export function mountInventoryControls(
         )) {
           const choice = button('', () => {
             catalogChoice = item.itemType;
+            localNotice = null;
+            renderMessage();
             drawCatalog();
           });
           choice.dataset.item = item.itemType;
@@ -330,7 +344,7 @@ export function mountInventoryControls(
         if (state >= 0) {
           runtime.command({ type: 'select', state });
           runtime.command({ type: 'inventory', operation: { kind: 'close' } });
-        } else message.textContent = 'הפריט הזה אינו בלוק. אפשר להוסיף אותו לתיק.';
+        } else notify('הפריט הזה אינו בלוק. אפשר להוסיף אותו לתיק.');
       });
       choose.disabled = busy();
       const grant = button('הוספה לתיק', () => {
@@ -455,6 +469,19 @@ export function mountInventoryControls(
     const pendingChanged = hud?.inventoryPending !== state.inventoryPending;
     const statusChanged = hud?.status !== state.status || hud?.lifecycle !== state.lifecycle;
     const foodChanged = hud?.vitals?.food !== state.vitals?.food;
+    if (
+      opening ||
+      !state.inventoryOpen ||
+      state.inventoryPending ||
+      statusChanged ||
+      hud?.inventory?.revision !== state.inventory?.revision ||
+      hud?.inventory?.container?.id !== state.inventory?.container?.id ||
+      hud?.inventory?.container?.revision !== state.inventory?.container?.revision ||
+      (hud?.message !== state.message &&
+        state.message &&
+        !state.message.startsWith('לחצו על העולם'))
+    )
+      localNotice = null;
     hud = state;
     if (state.inventoryOpen && !dialog.open) {
       dialog.showModal();
@@ -470,11 +497,7 @@ export function mountInventoryControls(
       !state.inventoryPending &&
       ['playing', 'paused'].includes(state.status);
     open.disabled = use.disabled = !available;
-    message.textContent = state.inventoryPending
-      ? 'ממתינים לעדכון…'
-      : state.message.startsWith('לחצו על העולם')
-        ? ''
-        : state.message;
+    renderMessage();
     if (
       state.inventoryOpen &&
       (opening || state.inventory !== previous || pendingChanged || statusChanged || foodChanged)

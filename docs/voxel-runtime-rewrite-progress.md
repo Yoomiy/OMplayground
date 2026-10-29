@@ -2028,7 +2028,7 @@ without discarding its loaded world or owned inventory. Input remains frozen
 through graphics loss and the player explicitly resumes afterward.
 
 The current matched published release is
-`ac2f7fb648a0afc81aea795dc1f9a975c06388368fa0163229ef17f9b55af8c1`.
+`8beabee44d43b4a0a0ceb1b26d534e45b540247dcd9da1d9f5c87dd7a73f124d`.
 The unchanged Wasm engine and its input/artifact hashes match the prior release;
 client/server bundles and the release snapshot are rebuilt together. This
 executor has no Rust compiler, so no fresh engine compilation is claimed.
@@ -2046,3 +2046,10 @@ The user reports that the app starts and asks to launch with less repeated
 testing. Use focused checks for concrete fixes and normal staging feedback.
 Staging repairs are batched; the main PR and manual deployment walkthrough
 follow the user's confirmation that staging works.
+
+A local inventory-feedback follow-up preserves quick-transfer/catalog hints for
+three seconds across routine HUD refreshes. New operations and authoritative
+feedback clear stale hints. Status text changes only when its content changes.
+Strict game types and the rebuilt matched release pass; no broad test rerun is
+used for this small presentation change. The user explicitly forbids pushing
+`dev/staging`; these repairs remain local for manual feedback.

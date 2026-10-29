@@ -15,7 +15,7 @@ Repairs for the 2026-10-29 source review of `90fe575`. The first batch is `6af81
 | UI-12 | Help explains survival hold mining, sprint, sneak, creative flight, slot selection and TNT ignition. |
 | BUG-01, BUG-02 | A brief input gap or authoritative ray miss pauses mining for up to 200 ms before cancellation. No mining ticks accrue during that interruption. Movement still expires after 100 ms. Block replacement, tool changes, focus loss and permission loss still invalidate mining. |
 | BUG-03 | Release may finish only the final two valid server ticks. Earlier release cancels immediately. |
-| BUG-04 | Transient gameplay rejection messages remain visible during normal play, with three seconds to read them. |
+| BUG-04 | Transient gameplay rejection messages remain visible during normal play, with three seconds to read them. Local inventory hints also survive routine HUD refreshes and yield to new operations/server feedback; unchanged text is not rewritten on every tick. |
 | BUG-07, BUG-08 | E respects other open dialogs. Pointer-lock rejection displays retry guidance and freezes local input. |
 | BUG-09 | A running session restores GPU resources from retained scene/texture data, including the CPU-backed biome atlas. Input stays frozen until rendering returns and the player explicitly resumes. Session/inventory stay in place; errors and ended sessions are preserved. |
 | BUG-10 | Wheel, V and the session menu select first/third person. A native collision-volume query keeps the camera before walls and respects partial block shapes. The local avatar carries its held item/equipment. Movement, interaction reach and proximity voice remain at the player's position. |
@@ -31,6 +31,6 @@ Repairs for the 2026-10-29 source review of `90fe575`. The first batch is `6af81
 
 ## Release and next step
 
-The matched published game release is `ac2f7fb648a0afc81aea795dc1f9a975c06388368fa0163229ef17f9b55af8c1`.
+The matched published game release is `8beabee44d43b4a0a0ceb1b26d534e45b540247dcd9da1d9f5c87dd7a73f124d`.
 
 Terrain artwork continues to use the procedural world-texture pipeline (UI-13). Continue with concrete staging feedback, then the requested main PR and manual deployment walkthrough. No additional broad qualification loop is required for these presentation repairs.
