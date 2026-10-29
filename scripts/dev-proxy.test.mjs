@@ -55,7 +55,7 @@ test('one dev port preserves service paths, auth/origin headers and binary WebSo
       assert.equal(response.status, 200);
       assert.deepEqual(await response.json(), { name, path: forwarded, method: 'POST', authorization: 'Bearer local-fixture', origin, body: '{"fixture":true}' });
     }
-    for (const [route, backend] of [['/voxel', voxel], ['/voxel-media/rtc?ticket=fixture', voxel], ['/socket.io/?EIO=4&transport=websocket', game]]) {
+    for (const [route, backend] of [['/voxel', voxel], ['/voxel-media/rtc?ticket=fixture', voxel], ['/voxel-media/rtc/v1?access_token=opaque-fixture&join_request=CAESAA%3D%3D', voxel], ['/socket.io/?EIO=4&transport=websocket', game]]) {
       const socket = new WebSocket(origin.replace('http:', 'ws:') + route, { origin }); sockets.push(socket);
       socket.on('error', () => {});
       await once(socket, 'open', { signal: AbortSignal.timeout(5000) });

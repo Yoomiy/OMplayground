@@ -31,6 +31,7 @@ type Session = {
   sequence: number;
   pending: Map<number, number>;
   pendingBytes: number;
+  renewalMs: number;
 };
 const bytes = (data: WebSocket.RawData) =>
   Buffer.isBuffer(data)
@@ -65,12 +66,15 @@ export class VoiceSignaling {
   private upstreamStatus: number | null = null;
   private startup: ReturnType<typeof setTimeout>;
   private rejectReady: (error: Error) => void;
+  private onFailure?: (context: Record<string, string | number>) => void;
   readonly ready: Promise<void>;
   constructor(
     endpoint: string,
     origins: readonly string[],
     allowInsecureLocal = false,
+    onFailure?: (context: Record<string, string | number>) => void,
   ) {
+    this.onFailure = onFailure;
     const url = new URL(endpoint);
     if (
       !["wss:", "https:"].includes(url.protocol) &&
@@ -117,6 +121,14 @@ export class VoiceSignaling {
         return;
       }
       if (message.type === "closed") {
+        if (message.reason !== "CLOSED")
+          this.onFailure?.({
+            phase: "signaling",
+            reason: message.reason,
+            ...(message.upstreamStatus !== undefined
+              ? { upstreamStatus: message.upstreamStatus }
+              : {}),
+          });
         this.closures[message.reason] =
           (this.closures[message.reason] ?? 0) + 1;
         if (message.upstreamStatus !== undefined)
@@ -295,7 +307,11 @@ export class VoiceSignaling {
           ? "/rtc/v1"
           : null;
     if (!path) return false;
-    const deny = () => {
+    let rejected = false;
+    const deny = (reason: string) => {
+      if (rejected) return;
+      rejected = true;
+      this.onFailure?.({ phase: "admission", reason });
       if (!socket.destroyed)
         socket.end(
           "HTTP/1.1 401 Unauthorized\r\nConnection: close\r\nContent-Length: 0\r\n\r\n",
@@ -311,7 +327,7 @@ export class VoiceSignaling {
       !ticket ||
       performance.now() >= ticket.until
     ) {
-      deny();
+      deny(!this.allowed(request) ? "ORIGIN_DENIED" : "TICKET_UNAVAILABLE");
       return true;
     }
     this.tickets.delete(token);
@@ -319,7 +335,7 @@ export class VoiceSignaling {
     const started = performance.now(),
       wall = Date.now();
     const timeout = setTimeout(
-      () => socket.destroy(),
+      () => deny("POLICY_TIMEOUT"),
       Math.max(0, ticket.until - started),
     );
     void ticket.grant
@@ -328,13 +344,18 @@ export class VoiceSignaling {
         clearTimeout(timeout);
         if (
           !proof ||
+          rejected ||
           socket.destroyed ||
           performance.now() >= ticket.until ||
           this.revoked(ticket.grant) ||
           this.failed ||
           this.closing
         ) {
-          deny();
+          deny(
+            performance.now() >= ticket.until
+              ? "TICKET_EXPIRED"
+              : "POLICY_DENIED",
+          );
           return;
         }
         const until = this.until(proof.expiresAt, started, wall);
@@ -353,6 +374,7 @@ export class VoiceSignaling {
             sequence: 0,
             pending: new Map(),
             pendingBytes: 0,
+            renewalMs: performance.now() - started,
           };
           this.sessions.set(session.id, session);
           this.scopes.set(session.grant.scope, session.id);
@@ -397,14 +419,16 @@ export class VoiceSignaling {
       })
       .catch(() => {
         clearTimeout(timeout);
-        deny();
+        deny("POLICY_UNAVAILABLE");
       });
     return true;
   }
   private schedule(session: Session) {
     session.timer = setTimeout(
       () => void this.renew(session),
-      Math.max(1, (session.until - performance.now()) / 2),
+      // Proofs expire from request start. Reserve the measured policy latency
+      // so a slow successful read can finish before the independent deadline.
+      Math.max(1, (session.until - performance.now()) / 2 - session.renewalMs),
     );
   }
   private async renew(session: Session) {
@@ -423,6 +447,7 @@ export class VoiceSignaling {
         return;
       }
       session.until = this.until(proof.expiresAt, started, wall);
+      session.renewalMs = performance.now() - started;
       this.post({ type: "renew", id: session.id, until: session.until });
       this.schedule(session);
     } catch {

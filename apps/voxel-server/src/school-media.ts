@@ -197,13 +197,12 @@ export class SchoolVoice {
       !this.same(original, after)
     )
       throw new AccessDenied("NOT_IN_ROOM");
+    // The same game connection may renew during the independent school read.
+    // Bound this proof by its fresh result and the current connection, rather
+    // than the superseded expiry sampled before IO. A lost/replaced connection
+    // still fails the cohort checks before and after the media policy read.
     const until = Math.floor(
-      Math.min(
-        started + 5000,
-        before.expiresAt,
-        after.expiresAt,
-        fresh.expiresAt,
-      ),
+      Math.min(started + 5000, after.expiresAt, fresh.expiresAt),
     );
     if (Date.now() >= until) throw new AccessDenied("VOICE_EXPIRED");
     const policy = await this.media.authorize(

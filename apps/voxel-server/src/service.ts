@@ -124,7 +124,12 @@ export async function startVoxelService(
     });
   };
   const credentials = voiceConfig(env),
-    signal = new VoiceSignaling(credentials.endpoint, config.origins);
+    signal = new VoiceSignaling(
+      credentials.endpoint,
+      config.origins,
+      false,
+      (context) => event("VOXEL_VOICE_CONNECTION_FAILED", context),
+    );
   let gateway: Awaited<ReturnType<typeof runtime.createGateway>>;
   try {
     await signal.ready;

@@ -104,3 +104,13 @@ the launcher's env-file configuration.
 
 Readiness errors include safe HTTP/error codes and guidance; upstream response
 bodies and credentials are omitted.
+
+
+Voxel voice signaling uses the same local Vite port at `/voxel-media/rtc/v1`.
+If it fails, retain the `VOXEL_VOICE_CONNECTION_FAILED` event: its fixed
+`phase`/`reason` fields distinguish ticket/policy expiry from upstream rejection,
+and `upstreamStatus` identifies an HTTP rejection by the SFU when available.
+The SDK's subsequent `/validate` request can return 401 after a single-use ticket
+was consumed; that response alone does not diagnose the provider credentials.
+Game effects activate on a normal movement key or world click after automatic
+entry. Restart the local stack and refresh after restoring a new matched release.

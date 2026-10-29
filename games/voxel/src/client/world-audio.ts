@@ -45,6 +45,7 @@ export class WorldAudio {
   }
   unlock(): void {
     if (this.disposed || !this.supported || this.muted) return;
+    if (this.context?.state === 'running') return;
     try {
       if (!this.context) {
         const context = (this.context = new AudioContext());
