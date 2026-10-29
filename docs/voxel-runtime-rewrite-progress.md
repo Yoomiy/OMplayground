@@ -2095,3 +2095,13 @@ E/Esc navigates back from the recipe book to inventory, then back to play. Recip
 Focused delayed-response inventory checks retain identical panel/grid/slot geometry and original slot buttons through stack distribution, recipe preparation, crafting and rejection. The production React/native-worker flow and 1366×850 screenshot review cover the separate book and return-to-game controls. Game/web types and matched packaging pass; no hosted writes or broad gameplay suite was run. See [UI review follow-up](voxel-ui-review-follow-up.md).
 
 Matched release: `596d8ffc6b18024f391e27cf7c26a3a40bf82b806abe88168ac2737f92fbb80c`. Engine/content/protocol and prior authorization/end-session fixes remain intact. No migration, world reset or staging push.
+
+## 2026-10-29 — Play feedback and single-game presentation
+
+Centered inventory carry/drag previews, increased the correct tool's reward to roughly nine times bare-hand speed on wood/ground, removed plant/leaf box presentation, and applied authored item-material tint/cutout to fibers and other material-backed models. Mining remains server-authoritative; instant plants, required tool tiers and tool wear are retained.
+
+Chat/audio now follow the old compact dark widgets. Chat has a draggable header, Enter/send and a live minimized preview; audio shows core controls first and collapses settings/moderation. M uses the existing microphone permission flow. The app/guide no longer exposes creative/survival labels or a gameplay-mode switch; developer fixtures retain internal setup commands. Explicit session-end text and its button consistently describe ending without continuation, with pause saving for later.
+
+Game/web types, focused tool/material checks, four native mining checks, cursor/layout flow and production React/native-room presentation checks pass. Screenshots include compact chat/audio and green held fibers/item thumbnails. No hosted write or SFU/media matrix was run. The user's single remaining disconnect shows expired authorization during slow/unavailable policy reads; this batch preserves those deadlines and makes no provider-outage cure claim.
+
+Matched release: `97e41770853caa0eb4768e5b7784d3b065d00be776b92f8e059d703ae4397795`. Content/engine/protocol are unchanged and existing saves remain compatible. No migration, world reset or staging push. See [UI follow-up](voxel-ui-review-follow-up.md) for scope and evidence.

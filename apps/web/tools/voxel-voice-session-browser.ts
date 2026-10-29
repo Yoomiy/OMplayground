@@ -323,7 +323,7 @@ probe.lateActivation=async()=>{let release;const original=AudioContext.prototype
   stage = "explicit-listening";
   for (const page of pages) {
     await page
-      .getByRole("button", { name: "הצטרפות לשמע", exact: true })
+      .getByRole("button", { name: "כניסה לשיחה", exact: true })
       .click();
     await joined(page);
     assert.equal(
@@ -334,13 +334,13 @@ probe.lateActivation=async()=>{let release;const original=AudioContext.prototype
   result.noAutomaticMicrophone = true;
   assert.equal(
     await observer
-      .getByRole("button", { name: "הפעלת מיקרופון", exact: true })
+      .getByRole("button", { name: "מיקרופון מושתק (M)", exact: true })
       .isDisabled(),
     true,
   );
   stage = "permission-denial";
   await speaker
-    .getByRole("button", { name: "הפעלת מיקרופון", exact: true })
+    .getByRole("button", { name: "מיקרופון מושתק (M)", exact: true })
     .click();
   await speaker
     .getByText("לא ניתנה הרשאת מיקרופון.", { exact: false })
@@ -350,7 +350,7 @@ probe.lateActivation=async()=>{let release;const original=AudioContext.prototype
   stage = "generated-media";
   await speaker.evaluate(() => ((window as any).voiceProbe.mode = "generated"));
   await speaker
-    .getByRole("button", { name: "הפעלת מיקרופון", exact: true })
+    .getByRole("button", { name: "מיקרופון מושתק (M)", exact: true })
     .click();
   await speaker.waitForFunction(
     () => (window as any).voiceProbe.session.state.microphone === "on",
@@ -493,7 +493,7 @@ probe.lateActivation=async()=>{let release;const original=AudioContext.prototype
     captureCalls,
   );
   await speaker
-    .getByRole("button", { name: "הפעלת מיקרופון", exact: true })
+    .getByRole("button", { name: "מיקרופון מושתק (M)", exact: true })
     .click();
   await speaker.waitForFunction(
     () => (window as any).voiceProbe.session.state.microphone === "on",
@@ -517,7 +517,7 @@ probe.lateActivation=async()=>{let release;const original=AudioContext.prototype
     beforeRecovery,
   );
   await speaker
-    .getByRole("button", { name: "הפעלת מיקרופון", exact: true })
+    .getByRole("button", { name: "מיקרופון מושתק (M)", exact: true })
     .click();
   await speaker.waitForFunction(
     () => (window as any).voiceProbe.session.state.microphone === "on",
@@ -565,6 +565,7 @@ probe.lateActivation=async()=>{let release;const original=AudioContext.prototype
   );
   result.reconnectRequiresExplicitMicrophone = true;
   stage = "audited-ui-retry";
+  await observer.locator(".voxel-session__voice-staff > summary").click();
   await observer
     .getByRole("button", { name: "השתקת כל התלמידים", exact: true })
     .click();
@@ -601,7 +602,7 @@ probe.lateActivation=async()=>{let release;const original=AudioContext.prototype
   );
   await listener.evaluate(() => ((window as any).voiceProbe.mode = "pending"));
   await listener
-    .getByRole("button", { name: "הפעלת מיקרופון", exact: true })
+    .getByRole("button", { name: "מיקרופון מושתק (M)", exact: true })
     .click();
   await listener.waitForFunction(
     () => !!(window as any).voiceProbe.resolveCapture,

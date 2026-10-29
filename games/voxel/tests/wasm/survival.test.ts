@@ -228,7 +228,9 @@ test('real Wasm mining earns fixed world ticks despite action bursts, ignores un
     f.tick(15);
     assert.equal(f.store.world.get_block(...cell), content.defaults.oak_log);
     f.store.set(cell[0] + 2, cell[1], cell[2], content.defaults.stone);
-    f.tick(15);
+    f.tick(74);
+    assert.equal(f.store.world.get_block(...cell), content.defaults.oak_log);
+    f.tick();
     assert.equal(f.store.world.get_block(...cell), 0);
     assert.equal(f.room.drops.size, 1);
     const first = f.room.drops.nearby([cell[0], cell[1], cell[2]], 6)[0];

@@ -108,6 +108,7 @@ export function mountInventoryControls(
     selected: SlotRef | null = null,
     previous: InventoryView | null = null,
     disposed = false;
+  let dragging = false;
   let catalogChoice = content.items[0]?.itemType ?? '';
   let localNotice: { text: string; until: number } | null = null;
   let sectionsHost = body;
@@ -493,7 +494,7 @@ export function mountInventoryControls(
     if (give) give.disabled = busy();
     const choose = body.querySelector<HTMLButtonElement>('#inventory-choose');
     if (choose) choose.disabled = busy();
-    cursor.hidden = !stack || !hud.inventoryOpen;
+    cursor.hidden = !stack || !hud.inventoryOpen || dragging;
     cursor.replaceChildren();
     if (stack)
       fillItemSlot(
@@ -537,10 +538,27 @@ export function mountInventoryControls(
       });
       b.draggable = !!stack && !busy();
       b.addEventListener('dragstart', (event) => {
+        dragging = true;
+        cursor.hidden = true;
         selected = ref;
         selectedCount = readSlot(ref)?.count ?? 0;
         event.dataTransfer?.setData('text/plain', JSON.stringify(ref));
         if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
+        const image = b.querySelector('img');
+        if (image && event.dataTransfer) {
+          const preview = document.createElement('canvas');
+          preview.width = preview.height = image.width;
+          preview.getContext('2d')?.drawImage(image, 0, 0, preview.width, preview.height);
+          event.dataTransfer.setDragImage(preview, preview.width / 2, preview.height / 2);
+        }
+      });
+      b.addEventListener('dragend', () => {
+        dragging = false;
+        if (!placement) {
+          selected = null;
+          selectedCount = 0;
+        }
+        updateSelection();
       });
       b.addEventListener('dragover', (event) => {
         if (selected && !busy()) event.preventDefault();
@@ -597,7 +615,7 @@ export function mountInventoryControls(
       tabs.setAttribute('aria-label', 'תצוגת מלאי');
       for (const [id, text] of [
         ['inventory', 'מלאי ויצירה'],
-        ['catalog', 'קטלוג יצירתי'],
+        ['catalog', 'קטלוג פריטים'],
       ] as const) {
         const tab = button(text, () => {
           panel = id;
@@ -700,14 +718,14 @@ export function mountInventoryControls(
     if (view.catalog) {
       const section = document.createElement('section'),
         title = document.createElement('h3');
-      title.textContent = 'קטלוג יצירתי';
+      title.textContent = 'קטלוג פריטים';
       section.className = 'inventory-catalog';
       section.hidden = panel !== 'catalog';
       const search = document.createElement('input');
       search.type = 'search';
       search.id = 'inventory-catalog-search';
       search.placeholder = 'חיפוש פריטים ובלוקים…';
-      search.setAttribute('aria-label', 'חיפוש בקטלוג היצירתי');
+      search.setAttribute('aria-label', 'חיפוש בקטלוג הפריטים');
       search.value = catalogSearch;
       const catalog = document.createElement('div');
       catalog.id = 'inventory-catalog';
@@ -724,9 +742,11 @@ export function mountInventoryControls(
             catalogChoice = item.itemType;
             localNotice = null;
             renderMessage();
-            catalog.querySelectorAll<HTMLButtonElement>('[data-item]').forEach((node) =>
-              node.setAttribute('aria-pressed', String(node.dataset.item === catalogChoice)),
-            );
+            catalog
+              .querySelectorAll<HTMLButtonElement>('[data-item]')
+              .forEach((node) =>
+                node.setAttribute('aria-pressed', String(node.dataset.item === catalogChoice)),
+              );
             updateSelection();
           });
           choice.dataset.item = item.itemType;
@@ -1050,9 +1070,10 @@ export function mountInventoryControls(
     else runtime.command({ type: 'inventory', operation: { kind: 'open', target: null } });
   };
   const followCursor = (event: PointerEvent) => {
-    cursor.style.left = `${event.clientX + 14}px`;
-    cursor.style.top = `${event.clientY + 14}px`;
+    cursor.style.left = `${event.clientX}px`;
+    cursor.style.top = `${event.clientY}px`;
   };
+  dialog.addEventListener('pointerdown', followCursor);
   dialog.addEventListener('pointermove', followCursor);
   dialog.addEventListener('cancel', cancel);
   window.addEventListener('keydown', key);
@@ -1065,6 +1086,7 @@ export function mountInventoryControls(
       placements.length = 0;
       arrangement = null;
       dialog.removeEventListener('pointermove', followCursor);
+      dialog.removeEventListener('pointerdown', followCursor);
       thumbnails.reset();
       unsubscribe();
       window.removeEventListener('keydown', key);

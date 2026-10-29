@@ -60,6 +60,7 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
     [help, setHelp] = useState(false),
     [now, setNow] = useState(Date.now);
   const [endConfirmed, setEndConfirmed] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
   const endDialog = useRef<HTMLDialogElement>(null),
     controlAbort = useRef<AbortController | null>(null);
   const controlPending = useRef(false),
@@ -327,7 +328,7 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
             : action === "resume"
               ? "המפגש חודש. לחצו על כניסה לעולם כדי להמשיך."
               : action === "end"
-                ? "המפגש הסתיים. העולם לא נשמר להמשך."
+                ? "המפגש הסתיים. אפשר לפתוח מפגש חדש."
                 : "המפגש הושהה והשמירה אושרה.",
         });
         if (action === "end" && receipt.current) setEndConfirmed(true);
@@ -439,7 +440,7 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
     !!mountError ||
     !!errorCode ||
     !hud ||
-    (hud.status !== "playing" && !hud.inventoryOpen && !help);
+    (hud.status !== "playing" && !hud.inventoryOpen && !help && !panelOpen);
   useEffect(() => {
     if (hud?.status === "playing") {
       if (menu.current) menu.current.open = false;
@@ -480,12 +481,7 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
       "MODE_DENIED",
     ].includes(errorCode ?? "") &&
     ["error", "recovering", "stalled"].includes(hud.status);
-  const title =
-    hud?.role === "observer"
-      ? "תצפית נסתרת בעולם"
-      : hud?.mode === "creative"
-        ? "עולם הבנייה"
-        : "עולם ההישרדות";
+  const title = "מיינקראפט";
   const selectedItem = browser?.content.items.find(
     (item) => item.itemType === hud?.inventory?.bag[hud.selectedSlot]?.itemType,
   );
@@ -519,12 +515,24 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
             ["playing", "paused", "dead"].includes(hud.status)
           }
           scene={() => runtime.current?.voiceScene() ?? null}
-          onOpen={() => command({ type: "pause" })}
-          onResume={() => command({ type: "resume" })}
+          onOpen={() => {
+            setPanelOpen(true);
+            command({ type: "pause" });
+          }}
+          onResume={() => {
+            setPanelOpen(false);
+            command({ type: "resume" });
+          }}
         />
         <VoxelChat
           api={api}
           isStaff={isStaff}
+          active={
+            !!hud &&
+            !terminal &&
+            !errorCode &&
+            ["playing", "paused", "dead"].includes(hud.status)
+          }
           canSend={
             !!hud &&
             hud.role === "participant" &&
@@ -532,8 +540,14 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
             !errorCode &&
             ["playing", "paused", "dead"].includes(hud.status)
           }
-          onOpen={() => command({ type: "pause" })}
-          onResume={() => command({ type: "resume" })}
+          onOpen={() => {
+            setPanelOpen(true);
+            command({ type: "pause" });
+          }}
+          onResume={() => {
+            setPanelOpen(false);
+            command({ type: "resume" });
+          }}
         />
         <details
           ref={menu}
@@ -547,12 +561,6 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
             <div>
               <h1>{title}</h1>
               <p>
-                {hud && (
-                  <span>
-                    {hud.mode === "creative" ? "מצב יצירתי" : "מצב שרידות"}{" "}
-                    ·{" "}
-                  </span>
-                )}
                 {session
                   ? `מארח: ${session.hostName} · ${connected.length} שחקנים מחוברים`
                   : "טוענים פרטי מפגש…"}
@@ -646,26 +654,6 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
             {isStaff && hud && !terminal && (
               <details className="voxel-session__staff">
                 <summary>כלי מורה</summary>
-                <button
-                  type="button"
-                  disabled={
-                    control?.state === "pending" ||
-                    staffState?.state === "pending" ||
-                    moderationBusy
-                  }
-                  onClick={() => {
-                    command({ type: "pause" });
-                    setStaffDraft({
-                      kind: "mode",
-                      mode: hud.mode === "survival" ? "creative" : "survival",
-                    });
-                    staffDialog.current?.showModal();
-                  }}
-                >
-                  {hud.mode === "survival"
-                    ? "מעבר למצב יצירתי"
-                    : "מעבר למצב שרידות"}
-                </button>
                 <label>
                   יעד להשתגרות
                   <select
@@ -758,11 +746,19 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
           });
         }}
       />
-      {!showStatus && hud?.message && !hud.inventoryOpen && (
-        <p className="voxel-session__feedback" role="status" aria-live="polite">
-          {hud.message}
-        </p>
-      )}
+      {!showStatus &&
+        !panelOpen &&
+        !help &&
+        hud?.message &&
+        !hud.inventoryOpen && (
+          <p
+            className="voxel-session__feedback"
+            role="status"
+            aria-live="polite"
+          >
+            {hud.message}
+          </p>
+        )}
       {showStatus && (
         <div className="voxel-session__status" role="status" aria-live="polite">
           <p>{statusText}</p>
@@ -860,14 +856,8 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
         className="voxel-session__dialog"
         aria-labelledby="voxel-staff-title"
       >
-        <h2 id="voxel-staff-title">
-          {staffDraft?.kind === "mode" ? "לשנות את מצב העולם?" : "להשתגר ליעד?"}
-        </h2>
-        <p>
-          {staffDraft?.kind === "mode"
-            ? "המצב ישתנה עבור כל המשתתפים. התיקים יישמרו והשליטה תחודש בכניסה מפורשת. מי שנפלו עדיין צריכים לחזור דרך כפתור החזרה."
-            : "רק המיקום שלכם ישתנה. השליטה תחודש לאחר טעינת השטח וכניסה מפורשת."}
-        </p>
+        <h2 id="voxel-staff-title">להשתגר ליעד?</h2>
+        <p>רק המיקום שלכם ישתנה. לאחר טעינת השטח אפשר להמשיך לשחק.</p>
         <button type="button" onClick={() => staffDialog.current?.close()}>
           ביטול
         </button>
@@ -1028,8 +1018,8 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
       >
         <h2 id="voxel-end-title">לסיים את המפגש?</h2>
         <p>
-          סיום המפגש מנתק את המשתתפים ללא שמירת העולם להמשך. כדי לשמור ולחזור
-          מאוחר יותר, בחרו בהשהיית המפגש.
+          סיום המפגש מנתק את המשתתפים ולא ניתן לחדש אותו. כדי לשמור ולחזור מאוחר
+          יותר, בחרו בהשהיית המפגש.
         </p>
         <button type="button" onClick={() => endDialog.current?.close()}>
           ביטול
@@ -1041,7 +1031,7 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
             void executeControl("end");
           }}
         >
-          שמירה וסיום
+          סיום המפגש
         </button>
       </dialog>
     </section>

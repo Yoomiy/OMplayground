@@ -31,7 +31,7 @@ Repairs for the 2026-10-29 source review of `90fe575`. The first batch is `6af81
 
 ## Release and next step
 
-The matched published game release is `596d8ffc6b18024f391e27cf7c26a3a40bf82b806abe88168ac2737f92fbb80c`.
+The matched published game release is `97e41770853caa0eb4768e5b7784d3b065d00be776b92f8e059d703ae4397795`.
 
 Terrain artwork continues to use the procedural world-texture pipeline (UI-13). Next is local play feedback; `dev/staging` stays untouched under the user's explicit instruction. The main PR and deployment walkthrough still depend on their later staging confirmation. No additional broad qualification loop is required for these presentation repairs.
 
@@ -100,3 +100,20 @@ The recipe book opens separately, as in the old version. E/Esc returns from it t
 Focused checks use the actual authoritative inventory model with delayed responses: select/split/distribute/craft two tables, prepare recipes, search/categories and reject a transfer. Dialog/grid/slot rectangles remain identical across the interaction and the original slot nodes remain connected. A production React/native-worker browser flow verifies separate recipe preparation, table crafting, help/chat shortcuts and returning to game control; screenshots were reviewed at 1366×850. Game/web types and matched packaging pass. These are local functional/visual checks, with no hosted writes, broader gameplay rerun or school-PC performance claim.
 
 Matched release: `596d8ffc6b18024f391e27cf7c26a3a40bf82b806abe88168ac2737f92fbb80c`. No content/engine/protocol change, migration or additional world reset. No staging push.
+
+## Play feedback: cursor, tool reward, foliage and communication widgets
+
+The user reports a longer play period with one remaining disconnect. Its event identifies authorization expiry with a renewal 2254 ms in flight, followed by unavailable room-policy reads. Authorization deadlines/fencing remain unchanged in this batch; it does not claim to eliminate real provider outages.
+
+- Cursor-carried icons are centered at the pointer, including on first selection. Native dragging uses a transparent, rendered-size canvas preview centered on the pointer and hides the separate carried icon during that drag.
+- The appropriate starting tool is roughly nine times faster than bare hands on wood and ground. Material families without a specific authored affinity use their existing wood/stone/ground metadata; wrong tools receive the same timing as bare hands. Tool requirements and durability remain authoritative. Cross-shaped plants still break immediately.
+- Cross-shaped plants and leaves no longer receive the box-shaped target/crack presentation. Their actual ray target and server validation are retained.
+- Item styling now resolves an item's authored material as well as placed blocks. Plant fibers therefore receive the leaf tint/cutout in thumbnails, dropped models and held presentation, rather than sampling grayscale leaf textures without tint. Bucket metal/water styling is retained.
+- Chat follows the old compact dark floating card, with a draggable header, focused one-line input, Enter to send and a four-message minimized preview. The preview polls only while connected/paused/dead in a live session, every ten seconds; open chat keeps its three-second polling. Reads/writes/moderation retain their existing authorization and receipt checks. Normal successful sends no longer add an extra confirmation block.
+- Audio uses a compact card: join first, microphone/speaker controls when connected, with device settings and staff moderation collapsed. M uses the same permission-checked microphone flow. Opening either widget hides the unrelated resume hint; closing restores game control. No microphone is started without an explicit user action.
+- The app presents Minecraft without creative/survival badges or a gameplay-mode switch. Internal developer fixtures retain their trusted setup commands. Guide/catalog wording follows the single-game presentation.
+- The end-dialog button says “סיום המפגש”; its body and receipt explain that the session cannot be resumed. Pause remains the save-for-later action. No text claims a final end checkpoint.
+
+Focused validation: game/web types; three tool/material/bucket checks; four actual-Wasm mining/plant/release/tool checks; delayed-response inventory/cursor geometry flow; production React/native-room chat send/close, compact audio settings, recipe crafting, held fiber/PNG thumbnails, mode-label absence and end wording. Screenshots were reviewed at 1366×850. The final widget check also verifies that the readable minimized chat preview stays at the viewport's left edge. No SFU connection, hosted write, broad gameplay/media matrix or physical-PC performance claim is included. Existing browser tools were aligned with the changed controls but their full suites were not rerun.
+
+Matched release: `97e41770853caa0eb4768e5b7784d3b065d00be776b92f8e059d703ae4397795`. Engine, content and protocol are unchanged, so the current saved world remains compatible. No migration, world reset or staging push.

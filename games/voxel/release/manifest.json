@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "buildId": "596d8ffc6b18024f391e27cf7c26a3a40bf82b806abe88168ac2737f92fbb80c",
+  "buildId": "97e41770853caa0eb4768e5b7784d3b065d00be776b92f8e059d703ae4397795",
   "inputs": [
     {
       "path": "LICENSE",
@@ -172,11 +172,11 @@
     },
     {
       "path": "src/client/inventory-controls.ts",
-      "hash": "685bba01476febfa3e8b50c30ce072c62b723c17a5cd5616adcd14b767cae96a"
+      "hash": "c7e61085ae0e57d8bd77a709224757bc6d6f5e18b5dd2e598868203f80b6e746"
     },
     {
       "path": "src/client/inventory.css",
-      "hash": "ee18be5e5f03f8bd02ab32d0896fb822d415e71ab6a51a43d8e65d9b29fa2b18"
+      "hash": "6a3abb09aa469702ecbf9a13e223730d112d6203c5e38d7185ffebc8d448bb0c"
     },
     {
       "path": "src/client/item-description.ts",
@@ -200,7 +200,7 @@
     },
     {
       "path": "src/client/runtime.ts",
-      "hash": "55daf178576b6e18931d852b86a906423a89bad987fd557d30d854d52c38059e"
+      "hash": "30c804cd222c5dbbb2582efb9e84ac15169797b6313e27d3a1073141b602cba6"
     },
     {
       "path": "src/client/style.css",
@@ -264,7 +264,7 @@
     },
     {
       "path": "src/render/held-block.ts",
-      "hash": "31663109dd3a761f52fd3d0c8208221b767e1f250062511840a082424ec42432"
+      "hash": "c7db185478da108fbb384e80dc6432ab56c0abeb3d980fdd9ffbf668431e4e07"
     },
     {
       "path": "src/render/item-icons.ts",
@@ -452,7 +452,7 @@
     },
     {
       "path": "src/sim/mining.ts",
-      "hash": "aa8d1688135257b2fda5a8d8c50a96de73fb4b18408babcc98fc65f22145be7a"
+      "hash": "13ae716f46db2a4ab8abee2fc105c71593de684486aaf6a1bfaaa8fbf522e3a0"
     },
     {
       "path": "src/sim/movement-room.ts",
@@ -522,7 +522,7 @@
     },
     {
       "path": "artifacts/build.json",
-      "hash": "738684e2955ac0faf39487b7b2c4fecbd29d3bdfa6a2108c9badfb1e9dae70c9"
+      "hash": "a92f9e199d014fecec20b0a34b8412634c90aff37dcc30f16750501d99b7e246"
     },
     {
       "path": "artifacts/content-bindings.ts",
@@ -538,19 +538,19 @@
     },
     {
       "path": "artifacts/release.json",
-      "hash": "907f1d60c96d7312c95e237bc25c773dfa4ea78df29cf40c2757e0526a559883"
+      "hash": "1d61eb4a261c3589edcc9e102978d51f0c0bff45301e195a00e01d01016d2578"
     },
     {
       "path": "dist-client/assets/engine-worker-DYAFKrDe.js",
       "hash": "99d3377c134578cd5e9bdd923e7707547e62c3a2a0a1a64c90adec5f1121bf04"
     },
     {
-      "path": "dist-client/assets/index-B73BUZZl.js",
-      "hash": "c4ed06303838296ca19db1ca348f5b3ee436966f89fc14aeaa95a18a557d4b04"
+      "path": "dist-client/assets/index-F_K9ERdv.js",
+      "hash": "bf9e63e1c4cc7fe104d4ecd6bab1f2788b4ec7c1e0933b084f9ca300631cdf97"
     },
     {
-      "path": "dist-client/assets/index-BY26-pet.css",
-      "hash": "e600689413fc76bc199da1421cb764e980876fd31124e82f754e05607f5f1795"
+      "path": "dist-client/assets/index-P3AiFv1J.css",
+      "hash": "9fa2a5f4e45de30243c0269a36f22ec695d3d68663b468cfa21e2d0c23ffe50d"
     },
     {
       "path": "dist-client/assets/voxel_engine_bg-1ejYMYOZ.wasm",
@@ -558,11 +558,11 @@
     },
     {
       "path": "dist-client/index.html",
-      "hash": "4b9265c5e9a96c6386b674626534c6ab15958863090669a513d8abf1f5f52b49"
+      "hash": "d1ad293d313d994fa03437283ad43e40f99bcb20c887766c75d01812de972b61"
     },
     {
       "path": "dist-server/build.json",
-      "hash": "738684e2955ac0faf39487b7b2c4fecbd29d3bdfa6a2108c9badfb1e9dae70c9"
+      "hash": "a92f9e199d014fecec20b0a34b8412634c90aff37dcc30f16750501d99b7e246"
     },
     {
       "path": "dist-server/content.json",
@@ -582,11 +582,11 @@
     },
     {
       "path": "dist-server/room-worker.js",
-      "hash": "d95abe8f39c4bf1ad0669dfe6a07917fdd6e3a833130666b81f21bedbdcd6973"
+      "hash": "4676a00c7f46ea17bd17c8123551e2847cc989ad7fab06d00877383961b19b16"
     },
     {
       "path": "dist-server/room-worker.js.map",
-      "hash": "a10778cd68dc72e9aad8cd0e196deed904fae3dc9b6d5b6fe62558370068b787"
+      "hash": "78a724b10ccee6b0c7478ce22c54ad213f0585a8148025f9e149aa58437dc3e2"
     },
     {
       "path": "engine/pkg/.gitignore",

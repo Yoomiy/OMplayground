@@ -301,7 +301,9 @@ export function worldItemMaterial(
   const block = blocks.find((block) =>
     item.model === 'bucket'
       ? block.name === item.material
-      : block.name === item.places && block.placeable !== false,
+      : item.places
+        ? block.name === item.places && block.placeable !== false
+        : block.name === item.material,
   );
   material.uniforms.uCutout.value = block?.layer === 1 ? 1 : 0;
   material.uniforms.uTint.value = block?.tint ? (block.layer === 1 ? 2 : 1) : 0;
@@ -394,6 +396,7 @@ export class HeldBlockRenderer {
       (item?.model === 'bucket' && this.blocks.find((block) => block.name === item.material)) ||
       (item?.places &&
         this.blocks.find((block) => block.name === item.places && block.placeable !== false)) ||
+      (item?.material && this.blocks.find((block) => block.name === item.material)) ||
       this.blocks[state];
     if (definition && (state !== this.state || itemType !== this.itemType)) {
       this.block.geometry.dispose();

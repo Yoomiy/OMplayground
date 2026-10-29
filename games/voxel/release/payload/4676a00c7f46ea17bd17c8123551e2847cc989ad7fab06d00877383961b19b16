@@ -2846,10 +2846,16 @@ var Drops = class _Drops {
 
 // src/sim/mining.ts
 function miningPlan(block, item) {
-  const tool = item?.tool, correct = !!tool && tool.kind === block.mining.tool && tool.tier >= (block.mining.tier ?? 0);
+  const preferred = block.mining.tool ?? (block.soundGroup === "wood" ? "axe" : block.family === "grass_block" || ["sand", "gravel"].includes(block.soundGroup ?? "") ? "shovel" : block.soundGroup === "stone" ? "pickaxe" : void 0);
+  const tool = item?.tool, correct = !!tool && tool.kind === preferred && tool.tier >= (block.mining.tier ?? 0);
   return {
     allowed: !block.mining.requiresTool || correct,
-    ticks: Math.max(1, Math.ceil(block.mining.seconds * WORLD_HZ / (correct ? tool.speed : 1)))
+    // Bare hands/wrong tools are deliberately slow on tool-specific materials.
+    // Starting resources remain obtainable; the proper wooden tool is ~9× faster.
+    ticks: Math.max(
+      1,
+      Math.ceil(block.mining.seconds * WORLD_HZ / (correct ? tool.speed : preferred ? 1 / 3 : 1))
+    )
   };
 }
 

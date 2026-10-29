@@ -15,6 +15,18 @@ import type { ItemDefinition } from '../src/shared/content.ts';
 const { manifest: content } = compileContent(source);
 const items = new Map(content.items.map((item) => [item.itemType, item]));
 
+test('plant-fiber items use their authored leaf tint and cutout in icons, drops and attached models', () => {
+  const texture = new Texture();
+  const material = worldItemMaterial(items.get('plant_fiber')!, content.blocks, texture, texture);
+  try {
+    assert.equal(material.uniforms.uTint.value, 2);
+    assert.equal(material.uniforms.uCutout.value, 1);
+  } finally {
+    material.dispose();
+    texture.dispose();
+  }
+});
+
 test('creative catalog has stable unique state keys even when multiple owned items place the same block', () => {
   const choices = creativePalette(content),
     water = content.blocks.findIndex((block) => block.name === 'water');

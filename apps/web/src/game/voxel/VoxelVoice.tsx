@@ -86,6 +86,36 @@ export function VoxelVoice(props: {
     else if (!ready) void owner.current?.microphone(false);
   }, [ready, api, props.ended]);
   useEffect(() => {
+    const key = (event: KeyboardEvent) => {
+      if (
+        event.code !== "KeyM" ||
+        event.repeat ||
+        !latest.current.ready ||
+        document.querySelector(".voxel-session dialog[open]") ||
+        (event.target instanceof HTMLElement &&
+          event.target.closest(
+            'input,textarea,select,[contenteditable="true"]',
+          ))
+      )
+        return;
+      event.preventDefault();
+      const voice = owner.current;
+      if (voice?.state.phase === "connected")
+        void voice.microphone(voice.state.microphone !== "on");
+      else if (voice)
+        void voice.start().then(() => {
+          if (
+            voice === owner.current &&
+            latest.current.ready &&
+            voice.state.publishAllowed
+          )
+            void voice.microphone(true);
+        });
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, []);
+  useEffect(() => {
     if (!open) return;
     let alive = true;
     const update = async () => {
@@ -264,53 +294,53 @@ export function VoxelVoice(props: {
           </button>
         </header>
         <p role="status">{phases[state?.phase ?? "off"]}</p>
-        <nav aria-label="השמעה ומיקרופון">
-          <button
-            type="button"
-            disabled={!ready}
-            onClick={() => void owner.current?.start()}
-          >
-            {state?.audioLocked
-              ? "הפעלת שמע"
-              : connected
-                ? "הפעלת שמע מחדש"
-                : "הצטרפות לשמע"}
-          </button>
-          <button
-            type="button"
-            disabled={!state || state.phase === "off"}
-            onClick={() => owner.current?.stop()}
-          >
-            כיבוי השיחה
-          </button>
-          <button
-            type="button"
-            aria-pressed={state?.microphone === "on"}
-            disabled={
-              !ready ||
-              !connected ||
-              !state?.publishAllowed ||
-              state.capturePending
-            }
-            onClick={() =>
-              void owner.current?.microphone(state?.microphone !== "on")
-            }
-          >
-            {state?.microphone === "on" ? "כיבוי מיקרופון" : "הפעלת מיקרופון"}
-          </button>
-          <button
-            type="button"
-            aria-pressed={state?.outputMuted ?? false}
-            disabled={!connected}
-            onClick={() => owner.current?.muteOutput(!state?.outputMuted)}
-          >
-            {state?.outputMuted ? "ביטול השתקת ההשמעה" : "השתקת ההשמעה"}
-          </button>
+        <nav
+          aria-label="השמעה ומיקרופון"
+          className="voxel-session__voice-primary"
+        >
+          {!connected && (
+            <button
+              type="button"
+              disabled={!ready || state?.phase === "starting"}
+              onClick={() => void owner.current?.start()}
+            >
+              {state?.audioLocked
+                ? "הפעלת שמע"
+                : state?.phase === "starting"
+                  ? "מתחברים…"
+                  : "כניסה לשיחה"}
+            </button>
+          )}
+          {connected && (
+            <>
+              <button
+                type="button"
+                aria-pressed={state?.microphone === "on"}
+                disabled={
+                  !ready || !state?.publishAllowed || state.capturePending
+                }
+                onClick={() =>
+                  void owner.current?.microphone(state?.microphone !== "on")
+                }
+              >
+                {state?.microphone === "on"
+                  ? "מיקרופון פעיל (M)"
+                  : "מיקרופון מושתק (M)"}
+              </button>
+              <button
+                type="button"
+                aria-pressed={state?.outputMuted ?? false}
+                onClick={() => owner.current?.muteOutput(!state?.outputMuted)}
+              >
+                {state?.outputMuted ? "הפעלת רמקול" : "השתקת רמקול"}
+              </button>
+            </>
+          )}
         </nav>
         {connected && !state?.publishAllowed && (
           <p>
             {state?.hidden
-              ? "במצב צפייה אפשר להאזין בלבד."
+              ? "בתצפית אפשר להאזין בלבד."
               : "המיקרופון מושתק לפי מדיניות המפגש."}
           </p>
         )}
@@ -325,52 +355,56 @@ export function VoxelVoice(props: {
         {state?.microphone === "unavailable" && (
           <p>המיקרופון אינו זמין. בדקו את המכשיר ונסו שוב.</p>
         )}
-        <p>
-          המיקרופון מופעל רק לפי בקשתכם ונכבה בניתוק או במעבר לרקע. אחרי חיבור
-          מחדש מפעילים אותו שוב.
-        </p>
-        <label>
-          יציאת שמע{" "}
-          <select
-            aria-label="יציאת שמע"
-            value={sink}
-            disabled={!state?.outputSelection}
-            onChange={(e) => void choose(e.target.value)}
-          >
-            <option value="">ברירת המחדל של המכשיר</option>
-            {devices
-              .filter((d) => d.deviceId && d.deviceId !== "default")
-              .map((d, i) => (
-                <option key={d.deviceId} value={d.deviceId}>
-                  {d.label || `יציאת שמע ${i + 1}`}
-                </option>
-              ))}
-          </select>
-        </label>
-        {typeof (
-          navigator.mediaDevices as
-            | (MediaDevices & { selectAudioOutput?: unknown })
-            | undefined
-        )?.selectAudioOutput === "function" && (
+        <details className="voxel-session__voice-settings">
+          <summary>הגדרות שמע</summary>
+          <label>
+            יציאת שמע{" "}
+            <select
+              aria-label="יציאת שמע"
+              value={sink}
+              disabled={!state?.outputSelection}
+              onChange={(e) => void choose(e.target.value)}
+            >
+              <option value="">ברירת המחדל של המכשיר</option>
+              {devices
+                .filter((d) => d.deviceId && d.deviceId !== "default")
+                .map((d, i) => (
+                  <option key={d.deviceId} value={d.deviceId}>
+                    {d.label || `יציאת שמע ${i + 1}`}
+                  </option>
+                ))}
+            </select>
+          </label>
+          {typeof (
+            navigator.mediaDevices as
+              | (MediaDevices & { selectAudioOutput?: unknown })
+              | undefined
+          )?.selectAudioOutput === "function" && (
+            <button
+              type="button"
+              disabled={!state?.outputSelection}
+              onClick={() => void promptOutput()}
+            >
+              בחירת התקן שמע
+            </button>
+          )}
+          {!state?.outputSelection && (
+            <p>בחירת יציאה זמינה לפי תמיכת הדפדפן, אחרי הפעלת השמע.</p>
+          )}
+          {sinkError && (
+            <p role="status">לא ניתן לשנות את יציאת השמע. בחרו התקן אחר.</p>
+          )}
           <button
             type="button"
-            disabled={!state?.outputSelection}
-            onClick={() => void promptOutput()}
+            disabled={!state || state.phase === "off"}
+            onClick={() => owner.current?.stop()}
           >
-            בחירת התקן שמע
+            יציאה מהשיחה
           </button>
-        )}
-        {!state?.outputSelection && (
-          <p>בחירת יציאה זמינה לפי תמיכת הדפדפן, אחרי הפעלת השמע.</p>
-        )}
-        {sinkError && (
-          <p role="status">
-            לא ניתן לשנות את יציאת השמע. בדקו הרשאה או בחרו התקן אחר.
-          </p>
-        )}
+        </details>
         {isStaff && (
-          <section aria-label="ניהול שמע לתלמידים">
-            <h3>ניהול שמע לתלמידים</h3>
+          <details className="voxel-session__voice-staff">
+            <summary>כלי מורה</summary>
             {readError && (
               <p role="status">לא ניתן לקרוא כרגע את מדיניות השמע.</p>
             )}
@@ -462,7 +496,7 @@ export function VoxelVoice(props: {
                 )}
               </>
             )}
-          </section>
+          </details>
         )}
       </dialog>
     </div>

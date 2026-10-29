@@ -594,6 +594,174 @@
   font-size: 11px;
   margin: 4px 0 0;
 }
+
+/* Compact floating chat/voice cards, following the original game widgets. */
+.voxel-session .voxel-session__chat,
+.voxel-session .voxel-session__voice-dialog {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  padding: 12px;
+  box-sizing: border-box;
+  color: #e2e8f0;
+  background: #0b1223ed;
+  border: 1px solid #ffffff30;
+  border-radius: 12px;
+  box-shadow: 0 12px 36px #0008;
+  font:
+    13px/1.5 Arial,
+    sans-serif;
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+}
+.voxel-session .voxel-session__chat {
+  top: 80px;
+  left: 16px;
+  width: min(384px, calc(100vw - 32px));
+}
+.voxel-session .voxel-session__voice-dialog {
+  bottom: 104px;
+  left: 16px;
+  width: min(300px, calc(100vw - 32px));
+}
+.voxel-session__chat::backdrop,
+.voxel-session__voice-dialog::backdrop {
+  background: transparent;
+}
+.voxel-session .voxel-session__chat header,
+.voxel-session .voxel-session__voice-dialog header {
+  border-bottom: 1px solid #ffffff22;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+.voxel-session__chat header {
+  cursor: move;
+  touch-action: none;
+  user-select: none;
+}
+.voxel-session .voxel-session__chat h2,
+.voxel-session .voxel-session__voice-dialog h2 {
+  margin: 0;
+  font-size: 14px;
+  color: #cbd5e1;
+}
+.voxel-session .voxel-session__chat button,
+.voxel-session .voxel-session__voice-dialog button {
+  min-height: 30px;
+  padding: 4px 8px;
+  margin: 0;
+  color: #e2e8f0;
+  background: #ffffff0d;
+  border: 1px solid #ffffff26;
+  box-shadow: none;
+  border-radius: 6px;
+  font-size: 11px;
+}
+.voxel-session .voxel-session__chat button:hover,
+.voxel-session .voxel-session__voice-dialog button:hover {
+  background: #ffffff20;
+}
+.voxel-session .voxel-session__chat-lines {
+  height: 192px;
+  max-height: 35vh;
+  padding: 0 3px;
+  margin: 8px 0;
+  list-style: none;
+}
+.voxel-session .voxel-session__chat-lines li {
+  border: 0;
+  padding: 3px 0;
+}
+.voxel-session__chat-lines strong,
+.voxel-session__chat-peek strong {
+  color: #7dd3fc;
+}
+.voxel-session .voxel-session__chat form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.voxel-session__chat-compose {
+  flex: 1;
+  min-width: 0;
+}
+.voxel-session .voxel-session__chat input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  background: #0006;
+  border: 1px solid #ffffff40;
+  border-radius: 5px;
+  padding: 7px 9px;
+  color: white;
+  font: inherit;
+}
+.voxel-session .voxel-session__chat button[type="submit"] {
+  background: #0284c7;
+  border-color: #0284c7;
+  color: white;
+}
+.voxel-session__chat nav {
+  justify-content: flex-start;
+  font-size: 11px;
+}
+.voxel-session__chat-peek {
+  position: fixed;
+  top: 76px;
+  left: 16px;
+  width: min(360px, calc(100vw - 32px));
+  pointer-events: none;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: #f8fafc;
+  background: #0005;
+  font:
+    12px/1.5 Arial,
+    sans-serif;
+}
+.voxel-session__chat-peek p {
+  margin: 2px 0;
+  overflow-wrap: anywhere;
+}
+.voxel-session .voxel-session__chat-peek p {
+  color: #f1f5f9;
+}
+.voxel-session .voxel-session__voice-primary {
+  justify-content: flex-start;
+  gap: 8px;
+}
+.voxel-session .voxel-session__voice-primary button[aria-pressed="true"] {
+  color: white;
+  background: #047857;
+  border-color: #059669;
+}
+.voxel-session__voice-settings,
+.voxel-session__voice-staff {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid #ffffff20;
+}
+.voxel-session__voice-settings summary,
+.voxel-session__voice-staff summary {
+  cursor: pointer;
+  color: #94a3b8;
+  font-size: 12px;
+}
+.voxel-session .voxel-session__voice-dialog select {
+  width: 100%;
+  min-height: 32px;
+  background: #0f172a;
+  border: 1px solid #ffffff30;
+  border-radius: 5px;
+  font-size: 12px;
+}
+.voxel-session__voice-dialog p {
+  font-size: 12px;
+  color: #cbd5e1;
+  margin: 6px 0;
+}
 .voxel-session__help > nav {
   display: flex;
   flex-wrap: wrap;

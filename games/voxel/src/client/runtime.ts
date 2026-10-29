@@ -1154,11 +1154,13 @@ export async function mountVoxel(
     if (key !== lastHighlight) {
       lastHighlight = key;
       const boxes: number[][] = [];
-      if (target) {
+      const block = target && content.blocks[world.get_block(...target)];
+      const foliage = block && (block.shape === 'cross' || block.leaves);
+      if (target && !foliage) {
         const raw = world.target_boxes(...target);
         for (let i = 0; i < raw.length; i += 6) boxes.push(Array.from(raw.subarray(i, i + 6)));
       }
-      renderer.target(boxes, target);
+      renderer.target(boxes, foliage ? null : target);
     }
   }
   function update(now: number) {

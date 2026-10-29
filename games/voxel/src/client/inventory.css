@@ -322,6 +322,7 @@
 }
 .voxel-inventory .inventory-cursor {
   position: fixed;
+  transform: translate(-50%, -50%);
   z-index: 30;
   pointer-events: none;
   border: 0;

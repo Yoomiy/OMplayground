@@ -672,7 +672,7 @@ try {
       if (touch) await open.tap();
       else await open.click();
       const start = page.getByRole("button", {
-        name: "הצטרפות לשמע",
+        name: "כניסה לשיחה",
         exact: true,
       });
       if (touch) await start.tap();
@@ -688,13 +688,13 @@ try {
       assert.equal(await page.evaluate(() => (window as any).voiceGumCalls), 0);
     assert.equal(
       await teacherPage
-        .getByRole("button", { name: "הפעלת מיקרופון", exact: true })
+        .getByRole("button", { name: "מיקרופון מושתק (M)", exact: true })
         .isDisabled(),
       true,
     );
     await kidPage.bringToFront();
     await kidPage
-      .getByRole("button", { name: "הפעלת מיקרופון", exact: true })
+      .getByRole("button", { name: "מיקרופון מושתק (M)", exact: true })
       .click();
     await kidPage.waitForFunction(
       () => (window as any).surfaceVoice.state.microphone === "on",
@@ -813,7 +813,7 @@ try {
     assert.equal(admissions.length, beforeMediaAdmissions);
     await kidPage.bringToFront();
     await kidPage
-      .getByRole("button", { name: "הפעלת מיקרופון", exact: true })
+      .getByRole("button", { name: "מיקרופון מושתק (M)", exact: true })
       .click();
     await kidPage.waitForFunction(
       () => (window as any).surfaceVoice.state.microphone === "on",
@@ -923,14 +923,14 @@ try {
     ownedBeforeStaff = (await debug(kidPage)).inventory.bag;
   await teacherPage.bringToFront();
   await openSessionMenu(teacherPage);
-  await teacherPage.getByText("כלי מורה", { exact: true }).tap();
+  await teacherPage.locator(".voxel-session__staff > summary").tap();
   await openSessionMenu(teacherPage);
-  await teacherPage
-    .getByRole("button", { name: "מעבר למצב יצירתי", exact: true })
-    .tap();
-  await teacherPage
-    .getByRole("button", { name: "אישור הפעולה", exact: true })
-    .tap();
+  await teacherPage.evaluate(async () => {
+    await (window as any).fixtureApi.staff(
+      { kind: "mode", mode: "creative" },
+      crypto.randomUUID(),
+    );
+  });
   for (const page of [kidPage, teacherPage])
     await page.waitForFunction(
       () => (window as any).surfaceRuntime.debug().mode === "creative",
@@ -942,7 +942,7 @@ try {
     .getByRole("button", { name: "תיק ויצירה (E)", exact: true })
     .click();
   await kidPage
-    .getByRole("button", { name: "קטלוג יצירתי", exact: true })
+    .getByRole("button", { name: "קטלוג פריטים", exact: true })
     .click();
   await kidPage.locator("#inventory-catalog").waitFor();
   const giveRevision = (await debug(kidPage)).inventory.revision;
@@ -962,12 +962,12 @@ try {
   await teacherPage.bringToFront();
 
   await openSessionMenu(teacherPage);
-  await teacherPage
-    .getByRole("button", { name: "מעבר למצב שרידות", exact: true })
-    .tap();
-  await teacherPage
-    .getByRole("button", { name: "אישור הפעולה", exact: true })
-    .tap();
+  await teacherPage.evaluate(async () => {
+    await (window as any).fixtureApi.staff(
+      { kind: "mode", mode: "survival" },
+      crypto.randomUUID(),
+    );
+  });
   for (const page of [kidPage, teacherPage])
     await page.waitForFunction(
       () => (window as any).surfaceRuntime.debug().mode === "survival",
@@ -977,7 +977,7 @@ try {
   // Move through normal touch input far enough to unload the destination's
   // former subscription before testing teleport readiness and origin reset.
   await openSessionMenu(teacherPage);
-  await teacherPage.getByText("כלי מורה", { exact: true }).tap();
+  await teacherPage.locator(".voxel-session__staff > summary").tap();
   await teacherPage
     .getByRole("button", { name: "כניסה לתצפית", exact: true })
     .tap();
@@ -1057,7 +1057,7 @@ try {
     ) {
       await kidPage.getByRole("button", { name: /^שיחה קולית/ }).click();
       await kidPage
-        .getByRole("button", { name: "הפעלת מיקרופון", exact: true })
+        .getByRole("button", { name: "מיקרופון מושתק (M)", exact: true })
         .click();
       await kidPage.waitForFunction(
         () => (window as any).surfaceVoice.state.microphone === "on",
@@ -1086,7 +1086,7 @@ try {
     voiceEvidence.nativeFarSceneSilent = true;
   }
   await openSessionMenu(teacherPage);
-  await teacherPage.getByText("כלי מורה", { exact: true }).tap();
+  await teacherPage.locator(".voxel-session__staff > summary").tap();
   await teacherPage
     .getByLabel("יעד להשתגרות", { exact: true })
     .selectOption(kid);
@@ -1140,7 +1140,7 @@ try {
     path: join(web, "test-results/voxel-react-staff.png"),
   });
   await openSessionMenu(teacherPage);
-  await teacherPage.getByText("כלי מורה", { exact: true }).tap();
+  await teacherPage.locator(".voxel-session__staff > summary").tap();
   const staffReceipts = db.value(
     `SELECT jsonb_agg(jsonb_build_object('command',command,'completed',completed,'result',result) ORDER BY revision) FROM public.voxel_staff_commands WHERE session_id=${literal(room)}`,
   );
@@ -1152,7 +1152,7 @@ try {
   const moderationInventoryBefore = (await debug(kidPage)).inventory.bag;
   let lastJoinedEpoch = (await debug(kidPage)).epoch;
   await openSessionMenu(teacherPage);
-  await teacherPage.getByText("כלי מורה", { exact: true }).tap();
+  await teacherPage.locator(".voxel-session__staff > summary").tap();
   await teacherPage.getByText("ניהול משתתפים", { exact: true }).tap();
   await teacherPage
     .getByRole("combobox", { name: "משתתף או משתתפת לניהול", exact: true })
@@ -1329,7 +1329,7 @@ try {
     path: join(web, "test-results/voxel-react-moderation.png"),
   });
   await openSessionMenu(teacherPage);
-  await teacherPage.getByText("כלי מורה", { exact: true }).tap();
+  await teacherPage.locator(".voxel-session__staff > summary").tap();
   // Persisted chat uses visible owned dialogs and the real SQL/SDK boundary.
   const chatText = "<img src=x onerror=alert(1)> שלום 🙂";
   await kidPage.getByRole("button", { name: "צ׳אט", exact: true }).click();
@@ -1337,9 +1337,7 @@ try {
     .getByRole("textbox", { name: "הודעה למפגש", exact: true })
     .fill(chatText);
   wire.control.loseChatResponse = true;
-  await kidPage
-    .getByRole("button", { name: "שליחת הודעה", exact: true })
-    .click();
+  await kidPage.getByRole("button", { name: "שליחה", exact: true }).click();
   try {
     await kidPage
       .getByText("לא התקבל אישור. אפשר לבדוק שוב את אותה בקשת צ׳אט.", {
@@ -1397,9 +1395,7 @@ try {
   await kidPage
     .getByRole("textbox", { name: "הודעה למפגש", exact: true })
     .fill("הודעה נוספת לניקוי");
-  await kidPage
-    .getByRole("button", { name: "שליחת הודעה", exact: true })
-    .click();
+  await kidPage.getByRole("button", { name: "שליחה", exact: true }).click();
   await teacherPage.getByText("הודעה נוספת לניקוי", { exact: true }).waitFor();
   await teacherPage
     .getByRole("button", { name: "ניקוי הצ׳אט", exact: true })
@@ -1530,7 +1526,7 @@ try {
     .getByRole("button", { name: "סיום המפגש", exact: true })
     .tap();
   await teacherPage
-    .getByRole("button", { name: "שמירה וסיום", exact: true })
+    .getByRole("button", { name: "סיום המפגש", exact: true })
     .tap();
   try {
     await teacherPage
