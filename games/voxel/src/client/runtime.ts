@@ -180,7 +180,7 @@ export async function mountVoxel(
   const hotbar = palette.slice(0, 9);
   hotbar[0] = palette.find((item) => item.family === 'stone') ?? hotbar[0];
   let hud: HudState = {
-    mode: 'creative',
+    mode: 'survival',
     role: 'participant',
     lifecycle: 'preparing',
     worldPauseReason: null,
@@ -199,13 +199,13 @@ export async function mountVoxel(
     effectsAvailable: audio.supported,
     status: 'connecting',
     message: 'מתחברים לעולם…',
-    selected: hotbar.find((i) => i.family === 'stone')?.state ?? hotbar[0].state,
+    selected: 0,
     players: 1,
     flying: false,
     pointerLocked: false,
     cameraDistance: 0,
     graphics: 'ready',
-    hotbar,
+    hotbar: [],
   };
   let socket: WebSocket | null = null,
     pool: EnginePool | null = null,

@@ -2105,3 +2105,9 @@ Chat/audio now follow the old compact dark widgets. Chat has a draggable header,
 Game/web types, focused tool/material checks, four native mining checks, cursor/layout flow and production React/native-room presentation checks pass. Screenshots include compact chat/audio and green held fibers/item thumbnails. No hosted write or SFU/media matrix was run. The user's single remaining disconnect shows expired authorization during slow/unavailable policy reads; this batch preserves those deadlines and makes no provider-outage cure claim.
 
 Matched release: `97e41770853caa0eb4768e5b7784d3b065d00be776b92f8e059d703ae4397795`. Content/engine/protocol are unchanged and existing saves remain compatible. No migration, world reset or staging push. See [UI follow-up](voxel-ui-review-follow-up.md) for scope and evidence.
+
+## 2026-10-29 — Loading palette and terrain explanation
+
+Removed the pre-welcome creative HUD/palette flash: startup now uses normal gameplay defaults with an empty hotbar and no selected block. The school server supplies the actual rules; terrain starts from its welcome seed. Game types and matched packaging pass for release `c36e8047624d2b4afac1752eaf97687fb0a05ab5ff51af17b6730b61f9f89911`. No engine/content/protocol change, migration, reset or push.
+
+Current fresh-room seed remains the gateway default `4242`, so new sessions begin with identical base terrain while their saved edits remain separate. The Rust generator uses deterministic climate/height/density noise, biome surfaces, caves, ores, vegetation and bedrock in independent 16×16×256 columns. The playable square is 512×512. Distinct new maps would require a seed chosen and persisted per new world; that behavior was not changed in this UI fix.

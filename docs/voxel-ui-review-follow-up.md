@@ -31,7 +31,7 @@ Repairs for the 2026-10-29 source review of `90fe575`. The first batch is `6af81
 
 ## Release and next step
 
-The matched published game release is `97e41770853caa0eb4768e5b7784d3b065d00be776b92f8e059d703ae4397795`.
+The matched published game release is `c36e8047624d2b4afac1752eaf97687fb0a05ab5ff51af17b6730b61f9f89911`.
 
 Terrain artwork continues to use the procedural world-texture pipeline (UI-13). Next is local play feedback; `dev/staging` stays untouched under the user's explicit instruction. The main PR and deployment walkthrough still depend on their later staging confirmation. No additional broad qualification loop is required for these presentation repairs.
 
@@ -117,3 +117,9 @@ The user reports a longer play period with one remaining disconnect. Its event i
 Focused validation: game/web types; three tool/material/bucket checks; four actual-Wasm mining/plant/release/tool checks; delayed-response inventory/cursor geometry flow; production React/native-room chat send/close, compact audio settings, recipe crafting, held fiber/PNG thumbnails, mode-label absence and end wording. Screenshots were reviewed at 1366×850. The final widget check also verifies that the readable minimized chat preview stays at the viewport's left edge. No SFU connection, hosted write, broad gameplay/media matrix or physical-PC performance claim is included. Existing browser tools were aligned with the changed controls but their full suites were not rerun.
 
 Matched release: `97e41770853caa0eb4768e5b7784d3b065d00be776b92f8e059d703ae4397795`. Engine, content and protocol are unchanged, so the current saved world remains compatible. No migration, world reset or staging push.
+
+## Initialization palette flash
+
+The loading HUD defaulted to creative and displayed a filled palette before the server's welcome established the actual rules. It now starts with normal gameplay defaults, no selected block and an empty hotbar. Terrain jobs still begin only after the authoritative welcome supplies the seed/world identity. The school service already starts fresh worlds with normal gameplay rules; restored checkpoints retain their saved rules. This is a presentation fix, not a second terrain-generation path.
+
+The map-generation question also confirmed that the gateway currently defaults every fresh room to seed `4242`. New rooms therefore start with the same terrain and maintain separate saved edits. This seed behavior was not changed by the initialization fix. Game types and matched packaging pass; no broad suite was rerun. Matched release: `c36e8047624d2b4afac1752eaf97687fb0a05ab5ff51af17b6730b61f9f89911`; engine/content/protocol unchanged, no migration/reset/push.
