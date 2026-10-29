@@ -1,21 +1,21 @@
 {
-  "buildId": "a0fe518cf938d99a9197513bc4a7aff78217db7db0a70c3095eb49e3f81bad55",
+  "buildId": "596d8ffc6b18024f391e27cf7c26a3a40bf82b806abe88168ac2737f92fbb80c",
   "engineHash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388",
   "contentHash": "2d930b06841018cd0cb4adc65905432e4ffedc3ea2d112bb7ff65a811165307c",
-  "clientHash": "3a8f67eb411a5befcfa05955433673d1c0df1a117d6236d9a3981fd9c4002d3d",
-  "serverHash": "6b299f5b12c88000022b79aa34ee9731d6ec1c6a18ae1218cb669a996b9ceb10",
+  "clientHash": "2bc08b40e2d8e774eccb18e6ff2cbf8803801b76412597f029c537c9e44ceb46",
+  "serverHash": "8e8bc77386662c1f241497c6de465e6b5adf2c4d86c09ddb1842d4e050fc96bc",
   "client": [
     {
       "path": "assets/engine-worker-DYAFKrDe.js",
       "hash": "99d3377c134578cd5e9bdd923e7707547e62c3a2a0a1a64c90adec5f1121bf04"
     },
     {
-      "path": "assets/index-Cs1na6Sb.css",
-      "hash": "71bc1c00ada28a34cac8c5976388cd23a17caf35f8a665f8ca99c68c75c1de51"
+      "path": "assets/index-B73BUZZl.js",
+      "hash": "c4ed06303838296ca19db1ca348f5b3ee436966f89fc14aeaa95a18a557d4b04"
     },
     {
-      "path": "assets/index-DcuibwAc.js",
-      "hash": "94cb4c0d85269dc8d83425f303a2024d6efbb3c3875b2fadd971571127d7a96e"
+      "path": "assets/index-BY26-pet.css",
+      "hash": "e600689413fc76bc199da1421cb764e980876fd31124e82f754e05607f5f1795"
     },
     {
       "path": "assets/voxel_engine_bg-1ejYMYOZ.wasm",
@@ -23,13 +23,13 @@
     },
     {
       "path": "index.html",
-      "hash": "9d913441ca2de92496f255505b7ce1c0f07803edd3317222d5168bbe104dc6b4"
+      "hash": "4b9265c5e9a96c6386b674626534c6ab15958863090669a513d8abf1f5f52b49"
     }
   ],
   "server": [
     {
       "path": "build.json",
-      "hash": "9bb6c9c4f07b56ba3807e5f0e37fbe218a30923e8aa0e3ef9fa52c0009a0ac1b"
+      "hash": "738684e2955ac0faf39487b7b2c4fecbd29d3bdfa6a2108c9badfb1e9dae70c9"
     },
     {
       "path": "content.json",

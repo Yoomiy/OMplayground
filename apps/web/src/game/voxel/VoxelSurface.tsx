@@ -439,7 +439,7 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
     !!mountError ||
     !!errorCode ||
     !hud ||
-    (hud.status !== "playing" && !hud.inventoryOpen);
+    (hud.status !== "playing" && !hud.inventoryOpen && !help);
   useEffect(() => {
     if (hud?.status === "playing") {
       if (menu.current) menu.current.open = false;
@@ -520,6 +520,7 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
           }
           scene={() => runtime.current?.voiceScene() ?? null}
           onOpen={() => command({ type: "pause" })}
+          onResume={() => command({ type: "resume" })}
         />
         <VoxelChat
           api={api}
@@ -532,6 +533,7 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
             ["playing", "paused", "dead"].includes(hud.status)
           }
           onOpen={() => command({ type: "pause" })}
+          onResume={() => command({ type: "resume" })}
         />
         <details
           ref={menu}

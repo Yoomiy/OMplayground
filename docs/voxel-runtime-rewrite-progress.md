@@ -2085,3 +2085,13 @@ Renew immediately after attachment and reserve measured provider latency on late
 The aged-proof reproduction, transient-error/denial check and native durable-room scenario with slow membership acceptance plus repeated one-second reads pass. Existing revocation, expired-response and terminal-completion checks pass, as do game/service types and matched client/server packaging. The room retains the same worker and owner. These are focused local checks with no hosted writes or broad qualification rerun.
 
 Matched release: `a0fe518cf938d99a9197513bc4a7aff78217db7db0a70c3095eb49e3f81bad55`. Engine, content and protocol are unchanged. Restart/reload locally; no migration or further world reset is required. Changes remain local and no staging push was made.
+
+## 2026-10-29 — Inventory layout and selection movement
+
+Compared directly with the old client and restored its compact 640px inventory, 40px gray beveled slots, crafting-first/equipment/storage order, and separate 440px recipe-book window. The main panel and its status/details/actions keep fixed space through selection. The hotbar stays at the bottom with storage scrolling above it. Slot buttons persist across selection and authoritative acknowledgments; catalog choices no longer replace the list or reset scrolling. Recipe previews/cards are compact and use a consistent ingredient → output row.
+
+E/Esc navigates back from the recipe book to inventory, then back to play. Recipe preparation returns to the crafting grid. Closing chat/voice restores game control. Numpad digits and NumpadEnter restore the legacy shortcuts. Escape can restore keyboard control without a fresh pointer-lock activation; the next world click captures the mouse. Help hides the unrelated entry prompt behind it.
+
+Focused delayed-response inventory checks retain identical panel/grid/slot geometry and original slot buttons through stack distribution, recipe preparation, crafting and rejection. The production React/native-worker flow and 1366×850 screenshot review cover the separate book and return-to-game controls. Game/web types and matched packaging pass; no hosted writes or broad gameplay suite was run. See [UI review follow-up](voxel-ui-review-follow-up.md).
+
+Matched release: `596d8ffc6b18024f391e27cf7c26a3a40bf82b806abe88168ac2737f92fbb80c`. Engine/content/protocol and prior authorization/end-session fixes remain intact. No migration, world reset or staging push.

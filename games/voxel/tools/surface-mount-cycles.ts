@@ -71,7 +71,8 @@ export async function surfaceMountCycles(
     );
     assert.equal(activeOwners.liveWorkers, active.resources.workers);
     assert.equal(await page.locator('.voxel-session canvas').count(), 1);
-    assert.equal(await page.locator('.voxel-inventory').count(), 1);
+    assert.equal(await page.locator('.voxel-inventory:not(.voxel-recipe-book)').count(), 1);
+    assert.equal(await page.locator('.voxel-recipe-book').count(), 1);
     assert.equal(await page.locator('.voxel-touch').count(), 1);
     const beforeExit = await page.evaluate(() => (window as any).voxelMemoryProbe());
     assert(beforeExit.gpuBuffers.bytes > 0);

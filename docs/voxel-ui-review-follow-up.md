@@ -31,7 +31,7 @@ Repairs for the 2026-10-29 source review of `90fe575`. The first batch is `6af81
 
 ## Release and next step
 
-The matched published game release is `a0fe518cf938d99a9197513bc4a7aff78217db7db0a70c3095eb49e3f81bad55`.
+The matched published game release is `596d8ffc6b18024f391e27cf7c26a3a40bf82b806abe88168ac2737f92fbb80c`.
 
 Terrain artwork continues to use the procedural world-texture pipeline (UI-13). Next is local play feedback; `dev/staging` stays untouched under the user's explicit instruction. The main PR and deployment walkthrough still depend on their later staging confirmation. No additional broad qualification loop is required for these presentation repairs.
 
@@ -88,3 +88,15 @@ The first connected check now starts immediately. Later checks reserve the obser
 Focused validation passes: five authorization unit checks; a real native gateway/worker with in-memory durable ownership, slow membership acceptance leaving 1.6 seconds of its five-second proof, and successive one-second renewal reads; existing capability-revocation and late-response expiry checks; and terminal completion. The durable room retained the same worker and owner through the repeated checks. Game/service TypeScript and matched packaging pass. No hosted calls, browser matrix or broader gameplay suite was added.
 
 Matched release: `a0fe518cf938d99a9197513bc4a7aff78217db7db0a70c3095eb49e3f81bad55`. Restart the local stack and refresh the browser to load the matched build. Content/engine/protocol are unchanged; no migration or additional world reset is required. The local reproduction is not a claim of verified hosted provider performance. Staging remains untouched.
+
+## Stable inventory controls using the old layout
+
+The user rejected the combined inventory/recipe layout and reported movement when selecting items. The old `MinecraftClient.tsx` inventory was read directly: a compact 640px panel, crafting at the top, equipment then storage/hotbar, 40px gray beveled slots, and a separate centered 440px recipe-book window. This batch follows that structure instead of keeping the earlier combined 1040px panel.
+
+The main panel has a fixed viewport-bounded frame. Its header, status line, item details and action row reserve their space rather than appearing/disappearing on selection. The hotbar stays visible at the bottom; storage scrolls above it when needed. Selection, pending acknowledgments and inventory revisions update the existing slot buttons rather than replacing the entire layout. Structural changes such as opening a chest or switching to a workbench rebuild only when that layout actually changes. Catalog selection retains its list nodes and scroll position. Recipe previews use explicit left-to-right ingredient → result rows and compact cards.
+
+The recipe book opens separately, as in the old version. E/Esc returns from it to the unchanged inventory. Arranging a recipe returns to the crafting grid; creating its result remains explicit. E/Esc or the close button returns from inventory to the game. Closing chat and voice restores local control, numpad digits select hotbar slots, and NumpadEnter opens chat. Escape without current browser activation restores keyboard control; the next world click captures the mouse. Help no longer displays an entry prompt behind it. Permissions, recipes, inventory authority and session lifecycle are unchanged.
+
+Focused checks use the actual authoritative inventory model with delayed responses: select/split/distribute/craft two tables, prepare recipes, search/categories and reject a transfer. Dialog/grid/slot rectangles remain identical across the interaction and the original slot nodes remain connected. A production React/native-worker browser flow verifies separate recipe preparation, table crafting, help/chat shortcuts and returning to game control; screenshots were reviewed at 1366×850. Game/web types and matched packaging pass. These are local functional/visual checks, with no hosted writes, broader gameplay rerun or school-PC performance claim.
+
+Matched release: `596d8ffc6b18024f391e27cf7c26a3a40bf82b806abe88168ac2737f92fbb80c`. No content/engine/protocol change, migration or additional world reset. No staging push.

@@ -1466,7 +1466,7 @@ export async function mountVoxel(
     if (event.code === 'KeyQ' && !event.repeat) command({ type: 'drop' });
     if (event.code === 'KeyX' && !event.repeat) command({ type: 'attack' });
     if (event.code === 'KeyG' && !event.repeat) command({ type: 'ignite' });
-    if (/^Digit[1-9]$/.test(event.code)) {
+    if (/^(Digit|Numpad)[1-9]$/.test(event.code)) {
       const index = Number(event.code.slice(-1)) - 1;
       if (usesBagHotbar()) command({ type: 'select-slot', slot: index });
       else {
@@ -1781,6 +1781,21 @@ export async function mountVoxel(
       if (inputMode === 'touch') {
         focus(document.visibilityState === 'visible' && document.hasFocus());
         if (focused) publish({ status: phase === 'playing' ? 'playing' : hud.status, message: '' });
+      } else if (
+        navigator.userActivation?.isActive === false &&
+        phase === 'playing' &&
+        prediction &&
+        stream?.readyAround(world.player_state(prediction.slot)) &&
+        socket?.readyState === WebSocket.OPEN &&
+        performance.now() - lastReceived < 1500 &&
+        document.visibilityState === 'visible' &&
+        document.hasFocus()
+      ) {
+        // Escape does not supply fresh browser activation. Restore keyboard
+        // control now; the next world click captures the mouse as on first entry.
+        canvas.focus({ preventScroll: true });
+        focus(true);
+        if (focused) publish({ status: 'playing', message: '' });
       } else if (typeof canvas.requestPointerLock === 'function') {
         // The browser API exists in both void and Promise-returning forms.
         try {

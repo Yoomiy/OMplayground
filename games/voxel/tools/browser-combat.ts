@@ -168,7 +168,9 @@ try {
   assert.equal(dead.body.frozen, 1);
   assert.equal(dead.inventoryOpen, false);
   assert.equal(
-    await b.locator('.voxel-inventory').evaluate((dialog: HTMLDialogElement) => dialog.open),
+    await b
+      .locator('.voxel-inventory:not(.voxel-recipe-book)')
+      .evaluate((dialog: HTMLDialogElement) => dialog.open),
     false,
   );
   assert.ok(dead.feedback.effects.hits >= 1);

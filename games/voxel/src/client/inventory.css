@@ -2,41 +2,50 @@
   --paper: #d4c5a8;
   --ink: #2f261c;
   --edge: #5c4f3e;
-  width: min(1040px, calc(100vw - 32px));
+  width: min(640px, calc(100vw - 32px));
+  height: min(780px, calc(100dvh - 32px));
   max-height: calc(100dvh - 32px);
   box-sizing: border-box;
-  overflow: auto;
+  overflow: hidden;
   color: var(--ink);
   background: linear-gradient(#d4c5a8, #bfb196 65%, #a89274);
   border: 3px solid #1e1e1e;
   border-radius: 3px;
-  padding: 16px 20px;
+  padding: 16px 22px;
   box-shadow:
     inset 0 1px #ffffff59,
     0 20px 50px #000d;
   font-family: inherit;
 }
-.voxel-inventory[data-book='false'] {
-  width: min(640px, calc(100vw - 32px));
+.voxel-inventory[open] {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 .voxel-inventory::backdrop {
-  background: #000a;
+  background: #000b;
 }
 .voxel-inventory header {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 12px;
   padding-bottom: 10px;
-  margin-bottom: 12px;
   border-bottom: 2px solid #8a7a62;
 }
 .voxel-inventory h2 {
-  margin: 0 auto 0 0;
+  margin: 0;
   font-size: 20px;
   color: #1f1810;
 }
+.inventory-subtitle {
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: #4a3f30;
+}
 .voxel-inventory h3 {
-  margin: 8px 0;
+  margin: 0;
   font-size: 13px;
   font-weight: 800;
 }
@@ -68,102 +77,147 @@
   opacity: 0.5;
   cursor: default;
 }
-.inventory-hint,
-#inventory-item-details {
-  color: #4a3f30;
-  font-size: 11px;
-  line-height: 1.6;
-  margin: 10px 0 0;
-}
-.inventory-cursor-status {
-  color: #392a13;
-  background: #efdfb2;
-  border: 1px solid #8a7a62;
-  padding: 6px 9px;
-  margin: 0 0 10px;
-  font-size: 12px;
-}
-.inventory-cursor-status:empty,
-.inventory-notice:empty {
-  display: none;
-}
 .inventory-notice {
+  flex: 0 0 22px;
+  height: 22px;
+  line-height: 22px;
+  margin: 0;
+  color: #4a3f30;
   font-size: 12px;
-  padding: 5px 8px;
-  background: #f8e6b5;
-  border-right: 3px solid #80612d;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .inventory-body {
-  display: grid;
-  grid-template-columns: minmax(500px, 1fr) 330px;
-  align-items: start;
-  gap: 16px;
-}
-.voxel-inventory[data-book='false'] .inventory-body,
-.inventory-body[data-panel='catalog'] {
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  scrollbar-gutter: stable;
+  padding: 2px 4px 4px;
 }
 .inventory-panel-tabs {
-  grid-column: 1 / -1;
   display: flex;
   gap: 8px;
+  margin-bottom: 12px;
 }
 .inventory-primary {
-  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 8px;
+}
+.inventory-storage {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 8px;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+.inventory-storage > * {
+  flex-shrink: 0;
+}
+.inventory-hotbar {
+  flex: 0 0 auto;
+}
+.inventory-hotbar h3 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 .inventory-primary > section {
-  margin-top: 12px;
+  min-width: 0;
 }
 .inventory-upper {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 16px;
   border: 2px solid #6b5e4b;
   background: #00000012;
-  padding: 10px;
+  padding: 10px 12px;
 }
 .inventory-upper > section {
-  min-width: 0;
-  position: relative;
+  display: flow-root;
 }
 .inventory-upper h3 {
-  margin-top: 0;
+  line-height: 28px;
+  margin-bottom: 8px;
 }
 .voxel-inventory .inventory-book-toggle {
-  font-size: 10px;
   float: left;
-  padding: 3px 6px;
-  min-height: 26px;
-  margin-bottom: 8px;
 }
 .inventory-grid {
   direction: ltr;
   display: grid;
-  grid-template-columns: repeat(var(--columns), 52px);
+  grid-template-columns: repeat(var(--columns), 40px);
   gap: 4px;
-  justify-content: center;
-}
-.inventory-equipment .inventory-grid {
-  grid-template-columns: repeat(var(--columns), 38px);
-  gap: 3px;
+  justify-content: start;
+  width: max-content;
+  padding: 5px;
+  border: 2px solid #6b5e4b;
+  background: #00000016;
 }
 .inventory-craft-row {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 18px;
   clear: both;
 }
 .inventory-craft-row > span {
-  font-size: 24px;
+  font-size: 26px;
   color: #5c4f3e;
 }
 .inventory-output-label {
-  font-size: 10px;
-  line-height: 1.5;
+  height: 18px;
+  line-height: 18px;
+  font-size: 11px;
   color: #4a3f30;
-  margin: 7px 0 0;
-  max-width: 280px;
+  text-align: center;
+  margin: 6px 0 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.inventory-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 5px 8px;
+  flex: 0 0 auto;
+  border-top: 2px solid #8a7a62;
+  padding-top: 8px;
+}
+#inventory-item-details {
+  height: 18px;
+  line-height: 18px;
+  font-size: 12px;
+  margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.inventory-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.inventory-hint {
+  grid-column: 1 / -1;
+  color: #4a3f30;
+  font-size: 11px;
+  line-height: 18px;
+  height: 18px;
+  margin: 0;
+  white-space: nowrap;
+}
+.inventory-cursor-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 .voxel-item-slot,
 .voxel-session .voxel-item-slot {
@@ -180,11 +234,13 @@
   padding: 2px;
   border-radius: 1px;
   border: 2px solid;
-  border-color: #5c4f3e #e6d8bd #e6d8bd #5c4f3e;
-  background: #9d8d73;
+  border-color: #2a2a2a;
+  background: #8d8d8d;
   color: #30271c;
   vertical-align: middle;
-  box-shadow: inset 1px 1px #0003;
+  box-shadow:
+    inset 2px 2px #ffffff73,
+    inset -2px -2px #0006;
 }
 .voxel-item-slot img {
   width: 44px;
@@ -246,24 +302,25 @@
 .voxel-item-slot[data-compatible='false'] {
   opacity: 0.5;
 }
-.inventory-equipment .voxel-item-slot {
-  width: 38px;
-  height: 42px;
-  min-height: 42px;
+.inventory-grid .voxel-item-slot {
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  flex-basis: 40px;
 }
-.inventory-equipment .voxel-item-slot img {
+.inventory-grid .voxel-item-slot img {
   width: 32px;
   height: 32px;
 }
 .voxel-inventory .inventory-result {
-  width: 64px;
-  height: 64px;
-  min-height: 64px;
-  flex-basis: 64px;
+  width: 56px;
+  height: 56px;
+  min-height: 56px;
+  flex-basis: 56px;
   border-color: #79602e #fff0c1 #fff0c1 #79602e;
   background: #c8b58a;
 }
-.inventory-cursor {
+.voxel-inventory .inventory-cursor {
   position: fixed;
   z-index: 30;
   pointer-events: none;
@@ -287,28 +344,44 @@
 }
 .inventory-catalog {
   grid-column: 1 / -1;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  min-height: 0;
 }
 .inventory-catalog-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, 52px);
-  max-height: min(52vh, 420px);
+  max-height: none;
   overflow: auto;
   gap: 5px;
   padding: 4px;
   margin-bottom: 12px;
 }
-.inventory-recipes {
-  min-width: 0;
-  border: 2px solid #6b5e4b;
-  background: linear-gradient(#ebe1cf, #d9ccb8);
-  padding: 10px;
-  box-shadow: inset 0 1px #fff6;
+.voxel-recipe-book {
+  width: min(440px, calc(100vw - 32px));
+  height: min(520px, calc(100dvh - 48px));
+  background: linear-gradient(#ebe1cf, #d9ccb8 65%, #c0b09a);
 }
-.inventory-recipes summary {
-  cursor: pointer;
-  font-size: 15px;
-  font-weight: 900;
-  margin-bottom: 8px;
+.voxel-recipe-book::backdrop {
+  background: #0009;
+}
+.inventory-recipes {
+  min-height: 0;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+}
+.inventory-recipes input[type='search'] {
+  margin: 0;
+}
+.inventory-recipe-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.inventory-recipe-preview > span:not(.voxel-item-slot) {
+  font-size: 20px;
 }
 .inventory-recipe-tabs {
   display: flex;
@@ -332,12 +405,19 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 9px;
-  max-height: min(63vh, 600px);
+  flex: 1;
+  min-height: 0;
+  align-content: start;
+  scrollbar-gutter: stable;
   overflow: auto;
   padding: 2px;
 }
 .inventory-recipe {
-  padding: 9px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 12px;
   background: #0000000a;
   border: 1px solid #8a7a62;
 }
@@ -345,7 +425,9 @@
   outline: 2px solid #9c761f;
 }
 .inventory-recipe h4 {
-  margin: 0 0 8px;
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0;
   font-size: 12px;
 }
 .inventory-recipe-grid {
@@ -369,7 +451,26 @@
 .inventory-recipe p {
   font-size: 10px;
   line-height: 1.5;
-  margin: 6px 0;
+  margin: 0;
+}
+.inventory-recipe-preview {
+  grid-column: 1;
+  grid-row: 2;
+}
+.inventory-recipe > button {
+  grid-column: 2;
+  grid-row: 2;
+}
+.inventory-recipe-ingredients {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.inventory-recipe-availability {
+  grid-column: 2;
+  grid-row: 1;
 }
 .inventory-recipe-empty {
   font-size: 12px;
@@ -380,35 +481,25 @@
 .voxel-inventory [hidden] {
   display: none !important;
 }
-@media (max-width: 930px) {
-  .inventory-body {
-    grid-template-columns: 1fr;
-  }
-  .inventory-recipes {
-    grid-column: 1;
-  }
-  .inventory-recipe-list {
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    max-height: 340px;
-  }
-}
 @media (max-width: 580px) {
   .voxel-inventory {
     padding: 12px;
   }
   .inventory-grid {
     grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
+    width: auto;
   }
   .inventory-grid .voxel-item-slot {
     width: 100%;
-    height: 40px;
-    min-height: 40px;
+    height: 38px;
+    min-height: 38px;
   }
   .inventory-grid .voxel-item-slot img {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
   }
-  .inventory-upper {
-    grid-template-columns: 1fr;
+  .inventory-hint {
+    grid-column: 1 / -1;
+    font-size: 9px;
   }
 }

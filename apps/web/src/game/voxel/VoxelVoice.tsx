@@ -31,6 +31,7 @@ export function VoxelVoice(props: {
   ended?: boolean;
   scene: () => VoiceScene | null;
   onOpen: () => void;
+  onResume?: () => void;
 }) {
   const { api, isStaff, ready } = props,
     latest = useRef(props);
@@ -240,6 +241,11 @@ export function VoxelVoice(props: {
         ref={dialog}
         className="voxel-session__dialog voxel-session__voice-dialog"
         aria-labelledby="voxel-voice-title"
+        onCancel={(event) => {
+          event.preventDefault();
+          dialog.current?.close();
+          props.onResume?.();
+        }}
         onClose={() => {
           setOpen(false);
           setDraft(null);
@@ -247,7 +253,13 @@ export function VoxelVoice(props: {
       >
         <header>
           <h2 id="voxel-voice-title">שיחה קולית</h2>
-          <button type="button" onClick={() => dialog.current?.close()}>
+          <button
+            type="button"
+            onClick={() => {
+              dialog.current?.close();
+              props.onResume?.();
+            }}
+          >
             סגירת שיחה קולית
           </button>
         </header>

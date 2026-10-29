@@ -17,11 +17,13 @@ export function VoxelChat({
   isStaff,
   canSend,
   onOpen,
+  onResume,
 }: {
   api: VoxelApi;
   isStaff: boolean;
   canSend: boolean;
   onOpen: () => void;
+  onResume?: () => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null),
     write = useRef<AbortController | null>(null),
@@ -144,15 +146,14 @@ export function VoxelChat({
     }
   };
   const locked = notice?.state === "pending" || notice?.state === "unconfirmed";
-  const opening = useRef({ onOpen, canSend, open });
-  opening.current = { onOpen, canSend, open };
+  const opening = useRef({ onOpen, open });
+  opening.current = { onOpen, open };
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       const current = opening.current;
       if (
         event.repeat ||
-        !["KeyT", "Enter"].includes(event.code) ||
-        !current.canSend ||
+        !["KeyT", "Enter", "NumpadEnter"].includes(event.code) ||
         current.open ||
         document.querySelector(".voxel-session dialog[open]") ||
         (event.target instanceof HTMLElement &&
@@ -185,6 +186,11 @@ export function VoxelChat({
         ref={dialog}
         className="voxel-session__dialog voxel-session__chat"
         aria-labelledby="voxel-chat-title"
+        onCancel={(event) => {
+          event.preventDefault();
+          dialog.current?.close();
+          onResume?.();
+        }}
         onClose={() => {
           setOpen(false);
           setConfirm(null);
@@ -192,7 +198,13 @@ export function VoxelChat({
       >
         <header>
           <h2 id="voxel-chat-title">צ׳אט במפגש</h2>
-          <button type="button" onClick={() => dialog.current?.close()}>
+          <button
+            type="button"
+            onClick={() => {
+              dialog.current?.close();
+              onResume?.();
+            }}
+          >
             סגירת הצ׳אט
           </button>
         </header>

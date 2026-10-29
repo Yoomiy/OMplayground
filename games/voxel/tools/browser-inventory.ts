@@ -52,7 +52,9 @@ try {
     );
   });
   assert.equal(
-    await page.locator('.voxel-inventory').evaluate((dialog: HTMLDialogElement) => dialog.open),
+    await page
+      .locator('.voxel-inventory:not(.voxel-recipe-book)')
+      .evaluate((dialog: HTMLDialogElement) => dialog.open),
     true,
   );
   const settled = () => page.waitForFunction(() => !(window as any).voxel.debug().inventoryPending);

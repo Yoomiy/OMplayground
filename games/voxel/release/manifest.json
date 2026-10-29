@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "buildId": "a0fe518cf938d99a9197513bc4a7aff78217db7db0a70c3095eb49e3f81bad55",
+  "buildId": "596d8ffc6b18024f391e27cf7c26a3a40bf82b806abe88168ac2737f92fbb80c",
   "inputs": [
     {
       "path": "LICENSE",
@@ -172,11 +172,11 @@
     },
     {
       "path": "src/client/inventory-controls.ts",
-      "hash": "86e80eb8c330c2e765e3ede93378353618c9c0b133cd894787f1431767a1ff40"
+      "hash": "685bba01476febfa3e8b50c30ce072c62b723c17a5cd5616adcd14b767cae96a"
     },
     {
       "path": "src/client/inventory.css",
-      "hash": "e0ca8a829a35e250503b1051b8ab4a019ba02b1aa6ad9ea523267218f10678b1"
+      "hash": "ee18be5e5f03f8bd02ab32d0896fb822d415e71ab6a51a43d8e65d9b29fa2b18"
     },
     {
       "path": "src/client/item-description.ts",
@@ -200,7 +200,7 @@
     },
     {
       "path": "src/client/runtime.ts",
-      "hash": "13eefa74cb5be0e6c2eee2372e1cf8305f683daa37ca212b3a38b839e38dd90a"
+      "hash": "55daf178576b6e18931d852b86a906423a89bad987fd557d30d854d52c38059e"
     },
     {
       "path": "src/client/style.css",
@@ -522,7 +522,7 @@
     },
     {
       "path": "artifacts/build.json",
-      "hash": "9bb6c9c4f07b56ba3807e5f0e37fbe218a30923e8aa0e3ef9fa52c0009a0ac1b"
+      "hash": "738684e2955ac0faf39487b7b2c4fecbd29d3bdfa6a2108c9badfb1e9dae70c9"
     },
     {
       "path": "artifacts/content-bindings.ts",
@@ -538,19 +538,19 @@
     },
     {
       "path": "artifacts/release.json",
-      "hash": "c0adb9b34f6eaf638df29dec66f2d19090f2ba012ff8f5d2ffc4f929ee23fee2"
+      "hash": "907f1d60c96d7312c95e237bc25c773dfa4ea78df29cf40c2757e0526a559883"
     },
     {
       "path": "dist-client/assets/engine-worker-DYAFKrDe.js",
       "hash": "99d3377c134578cd5e9bdd923e7707547e62c3a2a0a1a64c90adec5f1121bf04"
     },
     {
-      "path": "dist-client/assets/index-Cs1na6Sb.css",
-      "hash": "71bc1c00ada28a34cac8c5976388cd23a17caf35f8a665f8ca99c68c75c1de51"
+      "path": "dist-client/assets/index-B73BUZZl.js",
+      "hash": "c4ed06303838296ca19db1ca348f5b3ee436966f89fc14aeaa95a18a557d4b04"
     },
     {
-      "path": "dist-client/assets/index-DcuibwAc.js",
-      "hash": "94cb4c0d85269dc8d83425f303a2024d6efbb3c3875b2fadd971571127d7a96e"
+      "path": "dist-client/assets/index-BY26-pet.css",
+      "hash": "e600689413fc76bc199da1421cb764e980876fd31124e82f754e05607f5f1795"
     },
     {
       "path": "dist-client/assets/voxel_engine_bg-1ejYMYOZ.wasm",
@@ -558,11 +558,11 @@
     },
     {
       "path": "dist-client/index.html",
-      "hash": "9d913441ca2de92496f255505b7ce1c0f07803edd3317222d5168bbe104dc6b4"
+      "hash": "4b9265c5e9a96c6386b674626534c6ab15958863090669a513d8abf1f5f52b49"
     },
     {
       "path": "dist-server/build.json",
-      "hash": "9bb6c9c4f07b56ba3807e5f0e37fbe218a30923e8aa0e3ef9fa52c0009a0ac1b"
+      "hash": "738684e2955ac0faf39487b7b2c4fecbd29d3bdfa6a2108c9badfb1e9dae70c9"
     },
     {
       "path": "dist-server/content.json",
