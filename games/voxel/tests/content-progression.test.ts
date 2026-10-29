@@ -255,7 +255,7 @@ test('apples are rare oak forage rather than a guaranteed drop from every tree l
       apples += blockDrops(leaves, 4242, [n, 70, 0], n).filter(
         (drop) => drop.itemType === 'apple',
       ).length;
-    if (family === 'oak_leaves') assert.ok(apples >= 15 && apples <= 70, String(apples));
+    if (family === 'oak_leaves') assert.ok(apples >= 140 && apples <= 260, String(apples));
     else assert.equal(apples, 0);
   }
 });

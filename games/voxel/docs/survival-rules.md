@@ -32,7 +32,7 @@ through restart. See [checkpoint state](checkpoint-state.md).
 | Food | Owned food uses its authored nutrition, capped at 20; apple restores four |
 | Eating cooldown | Half a simulation second; full-food/cooldown/conflict rejection consumes nothing |
 
-All three leaf families retain guaranteed leaves. Oak additionally rolls a 2% apple
+All three leaf families retain guaranteed leaves. Oak additionally rolls a 10% apple
 or 5% sapling outcome; birch/spruce only roll the 5% sapling outcome. Grass supplies
 plant fiber plus one deterministic weighted forage outcome. Tagged mixed-wood
 recipes, refining, four tool tiers, body armor, prepared foods and reusable

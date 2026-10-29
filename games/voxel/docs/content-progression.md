@@ -58,7 +58,7 @@ reusable bucket. The vest gives 20% melee/blast armor, speed ×0.95 and 240 uses
 Special equipment keeps the rules in [equipment-rules.md](equipment-rules.md).
 
 All three leaf families retain the guaranteed leaf drop. Oak additionally rolls
-a 2% apple or 5% sapling outcome; birch and spruce roll only the 5% sapling outcome. Short grass
+a 10% apple or 5% sapling outcome; birch and spruce roll only the 5% sapling outcome. Short grass
 always yields one plant fiber and rolls once against this table:
 
 | Extra outcome | Weight per 1,000 |

@@ -38,6 +38,13 @@ test('reviewed loot/mining tuning preserves prior native checkpoint data without
   for (const key of ['blocks', 'items', 'recipes', 'terrain', 'terrainFallback'] as const)
     assert.deepEqual(content[key], old[key], key);
   assert.equal(compatibleCheckpointContent(old.hash, content), true);
+  assert.equal(
+    compatibleCheckpointContent(
+      '05809e4f10d630b5446d0872e38b1ba7f40263d0a3fb59f5ea3e7c023d190ddc',
+      content,
+    ),
+    true,
+  );
   assert.equal(compatibleCheckpointContent('0'.repeat(64), content), false);
   assert.equal(compatibleCheckpointContent(old.hash, { ...content, hash: '0'.repeat(64) }), false);
   engine.initSync({

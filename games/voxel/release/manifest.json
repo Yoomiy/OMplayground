@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "buildId": "0119f4a9e8a1701a86c4bc0a2b4d9442d3cc16f4fb691fe9897332d864b19d56",
+  "buildId": "cdcac5d8b8ddb11f9ddb0dc6f81211188ba3e675761ab4e761ee644559cec3bb",
   "inputs": [
     {
       "path": "LICENSE",
@@ -32,7 +32,7 @@
     },
     {
       "path": "content/index.ts",
-      "hash": "39fea0e5915ca8492236ea19108190078d535dc139427f6e7d2da827586d6114"
+      "hash": "3ea0ebb9c1ecdb4c0ef78a55fb5b52e33778f837efe07edf734fe9e20259eb58"
     },
     {
       "path": "content/legacy-inventory.json",
@@ -344,7 +344,7 @@
     },
     {
       "path": "src/shared/checkpoint-content.ts",
-      "hash": "ffe788726b0d742994bb1064e1bbe8a73d6f708a2e0e004ea737426febea116b"
+      "hash": "94d17c5cb95ea9dfba99e86f2da330f7cdaf0d5e1cafd3e052715ca5d71f07bc"
     },
     {
       "path": "src/shared/chunk-wire.ts",
@@ -530,15 +530,15 @@
     },
     {
       "path": "artifacts/build.json",
-      "hash": "990059b0eba420d9164db1dfd62b093fab96c4f29526cf0f80c5ff4c32873f8b"
+      "hash": "f43abcd50b741a40c00b26a48a6494122fcd5cfd2762cd11d7b0f97c622522f5"
     },
     {
       "path": "artifacts/content-bindings.ts",
-      "hash": "3039074e8e0151aa804b4dbd3c2bcd0bbac9f1877da5dcf849e393618f503ce3"
+      "hash": "be9f350986883ce11c0fb78e4cfce95f9c86199961918246b2a17fd2d714c599"
     },
     {
       "path": "artifacts/content.json",
-      "hash": "959921133a305a47a88d3f80c51a34387275f165cf7301d237baee09117f64c3"
+      "hash": "5b148b7ed67000f0a690f253642e19e300c88b5c5110035ce0b3747c2eb5e9e9"
     },
     {
       "path": "artifacts/engine-cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388.wasm",
@@ -546,15 +546,15 @@
     },
     {
       "path": "artifacts/release.json",
-      "hash": "0002b72c7f2c618c6d79fec2a389a00cd3610094d19e465451a826aa6c82496e"
+      "hash": "7f94249e1f2f9298c47f311ab45d4f4ffbd8c760e8e95f668e089e6aeea028a4"
     },
     {
       "path": "dist-client/assets/engine-worker-DYAFKrDe.js",
       "hash": "99d3377c134578cd5e9bdd923e7707547e62c3a2a0a1a64c90adec5f1121bf04"
     },
     {
-      "path": "dist-client/assets/index-DNQV2uFU.js",
-      "hash": "a8c06746ce9871095bc3762aee4a696c5ab3b6abb5cb0561f6b5e0714bb1d083"
+      "path": "dist-client/assets/index-CLPd9fQv.js",
+      "hash": "db5eb8b938330ecfad84562595a4608e4ecd965663cf62a2cbf15759f5b87ac6"
     },
     {
       "path": "dist-client/assets/index-P3AiFv1J.css",
@@ -566,15 +566,15 @@
     },
     {
       "path": "dist-client/index.html",
-      "hash": "a1b84d5dd68706835b206b6bf784634b1d762baea8077c079ec419f73e683fb8"
+      "hash": "7770561ea40f359c5738e6c575e58226f24be6f3ca6158daf4f5cc879e053323"
     },
     {
       "path": "dist-server/build.json",
-      "hash": "990059b0eba420d9164db1dfd62b093fab96c4f29526cf0f80c5ff4c32873f8b"
+      "hash": "f43abcd50b741a40c00b26a48a6494122fcd5cfd2762cd11d7b0f97c622522f5"
     },
     {
       "path": "dist-server/content.json",
-      "hash": "959921133a305a47a88d3f80c51a34387275f165cf7301d237baee09117f64c3"
+      "hash": "5b148b7ed67000f0a690f253642e19e300c88b5c5110035ce0b3747c2eb5e9e9"
     },
     {
       "path": "dist-server/engine.wasm",
@@ -582,19 +582,19 @@
     },
     {
       "path": "dist-server/gateway.js",
-      "hash": "ebdbb133fa58a72ee344d9a08d27b55d50aad677196ed9a851a891f5fd9f8fc7"
+      "hash": "62afd61dd4c6544c08665820a6460850f2b2b0f044b1afeda69264f10d9ec7ad"
     },
     {
       "path": "dist-server/gateway.js.map",
-      "hash": "f25550ab22b407e55e2bafaeffe84836a0047267116c274a98662182014f32a0"
+      "hash": "1d4d17e081e8ac8b2d0a54823497884ca73c22e8f6ad0be1b7519e144cae3c1b"
     },
     {
       "path": "dist-server/room-worker.js",
-      "hash": "ceb7548fc0efa92fcf89e12a42fe2710f5d2cf8f37323bd5e1ff1a216bfc7b82"
+      "hash": "e8019e1e99ed9b6b65bb9e8ce335c845a1a7942fa415e7ce8ad40c777fa6cb18"
     },
     {
       "path": "dist-server/room-worker.js.map",
-      "hash": "e6f11177aba2e6bfce5066546af8c92ee25515f460b55e0308191fa49a42037d"
+      "hash": "654637729677ce38cd46da6606f626c63ae448875a2b36dd0e6a9ca99c78b08a"
     },
     {
       "path": "engine/pkg/.gitignore",

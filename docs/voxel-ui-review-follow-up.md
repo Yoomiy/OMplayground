@@ -31,7 +31,7 @@ Repairs for the 2026-10-29 source review of `90fe575`. The first batch is `6af81
 
 ## Release and next step
 
-The matched published game release is `0119f4a9e8a1701a86c4bc0a2b4d9442d3cc16f4fb691fe9897332d864b19d56`.
+The matched published game release is `cdcac5d8b8ddb11f9ddb0dc6f81211188ba3e675761ab4e761ee644559cec3bb`.
 
 Terrain artwork continues to use the procedural world-texture pipeline (UI-13). Next is local play feedback; `dev/staging` stays untouched under the user's explicit instruction. The main PR and deployment walkthrough still depend on their later staging confirmation. No additional broad qualification loop is required for these presentation repairs.
 
@@ -168,3 +168,6 @@ The requested cave-light audit found that meshing waits for its full neighbor se
 Focused validation passes: game/web/service types; deterministic rare-apple check; native instant-attachment mining; native prior-content object-store recovery; and a production React/native-worker browser flow consuming food by right-click and by the mouse-free button. The latter observes hunger 4→8→12 and owned apples 4→3→2, no blocking release modal and correct tool guidance. Screenshots at 1366×850 were reviewed. No hosted writes, broad qualification or new migration. Engine Wasm is unchanged and reused.
 
 Matched release: `0119f4a9e8a1701a86c4bc0a2b4d9442d3cc16f4fb691fe9897332d864b19d56`. Commit locally, restart the stack and refresh. Existing compatible worlds need no reset; staging is not pushed.
+
+
+The user raised oak apple forage to 10%; saplings remain 5%, with no apple from birch/spruce. Help → אוכל already explains hotbar selection/right-click, R, and the mouse-free eating button. Previous compatible save versions remain accepted. The focused loot/native-save checks and matched packaging pass for `cdcac5d8b8ddb11f9ddb0dc6f81211188ba3e675761ab4e761ee644559cec3bb`. No push, migration or reset.

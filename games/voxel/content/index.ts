@@ -549,11 +549,11 @@ export const source: ContentSource = {
         ? {
             ...block,
             forage: {
-              none: block.family === 'oak_leaves' ? 93 : 95,
+              none: block.family === 'oak_leaves' ? 85 : 95,
               entries: [
                 { itemType: 'sapling', count: 1, weight: 5 },
                 ...(block.family === 'oak_leaves'
-                  ? [{ itemType: 'apple', count: 1, weight: 2 }]
+                  ? [{ itemType: 'apple', count: 1, weight: 10 }]
                   : []),
               ],
             },
