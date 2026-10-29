@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { setTimeout as delay } from 'node:timers/promises';
 import { readAuthorization, ConnectionAuthorization } from '../src/server/admission.ts';
 test('private authorization validates every grant and canonicalizes copied capabilities without accepting client timers or a different identity', () => {
   const now = Date.now(),
@@ -97,3 +98,74 @@ test('a connection retains its original admission generation when a fresh policy
     connection.close();
   }
 });
+
+test(
+  'startup-aged grants renew without another half-window wait and sustained provider latency leaves renewal headroom',
+  { timeout: 5000 },
+  async () => {
+    const actor = {
+      id: 'kid',
+      role: 'participant' as const,
+      capabilities: { build: true, fly: true, observe: false, combat: true, explosives: true },
+    };
+    // A five-second school proof has already spent most of its time in startup IO.
+    const current = { actor, expiresAt: Date.now() + 500 };
+    const losses: string[] = [];
+    let renewals = 0;
+    const connection = new ConnectionAuthorization(
+      {
+        ...current,
+        revalidate: async () => {
+          const expiresAt = Date.now() + 900;
+          await delay(350);
+          return { actor, expiresAt };
+        },
+      },
+      current,
+      () => renewals++,
+      (reason) => losses.push(reason),
+    );
+    try {
+      for (let n = 0; n < 200 && renewals < 3 && !losses.length; n++) await delay(10);
+      assert.deepEqual(losses, [], 'valid slow renewal must not trigger a reconnect');
+      assert.ok(renewals >= 3, 'connection must survive successive request-start-bounded proofs');
+      assert.equal(connection.valid(), true);
+    } finally {
+      connection.close();
+    }
+  },
+);
+
+test(
+  'a transient renewal error retries inside the original proof, while a confirmed denial closes immediately',
+  { timeout: 3000 },
+  async () => {
+    const actor = {
+      id: 'kid',
+      role: 'participant' as const,
+      capabilities: { build: true, fly: true, observe: false, combat: true, explosives: true },
+    };
+    const current = { actor, expiresAt: Date.now() + 2000 };
+    let checks = 0;
+    const lost = new Promise<string>((resolve) => {
+      const connection = new ConnectionAuthorization(
+        {
+          ...current,
+          revalidate: async () => {
+            if (++checks === 1) throw new Error('temporary provider outage');
+            return null;
+          },
+        },
+        current,
+        () => assert.fail('neither an outage nor a denial renews authority'),
+        (reason) => {
+          connection.close();
+          resolve(reason);
+        },
+      );
+    });
+    assert.equal(await lost, 'UNAUTHORIZED');
+    assert.equal(checks, 2);
+    assert.ok(Date.now() < current.expiresAt);
+  },
+);

@@ -1078,11 +1078,12 @@ export async function createGateway(options: GatewayOptions) {
                   connection: id,
                   deadline: until,
                 } satisfies ToRoom),
-              (reason) => {
+              (reason, detail) => {
                 event('VOXEL_ACTOR_DISCONNECTED', {
                   worldId: room.worldId,
                   reason,
                   origin: 'authorization',
+                  ...detail,
                 });
                 detach(id);
                 if (socket.readyState === WebSocket.OPEN)

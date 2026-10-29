@@ -31,7 +31,7 @@ Repairs for the 2026-10-29 source review of `90fe575`. The first batch is `6af81
 
 ## Release and next step
 
-The matched published game release is `cff3c428323c1a660d06f63fdebd4801a74faca4e5ca7bfd02906087c4154868`.
+The matched published game release is `a0fe518cf938d99a9197513bc4a7aff78217db7db0a70c3095eb49e3f81bad55`.
 
 Terrain artwork continues to use the procedural world-texture pipeline (UI-13). Next is local play feedback; `dev/staging` stays untouched under the user's explicit instruction. The main PR and deployment walkthrough still depend on their later staging confirmation. No additional broad qualification loop is required for these presentation repairs.
 
@@ -76,3 +76,15 @@ The user confirmed applying `20261029160000_voxel_end_without_checkpoint.sql`. I
 Focused checks: strict game/web/service types; end/pause unit and receipt checks; actual PostgreSQL semantics in an isolated PGlite instance; a delayed-response authoritative inventory DOM flow distributing a stack across four cells and crafting a table; and a production React/native-room browser flow exercising the guide, shortcuts, recipe arrangement, table result and explicit end. The latter observed zero new checkpoint requests after end was accepted. Desktop screenshots at 1366×850 were reviewed. Persistence/lifecycle fixtures were local; these checks made no hosted writes and do not establish school-PC GPU performance. Existing PostgreSQL integration tests were updated but their CLI suite was not rerun.
 
 Matched release: `cff3c428323c1a660d06f63fdebd4801a74faca4e5ca7bfd02906087c4154868`. Content, engine and protocol are unchanged from the prior entry/recovery release, so this batch does not require another world reset. No broad qualification rerun, log-level change or staging push was performed.
+
+## Authorization renewal during slow startup/provider reads
+
+The next local report contains repeated `RECOVERING` disconnects from the authorization supervisor (and once the worker), followed by clean save/release and fresh admission. This identifies the authorization path behind that rejoin loop; successful checkpoints precede the disconnect.
+
+A focused reproduction exposed a renewal scheduling flaw. A proof aged by startup/membership IO waited another half of its remaining lifetime before renewal. School proofs expire five seconds from the provider request start, so the remaining time also excludes the provider's response latency. Both delays could leave too little time to finish the next check. The reproduction failed against the previous code.
+
+The first connected check now starts immediately. Later checks reserve the observed provider duration in addition to half the remaining window. Temporary provider errors retry inside the current proof; they never move its independent expiry. Confirmed denial, capability changes and session completion still close the connection, and late responses cannot revive it. Safe disconnect fields distinguish expired/denied/changed/ended authorization and record renewal duration without provider messages or tokens. Log levels/format remain unchanged.
+
+Focused validation passes: five authorization unit checks; a real native gateway/worker with in-memory durable ownership, slow membership acceptance leaving 1.6 seconds of its five-second proof, and successive one-second renewal reads; existing capability-revocation and late-response expiry checks; and terminal completion. The durable room retained the same worker and owner through the repeated checks. Game/service TypeScript and matched packaging pass. No hosted calls, browser matrix or broader gameplay suite was added.
+
+Matched release: `a0fe518cf938d99a9197513bc4a7aff78217db7db0a70c3095eb49e3f81bad55`. Restart the local stack and refresh the browser to load the matched build. Content/engine/protocol are unchanged; no migration or additional world reset is required. The local reproduction is not a claim of verified hosted provider performance. Staging remains untouched.

@@ -7,6 +7,8 @@ import { WebSocket } from 'ws';
 import { SocketProbe } from '../fixtures/socket-probe.ts';
 import type { AdmissionGrant, Authorization } from '../../src/server/admission.ts';
 import type { AdmittedActor } from '../../src/sim/game-room.ts';
+import type { GatewayOptions } from '../../src/server/gateway.ts';
+import { MemoryCheckpoints } from '../fixtures/checkpoint-storage.ts';
 import { SessionEnded } from '../../src/server/admission.ts';
 const { createGateway }: typeof import('../../src/server/gateway.ts') = process.env
   .VOXEL_TEST_BUNDLE
@@ -26,8 +28,11 @@ const participant: AdmittedActor = {
 function grant(revalidate: AdmissionGrant['revalidate'], actor = participant): AdmissionGrant {
   return { actor, expiresAt: Date.now() + 30000, revalidate };
 }
-async function harness(issue: () => Promise<AdmissionGrant>) {
-  const gateway = await createGateway({ build, content, admit: issue });
+async function harness(
+  issue: () => Promise<AdmissionGrant>,
+  options: Pick<GatewayOptions, 'persistence' | 'sessions' | 'roomPolicy'> = {},
+) {
+  const gateway = await createGateway({ build, content, admit: issue, ...options });
   assert.ok(gateway.address && typeof gateway.address === 'object');
   const origin = `http://127.0.0.1:${gateway.address.port}`;
   const ticket = async (body: unknown = { room: 'authorization' }) => {
@@ -46,6 +51,60 @@ async function harness(issue: () => Promise<AdmissionGrant>) {
   };
   return { gateway, origin, ticket, connect };
 }
+
+test(
+  'slow membership acceptance and school-sized renewal latency do not cycle a durable room through reconnects',
+  { timeout: 15000 },
+  async () => {
+    const backend = new MemoryCheckpoints();
+    let proofExpiresAt = 0,
+      renewals = 0;
+    const h = await harness(
+      async () =>
+        grant(async (stage) => {
+          const expiresAt = Date.now() + 5000;
+          proofExpiresAt = expiresAt;
+          if (stage === 'actor') {
+            renewals++;
+            await delay(1000);
+          }
+          return { actor: participant, expiresAt };
+        }),
+      {
+        persistence: { objects: backend, metadata: backend },
+        roomPolicy: async () => ({ state: 'playing', expiresAt: Date.now() + 5000 }),
+        sessions: {
+          async initialize() {},
+          async accept() {
+            // Startup and platform membership leave a still-valid aged proof.
+            await delay(Math.max(0, proofExpiresAt - Date.now() - 1600));
+          },
+          async project() {
+            return true;
+          },
+        },
+      },
+    );
+    let probe: SocketProbe | undefined;
+    try {
+      probe = await h.connect((await h.ticket()).value);
+      await probe.ready();
+      const room = h.gateway.rooms.get('authorization');
+      await delay(6500);
+      assert.equal(probe.socket.readyState, WebSocket.OPEN);
+      assert.ok(renewals >= 3, 'multiple real gateway-to-worker renewals completed');
+      assert.equal(h.gateway.rooms.get('authorization'), room, 'same worker and owner retained');
+      assert.equal(backend.rows.get('authorization')!.epoch, 1);
+      assert.equal(
+        probe.events.some((event) => 'type' in event && event.type === 'error'),
+        false,
+      );
+    } finally {
+      probe?.socket.terminate();
+      await h.gateway.close();
+    }
+  },
+);
 
 test(
   'ticket consumption revalidates current authority before allocating a room',
@@ -171,10 +230,10 @@ test(
   { timeout: 10000 },
   async () => {
     for (const connected of [false, true]) {
-      let calls = 0;
+      let ended = !connected;
       const h = await harness(async () =>
         grant(async () => {
-          if (connected && ++calls === 1)
+          if (!ended)
             return { actor: participant, expiresAt: Date.now() + 1200 };
           throw new SessionEnded();
         }),
@@ -182,7 +241,10 @@ test(
       let probe: SocketProbe | undefined;
       try {
         probe = await h.connect((await h.ticket()).value);
-        if (connected) await probe.ready();
+        if (connected) {
+          await probe.ready();
+          ended = true;
+        }
         const error = await probe.event('error');
         assert.equal(error.code, 'SESSION_ENDED');
         assert.equal(error.retryable, false);

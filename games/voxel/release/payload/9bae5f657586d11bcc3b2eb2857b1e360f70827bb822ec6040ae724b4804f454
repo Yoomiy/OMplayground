@@ -1029,6 +1029,8 @@ var ConnectionAuthorization = class {
   renewal = null;
   expiry = null;
   closed = false;
+  renewalStarted = null;
+  renewalMs = 0;
   initialMembershipRevision;
   apply;
   lost;
@@ -1039,7 +1041,7 @@ var ConnectionAuthorization = class {
     this.apply = apply;
     this.lost = lost;
     this.deadline = performance.now() + current.expiresAt - Date.now();
-    this.schedule();
+    this.schedule(true);
   }
   get until() {
     return this.deadline;
@@ -1059,38 +1061,56 @@ var ConnectionAuthorization = class {
     if (!this.closed) this.fail("RECOVERING");
     return false;
   }
-  schedule() {
+  schedule(immediate = false) {
     const remaining = this.deadline - performance.now();
     this.expiry = setTimeout(() => this.fail("RECOVERING"), Math.max(0, remaining));
-    this.renewal = setTimeout(() => void this.renew(), Math.max(0, remaining / 2));
+    this.renewal = setTimeout(
+      () => void this.renew(),
+      immediate ? 0 : Math.max(0, remaining / 2 - this.renewalMs)
+    );
   }
   async renew() {
     if (!this.valid()) return;
+    this.renewalStarted = performance.now();
     try {
       const value = await this.grant.revalidate("actor");
       if (!this.valid()) return;
       if (value === null) {
-        this.fail("UNAUTHORIZED");
+        this.fail("UNAUTHORIZED", "denied");
         return;
       }
       const next = readAuthorization(value, Date.now(), this.current.actor.id);
       if (JSON.stringify(next.actor) !== JSON.stringify(this.current.actor)) {
-        this.fail("UNAUTHORIZED");
+        this.fail("UNAUTHORIZED", "changed");
         return;
       }
       if (this.expiry) clearTimeout(this.expiry);
+      this.renewalMs = performance.now() - this.renewalStarted;
+      this.renewalStarted = null;
       this.current = next;
       this.deadline = performance.now() + next.expiresAt - Date.now();
       this.apply(this.deadline);
       this.schedule();
     } catch (error) {
-      if (this.valid()) this.fail(isSessionEnded(error) ? "SESSION_ENDED" : "RECOVERING");
+      if (!this.valid()) return;
+      if (isSessionEnded(error)) this.fail("SESSION_ENDED", "session_ended");
+      else {
+        this.renewal = setTimeout(
+          () => void this.renew(),
+          Math.min(250, Math.max(1, (this.deadline - performance.now()) / 2))
+        );
+      }
     }
   }
-  fail(reason) {
+  fail(reason, authorizationFailure = "expired") {
     if (this.closed) return;
     this.close();
-    this.lost(reason);
+    this.lost(reason, {
+      authorizationFailure,
+      renewalMs: Math.round(
+        this.renewalStarted === null ? this.renewalMs : performance.now() - this.renewalStarted
+      )
+    });
   }
   close() {
     this.closed = true;
@@ -2049,11 +2069,12 @@ async function createGateway(options) {
                 connection: id,
                 deadline: until
               }),
-              (reason) => {
+              (reason, detail) => {
                 event("VOXEL_ACTOR_DISCONNECTED", {
                   worldId: room.worldId,
                   reason,
-                  origin: "authorization"
+                  origin: "authorization",
+                  ...detail
                 });
                 detach(id);
                 if (socket.readyState === WebSocket.OPEN)

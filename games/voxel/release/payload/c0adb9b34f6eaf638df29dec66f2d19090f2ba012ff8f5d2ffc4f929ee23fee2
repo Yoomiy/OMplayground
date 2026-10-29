@@ -1,9 +1,9 @@
 {
-  "buildId": "cff3c428323c1a660d06f63fdebd4801a74faca4e5ca7bfd02906087c4154868",
+  "buildId": "a0fe518cf938d99a9197513bc4a7aff78217db7db0a70c3095eb49e3f81bad55",
   "engineHash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388",
   "contentHash": "2d930b06841018cd0cb4adc65905432e4ffedc3ea2d112bb7ff65a811165307c",
-  "clientHash": "da164417063ac24c8281e0cff90ae64df1ab16457d2780b75c576109011e71f0",
-  "serverHash": "113fa4113655a14d9604477b4eaf3690ba755f6fb13f3efe178012214eb65e5f",
+  "clientHash": "3a8f67eb411a5befcfa05955433673d1c0df1a117d6236d9a3981fd9c4002d3d",
+  "serverHash": "6b299f5b12c88000022b79aa34ee9731d6ec1c6a18ae1218cb669a996b9ceb10",
   "client": [
     {
       "path": "assets/engine-worker-DYAFKrDe.js",
@@ -14,8 +14,8 @@
       "hash": "71bc1c00ada28a34cac8c5976388cd23a17caf35f8a665f8ca99c68c75c1de51"
     },
     {
-      "path": "assets/index-ygjCXsqG.js",
-      "hash": "0e4cc93dfec46d87a50a84227ab192185126624fddc09c644ffeb89aa432c1d9"
+      "path": "assets/index-DcuibwAc.js",
+      "hash": "94cb4c0d85269dc8d83425f303a2024d6efbb3c3875b2fadd971571127d7a96e"
     },
     {
       "path": "assets/voxel_engine_bg-1ejYMYOZ.wasm",
@@ -23,13 +23,13 @@
     },
     {
       "path": "index.html",
-      "hash": "b49c0a7008fea259e0b454da84f78ddf48ae50756d1a8f613a9d3c3f5f2c6a58"
+      "hash": "9d913441ca2de92496f255505b7ce1c0f07803edd3317222d5168bbe104dc6b4"
     }
   ],
   "server": [
     {
       "path": "build.json",
-      "hash": "9031a700c4311a8fe25abc988ec48cb40733bba870c2d0b1967c3e3bef4bb61e"
+      "hash": "9bb6c9c4f07b56ba3807e5f0e37fbe218a30923e8aa0e3ef9fa52c0009a0ac1b"
     },
     {
       "path": "content.json",
@@ -41,11 +41,11 @@
     },
     {
       "path": "gateway.js",
-      "hash": "62e874e4cd205996e82283c0e7eff25b8f4103265079a24ee8c8bc06c0b0d9d3"
+      "hash": "9bae5f657586d11bcc3b2eb2857b1e360f70827bb822ec6040ae724b4804f454"
     },
     {
       "path": "gateway.js.map",
-      "hash": "2347bfa0f85ac41a797119c0ba1eaec660e53033db34d8d4ff5299d10c26b9dd"
+      "hash": "750669f43adba859b4e33b41df6964fe1eefc8efaada1811546a6201627b9b44"
     },
     {
       "path": "room-worker.js",
@@ -53,7 +53,7 @@
     },
     {
       "path": "room-worker.js.map",
-      "hash": "868ef382d83e6f6d1eddbcce407f831e938ecd9a0b234d2eedb8c7072d242348"
+      "hash": "a10778cd68dc72e9aad8cd0e196deed904fae3dc9b6d5b6fe62558370068b787"
     }
   ]
 }

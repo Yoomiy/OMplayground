@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "buildId": "cff3c428323c1a660d06f63fdebd4801a74faca4e5ca7bfd02906087c4154868",
+  "buildId": "a0fe518cf938d99a9197513bc4a7aff78217db7db0a70c3095eb49e3f81bad55",
   "inputs": [
     {
       "path": "LICENSE",
@@ -288,7 +288,7 @@
     },
     {
       "path": "src/server/admission.ts",
-      "hash": "dc63ec37cf2440baed9e6fe63ada6dd82ecd309c3ab97d6c579470223c8a62e9"
+      "hash": "aa31d21ba6edc9c976c778cd629fa93a7238de1abefef239c987c63fe28ec09e"
     },
     {
       "path": "src/server/checkpoint-storage.ts",
@@ -300,7 +300,7 @@
     },
     {
       "path": "src/server/gateway.ts",
-      "hash": "75968bf9ed2ea4f1d5237ce46a39d888d372da1e19cb179ed5c5fd53aee1de13"
+      "hash": "02da6b92e4a471de735155366c465bf3006562adcff9c7111c2ba246995e99df"
     },
     {
       "path": "src/server/owner-authorization.ts",
@@ -522,7 +522,7 @@
     },
     {
       "path": "artifacts/build.json",
-      "hash": "9031a700c4311a8fe25abc988ec48cb40733bba870c2d0b1967c3e3bef4bb61e"
+      "hash": "9bb6c9c4f07b56ba3807e5f0e37fbe218a30923e8aa0e3ef9fa52c0009a0ac1b"
     },
     {
       "path": "artifacts/content-bindings.ts",
@@ -538,7 +538,7 @@
     },
     {
       "path": "artifacts/release.json",
-      "hash": "9a9c316a30aa83af7c30a102c78b8ced77459ef53a2b8b3aa43f9c39de6b38bf"
+      "hash": "c0adb9b34f6eaf638df29dec66f2d19090f2ba012ff8f5d2ffc4f929ee23fee2"
     },
     {
       "path": "dist-client/assets/engine-worker-DYAFKrDe.js",
@@ -549,8 +549,8 @@
       "hash": "71bc1c00ada28a34cac8c5976388cd23a17caf35f8a665f8ca99c68c75c1de51"
     },
     {
-      "path": "dist-client/assets/index-ygjCXsqG.js",
-      "hash": "0e4cc93dfec46d87a50a84227ab192185126624fddc09c644ffeb89aa432c1d9"
+      "path": "dist-client/assets/index-DcuibwAc.js",
+      "hash": "94cb4c0d85269dc8d83425f303a2024d6efbb3c3875b2fadd971571127d7a96e"
     },
     {
       "path": "dist-client/assets/voxel_engine_bg-1ejYMYOZ.wasm",
@@ -558,11 +558,11 @@
     },
     {
       "path": "dist-client/index.html",
-      "hash": "b49c0a7008fea259e0b454da84f78ddf48ae50756d1a8f613a9d3c3f5f2c6a58"
+      "hash": "9d913441ca2de92496f255505b7ce1c0f07803edd3317222d5168bbe104dc6b4"
     },
     {
       "path": "dist-server/build.json",
-      "hash": "9031a700c4311a8fe25abc988ec48cb40733bba870c2d0b1967c3e3bef4bb61e"
+      "hash": "9bb6c9c4f07b56ba3807e5f0e37fbe218a30923e8aa0e3ef9fa52c0009a0ac1b"
     },
     {
       "path": "dist-server/content.json",
@@ -574,11 +574,11 @@
     },
     {
       "path": "dist-server/gateway.js",
-      "hash": "62e874e4cd205996e82283c0e7eff25b8f4103265079a24ee8c8bc06c0b0d9d3"
+      "hash": "9bae5f657586d11bcc3b2eb2857b1e360f70827bb822ec6040ae724b4804f454"
     },
     {
       "path": "dist-server/gateway.js.map",
-      "hash": "2347bfa0f85ac41a797119c0ba1eaec660e53033db34d8d4ff5299d10c26b9dd"
+      "hash": "750669f43adba859b4e33b41df6964fe1eefc8efaada1811546a6201627b9b44"
     },
     {
       "path": "dist-server/room-worker.js",
@@ -586,7 +586,7 @@
     },
     {
       "path": "dist-server/room-worker.js.map",
-      "hash": "868ef382d83e6f6d1eddbcce407f831e938ecd9a0b234d2eedb8c7072d242348"
+      "hash": "a10778cd68dc72e9aad8cd0e196deed904fae3dc9b6d5b6fe62558370068b787"
     },
     {
       "path": "engine/pkg/.gitignore",

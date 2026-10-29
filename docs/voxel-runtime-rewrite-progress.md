@@ -2075,3 +2075,13 @@ Explicit “סיום המפגש” skips the final checkpoint throughout control
 Focused types, control/receipt checks, an isolated PostgreSQL migration check and two local browser/model flows pass. The production React/native-room flow crafted a table and ended through the actual session button with zero subsequent checkpoint requests. Desktop screenshots were reviewed. No hosted mutation or broad qualification matrix was run. See [UI review follow-up](voxel-ui-review-follow-up.md) for scope and limits.
 
 Matched release: `cff3c428323c1a660d06f63fdebd4801a74faca4e5ca7bfd02906087c4154868`. This batch changes neither content nor engine/protocol and needs no additional world reset. Changes remain local under the user's no-staging-push instruction; normal local feedback is the next step.
+
+## 2026-10-29 — Authorization-driven rejoin loop
+
+The user's new logs locate repeated recoverable disconnects in authorization renewal, followed by ordinary empty-room saving and automatic readmission. A regression reproduction failed on the prior code: startup-aged proofs waited half their remaining lifetime, and subsequent renewal scheduling ignored time spent obtaining request-start-bounded school proofs.
+
+Renew immediately after attachment and reserve measured provider latency on later checks. Retry temporary errors only inside the still-valid proof, retaining its original independent expiry. Actual denial/capability changes remain immediate, and late responses cannot revive expired authority. Disconnect events include safe authorization cause/duration fields; shared logging behavior is unchanged.
+
+The aged-proof reproduction, transient-error/denial check and native durable-room scenario with slow membership acceptance plus repeated one-second reads pass. Existing revocation, expired-response and terminal-completion checks pass, as do game/service types and matched client/server packaging. The room retains the same worker and owner. These are focused local checks with no hosted writes or broad qualification rerun.
+
+Matched release: `a0fe518cf938d99a9197513bc4a7aff78217db7db0a70c3095eb49e3f81bad55`. Engine, content and protocol are unchanged. Restart/reload locally; no migration or further world reset is required. Changes remain local and no staging push was made.
