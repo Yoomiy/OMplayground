@@ -2156,3 +2156,12 @@ The requested cave-light audit found that meshing waits for its full neighbor se
 Focused validation passes: game/web/service types; deterministic rare-apple check; native instant-attachment mining; native prior-content object-store recovery; and a production React/native-worker browser flow consuming food by right-click and by the mouse-free button. The latter observes hunger 4→8→12 and owned apples 4→3→2, no blocking release modal and correct tool guidance. Screenshots at 1366×850 were reviewed. No hosted writes, broad qualification or new migration. Engine Wasm is unchanged and reused.
 
 Matched release: `0119f4a9e8a1701a86c4bc0a2b4d9442d3cc16f4fb691fe9897332d864b19d56`. Commit locally, restart the stack and refresh. Existing compatible worlds need no reset; staging is not pushed.
+
+
+## Game effect audibility follow-up
+
+The user still reports silent game effects. The earlier gesture browser check established output but measured a footstep at only about 0.001 RMS full scale. The effects master gain and event envelope were low, followed by further inverse-distance attenuation between the player's head and feet. Raised ordinary effect/master levels and set the panner reference distance to two blocks so nearby actions are clearer. Ambient wind/rain levels are compensated to retain their previous balance. Voice audio is separate and unchanged; deferred multiplayer smoothing and cave lighting are untouched.
+
+A focused native-game browser run enters automatically, unlocks through a normal movement key and measures a footstep at about 0.012 RMS (roughly 12× the prior waveform). Muting measures zero and disposal closes the owned context. Game types and matched packaging pass for `8157d95bf55d76343397ca367cb0d5187b346b249a6fd68553655996fb8977c6`. This is software-browser output evidence, not proof of physical playback on the user's device or a confirmed diagnosis of all silence. A question about other audio in the same browser remains pending.
+
+Committed locally; no push, migration, content change or reset. Restart/refresh and click into the world before walking/mining: effects intentionally mute while gameplay control is released.

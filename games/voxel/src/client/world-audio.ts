@@ -95,7 +95,7 @@ export class WorldAudio {
   private gain(): void {
     if (!this.context || !this.output || this.disposed) return;
     this.output.gain.setTargetAtTime(
-      this.active && !this.muted ? 0.22 : 0,
+      this.active && !this.muted ? 0.7 : 0,
       this.context.currentTime,
       0.025,
     );
@@ -132,7 +132,7 @@ export class WorldAudio {
     if (this.ambientGain && context.currentTime >= this.nextAmbient) {
       this.nextAmbient = context.currentTime + 0.25;
       this.ambientGain.gain.setTargetAtTime(
-        (openSky ? 1 : 0.12) * (0.006 + environment.rain * 0.045),
+        (openSky ? 1 : 0.12) * (0.002 + environment.rain * 0.014),
         context.currentTime,
         0.5,
       );
@@ -215,11 +215,13 @@ export class WorldAudio {
                 : 780;
     filter.Q.value = 0.6;
     const duration = group === 'explosion' ? 0.4 : 0.13;
-    gain.gain.setValueAtTime(group === 'explosion' ? 0.45 : removal ? 0.22 : 0.12, now);
+    gain.gain.setValueAtTime(group === 'explosion' ? 0.45 : removal ? 0.65 : 0.4, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
     panner.panningModel = 'equalpower';
     panner.distanceModel = 'inverse';
-    panner.refDistance = 1;
+    // Local footsteps are about 1.6 blocks below the listener. Keep nearby
+    // actions clear before applying distance attenuation to farther effects.
+    panner.refDistance = 2;
     panner.maxDistance = 32;
     panner.rolloffFactor = 1.2;
     panner.positionX.value = position[0];

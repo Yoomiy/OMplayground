@@ -31,7 +31,7 @@ Repairs for the 2026-10-29 source review of `90fe575`. The first batch is `6af81
 
 ## Release and next step
 
-The matched published game release is `cdcac5d8b8ddb11f9ddb0dc6f81211188ba3e675761ab4e761ee644559cec3bb`.
+The matched published game release is `8157d95bf55d76343397ca367cb0d5187b346b249a6fd68553655996fb8977c6`.
 
 Terrain artwork continues to use the procedural world-texture pipeline (UI-13). Next is local play feedback; `dev/staging` stays untouched under the user's explicit instruction. The main PR and deployment walkthrough still depend on their later staging confirmation. No additional broad qualification loop is required for these presentation repairs.
 
@@ -171,3 +171,12 @@ Matched release: `0119f4a9e8a1701a86c4bc0a2b4d9442d3cc16f4fb691fe9897332d864b19d
 
 
 The user raised oak apple forage to 10%; saplings remain 5%, with no apple from birch/spruce. Help → אוכל already explains hotbar selection/right-click, R, and the mouse-free eating button. Previous compatible save versions remain accepted. The focused loot/native-save checks and matched packaging pass for `cdcac5d8b8ddb11f9ddb0dc6f81211188ba3e675761ab4e761ee644559cec3bb`. No push, migration or reset.
+
+
+## Game effect audibility follow-up
+
+The user still reports silent game effects. The earlier gesture browser check established output but measured a footstep at only about 0.001 RMS full scale. The effects master gain and event envelope were low, followed by further inverse-distance attenuation between the player's head and feet. Raised ordinary effect/master levels and set the panner reference distance to two blocks so nearby actions are clearer. Ambient wind/rain levels are compensated to retain their previous balance. Voice audio is separate and unchanged; deferred multiplayer smoothing and cave lighting are untouched.
+
+A focused native-game browser run enters automatically, unlocks through a normal movement key and measures a footstep at about 0.012 RMS (roughly 12× the prior waveform). Muting measures zero and disposal closes the owned context. Game types and matched packaging pass for `8157d95bf55d76343397ca367cb0d5187b346b249a6fd68553655996fb8977c6`. This is software-browser output evidence, not proof of physical playback on the user's device or a confirmed diagnosis of all silence. A question about other audio in the same browser remains pending.
+
+Committed locally; no push, migration, content change or reset. Restart/refresh and click into the world before walking/mining: effects intentionally mute while gameplay control is released.
