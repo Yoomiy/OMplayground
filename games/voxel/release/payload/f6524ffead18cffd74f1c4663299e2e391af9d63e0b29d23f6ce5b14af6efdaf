@@ -1,9 +1,9 @@
 {
-  "buildId": "077aaf53558912d801cef5ad3b693cf71800c1b92af826d2e1696eaf68d499ca",
+  "buildId": "ac2f7fb648a0afc81aea795dc1f9a975c06388368fa0163229ef17f9b55af8c1",
   "engineHash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388",
   "contentHash": "368b605ac5bdf5ff6fcf4af02f7174cbc6d39b5110f48e0a41b231a0a6479464",
-  "clientHash": "7c566760012226f2b2e3c751314c5e696f5943c96a22684054d078633dac15ca",
-  "serverHash": "74129a962acf42de74c3ff5e43feac97cc322ec8dd0e0ec0b270b5068eaf9d5a",
+  "clientHash": "a6e0820ed4630a320c29ad2a52f8052a8bf2010b4cbc664fd811b35384744d57",
+  "serverHash": "b5da82b9a3b046c0478c7648a8f05d16c405c436068933d7beb9a546c31d9eeb",
   "client": [
     {
       "path": "assets/engine-worker-DYAFKrDe.js",
@@ -14,8 +14,8 @@
       "hash": "ed44b97ecc09afb9f18f4ab10516ebcd08f0d94a8dd526fcd7c83528abcf5d37"
     },
     {
-      "path": "assets/index-BK8iAXfp.js",
-      "hash": "ad885289b55a9b315e763fda2e76a46bf3befee4e563c00917cded5f934ae6ba"
+      "path": "assets/index-CBvZKdhK.js",
+      "hash": "56f5d2ac47f9037be8f620fb3042ac21e59950d28839ad28cc89b527eb6f84ff"
     },
     {
       "path": "assets/voxel_engine_bg-1ejYMYOZ.wasm",
@@ -23,13 +23,13 @@
     },
     {
       "path": "index.html",
-      "hash": "8889b25b24343f18539a9e8787b5c8cb418e0d058dd56bc93c4aefd470ab1fe7"
+      "hash": "a020f55dd7230d5e0e139175ffe44908d1f8a00d18d86f5a7019cc116dadd5b1"
     }
   ],
   "server": [
     {
       "path": "build.json",
-      "hash": "fa2e524b88b83f3894cfafa362222369adc261ccb06de82b760571bac832bf6f"
+      "hash": "4a812ebd15c5d043751c9c1ab01e1c3cee6b4a7814aab034f703756d95fbe13e"
     },
     {
       "path": "content.json",

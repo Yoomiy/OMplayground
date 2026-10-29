@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "buildId": "077aaf53558912d801cef5ad3b693cf71800c1b92af826d2e1696eaf68d499ca",
+  "buildId": "ac2f7fb648a0afc81aea795dc1f9a975c06388368fa0163229ef17f9b55af8c1",
   "inputs": [
     {
       "path": "LICENSE",
@@ -147,6 +147,10 @@
       "hash": "417a1e13efdd3daf20309c7097a2df58a7170c83c76f3c98edd3e2842209d376"
     },
     {
+      "path": "src/client/camera.ts",
+      "hash": "49909c743d1eb8e4e2610e1006e77b6d3126786de933bfeb950a59856015b11e"
+    },
+    {
       "path": "src/client/content-labels.ts",
       "hash": "6c2a7aa28b6f4b15875ceef6e02733798a3bf3e9b96d19894afe25b8a140e539"
     },
@@ -180,7 +184,7 @@
     },
     {
       "path": "src/client/item-slot.ts",
-      "hash": "a2025421141363b75c7ce0b465a5824f4e245a7378241cd23c4882744bda05aa"
+      "hash": "8943f2817c25f833293b8d1ab5a696a209bd51a38ac978b9c9fe7960c55bb8dd"
     },
     {
       "path": "src/client/palette.ts",
@@ -192,7 +196,7 @@
     },
     {
       "path": "src/client/runtime.ts",
-      "hash": "a35227f160885943f14227a516b29450cf49b32aa2c529a0991dc6f072c4035d"
+      "hash": "0551745f894bb76f3d2565ebcb122fb0d76799917f37bf39c22c6e9b14069fbd"
     },
     {
       "path": "src/client/style.css",
@@ -224,11 +228,11 @@
     },
     {
       "path": "src/render/avatar-motion.ts",
-      "hash": "5cc8183ba90997b05c5301ae6be73db22325a7c587a99b84a4829e3ff46d5462"
+      "hash": "2c71cb1045b658e54cb68b2c0d02e4a36b0613c87e4a2c002cc517ba930c85be"
     },
     {
       "path": "src/render/avatars.ts",
-      "hash": "0fd3fdd58fe732db4f5e2431c7fbf06cbf611b4eda60f7f66f00a6898983c766"
+      "hash": "8987661a59c480c2075ae37f0e066ca3d81f73ca5cbc9e6b28d37a1b0db6ecdd"
     },
     {
       "path": "src/render/drops.ts",
@@ -252,7 +256,7 @@
     },
     {
       "path": "src/render/held-block.ts",
-      "hash": "4779a9064c7fde7bc3826cdc658f4d61bb11737dc234921229113a682bb9a8f6"
+      "hash": "31663109dd3a761f52fd3d0c8208221b767e1f250062511840a082424ec42432"
     },
     {
       "path": "src/render/item-icons.ts",
@@ -260,7 +264,7 @@
     },
     {
       "path": "src/render/mining-cracks.ts",
-      "hash": "6e0c380220df83b84d97c19330bd5987bb5e40a002fc7ba9ccafa13b10313402"
+      "hash": "2ea07322d35b408edb16d90f111370366d8aadc6d2478f0634f7ffb4412d16b4"
     },
     {
       "path": "src/render/shaders/common.glsl",
@@ -272,7 +276,7 @@
     },
     {
       "path": "src/render/terrain.ts",
-      "hash": "e9b453edb9766e075f493d49471a5b4d857d1bf8e94e7c1112120adf80423c03"
+      "hash": "a85c41eb66a32c1b529de84ed7bf55022226ff3b4b93ef211e470ec0894678dc"
     },
     {
       "path": "src/server/admission.ts",
@@ -510,7 +514,7 @@
     },
     {
       "path": "artifacts/build.json",
-      "hash": "fa2e524b88b83f3894cfafa362222369adc261ccb06de82b760571bac832bf6f"
+      "hash": "4a812ebd15c5d043751c9c1ab01e1c3cee6b4a7814aab034f703756d95fbe13e"
     },
     {
       "path": "artifacts/content-bindings.ts",
@@ -526,7 +530,7 @@
     },
     {
       "path": "artifacts/release.json",
-      "hash": "89ff50153f0f7aadab6f9c578ad7aea324c24b68f3823e8896d0caae610f9b26"
+      "hash": "f6524ffead18cffd74f1c4663299e2e391af9d63e0b29d23f6ce5b14af6efdaf"
     },
     {
       "path": "dist-client/assets/engine-worker-DYAFKrDe.js",
@@ -537,8 +541,8 @@
       "hash": "ed44b97ecc09afb9f18f4ab10516ebcd08f0d94a8dd526fcd7c83528abcf5d37"
     },
     {
-      "path": "dist-client/assets/index-BK8iAXfp.js",
-      "hash": "ad885289b55a9b315e763fda2e76a46bf3befee4e563c00917cded5f934ae6ba"
+      "path": "dist-client/assets/index-CBvZKdhK.js",
+      "hash": "56f5d2ac47f9037be8f620fb3042ac21e59950d28839ad28cc89b527eb6f84ff"
     },
     {
       "path": "dist-client/assets/voxel_engine_bg-1ejYMYOZ.wasm",
@@ -546,11 +550,11 @@
     },
     {
       "path": "dist-client/index.html",
-      "hash": "8889b25b24343f18539a9e8787b5c8cb418e0d058dd56bc93c4aefd470ab1fe7"
+      "hash": "a020f55dd7230d5e0e139175ffe44908d1f8a00d18d86f5a7019cc116dadd5b1"
     },
     {
       "path": "dist-server/build.json",
-      "hash": "fa2e524b88b83f3894cfafa362222369adc261ccb06de82b760571bac832bf6f"
+      "hash": "4a812ebd15c5d043751c9c1ab01e1c3cee6b4a7814aab034f703756d95fbe13e"
     },
     {
       "path": "dist-server/content.json",

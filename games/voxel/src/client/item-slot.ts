@@ -18,7 +18,7 @@ export function fillItemSlot(
   } else if (item || emptyLabel) {
     const name = document.createElement('span');
     name.className = 'voxel-item-slot__empty';
-    name.textContent = emptyLabel || item?.labelKey || '';
+    name.textContent = emptyLabel || 'פריט';
     node.append(name);
   }
   if (stack && stack.count > 1) {

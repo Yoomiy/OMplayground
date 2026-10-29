@@ -32,6 +32,7 @@ export class MiningCracks {
         context.stroke();
       }
       const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
       texture.magFilter = texture.minFilter = THREE.NearestFilter;
       this.textures.push(texture);
     }

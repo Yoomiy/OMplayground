@@ -2015,3 +2015,34 @@ mutation is performed by these checks. The previous content/assets evidence
 archive remains an immutable historical baseline; its live-source comparison
 does not describe these later changes. Hosted and physical-PC qualification,
 balance review and operational cutover remain open.
+
+
+## 2026-10-29: UI review follow-up
+
+The first repair batch (`6af8112`) restores item imagery, durability/vitals,
+visual recipes, inventory transfers, direct station use, compact HUD layout,
+visible action feedback, and bounded mining interruption/release tolerance.
+The follow-up adds collision-aware third-person camera controls and local
+avatar/equipment presentation, plus recovery of a running graphics context
+without discarding its loaded world or owned inventory. Input remains frozen
+through graphics loss and the player explicitly resumes afterward.
+
+The current matched published release is
+`ac2f7fb648a0afc81aea795dc1f9a975c06388368fa0163229ef17f9b55af8c1`.
+The unchanged Wasm engine and its input/artifact hashes match the prior release;
+client/server bundles and the release snapshot are rebuilt together. This
+executor has no Rust compiler, so no fresh engine compilation is claimed.
+
+The two actual-Wasm camera tests pass, as do strict game/web types. Focused
+production-React/native-worker browser checks cover the 3×3 workbench,
+third-person avatar/held item, a real context-loss/restoration cycle retaining
+32 planks and 49 columns with no readmission/remount, explicit resume, and
+continuous mining feedback. Graphics recovery/mining use the existing 0.5
+render-scale / 30 Hz options under software Chromium. These checks do not
+establish physical school-PC performance. See
+[UI review follow-up](voxel-ui-review-follow-up.md) for details.
+
+The user reports that the app starts and asks to launch with less repeated
+testing. Use focused checks for concrete fixes and normal staging feedback.
+Staging repairs are batched; the main PR and manual deployment walkthrough
+follow the user's confirmation that staging works.

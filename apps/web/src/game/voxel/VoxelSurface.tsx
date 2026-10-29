@@ -421,6 +421,7 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
               : "מכינים את העולם…")));
   const canEnter =
     !!hud &&
+    hud.graphics === "ready" &&
     !terminal &&
     !errorCode &&
     !mountError &&
@@ -429,6 +430,7 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
       (hud.role === "observer" && hud.lifecycle === "paused"));
   const reconnect =
     !!hud &&
+    ["ready", "failed"].includes(hud.graphics) &&
     !terminal &&
     ![
       "UNAUTHORIZED",
@@ -531,6 +533,17 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
                 onClick={() => command({ type: "fullscreen" })}
               >
                 מסך מלא
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  command({
+                    type: "camera",
+                    distance: hud?.cameraDistance ? 0 : 4,
+                  })
+                }
+              >
+                {hud?.cameraDistance ? "מבט ראשון" : "מבט שלישי"}
               </button>
               <button
                 type="button"
@@ -705,6 +718,10 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
             ולבחור אותו לסרגל. Esc משחרר את העכבר.
           </p>
           <p>
+            גלילת הגלגלת מקרבת ומרחיקה את המצלמה. V מחליף בין מבט ראשון למבט
+            שלישי.
+          </p>
+          <p>
             פתיחת התיק או יציאה מלכידת העכבר עוצרות רק אתכם. תצפית מורה נשארת
             נסתרת; העולם מתקדם רק עם שחקנים מורשים.
           </p>
@@ -721,7 +738,7 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
       {showStatus && (
         <div className="voxel-session__status" role="status" aria-live="polite">
           <p>{statusText}</p>
-          {mountError && (
+          {(mountError || (hud && hud.graphics !== "ready")) && (
             <button type="button" onClick={() => location.reload()}>
               טעינה מחדש
             </button>
@@ -736,7 +753,9 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
               type="button"
               onClick={() => command({ type: "reconnect" })}
             >
-              התחברות מחדש
+              {hud?.graphics === "failed"
+                ? "ניסיון נוסף לשחזור התצוגה"
+                : "התחברות מחדש"}
             </button>
           )}
           {hud?.status === "dead" && (

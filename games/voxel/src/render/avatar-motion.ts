@@ -9,7 +9,8 @@ export function avatarSwing(
   seconds: number,
   hash = avatarIdentity(actor.id),
 ): number {
-  return actor.flying
-    ? 0
-    : Math.sin(seconds * 10 + (hash % 16)) * Math.min(0.7, actor.speed * 0.13);
+  return (
+    (actor.actionSwing ?? 0) +
+    (actor.flying ? 0 : Math.sin(seconds * 10 + (hash % 16)) * Math.min(0.7, actor.speed * 0.13))
+  );
 }

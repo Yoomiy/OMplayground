@@ -11,6 +11,7 @@ export type AvatarPose = Readonly<{
   speed: number;
   flying: boolean;
   appearance: ActorAppearance;
+  actionSwing?: number;
 }>;
 const palette = [0x4da6a6, 0x7f97d5, 0xc68e65, 0x83a868, 0xb781aa].map(
   (color) => new THREE.Color(color),

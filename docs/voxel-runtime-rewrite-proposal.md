@@ -86,7 +86,7 @@ There is no automatic feature-parity requirement with every current edge case. T
 | Tool wear, food, health/hunger, fall damage, combat, death/respawn, TNT | Required, with server-owned outcomes and deliberate tuning. |
 | Equipment perks | Retain the intended capabilities through data-driven modifiers; old constants and implementation details are negotiable. |
 | Terrain, biomes, day/night, ambient audio, basic weather presentation | Use candidate generation/art foundations; redesign terrain composition and visual style as needed. |
-| Weather-driven block simulation and elaborate weather effects | Deferred proposal, requiring product acceptance of that scope reduction. |
+| Weather-driven block simulation and elaborate weather effects | Deferred for the first release under the launch direction above; weather has visual/audio presentation without changing blocks. |
 | Teacher observation/play modes, room controls, supervision and moderation | Required; capabilities enforced by the backend. |
 | Proximity voice, mute controls, chat | Required; retain LiveKit as the media service with new engine-independent adapters. |
 | Hebrew UI, RTL text/layout, pointer lock, fullscreen and keyboard/mouse controls | Required on school PCs. Existing touch controls are best-effort; mobile/tablet compatibility is not a release gate. World axes, movement, and camera are not mirrored for RTL. |
@@ -294,6 +294,8 @@ Effort is concentrated in registry widening, robust time/reconnect semantics, co
 
 These are proposed engineering targets, not results already achieved. Confirm the actual school device/network matrix and expected simultaneous sessions before release qualification; do not infer school capacity from a 16-player flat-world probe.
 
+**Validation direction — 2026-10-29:** The user reports that the app starts, wants to launch, and asked to reduce repeated testing. Reuse existing CI and recorded evidence; check the specific behavior changed by a fix and address concrete staging feedback. Do not repeatedly run this entire matrix or introduce new workload/device questionnaires as launch prerequisites. Software-rendered browser checks still do not establish physical-PC performance.
+
 | Concern | Proposed gate |
 | --- | --- |
 | Supported school PC | During prescribed movement/building scenarios, foreground frame time p95 ≤16.7 ms and p99 ≤33.3 ms at the documented quality profile. |
@@ -325,9 +327,9 @@ Retire `apps/minecraft-server` only after classroom/RTC responsibilities have th
 
 Rollback means disabling voxel admission or deploying the previous **new-stack** build with compatible checkpoint formats. It does not mean silently reverting to the old NOA game. During prelaunch development, explicit test-world resets remain acceptable; after real users begin, storage/build compatibility and recovery need a deliberate version policy. Waiving compatibility with today's test worlds does not waive future player-data correctness.
 
-## 16. Remaining decisions and stop conditions
+## 16. Launch defaults and stop conditions
 
-Before release, ratify: the bounded-world default and size; actual device/browser floor; deferred weather scope; required art/content set; and the acceptable recovery-loss window. Use ordinary private-school sessions as qualification context; large-scale capacity planning is not a release requirement. Player and room caps are explicitly excluded by the user decision above. The proposal supplies other defaults without treating the existing implementation as the answer.
+Proceed with the user's launch direction: a 512×512 world, school PCs as the primary devices, visual/audio weather, the compiled content set with its recorded legacy-content dispositions, and a healthy-service recovery target of at most 30 seconds of unsaved progress. Continue through staging feedback and the requested manual deployment walkthrough using those defaults. Player and room caps are excluded. The user configures hosting services; a PR to main follows their confirmation that staging works.
 
 Reconsider the candidate foundation if Uint16 conversion makes the engine substantially harder to maintain, representative devices fail basic rendering budgets after sensible quality reductions, or survival/prediction integration requires replacing most supposedly reusable engine contracts. Record those costs and choose an alternative at the early gates rather than continuing because of time already invested.
 

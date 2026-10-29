@@ -4,6 +4,8 @@ import { EnginePool } from '../world/worker-pool.ts';
 import { WorldStream } from '../world/stream.ts';
 import { Prediction } from './prediction.ts';
 import { creativePalette } from './palette.ts';
+import { cameraView, MAX_CAMERA_DISTANCE } from './camera.ts';
+import type { CameraView } from './camera.ts';
 import { RemoteActors } from './interpolation.ts';
 import { appearanceMatchesContent } from '../shared/appearance.ts';
 import { WorldClock } from './world-clock.ts';
@@ -15,7 +17,7 @@ import { parseServerMessage, GENERATOR_VERSION, columnKey } from '../shared/prot
 import type { ClientMessage, ServerMessage, Cell } from '../shared/protocol.ts';
 import { decodeChunk, worldCell } from '../shared/chunk-wire.ts';
 import type { Controls, InputFrame } from '../shared/input.ts';
-import { validStack } from '../shared/inventory.ts';
+import { validStack, EQUIPMENT } from '../shared/inventory.ts';
 import type { InventoryCommand, InventoryView } from '../shared/inventory.ts';
 import type { GameMode, MiningView, DropView } from '../shared/gameplay.ts';
 import type { VitalsView } from '../shared/vitals.ts';
@@ -57,6 +59,8 @@ export type HudState = {
   players: number;
   flying: boolean;
   pointerLocked: boolean;
+  cameraDistance: number;
+  graphics: 'ready' | 'lost' | 'restoring' | 'failed';
   hotbar: readonly {
     key: number;
     state: number;
@@ -78,6 +82,7 @@ export type RuntimeCommand =
   | { type: 'ignite' }
   | { type: 'interact'; kind: 'place' | 'remove' }
   | { type: 'flight' }
+  | { type: 'camera'; distance: number }
   | { type: 'fullscreen' }
   | { type: 'resume' }
   | { type: 'pause' }
@@ -195,6 +200,8 @@ export async function mountVoxel(
     players: 1,
     flying: false,
     pointerLocked: false,
+    cameraDistance: 0,
+    graphics: 'ready',
     hotbar,
   };
   let socket: WebSocket | null = null,
@@ -262,8 +269,23 @@ export async function mountVoxel(
     lastHighlight = '';
   let visualOffset = [0, 0, 0],
     lastPosition = [0, 80, 0];
+  let graphics: HudState['graphics'] = 'ready';
+  const graphicsFailureMessage = 'לא הצלחנו לשחזר את התצוגה. נסו שוב או רעננו את העמוד.';
+  let camera: CameraView = { eye: [0, 81.62, 0], distance: 0 };
   const publish = (patch: Partial<HudState>) => {
-    hud = { ...hud, ...patch };
+    hud = { ...hud, ...patch, graphics };
+    if (
+      !fatalRecovery &&
+      hud.lifecycle !== 'ended' &&
+      hud.status !== 'error' &&
+      hud.status !== 'unsupported' &&
+      (graphics === 'lost' || graphics === 'restoring')
+    )
+      hud = {
+        ...hud,
+        status: 'recovering',
+        message: graphics === 'lost' ? 'התצוגה נעצרה. ממתינים לחידושה…' : 'משחזרים את התצוגה…',
+      };
     for (const listener of listeners) listener(hud);
   };
   const send = (message: ClientMessage) => {
@@ -377,7 +399,8 @@ export async function mountVoxel(
         (hud.role === 'participant' && ['paused', 'recovering'].includes(hud.lifecycle)))
     )
       return;
-    if (active && (fatalRecovery || hud.inventoryOpen || phase === 'dead')) return;
+    if (active && (fatalRecovery || graphics !== 'ready' || hud.inventoryOpen || phase === 'dead'))
+      return;
     if (focused === active) return;
     focused = active;
     if (!active) {
@@ -1261,6 +1284,7 @@ export async function mountVoxel(
     animation = requestAnimationFrame(frame);
   }
   function draw(position: readonly number[], now: number) {
+    if (graphics === 'lost' || graphics === 'failed') return;
     // Controls/prediction/streaming/network use their own timer; GPU submission
     // frequency does not schedule or mint control steps. Main-thread stalls still apply.
     const interval = 1000 / (focused && phase === 'playing' ? renderHz : 10);
@@ -1268,10 +1292,39 @@ export async function mountVoxel(
     nextDraw = now + interval - ((now - nextDraw) % interval);
     const state = slot === null ? null : world.player_state(slot);
     try {
+      camera = cameraView(world, position, yaw, pitch, hud.cameraDistance);
+      const self =
+        camera.distance > 0.8 && hud.role === 'participant' && phase === 'playing'
+          ? {
+              id: actorId,
+              position,
+              yaw,
+              pitch,
+              speed: state ? Math.hypot(state[3], state[5]) : 0,
+              flying: state?.[10] === 1,
+              appearance: {
+                held:
+                  hud.mode === 'survival'
+                    ? (hud.inventory?.bag[hud.selectedSlot]?.itemType ?? null)
+                    : (content.items.find(
+                        (item) => item.places === content.blocks[hud.selected]?.name,
+                      )?.itemType ?? null),
+                equipment: Object.fromEntries(
+                  EQUIPMENT.map((slot, index) => [
+                    slot,
+                    hud.inventory?.equipment[index]?.itemType ?? null,
+                  ]),
+                ) as Record<(typeof EQUIPMENT)[number], string | null>,
+              },
+            }
+          : null;
+      const submitted = renderer.gpuStats.submitted;
       renderer.frame(position, yaw, pitch, remotes.frame(now), now, environment, openSky, {
+        eye: camera.eye,
+        self,
         state: hud.selected,
         speed: state ? Math.hypot(state[3], state[5]) : 0,
-        active: focused && phase === 'playing' && !fatalRecovery,
+        active: focused && phase === 'playing' && hud.role === 'participant' && !fatalRecovery,
         itemType:
           hud.mode === 'survival' ? (hud.inventory?.bag[hud.selectedSlot]?.itemType ?? null) : null,
         drops: [...dropped.values()],
@@ -1285,8 +1338,34 @@ export async function mountVoxel(
             }),
           ).vision,
       });
+      if (graphics === 'restoring' && renderer.gpuStats.submitted > submitted) {
+        graphics = 'ready';
+        if (
+          !fatalRecovery &&
+          hud.lifecycle !== 'ended' &&
+          hud.status !== 'error' &&
+          hud.status !== 'unsupported'
+        )
+          publish({
+            status: phase === 'dead' ? 'dead' : phase === 'preparing' ? 'loading' : 'paused',
+            message:
+              phase === 'dead'
+                ? 'נפלתם. אפשר לחזור לנקודת ההתחלה.'
+                : 'התצוגה שוחזרה. לחצו על כניסה לעולם כדי להמשיך.',
+          });
+        else publish({});
+      }
     } catch (error) {
-      fail('webgl', error);
+      if (renderer.gl.getContext().isContextLost())
+        onContextLost(new Event('webglcontextlost', { cancelable: true }));
+      else if (graphics === 'restoring') {
+        graphics = 'failed';
+        diagnose('webgl_restore', error);
+        publish({
+          status: 'error',
+          message: graphicsFailureMessage,
+        });
+      } else fail('webgl', error);
     }
   }
   const resize = () =>
@@ -1314,6 +1393,10 @@ export async function mountVoxel(
       keys.add(event.code);
     }
     if (event.code === 'KeyF' && !event.repeat) command({ type: 'flight' });
+    if (event.code === 'KeyV' && !event.repeat) {
+      event.preventDefault();
+      command({ type: 'camera', distance: hud.cameraDistance > 0 ? 0 : 4 });
+    }
     if (event.code === 'KeyR' && !event.repeat) command({ type: 'eat' });
     if (event.code === 'KeyQ' && !event.repeat) command({ type: 'attack' });
     if (event.code === 'KeyG' && !event.repeat) command({ type: 'ignite' });
@@ -1379,8 +1462,16 @@ export async function mountVoxel(
     if (event.button === 2) command({ type: 'interact', kind: 'place' });
   };
   const onPointerLockError = (error: unknown) => {
-    if (disposed || fatalRecovery || hud.lifecycle === 'ended' || phase === 'dead') return;
+    if (
+      disposed ||
+      fatalRecovery ||
+      graphics !== 'ready' ||
+      hud.lifecycle === 'ended' ||
+      phase === 'dead'
+    )
+      return;
     diagnose('pointer_lock', error);
+    noticeUntil = 0;
     pointerLockProblem =
       'העכבר לא נלכד. לחצו שוב על כניסה לעולם; אם יצאתם עם Esc, המתינו רגע ונסו שוב.';
     focus(false);
@@ -1398,14 +1489,30 @@ export async function mountVoxel(
     if (document.visibilityState !== 'visible') focus(false);
   };
   const onContext = (event: Event) => event.preventDefault();
+  const onWheel = (event: WheelEvent) => {
+    if (!focused || inputMode !== 'desktop' || !ownsPointerLock()) return;
+    event.preventDefault();
+    const pixels =
+      event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? host.clientHeight : 1);
+    command({ type: 'camera', distance: hud.cameraDistance + pixels * 0.01 });
+  };
   const onContextLost = (event: Event) => {
     event.preventDefault();
+    if (disposed || graphics === 'lost') return;
+    graphics = 'lost';
     renderer.contextLost();
     focus(false);
-    fail('webgl', 'context lost');
+    if (ownsPointerLock()) document.exitPointerLock();
+    publish({});
   };
   const onContextRestored = () => {
-    publish({ status: 'error', message: 'התצוגה הופעלה מחדש. יש לרענן את העמוד.' });
+    if (disposed) return;
+    const retryingGraphics = graphics === 'failed' && hud.message === graphicsFailureMessage;
+    renderer.contextRestored();
+    graphics = 'restoring';
+    nextDraw = 0;
+    lastHighlight = '';
+    publish(retryingGraphics ? { status: 'recovering' } : {});
   };
   function sendInventory(operation: InventoryCommand): void {
     if (socket?.readyState !== WebSocket.OPEN || performance.now() - lastReceived > 1500) return;
@@ -1442,6 +1549,11 @@ export async function mountVoxel(
   }
   function command(cmd: RuntimeCommand) {
     if (disposed) return;
+    if (cmd.type === 'camera') {
+      if (Number.isFinite(cmd.distance))
+        publish({ cameraDistance: Math.max(0, Math.min(MAX_CAMERA_DISTANCE, cmd.distance)) });
+      return;
+    }
     if (cmd.type === 'ignite') {
       if (hud.canIgnite && focused && phase === 'playing') {
         miningHeld = miningSingle = false;
@@ -1550,6 +1662,7 @@ export async function mountVoxel(
         queuedAction = 'collect';
       else queuedAction = cmd.kind;
     } else if (cmd.type === 'resume') {
+      if (graphics !== 'ready') return;
       if (hud.lifecycle === 'ended' || (hud.role === 'participant' && hud.lifecycle !== 'playing'))
         return;
       if (hud.inventoryOpen || phase === 'dead') return;
@@ -1594,8 +1707,10 @@ export async function mountVoxel(
       void (options.fullscreenElement ?? host)
         .requestFullscreen?.()
         .catch((error) => diagnose('fullscreen', error));
-    else if (cmd.type === 'reconnect' && hud.lifecycle !== 'ended') void connect();
-    else if (
+    else if (cmd.type === 'reconnect' && hud.lifecycle !== 'ended') {
+      if (graphics === 'failed') onContextRestored();
+      else if (graphics === 'ready') void connect();
+    } else if (
       cmd.type === 'flight' &&
       prediction &&
       phase === 'playing' &&
@@ -1620,6 +1735,7 @@ export async function mountVoxel(
   document.addEventListener('pointerlockerror', onPointerLockError);
   canvas.addEventListener('mousedown', onMouseDown);
   canvas.addEventListener('contextmenu', onContext);
+  canvas.addEventListener('wheel', onWheel, { passive: false });
   canvas.addEventListener('webglcontextlost', onContextLost);
   canvas.addEventListener('webglcontextrestored', onContextRestored);
   updateTimer = setInterval(() => update(performance.now()), 1000 / 60);
@@ -1630,6 +1746,7 @@ export async function mountVoxel(
     voiceScene() {
       if (
         disposed ||
+        graphics !== 'ready' ||
         fatalRecovery ||
         !baselineReceived ||
         !prediction ||
@@ -1677,6 +1794,8 @@ export async function mountVoxel(
         atmosphere: renderer.atmosphere,
         avatars: renderer.actors,
         renderOrigin: { x: renderer.origin.x, z: renderer.origin.z },
+        camera: { ...camera, requested: hud.cameraDistance },
+        graphics,
         feedback: renderer.feedback,
         audio: audio.stats,
         renderLimitHz: disposed ? 0 : focused && phase === 'playing' ? renderHz : 10,
@@ -1768,6 +1887,7 @@ export async function mountVoxel(
       document.removeEventListener('pointerlockerror', onPointerLockError);
       canvas.removeEventListener('mousedown', onMouseDown);
       canvas.removeEventListener('contextmenu', onContext);
+      canvas.removeEventListener('wheel', onWheel);
       canvas.removeEventListener('webglcontextlost', onContextLost);
       canvas.removeEventListener('webglcontextrestored', onContextRestored);
       clearWorld();
