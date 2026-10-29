@@ -98,6 +98,8 @@ export type RuntimeOptions = {
   renderScale?: number;
   renderHz?: 30 | 60;
   inputMode?: 'desktop' | 'touch';
+  /** Enter an admitted, ready world directly; mouse capture still needs a click. */
+  autoEnter?: boolean;
   onDiagnostic?: (operation: string, reason: string) => void;
 };
 export type VoxelRuntime = {
@@ -211,6 +213,7 @@ export async function mountVoxel(
     slot: number | null = null;
   let reconnectAllowed = true,
     fatalRecovery = false;
+  let enterOnReady = false;
   let disposed = false,
     connection = 0,
     phase: 'preparing' | 'playing' | 'paused' | 'dead' = 'preparing',
@@ -320,11 +323,13 @@ export async function mountVoxel(
     publish({
       lifecycle: 'recovering',
       status: 'recovering',
+      pointerLocked: false,
       message: 'העולם מתאושש. אפשר להתחבר מחדש.',
     });
     if (prediction) send({ type: 'focus', epoch: prediction.currentEpoch, active: false });
     focused = false;
     audio.setActive(false);
+    if (ownsPointerLock()) document.exitPointerLock();
   };
   const clearWorld = () => {
     audio.setActive(false);
@@ -687,18 +692,22 @@ export async function mountVoxel(
             ? 'dead'
             : event.phase === 'preparing'
               ? 'loading'
-              : focused && event.state[12] === 0
-                ? 'playing'
-                : 'paused',
+              : enterOnReady || focusPending
+                ? 'loading'
+                : focused && event.state[12] === 0
+                  ? 'playing'
+                  : 'paused',
         message: fatalRecovery
           ? 'העולם מתאושש. אפשר להתחבר מחדש.'
           : event.phase === 'dead'
             ? 'נפלתם. הפריטים נשארו בעולם. אפשר לחזור לנקודת ההתחלה.'
             : event.phase === 'preparing'
               ? 'מכינים את העולם…'
-              : focused
-                ? ''
-                : (pointerLockProblem ?? 'לחצו על העולם כדי להמשיך'),
+              : enterOnReady || focusPending
+                ? 'נכנסים לעולם…'
+                : focused
+                  ? ''
+                  : (pointerLockProblem ?? 'לחצו על העולם כדי להמשיך'),
         flying: event.state[10] === 1,
       });
       if (pendingInventoryOpen) {
@@ -811,18 +820,19 @@ export async function mountVoxel(
     }
     if (event.type === 'error') {
       if (event.code === 'INVALID') return;
+      enterOnReady = false;
       reconnectAllowed = event.code === 'SESSION_ENDED' ? false : event.retryable;
+      focus(false);
       if (event.code === 'SESSION_ENDED' || event.code === 'RECOVERING') {
         const now = performance.now();
         worldClock.reset(worldClock.read(now), now, false);
-        focus(false);
         if (event.code === 'SESSION_ENDED') phase = 'paused';
-        if (ownsPointerLock()) document.exitPointerLock();
       }
       publish({
         ...(event.code === 'SESSION_ENDED' ? { lifecycle: 'ended' as const } : {}),
         ...(event.code === 'RECOVERING' ? { lifecycle: 'recovering' as const } : {}),
         status: 'error',
+        pointerLocked: false,
         message:
           event.code === 'SESSION_ENDED'
             ? 'המפגש הסתיים. אפשר לחזור לרשימת המשחקים.'
@@ -832,11 +842,15 @@ export async function mountVoxel(
                 ? 'המשחק פתוח בחלון אחר.'
                 : 'החיבור לעולם הופסק. אפשר להתחבר מחדש.',
       });
+      if (ownsPointerLock()) document.exitPointerLock();
     }
   };
   async function connect() {
     reconnectAllowed = true;
     fatalRecovery = false;
+    enterOnReady = options.autoEnter === true;
+    focus(false);
+    if (ownsPointerLock()) document.exitPointerLock();
     const generation = ++connection;
     if (connectionTimer) {
       clearTimeout(connectionTimer);
@@ -934,10 +948,10 @@ export async function mountVoxel(
       ws.onerror = () => diagnose('socket', 'connection failed');
       ws.onclose = () => {
         if (disposed || generation !== connection) return;
-        focused = false;
-        audio.setActive(false);
-        keys.clear();
-        touch = neutralTouch();
+        enterOnReady = false;
+        focus(false);
+        if (ownsPointerLock()) document.exitPointerLock();
+        publish({ pointerLocked: false });
         if (!reconnectAllowed) return;
         publish({ status: 'recovering', message: 'החיבור הופסק. מתחברים מחדש…' });
         connectionTimer = setTimeout(() => {
@@ -1165,6 +1179,20 @@ export async function mountVoxel(
       }
       const ready = stream.readyAround(state) !== null,
         stalled = now - lastReceived > 1500;
+      if (
+        enterOnReady &&
+        phase === 'playing' &&
+        ready &&
+        !stalled &&
+        (hud.lifecycle === 'playing' || (hud.role === 'observer' && hud.lifecycle === 'paused')) &&
+        graphics === 'ready'
+      ) {
+        enterOnReady = false;
+        if (document.visibilityState === 'visible' && document.hasFocus()) {
+          canvas.focus({ preventScroll: true });
+          focus(true);
+        }
+      }
       if (ready && now - lastSkyProbe > 250) {
         lastSkyProbe = now;
         openSky = world.raycast(state[0], state[1] + 1.9, state[2], 0, 1, 0, 256)[0] === 0;
@@ -1182,8 +1210,16 @@ export async function mountVoxel(
           status: focused ? 'playing' : 'paused',
           message: focused ? '' : 'לחצו על העולם כדי להמשיך',
         });
-      if (stalled && hud.status !== 'recovering' && hud.status !== 'error')
+      if (
+        stalled &&
+        hud.status !== 'recovering' &&
+        hud.status !== 'error' &&
+        hud.status !== 'stalled'
+      ) {
+        focus(false);
         publish({ status: 'stalled', message: 'ממתינים לחיבור…' });
+        if (ownsPointerLock()) document.exitPointerLock();
+      }
       let steps = 0;
       let sampled = false;
       while (accumulator >= 1 / 60 && steps++ < 6) {
@@ -1389,7 +1425,13 @@ export async function mountVoxel(
   observer.observe(host);
   resize();
   const onKeyDown = (event: KeyboardEvent) => {
-    if (!focused || (inputMode === 'desktop' && !ownsPointerLock())) return;
+    if (
+      !focused ||
+      (inputMode === 'desktop' && !ownsPointerLock() && document.activeElement !== canvas) ||
+      (event.target instanceof HTMLElement &&
+        event.target.closest('input, textarea, select, [contenteditable="true"], dialog[open]'))
+    )
+      return;
     if (
       [
         'Space',
@@ -1446,6 +1488,15 @@ export async function mountVoxel(
     }
     const locked = ownsPointerLock();
     if (locked) pointerLockProblem = null;
+    if (
+      fatalRecovery ||
+      graphics !== 'ready' ||
+      socket?.readyState !== WebSocket.OPEN ||
+      ['error', 'recovering', 'stalled', 'connecting'].includes(hud.status)
+    ) {
+      publish({ pointerLocked: locked });
+      return;
+    }
     focus(locked && document.visibilityState === 'visible');
     publish({
       pointerLocked: locked,
@@ -1481,6 +1532,7 @@ export async function mountVoxel(
       disposed ||
       fatalRecovery ||
       graphics !== 'ready' ||
+      ['error', 'recovering', 'stalled', 'connecting'].includes(hud.status) ||
       hud.lifecycle === 'ended' ||
       phase === 'dead'
     )
@@ -1551,6 +1603,7 @@ export async function mountVoxel(
   }
   function openInventory(operation: Extract<InventoryCommand, { kind: 'open' }>): void {
     if (!prediction || phase !== 'playing' || fatalRecovery) return;
+    enterOnReady = false;
     publish({ inventoryOpen: true });
     pendingInventoryOpen = operation;
     if (focused) {
@@ -1699,6 +1752,7 @@ export async function mountVoxel(
         });
     } else if (cmd.type === 'pause') {
       if (phase === 'dead') return;
+      enterOnReady = false;
       focus(false);
       if (ownsPointerLock()) document.exitPointerLock();
       publish({ status: 'paused', message: 'לחצו על העולם כדי להמשיך' });

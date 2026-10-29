@@ -4,14 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>עולם הבנייה — פיתוח</title>
-    <script type="module" crossorigin src="./assets/index-BeoO4WCB.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-BJR-UF1b.css">
+    <script type="module" crossorigin src="./assets/index-BBQBQESg.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-viklwn8F.css">
   </head>
   <body>
     <main id="app">
       <div id="world"></div>
       <div class="crosshair" aria-hidden="true">+</div>
-      <progress id="mining" max="1" value="0" aria-label="התקדמות כרייה" hidden></progress>
       <output id="hit-feedback" aria-live="polite"></output>
       <aside class="toolbar">
         <span id="vitals" aria-label="בריאות, מזון ואוויר" hidden></span>

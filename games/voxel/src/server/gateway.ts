@@ -602,16 +602,25 @@ export async function createGateway(options: GatewayOptions) {
         const c = connections.get(message.connection);
         if (!c || c.room !== handle || c.socket.readyState !== WebSocket.OPEN) return;
         if (message.type === 'close') {
+          event('VOXEL_ACTOR_DISCONNECTED', {
+            worldId: handle.worldId,
+            reason: message.reason,
+            origin: 'worker',
+          });
           detach(message.connection);
           c.socket.send(
             JSON.stringify({
               type: 'error',
               code: message.reason,
-              retryable: false,
+              retryable: message.reason === 'RECOVERING',
             } satisfies ServerMessage),
           );
           c.socket.close(
-            ['UNAUTHORIZED', 'SESSION_ENDED'].includes(message.reason) ? 1008 : 4001,
+            message.reason === 'RECOVERING'
+              ? 1012
+              : ['UNAUTHORIZED', 'SESSION_ENDED'].includes(message.reason)
+                ? 1008
+                : 4001,
             message.reason.toLowerCase(),
           );
         } else {
@@ -915,8 +924,12 @@ export async function createGateway(options: GatewayOptions) {
       messages = 0;
     const deadline = setTimeout(() => socket.close(1008, 'admission required'), 5000);
     socket.on('error', () => socket.terminate());
-    socket.on('close', () => {
+    socket.on('close', (code) => {
       clearTimeout(deadline);
+      event('VOXEL_CONNECTION_CLOSED', {
+        code,
+        ...(entry.room ? { worldId: entry.room.worldId } : {}),
+      });
       detach(id);
       connections.delete(id);
     });
@@ -1054,6 +1067,11 @@ export async function createGateway(options: GatewayOptions) {
                   deadline: until,
                 } satisfies ToRoom),
               (reason) => {
+                event('VOXEL_ACTOR_DISCONNECTED', {
+                  worldId: room.worldId,
+                  reason,
+                  origin: 'authorization',
+                });
                 detach(id);
                 if (socket.readyState === WebSocket.OPEN)
                   socket.send(

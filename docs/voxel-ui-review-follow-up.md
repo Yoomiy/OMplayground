@@ -31,7 +31,7 @@ Repairs for the 2026-10-29 source review of `90fe575`. The first batch is `6af81
 
 ## Release and next step
 
-The matched published game release is `58715c185d44cb1e7334e401fb337bcdab45ab5db94af96614f9b32aad6994e3`.
+The matched published game release is `5ee78c6d15b18a4448b1a92f6777bf7747b08f737d4f85255403f5d219f8f9b3`.
 
 Terrain artwork continues to use the procedural world-texture pipeline (UI-13). Next is local play feedback; `dev/staging` stays untouched under the user's explicit instruction. The main PR and deployment walkthrough still depend on their later staging confirmation. No additional broad qualification loop is required for these presentation repairs.
 
@@ -44,3 +44,15 @@ Addressed the two findings and thumbnail concern in the user's `tmp/voxel-rewrit
 - Catalog and recipe slots reuse cached images immediately. Uncached thumbnails are requested only for visible slots, with at most one request per animation frame. Scrolling, search, closing and disposal update or cancel pending work. Opening the catalog no longer synchronously renders all 172 thumbnails.
 
 Focused checks passed: game TypeScript, the five native appearance tests (including creative tool/palette switching and rejected selection), an actual-DOM check using the authoritative inventory model with delayed result/view delivery, and a built-client/native-room browser check of visible held tools, number-key selection and return to the block palette. The DOM check reproduced the review's 64/60-log setup and completed moves of 4 and 60 at successive revisions; rejection and close stopped further moves. It also confirmed that uncached offscreen catalog items were not generated and search results loaded when visible. These software-browser checks establish behavior, not school-PC GPU timing. Matched client/server packaging and the published snapshot are updated; the engine and content are unchanged.
+
+## Local-play entry, recovery and plant feedback
+
+The app now enters an admitted, collision-ready world directly. Keyboard input works with the world focused; the first world click captures the mouse using the browser-required gesture. Explicit pause, inventory, graphics recovery and ended-session controls still apply. The initial loading state no longer asks for a second entry confirmation.
+
+Failures, stalled transport and socket closure release pointer lock so recovery controls can receive clicks. Pointer-lock events preserve an existing error/recovery state. The entry button is offered only for a usable paused connection, rather than alongside reconnect on an unusable connection. Expired authorization still stops input at its original deadline in both gateway and worker; a missed renewal now permits a fresh admission retry. Confirmed denial remains a denial. Disconnect events now record the safe close code/reason before empty-room retirement. The user's logs prove clean empty-room saving/release, not the original disconnect trigger; this change does not claim to identify that trigger conclusively.
+
+Removed the redundant mining progress bar from app and sandbox. Grass, flowers, saplings, mushrooms, cane and other cross-shaped plants have zero-duration authored mining rules. The server performs the usual validated break/drop transaction without publishing an active mining overlay. Ordinary blocks retain timed mining and cracks.
+
+Focused validation passed: game/web TypeScript; actual-Wasm plant and ordinary-mining checks; gateway and independent-worker authorization-expiry checks; production React/native-room browser flow using in-memory checkpoint storage. The browser flow entered directly, used keyboard controls, retained the connection through a real periodic checkpoint, released captured mouse input after a server rejection, restored the saved world through an actual reconnect-button click, and recovered automatically after abrupt transport loss. It retained 64 owned logs across three admissions with one runtime mount. This is local functional evidence, not a hosted-network or school-device performance claim.
+
+The matched release is `5ee78c6d15b18a4448b1a92f6777bf7747b08f737d4f85255403f5d219f8f9b3`. Plant tuning changes the content hash; use a fresh test session when trying this release. Existing checkpoints are not migrated or deleted. The engine is unchanged and its published Wasm is reused. Staging and log-level handling remain untouched.

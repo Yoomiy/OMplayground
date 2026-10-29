@@ -864,9 +864,8 @@ try {
       };
     });
   if (withVoice) voiceEvidence.beforeGameResume = await inputState();
-  await kidPage
-    .getByRole("button", { name: "כניסה לעולם", exact: true })
-    .click();
+  // Initial admission enters directly; the first world click captures the mouse.
+  await kidPage.locator(".voxel-session__world canvas").click();
   try {
     await kidPage.waitForFunction(
       () =>
@@ -1779,9 +1778,6 @@ try {
     waitUntil: "domcontentloaded",
   });
   await ready(mobilePage);
-  await mobilePage
-    .getByRole("button", { name: "כניסה לעולם", exact: true })
-    .tap();
   await mobilePage.waitForFunction(
     () => (window as any).surfaceRuntime.debug().focused,
   );

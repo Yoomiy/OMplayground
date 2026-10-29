@@ -151,7 +151,9 @@ test(
       probe = await h.connect((await h.ticket()).value);
       await probe.event('welcome');
       const closed = once(probe.socket, 'close');
-      assert.equal((await probe.event('error')).code, 'UNAUTHORIZED');
+      const expired = await probe.event('error');
+      assert.equal(expired.code, 'RECOVERING');
+      assert.equal(expired.retryable, true);
       await closed;
       unblock({ actor: participant, expiresAt: Date.now() + 30000 });
       await delay(20);

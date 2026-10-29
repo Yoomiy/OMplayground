@@ -143,6 +143,7 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
         fullscreenElement: root.current,
         renderScale: matchMedia("(pointer: coarse)").matches ? 0.75 : 1,
         renderHz: matchMedia("(pointer: coarse)").matches ? 30 : 60,
+        autoEnter: true,
         admit: async () => {
           try {
             const result = await api.admit(abort.signal);
@@ -425,7 +426,7 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
     !terminal &&
     !errorCode &&
     !mountError &&
-    hud.status !== "dead" &&
+    hud.status === "paused" &&
     (hud.lifecycle === "playing" ||
       (hud.role === "observer" && hud.lifecycle === "paused"));
   const reconnect =
@@ -907,14 +908,6 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
             </button>
           </aside>
         )}
-      {hud?.mining.target && (
-        <progress
-          className="voxel-session__mining"
-          aria-label="התקדמות כרייה"
-          max={hud.mining.total || 1}
-          value={hud.mining.elapsed}
-        />
-      )}
       <footer
         className="voxel-session__bottom"
         hidden={terminal || hud?.role === "observer"}

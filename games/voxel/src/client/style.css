@@ -77,17 +77,6 @@ small {
   pointer-events: none;
   text-shadow: 0 1px 4px #000;
 }
-#mining {
-  position: absolute;
-  z-index: 3;
-  left: 50%;
-  top: calc(50% + 26px);
-  transform: translateX(-50%);
-  width: 110px;
-  height: 8px;
-  accent-color: #efd28c;
-  pointer-events: none;
-}
 #hotbar {
   z-index: 3;
   position: absolute;

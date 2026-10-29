@@ -111,12 +111,14 @@ export class ConnectionAuthorization {
   }
   valid() {
     if (!this.closed && performance.now() < this.deadline) return true;
-    if (!this.closed) this.fail('UNAUTHORIZED');
+    if (!this.closed) this.fail('RECOVERING');
     return false;
   }
   private schedule() {
     const remaining = this.deadline - performance.now();
-    this.expiry = setTimeout(() => this.fail('UNAUTHORIZED'), Math.max(0, remaining));
+    // A missed renewal stops authority at the same deadline, but is not a
+    // confirmed revocation. A fresh admission may retry after the outage.
+    this.expiry = setTimeout(() => this.fail('RECOVERING'), Math.max(0, remaining));
     this.renewal = setTimeout(() => void this.renew(), Math.max(0, remaining / 2));
   }
   private async renew() {

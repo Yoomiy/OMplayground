@@ -194,17 +194,6 @@
   flex: 0 0 52px;
   max-width: 52px;
 }
-.voxel-session__mining {
-  position: absolute;
-  z-index: 2;
-  top: calc(50% + 25px);
-  left: 50%;
-  transform: translateX(-50%);
-  width: 84px;
-  height: 7px;
-  accent-color: #f3db91;
-  pointer-events: none;
-}
 .voxel-session__dialog {
   color: #f4f7f2;
   background: #2c3328;

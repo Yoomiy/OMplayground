@@ -4284,7 +4284,8 @@ var GameRoom = class _GameRoom {
       interruptedAt: null,
       released: false
     };
-    this.miningView(a);
+    if (rule.mining.seconds === 0) this.advanceMining(a, now);
+    else this.miningView(a);
     return { ok: true, reason: "mining" };
   }
   advanceMining(a, now) {
@@ -4970,7 +4971,7 @@ try {
         authorizations.delete(connection);
         chunkInFlight.delete(connection);
         room.disconnect(connection, now);
-        send({ type: "close", connection, reason: "UNAUTHORIZED" });
+        send({ type: "close", connection, reason: "RECOVERING" });
       }
   };
   let ticks = 0, overrunMs = 0, closed = false, lastCheckpoint = 0;

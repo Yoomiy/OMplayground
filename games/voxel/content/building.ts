@@ -12,7 +12,7 @@ const plant = (family: string, texture = family): BlockDefinition =>
       layer: 1,
       replaceable: true,
     }),
-    { soundGroup: 'grass', support: 'below', mining: { seconds: 0.25 } },
+    { soundGroup: 'grass', support: 'below', mining: { seconds: 0 } },
   );
 export const buildingBlocks: BlockDefinition[] = [
   ...[

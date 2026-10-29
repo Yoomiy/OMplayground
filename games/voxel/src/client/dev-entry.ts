@@ -16,6 +16,7 @@ try {
   runtime = await mountVoxel(host, {
     renderScale: new URL(location.href).searchParams.get('quality') === 'low' ? 0.5 : 1,
     renderHz: new URL(location.href).searchParams.get('quality') === 'low' ? 30 : 60,
+    autoEnter: true,
     socketUrl: `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/voxel`,
     admit: async () => {
       const response = await fetch('/api/voxel/admission', {
@@ -77,11 +78,6 @@ try {
     if (environment)
       environment.textContent = `${String(state.environment.hour).padStart(2, '0')}:00 · ${state.environment.rain ? 'גשם' : state.environment.daytime ? 'יום בהיר' : 'לילה בהיר'}`;
     status.textContent = state.message || `${state.players} בעולם${state.flying ? ' · תעופה' : ''}`;
-    const mining = document.querySelector<HTMLProgressElement>('#mining');
-    if (mining) {
-      mining.hidden = !state.mining.target;
-      mining.value = state.mining.total ? state.mining.elapsed / state.mining.total : 0;
-    }
     if (
       buttons.size !== state.hotbar.length ||
       state.hotbar.some((item) => !buttons.has(item.key))

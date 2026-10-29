@@ -255,6 +255,32 @@ test('real Wasm mining earns fixed world ticks despite action bursts, ignores un
     f.room.dispose();
   }
 });
+test('plants break on the validated action without a mining period or active crack view', () => {
+  const f = fixture();
+  try {
+    const plants = content.manifest.blocks.filter((block) => block.shape === 'cross');
+    assert.ok(plants.length >= 9);
+    for (const plant of plants) {
+      const cell = f.target(plant.name);
+      f.store.set(cell[0], cell[1] - 1, cell[2], content.defaults.dirt);
+      f.aim(cell);
+      f.events.set('a', []);
+      const tick = f.room.lifecycle().tick;
+      assert.equal(f.start(cell).outcome?.ok, true, plant.name);
+      assert.equal(f.room.lifecycle().tick, tick, 'no wait for mining work ticks');
+      assert.equal(f.store.world.get_block(...cell), 0, plant.name);
+      assert.equal(f.player().mining, null);
+      assert.ok(
+        f.events
+          .get('a')!
+          .every((event) => !('type' in event) || event.type !== 'mining' || event.target === null),
+      );
+    }
+  } finally {
+    f.room.dispose();
+  }
+});
+
 test('mining cancels on stale input, replacement at the same cell, focus epoch and changed owned tool', () => {
   const f = fixture();
   try {

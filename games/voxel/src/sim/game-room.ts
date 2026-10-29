@@ -1577,7 +1577,10 @@ export class GameRoom {
       interruptedAt: null,
       released: false,
     };
-    this.miningView(a);
+    // Zero-duration plants still use the authoritative reach/tool/mutation
+    // checks, but never publish an active crack overlay or wait for work ticks.
+    if (rule.mining.seconds === 0) this.advanceMining(a, now);
+    else this.miningView(a);
     return { ok: true, reason: 'mining' };
   }
   private advanceMining(a: Actor, now: number): void {

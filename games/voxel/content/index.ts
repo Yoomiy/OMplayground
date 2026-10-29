@@ -109,7 +109,7 @@ const blocks: BlockDefinition[] = [
       layer: 1,
       tint: true,
     }),
-    { support: 'below', drops: [], soundGroup: 'grass' },
+    { support: 'below', drops: [], soundGroup: 'grass', mining: { seconds: 0 } },
   ),
   block('stone_slab', cube('stone'), {
     variants: {
