@@ -4,10 +4,14 @@ import { test } from 'node:test';
 import { once } from 'node:events';
 import { readFileSync } from 'node:fs';
 import { WebSocket } from 'ws';
-const { createGateway }: typeof import('../../src/server/gateway.ts') = process.env
+const { createGateway: gatewayFactory }: typeof import('../../src/server/gateway.ts') = process.env
   .VOXEL_TEST_BUNDLE
   ? await import(new URL('../../dist-server/gateway.js', import.meta.url).href)
   : await import('../../src/server/gateway.ts');
+// These terrain/movement fixtures mirror seed 4242 in their local native world.
+// Pin that development override instead of relying on a fresh-room default.
+const createGateway: typeof gatewayFactory = (options) =>
+  gatewayFactory({ ...options, worldDefaults: { seed: 4242, ...options.worldDefaults } });
 import { parseServerMessage, around } from '../../src/shared/protocol.ts';
 import type {
   ClientMessage,

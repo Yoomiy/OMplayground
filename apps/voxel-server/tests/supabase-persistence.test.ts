@@ -52,6 +52,7 @@ test("installed SDK sends canonical service RPCs with a secret apikey and accept
     room,
     owner,
     worldId,
+    seed: 1013904223,
     epoch: 1,
     sequence: 0,
     validForMs: 30000,
@@ -66,7 +67,9 @@ test("installed SDK sends canonical service RPCs with a secret apikey and accept
     });
     if (name === "voxel_persistence_status")
       return response({ schema: 1, privateBucket: true });
-    if (name === "voxel_acquire_room") return response(lease);
+    if (name === "voxel_seed_schema_status")
+      return response({ schema: 1, uniqueSeeds: true });
+    if (name === "voxel_acquire_seeded_room") return response(lease);
     if (name === "voxel_renew_room") return response({ validForMs: 30000 });
     if (name === "voxel_release_room") return response(null);
     if (name === "voxel_commit_checkpoint") return response(true);
@@ -96,6 +99,10 @@ test("installed SDK sends canonical service RPCs with a secret apikey and accept
   await backend.release(acquired);
   const corrupt = service(() => response({ ...lease, sequence: 2 }));
   await assert.rejects(corrupt.acquire(room, owner), /acquire_protocol/);
+  for (const seed of [undefined, null, -1, 0x100000000, 0.5]) {
+    const invalidSeed = service(() => response({ ...lease, seed }));
+    await assert.rejects(invalidSeed.acquire(room, owner), /acquire_protocol/);
+  }
 });
 
 test("create-only uploads copy bytes before IO and verify a duplicate object before marking it ready", async () => {

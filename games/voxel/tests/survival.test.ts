@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { BOUNDS } from '../src/shared/world-bounds.ts';
 import { test } from 'node:test';
 import { source } from '../content/index.ts';
 import { compileContent } from '../tools/compile-content.ts';
@@ -165,7 +166,10 @@ test('mining and drop protocol carries intents only, bounds replication batches 
     { seconds: 0 },
   ])
     assert.equal(parseClientMessage(JSON.stringify({ ...message, ...extra })), null);
-  assert.equal(parseClientMessage(JSON.stringify({ ...message, target: [256, 64, 0] })), null);
+  assert.equal(
+    parseClientMessage(JSON.stringify({ ...message, target: [BOUNDS.maxX, 64, 0] })),
+    null,
+  );
   assert.ok(
     parseServerMessage(
       JSON.stringify({ type: 'mining', epoch: 1, target: null, total: 0, elapsed: 0 }),

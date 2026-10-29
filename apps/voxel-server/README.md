@@ -141,3 +141,12 @@ locally qualified staff schema, not installed by the agent. See
 
 [React integration](../web/src/game/voxel/README.md) describes the app adapter,
 read-only session/diagnostic endpoints, input ownership and remaining school work.
+
+
+New worlds reserve distinct seeds through `voxel_acquire_seeded_room` before the
+first checkpoint. Install `20261029220000_voxel_unique_world_seeds.sql` along with
+the existing migrations. The user confirmed applying it locally/staging. Service
+readiness checks the seed schema. Existing saved worlds retain their seed and
+progress and expand beyond the former 512×512 boundary. See the
+[world profile](../../games/voxel/docs/world-profile.md) for the remaining native
+coordinate guard and restart behavior.

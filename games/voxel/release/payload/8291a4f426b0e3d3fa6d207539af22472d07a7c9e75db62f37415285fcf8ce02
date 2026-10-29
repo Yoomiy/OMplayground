@@ -1520,20 +1520,25 @@ function matchRecipe(grid, size, recipes, items) {
 
 // config/world.json
 var world_default = {
-  size: 512
+  horizontal: "streamed"
 };
 
 // src/shared/world-bounds.ts
-if (Object.keys(world_default).length !== 1 || !Number.isSafeInteger(world_default.size) || world_default.size < 64 || world_default.size > 65536 || world_default.size % 32 !== 0)
-  throw new Error("World size must be a multiple of 32 between 64 and 65536 blocks");
-var half = world_default.size / 2;
+if (Object.keys(world_default).length !== 1 || world_default.horizontal !== "streamed")
+  throw new Error("World profile must use streamed horizontal terrain");
+var horizontal = 1e6 - 16;
 var BOUNDS = Object.freeze({
-  minX: -half,
-  minZ: -half,
-  maxX: half,
-  maxZ: half,
+  minX: -horizontal,
+  minZ: -horizontal,
+  maxX: horizontal,
+  maxZ: horizontal,
   height: 256
 });
+function compatibleCheckpointBounds(value) {
+  if (Object.entries(BOUNDS).every(([key2, n]) => value[key2] === n)) return true;
+  const { minX, minZ, maxX, maxZ, height } = value;
+  return typeof maxX === "number" && Number.isInteger(maxX) && maxX >= 32 && maxX <= 32768 && maxX % 16 === 0 && minX === -maxX && minZ === -maxX && maxZ === maxX && height === BOUNDS.height;
+}
 
 // src/shared/movement.ts
 var DEFAULT_MOVEMENT = Object.freeze({
@@ -2154,9 +2159,7 @@ function readRoomCheckpoint(value, content, build) {
     "inventories",
     "drops",
     "explosives"
-  ]) || value.schema !== 1 || !checkpointIdentity(value.worldId) || !checkpointInteger(value.seed, 0, 4294967295) || value.preset !== "blockyard-natural-v2" || value.generatorVersion !== GENERATOR_VERSION || value.contentHash !== content.hash || value.engineHash !== build.engineHash || typeof value.sourceBuildId !== "string" || !/^[a-f0-9]{64}$/.test(value.sourceBuildId) || !checkpointObject(value.bounds, Object.keys(BOUNDS)) || !Object.entries(BOUNDS).every(
-    ([key2, n]) => value.bounds[key2] === n
-  ) || !["creative", "survival"].includes(value.mode) || !checkpointInteger(value.tick, 0, Number.MAX_SAFE_INTEGER - 9e3) || !checkpointInteger(value.epoch, 0, Number.MAX_SAFE_INTEGER - 2) || typeof value.paused !== "boolean" || !checkpointInteger(value.hitSequence) || !checkpointInteger(value.explosionSequence) || !checkpointPosition(value.spawn) || !Array.isArray(value.players))
+  ]) || value.schema !== 1 || !checkpointIdentity(value.worldId) || !checkpointInteger(value.seed, 0, 4294967295) || value.preset !== "blockyard-natural-v2" || value.generatorVersion !== GENERATOR_VERSION || value.contentHash !== content.hash || value.engineHash !== build.engineHash || typeof value.sourceBuildId !== "string" || !/^[a-f0-9]{64}$/.test(value.sourceBuildId) || !checkpointObject(value.bounds, Object.keys(BOUNDS)) || !compatibleCheckpointBounds(value.bounds) || !["creative", "survival"].includes(value.mode) || !checkpointInteger(value.tick, 0, Number.MAX_SAFE_INTEGER - 9e3) || !checkpointInteger(value.epoch, 0, Number.MAX_SAFE_INTEGER - 2) || typeof value.paused !== "boolean" || !checkpointInteger(value.hitSequence) || !checkpointInteger(value.explosionSequence) || !checkpointPosition(value.spawn) || !Array.isArray(value.players))
     return invalid();
   const ids = /* @__PURE__ */ new Set(), players = [];
   for (const p of value.players) {
@@ -4567,10 +4570,10 @@ var GameRoom = class _GameRoom {
       if (rule?.support === "below" && this.store.world.collision_top(x, y - 1, z) < 1)
         return { ok: false, reason: "support" };
       const facing = ["north", "east", "south", "west"][(Math.round(c.yaw / (Math.PI / 2)) + 4) % 4];
-      const half2 = hit[5] < 0 || hit[5] === 0 && (p[1] + 1.62 + dy * hit[8]) % 1 > 0.5 ? "top" : "bottom";
+      const half = hit[5] < 0 || hit[5] === 0 && (p[1] + 1.62 + dy * hit[8]) % 1 > 0.5 ? "top" : "bottom";
       let variant = "";
-      if (requested.shape === "stairs") variant = `facing=${facing},half=${half2}`;
-      else if (requested.shape === "slab") variant = `half=${half2}`;
+      if (requested.shape === "stairs") variant = `facing=${facing},half=${half}`;
+      else if (requested.shape === "slab") variant = `half=${half}`;
       else if (requested.climbable)
         variant = `facing=${hit[4] === 1 ? "east" : hit[4] === -1 ? "west" : hit[6] === 1 ? "south" : "north"}`;
       state = variant ? this.content.blocks.findIndex((b) => b.name === requested.name && b.state === variant) : m.state;

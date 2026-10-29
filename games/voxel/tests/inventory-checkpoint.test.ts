@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { BOUNDS } from '../src/shared/world-bounds.ts';
 import { test } from 'node:test';
 import { source } from '../content/index.ts';
 import { compileContent } from '../tools/compile-content.ts';
@@ -190,7 +191,7 @@ test('inventory reconstruction rejects bad schemas/content, duplicates, forged s
     (v) => (v.players[1].station = { kind: 'container', cell: chest }),
     (v) => v.chests.push(v.chests[0]),
     (v) => (v.chests[0].id = 'chest-2'),
-    (v) => (v.chests[0].cell = [256, 64, 1]),
+    (v) => (v.chests[0].cell = [BOUNDS.maxX, 64, 1]),
     (v) => (v.chests[0].cell = Array(3)),
     (v) => (v.chests[0].revision = -1),
     (v) => v.chests[0].slots.pop(),

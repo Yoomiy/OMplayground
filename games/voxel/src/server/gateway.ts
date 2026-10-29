@@ -121,13 +121,11 @@ export async function createGateway(options: GatewayOptions) {
     options.content.hash !== options.build.contentHash
   )
     throw new Error('incompatible server content/protocol');
-  const seed = options.worldDefaults?.seed ?? 4242,
+  const seed = options.worldDefaults?.seed,
     initialTick = options.worldDefaults?.initialTick ?? 0,
     mode = options.worldDefaults?.mode ?? 'creative';
   if (
-    !Number.isInteger(seed) ||
-    seed < 0 ||
-    seed > 0xffffffff ||
+    (seed !== undefined && (!Number.isInteger(seed) || seed < 0 || seed > 0xffffffff)) ||
     !Number.isSafeInteger(initialTick) ||
     initialTick < 0 ||
     !['creative', 'survival'].includes(mode)
@@ -422,7 +420,19 @@ export async function createGateway(options: GatewayOptions) {
           throw new Error('restored explosive owner resolver unavailable');
         const owners = ids.length ? await resolveOwnerAuthorizations(resolveOwner!, id, ids) : [];
         start = { type: 'restore', checkpoint: snapshot, owners };
-      } else start = { type: 'fresh', worldId, seed, initialTick, mode };
+      } else
+        start = {
+          type: 'fresh',
+          worldId,
+          // School metadata reserves unique seeds transactionally. Standalone
+          // development ports derive a stable seed from their world identity.
+          seed:
+            seed ??
+            durability?.ownership.seed ??
+            createHash('sha256').update(worldId).digest().readUInt32LE(0),
+          initialTick,
+          mode,
+        };
       if (draining || ownershipLost || (durability && !durability.owned()))
         throw new Error('room ownership unavailable');
       handle = spawnRoom(id, worldId, start, durability);

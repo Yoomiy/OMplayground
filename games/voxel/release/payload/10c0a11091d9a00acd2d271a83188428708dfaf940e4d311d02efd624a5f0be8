@@ -73,20 +73,25 @@ function isInventoryCommand(v, cell2) {
 
 // config/world.json
 var world_default = {
-  size: 512
+  horizontal: "streamed"
 };
 
 // src/shared/world-bounds.ts
-if (Object.keys(world_default).length !== 1 || !Number.isSafeInteger(world_default.size) || world_default.size < 64 || world_default.size > 65536 || world_default.size % 32 !== 0)
-  throw new Error("World size must be a multiple of 32 between 64 and 65536 blocks");
-var half = world_default.size / 2;
+if (Object.keys(world_default).length !== 1 || world_default.horizontal !== "streamed")
+  throw new Error("World profile must use streamed horizontal terrain");
+var horizontal = 1e6 - 16;
 var BOUNDS = Object.freeze({
-  minX: -half,
-  minZ: -half,
-  maxX: half,
-  maxZ: half,
+  minX: -horizontal,
+  minZ: -horizontal,
+  maxX: horizontal,
+  maxZ: horizontal,
   height: 256
 });
+function compatibleCheckpointBounds(value) {
+  if (Object.entries(BOUNDS).every(([key, n]) => value[key] === n)) return true;
+  const { minX, minZ, maxX, maxZ, height } = value;
+  return typeof maxX === "number" && Number.isInteger(maxX) && maxX >= 32 && maxX <= 32768 && maxX % 16 === 0 && minX === -maxX && minZ === -maxX && maxZ === maxX && height === BOUNDS.height;
+}
 
 // src/shared/movement.ts
 var DEFAULT_MOVEMENT = Object.freeze({
@@ -475,9 +480,7 @@ function readRoomCheckpoint(value, content, build) {
     "inventories",
     "drops",
     "explosives"
-  ]) || value.schema !== 1 || !checkpointIdentity(value.worldId) || !checkpointInteger(value.seed, 0, 4294967295) || value.preset !== "blockyard-natural-v2" || value.generatorVersion !== GENERATOR_VERSION || value.contentHash !== content.hash || value.engineHash !== build.engineHash || typeof value.sourceBuildId !== "string" || !/^[a-f0-9]{64}$/.test(value.sourceBuildId) || !checkpointObject(value.bounds, Object.keys(BOUNDS)) || !Object.entries(BOUNDS).every(
-    ([key, n]) => value.bounds[key] === n
-  ) || !["creative", "survival"].includes(value.mode) || !checkpointInteger(value.tick, 0, Number.MAX_SAFE_INTEGER - 9e3) || !checkpointInteger(value.epoch, 0, Number.MAX_SAFE_INTEGER - 2) || typeof value.paused !== "boolean" || !checkpointInteger(value.hitSequence) || !checkpointInteger(value.explosionSequence) || !checkpointPosition(value.spawn) || !Array.isArray(value.players))
+  ]) || value.schema !== 1 || !checkpointIdentity(value.worldId) || !checkpointInteger(value.seed, 0, 4294967295) || value.preset !== "blockyard-natural-v2" || value.generatorVersion !== GENERATOR_VERSION || value.contentHash !== content.hash || value.engineHash !== build.engineHash || typeof value.sourceBuildId !== "string" || !/^[a-f0-9]{64}$/.test(value.sourceBuildId) || !checkpointObject(value.bounds, Object.keys(BOUNDS)) || !compatibleCheckpointBounds(value.bounds) || !["creative", "survival"].includes(value.mode) || !checkpointInteger(value.tick, 0, Number.MAX_SAFE_INTEGER - 9e3) || !checkpointInteger(value.epoch, 0, Number.MAX_SAFE_INTEGER - 2) || typeof value.paused !== "boolean" || !checkpointInteger(value.hitSequence) || !checkpointInteger(value.explosionSequence) || !checkpointPosition(value.spawn) || !Array.isArray(value.players))
     return invalid();
   const ids = /* @__PURE__ */ new Set(), players = [];
   for (const p of value.players) {
@@ -689,7 +692,7 @@ var RoomDurability = class _RoomDurability {
   }
   static async acquire(ports, content, build, room, owner, onLost) {
     const started = performance.now(), lease = await ports.metadata.acquire(room, owner);
-    if (!lease || lease.room !== room || lease.owner !== owner || !lease.worldId || !Number.isSafeInteger(lease.epoch) || lease.epoch < 1 || !Number.isSafeInteger(lease.sequence) || lease.sequence < 0 || (lease.checkpoint ? lease.checkpoint.sequence !== lease.sequence || !Number.isSafeInteger(lease.checkpoint.ownerEpoch) || lease.checkpoint.ownerEpoch < 1 || lease.checkpoint.ownerEpoch > lease.epoch : lease.sequence !== 0) || !Number.isFinite(lease.validForMs) || lease.validForMs <= 1e3 || started + lease.validForMs - 1e3 <= performance.now())
+    if (!lease || lease.room !== room || lease.owner !== owner || !lease.worldId || lease.seed !== void 0 && lease.seed !== null && (!Number.isSafeInteger(lease.seed) || lease.seed < 0 || lease.seed > 4294967295) || !Number.isSafeInteger(lease.epoch) || lease.epoch < 1 || !Number.isSafeInteger(lease.sequence) || lease.sequence < 0 || (lease.checkpoint ? lease.checkpoint.sequence !== lease.sequence || !Number.isSafeInteger(lease.checkpoint.ownerEpoch) || lease.checkpoint.ownerEpoch < 1 || lease.checkpoint.ownerEpoch > lease.epoch : lease.sequence !== 0) || !Number.isFinite(lease.validForMs) || lease.validForMs <= 1e3 || started + lease.validForMs - 1e3 <= performance.now())
       throw new Error("room ownership unavailable");
     return new _RoomDurability(ports, content, build, lease, started, onLost);
   }
@@ -1244,8 +1247,8 @@ async function createGateway(options) {
   const resolveOwner = options.resolveOwner ?? options.persistence?.resolveOwner;
   if (options.build.protocol !== PROTOCOL || options.build.environmentVersion !== ENVIRONMENT_VERSION || options.content.hash !== options.build.contentHash)
     throw new Error("incompatible server content/protocol");
-  const seed = options.worldDefaults?.seed ?? 4242, initialTick = options.worldDefaults?.initialTick ?? 0, mode = options.worldDefaults?.mode ?? "creative";
-  if (!Number.isInteger(seed) || seed < 0 || seed > 4294967295 || !Number.isSafeInteger(initialTick) || initialTick < 0 || !["creative", "survival"].includes(mode))
+  const seed = options.worldDefaults?.seed, initialTick = options.worldDefaults?.initialTick ?? 0, mode = options.worldDefaults?.mode ?? "creative";
+  if (seed !== void 0 && (!Number.isInteger(seed) || seed < 0 || seed > 4294967295) || !Number.isSafeInteger(initialTick) || initialTick < 0 || !["creative", "survival"].includes(mode))
     throw new Error("invalid world defaults");
   const wasm = await readFile(
     new URL(
@@ -1484,7 +1487,16 @@ async function createGateway(options) {
           throw new Error("restored explosive owner resolver unavailable");
         const owners = ids.length ? await resolveOwnerAuthorizations(resolveOwner, id, ids) : [];
         start = { type: "restore", checkpoint: snapshot, owners };
-      } else start = { type: "fresh", worldId, seed, initialTick, mode };
+      } else
+        start = {
+          type: "fresh",
+          worldId,
+          // School metadata reserves unique seeds transactionally. Standalone
+          // development ports derive a stable seed from their world identity.
+          seed: seed ?? durability?.ownership.seed ?? createHash2("sha256").update(worldId).digest().readUInt32LE(0),
+          initialTick,
+          mode
+        };
       if (draining || ownershipLost || durability && !durability.owned())
         throw new Error("room ownership unavailable");
       handle = spawnRoom(id, worldId, start, durability);

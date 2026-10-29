@@ -78,6 +78,9 @@ export class RoomDurability {
       lease.room !== room ||
       lease.owner !== owner ||
       !lease.worldId ||
+      (lease.seed !== undefined &&
+        lease.seed !== null &&
+        (!Number.isSafeInteger(lease.seed) || lease.seed < 0 || lease.seed > 0xffffffff)) ||
       !Number.isSafeInteger(lease.epoch) ||
       lease.epoch < 1 ||
       !Number.isSafeInteger(lease.sequence) ||

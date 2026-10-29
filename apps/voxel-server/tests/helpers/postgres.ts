@@ -55,6 +55,13 @@ export class PostgresTestDatabase {
               import.meta.url,
             ),
           ),
+          "-f",
+          fileURLToPath(
+            new URL(
+              "../../../../supabase/migrations/20261029220000_voxel_unique_world_seeds.sql",
+              import.meta.url,
+            ),
+          ),
         ],
         { stdio: "pipe" },
       );
@@ -267,6 +274,8 @@ export class PostgresTestDatabase {
       "voxel_project_session",
       "voxel_session_policy",
       "voxel_acquire_room",
+      "voxel_acquire_seeded_room",
+      "voxel_seed_schema_status",
       "voxel_renew_room",
       "voxel_release_room",
       "voxel_prepare_object",

@@ -31,7 +31,7 @@ Repairs for the 2026-10-29 source review of `90fe575`. The first batch is `6af81
 
 ## Release and next step
 
-The matched published game release is `c36e8047624d2b4afac1752eaf97687fb0a05ab5ff51af17b6730b61f9f89911`.
+The matched published game release is `c6a2adac33c3ec1f094cd76d3ff7465686ee8c13b5df6174af20ff67c2871a02`.
 
 Terrain artwork continues to use the procedural world-texture pipeline (UI-13). Next is local play feedback; `dev/staging` stays untouched under the user's explicit instruction. The main PR and deployment walkthrough still depend on their later staging confirmation. No additional broad qualification loop is required for these presentation repairs.
 
@@ -123,3 +123,16 @@ Matched release: `97e41770853caa0eb4768e5b7784d3b065d00be776b92f8e059d703ae43977
 The loading HUD defaulted to creative and displayed a filled palette before the server's welcome established the actual rules. It now starts with normal gameplay defaults, no selected block and an empty hotbar. Terrain jobs still begin only after the authoritative welcome supplies the seed/world identity. The school service already starts fresh worlds with normal gameplay rules; restored checkpoints retain their saved rules. This is a presentation fix, not a second terrain-generation path.
 
 The map-generation question also confirmed that the gateway currently defaults every fresh room to seed `4242`. New rooms therefore start with the same terrain and maintain separate saved edits. This seed behavior was not changed by the initialization fix. Game types and matched packaging pass; no broad suite was rerun. Matched release: `c36e8047624d2b4afac1752eaf97687fb0a05ab5ff51af17b6730b61f9f89911`; engine/content/protocol unchanged, no migration/reset/push.
+
+
+## Streamed exploration and distinct new-world seeds
+
+The user requested auditing the 512×512 fence and removing it if streaming did not need it. The server loads nearby 3×3 columns per actor; the browser unloads distant render columns, and checkpoints retain edits rather than a generated map. No capacity or delta-storage requirement justifies the old fence. The profile now selects streamed terrain. Height remains 256. A shared guard at ±999,984 blocks stays inside the published native body-sweep API's ±1,000,000 coordinate contract; it also stays below the generator's f32 integer precision horizon. The engine is unchanged.
+
+Compatible old centered finite saves expand on restore, retaining their original seed, edits, player positions and inventory. Content/engine/generator compatibility checks remain. New school worlds reserve a unique uint32 seed transactionally before their first checkpoint. A noncycling database sequence, bijective permutation and unique constraint prevent collisions/reuse, including across service instances. Seed 4242 is excluded for historical worlds. Restarting before the first checkpoint reuses the reservation. Saved worlds use their embedded seed. Standalone development fallback derives a stable seed from world identity; explicit development overrides remain available for deterministic fixtures.
+
+The user confirmed applying `20261029220000_voxel_unique_world_seeds.sql` locally/staging. Its new RPC preserves the existing lease/fencing checks and leaves the old RPC and saves intact. Startup checks for the installed seed schema. No hosted writes were made by these checks.
+
+Focused checks pass: game/service types; 13 checkpoint/inventory/survival checks; six service persistence checks; actual published-Wasm movement and drops near the numeric guard, wire validation, old-bounds expansion and far-edit socket recovery; distinct reserved seeds, worker termination before the first save and committed-seed restart. The latter flows also pass against the packaged gateway. Isolated PostgreSQL/PGlite verifies 32 distinct seeds, idempotence, ownership fencing, pre-checkpoint restart, legacy saves and browser-role denial. A permanent PostgreSQL integration case covers reservation and concurrent distinct-world allocation; the PostgreSQL CLI suite was not run in this executor. No broad browser or scale suite was added.
+
+Matched release: `c6a2adac33c3ec1f094cd76d3ff7465686ee8c13b5df6174af20ff67c2871a02`. Restart the local stack and refresh the browser; no world reset is required. This is committed locally with no staging push.

@@ -169,6 +169,13 @@ export class SupabasePersistence implements CheckpointObjects, RoomMetadata {
       result.privateBucket !== true
     )
       throw new PersistenceError("installation_protocol");
+    const seeds = await this.rpc("voxel_seed_schema_status", {});
+    if (
+      !exact(seeds, ["schema", "uniqueSeeds"]) ||
+      seeds.schema !== 1 ||
+      seeds.uniqueSeeds !== true
+    )
+      throw new PersistenceError("seed_installation_protocol");
   }
   async collectGarbage(
     batch = 64,
@@ -224,7 +231,7 @@ export class SupabasePersistence implements CheckpointObjects, RoomMetadata {
   async acquire(room: string, owner: string): Promise<RoomLease | null> {
     if (!UUID.test(room) || !UUID.test(owner))
       throw new Error("invalid durable room identity");
-    const value = await this.rpc("voxel_acquire_room", {
+    const value = await this.rpc("voxel_acquire_seeded_room", {
       p_session: room,
       p_owner: owner,
     });
@@ -233,6 +240,7 @@ export class SupabasePersistence implements CheckpointObjects, RoomMetadata {
       !exact(value, [
         "room",
         "worldId",
+        "seed",
         "owner",
         "epoch",
         "sequence",
@@ -243,6 +251,9 @@ export class SupabasePersistence implements CheckpointObjects, RoomMetadata {
       value.owner !== owner ||
       typeof value.worldId !== "string" ||
       !UUID.test(value.worldId) ||
+      (value.seed !== null &&
+        (!integer(value.seed) || (value.seed as number) > 0xffffffff)) ||
+      (value.seed === null && value.checkpoint === null) ||
       !integer(value.epoch, 1) ||
       !integer(value.sequence) ||
       value.validForMs !== 30000 ||

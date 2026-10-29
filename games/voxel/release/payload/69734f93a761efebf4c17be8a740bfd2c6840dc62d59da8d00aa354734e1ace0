@@ -1,17 +1,17 @@
 {
-  "buildId": "c36e8047624d2b4afac1752eaf97687fb0a05ab5ff51af17b6730b61f9f89911",
+  "buildId": "c6a2adac33c3ec1f094cd76d3ff7465686ee8c13b5df6174af20ff67c2871a02",
   "engineHash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388",
   "contentHash": "2d930b06841018cd0cb4adc65905432e4ffedc3ea2d112bb7ff65a811165307c",
-  "clientHash": "13799c451f155ed8a768c2cd55155e436eab6bd996a2cfc3c190612084b8a52a",
-  "serverHash": "52580687c9d3e962f0cc5f8b19125949795f5b14be842706c56c58d4deb91c61",
+  "clientHash": "adff45dc194e2f86be9dadaf066490331a13ffd8b4dd670d5e0e10f8f33b56c4",
+  "serverHash": "0e6c1b3830ffcd8b2f5025a55172987b7131f29f334c96bc5b7620002fd0454d",
   "client": [
     {
       "path": "assets/engine-worker-DYAFKrDe.js",
       "hash": "99d3377c134578cd5e9bdd923e7707547e62c3a2a0a1a64c90adec5f1121bf04"
     },
     {
-      "path": "assets/index-DvB_0VxM.js",
-      "hash": "2b30a614f89a2990a0c501e02baed7e28b65bb97419b029896029b2c95a28a94"
+      "path": "assets/index-BB3OulOK.js",
+      "hash": "c3b487c4b176f1594b9a6cbdc9555b6cec52be9ca7f342eb51ad91664d126703"
     },
     {
       "path": "assets/index-P3AiFv1J.css",
@@ -23,13 +23,13 @@
     },
     {
       "path": "index.html",
-      "hash": "9e4422d37926872ced4bf5fb943822bfe4952da368de576772971356cfb4cda7"
+      "hash": "904a25de82ba94f1b53f8ba5bad4569af4066f5dc22ea2283bd0c7df6d8f0e3a"
     }
   ],
   "server": [
     {
       "path": "build.json",
-      "hash": "5f88ec1a15c01e19cce320199ded2be31173445f842a1ed633ad2b99fb8e0d3c"
+      "hash": "a6bcb5576f7854ebca4d9adf5d32c0967842b1d3a45c14e699053ac0bbf21ab4"
     },
     {
       "path": "content.json",
@@ -41,19 +41,19 @@
     },
     {
       "path": "gateway.js",
-      "hash": "9bae5f657586d11bcc3b2eb2857b1e360f70827bb822ec6040ae724b4804f454"
+      "hash": "10c0a11091d9a00acd2d271a83188428708dfaf940e4d311d02efd624a5f0be8"
     },
     {
       "path": "gateway.js.map",
-      "hash": "750669f43adba859b4e33b41df6964fe1eefc8efaada1811546a6201627b9b44"
+      "hash": "dede1cb6637277b42e10e9f662403d6b456d2ac51eccbf8ff5ec15f0230799b7"
     },
     {
       "path": "room-worker.js",
-      "hash": "4676a00c7f46ea17bd17c8123551e2847cc989ad7fab06d00877383961b19b16"
+      "hash": "8291a4f426b0e3d3fa6d207539af22472d07a7c9e75db62f37415285fcf8ce02"
     },
     {
       "path": "room-worker.js.map",
-      "hash": "78a724b10ccee6b0c7478ce22c54ad213f0585a8148025f9e149aa58437dc3e2"
+      "hash": "0c068c1970bf5d5cd82f24874ef65dbf7dc4891049cd16fd3c25fde210690fd7"
     }
   ]
 }
