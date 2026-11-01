@@ -1,3 +1,4 @@
+import { compatibleCheckpointContent } from '../shared/checkpoint-content.ts';
 import { BOUNDS } from '../shared/world-bounds.ts';
 import type { ContentManifest, Stack } from '../shared/content.ts';
 import { copyStack, sameStack, validStack } from '../shared/inventory.ts';
@@ -82,7 +83,7 @@ export class Drops {
     if (
       !checkpointObject(value, ['schema', 'contentHash', 'tick', 'nextId', 'entries']) ||
       value.schema !== 1 ||
-      value.contentHash !== content.hash ||
+      !compatibleCheckpointContent(value.contentHash, content) ||
       !checkpointInteger(value.tick, 0, Number.MAX_SAFE_INTEGER - DROP_LIFETIME_TICKS) ||
       !checkpointInteger(value.nextId) ||
       !Array.isArray(value.entries)

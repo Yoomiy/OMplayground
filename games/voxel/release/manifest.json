@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "buildId": "8658d3b91ebdaeeb4df5c82be0e829bb0f6944043f01a3871eb42e186615b8e8",
+  "buildId": "8157d95bf55d76343397ca367cb0d5187b346b249a6fd68553655996fb8977c6",
   "inputs": [
     {
       "path": "LICENSE",
@@ -20,7 +20,7 @@
     },
     {
       "path": "content/building.ts",
-      "hash": "c77697018765d3cfba56a26db238497967782a613b256142fbc080e289a35fff"
+      "hash": "7cfa0493f07874989f13714b62db7a2d108e8ad86412c6aa3357ff592134ffac"
     },
     {
       "path": "content/disposition.json",
@@ -32,7 +32,7 @@
     },
     {
       "path": "content/index.ts",
-      "hash": "e534f7ef68e75b6981d2cd62dd71fac915bd452a6ea83d9339611a4a0f20d621"
+      "hash": "3ea0ebb9c1ecdb4c0ef78a55fb5b52e33778f837efe07edf734fe9e20259eb58"
     },
     {
       "path": "content/legacy-inventory.json",
@@ -200,7 +200,7 @@
     },
     {
       "path": "src/client/runtime.ts",
-      "hash": "d3b2bc5462af7407c9b32f00b26e93d8f621a0f63fa5cd62fa933c323f38ef83"
+      "hash": "88f8ca088baa20641eb3604eedd0bf71abfb5e38e72f1d08a948cf12810b99c5"
     },
     {
       "path": "src/client/style.css",
@@ -224,7 +224,7 @@
     },
     {
       "path": "src/client/world-audio.ts",
-      "hash": "99fc56ca9f6351f22c07c2b898f31a9bcfe4e016a3738783579866bf9829f9ec"
+      "hash": "0edd0061d408e795514fb98a3437232e341aa33a66f1144b57b0223385273b46"
     },
     {
       "path": "src/client/world-clock.ts",
@@ -292,7 +292,7 @@
     },
     {
       "path": "src/server/checkpoint-storage.ts",
-      "hash": "186a11461ea554fd60b617ddf73b4e5729e483340e8fda6efd02cbdf5f003432"
+      "hash": "a281d0aac305022325cb74d1ffc109db9a3051ba9d06f1fd46d559c31f53fa44"
     },
     {
       "path": "src/server/control.ts",
@@ -343,6 +343,10 @@
       "hash": "4ec59912af23d7cc7df6d5890437eae814b1a7c85908ee92908dd11fddb9c073"
     },
     {
+      "path": "src/shared/checkpoint-content.ts",
+      "hash": "94d17c5cb95ea9dfba99e86f2da330f7cdaf0d5e1cafd3e052715ca5d71f07bc"
+    },
+    {
       "path": "src/shared/chunk-wire.ts",
       "hash": "30f7554bbf04b8a89df374e3b09be913d188c60741199af58c91344efcd227ee"
     },
@@ -391,6 +395,10 @@
       "hash": "df6629f90df8e8aa74dc92bae32b3359fe62566aecc68cffa6db7e5e10cca92a"
     },
     {
+      "path": "src/shared/mining-rules.ts",
+      "hash": "ce57e9c286fecfe160f275cb70fe12a9d4a064de06fdca1097585614c0bdc2a9"
+    },
+    {
       "path": "src/shared/moderation.ts",
       "hash": "728a48c6a6e73e19d6b192221ca66d0c3ae2a9f5479cc776027505dead2a77f0"
     },
@@ -432,11 +440,11 @@
     },
     {
       "path": "src/sim/drops.ts",
-      "hash": "5ec9c3f96fb8c69468fe0ca3dbb0b3fc6b400206f8dc4ece07c1abe2e5689b54"
+      "hash": "548a70d1306470a58f400bd44bc61a228590a85c54f1e6d17396d05db2e6941d"
     },
     {
       "path": "src/sim/explosives.ts",
-      "hash": "e571da5405bb50114a9ba6d813e4e758a65916dd2cffd2bfa77ab8864a6bd782"
+      "hash": "1a61daf0d4d8f51f14fd3abba0f8c9f49de74315f0ca1c9b04aaa15a6cd72667"
     },
     {
       "path": "src/sim/game-room.ts",
@@ -448,11 +456,11 @@
     },
     {
       "path": "src/sim/inventory.ts",
-      "hash": "878756952a9c55cdaaec45e102db197c8514b0ed1f6e984690dbbd44f33a9a38"
+      "hash": "86c58c54cf144ae53e39c35282a5214611721bc0134e54dc18ee95c6911f195a"
     },
     {
       "path": "src/sim/mining.ts",
-      "hash": "13ae716f46db2a4ab8abee2fc105c71593de684486aaf6a1bfaaa8fbf522e3a0"
+      "hash": "dce0a0114a51d67730f73cafa6d1ca7be5a011ea54e0181e27600ac183c82a01"
     },
     {
       "path": "src/sim/movement-room.ts",
@@ -460,7 +468,7 @@
     },
     {
       "path": "src/sim/room-checkpoint.ts",
-      "hash": "1664034dd70edd94204b903f21e4316d6d03f1b02e0a383e56077ad2d7a55d28"
+      "hash": "a0d639563774a50d9802b50354d8fc4893761826fe178437ed038fe021bbe84b"
     },
     {
       "path": "src/sim/scheduler.ts",
@@ -476,7 +484,7 @@
     },
     {
       "path": "src/sim/world-store.ts",
-      "hash": "295c43181a8d0f4bb3701731b730ae796e99a2ef3c405f6a8559e0b9bd42df69"
+      "hash": "54b97da6481f982eea4102ec2189c15744508eab31eae523464cc57ebe3ff34a"
     },
     {
       "path": "src/world/engine-worker.ts",
@@ -522,15 +530,15 @@
     },
     {
       "path": "artifacts/build.json",
-      "hash": "edd826ff4aefe5ed30d665437f5a9eb3585cab13b911d1461d0e2d6a5bb90a81"
+      "hash": "e889b7d19bec44f34eba6bed81b139f5445733fa02c4b8e60338a2e3764e2d5d"
     },
     {
       "path": "artifacts/content-bindings.ts",
-      "hash": "873d634d327d088f4aec182cfc478aef32a185821742191eed4bf897f26a4566"
+      "hash": "be9f350986883ce11c0fb78e4cfce95f9c86199961918246b2a17fd2d714c599"
     },
     {
       "path": "artifacts/content.json",
-      "hash": "7a83344fb84a2ea1841d5997d35d5acf27dee520e761eb856c87fa37c298b539"
+      "hash": "5b148b7ed67000f0a690f253642e19e300c88b5c5110035ce0b3747c2eb5e9e9"
     },
     {
       "path": "artifacts/engine-cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388.wasm",
@@ -538,15 +546,15 @@
     },
     {
       "path": "artifacts/release.json",
-      "hash": "cc70ded2d11bdc1268015494ac1a991a6c91d0569edaf8fb0a734c3b79ae9cd1"
+      "hash": "346446ec89ad7a921a94496a2cb8a39350a8fce8852936e41feb6a08fed59e21"
     },
     {
       "path": "dist-client/assets/engine-worker-DYAFKrDe.js",
       "hash": "99d3377c134578cd5e9bdd923e7707547e62c3a2a0a1a64c90adec5f1121bf04"
     },
     {
-      "path": "dist-client/assets/index-Cd0K0y0_.js",
-      "hash": "e1c7fc655238326a661ac8e4672cf1141162332dc5dd62e3d37562e47a676521"
+      "path": "dist-client/assets/index-J5R6TnO6.js",
+      "hash": "c1c3a90c0b7146ee6178a3de24423a3f9b6b908a9aac81db94ef2cfd7cee0081"
     },
     {
       "path": "dist-client/assets/index-P3AiFv1J.css",
@@ -558,15 +566,15 @@
     },
     {
       "path": "dist-client/index.html",
-      "hash": "512dd8d8496df9850270a1eac32f849bcdd02c0fdfe79d4e4c4d7f54a2db1d13"
+      "hash": "b8e7e61cc66c9c5433a456ef7f8ab046bf1f48c386dd76b4bcbd29db5fd5f9d9"
     },
     {
       "path": "dist-server/build.json",
-      "hash": "edd826ff4aefe5ed30d665437f5a9eb3585cab13b911d1461d0e2d6a5bb90a81"
+      "hash": "e889b7d19bec44f34eba6bed81b139f5445733fa02c4b8e60338a2e3764e2d5d"
     },
     {
       "path": "dist-server/content.json",
-      "hash": "7a83344fb84a2ea1841d5997d35d5acf27dee520e761eb856c87fa37c298b539"
+      "hash": "5b148b7ed67000f0a690f253642e19e300c88b5c5110035ce0b3747c2eb5e9e9"
     },
     {
       "path": "dist-server/engine.wasm",
@@ -574,19 +582,19 @@
     },
     {
       "path": "dist-server/gateway.js",
-      "hash": "10c0a11091d9a00acd2d271a83188428708dfaf940e4d311d02efd624a5f0be8"
+      "hash": "62afd61dd4c6544c08665820a6460850f2b2b0f044b1afeda69264f10d9ec7ad"
     },
     {
       "path": "dist-server/gateway.js.map",
-      "hash": "dede1cb6637277b42e10e9f662403d6b456d2ac51eccbf8ff5ec15f0230799b7"
+      "hash": "1d4d17e081e8ac8b2d0a54823497884ca73c22e8f6ad0be1b7519e144cae3c1b"
     },
     {
       "path": "dist-server/room-worker.js",
-      "hash": "8291a4f426b0e3d3fa6d207539af22472d07a7c9e75db62f37415285fcf8ce02"
+      "hash": "e8019e1e99ed9b6b65bb9e8ce335c845a1a7942fa415e7ce8ad40c777fa6cb18"
     },
     {
       "path": "dist-server/room-worker.js.map",
-      "hash": "0c068c1970bf5d5cd82f24874ef65dbf7dc4891049cd16fd3c25fde210690fd7"
+      "hash": "654637729677ce38cd46da6606f626c63ae448875a2b36dd0e6a9ca99c78b08a"
     },
     {
       "path": "engine/pkg/.gitignore",

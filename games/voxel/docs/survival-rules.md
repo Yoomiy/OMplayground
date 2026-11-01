@@ -32,7 +32,8 @@ through restart. See [checkpoint state](checkpoint-state.md).
 | Food | Owned food uses its authored nutrition, capped at 20; apple restores four |
 | Eating cooldown | Half a simulation second; full-food/cooldown/conflict rejection consumes nothing |
 
-All three leaf families retain guaranteed leaves and an apple. Grass supplies
+All three leaf families retain guaranteed leaves. Oak additionally rolls a 10% apple
+or 5% sapling outcome; birch/spruce only roll the 5% sapling outcome. Grass supplies
 plant fiber plus one deterministic weighted forage outcome. Tagged mixed-wood
 recipes, refining, four tool tiers, body armor, prepared foods and reusable
 water buckets are documented in [content progression](content-progression.md).
@@ -115,3 +116,12 @@ See [equipment-rules.md](equipment-rules.md) for the new contracts, fictional
 natural recipes and current tuning. Current trusted PC input exercises owned
 and remote equipment presentation; software Chromium is functional evidence,
 not a physical school-PC frame-rate verdict.
+
+
+Select owned food and right-click to eat; R remains a shortcut. Escape releases
+the mouse without covering the HUD or leaving the world, so the eating button
+also works while the mouse is free. A full food meter/cooldown rejects eating
+without consuming the stack. Plants, torches and ladders break immediately with
+no target/crack overlay; leaves also omit the overlay. Solid blocks retain it.
+The help guide lists required blocks by the minimum named tool, followed by
+recommended axes/shovels for materials that can also be collected by hand.

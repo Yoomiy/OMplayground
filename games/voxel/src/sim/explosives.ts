@@ -1,3 +1,4 @@
+import { compatibleCheckpointContent } from '../shared/checkpoint-content.ts';
 import type { WorldPort } from '../shared/engine-port.ts';
 import type { ExplosiveRule, ContentManifest } from '../shared/content.ts';
 import type { ExplosiveView } from '../shared/explosives.ts';
@@ -71,7 +72,7 @@ export class Explosives {
     if (
       !checkpointObject(value, ['schema', 'contentHash', 'next', 'entries']) ||
       value.schema !== 1 ||
-      value.contentHash !== content.hash ||
+      !compatibleCheckpointContent(value.contentHash, content) ||
       !checkpointInteger(value.next) ||
       !Array.isArray(value.entries)
     )

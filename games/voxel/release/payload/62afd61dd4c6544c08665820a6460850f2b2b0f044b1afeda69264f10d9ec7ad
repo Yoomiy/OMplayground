@@ -193,6 +193,14 @@ function around(x, z, radius) {
   return out;
 }
 
+// src/shared/checkpoint-content.ts
+var previous = "2d930b06841018cd0cb4adc65905432e4ffedc3ea2d112bb7ff65a811165307c";
+var tuned = "05809e4f10d630b5446d0872e38b1ba7f40263d0a3fb59f5ea3e7c023d190ddc";
+var appleTenPercent = "3bacc621111bfbd511d8db591f50a4fdd9298f8659aa2c2187a67e97aeb9b478";
+function compatibleCheckpointContent(hash2, content) {
+  return hash2 === content.hash || content.hash === tuned && hash2 === previous || content.hash === appleTenPercent && (hash2 === previous || hash2 === tuned);
+}
+
 // src/server/checkpoint-storage.ts
 import { createHash } from "node:crypto";
 
@@ -480,7 +488,7 @@ function readRoomCheckpoint(value, content, build) {
     "inventories",
     "drops",
     "explosives"
-  ]) || value.schema !== 1 || !checkpointIdentity(value.worldId) || !checkpointInteger(value.seed, 0, 4294967295) || value.preset !== "blockyard-natural-v2" || value.generatorVersion !== GENERATOR_VERSION || value.contentHash !== content.hash || value.engineHash !== build.engineHash || typeof value.sourceBuildId !== "string" || !/^[a-f0-9]{64}$/.test(value.sourceBuildId) || !checkpointObject(value.bounds, Object.keys(BOUNDS)) || !compatibleCheckpointBounds(value.bounds) || !["creative", "survival"].includes(value.mode) || !checkpointInteger(value.tick, 0, Number.MAX_SAFE_INTEGER - 9e3) || !checkpointInteger(value.epoch, 0, Number.MAX_SAFE_INTEGER - 2) || typeof value.paused !== "boolean" || !checkpointInteger(value.hitSequence) || !checkpointInteger(value.explosionSequence) || !checkpointPosition(value.spawn) || !Array.isArray(value.players))
+  ]) || value.schema !== 1 || !checkpointIdentity(value.worldId) || !checkpointInteger(value.seed, 0, 4294967295) || value.preset !== "blockyard-natural-v2" || value.generatorVersion !== GENERATOR_VERSION || !compatibleCheckpointContent(value.contentHash, content) || value.engineHash !== build.engineHash || typeof value.sourceBuildId !== "string" || !/^[a-f0-9]{64}$/.test(value.sourceBuildId) || !checkpointObject(value.bounds, Object.keys(BOUNDS)) || !compatibleCheckpointBounds(value.bounds) || !["creative", "survival"].includes(value.mode) || !checkpointInteger(value.tick, 0, Number.MAX_SAFE_INTEGER - 9e3) || !checkpointInteger(value.epoch, 0, Number.MAX_SAFE_INTEGER - 2) || typeof value.paused !== "boolean" || !checkpointInteger(value.hitSequence) || !checkpointInteger(value.explosionSequence) || !checkpointPosition(value.spawn) || !Array.isArray(value.players))
     return invalid();
   const ids = /* @__PURE__ */ new Set(), players = [];
   for (const p of value.players) {
@@ -506,6 +514,7 @@ function readRoomCheckpoint(value, content, build) {
   }
   return Object.freeze({
     ...value,
+    contentHash: content.hash,
     spawn: Object.freeze([...value.spawn]),
     bounds: BOUNDS,
     players: Object.freeze(players)
@@ -585,7 +594,7 @@ var CheckpointStorage = class {
       "sequence",
       "room",
       "world"
-    ]) || manifest.schema !== 1 || manifest.worldId !== this.worldId || manifest.ownerEpoch !== pointer.ownerEpoch || manifest.sequence !== pointer.sequence || !checkpointObject(manifest.world, ["schema", "contentHash", "columns"]) || manifest.world.schema !== 1 || manifest.world.contentHash !== this.content.hash || !manifest.room || typeof manifest.room !== "object" || Array.isArray(manifest.room) || Object.hasOwn(manifest.room, "world") || !Array.isArray(manifest.world.columns) || !manifest.world.columns.every((ref) => validObject(ref, this.worldId)))
+    ]) || manifest.schema !== 1 || manifest.worldId !== this.worldId || manifest.ownerEpoch !== pointer.ownerEpoch || manifest.sequence !== pointer.sequence || !checkpointObject(manifest.world, ["schema", "contentHash", "columns"]) || manifest.world.schema !== 1 || !compatibleCheckpointContent(manifest.world.contentHash, this.content) || !manifest.room || typeof manifest.room !== "object" || Array.isArray(manifest.room) || Object.hasOwn(manifest.room, "world") || !Array.isArray(manifest.world.columns) || !manifest.world.columns.every((ref) => validObject(ref, this.worldId)))
       throw new Error("invalid checkpoint manifest");
     const room = readRoomCheckpoint(
       { ...manifest.room, world: null },
@@ -593,10 +602,10 @@ var CheckpointStorage = class {
       this.build
     );
     if (room.worldId !== this.worldId) throw new Error("checkpoint world mismatch");
-    const refs = manifest.world.columns;
+    const refs = manifest.world.columns, savedContentHash = manifest.world.contentHash;
     const columns = await eachObject(refs, async (ref) => {
       const value = await this.read(ref);
-      if (!checkpointObject(value, ["schema", "contentHash", "column"]) || value.schema !== 1 || value.contentHash !== this.content.hash)
+      if (!checkpointObject(value, ["schema", "contentHash", "column"]) || value.schema !== 1 || value.contentHash !== savedContentHash)
         throw new Error("invalid checkpoint column object");
       return value.column;
     });
@@ -897,7 +906,7 @@ var Explosives = class _Explosives {
     const invalid = () => {
       throw new Error("invalid explosives checkpoint");
     };
-    if (!checkpointObject(value, ["schema", "contentHash", "next", "entries"]) || value.schema !== 1 || value.contentHash !== content.hash || !checkpointInteger(value.next) || !Array.isArray(value.entries))
+    if (!checkpointObject(value, ["schema", "contentHash", "next", "entries"]) || value.schema !== 1 || !compatibleCheckpointContent(value.contentHash, content) || !checkpointInteger(value.next) || !Array.isArray(value.entries))
       return invalid();
     const restored = new _Explosives(), entries = /* @__PURE__ */ new Map();
     for (const b of value.entries) {
@@ -1730,8 +1739,8 @@ async function createGateway(options) {
   }
   async function executeControl(grant) {
     if (!/^[a-zA-Z0-9_-]{1,64}$/.test(grant.room)) throw new Error("invalid control room");
-    const previous = commandQueues.get(grant.room) ?? Promise.resolve();
-    const task = previous.then(async () => {
+    const previous2 = commandQueues.get(grant.room) ?? Promise.resolve();
+    const task = previous2.then(async () => {
       if (draining) throw new Error("service draining");
       const room = await roomFor(grant.room);
       if (!room.durability || room.closing || !room.durability.owned())

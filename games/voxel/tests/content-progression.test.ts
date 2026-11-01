@@ -242,3 +242,20 @@ test('all authored item forms have finite geometry, real texture layers and comp
     assert.equal(textures[glass.tex[0]], `${color}_stained_glass`);
   }
 });
+
+test('apples are rare oak forage rather than a guaranteed drop from every tree leaf', () => {
+  for (const family of ['oak_leaves', 'birch_leaves', 'spruce_leaves']) {
+    const leaves = content.behavior.find((block) => block.family === family)!;
+    assert.equal(
+      leaves.drops.some((drop) => drop.itemType === 'apple'),
+      false,
+    );
+    let apples = 0;
+    for (let n = 0; n < 2000; n++)
+      apples += blockDrops(leaves, 4242, [n, 70, 0], n).filter(
+        (drop) => drop.itemType === 'apple',
+      ).length;
+    if (family === 'oak_leaves') assert.ok(apples >= 140 && apples <= 260, String(apples));
+    else assert.equal(apples, 0);
+  }
+});

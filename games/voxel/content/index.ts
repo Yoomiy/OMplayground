@@ -80,10 +80,7 @@ const blocks: BlockDefinition[] = [
     cube('oak_leaves', { layer: 1, opaque: false, opacity: 1, leaves: true, tint: true }),
     {
       soundGroup: 'grass',
-      drops: [
-        { itemType: 'oak_leaves', count: 1 },
-        { itemType: 'apple', count: 1 },
-      ],
+      drops: [{ itemType: 'oak_leaves', count: 1 }],
     },
   ),
   block('oak_planks', cube('oak_planks'), { soundGroup: 'wood' }),
@@ -129,6 +126,7 @@ const blocks: BlockDefinition[] = [
     ),
   }),
   block('ladder', cube('oak_planks'), {
+    mining: { seconds: 0 },
     support: 'wall',
     soundGroup: 'wood',
     variants: Object.fromEntries(
@@ -154,6 +152,7 @@ const blocks: BlockDefinition[] = [
     ),
   }),
   block('torch', cube('torch'), {
+    mining: { seconds: 0 },
     support: 'below',
     variants: {
       '': cube('torch', {
@@ -549,7 +548,15 @@ export const source: ContentSource = {
       : block.family.endsWith('_leaves')
         ? {
             ...block,
-            forage: { none: 95, entries: [{ itemType: 'sapling', count: 1, weight: 5 }] },
+            forage: {
+              none: block.family === 'oak_leaves' ? 85 : 95,
+              entries: [
+                { itemType: 'sapling', count: 1, weight: 5 },
+                ...(block.family === 'oak_leaves'
+                  ? [{ itemType: 'apple', count: 1, weight: 10 }]
+                  : []),
+              ],
+            },
           }
         : block,
   ),

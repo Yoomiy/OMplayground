@@ -1,3 +1,4 @@
+import { compatibleCheckpointContent } from '../shared/checkpoint-content.ts';
 import { BOUNDS, GENERATOR_VERSION } from '../shared/protocol.ts';
 import { compatibleCheckpointBounds } from '../shared/world-bounds.ts';
 import type { BuildIdentity } from '../shared/protocol.ts';
@@ -106,7 +107,7 @@ export function readRoomCheckpoint(
     !checkpointInteger(value.seed, 0, 0xffffffff) ||
     value.preset !== 'blockyard-natural-v2' ||
     value.generatorVersion !== GENERATOR_VERSION ||
-    value.contentHash !== content.hash ||
+    !compatibleCheckpointContent(value.contentHash, content) ||
     value.engineHash !== build.engineHash ||
     typeof value.sourceBuildId !== 'string' ||
     !/^[a-f0-9]{64}$/.test(value.sourceBuildId) ||
@@ -163,6 +164,7 @@ export function readRoomCheckpoint(
   }
   return Object.freeze({
     ...value,
+    contentHash: content.hash,
     spawn: Object.freeze([...value.spawn]),
     bounds: BOUNDS,
     players: Object.freeze(players),

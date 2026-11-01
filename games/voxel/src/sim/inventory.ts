@@ -1,3 +1,4 @@
+import { compatibleCheckpointContent } from '../shared/checkpoint-content.ts';
 import type { ContentManifest, ItemDefinition, Stack } from '../shared/content.ts';
 import type { Cell } from '../shared/protocol.ts';
 import {
@@ -108,7 +109,7 @@ export class Inventories {
     if (
       !checkpointObject(value, ['schema', 'contentHash', 'nextChest', 'players', 'chests']) ||
       value.schema !== 1 ||
-      value.contentHash !== content.hash ||
+      !compatibleCheckpointContent(value.contentHash, content) ||
       !checkpointInteger(value.nextChest) ||
       !Array.isArray(value.players) ||
       !Array.isArray(value.chests)

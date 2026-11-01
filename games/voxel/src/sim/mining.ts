@@ -1,19 +1,12 @@
 import type { BlockDefinition, ItemDefinition } from '../shared/content.ts';
+import { preferredMiningTool } from '../shared/mining-rules.ts';
 import { WORLD_HZ } from '../shared/input.ts';
 /** Content tuning is in seconds; only earned world ticks advance a mining job. */
 export function miningPlan(
   block: Pick<BlockDefinition, 'mining'> & Partial<Pick<BlockDefinition, 'family' | 'soundGroup'>>,
   item: ItemDefinition | undefined,
 ): { allowed: boolean; ticks: number } {
-  const preferred =
-    block.mining.tool ??
-    (block.soundGroup === 'wood'
-      ? 'axe'
-      : block.family === 'grass_block' || ['sand', 'gravel'].includes(block.soundGroup ?? '')
-        ? 'shovel'
-        : block.soundGroup === 'stone'
-          ? 'pickaxe'
-          : undefined);
+  const preferred = preferredMiningTool(block);
   const tool = item?.tool,
     correct = !!tool && tool.kind === preferred && tool.tier >= (block.mining.tier ?? 0);
   return {

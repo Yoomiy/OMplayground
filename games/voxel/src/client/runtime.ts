@@ -1155,12 +1155,18 @@ export async function mountVoxel(
       lastHighlight = key;
       const boxes: number[][] = [];
       const block = target && content.blocks[world.get_block(...target)];
-      const foliage = block && (block.shape === 'cross' || block.leaves);
-      if (target && !foliage) {
+      const hideOverlay =
+        block &&
+        (block.shape === 'cross' ||
+          block.leaves ||
+          block.shape === 'torch' ||
+          block.shape === 'wall_torch' ||
+          block.climbable);
+      if (target && !hideOverlay) {
         const raw = world.target_boxes(...target);
         for (let i = 0; i < raw.length; i += 6) boxes.push(Array.from(raw.subarray(i, i + 6)));
       }
-      renderer.target(boxes, foliage ? null : target);
+      renderer.target(boxes, hideOverlay ? null : target);
     }
   }
   function update(now: number) {
@@ -1768,7 +1774,8 @@ export async function mountVoxel(
           (block) => block.family === content.blocks[world.get_block(...target!)]?.name,
         )?.interaction;
       const sneaking = keys.has('ShiftLeft') || keys.has('ShiftRight') || touch.sneak;
-      if (cmd.kind === 'place' && station && !sneaking && hud.role === 'participant')
+      if (cmd.kind === 'place' && hud.mode === 'survival' && item?.food) command({ type: 'eat' });
+      else if (cmd.kind === 'place' && station && !sneaking && hud.role === 'participant')
         openInventory({ kind: 'open', target: [...target!] });
       else if (cmd.kind === 'place' && hud.mode === 'survival' && item?.igniter)
         command({ type: 'ignite' });
