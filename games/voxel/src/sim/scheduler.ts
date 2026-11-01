@@ -1,7 +1,7 @@
 import { WORLD_HZ } from '../shared/input.ts';
 const TICK_MS = 1000 / WORLD_HZ;
 export const MAX_CATCHUP_STEPS = 4;
-/** Feed a monotonic clock. A room tick always performs exactly two player movement substeps. */
+/** Feed a monotonic clock. World ticks are fixed; numbered player samples have their own playback durations. */
 export class FixedScheduler {
   private previous: number;
   private remainder = 0;

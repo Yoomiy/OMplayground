@@ -84,7 +84,7 @@ test('owned jump boots break once on native takeoff and rotate the profile while
     const epoch = f.player().epoch,
       ground = f.state()[1];
     f.controls.set('a', { ...f.controls.get('a')!, jump: true });
-    f.tick();
+    f.tick(3);
     assert.equal(f.room.inventories.view('a').equipment[3], null);
     assert.ok(f.player().epoch > epoch);
     assert.equal(f.baseline('a').movement.jump, 1);
@@ -118,7 +118,7 @@ test('water introduced between ticks cannot turn a swim press into equipment wea
         content.defaults.water,
       );
     f.controls.set('a', { ...f.controls.get('a')!, jump: true });
-    f.tick();
+    f.tick(3);
     assert.equal(f.state()[7], 1);
     assert.equal(f.room.inventories.view('a').equipment[3]?.instance?.durability, 1);
   } finally {

@@ -15,7 +15,7 @@ import { isLifecycleView } from './lifecycle.ts';
 import type { LifecycleView } from './lifecycle.ts';
 import { BOUNDS } from './world-bounds.ts';
 export { BOUNDS } from './world-bounds.ts';
-export const PROTOCOL = 13;
+export const PROTOCOL = 14;
 export const GENERATOR_VERSION = 2;
 export const MAX_CONTROL_BYTES = 16384;
 export const STREAM_RADIUS = 3;

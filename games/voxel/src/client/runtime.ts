@@ -236,7 +236,6 @@ export async function mountVoxel(
   let pendingInputs: InputFrame[] = [],
     lastFrame = performance.now(),
     lastUpdate = lastFrame,
-    accumulator = 0,
     lastSend = 0,
     lastReceived = 0,
     lastHud = 0,
@@ -289,6 +288,7 @@ export async function mountVoxel(
   let target: Cell | null = null,
     targetNormal: Cell | null = null,
     lastHighlight = '';
+  const baselineReasons: Record<string, number> = {};
   let visualOffset = [0, 0, 0],
     lastPosition = [0, 80, 0];
   let graphics: HudState['graphics'] = 'ready';
@@ -444,7 +444,6 @@ export async function mountVoxel(
     miningHeld = miningSingle = false;
     lastMineKey = '';
     pendingInputs = [];
-    accumulator = 0;
     if (prediction && phase === 'playing') {
       focusPending = true;
       send({ type: 'focus', epoch: prediction.currentEpoch, active });
@@ -635,6 +634,7 @@ export async function mountVoxel(
       return;
     }
     if (event.type === 'baseline' && prediction) {
+      baselineReasons[event.reason] = (baselineReasons[event.reason] ?? 0) + 1;
       if (event.reason === 'mode' || event.reason === 'teleport') {
         focus(false);
         if (ownsPointerLock()) document.exitPointerLock();
@@ -646,6 +646,7 @@ export async function mountVoxel(
         lastReady = -Infinity;
       }
 
+      const beforeBaseline = world.player_state(prediction.slot);
       const previousEpoch = prediction.currentEpoch;
       prediction.baseline(event.epoch, event.ack, event.state, event.movement);
       phase = event.phase;
@@ -665,7 +666,12 @@ export async function mountVoxel(
       }
       baselineReceived = true;
       pendingInputs = [];
-      visualOffset = [0, 0, 0];
+      const discontinuity = ['join', 'ready', 'teleport', 'respawn', 'mode'].includes(event.reason);
+      const baselineError = event.state
+        .slice(0, 3)
+        .map((v, i) => beforeBaseline[i] + visualOffset[i] - v);
+      visualOffset = !discontinuity && Math.hypot(...baselineError) < 2 ? baselineError : [0, 0, 0];
+      lastPosition = event.state.slice(0, 3);
       if (event.epoch !== previousEpoch) {
         queuedAction = null;
         actionSequence = 0;
@@ -738,19 +744,8 @@ export async function mountVoxel(
         const changed = prediction.reconcile(event.self.epoch, event.self.ack, event.self.state);
         if (changed) {
           const after = world.player_state(prediction.slot);
-          const distance = Math.hypot(
-            after[0] - before[0],
-            after[1] - before[1],
-            after[2] - before[2],
-          );
-          visualOffset =
-            distance < 1
-              ? [
-                  visualOffset[0] + before[0] - after[0],
-                  visualOffset[1] + before[1] - after[1],
-                  visualOffset[2] + before[2] - after[2],
-                ]
-              : [0, 0, 0];
+          const error = [0, 1, 2].map((i) => before[i] + visualOffset[i] - after[i]);
+          visualOffset = Math.hypot(...error) < 2 ? error : [0, 0, 0];
         }
       }
       remotes.snapshot(event.actors, event.time, performance.now());
@@ -1174,7 +1169,6 @@ export async function mountVoxel(
     const dt = Math.min(0.1, Math.max(0, (now - lastUpdate) / 1000));
     lastUpdate = now;
     environment = sampleEnvironment(worldClock.read(now), environmentSeed);
-    accumulator += dt;
     if (prediction && stream) {
       let state = world.player_state(prediction.slot);
       stream.setCenter(state[0], state[2], yaw);
@@ -1229,12 +1223,10 @@ export async function mountVoxel(
         publish({ status: 'stalled', message: 'ממתינים לחיבור…' });
         if (ownsPointerLock()) document.exitPointerLock();
       }
-      let steps = 0;
       let sampled = false;
-      while (accumulator >= 1 / 60 && steps++ < 6) {
-        accumulator -= 1 / 60;
+      if (dt > 0) {
         if (phase === 'playing' && focused && ready && !stalled && state[12] === 0) {
-          const sample = prediction.sample(controls());
+          const sample = prediction.sample(controls(), dt);
           if (sample) {
             sampled = true;
             pendingInputs.push(sample);
@@ -1332,13 +1324,12 @@ export async function mountVoxel(
             : {}),
         });
       }
-    } else {
-      accumulator = 0;
     }
   }
   function frame(now: number) {
     if (disposed) return;
     lastFrame = now;
+    update(now);
     draw(
       lastPosition.map((v, i) => v + visualOffset[i]),
       now,
@@ -1347,8 +1338,7 @@ export async function mountVoxel(
   }
   function draw(position: readonly number[], now: number) {
     if (graphics === 'lost' || graphics === 'failed') return;
-    // Controls/prediction/streaming/network use their own timer; GPU submission
-    // frequency does not schedule or mint control steps. Main-thread stalls still apply.
+    // Prediction runs once per animation frame, even when GPU submissions are paced.
     const interval = 1000 / (focused && phase === 'playing' ? renderHz : 10);
     if (now < nextDraw) return;
     nextDraw = now + interval - ((now - nextDraw) % interval);
@@ -1875,7 +1865,12 @@ export async function mountVoxel(
   canvas.addEventListener('wheel', onWheel, { passive: false });
   canvas.addEventListener('webglcontextlost', onContextLost);
   canvas.addEventListener('webglcontextrestored', onContextRestored);
-  updateTimer = setInterval(() => update(performance.now()), 1000 / 60);
+  // Continue loading/recovery while animation frames are suspended. Foreground movement
+  // is sampled with rendering, never by a competing simulation timer.
+  updateTimer = setInterval(() => {
+    const now = performance.now();
+    if (now - lastFrame > 100) update(now);
+  }, 1000 / 30);
   animation = requestAnimationFrame(frame);
   const runtime: VoxelRuntime = {
     command,
@@ -1974,7 +1969,13 @@ export async function mountVoxel(
         selected: hud.selected,
         players: remotes.size + 1,
         inputLag: prediction?.inputLag,
+        inputSeconds: prediction?.inputSeconds,
         correction: prediction?.correction,
+        movement: {
+          reconciliations: prediction?.reconciliations ?? 0,
+          recentCorrections: prediction?.recentCorrections.map((sample) => ({ ...sample })) ?? [],
+          baselines: { ...baselineReasons },
+        },
         columns: stream?.columns.size,
         collisionColumns: stream?.collisionCount,
         meshed: stream?.meshCount,

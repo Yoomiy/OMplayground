@@ -63,7 +63,7 @@ test('binary subscription baselines preserve high states and reject format/lengt
   const reserved = encodeChunk({ ...frame, edits: [[0, 65535]] });
   assert.equal(decodeChunk(reserved, 65536), null);
 });
-test('acknowledgement includes discarded controls and worker identities include every freshness boundary', () => {
+test('acknowledgement follows consumed controls and worker identities include every freshness boundary', () => {
   const q = new InputQueue(1);
   for (let sequence = 1; sequence <= 13; sequence++)
     q.receive(
@@ -80,8 +80,8 @@ test('acknowledgement includes discarded controls and worker identities include 
       },
       0,
     );
-  assert.equal(q.ack, 1);
-  q.take(201);
+  assert.equal(q.ack, 0);
+  for (let n = 0; n < 10; n++) q.advance(1 / 30, () => {});
   assert.equal(q.ack, 13);
   const tag = {
     worldId: 'world',

@@ -462,6 +462,7 @@ test(
           {
             epoch: a.baseline.epoch,
             sequence: 1,
+            dt: 0.05,
             x: 0,
             z: 0,
             yaw: chosen.yaw,
@@ -787,6 +788,7 @@ test(
         ).values(),
       ];
       const frame = {
+        dt: 0.05,
         epoch: a.baseline.epoch,
         sequence: 1,
         x: 0,
@@ -886,7 +888,7 @@ test(
 );
 
 test(
-  'the actual gateway bounds burst movement time and enforces participant/observer capabilities',
+  'the actual gateway catches up numbered inputs without resync and enforces participant/observer capabilities',
   { timeout: 20000 },
   async () => {
     const gateway = await createGateway({
@@ -1011,14 +1013,18 @@ test(
       await new Promise((resolve) => setTimeout(resolve, 1100));
       clearInterval(timer);
       timer = undefined;
-      // Both clients are bounded by the same earned room time. A normally paced
-      // sender can miss timer callbacks under CI load, so it is not a speed oracle.
+      // Playback may catch up buffered input time. Each client must remain bounded
+      // by its actual numbered inputs, without an ordinary resync baseline.
       const normalSnapshots = snapshots(normal.probe),
         burstSnapshots = snapshots(burst.probe);
       const commonTick = lastCommon(normalSnapshots, burstSnapshots);
       assert.ok(Number.isSafeInteger(commonTick));
       assert.ok(commonTick > startTick);
-      const maximumDistance = (start: readonly number[], movement: MovementModifiers) => {
+      const maximumDistance = (
+        start: readonly number[],
+        movement: MovementModifiers,
+        samples: number,
+      ) => {
         const reference = new VoxelWorld(),
           empty = new TerrainGen(4242),
           loaded = new Set<string>();
@@ -1027,7 +1033,7 @@ test(
           const slot = reference.player_add(start[0], start[1], start[2]);
           reference.player_restore(slot, new Float64Array(start));
           assert.equal(start[10], 1, 'reference begins in authorized flight');
-          for (let step = 0; step < (commonTick - startTick) * 2; step++) {
+          for (let step = 0; step < samples; step++) {
             const body = reference.player_state(slot);
             for (const column of around(Math.floor(body[0] / 16), Math.floor(body[2] / 16), 1)) {
               const key = `${column.x},${column.z}`;
@@ -1051,16 +1057,22 @@ test(
         ['normal', normalDistance, normalBefore.get(startTick)!, normalStart.movement],
         ['burst', burstDistance, burstBefore.get(startTick)!, burstStart.movement],
       ] as const) {
-        const maximum = maximumDistance(state, movement);
+        const maximum = maximumDistance(
+          state,
+          movement,
+          name === 'burst' ? burstSequence : normalSequence,
+        );
         assert.ok(
           distance <= maximum + 0.001,
-          `ticks ${startTick}–${commonTick}: ${name} moved ${distance}, native limit ${maximum}`,
+          `input playback: ${name} moved ${distance}, sent-input limit ${maximum}`,
         );
       }
-      assert.ok(
+      assert.equal(
         burst.probe.events.some(
           (e) => 'type' in e && e.type === 'baseline' && e.reason === 'resync',
         ),
+        false,
+        'ordinary backlog catch-up must not reset prediction',
       );
       const observer = await join('hidden-observer');
       observer.probe.send({
@@ -1237,7 +1249,10 @@ test(
         (e): e is Extract<ServerMessage, { type: 'baseline' }> =>
           'type' in e && e.type === 'baseline' && e.epoch > pbase.epoch,
       );
-      peaceful.send({ type: 'input', frames: [{ ...NEUTRAL, epoch: focused.epoch, sequence: 1 }] });
+      peaceful.send({
+        type: 'input',
+        frames: [{ ...NEUTRAL, dt: 0.05, epoch: focused.epoch, sequence: 1 }],
+      });
       peaceful.send({
         type: 'attack',
         epoch: focused.epoch,

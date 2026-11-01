@@ -144,7 +144,11 @@ try {
       const identity = await debug();
       assert(authority);
       phase = 'movement';
-      const before = { server: structuredClone(authority), inputFrames };
+      const before = {
+        server: structuredClone(authority),
+        inputFrames,
+        movement: identity.movement,
+      };
       const samples = [];
       await command({ ...neutral, x: 1 });
       for (let n = 0; n < 24; n++) {
@@ -179,7 +183,23 @@ try {
         agreement < 0.01,
         'stationary prediction/server agreement must return within one centimetre',
       );
+      const corrections = settled.movement.recentCorrections.filter(
+        (sample: { sample: number; distance: number }) =>
+          sample.sample > before.movement.reconciliations,
+      );
+      assert(corrections.length >= 20, 'measure reconciliations across the movement window');
+      const maximumCorrection = Math.max(
+        ...corrections.map((sample: { distance: number }) => sample.distance),
+      );
+      assert(
+        maximumCorrection < 0.001,
+        `visible correction ${maximumCorrection}m on ${JSON.stringify(profile)}`,
+      );
+      assert.equal(settled.movement.baselines.resync ?? 0, before.movement.baselines.resync ?? 0);
       row.movement = {
+        correctionSamples: corrections.length,
+        maximumCorrectionMetres: maximumCorrection,
+        resyncs: (settled.movement.baselines.resync ?? 0) - (before.movement.baselines.resync ?? 0),
         before: before.server,
         after,
         framesSent: inputFrames - before.inputFrames,

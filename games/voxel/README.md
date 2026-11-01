@@ -99,8 +99,9 @@ worlds from repeatedly exhausting a slow connection's output queue during join.
 Real TCP read-stall regressions cover source/packaged workers and the rendered
 client, including stale-control freeze, complete baselines and reconnect.
 
-[Input stall recovery](docs/input-backlog.md) retires stale queued controls during
-scheduled movement steps so a recovered link does not retain input latency.
+[Movement synchronization](docs/movement-sync.md) uses Blockyard's numbered-duration
+playback and input cushion to absorb jitter without routine prediction resets.
+The earlier [input stall recovery](docs/input-backlog.md) report is historical.
 `test:input-stalls:browser` suspends actual inbound TCP reads for one/five seconds,
 checks sustained acknowledgement recovery, bounded prediction and explicit rejoin.
 
@@ -178,8 +179,9 @@ tagged recipes, forage, four tool tiers and verification limits in
 `?quality=low` selects half render scale and a 30 Hz presentation limit; the
 default presentation limit is 60 Hz. Paused/preparing views submit at most
 10 frames per second. `RuntimeOptions.renderHz` configures the active limit.
-Input sampling, prediction, streaming and network scheduling keep their own
-cadence; GPU submissions do not allocate movement time.
+Local input sampling and prediction run with animation frames before GPU pacing.
+Network sends remain batched at 30 Hz; a timer continues loading/recovery when
+animation frames are suspended. Player snapshots publish at 30 Hz.
 One WebGL2 completion fence prevents queuing another rendered frame while the
 previous frame is pending. Polls use zero timeout; context loss and disposal
 release the fence. This bounds submitted work, while main-thread/device stalls
@@ -192,7 +194,7 @@ Room ticks drive a 20-minute day/night cycle and seeded, smoothly changing basic
 weather. Sun, moon, stars, clouds, light, fog, water and ambience follow that
 clock. Rain is presentation only and hides beneath overhead terrain. The gateway's
 injected `worldDefaults` can set the initial seed/tick; clients cannot set room
-time. The protocol is version 11 with environment version 1, vitals format 2 and inventory format 2. Room clocks are still
+time. The protocol is version 14 with environment version 1, vitals format 2 and inventory format 2. Room clocks are still
 volatile in the launcher; the gateway now has injected checkpoint/lease ports
 with coherent room recovery. The production Supabase adapter/migration now exists in `apps/voxel-server`; remote installation awaits approval.
 First-person and remote
@@ -271,8 +273,8 @@ for behavior, contract-fixture evidence and remaining service qualification.
 
 ## Boundaries
 
-`src/shared` defines content, versioned protocol and fixed movement contracts.
-`src/sim` owns earned movement time, command authority and revisioned world state.
+`src/shared` defines content, versioned protocol and shared movement contracts.
+`src/sim` owns input playback, command authority and revisioned world state.
 `src/server` supervises room workers and accepts an injected admission policy.
 `src/client` owns prediction/input/socket lifecycle; its optional touch UI adapter
 only calls the public runtime command interface. `src/world` runs tagged

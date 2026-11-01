@@ -147,9 +147,13 @@ export function roomFixture(
       yaw: Math.atan2(dx, -dz),
       pitch: Math.atan2(dy, Math.hypot(dx, dz)),
     });
-    tick();
+    tick(2);
   };
   const send = (message: ClientMessage, id = 'a') => {
+    // Gameplay fixtures act from the last consumed pose/aim. Explicit dependency
+    // tests enqueue their future action directly with room.receive.
+    if ('inputSequence' in message && message.inputSequence === inputs.get(id))
+      message = { ...message, inputSequence: player(id).queue.ack };
     room.receive(id, message, now);
     return result(id);
   };

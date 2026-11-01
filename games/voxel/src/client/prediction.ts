@@ -1,6 +1,7 @@
 import { stepBoundedMovement, DEFAULT_MOVEMENT } from '../shared/movement.ts';
 import type { MovementModifiers } from '../shared/movement.ts';
 import type { WorldPort } from '../shared/engine-port.ts';
+import { MOVEMENT_DT, MAX_INPUT_DT } from '../shared/input.ts';
 import type { InputFrame, Controls } from '../shared/input.ts';
 export class Prediction {
   readonly world: WorldPort;
@@ -11,6 +12,8 @@ export class Prediction {
   private lastAck = 0;
   private modifiers: MovementModifiers = DEFAULT_MOVEMENT;
   correction = 0;
+  reconciliations = 0;
+  readonly recentCorrections: { sample: number; distance: number }[] = [];
   constructor(world: WorldPort, slot: number) {
     this.world = world;
     this.slot = slot;
@@ -30,9 +33,10 @@ export class Prediction {
     this.pending = [];
     this.world.player_restore(this.slot, new Float64Array(state));
   }
-  sample(controls: Controls): InputFrame | null {
-    if (this.pending.length >= 120) return null;
-    const frame: InputFrame = { ...controls, epoch: this.epoch, sequence: ++this.sequence };
+  sample(controls: Controls, dt = MOVEMENT_DT): InputFrame | null {
+    if (!Number.isFinite(dt) || dt <= 0 || dt > MAX_INPUT_DT) return null;
+    if (this.inputSeconds >= 2) return null;
+    const frame: InputFrame = { ...controls, dt, epoch: this.epoch, sequence: ++this.sequence };
     this.pending.push(frame);
     stepBoundedMovement(this.world, this.slot, frame, this.modifiers);
     return frame;
@@ -56,7 +60,12 @@ export class Prediction {
       current[1] - previous[1],
       current[2] - previous[2],
     );
+    this.recentCorrections.push({ sample: ++this.reconciliations, distance: this.correction });
+    if (this.recentCorrections.length > 128) this.recentCorrections.shift();
     return true;
+  }
+  get inputSeconds(): number {
+    return this.pending.reduce((sum, frame) => sum + (frame.dt ?? MOVEMENT_DT), 0);
   }
   get inputLag(): number {
     return this.pending.length;

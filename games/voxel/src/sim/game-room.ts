@@ -754,18 +754,12 @@ export class GameRoom {
         this.tick++;
         for (const a of this.actors.values())
           if (a.connection && a.phase === 'playing') this.refreshMovement(a);
-        for (let sub = 0; sub < 2; sub++)
-          for (const a of this.actors.values())
-            if (a.connection && a.phase === 'playing' && a.focused) {
-              const input = a.queue.take(now);
-              a.controls = input.controls;
+        for (const a of this.actors.values())
+          if (a.connection && a.phase === 'playing' && a.focused) {
+            a.queue.advance(1 / 30, (input) => {
+              a.controls = input;
               const before = this.store.world.player_state(a.slot);
-              const jumped = stepBoundedMovement(
-                this.store.world,
-                a.slot,
-                input.controls,
-                a.movement,
-              );
+              const jumped = stepBoundedMovement(this.store.world, a.slot, input, a.movement);
               if (this.survival(a)) {
                 const after = this.store.world.player_state(a.slot);
                 const climbing = [0.1, 0.9, 1.6].some(
@@ -784,7 +778,7 @@ export class GameRoom {
                   after,
                   climbing,
                   effects.fallImmune ? 1 : effects.fall,
-                  input.controls.sprint && a.movement.sprint,
+                  input.sprint && a.movement.sprint,
                 );
                 let worn = landing.impact > 0 && this.inventories.wearEquipment(a.id, 'fall');
                 if (jumped) worn = this.inventories.wearEquipment(a.id, 'jump') || worn;
@@ -794,8 +788,8 @@ export class GameRoom {
                 }
                 this.handleDeath(a);
               }
-              if (input.resync) this.baseline(a, 'resync');
-            }
+            });
+          }
         for (const a of this.actors.values())
           if (a.connection) {
             if (
@@ -875,7 +869,7 @@ export class GameRoom {
           this.dropSnapshots();
           this.explosiveSnapshots();
         }
-        if (this.tick % 2 === 0) this.snapshots(now);
+        this.snapshots(now);
         this.ports.onStep?.('world', performance.now() - started);
       });
     }
@@ -958,14 +952,13 @@ export class GameRoom {
       if (this.ended) return;
       const started = this.ports.onStep ? performance.now() : 0;
       this.observerTick++;
-      for (let sub = 0; sub < 2; sub++)
-        for (const a of this.actors.values())
-          if (a.connection && a.role === 'observer' && a.phase === 'playing' && a.focused) {
-            const input = a.queue.take(now);
-            a.controls = input.controls;
-            stepBoundedMovement(this.store.world, a.slot, input.controls, a.movement);
-            if (input.resync) this.baseline(a, 'resync');
-          }
+      for (const a of this.actors.values())
+        if (a.connection && a.role === 'observer' && a.phase === 'playing' && a.focused) {
+          a.queue.advance(1 / 30, (input) => {
+            a.controls = input;
+            stepBoundedMovement(this.store.world, a.slot, input, a.movement);
+          });
+        }
       for (const a of this.actors.values())
         if (a.connection && a.role === 'observer') {
           a.saved = this.store.world.player_state(a.slot);
@@ -976,7 +969,7 @@ export class GameRoom {
         this.dropSnapshots();
         this.explosiveSnapshots();
       }
-      if (this.observerTick % 2 === 0) this.snapshots(now);
+      this.snapshots(now);
       this.ports.onStep?.('observer', performance.now() - started);
     });
   }
@@ -1971,8 +1964,10 @@ export class GameRoom {
   private snapshots(now: number): void {
     const connected = [...this.actors.values()].filter((a) => a.connection);
     // One synchronous replication pass cannot advance bodies. Capture each raw
-    // pose once; its quantized public state is also valid for that actor's self.
+    // pose once. Self stays at the acknowledged input; public poses compensate
+    // for whole-input playback remainder, as Blockyard FrameBuffer.caughtUp does.
     const poses = new Map(connected.map((a) => [a.id, this.store.world.player_state(a.slot)]));
+    const selfStates = new Map(connected.map((a) => [a.id, this.state(a, poses.get(a.id)!)]));
     const states = new Map(
       connected
         .filter((a) => a.phase === 'playing')
@@ -1980,7 +1975,13 @@ export class GameRoom {
           other.id,
           {
             id: other.id,
-            state: this.state(other, poses.get(other.id)!),
+            state: selfStates
+              .get(other.id)!
+              .map((value, axis, body) =>
+                axis < 3 && !body[12]
+                  ? Math.round((value + body[axis + 3] * other.queue.lead) * 10000) / 10000
+                  : value,
+              ),
             yaw: other.controls.yaw,
             pitch: other.controls.pitch,
             appearance:
@@ -2006,7 +2007,7 @@ export class GameRoom {
           (other.role !== 'observer' || viewer.role === 'observer')
         ) {
           const actor = states.get(other.id)!,
-            state = actor.state;
+            state = selfStates.get(other.id)!;
           const dx = state[0] - own[0],
             dz = state[2] - own[2];
           // A conservative diamond strictly inside the existing 48-block circle
@@ -2064,7 +2065,7 @@ export class GameRoom {
         self: {
           epoch: viewer.epoch,
           ack: viewer.queue.ack,
-          state: states.get(viewer.id)?.state ?? this.state(viewer, own),
+          state: selfStates.get(viewer.id)!,
         },
         actors: changes.splice(0, 64),
       });

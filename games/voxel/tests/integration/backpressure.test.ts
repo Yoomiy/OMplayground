@@ -125,6 +125,7 @@ test(
         type: 'input',
         frames: [1, 2].map((sequence) => ({
           ...NEUTRAL,
+          dt: 1 / 30,
           yaw: 0.9,
           epoch: mover.baseline.epoch,
           sequence,

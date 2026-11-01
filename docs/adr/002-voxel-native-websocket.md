@@ -11,8 +11,12 @@ supersede Socket.io for unrelated Playground services.
 The replacement voxel game uses `ws` on Node and the browser WebSocket API,
 with one shared versioned protocol and server-owned fixed-step simulation.
 The same forked Rust/Wasm movement primitive runs in authority and prediction.
-Socket callbacks cannot allocate simulation time. Input samples carry controls,
-a sequence and an epoch; they carry no authoritative duration or position.
+Socket callbacks cannot allocate simulation time. Input samples originally carried controls, a sequence and an epoch with fixed
+movement durations. The 2026-11-01 smoothness update supersedes that timing
+contract: protocol 14 carries bounded per-sample durations, replayed identically
+by client and server using Blockyard's input playback mechanics. World gameplay
+still advances on the fixed 30 Hz room clock. Inputs never carry positions.
+See [movement synchronization](../../games/voxel/docs/movement-sync.md).
 
 Control/snapshot messages use bounded validated JSON. Bulk world data uses
 versioned binary buffers. Room computation runs in supervised workers behind a

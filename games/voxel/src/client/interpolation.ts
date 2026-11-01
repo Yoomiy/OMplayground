@@ -3,6 +3,7 @@ import type { AvatarPose } from '../render/avatars.ts';
 type Sample = { time: number; state: number[]; yaw: number; pitch: number };
 export class RemoteActors {
   private actors = new Map<string, { latest: ActorState; samples: Sample[] }>();
+  private shown = -Infinity;
   private offset: number | null = null;
   join(actor: ActorState, time: number): void {
     this.actors.set(actor.id, {
@@ -37,7 +38,10 @@ export class RemoteActors {
     }
   }
   frame(now: number): AvatarPose[] {
-    const time = now + (this.offset ?? 0) - 125,
+    const time =
+        this.offset === null
+          ? -Infinity
+          : (this.shown = Math.max(this.shown, now + this.offset - 1000 / 15)),
       out: AvatarPose[] = [];
     for (const [id, actor] of this.actors) {
       const samples = actor.samples;
@@ -45,12 +49,8 @@ export class RemoteActors {
       const a = samples[0],
         b = samples[1] ?? a,
         span = b.time - a.time,
-        t = span > 0 ? Math.max(0, Math.min(1, (time - a.time) / span)) : 0;
+        t = span > 0 ? Math.max(0, Math.min(1, (time - a.time) / span)) : time >= b.time ? 1 : 0;
       const position = a.state.slice(0, 3).map((v, i) => v + (b.state[i] - v) * t);
-      if (time > b.time && b.state[12] !== 1) {
-        const dt = Math.min(0.1, Math.max(0, (time - b.time) / 1000));
-        for (let i = 0; i < 3; i++) position[i] = b.state[i] + b.state[i + 3] * dt;
-      }
       const angle = Math.atan2(Math.sin(b.yaw - a.yaw), Math.cos(b.yaw - a.yaw));
       out.push({
         id,
@@ -67,6 +67,7 @@ export class RemoteActors {
   clear(): void {
     this.actors.clear();
     this.offset = null;
+    this.shown = -Infinity;
   }
   get size(): number {
     return this.actors.size;

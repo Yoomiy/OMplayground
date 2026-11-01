@@ -11,6 +11,7 @@ License: MIT, copyright 2026 Patrick Blais. The original notice is retained in
 
 | Upstream path | Local path | Use |
 | --- | --- | --- |
+| `src/platform/host/game.ts::moveInputs`, `src/platform/client/{predict,interp}.ts` | Adapted in `src/sim/input-queue.ts`, `src/client/{prediction,interpolation,runtime}.ts` | Numbered-duration movement replay, 40 ms input priming, 50 ms cushion, 5% catch-up, correction easing and monotonic two-tick remote playback. |
 | `engine/src/*.rs` | `engine/src/*.rs` | Generation/noise, shapes, collision/raycasting, lighting/meshing, culling, procedural textures and their tests. |
 | `engine/Cargo.toml`, `engine/Cargo.lock` | Same paths | Locked Rust/Wasm build. |
 | `LICENSE` | `LICENSE`, `engine/LICENSE` | Required MIT notice. |
@@ -20,7 +21,8 @@ License: MIT, copyright 2026 Patrick Blais. The original notice is retained in
 
 `engine/src/formats.rs` and `engine/src/state_width.rs` are new local code.
 The TypeScript simulation, content compiler, authored content, tests and tools are
-new code. The renderer adaptations are listed above. The imported actor/mover/damage compute modules are retained internally
+locally maintained code; movement synchronization adapts the upstream algorithms
+listed above. The renderer adaptations are listed above. The imported actor/mover/damage compute modules are retained internally
 with their regression tests; this does not add mobs, vehicles or micro-voxel
 weapons to the release scope. No upstream host, account, uploaded-game, replay,
 public-lobby, development-command, telemetry or server endpoint is imported.

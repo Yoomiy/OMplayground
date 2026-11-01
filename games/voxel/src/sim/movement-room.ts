@@ -30,12 +30,8 @@ export class MovementRoom {
   advance(now: number): { steps: number; droppedMs: number; resync: Set<string> } {
     const resync = new Set<string>();
     const result = this.clock.advance(now, () => {
-      for (let substep = 0; substep < 2; substep++)
-        for (const [id, actor] of this.actors) {
-          const input = actor.queue.take(now);
-          if (input.resync) resync.add(id);
-          stepMovement(this.world, actor.slot, input.controls);
-        }
+      for (const actor of this.actors.values())
+        actor.queue.advance(1 / 30, (input) => stepMovement(this.world, actor.slot, input));
     });
     return { ...result, resync };
   }
