@@ -1,27 +1,19 @@
-import {
-  HELD_INPUT_MS,
-  INPUT_MAX_AGE_MS,
-  INPUT_QUEUE_LIMIT,
-  isInputFrame,
-  NEUTRAL,
-} from '../shared/input.ts';
-import type { Controls, InputFrame } from '../shared/input.ts';
+import { HELD_INPUT_MS, INPUT_QUEUE_LIMIT, MOVEMENT_DT, isInputFrame } from '../shared/input.ts';
+import type { InputFrame } from '../shared/input.ts';
 export type InputReceipt = 'accepted' | 'invalid' | 'stale_epoch' | 'duplicate' | 'resync';
-type Pending = { frame: InputFrame; arrivedAt: number };
-/** Socket callbacks only enqueue. Only a scheduled simulation substep may consume controls. */
+const PRIME = 0.04;
+const CUSHION = 0.05;
+/** Play numbered samples, never invented held/neutral steps. Ack and state share one timeline. */
 export class InputQueue {
-  private pending: Pending[] = [];
+  private pending: InputFrame[] = [];
   private latestSequence = 0;
-  private held: Pending | undefined;
   private acknowledged = 0;
   private currentEpoch: number;
   private latestArrival = -Infinity;
-  private backlogAt = Infinity;
-  private overflowed = false;
-  private look: Pick<Controls, 'yaw' | 'pitch'>;
-  constructor(epoch: number, look: Pick<Controls, 'yaw' | 'pitch'> = NEUTRAL) {
+  private bank = 0;
+  private playing = false;
+  constructor(epoch: number, _look?: { yaw: number; pitch: number }) {
     this.currentEpoch = epoch;
-    this.look = { yaw: look.yaw, pitch: look.pitch };
   }
   get received(): number {
     return this.latestSequence;
@@ -31,6 +23,10 @@ export class InputQueue {
   }
   get ack(): number {
     return this.acknowledged;
+  }
+  /** Whole samples can trail the room tick by this remainder (Blockyard's player lead). */
+  get lead(): number {
+    return this.bank;
   }
   get size(): number {
     return this.pending.length;
@@ -44,62 +40,49 @@ export class InputQueue {
     if (value.sequence <= this.latestSequence) return 'duplicate';
     this.latestSequence = value.sequence;
     this.latestArrival = now;
-    // Copy transport input so subsequent caller mutation cannot change queued authority.
-    this.pending.push({ frame: { ...value }, arrivedAt: now });
-    if (this.pending.length > 4) this.backlogAt = Math.min(this.backlogAt, now);
+    this.pending.push({ ...value });
     if (this.pending.length > INPUT_QUEUE_LIMIT) {
-      this.overflowed = true;
       const discarded = this.pending.splice(0, this.pending.length - INPUT_QUEUE_LIMIT);
-      this.acknowledged = Math.max(this.acknowledged, discarded.at(-1)!.frame.sequence);
+      this.acknowledged = discarded.at(-1)!.sequence;
       return 'resync';
     }
     return 'accepted';
   }
-  take(now: number): { controls: Controls; resync: boolean } {
-    let resync = false;
-    while (this.pending[0] && now - this.pending[0].arrivedAt > INPUT_MAX_AGE_MS) {
-      this.acknowledged = Math.max(this.acknowledged, this.pending.shift()!.frame.sequence);
-      resync = true;
+  /** A small cushion absorbs arrival jitter; surplus drains 5% faster without dropping inputs.
+   * A long transport stall uses Blockyard's queue-over-30 catch-up instead of resetting prediction.
+   * Duration-less headless clients retain their explicit 60 Hz sample convention.
+   */
+  advance(dt: number, apply: (frame: InputFrame) => void): void {
+    const queued = this.pending.reduce((sum, frame) => sum + (frame.dt ?? MOVEMENT_DT), 0);
+    if (!this.playing) {
+      if (queued + 1e-9 < PRIME) return;
+      this.playing = true;
     }
-    // Two 60 Hz controls normally arrive in each 30 Hz packet. Once more than
-    // two packets persist, consuming at exactly 60 Hz can retain that delay
-    // forever. Allow brief arrival jitter; overflow or a backlog lasting the held
-    // input deadline retires older identities without simulating their movement,
-    // view changes or presses. Only a scheduled take applies surviving controls.
-    if (this.pending.length > 4 && (this.overflowed || now - this.backlogAt >= HELD_INPUT_MS)) {
-      const discarded = this.pending.splice(0, this.pending.length - 2);
-      this.acknowledged = Math.max(this.acknowledged, discarded.at(-1)!.frame.sequence);
-      resync = true;
+    this.bank = Math.min(0.25, this.bank + dt * (queued > CUSHION + dt ? 1.05 : 1));
+    let count = 0;
+    while (this.pending.length && count++ < INPUT_QUEUE_LIMIT) {
+      const frame = this.pending[0],
+        duration = frame.dt ?? MOVEMENT_DT;
+      // Blockyard catch-up: a long queue is played through, not retired/reset.
+      if (duration > this.bank + 1e-9 && this.pending.length <= 30) break;
+      this.pending.shift();
+      this.bank = Math.max(0, this.bank - duration);
+      // A movement outcome may invalidate the epoch (death/equipment). Never resurrect its ack.
+      this.acknowledged = frame.sequence;
+      const epoch = this.currentEpoch;
+      apply(frame);
+      if (this.currentEpoch !== epoch) break;
     }
-    this.overflowed = false;
-    const next = this.pending.shift();
-    if (this.pending.length < 4) this.backlogAt = Infinity;
-    if (next) {
-      this.held = next;
-      this.look = { yaw: next.frame.yaw, pitch: next.frame.pitch };
-      this.acknowledged = next.frame.sequence;
-      return { controls: next.frame, resync };
-    }
-    const held = this.held;
-    // jump is a transient press; held movement expires even if no socket close arrives.
-    if (held && now - held.arrivedAt <= HELD_INPUT_MS) {
-      return { controls: { ...held.frame, jump: false }, resync };
-    }
-    return {
-      controls: { ...NEUTRAL, ...this.look },
-      resync,
-    };
+    if (!this.pending.length) this.bank = Math.min(this.bank, dt * 0.5);
   }
   reset(epoch: number): void {
     if (!Number.isSafeInteger(epoch) || epoch <= this.currentEpoch)
       throw new Error('epoch must advance');
     this.currentEpoch = epoch;
     this.pending = [];
-    this.held = undefined;
-    this.latestSequence = 0;
-    this.acknowledged = 0;
+    this.latestSequence = this.acknowledged = 0;
     this.latestArrival = -Infinity;
-    this.backlogAt = Infinity;
-    this.overflowed = false;
+    this.bank = 0;
+    this.playing = false;
   }
 }

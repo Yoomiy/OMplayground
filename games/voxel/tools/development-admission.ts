@@ -5,7 +5,12 @@ export function developmentAdmission(actor: AdmittedActor): AdmissionGrant {
   if (process.env.NODE_ENV === 'production')
     throw new Error('development admission cannot run in production');
   const authorize = () => ({
-    actor: { id: actor.id, role: actor.role, capabilities: { ...actor.capabilities } },
+    actor: {
+      id: actor.id,
+      role: actor.role,
+      ...(actor.avatar === undefined ? {} : { avatar: actor.avatar }),
+      capabilities: { ...actor.capabilities },
+    },
     expiresAt: Date.now() + 30000,
   });
   return { ...authorize(), revalidate: async () => authorize() };

@@ -90,10 +90,11 @@ export function roomFixture(
     );
     room.receive(id, { type: 'focus', epoch: baseline(id).epoch, active: true }, now);
   };
-  const join = (id = 'a', role: 'participant' | 'observer' = 'participant') => {
+  const join = (id = 'a', role: 'participant' | 'observer' = 'participant', avatar?: number) => {
     room.join(
       {
         id,
+        ...(avatar === undefined ? {} : { avatar }),
         role,
         capabilities: {
           build: role === 'participant',
@@ -147,9 +148,13 @@ export function roomFixture(
       yaw: Math.atan2(dx, -dz),
       pitch: Math.atan2(dy, Math.hypot(dx, dz)),
     });
-    tick();
+    tick(2);
   };
   const send = (message: ClientMessage, id = 'a') => {
+    // Gameplay fixtures act from the last consumed pose/aim. Explicit dependency
+    // tests enqueue their future action directly with room.receive.
+    if ('inputSequence' in message && message.inputSequence === inputs.get(id))
+      message = { ...message, inputSequence: player(id).queue.ack };
     room.receive(id, message, now);
     return result(id);
   };

@@ -597,6 +597,12 @@ export class Inventories {
     p.revision++;
     return { ok: true, reason: 'dropped' };
   }
+  canReceive(id: string, stack: Stack): boolean {
+    const item = this.items.get(stack.itemType)!;
+    return this.player(id).bag.some(
+      (slot) => !slot || (sameStack(slot, stack) && slot.count < item.maxStack),
+    );
+  }
   receive(id: string, stack: Stack): number {
     if (!validStack(stack, this.items)) throw new Error('invalid pickup stack');
     const p = this.player(id),

@@ -26,7 +26,9 @@ const phases: Record<VoiceState["phase"], string> = {
 /** Owns user activation and staff UI; spatial sampling stays in VoiceSession. */
 export function VoxelVoice(props: {
   api: VoxelApi;
+  names?: readonly { id: string; name: string }[];
   isStaff: boolean;
+  manualJoin?: boolean;
   ready: boolean;
   ended?: boolean;
   scene: () => VoiceScene | null;
@@ -37,12 +39,13 @@ export function VoxelVoice(props: {
     latest = useRef(props);
   latest.current = props;
   const host = useRef<HTMLDivElement>(null),
-    dialog = useRef<HTMLDialogElement>(null),
+    dialog = useRef<HTMLElement>(null),
     owner = useRef<VoiceSession | null>(null);
   const write = useRef<AbortController | null>(null),
     busy = useRef(false);
+  const autoStarted = useRef(false);
   const [state, setState] = useState<VoiceState | null>(null),
-    [open, setOpen] = useState(false),
+    [open, setOpen] = useState(true),
     [devices, setDevices] = useState<MediaDeviceInfo[]>([]),
     [sink, setSink] = useState(""),
     [sinkError, setSinkError] = useState(false);
@@ -64,8 +67,10 @@ export function VoxelVoice(props: {
       },
     });
     owner.current = voice;
+    autoStarted.current = false;
     setState(voice.state);
-    setOpen(false);
+    setOpen(true);
+
     setNotice(null);
     setPolicy(null);
     setDraft(null);
@@ -76,7 +81,7 @@ export function VoxelVoice(props: {
       alive = false;
       write.current?.abort();
       busy.current = false;
-      dialog.current?.close();
+      setOpen(false);
       if (owner.current === voice) owner.current = null;
       void voice.close();
     };
@@ -85,6 +90,44 @@ export function VoxelVoice(props: {
     if (props.ended) void owner.current?.close();
     else if (!ready) void owner.current?.microphone(false);
   }, [ready, api, props.ended]);
+  useEffect(() => {
+    const voice = owner.current;
+    if (
+      !voice ||
+      !ready ||
+      props.ended ||
+      props.manualJoin ||
+      autoStarted.current
+    )
+      return;
+    autoStarted.current = true;
+    void voice.start({ automatic: true }).then(() => {
+      if (
+        owner.current === voice &&
+        latest.current.ready &&
+        !latest.current.manualJoin &&
+        voice.state.publishAllowed
+      )
+        void voice.microphone(true);
+    });
+  }, [api, ready, props.manualJoin, props.ended]);
+  useEffect(() => {
+    const unlock = () => {
+      const voice = owner.current;
+      if (
+        !latest.current.manualJoin &&
+        latest.current.ready &&
+        voice?.state.audioLocked
+      )
+        void voice.start();
+    };
+    window.addEventListener("pointerdown", unlock);
+    window.addEventListener("keydown", unlock);
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
+  }, []);
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       if (
@@ -258,47 +301,48 @@ export function VoxelVoice(props: {
     <div className="voxel-session__voice" ref={host}>
       <button
         type="button"
-        aria-haspopup="dialog"
+        hidden={open}
+        aria-expanded={open}
         onClick={() => {
           props.onOpen();
           setOpen(true);
-          dialog.current?.showModal();
         }}
       >
         שיחה קולית{state?.microphone === "on" ? " · מיקרופון פעיל" : ""}
       </button>
-      <dialog
+      <section
+        hidden={!open}
         ref={dialog}
         className="voxel-session__dialog voxel-session__voice-dialog"
         aria-labelledby="voxel-voice-title"
-        onCancel={(event) => {
-          event.preventDefault();
-          dialog.current?.close();
-          props.onResume?.();
-        }}
-        onClose={() => {
-          setOpen(false);
-          setDraft(null);
+        onKeyDown={(event) => {
+          event.stopPropagation();
+          if (event.key === "Escape") {
+            event.preventDefault();
+            setOpen(false);
+            props.onResume?.();
+          }
         }}
       >
         <header>
-          <h2 id="voxel-voice-title">שיחה קולית</h2>
+          <h2 id="voxel-voice-title">קשר קולי (סביבתי)</h2>
           <button
             type="button"
             onClick={() => {
-              dialog.current?.close();
+              setOpen(false);
               props.onResume?.();
             }}
           >
-            סגירת שיחה קולית
+            מזער
           </button>
         </header>
-        <p role="status">{phases[state?.phase ?? "off"]}</p>
-        <nav
-          aria-label="השמעה ומיקרופון"
-          className="voxel-session__voice-primary"
-        >
-          {!connected && (
+        <p role="status">
+          {!props.manualJoin && (!state || state.phase === "off")
+            ? "מכינים את השמע…"
+            : phases[state?.phase ?? "off"]}
+        </p>
+        <nav aria-label="מיקרופון" className="voxel-session__voice-primary">
+          {!connected && props.manualJoin && (
             <button
               type="button"
               disabled={!ready || state?.phase === "starting"}
@@ -327,16 +371,29 @@ export function VoxelVoice(props: {
                   ? "מיקרופון פעיל (M)"
                   : "מיקרופון מושתק (M)"}
               </button>
-              <button
-                type="button"
-                aria-pressed={state?.outputMuted ?? false}
-                onClick={() => owner.current?.muteOutput(!state?.outputMuted)}
-              >
-                {state?.outputMuted ? "הפעלת רמקול" : "השתקת רמקול"}
-              </button>
             </>
           )}
         </nav>
+        {connected && (
+          <section
+            aria-label="שחקנים בטווח שמיעה"
+            className="voxel-session__nearby"
+          >
+            <p>שחקנים בטווח שמיעה</p>
+            {!state?.nearby.length && <p>אין שחקנים בטווח</p>}
+            {state?.nearby.map((player) => (
+              <p key={player.id} data-speaking={player.speaking}>
+                <span>
+                  {props.names?.find((p) => p.id === player.id)?.name ?? "שחקן"}
+                </span>
+                <span>
+                  {player.speaking ? " · מדבר" : ""} · {player.distance} מ׳
+                  {player.occluded ? " · קול עמום" : ""}
+                </span>
+              </p>
+            ))}
+          </section>
+        )}
         {connected && !state?.publishAllowed && (
           <p>
             {state?.hidden
@@ -394,13 +451,15 @@ export function VoxelVoice(props: {
           {sinkError && (
             <p role="status">לא ניתן לשנות את יציאת השמע. בחרו התקן אחר.</p>
           )}
-          <button
-            type="button"
-            disabled={!state || state.phase === "off"}
-            onClick={() => owner.current?.stop()}
-          >
-            יציאה מהשיחה
-          </button>
+          {props.manualJoin && (
+            <button
+              type="button"
+              disabled={!state || state.phase === "off"}
+              onClick={() => owner.current?.stop()}
+            >
+              יציאה מהשיחה
+            </button>
+          )}
         </details>
         {isStaff && (
           <details className="voxel-session__voice-staff">
@@ -498,7 +557,7 @@ export function VoxelVoice(props: {
             )}
           </details>
         )}
-      </dialog>
+      </section>
     </div>
   );
 }

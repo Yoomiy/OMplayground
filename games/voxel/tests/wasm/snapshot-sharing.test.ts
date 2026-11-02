@@ -45,3 +45,45 @@ test('real room shares identical deltas across viewers without changing visibili
     f.room.dispose();
   }
 });
+
+test('public playback lead smooths whole-input timing without contaminating self reconciliation', () => {
+  const f = roomFixture('creative');
+  try {
+    f.join('b');
+    const a = f.player();
+    // A 25 ms sample leaves a fractional remainder in a 30 Hz server tick.
+    f.room.receive(
+      'a',
+      {
+        type: 'input',
+        frames: [1, 2].map((sequence) => ({
+          epoch: a.epoch,
+          sequence,
+          dt: 0.025,
+          x: 1,
+          z: 0,
+          yaw: 0,
+          pitch: 0,
+          jump: false,
+          sneak: false,
+          sprint: false,
+        })),
+      },
+      f.now,
+    );
+    f.elapse(1000 / 30);
+    const snapshot = (id: string) =>
+      f.events.get(id)!.findLast((e): e is Snapshot => 'type' in e && e.type === 'snapshot')!;
+    const own = snapshot('a').self!.state,
+      raw = f.state();
+    assert.equal(own[0], Math.round(raw[0] * 10000) / 10000);
+    const peer = snapshot('b').actors.find((delta) => delta.id === 'a');
+    const visible = peer?.state ?? f.player('b').visible.get('a')!.state;
+    assert(a.queue.lead > 0);
+    assert.equal(visible[0], Math.round((own[0] + own[3] * a.queue.lead) * 10000) / 10000);
+    assert(visible[0] > own[0]);
+    assert.equal(snapshot('a').self!.ack, 1);
+  } finally {
+    f.room.dispose();
+  }
+});

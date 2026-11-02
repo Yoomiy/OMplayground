@@ -1,3 +1,4 @@
+import { DIAGNOSTIC_REASONS } from "../../../games/voxel/src/shared/diagnostics.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { GatewayOptions } from "../../../games/voxel/src/server/gateway.ts";
 import {
@@ -28,6 +29,19 @@ export function schoolSessionApi(
       } catch (error) {
         const code =
           error instanceof AccessDenied ? error.code : "SESSION_UNAVAILABLE";
+        const correlationId = res.getHeader?.("x-correlation-id");
+        event("VOXEL_SESSION_API_REJECTED", {
+          code,
+          ...(typeof correlationId === "string" ? { correlationId } : {}),
+          operation:
+            req.url === "/api/voxel/diagnostics" ? "diagnostics" : "session",
+          ...(error instanceof PersistenceError
+            ? {
+                providerCode: error.providerCode,
+                persistenceOperation: error.operation,
+              }
+            : {}),
+        });
         res.writeHead(
           code === "UNAUTHORIZED"
             ? 401
@@ -43,6 +57,48 @@ export function schoolSessionApi(
       }
     };
   return {
+    "/api/voxel/room-settings": run(async (req, body) => {
+      if (!body || typeof body !== "object" || Array.isArray(body))
+        throw new AccessDenied("INVALID");
+      const v = body as Record<string, unknown>;
+      if (
+        typeof v.room !== "string" ||
+        !UUID.test(v.room) ||
+        Object.keys(v).some((k) => !["room", "isOpen"].includes(k)) ||
+        ("isOpen" in v && typeof v.isOpen !== "boolean")
+      )
+        throw new AccessDenied("INVALID");
+      const token = bearerToken(req.headers.authorization);
+      if (!token) throw new AccessDenied("UNAUTHORIZED");
+      const auth = await access.identity(token);
+      await access.inspect(token, { room: v.room });
+      const fields = "is_open,invitation_code";
+      const result =
+        "isOpen" in v
+          ? await client
+              .from("game_sessions")
+              .update({ is_open: v.isOpen })
+              .eq("id", v.room)
+              .eq("host_id", auth.subject.id)
+              .neq("status", "completed")
+              .select(fields)
+              .maybeSingle()
+              .retry(false)
+          : await client
+              .from("game_sessions")
+              .select(fields)
+              .eq("id", v.room)
+              .eq("host_id", auth.subject.id)
+              .maybeSingle()
+              .retry(false);
+      if (result.error)
+        throw new PersistenceError("room_settings", result.error);
+      if (!result.data) throw new AccessDenied("FORBIDDEN");
+      return {
+        isOpen: result.data.is_open,
+        invitationCode: result.data.invitation_code,
+      };
+    }),
     "/api/voxel/session": run(async (req, body) => {
       const token = bearerToken(req.headers.authorization);
       if (!token) throw new AccessDenied("UNAUTHORIZED");
@@ -72,7 +128,21 @@ export function schoolSessionApi(
         throw new AccessDenied("INVALID");
       const v = body as Record<string, unknown>;
       if (
-        Object.keys(v).length !== 5 ||
+        Object.keys(v).some(
+          (key) =>
+            ![
+              "room",
+              "correlationId",
+              "operation",
+              "code",
+              "buildId",
+              "reason",
+              "fatal",
+            ].includes(key),
+        ) ||
+        (v.reason !== undefined &&
+          !(DIAGNOSTIC_REASONS as readonly unknown[]).includes(v.reason)) ||
+        (v.fatal !== undefined && typeof v.fatal !== "boolean") ||
         typeof v.room !== "string" ||
         !UUID.test(v.room) ||
         typeof v.correlationId !== "string" ||
@@ -96,6 +166,8 @@ export function schoolSessionApi(
         operation: v.operation,
         code: v.code,
         clientBuildId: v.buildId ?? "unknown",
+        ...(typeof v.reason === "string" ? { reason: v.reason } : {}),
+        ...(typeof v.fatal === "boolean" ? { fatal: v.fatal } : {}),
       });
       return { ok: true };
     }),

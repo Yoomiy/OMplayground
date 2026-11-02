@@ -1,9 +1,9 @@
-/** One movement frame is exactly one 1/60 s step. No client clock or duration exists. */
+/** Numbered movement samples replay the same duration on client and server. */
 export const MOVEMENT_HZ = 60;
 export const WORLD_HZ = 30;
 export const MOVEMENT_DT = 1 / MOVEMENT_HZ;
-export const INPUT_QUEUE_LIMIT = 12;
-export const INPUT_MAX_AGE_MS = 200;
+export const INPUT_QUEUE_LIMIT = 240;
+export const MAX_INPUT_DT = 0.1;
 export const HELD_INPUT_MS = 100;
 export type Controls = Readonly<{
   x: number;
@@ -14,7 +14,7 @@ export type Controls = Readonly<{
   sneak: boolean;
   sprint: boolean;
 }>;
-export type InputFrame = Controls & Readonly<{ epoch: number; sequence: number }>;
+export type InputFrame = Controls & Readonly<{ epoch: number; sequence: number; dt?: number }>;
 export const NEUTRAL: Controls = Object.freeze({
   x: 0,
   z: 0,
@@ -28,8 +28,14 @@ const keys = ['epoch', 'sequence', 'x', 'z', 'yaw', 'pitch', 'jump', 'sneak', 's
 export function isInputFrame(value: unknown): value is InputFrame {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const v = value as Record<string, unknown>;
-  if (Object.keys(v).length !== keys.length || keys.some((k) => !Object.hasOwn(v, k))) return false;
+  if (
+    Object.keys(v).some((k) => !keys.includes(k) && k !== 'dt') ||
+    keys.some((k) => !Object.hasOwn(v, k))
+  )
+    return false;
   return (
+    (v.dt === undefined ||
+      (typeof v.dt === 'number' && Number.isFinite(v.dt) && v.dt > 0 && v.dt <= MAX_INPUT_DT)) &&
     Number.isSafeInteger(v.epoch) &&
     (v.epoch as number) > 0 &&
     Number.isSafeInteger(v.sequence) &&

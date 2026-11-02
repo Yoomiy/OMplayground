@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { loadServerRelease } from "../src/release.ts";
 import { serviceConfig, startVoxelService } from "../src/service.ts";
-const logger = { info: () => {}, error: () => {} };
+const logger = { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} };
 test("production listener rejects wildcard, path, insecure and credential origins and requires a concrete port", () => {
   assert.deepEqual(
     serviceConfig({
@@ -81,19 +81,24 @@ test("startup verifies every schema and fails before listening when controls are
         const data =
           name === "voxel_persistence_status"
             ? { schema: 1, privateBucket: true }
-            : name === "voxel_session_projection_status"
-              ? { schema: 1, authoritativeWrites: true }
-              : name === "voxel_staff_status"
-                ? { schema: 1, epochFencing: true }
-                : name === "voxel_chat_status"
-                  ? { schema: 1, persistedModeration: true }
-                  : [
-                        "voxel_roster_status",
-                        "voxel_moderation_status",
-                        "voxel_media_status",
-                      ].includes(name)
-                    ? { schema: 1, revisionFencing: true }
-                    : { code: "PGRST202", message: "private provider message" };
+            : name === "voxel_seed_schema_status"
+              ? { schema: 1, uniqueSeeds: true }
+              : name === "voxel_session_projection_status"
+                ? { schema: 1, authoritativeWrites: true }
+                : name === "voxel_staff_status"
+                  ? { schema: 1, epochFencing: true }
+                  : name === "voxel_chat_status"
+                    ? { schema: 1, persistedModeration: true }
+                    : [
+                          "voxel_roster_status",
+                          "voxel_moderation_status",
+                          "voxel_media_status",
+                        ].includes(name)
+                      ? { schema: 1, revisionFencing: true }
+                      : {
+                          code: "PGRST202",
+                          message: "private provider message",
+                        };
         return new Response(JSON.stringify(data), {
           status: name === "voxel_controls_status" ? 404 : 200,
           headers: { "Content-Type": "application/json" },
@@ -107,6 +112,7 @@ test("startup verifies every schema and fails before listening when controls are
     [
       "voxel_controls_status",
       "voxel_persistence_status",
+      "voxel_seed_schema_status",
       "voxel_session_projection_status",
       "voxel_roster_status",
       "voxel_staff_status",

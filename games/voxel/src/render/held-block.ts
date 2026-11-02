@@ -2,6 +2,12 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { EngineBlock, ItemDefinition } from '../shared/content.ts';
 import type { EquipmentSlot } from '../shared/inventory.ts';
+import { SPRITE_HOLD } from './sprite-hold.ts';
+import { AVATAR_COLORS } from './upstream/blockyard/avatar.ts';
+import { AVATAR_PRESETS } from './avatar-presets.ts';
+import { isAvatarId } from '../shared/avatars.ts';
+import { itemSprite } from './item-sprites.ts';
+import { extrudeSprite } from './upstream/blockyard/sprite-geometry.ts';
 
 /** View-model primitives use the same 1/16 extents and face-layer order as the engine. */
 export function geometryFor(block: EngineBlock): THREE.BufferGeometry {
@@ -79,16 +85,25 @@ p=instanceMatrix*p;n=mat3(instanceMatrix)*n;
 #endif
 vUV=uv;vLayer=layer;vShade=.45+.55*max(dot(normalize(normalMatrix*n),normalize(vec3(.4,.8,1.))),0.);gl_Position=projectionMatrix*modelViewMatrix*p;}`;
 const fragment = `precision highp float;precision highp sampler2DArray;in vec2 vUV;in float vLayer,vShade;
-uniform sampler2DArray uAlbedo,uMaterial;uniform float uLight,uCutout,uTint,uAlpha;uniform vec3 uColor;out vec4 fragColor;
-void main(){vec2 uv=clamp(vec2(vUV.x,1.-vUV.y),vec2(.001),vec2(.999));vec4 a=texture(uAlbedo,vec3(uv,vLayer));
+uniform sampler2DArray uAlbedo,uMaterial;uniform sampler2D uSprite;uniform float uLight,uCutout,uTint,uAlpha;uniform vec3 uColor;out vec4 fragColor;
+void main(){vec4 a;vec4 surface=vec4(0.);
+#ifdef ITEM_SPRITE
+// The upstream sprite geometry uses UVs measured down from the top row.
+a=texture(uSprite,vUV);
+#else
+vec2 uv=clamp(vec2(vUV.x,1.-vUV.y),vec2(.001),vec2(.999));a=texture(uAlbedo,vec3(uv,vLayer));
+surface=texture(uMaterial,vec3(uv,vLayer));
+#endif
 if(uCutout>.5&&a.a<.4)discard;vec3 color=a.rgb;if(uTint>1.5)color*=vec3(.46,.7,.3);else if(uTint>.5)color=mix(color,color*vec3(.46,.7,.3),1.-a.a);
-color*=uLight*vShade*uColor;color+=a.rgb*texture(uMaterial,vec3(uv,vLayer)).a*2.;color=pow(color/(color+vec3(1.)),vec3(1./2.2));fragColor=vec4(color,uAlpha);}`;
+color*=uLight*vShade*uColor;color+=a.rgb*surface.a*2.;color=pow(color/(color+vec3(1.)),vec3(1./2.2));fragColor=vec4(color,uAlpha);}`;
 
 export function itemGeometry(
   item: ItemDefinition,
   blocks: readonly EngineBlock[],
   wornSlot?: EquipmentSlot,
 ): THREE.BufferGeometry {
+  const sprite = !wornSlot && itemSprite(item);
+  if (sprite) return extrudeSprite({ pixels: sprite, width: 16, height: 16 }, 0, 0);
   const placed = item.places && blocks.find((b) => b.name === item.places && b.placeable !== false);
   if (placed && item.model !== 'bucket') return geometryFor(placed);
   const wood = blocks.find((b) => b.name === 'oak_planks') ?? blocks[1],
@@ -296,8 +311,23 @@ export function worldItemMaterial(
   blocks: readonly EngineBlock[],
   albedo: THREE.Texture,
   surface: THREE.Texture,
+  wornSlot?: EquipmentSlot,
+  instanced = true,
 ): THREE.RawShaderMaterial {
-  const material = itemMaterial(albedo, surface, true);
+  const material = itemMaterial(albedo, surface, instanced);
+  const sprite = !wornSlot && itemSprite(item);
+  if (sprite) {
+    const texture = new THREE.DataTexture(sprite, 16, 16);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.magFilter = texture.minFilter = THREE.NearestFilter;
+    texture.needsUpdate = true;
+    material.defines.ITEM_SPRITE = 1;
+    material.uniforms.uSprite = { value: texture };
+    material.uniforms.uCutout.value = 1;
+    // Only this sprite texture is owned by the material. Terrain arrays remain caller-owned.
+    material.addEventListener('dispose', () => texture.dispose());
+    return material;
+  }
   const block = blocks.find((block) =>
     item.model === 'bucket'
       ? block.name === item.material
@@ -337,6 +367,8 @@ export class HeldBlockRenderer {
   readonly stats = { state: -1, itemType: null as string | null, visible: false, swings: 0 };
   private blocks: readonly EngineBlock[];
   private items: readonly ItemDefinition[];
+  private albedo: THREE.Texture;
+  private surface: THREE.Texture;
   constructor(
     blocks: readonly EngineBlock[],
     items: readonly ItemDefinition[],
@@ -345,24 +377,9 @@ export class HeldBlockRenderer {
   ) {
     this.blocks = blocks;
     this.items = items;
-    this.block = new THREE.Mesh(
-      new THREE.BufferGeometry(),
-      new THREE.RawShaderMaterial({
-        vertexShader: vertex,
-        fragmentShader: fragment,
-        glslVersion: THREE.GLSL3,
-        side: THREE.DoubleSide,
-        uniforms: {
-          uAlbedo: { value: albedo },
-          uMaterial: { value: material },
-          uLight: { value: 1 },
-          uCutout: { value: 0 },
-          uTint: { value: 0 },
-          uAlpha: { value: 1 },
-          uColor: { value: new THREE.Vector3(1, 1, 1) },
-        },
-      }),
-    );
+    this.albedo = albedo;
+    this.surface = material;
+    this.block = new THREE.Mesh(new THREE.BufferGeometry(), itemMaterial(albedo, material));
     this.hand.position.set(0, -0.22, 0.08);
     this.sleeve.position.set(0, -0.38, 0.09);
     this.block.scale.setScalar(0.28);
@@ -387,6 +404,7 @@ export class HeldBlockRenderer {
     light: number,
     visible: boolean,
     itemType: string | null,
+    avatar?: number,
   ): boolean {
     if (this.disposed) return false;
     this.stats.visible = visible;
@@ -401,20 +419,25 @@ export class HeldBlockRenderer {
     if (definition && (state !== this.state || itemType !== this.itemType)) {
       this.block.geometry.dispose();
       this.block.geometry = item ? itemGeometry(item, this.blocks) : geometryFor(definition);
+      this.block.scale.setScalar(item && itemSprite(item) ? 0.48 : 0.28);
+      this.block.material.dispose();
+      this.block.material = item
+        ? worldItemMaterial(item, this.blocks, this.albedo, this.surface, undefined, false)
+        : itemMaterial(this.albedo, this.surface);
       this.state = this.stats.state = state;
       this.itemType = this.stats.itemType = itemType;
-      this.block.material.uniforms.uColor.value.set(
-        ...(item?.color ?? (item?.model === 'apple' ? [1.5, 0.15, 0.1] : [1, 1, 1])),
-      );
-      this.block.material.uniforms.uCutout.value = definition.layer === 1 ? 1 : 0;
-      this.block.material.uniforms.uTint.value = definition.tint
-        ? definition.layer === 1
-          ? 2
-          : 1
-        : 0;
-      this.block.material.uniforms.uAlpha.value = definition.layer === 2 ? 0.65 : 1;
-      this.block.material.transparent = definition.layer === 2;
-      this.block.material.needsUpdate = true;
+      if (!item) {
+        this.block.material.uniforms.uColor.value.set(1, 1, 1);
+        this.block.material.uniforms.uCutout.value = definition.layer === 1 ? 1 : 0;
+        this.block.material.uniforms.uTint.value = definition.tint
+          ? definition.layer === 1
+            ? 2
+            : 1
+          : 0;
+        this.block.material.uniforms.uAlpha.value = definition.layer === 2 ? 0.65 : 1;
+        this.block.material.transparent = definition.layer === 2;
+        this.block.material.needsUpdate = true;
+      }
     }
     this.block.visible = !!item || (!!definition && definition.shape !== 'air');
     this.block.material.uniforms.uLight.value = 0.2 + light * 0.8;
@@ -435,8 +458,45 @@ export class HeldBlockRenderer {
     // Show the contents above the near rim even while the bucket is at rest.
     const tilt = bucket ? 0.4 + swing * 0.15 : -0.15 + swing * 0.8;
     this.grip.rotation.set(tilt, 0.35 - swing * 0.2, -0.1);
-    this.hand.material.color.setRGB(0.76, 0.54, 0.35).multiplyScalar(0.2 + light * 0.8);
-    this.sleeve.material.color.setRGB(0.15, 0.33, 0.4).multiplyScalar(0.2 + light * 0.8);
+    const preset = AVATAR_PRESETS[isAvatarId(avatar) ? avatar : 0].avatar;
+    this.hand.material.color
+      .setHex(AVATAR_COLORS.tone[preset.tone])
+      .multiplyScalar(0.2 + light * 0.8);
+    this.sleeve.material.color
+      .setHex(AVATAR_COLORS.cloth[preset.topColor])
+      .multiplyScalar(0.2 + light * 0.8);
+    const sprite = !!item && !!itemSprite(item);
+    if (sprite) {
+      const rest = SPRITE_HOLD[item.tool ? 'tool' : 'item'];
+      this.grip.position.copy(rest.fist);
+      this.grip.position.y += bob * 0.012;
+      this.grip.rotation.set(swing * 0.35, -swing * 0.15, 0);
+      this.grip.scale.setScalar(Math.max(0.65, widthScale));
+      this.block.quaternion.copy(rest.itemRotation);
+      this.block.scale.setScalar(rest.itemScale);
+      this.block.position.copy(rest.itemPosition);
+      this.hand.quaternion.copy(rest.armRotation);
+      this.hand.position.copy(rest.armOffset);
+      this.hand.scale.set(0.25 / 0.16, 0.75 / 0.45, 0.25 / 0.16);
+      this.sleeve.quaternion.copy(rest.armRotation);
+      this.sleeve.position.set(0, 0.25, 0).applyQuaternion(rest.armRotation).add(rest.armOffset);
+      this.sleeve.scale.set(0.26 / 0.17, 0.25 / 0.22, 0.26 / 0.17);
+    } else {
+      this.block.rotation.set(0, 0, 0);
+      this.block.position.set(0, 0.04, -0.06);
+      this.block.scale.setScalar(0.28);
+      this.hand.rotation.set(0, 0, 0);
+      this.hand.position.set(0, -0.22, 0.08);
+      this.hand.scale.setScalar(1);
+      this.sleeve.rotation.set(0, 0, 0);
+      this.sleeve.position.set(0, -0.38, 0.09);
+      this.sleeve.scale.setScalar(1);
+    }
+    const fov = sprite ? 75 : 55;
+    if (this.camera.fov !== fov) {
+      this.camera.fov = fov;
+      this.camera.updateProjectionMatrix();
+    }
     if (this.camera.aspect !== aspect) {
       this.camera.aspect = aspect;
       this.camera.updateProjectionMatrix();

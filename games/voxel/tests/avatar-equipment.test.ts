@@ -5,6 +5,7 @@ import { source } from '../content/index.ts';
 import { compileContent } from '../tools/compile-content.ts';
 import { emptyAppearance } from '../src/shared/appearance.ts';
 import { AvatarEquipmentRenderer } from '../src/render/avatar-equipment.ts';
+import { avatarJoint } from '../src/render/avatar-model.ts';
 import type { AvatarPose } from '../src/render/avatars.ts';
 const content = compileContent(source).manifest;
 function fixture() {
@@ -50,12 +51,12 @@ test('submitted held and worn instances follow the avatar joints and preserve ab
     assert.equal(f.renderer.stats.held, 1);
     assert.equal(f.renderer.stats.worn, 5);
     const before = f.renderer.samples;
-    near(before.find((s) => s.slot === 'held')!.position[0], 1.86);
-    near(before.find((s) => s.slot === 'offhand')!.position[0], 1.14);
+    near(before.find((s) => s.slot === 'held')!.position[0], 1.5 + avatarJoint(a.id, 'gripR').x);
+    near(before.find((s) => s.slot === 'offhand')!.position[0], 1.5 + avatarJoint(a.id, 'gripL').x);
     const feet = before.filter((s) => s.slot === 'feet');
     assert.equal(feet.length, 2);
     assert.ok(feet.every((s) => s.vertices === 48));
-    near(feet[0].position[1], 68.3);
+    near(feet[0].position[1], 68 + avatarJoint(a.id, 'footR').y + 0.31 - 3 / 26);
     f.renderer.update([a], second, 0, 1);
     for (const sample of f.renderer.samples) {
       const old = before.find((s) => s.slot === sample.slot && s.side === sample.side)!;
@@ -81,7 +82,10 @@ test('submitted held and worn instances follow the avatar joints and preserve ab
       movingFeet,
     );
     f.renderer.update([{ ...moving, flying: true }], first, 0.25, 1);
-    near(f.renderer.samples.find((s) => s.slot === 'feet')!.position[1], 68.3);
+    near(
+      f.renderer.samples.find((s) => s.slot === 'feet')!.position[1],
+      68 + avatarJoint(a.id, 'footR').y + 0.31 - 3 / 26,
+    );
   } finally {
     f.renderer.dispose();
     f.albedo.dispose();

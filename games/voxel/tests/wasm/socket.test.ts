@@ -16,9 +16,9 @@ const frame = (sequence: number) => ({
   sneak: false,
   sprint: false,
 });
-/** Regression for research/voxel-runtime/input-time-socket.ts; transport carries no dt. */
+/** Socket playback must consume each numbered sample once, including after a backlog. */
 test(
-  'real WebSocket bursts cannot accelerate actual Wasm physics',
+  'real WebSocket backlog catches up without resets or invented movement',
   { timeout: 10000 },
   async () => {
     const world = flatWorld(),
@@ -34,6 +34,7 @@ test(
     const address = server.address();
     assert.ok(address && typeof address === 'object');
     const slots: number[] = [];
+    const accepted = new Map<string, number[]>();
     let connections = 0,
       rejected = 0,
       overflows = 0;
@@ -52,6 +53,11 @@ test(
           return;
         }
         const result = room.receive(id, value, performance.now());
+        if (result === 'accepted' || result === 'resync') {
+          const list = accepted.get(id) ?? [];
+          list.push((value as { sequence: number }).sequence);
+          accepted.set(id, list);
+        }
         if (result === 'invalid') rejected++;
         if (result === 'resync') overflows++;
         socket.send(JSON.stringify({ sequence: (value as { sequence?: number }).sequence ?? 0 }));
@@ -81,7 +87,7 @@ test(
         readyB = receipt(b, 60);
       a.send(JSON.stringify(frame(++ordinary)));
       for (let n = 0; n < 60; n++) b.send(JSON.stringify(frame(++burst)));
-      b.send(JSON.stringify({ ...frame(++burst), dt: 0.1 }));
+      b.send(JSON.stringify({ ...frame(++burst), dt: 1 }));
       b.send(JSON.stringify({ type: 'dev', source: 'move 10000' }));
       await Promise.all([readyA, readyB]);
       room.resetClock(performance.now());
@@ -95,23 +101,36 @@ test(
         }
       }, 1000 / 30);
       await new Promise((resolve) => setTimeout(resolve, 1100));
+      clearInterval(sendTimer);
+      sendTimer = undefined;
+      await new Promise((resolve) => setTimeout(resolve, 800));
       const normal = world.player_state(slots[0])[0] - 0.5,
         burstDistance = world.player_state(slots[1])[0] - 0.5;
       assert.equal(rejected, 2);
-      assert.ok(overflows > 0);
+      assert.equal(overflows, 0);
       assert.ok(normal > 2);
-      const reference = world.player_add(0.5, 3, 0.5);
-      world.set_flying(reference, true);
-      for (let step = 0; step < ticks * 2; step++) stepMovement(world, reference, frame(1));
-      const earnedDistance = world.player_state(reference)[0] - 0.5;
-      assert.ok(
-        Math.abs(burstDistance - normal) < 1e-9,
-        `burst ${burstDistance} vs normal ${normal}`,
-      );
-      assert.ok(
-        burstDistance <= earnedDistance + 1e-9,
-        'burst must remain within scheduled authoritative movement time',
-      );
+      for (const [id, slot, distance] of [
+        ['0', slots[0], normal],
+        ['1', slots[1], burstDistance],
+      ] as const) {
+        const reference = world.player_add(0.5, 3, 0.5);
+        world.set_flying(reference, true);
+        const ack = room.ack(id);
+        for (
+          let step = 0;
+          step < accepted.get(id)!.filter((sequence) => sequence <= ack).length;
+          step++
+        )
+          stepMovement(world, reference, frame(1));
+        assert(Math.abs(distance - (world.player_state(reference)[0] - 0.5)) < 1e-9);
+        const before = Array.from(world.player_state(slot));
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        assert.deepEqual(
+          Array.from(world.player_state(slot)),
+          before,
+          'empty input playback cannot invent motion',
+        );
+      }
     } finally {
       clearInterval(tickTimer);
       clearInterval(sendTimer);

@@ -548,6 +548,7 @@ export const source: ContentSource = {
       : block.family.endsWith('_leaves')
         ? {
             ...block,
+            mining: { ...block.mining, seconds: 0 },
             forage: {
               none: block.family === 'oak_leaves' ? 85 : 95,
               entries: [

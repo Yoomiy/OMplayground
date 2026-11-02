@@ -32,14 +32,14 @@ test('a delayed receipt cannot leave remote movement and look stuck behind after
   assert.ok(Math.abs(result.yaw - Math.PI / 2) < 1e-9);
   assert.equal(result.pitch, 0.3);
 });
-test('extrapolation is bounded, frozen bodies do not coast, and removed actors release interpolation state', () => {
+test('playback holds the newest sample without overshooting, frozen bodies do not coast, and removed actors release interpolation state', () => {
   const actors = new RemoteActors();
   actors.join(
     { id: 'peer', state: body(3, 4), yaw: 3.1, pitch: 0, appearance: emptyAppearance() },
     0,
   );
   actors.snapshot([{ id: 'peer', yaw: -3.1 }], 1000, 100);
-  assert.ok(actors.frame(5000)[0].position[0] <= 3.4 + 1e-9);
+  assert.equal(actors.frame(5000)[0].position[0], 3);
   actors.snapshot([{ id: 'peer', state: body(7, 4, 1) }], 6000, 5100);
   assert.equal(actors.frame(10000)[0].position[0], 7);
   assert.equal(actors.frame(10000)[0].speed, 0);
@@ -77,4 +77,22 @@ test('appearance-only deltas update discrete gear without inventing motion and r
   assert.deepEqual(actors.frame(1300)[0].appearance, appearance);
   actors.clear();
   assert.deepEqual(actors.frame(1400), []);
+});
+
+test('clock drift cannot reverse playback, and a new world resets its timeline', () => {
+  const actors = new RemoteActors();
+  actors.join({ id: 'peer', state: body(0), yaw: 0, pitch: 0, appearance: emptyAppearance() }, 0);
+  actors.snapshot([{ id: 'peer', state: body(0) }], 1000, 1000);
+  actors.snapshot([{ id: 'peer', state: body(10) }], 1100, 1100);
+  let previous = actors.frame(1140)[0].position[0];
+  for (let n = 0; n < 20; n++) {
+    actors.snapshot([], 1100, 2100); // delayed packets lower the clock estimate
+    const x = actors.frame(1140)[0].position[0];
+    assert(x >= previous);
+    previous = x;
+  }
+  actors.clear();
+  actors.join({ id: 'peer', state: body(2), yaw: 0, pitch: 0, appearance: emptyAppearance() }, 0);
+  actors.snapshot([{ id: 'peer', state: body(3) }], 100, 100);
+  assert.equal(actors.frame(1000)[0].position[0], 3);
 });

@@ -172,7 +172,10 @@ test('real lava death drains owned grids/equipment once, rejects dead commands a
     f.join();
     assert.equal(f.player().phase, 'playing');
     assert.equal(f.state()[12], 0);
-    assert.equal(f.room.drops.size, 3);
+    assert.equal(
+      f.room.drops.nearby(f.state(), 32).reduce((n, d) => n + d.stack.count, 0),
+      4,
+    );
   } finally {
     f.room.dispose();
   }
@@ -257,7 +260,7 @@ test('real Wasm mining earns fixed world ticks despite action bursts, ignores un
     f.room.dispose();
   }
 });
-test('plants, torches and ladders break without a mining period or active crack view', () => {
+test('plants, leaves, torches and ladders break without a mining period or active crack view', () => {
   const f = fixture();
   try {
     const plants = content.manifest.blocks.filter(
@@ -265,6 +268,7 @@ test('plants, torches and ladders break without a mining period or active crack 
         block.shape === 'cross' ||
         block.shape === 'torch' ||
         block.shape === 'wall_torch' ||
+        block.leaves ||
         block.climbable,
     );
     assert.ok(plants.length >= 9);
@@ -502,6 +506,15 @@ test('survival forbids catalog/flight/instant removal, consumes placement atomic
     assert.equal(f.send(drop).status, 'cached');
     assert.equal(f.room.drops.size, 1);
     f.tick(45);
+    assert.equal(f.room.drops.size, 1);
+    const thrown = f.room.drops.nearby(f.state(), 32)[0];
+    // Leave its reach before returning: a timer alone must not undo a throw.
+    f.room.drops.releaseThrower('a', [100, 64, 100]);
+    const body = f.state();
+    body[0] = thrown.position[0];
+    body[2] = thrown.position[2];
+    f.store.world.player_restore(f.player().slot, body);
+    f.tick(20);
     assert.equal(f.room.drops.size, 0);
     assert.equal(f.room.inventories.held('a').stack?.count, 8);
     assert.equal(f.send(drop).status, 'cached');
@@ -571,7 +584,7 @@ test('drop pickups obey solid occlusion and capacity; pause freezes expiry and s
     );
     f.store.set(x + 1, 64, z, 0);
     f.store.set(x + 1, 65, z, 0);
-    f.tick(3);
+    f.tick(18); // The embedded spawn is first pushed outside the wall, then attracted back.
     assert.equal(f.room.inventories.view('a').bag[35]?.count, 64);
     assert.equal(f.room.drops.nearby(p, 5)[0].stack.count, 4);
     f.room.setPaused(true, f.now);
@@ -691,14 +704,14 @@ test('fall history survives focus and room pause, vitals remain private, and fre
     f.room.receive('a', { type: 'focus', epoch: f.player().epoch, active: false }, f.now);
     const frozen = f.state()[1];
     f.tick(120);
-    assert.equal(f.state()[1], frozen);
-    assert.equal(f.player().vitals.view().health, 20);
+    assert.ok(f.state()[1] < frozen);
+    assert.equal(f.player().vitals.view().health, 13);
     f.room.setPaused(true, f.now);
     f.elapse(10000);
     f.room.setPaused(false, f.now);
     f.room.receive('a', { type: 'focus', epoch: f.player().epoch, active: true }, f.now);
     f.tick(60);
-    assert.equal(f.player().vitals.view().health, 13);
+    assert.equal(f.player().vitals.view().health, 14); // Normal regeneration continued after landing.
     assert.ok(
       f.events
         .get('b')!
@@ -715,7 +728,7 @@ test('fall history survives focus and room pause, vitals remain private, and fre
     assert.equal(f.room.actors.has('a'), false);
     f.join();
     f.tick(30);
-    assert.equal(f.player().vitals.view().health, 13);
+    assert.equal(f.player().vitals.view().health, 14);
     assert.equal(f.player().phase, 'playing');
   } finally {
     f.room.dispose();

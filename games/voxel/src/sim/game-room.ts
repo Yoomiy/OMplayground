@@ -29,7 +29,14 @@ import { makeStack, sameStack } from '../shared/inventory.ts';
 import type { Slot } from '../shared/inventory.ts';
 import type { GameMode, MiningView, DropView } from '../shared/gameplay.ts';
 import type { LifecycleView, PauseReason } from '../shared/lifecycle.ts';
-import { DROP_RADIUS, PICKUP_RADIUS } from '../shared/gameplay.ts';
+import {
+  DROP_RADIUS,
+  PICKUP_RADIUS,
+  MAGNET_RADIUS,
+  DROP_HALF_WIDTH,
+  DROP_HEIGHT,
+  DROP_PICKUP_TICKS,
+} from '../shared/gameplay.ts';
 import { stepBoundedMovement, DEFAULT_MOVEMENT } from '../shared/movement.ts';
 import type { MovementModifiers } from '../shared/movement.ts';
 import { NEUTRAL } from '../shared/input.ts';
@@ -53,6 +60,7 @@ import type {
 } from '../shared/protocol.ts';
 import type { ChunkFrame } from '../shared/chunk-wire.ts';
 import type { ContentManifest } from '../shared/content.ts';
+import { isAvatarId, selectAvatar } from '../shared/avatars.ts';
 import { sameAppearance } from '../shared/appearance.ts';
 import { blockDrops } from '../shared/loot.ts';
 export type Capabilities = {
@@ -64,6 +72,7 @@ export type Capabilities = {
 };
 export type AdmittedActor = {
   id: string;
+  avatar?: number;
   role: 'participant' | 'observer';
   capabilities: Capabilities;
 };
@@ -87,6 +96,7 @@ type RoomRecovery = {
 };
 type Actor = {
   id: string;
+  avatar: number;
   role: 'participant' | 'observer';
   capabilities: Capabilities;
   connection: string | null;
@@ -424,6 +434,7 @@ export class GameRoom {
     const dead = admitted.role === 'participant' && vitals.dead;
     const actor: Actor = {
       ...admitted,
+      avatar: isAvatarId(admitted.avatar) ? admitted.avatar : selectAvatar(admitted.id),
       connection,
       slot,
       epoch,
@@ -467,6 +478,7 @@ export class GameRoom {
     this.send(actor, {
       type: 'welcome',
       actorId: actor.id,
+      avatar: actor.avatar,
       epoch,
       worldId: this.worldId,
       seed: this.seed,
@@ -644,10 +656,20 @@ export class GameRoom {
                   (stack) => {
                     const p = this.store.world.player_state(a.slot),
                       yaw = a.controls.yaw;
-                    this.drops.add(stack, [p[0], p[1] + 0.8, p[2]], this.tick, a.id, [
-                      Math.sin(yaw) * 2,
-                      2,
-                      -Math.cos(yaw) * 2,
+                    const spawn = this.store.world.sweep_body(
+                      p[0],
+                      p[1] + 0.9,
+                      p[2],
+                      Math.sin(yaw) * 0.65,
+                      0,
+                      -Math.cos(yaw) * 0.65,
+                      DROP_HALF_WIDTH,
+                      DROP_HEIGHT,
+                    );
+                    this.drops.add(stack, Array.from(spawn.subarray(0, 3)), this.tick, a.id, [
+                      Math.sin(yaw) * 5.2,
+                      1.15,
+                      -Math.cos(yaw) * 5.2,
                     ]);
                   },
                 )
@@ -754,48 +776,19 @@ export class GameRoom {
         this.tick++;
         for (const a of this.actors.values())
           if (a.connection && a.phase === 'playing') this.refreshMovement(a);
-        for (let sub = 0; sub < 2; sub++)
-          for (const a of this.actors.values())
-            if (a.connection && a.phase === 'playing' && a.focused) {
-              const input = a.queue.take(now);
-              a.controls = input.controls;
-              const before = this.store.world.player_state(a.slot);
-              const jumped = stepBoundedMovement(
-                this.store.world,
-                a.slot,
-                input.controls,
-                a.movement,
-              );
-              if (this.survival(a)) {
-                const after = this.store.world.player_state(a.slot);
-                const climbing = [0.1, 0.9, 1.6].some(
-                  (height) =>
-                    this.content.blocks[
-                      this.store.world.get_block(
-                        Math.floor(after[0]),
-                        Math.floor(after[1] + height),
-                        Math.floor(after[2]),
-                      )
-                    ]?.climbable,
-                );
-                const effects = equipmentEffects(this.inventories.equipped(a.id));
-                const landing = a.vitals.movement(
-                  before,
-                  after,
-                  climbing,
-                  effects.fallImmune ? 1 : effects.fall,
-                  input.controls.sprint && a.movement.sprint,
-                );
-                let worn = landing.impact > 0 && this.inventories.wearEquipment(a.id, 'fall');
-                if (jumped) worn = this.inventories.wearEquipment(a.id, 'jump') || worn;
-                if (worn) {
-                  this.inventoryView(a);
-                  this.refreshMovement(a);
-                }
-                this.handleDeath(a);
-              }
-              if (input.resync) this.baseline(a, 'resync');
+        for (const a of this.actors.values())
+          if (a.connection && a.phase === 'playing') {
+            if (!a.focused) {
+              this.passiveMovement(a);
+              continue;
             }
+            a.queue.advance(1 / 30, (input) => {
+              a.controls = input;
+              const before = this.store.world.player_state(a.slot);
+              const jumped = stepBoundedMovement(this.store.world, a.slot, input, a.movement);
+              this.movementEffects(a, before, input.sprint && a.movement.sprint, jumped);
+            });
+          }
         for (const a of this.actors.values())
           if (a.connection) {
             if (
@@ -870,12 +863,12 @@ export class GameRoom {
         this.advanceExplosions(now);
         this.store.require(this.positions());
         this.drops.step(this.store.world, this.tick);
-        if (this.tick % 3 === 0) {
+        if (this.tick % DROP_PICKUP_TICKS === 0) {
           this.pickups();
           this.dropSnapshots();
           this.explosiveSnapshots();
         }
-        if (this.tick % 2 === 0) this.snapshots(now);
+        this.snapshots(now);
         this.ports.onStep?.('world', performance.now() - started);
       });
     }
@@ -958,14 +951,13 @@ export class GameRoom {
       if (this.ended) return;
       const started = this.ports.onStep ? performance.now() : 0;
       this.observerTick++;
-      for (let sub = 0; sub < 2; sub++)
-        for (const a of this.actors.values())
-          if (a.connection && a.role === 'observer' && a.phase === 'playing' && a.focused) {
-            const input = a.queue.take(now);
-            a.controls = input.controls;
-            stepBoundedMovement(this.store.world, a.slot, input.controls, a.movement);
-            if (input.resync) this.baseline(a, 'resync');
-          }
+      for (const a of this.actors.values())
+        if (a.connection && a.role === 'observer' && a.phase === 'playing' && a.focused) {
+          a.queue.advance(1 / 30, (input) => {
+            a.controls = input;
+            stepBoundedMovement(this.store.world, a.slot, input, a.movement);
+          });
+        }
       for (const a of this.actors.values())
         if (a.connection && a.role === 'observer') {
           a.saved = this.store.world.player_state(a.slot);
@@ -976,7 +968,7 @@ export class GameRoom {
         this.dropSnapshots();
         this.explosiveSnapshots();
       }
-      if (this.observerTick % 2 === 0) this.snapshots(now);
+      this.snapshots(now);
       this.ports.onStep?.('observer', performance.now() - started);
     });
   }
@@ -1120,6 +1112,62 @@ export class GameRoom {
   private survival(a: Actor): boolean {
     return this.mode === 'survival' && a.role === 'participant';
   }
+  private movementEffects(
+    a: Actor,
+    before: Float64Array,
+    sprinting: boolean,
+    jumped: boolean,
+  ): void {
+    if (this.survival(a)) {
+      const after = this.store.world.player_state(a.slot);
+      const climbing = [0.1, 0.9, 1.6].some(
+        (height) =>
+          this.content.blocks[
+            this.store.world.get_block(
+              Math.floor(after[0]),
+              Math.floor(after[1] + height),
+              Math.floor(after[2]),
+            )
+          ]?.climbable,
+      );
+      const effects = equipmentEffects(this.inventories.equipped(a.id));
+      const landing = a.vitals.movement(
+        before,
+        after,
+        climbing,
+        effects.fallImmune ? 1 : effects.fall,
+        sprinting,
+      );
+      let worn = landing.impact > 0 && this.inventories.wearEquipment(a.id, 'fall');
+      if (jumped) worn = this.inventories.wearEquipment(a.id, 'jump') || worn;
+      if (worn) {
+        this.inventoryView(a);
+        this.refreshMovement(a);
+      }
+      this.handleDeath(a);
+    }
+  }
+  /** Unfocused players lose controls, not gravity. Use the same native physics and
+   * survival accounting as input playback; room pause still stops this clock. */
+  private passiveMovement(a: Actor): void {
+    const before = this.store.world.player_state(a.slot);
+    if (before[10]) return; // Explicit flight stays armed.
+    const support = this.store.world.sweep_body(
+      before[0],
+      before[1],
+      before[2],
+      0,
+      -0.03,
+      0,
+      0.3,
+      1.8,
+    );
+    if (before[6] && support[4]) return;
+    this.store.world.set_frozen(a.slot, false);
+    stepBoundedMovement(this.store.world, a.slot, { ...NEUTRAL, dt: 1 / 30 }, a.movement);
+    this.store.world.set_frozen(a.slot, true);
+    this.movementEffects(a, before, false, false);
+  }
   private movementProfile(a: Actor): MovementModifiers {
     if (!this.survival(a)) return DEFAULT_MOVEMENT;
     return {
@@ -1150,7 +1198,7 @@ export class GameRoom {
     this.store.world.set_frozen(a.slot, true);
     const p = this.store.world.player_state(a.slot);
     this.inventories.drain(a.id, (stack) =>
-      this.drops.add(stack, [p[0], p[1] + 0.2, p[2]], this.tick, a.id),
+      this.drops.scatter(stack, [p[0] - 0.5, p[1], p[2] - 0.5], this.tick, a.id),
     );
     this.baseline(a, 'death');
   }
@@ -1637,12 +1685,7 @@ export class GameRoom {
         const viewer = this.actors.get(id);
         if (viewer) this.inventoryView(viewer);
       }
-      for (const stack of stacks)
-        this.drops.add(
-          stack,
-          [job.target[0] + 0.5, job.target[1] + 0.2, job.target[2] + 0.5],
-          this.tick,
-        );
+      for (const stack of stacks) this.drops.scatter(stack, job.target, this.tick);
       this.inventoryView(a);
       this.publishEdit(mutation.value);
     }
@@ -1656,35 +1699,52 @@ export class GameRoom {
     }
   }
   private pickups(): void {
-    for (const a of this.actors.values())
-      if (
-        a.connection &&
-        a.phase === 'playing' &&
-        a.role === 'participant' &&
-        a.capabilities.build
-      ) {
-        const p = this.store.world.player_state(a.slot),
-          origin = [p[0], p[1] + 0.7, p[2]];
-        let changed = false;
-        for (const drop of this.drops.nearby(origin, PICKUP_RADIUS)) {
-          if (
-            !this.drops.eligible(drop.id, a.id, this.tick) ||
-            !this.store.world.line_clear(
-              ...(origin as [number, number, number]),
-              drop.position[0],
-              drop.position[1] + 0.125,
-              drop.position[2],
-            )
+    const collectors = [...this.actors.values()]
+      .filter(
+        (a) =>
+          a.connection && a.phase === 'playing' && a.role === 'participant' && a.capabilities.build,
+      )
+      .map((a) => {
+        const p = this.store.world.player_state(a.slot);
+        return { a, origin: [p[0], p[1] + 0.7, p[2]] as [number, number, number] };
+      });
+    const candidates = new Map<
+      string,
+      { drop: DropView; a: Actor; origin: [number, number, number]; distance: number }
+    >();
+    for (const { a, origin } of collectors) {
+      this.drops.releaseThrower(a.id, origin);
+      for (const drop of this.drops.nearby(origin, MAGNET_RADIUS)) {
+        if (
+          !this.inventories.canReceive(a.id, drop.stack) ||
+          !this.drops.eligible(drop.id, a.id, this.tick) ||
+          !this.store.world.line_clear(
+            ...origin,
+            drop.position[0],
+            drop.position[1] + DROP_HEIGHT / 2,
+            drop.position[2],
           )
-            continue;
-          const accepted = this.inventories.receive(a.id, drop.stack);
-          if (accepted) {
-            this.drops.take(drop.id, accepted);
-            changed = true;
-          }
-        }
-        if (changed) this.inventoryView(a);
+        )
+          continue;
+        const distance = Math.hypot(...drop.position.map((v, i) => v - origin[i]));
+        if (!candidates.has(drop.id) || distance < candidates.get(drop.id)!.distance)
+          candidates.set(drop.id, { drop, a, origin, distance });
       }
+    }
+    const changed = new Set<Actor>();
+    for (const { drop, a, origin, distance } of candidates.values()) {
+      if (distance > PICKUP_RADIUS) {
+        this.drops.pull(drop.id, origin, this.store.world);
+        continue;
+      }
+      const accepted = this.inventories.receive(a.id, drop.stack);
+      if (accepted) {
+        this.drops.take(drop.id, accepted);
+        this.send(a, { type: 'pickup', epoch: a.epoch, stack: { ...drop.stack, count: accepted } });
+        changed.add(a);
+      }
+    }
+    for (const a of changed) this.inventoryView(a);
   }
   private dropSnapshots(): void {
     for (const a of this.actors.values())
@@ -1971,8 +2031,10 @@ export class GameRoom {
   private snapshots(now: number): void {
     const connected = [...this.actors.values()].filter((a) => a.connection);
     // One synchronous replication pass cannot advance bodies. Capture each raw
-    // pose once; its quantized public state is also valid for that actor's self.
+    // pose once. Self stays at the acknowledged input; public poses compensate
+    // for whole-input playback remainder, as Blockyard FrameBuffer.caughtUp does.
     const poses = new Map(connected.map((a) => [a.id, this.store.world.player_state(a.slot)]));
+    const selfStates = new Map(connected.map((a) => [a.id, this.state(a, poses.get(a.id)!)]));
     const states = new Map(
       connected
         .filter((a) => a.phase === 'playing')
@@ -1980,7 +2042,14 @@ export class GameRoom {
           other.id,
           {
             id: other.id,
-            state: this.state(other, poses.get(other.id)!),
+            avatar: other.avatar,
+            state: selfStates
+              .get(other.id)!
+              .map((value, axis, body) =>
+                axis < 3 && !body[12]
+                  ? Math.round((value + body[axis + 3] * other.queue.lead) * 10000) / 10000
+                  : value,
+              ),
             yaw: other.controls.yaw,
             pitch: other.controls.pitch,
             appearance:
@@ -2006,7 +2075,7 @@ export class GameRoom {
           (other.role !== 'observer' || viewer.role === 'observer')
         ) {
           const actor = states.get(other.id)!,
-            state = actor.state;
+            state = selfStates.get(other.id)!;
           const dx = state[0] - own[0],
             dz = state[2] - own[2];
           // A conservative diamond strictly inside the existing 48-block circle
@@ -2023,6 +2092,7 @@ export class GameRoom {
             if (delta === undefined) {
               const next = {
                 id: other.id,
+                ...(actor.avatar !== old.avatar ? { avatar: actor.avatar } : {}),
                 ...(state.some((v, i) => v !== old.state[i]) ? { state } : {}),
                 ...(actor.yaw !== old.yaw ? { yaw: actor.yaw } : {}),
                 ...(actor.pitch !== old.pitch ? { pitch: actor.pitch } : {}),
@@ -2064,7 +2134,7 @@ export class GameRoom {
         self: {
           epoch: viewer.epoch,
           ack: viewer.queue.ack,
-          state: states.get(viewer.id)?.state ?? this.state(viewer, own),
+          state: selfStates.get(viewer.id)!,
         },
         actors: changes.splice(0, 64),
       });

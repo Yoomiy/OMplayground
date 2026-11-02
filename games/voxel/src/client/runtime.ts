@@ -1,3 +1,7 @@
+import { toggleFullscreen } from './fullscreen.ts';
+import { runtimeDiagnostic } from '../shared/diagnostics.ts';
+import type { DiagnosticDetail } from '../shared/diagnostics.ts';
+import { ITEM_LABELS } from './content-labels.ts';
 import { engine, loadEngine, content, identity, supportProblem } from './engine.ts';
 import { TerrainRenderer } from '../render/terrain.ts';
 import { EnginePool } from '../world/worker-pool.ts';
@@ -7,6 +11,7 @@ import { creativePalette } from './palette.ts';
 import { cameraView, MAX_CAMERA_DISTANCE } from './camera.ts';
 import type { CameraView } from './camera.ts';
 import { RemoteActors } from './interpolation.ts';
+import { selectAvatar } from '../shared/avatars.ts';
 import { appearanceMatchesContent } from '../shared/appearance.ts';
 import { WorldClock } from './world-clock.ts';
 import { WorldAudio } from './world-audio.ts';
@@ -101,7 +106,11 @@ export type RuntimeOptions = {
   inputMode?: 'desktop' | 'touch';
   /** Enter an admitted, ready world directly; mouse capture still needs a click. */
   autoEnter?: boolean;
-  onDiagnostic?: (operation: string, reason: string) => void;
+  onDiagnostic?: (
+    operation: string,
+    reason: string,
+    detail?: DiagnosticDetail & { code: string },
+  ) => void;
 };
 export type VoxelRuntime = {
   command(command: RuntimeCommand): void;
@@ -221,6 +230,7 @@ export async function mountVoxel(
     focused = false,
     baselineReceived = false,
     actorId = '',
+    avatarId = 0,
     worldId = '',
     yaw = 0,
     pitch = 0,
@@ -236,7 +246,6 @@ export async function mountVoxel(
   let pendingInputs: InputFrame[] = [],
     lastFrame = performance.now(),
     lastUpdate = lastFrame,
-    accumulator = 0,
     lastSend = 0,
     lastReceived = 0,
     lastHud = 0,
@@ -289,6 +298,7 @@ export async function mountVoxel(
   let target: Cell | null = null,
     targetNormal: Cell | null = null,
     lastHighlight = '';
+  const baselineReasons: Record<string, number> = {};
   let visualOffset = [0, 0, 0],
     lastPosition = [0, 80, 0];
   let graphics: HudState['graphics'] = 'ready';
@@ -313,11 +323,13 @@ export async function mountVoxel(
   const send = (message: ClientMessage) => {
     if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message));
   };
-  const diagnose = (operation: string, error: unknown) =>
-    options.onDiagnostic?.(operation, error instanceof Error ? error.message : String(error));
+  const diagnose = (operation: string, error: unknown, fatal = false) => {
+    const diagnostic = runtimeDiagnostic(error, fatal);
+    options.onDiagnostic?.(operation, diagnostic.reason, diagnostic);
+  };
   const fail = (operation: string, error: unknown) => {
     fatalRecovery = true;
-    diagnose(operation, error);
+    diagnose(operation, error, true);
     keys.clear();
     touch = neutralTouch();
     worldClock.reset(worldClock.read(performance.now()), performance.now(), false);
@@ -444,7 +456,6 @@ export async function mountVoxel(
     miningHeld = miningSingle = false;
     lastMineKey = '';
     pendingInputs = [];
-    accumulator = 0;
     if (prediction && phase === 'playing') {
       focusPending = true;
       send({ type: 'focus', epoch: prediction.currentEpoch, active });
@@ -520,6 +531,15 @@ export async function mountVoxel(
     }
     if (event.type === 'vitals') {
       if (prediction && event.epoch === prediction.currentEpoch) publish({ vitals: event.view });
+      return;
+    }
+    if (event.type === 'pickup') {
+      if (!prediction || event.epoch !== prediction.currentEpoch) return;
+      const item = content.items.find((item) => item.itemType === event.stack.itemType);
+      if (!item || !validStack(event.stack, new Map([[item.itemType, item]]))) return;
+      audio.pickup();
+      noticeUntil = performance.now() + 1800;
+      publish({ message: `+${event.stack.count} ${ITEM_LABELS[item.itemType] ?? item.itemType}` });
       return;
     }
     if (event.type === 'drops') {
@@ -599,6 +619,7 @@ export async function mountVoxel(
         return;
       }
       actorId = event.actorId;
+      avatarId = event.avatar ?? selectAvatar(actorId);
       if (event.mode !== hud.mode) creativeBagHotbar = false;
       publish({
         mode: event.mode,
@@ -635,6 +656,7 @@ export async function mountVoxel(
       return;
     }
     if (event.type === 'baseline' && prediction) {
+      baselineReasons[event.reason] = (baselineReasons[event.reason] ?? 0) + 1;
       if (event.reason === 'mode' || event.reason === 'teleport') {
         focus(false);
         if (ownsPointerLock()) document.exitPointerLock();
@@ -646,6 +668,7 @@ export async function mountVoxel(
         lastReady = -Infinity;
       }
 
+      const beforeBaseline = world.player_state(prediction.slot);
       const previousEpoch = prediction.currentEpoch;
       prediction.baseline(event.epoch, event.ack, event.state, event.movement);
       phase = event.phase;
@@ -665,7 +688,12 @@ export async function mountVoxel(
       }
       baselineReceived = true;
       pendingInputs = [];
-      visualOffset = [0, 0, 0];
+      const discontinuity = ['join', 'ready', 'teleport', 'respawn', 'mode'].includes(event.reason);
+      const baselineError = event.state
+        .slice(0, 3)
+        .map((v, i) => beforeBaseline[i] + visualOffset[i] - v);
+      visualOffset = !discontinuity && Math.hypot(...baselineError) < 2 ? baselineError : [0, 0, 0];
+      lastPosition = event.state.slice(0, 3);
       if (event.epoch !== previousEpoch) {
         queuedAction = null;
         actionSequence = 0;
@@ -738,19 +766,8 @@ export async function mountVoxel(
         const changed = prediction.reconcile(event.self.epoch, event.self.ack, event.self.state);
         if (changed) {
           const after = world.player_state(prediction.slot);
-          const distance = Math.hypot(
-            after[0] - before[0],
-            after[1] - before[1],
-            after[2] - before[2],
-          );
-          visualOffset =
-            distance < 1
-              ? [
-                  visualOffset[0] + before[0] - after[0],
-                  visualOffset[1] + before[1] - after[1],
-                  visualOffset[2] + before[2] - after[2],
-                ]
-              : [0, 0, 0];
+          const error = [0, 1, 2].map((i) => before[i] + visualOffset[i] - after[i]);
+          visualOffset = Math.hypot(...error) < 2 ? error : [0, 0, 0];
         }
       }
       remotes.snapshot(event.actors, event.time, performance.now());
@@ -1158,7 +1175,6 @@ export async function mountVoxel(
       const hideOverlay =
         block &&
         (block.shape === 'cross' ||
-          block.leaves ||
           block.shape === 'torch' ||
           block.shape === 'wall_torch' ||
           block.climbable);
@@ -1174,7 +1190,6 @@ export async function mountVoxel(
     const dt = Math.min(0.1, Math.max(0, (now - lastUpdate) / 1000));
     lastUpdate = now;
     environment = sampleEnvironment(worldClock.read(now), environmentSeed);
-    accumulator += dt;
     if (prediction && stream) {
       let state = world.player_state(prediction.slot);
       stream.setCenter(state[0], state[2], yaw);
@@ -1229,12 +1244,10 @@ export async function mountVoxel(
         publish({ status: 'stalled', message: 'ממתינים לחיבור…' });
         if (ownsPointerLock()) document.exitPointerLock();
       }
-      let steps = 0;
       let sampled = false;
-      while (accumulator >= 1 / 60 && steps++ < 6) {
-        accumulator -= 1 / 60;
+      if (dt > 0) {
         if (phase === 'playing' && focused && ready && !stalled && state[12] === 0) {
-          const sample = prediction.sample(controls());
+          const sample = prediction.sample(controls(), dt);
           if (sample) {
             sampled = true;
             pendingInputs.push(sample);
@@ -1332,13 +1345,12 @@ export async function mountVoxel(
             : {}),
         });
       }
-    } else {
-      accumulator = 0;
     }
   }
   function frame(now: number) {
     if (disposed) return;
     lastFrame = now;
+    update(now);
     draw(
       lastPosition.map((v, i) => v + visualOffset[i]),
       now,
@@ -1347,8 +1359,7 @@ export async function mountVoxel(
   }
   function draw(position: readonly number[], now: number) {
     if (graphics === 'lost' || graphics === 'failed') return;
-    // Controls/prediction/streaming/network use their own timer; GPU submission
-    // frequency does not schedule or mint control steps. Main-thread stalls still apply.
+    // Prediction runs once per animation frame, even when GPU submissions are paced.
     const interval = 1000 / (focused && phase === 'playing' ? renderHz : 10);
     if (now < nextDraw) return;
     nextDraw = now + interval - ((now - nextDraw) % interval);
@@ -1359,6 +1370,7 @@ export async function mountVoxel(
         camera.distance > 0.8 && hud.role === 'participant' && phase === 'playing'
           ? {
               id: actorId,
+              avatar: avatarId,
               position,
               yaw,
               pitch,
@@ -1382,12 +1394,14 @@ export async function mountVoxel(
       const submitted = renderer.gpuStats.submitted;
       renderer.frame(position, yaw, pitch, remotes.frame(now), now, environment, openSky, {
         eye: camera.eye,
+        avatar: avatarId,
         self,
         state: hud.selected,
         speed: state ? Math.hypot(state[3], state[5]) : 0,
         active: focused && phase === 'playing' && hud.role === 'participant' && !fatalRecovery,
         itemType: usesBagHotbar() ? (hud.inventory?.bag[hud.selectedSlot]?.itemType ?? null) : null,
         drops: [...dropped.values()],
+        dropCollision: world,
         explosives: [...primed.values()],
         vision:
           hud.mode === 'survival' &&
@@ -1841,9 +1855,9 @@ export async function mountVoxel(
         sprint: cmd.sprint,
       };
     } else if (cmd.type === 'fullscreen')
-      void (options.fullscreenElement ?? host)
-        .requestFullscreen?.()
-        .catch((error) => diagnose('fullscreen', error));
+      void toggleFullscreen(options.fullscreenElement ?? host).catch((error) =>
+        diagnose('fullscreen', error),
+      );
     else if (cmd.type === 'reconnect' && hud.lifecycle !== 'ended') {
       if (graphics === 'failed') onContextRestored();
       else if (graphics === 'ready') void connect();
@@ -1875,7 +1889,12 @@ export async function mountVoxel(
   canvas.addEventListener('wheel', onWheel, { passive: false });
   canvas.addEventListener('webglcontextlost', onContextLost);
   canvas.addEventListener('webglcontextrestored', onContextRestored);
-  updateTimer = setInterval(() => update(performance.now()), 1000 / 60);
+  // Continue loading/recovery while animation frames are suspended. Foreground movement
+  // is sampled with rendering, never by a competing simulation timer.
+  updateTimer = setInterval(() => {
+    const now = performance.now();
+    if (now - lastFrame > 100) update(now);
+  }, 1000 / 30);
   animation = requestAnimationFrame(frame);
   const runtime: VoxelRuntime = {
     command,
@@ -1930,6 +1949,7 @@ export async function mountVoxel(
         environment: { ...environment, openSky },
         atmosphere: renderer.atmosphere,
         avatars: renderer.actors,
+        avatar: avatarId,
         renderOrigin: { x: renderer.origin.x, z: renderer.origin.z },
         camera: { ...camera, requested: hud.cameraDistance },
         graphics,
@@ -1974,7 +1994,13 @@ export async function mountVoxel(
         selected: hud.selected,
         players: remotes.size + 1,
         inputLag: prediction?.inputLag,
+        inputSeconds: prediction?.inputSeconds,
         correction: prediction?.correction,
+        movement: {
+          reconciliations: prediction?.reconciliations ?? 0,
+          recentCorrections: prediction?.recentCorrections.map((sample) => ({ ...sample })) ?? [],
+          baselines: { ...baselineReasons },
+        },
         columns: stream?.columns.size,
         collisionColumns: stream?.collisionCount,
         meshed: stream?.meshCount,

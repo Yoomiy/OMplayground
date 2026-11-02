@@ -1,3 +1,4 @@
+import { failureDetails } from './failure.ts';
 import { ActionLedger } from '../sim/action-ledger.ts';
 import { readStaffCommand } from '../shared/staff.ts';
 import type { StaffResult } from '../shared/staff.ts';
@@ -213,17 +214,17 @@ try {
         authorizations.delete(connection);
         chunkInFlight.delete(connection);
         room.disconnect(connection, now);
-        send({ type: 'close', connection, reason: 'RECOVERING' });
+        send({ type: 'close', connection, reason: 'RECOVERING', cause: 'authorization_expired' });
       }
   };
   let ticks = 0,
     overrunMs = 0,
     closed = false,
     lastCheckpoint = 0;
-  const close = (fault: boolean) => {
+  const close = (fault: boolean, reason = 'worker_command_failed', error?: unknown) => {
     if (closed) return;
     closed = true;
-    if (fault) send({ type: 'fault' });
+    if (fault) send({ type: 'fault', reason, failureType: failureDetails(error).failureType });
     clearInterval(timer);
     clearInterval(metrics);
     room.dispose();
@@ -250,8 +251,8 @@ try {
         if (!store.generateOne()) break;
         generationJob.record(performance.now() - jobStarted);
       }
-    } catch {
-      close(true);
+    } catch (error) {
+      close(true, 'worker_turn_failed', error);
     } finally {
       workerTurn.record(performance.now() - started);
     }
@@ -447,14 +448,18 @@ try {
         ownershipDeadline = message.deadline;
       } else if (message.type === 'stop') close(false);
       else throw new Error('invalid supervisor command');
-    } catch {
-      close(true);
+    } catch (error) {
+      close(true, 'worker_command_failed', error);
     } finally {
       command.record(performance.now() - started);
     }
   });
   send({ type: 'ready' });
-} catch {
-  send({ type: 'fault' });
+} catch (error) {
+  send({
+    type: 'fault',
+    reason: 'worker_startup_failed',
+    failureType: failureDetails(error).failureType,
+  });
   process.exitCode = 1;
 }

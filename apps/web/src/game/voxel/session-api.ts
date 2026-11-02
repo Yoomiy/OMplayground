@@ -1,3 +1,4 @@
+import type { DiagnosticDetail } from "@playground/voxel-runtime";
 import {
   readModerationAction,
   readModerationReceipt,
@@ -167,6 +168,23 @@ export function createVoxelApi(options: {
   }
 
   return {
+    async roomSettings(isOpen?: boolean, signal?: AbortSignal) {
+      const value = await post(
+        "/api/voxel/room-settings",
+        {
+          room: options.room,
+          ...(isOpen === undefined ? {} : { isOpen }),
+        },
+        signal,
+      );
+      if (
+        !record(value) ||
+        typeof value.isOpen !== "boolean" ||
+        typeof value.invitationCode !== "string"
+      )
+        throw new VoxelApiError("PROTOCOL");
+      return { isOpen: value.isOpen, invitationCode: value.invitationCode };
+    },
     socketUrl: endpoint.socketUrl,
     voiceUrl: endpoint.origin.replace(/^http/, "ws") + "/voxel-media",
     async voiceTicket(signal?: AbortSignal): Promise<VoiceTicket> {
@@ -419,6 +437,7 @@ export function createVoxelApi(options: {
       code: string,
       buildId: string | null,
       signal?: AbortSignal,
+      detail?: DiagnosticDetail,
     ) {
       await post(
         "/api/voxel/diagnostics",
@@ -428,6 +447,7 @@ export function createVoxelApi(options: {
           code,
           buildId,
           correlationId: crypto.randomUUID(),
+          ...(detail ? { reason: detail.reason, fatal: detail.fatal } : {}),
         },
         signal,
       );

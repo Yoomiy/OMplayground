@@ -12,6 +12,30 @@ assert.equal(
   createHash('sha256').update(readFileSync(baseline)).digest('hex'),
   '47410a364fc73bfd204cc3d3faf56fa7fb5ed5ad931acc834d8c895f8ff91d8d',
 );
+// Compare reconstructed public state and reliable events: publication now runs at
+// 30 Hz, so identical 15 Hz wire histories are intentionally no longer expected.
+function wireHistory(events: Map<string, any[]>) {
+  return [...events].map(([id, rows]) => {
+    const actors = new Map<string, any>();
+    let self: any;
+    for (const e of rows) {
+      if (e.type === 'actor_joined') actors.set(e.actor.id, e.actor);
+      if (e.type === 'actor_removed') actors.delete(e.id);
+      if (e.type === 'snapshot') {
+        if (e.self) self = e.self;
+        for (const delta of e.actors) actors.set(delta.id, { ...actors.get(delta.id), ...delta });
+      }
+    }
+    return [
+      id,
+      rows
+        .filter((e) => e.type !== 'snapshot')
+        .sort((a, b) => (a.type ?? a.kind).localeCompare(b.type ?? b.kind)),
+      self,
+      [...actors].sort(([a], [b]) => a.localeCompare(b)),
+    ];
+  });
+}
 const { GameRoom: Before } = (await import(baseline.href)) as { GameRoom: typeof GameRoom };
 function journey(Room: typeof GameRoom) {
   const f = roomFixture('creative', 0, false, undefined, Room);
@@ -24,6 +48,7 @@ function journey(Room: typeof GameRoom) {
       f.room.receive(id, { type: 'focus', epoch: f.player(id).epoch, active: false }, f.now);
     const pose = (id: string, x: number, z: number) => {
       const p = f.state(id);
+      p[10] = 1;
       p[0] = x;
       p[2] = z;
       f.store.world.player_restore(f.player(id).slot, p);
@@ -37,7 +62,7 @@ function journey(Room: typeof GameRoom) {
       'late',
       f.now,
     );
-    const history: string[] = [];
+    const history: unknown[] = [];
     const points = [
       [0, 0],
       [23, 23],
@@ -67,7 +92,7 @@ function journey(Room: typeof GameRoom) {
       assert.equal(f.player('a').visible.has('teacher'), false);
       assert.equal(f.player('a').visible.has('late'), false);
       assert.equal(f.player('teacher').visible.has('a'), true);
-      history.push(JSON.stringify([...f.events]));
+      history.push(wireHistory(f.events));
     }
     const retainedEvents = [...f.events].map(([id, events]) => [id, events.slice()]);
     const retained = JSON.stringify(retainedEvents);
@@ -76,19 +101,27 @@ function journey(Room: typeof GameRoom) {
     f.tick(2);
     assert.equal(f.player('a').visible.has('b'), true);
     assert.equal(JSON.stringify(retainedEvents), retained);
-    history.push(JSON.stringify([...f.events]));
+    history.push(wireHistory(f.events));
     // b has left and re-entered before this simultaneous removal. Its insertion
     // order must not move behind c/d in removals or a trusted teleport reset.
     pose('a', -200, -200);
     f.tick(2);
-    history.push(JSON.stringify([...f.events]));
+    history.push(wireHistory(f.events));
     assert.equal(f.room.staff('teacher', { kind: 'teleport', target: 'b' }, f.now).ok, true);
-    history.push(JSON.stringify([...f.events]));
+    history.push(wireHistory(f.events));
     return history;
   } finally {
     f.room.dispose();
   }
 }
-test('snapshot pose reuse preserves exact per-viewer wire history, circle boundaries, quantization and hidden staff', () => {
-  assert.deepEqual(journey(GameRoom), journey(Before));
+test('snapshot pose reuse preserves reconstructed per-viewer state, circle boundaries, quantization and hidden staff', () => {
+  const after = journey(GameRoom),
+    before = journey(Before);
+  function compare(a: any, b: any, path: string): void {
+    if (a && b && typeof a === 'object' && typeof b === 'object') {
+      assert.deepEqual(Object.keys(a).sort(), Object.keys(b).sort(), path + ' keys');
+      for (const key of Object.keys(a)) compare(a[key], b[key], `${path}.${key}`);
+    } else assert.equal(a, b, path);
+  }
+  compare(after, before, 'history');
 });

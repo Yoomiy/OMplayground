@@ -1,3 +1,4 @@
+import { isAvatarId } from '../shared/avatars.ts';
 import type { AdmittedActor } from '../sim/game-room.ts';
 export type AdmissionRequest = Readonly<{
   room: string;
@@ -14,6 +15,12 @@ export type AdmissionGrant = Authorization &
 type AuthorizationFailure = Readonly<{
   authorizationFailure: 'expired' | 'denied' | 'changed' | 'session_ended';
   renewalMs: number;
+  renewalAttempts: number;
+  renewalFailures: number;
+  lastRenewalFailure: string;
+  renewalInFlight: boolean;
+  proofRemainingMs: number;
+  proofLifetimeMs: number;
 }>;
 export class SessionEnded extends Error {
   readonly code = 'SESSION_ENDED';
@@ -42,7 +49,9 @@ export function readAuthorization(value: unknown, now: number, expectedId?: stri
     ('membershipRevision' in value &&
       (!Number.isSafeInteger(value.membershipRevision) ||
         (value.membershipRevision as number) < 0)) ||
-    !object(value.actor, ['id', 'role', 'capabilities']) ||
+    (!object(value.actor, ['id', 'role', 'capabilities']) &&
+      !object(value.actor, ['id', 'role', 'capabilities', 'avatar'])) ||
+    ('avatar' in value.actor && !isAvatarId(value.actor.avatar)) ||
     typeof value.actor.id !== 'string' ||
     !value.actor.id.length ||
     value.actor.id.length > 128 ||
@@ -60,6 +69,7 @@ export function readAuthorization(value: unknown, now: number, expectedId?: stri
   return Object.freeze({
     actor: Object.freeze({
       id: value.actor.id,
+      ...(value.actor.avatar === undefined ? {} : { avatar: value.actor.avatar }),
       role: value.actor.role,
       capabilities: Object.freeze({
         build: value.actor.capabilities.build,
@@ -85,6 +95,12 @@ export class ConnectionAuthorization {
   private closed = false;
   private renewalStarted: number | null = null;
   private renewalMs = 0;
+  private renewalPending = false;
+  private lastAttemptMs = 0;
+  private renewalAttempts = 0;
+  private renewalFailures = 0;
+  private lastRenewalFailure = 'none';
+  private proofLifetimeMs: number;
   private readonly initialMembershipRevision: number;
   private apply: (deadline: number) => void;
   private lost: (
@@ -105,7 +121,8 @@ export class ConnectionAuthorization {
     this.initialMembershipRevision = current.membershipRevision ?? 0;
     this.apply = apply;
     this.lost = lost;
-    this.deadline = performance.now() + current.expiresAt - Date.now();
+    this.proofLifetimeMs = current.expiresAt - Date.now();
+    this.deadline = performance.now() + this.proofLifetimeMs;
     // Allocation and membership IO can consume most of the ticket proof. Start
     // its first connected check now, while that proof is still valid.
     this.schedule(true);
@@ -142,9 +159,13 @@ export class ConnectionAuthorization {
   }
   private async renew() {
     if (!this.valid()) return;
+    this.renewalAttempts++;
     this.renewalStarted = performance.now();
+    this.renewalPending = true;
     try {
       const value = await this.grant.revalidate('actor');
+      this.lastAttemptMs = performance.now() - this.renewalStarted;
+      this.renewalPending = false;
       if (!this.valid()) return;
       if (value === null) {
         this.fail('UNAUTHORIZED', 'denied');
@@ -159,10 +180,21 @@ export class ConnectionAuthorization {
       this.renewalMs = performance.now() - this.renewalStarted;
       this.renewalStarted = null;
       this.current = next;
-      this.deadline = performance.now() + next.expiresAt - Date.now();
+      this.proofLifetimeMs = next.expiresAt - Date.now();
+      this.lastRenewalFailure = 'none';
+      this.deadline = performance.now() + this.proofLifetimeMs;
       this.apply(this.deadline);
       this.schedule();
     } catch (error) {
+      this.lastAttemptMs = performance.now() - this.renewalStarted!;
+      this.renewalPending = false;
+      this.renewalFailures++;
+      this.lastRenewalFailure =
+        error instanceof Error && ['TimeoutError', 'AbortError'].includes(error.name)
+          ? error.name
+          : error instanceof Error && error.message === 'invalid server authorization'
+            ? 'invalid_authorization'
+            : 'provider_error';
       if (!this.valid()) return;
       if (isSessionEnded(error)) this.fail('SESSION_ENDED', 'session_ended');
       else {
@@ -183,8 +215,16 @@ export class ConnectionAuthorization {
     this.close();
     this.lost(reason, {
       authorizationFailure,
+      renewalAttempts: this.renewalAttempts,
+      renewalFailures: this.renewalFailures,
+      lastRenewalFailure: this.lastRenewalFailure,
+      renewalInFlight: this.renewalPending,
+      proofRemainingMs: Math.round(this.deadline - performance.now()),
+      proofLifetimeMs: Math.round(this.proofLifetimeMs),
       renewalMs: Math.round(
-        this.renewalStarted === null ? this.renewalMs : performance.now() - this.renewalStarted,
+        this.renewalPending && this.renewalStarted !== null
+          ? performance.now() - this.renewalStarted
+          : this.lastAttemptMs,
       ),
     });
   }

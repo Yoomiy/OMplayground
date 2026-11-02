@@ -1,5 +1,10 @@
 # Input recovery after an inbound TCP stall
 
+Historical implementation and evidence. The 2026-11-01
+[movement synchronization update](movement-sync.md) replaces routine input retirement
+with Blockyard-style duration playback and catch-up. The archived measurements below
+remain evidence of the earlier implementation.
+
 A restored connection could leave roughly ten controls waiting indefinitely on
 the server. The server consumed controls at the same 60 Hz rate as new arrivals,
 so its 12-frame queue stayed behind even after transport recovered. Those controls

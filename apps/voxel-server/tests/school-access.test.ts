@@ -554,3 +554,30 @@ test("missing, inconsistent or overlong access-policy reads cannot grant or rene
     SchoolUnavailable,
   );
 });
+
+test("school avatar selection follows verified profile gender, stays stable, and rejects browser-supplied overrides", async () => {
+  const { AVATAR_POOLS } = await import(
+    "../../../games/voxel/src/shared/avatars.ts"
+  );
+  const f = fixture();
+  const boy = await f.access.authorize(f.token(), { room: f.room });
+  assert.ok(AVATAR_POOLS.boy.includes(boy.actor.avatar!));
+  assert.equal(
+    (await f.access.authorize(f.token(), { room: f.room })).actor.avatar,
+    boy.actor.avatar,
+  );
+  f.profiles.get(f.kid)!.gender = "girl";
+  f.state.session.gender = "girl";
+  const girl = await f.access.authorize(f.token(), { room: f.room });
+  assert.ok(AVATAR_POOLS.girl.includes(girl.actor.avatar!));
+  assert.notEqual(girl.actor.avatar, boy.actor.avatar);
+  assert.equal(
+    (await f.access.authorize(f.token(), { room: f.room })).actor.avatar,
+    girl.actor.avatar,
+  );
+  assert.equal("gender" in girl.actor, false);
+  await assert.rejects(
+    f.access.authorize(f.token(), { room: f.room, avatar: 0 } as never),
+    rejected("INVALID"),
+  );
+});

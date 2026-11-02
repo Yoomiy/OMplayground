@@ -1,3 +1,5 @@
+import { compatibleCheckpointContent } from '../src/shared/checkpoint-content.ts';
+import { Drops } from '../src/sim/drops.ts';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { source } from '../content/index.ts';
@@ -258,4 +260,44 @@ test('apples are rare oak forage rather than a guaranteed drop from every tree l
     if (family === 'oak_leaves') assert.ok(apples >= 140 && apples <= 260, String(apples));
     else assert.equal(apples, 0);
   }
+});
+
+test('instant leaves change only mining duration and restore existing owned drops', () => {
+  const previous = compileContent({
+    ...source,
+    blocks: source.blocks.map((block) =>
+      block.family.endsWith('_leaves')
+        ? { ...block, mining: { ...block.mining, seconds: 1 } }
+        : block,
+    ),
+  }).manifest;
+  assert.equal(previous.hash, '3bacc621111bfbd511d8db591f50a4fdd9298f8659aa2c2187a67e97aeb9b478');
+  const retuned = {
+    ...content,
+    hash: previous.hash,
+    behavior: content.behavior.map((block) =>
+      block.family.endsWith('_leaves')
+        ? { ...block, mining: { ...block.mining, seconds: 1 } }
+        : block,
+    ),
+  };
+  assert.deepEqual(
+    retuned,
+    previous,
+    'state IDs, geometry, loot, items, recipes and generator remain identical',
+  );
+  for (const leaf of content.behavior.filter((block) => block.family.endsWith('_leaves')))
+    assert.equal(leaf.mining.seconds, 0);
+  for (const hash of [
+    previous.hash,
+    '2d930b06841018cd0cb4adc65905432e4ffedc3ea2d112bb7ff65a811165307c',
+    '05809e4f10d630b5446d0872e38b1ba7f40263d0a3fb59f5ea3e7c023d190ddc',
+  ])
+    assert.equal(compatibleCheckpointContent(hash, content), true);
+  assert.equal(compatibleCheckpointContent('unreviewed-content', content), false);
+  const drops = new Drops(previous);
+  drops.add({ itemType: 'oak_leaves', count: 3 }, [0, 1, 0], 0, 'owner');
+  const restored = Drops.fromCheckpoint(content, drops.checkpoint(0));
+  assert.equal(restored.checkpoint(0).entries[0].stack.count, 3);
+  assert.equal(restored.checkpoint(0).entries[0].owner, 'owner');
 });

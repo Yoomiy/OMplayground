@@ -49,6 +49,7 @@ test('room snapshots publish owned visible identities, omit private stacks and s
     assert.ok(joined && joined.type === 'actor_joined');
     assert.deepEqual(Object.keys(joined.actor).sort(), [
       'appearance',
+      'avatar',
       'id',
       'pitch',
       'state',
@@ -264,4 +265,35 @@ test('palette messages cannot forge a survival hand, refresh held movement or bu
     trace(false),
     'catalog traffic changes no fixed-step motion or control liveness',
   );
+});
+
+test('server-selected avatar reaches welcome, peer join, late viewers and reconnect without exposing profile gender', () => {
+  const f = roomFixture();
+  try {
+    f.join('girl', 'participant', 6);
+    f.join('viewer');
+    f.tick(6);
+    const welcome = (f.events.get('girl') ?? []).find((e) => 'type' in e && e.type === 'welcome');
+    assert.ok(welcome && 'type' in welcome && welcome.type === 'welcome');
+    assert.equal(welcome.avatar, 6);
+    const joined = appearanceEvents(f, 'viewer').find(
+      (e) => e.type === 'actor_joined' && e.actor.id === 'girl',
+    );
+    assert.ok(joined && joined.type === 'actor_joined');
+    assert.equal(joined.actor.avatar, 6);
+    assert.equal('gender' in joined.actor, false);
+    f.join('late-viewer');
+    f.tick(6);
+    const late = appearanceEvents(f, 'late-viewer').find(
+      (e) => e.type === 'actor_joined' && e.actor.id === 'girl',
+    );
+    assert.ok(late && late.type === 'actor_joined');
+    assert.equal(late.actor.avatar, 6);
+    f.room.disconnect('girl', f.now);
+    f.join('girl', 'participant', 6);
+    f.tick(6);
+    assert.equal(f.player('girl').avatar, 6);
+  } finally {
+    f.room.dispose();
+  }
 });

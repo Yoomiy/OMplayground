@@ -90,6 +90,28 @@ function restore(
   const tick = (count = 1) => {
     for (let i = 0; i < count; i++) {
       now += 1000 / 30;
+      for (const actor of room.actors.values())
+        if (actor.connection && actor.focused && actor.phase === 'playing') {
+          const sequence = actor.queue.received;
+          room.receive(
+            actor.connection,
+            {
+              type: 'input',
+              frames: [1, 2].map((n) => ({
+                x: 0,
+                z: 0,
+                yaw: actor.controls.yaw,
+                pitch: actor.controls.pitch,
+                jump: false,
+                sneak: false,
+                sprint: false,
+                epoch: actor.epoch,
+                sequence: sequence + n,
+              })),
+            },
+            now,
+          );
+        }
       room.advance(now);
       pump();
     }

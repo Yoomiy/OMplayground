@@ -340,6 +340,55 @@ introduced by this logging contract.
 For deployment configuration and manual IP verification, see the classroom
 deployment notes in `docs/virtual_classrooms.md`.
 
+### Voxel operational event policy
+
+`apps/voxel-server/src/service-events.ts` explicitly assigns severity, outcome,
+and a readable message to voxel events. Event-name suffixes do not determine
+health. Unknown event names produce a warning with `status: unknown` until a
+policy is added.
+
+- Routine room timing windows, checkpoint commits, admission tickets/attachment,
+  and cleanup passes that do no work use `debug`. Enable these locally with
+  `LOG_LEVEL=debug npm run dev:app`.
+- Service and room lifecycle boundaries use `info`. Room records include `room`
+  (the session ID), `worldId`, and `roomInstanceId` (one worker allocation).
+- Recovery disconnects, backpressure resynchronization, abnormal socket closes,
+  partially failed cleanup, and timing windows with dropped simulation time use
+  `warn`. A successful cleanup that performed work uses `info`.
+- Fatal client failures, worker faults/unexpected exits, failed checkpoints,
+  and unavailable service operations use `error`. Expected admission or policy
+  rejections use `warn`; normal session-policy closure uses `info`. The socket
+  close following an already-reported failure/policy decision uses `debug` and
+  names its `reportedEvent`, so one disruption does not produce duplicate alerts.
+- Expected browser permission rejection/cancellation of an optional interaction
+  is `debug`; a fatal failure is never downgraded for that reason. Older clients
+  without a fatality flag still classify core runtime failures as errors.
+
+Admission logs carry a server-generated `admissionId`, also used as their
+`correlationId`. Socket records retain `connectionId`, admission phase, locally
+selected close reason, and available room identity after detachment. Socket
+records without a known admission use `connectionId` as their correlation ID.
+`duration_ms` measures the recorded boundary: policy lookup for ticket issuance,
+connection-to-attachment for accepted admission, or full socket lifetime for
+closure. Worker readiness measures worker startup; retirement records worker
+uptime. Ticket issuance and gateway attachment do not prove that the browser
+received its world baseline.
+
+Authorization expiry records include remaining proof lifetime, renewal attempts,
+provider failure count/category, duration, and whether a renewal was in flight.
+Worker-enforced expiry has `origin: worker` and `cause: authorization_expired`;
+it may win the race against the supervisor's expiry callback. Worker faults
+identify startup, command handling, or simulation turn as their failure phase.
+
+Client diagnostic reports retain fixed reason categories and fatality instead
+of replacing every cause with `RUNTIME_FAILURE`. The endpoint accepts the old
+five-field payload and optional `reason`/`fatal` fields. Reasons must belong to
+the shared allowlist. Raw exception messages, stacks, provider responses,
+credentials, and arbitrary peer close text never cross this telemetry boundary.
+Server failure summaries retain bounded machine codes and exception categories;
+provider error text is deliberately excluded. These logs diagnose outcomes and
+recovery; they do not claim a successful save implies successful gameplay.
+
 ## 7. Failure and acknowledgement contract
 
 Logging must not make product behavior inconsistent:

@@ -3,6 +3,8 @@ import type { EngineBlock, ItemDefinition } from '../shared/content.ts';
 import { EQUIPMENT } from '../shared/inventory.ts';
 import type { EquipmentSlot } from '../shared/inventory.ts';
 import type { AvatarPose } from './avatars.ts';
+import { itemSprite } from './item-sprites.ts';
+import { avatarJoint } from './avatar-model.ts';
 import { avatarSwing } from './avatar-motion.ts';
 import { itemGeometry, worldItemMaterial } from './held-block.ts';
 type Attachment = {
@@ -59,6 +61,12 @@ export class AvatarEquipmentRenderer {
         slot,
         side,
         position: this.matrix.elements.slice(12, 15),
+        grip: (slot === 'held' && itemSprite(this.items.get(itemType)!)
+          ? new THREE.Vector3(-0.28, -0.28, 0)
+          : new THREE.Vector3()
+        )
+          .applyMatrix4(this.matrix)
+          .toArray(),
         vertices: batch.mesh.geometry.getAttribute('position').count,
       };
     });
@@ -106,8 +114,14 @@ export class AvatarEquipmentRenderer {
         if (batch) this.release(batch);
         const first = values[0];
         const mesh = new THREE.InstancedMesh(
-          itemGeometry(first.item, this.blocks, first.slot === 'feet' ? 'feet' : undefined),
-          worldItemMaterial(first.item, this.blocks, this.albedo, this.surface),
+          itemGeometry(first.item, this.blocks, first.slot === 'held' ? undefined : first.slot),
+          worldItemMaterial(
+            first.item,
+            this.blocks,
+            this.albedo,
+            this.surface,
+            first.slot === 'held' ? undefined : first.slot,
+          ),
           capacity,
         );
         mesh.frustumCulled = false;
@@ -153,23 +167,42 @@ export class AvatarEquipmentRenderer {
     let scale = 0.5;
     if (slot === 'held' || slot === 'offhand') {
       const direction = slot === 'held' ? 1 : -1;
+      const arm = avatarJoint(actor.id, direction > 0 ? 'upperArmR' : 'upperArmL', actor.avatar);
+      const grip = avatarJoint(actor.id, direction > 0 ? 'gripR' : 'gripL', actor.avatar);
       this.local
-        .makeTranslation(direction * 0.36, 1.32, 0)
+        .makeTranslation(arm.x, arm.y, arm.z)
         .multiply(this.scratch.makeRotationX(swing * direction))
-        .multiply(this.scratch.makeTranslation(0, -0.48, -0.12));
-      if (slot === 'held') this.local.multiply(this.scratch.makeRotationZ(-0.2));
-      scale = slot === 'offhand' ? 0.8 : item.places ? 0.34 : 0.65;
+        .multiply(this.scratch.makeTranslation(grip.x - arm.x, grip.y - arm.y, grip.z - arm.z));
+      if (slot === 'held' && itemSprite(item)) {
+        // Upstream inFist: .62 scale, lower-left handle in the fist. Our figures face -Z.
+        this.local.multiply(this.scratch.makeRotationY(Math.PI / 2));
+        this.local.multiply(this.scratch.makeScale(0.62, 0.62, 0.62));
+        this.local.multiply(this.scratch.makeTranslation(0.28, 0.28, 0));
+        scale = 1;
+      } else {
+        if (slot === 'held') this.local.multiply(this.scratch.makeRotationZ(-0.2));
+        scale = slot === 'offhand' ? 0.8 : item.places ? 0.34 : 0.65;
+      }
     } else if (slot === 'feet') {
+      const leg = avatarJoint(actor.id, side > 0 ? 'upperLegR' : 'upperLegL', actor.avatar);
+      const foot = avatarJoint(actor.id, side > 0 ? 'footR' : 'footL', actor.avatar);
       this.local
-        .makeTranslation(side * 0.14, 0.8, 0)
+        .makeTranslation(leg.x, leg.y, leg.z)
         .multiply(this.scratch.makeRotationX(-swing * side))
-        .multiply(this.scratch.makeTranslation(0, -0.5, -0.035));
+        .multiply(
+          this.scratch.makeTranslation(
+            foot.x - leg.x,
+            foot.y - leg.y + 0.31 - 3 / 26,
+            foot.z - leg.z,
+          ),
+        );
       scale = 0.62;
     } else if (slot === 'head') {
+      const head = avatarJoint(actor.id, 'head', actor.avatar);
       this.local
-        .makeTranslation(0, 1.58, 0)
+        .makeTranslation(head.x, head.y, head.z)
         .multiply(this.scratch.makeRotationX(actor.pitch))
-        .multiply(this.scratch.makeTranslation(0, 0.12, -0.25));
+        .multiply(this.scratch.makeTranslation(0, 0.32, -0.25));
       scale = 0.45;
     } else if (slot === 'body') {
       this.local.makeTranslation(0, 1.05, -0.19);

@@ -64,6 +64,14 @@ try {
     inputFrames = 0,
     admissions = 0,
     generation = 0;
+  const durations = new Map<string, number>();
+  const consumedSeconds = (before: Authority, after: Authority) => {
+    let seconds = 0;
+    if (before.epoch !== after.epoch) return 2.1; // a lifecycle baseline has retired the old identity
+    for (let sequence = before.ack + 1; sequence <= after.ack; sequence++)
+      seconds += durations.get(`${after.epoch}:${sequence}`) ?? 0;
+    return seconds;
+  };
   let trace: { atMs: number; state: Authority }[] | null = null;
   page.on('request', (r) => {
     if (r.url().endsWith('/api/voxel/admission')) admissions++;
@@ -73,7 +81,11 @@ try {
     socket.on('framesent', (frame) => {
       if (typeof frame.payload === 'string') {
         const e = JSON.parse(frame.payload);
-        if (e.type === 'input') inputFrames += e.frames.length;
+        if (e.type === 'input') {
+          inputFrames += e.frames.length;
+          for (const input of e.frames)
+            durations.set(`${input.epoch}:${input.sequence}`, input.dt ?? 1 / 60);
+        }
       }
     });
     socket.on('framereceived', (frame) => {
@@ -159,7 +171,7 @@ try {
     'held inputs cannot move the authoritative body',
   );
   assert(short.lastReceivedAgoMs < 1000);
-  assert(short.inputLag <= 120);
+  assert(short.inputSeconds <= 2.1);
   assert.notEqual(short.status, 'recovering');
   const shortReleased = performance.now();
   const shortFramesAtRelease = inputFrames;
@@ -184,8 +196,8 @@ try {
   for (const row of trace) {
     assert(
       distance(row.state.position, shortEnd.position) <=
-        (10.9 * (row.atMs - shortReleased)) / 1000 + 1.2,
-      'burst delivery cannot mint movement time',
+        10.9 * consumedSeconds(shortEnd, row.state) + 1.2,
+      'catch-up distance is bounded by the numbered movement actually consumed',
     );
     assert(
       row.state.tick - shortEnd.tick <= Math.ceil(((row.atMs - shortReleased) * 30) / 1000) + 6,
@@ -233,7 +245,7 @@ try {
   });
   const failed = await debug(),
     framesAtFailure = inputFrames;
-  assert(failed.inputLag <= 120);
+  assert(failed.inputSeconds <= 2.1);
   assert.equal(failed.focused, false);
   assert.equal(await page.evaluate(() => (window as any).voxel.voiceScene()), null);
   // The last already-sampled batch can flush in the same render turn as fail(),
@@ -253,7 +265,7 @@ try {
   assert(late.lastReceivedAgoMs < 1000);
   assert.equal(late.status, 'recovering');
   assert.equal(late.focused, false);
-  assert(late.inputLag <= 120);
+  assert(late.inputSeconds <= 2.1);
   assert.equal(late.inputLag, failed.inputLag);
   const released = performance.now();
   trace = [];
@@ -266,7 +278,7 @@ try {
   for (const row of trace) {
     assert(
       distance(row.state.position, beforeRelease.position) <=
-        (10.9 * (row.atMs - released)) / 1000 + 1.2,
+        10.9 * consumedSeconds(beforeRelease, row.state) + 1.2,
     );
     assert(
       row.state.tick - beforeRelease.tick <= Math.ceil(((row.atMs - released) * 30) / 1000) + 6,

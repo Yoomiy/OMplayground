@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import type { EngineBlock, ItemDefinition } from '../shared/content.ts';
 import { itemGeometry, worldItemMaterial } from './held-block.ts';
+import { itemSprite } from './item-sprites.ts';
 
-/** Cached thumbnails of the actual world models, using the existing graphics context. */
+/** Authored item sprites and cached block thumbnails, shared by every inventory surface. */
 export class ItemIcons {
   private cache = new Map<string, string>();
   private target = new THREE.WebGLRenderTarget(48, 48);
@@ -23,7 +24,21 @@ export class ItemIcons {
     if (cached) return cached;
     if (cachedOnly) return null;
     const item = this.items.find((item) => item.itemType === itemType);
-    if (!item || this.renderer.getContext().isContextLost()) return null;
+    if (!item) return null;
+    const sprite = itemSprite(item);
+    if (sprite) {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 16;
+      const context = canvas.getContext('2d');
+      if (!context) return null;
+      const image = context.createImageData(16, 16);
+      image.data.set(sprite);
+      context.putImageData(image, 0, 0);
+      const url = canvas.toDataURL('image/png');
+      this.cache.set(itemType, url);
+      return url;
+    }
+    if (this.renderer.getContext().isContextLost()) return null;
     const geometry = itemGeometry(item, this.blocks);
     const material = worldItemMaterial(item, this.blocks, this.albedo, this.surface);
     material.defines = {};

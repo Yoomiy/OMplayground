@@ -1,4 +1,5 @@
 import { isInputFrame } from './input.ts';
+import type { Stack } from './content.ts';
 import type { InputFrame } from './input.ts';
 import { ENVIRONMENT_VERSION } from './environment.ts';
 import { isInventoryCommand, isInventoryView, validStack } from './inventory.ts';
@@ -9,13 +10,14 @@ import type { VitalsView } from './vitals.ts';
 import type { MovementModifiers } from './movement.ts';
 import type { HitEvent } from './combat.ts';
 import type { ExplosiveView, ExplosionEvent } from './explosives.ts';
+import { isAvatarId } from './avatars.ts';
 import { isActorAppearance } from './appearance.ts';
 import type { ActorAppearance } from './appearance.ts';
 import { isLifecycleView } from './lifecycle.ts';
 import type { LifecycleView } from './lifecycle.ts';
 import { BOUNDS } from './world-bounds.ts';
 export { BOUNDS } from './world-bounds.ts';
-export const PROTOCOL = 13;
+export const PROTOCOL = 15;
 export const GENERATOR_VERSION = 2;
 export const MAX_CONTROL_BYTES = 16384;
 export const STREAM_RADIUS = 3;
@@ -79,6 +81,7 @@ export type ClientMessage =
   | { type: 'flight'; epoch: number; sequence: number; on: boolean };
 export type ActorState = {
   id: string;
+  avatar?: number;
   state: number[];
   yaw: number;
   pitch: number;
@@ -86,6 +89,7 @@ export type ActorState = {
 };
 export type ActorDelta = {
   id: string;
+  avatar?: number;
   state?: number[];
   yaw?: number;
   pitch?: number;
@@ -97,6 +101,7 @@ export type ServerMessage =
   | {
       type: 'welcome';
       actorId: string;
+      avatar?: number;
       epoch: number;
       worldId: string;
       seed: number;
@@ -143,6 +148,7 @@ export type ServerMessage =
   | { type: 'actor_removed'; id: string }
   | { type: 'unload'; x: number; z: number; subscription: number }
   | { type: 'inventory'; epoch: number; view: InventoryView }
+  | { type: 'pickup'; epoch: number; stack: Stack }
   | { type: 'vitals'; epoch: number; view: VitalsView }
   | ({ type: 'hit' } & HitEvent)
   | { type: 'explosives'; reset: boolean; upsert: ExplosiveView[]; removed: string[] }
@@ -362,6 +368,7 @@ export function parseServerMessage(text: string): ServerMessage | null {
         : null;
     case 'welcome':
       return id(v.actorId) &&
+        (v.avatar === undefined || isAvatarId(v.avatar)) &&
         integer(v.epoch, 1) &&
         id(v.worldId) &&
         integer(v.seed, 0, 0xffffffff) &&
@@ -415,9 +422,10 @@ export function parseServerMessage(text: string): ServerMessage | null {
           (a) =>
             object(a) &&
             Object.keys(a).every((key) =>
-              ['id', 'state', 'yaw', 'pitch', 'appearance'].includes(key),
+              ['id', 'state', 'yaw', 'pitch', 'appearance', 'avatar'].includes(key),
             ) &&
             id(a.id) &&
+            (a.avatar === undefined || isAvatarId(a.avatar)) &&
             (a.state === undefined || state(a.state)) &&
             (a.yaw === undefined || finite(a.yaw)) &&
             (a.pitch === undefined || finite(a.pitch)) &&
@@ -427,7 +435,9 @@ export function parseServerMessage(text: string): ServerMessage | null {
         : null;
     case 'actor_joined':
       return object(v.actor) &&
-        exact(v.actor, ['id', 'state', 'yaw', 'pitch', 'appearance']) &&
+        (exact(v.actor, ['id', 'state', 'yaw', 'pitch', 'appearance']) ||
+          exact(v.actor, ['id', 'state', 'yaw', 'pitch', 'appearance', 'avatar'])) &&
+        (v.actor.avatar === undefined || isAvatarId(v.actor.avatar)) &&
         id(v.actor.id) &&
         state(v.actor.state) &&
         finite(v.actor.yaw) &&
@@ -520,6 +530,10 @@ export function parseServerMessage(text: string): ServerMessage | null {
           : cell(v.target) &&
             integer(v.total, 1, 30 * 3600) &&
             integer(v.elapsed, 0, v.total as number))
+        ? (v as ServerMessage)
+        : null;
+    case 'pickup':
+      return exact(v, ['type', 'epoch', 'stack']) && integer(v.epoch, 1) && validStack(v.stack)
         ? (v as ServerMessage)
         : null;
     case 'drops': {

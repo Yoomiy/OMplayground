@@ -1,5 +1,5 @@
 import { MOVEMENT_DT, movementWish } from './input.ts';
-import type { Controls } from './input.ts';
+import type { Controls, InputFrame } from './input.ts';
 import { BOUNDS } from './world-bounds.ts';
 /** Narrow Wasm port shared by prediction and authority; rules supply modifiers. */
 export type MovementWorld = {
@@ -35,7 +35,7 @@ export const DEFAULT_MOVEMENT: MovementModifiers = Object.freeze({
 export function stepMovement(
   world: MovementWorld,
   slot: number,
-  controls: Controls,
+  controls: Controls & Pick<InputFrame, 'dt'>,
   modifiers = DEFAULT_MOVEMENT,
 ): boolean {
   const [x, z] = movementWish(controls);
@@ -51,7 +51,7 @@ export function stepMovement(
     modifiers.gravity,
     modifiers.control,
     modifiers.jump,
-    MOVEMENT_DT,
+    controls.dt ?? MOVEMENT_DT,
   );
 }
 export type BoundedMovementWorld = MovementWorld & {
@@ -62,7 +62,7 @@ export type BoundedMovementWorld = MovementWorld & {
 export function stepBoundedMovement(
   world: BoundedMovementWorld,
   slot: number,
-  controls: Controls,
+  controls: Controls & Pick<InputFrame, 'dt'>,
   modifiers = DEFAULT_MOVEMENT,
 ): boolean {
   const jumped = stepMovement(world, slot, controls, modifiers);

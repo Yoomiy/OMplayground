@@ -141,7 +141,7 @@ test('attack waits for consumed aim, rejects stale input and cannot turn a futur
   const f = pair();
   try {
     f.controls.set('a', { ...f.controls.get('a')!, yaw: Math.PI });
-    f.tick();
+    f.tick(3);
     const sequence = f.inputs.get('a')! + 1;
     const frame = { ...f.controls.get('a')!, yaw: 0, epoch: f.player().epoch, sequence };
     f.room.receive('a', { type: 'input', frames: [frame] }, f.now);
@@ -158,7 +158,7 @@ test('attack waits for consumed aim, rejects stale input and cannot turn a futur
     f.room.receive('a', pending, f.now);
     assert.equal(f.player().pending.size, 1);
     assert.equal(f.player('b').vitals.view().health, 20);
-    f.tick();
+    f.tick(2);
     assert.equal(f.result('a').outcome?.reason, 'hit');
     assert.equal(f.player('b').vitals.view().health, 18);
     f.tick(15);
@@ -206,7 +206,14 @@ test('melee death drops personal state once and the same connection respawns onl
     assert.ok(f.player('b').vitals.view().protection > 0);
     assert.equal(f.player('b').vitals.view().health, 20);
     assert.ok(f.room.inventories.view('b').bag.every((stack) => !stack));
-    assert.equal(f.room.drops.size, 2);
+    assert.equal(f.room.drops.size, 0);
+    assert.equal(
+      f.room.inventories
+        .view('a')
+        .bag.filter((s) => s?.itemType === 'stick')
+        .reduce((n, s) => n + s!.count, 0),
+      3,
+    );
     assert.ok(
       f.events
         .get('a')!
@@ -256,14 +263,7 @@ test('nonfatal knockback changes velocity without minting motion time and reconc
         }
         const predicted = client.player_state(slot),
           authoritative = f.state('b');
-        assert.ok(
-          Math.hypot(
-            predicted[0] - authoritative[0],
-            predicted[1] - authoritative[1],
-            predicted[2] - authoritative[2],
-          ) < 0.01,
-          `impulse replay diverged at tick ${step}`,
-        );
+        assert.ok(prediction.correction < 0.001, `impulse replay correction at tick ${step}`);
       }
     } finally {
       client.free();
