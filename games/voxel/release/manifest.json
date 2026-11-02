@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "buildId": "e71da51f4ee691eb1d3b818aecb2fa67c7f48184c93c61ee2cff71e37a4234b2",
+  "buildId": "f11c775090c36bab152986be3c97b5fcc55909665760ce457617af25b691f007",
   "inputs": [
     {
       "path": "LICENSE",
@@ -452,7 +452,7 @@
     },
     {
       "path": "src/shared/media.ts",
-      "hash": "df6629f90df8e8aa74dc92bae32b3359fe62566aecc68cffa6db7e5e10cca92a"
+      "hash": "6315a3641a3d6b05f9e6ff497b6d194f648bd28dfb60d74aec49645523cbdeeb"
     },
     {
       "path": "src/shared/mining-rules.ts",
@@ -590,7 +590,7 @@
     },
     {
       "path": "artifacts/build.json",
-      "hash": "949e99c743843e0b8b1392caf70f4a7fde4354f33815638ff06ae8de39bcb6db"
+      "hash": "739ee343f37dd804f4113585a4c83067963632bbbf69f5e64c2a153dfd674ddd"
     },
     {
       "path": "artifacts/content-bindings.ts",
@@ -606,15 +606,15 @@
     },
     {
       "path": "artifacts/release.json",
-      "hash": "67195db7e3d0fd7f08d40fd1324889b5ed6c3ab8e5b4bc58279b2f81181186b5"
+      "hash": "9dc05404a07c91d30bdef50e9dd69b66e03f619bb1815cf99d184bbd1e8bd1b2"
     },
     {
       "path": "dist-client/assets/engine-worker-DYAFKrDe.js",
       "hash": "99d3377c134578cd5e9bdd923e7707547e62c3a2a0a1a64c90adec5f1121bf04"
     },
     {
-      "path": "dist-client/assets/index-CFP-OlMy.js",
-      "hash": "377e055feb16c74b31a913e908fc09d801a4115c429fbeaecea425e669d5bbc0"
+      "path": "dist-client/assets/index-BnOD3BYm.js",
+      "hash": "83a33f45d22fe24474e432489f16c39621cabed5632f1ba139e47d5513ebcba2"
     },
     {
       "path": "dist-client/assets/index-P3AiFv1J.css",
@@ -630,11 +630,11 @@
     },
     {
       "path": "dist-client/index.html",
-      "hash": "413d574212d4accc8cc0e5860ccf463693d24f6f86cb85a21d622f8e87b733e0"
+      "hash": "5bf4beebfadf65bc864e1a836b88bf7b1aca9bcac333ee27b493a53c432838d5"
     },
     {
       "path": "dist-server/build.json",
-      "hash": "949e99c743843e0b8b1392caf70f4a7fde4354f33815638ff06ae8de39bcb6db"
+      "hash": "739ee343f37dd804f4113585a4c83067963632bbbf69f5e64c2a153dfd674ddd"
     },
     {
       "path": "dist-server/content.json",

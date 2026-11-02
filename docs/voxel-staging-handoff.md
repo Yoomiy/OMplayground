@@ -61,9 +61,9 @@ refused without resizing or deleting data.
 | --- | --- |
 | Web | Deploy `apps/web/dist`; retain SPA fallback and static Wasm/worker assets. Set `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_GAME_SERVER_URL`, `VITE_VOXEL_RUNTIME_SERVER_URL`, `VITE_CLASSROOM_SERVER_URL` at build time. |
 | Board | Retain the existing board service and its environment. Build `@playground/game-logic` and `@playground/observability` before its normal build/start. |
-| Voxel | `npm start --workspace @playground/voxel-server`; default port 3001. Route `/api/voxel/*`, gameplay WebSocket `/voxel`, and voice signaling `/voxel-media/*` to it. Expose `/health` and `/ready` to operational probes. |
+| Voxel | `npm start --workspace @playground/voxel-server`; default port 3001. Route `/api/voxel/*`, gameplay WebSocket `/voxel` to it. Expose `/health` and `/ready` to operational probes. |
 | Classroom | `npm start --workspace @playground/classroom-server`; default port 8083. Route classroom HTTP and `/webhooks/livekit` to this service. Repoint the LiveKit webhook destination when cutting over. |
-| LiveKit | Retain the configured SFU. Voxel signaling passes through the voxel service; WebRTC media connects to LiveKit directly. An HTTP proxy alone does not qualify media connectivity. |
+| LiveKit | Retain the configured SFU. Voxel signaling and WebRTC media connect to LiveKit directly. An HTTP proxy alone does not qualify media connectivity. |
 
 Use HTTPS endpoints and exact browser origins in production. Set
 `NODE_ENV=production`, voxel `VOXEL_ALLOWED_ORIGINS`, and classroom/board
@@ -74,8 +74,9 @@ converter and board-signing settings must retain their existing shared contract.
 See the service `.env.example` files, [production entry](../apps/voxel-server/docs/production-service.md)
 and [classroom service](../apps/classroom-server/README.md).
 
-The target database needs all eight `20261025010000`–`20261025080000` voxel
-migrations in order. The user's configured project already passed their
+The target database needs the gameplay migrations, including unique world seeds
+(`20261029220000`). The historical eighth media-policy migration is unused by the
+current direct LiveKit voice flow. The user's configured project already passed their
 read-only readiness checks; a separate staging project needs its own migration
 installation and school data. The additional main-branch migration
 `20261026162928_add_kindergarten_and_grade_nine.sql` is included in this branch;
@@ -108,7 +109,7 @@ Before production cutover, verify these on the actual staging deployment:
   pause/resume, closure, moderation and immediate access revocation.
 - A natural survival session on a school PC: pointer lock, keyboard/mouse,
   inventory/crafting, equipment, sound, visibility, acceptable frame pacing.
-- Two actual users' proximity voice, teacher mute/revocation, reconnect and
+- Two actual users' proximity voice, local microphone controls, reconnect and
   classroom media/presentation/board/attendance through the real SFU.
 - Save, disconnect/reconnect, process restart/crash recovery, graceful drain,
   provider failure and clear saved/failed acknowledgements. Review the proposed

@@ -41,7 +41,7 @@ test("production composition verifies real schemas, serves authenticated APIs wi
           origin + "/voxel-media/rtc/v1/validate?access_token=invalid",
         )
       ).status,
-      401,
+      404,
     );
     const adminStats = await fetch(origin + "/api/voxel/admin-stats", {
       method: "POST",

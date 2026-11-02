@@ -17,13 +17,7 @@ import {
 import { schoolRosterApi } from "./school-roster.ts";
 import { schoolSessionApi } from "./school-session.ts";
 import { SupabaseChat, schoolChatApi } from "./school-chat.ts";
-import {
-  SupabaseMedia,
-  SchoolVoice,
-  schoolMediaApi,
-  voiceConfig,
-} from "./school-media.ts";
-import { VoiceSignaling } from "./voice-signaling.ts";
+import { SchoolVoice, schoolVoiceApi, voiceConfig } from "./school-voice.ts";
 import { schoolOperationsApi } from "./school-operations.ts";
 import { createVoxelEventLogger } from "./service-events.ts";
 import type { ServiceLogger } from "./service-events.ts";
@@ -89,7 +83,6 @@ export async function startVoxelService(
     staff = new SupabaseStaff(client),
     moderation = new SupabaseModeration(client),
     chat = new SupabaseChat(client),
-    media = new SupabaseMedia(client),
     access = new SchoolAccess(client);
   const readiness = await Promise.allSettled([
     backend.verifyInstallation(),
@@ -99,72 +92,49 @@ export async function startVoxelService(
     staff.verifyInstallation(),
     moderation.verifyInstallation(),
     chat.verifyInstallation(),
-    media.verifyInstallation(),
   ]);
   for (const status of readiness)
     if (status.status === "rejected") throw status.reason;
   const event = createVoxelEventLogger(logger);
-  const credentials = voiceConfig(env),
-    signal = new VoiceSignaling(
-      credentials.endpoint,
-      config.origins,
-      false,
-      (context) => event("VOXEL_VOICE_CONNECTION_FAILED", context),
-    );
+  const voice = new SchoolVoice(access, voiceConfig(env));
   let gateway: Awaited<ReturnType<typeof runtime.createGateway>>;
-  try {
-    await signal.ready;
-    const voice = new SchoolVoice(access, media, signal, credentials);
-    gateway = await runtime.createGateway({
-      build: runtime.build,
-      content: runtime.content,
-      host: config.host,
-      port: config.port,
-      allowedOrigins: config.origins,
-      worldDefaults: { mode: "survival" },
-      persistence: { objects: backend, metadata: backend },
-      ...schoolGatewayPolicy(access, sessions, event),
-      control: (req, body, res) =>
-        body && typeof body === "object" && "command" in body
-          ? schoolStaff(access, staff, event)(req, body, res)
-          : schoolControl(access, commands, event)(req, body, res),
-      api: {
-        ...schoolOperationsApi(access, () => {
-          const rooms = [...gateway.rooms.entries()]
-            .filter(([, room]) => !room.closing)
-            .map(([sessionId, room]) => ({
-              sessionId,
-              gameType: "voxel" as const,
-              connectionCount: room.connections.size,
-            }));
-          return {
-            service: "voxel-server",
-            activeConnections: gateway.sockets.clients.size,
-            activeRoomsCount: rooms.length,
-            mediaConnections: signal.stats.sessions,
-            rooms,
-          };
-        }),
-        ...schoolSessionApi(access, client, event),
-        ...schoolRosterApi(access, client, event),
-        ...schoolModerationApi(access, moderation, event),
-        ...schoolChatApi(access, chat, event),
-        ...schoolMediaApi(access, media, voice, signal, event),
-      },
-      upgradeClient: (request, socket, head) =>
-        signal.upgrade(request, socket, head),
-      handleClient: (request, response) => {
-        if (!signal.handleHttp(request, response)) {
-          response.writeHead(404);
-          response.end();
-        }
-      },
-      onEvent: event,
-    });
-  } catch (error) {
-    await signal.close();
-    throw error;
-  }
+  gateway = await runtime.createGateway({
+    build: runtime.build,
+    content: runtime.content,
+    host: config.host,
+    port: config.port,
+    allowedOrigins: config.origins,
+    worldDefaults: { mode: "survival" },
+    persistence: { objects: backend, metadata: backend },
+    ...schoolGatewayPolicy(access, sessions, event),
+    control: (req, body, res) =>
+      body && typeof body === "object" && "command" in body
+        ? schoolStaff(access, staff, event)(req, body, res)
+        : schoolControl(access, commands, event)(req, body, res),
+    api: {
+      ...schoolOperationsApi(access, () => {
+        const rooms = [...gateway.rooms.entries()]
+          .filter(([, room]) => !room.closing)
+          .map(([sessionId, room]) => ({
+            sessionId,
+            gameType: "voxel" as const,
+            connectionCount: room.connections.size,
+          }));
+        return {
+          service: "voxel-server",
+          activeConnections: gateway.sockets.clients.size,
+          activeRoomsCount: rooms.length,
+          rooms,
+        };
+      }),
+      ...schoolSessionApi(access, client, event),
+      ...schoolRosterApi(access, client, event),
+      ...schoolModerationApi(access, moderation, event),
+      ...schoolChatApi(access, chat, event),
+      ...schoolVoiceApi(voice, event),
+    },
+    onEvent: event,
+  });
   gateway.http.headersTimeout = 10000;
   gateway.http.requestTimeout = 20000;
   let cleanup: Promise<void> | null = null,
@@ -196,11 +166,7 @@ export async function startVoxelService(
         clearInterval(cleanupTimer);
         closing = (async () => {
           try {
-            try {
-              await signal.close();
-            } finally {
-              await gateway.close();
-            }
+            await gateway.close();
           } finally {
             await cleanup;
           }

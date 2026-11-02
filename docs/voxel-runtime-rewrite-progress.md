@@ -2165,3 +2165,32 @@ The user still reports silent game effects. The earlier gesture browser check es
 A focused native-game browser run enters automatically, unlocks through a normal movement key and measures a footstep at about 0.012 RMS (roughly 12× the prior waveform). Muting measures zero and disposal closes the owned context. Game types and matched packaging pass for `8157d95bf55d76343397ca367cb0d5187b346b249a6fd68553655996fb8977c6`. This is software-browser output evidence, not proof of physical playback on the user's device or a confirmed diagnosis of all silence. A question about other audio in the same browser remains pending.
 
 Committed locally; no push, migration, content change or reset. Restart/refresh and click into the world before walking/mining: effects intentionally mute while gameplay control is released.
+
+
+## Direct LiveKit voice lifecycle — 2026-11-02
+
+At the user's request, removed voxel's custom signaling proxy, independent voice
+worker, single-use voice tickets, five-second voice policy renewal, durable mute
+adapter and unused teacher voice-policy UI/polling. The backend now verifies the
+account and current game membership once at `/api/voxel/voice-token` and issues a
+two-hour microphone-only LiveKit token. Staff observers remain hidden and
+listen-only. The browser connects directly and keeps its room/microphone across
+SDK reconnects. Gameplay authorization stays independent; loss of local game
+readiness, session end and unmount clean up voice. Historical SQL migrations are
+retained but voice no longer requires or calls their policy functions. No SQL
+change or world reset is required. Deploy the frontend and voxel service together
+and refresh existing clients, because the old ticket/proxy routes are removed.
+
+Validation: 59 service tests, 174 web tests, shared-token/gateway/dev-proxy tests,
+web/service types and isolated production package install/start/drain pass. An
+actual product UI/software-Chromium/local LiveKit 1.12.0 run passes generated
+microphone playback (RMS about 0.05), proximity subscription removal/restoration,
+hidden listen-only staff, and native SDK signal reconnect AFTER the original
+five-second fixture JWT expires. Each browser requests exactly one application
+token and the speaker's microphone stays on. Three teardowns leave no owned
+microphone/audio/timer/connection resources. The isolated SFU room is deleted;
+no hosted school/SFU or user microphone was used. This does not establish
+production network or physical-device behavior.
+
+Matched release: `f11c775090c3` (engine/content/protocol unchanged). Changes are
+local; no deployment or push was performed.

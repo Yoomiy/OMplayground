@@ -24,6 +24,7 @@ export function schoolSessionApi(
       work: NonNullable<GatewayOptions["api"]>[string],
     ): NonNullable<GatewayOptions["api"]>[string] =>
     async (req, body, res) => {
+      const started = performance.now();
       try {
         return await work(req, body, res);
       } catch (error) {
@@ -32,6 +33,15 @@ export function schoolSessionApi(
         const correlationId = res.getHeader?.("x-correlation-id");
         event("VOXEL_SESSION_API_REJECTED", {
           code,
+          duration_ms: Math.round(performance.now() - started),
+          failure:
+            error instanceof SchoolUnavailable
+              ? "school_policy"
+              : error instanceof PersistenceError
+                ? "persistence"
+                : error instanceof AccessDenied
+                  ? "access_denied"
+                  : "unexpected",
           ...(typeof correlationId === "string" ? { correlationId } : {}),
           operation:
             req.url === "/api/voxel/diagnostics" ? "diagnostics" : "session",

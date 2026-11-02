@@ -21,7 +21,6 @@
     "build": "npm run typecheck"
   },
   "dependencies": {
-    "@livekit/protocol": "1.46.4",
     "@playground/game-logic": "0.0.1",
     "@playground/observability": "0.0.1",
     "@supabase/supabase-js": "2.103.3",

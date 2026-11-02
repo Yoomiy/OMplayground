@@ -6,7 +6,7 @@ export type VoxelOperations = Readonly<{
   service: "voxel-server";
   activeConnections: number;
   activeRoomsCount: number;
-  mediaConnections: number;
+  mediaConnections?: number;
   rooms: ReadonlyArray<{
     sessionId: string;
     gameType: "voxel";

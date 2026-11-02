@@ -51,7 +51,6 @@ const policies: Readonly<Record<string, Policy>> = {
   VOXEL_CONTROL_COMPLETED: policy("info", "success", "Room control completed"),
   VOXEL_STAFF_COMPLETED: policy("info", "success", "Staff command completed"),
   VOXEL_CHAT_APPLIED: policy("debug", "success", "Chat operation applied"),
-  VOXEL_MEDIA_POLICY_APPLIED: policy("info", "success", "Media policy applied"),
   VOXEL_MODERATION_POLICY_APPLIED: policy(
     "info",
     "success",
@@ -100,11 +99,7 @@ const policies: Readonly<Record<string, Policy>> = {
     "failed",
     "Client transport upgrade failed",
   ),
-  VOXEL_VOICE_CONNECTION_FAILED: policy(
-    "warn",
-    "failed",
-    "Voice connection failed",
-  ),
+  VOXEL_VOICE_REJECTED: policy("warn", "rejected", "Voice admission rejected"),
   VOXEL_CLEANUP_FAILED: policy("error", "failed", "Checkpoint cleanup failed"),
   VOXEL_SESSION_API_REJECTED: policy(
     "warn",
@@ -114,7 +109,6 @@ const policies: Readonly<Record<string, Policy>> = {
   VOXEL_CONTROL_REJECTED: policy("warn", "rejected", "Room control rejected"),
   VOXEL_STAFF_REJECTED: policy("warn", "rejected", "Staff command rejected"),
   VOXEL_CHAT_REJECTED: policy("warn", "rejected", "Chat operation rejected"),
-  VOXEL_MEDIA_REJECTED: policy("warn", "rejected", "Media operation rejected"),
   VOXEL_MODERATION_REJECTED: policy(
     "warn",
     "rejected",
@@ -248,7 +242,7 @@ export function voxelEventPolicy(name: string, context: Context): Policy {
       "CONTROL_UNAVAILABLE",
       "STAFF_UNCONFIRMED",
       "CHAT_UNCONFIRMED",
-      "MEDIA_UNCONFIRMED",
+      "VOICE_UNAVAILABLE",
       "MODERATION_UNCONFIRMED",
       "SESSION_UNAVAILABLE",
       "SCHOOL_POLICY_UNAVAILABLE",

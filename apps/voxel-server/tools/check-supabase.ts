@@ -6,7 +6,6 @@ import {
 import { SupabaseStaff } from "../src/school-staff.ts";
 import { SupabaseModeration } from "../src/school-moderation.ts";
 import { SupabaseChat } from "../src/school-chat.ts";
-import { SupabaseMedia } from "../src/school-media.ts";
 import { SupabaseControls } from "../src/school-control.ts";
 import { SupabaseSessions } from "../src/supabase-sessions.ts";
 try {
@@ -16,8 +15,7 @@ try {
     controls = new SupabaseControls(client),
     staff = new SupabaseStaff(client),
     moderation = new SupabaseModeration(client),
-    chat = new SupabaseChat(client),
-    media = new SupabaseMedia(client);
+    chat = new SupabaseChat(client);
   const checks = [
     ["checkpoint", () => backend.verifyInstallation()],
     ["projection", () => sessions.verifyInstallation()],
@@ -26,7 +24,6 @@ try {
     ["staff", () => staff.verifyInstallation()],
     ["moderation", () => moderation.verifyInstallation()],
     ["chat", () => chat.verifyInstallation()],
-    ["media", () => media.verifyInstallation()],
   ] as const;
   const results = await Promise.allSettled(checks.map(([, run]) => run()));
   const status = Object.fromEntries(
@@ -59,7 +56,6 @@ try {
       staffSchema: status.staff.ready ? 1 : null,
       moderationSchema: status.moderation.ready ? 1 : null,
       chatSchema: status.chat.ready ? 1 : null,
-      mediaSchema: status.media.ready ? 1 : null,
       checks: status,
       checkedAt: new Date().toISOString(),
     }),

@@ -2,32 +2,19 @@ import { useEffect, useRef, useState } from "react";
 import type { VoiceScene } from "@playground/voxel-runtime";
 import { VoiceSession } from "./voice-session";
 import type { VoiceState } from "./voice-session";
-import { VoxelApiError, admissionMessage } from "./session-api";
-import type { VoxelApi, MediaAction, MediaState } from "./session-api";
-type Draft = Readonly<{
-  action: MediaAction;
-  target: string | null;
-  name: string;
-}>;
-type Notice = {
-  id: string;
-  draft: Draft;
-  state: "pending" | "unconfirmed" | "done";
-  text: string;
-};
+import type { VoxelApi } from "./session-api";
 const phases: Record<VoiceState["phase"], string> = {
   off: "השמע כבוי.",
   starting: "מתחברים לשמע…",
   connected: "מחוברים לשמע בקרבתכם.",
-  reconnecting: "מתחברים מחדש. המיקרופון כבוי.",
+  reconnecting: "מתחברים מחדש לשמע…",
   unavailable: "חיבור השמע אינו זמין כרגע. ננסה שוב.",
   blocked: "אין כרגע הרשאה לחיבור שמע.",
 };
-/** Owns user activation and staff UI; spatial sampling stays in VoiceSession. */
+/** Owns user activation and audio controls; spatial sampling stays in VoiceSession. */
 export function VoxelVoice(props: {
   api: VoxelApi;
   names?: readonly { id: string; name: string }[];
-  isStaff: boolean;
   manualJoin?: boolean;
   ready: boolean;
   ended?: boolean;
@@ -35,26 +22,18 @@ export function VoxelVoice(props: {
   onOpen: () => void;
   onResume?: () => void;
 }) {
-  const { api, isStaff, ready } = props,
+  const { api, ready } = props,
     latest = useRef(props);
   latest.current = props;
   const host = useRef<HTMLDivElement>(null),
     dialog = useRef<HTMLElement>(null),
     owner = useRef<VoiceSession | null>(null);
-  const write = useRef<AbortController | null>(null),
-    busy = useRef(false);
   const autoStarted = useRef(false);
   const [state, setState] = useState<VoiceState | null>(null),
     [open, setOpen] = useState(true),
     [devices, setDevices] = useState<MediaDeviceInfo[]>([]),
     [sink, setSink] = useState(""),
     [sinkError, setSinkError] = useState(false);
-  const [policy, setPolicy] = useState<MediaState | null>(null),
-    [readError, setReadError] = useState(false),
-    [selected, setSelected] = useState(""),
-    [refresh, setRefresh] = useState(0),
-    [draft, setDraft] = useState<Draft | null>(null),
-    [notice, setNotice] = useState<Notice | null>(null);
   useEffect(() => {
     if (!host.current) return;
     let alive = true;
@@ -71,16 +50,10 @@ export function VoxelVoice(props: {
     setState(voice.state);
     setOpen(true);
 
-    setNotice(null);
-    setPolicy(null);
-    setDraft(null);
-    setSelected("");
     setSink("");
     setSinkError(false);
     return () => {
       alive = false;
-      write.current?.abort();
-      busy.current = false;
       setOpen(false);
       if (owner.current === voice) owner.current = null;
       void voice.close();
@@ -88,7 +61,10 @@ export function VoxelVoice(props: {
   }, [api]);
   useEffect(() => {
     if (props.ended) void owner.current?.close();
-    else if (!ready) void owner.current?.microphone(false);
+    else if (!ready) {
+      owner.current?.stop();
+      autoStarted.current = false;
+    }
   }, [ready, api, props.ended]);
   useEffect(() => {
     const voice = owner.current;
@@ -177,98 +153,6 @@ export function VoxelVoice(props: {
       navigator.mediaDevices?.removeEventListener("devicechange", update);
     };
   }, [open, state?.microphone]);
-  useEffect(() => {
-    if (!open || !isStaff) return;
-    const abort = new AbortController();
-    let running = false;
-    setReadError(false);
-    const load = async () => {
-      if (
-        running ||
-        abort.signal.aborted ||
-        document.visibilityState !== "visible"
-      )
-        return;
-      running = true;
-      try {
-        const value = await api.mediaState(abort.signal);
-        if (!abort.signal.aborted) {
-          setPolicy(value);
-          setReadError(false);
-          setSelected((previous) =>
-            value.targets.some((t) => t.id === previous)
-              ? previous
-              : (value.targets[0]?.id ?? ""),
-          );
-        }
-      } catch {
-        if (!abort.signal.aborted) {
-          setPolicy(null);
-          setReadError(true);
-        }
-      } finally {
-        running = false;
-      }
-    };
-    void load();
-    const timer = setInterval(() => void load(), 3000),
-      visible = () => void load();
-    document.addEventListener("visibilitychange", visible);
-    return () => {
-      abort.abort();
-      clearInterval(timer);
-      document.removeEventListener("visibilitychange", visible);
-    };
-  }, [api, open, isStaff, refresh]);
-  const execute = async (value: Draft, id: string = crypto.randomUUID()) => {
-    if (busy.current) return;
-    busy.current = true;
-    const abort = new AbortController();
-    write.current = abort;
-    setDraft(null);
-    setNotice({
-      id,
-      draft: value,
-      state: "pending",
-      text: "ממתינים לאישור מדיניות השמע…",
-    });
-    try {
-      const receipt = await api.moderateMedia(
-        value.action,
-        value.target,
-        id,
-        abort.signal,
-      );
-      if (!abort.signal.aborted) {
-        setNotice({
-          id,
-          draft: value,
-          state: "done",
-          text: receipt.current
-            ? "מדיניות השמע נשמרה. נשלחה בקשה לעדכון החיבורים."
-            : "זו תוצאה של בקשה קודמת. בדקו את המצב הנוכחי.",
-        });
-        setRefresh((v) => v + 1);
-      }
-    } catch (error) {
-      if (!abort.signal.aborted) {
-        const retry = !(error instanceof VoxelApiError) || error.retryable;
-        setNotice({
-          id,
-          draft: value,
-          state: retry ? "unconfirmed" : "done",
-          text: retry
-            ? "לא התקבל אישור. אפשר לבדוק שוב את אותה בקשה."
-            : admissionMessage(error.code),
-        });
-      }
-    } finally {
-      if (write.current === abort) {
-        busy.current = false;
-        write.current = null;
-      }
-    }
-  };
   const choose = async (id: string) => {
     const voice = owner.current;
     try {
@@ -293,10 +177,7 @@ export function VoxelVoice(props: {
       if (owner.current === voice) setSinkError(true);
     }
   };
-  const pending =
-      notice?.state === "pending" || notice?.state === "unconfirmed",
-    target = policy?.targets.find((t) => t.id === selected),
-    connected = state?.phase === "connected";
+  const connected = state?.phase === "connected";
   return (
     <div className="voxel-session__voice" ref={host}>
       <button
@@ -461,102 +342,6 @@ export function VoxelVoice(props: {
             </button>
           )}
         </details>
-        {isStaff && (
-          <details className="voxel-session__voice-staff">
-            <summary>כלי מורה</summary>
-            {readError && (
-              <p role="status">לא ניתן לקרוא כרגע את מדיניות השמע.</p>
-            )}
-            {!policy && !readError && <p>טוענים את מדיניות השמע…</p>}
-            {policy && (
-              <>
-                <p>
-                  כל התלמידים:{" "}
-                  {policy.allMuted
-                    ? "מושתקים"
-                    : "רשאים לדבר לפי ההגדרות האישיות"}
-                </p>
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() =>
-                    setDraft({
-                      action: policy.allMuted ? "unmute" : "mute",
-                      target: null,
-                      name: "כל התלמידים",
-                    })
-                  }
-                >
-                  {policy.allMuted ? "ביטול השתקה כללית" : "השתקת כל התלמידים"}
-                </button>
-                <label>
-                  תלמיד או תלמידה{" "}
-                  <select
-                    value={selected}
-                    disabled={pending || policy.targets.length === 0}
-                    onChange={(e) => setSelected(e.target.value)}
-                  >
-                    {policy.targets.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name}
-                        {t.effectiveMuted ? " · מושתק/ת" : ""}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <button
-                  type="button"
-                  disabled={pending || !target}
-                  onClick={() =>
-                    target &&
-                    setDraft({
-                      action: target.muted ? "unmute" : "mute",
-                      target: target.id,
-                      name: target.name,
-                    })
-                  }
-                >
-                  {target?.muted ? "ביטול השתקה אישית" : "השתקה אישית"}
-                </button>
-                <p>
-                  ביטול השתקה כללית משאיר השתקות אישיות בתוקף. השתקת תלמידים
-                  אינה חוסמת את אנשי הצוות.
-                </p>
-              </>
-            )}
-            {draft && (
-              <section aria-label="אישור מדיניות שמע">
-                <p>
-                  {draft.action === "mute" ? "להשתיק" : "לבטל השתקה עבור"}{" "}
-                  <bdi>{draft.name}</bdi>?
-                </p>
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() => void execute(draft)}
-                >
-                  אישור מדיניות שמע
-                </button>
-                <button type="button" onClick={() => setDraft(null)}>
-                  ביטול
-                </button>
-              </section>
-            )}
-            {notice && (
-              <>
-                <p role="status">{notice.text}</p>
-                {notice.state === "unconfirmed" && (
-                  <button
-                    type="button"
-                    onClick={() => void execute(notice.draft, notice.id)}
-                  >
-                    בדיקה חוזרת של בקשת השמע
-                  </button>
-                )}
-              </>
-            )}
-          </details>
-        )}
       </section>
     </div>
   );

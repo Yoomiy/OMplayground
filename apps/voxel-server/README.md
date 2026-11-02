@@ -13,11 +13,10 @@ and history index match the tested file. Guarded startup of packaged chat build
 application writes. The [installation record](../../games/voxel/evidence/chat-installation/README.md)
 retains this separately from the earlier pre-installation chat archive. The React
 session/HUD, departure, mode/self-teleport, remove/ban/unban and persisted moderated
-chat are locally qualified. Current media source adds an eighth schema, private
-credential signaling and school-bound mute policy. All eight hosted schema status
-checks now pass following the user's media push, and exact hosted media bodies,
-grants and private table catalogs match the tested SQL. The voice coordinator
-is wired to product controls and passes isolated actual-provider browser checks.
+chat are locally qualified. Voice issues ordinary two-hour LiveKit tokens after
+checking current game membership. Browsers connect directly to LiveKit and use
+its standard refresh/reconnect lifecycle; no voice policy renewal or custom
+signaling worker remains. The historical eighth media migration is unused.
 Complete actual-Auth/game/SFU and physical-device qualification remain open.
 Actual hosted school/recovery qualification
 remains unfinished.
@@ -25,15 +24,15 @@ This is not deployed yet.
 
 The backend requires `SUPABASE_URL` and the server-only `SUPABASE_SECRET_KEY`.
 Current media composition also requires `LIVEKIT_URL`, `LIVEKIT_API_KEY` and
-server-only `LIVEKIT_API_SECRET`, and verifies all eight schemas before listening.
+server-only `LIVEKIT_API_SECRET`. Voice does not require its former media schema.
 There is no fallback to revoked legacy keys. Requests have an eight-second
 deadline, retain user JWTs when explicitly supplied, and send the API secret as
 `apikey`. Errors retain machine codes, not provider messages or credentials.
 See [Supabase key migration](../../docs/supabase-key-migration.md).
-The [media boundary](docs/media.md) explains private credential signaling,
-audited mute revisions, browser resource ownership and qualification limits.
+The [voice boundary](docs/media.md) explains direct LiveKit admission,
+browser resource ownership and qualification limits.
 The [media increment archive](../../games/voxel/evidence/media/README.md) retains
-current source/release evidence, hosted installation/startup checks and negative
+historical source/release evidence, hosted installation/startup checks and negative
 observations alongside passing reruns.
 
 [School admission](docs/school-admission.md) describes the current policy,

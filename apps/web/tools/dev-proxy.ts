@@ -12,7 +12,6 @@ const defaults: DevelopmentTargets = {
 export function developmentProxies(targets: DevelopmentTargets = defaults): Record<string, ProxyOptions> {
   return {
     "/api/voxel": { target: targets.voxel },
-    "/voxel-media": { target: targets.voxel, ws: true },
     "/voxel": { target: targets.voxel, ws: true },
     [CLASSROOM_DEV_PROXY_PATH]: {
       target: targets.classroom,

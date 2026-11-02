@@ -8,18 +8,9 @@ import type {
   ModerationReceipt,
 } from "../../../../../games/voxel/src/shared/moderation.ts";
 export type { ModerationAction, ModerationReceipt };
-import {
-  readVoiceTicket,
-  readMediaReceipt,
-  readMediaState,
-} from "../../../../../games/voxel/src/shared/media.ts";
-import type {
-  MediaAction,
-  MediaReceipt,
-  MediaState,
-  VoiceTicket,
-} from "../../../../../games/voxel/src/shared/media.ts";
-export type { MediaAction, MediaReceipt, MediaState, VoiceTicket };
+import { readVoiceToken } from "../../../../../games/voxel/src/shared/media.ts";
+import type { VoiceToken } from "../../../../../games/voxel/src/shared/media.ts";
+export type { VoiceToken };
 export type ModerationTarget = Readonly<{
   id: string;
   name: string;
@@ -98,7 +89,7 @@ export function voxelEndpoint(value: string): {
     socketUrl: `${url.protocol === "https:" ? "wss:" : "ws:"}//${url.host}/voxel`,
   };
 }
-/** Browser tokens go only to the configured service header, never URLs or telemetry. */
+/** School access tokens go only to the configured service authorization header. */
 export function createVoxelApi(options: {
   serverUrl: string;
   room: string;
@@ -186,47 +177,11 @@ export function createVoxelApi(options: {
       return { isOpen: value.isOpen, invitationCode: value.invitationCode };
     },
     socketUrl: endpoint.socketUrl,
-    voiceUrl: endpoint.origin.replace(/^http/, "ws") + "/voxel-media",
-    async voiceTicket(signal?: AbortSignal): Promise<VoiceTicket> {
-      const value = readVoiceTicket(
-        await post("/api/voxel/voice-ticket", { room: options.room }, signal),
+    async voiceToken(signal?: AbortSignal): Promise<VoiceToken> {
+      const value = readVoiceToken(
+        await post("/api/voxel/voice-token", { room: options.room }, signal),
       );
       if (!value) throw new VoxelApiError("PROTOCOL", true);
-      return value;
-    },
-    async mediaState(signal?: AbortSignal): Promise<MediaState> {
-      const value = readMediaState(
-        await post("/api/voxel/media-state", { room: options.room }, signal),
-      );
-      if (!value) throw new VoxelApiError("PROTOCOL", true);
-      return value;
-    },
-    async moderateMedia(
-      action: MediaAction,
-      target: string | null,
-      requestId: string,
-      signal?: AbortSignal,
-    ): Promise<MediaReceipt> {
-      if (
-        !UUID.test(requestId) ||
-        !["mute", "unmute"].includes(action) ||
-        !(target === null || UUID.test(target))
-      )
-        throw new VoxelApiError("INVALID");
-      const value = readMediaReceipt(
-        await post(
-          "/api/voxel/media-moderate",
-          { room: options.room, requestId, action, target },
-          signal,
-        ),
-      );
-      if (
-        !value ||
-        value.requestId !== requestId ||
-        value.action !== action ||
-        value.target !== target
-      )
-        throw new VoxelApiError("PROTOCOL", true);
       return value;
     },
     async chatHistory(

@@ -528,7 +528,6 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
         manualJoin={
           props.manualVoiceJoin ?? (isStaff && hud?.role === "observer")
         }
-        isStaff={false}
         ended={terminal}
         ready={
           !!hud &&
