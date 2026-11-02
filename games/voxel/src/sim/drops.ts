@@ -4,7 +4,7 @@ import type { ContentManifest, Stack } from '../shared/content.ts';
 import { copyStack, sameStack, validStack } from '../shared/inventory.ts';
 import type { WorldPort } from '../shared/engine-port.ts';
 import type { DropView } from '../shared/gameplay.ts';
-import { DROP_LIFETIME_TICKS } from '../shared/gameplay.ts';
+import { MAGNET_RADIUS, DROP_LIFETIME_TICKS } from '../shared/gameplay.ts';
 import {
   checkpointObject,
   checkpointInteger,
@@ -167,6 +167,124 @@ export class Drops {
     });
     return id;
   }
+  /** Stable scatter survives deterministic replays without global random state. */
+  scatter(stack: Stack, cell: readonly number[], tick: number): string {
+    const angle = (this.nextId + 1) * 2.399963229728653;
+    const radius = 0.1 + ((this.nextId * 7) % 23) / 100;
+    return this.add(
+      stack,
+      [
+        cell[0] + 0.5 + Math.sin(angle) * radius,
+        cell[1] + 0.25,
+        cell[2] + 0.5 + Math.cos(angle) * radius,
+      ],
+      tick,
+      null,
+      [Math.sin(angle) * 1.3, 1.6 + (this.nextId % 7) * 0.2, Math.cos(angle) * 1.3],
+    );
+  }
+  releaseThrower(actor: string, origin: readonly number[]): void {
+    for (const drop of this.values.values())
+      if (
+        drop.owner === actor &&
+        Math.hypot(...drop.position.map((v, i) => v - origin[i])) >= MAGNET_RADIUS
+      )
+        drop.owner = null;
+  }
+  pull(id: string, origin: readonly number[], world: WorldPort): void {
+    const drop = this.values.get(id);
+    if (!drop) return;
+    const distance = Math.hypot(...drop.position.map((v, i) => v - origin[i]));
+    if (distance < 0.00001) return;
+    const step = Math.min(distance, 9 / 30);
+    this.move(
+      drop,
+      world,
+      drop.position.map((v, i) => ((origin[i] - v) / distance) * step),
+    );
+    drop.velocity.fill(0);
+  }
+  private move(drop: Drop, world: WorldPort, delta: readonly number[]): void {
+    const state = world.sweep_body(...drop.position, delta[0], delta[1], delta[2], 0.125, 0.25);
+    const position = [
+      Math.max(BOUNDS.minX + 0.125, Math.min(BOUNDS.maxX - 0.125, state[0])),
+      Math.max(0, Math.min(255.75, state[1])),
+      Math.max(BOUNDS.minZ + 0.125, Math.min(BOUNDS.maxZ - 0.125, state[2])),
+    ] as [number, number, number];
+    for (let i = 0; i < 3; i++) if (state[i + 3] || state[i] !== position[i]) drop.velocity[i] = 0;
+    if (position.some((v, i) => Math.abs(v - drop.position[i]) > 0.00001)) {
+      drop.position = position;
+      drop.revision++;
+    }
+  }
+  /** Spatial buckets bound pair checks to neighboring half-block cells. */
+  private settlePairs(world: WorldPort, tick: number): void {
+    const buckets = new Map<string, Drop[]>();
+    for (const drop of [...this.values.values()]) {
+      if (!world.has_column(Math.floor(drop.position[0] / 16), Math.floor(drop.position[2] / 16)))
+        continue;
+      const cell = drop.position.map((v) => Math.floor(v / 0.5));
+      for (let x = -1; x <= 1; x++)
+        for (let y = -1; y <= 1; y++)
+          for (let z = -1; z <= 1; z++) {
+            for (const other of buckets.get(`${cell[0] + x},${cell[1] + y},${cell[2] + z}`) ?? []) {
+              if (!this.values.has(other.id) || !this.values.has(drop.id)) continue;
+              const dx = drop.position[0] - other.position[0],
+                dy = drop.position[1] - other.position[1],
+                dz = drop.position[2] - other.position[2];
+              if (
+                sameStack(drop.stack, other.stack) &&
+                drop.owner === other.owner &&
+                other.stack.count < this.items.get(other.stack.itemType)!.maxStack &&
+                (tick < drop.pickupAt || tick < other.pickupAt)
+              )
+                continue;
+              if (
+                Math.hypot(dx, dy, dz) < 0.38 &&
+                sameStack(drop.stack, other.stack) &&
+                drop.owner === other.owner &&
+                tick >= drop.pickupAt &&
+                tick >= other.pickupAt
+              ) {
+                const count = Math.min(
+                  drop.stack.count,
+                  this.items.get(other.stack.itemType)!.maxStack - other.stack.count,
+                );
+                if (count > 0) {
+                  other.stack = { ...other.stack, count: other.stack.count + count };
+                  // Merging must never shorten throw protection or extend item lifetime.
+                  other.pickupAt = Math.max(other.pickupAt, drop.pickupAt);
+                  other.ownerPickupAt = Math.max(other.ownerPickupAt, drop.ownerPickupAt);
+                  other.expires = Math.min(other.expires, drop.expires);
+                  other.revision++;
+                  this.take(drop.id, count);
+                }
+              }
+              if (
+                !this.values.has(drop.id) ||
+                Math.abs(dy) >= 0.25 ||
+                Math.abs(dx) >= 0.25 ||
+                Math.abs(dz) >= 0.25
+              )
+                continue;
+              const axis = Math.abs(dx) >= Math.abs(dz) ? 0 : 2;
+              const offset = axis === 0 ? dx : dz;
+              const delta = [0, 0, 0];
+              delta[axis] = ((offset < 0 ? -1 : 1) * (0.251 - Math.abs(offset))) / 2;
+              this.move(drop, world, delta);
+              this.move(
+                other,
+                world,
+                delta.map((v) => -v),
+              );
+            }
+          }
+      const key = cell.join(',');
+      const list = buckets.get(key) ?? [];
+      list.push(drop);
+      buckets.set(key, list);
+    }
+  }
   step(world: WorldPort, tick: number): void {
     for (const [id, drop] of this.values) {
       if (tick >= drop.expires) {
@@ -176,30 +294,15 @@ export class Drops {
       const [x, y, z] = drop.position;
       if (!world.has_column(Math.floor(x / 16), Math.floor(z / 16))) continue;
       drop.velocity[1] = Math.max(-12, drop.velocity[1] - 18 / 30);
-      const state = world.sweep_body(
-        x,
-        y,
-        z,
-        drop.velocity[0] / 30,
-        drop.velocity[1] / 30,
-        drop.velocity[2] / 30,
-        0.125,
-        0.25,
+      this.move(
+        drop,
+        world,
+        drop.velocity.map((v) => v / 30),
       );
-      const position = [
-        Math.max(BOUNDS.minX + 0.125, Math.min(BOUNDS.maxX - 0.125, state[0])),
-        Math.max(0, Math.min(255.75, state[1])),
-        Math.max(BOUNDS.minZ + 0.125, Math.min(BOUNDS.maxZ - 0.125, state[2])),
-      ] as [number, number, number];
-      for (let i = 0; i < 3; i++)
-        if (state[i + 3] || state[i] !== position[i]) drop.velocity[i] = 0;
       drop.velocity[0] *= 0.9;
       drop.velocity[2] *= 0.9;
-      if (position.some((n, i) => Math.abs(n - drop.position[i]) > 0.00001)) {
-        drop.position = position;
-        drop.revision++;
-      }
     }
+    this.settlePairs(world, tick);
   }
   /** Immutable public replicas, reused across viewers until this body's revision
    * changes. Query arrays remain caller-owned; private physics/pickup data never leave.
@@ -250,7 +353,7 @@ export class Drops {
   }
   eligible(id: string, actor: string, tick: number): boolean {
     const drop = this.values.get(id);
-    return !!drop && tick >= drop.pickupAt && (drop.owner !== actor || tick >= drop.ownerPickupAt);
+    return !!drop && tick >= drop.pickupAt && drop.owner !== actor;
   }
   take(id: string, count: number): void {
     const drop = this.values.get(id);

@@ -1,4 +1,5 @@
 import { isInputFrame } from './input.ts';
+import type { Stack } from './content.ts';
 import type { InputFrame } from './input.ts';
 import { ENVIRONMENT_VERSION } from './environment.ts';
 import { isInventoryCommand, isInventoryView, validStack } from './inventory.ts';
@@ -15,7 +16,7 @@ import { isLifecycleView } from './lifecycle.ts';
 import type { LifecycleView } from './lifecycle.ts';
 import { BOUNDS } from './world-bounds.ts';
 export { BOUNDS } from './world-bounds.ts';
-export const PROTOCOL = 14;
+export const PROTOCOL = 15;
 export const GENERATOR_VERSION = 2;
 export const MAX_CONTROL_BYTES = 16384;
 export const STREAM_RADIUS = 3;
@@ -143,6 +144,7 @@ export type ServerMessage =
   | { type: 'actor_removed'; id: string }
   | { type: 'unload'; x: number; z: number; subscription: number }
   | { type: 'inventory'; epoch: number; view: InventoryView }
+  | { type: 'pickup'; epoch: number; stack: Stack }
   | { type: 'vitals'; epoch: number; view: VitalsView }
   | ({ type: 'hit' } & HitEvent)
   | { type: 'explosives'; reset: boolean; upsert: ExplosiveView[]; removed: string[] }
@@ -520,6 +522,10 @@ export function parseServerMessage(text: string): ServerMessage | null {
           : cell(v.target) &&
             integer(v.total, 1, 30 * 3600) &&
             integer(v.elapsed, 0, v.total as number))
+        ? (v as ServerMessage)
+        : null;
+    case 'pickup':
+      return exact(v, ['type', 'epoch', 'stack']) && integer(v.epoch, 1) && validStack(v.stack)
         ? (v as ServerMessage)
         : null;
     case 'drops': {

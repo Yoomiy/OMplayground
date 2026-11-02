@@ -81,7 +81,10 @@ test('chain ignition creates a separate short fuse; revoking explosion permissio
     const child = f.room.explosives.nearby(f.state(), 48);
     assert.equal(child.length, 1);
     assert.equal(child[0].remaining, 30);
-    const drops = f.room.drops.size;
+    const countLoot = () =>
+      f.room.drops.nearby(f.state(), 128).reduce((n, d) => n + d.stack.count, 0) +
+      f.room.inventories.view('a').bag.reduce((n, s) => n + (s?.count ?? 0), 0);
+    const drops = countLoot();
     f.player().capabilities.explosives = false;
     f.tick(29);
     assert.equal(events(f).length, 1);
@@ -90,7 +93,7 @@ test('chain ignition creates a separate short fuse; revoking explosion permissio
     assert.equal(events(f)[1].cancelled, true);
     assert.equal(events(f)[1].removed, 0);
     assert.deepEqual(events(f)[1].columns, []);
-    assert.equal(f.room.drops.size, drops);
+    assert.equal(countLoot(), drops);
     assert.equal(f.room.explosives.size, 0);
   } finally {
     f.room.dispose();

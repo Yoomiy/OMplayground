@@ -206,7 +206,14 @@ test('melee death drops personal state once and the same connection respawns onl
     assert.ok(f.player('b').vitals.view().protection > 0);
     assert.equal(f.player('b').vitals.view().health, 20);
     assert.ok(f.room.inventories.view('b').bag.every((stack) => !stack));
-    assert.equal(f.room.drops.size, 2);
+    assert.equal(f.room.drops.size, 0);
+    assert.equal(
+      f.room.inventories
+        .view('a')
+        .bag.filter((s) => s?.itemType === 'stick')
+        .reduce((n, s) => n + s!.count, 0),
+      3,
+    );
     assert.ok(
       f.events
         .get('a')!

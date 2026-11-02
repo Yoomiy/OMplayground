@@ -1,3 +1,4 @@
+import { ITEM_LABELS } from './content-labels.ts';
 import { engine, loadEngine, content, identity, supportProblem } from './engine.ts';
 import { TerrainRenderer } from '../render/terrain.ts';
 import { EnginePool } from '../world/worker-pool.ts';
@@ -519,6 +520,15 @@ export async function mountVoxel(
     }
     if (event.type === 'vitals') {
       if (prediction && event.epoch === prediction.currentEpoch) publish({ vitals: event.view });
+      return;
+    }
+    if (event.type === 'pickup') {
+      if (!prediction || event.epoch !== prediction.currentEpoch) return;
+      const item = content.items.find((item) => item.itemType === event.stack.itemType);
+      if (!item || !validStack(event.stack, new Map([[item.itemType, item]]))) return;
+      audio.pickup();
+      noticeUntil = performance.now() + 1800;
+      publish({ message: `+${event.stack.count} ${ITEM_LABELS[item.itemType] ?? item.itemType}` });
       return;
     }
     if (event.type === 'drops') {
