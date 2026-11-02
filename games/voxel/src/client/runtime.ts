@@ -7,6 +7,7 @@ import { creativePalette } from './palette.ts';
 import { cameraView, MAX_CAMERA_DISTANCE } from './camera.ts';
 import type { CameraView } from './camera.ts';
 import { RemoteActors } from './interpolation.ts';
+import { selectAvatar } from '../shared/avatars.ts';
 import { appearanceMatchesContent } from '../shared/appearance.ts';
 import { WorldClock } from './world-clock.ts';
 import { WorldAudio } from './world-audio.ts';
@@ -221,6 +222,7 @@ export async function mountVoxel(
     focused = false,
     baselineReceived = false,
     actorId = '',
+    avatarId = 0,
     worldId = '',
     yaw = 0,
     pitch = 0,
@@ -598,6 +600,7 @@ export async function mountVoxel(
         return;
       }
       actorId = event.actorId;
+      avatarId = event.avatar ?? selectAvatar(actorId);
       if (event.mode !== hud.mode) creativeBagHotbar = false;
       publish({
         mode: event.mode,
@@ -1349,6 +1352,7 @@ export async function mountVoxel(
         camera.distance > 0.8 && hud.role === 'participant' && phase === 'playing'
           ? {
               id: actorId,
+              avatar: avatarId,
               position,
               yaw,
               pitch,
@@ -1372,6 +1376,7 @@ export async function mountVoxel(
       const submitted = renderer.gpuStats.submitted;
       renderer.frame(position, yaw, pitch, remotes.frame(now), now, environment, openSky, {
         eye: camera.eye,
+        avatar: avatarId,
         self,
         state: hud.selected,
         speed: state ? Math.hypot(state[3], state[5]) : 0,
@@ -1925,6 +1930,7 @@ export async function mountVoxel(
         environment: { ...environment, openSky },
         atmosphere: renderer.atmosphere,
         avatars: renderer.actors,
+        avatar: avatarId,
         renderOrigin: { x: renderer.origin.x, z: renderer.origin.z },
         camera: { ...camera, requested: hud.cameraDistance },
         graphics,

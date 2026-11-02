@@ -90,10 +90,11 @@ export function roomFixture(
     );
     room.receive(id, { type: 'focus', epoch: baseline(id).epoch, active: true }, now);
   };
-  const join = (id = 'a', role: 'participant' | 'observer' = 'participant') => {
+  const join = (id = 'a', role: 'participant' | 'observer' = 'participant', avatar?: number) => {
     room.join(
       {
         id,
+        ...(avatar === undefined ? {} : { avatar }),
         role,
         capabilities: {
           build: role === 'participant',

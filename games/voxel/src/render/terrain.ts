@@ -26,18 +26,23 @@ const vertex =
   unpack +
   `
 uniform mat4 modelMatrix,modelViewMatrix,projectionMatrix; uniform vec3 uWorldOrigin;
-out vec2 vUV; out vec3 vNormal; out vec3 vWorld; out vec4 vLight; flat out uint vLayer; flat out uint vFlags;
-void main(){vec3 origin=modelMatrix[3].xyz+uWorldOrigin; Vtx v=unpackVertex(origin);vec4 view=modelViewMatrix*vec4(v.pos,1.0);gl_Position=projectionMatrix*view;vUV=v.uv;vNormal=v.normal;vWorld=origin+v.pos;vLight=vec4(v.sky,v.blk,v.ao,v.tint);vLayer=v.layer;vFlags=(v.normalIdx>=6u?1u:0u)|(v.fine?4u:0u);}`;
+out vec2 vUV; out vec3 vNormal; out vec3 vTangent,vBitangent; out vec3 vWorld; out vec4 vLight; flat out uint vLayer; flat out uint vFlags;
+void main(){vec3 origin=modelMatrix[3].xyz+uWorldOrigin; Vtx v=unpackVertex(origin);vec4 view=modelViewMatrix*vec4(v.pos,1.0);gl_Position=projectionMatrix*view;vUV=v.uv;vNormal=v.normal;vTangent=v.tangent;vBitangent=v.bitangent;vWorld=origin+v.pos;vLight=vec4(v.sky,v.blk,v.ao,v.tint);vLayer=v.layer;vFlags=(v.normalIdx>=6u?1u:0u)|(v.fine?4u:0u);}`;
 const fragment =
   precision +
   `
 uniform sampler2DArray uAlbedo,uMaterial;uniform sampler2D uBiome;uniform vec3 uCamera,uSky,uSun;uniform float uFogEnd,uDaylight,uVision;
-in vec2 vUV;in vec3 vNormal;in vec3 vWorld;in vec4 vLight;flat in uint vLayer;flat in uint vFlags;out vec4 fragColor;
+in vec2 vUV;in vec3 vNormal;in vec3 vTangent,vBitangent;in vec3 vWorld;in vec4 vLight;flat in uint vLayer;flat in uint vFlags;out vec4 fragColor;
 void main(){vec2 dx=dFdx(vUV),dy=dFdy(vUV);vec2 uv=vec2(fract(vUV.x),1.0-fract(vUV.y));
-if((vFlags&4u)!=0u){vec2 c=clamp(vUV,vec2(.001),vec2(.999));uv=vec2(c.x,1.-c.y);}
+if((vFlags&4u)!=0u){
+float lod=log2(max(max(length(dx),length(dy))*16.,1.));
+float h=min(.5,.5*max(exp2(ceil(lod))/16.,max(max(abs(dx.x),abs(dy.x)),max(abs(dx.y),abs(dy.y)))));
+vec2 c=clamp(vUV,vec2(h),vec2(1.-h));uv=vec2(c.x,1.-c.y);}
+dx.y=-dx.y;dy.y=-dy.y;
 vec4 albedo=textureGrad(uAlbedo,vec3(uv,float(vLayer)),dx,dy);vec4 material=textureGrad(uMaterial,vec3(uv,float(vLayer)),dx,dy);
 #ifdef CUTOUT
-if(albedo.a<.45)discard;
+float lod=log2(max(max(length(dx),length(dy))*16.,1.));
+if(albedo.a*(1.+lod*.22)<.45)discard;
 #endif
 vec3 base=albedo.rgb;if(vLight.w>.5){vec3 tint=texture(uBiome,vWorld.xz/1024.).rgb;
 #ifdef CUTOUT
@@ -46,10 +51,21 @@ base*=tint;
 base=mix(base,base*tint,1.-albedo.a);
 #endif
 }
-float ao=.38+.62*vLight.z*vLight.z;float sun=max(dot(normalize(vNormal),uSun),0.);
+vec3 Ng=normalize(vNormal),T=normalize(vTangent),B=normalize(vBitangent);
+bool plant=(vFlags&1u)!=0u;
+#ifdef CUTOUT
+if(!gl_FrontFacing&&!plant){Ng=-Ng;T=-T;}
+#endif
+vec3 N=Ng;
+if(!plant){vec2 n=material.rg*2.-1.;N=normalize(T*n.x+B*n.y+Ng*sqrt(max(0.,1.-dot(n,n))));}
+float ao=.38+.62*vLight.z*vLight.z;float sun=max(dot(N,uSun),0.);
 vec3 light=(vec3(.3,.4,.58)*vLight.x*vLight.x+vec3(.8,.72,.55)*sun*vLight.x)*uDaylight+vec3(1.,.62,.28)*pow(max(vLight.y,0.),2.2)*1.8+vec3(.028);
 light=mix(light,max(light,vec3(.85)),uVision);
-vec3 color=base*light*ao+base*material.a*2.;color=color/(color+vec3(1.));color=pow(color,vec3(1./2.2));
+vec3 V=normalize(uCamera-vWorld),H=normalize(uSun+V);
+float smoothness=material.b;
+float spec=plant?0.:pow(max(dot(N,H),0.),mix(12.,96.,smoothness))*smoothness*smoothness*.3;
+spec*=max(dot(Ng,uSun),0.)*vLight.x*uDaylight*(1.-smoothstep(32.,80.,length(uCamera-vWorld)));
+vec3 color=base*light*ao+vec3(1.,.91,.76)*spec*ao+base*material.a*2.;color=color/(color+vec3(1.));color=pow(color,vec3(1./2.2));
 float fog=smoothstep(uFogEnd*.55,uFogEnd,length(vWorld.xz-uCamera.xz));color=mix(color,uSky,fog);
 #ifdef TRANSLUCENT
 fragColor=vec4(color,.65);
@@ -210,20 +226,23 @@ export class TerrainRenderer {
     this.gl.setClearColor(0x97c2e0);
     this.gl.outputColorSpace = THREE.LinearSRGBColorSpace;
     const size = layers * 16 * 16 * 4;
+    const albedoPixels = pixels.slice(0, size),
+      materialPixels = pixels.slice(size, size * 2);
     const texture = (data: Uint8Array, srgb: boolean) => {
       const t = new THREE.DataArrayTexture(data, 16, 16, layers);
       t.format = THREE.RGBAFormat;
       t.magFilter = THREE.NearestFilter;
       t.minFilter = THREE.LinearMipmapLinearFilter;
       t.generateMipmaps = true;
+      t.anisotropy = Math.min(8, this.gl.capabilities.getMaxAnisotropy());
       t.wrapS = t.wrapT = THREE.RepeatWrapping;
       t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
       t.needsUpdate = true;
       this.textures.push(t);
       return t;
     };
-    const albedo = texture(pixels.slice(0, size), true),
-      material = texture(pixels.slice(size, size * 2), false);
+    const albedo = texture(albedoPixels, true),
+      material = texture(materialPixels, false);
     this.icons = new ItemIcons(this.gl, blocks, items, albedo, material);
     this.scene.add(this.cracks.group);
     const lookBytes = new Uint8Array(1024 * 4);
@@ -409,6 +428,7 @@ export class TerrainRenderer {
     openSky: boolean,
     view: {
       state: number;
+      avatar?: number;
       speed: number;
       active: boolean;
       itemType: string | null;
@@ -500,6 +520,7 @@ export class TerrainRenderer {
         itemLight,
         view.active && !self,
         view.itemType,
+        view.avatar,
       );
       this.stats.drawCalls = calls + (drawn ? this.gl.info.render.calls : 0);
       this.stats.triangles = triangles + (drawn ? this.gl.info.render.triangles : 0);

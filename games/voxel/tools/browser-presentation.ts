@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
+import { Vector3 } from 'three';
 import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { avatarJoint } from '../src/render/avatar-model.ts';
 import { randomUUID } from 'node:crypto';
 import { createBuiltHarness, launchSoftwareBrowser } from './browser-harness.ts';
 const { gateway, origin, build, content } = await createBuiltHarness();
@@ -49,6 +51,11 @@ try {
     await page.touchscreen.tap(resume.x + resume.width / 2, resume.y + resume.height / 2);
     await page.waitForFunction(() => (window as any).voxel.debug().body?.frozen === 0);
     await page.waitForFunction(() => (window as any).voxel.debug().audio.state === 'running');
+    // Creative inventories start empty; choose a held block before checking peer equipment.
+    await command(page, {
+      type: 'select',
+      state: content.blocks.findIndex((block: { name: string }) => block.name === 'stone'),
+    });
     await command(page, { type: 'flight' });
     await page.waitForFunction(() => (window as any).voxel.debug().body?.flying === 1);
     await command(page, { ...controls, jump: true });
@@ -57,8 +64,9 @@ try {
   for (const page of pages) await command(page, controls);
   console.log('Crossing a chunk origin using ordinary authorized flight controls');
   const before = await debug(a);
+  const crossing = Math.floor(before.position[0] / 16) * 16 - 1;
   await command(a, { ...controls, x: -1 });
-  await a.waitForFunction(() => (window as any).voxel.debug().position[0] < 45, null, {
+  await a.waitForFunction((x) => (window as any).voxel.debug().position[0] < x, crossing, {
     timeout: 10000,
   });
   await command(a, controls);
@@ -120,19 +128,20 @@ try {
     (sample: any) => sample.id === peer.actorId && sample.slot === 'held',
   );
   assert.ok(renderedGear);
+  const grip = avatarJoint(peer.actorId, 'gripR', peer.avatar);
   for (const [axis, expected] of [
     peer.position[0] +
-      0.36 * Math.cos(peer.view.yaw) +
-      0.12 * Math.sin(peer.view.yaw) -
+      grip.x * Math.cos(peer.view.yaw) -
+      grip.z * Math.sin(peer.view.yaw) -
       after.renderOrigin.x,
-    peer.position[1] + 0.84,
+    peer.position[1] + grip.y,
     peer.position[2] +
-      0.36 * Math.sin(peer.view.yaw) -
-      0.12 * Math.cos(peer.view.yaw) -
+      grip.x * Math.sin(peer.view.yaw) +
+      grip.z * Math.cos(peer.view.yaw) -
       after.renderOrigin.z,
   ].entries())
     assert.ok(
-      Math.abs(renderedGear.position[axis] - expected) < 0.06,
+      Math.abs((renderedGear.grip ?? renderedGear.position)[axis] - expected) < 0.06,
       `held item origin axis ${axis}`,
     );
   for (let axis = 0; axis < 3; axis++)
@@ -150,10 +159,13 @@ try {
     ) < 0.03,
     'pause must retain the consumed avatar look direction',
   );
+  const head = avatarJoint(peer.actorId, 'head', peer.avatar);
+  head.add(new Vector3(0, 6 / 26, 0).applyAxisAngle(new Vector3(1, 0, 0), peer.view.pitch));
+  head.applyAxisAngle(new Vector3(0, 1, 0), -peer.view.yaw);
   for (const [index, expected] of [
-    peer.position[0] - after.renderOrigin.x,
-    peer.position[1] + 1.58,
-    peer.position[2] - after.renderOrigin.z,
+    peer.position[0] + head.x - after.renderOrigin.x,
+    peer.position[1] + head.y,
+    peer.position[2] + head.z - after.renderOrigin.z,
   ].entries())
     assert.ok(
       Math.abs(rendered.head[index] - expected) < 0.06,

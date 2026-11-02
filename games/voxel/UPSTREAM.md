@@ -11,6 +11,11 @@ License: MIT, copyright 2026 Patrick Blais. The original notice is retained in
 
 | Upstream path | Local path | Use |
 | --- | --- | --- |
+| `src/platform/{avatar.ts,character/{look,build,voxels}.ts}` | `src/render/upstream/blockyard/` | Original avatar presets, appearance mapping, voxel character geometry and palette atlases; only module specifiers adapted. |
+| `src/games/bedwars/art/{index,sprites}.ts` | Generated `src/render/upstream/blockyard/item-pixels.ts` | Seven exact 16×16 RGBA atlas regions, extracted without resampling or recolouring. |
+| `src/platform/client-kits/firstperson/poses.ts::{armChain,attachedRest,STYLES}`, `figures/held.ts::inFist` | Adapted in `src/render/{sprite-hold,held-block,avatar-equipment}.ts` | Sprite grip-pixel anchoring, resting arm/item transforms, scales and remote hand grip. Tests use values evaluated from unmodified upstream code. |
+| `src/platform/render/entities.ts::extrudeSprite` | `src/render/upstream/blockyard/sprite-geometry.ts` | Original one-pixel-thick sprite geometry for hands, drops and remote held items; atlas interface adapted. |
+| `LICENSE` | `public/blockyard-LICENSE.txt` | Original MIT notice served in development and included in client builds. |
 | `src/platform/host/game.ts::moveInputs`, `src/platform/client/{predict,interp}.ts` | Adapted in `src/sim/input-queue.ts`, `src/client/{prediction,interpolation,runtime}.ts` | Numbered-duration movement replay, 40 ms input priming, 50 ms cushion, 5% catch-up, correction easing and monotonic two-tick remote playback. |
 | `engine/src/*.rs` | `engine/src/*.rs` | Generation/noise, shapes, collision/raycasting, lighting/meshing, culling, procedural textures and their tests. |
 | `engine/Cargo.toml`, `engine/Cargo.lock` | Same paths | Locked Rust/Wasm build. |
@@ -86,16 +91,28 @@ names and UV conventions derive from the same engine. New content uses those
 procedural layers. This is the complete imported-asset inventory at this stage;
 record the source and redistribution terms here before adding other assets.
 
-The articulated instanced avatars, generated face texture, held-block primitive
-geometry, sun/moon/cloud/star/rain geometry and edit particles are authored locally
-in `src/render`. Held blocks borrow the same procedural terrain texture arrays.
-Held/dropped pickaxes, axes, shovels, sticks, boots, apples, shields, powder,
-firestarters, talismans and medallions are local primitive models
-using those arrays. Dropped items use growable per-item instance batches and
-camera-relative coordinates; no downloaded item models or icon textures are used.
+The player figures now use the original upstream micro-voxel character generator and eight
+curated guest presets, with local instanced rendering and grouped-joint animation. A stable
+hash of player identity selects a preset within explicit boy/girl pools, using the school
+server's verified existing profile gender. The selected ID is replicated to all clients;
+guests/admins without gender use the full pool. Presets can repeat. This does not import
+the upstream avatar editor or account/profile services.
+Geometry, palettes, faces, hair and outfits come from upstream, rather than local replacement art.
+`tools/import-blockyard-art.mjs /path/to/blockyard` reproduces the imported source and exact
+sprite regions from the pinned revision, preserving its copyright and MIT notice.
+
+Exact upstream item sprites are used for iron/gold ingots, diamond, wooden/iron/diamond
+pickaxes and the iron vest (upstream `iron_armor`). Items without an exact matching upstream
+sprite retain their existing model thumbnails. A stone pickaxe variant uses the original
+upstream painter with a local stone head palette; its silhouette and wooden handle are unchanged.
+Sprite-backed held/dropped items use the original upstream extrusion routine and sprite pixels;
+worn armor and non-sprite items keep local primitive models using the terrain arrays. The local experimental sprite/skin painters and terrain-art finishing
+from the first art pass were removed; terrain pixels again come directly from the existing
+engine texture generator. Material lighting and filtering improvements remain.
+
 `src/client/world-audio.ts` synthesizes ambience, footsteps and material edit
 sounds with Web Audio oscillators and locally generated noise. No recordings,
-third-party avatar models, fonts or new external art assets are bundled.
+fonts or other unlisted art assets are bundled. The imported avatar and item source is listed above.
 
 ## Toolchain
 

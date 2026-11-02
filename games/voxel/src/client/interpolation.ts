@@ -54,6 +54,7 @@ export class RemoteActors {
       const angle = Math.atan2(Math.sin(b.yaw - a.yaw), Math.cos(b.yaw - a.yaw));
       out.push({
         id,
+        avatar: actor.latest.avatar,
         position,
         yaw: a.yaw + angle * t,
         pitch: a.pitch + (b.pitch - a.pitch) * t,

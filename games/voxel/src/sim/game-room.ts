@@ -53,6 +53,7 @@ import type {
 } from '../shared/protocol.ts';
 import type { ChunkFrame } from '../shared/chunk-wire.ts';
 import type { ContentManifest } from '../shared/content.ts';
+import { isAvatarId, selectAvatar } from '../shared/avatars.ts';
 import { sameAppearance } from '../shared/appearance.ts';
 import { blockDrops } from '../shared/loot.ts';
 export type Capabilities = {
@@ -64,6 +65,7 @@ export type Capabilities = {
 };
 export type AdmittedActor = {
   id: string;
+  avatar?: number;
   role: 'participant' | 'observer';
   capabilities: Capabilities;
 };
@@ -87,6 +89,7 @@ type RoomRecovery = {
 };
 type Actor = {
   id: string;
+  avatar: number;
   role: 'participant' | 'observer';
   capabilities: Capabilities;
   connection: string | null;
@@ -424,6 +427,7 @@ export class GameRoom {
     const dead = admitted.role === 'participant' && vitals.dead;
     const actor: Actor = {
       ...admitted,
+      avatar: isAvatarId(admitted.avatar) ? admitted.avatar : selectAvatar(admitted.id),
       connection,
       slot,
       epoch,
@@ -467,6 +471,7 @@ export class GameRoom {
     this.send(actor, {
       type: 'welcome',
       actorId: actor.id,
+      avatar: actor.avatar,
       epoch,
       worldId: this.worldId,
       seed: this.seed,
@@ -1975,6 +1980,7 @@ export class GameRoom {
           other.id,
           {
             id: other.id,
+            avatar: other.avatar,
             state: selfStates
               .get(other.id)!
               .map((value, axis, body) =>
@@ -2024,6 +2030,7 @@ export class GameRoom {
             if (delta === undefined) {
               const next = {
                 id: other.id,
+                ...(actor.avatar !== old.avatar ? { avatar: actor.avatar } : {}),
                 ...(state.some((v, i) => v !== old.state[i]) ? { state } : {}),
                 ...(actor.yaw !== old.yaw ? { yaw: actor.yaw } : {}),
                 ...(actor.pitch !== old.pitch ? { pitch: actor.pitch } : {}),

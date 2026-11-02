@@ -13,13 +13,24 @@ export class DropRenderer {
   private euler = new THREE.Euler();
   private disposed = false;
   readonly stats = { visible: 0, kinds: 0 };
+  private scene: THREE.Scene;
+  private blocks: readonly EngineBlock[];
+  private items: readonly ItemDefinition[];
+  private albedo: THREE.Texture;
+  private surface: THREE.Texture;
   constructor(
-    private scene: THREE.Scene,
-    private blocks: readonly EngineBlock[],
-    private items: readonly ItemDefinition[],
-    private albedo: THREE.Texture,
-    private surface: THREE.Texture,
-  ) {}
+    scene: THREE.Scene,
+    blocks: readonly EngineBlock[],
+    items: readonly ItemDefinition[],
+    albedo: THREE.Texture,
+    surface: THREE.Texture,
+  ) {
+    this.scene = scene;
+    this.blocks = blocks;
+    this.items = items;
+    this.albedo = albedo;
+    this.surface = surface;
+  }
   update(
     drops: readonly DropView[],
     origin: THREE.Vector3,

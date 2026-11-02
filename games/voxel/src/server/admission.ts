@@ -1,3 +1,4 @@
+import { isAvatarId } from '../shared/avatars.ts';
 import type { AdmittedActor } from '../sim/game-room.ts';
 export type AdmissionRequest = Readonly<{
   room: string;
@@ -42,7 +43,9 @@ export function readAuthorization(value: unknown, now: number, expectedId?: stri
     ('membershipRevision' in value &&
       (!Number.isSafeInteger(value.membershipRevision) ||
         (value.membershipRevision as number) < 0)) ||
-    !object(value.actor, ['id', 'role', 'capabilities']) ||
+    (!object(value.actor, ['id', 'role', 'capabilities']) &&
+      !object(value.actor, ['id', 'role', 'capabilities', 'avatar'])) ||
+    ('avatar' in value.actor && !isAvatarId(value.actor.avatar)) ||
     typeof value.actor.id !== 'string' ||
     !value.actor.id.length ||
     value.actor.id.length > 128 ||
@@ -60,6 +63,7 @@ export function readAuthorization(value: unknown, now: number, expectedId?: stri
   return Object.freeze({
     actor: Object.freeze({
       id: value.actor.id,
+      ...(value.actor.avatar === undefined ? {} : { avatar: value.actor.avatar }),
       role: value.actor.role,
       capabilities: Object.freeze({
         build: value.actor.capabilities.build,

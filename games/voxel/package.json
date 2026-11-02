@@ -42,6 +42,7 @@
     "test:touch:browser": "node tools/browser-touch.ts",
     "test:environment:browser": "node tools/browser-environment.ts",
     "test:presentation:browser": "node tools/browser-presentation.ts",
+    "test:art:browser": "node tools/browser-pixel-art.ts",
     "test:memory:probe": "node tools/check-browser-memory-probe.ts",
     "test:memory:browser": "node tools/browser-travel-memory.ts",
     "check:memory:browser": "node tools/check-travel-memory.ts",

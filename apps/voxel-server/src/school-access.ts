@@ -1,3 +1,4 @@
+import { selectAvatar } from "../../../games/voxel/src/shared/avatars.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isWithinEffectiveRecess } from "@playground/game-logic/dist/recessSchedule.js";
 import type {
@@ -538,6 +539,7 @@ export class SchoolAccess {
     const role = observing ? "observer" : "participant";
     const actor = Object.freeze({
       id: subject.id,
+      avatar: selectAvatar(subject.id, subject.gender),
       role,
       capabilities: Object.freeze({
         build: !observing,
