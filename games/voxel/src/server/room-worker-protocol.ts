@@ -86,6 +86,7 @@ export type FromRoom =
     }
   | {
       type: 'close';
+      cause?: 'authorization_expired';
       connection: string;
       reason: 'REPLACED' | 'RECOVERING' | 'UNAUTHORIZED' | 'SESSION_ENDED';
     }
@@ -101,4 +102,4 @@ export type FromRoom =
       windowEndedAtMs: number;
       timings: RoomTimings;
     }
-  | { type: 'fault' };
+  | { type: 'fault'; reason?: string; failureType?: string };

@@ -42,7 +42,12 @@ test('a clean source checkout restores matching browser/server/Wasm artifacts wi
       readFileSync(new URL('test-results/release-verification.json', f.root), 'utf8'),
     );
     assert.equal(proof.result, 'PASS');
-    assert.equal(proof.matchedReleaseFiles, 12);
+    assert.equal(
+      proof.matchedReleaseFiles,
+      f.manifest.files.filter(
+        (row) => row.path.startsWith('dist-client/') || row.path.startsWith('dist-server/'),
+      ).length,
+    );
   } finally {
     rmSync(f.dir, { recursive: true, force: true });
   }
@@ -90,7 +95,12 @@ test('a Node process without native TypeScript restores a clean checkout through
       readFileSync(new URL('test-results/release-verification.json', f.root), 'utf8'),
     );
     assert.equal(proof.result, 'PASS');
-    assert.equal(proof.matchedReleaseFiles, 12);
+    assert.equal(
+      proof.matchedReleaseFiles,
+      f.manifest.files.filter(
+        (row) => row.path.startsWith('dist-client/') || row.path.startsWith('dist-server/'),
+      ).length,
+    );
   } finally {
     rmSync(f.dir, { recursive: true, force: true });
   }

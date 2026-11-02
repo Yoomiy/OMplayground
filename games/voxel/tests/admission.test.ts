@@ -169,3 +169,39 @@ test(
     assert.ok(Date.now() < current.expiresAt);
   },
 );
+
+test(
+  'expiry diagnostics distinguish provider retry failures from an in-flight renewal and retain proof headroom',
+  { timeout: 3000 },
+  async () => {
+    const actor = {
+      id: 'kid',
+      role: 'participant' as const,
+      capabilities: { build: true, fly: true, observe: false, combat: true, explosives: true },
+    };
+    const current = { actor, expiresAt: Date.now() + 150 };
+    let attempts = 0;
+    const diagnostic = await new Promise<Record<string, string | number | boolean>>((resolve) => {
+      new ConnectionAuthorization(
+        {
+          ...current,
+          revalidate: async () => {
+            attempts++;
+            throw new DOMException('https://provider.invalid?token=private', 'TimeoutError');
+          },
+        },
+        current,
+        () => assert.fail('failed renewal cannot update the deadline'),
+        (_reason, detail) => resolve(detail),
+      );
+    });
+    assert.equal(diagnostic.authorizationFailure, 'expired');
+    assert.equal(diagnostic.renewalAttempts, attempts);
+    assert.equal(diagnostic.renewalFailures, attempts);
+    assert.equal(diagnostic.lastRenewalFailure, 'TimeoutError');
+    assert.equal(diagnostic.renewalInFlight, false);
+    assert.ok(Number(diagnostic.proofRemainingMs) <= 2);
+    assert.ok(Number(diagnostic.proofLifetimeMs) > 0);
+    assert.doesNotMatch(JSON.stringify(diagnostic), /provider.invalid|private/);
+  },
+);

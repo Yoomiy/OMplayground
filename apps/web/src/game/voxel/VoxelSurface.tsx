@@ -1,3 +1,4 @@
+import type { DiagnosticDetail } from "@playground/voxel-runtime";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { HudState, VoxelRuntime } from "@playground/voxel-runtime";
 import type { LifecycleAction, VoxelApi, StaffCommand } from "./session-api";
@@ -29,6 +30,7 @@ export type VoxelSurfaceProps = {
     operation: string,
     code: string,
     buildId: string | null,
+    detail?: DiagnosticDetail,
   ) => void;
   onRuntime?: (runtime: VoxelRuntime) => void | (() => void);
 };
@@ -186,11 +188,12 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
             throw error;
           }
         },
-        onDiagnostic: (operation) =>
+        onDiagnostic: (operation, _reason, detail) =>
           callbacks.current.onDiagnostic?.(
             operation,
-            "RUNTIME_FAILURE",
+            detail?.code ?? "RUNTIME_FAILURE",
             module.identity.buildId,
+            detail,
           ),
       });
       if (abort.signal.aborted) {

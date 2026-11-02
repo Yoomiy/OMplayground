@@ -1,3 +1,4 @@
+import type { DiagnosticDetail } from "@playground/voxel-runtime";
 import {
   readModerationAction,
   readModerationReceipt,
@@ -419,6 +420,7 @@ export function createVoxelApi(options: {
       code: string,
       buildId: string | null,
       signal?: AbortSignal,
+      detail?: DiagnosticDetail,
     ) {
       await post(
         "/api/voxel/diagnostics",
@@ -428,6 +430,7 @@ export function createVoxelApi(options: {
           code,
           buildId,
           correlationId: crypto.randomUUID(),
+          ...(detail ? { reason: detail.reason, fatal: detail.fatal } : {}),
         },
         signal,
       );

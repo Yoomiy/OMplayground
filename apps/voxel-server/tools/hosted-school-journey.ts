@@ -150,6 +150,8 @@ async function start() {
     },
     request: scopedFetch,
     logger: {
+      debug() {},
+      warn() {},
       info() {},
       error(v: { context?: Record<string, unknown> }) {
         const e = v.context?.event;

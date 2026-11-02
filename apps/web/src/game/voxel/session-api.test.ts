@@ -372,3 +372,30 @@ describe("staff moderation service contract", () => {
     expect((await api.moderate("unban", target, requestId)).revision).toBe(0);
   });
 });
+
+it("reports bounded runtime failure details alongside the correlation ID and build", async () => {
+  let payload: Record<string, unknown> = {};
+  const api = createVoxelApi({
+    room,
+    serverUrl: "https://voxel.example",
+    getToken: async () => "fixture",
+    request: async (_input, init) => {
+      payload = JSON.parse(String(init?.body));
+      return response({ ok: true });
+    },
+  });
+  await api.report("prediction", "RUNTIME_FAILURE", buildId, undefined, {
+    reason: "input_acknowledgement_stalled",
+    fatal: true,
+  });
+  expect(payload).toMatchObject({
+    room,
+    operation: "prediction",
+    code: "RUNTIME_FAILURE",
+    buildId,
+    reason: "input_acknowledgement_stalled",
+    fatal: true,
+  });
+  expect(payload.correlationId).toMatch(/^[a-f0-9-]{36}$/);
+  expect(payload).not.toHaveProperty("token");
+});

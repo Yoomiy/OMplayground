@@ -2,6 +2,7 @@ import { createLogger } from "@playground/observability/dist/logger.js";
 import {
   createSupabaseServerClient,
   SupabasePersistence,
+  PersistenceError,
 } from "./supabase-persistence.ts";
 import { SupabaseSessions } from "./supabase-sessions.ts";
 import { SupabaseControls, schoolControl } from "./school-control.ts";
@@ -24,10 +25,9 @@ import {
 } from "./school-media.ts";
 import { VoiceSignaling } from "./voice-signaling.ts";
 import { schoolOperationsApi } from "./school-operations.ts";
-export type ServiceLogger = Pick<
-  ReturnType<typeof createLogger>,
-  "info" | "error"
->;
+import { createVoxelEventLogger } from "./service-events.ts";
+import type { ServiceLogger } from "./service-events.ts";
+export type { ServiceLogger } from "./service-events.ts";
 export function serviceConfig(
   env: Readonly<Record<string, string | undefined>>,
 ) {
@@ -103,26 +103,7 @@ export async function startVoxelService(
   ]);
   for (const status of readiness)
     if (status.status === "rejected") throw status.reason;
-  const event = (
-    name: string,
-    context: Record<string, string | number | boolean>,
-  ) => {
-    const failed =
-      name.endsWith("_FAILED") ||
-      name.endsWith("_REJECTED") ||
-      name.endsWith("_UNAVAILABLE");
-    const { correlationId, ...details } = context;
-    logger[failed ? "error" : "info"]({
-      ...(typeof correlationId === "string" ? { correlationId } : {}),
-      message: "Voxel service event",
-      protocol: "internal",
-      context: {
-        event: name,
-        status: failed ? "failed" : "success",
-        ...details,
-      },
-    });
-  };
+  const event = createVoxelEventLogger(logger);
   const credentials = voiceConfig(env),
     signal = new VoiceSignaling(
       credentials.endpoint,
@@ -142,7 +123,7 @@ export async function startVoxelService(
       allowedOrigins: config.origins,
       worldDefaults: { mode: "survival" },
       persistence: { objects: backend, metadata: backend },
-      ...schoolGatewayPolicy(access, sessions),
+      ...schoolGatewayPolicy(access, sessions, event),
       control: (req, body, res) =>
         body && typeof body === "object" && "command" in body
           ? schoolStaff(access, staff, event)(req, body, res)
@@ -194,7 +175,13 @@ export async function startVoxelService(
       .collectGarbage()
       .then(
         (result) => event("VOXEL_CLEANUP_COMPLETED", result),
-        () => event("VOXEL_CLEANUP_FAILED", {}),
+        (error) =>
+          event("VOXEL_CLEANUP_FAILED", {
+            reason: "cleanup_unavailable",
+            ...(error instanceof PersistenceError
+              ? { operation: error.operation, providerCode: error.providerCode }
+              : {}),
+          }),
       )
       .finally(() => (cleanup = null));
   }, 60000);
