@@ -1,3 +1,4 @@
+import type { DropCollisionWorld } from '../shared/drop-physics.ts';
 import * as THREE from 'three';
 import common from './shaders/common.glsl?raw';
 import unpack from './shaders/vertex_unpack.glsl?raw';
@@ -433,6 +434,7 @@ export class TerrainRenderer {
       active: boolean;
       itemType: string | null;
       drops: readonly DropView[];
+      dropCollision: DropCollisionWorld;
       explosives: readonly ExplosiveView[];
       vision: boolean;
       eye: readonly number[];
@@ -506,7 +508,13 @@ export class TerrainRenderer {
         itemLight,
       );
       this.effects.frame(now, this.origin, itemLight);
-      this.drops.update(view.drops, this.origin, environment.seconds, itemLight);
+      this.drops.update(
+        view.drops,
+        this.origin,
+        environment.seconds,
+        itemLight,
+        view.dropCollision,
+      );
       this.explosives.update(view.explosives, this.origin, itemLight);
       this.gl.render(this.scene, this.camera);
       const calls = this.gl.info.render.calls,

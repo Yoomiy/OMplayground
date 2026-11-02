@@ -1393,6 +1393,7 @@ export async function mountVoxel(
         active: focused && phase === 'playing' && hud.role === 'participant' && !fatalRecovery,
         itemType: usesBagHotbar() ? (hud.inventory?.bag[hud.selectedSlot]?.itemType ?? null) : null,
         drops: [...dropped.values()],
+        dropCollision: world,
         explosives: [...primed.values()],
         vision:
           hud.mode === 'survival' &&

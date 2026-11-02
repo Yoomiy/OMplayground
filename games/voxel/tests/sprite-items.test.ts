@@ -87,6 +87,12 @@ test('dropped sprites stay instanced, follow origin shifts, and release owned te
   const scene = new THREE.Scene(),
     albedo = new THREE.Texture(),
     surface = new THREE.Texture();
+  const collision = {
+    get_block: () => 0,
+    target_boxes: () => new Uint8Array(),
+    sweep_body: (x: number, y: number, z: number, dx: number, dy: number, dz: number) =>
+      new Float64Array([x + dx, y + dy, z + dz, 0, 0, 0]),
+  };
   const drops = new DropRenderer(scene, content.blocks, content.items, albedo, surface);
   const values = Array.from({ length: 129 }, (_, i) => ({
     id: `drop-${i}`,
@@ -94,7 +100,7 @@ test('dropped sprites stay instanced, follow origin shifts, and release owned te
     stack: { itemType: 'stone_pickaxe', count: 1 },
     position: [100 + i, 64, 0] as const,
   }));
-  drops.update(values, new THREE.Vector3(96, 0, 0), 0, 1);
+  drops.update(values, new THREE.Vector3(96, 0, 0), 0, 1, collision);
   const batch = scene.children[0] as THREE.InstancedMesh<
     THREE.BufferGeometry,
     THREE.RawShaderMaterial
@@ -110,7 +116,7 @@ test('dropped sprites stay instanced, follow origin shifts, and release owned te
     'dispose',
     () => textures++,
   );
-  drops.update(values.slice(0, 1), new THREE.Vector3(112, 0, 0), 0, 1);
+  drops.update(values.slice(0, 1), new THREE.Vector3(112, 0, 0), 0, 1, collision);
   assert.equal(textures, 1);
   const smaller = scene.children[0] as typeof batch;
   smaller.getMatrixAt(0, matrix);
@@ -119,7 +125,7 @@ test('dropped sprites stay instanced, follow origin shifts, and release owned te
     'dispose',
     () => textures++,
   );
-  drops.update([], new THREE.Vector3(), 0, 1);
+  drops.update([], new THREE.Vector3(), 0, 1, collision);
   assert.equal(textures, 2);
   assert.equal(scene.children.length, 0);
   drops.dispose();

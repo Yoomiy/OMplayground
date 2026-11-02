@@ -36,7 +36,7 @@ test('support removal drops an unfocused player, lands with damage, and respects
   }
 });
 
-test('scattered drops differ, merge within limits, separate incompatible bodies, and conserve stacks through restore', () => {
+test('scattered drops differ, merge within limits, allow incompatible overlap, and conserve stacks through restore', () => {
   const world = flatWorld();
   try {
     const drops = new Drops(content.manifest);
@@ -58,7 +58,7 @@ test('scattered drops differ, merge within limits, separate incompatible bodies,
     );
     assert.ok(entries.some((d) => d.stack.count === 64));
     assert.ok(entries.every((d) => d.stack.count <= 64));
-    assert.notDeepEqual(entries[0].position, entries[2].position);
+    assert.deepEqual(entries[0].position, entries[2].position);
     assert.deepEqual(
       Drops.fromCheckpoint(content.manifest, pair.checkpoint(30)).checkpoint(30),
       pair.checkpoint(30),

@@ -583,7 +583,7 @@ test('drop pickups obey solid occlusion and capacity; pause freezes expiry and s
     );
     f.store.set(x + 1, 64, z, 0);
     f.store.set(x + 1, 65, z, 0);
-    f.tick(12);
+    f.tick(18); // The embedded spawn is first pushed outside the wall, then attracted back.
     assert.equal(f.room.inventories.view('a').bag[35]?.count, 64);
     assert.equal(f.room.drops.nearby(p, 5)[0].stack.count, 4);
     f.room.setPaused(true, f.now);

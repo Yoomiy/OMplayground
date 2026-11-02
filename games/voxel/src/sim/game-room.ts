@@ -29,7 +29,14 @@ import { makeStack, sameStack } from '../shared/inventory.ts';
 import type { Slot } from '../shared/inventory.ts';
 import type { GameMode, MiningView, DropView } from '../shared/gameplay.ts';
 import type { LifecycleView, PauseReason } from '../shared/lifecycle.ts';
-import { DROP_RADIUS, PICKUP_RADIUS, MAGNET_RADIUS } from '../shared/gameplay.ts';
+import {
+  DROP_RADIUS,
+  PICKUP_RADIUS,
+  MAGNET_RADIUS,
+  DROP_HALF_WIDTH,
+  DROP_HEIGHT,
+  DROP_PICKUP_TICKS,
+} from '../shared/gameplay.ts';
 import { stepBoundedMovement, DEFAULT_MOVEMENT } from '../shared/movement.ts';
 import type { MovementModifiers } from '../shared/movement.ts';
 import { NEUTRAL } from '../shared/input.ts';
@@ -656,8 +663,8 @@ export class GameRoom {
                       Math.sin(yaw) * 0.65,
                       0,
                       -Math.cos(yaw) * 0.65,
-                      0.125,
-                      0.25,
+                      DROP_HALF_WIDTH,
+                      DROP_HEIGHT,
                     );
                     this.drops.add(stack, Array.from(spawn.subarray(0, 3)), this.tick, a.id, [
                       Math.sin(yaw) * 5.2,
@@ -856,7 +863,7 @@ export class GameRoom {
         this.advanceExplosions(now);
         this.store.require(this.positions());
         this.drops.step(this.store.world, this.tick);
-        if (this.tick % 3 === 0) {
+        if (this.tick % DROP_PICKUP_TICKS === 0) {
           this.pickups();
           this.dropSnapshots();
           this.explosiveSnapshots();
@@ -1191,7 +1198,7 @@ export class GameRoom {
     this.store.world.set_frozen(a.slot, true);
     const p = this.store.world.player_state(a.slot);
     this.inventories.drain(a.id, (stack) =>
-      this.drops.add(stack, [p[0], p[1] + 0.2, p[2]], this.tick, a.id),
+      this.drops.scatter(stack, [p[0] - 0.5, p[1], p[2] - 0.5], this.tick, a.id),
     );
     this.baseline(a, 'death');
   }
@@ -1714,7 +1721,7 @@ export class GameRoom {
           !this.store.world.line_clear(
             ...origin,
             drop.position[0],
-            drop.position[1] + 0.125,
+            drop.position[1] + DROP_HEIGHT / 2,
             drop.position[2],
           )
         )
