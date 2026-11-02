@@ -91,13 +91,17 @@ names and UV conventions derive from the same engine. New content uses those
 procedural layers. This is the complete imported-asset inventory at this stage;
 record the source and redistribution terms here before adding other assets.
 
-The player figures now use the original upstream micro-voxel character generator and eight
-curated guest presets, with local instanced rendering and grouped-joint animation. A stable
+The player figures use the original upstream micro-voxel character generator with local
+instanced rendering and grouped-joint animation. The local catalog contains the original
+eight preset IDs plus four female skirt/dress outfits assembled from existing generator
+options. Skater locally wears a denim skirt instead of the original shorts. All six female
+presets wear skirts; the imported upstream source is unchanged. A stable
 hash of player identity selects a preset within explicit boy/girl pools, using the school
 server's verified existing profile gender. The selected ID is replicated to all clients;
 guests/admins without gender use the full pool. Presets can repeat. This does not import
 the upstream avatar editor or account/profile services.
-Geometry, palettes, faces, hair and outfits come from upstream, rather than local replacement art.
+Geometry, palette machinery, faces, hair and clothing styles come from upstream.
+Local preset combinations and outfit overrides are recorded in `src/render/avatar-presets.ts`.
 `tools/import-blockyard-art.mjs /path/to/blockyard` reproduces the imported source and exact
 sprite regions from the pinned revision, preserving its copyright and MIT notice.
 

@@ -10,7 +10,7 @@ import {
   avatarMaterial,
   avatarVariant,
 } from './avatar-model.ts';
-import { AVATAR_PRESETS } from './upstream/blockyard/avatar.ts';
+import { AVATAR_PRESETS } from './avatar-presets.ts';
 export type AvatarPose = Readonly<{
   id: string;
   avatar?: number;
@@ -28,7 +28,7 @@ type Batch = {
   pose: THREE.InstancedBufferAttribute;
   capacity: number;
 };
-/** At most eight body draw calls: players with the same upstream preset share a batch. */
+/** At most twelve body draw calls: players with the same upstream preset share a batch. */
 export class AvatarRenderer {
   private batches = new Map<number, Batch>();
   private base = new THREE.Matrix4();

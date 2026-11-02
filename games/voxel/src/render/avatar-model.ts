@@ -1,10 +1,11 @@
 import * as THREE from 'three';
-import { AVATAR_PRESETS, avatarLook } from './upstream/blockyard/avatar.ts';
+import { avatarLook } from './upstream/blockyard/avatar.ts';
+import { AVATAR_PRESETS } from './avatar-presets.ts';
 import { BONES, buildCharacter, type CharacterMesh } from './upstream/blockyard/character/build.ts';
 import { isAvatarId, selectAvatar } from '../shared/avatars.ts';
 
 export const AVATAR_COUNT = AVATAR_PRESETS.length;
-/** Stable across clients and reconnects; the eight original Blockyard guest presets. */
+/** Stable across clients and reconnects; the local catalog of Blockyard-based presets. */
 export const avatarVariant = (id: string, assigned?: number) =>
   isAvatarId(assigned) ? assigned : selectAvatar(id);
 const assets = new Map<number, CharacterMesh>();

@@ -27,11 +27,18 @@ Worn armor continues to use its equipment model, while its held/dropped item use
 Material disposal releases owned sprite textures without disposing borrowed terrain arrays.
 Blocks and items without sprites retain their existing geometry.
 
-Player figures use Blockyard's actual micro-voxel character builder, palette atlases, and
-its eight curated presets: Classic, Hoodie, Skater, Sharp, Explorer, Punk, Scholar,
-and Vacation. The local shared avatar policy explicitly categorizes Classic, Hoodie,
-Sharp, Explorer, Punk and Vacation in the boy pool; Skater and Scholar in the girl pool.
-These are curated categories for the game characters, not upstream gender metadata.
+Player figures use Blockyard's actual micro-voxel character builder and palette atlases,
+with a local catalog in `src/render/avatar-presets.ts`. There are twelve presets: six male
+and six female. The original eight IDs stay in place; Rose, Meadow, Marina and Sunflower
+are appended as IDs 8–11. These four are local combinations of existing generator options,
+not additional upstream artwork. The original imported files remain unchanged.
+
+The male pool remains Classic, Hoodie, Sharp, Explorer, Punk and Vacation. The female pool
+is Skater, Scholar, Rose, Meadow, Marina and Sunflower. All six female presets use the
+builder's skirt option. Skater retains its original face/hair/colours with a denim skirt
+replacing its shorts. Marina's matching navy tunic and skirt form a dress-like outfit;
+the other new looks pair skirts with distinct tops, hair, skin tones and shoes. These are
+explicit local categories for the game characters, not upstream gender metadata.
 
 The school access service uses the verified existing profile `gender` field to select
 an ID consistently from the matching pool. It sends only the preset ID through the private
@@ -43,10 +50,10 @@ No database migration or avatar picker is added. A profile change is rechecked d
 normal school authorization; a changed selected avatar requires fresh admission.
 
 `avatar-model.ts` adapts the original mesh to our coordinate system and existing head/limb
-motion. Players sharing a preset use one instanced batch: at most eight body draw calls.
+motion. Players sharing a preset use one instanced batch: at most twelve body draw calls.
 Equipment follows the imported shoulder, hand and leg joints. GPU geometry, texture and
 instance resources are released on shrink, disappearance and renderer disposal. CPU model
-assets are cached for at most eight presets. This differs from upstream's complete animation
+assets are cached for at most twelve presets. This differs from upstream's complete animation
 and cosmetic systems; those services are not imported.
 
 Terrain pixels come directly from the existing engine generator again. The experimental
@@ -72,8 +79,9 @@ Validation:
 - `node --test apps/voxel-server/tests/school-access.test.ts` from the repository root:
   verified school profile selection and rejection of browser overrides.
 - `npm run test:art:browser`: headless WebGL comparison of the previous centred pose and
-  corrected Blockyard grip pose, gender-selected models, all original presets, sprites,
+  corrected Blockyard grip pose, gender-selected models, all twelve presets, sprites,
   dropped batches and representative model thumbnails. Writes `test-results/pixel-art.png`.
+  A separate `test-results/female-avatars.png` shows all six female outfits.
   It does not start a game gateway or dev server.
 - `npm run typecheck` and `npm run check:boundaries`.
 

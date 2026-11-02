@@ -56,22 +56,22 @@ test('stone pickaxe changes only the upstream material palette, preserving its s
   assert.ok(handle > 10);
   assert.ok(changed > 10);
 });
-test('player identity consistently selects the original presets with different shapes and appearances', () => {
-  assert.equal(AVATAR_COUNT, 8);
+test('player identity consistently selects distinct local presets with different shapes and appearances', () => {
+  assert.equal(AVATAR_COUNT, 12);
   const appearances = new Set<string>(),
     shapes = new Set<number>();
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < AVATAR_COUNT; i++) {
     const asset = avatarAsset(i);
     appearances.add(createHash('sha256').update(asset.atlas.albedo).digest('hex'));
     shapes.add(asset.position.length);
     assert.ok(asset.position.every(Number.isFinite));
   }
-  assert.equal(appearances.size, 8);
+  assert.equal(appearances.size, AVATAR_COUNT);
   assert.ok(shapes.size > 4);
   for (const id of ['alice', 'bob', 'guest-0123']) {
     const first = avatarVariant(id);
     assert.equal(avatarVariant(id), first);
-    assert.ok(first >= 0 && first < 8);
+    assert.ok(first >= 0 && first < AVATAR_COUNT);
   }
 });
 test('upstream avatar batches cover every player, preserve origin shifts, grow and release GPU resources', () => {
@@ -91,7 +91,7 @@ test('upstream avatar batches cover every player, preserve origin shifts, grow a
   renderer.update(actors, new THREE.Vector3(96, 0, 0), [0, 64, 0], 1, 1);
   assert.equal(renderer.stats.visible, 129);
   const batches = scene.children.filter((node) => node instanceof THREE.InstancedMesh);
-  assert.equal(batches.length, 8);
+  assert.equal(batches.length, AVATAR_COUNT);
   assert.equal(
     batches.reduce((n, batch) => n + batch.count, 0),
     129,
@@ -124,8 +124,8 @@ test('upstream avatar batches cover every player, preserve origin shifts, grow a
   renderer.dispose();
   renderer.dispose();
   assert.equal(scene.children.length, 0);
-  assert.equal(textures, 8);
-  assert.equal(geometries, 8);
+  assert.equal(textures, AVATAR_COUNT);
+  assert.equal(geometries, AVATAR_COUNT);
   albedo.dispose();
   surface.dispose();
 });

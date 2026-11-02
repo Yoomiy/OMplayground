@@ -5,6 +5,7 @@ import { source } from '../content/index.ts';
 import { compileContent } from './compile-content.ts';
 import { engine } from '../tests/wasm/fixture.ts';
 import { launchSoftwareBrowser } from './browser-harness.ts';
+import { AVATAR_COUNT, AVATAR_POOLS } from '../src/shared/avatars.ts';
 
 // Exercise actual GPU materials, icon routing and texture pixels independently of world movement.
 const bundled = await build({
@@ -18,7 +19,8 @@ import {itemSprite} from './src/render/item-sprites.ts';
 import {HeldBlockRenderer} from './src/render/held-block.ts';
 import {DropRenderer} from './src/render/drops.ts';
 import {avatarVariant} from './src/render/avatar-model.ts';
-import {selectAvatar} from './src/shared/avatars.ts';
+import {selectAvatar,AVATAR_POOLS} from './src/shared/avatars.ts';
+import {AVATAR_PRESETS} from './src/render/avatar-presets.ts';
 import {emptyAppearance} from './src/shared/appearance.ts';
 window.drawArt = (content, bytes) => {
   const title = text => {const h = document.createElement('h2');h.textContent=text;document.body.append(h);};
@@ -28,25 +30,25 @@ window.drawArt = (content, bytes) => {
   const canvas=document.createElement('canvas');
   const gl=new THREE.WebGLRenderer({canvas,antialias:false});
   gl.outputColorSpace=THREE.LinearSRGBColorSpace;
-  gl.setSize(1080,360);gl.setClearColor(0x293442);
-  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(35,3,.1,100);
+  gl.setSize(1080,600);gl.setClearColor(0x293442);
+  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(35,1080/600,.1,100);
   camera.position.set(2,2.3,-6.8);camera.lookAt(0,.9,0);
   const size=bytes.length/2,albedo=new Uint8Array(bytes.slice(0,size)),material=new Uint8Array(bytes.slice(size));
 
   const texture=(data,srgb)=>{const t=new THREE.DataArrayTexture(data,16,16,size/1024);t.magFilter=THREE.NearestFilter;t.minFilter=THREE.LinearMipmapLinearFilter;t.generateMipmaps=true;t.colorSpace=srgb?THREE.SRGBColorSpace:THREE.NoColorSpace;t.needsUpdate=true;return t;};
   const a=texture(albedo,true),m=texture(material,false);
   const avatars=new AvatarRenderer(scene,content.blocks,content.items,a,m);
-  const actors=Array.from({length:8},(_,i)=>{let id='';for(let n=0;;n++){id='art-player-'+n;if(avatarVariant(id)===i)break;}return {id,position:[(3.5-i)*1.08,0,0],yaw:i===2?.4:0,pitch:0,speed:0,flying:false,appearance:emptyAppearance()};});
-  camera.position.set(0,1.7,-7);camera.lookAt(0,.95,0);
-  avatars.update(actors,new THREE.Vector3(),[0,1.7,-7],0,1);
-  title('Original Blockyard avatars / all eight guest presets');document.body.append(canvas);gl.render(scene,camera);
+  const actors=[...AVATAR_POOLS.boy,...AVATAR_POOLS.girl].map((avatar,i)=>({id:'art-player-'+avatar,avatar,position:[(2.5-i%6)*1.15,i<6?2.3:0,0],yaw:i===2?.4:0,pitch:0,speed:0,flying:false,appearance:emptyAppearance()}));
+  camera.position.set(0,2.7,-8.5);camera.lookAt(0,2.1,0);
+  avatars.update(actors,new THREE.Vector3(),[0,2.7,-8.5],0,1);
+  title('Avatar catalog / six male above, six female below');document.body.append(canvas);gl.render(scene,camera);
   const calls=gl.info.render.calls;
-  const context=gl.getContext(),still=new Uint8Array(1080*360*4),moving=new Uint8Array(still.length);
-  context.readPixels(0,0,1080,360,context.RGBA,context.UNSIGNED_BYTE,still);
-  avatars.update(actors.map(actor=>({...actor,pitch:.25,speed:4})),new THREE.Vector3(),[0,1.7,-7],.23,1);
-  gl.render(scene,camera);context.readPixels(0,0,1080,360,context.RGBA,context.UNSIGNED_BYTE,moving);
+  const context=gl.getContext(),still=new Uint8Array(canvas.width*canvas.height*4),moving=new Uint8Array(still.length);
+  context.readPixels(0,0,canvas.width,canvas.height,context.RGBA,context.UNSIGNED_BYTE,still);
+  avatars.update(actors.map(actor=>({...actor,pitch:.25,speed:4})),new THREE.Vector3(),[0,2.7,-8.5],.23,1);
+  gl.render(scene,camera);context.readPixels(0,0,canvas.width,canvas.height,context.RGBA,context.UNSIGNED_BYTE,moving);
   const animatedChannels=moving.reduce((n,value,i)=>n+(value!==still[i]?1:0),0);
-  avatars.update(actors,new THREE.Vector3(),[0,1.7,-7],0,1);gl.render(scene,camera);
+  avatars.update(actors,new THREE.Vector3(),[0,2.7,-8.5],0,1);gl.render(scene,camera);
   const icons=new ItemIcons(gl,content.blocks,content.items,a,m);
   let readbacks=0;const read=gl.readRenderTargetPixels.bind(gl);gl.readRenderTargetPixels=(...args)=>{readbacks++;return read(...args);};
   title('Blockyard sprites / seven originals + stone palette variant');const items=grid();
@@ -78,6 +80,19 @@ window.drawArt = (content, bytes) => {
       hands.append(canvas);held.dispose();renderer.dispose();
     }
   }
+  const femaleSection=document.createElement('section');femaleSection.id='female-avatars-preview';document.body.append(femaleSection);
+  const femaleHeading=document.createElement('h2');femaleHeading.textContent='Six female outfits / skirts and dresses';femaleSection.append(femaleHeading);
+  const femaleCanvas=document.createElement('canvas'),femaleGL=new THREE.WebGLRenderer({canvas:femaleCanvas,antialias:false});
+  femaleGL.outputColorSpace=THREE.LinearSRGBColorSpace;femaleGL.setSize(1080,340);femaleGL.setClearColor(0x293442);
+  const femaleScene=new THREE.Scene(),femaleCamera=new THREE.PerspectiveCamera(30,1080/340,.1,20);
+  femaleCamera.position.set(0,1.7,-6);femaleCamera.lookAt(0,.9,0);
+  const femaleAvatars=new AvatarRenderer(femaleScene,content.blocks,content.items,a,m);
+  const femaleActors=AVATAR_POOLS.girl.map((avatar,i)=>({id:'female-preview-'+i,avatar,position:[(2.5-i)*1.15,0,0],yaw:0,pitch:0,speed:0,flying:false,appearance:emptyAppearance()}));
+  femaleAvatars.update(femaleActors,new THREE.Vector3(),[0,1.7,-6],0,1);femaleGL.render(femaleScene,femaleCamera);
+  const femaleCalls=femaleGL.info.render.calls;femaleSection.append(femaleCanvas);
+  const names=document.createElement('div');names.style.cssText='position:relative;height:30px';
+  AVATAR_POOLS.girl.forEach((avatar,i)=>{const name=document.createElement('span');name.textContent=AVATAR_PRESETS[avatar].name;const at=new THREE.Vector3(...femaleActors[i].position).project(femaleCamera);name.style.cssText='position:absolute;transform:translateX(-50%)';name.style.left=((at.x+1)*540)+'px';names.append(name);});femaleSection.append(names);
+  femaleAvatars.dispose();femaleGL.dispose();
   title('Profile-based selection / boys on the left, girls on the right');
   const genderCanvas=document.createElement('canvas'),genderGL=new THREE.WebGLRenderer({canvas:genderCanvas,antialias:false});
   genderGL.outputColorSpace=THREE.LinearSRGBColorSpace;genderGL.setSize(1080,300);genderGL.setClearColor(0x293442);
@@ -97,10 +112,10 @@ window.drawArt = (content, bytes) => {
   dropCamera.position.set(0,.5,1.5);dropCamera.lookAt(0,.16,0);
   const drops=new DropRenderer(dropScene,content.blocks,content.items,a,m);
   drops.update(['wooden_pickaxe','stone_pickaxe','iron_pickaxe','diamond_pickaxe'].map((id,i)=>({id:'drop-'+i*17,revision:1,stack:{itemType:id,count:1},position:[(i-1.5)*.5,0,0]})),new THREE.Vector3(),.5,1);
-  dropGL.render(dropScene,dropCamera);const dropCalls=dropGL.info.render.calls;document.body.append(dropCanvas);
+  dropGL.render(dropScene,dropCamera);const dropCalls=dropGL.info.render.calls,dropKinds=dropScene.children.filter(node=>node instanceof THREE.InstancedMesh&&node.material instanceof THREE.RawShaderMaterial).length;document.body.append(dropCanvas);
   drops.dispose();dropGL.dispose();
   icons.dispose();avatars.dispose();a.dispose();m.dispose();gl.dispose();
-  return {calls,spriteReadbacks,modelReadbacks,animatedChannels,dropCalls,assigned,shown};
+  return {calls,spriteReadbacks,modelReadbacks,animatedChannels,dropCalls,dropKinds,assigned,shown,femaleCalls};
 };`,
   },
   bundle: true,
@@ -133,7 +148,8 @@ body{margin:20px;background:#18212b;color:#e5edf2;font:14px system-ui}h2{font-si
   );
   await page.evaluate(() => Promise.all(Array.from(document.images, (image) => image.decode())));
   assert.deepEqual(errors, []);
-  assert.equal(result.calls, 8, 'one draw call per upstream preset, regardless of player count');
+  assert.equal(result.calls, AVATAR_COUNT, 'one draw call per preset, regardless of player count');
+  assert.equal(result.femaleCalls, 6, 'all female presets render');
   assert.equal(result.spriteReadbacks, 0, 'item sprites must not read pixels back from the GPU');
   assert.equal(result.modelReadbacks, 6, 'unmatched items and blocks retain model thumbnails');
   assert.deepEqual(
@@ -141,9 +157,13 @@ body{margin:20px;background:#18212b;color:#e5edf2;font:14px system-ui}h2{font-si
     [...result.assigned].sort(),
     'server-selected presets must reach the GPU batches',
   );
-  assert.ok(result.assigned.slice(0, 2).every((id: number) => [0, 1, 3, 4, 5, 7].includes(id)));
-  assert.ok(result.assigned.slice(2).every((id: number) => [2, 6].includes(id)));
-  assert.equal(result.dropCalls, 4, 'one instanced draw per visible dropped tool kind');
+  assert.ok(result.assigned.slice(0, 2).every((id: number) => AVATAR_POOLS.boy.includes(id)));
+  assert.ok(result.assigned.slice(2).every((id: number) => AVATAR_POOLS.girl.includes(id)));
+  assert.equal(result.dropKinds, 4, 'one instanced batch per visible dropped tool kind');
+  assert.ok(
+    result.dropCalls >= result.dropKinds,
+    'item batches render alongside the merged pickup halo',
+  );
   assert.ok(
     result.animatedChannels > 100,
     'per-player look and limb animation must change GPU output',
@@ -153,6 +173,9 @@ body{margin:20px;background:#18212b;color:#e5edf2;font:14px system-ui}h2{font-si
     path: new URL('../test-results/pixel-art.png', import.meta.url).pathname,
     fullPage: true,
   });
+  await page
+    .locator('#female-avatars-preview')
+    .screenshot({ path: new URL('../test-results/female-avatars.png', import.meta.url).pathname });
   writeFileSync(
     new URL('../test-results/pixel-art.json', import.meta.url),
     JSON.stringify({ ...result, errors }, null, 2) + '\n',
