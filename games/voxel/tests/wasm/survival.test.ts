@@ -260,7 +260,7 @@ test('real Wasm mining earns fixed world ticks despite action bursts, ignores un
     f.room.dispose();
   }
 });
-test('plants, torches and ladders break without a mining period or active crack view', () => {
+test('plants, leaves, torches and ladders break without a mining period or active crack view', () => {
   const f = fixture();
   try {
     const plants = content.manifest.blocks.filter(
@@ -268,6 +268,7 @@ test('plants, torches and ladders break without a mining period or active crack 
         block.shape === 'cross' ||
         block.shape === 'torch' ||
         block.shape === 'wall_torch' ||
+        block.leaves ||
         block.climbable,
     );
     assert.ok(plants.length >= 9);

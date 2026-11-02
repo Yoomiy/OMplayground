@@ -68,12 +68,27 @@ test('scattered drops differ, merge within limits, allow incompatible overlap, a
   }
 });
 
-test('magnet pulls from three blocks, awards only collected items and reports pickup', () => {
+test('magnet leaves distant drops alone, pulls within 2.7 blocks and reports actual pickups', () => {
   const f = roomFixture();
   try {
     f.tick(3);
     const p = f.state();
-    f.room.drops.add({ itemType: 'stone', count: 4 }, [p[0] + 3, p[1] + 0.2, p[2]], 3);
+    f.room.drops.add(
+      { itemType: 'stone', count: 4 },
+      [p[0] + 3, p[1] + 0.2, p[2]],
+      3,
+      null,
+      [0, 0, 0],
+    );
+    f.tick(8);
+    assert.equal(
+      f.room.drops.nearby(p, 32)[0].position[0],
+      p[0] + 3,
+      'outside the shorter attraction range',
+    );
+    const closer = f.state();
+    closer[0] += 0.6;
+    f.store.world.player_restore(f.player().slot, closer);
     f.tick(8);
     assert.ok(f.room.drops.nearby(p, 32)[0].position[0] < p[0] + 3);
     assert.equal(f.room.inventories.held('a').stack, null);

@@ -1166,7 +1166,6 @@ export async function mountVoxel(
       const hideOverlay =
         block &&
         (block.shape === 'cross' ||
-          block.leaves ||
           block.shape === 'torch' ||
           block.shape === 'wall_torch' ||
           block.climbable);
