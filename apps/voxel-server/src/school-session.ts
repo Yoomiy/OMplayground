@@ -1,3 +1,4 @@
+import { DIAGNOSTIC_REASONS } from "../../../games/voxel/src/shared/diagnostics.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { GatewayOptions } from "../../../games/voxel/src/server/gateway.ts";
 import {
@@ -28,6 +29,19 @@ export function schoolSessionApi(
       } catch (error) {
         const code =
           error instanceof AccessDenied ? error.code : "SESSION_UNAVAILABLE";
+        const correlationId = res.getHeader?.("x-correlation-id");
+        event("VOXEL_SESSION_API_REJECTED", {
+          code,
+          ...(typeof correlationId === "string" ? { correlationId } : {}),
+          operation:
+            req.url === "/api/voxel/diagnostics" ? "diagnostics" : "session",
+          ...(error instanceof PersistenceError
+            ? {
+                providerCode: error.providerCode,
+                persistenceOperation: error.operation,
+              }
+            : {}),
+        });
         res.writeHead(
           code === "UNAUTHORIZED"
             ? 401
@@ -114,7 +128,21 @@ export function schoolSessionApi(
         throw new AccessDenied("INVALID");
       const v = body as Record<string, unknown>;
       if (
-        Object.keys(v).length !== 5 ||
+        Object.keys(v).some(
+          (key) =>
+            ![
+              "room",
+              "correlationId",
+              "operation",
+              "code",
+              "buildId",
+              "reason",
+              "fatal",
+            ].includes(key),
+        ) ||
+        (v.reason !== undefined &&
+          !(DIAGNOSTIC_REASONS as readonly unknown[]).includes(v.reason)) ||
+        (v.fatal !== undefined && typeof v.fatal !== "boolean") ||
         typeof v.room !== "string" ||
         !UUID.test(v.room) ||
         typeof v.correlationId !== "string" ||
@@ -138,6 +166,8 @@ export function schoolSessionApi(
         operation: v.operation,
         code: v.code,
         clientBuildId: v.buildId ?? "unknown",
+        ...(typeof v.reason === "string" ? { reason: v.reason } : {}),
+        ...(typeof v.fatal === "boolean" ? { fatal: v.fatal } : {}),
       });
       return { ok: true };
     }),

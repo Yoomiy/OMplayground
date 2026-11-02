@@ -1,3 +1,4 @@
+import type { DiagnosticDetail } from "@playground/voxel-runtime";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -90,19 +91,31 @@ export function VoxelSessionContainer({ sessionId }: { sessionId: string }) {
     };
   }, [api]);
   const diagnostic = useCallback(
-    (operation: string, code: string, buildId: string | null) => {
+    (
+      operation: string,
+      code: string,
+      buildId: string | null,
+      detail?: DiagnosticDetail,
+    ) => {
       if (!api || scopeAbort.current?.signal.aborted) return;
       const normalized = operation
           .toLowerCase()
           .replace(/[^a-z_]/g, "_")
           .slice(0, 40),
-        key = normalized + ":" + code,
+        key =
+          normalized +
+          ":" +
+          code +
+          ":" +
+          (detail?.reason ?? "unknown") +
+          ":" +
+          (detail?.fatal ?? false),
         now = Date.now();
       if (now - (telemetry.current.get(key) ?? 0) < 10000) return;
       telemetry.current.set(key, now);
       // Best-effort bounded telemetry never turns its transport failure into a game failure.
       void api
-        .report(normalized, code, buildId, scopeAbort.current?.signal)
+        .report(normalized, code, buildId, scopeAbort.current?.signal, detail)
         .catch(() => {});
     },
     [api],

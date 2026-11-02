@@ -1,0 +1,63 @@
+{
+  "buildId": "e71da51f4ee691eb1d3b818aecb2fa67c7f48184c93c61ee2cff71e37a4234b2",
+  "engineHash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388",
+  "contentHash": "2901239743859cde06ec4544cb84bb22f0c6062c4f83234dc2f8ac0d380cd21a",
+  "clientHash": "fbc63204c2d2160325bec5f22e70f7a8a3d942d6ee00e2c8f2146fc3865eca2c",
+  "serverHash": "27ec57889e84bd285caca474e15253207614ecbbf0eae20cbc671ac9fb4db748",
+  "client": [
+    {
+      "path": "assets/engine-worker-DYAFKrDe.js",
+      "hash": "99d3377c134578cd5e9bdd923e7707547e62c3a2a0a1a64c90adec5f1121bf04"
+    },
+    {
+      "path": "assets/index-CFP-OlMy.js",
+      "hash": "377e055feb16c74b31a913e908fc09d801a4115c429fbeaecea425e669d5bbc0"
+    },
+    {
+      "path": "assets/index-P3AiFv1J.css",
+      "hash": "9fa2a5f4e45de30243c0269a36f22ec695d3d68663b468cfa21e2d0c23ffe50d"
+    },
+    {
+      "path": "assets/voxel_engine_bg-1ejYMYOZ.wasm",
+      "hash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "blockyard-LICENSE.txt",
+      "hash": "4c89ee97bee29e2bd7dcd9567a06c1fee5fb8ab7c5c35ca4a153543524b6f07f"
+    },
+    {
+      "path": "index.html",
+      "hash": "413d574212d4accc8cc0e5860ccf463693d24f6f86cb85a21d622f8e87b733e0"
+    }
+  ],
+  "server": [
+    {
+      "path": "build.json",
+      "hash": "949e99c743843e0b8b1392caf70f4a7fde4354f33815638ff06ae8de39bcb6db"
+    },
+    {
+      "path": "content.json",
+      "hash": "849b9bab106d5b6ef78c48df9f89222cc87afb904672def8c96c9a9989c9804c"
+    },
+    {
+      "path": "engine.wasm",
+      "hash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388"
+    },
+    {
+      "path": "gateway.js",
+      "hash": "6397793779b78a76715c495c22623b4b145918459694a6bd6064b3688b34c4d1"
+    },
+    {
+      "path": "gateway.js.map",
+      "hash": "b394cd362c6038e61fe9004a9b719e9df89d8e81aa8ca77c4f7e32dc967c4d37"
+    },
+    {
+      "path": "room-worker.js",
+      "hash": "e694248ffa60e161c4cd9bf174030c18f7c94e94f449a22c2c48927074b6440f"
+    },
+    {
+      "path": "room-worker.js.map",
+      "hash": "dc55253c3cd5bd01da9ee5724beeaf92f5439f1fc2c17bbcce25afa0bd5932c8"
+    }
+  ]
+}

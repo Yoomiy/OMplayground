@@ -1,15 +1,20 @@
 import type { AdmissionPolicy } from "../../../games/voxel/src/server/gateway.ts";
 import type { GatewayOptions } from "../../../games/voxel/src/server/gateway.ts";
 import { SchoolAccess, AccessDenied, bearerToken } from "./school-access.ts";
+type Event = (
+  name: string,
+  context: Record<string, string | number | boolean>,
+) => void;
 /** Install both school policy ports; connected and passive ownership require fresh reads. */
 export function schoolGatewayPolicy(
   access: SchoolAccess,
   sessions?: NonNullable<GatewayOptions["sessions"]> & {
     roomPolicy: NonNullable<GatewayOptions["roomPolicy"]>;
   },
+  event?: Event,
 ): Pick<GatewayOptions, "admit" | "resolveOwner" | "roomPolicy" | "sessions"> {
   return {
-    admit: schoolAdmission(access),
+    admit: schoolAdmission(access, event),
     resolveOwner: (room, id) => access.resolveOwner(room, id),
     roomPolicy: (room) =>
       sessions ? sessions.roomPolicy(room) : access.roomPolicy(room),
@@ -17,7 +22,10 @@ export function schoolGatewayPolicy(
   };
 }
 /** HTTP boundary owns error responses; the game sees only an authenticated grant. */
-export function schoolAdmission(access: SchoolAccess): AdmissionPolicy {
+export function schoolAdmission(
+  access: SchoolAccess,
+  event?: Event,
+): AdmissionPolicy {
   return async (request, body, response) => {
     const token = bearerToken(request.headers.authorization);
     try {
@@ -36,6 +44,14 @@ export function schoolAdmission(access: SchoolAccess): AdmissionPolicy {
             : error instanceof AccessDenied
               ? 403
               : 503;
+      const correlationId = response.getHeader?.("x-correlation-id");
+      event?.("VOXEL_ADMISSION_REJECTED", {
+        room: body.room,
+        code,
+        httpStatus: status,
+        phase: "school_authorization",
+        ...(typeof correlationId === "string" ? { correlationId } : {}),
+      });
       response.writeHead(status, {
         "Content-Type": "application/json",
         "Cache-Control": "no-store",

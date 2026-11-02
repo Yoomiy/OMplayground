@@ -22,6 +22,8 @@ test("production composition verifies real schemas, serves authenticated APIs wi
       LIVEKIT_API_SECRET: "media_test_secret_at_least_32_characters",
     },
     logger: {
+      debug: (value: unknown) => logs.push(value),
+      warn: (value: unknown) => logs.push(value),
       info: (value: unknown) => logs.push(value),
       error: (value: unknown) => logs.push(value),
     },

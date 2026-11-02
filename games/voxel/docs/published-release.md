@@ -20,7 +20,7 @@ content, configuration, engine source/toolchain and compiler-input hashes, every
 payload checksum and every destination path. Source edits require a new release;
 changing metadata cannot silently choose another binary path. The existing full
 release verifier then checks canonical content, runtime identity, hashed bindings/
-Wasm and all 12 client/server release files. The payload is an integrity-checked
+Wasm and every client/server release file. The payload is an integrity-checked
 build artifact distributed through Git, not a signed provenance assertion.
 
 When changing the game, maintainers use the pinned build toolchain and full

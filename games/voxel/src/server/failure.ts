@@ -1,0 +1,27 @@
+/** Server exceptions may carry provider URLs and credentials. Export machine categories only. */
+export function failureDetails(error: unknown): Record<string, string> {
+  const fields = error && typeof error === 'object' ? (error as Record<string, unknown>) : {};
+  const name = error instanceof Error ? error.name : '';
+  const rawCode = fields.providerCode ?? fields.code;
+  const code = typeof rawCode === 'string' || typeof rawCode === 'number' ? String(rawCode) : '';
+  const machineCode =
+    /^(?:[0-9A-Z]{5}|PGRST[0-9]{3}|[1-5][0-9]{2})$/.test(code) ||
+    [
+      'UNAVAILABLE',
+      'UNAUTHORIZED',
+      'SESSION_ENDED',
+      'ECONNREFUSED',
+      'ECONNRESET',
+      'ETIMEDOUT',
+      'Duplicate',
+      'NoSuchBucket',
+      'NoSuchKey',
+      'ResourceAlreadyExists',
+    ].includes(code);
+  return {
+    failureType: ['Error', 'TypeError', 'RangeError', 'TimeoutError', 'AbortError'].includes(name)
+      ? name
+      : 'unknown',
+    ...(machineCode ? { failureCode: code } : {}),
+  };
+}

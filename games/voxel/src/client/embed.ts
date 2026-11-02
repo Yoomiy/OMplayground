@@ -6,3 +6,4 @@ export { mountTouchControls } from './touch-controls.ts';
 export { mountInventoryControls } from './inventory-controls.ts';
 export { content, identity, supportProblem } from './engine.ts';
 export { ITEM_LABELS } from './content-labels.ts';
+export type { DiagnosticDetail } from '../shared/diagnostics.ts';

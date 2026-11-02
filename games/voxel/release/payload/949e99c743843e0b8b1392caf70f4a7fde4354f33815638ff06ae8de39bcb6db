@@ -1,15 +1,15 @@
 {
-  "runtimeHash": "99adf757431c84b3d7f07318e43efbbf1e8bcba76d6054b65647c5058b8ac4ca",
+  "runtimeHash": "8cb5d3861822139b37e819f1271a5bc57302a04826611706c49e399e5f712081",
   "engineHash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388",
   "bindingsHash": "df0ef34a38d5b9a1f0a16a665bd7eec398736c2eacea98dbb1ec5a4fd0cd32e1",
-  "contentHash": "3bacc621111bfbd511d8db591f50a4fdd9298f8659aa2c2187a67e97aeb9b478",
-  "protocol": 13,
+  "contentHash": "2901239743859cde06ec4544cb84bb22f0c6062c4f83234dc2f8ac0d380cd21a",
+  "protocol": 15,
   "environmentVersion": 1,
   "columnFormat": 2,
   "regionFormat": 2,
   "editFormat": 2,
   "height": 256,
-  "buildId": "8157d95bf55d76343397ca367cb0d5187b346b249a6fd68553655996fb8977c6",
+  "buildId": "e71da51f4ee691eb1d3b818aecb2fa67c7f48184c93c61ee2cff71e37a4234b2",
   "engineArtifact": "engine-cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388.wasm",
   "bindingsArtifact": "bindings-df0ef34a38d5b9a1f0a16a665bd7eec398736c2eacea98dbb1ec5a4fd0cd32e1.js"
 }

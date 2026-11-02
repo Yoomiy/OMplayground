@@ -1,4 +1,6 @@
 import { toggleFullscreen } from './fullscreen.ts';
+import { runtimeDiagnostic } from '../shared/diagnostics.ts';
+import type { DiagnosticDetail } from '../shared/diagnostics.ts';
 import { ITEM_LABELS } from './content-labels.ts';
 import { engine, loadEngine, content, identity, supportProblem } from './engine.ts';
 import { TerrainRenderer } from '../render/terrain.ts';
@@ -104,7 +106,11 @@ export type RuntimeOptions = {
   inputMode?: 'desktop' | 'touch';
   /** Enter an admitted, ready world directly; mouse capture still needs a click. */
   autoEnter?: boolean;
-  onDiagnostic?: (operation: string, reason: string) => void;
+  onDiagnostic?: (
+    operation: string,
+    reason: string,
+    detail?: DiagnosticDetail & { code: string },
+  ) => void;
 };
 export type VoxelRuntime = {
   command(command: RuntimeCommand): void;
@@ -317,11 +323,13 @@ export async function mountVoxel(
   const send = (message: ClientMessage) => {
     if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message));
   };
-  const diagnose = (operation: string, error: unknown) =>
-    options.onDiagnostic?.(operation, error instanceof Error ? error.message : String(error));
+  const diagnose = (operation: string, error: unknown, fatal = false) => {
+    const diagnostic = runtimeDiagnostic(error, fatal);
+    options.onDiagnostic?.(operation, diagnostic.reason, diagnostic);
+  };
   const fail = (operation: string, error: unknown) => {
     fatalRecovery = true;
-    diagnose(operation, error);
+    diagnose(operation, error, true);
     keys.clear();
     touch = neutralTouch();
     worldClock.reset(worldClock.read(performance.now()), performance.now(), false);
@@ -1847,8 +1855,9 @@ export async function mountVoxel(
         sprint: cmd.sprint,
       };
     } else if (cmd.type === 'fullscreen')
-      void toggleFullscreen(options.fullscreenElement ?? host)
-        .catch((error) => diagnose('fullscreen', error));
+      void toggleFullscreen(options.fullscreenElement ?? host).catch((error) =>
+        diagnose('fullscreen', error),
+      );
     else if (cmd.type === 'reconnect' && hud.lifecycle !== 'ended') {
       if (graphics === 'failed') onContextRestored();
       else if (graphics === 'ready') void connect();

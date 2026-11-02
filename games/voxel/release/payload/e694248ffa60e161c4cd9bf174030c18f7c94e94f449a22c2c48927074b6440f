@@ -1,3 +1,27 @@
+// src/server/failure.ts
+function failureDetails(error) {
+  const fields = error && typeof error === "object" ? error : {};
+  const name = error instanceof Error ? error.name : "";
+  const rawCode = fields.providerCode ?? fields.code;
+  const code = typeof rawCode === "string" || typeof rawCode === "number" ? String(rawCode) : "";
+  const machineCode = /^(?:[0-9A-Z]{5}|PGRST[0-9]{3}|[1-5][0-9]{2})$/.test(code) || [
+    "UNAVAILABLE",
+    "UNAUTHORIZED",
+    "SESSION_ENDED",
+    "ECONNREFUSED",
+    "ECONNRESET",
+    "ETIMEDOUT",
+    "Duplicate",
+    "NoSuchBucket",
+    "NoSuchKey",
+    "ResourceAlreadyExists"
+  ].includes(code);
+  return {
+    failureType: ["Error", "TypeError", "RangeError", "TimeoutError", "AbortError"].includes(name) ? name : "unknown",
+    ...machineCode ? { failureCode: code } : {}
+  };
+}
+
 // src/sim/action-ledger.ts
 var ActionLedger = class {
   currentEpoch;
@@ -1249,8 +1273,8 @@ function initSync(module) {
 var MOVEMENT_HZ = 60;
 var WORLD_HZ = 30;
 var MOVEMENT_DT = 1 / MOVEMENT_HZ;
-var INPUT_QUEUE_LIMIT = 12;
-var INPUT_MAX_AGE_MS = 200;
+var INPUT_QUEUE_LIMIT = 240;
+var MAX_INPUT_DT = 0.1;
 var HELD_INPUT_MS = 100;
 var NEUTRAL = Object.freeze({
   x: 0,
@@ -1265,8 +1289,9 @@ var keys = ["epoch", "sequence", "x", "z", "yaw", "pitch", "jump", "sneak", "spr
 function isInputFrame(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const v = value;
-  if (Object.keys(v).length !== keys.length || keys.some((k) => !Object.hasOwn(v, k))) return false;
-  return Number.isSafeInteger(v.epoch) && v.epoch > 0 && Number.isSafeInteger(v.sequence) && v.sequence > 0 && ["x", "z", "yaw", "pitch"].every((k) => typeof v[k] === "number" && Number.isFinite(v[k])) && Math.abs(v.x) <= 1 && Math.abs(v.z) <= 1 && Math.abs(v.yaw) <= Math.PI && Math.abs(v.pitch) <= Math.PI / 2 && ["jump", "sneak", "sprint"].every((k) => typeof v[k] === "boolean");
+  if (Object.keys(v).some((k) => !keys.includes(k) && k !== "dt") || keys.some((k) => !Object.hasOwn(v, k)))
+    return false;
+  return (v.dt === void 0 || typeof v.dt === "number" && Number.isFinite(v.dt) && v.dt > 0 && v.dt <= MAX_INPUT_DT) && Number.isSafeInteger(v.epoch) && v.epoch > 0 && Number.isSafeInteger(v.sequence) && v.sequence > 0 && ["x", "z", "yaw", "pitch"].every((k) => typeof v[k] === "number" && Number.isFinite(v[k])) && Math.abs(v.x) <= 1 && Math.abs(v.z) <= 1 && Math.abs(v.yaw) <= Math.PI && Math.abs(v.pitch) <= Math.PI / 2 && ["jump", "sneak", "sprint"].every((k) => typeof v[k] === "boolean");
 }
 function movementWish(input) {
   const scale = Math.max(1, Math.hypot(input.x, input.z));
@@ -1276,19 +1301,18 @@ function movementWish(input) {
 }
 
 // src/sim/input-queue.ts
+var PRIME = 0.04;
+var CUSHION = 0.05;
 var InputQueue = class {
   pending = [];
   latestSequence = 0;
-  held;
   acknowledged = 0;
   currentEpoch;
   latestArrival = -Infinity;
-  backlogAt = Infinity;
-  overflowed = false;
-  look;
-  constructor(epoch, look = NEUTRAL) {
+  bank = 0;
+  playing = false;
+  constructor(epoch, _look) {
     this.currentEpoch = epoch;
-    this.look = { yaw: look.yaw, pitch: look.pitch };
   }
   get received() {
     return this.latestSequence;
@@ -1298,6 +1322,10 @@ var InputQueue = class {
   }
   get ack() {
     return this.acknowledged;
+  }
+  /** Whole samples can trail the room tick by this remainder (Blockyard's player lead). */
+  get lead() {
+    return this.bank;
   }
   get size() {
     return this.pending.length;
@@ -1311,56 +1339,47 @@ var InputQueue = class {
     if (value.sequence <= this.latestSequence) return "duplicate";
     this.latestSequence = value.sequence;
     this.latestArrival = now;
-    this.pending.push({ frame: { ...value }, arrivedAt: now });
-    if (this.pending.length > 4) this.backlogAt = Math.min(this.backlogAt, now);
+    this.pending.push({ ...value });
     if (this.pending.length > INPUT_QUEUE_LIMIT) {
-      this.overflowed = true;
       const discarded = this.pending.splice(0, this.pending.length - INPUT_QUEUE_LIMIT);
-      this.acknowledged = Math.max(this.acknowledged, discarded.at(-1).frame.sequence);
+      this.acknowledged = discarded.at(-1).sequence;
       return "resync";
     }
     return "accepted";
   }
-  take(now) {
-    let resync = false;
-    while (this.pending[0] && now - this.pending[0].arrivedAt > INPUT_MAX_AGE_MS) {
-      this.acknowledged = Math.max(this.acknowledged, this.pending.shift().frame.sequence);
-      resync = true;
+  /** A small cushion absorbs arrival jitter; surplus drains 5% faster without dropping inputs.
+   * A long transport stall uses Blockyard's queue-over-30 catch-up instead of resetting prediction.
+   * Duration-less headless clients retain their explicit 60 Hz sample convention.
+   */
+  advance(dt, apply) {
+    const queued = this.pending.reduce((sum, frame) => sum + (frame.dt ?? MOVEMENT_DT), 0);
+    if (!this.playing) {
+      if (queued + 1e-9 < PRIME) return;
+      this.playing = true;
     }
-    if (this.pending.length > 4 && (this.overflowed || now - this.backlogAt >= HELD_INPUT_MS)) {
-      const discarded = this.pending.splice(0, this.pending.length - 2);
-      this.acknowledged = Math.max(this.acknowledged, discarded.at(-1).frame.sequence);
-      resync = true;
+    this.bank = Math.min(0.25, this.bank + dt * (queued > CUSHION + dt ? 1.05 : 1));
+    let count = 0;
+    while (this.pending.length && count++ < INPUT_QUEUE_LIMIT) {
+      const frame = this.pending[0], duration = frame.dt ?? MOVEMENT_DT;
+      if (duration > this.bank + 1e-9 && this.pending.length <= 30) break;
+      this.pending.shift();
+      this.bank = Math.max(0, this.bank - duration);
+      this.acknowledged = frame.sequence;
+      const epoch = this.currentEpoch;
+      apply(frame);
+      if (this.currentEpoch !== epoch) break;
     }
-    this.overflowed = false;
-    const next = this.pending.shift();
-    if (this.pending.length < 4) this.backlogAt = Infinity;
-    if (next) {
-      this.held = next;
-      this.look = { yaw: next.frame.yaw, pitch: next.frame.pitch };
-      this.acknowledged = next.frame.sequence;
-      return { controls: next.frame, resync };
-    }
-    const held = this.held;
-    if (held && now - held.arrivedAt <= HELD_INPUT_MS) {
-      return { controls: { ...held.frame, jump: false }, resync };
-    }
-    return {
-      controls: { ...NEUTRAL, ...this.look },
-      resync
-    };
+    if (!this.pending.length) this.bank = Math.min(this.bank, dt * 0.5);
   }
   reset(epoch) {
     if (!Number.isSafeInteger(epoch) || epoch <= this.currentEpoch)
       throw new Error("epoch must advance");
     this.currentEpoch = epoch;
     this.pending = [];
-    this.held = void 0;
-    this.latestSequence = 0;
-    this.acknowledged = 0;
+    this.latestSequence = this.acknowledged = 0;
     this.latestArrival = -Infinity;
-    this.backlogAt = Infinity;
-    this.overflowed = false;
+    this.bank = 0;
+    this.playing = false;
   }
 };
 
@@ -1394,8 +1413,9 @@ var FixedScheduler = class {
 var previous = "2d930b06841018cd0cb4adc65905432e4ffedc3ea2d112bb7ff65a811165307c";
 var tuned = "05809e4f10d630b5446d0872e38b1ba7f40263d0a3fb59f5ea3e7c023d190ddc";
 var appleTenPercent = "3bacc621111bfbd511d8db591f50a4fdd9298f8659aa2c2187a67e97aeb9b478";
+var instantLeaves = "2901239743859cde06ec4544cb84bb22f0c6062c4f83234dc2f8ac0d380cd21a";
 function compatibleCheckpointContent(hash2, content) {
-  return hash2 === content.hash || content.hash === tuned && hash2 === previous || content.hash === appleTenPercent && (hash2 === previous || hash2 === tuned);
+  return hash2 === content.hash || content.hash === tuned && hash2 === previous || content.hash === appleTenPercent && (hash2 === previous || hash2 === tuned) || content.hash === instantLeaves && (hash2 === previous || hash2 === tuned || hash2 === appleTenPercent);
 }
 
 // src/shared/environment.ts
@@ -1570,7 +1590,7 @@ function stepMovement(world, slot, controls, modifiers = DEFAULT_MOVEMENT) {
     modifiers.gravity,
     modifiers.control,
     modifiers.jump,
-    MOVEMENT_DT
+    controls.dt ?? MOVEMENT_DT
   );
 }
 function stepBoundedMovement(world, slot, controls, modifiers = DEFAULT_MOVEMENT) {
@@ -1628,6 +1648,25 @@ function equipmentEffects(items) {
     sunRegen,
     vision
   };
+}
+
+// src/shared/avatars.ts
+var AVATAR_POOLS = Object.freeze({
+  boy: Object.freeze([0, 1, 3, 4, 5, 7]),
+  girl: Object.freeze([2, 6, 8, 9, 10, 11])
+});
+var AVATAR_COUNT = 12;
+function isAvatarId(value) {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < AVATAR_COUNT;
+}
+function avatarIdentity(id) {
+  let hash2 = 2166136261;
+  for (let i = 0; i < id.length; i++) hash2 = Math.imul(hash2 ^ id.charCodeAt(i), 16777619);
+  return hash2 >>> 0;
+}
+function selectAvatar(id, gender = null) {
+  const hash2 = avatarIdentity(id);
+  return gender ? AVATAR_POOLS[gender][hash2 % AVATAR_POOLS[gender].length] : hash2 % AVATAR_COUNT;
 }
 
 // src/shared/appearance.ts
@@ -2616,6 +2655,12 @@ var Inventories = class _Inventories {
     p.revision++;
     return { ok: true, reason: "dropped" };
   }
+  canReceive(id, stack) {
+    const item = this.items.get(stack.itemType);
+    return this.player(id).bag.some(
+      (slot) => !slot || sameStack(slot, stack) && slot.count < item.maxStack
+    );
+  }
   receive(id, stack) {
     if (!validStack(stack, this.items)) throw new Error("invalid pickup stack");
     const p = this.player(id), bag = clone(p.bag), remaining = this.fill(bag, this.items.get(stack.itemType), stack.count, stack);
@@ -2665,8 +2710,46 @@ var Inventories = class _Inventories {
 
 // src/shared/gameplay.ts
 var DROP_RADIUS = 32;
-var PICKUP_RADIUS = 1.75;
+var PICKUP_RADIUS = 1.1;
 var DROP_LIFETIME_TICKS = 30 * 300;
+var MAGNET_RADIUS = 2.7;
+var DROP_HALF_WIDTH = 0.198;
+var DROP_HEIGHT = 0.284;
+var DROP_MERGE_RADIUS = 0.38;
+var DROP_MERGE_TICKS = 6;
+var DROP_PICKUP_TICKS = 3;
+var DROP_MAGNET_SPEED = 2.5;
+
+// src/shared/drop-physics.ts
+var FULL_BOX = [0, 0, 0, 16, 16, 16];
+function sweepDrop(world, blocks, x, y, z, dx, dy, dz) {
+  for (let pass = 0; pass < 10; pass++) {
+    let moved = false;
+    cells: for (let by = Math.floor(y); by <= Math.floor(y + DROP_HEIGHT); by++)
+      for (let bz = Math.floor(z - DROP_HALF_WIDTH); bz <= Math.floor(z + DROP_HALF_WIDTH); bz++)
+        for (let bx = Math.floor(x - DROP_HALF_WIDTH); bx <= Math.floor(x + DROP_HALF_WIDTH); bx++) {
+          const block = blocks[world.get_block(bx, by, bz)];
+          if (block?.solid === false || block?.shape === "air" || block?.shape === "liquid" || block?.shape === "cross")
+            continue;
+          const boxes = !block || block.shape === "cube" ? FULL_BOX : world.target_boxes(bx, by, bz);
+          for (let i = 0; i < boxes.length; i += 6) {
+            const lx = bx + boxes[i] / 16, ly = by + boxes[i + 1] / 16, lz = bz + boxes[i + 2] / 16;
+            const hx = bx + boxes[i + 3] / 16, hy = by + boxes[i + 4] / 16, hz = bz + boxes[i + 5] / 16;
+            const ox = Math.min(x + DROP_HALF_WIDTH, hx) - Math.max(x - DROP_HALF_WIDTH, lx);
+            const oy = Math.min(y + DROP_HEIGHT, hy) - Math.max(y, ly);
+            const oz = Math.min(z + DROP_HALF_WIDTH, hz) - Math.max(z - DROP_HALF_WIDTH, lz);
+            if (ox <= 1e-7 || oy <= 1e-7 || oz <= 1e-7) continue;
+            if (ox < oy && ox < oz) x += (x < (lx + hx) / 2 ? -1 : 1) * (ox + 12e-4);
+            else if (oy < oz) y += (y + DROP_HEIGHT / 2 < (ly + hy) / 2 ? -1 : 1) * (oy + 12e-4);
+            else z += (z < (lz + hz) / 2 ? -1 : 1) * (oz + 12e-4);
+            moved = true;
+            break cells;
+          }
+        }
+    if (!moved) break;
+  }
+  return world.sweep_body(x, y, z, dx, dy, dz, DROP_HALF_WIDTH, DROP_HEIGHT);
+}
 
 // src/sim/drops.ts
 var Drops = class _Drops {
@@ -2675,9 +2758,11 @@ var Drops = class _Drops {
   nextId = 0;
   items;
   contentHash;
+  blocks;
   constructor(content) {
     this.items = new Map(content.items.map((item) => [item.itemType, item]));
     this.contentHash = content.hash;
+    this.blocks = content.blocks;
   }
   checkpoint(tick) {
     if (!checkpointInteger(tick, 0, Number.MAX_SAFE_INTEGER - DROP_LIFETIME_TICKS))
@@ -2762,6 +2847,100 @@ var Drops = class _Drops {
     });
     return id;
   }
+  /** Stable scatter survives deterministic replays without global random state. */
+  scatter(stack, cell, tick, owner = null) {
+    const angle = (this.nextId + 1) * 2.399963229728653;
+    const radius = 0.1 + this.nextId * 7 % 23 / 100;
+    return this.add(
+      stack,
+      [
+        cell[0] + 0.5 + Math.sin(angle) * radius,
+        cell[1] + 0.25,
+        cell[2] + 0.5 + Math.cos(angle) * radius
+      ],
+      tick,
+      owner,
+      [Math.sin(angle) * 1.3, 1.6 + this.nextId % 7 * 0.2, Math.cos(angle) * 1.3]
+    );
+  }
+  releaseThrower(actor, origin) {
+    for (const drop of this.values.values())
+      if (drop.owner === actor && Math.hypot(...drop.position.map((v, i) => v - origin[i])) >= MAGNET_RADIUS)
+        drop.owner = null;
+  }
+  pull(id, origin, world) {
+    const drop = this.values.get(id);
+    if (!drop) return;
+    const distance = Math.hypot(...drop.position.map((v, i) => v - origin[i]));
+    if (distance < 1e-5) return;
+    const step = Math.min(distance, DROP_MAGNET_SPEED * DROP_PICKUP_TICKS / 30);
+    this.move(
+      drop,
+      world,
+      drop.position.map((v, i) => (origin[i] - v) / distance * step)
+    );
+    drop.velocity.fill(0);
+  }
+  move(drop, world, delta) {
+    const state = sweepDrop(world, this.blocks, ...drop.position, delta[0], delta[1], delta[2]);
+    const position = [
+      Math.max(BOUNDS.minX + DROP_HALF_WIDTH, Math.min(BOUNDS.maxX - DROP_HALF_WIDTH, state[0])),
+      Math.max(0, Math.min(256 - DROP_HEIGHT, state[1])),
+      Math.max(BOUNDS.minZ + DROP_HALF_WIDTH, Math.min(BOUNDS.maxZ - DROP_HALF_WIDTH, state[2]))
+    ];
+    for (let i = 0; i < 3; i++) if (state[i + 3] || state[i] !== position[i]) drop.velocity[i] = 0;
+    if (position.some((v, i) => Math.abs(v - drop.position[i]) > 1e-5)) {
+      drop.position = position;
+      drop.revision++;
+    }
+  }
+  /** Only non-full, compatible stacks enter the per-material spatial search.
+   * Distinct drops may overlap; merging never moves either body's position. */
+  mergeNearby(world, tick) {
+    const materials = /* @__PURE__ */ new Map();
+    for (const drop of this.values.values()) {
+      const maxStack = this.items.get(drop.stack.itemType).maxStack;
+      if (maxStack <= 1 || drop.stack.count >= maxStack || tick < drop.pickupAt || !world.has_column(Math.floor(drop.position[0] / 16), Math.floor(drop.position[2] / 16)))
+        continue;
+      let buckets = materials.get(drop.stack.itemType);
+      if (!buckets) materials.set(drop.stack.itemType, buckets = /* @__PURE__ */ new Map());
+      const cx = Math.floor(drop.position[0] / 0.5), cy = Math.floor(drop.position[1] / 0.5), cz = Math.floor(drop.position[2] / 0.5);
+      search: for (let x = -1; x <= 1; x++)
+        for (let y = -1; y <= 1; y++)
+          for (let z = -1; z <= 1; z++) {
+            for (const other of buckets.get(`${cx + x},${cy + y},${cz + z}`) ?? []) {
+              if (other.stack.count >= maxStack || drop.owner !== other.owner || !sameStack(drop.stack, other.stack))
+                continue;
+              const distanceSquared = drop.position.reduce(
+                (sum, v, i) => sum + (v - other.position[i]) ** 2,
+                0
+              );
+              if (distanceSquared > DROP_MERGE_RADIUS ** 2 || !world.line_clear(
+                drop.position[0],
+                drop.position[1] + DROP_HEIGHT / 2,
+                drop.position[2],
+                other.position[0],
+                other.position[1] + DROP_HEIGHT / 2,
+                other.position[2]
+              ))
+                continue;
+              const count = Math.min(drop.stack.count, maxStack - other.stack.count);
+              other.stack = { ...other.stack, count: other.stack.count + count };
+              other.pickupAt = Math.max(other.pickupAt, drop.pickupAt);
+              other.ownerPickupAt = Math.max(other.ownerPickupAt, drop.ownerPickupAt);
+              other.expires = Math.min(other.expires, drop.expires);
+              other.revision++;
+              this.take(drop.id, count);
+              if (!this.values.has(drop.id)) break search;
+            }
+          }
+      if (!this.values.has(drop.id)) continue;
+      const key2 = `${cx},${cy},${cz}`;
+      const list = buckets.get(key2) ?? [];
+      list.push(drop);
+      buckets.set(key2, list);
+    }
+  }
   step(world, tick) {
     for (const [id, drop] of this.values) {
       if (tick >= drop.expires) {
@@ -2771,30 +2950,15 @@ var Drops = class _Drops {
       const [x, y, z] = drop.position;
       if (!world.has_column(Math.floor(x / 16), Math.floor(z / 16))) continue;
       drop.velocity[1] = Math.max(-12, drop.velocity[1] - 18 / 30);
-      const state = world.sweep_body(
-        x,
-        y,
-        z,
-        drop.velocity[0] / 30,
-        drop.velocity[1] / 30,
-        drop.velocity[2] / 30,
-        0.125,
-        0.25
+      this.move(
+        drop,
+        world,
+        drop.velocity.map((v) => v / 30)
       );
-      const position = [
-        Math.max(BOUNDS.minX + 0.125, Math.min(BOUNDS.maxX - 0.125, state[0])),
-        Math.max(0, Math.min(255.75, state[1])),
-        Math.max(BOUNDS.minZ + 0.125, Math.min(BOUNDS.maxZ - 0.125, state[2]))
-      ];
-      for (let i = 0; i < 3; i++)
-        if (state[i + 3] || state[i] !== position[i]) drop.velocity[i] = 0;
       drop.velocity[0] *= 0.9;
       drop.velocity[2] *= 0.9;
-      if (position.some((n, i) => Math.abs(n - drop.position[i]) > 1e-5)) {
-        drop.position = position;
-        drop.revision++;
-      }
     }
+    if (tick % DROP_MERGE_TICKS === 0) this.mergeNearby(world, tick);
   }
   /** Immutable public replicas, reused across viewers until this body's revision
    * changes. Query arrays remain caller-owned; private physics/pickup data never leave.
@@ -2838,7 +3002,7 @@ var Drops = class _Drops {
   }
   eligible(id, actor, tick) {
     const drop = this.values.get(id);
-    return !!drop && tick >= drop.pickupAt && (drop.owner !== actor || tick >= drop.ownerPickupAt);
+    return !!drop && tick >= drop.pickupAt && drop.owner !== actor;
   }
   take(id, count) {
     const drop = this.values.get(id);
@@ -3352,6 +3516,7 @@ var GameRoom = class _GameRoom {
     const dead = admitted.role === "participant" && vitals.dead;
     const actor = {
       ...admitted,
+      avatar: isAvatarId(admitted.avatar) ? admitted.avatar : selectAvatar(admitted.id),
       connection,
       slot,
       epoch,
@@ -3395,6 +3560,7 @@ var GameRoom = class _GameRoom {
     this.send(actor, {
       type: "welcome",
       actorId: actor.id,
+      avatar: actor.avatar,
       epoch,
       worldId: this.worldId,
       seed: this.seed,
@@ -3544,10 +3710,20 @@ var GameRoom = class _GameRoom {
           operation.revision,
           (stack) => {
             const p = this.store.world.player_state(a.slot), yaw = a.controls.yaw;
-            this.drops.add(stack, [p[0], p[1] + 0.8, p[2]], this.tick, a.id, [
-              Math.sin(yaw) * 2,
-              2,
-              -Math.cos(yaw) * 2
+            const spawn = this.store.world.sweep_body(
+              p[0],
+              p[1] + 0.9,
+              p[2],
+              Math.sin(yaw) * 0.65,
+              0,
+              -Math.cos(yaw) * 0.65,
+              DROP_HALF_WIDTH,
+              DROP_HEIGHT
+            );
+            this.drops.add(stack, Array.from(spawn.subarray(0, 3)), this.tick, a.id, [
+              Math.sin(yaw) * 5.2,
+              1.15,
+              -Math.cos(yaw) * 5.2
             ]);
           }
         ) : this.inventories.transact(a.id, operation, this.mode === "creative");
@@ -3635,45 +3811,19 @@ var GameRoom = class _GameRoom {
         this.tick++;
         for (const a of this.actors.values())
           if (a.connection && a.phase === "playing") this.refreshMovement(a);
-        for (let sub = 0; sub < 2; sub++)
-          for (const a of this.actors.values())
-            if (a.connection && a.phase === "playing" && a.focused) {
-              const input = a.queue.take(now);
-              a.controls = input.controls;
-              const before = this.store.world.player_state(a.slot);
-              const jumped = stepBoundedMovement(
-                this.store.world,
-                a.slot,
-                input.controls,
-                a.movement
-              );
-              if (this.survival(a)) {
-                const after = this.store.world.player_state(a.slot);
-                const climbing = [0.1, 0.9, 1.6].some(
-                  (height) => this.content.blocks[this.store.world.get_block(
-                    Math.floor(after[0]),
-                    Math.floor(after[1] + height),
-                    Math.floor(after[2])
-                  )]?.climbable
-                );
-                const effects = equipmentEffects(this.inventories.equipped(a.id));
-                const landing = a.vitals.movement(
-                  before,
-                  after,
-                  climbing,
-                  effects.fallImmune ? 1 : effects.fall,
-                  input.controls.sprint && a.movement.sprint
-                );
-                let worn = landing.impact > 0 && this.inventories.wearEquipment(a.id, "fall");
-                if (jumped) worn = this.inventories.wearEquipment(a.id, "jump") || worn;
-                if (worn) {
-                  this.inventoryView(a);
-                  this.refreshMovement(a);
-                }
-                this.handleDeath(a);
-              }
-              if (input.resync) this.baseline(a, "resync");
+        for (const a of this.actors.values())
+          if (a.connection && a.phase === "playing") {
+            if (!a.focused) {
+              this.passiveMovement(a);
+              continue;
             }
+            a.queue.advance(1 / 30, (input) => {
+              a.controls = input;
+              const before = this.store.world.player_state(a.slot);
+              const jumped = stepBoundedMovement(this.store.world, a.slot, input, a.movement);
+              this.movementEffects(a, before, input.sprint && a.movement.sprint, jumped);
+            });
+          }
         for (const a of this.actors.values())
           if (a.connection) {
             if ((this.survival(a) || a.role === "participant" && a.vitals.dead) && (a.phase === "playing" || a.phase === "dead")) {
@@ -3734,12 +3884,12 @@ var GameRoom = class _GameRoom {
         this.advanceExplosions(now);
         this.store.require(this.positions());
         this.drops.step(this.store.world, this.tick);
-        if (this.tick % 3 === 0) {
+        if (this.tick % DROP_PICKUP_TICKS === 0) {
           this.pickups();
           this.dropSnapshots();
           this.explosiveSnapshots();
         }
-        if (this.tick % 2 === 0) this.snapshots(now);
+        this.snapshots(now);
         this.ports.onStep?.("world", performance.now() - started);
       });
     }
@@ -3808,14 +3958,13 @@ var GameRoom = class _GameRoom {
       if (this.ended) return;
       const started = this.ports.onStep ? performance.now() : 0;
       this.observerTick++;
-      for (let sub = 0; sub < 2; sub++)
-        for (const a of this.actors.values())
-          if (a.connection && a.role === "observer" && a.phase === "playing" && a.focused) {
-            const input = a.queue.take(now);
-            a.controls = input.controls;
-            stepBoundedMovement(this.store.world, a.slot, input.controls, a.movement);
-            if (input.resync) this.baseline(a, "resync");
-          }
+      for (const a of this.actors.values())
+        if (a.connection && a.role === "observer" && a.phase === "playing" && a.focused) {
+          a.queue.advance(1 / 30, (input) => {
+            a.controls = input;
+            stepBoundedMovement(this.store.world, a.slot, input, a.movement);
+          });
+        }
       for (const a of this.actors.values())
         if (a.connection && a.role === "observer") {
           a.saved = this.store.world.player_state(a.slot);
@@ -3826,7 +3975,7 @@ var GameRoom = class _GameRoom {
         this.dropSnapshots();
         this.explosiveSnapshots();
       }
-      if (this.observerTick % 2 === 0) this.snapshots(now);
+      this.snapshots(now);
       this.ports.onStep?.("observer", performance.now() - started);
     });
   }
@@ -3962,6 +4111,54 @@ var GameRoom = class _GameRoom {
   survival(a) {
     return this.mode === "survival" && a.role === "participant";
   }
+  movementEffects(a, before, sprinting, jumped) {
+    if (this.survival(a)) {
+      const after = this.store.world.player_state(a.slot);
+      const climbing = [0.1, 0.9, 1.6].some(
+        (height) => this.content.blocks[this.store.world.get_block(
+          Math.floor(after[0]),
+          Math.floor(after[1] + height),
+          Math.floor(after[2])
+        )]?.climbable
+      );
+      const effects = equipmentEffects(this.inventories.equipped(a.id));
+      const landing = a.vitals.movement(
+        before,
+        after,
+        climbing,
+        effects.fallImmune ? 1 : effects.fall,
+        sprinting
+      );
+      let worn = landing.impact > 0 && this.inventories.wearEquipment(a.id, "fall");
+      if (jumped) worn = this.inventories.wearEquipment(a.id, "jump") || worn;
+      if (worn) {
+        this.inventoryView(a);
+        this.refreshMovement(a);
+      }
+      this.handleDeath(a);
+    }
+  }
+  /** Unfocused players lose controls, not gravity. Use the same native physics and
+   * survival accounting as input playback; room pause still stops this clock. */
+  passiveMovement(a) {
+    const before = this.store.world.player_state(a.slot);
+    if (before[10]) return;
+    const support = this.store.world.sweep_body(
+      before[0],
+      before[1],
+      before[2],
+      0,
+      -0.03,
+      0,
+      0.3,
+      1.8
+    );
+    if (before[6] && support[4]) return;
+    this.store.world.set_frozen(a.slot, false);
+    stepBoundedMovement(this.store.world, a.slot, { ...NEUTRAL, dt: 1 / 30 }, a.movement);
+    this.store.world.set_frozen(a.slot, true);
+    this.movementEffects(a, before, false, false);
+  }
   movementProfile(a) {
     if (!this.survival(a)) return DEFAULT_MOVEMENT;
     return {
@@ -3992,7 +4189,7 @@ var GameRoom = class _GameRoom {
     const p = this.store.world.player_state(a.slot);
     this.inventories.drain(
       a.id,
-      (stack) => this.drops.add(stack, [p[0], p[1] + 0.2, p[2]], this.tick, a.id)
+      (stack) => this.drops.scatter(stack, [p[0] - 0.5, p[1], p[2] - 0.5], this.tick, a.id)
     );
     this.baseline(a, "death");
   }
@@ -4352,12 +4549,7 @@ var GameRoom = class _GameRoom {
         const viewer = this.actors.get(id);
         if (viewer) this.inventoryView(viewer);
       }
-      for (const stack of stacks)
-        this.drops.add(
-          stack,
-          [job.target[0] + 0.5, job.target[1] + 0.2, job.target[2] + 0.5],
-          this.tick
-        );
+      for (const stack of stacks) this.drops.scatter(stack, job.target, this.tick);
       this.inventoryView(a);
       this.publishEdit(mutation.value);
     }
@@ -4371,26 +4563,42 @@ var GameRoom = class _GameRoom {
     }
   }
   pickups() {
-    for (const a of this.actors.values())
-      if (a.connection && a.phase === "playing" && a.role === "participant" && a.capabilities.build) {
-        const p = this.store.world.player_state(a.slot), origin = [p[0], p[1] + 0.7, p[2]];
-        let changed = false;
-        for (const drop of this.drops.nearby(origin, PICKUP_RADIUS)) {
-          if (!this.drops.eligible(drop.id, a.id, this.tick) || !this.store.world.line_clear(
-            ...origin,
-            drop.position[0],
-            drop.position[1] + 0.125,
-            drop.position[2]
-          ))
-            continue;
-          const accepted = this.inventories.receive(a.id, drop.stack);
-          if (accepted) {
-            this.drops.take(drop.id, accepted);
-            changed = true;
-          }
-        }
-        if (changed) this.inventoryView(a);
+    const collectors = [...this.actors.values()].filter(
+      (a) => a.connection && a.phase === "playing" && a.role === "participant" && a.capabilities.build
+    ).map((a) => {
+      const p = this.store.world.player_state(a.slot);
+      return { a, origin: [p[0], p[1] + 0.7, p[2]] };
+    });
+    const candidates = /* @__PURE__ */ new Map();
+    for (const { a, origin } of collectors) {
+      this.drops.releaseThrower(a.id, origin);
+      for (const drop of this.drops.nearby(origin, MAGNET_RADIUS)) {
+        if (!this.inventories.canReceive(a.id, drop.stack) || !this.drops.eligible(drop.id, a.id, this.tick) || !this.store.world.line_clear(
+          ...origin,
+          drop.position[0],
+          drop.position[1] + DROP_HEIGHT / 2,
+          drop.position[2]
+        ))
+          continue;
+        const distance = Math.hypot(...drop.position.map((v, i) => v - origin[i]));
+        if (!candidates.has(drop.id) || distance < candidates.get(drop.id).distance)
+          candidates.set(drop.id, { drop, a, origin, distance });
       }
+    }
+    const changed = /* @__PURE__ */ new Set();
+    for (const { drop, a, origin, distance } of candidates.values()) {
+      if (distance > PICKUP_RADIUS) {
+        this.drops.pull(drop.id, origin, this.store.world);
+        continue;
+      }
+      const accepted = this.inventories.receive(a.id, drop.stack);
+      if (accepted) {
+        this.drops.take(drop.id, accepted);
+        this.send(a, { type: "pickup", epoch: a.epoch, stack: { ...drop.stack, count: accepted } });
+        changed.add(a);
+      }
+    }
+    for (const a of changed) this.inventoryView(a);
   }
   dropSnapshots() {
     for (const a of this.actors.values())
@@ -4630,12 +4838,16 @@ var GameRoom = class _GameRoom {
   snapshots(now) {
     const connected = [...this.actors.values()].filter((a) => a.connection);
     const poses = new Map(connected.map((a) => [a.id, this.store.world.player_state(a.slot)]));
+    const selfStates = new Map(connected.map((a) => [a.id, this.state(a, poses.get(a.id))]));
     const states = new Map(
       connected.filter((a) => a.phase === "playing").map((other) => [
         other.id,
         {
           id: other.id,
-          state: this.state(other, poses.get(other.id)),
+          avatar: other.avatar,
+          state: selfStates.get(other.id).map(
+            (value, axis, body) => axis < 3 && !body[12] ? Math.round((value + body[axis + 3] * other.queue.lead) * 1e4) / 1e4 : value
+          ),
           yaw: other.controls.yaw,
           pitch: other.controls.pitch,
           appearance: this.mode === "survival" || other.catalogUsesBag ? this.inventories.appearance(other.id) : { ...this.inventories.appearance(other.id), held: other.catalogItem }
@@ -4648,7 +4860,7 @@ var GameRoom = class _GameRoom {
       let membershipChanged = false, seen = 0;
       for (const other of connected)
         if (other.id !== viewer.id && other.phase === "playing" && (other.role !== "observer" || viewer.role === "observer")) {
-          const actor = states.get(other.id), state = actor.state;
+          const actor = states.get(other.id), state = selfStates.get(other.id);
           const dx = state[0] - own[0], dz = state[2] - own[2];
           if (Math.abs(dx) + Math.abs(dz) > 47 && Math.hypot(dx, dz) > 48) continue;
           seen++;
@@ -4662,6 +4874,7 @@ var GameRoom = class _GameRoom {
             if (delta === void 0) {
               const next = {
                 id: other.id,
+                ...actor.avatar !== old.avatar ? { avatar: actor.avatar } : {},
                 ...state.some((v, i) => v !== old.state[i]) ? { state } : {},
                 ...actor.yaw !== old.yaw ? { yaw: actor.yaw } : {},
                 ...actor.pitch !== old.pitch ? { pitch: actor.pitch } : {},
@@ -4696,7 +4909,7 @@ var GameRoom = class _GameRoom {
         self: {
           epoch: viewer.epoch,
           ack: viewer.queue.ack,
-          state: states.get(viewer.id)?.state ?? this.state(viewer, own)
+          state: selfStates.get(viewer.id)
         },
         actors: changes.splice(0, 64)
       });
@@ -4728,11 +4941,12 @@ function object(value, fields) {
   return !!value && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length === fields.length && fields.every((key2) => Object.hasOwn(value, key2));
 }
 function readAuthorization(value, now, expectedId) {
-  if (!object(value, ["actor", "expiresAt"]) && !object(value, ["actor", "expiresAt", "membershipRevision"]) || "membershipRevision" in value && (!Number.isSafeInteger(value.membershipRevision) || value.membershipRevision < 0) || !object(value.actor, ["id", "role", "capabilities"]) || typeof value.actor.id !== "string" || !value.actor.id.length || value.actor.id.length > 128 || expectedId !== void 0 && value.actor.id !== expectedId || !["participant", "observer"].includes(value.actor.role) || !object(value.actor.capabilities, ["build", "fly", "observe", "combat", "explosives"]) || !Object.values(value.actor.capabilities).every((flag) => typeof flag === "boolean") || value.actor.role === "observer" && value.actor.capabilities.observe !== true || typeof value.expiresAt !== "number" || !Number.isFinite(value.expiresAt) || value.expiresAt <= now || value.expiresAt > now + MAX_AUTHORIZATION_MS)
+  if (!object(value, ["actor", "expiresAt"]) && !object(value, ["actor", "expiresAt", "membershipRevision"]) || "membershipRevision" in value && (!Number.isSafeInteger(value.membershipRevision) || value.membershipRevision < 0) || !object(value.actor, ["id", "role", "capabilities"]) && !object(value.actor, ["id", "role", "capabilities", "avatar"]) || "avatar" in value.actor && !isAvatarId(value.actor.avatar) || typeof value.actor.id !== "string" || !value.actor.id.length || value.actor.id.length > 128 || expectedId !== void 0 && value.actor.id !== expectedId || !["participant", "observer"].includes(value.actor.role) || !object(value.actor.capabilities, ["build", "fly", "observe", "combat", "explosives"]) || !Object.values(value.actor.capabilities).every((flag) => typeof flag === "boolean") || value.actor.role === "observer" && value.actor.capabilities.observe !== true || typeof value.expiresAt !== "number" || !Number.isFinite(value.expiresAt) || value.expiresAt <= now || value.expiresAt > now + MAX_AUTHORIZATION_MS)
     throw new Error("invalid server authorization");
   return Object.freeze({
     actor: Object.freeze({
       id: value.actor.id,
+      ...value.actor.avatar === void 0 ? {} : { avatar: value.actor.avatar },
       role: value.actor.role,
       capabilities: Object.freeze({
         build: value.actor.capabilities.build,
@@ -4994,14 +5208,14 @@ try {
         authorizations.delete(connection);
         chunkInFlight.delete(connection);
         room.disconnect(connection, now);
-        send({ type: "close", connection, reason: "RECOVERING" });
+        send({ type: "close", connection, reason: "RECOVERING", cause: "authorization_expired" });
       }
   };
   let ticks = 0, overrunMs = 0, closed = false, lastCheckpoint = 0;
-  const close = (fault) => {
+  const close = (fault, reason = "worker_command_failed", error) => {
     if (closed) return;
     closed = true;
-    if (fault) send({ type: "fault" });
+    if (fault) send({ type: "fault", reason, failureType: failureDetails(error).failureType });
     clearInterval(timer);
     clearInterval(metrics);
     room.dispose();
@@ -5028,8 +5242,8 @@ try {
         if (!store.generateOne()) break;
         generationJob.record(performance.now() - jobStarted);
       }
-    } catch {
-      close(true);
+    } catch (error) {
+      close(true, "worker_turn_failed", error);
     } finally {
       workerTurn.record(performance.now() - started);
     }
@@ -5196,15 +5410,19 @@ try {
         ownershipDeadline = message.deadline;
       } else if (message.type === "stop") close(false);
       else throw new Error("invalid supervisor command");
-    } catch {
-      close(true);
+    } catch (error) {
+      close(true, "worker_command_failed", error);
     } finally {
       command.record(performance.now() - started);
     }
   });
   send({ type: "ready" });
-} catch {
-  send({ type: "fault" });
+} catch (error) {
+  send({
+    type: "fault",
+    reason: "worker_startup_failed",
+    failureType: failureDetails(error).failureType
+  });
   process.exitCode = 1;
 }
 //# sourceMappingURL=room-worker.js.map

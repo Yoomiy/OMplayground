@@ -1,3 +1,4 @@
+import { failureDetails } from './failure.ts';
 import type { StaffResult } from '../shared/staff.ts';
 import { createServer } from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
@@ -78,6 +79,10 @@ export type GatewayOptions = {
   onEvent?: (event: string, context: Record<string, string | number | boolean>) => void;
 };
 type RoomHandle = {
+  sessionId: string;
+  instanceId: string;
+  startedAt: number;
+  retirementReason?: string;
   worker: Worker;
   ready: Promise<void>;
   connections: Set<string>;
@@ -149,7 +154,13 @@ export async function createGateway(options: GatewayOptions) {
     >(),
     tickets = new Map<
       string,
-      { grant: AdmissionGrant; actor: AdmittedActor; room: string; expires: number }
+      {
+        grant: AdmissionGrant;
+        actor: AdmittedActor;
+        room: string;
+        expires: number;
+        admissionId: string;
+      }
     >();
   let draining = false;
   const chunkDrains = new Map<string, number>();
@@ -172,8 +183,32 @@ export async function createGateway(options: GatewayOptions) {
       chunkDrains.clear();
     });
   };
-  const event = (name: string, context: Record<string, string | number | boolean> = {}) =>
+  const event = (name: string, context: Record<string, string | number | boolean> = {}) => {
+    if (
+      typeof context.connectionId === 'string' &&
+      [
+        'VOXEL_ACTOR_DISCONNECTED',
+        'VOXEL_CONNECTION_FAILED',
+        'VOXEL_BACKPRESSURE_RECOVERY',
+      ].includes(name)
+    ) {
+      const socket = connections.get(context.connectionId)?.socket;
+      const state = socket && socketContexts.get(socket);
+      if (state) state.reportedEvent = name;
+    }
     options.onEvent?.(name, { buildId: options.build.buildId, ...context });
+  };
+  const roomContext = (handle: RoomHandle) => ({
+    room: handle.sessionId,
+    worldId: handle.worldId,
+    roomInstanceId: handle.instanceId,
+  });
+  const socketContexts = new WeakMap<WebSocket, Record<string, string | number | boolean>>();
+  const closeSocket = (socket: WebSocket, code: number, reason = 'policy_rejected') => {
+    const context = socketContexts.get(socket);
+    if (context && !context.reason) context.reason = reason.replaceAll(' ', '_');
+    socket.close(code, reason);
+  };
   const allowedOrigin = (req: IncomingMessage) =>
     !req.headers.origin ||
     options.allowedOrigins?.includes(req.headers.origin) ||
@@ -183,9 +218,14 @@ export async function createGateway(options: GatewayOptions) {
     res.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
     res.end(JSON.stringify(value));
   };
-  const failRoom = (handle: RoomHandle) => {
+  const failRoom = (
+    handle: RoomHandle,
+    reason = 'room_failure',
+    details: Record<string, string> = {},
+  ) => {
     if (handle.closing) return;
     handle.closing = true;
+    handle.retirementReason = reason;
     if (handle.staffPending) {
       clearTimeout(handle.staffPending.timer);
       handle.staffPending.reject(new Error('staff outcome unconfirmed'));
@@ -203,18 +243,25 @@ export async function createGateway(options: GatewayOptions) {
             retryable: true,
           } satisfies ServerMessage),
         );
-        c.socket.close(1012, 'recovering');
+        const state = socketContexts.get(c.socket);
+        if (state) state.reportedEvent = 'VOXEL_ROOM_FAILED';
+        closeSocket(c.socket, 1012, 'recovering');
       }
     }
     for (const [key, value] of rooms) if (value === handle) rooms.delete(key);
-    event('VOXEL_ROOM_FAILED', { connections: handle.connections.size });
+    event('VOXEL_ROOM_FAILED', {
+      ...roomContext(handle),
+      reason,
+      ...details,
+      connections: handle.connections.size,
+    });
     void handle.worker
       .terminate()
       .then(
         () => handle.durability?.close(),
         () => handle.durability?.close(),
       )
-      .catch(() => event('VOXEL_LEASE_RELEASE_FAILED'));
+      .catch(() => event('VOXEL_LEASE_RELEASE_FAILED', roomContext(handle)));
   };
   const detach = (id: string) => {
     chunkDrains.delete(id);
@@ -304,11 +351,11 @@ export async function createGateway(options: GatewayOptions) {
         // Stop publication/input immediately and queue leave before any later
         // checkpoint/join. The normal last-leave save/retirement remains owned.
         detach(id);
-        entry.socket.close(1008, 'room access revoked');
+        closeSocket(entry.socket, 1008, 'room access revoked');
         revoked++;
       }
       event('VOXEL_ACTOR_REVOKED', {
-        worldId: room.worldId,
+        ...roomContext(room),
         revision: cutoff,
         connections: revoked,
       });
@@ -338,12 +385,22 @@ export async function createGateway(options: GatewayOptions) {
   function retireRoom(handle: RoomHandle): Promise<void> {
     if (handle.idle) return handle.idle;
     if (handle.closing) return Promise.resolve();
+    if (!handle.retiring) {
+      handle.retirementReason = handle.ending
+        ? 'session_ended'
+        : handle.hasJoined
+          ? 'last_connection_left'
+          : 'admission_cancelled';
+      event('VOXEL_ROOM_RETIRING', {
+        ...roomContext(handle),
+        reason: handle.retirementReason,
+        duration_ms: Math.round(performance.now() - handle.startedAt),
+      });
+    }
     handle.retiring = true;
     if (handle.controlBusy) {
       const waiting = handle.controlBusy.then(() => retireRoom(handle));
-      void waiting.catch(() =>
-        event('VOXEL_DEFERRED_RETIREMENT_FAILED', { worldId: handle.worldId }),
-      );
+      void waiting.catch(() => event('VOXEL_DEFERRED_RETIREMENT_FAILED', roomContext(handle)));
       return waiting;
     }
     const task = (async () => {
@@ -376,7 +433,8 @@ export async function createGateway(options: GatewayOptions) {
             ? 'VOXEL_ROOM_SAVED_AND_RELEASED'
             : 'VOXEL_EMPTY_ROOM_STOPPED',
         {
-          worldId: handle.worldId,
+          ...roomContext(handle),
+          reason: handle.retirementReason ?? 'retired',
         },
       );
     })().finally(() => {
@@ -384,7 +442,7 @@ export async function createGateway(options: GatewayOptions) {
       if (handle.closing) for (const [key, value] of rooms) if (value === handle) rooms.delete(key);
     });
     handle.idle = task;
-    void task.catch(() => event('VOXEL_CHECKPOINT_FAILED', { worldId: handle.worldId }));
+    void task.catch(() => event('VOXEL_CHECKPOINT_FAILED', roomContext(handle)));
     return task;
   }
   async function allocate(id: string): Promise<RoomHandle> {
@@ -401,7 +459,7 @@ export async function createGateway(options: GatewayOptions) {
           randomUUID(),
           () => {
             ownershipLost = true;
-            if (handle) failRoom(handle);
+            if (handle) failRoom(handle, 'ownership_lost');
           },
         );
       if (options.sessions && durability) await options.sessions.initialize(durability.ownership);
@@ -441,7 +499,7 @@ export async function createGateway(options: GatewayOptions) {
         throw new Error('room startup cancelled');
       return handle;
     } catch (error) {
-      if (handle) failRoom(handle);
+      if (handle) failRoom(handle, 'allocation_failed', failureDetails(error));
       else await durability?.close().catch(() => event('VOXEL_LEASE_RELEASE_FAILED'));
       throw error;
     }
@@ -477,6 +535,9 @@ export async function createGateway(options: GatewayOptions) {
       reject = j;
     });
     const handle: RoomHandle = {
+      sessionId: id,
+      instanceId: randomUUID(),
+      startedAt: performance.now(),
       worker,
       ready,
       connections: new Set(),
@@ -496,7 +557,7 @@ export async function createGateway(options: GatewayOptions) {
         options.sessions && durability
           ? new SessionOutbox(
               (sequence, view) => options.sessions!.project(durability.ownership, sequence, view),
-              () => event('VOXEL_SESSION_PROJECTION_FAILED', { worldId }),
+              () => event('VOXEL_SESSION_PROJECTION_FAILED', roomContext(handle)),
             )
           : null,
     };
@@ -504,7 +565,7 @@ export async function createGateway(options: GatewayOptions) {
     durability?.attach((message) => worker.postMessage(message));
     const deadline = setTimeout(() => {
       reject(new Error('room startup timed out'));
-      failRoom(handle);
+      failRoom(handle, 'startup_timeout');
     }, 15000);
     worker.on('message', (message: FromRoom) => {
       if (handle.closing || (durability && !durability.owned())) return;
@@ -519,7 +580,10 @@ export async function createGateway(options: GatewayOptions) {
         handle.heartbeat = Date.now();
         clearTimeout(deadline);
         resolve();
-        event('VOXEL_ROOM_READY');
+        event('VOXEL_ROOM_READY', {
+          ...roomContext(handle),
+          duration_ms: Math.round(performance.now() - handle.startedAt),
+        });
       } else if (message.type === 'room-policy-needed') {
         const unavailable = () => {
           if (!handle.closing && (!durability || durability.owned()))
@@ -556,7 +620,7 @@ export async function createGateway(options: GatewayOptions) {
               }
             },
             () => {
-              event('VOXEL_ROOM_POLICY_UNAVAILABLE', { worldId: handle.worldId });
+              event('VOXEL_ROOM_POLICY_UNAVAILABLE', roomContext(handle));
               unavailable();
             },
           );
@@ -593,13 +657,15 @@ export async function createGateway(options: GatewayOptions) {
             } satisfies ToRoom);
           },
           () => {
-            event('VOXEL_OWNER_POLICY_UNAVAILABLE', { worldId: handle.worldId });
+            event('VOXEL_OWNER_POLICY_UNAVAILABLE', roomContext(handle));
             unavailable();
           },
         );
       } else if (message.type === 'fault') {
         reject(new Error('room failed'));
-        failRoom(handle);
+        failRoom(handle, message.reason ?? 'worker_fault', {
+          failureType: message.failureType ?? 'unknown',
+        });
       } else if (message.type === 'metrics') {
         handle.heartbeat = Date.now();
         const timings: Record<string, number> = {};
@@ -607,7 +673,7 @@ export async function createGateway(options: GatewayOptions) {
           for (const [measure, value] of Object.entries(summary))
             timings[`${kind}_${measure}`] = value;
         event('VOXEL_ROOM_METRICS', {
-          worldId: handle.worldId,
+          ...roomContext(handle),
           ticks: message.ticks,
           columns: message.columns,
           overrunMs: message.overrunMs,
@@ -624,9 +690,11 @@ export async function createGateway(options: GatewayOptions) {
         if (message.type === 'close') {
           if (message.reason === 'SESSION_ENDED') handle.ending = true;
           event('VOXEL_ACTOR_DISCONNECTED', {
-            worldId: handle.worldId,
+            ...roomContext(handle),
+            ...socketContexts.get(c.socket),
             reason: message.reason,
             origin: 'worker',
+            ...(message.cause ? { cause: message.cause, authorizationFailure: 'expired' } : {}),
           });
           detach(message.connection);
           c.socket.send(
@@ -636,7 +704,8 @@ export async function createGateway(options: GatewayOptions) {
               retryable: message.reason === 'RECOVERING',
             } satisfies ServerMessage),
           );
-          c.socket.close(
+          closeSocket(
+            c.socket,
             message.reason === 'RECOVERING'
               ? 1012
               : ['UNAUTHORIZED', 'SESSION_ENDED'].includes(message.reason)
@@ -650,8 +719,12 @@ export async function createGateway(options: GatewayOptions) {
           // is exceeded. Dropping an unsent snapshot would lose its actor changes.
           const bufferedBytes = c.socket.bufferedAmount;
           if (bufferedBytes > 1024 * 1024) {
-            event('VOXEL_BACKPRESSURE_RECOVERY', { worldId: handle.worldId, bufferedBytes });
-            c.socket.close(1013, 'resynchronize');
+            event('VOXEL_BACKPRESSURE_RECOVERY', {
+              ...roomContext(handle),
+              ...socketContexts.get(c.socket),
+              bufferedBytes,
+            });
+            closeSocket(c.socket, 1013, 'resynchronize');
             return;
           }
           c.socket.send(
@@ -670,18 +743,24 @@ export async function createGateway(options: GatewayOptions) {
         }
       }
     });
-    worker.on('error', () => {
+    worker.on('error', (error) => {
       clearTimeout(deadline);
       reject(new Error('room worker error'));
-      failRoom(handle);
+      failRoom(handle, 'worker_error', failureDetails(error));
     });
     worker.on('exit', (code) => {
       clearTimeout(deadline);
-      if (!handle.closing) {
+      const expected = handle.closing;
+      if (!expected) {
         reject(new Error('room exited'));
-        failRoom(handle);
+        failRoom(handle, 'unexpected_exit');
       }
-      event('VOXEL_ROOM_EXITED', { code });
+      event('VOXEL_ROOM_EXITED', {
+        ...roomContext(handle),
+        code,
+        expected,
+        reason: handle.retirementReason ?? 'unexpected_exit',
+      });
     });
     // Startup rejection is also observed when a client disconnects before awaiting admission.
     void ready.catch(() => {});
@@ -765,6 +844,8 @@ export async function createGateway(options: GatewayOptions) {
     }
   }
   const http = createServer((req, res) => {
+    const correlationId = randomUUID();
+    res.setHeader('x-correlation-id', correlationId);
     void (async () => {
       if (req.url === '/health') {
         reply(res, 200, { ok: true });
@@ -880,6 +961,8 @@ export async function createGateway(options: GatewayOptions) {
         return;
       }
       const input = body as AdmissionRequest;
+      const admissionStartedAt = performance.now();
+      const admissionId = correlationId;
       const grant = await options.admit(req, input, res);
       if (res.writableEnded) return;
       if (draining) {
@@ -899,14 +982,19 @@ export async function createGateway(options: GatewayOptions) {
       const ticket = randomBytes(32).toString('base64url');
       tickets.set(ticket, {
         grant,
+        admissionId,
         actor: initial.actor,
         room: body.room,
         expires: Date.now() + 30000,
       });
       reply(res, 200, { ticket, buildId: options.build.buildId });
-      event('VOXEL_ADMISSION_ISSUED');
-    })().catch(() => {
-      event('VOXEL_HTTP_FAILED');
+      event('VOXEL_ADMISSION_ISSUED', {
+        room: input.room,
+        admissionId,
+        duration_ms: Math.round(performance.now() - admissionStartedAt),
+      });
+    })().catch((error) => {
+      event('VOXEL_HTTP_FAILED', { correlationId, ...failureDetails(error) });
       if (!res.headersSent) reply(res, 500, { error: 'INTERNAL' });
       else res.end();
     });
@@ -939,18 +1027,29 @@ export async function createGateway(options: GatewayOptions) {
         room: null as RoomHandle | null,
         authorization: null as ConnectionAuthorization | null,
       };
+    const startedAt = performance.now();
+    const context: Record<string, string | number | boolean> = {
+      connectionId: id,
+      phase: 'awaiting_hello',
+    };
+    socketContexts.set(socket, context);
     connections.set(id, entry);
     let authenticated = false,
       joining = false,
       windowStart = Date.now(),
       messages = 0;
-    const deadline = setTimeout(() => socket.close(1008, 'admission required'), 5000);
-    socket.on('error', () => socket.terminate());
+    const deadline = setTimeout(() => closeSocket(socket, 1008, 'admission required'), 5000);
+    socket.on('error', () => {
+      context.reason ??= 'transport_error';
+      socket.terminate();
+    });
     socket.on('close', (code) => {
       clearTimeout(deadline);
       event('VOXEL_CONNECTION_CLOSED', {
+        ...context,
         code,
-        ...(entry.room ? { worldId: entry.room.worldId } : {}),
+        reason: context.reason ?? (authenticated ? 'peer_closed' : 'admission_interrupted'),
+        duration_ms: Math.round(performance.now() - startedAt),
       });
       detach(id);
       connections.delete(id);
@@ -962,7 +1061,7 @@ export async function createGateway(options: GatewayOptions) {
           messages = 0;
         }
         if (++messages > 300 || binary) {
-          socket.close(1008, 'invalid control stream');
+          closeSocket(socket, 1008, 'invalid control stream');
           return;
         }
         const message = parseClientMessage(bytes.toString());
@@ -978,12 +1077,14 @@ export async function createGateway(options: GatewayOptions) {
         }
         if (!authenticated) {
           if (joining || message.type !== 'hello') {
-            socket.close(1008, 'admission required');
+            closeSocket(socket, 1008, 'admission required');
             return;
           }
           joining = true;
           const ticket = tickets.get(message.ticket);
           tickets.delete(message.ticket);
+          if (ticket)
+            Object.assign(context, { room: ticket.room, admissionId: ticket.admissionId });
           if (!ticket || ticket.expires < Date.now()) {
             socket.send(
               JSON.stringify({
@@ -992,7 +1093,7 @@ export async function createGateway(options: GatewayOptions) {
                 retryable: false,
               } satisfies ServerMessage),
             );
-            socket.close(1008);
+            closeSocket(socket, 1008, ticket ? 'ticket expired' : 'ticket invalid');
             return;
           }
           if (message.buildId !== options.build.buildId) {
@@ -1003,12 +1104,13 @@ export async function createGateway(options: GatewayOptions) {
                 retryable: false,
               } satisfies ServerMessage),
             );
-            socket.close(1008);
+            closeSocket(socket, 1008, 'build incompatible');
             return;
           }
           admitting.set(ticket.room, (admitting.get(ticket.room) ?? 0) + 1);
           try {
             const validate = async (): Promise<Authorization | null> => {
+              context.phase = 'revalidating';
               const next = await ticket.grant.revalidate('ticket');
               return next === null ? null : readAuthorization(next, Date.now(), ticket.actor.id);
             };
@@ -1021,26 +1123,29 @@ export async function createGateway(options: GatewayOptions) {
                   retryable: false,
                 } satisfies ServerMessage),
               );
-              socket.close(1008);
+              closeSocket(socket, 1008, 'authorization denied');
               return;
             }
             let room: RoomHandle;
             let acceptedBy: RoomHandle | null = null;
             for (;;) {
               if (socket.readyState !== WebSocket.OPEN) return;
+              context.phase = 'allocating_room';
               room = await roomFor(ticket.room);
+              Object.assign(context, roomContext(room));
               if (socket.readyState !== WebSocket.OPEN) return;
               if (room.retiring) continue;
               if (authorization.expiresAt <= Date.now()) {
                 authorization = await validate();
                 if (!authorization) {
-                  socket.close(1008, 'authorization expired');
+                  closeSocket(socket, 1008, 'authorization expired');
                   return;
                 }
                 // Every await can cross retirement/replacement; reacquire before attaching.
                 continue;
               }
               if (options.sessions && room.durability && acceptedBy !== room) {
+                context.phase = 'accepting_membership';
                 await options.sessions.accept(
                   room.durability.ownership,
                   authorization.actor,
@@ -1071,9 +1176,15 @@ export async function createGateway(options: GatewayOptions) {
                   retryable: false,
                 } satisfies ServerMessage),
               );
-              socket.close(1008, 'room access revoked');
+              closeSocket(socket, 1008, 'room access revoked');
               return;
             }
+            context.phase = 'active';
+            Object.assign(context, roomContext(room));
+            event('VOXEL_ADMISSION_ACCEPTED', {
+              ...context,
+              duration_ms: Math.round(performance.now() - startedAt),
+            });
             entry.room = room;
             room.hasJoined = true;
             room.connections.add(id);
@@ -1090,7 +1201,8 @@ export async function createGateway(options: GatewayOptions) {
                 } satisfies ToRoom),
               (reason, detail) => {
                 event('VOXEL_ACTOR_DISCONNECTED', {
-                  worldId: room.worldId,
+                  ...context,
+                  ...roomContext(room),
                   reason,
                   origin: 'authorization',
                   ...detail,
@@ -1104,7 +1216,7 @@ export async function createGateway(options: GatewayOptions) {
                       retryable: reason === 'RECOVERING',
                     } satisfies ServerMessage),
                   );
-                socket.close(reason === 'RECOVERING' ? 1012 : 1008, reason.toLowerCase());
+                closeSocket(socket, reason === 'RECOVERING' ? 1012 : 1008, reason.toLowerCase());
               },
             );
             room.worker.postMessage({
@@ -1131,15 +1243,15 @@ export async function createGateway(options: GatewayOptions) {
           }
         }
         if (message.type === 'hello') {
-          socket.close(1008, 'ticket already used');
+          closeSocket(socket, 1008, 'ticket already used');
           return;
         }
         if (!entry.room || !entry.authorization?.valid()) {
-          socket.close(1008, 'authorization expired');
+          closeSocket(socket, 1008, 'authorization expired');
           return;
         }
         if (entry.room.closing || (entry.room.durability && !entry.room.durability.owned())) {
-          socket.close(1012, 'recovering');
+          closeSocket(socket, 1012, 'recovering');
           return;
         }
         entry.room!.worker.postMessage({
@@ -1149,7 +1261,11 @@ export async function createGateway(options: GatewayOptions) {
         } satisfies ToRoom);
       })().catch((error) => {
         const ended = isSessionEnded(error);
-        event('VOXEL_CONNECTION_FAILED');
+        event('VOXEL_CONNECTION_FAILED', {
+          ...context,
+          reason: ended ? 'session_ended' : 'connection_operation_failed',
+          ...failureDetails(error),
+        });
         if (socket.readyState === WebSocket.OPEN)
           socket.send(
             JSON.stringify({
@@ -1158,14 +1274,14 @@ export async function createGateway(options: GatewayOptions) {
               retryable: !ended,
             } satisfies ServerMessage),
           );
-        socket.close(ended ? 1008 : 1012, ended ? 'session ended' : 'recovering');
+        closeSocket(socket, ended ? 1008 : 1012, ended ? 'session ended' : 'recovering');
       });
     });
   });
   const sweep = setInterval(() => {
     for (const [key, ticket] of tickets) if (ticket.expires < Date.now()) tickets.delete(key);
     for (const handle of rooms.values())
-      if (Date.now() - handle.heartbeat > 25000) failRoom(handle);
+      if (Date.now() - handle.heartbeat > 25000) failRoom(handle, 'heartbeat_timeout');
   }, 5000);
   const autosave = setInterval(() => {
     for (const handle of rooms.values())
@@ -1174,10 +1290,10 @@ export async function createGateway(options: GatewayOptions) {
         void handle.durability.save(false).then(
           (pointer) =>
             event('VOXEL_CHECKPOINT_COMMITTED', {
-              worldId: handle.worldId,
+              ...roomContext(handle),
               sequence: pointer.sequence,
             }),
-          () => event('VOXEL_CHECKPOINT_FAILED', { worldId: handle.worldId }),
+          () => event('VOXEL_CHECKPOINT_FAILED', roomContext(handle)),
         );
   }, 15000);
   await new Promise<void>((resolve, reject) => {
@@ -1221,11 +1337,16 @@ export async function createGateway(options: GatewayOptions) {
           await handle.projection?.finish();
         }),
       );
-      for (const c of connections.values()) c.socket.terminate();
+      for (const c of connections.values()) {
+        const context = socketContexts.get(c.socket);
+        if (context) context.reason = 'service_shutdown';
+        c.socket.terminate();
+      }
       const closed = new Promise<void>((resolve) => http.close(() => resolve()));
       const force = setTimeout(() => http.closeAllConnections(), 3500);
       for (const handle of rooms.values()) {
         handle.closing = true;
+        handle.retirementReason = 'service_shutdown';
         handle.projection?.close();
         handle.worker.postMessage({ type: 'stop' } satisfies ToRoom);
       }

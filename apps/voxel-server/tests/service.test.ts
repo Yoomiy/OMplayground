@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { loadServerRelease } from "../src/release.ts";
 import { serviceConfig, startVoxelService } from "../src/service.ts";
-const logger = { info: () => {}, error: () => {} };
+const logger = { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} };
 test("production listener rejects wildcard, path, insecure and credential origins and requires a concrete port", () => {
   assert.deepEqual(
     serviceConfig({
