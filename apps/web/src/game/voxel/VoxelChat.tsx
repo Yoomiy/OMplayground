@@ -178,6 +178,7 @@ export function VoxelChat({
     const key = (event: KeyboardEvent) => {
       const current = opening.current;
       if (
+        !active ||
         event.repeat ||
         !["KeyT", "Enter", "NumpadEnter"].includes(event.code) ||
         current.open ||
@@ -191,27 +192,45 @@ export function VoxelChat({
       event.preventDefault();
       current.onOpen();
       setOpen(true);
-      dialog.current?.showModal();
+      dialog.current?.show();
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
-  }, []);
+  }, [active]);
   return (
     <>
       <button
+        className="voxel-session__chat-toggle"
         type="button"
+        aria-expanded={open}
+        aria-controls="voxel-chat-panel"
         onClick={() => {
+          if (open) {
+            dialog.current?.close();
+            onResume?.();
+            return;
+          }
+          if (!active) return;
           onOpen();
           setOpen(true);
-          dialog.current?.showModal();
+          dialog.current?.show();
         }}
       >
         צ׳אט
       </button>
       <dialog
         ref={dialog}
+        id="voxel-chat-panel"
         className="voxel-session__dialog voxel-session__chat"
         aria-labelledby="voxel-chat-title"
+        onKeyDown={(event) => {
+          event.stopPropagation();
+          if (event.key === "Escape") {
+            event.preventDefault();
+            dialog.current?.close();
+            onResume?.();
+          }
+        }}
         onCancel={(event) => {
           event.preventDefault();
           dialog.current?.close();
@@ -249,15 +268,6 @@ export function VoxelChat({
           }}
         >
           <h2 id="voxel-chat-title">צ׳אט המשחק</h2>
-          <button
-            type="button"
-            onClick={() => {
-              dialog.current?.close();
-              onResume?.();
-            }}
-          >
-            סגירת הצ׳אט
-          </button>
         </header>
         {readError && <p role="alert">לא ניתן לטעון את הצ׳אט כעת.</p>}
         {loading && !page && <p role="status">טוענים הודעות…</p>}

@@ -43,6 +43,48 @@ export function schoolSessionApi(
       }
     };
   return {
+    "/api/voxel/room-settings": run(async (req, body) => {
+      if (!body || typeof body !== "object" || Array.isArray(body))
+        throw new AccessDenied("INVALID");
+      const v = body as Record<string, unknown>;
+      if (
+        typeof v.room !== "string" ||
+        !UUID.test(v.room) ||
+        Object.keys(v).some((k) => !["room", "isOpen"].includes(k)) ||
+        ("isOpen" in v && typeof v.isOpen !== "boolean")
+      )
+        throw new AccessDenied("INVALID");
+      const token = bearerToken(req.headers.authorization);
+      if (!token) throw new AccessDenied("UNAUTHORIZED");
+      const auth = await access.identity(token);
+      await access.inspect(token, { room: v.room });
+      const fields = "is_open,invitation_code";
+      const result =
+        "isOpen" in v
+          ? await client
+              .from("game_sessions")
+              .update({ is_open: v.isOpen })
+              .eq("id", v.room)
+              .eq("host_id", auth.subject.id)
+              .neq("status", "completed")
+              .select(fields)
+              .maybeSingle()
+              .retry(false)
+          : await client
+              .from("game_sessions")
+              .select(fields)
+              .eq("id", v.room)
+              .eq("host_id", auth.subject.id)
+              .maybeSingle()
+              .retry(false);
+      if (result.error)
+        throw new PersistenceError("room_settings", result.error);
+      if (!result.data) throw new AccessDenied("FORBIDDEN");
+      return {
+        isOpen: result.data.is_open,
+        invitationCode: result.data.invitation_code,
+      };
+    }),
     "/api/voxel/session": run(async (req, body) => {
       const token = bearerToken(req.headers.authorization);
       if (!token) throw new AccessDenied("UNAUTHORIZED");

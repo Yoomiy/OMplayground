@@ -325,6 +325,12 @@ export function schoolMediaApi(
     async (req, body, res, context) => {
       let id = "invalid";
       try {
+        // Retain staff moderation implementation for an explicit future rollout.
+        if (
+          operation === "moderate" &&
+          process.env.VOXEL_VOICE_MODERATION_ENABLED !== "true"
+        )
+          throw new AccessDenied("FORBIDDEN");
         if (!body || typeof body !== "object" || Array.isArray(body))
           throw new AccessDenied("INVALID");
         const v = body as Record<string, unknown>;

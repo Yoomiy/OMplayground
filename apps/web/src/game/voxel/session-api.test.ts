@@ -372,3 +372,32 @@ describe("staff moderation service contract", () => {
     expect((await api.moderate("unban", target, requestId)).revision).toBe(0);
   });
 });
+
+it("room settings use authenticated service requests and validate privacy responses", async () => {
+  const calls: unknown[] = [];
+  let malformed = false;
+  const api = createVoxelApi({
+    serverUrl: "https://voxel.example",
+    room,
+    getToken: async () => "token",
+    request: async (_url, options) => {
+      expect(new Headers(options?.headers).get("Authorization")).toBe(
+        "Bearer token",
+      );
+      calls.push(JSON.parse(options?.body as string));
+      return response(
+        malformed
+          ? { isOpen: "false" }
+          : { isOpen: false, invitationCode: "code" },
+      );
+    },
+  });
+  expect(await api.roomSettings()).toEqual({
+    isOpen: false,
+    invitationCode: "code",
+  });
+  await api.roomSettings(false);
+  expect(calls).toEqual([{ room }, { room, isOpen: false }]);
+  malformed = true;
+  await expect(api.roomSettings()).rejects.toThrow("PROTOCOL");
+});

@@ -32,6 +32,12 @@ export type VoiceState = Readonly<{
   outputMuted: boolean;
   audioLocked: boolean;
   outputSelection: boolean;
+  nearby: readonly {
+    id: string;
+    distance: number;
+    occluded: boolean;
+    speaking: boolean;
+  }[];
 }>;
 const initial: VoiceState = {
   phase: "off",
@@ -42,6 +48,7 @@ const initial: VoiceState = {
   outputMuted: false,
   audioLocked: false,
   outputSelection: false,
+  nearby: [],
 };
 const identity =
   /^([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}):[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
@@ -100,17 +107,20 @@ export class VoiceSession {
   get state() {
     return this.value;
   }
-  async start(): Promise<void> {
+  async start(options: { automatic?: boolean } = {}): Promise<void> {
     if (this.disposed) return;
     const activation = ++this.activation;
     // Resume/create the graph synchronously within the user's gesture.
     let activated = false;
-    try {
-      activated = await this.audio.activate();
-    } catch {
-      if (this.disposed || activation !== this.activation) return;
-      this.emit({ phase: "unavailable", audioLocked: true });
-      return;
+    const activationResult = this.audio.activate().catch(() => false);
+    if (options.automatic) {
+      // Autoplay may wait for a gesture. Admission must not wait for it.
+      void activationResult.then((value) => {
+        if (!this.disposed && activation === this.activation)
+          this.emit({ audioLocked: !value });
+      });
+    } else {
+      activated = await activationResult;
     }
     if (this.disposed || activation !== this.activation) return;
     this.desired = true;
@@ -278,6 +288,24 @@ export class VoiceSession {
     this.audio.scene(scene);
     if (this.audio.stats.blockedInputs > 0) this.emit({ audioLocked: true });
     const room = this.room;
+    const speakers = new Set(
+      room?.activeSpeakers.map((p) => identity.exec(p.identity)?.[1]),
+    );
+    this.emit({
+      nearby: (scene?.sources ?? [])
+        .filter((s) => s.gain > 0)
+        .map((s) => ({
+          id: s.id,
+          distance: Math.round(
+            Math.hypot(
+              ...s.position.map((v, i) => v - scene!.listener.position[i]),
+            ),
+          ),
+          occluded: s.occluded,
+          speaking: speakers.has(s.id),
+        }))
+        .sort((a, b) => a.distance - b.distance),
+    });
     if (room?.state !== ConnectionState.Connected) return;
     const audible = new Set(
       scene?.sources.filter((s) => s.gain > 0).map((s) => s.id) ?? [],

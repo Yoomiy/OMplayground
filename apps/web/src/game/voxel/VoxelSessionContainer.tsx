@@ -132,6 +132,9 @@ export function VoxelSessionContainer({ sessionId }: { sessionId: string }) {
         userId={user.id}
         isStaff={isAdmin || profile?.role === "teacher"}
         canChoosePlayer={!isAdmin && profile?.role === "teacher"}
+        manualVoiceJoin={
+          (isAdmin || profile?.role === "teacher") && participation !== "player"
+        }
         onExit={back}
         onDiagnostic={diagnostic}
         onParticipation={(mode) => {

@@ -532,50 +532,33 @@
   transform: none;
 }
 
-/* Shared parchment/wood treatment follows the previous game's inventory and guide. */
+/* The original dark session chrome applies to every control. */
 .voxel-session button:not(.voxel-item-slot) {
-  color: #2f261c;
-  background: linear-gradient(#c9bda8, #a99a83);
-  border: 2px solid #5c4f3e;
-  box-shadow:
-    inset 0 1px #fff6,
-    0 2px #302519;
+  color: #f1f5f9;
+  background: #0f172acc;
+  border: 1px solid #ffffff26;
+  border-radius: 8px;
+  box-shadow: none;
   font-weight: 700;
 }
 .voxel-session button:not(.voxel-item-slot):hover {
-  background: #ddd2be;
+  background: #334155;
 }
 .voxel-session button:not(.voxel-item-slot)[aria-pressed="true"] {
-  background: #34281a;
-  color: #ffe1a0;
+  background: #075985;
+  color: #e0f2fe;
 }
-.voxel-session__header {
-  color: #2f261c;
-  background: linear-gradient(#d4c5a8ed, #b9a78be8);
-  border: 2px solid #5c4f3e;
-  box-shadow:
-    0 3px 12px #0006,
-    inset 0 1px #fff5;
-}
-.voxel-session__header p {
-  color: #4a3f30;
-}
-.voxel-session__menu-body,
-.voxel-session__dialog {
-  color: #2f261c;
-  background: linear-gradient(#ded0b6, #bfb196);
-  border: 3px solid #2f261c;
-}
+.voxel-session__dialog,
 .voxel-session__status {
-  color: #2f261c;
-  background: #e2d2b2ef;
-  border: 2px solid #5c4f3e;
-  box-shadow: 0 4px 20px #0007;
+  color: #e2e8f0;
+  background: #0f172aee;
+  border: 1px solid #ffffff26;
+  border-radius: 12px;
 }
 .voxel-session__bottom {
-  color: #f9eed8;
-  background: #302519d9;
-  border: 2px solid #7c674a;
+  color: #f1f5f9;
+  background: #0f172acc;
+  border: 1px solid #ffffff26;
 }
 .voxel-session__help > header {
   display: flex;
@@ -586,11 +569,12 @@
   padding-bottom: 9px;
 }
 .voxel-session__help h2 {
-  font-size: 20px;
   color: #1f1810;
   margin: 0;
+  font-size: 20px;
 }
 .voxel-session__help > header p {
+  color: #4a3f30;
   font-size: 11px;
   margin: 4px 0 0;
 }
@@ -780,10 +764,10 @@
 }
 .voxel-session__help-content section {
   border: 2px solid #6b5e4b;
-  background: #0000000c;
+  background: #0000001f;
   padding: 11px;
   margin-bottom: 10px;
-  box-shadow: inset 0 1px #fff4;
+  box-shadow: inset 0 2px 8px #0000001a;
 }
 .voxel-session__help-content h3 {
   font-size: 13px;
@@ -823,4 +807,199 @@
   text-align: right;
   border-bottom: 1px solid #8a7a6266;
   padding: 5px 3px;
+}
+
+/* Legacy voxel session controls and social overlays. */
+.voxel-session__header {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  background: transparent;
+  border: 0;
+  max-width: min(520px, calc(100vw - 24px));
+}
+.voxel-session__header > h1 {
+  display: none;
+}
+.voxel-session .voxel-session__header button,
+.voxel-session .voxel-session__room-controls button {
+  border-radius: 8px;
+  padding: 7px 12px;
+  background: #0f172acc;
+  color: #fff;
+  border: 1px solid #ffffff26;
+}
+.voxel-session__lifecycle {
+  display: flex;
+  gap: 8px;
+}
+.voxel-session .voxel-session__lifecycle button:first-child {
+  background: #d97706e6;
+}
+.voxel-session .voxel-session__lifecycle button:last-child {
+  background: #be123ce6;
+}
+.voxel-session__room-controls {
+  position: absolute;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  right: max(16px, env(safe-area-inset-right));
+  z-index: 4;
+  width: min(280px, calc(100vw - 32px));
+  padding: 12px;
+  border: 1px solid #ffffff33;
+  border-radius: 12px;
+  background: #0f172ae6;
+  color: white;
+  font:
+    12px/1.5 Arial,
+    sans-serif;
+}
+.voxel-session__room-controls nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.voxel-session__room-controls input {
+  width: 100%;
+  color: white;
+  background: #1e293b;
+  direction: ltr;
+}
+.voxel-session .voxel-session__chat,
+.voxel-session .voxel-session__voice-dialog,
+.voxel-session__chat-peek {
+  position: absolute;
+  z-index: 6;
+}
+.voxel-session .voxel-session__chat {
+  top: 64px;
+  bottom: auto;
+}
+.voxel-session .voxel-session__voice-dialog {
+  bottom: max(72px, calc(env(safe-area-inset-bottom) + 64px));
+  width: min(280px, calc(100vw - 32px));
+  max-height: min(420px, calc(100dvh - 140px));
+}
+.voxel-session__voice > button {
+  position: absolute;
+  bottom: max(72px, calc(env(safe-area-inset-bottom) + 64px));
+  left: 16px;
+}
+.voxel-session__nearby {
+  max-height: 140px;
+  overflow: auto;
+}
+.voxel-session__nearby p {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.voxel-session__nearby [data-speaking="true"] {
+  color: #6ee7b7;
+}
+@media (max-width: 700px), (pointer: coarse) {
+  .voxel-session__room-controls {
+    bottom: 170px;
+    right: 8px;
+    width: 210px;
+    padding: 8px;
+  }
+  .voxel-session .voxel-session__voice-dialog {
+    bottom: 170px;
+    left: 8px;
+    width: min(240px, calc(100vw - 238px));
+    min-width: 140px;
+    max-height: 240px;
+  }
+  .voxel-session__voice > button {
+    bottom: 170px;
+    left: 8px;
+  }
+  .voxel-session .voxel-session__chat {
+    top: 100px;
+    max-height: calc(100dvh - 270px);
+  }
+  .voxel-session__chat-peek {
+    top: 100px;
+    max-width: 45vw;
+  }
+}
+.voxel-session__chat-toggle {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 5;
+}
+.voxel-session__header {
+  box-shadow: none;
+}
+.voxel-session__voice > button {
+  z-index: 5;
+}
+
+.voxel-session__header > nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.voxel-session__staff {
+  position: relative;
+  color: #e2e8f0;
+}
+.voxel-session__staff[open] {
+  max-height: calc(100dvh - 180px);
+  overflow: auto;
+  padding: 12px;
+  border-radius: 12px;
+  background: #0f172aee;
+}
+.voxel-session input:not(.voxel-item-slot),
+.voxel-session select,
+.voxel-session textarea {
+  color: #f1f5f9;
+  background: #0f172a;
+  border: 1px solid #ffffff33;
+  border-radius: 6px;
+}
+.voxel-session .voxel-session__help kbd {
+  color: #2f261c;
+  background: #c9bda8;
+  border-color: #5c4f3e;
+}
+@media (max-width: 380px) {
+  .voxel-session__room-controls {
+    width: calc(50vw - 12px);
+    box-sizing: border-box;
+  }
+  .voxel-session .voxel-session__voice-dialog {
+    width: calc(50vw - 12px);
+    min-width: 0;
+  }
+}
+
+/* Historical Help is a self-contained parchment sidebar. */
+.voxel-session .voxel-session__help button {
+  color: #2f261c;
+  background: #c9bda8;
+  border: 2px solid #5c4f3e;
+  border-radius: 4px;
+  box-shadow:
+    inset 0 1px #ffffff66,
+    0 2px #2a2418;
+}
+.voxel-session .voxel-session__help button:hover {
+  background: #ddd2be;
+}
+.voxel-session .voxel-session__help button[aria-pressed="true"] {
+  color: #ffd700;
+  background: #1a1510;
+  border-color: #1a1510;
+}
+.voxel-session .voxel-session__help > header button {
+  background: linear-gradient(#a89a86, #8c7d68);
+}
+.voxel-session__help-content {
+  color: #3d3122;
+}
+.voxel-session__help-content dt {
+  color: #2f261c;
 }

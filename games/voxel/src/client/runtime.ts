@@ -1,3 +1,4 @@
+import { toggleFullscreen } from './fullscreen.ts';
 import { ITEM_LABELS } from './content-labels.ts';
 import { engine, loadEngine, content, identity, supportProblem } from './engine.ts';
 import { TerrainRenderer } from '../render/terrain.ts';
@@ -1846,8 +1847,7 @@ export async function mountVoxel(
         sprint: cmd.sprint,
       };
     } else if (cmd.type === 'fullscreen')
-      void (options.fullscreenElement ?? host)
-        .requestFullscreen?.()
+      void toggleFullscreen(options.fullscreenElement ?? host)
         .catch((error) => diagnose('fullscreen', error));
     else if (cmd.type === 'reconnect' && hud.lifecycle !== 'ended') {
       if (graphics === 'failed') onContextRestored();
