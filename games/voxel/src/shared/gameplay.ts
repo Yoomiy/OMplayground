@@ -12,5 +12,7 @@ export type DropView = {
   position: readonly [number, number, number];
 };
 export const DROP_RADIUS = 32;
-export const PICKUP_RADIUS = 1.75;
+export const PICKUP_RADIUS = 1.1;
 export const DROP_LIFETIME_TICKS = 30 * 300;
+
+export const MAGNET_RADIUS = 3.2;

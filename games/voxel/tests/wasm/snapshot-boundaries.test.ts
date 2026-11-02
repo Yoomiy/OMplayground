@@ -48,6 +48,7 @@ function journey(Room: typeof GameRoom) {
       f.room.receive(id, { type: 'focus', epoch: f.player(id).epoch, active: false }, f.now);
     const pose = (id: string, x: number, z: number) => {
       const p = f.state(id);
+      p[10] = 1;
       p[0] = x;
       p[2] = z;
       f.store.world.player_restore(f.player(id).slot, p);

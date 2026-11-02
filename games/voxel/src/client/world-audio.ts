@@ -174,6 +174,30 @@ export class WorldAudio {
     source.start(now);
     source.stop(now + 0.13);
   }
+  pickup(): void {
+    const context = this.context;
+    if (
+      !context ||
+      !this.output ||
+      !this.active ||
+      this.muted ||
+      context.state !== 'running' ||
+      this.disposed ||
+      this.voices.size >= 16
+    )
+      return;
+    const tone = context.createOscillator(),
+      gain = context.createGain(),
+      now = context.currentTime;
+    tone.frequency.setValueAtTime(660, now);
+    tone.frequency.exponentialRampToValueAtTime(990, now + 0.08);
+    gain.gain.setValueAtTime(0.09, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+    tone.connect(gain).connect(this.output);
+    this.track(tone, [gain]);
+    tone.start(now);
+    tone.stop(now + 0.14);
+  }
   effect(position: readonly number[], group: string, removal: boolean): void {
     const context = this.context;
     if (

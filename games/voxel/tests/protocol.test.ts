@@ -103,3 +103,15 @@ test('acknowledgement follows consumed controls and worker identities include ev
     assert.equal(sameJob(tag, other), false, key);
   }
 });
+
+test('pickup feedback accepts bounded stacks and rejects forged payloads', () => {
+  const event = { type: 'pickup', epoch: 1, stack: { itemType: 'stone', count: 3 } };
+  assert.deepEqual(parseServerMessage(JSON.stringify(event)), event);
+  for (const value of [
+    { ...event, epoch: 0 },
+    { ...event, stack: { itemType: 'stone', count: 0 } },
+    { ...event, stack: { itemType: 'stone', count: 1000 } },
+    { ...event, extra: true },
+  ])
+    assert.equal(parseServerMessage(JSON.stringify(value)), null);
+});
