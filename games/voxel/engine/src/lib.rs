@@ -90,6 +90,11 @@ impl TerrainGen {
         TerrainGen { inner: gen::Generator::new(seed) }
     }
 
+    /// Read-only climate classification for client ambience; terrain is unchanged.
+    pub fn biome_at(&self, x: i32, z: i32) -> String {
+        format!("{:?}", self.inner.column(x, z).biome)
+    }
+
     pub fn generate(&mut self, cx: i32, cz: i32) -> Vec<u8> {
         formats::wrap(formats::COLUMN, self.inner.generate(cx, cz))
     }

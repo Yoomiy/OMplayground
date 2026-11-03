@@ -55,7 +55,8 @@
     "test:bucket:browser": "VOXEL_SURVIVAL_BUCKET=1 node tools/browser-survival.ts",
     "test:held:browser": "node tools/browser-held-bucket.ts",
     "test:combat:browser": "node tools/browser-combat.ts",
-    "format": "prettier --write \"src/**/*.ts\" \"tools/*.{ts,mjs}\" \"tests/**/*.ts\" \"content/*.ts\" vite.config.ts index.html \"src/client/*.css\""
+    "format": "prettier --write \"src/**/*.ts\" \"tools/*.{ts,mjs}\" \"tests/**/*.ts\" \"content/*.ts\" vite.config.ts index.html \"src/client/*.css\"",
+    "test:feedback:browser": "node tools/browser-feedback.ts"
   },
   "dependencies": {
     "ws": "8.21.3",

@@ -146,6 +146,18 @@ export async function mountVoxel(
   canvas.setAttribute('aria-label', 'עולם המשחק');
   const ownsPointerLock = () => Object.is(document.pointerLockElement, canvas);
   host.append(canvas);
+  const blastFlash = document.createElement('div');
+  blastFlash.setAttribute('aria-hidden', 'true');
+  Object.assign(blastFlash.style, {
+    position: 'absolute',
+    inset: '0',
+    pointerEvents: 'none',
+    background: '#fff2d5',
+    opacity: '0',
+  });
+  host.append(blastFlash);
+  let blastFlashUntil = 0;
+
   const world = new engine.VoxelWorld(),
     renderer = new TerrainRenderer(
       canvas,
@@ -170,6 +182,7 @@ export async function mountVoxel(
     renderer.dispose();
     world.free();
     canvas.remove();
+    blastFlash.remove();
     throw error;
   }
   const remotes = new RemoteActors(),
@@ -178,6 +191,10 @@ export async function mountVoxel(
   const worldClock = new WorldClock();
   const audio = new WorldAudio(),
     soundGroups = new Map(content.behavior.map((block) => [block.family, block.soundGroup]));
+  let biomeGenerator: InstanceType<typeof engine.TerrainGen> | null = null;
+  let biome = 'Plains',
+    lastBiomeSample = -Infinity;
+  let inventorySound: 'craft' | 'consume' | null = null;
   let environmentSeed = 0,
     environment = sampleEnvironment(0, 0),
     openSky = false,
@@ -352,6 +369,13 @@ export async function mountVoxel(
     footTravel = 0;
     previousFoot = null;
     worldClock.reset(0, performance.now());
+    biomeGenerator?.free();
+    biomeGenerator = null;
+    biome = 'Plains';
+    lastBiomeSample = -Infinity;
+    inventorySound = null;
+    blastFlashUntil = 0;
+    blastFlash.style.opacity = '0';
     environmentSeed = 0;
     environment = sampleEnvironment(0, 0);
     openSky = false;
@@ -506,9 +530,12 @@ export async function mountVoxel(
       }
       if (event.reset) primed.clear();
       for (const id of event.removed) primed.delete(id);
-      for (const body of event.upsert)
+      for (const body of event.upsert) {
+        if (!primed.has(body.id) && body.total - body.remaining < 4)
+          audio.effect('fuse', body.position);
         if (!primed.has(body.id) || primed.get(body.id)!.revision <= body.revision)
           primed.set(body.id, body);
+      }
       return;
     }
     if (event.type === 'explosion') {
@@ -521,7 +548,9 @@ export async function mountVoxel(
       while (blastPatches.size > 128) blastPatches.delete(blastPatches.values().next().value!);
       if (!event.cancelled) {
         renderer.explosionEffect(event.position, event.radius, performance.now());
-        audio.effect(event.position, 'explosion', true);
+        audio.effect('explosion', event.position);
+        if (Math.hypot(...event.position.map((value, axis) => value - lastPosition[axis])) < 16)
+          blastFlashUntil = performance.now() + 220;
       }
       return;
     }
@@ -531,20 +560,23 @@ export async function mountVoxel(
       lastHitEvent = event;
       const now = performance.now();
       renderer.hitEffect(event.position, now);
-      audio.effect(event.position, 'impact', false);
+      if (event.target !== actorId) audio.effect('hurt', event.position);
       if (event.target === actorId || event.attacker === actorId)
         publish({ hit: { received: event.target === actorId, damage: event.damage, at: now } });
       return;
     }
     if (event.type === 'vitals') {
-      if (prediction && event.epoch === prediction.currentEpoch) publish({ vitals: event.view });
+      if (prediction && event.epoch === prediction.currentEpoch) {
+        if (hud.vitals && event.view.health < hud.vitals.health) audio.effect('hurt');
+        publish({ vitals: event.view });
+      }
       return;
     }
     if (event.type === 'pickup') {
       if (!prediction || event.epoch !== prediction.currentEpoch) return;
       const item = content.items.find((item) => item.itemType === event.stack.itemType);
       if (!item || !validStack(event.stack, new Map([[item.itemType, item]]))) return;
-      audio.pickup();
+      audio.effect('pickup');
       noticeUntil = performance.now() + 1800;
       publish({ message: `+${event.stack.count} ${ITEM_LABELS[item.itemType] ?? item.itemType}` });
       return;
@@ -640,6 +672,8 @@ export async function mountVoxel(
       });
       worldId = event.worldId;
       environmentSeed = event.seed;
+      biomeGenerator?.free();
+      biomeGenerator = new engine.TerrainGen(event.seed);
       worldClock.reset(event.tick, performance.now());
       slot = world.player_add(...event.spawn);
       world.set_ghost(slot, event.role === 'observer');
@@ -680,6 +714,7 @@ export async function mountVoxel(
       const previousEpoch = prediction.currentEpoch;
       prediction.baseline(event.epoch, event.ack, event.state, event.movement);
       phase = event.phase;
+      if (event.phase === 'paused' && hud.lifecycle === 'paused') enterOnReady = false;
       if (event.phase === 'paused' || event.phase === 'dead') {
         focusPending = false;
         focused = false;
@@ -744,7 +779,9 @@ export async function mountVoxel(
                 ? 'נכנסים לעולם…'
                 : focused
                   ? ''
-                  : (pointerLockProblem ?? 'לחצו על העולם כדי להמשיך'),
+                  : hud.lifecycle === 'paused' && hud.role === 'participant'
+                    ? 'העולם מושהה.'
+                    : (pointerLockProblem ?? 'לחצו על העולם כדי להמשיך'),
         flying: event.state[10] === 1,
       });
       if (pendingInventoryOpen) {
@@ -811,6 +848,10 @@ export async function mountVoxel(
           mineRetryAt = performance.now() + 150;
         }
         if (event.sequence === inventorySequence) {
+          if (event.status === 'applied' && event.outcome?.ok && inventorySound) {
+            audio.effect(inventorySound === 'consume' ? 'eat' : 'craft');
+          }
+          inventorySound = null;
           if (inventorySelectionPending && event.status === 'applied' && event.outcome?.ok)
             creativeBagHotbar = true;
           inventorySelectionPending = false;
@@ -818,11 +859,10 @@ export async function mountVoxel(
         }
         lastResult = event;
         if (worldActions.delete(event.sequence)) actionPending = worldActions.size;
-        if (event.outcome && !event.outcome.ok) {
+        if (event.outcome && !event.outcome.ok && event.outcome.reason !== 'conflict') {
           const notices: Record<string, string> = {
             collision: 'אין מספיק מקום לבלוק',
             out_of_reach: 'המטרה רחוקה או מוסתרת',
-            conflict: 'העולם השתנה. נסו שוב.',
             support: 'הבלוק צריך משטח מתאים',
             forbidden: 'אין הרשאה לפעולה הזאת',
             full: 'אין מקום בתיק או במשבצת היעד',
@@ -987,10 +1027,10 @@ export async function mountVoxel(
                     e.state === 0,
                   );
                   const state = e.state === 0 ? e.before : e.state;
-                  audio.effect(
+                  audio.material(
+                    e.state === 0 ? 'break' : 'place',
                     e.cell.map((v) => v + 0.5),
                     soundGroups.get(content.blocks[state]?.name) ?? 'stone',
-                    e.state === 0,
                   );
                 }
               for (const [local, state] of frame.edits)
@@ -1284,6 +1324,16 @@ export async function mountVoxel(
         stalled = now - lastReceived > 1500;
       if (
         enterOnReady &&
+        phase === 'paused' &&
+        ready &&
+        hud.lifecycle === 'paused' &&
+        hud.role === 'participant'
+      ) {
+        enterOnReady = false;
+        publish({ status: 'paused', message: 'העולם מושהה.' });
+      }
+      if (
+        enterOnReady &&
         phase === 'playing' &&
         ready &&
         !stalled &&
@@ -1359,10 +1409,10 @@ export async function mountVoxel(
       renderer.mining(visiblyMining ? hud.mining.elapsed / Math.max(1, hud.mining.total) : 0);
       if (visiblyMining && now - lastMiningSwing >= 280) {
         renderer.swing(now);
-        audio.effect(
+        audio.material(
+          'dig',
           target!.map((value) => value + 0.5),
           soundGroups.get(content.blocks[world.get_block(...target!)]?.name) ?? 'stone',
-          false,
         );
         lastMiningSwing = now;
       }
@@ -1388,23 +1438,32 @@ export async function mountVoxel(
             Math.floor(state[1] - 0.05),
             Math.floor(state[2]),
           );
-          audio.effect(
+          audio.material(
+            'step',
             [state[0], state[1] + 0.02, state[2]],
             soundGroups.get(content.blocks[beneath]?.name ?? '') ?? 'stone',
-            false,
           );
           footTravel %= 1.4;
           lastFootstep = now;
         }
       } else footTravel = 0;
       previousFoot = lastPosition;
+      if (biomeGenerator && now - lastBiomeSample > 1200) {
+        biome = biomeGenerator.biome_at(Math.floor(state[0]), Math.floor(state[2]));
+        lastBiomeSample = now;
+      }
+      blastFlash.style.opacity = String(Math.max(0, (blastFlashUntil - now) / 220) * 0.45);
       audio.frame(
         lastPosition,
         yaw,
         pitch,
         environment,
         openSky,
-        focused && phase === 'playing' && !fatalRecovery,
+        (focused || hud.inventoryOpen) &&
+          phase === 'playing' &&
+          !fatalRecovery &&
+          hud.lifecycle === 'playing',
+        biome,
       );
       for (let i = 0; i < 3; i++) visualOffset[i] *= Math.exp(-dt * 12);
       updateTarget(state);
@@ -1728,6 +1787,8 @@ export async function mountVoxel(
     )
       return;
     if (operation.kind !== 'open' && inventoryEpoch !== prediction.currentEpoch) return;
+    inventorySound =
+      operation.kind === 'craft' || operation.kind === 'consume' ? operation.kind : null;
     inventorySequence = ++actionSequence;
     inventorySelectionPending = operation.kind === 'select' && hud.mode === 'creative';
     publish({ inventoryPending: true });
@@ -2142,6 +2203,7 @@ export async function mountVoxel(
       world.free();
       listeners.clear();
       canvas.remove();
+      blastFlash.remove();
     },
   };
   const onAbort = () => runtime.dispose();

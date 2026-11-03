@@ -88,3 +88,21 @@ test('an ended world cannot be resumed, accept new actors or earn ticks', () => 
     f.room.dispose();
   }
 });
+
+test('paused participant joins stream pending columns without an observer', () => {
+  const f = roomFixture();
+  try {
+    f.room.setPaused(true, f.now, 'session');
+    f.join('late');
+    const actor = f.player('late');
+    // Simulate columns awaiting generation after the initial join pass.
+    for (const sub of actor.subscriptions.values()) sub.pending = true;
+    f.events.get('late')!.length = 0;
+    f.tick(6);
+    assert.ok([...actor.subscriptions.values()].every((sub) => !sub.pending));
+    assert.ok(f.events.get('late')!.some((event) => 'kind' in event && event.kind === 'baseline'));
+    assert.equal(f.state('late')[12], 1);
+  } finally {
+    f.room.dispose();
+  }
+});

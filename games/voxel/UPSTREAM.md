@@ -153,3 +153,14 @@ qualification remain required.
 4. Review browser bundles, real-device performance and protocol/checkpoint
    compatibility before a new release. Matching content/engine artifacts are
    required; changing the upstream pin alone never authorizes deployment.
+
+## Restored legacy game audio
+
+The recordings in `src/client/sounds/` are recovered byte-for-byte from
+`13e3c96^:apps/web/public/minecraft-assets/sounds/`. The legacy notice attributes
+these recordings to voxelsrv (MIT); it is retained beside the recordings and
+shipped as `public/voxel-audio-NOTICE.txt`. Only used action/material recordings
+and rain variants are restored. Biome ambience adapts the locally maintained
+legacy audio manager's nine synthesized profiles and crossfade timing. The
+read-only `TerrainGen.biome_at` query uses the existing climate classification;
+world generation and saved content are unchanged.

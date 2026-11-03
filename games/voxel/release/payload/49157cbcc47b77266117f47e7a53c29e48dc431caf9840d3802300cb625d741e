@@ -1,0 +1,351 @@
+{
+  "buildId": "60bfe0a320698fe4c955cc6933f11b4cc99771e5c1e9b4144eedb977d633833b",
+  "engineHash": "83a2ee1a6f731a6b6f515f16a121ca38311bb126266508d394177127f8ea1237",
+  "contentHash": "2901239743859cde06ec4544cb84bb22f0c6062c4f83234dc2f8ac0d380cd21a",
+  "clientHash": "0eb01b2bb8cc46859293f313fc00b615f208afb450da4bb172b19aa1a59de64b",
+  "serverHash": "16ca5c971693385df527b9b75721386bb367a4356df4f95dc1b514528fff4bff",
+  "client": [
+    {
+      "path": "assets/break-DPSoepx8.ogg",
+      "hash": "e26895d26215b084bb95eb0fd75b05be0a2aec2bcf294ed6c7f6d268ff85f327"
+    },
+    {
+      "path": "assets/burp-Lf150RvS.ogg",
+      "hash": "e49f343cf4289dc1c25f9932075a6b07a89bb13c885fea4ebc2634f43ba35c8d"
+    },
+    {
+      "path": "assets/classic_hurt-uFgAUyBt.ogg",
+      "hash": "f087f1373227cdfa745bd43d977492fd875cf193b41dec6837ba331e74c0a818"
+    },
+    {
+      "path": "assets/cloth1-BrRHUcDf.ogg",
+      "hash": "9bbd79703ef1c3a6247bd9367c6e57499cf005cd383b8cbfa0d1de3799d8eadc"
+    },
+    {
+      "path": "assets/cloth2-BlRi4aum.ogg",
+      "hash": "228e24ce7215c7d34772a209ac37ffd9f88a934521548f7b8997096529335bfa"
+    },
+    {
+      "path": "assets/cloth3-DQUw90MS.ogg",
+      "hash": "daa0a78568d543063659ae74cda0864ee74e7f06e9a091bfac5e5d1526a6658e"
+    },
+    {
+      "path": "assets/cloth4-Djnq2F6f.ogg",
+      "hash": "151db48ee5245d1ce4fec018f5e8887de464a584cffdec932038c53e27607535"
+    },
+    {
+      "path": "assets/eat1-D2yFp05r.ogg",
+      "hash": "dc60b1ca717f94671320e4850c36533c20b01ad57243087d11c32b642f381dd0"
+    },
+    {
+      "path": "assets/eat2-RfX8cfFT.ogg",
+      "hash": "964c5245ac60485fa9ef36a889e73513408d82e3334e4458092789252559c608"
+    },
+    {
+      "path": "assets/eat3-W7Hd0O5i.ogg",
+      "hash": "ff0d967f3ff81d1e5894181f6b6839f1478f24556190d390adfcd85af46c571b"
+    },
+    {
+      "path": "assets/engine-worker-DlFwGiwg.js",
+      "hash": "37fc25931326925914eb1d01c70d1839ff590410facd801056251bd8f5e55a9e"
+    },
+    {
+      "path": "assets/explode1-D5rHAtaC.ogg",
+      "hash": "ec6fe52205a861046bc6a45d284fbe8233b05f87bda87a67a7d4c24b74acc997"
+    },
+    {
+      "path": "assets/explode2-KmOKC6GC.ogg",
+      "hash": "c6438fb756b69367d9c4262def4d0c1836d6ecd4d0b6a831168c2e705253c688"
+    },
+    {
+      "path": "assets/explode3-BYPq0L_q.ogg",
+      "hash": "6178b31e2001591c67a019ed8176d76095f821e9a869f5f2418f41ed09f7adca"
+    },
+    {
+      "path": "assets/explode4-Bs8mSN9q.ogg",
+      "hash": "0524d95e0f8d537dcc7b9f585e0f99975a0676162cc722f96c05ab47c45c7a76"
+    },
+    {
+      "path": "assets/fuse-hNKdB9kF.ogg",
+      "hash": "4cf9560e566bcf200f61e460e47cd18f6002304a28d376c6ba2139ec96628828"
+    },
+    {
+      "path": "assets/glass1-DpyZ1137.ogg",
+      "hash": "ac96668c1b15115e362b2d7d033c46df1575535da06cbcb8bed2fa3b740ab446"
+    },
+    {
+      "path": "assets/glass2-DE_Wm-cK.ogg",
+      "hash": "7288bb874add42719964c87a232c2897f3e965e33ca55652b4744b4fad87fcea"
+    },
+    {
+      "path": "assets/glass3-zozfr2iA.ogg",
+      "hash": "062c3175b3ab2b7e44b52a10bb9ff60eb6c01f5b19f165e90df0ab0c215b07d6"
+    },
+    {
+      "path": "assets/grass1-wIfbpdMC.ogg",
+      "hash": "aa6f23fc51c011336311c6a894a98aa037d7f49211f511733f71fb85ad0e1449"
+    },
+    {
+      "path": "assets/grass2-BN8R4f8M.ogg",
+      "hash": "b53a96db563c8e95219fb72efeff02f26711686115d5625dfeb5a96167ec26ab"
+    },
+    {
+      "path": "assets/grass3-CuXRMZiW.ogg",
+      "hash": "90b9c84a9eb084872854e22105fc3b1f068ad22c5b68cf9c03588119c62d06ce"
+    },
+    {
+      "path": "assets/grass4-ixxIcadw.ogg",
+      "hash": "4131d4150a77fe147eb059dcc3adacb4940c8dae566a6359217a92d425468f1c"
+    },
+    {
+      "path": "assets/grass5-ChZTseMo.ogg",
+      "hash": "ebb475fbe829bbeb31dd43bb1e99930c957cd61edf2cefa44e26145baa39fbbd"
+    },
+    {
+      "path": "assets/grass6-BddZVlex.ogg",
+      "hash": "8b913e405126141dcc8f5bc2d742528ea11030079f0361740a2455b4f9dc000e"
+    },
+    {
+      "path": "assets/grave3-DuoJjXmR.ogg",
+      "hash": "6eff63c44ec1bac610bf425278024703f5d93a3be18ccbac252731d1c91b5ec1"
+    },
+    {
+      "path": "assets/gravel1-DEayKEjI.ogg",
+      "hash": "fd10a11f425c2e4c83ac1a9615ad39b6e36de7a26d74be6e48415a86ec3ef55e"
+    },
+    {
+      "path": "assets/gravel2-aixcyZNg.ogg",
+      "hash": "f3dd01b52059f9031c5ae7361726b5fe15e872dce6d4121e7e1dfda7f9eebf0d"
+    },
+    {
+      "path": "assets/gravel3-DgcnyZip.ogg",
+      "hash": "eff94b6d7cece9374c964baf02b7a4cab9b1b6f8f0f7ae1b151e0a9eeca60707"
+    },
+    {
+      "path": "assets/gravel4-BH53vHEd.ogg",
+      "hash": "3eba68d7069335da8b4813e3ac4ebc1fd632fd4d33ae70916a6686085b5f8dce"
+    },
+    {
+      "path": "assets/index-P1gIGUiO.js",
+      "hash": "b92978a2858fd01e721281411f98a6f785b82cad86c0ead949e8863b3033c2cd"
+    },
+    {
+      "path": "assets/index-P3AiFv1J.css",
+      "hash": "9fa2a5f4e45de30243c0269a36f22ec695d3d68663b468cfa21e2d0c23ffe50d"
+    },
+    {
+      "path": "assets/ladder1-C_gYzPoM.ogg",
+      "hash": "e98664c54ad466110e855d696d3364ab12818309347d5b19cf72736fc2f5fa75"
+    },
+    {
+      "path": "assets/ladder2-CyWM3plW.ogg",
+      "hash": "99c68047f987b1a5c020f6f4d53b18a6ce7994b148befb5d95f574732dd846a4"
+    },
+    {
+      "path": "assets/ladder3-L7znZEFw.ogg",
+      "hash": "e9d01d73a70e82666b37e79a77a902276c475c1eb836e2e6233a749d7a277cd3"
+    },
+    {
+      "path": "assets/ladder4-BojtMXnx.ogg",
+      "hash": "8ff5c119ee51073e38ef197662a980341950c12c9062af5956025db373939f5d"
+    },
+    {
+      "path": "assets/ladder5-CBqf369b.ogg",
+      "hash": "87214c02fc9656fad0525c0e2b7a952857563bd979afc90e1f008c5203e85b93"
+    },
+    {
+      "path": "assets/leaves1-DdWQMkdz.ogg",
+      "hash": "8e9da3da4e4de12de3d46ad32a566eb1300dbcd935681431ad04efa680ff89d1"
+    },
+    {
+      "path": "assets/leaves2-EfoBMj3n.ogg",
+      "hash": "dd09960441ca028a91607ede3d6deae3d077a01834250567725083799793eb05"
+    },
+    {
+      "path": "assets/leaves3-BjhYXOKL.ogg",
+      "hash": "51545d613717b3536d1fbf70fb04a791620c8a61592c26ee279145d6ea943623"
+    },
+    {
+      "path": "assets/leaves4-D_DK874C.ogg",
+      "hash": "b3af240dc0389b8419af43b7e6499003b647898dc1af98ca0a12c03329ddcb92"
+    },
+    {
+      "path": "assets/leaves5-D7xexr8U.ogg",
+      "hash": "c9cef3345c32a88366abece5ebae699b0104171f9fea18bc8bb22a258863a2b9"
+    },
+    {
+      "path": "assets/leaves6-aatKXMPF.ogg",
+      "hash": "3241343f82fb0d2a86dac6ec58877823c3aab523821a0457c7e883c4301e4703"
+    },
+    {
+      "path": "assets/leaves7--Wu2o0W4.ogg",
+      "hash": "eb4edc1e2516da131a7335457cc48b63c4997618dcd4ce477df04d6590bdcc1a"
+    },
+    {
+      "path": "assets/pop-C87aPWae.ogg",
+      "hash": "cecb02043f2b8b521e440214a54217578b5d97950558022af2377b09899a7279"
+    },
+    {
+      "path": "assets/rain1-D0Zv_5DN.ogg",
+      "hash": "6028fbc6048433b667af56434ea0a91c9cba20107734965edd54a967ec5248fe"
+    },
+    {
+      "path": "assets/rain2-DmCkpuOP.ogg",
+      "hash": "c0d63f72f415ca9195bd1b8708362c072bc7418357fd33c81939c3bf2a347c9f"
+    },
+    {
+      "path": "assets/rain3-Bv28UeIg.ogg",
+      "hash": "960ce3e9dd20abe3525f544469d28c808946c38fe74f4b4eb42fbe12c3414b50"
+    },
+    {
+      "path": "assets/rain4-BoObtjDi.ogg",
+      "hash": "06eca90aa6887d5e94038e1a6bace99782517ce4c250b8fb8e46d6c3230ae5e1"
+    },
+    {
+      "path": "assets/rain5-BIAgs9el.ogg",
+      "hash": "95a2c941a21afcc0b2bd4fb2c848a508e042dc647d5c551a2952f9db1dda37d2"
+    },
+    {
+      "path": "assets/rain6-DfBO7uBU.ogg",
+      "hash": "90eef5d4bf9a62f92595a8a222f4a2eb16e17bd33140136cd6b5a3a8f2d2209a"
+    },
+    {
+      "path": "assets/rain7-CQYHzFxG.ogg",
+      "hash": "951e253409a8a8983709d0c9453067d2651b5842138bf6ad7ddcf9612a537583"
+    },
+    {
+      "path": "assets/rain8-Cq1yjnEx.ogg",
+      "hash": "e2c6bff1addbb08dd82a3dfffcaea8d67de4846516fbdc92e498e6b54ccb1629"
+    },
+    {
+      "path": "assets/sand1-_hEHqOrk.ogg",
+      "hash": "21eb3175a2150f68c1800527859c1b6f2ada58235836b27b2f1a034cb83f6e04"
+    },
+    {
+      "path": "assets/sand2-C7h2d_h9.ogg",
+      "hash": "5b85dcd233d17dded993c818fdfefc93dcc32623622a0917e77dfbaf7858ecc9"
+    },
+    {
+      "path": "assets/sand3-CxvOp_W9.ogg",
+      "hash": "589a9ec75e2673ffe997db923732744136fdc90344f89f95580e7d256b859d09"
+    },
+    {
+      "path": "assets/sand4-gALF_ZJ6.ogg",
+      "hash": "a06f6d7bf81d9a111bf060f5fc733821a864644395a011e308db8c9175be3fd0"
+    },
+    {
+      "path": "assets/sand5-Cm0N7GJO.ogg",
+      "hash": "fc537c481e1ace4232c2c692c107fd4c501dd80e61f0d89ddea020c41c02a1b7"
+    },
+    {
+      "path": "assets/snow1-Edyi5QKz.ogg",
+      "hash": "94946fe70e9f083e6640050dc4bd2595990839de5aa804130d01b625a24846d3"
+    },
+    {
+      "path": "assets/snow2-C4I7n4IS.ogg",
+      "hash": "80615413b68b2849f247ad7b74632226ad9c0df0e144e680f5886086ee5092ce"
+    },
+    {
+      "path": "assets/snow3-BqERNbym.ogg",
+      "hash": "3c041ad80a8e018f5f1a59411edb42e771761fdf423d495de8c4f04623ba4271"
+    },
+    {
+      "path": "assets/snow4-BVUdJCmL.ogg",
+      "hash": "4cd590c1a87bde7a728ff57786d17bfedc0b6f557c2a98edbb1dbd30766cf47e"
+    },
+    {
+      "path": "assets/stone1-DPwu13zT.ogg",
+      "hash": "c6ae2c15a544973e41674563a43b570206b58ff54c1c8385f59c7edec341e1c2"
+    },
+    {
+      "path": "assets/stone2-D86mcIk3.ogg",
+      "hash": "356b4a4183208ff37572063e5d85d357c75e6fd941d705c8732123e52087dc9a"
+    },
+    {
+      "path": "assets/stone3-Dd-iqV-o.ogg",
+      "hash": "1dd51174f7b954799fa4e995f6b9065ab5720a082825573ef837d1191f394766"
+    },
+    {
+      "path": "assets/stone4-CBK3pw-t.ogg",
+      "hash": "110033af2126b5c282a3ab3910381b28d24482962b9900b77b2450ec1ebb61f6"
+    },
+    {
+      "path": "assets/stone5-BsN5Ros1.ogg",
+      "hash": "7164c358243c299e1908b24024050abb1aadc3c125af5d2cfb7c76b51c738720"
+    },
+    {
+      "path": "assets/stone6-DphM72O5.ogg",
+      "hash": "cfa572ceb4c8a7f6ead8d62d9b38e605d6b6c665b91decc5f82156825eff295a"
+    },
+    {
+      "path": "assets/voxel_engine_bg-CWnbVvxK.wasm",
+      "hash": "83a2ee1a6f731a6b6f515f16a121ca38311bb126266508d394177127f8ea1237"
+    },
+    {
+      "path": "assets/wood1-D6G09ajd.ogg",
+      "hash": "1a579b6db13e12ad67d1cd88fc615c10fea9f83950fd84fe5600c20e48ee0503"
+    },
+    {
+      "path": "assets/wood2-B-vQwhoY.ogg",
+      "hash": "1432eb98297f406ef6b05a8c9b9fe3dd9b4b246bca6d4fde8b7223ae705a1a6b"
+    },
+    {
+      "path": "assets/wood3-BQu_EJe5.ogg",
+      "hash": "9e77a3e87240baca6a767856902e9836892e9d9d5e541b9d908833685e71f9d8"
+    },
+    {
+      "path": "assets/wood4-SkfSnPpL.ogg",
+      "hash": "f8feae7e2b9659af6f5ad66385eeedc2ad1568f6519d9f17502eaef665791100"
+    },
+    {
+      "path": "assets/wood5-C8WSbtUU.ogg",
+      "hash": "f51a99dd387b2fb976e608dcb3940e6ae11a35f3238ba9fdc06bf64b4e30c65c"
+    },
+    {
+      "path": "assets/wood6-C-nwKz1j.ogg",
+      "hash": "4272b647b9da0310201e4afeee70584474960025d277dcd2988cc494558e8638"
+    },
+    {
+      "path": "blockyard-LICENSE.txt",
+      "hash": "4c89ee97bee29e2bd7dcd9567a06c1fee5fb8ab7c5c35ca4a153543524b6f07f"
+    },
+    {
+      "path": "index.html",
+      "hash": "f5a66a6cb4965f67cfa04f4e854263e264fe4337e55c3e56d70ee2b62177c6d4"
+    },
+    {
+      "path": "voxel-audio-NOTICE.txt",
+      "hash": "c485196829b52657cd568e91ecd86b56c036e802ee11d5fb3fa79e6d14e50c2b"
+    }
+  ],
+  "server": [
+    {
+      "path": "build.json",
+      "hash": "3650634046001ed735a13dd22dac5603a36f2f1cb91ed7489d44a80a994a837d"
+    },
+    {
+      "path": "content.json",
+      "hash": "849b9bab106d5b6ef78c48df9f89222cc87afb904672def8c96c9a9989c9804c"
+    },
+    {
+      "path": "engine.wasm",
+      "hash": "83a2ee1a6f731a6b6f515f16a121ca38311bb126266508d394177127f8ea1237"
+    },
+    {
+      "path": "gateway.js",
+      "hash": "48cab6f51ae38b0fc68b39137faa9ddf789a59dcde13aec0cc4145b45490cc4a"
+    },
+    {
+      "path": "gateway.js.map",
+      "hash": "a9fc1db3f421aff91031b4e17f55cf2890f3a0def36c8a45380d37300fa45dfb"
+    },
+    {
+      "path": "room-worker.js",
+      "hash": "2b00bba5d2b39038a4d5ce3f8c464455a31f5d5ab2946102420d5ebe45fc791b"
+    },
+    {
+      "path": "room-worker.js.map",
+      "hash": "acba34dbcceb4fddee747d8d85f97790c9e2bfb4552702da4b2ae5ebd8056d25"
+    }
+  ]
+}

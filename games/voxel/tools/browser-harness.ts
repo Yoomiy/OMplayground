@@ -82,9 +82,11 @@ export async function createBuiltHarness(
         ? 'text/javascript'
         : file.pathname.endsWith('.css')
           ? 'text/css'
-          : file.pathname.endsWith('.wasm')
-            ? 'application/wasm'
-            : 'text/html';
+          : file.pathname.endsWith('.ogg')
+            ? 'audio/ogg'
+            : file.pathname.endsWith('.wasm')
+              ? 'application/wasm'
+              : 'text/html';
       res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-store' });
       res.end(readFileSync(file));
     },

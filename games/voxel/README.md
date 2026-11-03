@@ -158,8 +158,10 @@ dialog shows crafting recipes and an authorized creative item catalog. Aim at a
 placed workbench/chest and use the dialog's open-station button for 3×3 crafting
 or shared storage. Escape closes the dialog; resume returns to movement.
 The local body freezes while inventory is open; the multiplayer room keeps ticking.
-The effects button mutes locally synthesized ambience, footsteps and material
-edit sounds. Audio starts after a resume/capture gesture and stops while paused.
+The effects button mutes game ambience, footsteps and material edit sounds. Material actions and TNT use the restored legacy recordings; biome
+ambience crossfades using the current terrain classification, and recorded rain
+follows weather intensity with shelter attenuation. Audio starts after a
+resume/capture gesture and stops while paused.
 It is separate from voice, which remains pending platform integration.
 Coarse touch devices receive a movement joystick, a right-side look area and
 Hebrew jump/flight/build controls. World axes retain their desktop orientation.
