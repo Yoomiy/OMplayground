@@ -28,8 +28,8 @@ async function until(predicate: () => boolean) {
 }
 
 test(
-  'an admission timeout records its phase and attempt identity without logging tickets or peer-supplied text',
-  { timeout: 12000 },
+  'a join has a separate bounded loading deadline, reports progress, and never logs arbitrary peer text',
+  { timeout: 45000 },
   async () => {
     const events: Entry[] = [];
     let release!: () => void;
@@ -63,17 +63,19 @@ test(
       await once(socket, 'open');
       const closed = once(socket, 'close');
       socket.send(JSON.stringify({ type: 'hello', ...value }));
+      await delay(5500);
+      assert.equal(socket.readyState, WebSocket.OPEN);
       await closed;
       await until(() => events.some((event) => event.name === 'VOXEL_CONNECTION_CLOSED'));
       const issued = events.find((event) => event.name === 'VOXEL_ADMISSION_ISSUED')!.context;
       const close = events.find((event) => event.name === 'VOXEL_CONNECTION_CLOSED')!.context;
-      assert.equal(close.reason, 'admission_required');
+      assert.equal(close.reason, 'join_timeout');
       assert.equal(close.phase, 'revalidating');
       assert.equal(close.room, 'logging');
       assert.equal(close.admissionId, issued.admissionId);
       assert.equal(admission.headers.get('x-correlation-id'), issued.admissionId);
-      assert.equal(close.code, 1008);
-      assert.ok(Number(close.duration_ms) >= 4900);
+      assert.equal(close.code, 1013);
+      assert.ok(Number(close.duration_ms) >= 29900);
       assert.match(String(close.connectionId), /^[a-f0-9-]{36}$/);
       assert.doesNotMatch(JSON.stringify(events), new RegExp(value.ticket));
       const peer = new WebSocket(origin.replace('http:', 'ws:') + '/voxel');
@@ -148,6 +150,9 @@ test(
         assert.equal(context.worldId, ready.worldId, name);
         assert.equal(context.roomInstanceId, ready.roomInstanceId, name);
       }
+      assert.equal(accepted.actorId, actor.id);
+      assert.equal(accepted.role, actor.role);
+      assert.equal(close.actorId, actor.id);
       assert.equal(close.connectionId, accepted.connectionId);
       assert.equal(close.reportedEvent, 'VOXEL_ACTOR_DISCONNECTED');
       assert.equal(disconnected.connectionId, accepted.connectionId);

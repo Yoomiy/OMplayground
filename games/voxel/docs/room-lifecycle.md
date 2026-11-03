@@ -21,7 +21,10 @@ disconnect them before that cutoff. Confirmed access denials still disconnect.
 
 The worker combines fresh session state, current participant leases and a
 server-only manual pause. Session pause, missing participants or expired policy
-cannot be bypassed by manual resume. Explicit pause/save remains paused while
+cannot be bypassed by manual resume. A fenced SQL Resume receipt updates cached
+playing intent immediately, invalidates older status replies and requests a fresh
+background read; it still cannot bypass ownership, recess or missing participants.
+The control button stays busy until the UI reflects that transition. Explicit pause/save remains paused while
 asynchronous checkpoint IO completes, and the save acknowledgement still follows
 the committed pointer. Fenced metadata ownership remains a separate prerequisite
 for all simulation/publication; session policy is not a replacement for it.
@@ -55,7 +58,9 @@ completed session, revoked membership or closed recess.
 
 Pending valid handshakes are tracked without a count ceiling. A cancelled
 admission cannot leave an unjoined worker running: volatile workers stop, and
-durable worlds commit a pause, stop and release their lease. A concurrent valid
+durable allocations that nobody joined stop and release their lease without
+writing another checkpoint. Rooms that have hosted players commit a pause before
+release. A concurrent valid
 handshake protects a shared allocation. Every await during fresh authorization
 can cross retirement, so the gateway reacquires the current worker before
 attaching. Existing durable last-player save/rejoin ordering remains in force.
@@ -122,3 +127,24 @@ without signing out, so the next recess can reopen the current route.
 `tools/browser-connection-recovery.ts` exercises admission retries, silent sockets,
 online recovery, terminal denials and cleanup. The real app guard/hook is exercised
 by `apps/web/tools/access-recovery-browser.ts` with fixture provider decisions.
+
+## Join budgets and lifecycle logs
+
+A socket has five seconds to send its hello. Once a valid ticket is presented,
+room loading has a separate 30-second deadline and sends a small `joining` message
+every two seconds. These messages keep the browser's silent-socket watchdog from
+replacing a healthy loading connection. Missing hello and expired loading have
+distinct close reasons; loading expiry is retryable.
+
+Accepted joins log at info with actor ID, role, connection/room/world identities,
+connection count and authorization/allocation/membership timings. Worker-ready
+logs retain worker duration and add total loading time, restore status, ownership,
+checkpoint and initialization timings. Clean browser disposal closes with code
+1000 and a fixed departure reason; normal player departures are info events.
+Unexpected transport loss remains a warning. Arbitrary peer close text is never
+logged. Controls include room, actor and duration. Pointer-lock refusals remain
+local to the browser; legacy reports are acknowledged without provider IO or logs.
+
+`tools/browser-loading.ts` verifies an eleven-second load uses one admission and
+produces a clean departure. `apps/web/tools/voxel-controls-browser.ts` verifies
+Resume remains busy between its HTTP receipt and the world update.

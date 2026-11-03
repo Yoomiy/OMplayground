@@ -404,7 +404,7 @@ export async function createGateway(options: GatewayOptions) {
       return waiting;
     }
     const task = (async () => {
-      if (!handle.ending) await handle.durability?.save(true);
+      if (!handle.ending && handle.hasJoined) await handle.durability?.save(true);
       await handle.projection?.finish();
       if (handle.closing) return;
       handle.closing = true;
@@ -430,7 +430,9 @@ export async function createGateway(options: GatewayOptions) {
         handle.ending
           ? 'VOXEL_SESSION_ENDED'
           : handle.durability
-            ? 'VOXEL_ROOM_SAVED_AND_RELEASED'
+            ? handle.hasJoined
+              ? 'VOXEL_ROOM_SAVED_AND_RELEASED'
+              : 'VOXEL_UNUSED_ROOM_RELEASED'
             : 'VOXEL_EMPTY_ROOM_STOPPED',
         {
           ...roomContext(handle),
@@ -449,21 +451,40 @@ export async function createGateway(options: GatewayOptions) {
     let durability: RoomDurability | null = null,
       handle: RoomHandle | null = null,
       ownershipLost = false;
+    const loadStarted = performance.now(),
+      timings: Record<string, number> = {};
+    let loadPhase = 'ownership';
+    const measure = async <T>(phase: string, work: () => Promise<T>): Promise<T> => {
+      loadPhase = phase;
+      const started = performance.now();
+      try {
+        return await work();
+      } finally {
+        timings[`${phase}_ms`] = Math.round(performance.now() - started);
+      }
+    };
     try {
       if (options.persistence)
-        durability = await RoomDurability.acquire(
-          options.persistence,
-          options.content,
-          options.build,
-          id,
-          randomUUID(),
-          () => {
-            ownershipLost = true;
-            if (handle) failRoom(handle, 'ownership_lost');
-          },
+        durability = await measure('ownership', () =>
+          RoomDurability.acquire(
+            options.persistence!,
+            options.content,
+            options.build,
+            id,
+            randomUUID(),
+            () => {
+              ownershipLost = true;
+              if (handle) failRoom(handle, 'ownership_lost');
+            },
+          ),
         );
-      if (options.sessions && durability) await options.sessions.initialize(durability.ownership);
-      const snapshot = await durability?.load();
+      if (options.sessions && durability)
+        await measure('session_initialize', () =>
+          options.sessions!.initialize(durability!.ownership),
+        );
+      const snapshot = durability
+        ? await measure('checkpoint_load', () => durability!.load())
+        : null;
       let start: RoomWorkerData['start'];
       const worldId = durability?.worldId ?? randomUUID();
       if (snapshot) {
@@ -476,7 +497,9 @@ export async function createGateway(options: GatewayOptions) {
         ];
         if (ids.length && !resolveOwner)
           throw new Error('restored explosive owner resolver unavailable');
-        const owners = ids.length ? await resolveOwnerAuthorizations(resolveOwner!, id, ids) : [];
+        const owners = ids.length
+          ? await measure('owner_policy', () => resolveOwnerAuthorizations(resolveOwner!, id, ids))
+          : [];
         start = { type: 'restore', checkpoint: snapshot, owners };
       } else
         start = {
@@ -493,14 +516,28 @@ export async function createGateway(options: GatewayOptions) {
         };
       if (draining || ownershipLost || (durability && !durability.owned()))
         throw new Error('room ownership unavailable');
-      handle = spawnRoom(id, worldId, start, durability);
+      loadPhase = 'worker_startup';
+      handle = spawnRoom(id, worldId, start, durability, {
+        started: loadStarted,
+        restored: !!snapshot,
+        timings,
+      });
       await handle.ready;
       if (draining || handle.closing || (durability && !durability.owned()))
         throw new Error('room startup cancelled');
       return handle;
     } catch (error) {
       if (handle) failRoom(handle, 'allocation_failed', failureDetails(error));
-      else await durability?.close().catch(() => event('VOXEL_LEASE_RELEASE_FAILED'));
+      else {
+        event('VOXEL_ROOM_LOAD_FAILED', {
+          room: id,
+          phase: loadPhase,
+          duration_ms: Math.round(performance.now() - loadStarted),
+          ...timings,
+          ...failureDetails(error),
+        });
+        await durability?.close().catch(() => event('VOXEL_LEASE_RELEASE_FAILED'));
+      }
       throw error;
     }
   }
@@ -509,6 +546,7 @@ export async function createGateway(options: GatewayOptions) {
     worldId: string,
     start: RoomWorkerData['start'],
     durability: RoomDurability | null,
+    load: { started: number; restored: boolean; timings: Record<string, number> },
   ): RoomHandle {
     // Allocation is idempotent. No room-count or player-count ceilings participate.
     const worker = new Worker(
@@ -582,6 +620,9 @@ export async function createGateway(options: GatewayOptions) {
         resolve();
         event('VOXEL_ROOM_READY', {
           ...roomContext(handle),
+          restored: load.restored,
+          load_ms: Math.round(performance.now() - load.started),
+          ...load.timings,
           duration_ms: Math.round(performance.now() - handle.startedAt),
         });
       } else if (message.type === 'room-policy-needed') {
@@ -818,7 +859,7 @@ export async function createGateway(options: GatewayOptions) {
           savePaused: () => room.durability!.save(true),
           resume: () => {
             if (!room.durability!.owned() || room.closing) throw new Error('room ownership lost');
-            room.worker.postMessage({ type: 'resume' } satisfies ToRoom);
+            room.worker.postMessage({ type: 'resume', confirmed: true } satisfies ToRoom);
           },
           end: () => {
             if (!room.durability!.owned() || room.closing) throw new Error('room ownership lost');
@@ -1040,16 +1081,34 @@ export async function createGateway(options: GatewayOptions) {
       joining = false,
       windowStart = Date.now(),
       messages = 0;
-    const deadline = setTimeout(() => closeSocket(socket, 1008, 'admission required'), 5000);
+    let deadline = setTimeout(() => closeSocket(socket, 1008, 'hello timeout'), 5000);
+    let progress: ReturnType<typeof setInterval> | null = null;
+    let phaseStarted = performance.now();
+    const measure = async <T>(phase: string, work: () => Promise<T>): Promise<T> => {
+      context.phase = phase;
+      phaseStarted = performance.now();
+      try {
+        return await work();
+      } finally {
+        context[`${phase}_ms`] =
+          Number(context[`${phase}_ms`] ?? 0) + Math.round(performance.now() - phaseStarted);
+      }
+    };
     socket.on('error', () => {
       context.reason ??= 'transport_error';
       socket.terminate();
     });
-    socket.on('close', (code) => {
+    socket.on('close', (code, peerReason) => {
+      if (!context.reason && [1000, 1001].includes(code)) {
+        const reason = peerReason.toString();
+        if (['client_left', 'client_reconnecting'].includes(reason)) context.reason = reason;
+      }
       clearTimeout(deadline);
+      if (progress) clearInterval(progress);
       event('VOXEL_CONNECTION_CLOSED', {
         ...context,
         code,
+        phase_duration_ms: Math.round(performance.now() - phaseStarted),
         reason: context.reason ?? (authenticated ? 'peer_closed' : 'admission_interrupted'),
         duration_ms: Math.round(performance.now() - startedAt),
       });
@@ -1109,11 +1168,28 @@ export async function createGateway(options: GatewayOptions) {
             closeSocket(socket, 1008, 'build incompatible');
             return;
           }
+          clearTimeout(deadline);
+          const loading = () => {
+            if (socket.readyState === WebSocket.OPEN && !authenticated)
+              socket.send(JSON.stringify({ type: 'joining' } satisfies ServerMessage));
+          };
+          loading();
+          progress = setInterval(loading, 2000);
+          deadline = setTimeout(() => {
+            if (socket.readyState !== WebSocket.OPEN) return;
+            socket.send(
+              JSON.stringify({
+                type: 'error',
+                code: 'RECOVERING',
+                retryable: true,
+              } satisfies ServerMessage),
+            );
+            closeSocket(socket, 1013, 'join timeout');
+          }, 30000);
           admitting.set(ticket.room, (admitting.get(ticket.room) ?? 0) + 1);
           try {
             const validate = async (): Promise<Authorization | null> => {
-              context.phase = 'revalidating';
-              const next = await ticket.grant.revalidate('ticket');
+              const next = await measure('revalidating', () => ticket.grant.revalidate('ticket'));
               return next === null ? null : readAuthorization(next, Date.now(), ticket.actor.id);
             };
             let authorization = await validate();
@@ -1132,8 +1208,7 @@ export async function createGateway(options: GatewayOptions) {
             let acceptedBy: RoomHandle | null = null;
             for (;;) {
               if (socket.readyState !== WebSocket.OPEN) return;
-              context.phase = 'allocating_room';
-              room = await roomFor(ticket.room);
+              room = await measure('allocating_room', () => roomFor(ticket.room));
               Object.assign(context, roomContext(room));
               if (socket.readyState !== WebSocket.OPEN) return;
               if (room.retiring) continue;
@@ -1147,11 +1222,12 @@ export async function createGateway(options: GatewayOptions) {
                 continue;
               }
               if (options.sessions && room.durability && acceptedBy !== room) {
-                context.phase = 'accepting_membership';
-                await options.sessions.accept(
-                  room.durability.ownership,
-                  authorization.actor,
-                  authorization,
+                await measure('accepting_membership', () =>
+                  options.sessions!.accept(
+                    room.durability!.ownership,
+                    authorization!.actor,
+                    authorization!,
+                  ),
                 );
                 acceptedBy = room;
                 // Authorization may expire or the allocation may retire during platform IO.
@@ -1182,11 +1258,10 @@ export async function createGateway(options: GatewayOptions) {
               return;
             }
             context.phase = 'active';
+            phaseStarted = performance.now();
+            context.actorId = authorization.actor.id;
+            context.role = authorization.actor.role;
             Object.assign(context, roomContext(room));
-            event('VOXEL_ADMISSION_ACCEPTED', {
-              ...context,
-              duration_ms: Math.round(performance.now() - startedAt),
-            });
             entry.room = room;
             room.hasJoined = true;
             room.connections.add(id);
@@ -1227,8 +1302,16 @@ export async function createGateway(options: GatewayOptions) {
               connection: id,
               authorizationUntil: entry.authorization.until,
             } satisfies ToRoom);
+            event('VOXEL_ADMISSION_ACCEPTED', {
+              ...context,
+              duration_ms: Math.round(performance.now() - startedAt),
+              connections: room.connections.size,
+            });
             return;
           } finally {
+            clearTimeout(deadline);
+            if (progress) clearInterval(progress);
+            progress = null;
             const remaining = (admitting.get(ticket.room) ?? 1) - 1;
             if (remaining) admitting.set(ticket.room, remaining);
             else admitting.delete(ticket.room);
@@ -1335,7 +1418,7 @@ export async function createGateway(options: GatewayOptions) {
       // A successful drain is acknowledged only after every requested pause checkpoint commits.
       const saved = await Promise.allSettled(
         handles.map(async (handle) => {
-          if (!handle.ending) await handle.durability?.save(true);
+          if (!handle.ending && handle.hasJoined) await handle.durability?.save(true);
           await handle.projection?.finish();
         }),
       );

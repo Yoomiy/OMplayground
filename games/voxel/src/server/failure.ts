@@ -23,5 +23,28 @@ export function failureDetails(error: unknown): Record<string, string> {
       ? name
       : 'unknown',
     ...(machineCode ? { failureCode: code } : {}),
+    ...([
+      'provider_error',
+      'provider_timeout',
+      'malformed_reply',
+      'read_deadline',
+      'clock_invalid',
+    ].includes(String(fields.failureReason))
+      ? { failureReason: String(fields.failureReason) }
+      : {}),
+    ...([
+      'identity',
+      'profile',
+      'session',
+      'actor_policy',
+      'recess',
+      'policy',
+      'admission',
+      'inspection',
+      'authorization',
+      'session_projection',
+    ].includes(String(fields.policyPhase))
+      ? { policyPhase: String(fields.policyPhase) }
+      : {}),
   };
 }

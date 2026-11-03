@@ -5,6 +5,9 @@ import { ROOM_POLICY_MS, readRoomPolicy } from '../src/server/room-policy.ts';
 import { WorldClock } from '../src/client/world-clock.ts';
 
 test('world lifecycle wire carries coherent public state and cannot be supplied by a browser', () => {
+  assert.deepEqual(parseServerMessage(JSON.stringify({ type: 'joining' })), { type: 'joining' });
+  assert.equal(parseServerMessage(JSON.stringify({ type: 'joining', phase: 'secret' })), null);
+  assert.equal(parseClientMessage(JSON.stringify({ type: 'joining' })), null);
   for (const code of ['SESSION_ENDED', 'RECESS_CLOSED']) {
     assert.ok(parseServerMessage(JSON.stringify({ type: 'error', code, retryable: false })));
     assert.equal(

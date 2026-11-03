@@ -33,10 +33,18 @@ administrator profiles without a gameplay partition cannot become players.
 Saved flight state is cleared when current authority no longer permits flight.
 Player and observer counts do not participate in admission.
 
-Admission and control proofs last at most five seconds from the start of their
-read, bounded by JWT expiry and a recess closing boundary. Single-use tickets
-are checked before room allocation and again after slow allocation when needed.
-SQL membership/control fencing retains these short proofs.
+Admission reads and read-only session inspection have a bounded twelve-second
+budget. Admission mints a short proof after those reads complete, bounded by JWT
+expiry and the real recess boundary. Membership consumes that proof within five
+seconds. Single-use tickets are checked before allocation and again after slow
+allocation when needed. Control/mutation proofs retain their stricter five-second
+request-start deadline and SQL fencing. Read-only projection shares the read
+budget rather than expiring according to a mutation proof.
+
+Failures identify provider error/timeout, malformed reply or read deadline,
+plus the policy phase and a sanitized provider code. Gateway loading and join
+logs separately measure backend loading and worker startup. Failed reads never
+produce a ticket or extend an existing recess cutoff.
 
 Once joined, a school connection uses its verified identity and the actual recess
 closing time as a local cutoff. Background profile, roster and schedule checks run

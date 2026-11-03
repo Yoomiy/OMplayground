@@ -22,11 +22,7 @@ const policies: Readonly<Record<string, Policy>> = {
     "Gameplay admission rejected",
   ),
   VOXEL_ADMISSION_ISSUED: policy("debug", "success", "Admission ticket issued"),
-  VOXEL_ADMISSION_ACCEPTED: policy(
-    "debug",
-    "success",
-    "Gameplay admission accepted",
-  ),
+  VOXEL_ADMISSION_ACCEPTED: policy("info", "success", "Player joined room"),
   VOXEL_ROOM_METRICS: policy(
     "debug",
     "observed",
@@ -44,6 +40,12 @@ const policies: Readonly<Record<string, Policy>> = {
     "success",
     "Room saved and ownership released",
   ),
+  VOXEL_UNUSED_ROOM_RELEASED: policy(
+    "info",
+    "success",
+    "Unused room ownership released",
+  ),
+  VOXEL_ROOM_LOAD_FAILED: policy("error", "failed", "Room loading failed"),
   VOXEL_EMPTY_ROOM_STOPPED: policy("info", "success", "Empty room stopped"),
   VOXEL_SESSION_ENDED: policy("info", "success", "Session ended"),
   VOXEL_ACTOR_REVOKED: policy("info", "revoked", "Actor access revoked"),
@@ -118,6 +120,14 @@ const policies: Readonly<Record<string, Policy>> = {
 
 export function voxelEventPolicy(name: string, context: Context): Policy {
   switch (name) {
+    case "VOXEL_ADMISSION_ACCEPTED":
+      return context.role === "observer"
+        ? policy("info", "success", "Observer joined room")
+        : policies.VOXEL_ADMISSION_ACCEPTED!;
+    case "VOXEL_ADMISSION_ISSUED":
+      return Number(context.duration_ms) >= 1000
+        ? policy("info", "success", "Slow school admission completed")
+        : policies.VOXEL_ADMISSION_ISSUED!;
     case "VOXEL_ROOM_METRICS":
       return Number(context.overrunMs) > 0
         ? policy(
@@ -223,8 +233,18 @@ export function voxelEventPolicy(name: string, context: Context): Policy {
           "rejected",
           "Gameplay connection closed by session policy",
         );
-      if (context.code === 1000 || context.code === 1001)
-        return policy("debug", "closed", "Gameplay connection closed");
+      if ([1000, 1001, 1005].includes(Number(context.code)))
+        return policy(
+          context.phase === "active" ? "info" : "debug",
+          "closed",
+          context.phase === "active"
+            ? "Player left room"
+            : "Room join cancelled",
+        );
+      if (context.reason === "join_timeout")
+        return policy("warn", "recovering", "Room join timed out");
+      if (context.reason === "hello_timeout")
+        return policy("warn", "closed", "Gameplay handshake timed out");
       return policy(
         "warn",
         context.code === 1012 || context.code === 1013
@@ -256,6 +276,8 @@ export function voxelEventPolicy(name: string, context: Context): Policy {
 
 export function createVoxelEventLogger(logger: ServiceLogger) {
   return (name: string, context: Context) => {
+    if (name === "VOXEL_CLIENT_FAILURE" && context.operation === "pointer_lock")
+      return;
     const { correlationId: suppliedCorrelationId, ...details } = context;
     const correlationId =
       suppliedCorrelationId ?? context.admissionId ?? context.connectionId;

@@ -86,14 +86,17 @@ test(
         const p = await h.raw('cancelled');
         if (p.socket.readyState !== 3) await once(p.socket, 'close');
         await until(() =>
-          h.events.includes(backend ? 'VOXEL_ROOM_SAVED_AND_RELEASED' : 'VOXEL_EMPTY_ROOM_STOPPED'),
+          h.events.includes(backend ? 'VOXEL_UNUSED_ROOM_RELEASED' : 'VOXEL_EMPTY_ROOM_STOPPED'),
         );
         assert.equal(h.gateway.rooms.size, 0);
         assert.equal(
           p.events.some((event) => 'type' in event && event.type === 'welcome'),
           false,
         );
-        if (backend) assert.equal(backend.rows.get('allocation')!.deadline, backend.now);
+        if (backend) {
+          assert.equal(backend.rows.get('allocation')!.deadline, backend.now);
+          assert.equal(backend.commits.length, 0);
+        }
       } finally {
         await h.close();
       }

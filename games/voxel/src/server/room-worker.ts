@@ -442,6 +442,18 @@ try {
         }
       } else if (message.type === 'resume' || message.type === 'pause') {
         if (data.enforceLifecycle) {
+          if (
+            message.type === 'resume' &&
+            message.confirmed === true &&
+            !terminalSent &&
+            policyState !== 'ended'
+          ) {
+            // The fenced control transaction has already committed playing intent.
+            policyState = 'playing';
+            policyUntil = now + ROOM_POLICY_MS;
+            pendingPolicy = null;
+            nextPolicyCheck = now;
+          }
           manualPause = message.type === 'pause';
           applyLifecycle(performance.now());
         } else room.setPaused(message.type === 'pause', performance.now());

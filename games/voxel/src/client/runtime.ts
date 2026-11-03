@@ -465,6 +465,10 @@ export async function mountVoxel(
     }
   };
   const handle = (event: ServerMessage) => {
+    if (event.type === 'joining') {
+      if (!baselineReceived) publish({ status: 'connecting', message: 'טוענים את העולם…' });
+      return;
+    }
     if (event.type === 'lifecycle') {
       const now = performance.now();
       worldClock.reset(event.tick, now, event.state === 'playing');
@@ -617,7 +621,7 @@ export async function mountVoxel(
         event.environmentVersion !== identity.environmentVersion ||
         event.generatorVersion !== GENERATOR_VERSION
       ) {
-        socket?.close();
+        socket?.close(1000, 'client_left');
         publish({ status: 'error', message: 'המשחק עודכן. יש לרענן את העמוד.' });
         return;
       }
@@ -907,7 +911,7 @@ export async function mountVoxel(
       cancelled = () => reject(new DOMException('Admission cancelled', 'AbortError'));
       abort.signal.addEventListener('abort', cancelled, { once: true });
     });
-    socket?.close();
+    socket?.close(1000, 'client_reconnecting');
     clearWorld();
     publish({
       lifecycle: 'preparing',
@@ -1253,7 +1257,7 @@ export async function mountVoxel(
       connection++;
       const previous = socket;
       socket = null;
-      previous.close();
+      previous.close(1000, 'client_reconnecting');
       focus(false);
       if (ownsPointerLock()) document.exitPointerLock();
       publish({
@@ -1659,7 +1663,7 @@ export async function mountVoxel(
       }
     }
   };
-  const onPointerLockError = (error: unknown) => {
+  const onPointerLockError = (_error: unknown) => {
     if (
       disposed ||
       fatalRecovery ||
@@ -1669,7 +1673,7 @@ export async function mountVoxel(
       phase === 'dead'
     )
       return;
-    diagnose('pointer_lock', error);
+    // Browser focus/activation refusals are handled locally, without server telemetry.
     noticeUntil = 0;
     pointerLockProblem =
       'העכבר לא נלכד. לחצו שוב על כניסה לעולם; אם יצאתם עם Esc, המתינו רגע ונסו שוב.';
@@ -2106,7 +2110,7 @@ export async function mountVoxel(
       }
       retry.dispose();
       connectionAbort?.abort();
-      socket?.close();
+      socket?.close(1000, 'client_left');
       if (ownsPointerLock()) document.exitPointerLock();
       if (Object.is(document.fullscreenElement, options.fullscreenElement ?? host)) {
         try {

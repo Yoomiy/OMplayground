@@ -8,6 +8,9 @@ import {
   SchoolUnavailable,
   bearerToken,
   AUTHORIZATION_MS,
+  SCHOOL_READ_MS,
+  schoolFailure,
+  schoolRead,
 } from "../src/school-access.ts";
 const rejected = (code: string) => (error: unknown) => {
   assert.ok(error instanceof AccessDenied);
@@ -584,11 +587,16 @@ test("school avatar selection follows verified profile gender, stays stable, and
 
 test("connected school sessions check policy every thirty seconds and retain a real recess cutoff independent of the login JWT", async () => {
   const f = fixture();
-  const grant = await f.access.grant(f.token(f.kid, f.now + 60000), { room: f.room });
+  const grant = await f.access.grant(f.token(f.kid, f.now + 60000), {
+    room: f.room,
+  });
   const policy = grant.connected!();
   assert.equal(policy.recheckMs, 30000);
   assert.equal(policy.expiresReason, "RECESS_CLOSED");
-  assert.equal(policy.authorization.expiresAt, Date.parse("2026-10-25T10:00:00Z"));
+  assert.equal(
+    policy.authorization.expiresAt,
+    Date.parse("2026-10-25T10:00:00Z"),
+  );
   const before = f.requests.length;
   f.setNow(f.now + 65000);
   const next = await policy.revalidate();
@@ -599,4 +607,67 @@ test("connected school sessions check policy every thirty seconds and retain a r
   f.state.outage = "";
   f.state.session.player_ids = [];
   assert.equal(await policy.revalidate(), null);
+});
+
+test("slow admission reads mint a short mutation proof after completion, while mutation authorization stays strict", async () => {
+  const f = fixture();
+  f.state.onRequest = () => f.setNow(f.now + 1000);
+  const before = f.now;
+  const grant = await f.access.grant(f.token(), { room: f.room });
+  assert.ok(f.now - before > AUTHORIZATION_MS);
+  assert.ok(f.now - before < SCHOOL_READ_MS);
+  assert.equal(grant.expiresAt, f.now + AUTHORIZATION_MS);
+  await assert.rejects(
+    f.access.authorize(f.token(), { room: f.room }),
+    (error: unknown) =>
+      error instanceof SchoolUnavailable &&
+      error.failureReason === "read_deadline",
+  );
+  const inspected = await f.access.inspect(f.token(), { room: f.room });
+  assert.ok(inspected.expiresAt > f.now);
+  f.state.onRequest = () => f.setNow(f.now + 2000);
+  await assert.rejects(
+    f.access.grant(f.token(), { room: f.room }),
+    (error: unknown) =>
+      error instanceof SchoolUnavailable &&
+      error.failureReason === "read_deadline",
+  );
+});
+test("school read failures expose fixed phase and provider codes without messages or URLs", async () => {
+  const f = fixture();
+  f.state.outage = "kid_profiles";
+  await assert.rejects(
+    f.access.grant(f.token(), { room: f.room }),
+    (error: unknown) => {
+      assert.deepEqual(schoolFailure(error), {
+        failureReason: "provider_error",
+        policyPhase: "profile",
+        providerCode: "P0001",
+      });
+      assert.doesNotMatch(
+        JSON.stringify(schoolFailure(error)),
+        /private-provider|https:/,
+      );
+      return true;
+    },
+  );
+});
+
+test("a hung read is bounded independently and its abort signal is cancelled", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  let signal: AbortSignal | undefined;
+  const pending = schoolRead("inspection", async (value) => {
+    signal = value;
+    return new Promise<never>(() => {});
+  });
+  const rejected = assert.rejects(
+    pending,
+    (error: unknown) =>
+      error instanceof SchoolUnavailable &&
+      error.failureReason === "read_deadline" &&
+      error.policyPhase === "inspection",
+  );
+  t.mock.timers.tick(SCHOOL_READ_MS);
+  await rejected;
+  assert.equal(signal?.aborted, true);
 });

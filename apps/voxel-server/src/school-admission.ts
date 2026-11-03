@@ -1,6 +1,11 @@
 import type { AdmissionPolicy } from "../../../games/voxel/src/server/gateway.ts";
 import type { GatewayOptions } from "../../../games/voxel/src/server/gateway.ts";
-import { SchoolAccess, AccessDenied, bearerToken } from "./school-access.ts";
+import {
+  SchoolAccess,
+  AccessDenied,
+  bearerToken,
+  schoolFailure,
+} from "./school-access.ts";
 type Event = (
   name: string,
   context: Record<string, string | number | boolean>,
@@ -27,7 +32,8 @@ export function schoolAdmission(
   event?: Event,
 ): AdmissionPolicy {
   return async (request, body, response) => {
-    const token = bearerToken(request.headers.authorization);
+    const token = bearerToken(request.headers.authorization),
+      started = performance.now();
     try {
       if (!token) throw new AccessDenied("UNAUTHORIZED");
       return await access.grant(token, body);
@@ -47,6 +53,8 @@ export function schoolAdmission(
       const correlationId = response.getHeader?.("x-correlation-id");
       event?.("VOXEL_ADMISSION_REJECTED", {
         room: body.room,
+        ...schoolFailure(error),
+        duration_ms: Math.round(performance.now() - started),
         code,
         httpStatus: status,
         phase: "school_authorization",
