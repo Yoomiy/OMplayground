@@ -283,6 +283,44 @@ try {
       recovery: after.inputRecovery,
     });
   }
+  phase = 'brief-snapshot-stall';
+  const beforeSnapshotStall = await debug();
+  const admissionsBeforeSnapshotStall = admissions;
+  relay.hold('server');
+  await page.waitForFunction(() => (window as any).voxel.debug().status === 'stalled', null, {
+    timeout: 4000,
+  });
+  const snapshotStalled = await debug();
+  assert.equal(snapshotStalled.focused, true, 'temporary snapshot loss retains local input focus');
+  assert.notEqual(await page.evaluate(() => (window as any).voxel.voiceScene()), null);
+  await command({ type: 'look', dx: 100, dy: 0 });
+  assert.notEqual((await debug()).view.yaw, snapshotStalled.view.yaw);
+  await command({ type: 'interact', kind: 'remove' });
+  assert.equal(
+    (await debug()).queuedAction,
+    null,
+    'stale world actions are not deferred until recovery',
+  );
+  await page.waitForTimeout(350);
+  relay.release('server');
+  await page.waitForFunction(
+    () => {
+      const d = (window as any).voxel.debug();
+      return d.status === 'playing' && d.inputSeconds < 0.2;
+    },
+    null,
+    { timeout: 15000 },
+  );
+  const snapshotRecovered = await debug();
+  assert.equal(snapshotRecovered.focused, true);
+  assert.equal(snapshotRecovered.actionSequence, beforeSnapshotStall.actionSequence);
+  assert.equal(admissions, admissionsBeforeSnapshotStall);
+  report.snapshotStall = {
+    waiting: snapshotStalled.status,
+    recovered: snapshotRecovered.status,
+    focused: snapshotRecovered.focused,
+    admissions,
+  };
   phase = 'retain-world-during-readmission';
   const beforeReadmission = await debug();
   let releaseAdmission!: () => void;

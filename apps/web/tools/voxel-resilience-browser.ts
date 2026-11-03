@@ -247,6 +247,16 @@ try {
     "optional failures do not remount the world",
   );
   await page.locator(".voxel-session__chat-toggle").click();
+  await page.locator(".voxel-session__chat-toggle").click();
+  await page
+    .getByText("לא ניתן לטעון את הצ׳אט כעת.", { exact: true })
+    .waitFor({ timeout: 15000 });
+  assert.equal(
+    await page.getByText("Previously loaded message", { exact: true }).count(),
+    1,
+    "reopening chat during an outage preserves the cached page",
+  );
+  await page.locator(".voxel-session__chat-toggle").click();
   await page.evaluate(() =>
     (window as any).surfaceRuntime.command({ type: "resume" }),
   );

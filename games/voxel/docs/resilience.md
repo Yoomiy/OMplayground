@@ -14,6 +14,7 @@ authorization deadlines remain authoritative; an outage cannot extend a proof.
 | Recorded sound fetch/decode hangs or a native audio call throws | The current event may be silent; gameplay continues | At most four loads, a five-second deadline, ten-second failed-load cooldown and at most 16 voices. Use a decoded variant when available. Do not replay an old event when its file finally arrives. |
 | Save or presence write fails | Continue simulation while ownership is valid; show an unsaved-state warning after a failed autosave | Bounded IO; coalesce pending snapshots/views. Clear the save warning only after a confirmed commit. Retry an unconfirmed checkpoint with the same identity before capturing a newer one. |
 | Input acknowledgements lag while snapshots arrive | Keep the rendered world, camera and voice; pause prediction/actions at the two-second input budget | Resume when backlog drains below 250 ms. After ten seconds waiting, request one baseline on the same socket; allow another ten seconds before readmission. Buffers remain bounded. |
+| Incoming gameplay packets briefly stall | Pause prediction and world actions while retaining local focus/camera | Fresh packets resume gameplay on the same socket. Discard clicks made while state is stale instead of replaying them later. Explicit browser blur and user pause still require normal resume. |
 | Gameplay transport needs readmission | Retain the old rendered world during admission | Replace resources when the new welcome arrives; do not replay uncertain world actions. Reconnect attempts use bounded backoff and jitter. |
 | Ownership or actor authorization can no longer be confirmed | Stop affected authoritative activity by the last confirmed deadline | A late proof cannot revive an expired owner or actor. The existing worker deadline and fencing tests cover the necessary disconnect. Other authorized actors continue when the failure is actor-specific. |
 | Saved checkpoint is missing/corrupt/incompatible | Reject recovery with a categorized error; retain the committed pointer | Never silently generate a replacement world. Allow only reviewed, directional engine compatibility. |
@@ -43,6 +44,9 @@ holds of five and fifteen seconds. Both recover on the existing connection while
 the other player and camera continue. A separate held admission verifies that
 the old meshes keep rendering until the next welcome and that both generations
 of workers, sockets and audio resources are released after disposal.
+An incoming TCP hold also verifies that a short snapshot interruption preserves
+focus and camera control, drops stale action requests, and resumes automatically
+without admitting another connection.
 Safe, nonfatal action rejection remains
 possible: an action whose preceding movement is not played within 500 ms returns
 `input_timeout`. The soak records these and verifies a fresh explicit attempt

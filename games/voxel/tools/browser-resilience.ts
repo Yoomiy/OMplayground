@@ -244,9 +244,16 @@ try {
       hasTouch: true,
       viewport: { width: 640, height: 480 },
     });
-    await context.addInitScript(() =>
-      Object.defineProperty(navigator, 'hardwareConcurrency', { value: 2 }),
-    );
+    await context.addInitScript(() => {
+      Object.defineProperty(navigator, 'hardwareConcurrency', { value: 2 });
+      const events: object[] = [];
+      (window as any).fixtureFocusEvents = events;
+      for (const type of ['focus', 'blur', 'visibilitychange'])
+        window.addEventListener(type, () => {
+          events.push({ type, at: performance.now(), visible: document.visibilityState });
+          if (events.length > 32) events.shift();
+        });
+    });
     const page = await context.newPage();
     pages.push(page);
     page.on('pageerror', (error: Error) => report.issues.push(error.message));
@@ -289,10 +296,13 @@ try {
     for (let index = 0; index < 2; index++) {
       const page = pages[index];
       const before = await debug(page);
-      // Alternate along one world axis. An edit can turn the camera; carrying its
-      // yaw into the next walk would turn this bounded route into an hour of drift.
+      // Walk toward the fixed starting x on one world axis. Camera changes and
+      // variable command latency must not turn an hour of short walks into drift.
       await command(page, { type: 'look', dx: -before.view.yaw / 0.002, dy: 0 });
-      await command(page, { ...neutral, x: iteration % 2 ? 1 : -1 });
+      await command(page, {
+        ...neutral,
+        x: before.position[0] >= identity[index].position[0] ? -1 : 1,
+      });
       await page.waitForTimeout(250);
       await command(page, neutral);
       if (cycle === 0) await editBlock(page, index);
@@ -358,6 +368,8 @@ try {
       states: states.map((d: any) => ({
         phase: d.phase,
         status: d.status,
+        focused: d.focused,
+        lastReceivedAgoMs: d.lastReceivedAgoMs,
         worldTick: d.worldTick,
         saveUnavailable: d.saveUnavailable,
         inputSeconds: d.inputSeconds,
@@ -396,6 +408,9 @@ try {
 } catch (error) {
   report.result = 'FAIL';
   report.clients = await Promise.all(pages.map((page) => debug(page).catch(() => null)));
+  report.focusEvents = await Promise.all(
+    pages.map((page) => page.evaluate(() => (window as any).fixtureFocusEvents).catch(() => null)),
+  );
   report.error =
     error instanceof Error ? { message: error.message, stack: error.stack } : String(error);
   throw error;

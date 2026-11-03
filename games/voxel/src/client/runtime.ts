@@ -1412,9 +1412,11 @@ export async function mountVoxel(
         hud.status !== 'error' &&
         hud.status !== 'stalled'
       ) {
-        focus(false);
+        queuedAction = null;
+        miningHeld = miningSingle = false;
+        if (lastMineKey) sendMining(null);
+        lastMineKey = '';
         publish({ status: 'stalled', message: 'ממתינים לחיבור…' });
-        if (ownsPointerLock()) document.exitPointerLock();
       }
       let sampled = false;
       if (dt > 0) {
@@ -1893,6 +1895,16 @@ export async function mountVoxel(
   }
   function command(cmd: RuntimeCommand) {
     if (disposed) return;
+    if (
+      (cmd.type === 'interact' ||
+        cmd.type === 'attack' ||
+        cmd.type === 'ignite' ||
+        cmd.type === 'flight' ||
+        cmd.type === 'respawn' ||
+        (cmd.type === 'mine' && cmd.active)) &&
+      (inputRecovery.waiting || performance.now() - lastReceived > 1500)
+    )
+      return;
     if (cmd.type === 'camera') {
       if (Number.isFinite(cmd.distance))
         publish({ cameraDistance: Math.max(0, Math.min(MAX_CAMERA_DISTANCE, cmd.distance)) });

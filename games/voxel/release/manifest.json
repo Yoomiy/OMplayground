@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "buildId": "80de337c45bb9d3366468ba84f434abe9bc0e259f44f8886209f208af2c53e02",
+  "buildId": "b9438158d0e39dd5ff78fd132075324385a119b268c01975e28d5dc51aef30f5",
   "inputs": [
     {
       "path": "LICENSE",
@@ -212,7 +212,7 @@
     },
     {
       "path": "src/client/runtime.ts",
-      "hash": "7f8626a6000816d87971ab261621f1bd6436023ea01828d48987e70dade6c672"
+      "hash": "1a5f77937f6ecb2abaca0c8876645bdb2d6e9c0c00924b7237b9ef3d54ddd6a8"
     },
     {
       "path": "src/client/sounds/NOTICE",
@@ -902,7 +902,7 @@
     },
     {
       "path": "artifacts/build.json",
-      "hash": "2205459a6077b2fb9120e0dd9ad2044a2c7ed154468c62425e24a052396da7d8"
+      "hash": "689d0b92ae3e3872f5686295e3b4d71bd3c192ed19a80ddacad6740962017873"
     },
     {
       "path": "artifacts/content-bindings.ts",
@@ -918,7 +918,7 @@
     },
     {
       "path": "artifacts/release.json",
-      "hash": "8a73aa155251c65258a944d1bc0f0bacc371001df380cf02d7d81a4e2bf95a72"
+      "hash": "18b4d31a44381b2678df23107660ae81301d56d89c01c547d7c4984c9e05b0ac"
     },
     {
       "path": "dist-client/assets/break-DPSoepx8.ogg",
@@ -1041,12 +1041,12 @@
       "hash": "3eba68d7069335da8b4813e3ac4ebc1fd632fd4d33ae70916a6686085b5f8dce"
     },
     {
-      "path": "dist-client/assets/index-P3AiFv1J.css",
-      "hash": "9fa2a5f4e45de30243c0269a36f22ec695d3d68663b468cfa21e2d0c23ffe50d"
+      "path": "dist-client/assets/index-DmPI884r.js",
+      "hash": "35f908d5c9d650fa18a721086f726b2f5ffcb70ebdab5a85b6608b9434161001"
     },
     {
-      "path": "dist-client/assets/index-saL_jG2J.js",
-      "hash": "e49cf408b8243ff955c27d929f5f78308eac474ae467b77e0951f2673221dc40"
+      "path": "dist-client/assets/index-P3AiFv1J.css",
+      "hash": "9fa2a5f4e45de30243c0269a36f22ec695d3d68663b468cfa21e2d0c23ffe50d"
     },
     {
       "path": "dist-client/assets/ladder1-C_gYzPoM.ogg",
@@ -1226,7 +1226,7 @@
     },
     {
       "path": "dist-client/index.html",
-      "hash": "2c94eda6beea0906fb2b01c2b02c82cdf7fd662bb95786745327b813604ff04a"
+      "hash": "0c09aa456197ed2453fa3c98486a54c757e07be16716bef4821cd45a44e02b0d"
     },
     {
       "path": "dist-client/voxel-audio-NOTICE.txt",
@@ -1234,7 +1234,7 @@
     },
     {
       "path": "dist-server/build.json",
-      "hash": "2205459a6077b2fb9120e0dd9ad2044a2c7ed154468c62425e24a052396da7d8"
+      "hash": "689d0b92ae3e3872f5686295e3b4d71bd3c192ed19a80ddacad6740962017873"
     },
     {
       "path": "dist-server/content.json",
