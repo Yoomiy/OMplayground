@@ -2,7 +2,7 @@
 
 `POST /api/voxel/admin-stats` with body `{}` and a Supabase bearer token returns
 the local service's active transport connections, non-closing room count,
-per-room connection counts and media signaling connection count. The gateway
+per-room connection counts. The gateway
 applies its existing origin, preflight and request-body rules. No room is
 allocated, game capability issued or database mutation performed by this route.
 
@@ -11,8 +11,9 @@ Only platform administrators may read it. Teachers and students receive 403;
 missing/invalid credentials receive 401, invalid bodies 400 and unavailable or
 expired proofs 503. Responses use `Cache-Control: no-store`. Snapshot counts are
 local observations; transport connections can include admission handshakes and
-room connection counts include observers. Media connections describe signaling,
-not an independently measured count of successfully joined SFU participants.
+room connection counts include observers. Voice connects directly to LiveKit,
+so the voxel service omits media connection counts; the UI shows this measurement
+as unavailable.
 
 The web admin panel independently queries board, voxel and classroom services.
 Voxel uses `VITE_VOXEL_RUNTIME_SERVER_URL`; classroom stats and browser error

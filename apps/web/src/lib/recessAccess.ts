@@ -1,15 +1,16 @@
 import { supabase } from "@/lib/supabase";
 import {
   isWithinEffectiveRecess,
+  effectiveRecessEndsAt,
   type ClassRecessException,
   type ClassRecessSchedule,
-  type RecessWindow
+  type RecessWindow,
 } from "@playground/game-logic";
 
 export type PlaygroundRole = "kid" | "teacher" | "admin";
 
 export type PlaygroundAccessResult =
-  | { allowed: true; role: PlaygroundRole }
+  | { allowed: true; role: PlaygroundRole; expiresAt?: number }
   | {
       allowed: false;
       role?: PlaygroundRole;
@@ -26,11 +27,14 @@ export type PlaygroundAccessResult =
 export const RECESS_ACCESS_CACHE_MS = 30_000;
 export const RECESS_RECHECK_MS = 30_000;
 
-const RECESS_DENIED_MESSAGE =
-  "לא ניתן להתחבר מחוץ לשעות ההפסקה";
+const RECESS_DENIED_MESSAGE = "לא ניתן להתחבר מחוץ לשעות ההפסקה";
 
-let defaultScheduleCache: { rows: RecessWindow[]; expiresAt: number } | null = null;
-const classScheduleCache = new Map<string, { schedule: ClassRecessSchedule | null; expiresAt: number }>();
+let defaultScheduleCache: { rows: RecessWindow[]; expiresAt: number } | null =
+  null;
+const classScheduleCache = new Map<
+  string,
+  { schedule: ClassRecessSchedule | null; expiresAt: number }
+>();
 
 async function loadActiveDefaultRecessSchedules(): Promise<RecessWindow[]> {
   const now = Date.now();
@@ -54,12 +58,15 @@ async function loadActiveDefaultRecessSchedules(): Promise<RecessWindow[]> {
 
 export function isKidAllowedByRecess(
   schedules: RecessWindow[],
-  now = new Date()
+  now = new Date(),
 ): boolean {
   return isWithinEffectiveRecess(now, { defaultWindows: schedules });
 }
 
-async function loadClassRecessSchedule(grade: string, gender: "boy" | "girl"): Promise<ClassRecessSchedule | null> {
+async function loadClassRecessSchedule(
+  grade: string,
+  gender: "boy" | "girl",
+): Promise<ClassRecessSchedule | null> {
   const cacheKey = `${grade}:${gender}`;
   const now = Date.now();
   const cached = classScheduleCache.get(cacheKey);
@@ -74,7 +81,10 @@ async function loadClassRecessSchedule(grade: string, gender: "boy" | "girl"): P
   if (settingError) throw new Error(settingError.message);
 
   if (!setting) {
-    classScheduleCache.set(cacheKey, { schedule: null, expiresAt: now + RECESS_ACCESS_CACHE_MS });
+    classScheduleCache.set(cacheKey, {
+      schedule: null,
+      expiresAt: now + RECESS_ACCESS_CACHE_MS,
+    });
     return null;
   }
 
@@ -87,15 +97,18 @@ async function loadClassRecessSchedule(grade: string, gender: "boy" | "girl"): P
 
   const schedule: ClassRecessSchedule = {
     overrideEnabled: Boolean(setting.override_enabled),
-    exceptions: (exceptions ?? []) as ClassRecessException[]
+    exceptions: (exceptions ?? []) as ClassRecessException[],
   };
-  classScheduleCache.set(cacheKey, { schedule, expiresAt: now + RECESS_ACCESS_CACHE_MS });
+  classScheduleCache.set(cacheKey, {
+    schedule,
+    expiresAt: now + RECESS_ACCESS_CACHE_MS,
+  });
   return schedule;
 }
 
-export async function getPlaygroundAccessForUser(
+async function checkPlaygroundAccess(
   userId: string,
-  now = new Date()
+  now = new Date(),
 ): Promise<PlaygroundAccessResult> {
   const { data: adminRow, error: adminError } = await supabase
     .from("admin_profiles")
@@ -107,7 +120,7 @@ export async function getPlaygroundAccessForUser(
     return {
       allowed: false,
       reason: "profile_error",
-      message: "לא ניתן לבדוק הרשאות משתמש כרגע."
+      message: "לא ניתן לבדוק הרשאות משתמש כרגע.",
     };
   }
 
@@ -125,7 +138,7 @@ export async function getPlaygroundAccessForUser(
     return {
       allowed: false,
       reason: "profile_error",
-      message: "לא ניתן לבדוק הרשאות משתמש כרגע."
+      message: "לא ניתן לבדוק הרשאות משתמש כרגע.",
     };
   }
 
@@ -133,7 +146,7 @@ export async function getPlaygroundAccessForUser(
     return {
       allowed: false,
       reason: "missing_profile",
-      message: "לא נמצא פרופיל פעיל למשתמש."
+      message: "לא נמצא פרופיל פעיל למשתמש.",
     };
   }
 
@@ -144,7 +157,7 @@ export async function getPlaygroundAccessForUser(
     return {
       allowed: false,
       reason: "inactive_profile",
-      message: "הפרופיל אינו פעיל כרגע."
+      message: "הפרופיל אינו פעיל כרגע.",
     };
   }
 
@@ -156,28 +169,41 @@ export async function getPlaygroundAccessForUser(
     return {
       allowed: false,
       reason: "unknown_role",
-      message: "תפקיד המשתמש אינו מוכר."
+      message: "תפקיד המשתמש אינו מוכר.",
     };
   }
 
   try {
     const profileData = profile as { grade?: string; gender?: "boy" | "girl" };
-    if (!profileData.grade || (profileData.gender !== "boy" && profileData.gender !== "girl")) {
+    if (
+      !profileData.grade ||
+      (profileData.gender !== "boy" && profileData.gender !== "girl")
+    ) {
       throw new Error("missing_class_profile");
     }
     const [schedules, classSchedule] = await Promise.all([
       loadActiveDefaultRecessSchedules(),
-      loadClassRecessSchedule(profileData.grade, profileData.gender)
+      loadClassRecessSchedule(profileData.grade, profileData.gender),
     ]);
-    if (isWithinEffectiveRecess(now, { defaultWindows: schedules, classSchedule })) {
-      return { allowed: true, role: "kid" };
+    if (
+      isWithinEffectiveRecess(now, { defaultWindows: schedules, classSchedule })
+    ) {
+      return {
+        allowed: true,
+        role: "kid",
+        expiresAt:
+          effectiveRecessEndsAt(now, {
+            defaultWindows: schedules,
+            classSchedule,
+          }) ?? now.getTime() + 24 * 60 * 60000,
+      };
     }
   } catch {
     return {
       allowed: false,
       role: "kid",
       reason: "schedule_error",
-      message: "לא ניתן לבדוק את זמני ההפסקה כרגע."
+      message: "לא ניתן לבדוק את זמני ההפסקה כרגע.",
     };
   }
 
@@ -185,11 +211,56 @@ export async function getPlaygroundAccessForUser(
     allowed: false,
     role: "kid",
     reason: "outside_recess",
-    message: RECESS_DENIED_MESSAGE
+    message: RECESS_DENIED_MESSAGE,
   };
 }
 
 export function clearRecessScheduleCacheForTests(): void {
   defaultScheduleCache = null;
   classScheduleCache.clear();
+}
+
+export function temporaryAccessFailure(
+  result: PlaygroundAccessResult,
+): boolean {
+  return (
+    !result.allowed &&
+    ["profile_error", "schedule_error"].includes(result.reason)
+  );
+}
+
+/** An unavailable check cannot erase a known decision or extend its recess cutoff. */
+export function accessAfterCheck(
+  previous: PlaygroundAccessResult | null,
+  next: PlaygroundAccessResult,
+  now = Date.now(),
+): PlaygroundAccessResult {
+  const result = temporaryAccessFailure(next) && previous ? previous : next;
+  if (
+    result.allowed &&
+    result.expiresAt !== undefined &&
+    result.expiresAt <= now
+  )
+    return {
+      allowed: false,
+      role: result.role,
+      reason: "outside_recess",
+      message: RECESS_DENIED_MESSAGE,
+    };
+  return result;
+}
+
+export async function getPlaygroundAccessForUser(
+  userId: string,
+  now = new Date(),
+): Promise<PlaygroundAccessResult> {
+  try {
+    return await checkPlaygroundAccess(userId, now);
+  } catch {
+    return {
+      allowed: false,
+      reason: "profile_error",
+      message: "לא ניתן לבדוק כרגע את החיבור. ננסה שוב בקרוב.",
+    };
+  }
 }

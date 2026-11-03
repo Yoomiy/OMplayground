@@ -1,17 +1,20 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { parseClientMessage, parseServerMessage } from '../src/shared/protocol.ts';
-import { readRoomPolicy } from '../src/server/room-policy.ts';
+import { ROOM_POLICY_MS, readRoomPolicy } from '../src/server/room-policy.ts';
 import { WorldClock } from '../src/client/world-clock.ts';
 
 test('world lifecycle wire carries coherent public state and cannot be supplied by a browser', () => {
-  assert.ok(
-    parseServerMessage(JSON.stringify({ type: 'error', code: 'SESSION_ENDED', retryable: false })),
-  );
-  assert.equal(
-    parseServerMessage(JSON.stringify({ type: 'error', code: 'SESSION_ENDED', retryable: true })),
-    null,
-  );
+  assert.deepEqual(parseServerMessage(JSON.stringify({ type: 'joining' })), { type: 'joining' });
+  assert.equal(parseServerMessage(JSON.stringify({ type: 'joining', phase: 'secret' })), null);
+  assert.equal(parseClientMessage(JSON.stringify({ type: 'joining' })), null);
+  for (const code of ['SESSION_ENDED', 'RECESS_CLOSED']) {
+    assert.ok(parseServerMessage(JSON.stringify({ type: 'error', code, retryable: false })));
+    assert.equal(
+      parseServerMessage(JSON.stringify({ type: 'error', code, retryable: true })),
+      null,
+    );
+  }
   for (const [state, reason] of [
     ['playing', 'allowed'],
     ['paused', 'session'],
@@ -34,7 +37,7 @@ test('world lifecycle wire carries coherent public state and cannot be supplied 
   ])
     assert.equal(parseServerMessage(JSON.stringify({ type: 'lifecycle', ...bad })), null);
 });
-test('room policy is a short private lease and rejects unknown state, browser claims and expired provider replies', () => {
+test('room policy has a bounded background-check horizon and rejects unknown state, browser claims and expired provider replies', () => {
   const now = 10000,
     value = { state: 'playing', expiresAt: now + 5000 };
   const read = readRoomPolicy(value, now);
@@ -45,7 +48,7 @@ test('room policy is a short private lease and rejects unknown state, browser cl
     null,
     {},
     { ...value, expiresAt: now },
-    { ...value, expiresAt: now + 5001 },
+    { ...value, expiresAt: now + ROOM_POLICY_MS + 1 },
     { ...value, expiresAt: Infinity },
     { ...value, state: 'recovering' },
     { ...value, owner: 'browser' },

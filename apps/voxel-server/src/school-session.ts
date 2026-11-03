@@ -5,6 +5,8 @@ import {
   AccessDenied,
   SchoolAccess,
   SchoolUnavailable,
+  schoolFailure,
+  schoolRead,
   bearerToken,
 } from "./school-access.ts";
 import type { SchoolAdmissionRequest } from "./school-access.ts";
@@ -24,6 +26,7 @@ export function schoolSessionApi(
       work: NonNullable<GatewayOptions["api"]>[string],
     ): NonNullable<GatewayOptions["api"]>[string] =>
     async (req, body, res) => {
+      const started = performance.now();
       try {
         return await work(req, body, res);
       } catch (error) {
@@ -32,6 +35,16 @@ export function schoolSessionApi(
         const correlationId = res.getHeader?.("x-correlation-id");
         event("VOXEL_SESSION_API_REJECTED", {
           code,
+          ...schoolFailure(error),
+          duration_ms: Math.round(performance.now() - started),
+          failure:
+            error instanceof SchoolUnavailable
+              ? "school_policy"
+              : error instanceof PersistenceError
+                ? "persistence"
+                : error instanceof AccessDenied
+                  ? "access_denied"
+                  : "unexpected",
           ...(typeof correlationId === "string" ? { correlationId } : {}),
           operation:
             req.url === "/api/voxel/diagnostics" ? "diagnostics" : "session",
@@ -99,30 +112,34 @@ export function schoolSessionApi(
         invitationCode: result.data.invitation_code,
       };
     }),
-    "/api/voxel/session": run(async (req, body) => {
-      const token = bearerToken(req.headers.authorization);
-      if (!token) throw new AccessDenied("UNAUTHORIZED");
-      const input = body as SchoolAdmissionRequest,
-        grant = await access.inspect(token, input);
-      let result: { data: unknown; error: unknown };
-      try {
-        result = await client
-          .from("game_sessions")
-          .select(
-            "id,host_id,host_name,status,connected_player_ids,connected_player_names,voxel_presence_expires_at",
-          )
-          .eq("id", input.room)
-          .maybeSingle()
-          .retry(false);
-      } catch {
-        throw new SchoolUnavailable();
-      }
-      if (result.error)
-        throw new PersistenceError("session_read", result.error);
-      if (!result.data) throw new AccessDenied("NOT_FOUND");
-      if (Date.now() >= grant.expiresAt) throw new SchoolUnavailable();
-      return result.data;
-    }),
+    "/api/voxel/session": run((req, body) =>
+      schoolRead("session_projection", async (signal) => {
+        const token = bearerToken(req.headers.authorization);
+        if (!token) throw new AccessDenied("UNAUTHORIZED");
+        const input = body as SchoolAdmissionRequest,
+          grant = await access.inspect(token, input);
+        let result: { data: unknown; error: unknown };
+        try {
+          result = await client
+            .from("game_sessions")
+            .select(
+              "id,host_id,host_name,status,connected_player_ids,connected_player_names,voxel_presence_expires_at",
+            )
+            .eq("id", input.room)
+            .abortSignal(signal)
+            .maybeSingle()
+            .retry(false);
+        } catch {
+          throw new SchoolUnavailable();
+        }
+        if (result.error)
+          throw new PersistenceError("session_read", result.error);
+        if (!result.data) throw new AccessDenied("NOT_FOUND");
+        if (Date.now() >= grant.expiresAt)
+          throw new SchoolUnavailable("read_deadline", "session_projection");
+        return result.data;
+      }),
+    ),
     "/api/voxel/diagnostics": run(async (req, body) => {
       if (!body || typeof body !== "object" || Array.isArray(body))
         throw new AccessDenied("INVALID");
@@ -159,6 +176,8 @@ export function schoolSessionApi(
         throw new AccessDenied("INVALID");
       const token = bearerToken(req.headers.authorization);
       if (!token) throw new AccessDenied("UNAUTHORIZED");
+      // Older clients may still send these; acknowledge without provider IO or logs.
+      if (v.operation === "pointer_lock") return { ok: true };
       await access.inspect(token, { room: v.room });
       event("VOXEL_CLIENT_FAILURE", {
         correlationId: v.correlationId,

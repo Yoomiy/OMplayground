@@ -77,7 +77,7 @@ test("the disrupted dev run raises failures and recovery while routine activity 
       "recovering",
     ],
     ["VOXEL_CONNECTION_CLOSED", { code: 1012 }, "warn", "recovering"],
-    ["VOXEL_CONNECTION_CLOSED", { code: 1005 }, "warn", "closed"],
+    ["VOXEL_CONNECTION_CLOSED", { code: 1005 }, "debug", "closed"],
     ["VOXEL_CONNECTION_CLOSED", { code: 1000 }, "debug", "closed"],
     [
       "VOXEL_CONNECTION_CLOSED",
@@ -172,4 +172,43 @@ test("event output preserves correlation and cannot report a client failure as s
   assert.equal(logs[0]!.value.context.event, "VOXEL_CLIENT_FAILURE");
   assert.equal(logs[0]!.value.context.reason, "input_acknowledgement_stalled");
   assert.equal(logs[0]!.value.message, "Client operation failed");
+});
+
+test("joining and routine player departure are info events, and pointer-lock reports never reach the logger", () => {
+  assert.equal(
+    voxelEventPolicy("VOXEL_ADMISSION_ACCEPTED", { role: "participant" }).level,
+    "info",
+  );
+  assert.equal(
+    voxelEventPolicy("VOXEL_ADMISSION_ACCEPTED", { role: "observer" }).message,
+    "Observer joined room",
+  );
+  for (const code of [1000, 1001, 1005])
+    assert.equal(
+      voxelEventPolicy("VOXEL_CONNECTION_CLOSED", { phase: "active", code })
+        .level,
+      "info",
+    );
+  assert.equal(
+    voxelEventPolicy("VOXEL_CONNECTION_CLOSED", { phase: "active", code: 1006 })
+      .level,
+    "warn",
+  );
+  const logs: unknown[] = [];
+  const capture = (value: unknown) => {
+    logs.push(value);
+  };
+  const emit = createVoxelEventLogger({
+    debug: capture,
+    info: capture,
+    warn: capture,
+    error: capture,
+  });
+  emit("VOXEL_CLIENT_FAILURE", {
+    operation: "pointer_lock",
+    code: "RUNTIME_FAILURE",
+    reason: "unknown",
+    fatal: true,
+  });
+  assert.equal(logs.length, 0);
 });

@@ -96,6 +96,7 @@ export type ActorDelta = {
   appearance?: ActorAppearance;
 };
 export type ServerMessage =
+  | { type: 'joining' }
   | LifecycleView
   | { type: 'rules'; epoch: number; mode: GameMode; combat: boolean; explosives: boolean }
   | {
@@ -171,7 +172,8 @@ export type ServerMessage =
         | 'RECOVERING'
         | 'REPLACED'
         | 'INTERNAL'
-        | 'SESSION_ENDED';
+        | 'SESSION_ENDED'
+        | 'RECESS_CLOSED';
       retryable: boolean;
     };
 const integer = (n: unknown, min = 0, max = Number.MAX_SAFE_INTEGER): n is number =>
@@ -356,6 +358,8 @@ export function parseServerMessage(text: string): ServerMessage | null {
   if (!object(v)) return null;
   const id = (s: unknown) => typeof s === 'string' && s.length > 0 && s.length <= 128;
   switch (v.type) {
+    case 'joining':
+      return exact(v, ['type']) ? (v as ServerMessage) : null;
     case 'lifecycle':
       return isLifecycleView(v) ? v : null;
     case 'rules':
@@ -592,9 +596,10 @@ export function parseServerMessage(text: string): ServerMessage | null {
         'REPLACED',
         'INTERNAL',
         'SESSION_ENDED',
+        'RECESS_CLOSED',
       ].includes(v.code as string) &&
         typeof v.retryable === 'boolean' &&
-        (v.code !== 'SESSION_ENDED' || v.retryable === false)
+        (!['SESSION_ENDED', 'RECESS_CLOSED'].includes(String(v.code)) || v.retryable === false)
         ? (v as ServerMessage)
         : null;
     default:

@@ -721,14 +721,12 @@
   background: #047857;
   border-color: #059669;
 }
-.voxel-session__voice-settings,
-.voxel-session__voice-staff {
+.voxel-session__voice-settings {
   margin-top: 12px;
   padding-top: 8px;
   border-top: 1px solid #ffffff20;
 }
-.voxel-session__voice-settings summary,
-.voxel-session__voice-staff summary {
+.voxel-session__voice-settings summary {
   cursor: pointer;
   color: #94a3b8;
   font-size: 12px;

@@ -12,13 +12,13 @@ import { pathToFileURL } from "node:url";
 export async function smokePackage(root) {
   const schemas = {
     voxel_persistence_status: { schema: 1, privateBucket: true },
+    voxel_seed_schema_status: { schema: 1, uniqueSeeds: true },
     voxel_session_projection_status: { schema: 1, authoritativeWrites: true },
     voxel_controls_status: { schema: 1 },
     voxel_roster_status: { schema: 1, revisionFencing: true },
     voxel_staff_status: { schema: 1, epochFencing: true },
     voxel_moderation_status: { schema: 1, revisionFencing: true },
     voxel_chat_status: { schema: 1, persistedModeration: true },
-    voxel_media_status: { schema: 1, revisionFencing: true },
   };
   const requests = [],
     denied = [];
@@ -101,7 +101,7 @@ export async function smokePackage(root) {
     assert.equal(
       (await fetch(origin + "/voxel-media/rtc/v1/validate?ticket=invalid"))
         .status,
-      401,
+      404,
     );
     const admin = await fetch(origin + "/api/voxel/admin-stats", {
       method: "POST",
@@ -149,7 +149,7 @@ export async function smokePackage(root) {
       ready: 200,
       prototype: 404,
       unauthorizedAdmin: 401,
-      voiceWorkerStarted: true,
+      voiceConnection: "direct LiveKit",
       gracefulExit: 0,
       provider: "local HTTP fixture",
       hosted: false,

@@ -21,7 +21,7 @@ export function LoginPage() {
     const email = usernameToSyntheticEmail(username);
     const { data, error: signErr } = await supabase.auth.signInWithPassword({
       email,
-      password
+      password,
     });
     if (signErr) {
       setError(signErr.message);
@@ -36,9 +36,8 @@ export function LoginPage() {
     }
     const access = await getPlaygroundAccessForUser(uid);
     if (!access.allowed) {
-      await supabase.auth.signOut();
-      setError(access.message);
       setLoading(false);
+      navigate("/home", { replace: true });
       return;
     }
 
@@ -66,7 +65,9 @@ export function LoginPage() {
           <span className="text-5xl leading-none" aria-hidden>
             🛝
           </span>
-          <h1 className="mt-4 text-3xl font-black text-slate-900 dark:text-white">ברוכים הבאים</h1>
+          <h1 className="mt-4 text-3xl font-black text-slate-900 dark:text-white">
+            ברוכים הבאים
+          </h1>
           <p className="mt-2 text-sm font-bold text-slate-600 dark:text-white/60">
             התחברו כדי להמשיך למשחק
           </p>

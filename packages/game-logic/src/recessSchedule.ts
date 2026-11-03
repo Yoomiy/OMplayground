@@ -27,18 +27,13 @@ export interface EffectiveScheduleSegment {
   mode: RecessMode;
 }
 
+const weekdayFormatter = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Jerusalem", weekday: "short" });
+const timeFormatter = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Jerusalem", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+
 function jerusalemParts(now: Date): { dayOfWeek: number; minuteOfDay: number } {
-  const weekday = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Asia/Jerusalem",
-    weekday: "short"
-  }).format(now);
+  const weekday = weekdayFormatter.format(now);
   const dayOfWeek = ({ Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 } as const)[weekday as "Sun"] ?? 0;
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Asia/Jerusalem",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23"
-  }).formatToParts(now);
+  const parts = timeFormatter.formatToParts(now);
   const hour = Number(parts.find((part) => part.type === "hour")?.value ?? "0");
   const minute = Number(parts.find((part) => part.type === "minute")?.value ?? "0");
   return { dayOfWeek, minuteOfDay: hour * 60 + minute };
@@ -108,4 +103,13 @@ export function buildEffectiveDaySchedule(dayOfWeek: number, snapshot: RecessSch
     }
   }
   return segments;
+}
+
+/** First closing minute in the next day, using actual UTC instants across DST. */
+export function effectiveRecessEndsAt(now: Date, snapshot: RecessScheduleSnapshot): number | null {
+  if (!isWithinEffectiveRecess(now, snapshot)) return null;
+  const firstMinute = Math.floor(now.getTime() / 60000) * 60000 + 60000;
+  for (let at = firstMinute; at <= now.getTime() + 24 * 60 * 60000; at += 60000)
+    if (!isWithinEffectiveRecess(new Date(at), snapshot)) return at;
+  return null;
 }

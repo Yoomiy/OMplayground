@@ -11,7 +11,24 @@ export type Authorization = Readonly<{
   membershipRevision?: number;
 }>;
 export type AdmissionGrant = Authorization &
-  Readonly<{ revalidate: (stage?: 'ticket' | 'actor') => Promise<Authorization | null> }>;
+  Readonly<{
+    revalidate: (stage?: 'ticket' | 'actor') => Promise<Authorization | null>;
+    /** A joined school's session has a local cutoff and best-effort background checks. */
+    connected?: () => ConnectedPolicy;
+  }>;
+export type ConnectedPolicy = Readonly<{
+  authorization: Authorization;
+  expiresReason: 'RECESS_CLOSED' | 'RECOVERING';
+  recheckMs: number;
+  revalidate: () => Promise<Authorization | null>;
+}>;
+export class AuthorizationDenied extends Error {
+  readonly code: 'UNAUTHORIZED' | 'RECESS_CLOSED';
+  constructor(code: 'UNAUTHORIZED' | 'RECESS_CLOSED') {
+    super(code);
+    this.code = code;
+  }
+}
 type AuthorizationFailure = Readonly<{
   authorizationFailure: 'expired' | 'denied' | 'changed' | 'session_ended';
   renewalMs: number;
@@ -42,7 +59,12 @@ function object(value: unknown, fields: readonly string[]): value is Record<stri
   );
 }
 /** Private server grant, never decoded from a browser-supplied role or timer. */
-export function readAuthorization(value: unknown, now: number, expectedId?: string): Authorization {
+export function readAuthorization(
+  value: unknown,
+  now: number,
+  expectedId?: string,
+  maxLifetimeMs = MAX_AUTHORIZATION_MS,
+): Authorization {
   if (
     (!object(value, ['actor', 'expiresAt']) &&
       !object(value, ['actor', 'expiresAt', 'membershipRevision'])) ||
@@ -63,7 +85,7 @@ export function readAuthorization(value: unknown, now: number, expectedId?: stri
     typeof value.expiresAt !== 'number' ||
     !Number.isFinite(value.expiresAt) ||
     value.expiresAt <= now ||
-    value.expiresAt > now + MAX_AUTHORIZATION_MS
+    value.expiresAt > now + maxLifetimeMs
   )
     throw new Error('invalid server authorization');
   return Object.freeze({
@@ -88,6 +110,7 @@ export function readAuthorization(value: unknown, now: number, expectedId?: stri
 /** A delayed provider response cannot revive an already expired connection. */
 export class ConnectionAuthorization {
   private grant: AdmissionGrant;
+  private policy: ConnectedPolicy | undefined;
   private current: Authorization;
   private deadline: number;
   private renewal: ReturnType<typeof setTimeout> | null = null;
@@ -104,7 +127,7 @@ export class ConnectionAuthorization {
   private readonly initialMembershipRevision: number;
   private apply: (deadline: number) => void;
   private lost: (
-    reason: 'UNAUTHORIZED' | 'RECOVERING' | 'SESSION_ENDED',
+    reason: 'UNAUTHORIZED' | 'RECOVERING' | 'SESSION_ENDED' | 'RECESS_CLOSED',
     detail: AuthorizationFailure,
   ) => void;
   constructor(
@@ -112,20 +135,36 @@ export class ConnectionAuthorization {
     current: Authorization,
     apply: (deadline: number) => void,
     lost: (
-      reason: 'UNAUTHORIZED' | 'RECOVERING' | 'SESSION_ENDED',
+      reason: 'UNAUTHORIZED' | 'RECOVERING' | 'SESSION_ENDED' | 'RECESS_CLOSED',
       detail: AuthorizationFailure,
     ) => void,
   ) {
     this.grant = grant;
-    this.current = current;
+    this.policy = grant.connected?.();
+    if (this.policy) {
+      const connected = readAuthorization(
+        this.policy.authorization,
+        Date.now(),
+        current.actor.id,
+        24 * 60 * 60000,
+      );
+      if (
+        JSON.stringify(connected.actor) !== JSON.stringify(current.actor) ||
+        !Number.isFinite(this.policy.recheckMs) ||
+        this.policy.recheckMs < 1 ||
+        this.policy.recheckMs > 60000
+      )
+        throw new Error('invalid connected policy');
+      this.current = connected;
+    } else this.current = current;
     this.initialMembershipRevision = current.membershipRevision ?? 0;
     this.apply = apply;
     this.lost = lost;
-    this.proofLifetimeMs = current.expiresAt - Date.now();
+    this.proofLifetimeMs = this.current.expiresAt - Date.now();
     this.deadline = performance.now() + this.proofLifetimeMs;
     // Allocation and membership IO can consume most of the ticket proof. Start
     // its first connected check now, while that proof is still valid.
-    this.schedule(true);
+    this.schedule(!this.policy);
   }
   get until() {
     return this.deadline;
@@ -142,19 +181,26 @@ export class ConnectionAuthorization {
   }
   valid() {
     if (!this.closed && performance.now() < this.deadline) return true;
-    if (!this.closed) this.fail('RECOVERING');
+    if (!this.closed) this.fail(this.policy?.expiresReason ?? 'RECOVERING');
     return false;
   }
   private schedule(immediate = false) {
     const remaining = this.deadline - performance.now();
     // A missed renewal stops authority at the same deadline, but is not a
     // confirmed revocation. A fresh admission may retry after the outage.
-    this.expiry = setTimeout(() => this.fail('RECOVERING'), Math.max(0, remaining));
+    this.expiry = setTimeout(
+      () => this.fail(this.policy?.expiresReason ?? 'RECOVERING'),
+      Math.max(0, remaining),
+    );
     // School proofs expire from request START, not response arrival. Reserve
     // the observed provider duration as well as half the remaining lifetime.
     this.renewal = setTimeout(
       () => void this.renew(),
-      immediate ? 0 : Math.max(0, remaining / 2 - this.renewalMs),
+      this.policy
+        ? Math.min(this.policy.recheckMs, remaining)
+        : immediate
+          ? 0
+          : Math.max(0, remaining / 2 - this.renewalMs),
     );
   }
   private async renew() {
@@ -163,7 +209,9 @@ export class ConnectionAuthorization {
     this.renewalStarted = performance.now();
     this.renewalPending = true;
     try {
-      const value = await this.grant.revalidate('actor');
+      const value = this.policy
+        ? await this.policy.revalidate()
+        : await this.grant.revalidate('actor');
       this.lastAttemptMs = performance.now() - this.renewalStarted;
       this.renewalPending = false;
       if (!this.valid()) return;
@@ -171,7 +219,12 @@ export class ConnectionAuthorization {
         this.fail('UNAUTHORIZED', 'denied');
         return;
       }
-      const next = readAuthorization(value, Date.now(), this.current.actor.id);
+      const next = readAuthorization(
+        value,
+        Date.now(),
+        this.current.actor.id,
+        this.policy ? 24 * 60 * 60000 : MAX_AUTHORIZATION_MS,
+      );
       if (JSON.stringify(next.actor) !== JSON.stringify(this.current.actor)) {
         this.fail('UNAUTHORIZED', 'changed');
         return; // Changed participation/capabilities require a fresh baseline.
@@ -197,18 +250,26 @@ export class ConnectionAuthorization {
             : 'provider_error';
       if (!this.valid()) return;
       if (isSessionEnded(error)) this.fail('SESSION_ENDED', 'session_ended');
+      else if (
+        error instanceof AuthorizationDenied ||
+        (error instanceof Error &&
+          ['RECESS_CLOSED', 'UNAUTHORIZED'].includes((error as { code?: string }).code ?? ''))
+      )
+        this.fail((error as AuthorizationDenied).code, 'denied');
       else {
         // A transient provider error does not revoke an unexpired proof. Retry
         // without moving its independent expiry or allowing late resurrection.
         this.renewal = setTimeout(
           () => void this.renew(),
-          Math.min(250, Math.max(1, (this.deadline - performance.now()) / 2)),
+          this.policy
+            ? Math.min(5000, Math.max(1, this.deadline - performance.now()))
+            : Math.min(250, Math.max(1, (this.deadline - performance.now()) / 2)),
         );
       }
     }
   }
   private fail(
-    reason: 'UNAUTHORIZED' | 'RECOVERING' | 'SESSION_ENDED',
+    reason: 'UNAUTHORIZED' | 'RECOVERING' | 'SESSION_ENDED' | 'RECESS_CLOSED',
     authorizationFailure: AuthorizationFailure['authorizationFailure'] = 'expired',
   ) {
     if (this.closed) return;

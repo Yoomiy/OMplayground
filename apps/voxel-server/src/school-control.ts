@@ -150,6 +150,7 @@ export function schoolControl(
       );
     };
     let requestId = "";
+    const started = performance.now();
     try {
       if (!body || typeof body !== "object" || Array.isArray(body))
         throw new AccessDenied("INVALID");
@@ -216,6 +217,10 @@ export function schoolControl(
             );
             onEvent("VOXEL_CONTROL_COMPLETED", {
               correlationId: requestId,
+              room,
+              actorId: fresh.subject.id,
+              role: fresh.subject.role,
+              duration_ms: Math.round(performance.now() - started),
               action,
               revision: result.revision,
               saved: saved !== null,

@@ -51,7 +51,7 @@ const initial: VoiceState = {
   nearby: [],
 };
 const identity =
-  /^([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}):[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
+  /^([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$/;
 type Options = {
   api: VoxelApi;
   host: HTMLElement;
@@ -126,7 +126,7 @@ export class VoiceSession {
     this.desired = true;
     this.attempts = 0;
     this.emit({ audioLocked: !activated });
-    if (this.room?.state === ConnectionState.Connected) return;
+    if (this.room && this.room.state !== ConnectionState.Disconnected) return;
     if (this.retry) {
       clearTimeout(this.retry);
       this.retry = null;
@@ -182,12 +182,11 @@ export class VoiceSession {
       publishAllowed: false,
     });
     try {
-      const grant = await this.options.api.voiceTicket(abort.signal);
+      const grant = await this.options.api.voiceToken(abort.signal);
       if (!owns()) return;
       room = new Room({
         loggerName: "voxel-voice",
         stopLocalTrackOnUnpublish: true,
-        reconnectPolicy: { nextRetryDelayInMs: () => null },
       });
       this.room = room;
       const owned = room;
@@ -208,12 +207,17 @@ export class VoiceSession {
             }
         })
         .on(RoomEvent.Reconnecting, () => {
-          if (this.room === owned) {
-            this.stopMic();
-            this.retire(owned);
-            this.emit({ phase: "reconnecting", publishAllowed: false });
-            this.retryLater();
-          }
+          if (this.room === owned && owns())
+            this.emit({ phase: "reconnecting" });
+        })
+        .on(RoomEvent.SignalReconnecting, () => {
+          if (this.room === owned && owns())
+            this.emit({ phase: "reconnecting" });
+        })
+        .on(RoomEvent.Reconnected, () => {
+          if (this.room !== owned || !owns()) return;
+          this.emit({ phase: "connected" });
+          this.tick();
         })
         .on(RoomEvent.Disconnected, () => {
           if (this.room !== owned || !owns()) return;
@@ -222,11 +226,8 @@ export class VoiceSession {
           this.emit({ phase: "reconnecting", publishAllowed: false });
           this.retryLater();
         });
-      await room.connect(this.options.api.voiceUrl, grant.ticket, {
+      await room.connect(grant.serverUrl, grant.token, {
         autoSubscribe: false,
-        maxRetries: 0,
-        websocketTimeout: 5000,
-        peerConnectionTimeout: 7000,
       });
       if (!owns() || this.room !== room) {
         this.retire(room);

@@ -262,7 +262,9 @@ export class GameRoom {
         const owner = recovery.owners.get(id);
         if (
           owner !== null &&
-          (!checkpointObject(owner, ['id', 'role', 'capabilities']) ||
+          ((!checkpointObject(owner, ['id', 'role', 'capabilities']) &&
+            !checkpointObject(owner, ['id', 'role', 'capabilities', 'avatar'])) ||
+            ('avatar' in owner && !isAvatarId(owner.avatar)) ||
             owner.id !== id ||
             !['participant', 'observer'].includes(owner.role) ||
             !checkpointObject(owner.capabilities, [

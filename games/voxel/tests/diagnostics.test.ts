@@ -51,6 +51,19 @@ test('server failure summaries expose machine codes without provider exception m
   assert.deepEqual(failureDetails(Object.assign(new Error('private'), { code: 'private-token' })), {
     failureType: 'Error',
   });
+  assert.deepEqual(
+    failureDetails(
+      Object.assign(new Error('private'), {
+        failureReason: 'read_deadline',
+        policyPhase: 'profile',
+      }),
+    ),
+    { failureType: 'Error', failureReason: 'read_deadline', policyPhase: 'profile' },
+  );
+  assert.deepEqual(
+    failureDetails({ failureReason: 'private-token', policyPhase: 'https://secret.invalid' }),
+    { failureType: 'unknown' },
+  );
   assert.deepEqual(failureDetails({ name: 'private', code: 'private' }), {
     failureType: 'unknown',
   });

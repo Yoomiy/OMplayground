@@ -91,35 +91,3 @@ test("completed sessions reject updates; malformed and unauthenticated requests 
   assert.equal((await fixture().call({ room, unexpected: true })).status, 400);
   assert.equal((await fixture().call({ room }, "")).status, 401);
 });
-
-test("voice moderation is disabled by default before any moderation operation", async () => {
-  const { schoolMediaApi } = await import("../src/school-media.ts");
-  const previous = process.env.VOXEL_VOICE_MODERATION_ENABLED;
-  delete process.env.VOXEL_VOICE_MODERATION_ENABLED;
-  try {
-    const api = schoolMediaApi(
-      {} as never,
-      {} as never,
-      {} as never,
-      {} as never,
-      () => {},
-    );
-    let status = 0;
-    await api["/api/voxel/media-moderate"](
-      {} as never,
-      {},
-      {
-        writeHead(code: number) {
-          status = code;
-        },
-        end() {},
-      } as never,
-      {} as never,
-    );
-    assert.equal(status, 403);
-  } finally {
-    if (previous === undefined)
-      delete process.env.VOXEL_VOICE_MODERATION_ENABLED;
-    else process.env.VOXEL_VOICE_MODERATION_ENABLED = previous;
-  }
-});

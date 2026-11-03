@@ -53,12 +53,10 @@ import {
   schoolChatApi,
 } from "../../voxel-server/src/school-chat.ts";
 import {
-  SupabaseMedia,
   SchoolVoice,
-  schoolMediaApi,
+  schoolVoiceApi,
   voiceConfig,
-} from "../../voxel-server/src/school-media.ts";
-import { VoiceSignaling } from "../../voxel-server/src/voice-signaling.ts";
+} from "../../voxel-server/src/school-voice.ts";
 import { RoomServiceClient } from "livekit-server-sdk";
 import type { GatewayOptions } from "../../../games/voxel/src/server/gateway.ts";
 
@@ -99,8 +97,7 @@ const voiceResponses: {
   code: string;
   time: number;
 }[] = [];
-let signaling: VoiceSignaling | undefined,
-  mediaProvider: RoomServiceClient | undefined,
+let mediaProvider: RoomServiceClient | undefined,
   mediaCleanup: boolean | undefined;
 const diagnosticPages: Awaited<
     ReturnType<Awaited<ReturnType<typeof launchSoftwareBrowser>>["newPage"]>
@@ -172,7 +169,6 @@ try {
     staff = new SupabaseStaff(client),
     moderation = new SupabaseModeration(client),
     chat = new SupabaseChat(client),
-    media = new SupabaseMedia(client),
     runtime = await loadServerRelease();
   let mediaRoutes: NonNullable<GatewayOptions["api"]> = {};
   if (withVoice) {
@@ -183,14 +179,9 @@ try {
       credentials.secret,
       { requestTimeout: 5 },
     );
-    signaling = new VoiceSignaling(credentials.endpoint, []);
-    await signaling.ready;
-    await media.verifyInstallation();
-    const voice = new SchoolVoice(school.access, media, signaling, credentials);
+    const voice = new SchoolVoice(school.access, credentials);
     mediaRoutes = Object.fromEntries(
-      Object.entries(
-        schoolMediaApi(school.access, media, voice, signaling, () => {}),
-      ).map(([path, run]) => {
+      Object.entries(schoolVoiceApi(voice, () => {})).map(([path, run]) => {
         const wrapped: typeof run = async (req, body, res, context) =>
           run(
             req,
@@ -324,11 +315,7 @@ try {
       ),
     },
     worldDefaults: { mode: "survival" },
-    upgradeClient: signaling
-      ? (req, socket, head) => signaling!.upgrade(req, socket, head)
-      : undefined,
     handleClient(req, res) {
-      if (signaling?.handleHttp(req, res)) return;
       const path = new URL(req.url ?? "/", "http://localhost").pathname;
       if (path === "/favicon.ico") {
         res.writeHead(204);
@@ -369,12 +356,6 @@ try {
     failedModerationResponses: { action: string; requestId: string }[] = [],
     chatSendRequests: string[] = [],
     failedChatResponses: string[] = [],
-    mediaRequests: {
-      requestId: string;
-      action: string;
-      target: string | null;
-    }[] = [],
-    failedMediaResponses: string[] = [],
     expectedVoiceFailures: string[] = [],
     bannedAdmissionResponses: string[] = [],
     bannedSessionResponses: string[] = [],
@@ -457,8 +438,7 @@ try {
             "Failed to load resource: the server responded with a status of 503 (Service Unavailable)" &&
           (message.location().url.endsWith("/api/voxel/control") ||
             message.location().url.endsWith("/api/voxel/moderation") ||
-            message.location().url.endsWith("/api/voxel/chat-send") ||
-            message.location().url.endsWith("/api/voxel/media-moderate"))
+            message.location().url.endsWith("/api/voxel/chat-send"))
         )
           expectedNetworkErrors.push(message.text());
         else if (
@@ -466,8 +446,7 @@ try {
             "Failed to load resource: the server responded with a status of 403 (Forbidden)" &&
           (message.location().url.endsWith("/api/voxel/admission") ||
             message.location().url.endsWith("/api/voxel/session") ||
-            message.location().url.endsWith("/api/voxel/voice-ticket") ||
-            message.location().url.endsWith("/api/voxel/media-moderate"))
+            message.location().url.endsWith("/api/voxel/voice-token"))
         )
           expectedNetworkErrors.push(message.text());
         else errors.push(`${message.text()} (${message.location().url})`);
@@ -476,9 +455,7 @@ try {
     page.on("response", (response) => {
       if (
         response.status() >= 400 &&
-        /\/api\/voxel\/(voice-ticket|media-state|media-moderate)$/.test(
-          response.url(),
-        )
+        /\/api\/voxel\/(voice-token)$/.test(response.url())
       ) {
         void response
           .json()
@@ -494,26 +471,16 @@ try {
       }
       if (
         response.status() === 403 &&
-        (response.url().endsWith("/api/voxel/voice-ticket") ||
-          response.url().endsWith("/api/voxel/media-moderate"))
+        response.url().endsWith("/api/voxel/voice-token")
       ) {
         void response
           .json()
           .then((v) => {
-            assert(
-              ["NOT_IN_ROOM", "FORBIDDEN", "BANNED", "VOICE_EXPIRED"].includes(
-                v.error,
-              ),
-            );
+            assert(["NOT_IN_ROOM", "FORBIDDEN", "BANNED"].includes(v.error));
             expectedVoiceFailures.push(v.error);
           })
           .catch((e) => errors.push(e.message));
       }
-      if (
-        response.status() === 503 &&
-        response.url().endsWith("/api/voxel/media-moderate")
-      )
-        failedMediaResponses.push(response.request().postDataJSON().requestId);
       if (
         response.status() === 503 &&
         response.url().endsWith("/api/voxel/chat-send")
@@ -557,17 +524,6 @@ try {
       }
     });
     page.on("request", (request) => {
-      if (
-        request.method() === "POST" &&
-        request.url().endsWith("/api/voxel/media-moderate")
-      ) {
-        const v = request.postDataJSON();
-        mediaRequests.push({
-          requestId: v.requestId,
-          action: v.action,
-          target: v.target,
-        });
-      }
       if (
         request.method() === "POST" &&
         request.url().endsWith("/api/voxel/chat-send")
@@ -626,7 +582,7 @@ try {
     assert.equal(
       await kidPage.evaluate(async () => {
         try {
-          await (window as any).fixtureApi.voiceTicket();
+          await (window as any).fixtureApi.voiceToken();
           return "accepted";
         } catch (e) {
           return (e as any).code;
@@ -741,83 +697,8 @@ try {
       ).permission?.hidden,
       true,
     );
-    const denied = await kidPage.evaluate(async () => {
-      try {
-        await (window as any).fixtureApi.moderateMedia(
-          "mute",
-          null,
-          crypto.randomUUID(),
-        );
-        return "accepted";
-      } catch (e) {
-        return (e as any).code;
-      }
-    });
-    assert.equal(denied, "FORBIDDEN");
-    await teacherPage
-      .getByRole("combobox", { name: "תלמיד או תלמידה", exact: true })
-      .selectOption(kid);
-    wire.control.loseMediaResponse = true;
-    await teacherPage
-      .getByRole("button", { name: "השתקה אישית", exact: true })
-      .tap();
-    await teacherPage
-      .getByRole("button", { name: "אישור מדיניות שמע", exact: true })
-      .tap();
-    await teacherPage
-      .getByRole("button", { name: "בדיקה חוזרת של בקשת השמע", exact: true })
-      .waitFor();
-    await kidPage.waitForFunction(
-      () =>
-        (window as any).surfaceVoice.state.phase === "connected" &&
-        !(window as any).surfaceVoice.state.publishAllowed,
-    );
-    assert.equal(
-      await kidPage.evaluate(
-        () => (window as any).surfaceVoice.state.microphone,
-      ),
-      "off",
-    );
-    await teacherPage
-      .getByRole("button", { name: "בדיקה חוזרת של בקשת השמע", exact: true })
-      .tap();
-    await teacherPage
-      .getByText("מדיניות השמע נשמרה.", { exact: false })
-      .waitFor();
-    const muteRequests = mediaRequests.filter(
-      (v) => v.action === "mute" && v.target === kid,
-    );
-    assert.equal(muteRequests.length, 2);
-    assert.equal(muteRequests[0].requestId, muteRequests[1].requestId);
-    assert.equal(
-      db.value(
-        `SELECT count(*) FROM public.audit_log WHERE entity_id=${literal(room)} AND action='VOXEL_MEDIA_MUTE'`,
-      ),
-      1,
-    );
-    await teacherPage
-      .getByRole("button", { name: "ביטול השתקה אישית", exact: true })
-      .tap();
-    await teacherPage
-      .getByRole("button", { name: "אישור מדיניות שמע", exact: true })
-      .tap();
-    await kidPage.waitForFunction(
-      () =>
-        (window as any).surfaceVoice.state.phase === "connected" &&
-        (window as any).surfaceVoice.state.publishAllowed,
-    );
-    assert.equal(
-      await kidPage.evaluate(() => (window as any).voiceGumCalls),
-      1,
-    );
     assert.equal(admissions.length, beforeMediaAdmissions);
     await kidPage.bringToFront();
-    await kidPage
-      .getByRole("button", { name: "מיקרופון מושתק (M)", exact: true })
-      .click();
-    await kidPage.waitForFunction(
-      () => (window as any).surfaceVoice.state.microphone === "on",
-    );
     await kidPage
       .getByRole("button", { name: "סגירת שיחה קולית", exact: true })
       .click();
@@ -828,10 +709,8 @@ try {
       actualGamePoses: actualScene,
       nearSamples: samples,
       hiddenStaff: true,
-      lostMuteReply: true,
-      retrySameRequest: true,
-      studentModerationDenied: true,
-      noGameplayReadmissionOnMute: true,
+      directLiveKit: true,
+      noGameplayReadmissionForVoice: true,
     });
   }
   await kidPage.bringToFront();
@@ -1249,7 +1128,7 @@ try {
     assert.equal(
       await kidPage.evaluate(async () => {
         try {
-          await (window as any).fixtureApi.voiceTicket();
+          await (window as any).fixtureApi.voiceToken();
           return "accepted";
         } catch (e) {
           return (e as any).code;
@@ -1568,7 +1447,6 @@ try {
           (window as any).surfaceVoice.stats.disposed &&
           (window as any).surfaceVoice.stats.audio.context === "closed",
       );
-    assert.equal(signaling!.stats.sessions, 0);
     voiceEvidence.terminalOwnerClosed = true;
   }
   const cleanup = [],
@@ -1869,10 +1747,7 @@ try {
   assert.equal(failedChatResponses[0], chatSendRequests[0]);
   assert.ok(
     expectedNetworkErrors.length <=
-      4 +
-        bannedSessionResponses.length +
-        expectedVoiceFailures.length +
-        failedMediaResponses.length,
+      4 + bannedSessionResponses.length + expectedVoiceFailures.length,
   );
   assert.deepEqual(errors, []);
   assert.equal(gateway.rooms.size, 0);
@@ -1943,8 +1818,6 @@ try {
         chatFlow: true,
         voice: voiceEvidence,
         expectedVoiceFailures,
-        mediaRequests,
-        expectedFailedMediaReplies: failedMediaResponses.length,
         chatRetrySameRequest: true,
         chatEscapedText: true,
         chatHiddenStaffReadOnly: true,
@@ -2026,7 +1899,6 @@ try {
     );
   }
   await browser?.close();
-  await signaling?.close();
   await gateway?.close();
   await wire?.close();
   await db?.close();

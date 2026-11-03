@@ -233,8 +233,7 @@ test(
       let ended = !connected;
       const h = await harness(async () =>
         grant(async () => {
-          if (!ended)
-            return { actor: participant, expiresAt: Date.now() + 1200 };
+          if (!ended) return { actor: participant, expiresAt: Date.now() + 1200 };
           throw new SessionEnded();
         }),
       );
@@ -278,6 +277,50 @@ test(
       assert.equal(error.code, 'RECOVERING');
       assert.equal(error.retryable, true);
       assert.equal(h.gateway.rooms.size, 0);
+    } finally {
+      probe?.socket.terminate();
+      await h.gateway.close();
+    }
+  },
+);
+
+test(
+  'a connected local cutoff survives provider outages and ends with a terminal recess reason',
+  { timeout: 10000 },
+  async () => {
+    let checks = 0;
+    const backend = new MemoryCheckpoints();
+    const h = await harness(
+      async () => ({
+        actor: participant,
+        expiresAt: Date.now() + 30000,
+        revalidate: async () => ({ actor: participant, expiresAt: Date.now() + 500 }),
+        connected: () => ({
+          authorization: { actor: participant, expiresAt: Date.now() + 1800 },
+          expiresReason: 'RECESS_CLOSED',
+          recheckMs: 100,
+          revalidate: async () => {
+            checks++;
+            throw new Error('provider unavailable');
+          },
+        }),
+      }),
+      { persistence: { objects: backend, metadata: backend } },
+    );
+    let probe: SocketProbe | undefined;
+    try {
+      probe = await h.connect((await h.ticket()).value);
+      await probe.ready();
+      await delay(700);
+      assert.ok(checks > 0);
+      assert.equal(probe.socket.readyState, WebSocket.OPEN);
+      assert.equal(
+        probe.events.some((e) => 'type' in e && e.type === 'error'),
+        false,
+      );
+      const error = await probe.event('error');
+      assert.equal(error.code, 'RECESS_CLOSED');
+      assert.equal(error.retryable, false);
     } finally {
       probe?.socket.terminate();
       await h.gateway.close();

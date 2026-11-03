@@ -91,3 +91,77 @@ test(
     }
   },
 );
+
+test(
+  'a fenced Resume updates a cached paused world immediately while a later status read is still pending',
+  { timeout: 10000 },
+  async () => {
+    const backend = new MemoryCheckpoints();
+    let state: 'paused' | 'playing' = 'paused',
+      reads = 0,
+      release!: () => void;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const gateway = await createGateway({
+      build,
+      content,
+      persistence: { objects: backend, metadata: backend },
+      sessions: { initialize: async () => {}, accept: async () => {}, project: async () => true },
+      roomPolicy: async () => {
+        if (++reads > 1) await held;
+        return { state, expiresAt: Date.now() + 60000 };
+      },
+      admit: async () =>
+        developmentAdmission({
+          id: 'kid',
+          role: 'participant',
+          capabilities: { build: true, observe: false, fly: true, combat: true, explosives: true },
+        }),
+      control: async () => ({
+        room: 'resume-now',
+        execute: async (control) => {
+          state = 'playing';
+          control.resume();
+          return { saved: false };
+        },
+      }),
+    });
+    assert.ok(gateway.address && typeof gateway.address === 'object');
+    const origin = `http://127.0.0.1:${gateway.address.port}`,
+      p = await connectProbe(origin, 'resume-now', content.blocks.length);
+    try {
+      await p.ready();
+      await p.wait(
+        (
+          e,
+        ): e is Extract<
+          import('../../src/shared/protocol.ts').ServerMessage,
+          { type: 'lifecycle' }
+        > =>
+          'type' in e && e.type === 'lifecycle' && e.state === 'paused' && e.reason === 'session',
+      );
+      const started = performance.now();
+      assert.equal(
+        (await fetch(origin + '/api/voxel/control', { method: 'POST', body: '{}' })).status,
+        200,
+      );
+      await p.wait(
+        (
+          e,
+        ): e is Extract<
+          import('../../src/shared/protocol.ts').ServerMessage,
+          { type: 'lifecycle' }
+        > => 'type' in e && e.type === 'lifecycle' && e.state === 'playing',
+      );
+      assert.ok(
+        performance.now() - started < 1500,
+        'Resume must not wait for a background policy poll',
+      );
+    } finally {
+      release();
+      p.socket.terminate();
+      await gateway.close();
+    }
+  },
+);

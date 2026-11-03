@@ -75,9 +75,10 @@ Use these watch paths so changes to shared runtime dependencies also deploy:
 /package-lock.json
 ```
 
-The selected Supabase project needs all eight voxel migrations
-`20261025010000`–`20261025080000`. Startup fails before listening if a schema or
-private bucket is missing. The already-configured project has passed this check;
+The selected Supabase project needs the gameplay migrations, including unique
+world seeds (`20261029220000`). Voice now connects directly to LiveKit and no
+longer requires the historical `20261025080000` media-policy schema. Startup fails
+before listening if a required gameplay schema or private bucket is missing. The already-configured project has passed this check;
 a new project needs its own migrations and school accounts/catalog data.
 
 ## 2. Railway: classroom service

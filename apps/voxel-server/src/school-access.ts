@@ -1,6 +1,9 @@
 import { selectAvatar } from "../../../games/voxel/src/shared/avatars.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { isWithinEffectiveRecess } from "@playground/game-logic/dist/recessSchedule.js";
+import {
+  isWithinEffectiveRecess,
+  effectiveRecessEndsAt,
+} from "@playground/game-logic/dist/recessSchedule.js";
 import type {
   RecessWindow,
   ClassRecessException,
@@ -10,10 +13,15 @@ import type {
   AdmissionGrant,
   Authorization,
 } from "../../../games/voxel/src/server/admission.ts";
+import { ROOM_POLICY_MS } from "../../../games/voxel/src/server/room-policy.ts";
 import type { RoomPolicy } from "../../../games/voxel/src/server/room-policy.ts";
-import { SessionEnded } from "../../../games/voxel/src/server/admission.ts";
+import {
+  SessionEnded,
+  AuthorizationDenied,
+} from "../../../games/voxel/src/server/admission.ts";
 
 export const AUTHORIZATION_MS = 5000;
+export const SCHOOL_READ_MS = 12000;
 const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 export type Participation = "player" | "observer";
 export type SchoolAdmissionRequest = Readonly<{
@@ -41,6 +49,7 @@ export type SchoolAuthorization = Readonly<{
   subject: Subject;
   session: SessionAccess;
   controls: boolean;
+  recessEndsAt?: number;
   policy: Readonly<{
     revision: number;
     acceptedRevision: number;
@@ -55,8 +64,58 @@ export class AccessDenied extends Error {
   }
 }
 export class SchoolUnavailable extends Error {
-  constructor() {
+  readonly failureReason: string;
+  readonly policyPhase: string;
+  readonly providerCode: string;
+  constructor(
+    failureReason = "malformed_reply",
+    policyPhase = "unknown",
+    error?: unknown,
+  ) {
     super("SCHOOL_POLICY_UNAVAILABLE");
+    this.failureReason = failureReason;
+    this.policyPhase = policyPhase;
+    const raw =
+      error && typeof error === "object"
+        ? ((error as { code?: unknown; status?: unknown }).code ??
+          (error as { status?: unknown }).status)
+        : undefined;
+    const value = String(raw ?? "");
+    this.providerCode = /^(?:[0-9A-Z]{5}|PGRST[0-9]{3}|[1-5][0-9]{2})$/.test(
+      value,
+    )
+      ? value
+      : "UNAVAILABLE";
+  }
+}
+export function schoolFailure(
+  error: unknown,
+): Record<string, string | number | boolean> {
+  return error instanceof SchoolUnavailable
+    ? {
+        failureReason: error.failureReason,
+        policyPhase: error.policyPhase,
+        providerCode: error.providerCode,
+      }
+    : {};
+}
+/** Bounds read-only work independently of the short proofs used by SQL mutations. */
+export async function schoolRead<T>(
+  phase: string,
+  work: (signal: AbortSignal) => Promise<T>,
+): Promise<T> {
+  const abort = new AbortController();
+  let timer!: ReturnType<typeof setTimeout>;
+  const expired = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => {
+      abort.abort();
+      reject(new SchoolUnavailable("read_deadline", phase));
+    }, SCHOOL_READ_MS);
+  });
+  try {
+    return await Promise.race([work(abort.signal), expired]);
+  } finally {
+    clearTimeout(timer);
   }
 }
 const record = (value: unknown): value is Record<string, unknown> =>
@@ -116,20 +175,33 @@ export class SchoolAccess {
     this.client = client;
     this.now = now;
   }
-  private async row(query: {
-    retry: (enabled: boolean) => PromiseLike<{ data: unknown; error: unknown }>;
-  }): Promise<unknown> {
+  private async row(
+    query: {
+      retry: (
+        enabled: boolean,
+      ) => PromiseLike<{ data: unknown; error: unknown }>;
+    },
+    phase = "policy",
+  ): Promise<unknown> {
     try {
       const result = await query.retry(false);
-      if (result.error) throw new SchoolUnavailable();
+      if (result.error) throw result.error;
       return result.data;
-    } catch {
-      throw new SchoolUnavailable();
+    } catch (error) {
+      throw new SchoolUnavailable(
+        error instanceof Error &&
+        ["TimeoutError", "AbortError"].includes(error.name)
+          ? "provider_timeout"
+          : "provider_error",
+        phase,
+        error,
+      );
     }
   }
   private async actorPolicy(room: string, id: string) {
     const value = await this.row(
       this.client.rpc("voxel_actor_policy", { p_session: room, p_actor: id }),
+      "actor_policy",
     );
     if (
       !record(value) ||
@@ -156,6 +228,7 @@ export class SchoolAccess {
         .select("id,role,gender,grade,is_active")
         .eq("id", id)
         .maybeSingle(),
+      "profile",
     );
     if (value !== null) {
       if (
@@ -181,6 +254,7 @@ export class SchoolAccess {
         .select("id")
         .eq("id", id)
         .maybeSingle(),
+      "profile",
     );
     if (admin === null) return null;
     if (!record(admin) || admin.id !== id) throw new SchoolUnavailable();
@@ -207,13 +281,14 @@ export class SchoolAccess {
         const status = (result.error as { status?: number }).status;
         if (status === 400 || status === 401 || status === 403)
           deny("UNAUTHORIZED");
-        throw new SchoolUnavailable();
+        throw new SchoolUnavailable("provider_error", "identity", result.error);
       }
       if (!uuid(result.data.user?.id)) deny("UNAUTHORIZED");
       id = result.data.user!.id;
     } catch (error) {
-      if (error instanceof AccessDenied) throw error;
-      throw new SchoolUnavailable();
+      if (error instanceof AccessDenied || error instanceof SchoolUnavailable)
+        throw error;
+      throw new SchoolUnavailable("provider_error", "identity", error);
     }
     // The Auth service has already verified this JWT; decoding only bounds our lease.
     let expiresAt: number;
@@ -247,6 +322,7 @@ export class SchoolAccess {
         )
         .eq("id", room)
         .maybeSingle(),
+      "session",
     );
     if (value === null) deny("NOT_FOUND");
     if (
@@ -285,21 +361,41 @@ export class SchoolAccess {
     };
   }
   /** Read-only UI scope. Completion remains visible to its roster and current staff. */
-  async inspect(
+  inspect(
     token: string,
     input: SchoolAdmissionRequest,
   ): Promise<{ expiresAt: number }> {
-    const request = checkedInput(input);
+    return schoolRead("inspection", () => this.inspectRead(token, input));
+  }
+  private async inspectRead(
+    token: string,
+    input: SchoolAdmissionRequest,
+  ): Promise<{ expiresAt: number }> {
+    const request = checkedInput(input),
+      started = this.now(),
+      auth = await this.authenticate(token);
     try {
-      return await this.authorize(token, request);
+      return await this.evaluate(
+        auth.subject,
+        request,
+        started,
+        auth.expiresAt,
+        true,
+        SCHOOL_READ_MS,
+      );
     } catch (error) {
       if (!(error instanceof AccessDenied) || error.code !== "SESSION_ENDED")
         throw error;
-      const started = this.now(),
-        auth = await this.authenticate(token),
-        session = await this.session(request.room, true);
+      const session = await this.session(request.room, true);
       if (session.view.status !== "completed")
-        return this.authorize(token, request);
+        return this.evaluate(
+          auth.subject,
+          request,
+          started,
+          auth.expiresAt,
+          true,
+          SCHOOL_READ_MS,
+        );
       if (
         auth.subject.role === "kid" &&
         (await this.actorPolicy(request.room, auth.subject.id)).banned
@@ -312,12 +408,13 @@ export class SchoolAccess {
             !session.view.playerIds.includes(auth.subject.id)))
       )
         deny("FORBIDDEN");
-      const expiresAt = Math.min(auth.expiresAt, started + AUTHORIZATION_MS);
+      const expiresAt = Math.min(auth.expiresAt, started + SCHOOL_READ_MS);
       if (this.now() >= expiresAt || this.now() < started)
-        throw new SchoolUnavailable();
+        throw new SchoolUnavailable("read_deadline", "inspection");
       return { expiresAt };
     }
   }
+
   private async recess(subject: Subject): Promise<{
     defaults: RecessWindow[];
     setting: boolean;
@@ -330,6 +427,7 @@ export class SchoolAccess {
           .from("recess_schedules")
           .select("day_of_week,start_time,end_time,is_active")
           .eq("is_active", true),
+        "recess",
       ),
       this.row(
         this.client
@@ -338,6 +436,7 @@ export class SchoolAccess {
           .eq("grade", subject.grade)
           .eq("gender", subject.gender)
           .maybeSingle(),
+        "recess",
       ),
       this.row(
         this.client
@@ -346,6 +445,7 @@ export class SchoolAccess {
           .eq("grade", subject.grade)
           .eq("gender", subject.gender)
           .eq("is_active", true),
+        "recess",
       ),
     ]);
     if (
@@ -397,6 +497,26 @@ export class SchoolAccess {
       true,
     );
   }
+  /** Loading can take longer than a mutation proof; mint that short proof after bounded reads. */
+  private async admissionRead(
+    token: string,
+    request: SchoolAdmissionRequest,
+  ): Promise<SchoolAuthorization> {
+    return schoolRead("admission", async () => {
+      const started = this.now(),
+        authenticated = await this.authenticate(token);
+      return this.evaluate(
+        authenticated.subject,
+        request,
+        started,
+        authenticated.expiresAt,
+        true,
+        SCHOOL_READ_MS,
+        true,
+      );
+    });
+  }
+
   async grant(
     token: string,
     input: SchoolAdmissionRequest,
@@ -408,25 +528,38 @@ export class SchoolAccess {
         expiresAt: checked.expiresAt,
         membershipRevision: checked.session.rosterRevision,
       });
-    const checkedInitial = await this.authorize(token, request),
-      initial = select(checkedInitial);
+    const checkedInitial = await this.admissionRead(token, request);
+    let latest = checkedInitial;
+    const accepted = (
+      checked: SchoolAuthorization,
+      stage: "ticket" | "actor",
+    ) => {
+      if (
+        checked.actor.role === "participant" &&
+        (checked.policy.revision > checkedInitial.session.rosterRevision ||
+          (stage === "actor" &&
+            (!checked.session.playerIds.includes(checked.subject.id) ||
+              checked.policy.revision > checked.policy.acceptedRevision)) ||
+          (stage === "ticket" &&
+            checked.session.rosterRevision !==
+              checkedInitial.session.rosterRevision))
+      )
+        deny("MEMBERSHIP_REVOKED");
+      latest = checked;
+      return checked;
+    };
+    const connected = (checked: SchoolAuthorization): Authorization => ({
+      actor: checked.actor,
+      expiresAt: checked.recessEndsAt ?? this.now() + 24 * 60 * 60000,
+      membershipRevision: checked.session.rosterRevision,
+    });
     return Object.freeze({
-      ...initial,
-      revalidate: async (stage = "ticket") => {
+      ...select(checkedInitial),
+      revalidate: async (stage: "ticket" | "actor" = "ticket") => {
         try {
-          const checked = await this.authorize(token, request);
-          if (
-            checked.actor.role === "participant" &&
-            (checked.policy.revision > checkedInitial.session.rosterRevision ||
-              (stage === "actor" &&
-                (!checked.session.playerIds.includes(checked.subject.id) ||
-                  checked.policy.revision > checked.policy.acceptedRevision)) ||
-              (stage === "ticket" &&
-                checked.session.rosterRevision !==
-                  checkedInitial.session.rosterRevision))
-          )
-            deny("MEMBERSHIP_REVOKED");
-          return select(checked);
+          return select(
+            accepted(await this.admissionRead(token, request), stage),
+          );
         } catch (error) {
           if (
             error instanceof AccessDenied &&
@@ -437,6 +570,42 @@ export class SchoolAccess {
           throw error;
         }
       },
+      connected: () => ({
+        authorization: connected(latest),
+        expiresReason:
+          latest.subject.role === "kid"
+            ? ("RECESS_CLOSED" as const)
+            : ("RECOVERING" as const),
+        recheckMs: 30000,
+        revalidate: async () => {
+          try {
+            const started = this.now(),
+              subject = await this.profile(checkedInitial.subject.id);
+            if (!subject) return null;
+            // Identity was verified at admission; do not retain/reuse an expiring login JWT.
+            const fresh = await this.evaluate(
+              subject,
+              request,
+              started,
+              Number.MAX_SAFE_INTEGER,
+              true,
+            );
+            return connected(accepted(fresh, "actor"));
+          } catch (error) {
+            if (
+              error instanceof AccessDenied &&
+              ["SESSION_ENDED", "NOT_FOUND", "WRONG_GAME"].includes(error.code)
+            )
+              throw new SessionEnded();
+            if (error instanceof AccessDenied) {
+              if (error.code === "RECESS_CLOSED")
+                throw new AuthorizationDenied("RECESS_CLOSED");
+              return null;
+            }
+            throw error;
+          }
+        },
+      }),
     });
   }
   private async evaluate(
@@ -445,6 +614,8 @@ export class SchoolAccess {
     started: number,
     tokenExpiresAt: number,
     checkRecess: boolean,
+    budgetMs = AUTHORIZATION_MS,
+    freshProof = false,
   ): Promise<SchoolAuthorization> {
     const session = await this.session(request.room),
       staff = subject.role !== "kid";
@@ -507,10 +678,15 @@ export class SchoolAccess {
     if (
       !Number.isFinite(now) ||
       now < started ||
-      now >= started + AUTHORIZATION_MS ||
+      now >= started + budgetMs ||
       tokenExpiresAt <= now
     )
-      throw new SchoolUnavailable();
+      throw new SchoolUnavailable(
+        !Number.isFinite(now) || now < started
+          ? "clock_invalid"
+          : "read_deadline",
+        "authorization",
+      );
     if (
       schedule &&
       !isWithinEffectiveRecess(new Date(now), {
@@ -522,7 +698,10 @@ export class SchoolAccess {
       })
     )
       deny("RECESS_CLOSED");
-    let expiresAt = Math.min(started + AUTHORIZATION_MS, tokenExpiresAt);
+    let expiresAt = Math.min(
+      freshProof ? now + AUTHORIZATION_MS : started + budgetMs,
+      tokenExpiresAt,
+    );
     const nextMinute = now + (60000 - (now % 60000));
     if (
       schedule &&
@@ -553,6 +732,18 @@ export class SchoolAccess {
       actor,
       subject,
       session: session.view,
+      ...(schedule
+        ? {
+            recessEndsAt:
+              effectiveRecessEndsAt(new Date(now), {
+                defaultWindows: schedule.defaults,
+                classSchedule: {
+                  overrideEnabled: schedule.setting,
+                  exceptions: schedule.exceptions,
+                },
+              }) ?? now + 24 * 60 * 60000,
+          }
+        : {}),
       controls:
         staff ||
         (session.view.hostId === subject.id &&
@@ -582,7 +773,7 @@ export class SchoolAccess {
       now >= started + AUTHORIZATION_MS
     )
       throw new SchoolUnavailable();
-    return Object.freeze({ state, expiresAt: started + AUTHORIZATION_MS });
+    return Object.freeze({ state, expiresAt: started + ROOM_POLICY_MS });
   }
   /** Passive owned objects require fresh eligibility; room lifecycle handles recess pauses. */
   async resolveOwner(room: string, id: string): Promise<AdmittedActor | null> {

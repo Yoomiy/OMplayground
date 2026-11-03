@@ -382,7 +382,10 @@ try {
       } else if (message.type === 'room-policy-unavailable') {
         if (pendingPolicy?.requestId !== message.requestId) return;
         pendingPolicy = null;
-        nextPolicyCheck = now + 500;
+        nextPolicyCheck = now + 5000;
+        // Keep a confirmed room state through a status-read outage. The independent
+        // storage ownership deadline still stops publication if ownership is lost.
+        if (policyUntil > 0) policyUntil = now + ROOM_POLICY_MS;
       } else if (message.type === 'room-policy') {
         const pending = pendingPolicy;
         if (!pending || message.requestId !== pending.requestId || terminalSent) return;
@@ -439,6 +442,18 @@ try {
         }
       } else if (message.type === 'resume' || message.type === 'pause') {
         if (data.enforceLifecycle) {
+          if (
+            message.type === 'resume' &&
+            message.confirmed === true &&
+            !terminalSent &&
+            policyState !== 'ended'
+          ) {
+            // The fenced control transaction has already committed playing intent.
+            policyState = 'playing';
+            policyUntil = now + ROOM_POLICY_MS;
+            pendingPolicy = null;
+            nextPolicyCheck = now;
+          }
           manualPause = message.type === 'pause';
           applyLifecycle(performance.now());
         } else room.setPaused(message.type === 'pause', performance.now());

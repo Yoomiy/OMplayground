@@ -32,7 +32,7 @@ test(
       upgradeClient: (request, socket, head) => {
         calls.push(request.url!);
         if (request.url === '/fixture-throw') throw new Error('fixture');
-        if (request.url !== '/voxel-media/rtc') return false;
+        if (request.url !== '/custom-client/socket') return false;
         transport.handleUpgrade(request, socket, head, (peer) => peer.send('external transport'));
         return true;
       },
@@ -53,15 +53,15 @@ test(
     }
     let closed: Promise<void> | undefined;
     try {
-      assert.equal((await open('/voxel-media/rtc', 'https://other.invalid')).accepted, false);
+      assert.equal((await open('/custom-client/socket', 'https://other.invalid')).accepted, false);
       assert.deepEqual(calls, []);
-      const media = await open('/voxel-media/rtc');
+      const media = await open('/custom-client/socket');
       assert(media.accepted);
       if (!media.frames.length) await once(media.socket, 'message');
       assert.deepEqual(media.frames, ['external transport']);
       const native = await open('/voxel');
       assert(native.accepted);
-      assert.deepEqual(calls, ['/voxel-media/rtc']);
+      assert.deepEqual(calls, ['/custom-client/socket']);
       assert.equal((await open('/unknown')).accepted, false);
       assert.equal((await open('/fixture-throw')).accepted, false);
       assert(events.includes('VOXEL_CLIENT_UPGRADE_FAILED'));
@@ -73,7 +73,7 @@ test(
       gateway.http.emit(
         'upgrade',
         {
-          url: '/voxel-media/rtc',
+          url: '/custom-client/socket',
           headers: { origin: 'https://school.invalid' },
         } as IncomingMessage,
         rejected,

@@ -16,7 +16,7 @@ type BrowserModule = typeof import("@playground/voxel-runtime");
 type ControlState = {
   action: LifecycleAction;
   id: string;
-  state: "pending" | "unconfirmed" | "done";
+  state: "pending" | "applying" | "unconfirmed" | "done";
   text: string;
 };
 export type VoxelSurfaceProps = {
@@ -184,9 +184,11 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
         renderScale: matchMedia("(pointer: coarse)").matches ? 0.75 : 1,
         renderHz: matchMedia("(pointer: coarse)").matches ? 30 : 60,
         autoEnter: true,
-        admit: async () => {
+        admit: async (attempt) => {
           try {
-            const result = await api.admit(abort.signal);
+            const result = await api.admit(
+              AbortSignal.any([abort.signal, attempt]),
+            );
             if (!abort.signal.aborted) setErrorCode(null);
             return result;
           } catch (error) {
@@ -328,17 +330,19 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
               ? "מסיימים את המפגש…"
               : "ממתינים לאישור שמירה…",
       });
+      let awaitingWorld = false;
       try {
         const receipt = await api.control(action, id, abort.signal);
         if (abort.signal.aborted) return;
+        awaitingWorld = action === "resume" && receipt.current;
         setControl({
           action,
           id,
-          state: "done",
+          state: awaitingWorld ? "applying" : "done",
           text: !receipt.current
             ? "הפעולה הקודמת הושלמה. מוצג המצב הנוכחי של המפגש."
             : action === "resume"
-              ? "המפגש חודש. לחצו על כניסה לעולם כדי להמשיך."
+              ? "פעולת החידוש אושרה. ממתינים לעדכון העולם…"
               : action === "end"
                 ? "המפגש הסתיים. אפשר לפתוח מפגש חדש."
                 : "המפגש הושהה והשמירה אושרה.",
@@ -361,11 +365,50 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
         });
         callbacks.current.onDiagnostic?.("control", code, identity.current);
       } finally {
-        if (controlAbort.current === abort) controlPending.current = false;
+        if (controlAbort.current === abort && !awaitingWorld)
+          controlPending.current = false;
       }
     },
     [api, command],
   );
+  useEffect(() => {
+    if (control?.state !== "applying") return;
+    const finished =
+      hud?.lifecycle === "playing" ||
+      hud?.lifecycle === "ended" ||
+      hud?.worldPauseReason === "no_participants";
+    if (finished) {
+      controlPending.current = false;
+      setControl((value) =>
+        value === control
+          ? {
+              ...value,
+              state: "done",
+              text:
+                hud?.lifecycle === "ended"
+                  ? "המפגש הסתיים."
+                  : hud?.worldPauseReason === "no_participants"
+                    ? "המפגש חודש. ממתינים לשחקנים."
+                    : "המפגש חודש. לחצו על כניסה לעולם כדי להמשיך.",
+            }
+          : value,
+      );
+      return;
+    }
+    const timer = setTimeout(() => {
+      controlPending.current = false;
+      setControl((value) =>
+        value === control
+          ? {
+              ...value,
+              state: "done",
+              text: "פעולת החידוש אושרה, אך עדכון העולם מתעכב. נסו להתחבר מחדש.",
+            }
+          : value,
+      );
+    }, 10000);
+    return () => clearTimeout(timer);
+  }, [control, hud?.lifecycle, hud?.worldPauseReason]);
   useEffect(() => {
     if (control?.state !== "done") return;
     const current = control,
@@ -489,6 +532,7 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
       (hud.role === "observer" && hud.lifecycle === "paused"));
   const reconnect =
     !!hud &&
+    hud.canReconnect !== false &&
     ["ready", "failed"].includes(hud.graphics) &&
     !terminal &&
     ![
@@ -528,7 +572,6 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
         manualJoin={
           props.manualVoiceJoin ?? (isStaff && hud?.role === "observer")
         }
-        isStaff={false}
         ended={terminal}
         ready={
           !!hud &&
@@ -586,7 +629,7 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
             <button
               type="button"
               disabled={
-                control?.state === "pending" ||
+                ["pending", "applying"].includes(control?.state ?? "") ||
                 staffState?.state === "pending" ||
                 moderationBusy
               }
@@ -601,7 +644,7 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
             <button
               type="button"
               disabled={
-                control?.state === "pending" ||
+                ["pending", "applying"].includes(control?.state ?? "") ||
                 staffState?.state === "pending" ||
                 moderationBusy
               }
@@ -660,7 +703,7 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
             <button
               type="button"
               disabled={
-                control?.state === "pending" ||
+                ["pending", "applying"].includes(control?.state ?? "") ||
                 staffState?.state === "pending" ||
                 moderationBusy
               }
@@ -675,7 +718,7 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
             <VoxelModeration
               api={api}
               busy={
-                control?.state === "pending" ||
+                ["pending", "applying"].includes(control?.state ?? "") ||
                 staffState?.state === "pending" ||
                 moderationBusy
               }

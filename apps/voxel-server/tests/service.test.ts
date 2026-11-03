@@ -6,7 +6,12 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { loadServerRelease } from "../src/release.ts";
 import { serviceConfig, startVoxelService } from "../src/service.ts";
-const logger = { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} };
+const logger = {
+  debug: () => {},
+  info: () => {},
+  warn: () => {},
+  error: () => {},
+};
 test("production listener rejects wildcard, path, insecure and credential origins and requires a concrete port", () => {
   assert.deepEqual(
     serviceConfig({
@@ -92,7 +97,6 @@ test("startup verifies every schema and fails before listening when controls are
                     : [
                           "voxel_roster_status",
                           "voxel_moderation_status",
-                          "voxel_media_status",
                         ].includes(name)
                       ? { schema: 1, revisionFencing: true }
                       : {
@@ -118,7 +122,6 @@ test("startup verifies every schema and fails before listening when controls are
       "voxel_staff_status",
       "voxel_moderation_status",
       "voxel_chat_status",
-      "voxel_media_status",
     ].sort(),
   );
 });

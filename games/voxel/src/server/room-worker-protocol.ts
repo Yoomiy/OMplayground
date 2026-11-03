@@ -62,7 +62,7 @@ export type ToRoom =
   | { type: 'message'; connection: string; message: ClientMessage }
   | { type: 'checkpoint'; requestId: number; pause: boolean }
   | { type: 'end' }
-  | { type: 'resume' }
+  | { type: 'resume'; confirmed?: boolean }
   | { type: 'pause' }
   | { type: 'ownership'; deadline: number }
   | { type: 'stop' };

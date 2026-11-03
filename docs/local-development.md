@@ -106,11 +106,10 @@ Readiness errors include safe HTTP/error codes and guidance; upstream response
 bodies and credentials are omitted.
 
 
-Voxel voice signaling uses the same local Vite port at `/voxel-media/rtc/v1`.
-If it fails, retain the `VOXEL_VOICE_CONNECTION_FAILED` event: its fixed
-`phase`/`reason` fields distinguish ticket/policy expiry from upstream rejection,
-and `upstreamStatus` identifies an HTTP rejection by the SFU when available.
-The SDK's subsequent `/validate` request can return 401 after a single-use ticket
-was consumed; that response alone does not diagnose the provider credentials.
+Voxel voice requests `/api/voxel/voice-token` through Vite, then connects directly
+to the configured `LIVEKIT_URL`, like the other games. LiveKit handles token
+refresh and reconnects. The old `/voxel-media/*` proxy is removed. Keep the
+LiveKit endpoint reachable from the browser; there is no voice policy renewal
+loop or media-schema startup requirement.
 Game effects activate on a normal movement key or world click after automatic
 entry. Restart the local stack and refresh after restoring a new matched release.

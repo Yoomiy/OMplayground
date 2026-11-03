@@ -1,3 +1,4 @@
+import { ConnectionRetry, retryableAdmission } from './connection-retry.ts';
 import { toggleFullscreen } from './fullscreen.ts';
 import { runtimeDiagnostic } from '../shared/diagnostics.ts';
 import type { DiagnosticDetail } from '../shared/diagnostics.ts';
@@ -32,6 +33,7 @@ import type { HitEvent } from '../shared/combat.ts';
 import type { ExplosiveView, ExplosionEvent } from '../shared/explosives.ts';
 import type { WorldState, PauseReason } from '../shared/lifecycle.ts';
 export type HudState = {
+  canReconnect?: boolean;
   mode: GameMode;
   role: 'participant' | 'observer';
   lifecycle: WorldState | 'preparing' | 'recovering';
@@ -97,7 +99,7 @@ export type RuntimeCommand =
   | { type: 'touch'; x: number; z: number; jump: boolean; sneak: boolean; sprint: boolean }
   | { type: 'reconnect' };
 export type RuntimeOptions = {
-  admit: () => Promise<{ ticket: string; buildId: string }>;
+  admit: (signal: AbortSignal) => Promise<{ ticket: string; buildId: string }>;
   socketUrl: string;
   signal?: AbortSignal;
   fullscreenElement?: HTMLElement;
@@ -252,7 +254,8 @@ export async function mountVoxel(
     lastReady = 0,
     nextDraw = 0,
     animation = 0,
-    connectionTimer: ReturnType<typeof setTimeout> | null = null,
+    connecting = false,
+    connectionAbort: AbortController | null = null,
     actionPending = 0;
   let updateTimer: ReturnType<typeof setInterval> | null = null;
   let paletteSent: { epoch: number; sequence: number; state: number } | null = null;
@@ -462,6 +465,10 @@ export async function mountVoxel(
     }
   };
   const handle = (event: ServerMessage) => {
+    if (event.type === 'joining') {
+      if (!baselineReceived) publish({ status: 'connecting', message: 'טוענים את העולם…' });
+      return;
+    }
     if (event.type === 'lifecycle') {
       const now = performance.now();
       worldClock.reset(event.tick, now, event.state === 'playing');
@@ -614,10 +621,11 @@ export async function mountVoxel(
         event.environmentVersion !== identity.environmentVersion ||
         event.generatorVersion !== GENERATOR_VERSION
       ) {
-        socket?.close();
+        socket?.close(1000, 'client_left');
         publish({ status: 'error', message: 'המשחק עודכן. יש לרענן את העמוד.' });
         return;
       }
+      retry.reset();
       actorId = event.actorId;
       avatarId = event.avatar ?? selectAvatar(actorId);
       if (event.mode !== hud.mode) creativeBagHotbar = false;
@@ -840,6 +848,7 @@ export async function mountVoxel(
       if (event.code === 'INVALID') return;
       enterOnReady = false;
       reconnectAllowed = event.code === 'SESSION_ENDED' ? false : event.retryable;
+      if (!reconnectAllowed) retry.cancel();
       focus(false);
       if (event.code === 'SESSION_ENDED' || event.code === 'RECOVERING') {
         const now = performance.now();
@@ -850,42 +859,76 @@ export async function mountVoxel(
         ...(event.code === 'SESSION_ENDED' ? { lifecycle: 'ended' as const } : {}),
         ...(event.code === 'RECOVERING' ? { lifecycle: 'recovering' as const } : {}),
         status: 'error',
+        canReconnect: reconnectAllowed,
         pointerLocked: false,
         message:
-          event.code === 'SESSION_ENDED'
-            ? 'המפגש הסתיים. אפשר לחזור לרשימת המשחקים.'
-            : event.code === 'INCOMPATIBLE'
-              ? 'המשחק עודכן. יש לרענן את העמוד.'
-              : event.code === 'REPLACED'
-                ? 'המשחק פתוח בחלון אחר.'
-                : 'החיבור לעולם הופסק. אפשר להתחבר מחדש.',
+          event.code === 'RECESS_CLOSED'
+            ? 'זמן ההפסקה הסתיים. אפשר לחזור בהפסקה הבאה.'
+            : event.code === 'SESSION_ENDED'
+              ? 'המפגש הסתיים. אפשר לחזור לרשימת המשחקים.'
+              : event.code === 'INCOMPATIBLE'
+                ? 'המשחק עודכן. יש לרענן את העמוד.'
+                : event.code === 'REPLACED'
+                  ? 'המשחק פתוח בחלון אחר.'
+                  : 'החיבור לעולם הופסק. אפשר להתחבר מחדש.',
       });
       if (ownsPointerLock()) document.exitPointerLock();
     }
   };
+  const retry = new ConnectionRetry(() => {
+    if (!disposed && reconnectAllowed && document.visibilityState === 'visible') void connect();
+  });
+  const scheduleReconnect = () => {
+    if (!disposed && reconnectAllowed && document.visibilityState === 'visible') retry.schedule();
+  };
+  const onOnline = () => {
+    if (
+      !disposed &&
+      reconnectAllowed &&
+      document.visibilityState === 'visible' &&
+      ['error', 'recovering', 'stalled'].includes(hud.status)
+    ) {
+      retry.cancel();
+      void connect();
+    }
+  };
   async function connect() {
+    if (disposed || connecting) return;
+    connecting = true;
     reconnectAllowed = true;
     fatalRecovery = false;
     enterOnReady = options.autoEnter === true;
     focus(false);
     if (ownsPointerLock()) document.exitPointerLock();
     const generation = ++connection;
-    if (connectionTimer) {
-      clearTimeout(connectionTimer);
-      connectionTimer = null;
-    }
-    socket?.close();
+    retry.cancel();
+    connectionAbort?.abort();
+    const abort = new AbortController();
+    connectionAbort = abort;
+    const timeout = setTimeout(() => abort.abort(), 15000);
+    let cancelled!: () => void;
+    const cancelledAdmission = new Promise<never>((_resolve, reject) => {
+      cancelled = () => reject(new DOMException('Admission cancelled', 'AbortError'));
+      abort.signal.addEventListener('abort', cancelled, { once: true });
+    });
+    socket?.close(1000, 'client_reconnecting');
     clearWorld();
     publish({
       lifecycle: 'preparing',
+      canReconnect: true,
       worldPauseReason: null,
       status: 'connecting',
       message: 'מתחברים לעולם…',
     });
     try {
-      const admission = await options.admit();
+      const admission = await Promise.race([options.admit(abort.signal), cancelledAdmission]);
       if (disposed || generation !== connection) return;
-      if (admission.buildId !== identity.buildId) throw new Error('incompatible client build');
+      if (admission.buildId !== identity.buildId)
+        throw Object.assign(new Error('incompatible client build'), {
+          code: 'INCOMPATIBLE',
+          retryable: false,
+        });
+      lastReceived = performance.now();
       const ws = new WebSocket(options.socketUrl);
       socket = ws;
       ws.binaryType = 'arraybuffer';
@@ -972,14 +1015,27 @@ export async function mountVoxel(
         publish({ pointerLocked: false });
         if (!reconnectAllowed) return;
         publish({ status: 'recovering', message: 'החיבור הופסק. מתחברים מחדש…' });
-        connectionTimer = setTimeout(() => {
-          void connect();
-        }, 1500);
+        scheduleReconnect();
       };
     } catch (error) {
       if (!disposed && generation === connection) {
         diagnose('admission', error);
-        publish({ status: 'error', message: 'לא ניתן להתחבר לעולם. נסו שוב.' });
+        reconnectAllowed = retryableAdmission(error);
+        publish({
+          canReconnect: reconnectAllowed,
+          status: reconnectAllowed ? 'recovering' : 'error',
+          message: reconnectAllowed
+            ? 'החיבור אינו זמין. ננסה שוב אוטומטית…'
+            : 'לא ניתן להתחבר לעולם.',
+        });
+        scheduleReconnect();
+      }
+    } finally {
+      clearTimeout(timeout);
+      abort.signal.removeEventListener('abort', cancelled);
+      if (generation === connection) {
+        connecting = false;
+        connectionAbort = null;
       }
     }
   }
@@ -1189,6 +1245,29 @@ export async function mountVoxel(
     if (disposed) return;
     const dt = Math.min(0.1, Math.max(0, (now - lastUpdate) / 1000));
     lastUpdate = now;
+    if (
+      reconnectAllowed &&
+      !connecting &&
+      socket &&
+      (socket.readyState === WebSocket.CONNECTING || socket.readyState === WebSocket.OPEN) &&
+      now - lastReceived > 10000 &&
+      document.visibilityState === 'visible'
+    ) {
+      // Replace a silent connection without waiting for its close handshake.
+      connection++;
+      const previous = socket;
+      socket = null;
+      previous.close(1000, 'client_reconnecting');
+      focus(false);
+      if (ownsPointerLock()) document.exitPointerLock();
+      publish({
+        lifecycle: 'recovering',
+        status: 'recovering',
+        pointerLocked: false,
+        message: 'החיבור הופסק. מתחברים מחדש…',
+      });
+      scheduleReconnect();
+    }
     environment = sampleEnvironment(worldClock.read(now), environmentSeed);
     if (prediction && stream) {
       let state = world.player_state(prediction.slot);
@@ -1584,7 +1663,7 @@ export async function mountVoxel(
       }
     }
   };
-  const onPointerLockError = (error: unknown) => {
+  const onPointerLockError = (_error: unknown) => {
     if (
       disposed ||
       fatalRecovery ||
@@ -1594,7 +1673,7 @@ export async function mountVoxel(
       phase === 'dead'
     )
       return;
-    diagnose('pointer_lock', error);
+    // Browser focus/activation refusals are handled locally, without server telemetry.
     noticeUntil = 0;
     pointerLockProblem =
       'העכבר לא נלכד. לחצו שוב על כניסה לעולם; אם יצאתם עם Esc, המתינו רגע ונסו שוב.';
@@ -1611,6 +1690,7 @@ export async function mountVoxel(
   const onBlur = () => focus(false);
   const onVisibility = () => {
     if (document.visibilityState !== 'visible') focus(false);
+    else onOnline();
   };
   const onContext = (event: Event) => event.preventDefault();
   const onWheel = (event: WheelEvent) => {
@@ -1876,6 +1956,7 @@ export async function mountVoxel(
       });
     }
   }
+  window.addEventListener('online', onOnline);
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp);
   window.addEventListener('mouseup', onMouseUp);
@@ -2027,8 +2108,9 @@ export async function mountVoxel(
         clearInterval(updateTimer);
         updateTimer = null;
       }
-      if (connectionTimer) clearTimeout(connectionTimer);
-      socket?.close();
+      retry.dispose();
+      connectionAbort?.abort();
+      socket?.close(1000, 'client_left');
       if (ownsPointerLock()) document.exitPointerLock();
       if (Object.is(document.fullscreenElement, options.fullscreenElement ?? host)) {
         try {
@@ -2040,6 +2122,7 @@ export async function mountVoxel(
         }
       }
       observer.disconnect();
+      window.removeEventListener('online', onOnline);
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('mouseup', onMouseUp);
