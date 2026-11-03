@@ -64,6 +64,7 @@ export async function packageRelease(destination: string) {
     "games/voxel/UPSTREAM.md",
     "games/voxel/engine/LICENSE",
     "games/voxel/src/server/admission.ts",
+    "games/voxel/src/server/room-policy.ts",
     "games/voxel/src/server/session-projection.ts",
     "games/voxel/src/shared", // School validators share the production game contracts.
     "games/voxel/config/world.json",

@@ -35,6 +35,8 @@ for (const key of ["buildId", "engineHash", "contentHash"])
 await import(new URL("apps/voxel-server/src/release.ts", root)).then((m) =>
   m.loadServerRelease(),
 );
+// Resolve the service's runtime dependencies without starting a listener or providers.
+await import(new URL("apps/voxel-server/src/service.ts", root));
 console.log(
   `Verified runtime package ${manifest.buildId.slice(0, 12)} (${manifest.files.length} files)`,
 );
