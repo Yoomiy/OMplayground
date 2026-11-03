@@ -581,3 +581,22 @@ test("school avatar selection follows verified profile gender, stays stable, and
     rejected("INVALID"),
   );
 });
+
+test("connected school sessions check policy every thirty seconds and retain a real recess cutoff independent of the login JWT", async () => {
+  const f = fixture();
+  const grant = await f.access.grant(f.token(f.kid, f.now + 60000), { room: f.room });
+  const policy = grant.connected!();
+  assert.equal(policy.recheckMs, 30000);
+  assert.equal(policy.expiresReason, "RECESS_CLOSED");
+  assert.equal(policy.authorization.expiresAt, Date.parse("2026-10-25T10:00:00Z"));
+  const before = f.requests.length;
+  f.setNow(f.now + 65000);
+  const next = await policy.revalidate();
+  assert(next && next.expiresAt > f.now + 5000);
+  assert(!f.requests.slice(before).some((request) => request.path === "user"));
+  f.state.outage = "kid_profiles";
+  await assert.rejects(policy.revalidate(), SchoolUnavailable);
+  f.state.outage = "";
+  f.state.session.player_ids = [];
+  assert.equal(await policy.revalidate(), null);
+});

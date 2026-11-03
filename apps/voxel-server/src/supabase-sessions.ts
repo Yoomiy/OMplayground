@@ -5,6 +5,7 @@ import type {
 } from "../../../games/voxel/src/server/session-projection.ts";
 import type { RoomLease } from "../../../games/voxel/src/server/checkpoint-storage.ts";
 import type { AdmittedActor } from "../../../games/voxel/src/sim/game-room.ts";
+import { ROOM_POLICY_MS } from "../../../games/voxel/src/server/room-policy.ts";
 import type { RoomPolicy } from "../../../games/voxel/src/server/room-policy.ts";
 import { PersistenceError } from "./supabase-persistence.ts";
 const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
@@ -134,7 +135,7 @@ export class SupabaseSessions implements SessionProjection {
       throw new PersistenceError("session_policy_protocol");
     return Object.freeze({
       state: value.state as RoomPolicy["state"],
-      expiresAt: started + 5000,
+      expiresAt: started + ROOM_POLICY_MS,
     });
   }
 }

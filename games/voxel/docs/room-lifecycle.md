@@ -6,14 +6,18 @@ inventory or local pause menu freezes that body. With school lifecycle policy
 enabled, no current participants means the world pauses; staff observers alone
 cannot advance hunger, hazards, drops, fuses, weather or the world tick.
 
-`schoolGatewayPolicy` installs admission, passive-owner resolution and a fresh
-session-status reader. The worker requests a private status proof whose monotonic
-deadline starts before IO and lasts at most five seconds. The gateway validates
-the reply and clamps it to that deadline. The worker checks expiry before ticks
-and messages, independently of a stalled supervisor. An unavailable provider
-cannot extend a confirmed proof; unknown initial or expired policy pauses the
-world. Late replies cannot revive an older request. Explicit completion is
-terminal in that worker and cannot be reversed with a resume command.
+`schoolGatewayPolicy` installs admission, passive-owner resolution and a
+session-status reader. Status is checked about every 30 seconds with a bounded
+60-second response horizon. Unknown initial state pauses the world. A temporary
+read failure preserves the last confirmed playing/paused state and retries after
+five seconds; it cannot clear a confirmed pause or revive an ended room. A hung
+read that reaches its horizon pauses until a successful response. Explicit
+completion is terminal and cannot be reversed with a resume command. Storage
+ownership deadlines remain independent and still fence simulation/publication.
+
+Connected school participants have a locally enforced recess cutoff, refreshed
+only by successful background policy checks. Temporary provider errors do not
+disconnect them before that cutoff. Confirmed access denials still disconnect.
 
 The worker combines fresh session state, current participant leases and a
 server-only manual pause. Session pause, missing participants or expired policy
@@ -101,3 +105,20 @@ control returns. Neither action advances a paused world's gameplay time or claim
 a committed save. Their audited HTTP/worker/epoch boundary is documented in
 [staff commands](../../../apps/voxel-server/docs/staff-commands.md). The checkpoint
 schema and engine/content formats remain unchanged.
+
+## Browser recovery
+
+Transport closure and temporary admission failures share a retry delay of 1.5,
+3, 6, then at most 10 seconds until recovery. A connection that stays open but
+receives nothing for 10 seconds is replaced. Admission attempts time out after
+15 seconds. Online/visible events can retry promptly; disposal cancels pending
+attempts and retries. Confirmed terminal denials stop automatic retries.
+
+The app keeps authentication separate from playground access. Temporary check
+failures preserve the last confirmed access decision; a known recess cutoff still
+blocks play locally. The access screen rechecks automatically and offers retry
+without signing out, so the next recess can reopen the current route.
+
+`tools/browser-connection-recovery.ts` exercises admission retries, silent sockets,
+online recovery, terminal denials and cleanup. The real app guard/hook is exercised
+by `apps/web/tools/access-recovery-browser.ts` with fixture provider decisions.

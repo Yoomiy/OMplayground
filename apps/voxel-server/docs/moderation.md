@@ -28,8 +28,9 @@ The gateway records the cutoff before detaching old connections and immediately
 stops their input/publication. The normal worker leave and last-leave retirement
 paths retain checkpoint ownership. An admission awaiting membership IO cannot
 attach past a newer cutoff. Retries cannot disconnect a later explicit admission.
-Other gateways still enforce fresh policy through independently expiring actor
-leases. SQL projection filters banned and pending-readmission actors so an older
+Other gateways discover external changes on their next successful 30-second
+background policy check; temporary provider failures retain the prior decision
+until its known recess cutoff. SQL projection filters banned and pending-readmission actors so an older
 queued presence view cannot restore them.
 
 A request UUID binds actor, target and action to one policy change and one audit.

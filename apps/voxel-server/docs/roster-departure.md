@@ -28,8 +28,10 @@ deadline under database locks. A ticket from before removal cannot add the depar
 identity back. Ticket renewal and connected-actor renewal have distinct contexts:
 new tickets may seek open-room admission, while connected participants must still
 be accepted roster members. Passive TNT-owner checks also require membership.
-Revocation follows the existing bounded five-second authority deadlines. A new
-explicit admission can rejoin an eligible open room; departure is not a ban.
+The owning gateway revokes immediately; other gateways discover departure on
+their next successful 30-second background policy check. Temporary provider
+failures preserve the prior decision until the known recess cutoff. A new explicit
+admission can rejoin an eligible open room; departure is not a ban.
 
 Receipts are service-only and idempotent per session/request UUID. Replaying an old
 receipt after a later rejoin returns that historical receipt without removing the

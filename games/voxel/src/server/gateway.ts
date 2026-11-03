@@ -688,6 +688,8 @@ export async function createGateway(options: GatewayOptions) {
         const c = connections.get(message.connection);
         if (!c || c.room !== handle || c.socket.readyState !== WebSocket.OPEN) return;
         if (message.type === 'close') {
+          // Preserve the policy's terminal recess reason if the worker expires first.
+          if (message.cause === 'authorization_expired' && !c.authorization?.valid()) return;
           if (message.reason === 'SESSION_ENDED') handle.ending = true;
           event('VOXEL_ACTOR_DISCONNECTED', {
             ...roomContext(handle),

@@ -33,21 +33,24 @@ administrator profiles without a gameplay partition cannot become players.
 Saved flight state is cleared when current authority no longer permits flight.
 Player and observer counts do not participate in admission.
 
-Each private grant lasts at most five seconds from the start of its read, also
-bounded by JWT expiry and an actual recess closing boundary. There is no profile
-cache. PostgREST's automatic retries are disabled for policy reads; the gateway
-owns renewal and expiry. Provider errors expose a fixed machine code rather than
-provider messages or credentials.
+Admission and control proofs last at most five seconds from the start of their
+read, bounded by JWT expiry and a recess closing boundary. Single-use tickets
+are checked before room allocation and again after slow allocation when needed.
+SQL membership/control fencing retains these short proofs.
 
-The gateway revalidates a single-use ticket before allocating its room and again
-after a slow allocation when necessary. It renews connected authority midway
-through the remaining lease. Changed identity/role/capabilities require a fresh
-admission and baseline; explicit denial disconnects, and provider failure closes
-with a retryable recovery reason. A delayed read cannot revive an expired socket.
-The worker independently expires the actor on its monotonic deadline, including
-while paused or while the gateway event loop is blocked. Late renewals cannot
-recreate a disconnected actor. Capability functions and JWTs never cross into
-the simulation or checkpoint.
+Once joined, a school connection uses its verified identity and the actual recess
+closing time as a local cutoff. Background profile, roster and schedule checks run
+every 30 seconds without reusing the original expiring login JWT. Temporary
+provider errors retain the last confirmed decision and retry after five seconds;
+they cannot extend the known cutoff. Confirmed removal, account deactivation or
+completion still disconnects. Changed role/capabilities require fresh admission.
+The worker independently enforces the monotonic cutoff even if the gateway event
+loop stalls. A delayed response cannot revive an expired connection. Explicit
+moderation on the owning gateway revokes immediately; other owners discover
+external policy changes on their next successful background check.
+
+Provider errors expose fixed machine codes rather than credentials or provider
+messages. Identity, capability callbacks and JWTs never enter checkpoints.
 
 Cross-origin admission permits only the configured origin (or same origin),
 `POST` and the `Authorization`/`Content-Type` headers. Preflight does not call the

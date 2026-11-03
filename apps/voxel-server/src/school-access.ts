@@ -1,6 +1,9 @@
 import { selectAvatar } from "../../../games/voxel/src/shared/avatars.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { isWithinEffectiveRecess } from "@playground/game-logic/dist/recessSchedule.js";
+import {
+  isWithinEffectiveRecess,
+  effectiveRecessEndsAt,
+} from "@playground/game-logic/dist/recessSchedule.js";
 import type {
   RecessWindow,
   ClassRecessException,
@@ -10,8 +13,12 @@ import type {
   AdmissionGrant,
   Authorization,
 } from "../../../games/voxel/src/server/admission.ts";
+import { ROOM_POLICY_MS } from "../../../games/voxel/src/server/room-policy.ts";
 import type { RoomPolicy } from "../../../games/voxel/src/server/room-policy.ts";
-import { SessionEnded } from "../../../games/voxel/src/server/admission.ts";
+import {
+  SessionEnded,
+  AuthorizationDenied,
+} from "../../../games/voxel/src/server/admission.ts";
 
 export const AUTHORIZATION_MS = 5000;
 const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
@@ -41,6 +48,7 @@ export type SchoolAuthorization = Readonly<{
   subject: Subject;
   session: SessionAccess;
   controls: boolean;
+  recessEndsAt?: number;
   policy: Readonly<{
     revision: number;
     acceptedRevision: number;
@@ -408,25 +416,36 @@ export class SchoolAccess {
         expiresAt: checked.expiresAt,
         membershipRevision: checked.session.rosterRevision,
       });
-    const checkedInitial = await this.authorize(token, request),
-      initial = select(checkedInitial);
+    const checkedInitial = await this.authorize(token, request);
+    let latest = checkedInitial;
+    const accepted = (
+      checked: SchoolAuthorization,
+      stage: "ticket" | "actor",
+    ) => {
+      if (
+        checked.actor.role === "participant" &&
+        (checked.policy.revision > checkedInitial.session.rosterRevision ||
+          (stage === "actor" &&
+            (!checked.session.playerIds.includes(checked.subject.id) ||
+              checked.policy.revision > checked.policy.acceptedRevision)) ||
+          (stage === "ticket" &&
+            checked.session.rosterRevision !==
+              checkedInitial.session.rosterRevision))
+      )
+        deny("MEMBERSHIP_REVOKED");
+      latest = checked;
+      return checked;
+    };
+    const connected = (checked: SchoolAuthorization): Authorization => ({
+      actor: checked.actor,
+      expiresAt: checked.recessEndsAt ?? this.now() + 24 * 60 * 60000,
+      membershipRevision: checked.session.rosterRevision,
+    });
     return Object.freeze({
-      ...initial,
-      revalidate: async (stage = "ticket") => {
+      ...select(checkedInitial),
+      revalidate: async (stage: "ticket" | "actor" = "ticket") => {
         try {
-          const checked = await this.authorize(token, request);
-          if (
-            checked.actor.role === "participant" &&
-            (checked.policy.revision > checkedInitial.session.rosterRevision ||
-              (stage === "actor" &&
-                (!checked.session.playerIds.includes(checked.subject.id) ||
-                  checked.policy.revision > checked.policy.acceptedRevision)) ||
-              (stage === "ticket" &&
-                checked.session.rosterRevision !==
-                  checkedInitial.session.rosterRevision))
-          )
-            deny("MEMBERSHIP_REVOKED");
-          return select(checked);
+          return select(accepted(await this.authorize(token, request), stage));
         } catch (error) {
           if (
             error instanceof AccessDenied &&
@@ -437,6 +456,42 @@ export class SchoolAccess {
           throw error;
         }
       },
+      connected: () => ({
+        authorization: connected(latest),
+        expiresReason:
+          latest.subject.role === "kid"
+            ? ("RECESS_CLOSED" as const)
+            : ("RECOVERING" as const),
+        recheckMs: 30000,
+        revalidate: async () => {
+          try {
+            const started = this.now(),
+              subject = await this.profile(checkedInitial.subject.id);
+            if (!subject) return null;
+            // Identity was verified at admission; do not retain/reuse an expiring login JWT.
+            const fresh = await this.evaluate(
+              subject,
+              request,
+              started,
+              Number.MAX_SAFE_INTEGER,
+              true,
+            );
+            return connected(accepted(fresh, "actor"));
+          } catch (error) {
+            if (
+              error instanceof AccessDenied &&
+              ["SESSION_ENDED", "NOT_FOUND", "WRONG_GAME"].includes(error.code)
+            )
+              throw new SessionEnded();
+            if (error instanceof AccessDenied) {
+              if (error.code === "RECESS_CLOSED")
+                throw new AuthorizationDenied("RECESS_CLOSED");
+              return null;
+            }
+            throw error;
+          }
+        },
+      }),
     });
   }
   private async evaluate(
@@ -553,6 +608,18 @@ export class SchoolAccess {
       actor,
       subject,
       session: session.view,
+      ...(schedule
+        ? {
+            recessEndsAt:
+              effectiveRecessEndsAt(new Date(now), {
+                defaultWindows: schedule.defaults,
+                classSchedule: {
+                  overrideEnabled: schedule.setting,
+                  exceptions: schedule.exceptions,
+                },
+              }) ?? now + 24 * 60 * 60000,
+          }
+        : {}),
       controls:
         staff ||
         (session.view.hostId === subject.id &&
@@ -582,7 +649,7 @@ export class SchoolAccess {
       now >= started + AUTHORIZATION_MS
     )
       throw new SchoolUnavailable();
-    return Object.freeze({ state, expiresAt: started + AUTHORIZATION_MS });
+    return Object.freeze({ state, expiresAt: started + ROOM_POLICY_MS });
   }
   /** Passive owned objects require fresh eligibility; room lifecycle handles recess pauses. */
   async resolveOwner(room: string, id: string): Promise<AdmittedActor | null> {

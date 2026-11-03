@@ -184,9 +184,11 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
         renderScale: matchMedia("(pointer: coarse)").matches ? 0.75 : 1,
         renderHz: matchMedia("(pointer: coarse)").matches ? 30 : 60,
         autoEnter: true,
-        admit: async () => {
+        admit: async (attempt) => {
           try {
-            const result = await api.admit(abort.signal);
+            const result = await api.admit(
+              AbortSignal.any([abort.signal, attempt]),
+            );
             if (!abort.signal.aborted) setErrorCode(null);
             return result;
           } catch (error) {
@@ -489,6 +491,7 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
       (hud.role === "observer" && hud.lifecycle === "paused"));
   const reconnect =
     !!hud &&
+    hud.canReconnect !== false &&
     ["ready", "failed"].includes(hud.graphics) &&
     !terminal &&
     ![

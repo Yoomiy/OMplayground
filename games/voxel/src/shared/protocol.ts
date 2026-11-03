@@ -171,7 +171,8 @@ export type ServerMessage =
         | 'RECOVERING'
         | 'REPLACED'
         | 'INTERNAL'
-        | 'SESSION_ENDED';
+        | 'SESSION_ENDED'
+        | 'RECESS_CLOSED';
       retryable: boolean;
     };
 const integer = (n: unknown, min = 0, max = Number.MAX_SAFE_INTEGER): n is number =>
@@ -592,9 +593,10 @@ export function parseServerMessage(text: string): ServerMessage | null {
         'REPLACED',
         'INTERNAL',
         'SESSION_ENDED',
+        'RECESS_CLOSED',
       ].includes(v.code as string) &&
         typeof v.retryable === 'boolean' &&
-        (v.code !== 'SESSION_ENDED' || v.retryable === false)
+        (!['SESSION_ENDED', 'RECESS_CLOSED'].includes(String(v.code)) || v.retryable === false)
         ? (v as ServerMessage)
         : null;
     default:

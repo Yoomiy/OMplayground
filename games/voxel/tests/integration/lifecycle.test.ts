@@ -162,7 +162,7 @@ test(
 );
 
 test(
-  'session and expired-policy pauses resist resume, recover without offline ticks, and ended sessions retire',
+  'session pauses survive policy outages and resist resume, recover without offline ticks, and ended sessions retire',
   { timeout: 12000 },
   async () => {
     const h = await harness();
@@ -178,7 +178,13 @@ test(
       assert.equal((await h.capture()).tick, paused.tick);
       at = staff.events.length;
       h.control.unavailable = true;
-      await lifecycle(staff, 'paused', 'policy_unavailable', at);
+      await delay(700);
+      assert.equal(
+        staff.events
+          .slice(at)
+          .some((e) => 'type' in e && e.type === 'lifecycle' && e.reason === 'policy_unavailable'),
+        false,
+      );
       const unknown = await h.capture();
       h.gateway.resume('lifecycle');
       await delay(150);
@@ -195,6 +201,39 @@ test(
       assert.equal((await staff.event('error')).code, 'SESSION_ENDED');
       for (let n = 0; h.gateway.rooms.size && n < 100; n++) await delay(10);
       assert.equal(h.gateway.rooms.size, 0);
+    } finally {
+      await h.close();
+    }
+  },
+);
+
+test(
+  'a temporary status outage preserves a confirmed playing world and later confirmed pause still applies',
+  { timeout: 10000 },
+  async () => {
+    const h = await harness();
+    try {
+      const kid = await h.join('kid');
+      await lifecycle(kid, 'playing', 'allowed');
+      const before = await h.capture(),
+        confirmedAt = kid.events.length;
+      h.control.unavailable = true;
+      await delay(900);
+      const after = await h.capture();
+      assert.ok(after.tick > before.tick);
+      assert.equal(
+        kid.events
+          .slice(confirmedAt)
+          .some((e) => 'type' in e && e.type === 'lifecycle' && e.reason === 'policy_unavailable'),
+        false,
+      );
+      const at = kid.events.length;
+      h.control.unavailable = false;
+      h.control.state = 'paused';
+      await lifecycle(kid, 'paused', 'session', at);
+      const paused = await h.capture();
+      await delay(150);
+      assert.equal((await h.capture()).tick, paused.tick);
     } finally {
       await h.close();
     }

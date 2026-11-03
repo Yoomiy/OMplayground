@@ -115,7 +115,7 @@ test("session SDK rejects malformed installation/policy replies and request-star
   f.state.value = { state: "playing" };
   assert.deepEqual(await f.sessions.roomPolicy(lease.room), {
     state: "playing",
-    expiresAt: 15000,
+    expiresAt: 70000,
   });
   f.state.value = { state: "playing", trusted: true };
   await assert.rejects(

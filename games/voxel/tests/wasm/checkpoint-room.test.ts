@@ -369,6 +369,18 @@ test('restored TNT requires fresh explicit owner resolution and a denied owner f
       () => restore(json(snapshot), new Map([['a', undefined as any]])),
       /owner policy/,
     );
+    const owner = {
+      id: 'a',
+      role: 'participant' as const,
+      avatar: 6,
+      capabilities: { build: true, fly: false, observe: false, combat: true, explosives: true },
+    };
+    const permitted = restore(json(snapshot), new Map([['a', owner]]));
+    permitted.room.dispose();
+    assert.throws(
+      () => restore(json(snapshot), new Map([['a', { ...owner, avatar: -1 }]])),
+      /owner policy/,
+    );
     resumed = restore(json(snapshot), new Map([['a', null]]));
     resumed.pump();
     resumed.tick(31);

@@ -3390,7 +3390,7 @@ var GameRoom = class _GameRoom {
         if (!playerIds.has(id)) throw new Error("incoherent explosive owner checkpoint");
         if (!recovery.owners.has(id)) throw new Error("restored explosive owner policy missing");
         const owner = recovery.owners.get(id);
-        if (owner !== null && (!checkpointObject(owner, ["id", "role", "capabilities"]) || owner.id !== id || !["participant", "observer"].includes(owner.role) || !checkpointObject(owner.capabilities, [
+        if (owner !== null && (!checkpointObject(owner, ["id", "role", "capabilities"]) && !checkpointObject(owner, ["id", "role", "capabilities", "avatar"]) || "avatar" in owner && !isAvatarId(owner.avatar) || owner.id !== id || !["participant", "observer"].includes(owner.role) || !checkpointObject(owner.capabilities, [
           "build",
           "fly",
           "observe",
@@ -4940,8 +4940,8 @@ var MAX_AUTHORIZATION_MS = 6e4;
 function object(value, fields) {
   return !!value && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length === fields.length && fields.every((key2) => Object.hasOwn(value, key2));
 }
-function readAuthorization(value, now, expectedId) {
-  if (!object(value, ["actor", "expiresAt"]) && !object(value, ["actor", "expiresAt", "membershipRevision"]) || "membershipRevision" in value && (!Number.isSafeInteger(value.membershipRevision) || value.membershipRevision < 0) || !object(value.actor, ["id", "role", "capabilities"]) && !object(value.actor, ["id", "role", "capabilities", "avatar"]) || "avatar" in value.actor && !isAvatarId(value.actor.avatar) || typeof value.actor.id !== "string" || !value.actor.id.length || value.actor.id.length > 128 || expectedId !== void 0 && value.actor.id !== expectedId || !["participant", "observer"].includes(value.actor.role) || !object(value.actor.capabilities, ["build", "fly", "observe", "combat", "explosives"]) || !Object.values(value.actor.capabilities).every((flag) => typeof flag === "boolean") || value.actor.role === "observer" && value.actor.capabilities.observe !== true || typeof value.expiresAt !== "number" || !Number.isFinite(value.expiresAt) || value.expiresAt <= now || value.expiresAt > now + MAX_AUTHORIZATION_MS)
+function readAuthorization(value, now, expectedId, maxLifetimeMs = MAX_AUTHORIZATION_MS) {
+  if (!object(value, ["actor", "expiresAt"]) && !object(value, ["actor", "expiresAt", "membershipRevision"]) || "membershipRevision" in value && (!Number.isSafeInteger(value.membershipRevision) || value.membershipRevision < 0) || !object(value.actor, ["id", "role", "capabilities"]) && !object(value.actor, ["id", "role", "capabilities", "avatar"]) || "avatar" in value.actor && !isAvatarId(value.actor.avatar) || typeof value.actor.id !== "string" || !value.actor.id.length || value.actor.id.length > 128 || expectedId !== void 0 && value.actor.id !== expectedId || !["participant", "observer"].includes(value.actor.role) || !object(value.actor.capabilities, ["build", "fly", "observe", "combat", "explosives"]) || !Object.values(value.actor.capabilities).every((flag) => typeof flag === "boolean") || value.actor.role === "observer" && value.actor.capabilities.observe !== true || typeof value.expiresAt !== "number" || !Number.isFinite(value.expiresAt) || value.expiresAt <= now || value.expiresAt > now + maxLifetimeMs)
     throw new Error("invalid server authorization");
   return Object.freeze({
     actor: Object.freeze({
@@ -4965,7 +4965,7 @@ function readAuthorization(value, now, expectedId) {
 var OWNER_AUTHORIZATION_MS = 5e3;
 
 // src/server/room-policy.ts
-var ROOM_POLICY_MS = 5e3;
+var ROOM_POLICY_MS = 6e4;
 
 // src/server/snapshot-encoder.ts
 var SnapshotEncoder = class {
@@ -5353,7 +5353,8 @@ try {
       } else if (message.type === "room-policy-unavailable") {
         if (pendingPolicy?.requestId !== message.requestId) return;
         pendingPolicy = null;
-        nextPolicyCheck = now + 500;
+        nextPolicyCheck = now + 5e3;
+        if (policyUntil > 0) policyUntil = now + ROOM_POLICY_MS;
       } else if (message.type === "room-policy") {
         const pending = pendingPolicy;
         if (!pending || message.requestId !== pending.requestId || terminalSent) return;

@@ -382,7 +382,10 @@ try {
       } else if (message.type === 'room-policy-unavailable') {
         if (pendingPolicy?.requestId !== message.requestId) return;
         pendingPolicy = null;
-        nextPolicyCheck = now + 500;
+        nextPolicyCheck = now + 5000;
+        // Keep a confirmed room state through a status-read outage. The independent
+        // storage ownership deadline still stops publication if ownership is lost.
+        if (policyUntil > 0) policyUntil = now + ROOM_POLICY_MS;
       } else if (message.type === 'room-policy') {
         const pending = pendingPolicy;
         if (!pending || message.requestId !== pending.requestId || terminalSent) return;

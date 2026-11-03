@@ -205,3 +205,83 @@ test(
     assert.doesNotMatch(JSON.stringify(diagnostic), /provider.invalid|private/);
   },
 );
+
+test('joined sessions survive background outages but stop at their locally scheduled recess cutoff', async () => {
+  const actor = {
+    id: 'kid',
+    role: 'participant' as const,
+    capabilities: { build: true, fly: true, observe: false, combat: true, explosives: true },
+  };
+  const short = { actor, expiresAt: Date.now() + 40 },
+    cutoff = Date.now() + 400;
+  let checks = 0;
+  const losses: string[] = [];
+  const connection = new ConnectionAuthorization(
+    {
+      ...short,
+      revalidate: async () =>
+        assert.fail('connected sessions must not repeatedly authenticate the join JWT'),
+      connected: () => ({
+        authorization: { actor, expiresAt: cutoff },
+        expiresReason: 'RECESS_CLOSED',
+        recheckMs: 30,
+        revalidate: async () => {
+          checks++;
+          throw new Error('background policy unavailable');
+        },
+      }),
+    },
+    short,
+    () => {},
+    (reason) => losses.push(reason),
+  );
+  try {
+    await delay(150);
+    assert.equal(connection.valid(), true);
+    assert.ok(checks > 0);
+    assert.deepEqual(losses, []);
+    await delay(300);
+    assert.equal(connection.valid(), false);
+    assert.deepEqual(losses, ['RECESS_CLOSED']);
+  } finally {
+    connection.close();
+  }
+});
+test('a late background response cannot revive a session past recess and explicit denial still closes it', async () => {
+  const actor = {
+    id: 'kid',
+    role: 'participant' as const,
+    capabilities: { build: true, fly: true, observe: false, combat: true, explosives: true },
+  };
+  for (const late of [true, false]) {
+    const short = { actor, expiresAt: Date.now() + 1000 },
+      losses: string[] = [];
+    let updates = 0;
+    const connection = new ConnectionAuthorization(
+      {
+        ...short,
+        revalidate: async () => short,
+        connected: () => ({
+          authorization: { actor, expiresAt: Date.now() + (late ? 80 : 1000) },
+          expiresReason: 'RECESS_CLOSED',
+          recheckMs: 10,
+          revalidate: async () => {
+            if (!late) return null;
+            await delay(150);
+            return { actor, expiresAt: Date.now() + 10000 };
+          },
+        }),
+      },
+      short,
+      () => updates++,
+      (reason) => losses.push(reason),
+    );
+    try {
+      await delay(220);
+      assert.deepEqual(losses, [late ? 'RECESS_CLOSED' : 'UNAUTHORIZED']);
+      assert.equal(updates, 0);
+    } finally {
+      connection.close();
+    }
+  }
+});

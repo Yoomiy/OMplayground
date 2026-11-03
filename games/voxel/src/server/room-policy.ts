@@ -1,5 +1,5 @@
 import type { WorldState } from '../shared/lifecycle.ts';
-export const ROOM_POLICY_MS = 5000;
+export const ROOM_POLICY_MS = 60000;
 export type RoomPolicy = Readonly<{ state: WorldState; expiresAt: number }>;
 export type RoomPolicyReader = (room: string) => Promise<RoomPolicy>;
 export function readRoomPolicy(value: unknown, now: number): RoomPolicy {

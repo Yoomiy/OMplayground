@@ -42,6 +42,15 @@ async function harness(seedOfflineTnt = false) {
     end_time: "24:00:00",
     is_active: true,
   }));
+  // Exercise real connected policy decisions at a faster test-only cadence.
+  const issue = f.access.grant.bind(f.access);
+  f.access.grant = async (...args) => {
+    const grant = await issue(...args);
+    return {
+      ...grant,
+      connected: () => ({ ...grant.connected!(), recheckMs: 100 }),
+    };
+  };
   const backend = seedOfflineTnt ? new MemoryCheckpoints() : null;
   if (backend) {
     initSync({
@@ -394,7 +403,7 @@ test(
         schedules = h.f.state.defaults,
         at = staff.events.length;
       h.f.state.defaults = [];
-      assert.equal((await kid.event("error")).code, "UNAUTHORIZED");
+      assert.equal((await kid.event("error")).code, "RECESS_CLOSED");
       await staff.wait(
         (event): event is Extract<ServerMessage, { type: "lifecycle" }> =>
           "type" in event &&
@@ -441,7 +450,7 @@ test(
 );
 
 test(
-  "connected school accounts lose authority on revocation and provider outages close with a retryable recovery reason",
+  "connected school accounts lose authority on revocation and survive temporary provider outages",
   { timeout: 15000 },
   async () => {
     const h = await harness();
@@ -454,13 +463,17 @@ test(
       const next = await h.connect((await h.ticket()).value);
       await ready(next);
       h.f.state.outage = "kid_profiles";
-      const error = await next.event("error");
-      assert.equal(error.code, "RECOVERING");
-      assert.equal(error.retryable, true);
+      const reads = h.f.requests.length;
+      await delay(700);
+      assert.ok(h.f.requests.length > reads);
+      assert.equal(next.socket.readyState, 1);
       assert.equal(
-        JSON.stringify(error).includes("private-provider-message"),
+        next.events.some((event) => "type" in event && event.type === "error"),
         false,
       );
+      h.f.state.outage = "";
+      h.f.profiles.get(h.f.kid)!.is_active = false;
+      assert.equal((await next.event("error")).code, "UNAUTHORIZED");
     } finally {
       await h.close();
     }
