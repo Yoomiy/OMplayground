@@ -1,11 +1,8 @@
+import { soundAssets as assets } from './world-audio-assets.ts';
+import { withDeadline } from '../shared/request-deadline.ts';
 import type { Environment } from '../shared/environment.ts';
 export type MaterialAction = 'step' | 'dig' | 'break' | 'place';
 export type EffectSound = 'pickup' | 'hurt' | 'eat' | 'swallow' | 'craft' | 'fuse' | 'explosion';
-const assets = import.meta.glob('./sounds/**/*.ogg', {
-  eager: true,
-  query: '?url',
-  import: 'default',
-}) as Record<string, string>;
 const effects: Record<EffectSound, string[]> = {
   pickup: ['random/pop.ogg'],
   craft: ['random/pop.ogg'],
@@ -59,7 +56,32 @@ export class WorldAudio {
   private buffers = new Map<string, AudioBuffer>();
   private loads = new Map<string, Promise<AudioBuffer | null>>();
   private abort = new AbortController();
-  private generation = 0;
+  private loadQueue: (() => void)[] = [];
+  private loadingCount = 0;
+  private retryAfter = new Map<string, number>();
+  private failedLoads = 0;
+  private audioFailures = 0;
+  private faultUntil = 0;
+  private reportIssue(reason: 'audio_load_failed' | 'audio_unavailable') {
+    try {
+      this.onIssue(reason);
+    } catch {
+      /* Telemetry is optional too. */
+    }
+  }
+  private protect(work: () => void, backoff = true) {
+    if (this.disposed || (backoff && performance.now() < this.faultUntil)) return;
+    try {
+      work();
+    } catch {
+      this.audioFailures++;
+      this.faultUntil = performance.now() + 1000;
+      this.reportIssue('audio_unavailable');
+    }
+  }
+  constructor(
+    private onIssue: (reason: 'audio_load_failed' | 'audio_unavailable') => void = () => {},
+  ) {}
   private biome: keyof typeof ambientProfiles = 'plains';
   private noise: AudioBuffer | null = null;
   private voices = new Set<Voice>();
@@ -88,6 +110,10 @@ export class WorldAudio {
       ambientChannels: this.ambientChannels.length,
       rain: this.rainGain?.gain.value ?? 0,
       buffers: this.buffers.size,
+      failedLoads: this.failedLoads,
+      audioFailures: this.audioFailures,
+      loading: this.loadingCount,
+      queuedLoads: this.loadQueue.length,
       dropped: this.dropped,
       listener: this.context?.listener.positionX
         ? [
@@ -123,22 +149,44 @@ export class WorldAudio {
         for (const path of Object.keys(assets))
           if (!path.includes('/ambient/')) void this.load(path);
       }
-      void this.context.resume().catch(() => {});
+      void this.context.resume().catch(() => this.reportIssue('audio_unavailable'));
       this.gain();
     } catch {
+      this.reportIssue('audio_unavailable');
       void this.dispose();
     }
   }
   setMuted(muted: boolean): void {
+    this.protect(() => this.changeMuted(muted), false);
+  }
+  private changeMuted(muted: boolean): void {
     if (muted === this.muted) return;
     this.muted = muted;
     this.gain();
   }
   setActive(active: boolean): void {
+    this.protect(() => this.changeActive(active), false);
+  }
+  private changeActive(active: boolean): void {
     const next = active && !this.disposed;
     if (next === this.active) return;
     this.active = next;
-    this.generation++;
+    if (!next)
+      for (const voice of [...this.voices]) {
+        voice.source.onended = null;
+        try {
+          voice.source.stop();
+        } catch {}
+        try {
+          voice.source.disconnect();
+        } catch {}
+        for (const node of voice.nodes) {
+          try {
+            node.disconnect();
+          } catch {}
+        }
+        this.voices.delete(voice);
+      }
     this.gain();
   }
   private gain(): void {
@@ -150,6 +198,18 @@ export class WorldAudio {
     );
   }
   frame(
+    position: readonly number[],
+    yaw: number,
+    pitch: number,
+    environment: Environment,
+    openSky: boolean,
+    active: boolean,
+    biome = 'Plains',
+  ): void {
+    this.setActive(active);
+    this.protect(() => this.updateFrame(position, yaw, pitch, environment, openSky, active, biome));
+  }
+  private updateFrame(
     position: readonly number[],
     yaw: number,
     pitch: number,
@@ -197,8 +257,14 @@ export class WorldAudio {
     const voice = { source, nodes };
     this.voices.add(voice);
     source.onended = () => {
-      for (const node of nodes) node.disconnect();
-      source.disconnect();
+      for (const node of nodes) {
+        try {
+          node.disconnect();
+        } catch {}
+      }
+      try {
+        source.disconnect();
+      } catch {}
       this.voices.delete(voice);
     };
   }
@@ -228,19 +294,50 @@ export class WorldAudio {
     const context = this.context,
       url = assets[key];
     if (!context || !url || this.disposed) return Promise.resolve(null);
-    const request = fetch(url, { signal: this.abort.signal })
-      .then((response) => {
-        if (!response.ok) throw new Error('sound download failed');
-        return response.arrayBuffer();
-      })
-      .then((bytes) => context.decodeAudioData(bytes))
-      .then((buffer) => {
-        if (this.disposed) return null;
-        this.buffers.set(key, buffer);
-        return buffer;
-      })
-      .catch(() => null)
-      .finally(() => this.loads.delete(key));
+    if (performance.now() < (this.retryAfter.get(key) ?? 0)) return Promise.resolve(null);
+    const request = new Promise<AudioBuffer | null>((resolve) => {
+      const start = () => {
+        if (this.disposed) {
+          resolve(null);
+          return;
+        }
+        this.loadingCount++;
+        void withDeadline(
+          async (signal) => {
+            const response = await fetch(url, { signal });
+            if (!response.ok) throw new Error('sound download failed');
+            return context.decodeAudioData(await response.arrayBuffer());
+          },
+          5000,
+          this.abort.signal,
+        )
+          .then(
+            (buffer) => {
+              if (this.disposed) {
+                resolve(null);
+                return;
+              }
+              this.buffers.set(key, buffer);
+              this.retryAfter.delete(key);
+              resolve(buffer);
+            },
+            () => {
+              if (!this.disposed) {
+                this.failedLoads++;
+                this.retryAfter.set(key, performance.now() + 10000);
+                this.reportIssue('audio_load_failed');
+              }
+              resolve(null);
+            },
+          )
+          .finally(() => {
+            this.loadingCount--;
+            this.loadQueue.shift()?.();
+          });
+      };
+      if (this.loadingCount < 4) start();
+      else this.loadQueue.push(start);
+    }).finally(() => this.loads.delete(key));
     this.loads.set(key, request);
     return request;
   }
@@ -304,16 +401,18 @@ export class WorldAudio {
       void this.load(`ambient/weather/rain${1 + Math.floor(Math.random() * 8)}.ogg`).then(
         (buffer) => {
           this.rainLoading = false;
-          if (!buffer || this.disposed || !this.output) return;
-          const source = context.createBufferSource(),
-            gain = context.createGain();
-          source.buffer = buffer;
-          source.loop = true;
-          gain.gain.value = 0;
-          source.connect(gain).connect(this.output);
-          source.start();
-          this.rainSource = source;
-          this.rainGain = gain;
+          this.protect(() => {
+            if (!buffer || this.disposed || !this.output) return;
+            const source = context.createBufferSource(),
+              gain = context.createGain();
+            source.buffer = buffer;
+            source.loop = true;
+            gain.gain.value = 0;
+            source.connect(gain).connect(this.output);
+            source.start();
+            this.rainSource = source;
+            this.rainGain = gain;
+          });
         },
       );
     }
@@ -367,8 +466,17 @@ export class WorldAudio {
     priority = false,
     delay = 0,
   ): void {
-    const context = this.context,
-      generation = this.generation;
+    this.protect(() => this.playBuffer(paths, volume, position, rate, priority, delay));
+  }
+  private playBuffer(
+    paths: readonly string[],
+    volume: number,
+    position?: readonly number[],
+    rate = 1,
+    priority = false,
+    delay = 0,
+  ): void {
+    const context = this.context;
     if (
       !context ||
       !this.output ||
@@ -383,57 +491,53 @@ export class WorldAudio {
       this.dropped++;
       return;
     }
-    const started = performance.now();
-    void this.load(paths[Math.floor(Math.random() * paths.length)]).then((buffer) => {
-      if (
-        !buffer ||
-        this.disposed ||
-        generation !== this.generation ||
-        !this.active ||
-        this.muted ||
-        !this.output ||
-        performance.now() - started > 1000
-      )
+    const keys = paths.map((path) => (path.startsWith('./') ? path : `./sounds/${path}`));
+    const selected = keys[Math.floor(Math.random() * keys.length)];
+    const buffer =
+      this.buffers.get(selected) ?? keys.map((key) => this.buffers.get(key)).find(Boolean);
+    if (!this.buffers.has(selected)) void this.load(selected);
+    if (!buffer) {
+      this.dropped++;
+      return;
+    }
+    if (this.voices.size >= 16) {
+      if (!priority) {
+        this.dropped++;
         return;
-      if (this.voices.size >= 16) {
-        if (!priority) {
-          this.dropped++;
-          return;
-        }
-        const oldest = this.voices.values().next().value;
-        if (oldest) {
-          oldest.source.onended = null;
-          oldest.source.stop();
-          oldest.source.disconnect();
-          for (const node of oldest.nodes) node.disconnect();
-          this.voices.delete(oldest);
-        }
       }
-      const source = context.createBufferSource(),
-        gain = context.createGain();
-      source.buffer = buffer;
-      source.playbackRate.value = rate;
-      gain.gain.value = volume;
-      source.connect(gain);
-      const nodes: AudioNode[] = [gain];
-      if (position) {
-        const panner = context.createPanner();
-        panner.panningModel = 'equalpower';
-        panner.distanceModel = 'inverse';
-        panner.refDistance = 2;
-        panner.maxDistance = 48;
-        panner.rolloffFactor = 1.2;
-        panner.positionX.value = position[0];
-        panner.positionY.value = position[1];
-        panner.positionZ.value = position[2];
-        gain.connect(panner).connect(this.output);
-        nodes.push(panner);
-        this.lastSource = [...position];
-      } else gain.connect(this.output);
-      this.track(source, nodes);
-      source.start(context.currentTime + delay);
-      this.effects++;
-    });
+      const oldest = this.voices.values().next().value;
+      if (oldest) {
+        oldest.source.onended = null;
+        oldest.source.stop();
+        oldest.source.disconnect();
+        for (const node of oldest.nodes) node.disconnect();
+        this.voices.delete(oldest);
+      }
+    }
+    const source = context.createBufferSource(),
+      gain = context.createGain();
+    source.buffer = buffer;
+    source.playbackRate.value = rate;
+    gain.gain.value = volume;
+    source.connect(gain);
+    const nodes: AudioNode[] = [gain];
+    if (position) {
+      const panner = context.createPanner();
+      panner.panningModel = 'equalpower';
+      panner.distanceModel = 'inverse';
+      panner.refDistance = 2;
+      panner.maxDistance = 48;
+      panner.rolloffFactor = 1.2;
+      panner.positionX.value = position[0];
+      panner.positionY.value = position[1];
+      panner.positionZ.value = position[2];
+      gain.connect(panner).connect(this.output);
+      nodes.push(panner);
+      this.lastSource = [...position];
+    } else gain.connect(this.output);
+    this.track(source, nodes);
+    source.start(context.currentTime + delay);
+    this.effects++;
   }
   dispose(): Promise<void> {
     if (this.disposed) return this.closing ?? Promise.resolve();
@@ -444,34 +548,62 @@ export class WorldAudio {
       try {
         voice.source.stop();
       } catch {}
-      voice.source.disconnect();
-      for (const node of voice.nodes) node.disconnect();
+      try {
+        voice.source.disconnect();
+      } catch {}
+      for (const node of voice.nodes) {
+        try {
+          node.disconnect();
+        } catch {}
+      }
     }
     this.voices.clear();
     this.abort.abort();
+    for (const start of this.loadQueue.splice(0)) start();
+    this.retryAfter.clear();
     this.buffers.clear();
     this.loads.clear();
     for (const channel of this.ambientChannels) {
-      channel.source.stop();
-      channel.tone.stop();
-      channel.source.disconnect();
-      channel.tone.disconnect();
-      for (const node of channel.nodes) node.disconnect();
+      try {
+        channel.source.stop();
+      } catch {}
+      try {
+        channel.tone.stop();
+      } catch {}
+      try {
+        channel.source.disconnect();
+      } catch {}
+      try {
+        channel.tone.disconnect();
+      } catch {}
+      for (const node of channel.nodes) {
+        try {
+          node.disconnect();
+        } catch {}
+      }
     }
     this.ambientChannels = [];
-    this.rainSource?.stop();
-    this.rainSource?.disconnect();
-    this.rainGain?.disconnect();
+    try {
+      this.rainSource?.stop();
+    } catch {}
+    try {
+      this.rainSource?.disconnect();
+    } catch {}
+    try {
+      this.rainGain?.disconnect();
+    } catch {}
     this.rainSource = null;
     this.rainGain = null;
-    this.output?.disconnect();
+    try {
+      this.output?.disconnect();
+    } catch {}
     this.output = null;
     this.noise = null;
     const context = this.context;
     this.closing =
       context && context.state !== 'closed'
-        ? context
-            .close()
+        ? Promise.resolve()
+            .then(() => context.close())
             .catch(() => {})
             .then(() => {
               this.context = null;

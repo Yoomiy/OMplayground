@@ -1,9 +1,9 @@
 {
-  "buildId": "60bfe0a320698fe4c955cc6933f11b4cc99771e5c1e9b4144eedb977d633833b",
+  "buildId": "80de337c45bb9d3366468ba84f434abe9bc0e259f44f8886209f208af2c53e02",
   "engineHash": "83a2ee1a6f731a6b6f515f16a121ca38311bb126266508d394177127f8ea1237",
   "contentHash": "2901239743859cde06ec4544cb84bb22f0c6062c4f83234dc2f8ac0d380cd21a",
-  "clientHash": "0eb01b2bb8cc46859293f313fc00b615f208afb450da4bb172b19aa1a59de64b",
-  "serverHash": "16ca5c971693385df527b9b75721386bb367a4356df4f95dc1b514528fff4bff",
+  "clientHash": "5927968ec3122da5b2c05cb6d7845409448454e942a8c80d87d8486ff21edd04",
+  "serverHash": "c11015a484b170fb0be24c25e97d86be5e3051f13fc862d68566df60454ab77f",
   "client": [
     {
       "path": "assets/break-DPSoepx8.ogg",
@@ -126,12 +126,12 @@
       "hash": "3eba68d7069335da8b4813e3ac4ebc1fd632fd4d33ae70916a6686085b5f8dce"
     },
     {
-      "path": "assets/index-P1gIGUiO.js",
-      "hash": "b92978a2858fd01e721281411f98a6f785b82cad86c0ead949e8863b3033c2cd"
-    },
-    {
       "path": "assets/index-P3AiFv1J.css",
       "hash": "9fa2a5f4e45de30243c0269a36f22ec695d3d68663b468cfa21e2d0c23ffe50d"
+    },
+    {
+      "path": "assets/index-saL_jG2J.js",
+      "hash": "e49cf408b8243ff955c27d929f5f78308eac474ae467b77e0951f2673221dc40"
     },
     {
       "path": "assets/ladder1-C_gYzPoM.ogg",
@@ -311,7 +311,7 @@
     },
     {
       "path": "index.html",
-      "hash": "f5a66a6cb4965f67cfa04f4e854263e264fe4337e55c3e56d70ee2b62177c6d4"
+      "hash": "2c94eda6beea0906fb2b01c2b02c82cdf7fd662bb95786745327b813604ff04a"
     },
     {
       "path": "voxel-audio-NOTICE.txt",
@@ -321,7 +321,7 @@
   "server": [
     {
       "path": "build.json",
-      "hash": "3650634046001ed735a13dd22dac5603a36f2f1cb91ed7489d44a80a994a837d"
+      "hash": "2205459a6077b2fb9120e0dd9ad2044a2c7ed154468c62425e24a052396da7d8"
     },
     {
       "path": "content.json",
@@ -333,19 +333,19 @@
     },
     {
       "path": "gateway.js",
-      "hash": "48cab6f51ae38b0fc68b39137faa9ddf789a59dcde13aec0cc4145b45490cc4a"
+      "hash": "718c15b39b114b28e24c9d4028e69417ba05b33aaea422a38f466706e0dbb57a"
     },
     {
       "path": "gateway.js.map",
-      "hash": "a9fc1db3f421aff91031b4e17f55cf2890f3a0def36c8a45380d37300fa45dfb"
+      "hash": "a804414ed58a9119aee89debd59455e65300a9e46d416fc7188914c4b0d76afc"
     },
     {
       "path": "room-worker.js",
-      "hash": "2b00bba5d2b39038a4d5ce3f8c464455a31f5d5ab2946102420d5ebe45fc791b"
+      "hash": "f3b9df2e8abd738646aa0a1caed64beca3052774c140c47144f067af115a1565"
     },
     {
       "path": "room-worker.js.map",
-      "hash": "acba34dbcceb4fddee747d8d85f97790c9e2bfb4552702da4b2ae5ebd8056d25"
+      "hash": "c49ad20ba3a62c6c6cbfeb0f9b356f4a7b174991d5b9cdef33ff8d9db82df894"
     }
   ]
 }

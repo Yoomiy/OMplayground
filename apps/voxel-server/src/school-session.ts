@@ -1,4 +1,7 @@
-import { DIAGNOSTIC_REASONS } from "../../../games/voxel/src/shared/diagnostics.ts";
+import {
+  DIAGNOSTIC_REASONS,
+  isDiagnosticMetrics,
+} from "../../../games/voxel/src/shared/diagnostics.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { GatewayOptions } from "../../../games/voxel/src/server/gateway.ts";
 import {
@@ -155,11 +158,13 @@ export function schoolSessionApi(
               "buildId",
               "reason",
               "fatal",
+              "metrics",
             ].includes(key),
         ) ||
         (v.reason !== undefined &&
           !(DIAGNOSTIC_REASONS as readonly unknown[]).includes(v.reason)) ||
         (v.fatal !== undefined && typeof v.fatal !== "boolean") ||
+        (v.metrics !== undefined && !isDiagnosticMetrics(v.metrics)) ||
         typeof v.room !== "string" ||
         !UUID.test(v.room) ||
         typeof v.correlationId !== "string" ||
@@ -187,6 +192,7 @@ export function schoolSessionApi(
         clientBuildId: v.buildId ?? "unknown",
         ...(typeof v.reason === "string" ? { reason: v.reason } : {}),
         ...(typeof v.fatal === "boolean" ? { fatal: v.fatal } : {}),
+        ...(isDiagnosticMetrics(v.metrics) ? v.metrics : {}),
       });
       return { ok: true };
     }),

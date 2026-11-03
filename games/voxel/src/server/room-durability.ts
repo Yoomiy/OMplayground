@@ -1,3 +1,4 @@
+import { withDeadline } from '../shared/request-deadline.ts';
 import { CheckpointStorage, CheckpointFenced } from './checkpoint-storage.ts';
 import type {
   CheckpointObjects,
@@ -72,7 +73,13 @@ export class RoomDurability {
     onLost: () => void,
   ): Promise<RoomDurability> {
     const started = performance.now(),
-      lease = await ports.metadata.acquire(room, owner);
+      lease = await withDeadline(async (signal) => {
+        const value = await ports.metadata.acquire(room, owner);
+        // RPC cancellation cannot undo a lease committed just before the deadline.
+        if (signal.aborted && value)
+          void withDeadline(() => ports.metadata.release(value), 5000).catch(() => {});
+        return value;
+      }, 10000);
     if (
       !lease ||
       lease.room !== room ||
@@ -141,7 +148,10 @@ export class RoomDurability {
     if (!this.owned()) return;
     const started = performance.now();
     try {
-      const result = await this.metadata.renew(this.lease);
+      const result = await withDeadline(
+        () => this.metadata.renew(this.lease),
+        Math.min(10000, Math.max(1, this.deadline - started)),
+      );
       if (!this.owned()) return;
       if (!result || !Number.isFinite(result.validForMs) || result.validForMs <= 1000) {
         this.lose();
@@ -263,7 +273,7 @@ export class RoomDurability {
     if (this.closing) return this.closing;
     this.closed = true;
     this.cancel(new Error('room persistence closed'));
-    this.closing = Promise.resolve().then(() => this.metadata.release(this.lease));
+    this.closing = withDeadline(() => this.metadata.release(this.lease), 5000);
     return this.closing;
   }
 }

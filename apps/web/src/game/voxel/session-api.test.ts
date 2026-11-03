@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { randomUUID } from "node:crypto";
 import { createVoxelApi, voxelEndpoint, VoxelApiError } from "./session-api";
 const room = randomUUID(),
@@ -427,4 +427,37 @@ it("reports bounded runtime failure details alongside the correlation ID and bui
   });
   expect(payload.correlationId).toMatch(/^[a-f0-9-]{36}$/);
   expect(payload).not.toHaveProperty("token");
+});
+
+describe("optional voxel API request isolation", () => {
+  it("bounds identity, fetch and response-body hangs even if the provider ignores cancellation", async () => {
+    vi.useFakeTimers();
+    try {
+      for (const phase of ["identity", "fetch", "body"]) {
+        const api = createVoxelApi({
+          room,
+          serverUrl: "https://voxel.example",
+          getToken: () =>
+            phase === "identity"
+              ? new Promise(() => {})
+              : Promise.resolve("fixture"),
+          request: (async () =>
+            phase === "fetch"
+              ? new Promise(() => {})
+              : {
+                  ok: true,
+                  json: () => new Promise(() => {}),
+                }) as typeof fetch,
+        });
+        const result = api.session().catch((error) => error);
+        await vi.advanceTimersByTimeAsync(15001);
+        expect(await result).toMatchObject({
+          code: "UNAVAILABLE",
+          retryable: true,
+        });
+      }
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

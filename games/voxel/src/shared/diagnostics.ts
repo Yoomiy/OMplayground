@@ -2,6 +2,9 @@
 export const DIAGNOSTIC_REASONS = [
   'unknown',
   'input_acknowledgement_stalled',
+  'input_recovered',
+  'audio_load_failed',
+  'audio_unavailable',
   'incompatible_client_build',
   'invalid_server_control_message',
   'invalid_world_frame',
@@ -21,7 +24,37 @@ export const DIAGNOSTIC_REASONS = [
   'session_ended',
 ] as const;
 export type DiagnosticReason = (typeof DIAGNOSTIC_REASONS)[number];
-export type DiagnosticDetail = Readonly<{ reason: DiagnosticReason; fatal: boolean }>;
+export type DiagnosticMetrics = Partial<
+  Record<
+    'epoch' | 'sequence' | 'ack' | 'inputSeconds' | 'ackAgeMs' | 'snapshotAgeMs' | 'bufferedBytes',
+    number
+  >
+>;
+export function isDiagnosticMetrics(value: unknown): value is DiagnosticMetrics {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  return Object.entries(value).every(
+    ([key, n]) =>
+      [
+        'epoch',
+        'sequence',
+        'ack',
+        'inputSeconds',
+        'ackAgeMs',
+        'snapshotAgeMs',
+        'bufferedBytes',
+      ].includes(key) &&
+      typeof n === 'number' &&
+      Number.isFinite(n) &&
+      n >= 0 &&
+      n <= Number.MAX_SAFE_INTEGER,
+  );
+}
+export type DiagnosticDetail = Readonly<{
+  reason: DiagnosticReason;
+  fatal: boolean;
+  metrics?: DiagnosticMetrics;
+}>;
+
 export function runtimeDiagnostic(error: unknown, fatal = false) {
   let reason: DiagnosticReason = 'unknown';
   let code = 'RUNTIME_FAILURE';

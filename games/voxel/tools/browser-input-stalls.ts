@@ -7,13 +7,13 @@ import { createBuiltHarness, launchSoftwareBrowser } from './browser-harness.ts'
 import { surfaceOwners } from './surface-mount-cycles.ts';
 import { tcpGate } from '../tests/fixtures/tcp-gate.ts';
 type Authority = { epoch: number; ack: number; tick: number; position: number[]; frozen: number };
-const runtime = await loadServerRelease();
+const runtime = process.env.VOXEL_TEST_PACKAGE === '1' ? await loadServerRelease() : undefined;
 const { gateway, build, events } = await createBuiltHarness(
   undefined,
   undefined,
   undefined,
   undefined,
-  { factory: runtime.createGateway },
+  { factory: runtime?.createGateway },
 );
 const address = gateway.address;
 assert(address && typeof address === 'object');
@@ -137,11 +137,15 @@ try {
   const identity = await debug();
   const distance = (a: number[], b: number[]) => Math.hypot(...a.map((v, i) => v - b[i]));
   const referenceLag: number[] = [];
+  const referenceSeconds: number[] = [];
   for (let n = 0; n < 8; n++) {
-    referenceLag.push((await debug()).inputLag);
+    const state = await debug();
+    referenceLag.push(state.inputLag);
+    referenceSeconds.push(state.inputSeconds);
     await page.waitForTimeout(100);
   }
   report.referenceLag = referenceLag;
+  report.referenceSeconds = referenceSeconds;
   phase = 'one-second-input-stall';
   const shortHeldAt = performance.now(),
     shortFramesAtHold = inputFrames;
@@ -179,14 +183,17 @@ try {
   relay.release('client');
   await page.waitForFunction(() => {
     const d = (window as any).voxel.debug();
-    return d.status === 'playing' && d.inputLag < 10;
+    return d.status === 'playing' && d.inputSeconds < 0.15;
   });
   await page.waitForTimeout(600);
   const shortRecovered = await debug(),
     settled = structuredClone(authority!);
   const recoveredLag: number[] = [];
+  const recoveredSeconds: number[] = [];
   for (let n = 0; n < 12; n++) {
-    recoveredLag.push((await debug()).inputLag);
+    const state = await debug();
+    recoveredLag.push(state.inputLag);
+    recoveredSeconds.push(state.inputSeconds);
     await page.waitForTimeout(100);
   }
   assert(
@@ -218,112 +225,96 @@ try {
     serverTraceAfterRelease: trace,
     recoveredInputLag: shortRecovered.inputLag,
     recoveredLagSamples: recoveredLag,
+    recoveredSeconds,
   };
-  const recoveredP90 = [...recoveredLag].sort((a, b) => a - b)[
-    Math.ceil(recoveredLag.length * 0.9) - 1
+  const recoveredP90 = [...recoveredSeconds].sort((a, b) => a - b)[
+    Math.ceil(recoveredSeconds.length * 0.9) - 1
   ];
   assert(
-    recoveredP90 <= Math.max(...referenceLag) + 4,
+    // Duration is authoritative: sample counts vary with RAF/fallback scheduling.
+    // Permit 250 ms of host scheduling jitter above the measured healthy baseline.
+    recoveredP90 <= Math.max(0.25, Math.max(...referenceSeconds) + 0.25),
     'short stall left persistent acknowledgement backlog',
   );
   trace = null;
-  phase = 'five-second-input-stall';
-  const longHeldAt = performance.now(),
-    longFramesAtHold = inputFrames;
-  relay.hold('client');
-  await page.waitForTimeout(200);
-  const longStart = {
-      server: structuredClone(authority!),
-      bytes: relay.bytesFromClient,
-      frames: inputFrames,
+  report.stalls = [];
+  for (const duration of [5000, 15000]) {
+    phase = `${duration}-ms-input-stall`;
+    const before = await debug(),
+      admittedBefore = admissions;
+    const heldAt = performance.now();
+    relay.hold('client');
+    await command({ ...neutral, x: 1 });
+    await page.waitForFunction(() => (window as any).voxel.debug().inputRecovery?.waiting, null, {
+      timeout: 4500,
+    });
+    const waiting = await debug();
+    assert.notEqual(waiting.status, 'recovering');
+    assert.equal(waiting.focused, true);
+    assert.notEqual(await page.evaluate(() => (window as any).voxel.voiceScene()), null);
+    const yaw = waiting.view.yaw;
+    await command({ type: 'look', dx: 100, dy: 0 });
+    assert.notEqual((await debug()).view.yaw, yaw, 'camera remains usable');
+    await command(neutral);
+    await page.waitForTimeout(Math.max(0, duration - (performance.now() - heldAt)));
+    const bounded = await debug();
+    assert(bounded.inputSeconds <= 2.1);
+    assert.equal(admissions, admittedBefore);
+    relay.release('client');
+    await page.waitForFunction(
+      () => {
+        const d = (window as any).voxel.debug();
+        return !d.inputRecovery.waiting && d.inputLag < 10 && d.status === 'playing';
+      },
+      null,
+      { timeout: 15000 },
+    );
+    const after = await debug();
+    assert.equal(admissions, admittedBefore, 'input recovery uses the same connection');
+    assert.equal(after.actorId, identity.actorId);
+    assert.equal(after.worldId, identity.worldId);
+    assert.equal(owners().liveWorkers, 1);
+    report.stalls.push({
+      duration,
+      before: before.inputSeconds,
+      bounded: bounded.inputSeconds,
+      recovered: after.inputSeconds,
       admissions,
-    },
-    began = longHeldAt;
-  await command({ ...neutral, x: 1 });
-  await page.waitForFunction(() => (window as any).voxel.debug().status === 'recovering', null, {
-    timeout: 4500,
-  });
-  const failed = await debug(),
-    framesAtFailure = inputFrames;
-  assert(failed.inputSeconds <= 2.1);
-  assert.equal(failed.focused, false);
-  assert.equal(await page.evaluate(() => (window as any).voxel.voiceScene()), null);
-  // The last already-sampled batch can flush in the same render turn as fail(),
-  // and Playwright's socket observer arrives independently of debug() evaluation.
-  // Allow that one bounded batch to settle, then require a sustained quiet tail.
-  await page.waitForTimeout(200);
-  const settledFailureFrames = inputFrames;
-  assert(settledFailureFrames - framesAtFailure <= 4);
-  await page.waitForTimeout(Math.max(0, 5000 - (performance.now() - began)));
-  const late = await debug(),
-    beforeRelease = structuredClone(authority!);
-  assert.equal(relay.bytesFromClient, longStart.bytes);
-  assert.equal(inputFrames, settledFailureFrames);
-  assert.equal(admissions, longStart.admissions);
-  assert(beforeRelease.tick > longStart.server.tick);
-  assert(distance(beforeRelease.position, longStart.server.position) < 0.05);
-  assert(late.lastReceivedAgoMs < 1000);
-  assert.equal(late.status, 'recovering');
-  assert.equal(late.focused, false);
-  assert(late.inputSeconds <= 2.1);
-  assert.equal(late.inputLag, failed.inputLag);
-  const released = performance.now();
-  trace = [];
-  relay.release('client');
-  await page.waitForFunction(() => {
-    const d = (window as any).voxel.debug();
-    return d.body?.frozen === 1;
-  });
-  await page.waitForTimeout(400);
-  for (const row of trace) {
-    assert(
-      distance(row.state.position, beforeRelease.position) <=
-        10.9 * consumedSeconds(beforeRelease, row.state) + 1.2,
-    );
-    assert(
-      row.state.tick - beforeRelease.tick <= Math.ceil(((row.atMs - released) * 30) / 1000) + 6,
-    );
+      recovery: after.inputRecovery,
+    });
   }
-  assert.equal(admissions, longStart.admissions, 'ack failure does not automatically readmit');
-  report.long = {
-    requestedHeldMs: 5000,
-    elapsedHeldMs: released - began,
-    serverBefore: longStart.server,
-    serverWhileHeld: beforeRelease,
-    clientAtFailure: { inputLag: failed.inputLag, status: failed.status, focused: failed.focused },
-    clientLate: {
-      inputLag: late.inputLag,
-      status: late.status,
-      focused: late.focused,
-      lastReceivedAgoMs: late.lastReceivedAgoMs,
-    },
-    bufferedFrames: settledFailureFrames - longFramesAtHold,
-    observedFramesAfterFailure: settledFailureFrames - framesAtFailure,
-    serverTraceAfterRelease: trace,
-    admissionsBeforeReconnect: admissions,
-  };
-  trace = null;
-  phase = 'explicit-reconnect';
-  const oldEpoch = (await debug()).epoch;
-  await command({ type: 'reconnect' });
-  await page.waitForFunction((epoch) => {
-    const d = (window as any).voxel.debug();
-    return d.epoch > epoch && d.phase === 'playing';
-  }, oldEpoch);
+  phase = 'retain-world-during-readmission';
+  const beforeReadmission = await debug();
+  let releaseAdmission!: () => void;
+  let admissionHeld = false;
+  const admissionGate = new Promise<void>((resolve) => (releaseAdmission = resolve));
+  await page.route('**/api/voxel/admission', async (route) => {
+    admissionHeld = true;
+    await admissionGate;
+    await route.continue();
+  });
+  try {
+    await command({ type: 'reconnect' });
+    await page.waitForTimeout(700);
+    assert(admissionHeld, 'the next admission is actually held');
+    const retained = await debug();
+    assert.equal(retained.phase, 'preparing');
+    assert.equal(retained.status, 'connecting');
+    assert.equal(retained.focused, false);
+    assert.equal(retained.meshed, beforeReadmission.meshed, 'loaded meshes remain visible');
+    assert(retained.resources.geometries > 0);
+    assert.equal(retained.audio.active, false);
+    assert(retained.lastFrame > beforeReadmission.lastFrame, 'the retained world still renders');
+    report.readmission = {
+      retainedMeshes: retained.meshed,
+      geometries: retained.resources.geometries,
+    };
+  } finally {
+    releaseAdmission();
+  }
   await ready();
-  await page.locator('#resume').tap();
-  await page.waitForFunction(() => (window as any).voxel.debug().body.frozen === 0);
-  const again = await debug();
-  assert.equal(again.actorId, identity.actorId);
-  assert.equal(again.worldId, identity.worldId);
-  assert.equal(admissions, longStart.admissions + 1);
-  report.reconnect = {
-    oldEpoch,
-    newEpoch: again.epoch,
-    admissions,
-    owners: owners(),
-    inputLag: again.inputLag,
-  };
+  assert.equal(admissions, 2, 'only the explicit reconnect creates a second admission');
+  assert.equal(owners().liveWorkers, 1);
   phase = 'dispose';
   await page.evaluate(() => (window as any).voxel.dispose());
   await page.waitForFunction(() => {
@@ -349,10 +340,16 @@ try {
   assert.equal(o.createdWorkers, o.closedWorkers);
   assert.deepEqual(errors, []);
   report.cleanup = { resources: disposed.resources, audio: disposed.audio.state, owners: o };
-  report.result = 'BROWSER_REAL_TCP_INPUT_STALL_AUTHORITY_ACK_BOUND_AND_EXPLICIT_RECOVERY_PASS';
+  report.result = 'BROWSER_REAL_TCP_INPUT_STALL_NONFATAL_RECOVERY_PASS';
   await context.close();
 } catch (e) {
   report.result = 'FAIL';
+  report.clients = await Promise.all(
+    browser
+      .contexts()
+      .flatMap((context) => context.pages())
+      .map((page) => page.evaluate(() => (window as any).voxel?.debug()).catch(() => null)),
+  );
   report.failure = {
     phase,
     message: e instanceof Error ? e.message : String(e),

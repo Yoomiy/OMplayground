@@ -19,6 +19,9 @@ export async function createBuiltHarness(
   transport?: {
     factory?: typeof createGateway;
     persistence?: GatewayOptions['persistence'];
+    sessions?: GatewayOptions['sessions'];
+    api?: GatewayOptions['api'];
+    clientAssets?: Record<string, Uint8Array>;
   },
 ) {
   const build = JSON.parse(
@@ -45,6 +48,8 @@ export async function createBuiltHarness(
     worldDefaults,
     roomPolicy,
     persistence: transport?.persistence,
+    sessions: transport?.sessions,
+    api: transport?.api,
     resolveOwner:
       ownerPolicy ??
       (admission
@@ -70,6 +75,12 @@ export async function createBuiltHarness(
       if (path === '/favicon.ico') {
         res.writeHead(204);
         res.end();
+        return;
+      }
+      const extra = transport?.clientAssets?.[path];
+      if (extra) {
+        res.writeHead(200, { 'Content-Type': path.endsWith('.html') || path.endsWith('/') ? 'text/html' : path.endsWith('.css') ? 'text/css' : path.endsWith('.wasm') ? 'application/wasm' : 'text/javascript' });
+        res.end(extra);
         return;
       }
       const file = assets.get(path === '/' ? '/index.html' : path);

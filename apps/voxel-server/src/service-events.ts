@@ -151,6 +151,19 @@ export function voxelEventPolicy(name: string, context: Context): Policy {
             "Checkpoint cleanup completed",
           );
     case "VOXEL_CLIENT_FAILURE":
+      if (context.fatal === false && context.code === "RECOVERED")
+        return policy("info", "recovered", "Client operation recovered");
+      if (
+        context.fatal === false &&
+        ["INPUT_BACKPRESSURE", "AUDIO_UNAVAILABLE"].includes(
+          String(context.code),
+        )
+      )
+        return policy(
+          "warn",
+          "degraded",
+          "Client feature temporarily degraded",
+        );
       if (
         ["BROWSER_NOT_ALLOWED", "BROWSER_ABORTED"].includes(
           String(context.code),

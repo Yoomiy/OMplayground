@@ -94,6 +94,10 @@ through its exit/re-entry buttons, including actual worker/socket and GL-buffer
 teardown. Its default four cycles can be increased with `VOXEL_REACT_MOUNT_CYCLES`;
 this remains a local SQL/fixture-transport scenario, with live media optional.
 
+The [failure isolation and recovery contract](docs/resilience.md) documents
+backend/media degradation, saved-engine compatibility, nonfatal input recovery,
+and the focused tests, actual React outage journey and two-player 60-minute soak.
+
 [Drain-driven column streaming](docs/column-drain.md) keeps heavily edited saved
 worlds from repeatedly exhausting a slow connection's output queue during join.
 Real TCP read-stall regressions cover source/packaged workers and the rendered

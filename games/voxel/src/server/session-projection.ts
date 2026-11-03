@@ -1,3 +1,4 @@
+import { withDeadline } from '../shared/request-deadline.ts';
 import type { RoomLease } from './checkpoint-storage.ts';
 import type { Authorization } from './admission.ts';
 import type { AdmittedActor } from '../sim/game-room.ts';
@@ -23,6 +24,7 @@ export class SessionOutbox {
   private stopped = false;
   private finished = false;
   private terminal = false;
+  private attempts = 0;
   private retry: ReturnType<typeof setTimeout> | null = null;
   private write: (sequence: number, view: SessionView) => Promise<boolean>;
   private onError: () => void;
@@ -48,10 +50,13 @@ export class SessionOutbox {
     void task.then(() => {
       this.running = null;
       if (this.pending && !this.stopped)
-        this.retry = setTimeout(() => {
-          this.retry = null;
-          if (!this.stopped) this.start();
-        }, 500);
+        this.retry = setTimeout(
+          () => {
+            this.retry = null;
+            if (!this.stopped) this.start();
+          },
+          Math.min(5000, 500 * 2 ** Math.min(this.attempts++, 3)) + Math.floor(Math.random() * 250),
+        );
     });
   }
   private async run() {
@@ -61,8 +66,9 @@ export class SessionOutbox {
       try {
         if (this.sequence === Number.MAX_SAFE_INTEGER)
           throw new Error('projection sequence exhausted');
-        if (!(await this.write(++this.sequence, view)))
+        if (!(await withDeadline(() => this.write(++this.sequence, view), 10000)))
           throw new Error('session projection fenced');
+        this.attempts = 0;
       } catch {
         // Newer full state supersedes failed state, except completion is terminal.
         if (!this.pending) this.pending = view;
@@ -81,10 +87,14 @@ export class SessionOutbox {
     this.pending = null;
     if (this.sequence === Number.MAX_SAFE_INTEGER) throw new Error('projection sequence exhausted');
     if (
-      !(await this.write(++this.sequence, {
-        state: this.terminal ? 'ended' : 'paused',
-        participants: [],
-      }))
+      !(await withDeadline(
+        () =>
+          this.write(++this.sequence, {
+            state: this.terminal ? 'ended' : 'paused',
+            participants: [],
+          }),
+        10000,
+      ))
     )
       throw new Error('session projection unavailable');
     this.finished = true;

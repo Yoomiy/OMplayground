@@ -1,3 +1,5 @@
+import { updateClock } from './update-clock.ts';
+import { InputRecovery } from './input-recovery.ts';
 import { ConnectionRetry, retryableAdmission } from './connection-retry.ts';
 import { toggleFullscreen } from './fullscreen.ts';
 import { runtimeDiagnostic } from '../shared/diagnostics.ts';
@@ -49,6 +51,7 @@ export type HudState = {
   inventoryPending: boolean;
   inputMode: 'desktop' | 'touch';
   environment: Readonly<{ hour: number; daytime: boolean; rain: boolean }>;
+  saveUnavailable: boolean;
   effectsMuted: boolean;
   effectsAvailable: boolean;
   status:
@@ -189,11 +192,17 @@ export async function mountVoxel(
     listeners = new Set<(state: HudState) => void>(),
     keys = new Set<string>();
   const worldClock = new WorldClock();
-  const audio = new WorldAudio(),
+  const inputRecovery = new InputRecovery();
+  let lastAckProgress = performance.now(),
+    lastSnapshot = performance.now();
+  const audio = new WorldAudio((reason) => {
+      options.onDiagnostic?.('audio', reason, { code: 'AUDIO_UNAVAILABLE', reason, fatal: false });
+    }),
     soundGroups = new Map(content.behavior.map((block) => [block.family, block.soundGroup]));
   let biomeGenerator: InstanceType<typeof engine.TerrainGen> | null = null;
   let biome = 'Plains',
     lastBiomeSample = -Infinity;
+  let awaitingWelcome = false;
   let inventorySound: 'craft' | 'consume' | null = null;
   let environmentSeed = 0,
     environment = sampleEnvironment(0, 0),
@@ -224,6 +233,7 @@ export async function mountVoxel(
     inputMode,
     environment: environmentHud(),
     effectsMuted: false,
+    saveUnavailable: false,
     effectsAvailable: audio.supported,
     status: 'connecting',
     message: 'מתחברים לעולם…',
@@ -341,6 +351,7 @@ export async function mountVoxel(
     for (const listener of listeners) listener(hud);
   };
   const send = (message: ClientMessage) => {
+    if (awaitingWelcome) return;
     if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message));
   };
   const diagnose = (operation: string, error: unknown, fatal = false) => {
@@ -366,6 +377,7 @@ export async function mountVoxel(
   };
   const clearWorld = () => {
     audio.setActive(false);
+    inputRecovery.reset();
     footTravel = 0;
     previousFoot = null;
     worldClock.reset(0, performance.now());
@@ -469,6 +481,7 @@ export async function mountVoxel(
     if (focused === active) return;
     focused = active;
     if (!active) {
+      inputRecovery.reset();
       miningHeld = miningSingle = false;
       lastMineKey = '';
     }
@@ -489,6 +502,10 @@ export async function mountVoxel(
     }
   };
   const handle = (event: ServerMessage) => {
+    if (event.type === 'persistence') {
+      publish({ saveUnavailable: !event.available });
+      return;
+    }
     if (event.type === 'joining') {
       if (!baselineReceived) publish({ status: 'connecting', message: 'טוענים את העולם…' });
       return;
@@ -657,6 +674,10 @@ export async function mountVoxel(
         publish({ status: 'error', message: 'המשחק עודכן. יש לרענן את העמוד.' });
         return;
       }
+      const saveUnavailable = hud.saveUnavailable;
+      clearWorld();
+      awaitingWelcome = false;
+      publish({ saveUnavailable });
       retry.reset();
       actorId = event.actorId;
       avatarId = event.avatar ?? selectAvatar(actorId);
@@ -714,6 +735,8 @@ export async function mountVoxel(
       const previousEpoch = prediction.currentEpoch;
       prediction.baseline(event.epoch, event.ack, event.state, event.movement);
       phase = event.phase;
+      inputRecovery.reset();
+      lastAckProgress = performance.now();
       if (event.phase === 'paused' && hud.lifecycle === 'paused') enterOnReady = false;
       if (event.phase === 'paused' || event.phase === 'dead') {
         focusPending = false;
@@ -805,10 +828,20 @@ export async function mountVoxel(
         fail('actors', 'invalid public appearance');
         return;
       }
+      lastSnapshot = performance.now();
       worldClock.observe(event.tick, performance.now());
       if (event.self && prediction) {
         const before = world.player_state(prediction.slot);
+        if (event.self.ack > prediction.currentAck) lastAckProgress = performance.now();
         const changed = prediction.reconcile(event.self.epoch, event.self.ack, event.self.state);
+        if (inputRecovery.observe(prediction.inputSeconds)) {
+          publish({ message: '' });
+          options.onDiagnostic?.('prediction', 'input_recovered', {
+            code: 'RECOVERED',
+            reason: 'input_recovered',
+            fatal: false,
+          });
+        }
         if (changed) {
           const after = world.player_state(prediction.slot);
           const error = [0, 1, 2].map((i) => before[i] + visualOffset[i] - after[i]);
@@ -952,7 +985,10 @@ export async function mountVoxel(
       abort.signal.addEventListener('abort', cancelled, { once: true });
     });
     socket?.close(1000, 'client_reconnecting');
-    clearWorld();
+    awaitingWelcome = true;
+    phase = 'preparing';
+    baselineReceived = false;
+    worldClock.reset(worldClock.read(performance.now()), performance.now(), false);
     publish({
       lifecycle: 'preparing',
       canReconnect: true,
@@ -1111,6 +1147,7 @@ export async function mountVoxel(
     });
   }
   function ignite(): boolean {
+    if (inputRecovery.waiting) return false;
     if (!target) return true;
     if (
       !prediction ||
@@ -1139,6 +1176,7 @@ export async function mountVoxel(
     return true;
   }
   function attack(): boolean {
+    if (inputRecovery.waiting) return false;
     if (
       !prediction ||
       !hud.inventory ||
@@ -1161,6 +1199,7 @@ export async function mountVoxel(
     return true;
   }
   function interaction(kind: 'place' | 'remove' | 'collect') {
+    if (inputRecovery.waiting) return;
     if (hud.mode === 'survival' && kind === 'remove') {
       miningHeld = miningSingle = true;
       return;
@@ -1283,7 +1322,9 @@ export async function mountVoxel(
   }
   function update(now: number) {
     if (disposed) return;
-    const dt = Math.min(0.1, Math.max(0, (now - lastUpdate) / 1000));
+    const sampleTime = updateClock(lastUpdate, now);
+    now = sampleTime.now;
+    const dt = sampleTime.dt;
     lastUpdate = now;
     if (
       reconnectAllowed &&
@@ -1311,8 +1352,10 @@ export async function mountVoxel(
     environment = sampleEnvironment(worldClock.read(now), environmentSeed);
     if (prediction && stream) {
       let state = world.player_state(prediction.slot);
-      stream.setCenter(state[0], state[2], yaw);
-      stream.pump(2);
+      if (!awaitingWelcome) {
+        stream.setCenter(state[0], state[2], yaw);
+        stream.pump(2);
+      }
       if (phase === 'preparing' && baselineReceived && now - lastReady > 300) {
         const columns = stream.readyAround(state);
         if (columns && stream.meshCount > 0) {
@@ -1375,7 +1418,14 @@ export async function mountVoxel(
       }
       let sampled = false;
       if (dt > 0) {
-        if (phase === 'playing' && focused && ready && !stalled && state[12] === 0) {
+        if (
+          phase === 'playing' &&
+          focused &&
+          ready &&
+          !stalled &&
+          state[12] === 0 &&
+          !inputRecovery.waiting
+        ) {
           const sample = prediction.sample(controls(), dt);
           if (sample) {
             sampled = true;
@@ -1391,11 +1441,38 @@ export async function mountVoxel(
                 queuedAction = null;
               }
             }
-          } else fail('prediction', 'input acknowledgement stalled');
+          } else if (inputRecovery.pause(now)) {
+            queuedAction = null;
+            miningHeld = miningSingle = false;
+            if (lastMineKey) sendMining(null);
+            lastMineKey = '';
+            publish({ message: 'החיבור איטי. ממתינים לאישור התנועה…' });
+            options.onDiagnostic?.('prediction', 'input_acknowledgement_stalled', {
+              code: 'INPUT_BACKPRESSURE',
+              reason: 'input_acknowledgement_stalled',
+              fatal: false,
+              metrics: {
+                epoch: prediction.currentEpoch,
+                sequence: prediction.currentSequence,
+                ack: prediction.currentAck,
+                inputSeconds: prediction.inputSeconds,
+                ackAgeMs: Math.max(0, now - lastAckProgress),
+                snapshotAgeMs: Math.max(0, now - lastSnapshot),
+                bufferedBytes: socket?.bufferedAmount ?? 0,
+              },
+            });
+          }
         }
       }
       if (now - lastSend >= 1000 / 30) flush();
-      miningControl(ready && !stalled, sampled);
+      if (inputRecovery.requestResync(now) && prediction && socket?.readyState === WebSocket.OPEN) {
+        send({ type: 'focus', epoch: prediction.currentEpoch, active: focused });
+      }
+      if (inputRecovery.shouldReconnect(now)) {
+        inputRecovery.reset();
+        command({ type: 'reconnect' });
+      }
+      miningControl(ready && !stalled && !inputRecovery.waiting, sampled);
       const visiblyMining =
         miningHeld &&
         focused &&
@@ -2072,6 +2149,7 @@ export async function mountVoxel(
     debug() {
       return {
         disposed,
+        saveUnavailable: hud.saveUnavailable,
         inputMode,
         mode: hud.mode,
         lifecycle: hud.lifecycle,
@@ -2135,6 +2213,11 @@ export async function mountVoxel(
         position: lastPosition,
         selected: hud.selected,
         players: remotes.size + 1,
+        inputRecovery: {
+          waiting: inputRecovery.waiting,
+          pauses: inputRecovery.pauses,
+          recoveries: inputRecovery.recoveries,
+        },
         inputLag: prediction?.inputLag,
         inputSeconds: prediction?.inputSeconds,
         correction: prediction?.correction,

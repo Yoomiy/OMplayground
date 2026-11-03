@@ -52,3 +52,42 @@ test('completion cannot be overwritten and a failed final projection can be retr
   assert.deepEqual(writes.at(-1), { state: 'ended', participants: [] });
   outbox.close();
 });
+
+test('a hung projection times out, retries only the latest state and ignores a late completion', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  t.mock.method(Math, 'random', () => 0);
+  const flush = async () => {
+    for (let i = 0; i < 20; i++) await Promise.resolve();
+  };
+  const writes: { sequence: number; view: SessionView }[] = [];
+  let release!: (value: boolean) => void;
+  let errors = 0;
+  const outbox = new SessionOutbox(
+    (sequence, view) => {
+      writes.push({ sequence, view });
+      return sequence === 1 ? new Promise((resolve) => (release = resolve)) : Promise.resolve(true);
+    },
+    () => errors++,
+  );
+  try {
+    outbox.offer({ state: 'playing', participants: ['first'] });
+    for (let i = 0; i < 10000; i++) outbox.offer({ state: 'playing', participants: [String(i)] });
+    assert.equal(writes.length, 1);
+    t.mock.timers.tick(10001);
+    await flush();
+    assert.equal(errors, 1);
+    t.mock.timers.tick(500);
+    await flush();
+    assert.deepEqual(writes[1], {
+      sequence: 2,
+      view: { state: 'playing', participants: ['9999'] },
+    });
+    release(true);
+    await flush();
+    assert.equal(writes.length, 2, 'late completion cannot revive or duplicate an obsolete view');
+    await outbox.finish();
+    assert.deepEqual(writes[2], { sequence: 3, view: { state: 'paused', participants: [] } });
+  } finally {
+    outbox.close();
+  }
+});

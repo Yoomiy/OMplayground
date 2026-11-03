@@ -1,3 +1,4 @@
+import { compatibleCheckpointEngine } from '../shared/checkpoint-engine.ts';
 import { compatibleCheckpointContent } from '../shared/checkpoint-content.ts';
 import { BOUNDS, GENERATOR_VERSION } from '../shared/protocol.ts';
 import { compatibleCheckpointBounds } from '../shared/world-bounds.ts';
@@ -78,6 +79,8 @@ export function readRoomCheckpoint(
   const invalid = (): never => {
     throw new Error('invalid room checkpoint');
   };
+  if (value && typeof value === 'object' && 'engineHash' in value && !compatibleCheckpointEngine(value.engineHash, build.engineHash))
+    throw Object.assign(new Error('incompatible checkpoint engine'), { failureReason: 'checkpoint_engine_incompatible' });
   if (
     !checkpointObject(value, [
       'schema',
@@ -108,7 +111,7 @@ export function readRoomCheckpoint(
     value.preset !== 'blockyard-natural-v2' ||
     value.generatorVersion !== GENERATOR_VERSION ||
     !compatibleCheckpointContent(value.contentHash, content) ||
-    value.engineHash !== build.engineHash ||
+    !compatibleCheckpointEngine(value.engineHash, build.engineHash) ||
     typeof value.sourceBuildId !== 'string' ||
     !/^[a-f0-9]{64}$/.test(value.sourceBuildId) ||
     !checkpointObject(value.bounds, Object.keys(BOUNDS)) ||
@@ -165,6 +168,7 @@ export function readRoomCheckpoint(
   return Object.freeze({
     ...value,
     contentHash: content.hash,
+    engineHash: build.engineHash,
     spawn: Object.freeze([...value.spawn]),
     bounds: BOUNDS,
     players: Object.freeze(players),

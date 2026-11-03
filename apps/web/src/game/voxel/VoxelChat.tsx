@@ -90,7 +90,6 @@ export function VoxelChat({
         }
       } catch {
         if (!abort.signal.aborted) {
-          setPage(null);
           setReadError(true);
         }
       } finally {

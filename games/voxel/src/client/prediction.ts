@@ -64,6 +64,9 @@ export class Prediction {
     if (this.recentCorrections.length > 128) this.recentCorrections.shift();
     return true;
   }
+  get currentAck(): number {
+    return this.lastAck;
+  }
   get inputSeconds(): number {
     return this.pending.reduce((sum, frame) => sum + (frame.dt ?? MOVEMENT_DT), 0);
   }

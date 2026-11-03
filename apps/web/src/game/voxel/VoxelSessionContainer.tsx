@@ -70,7 +70,6 @@ export function VoxelSessionContainer({ sessionId }: { sessionId: string }) {
         }
       } catch {
         if (!abort.signal.aborted) {
-          setSession(null);
           setMetadataUnavailable(true);
         }
       } finally {
@@ -158,7 +157,7 @@ export function VoxelSessionContainer({ sessionId }: { sessionId: string }) {
       />
       {metadataUnavailable && (
         <p className="voxel-session-metadata-error" role="status">
-          פרטי המפגש אינם זמינים כרגע. הרשאות ניהול יוצגו אחרי שהחיבור יתחדש.
+          פרטי המפגש אינם מעודכנים כרגע. ננסה לעדכן אותם כשהחיבור יתחדש.
         </p>
       )}
     </>

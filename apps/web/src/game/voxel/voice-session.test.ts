@@ -2,7 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { VoxelApi } from "./session-api";
 import type { VoiceScene } from "@playground/voxel-runtime";
 
-const mocks = vi.hoisted(() => ({ rooms: [] as any[], capture: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  rooms: [] as any[],
+  capture: vi.fn(),
+  connect: vi.fn(),
+}));
 vi.mock("livekit-client", async () => {
   const { EventEmitter } = await import("node:events");
   class Room extends EventEmitter {
@@ -13,8 +17,8 @@ vi.mock("livekit-client", async () => {
       publishTrack: vi.fn(async () => {}),
       unpublishTrack: vi.fn(async () => {}),
     };
-    connect = vi.fn(async () => {});
-    disconnect = vi.fn(async () => {});
+    connect = vi.fn((...args: unknown[]) => mocks.connect(...args));
+    disconnect = vi.fn((...args: unknown[]) => mocks.connect(...args));
     constructor(public options: unknown) {
       super();
       mocks.rooms.push(this);
@@ -79,6 +83,7 @@ describe("voxel uses LiveKit's connection lifecycle", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     mocks.rooms.length = 0;
+    mocks.connect.mockReset().mockResolvedValue(undefined);
     vi.stubGlobal(
       "document",
       Object.assign(new EventTarget(), { visibilityState: "visible" }),
@@ -126,7 +131,7 @@ describe("voxel uses LiveKit's connection lifecycle", () => {
     const room = mocks.rooms[0];
     room.state = "disconnected";
     room.emit("Disconnected");
-    await vi.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(1200);
     expect(room.disconnect).toHaveBeenCalledTimes(1);
     expect(voiceToken).toHaveBeenCalledTimes(2);
     expect(mocks.rooms).toHaveLength(2);
@@ -143,8 +148,7 @@ describe("voxel uses LiveKit's connection lifecycle", () => {
         }),
     );
     const pending = session.start();
-    await Promise.resolve();
-    await Promise.resolve();
+    await vi.advanceTimersByTimeAsync(0);
     session.stop();
     release(grant);
     await pending;
@@ -152,5 +156,40 @@ describe("voxel uses LiveKit's connection lifecycle", () => {
     expect(session.state.phase).toBe("off");
     await session.close();
     expect(session.stats.timers).toBe(0);
+  });
+  it("bounds a hanging token provider and retires its late grant while a later attempt succeeds", async () => {
+    const token = fixture();
+    let release!: (value: typeof grant) => void;
+    token.mockImplementationOnce(
+      () => new Promise((resolve) => (release = resolve)),
+    );
+    const pending = session.start();
+    await vi.advanceTimersByTimeAsync(15001);
+    await pending;
+    expect(session.state.phase).toBe("unavailable");
+    await vi.advanceTimersByTimeAsync(1200);
+    expect(session.state.phase).toBe("connected");
+    release(grant);
+    await Promise.resolve();
+    expect(mocks.rooms).toHaveLength(1);
+  });
+  it("times out a stuck LiveKit connect without keeping its room or blocking the next attempt", async () => {
+    fixture();
+    let release!: () => void;
+    mocks.connect.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (release = resolve)),
+    );
+    const pending = session.start();
+    await vi.advanceTimersByTimeAsync(10001);
+    await pending;
+    expect(session.state.phase).toBe("unavailable");
+    expect(mocks.rooms[0].disconnect).toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1200);
+    expect(session.state.phase).toBe("connected");
+    release();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(session.state.phase).toBe("connected");
+    expect(mocks.rooms[0].disconnect).toHaveBeenCalledTimes(2);
+    expect(mocks.rooms[1].disconnect).not.toHaveBeenCalled();
   });
 });
