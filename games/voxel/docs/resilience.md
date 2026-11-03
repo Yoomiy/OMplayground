@@ -104,3 +104,9 @@ performance, or prove that a real provider honors cancellation. Production
 diagnostics therefore retain safe failure categories plus epoch, sequence, ack,
 pending input seconds, acknowledgement/snapshot age and socket-buffer size.
 Tokens, raw provider errors and chat content are not added to those diagnostics.
+
+The [recorded qualification](../evidence/resilience/qualification.json) covers
+release `b9438158d0e3`: a real 60-minute two-player run, 212 confirmed edits,
+53 local input recoveries, no automatic readmissions or client errors, and
+successful cleanup. It also records the focused checks and the eight broader
+suite failures reproduced in the unchanged baseline.

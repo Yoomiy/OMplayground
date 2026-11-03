@@ -1,0 +1,213 @@
+{
+  "qualifiedAt": "2026-11-03T22:08:10.026Z",
+  "checkpointCommit": "cadafa7",
+  "implementationCommit": "8913d25",
+  "initialImplementationCommit": "bdb96c6",
+  "buildId": "b9438158d0e39dd5ff78fd132075324385a119b268c01975e28d5dc51aef30f5",
+  "engineHash": "83a2ee1a6f731a6b6f515f16a121ca38311bb126266508d394177127f8ea1237",
+  "protocol": 16,
+  "environment": {
+    "node": "v24.21.0",
+    "arch": "arm64",
+    "browser": "Playwright Chromium, software rendering",
+    "providers": "local fault-injectable fixtures"
+  },
+  "focusedChecks": {
+    "core": {
+      "passed": 21,
+      "failed": 0
+    },
+    "web": {
+      "passed": 24,
+      "failed": 0
+    },
+    "voxelService": {
+      "passed": 66,
+      "failed": 0
+    },
+    "releaseSnapshot": {
+      "passed": 3,
+      "failed": 0
+    },
+    "typechecks": [
+      "voxel runtime",
+      "web",
+      "voxel service"
+    ],
+    "productionWebBuild": "PASS",
+    "matchedRelease": "PASS",
+    "importBoundaries": "PASS"
+  },
+  "broadChecks": {
+    "implementation": "bdb96c6",
+    "unitAndWasm": {
+      "passed": 254,
+      "failed": 7
+    },
+    "packagedIntegration": {
+      "passed": 53,
+      "failed": 1
+    },
+    "note": "These failures also occurred in the unchanged baseline before resilience implementation; no additional broad-suite failures remain.",
+    "baselineFailures": [
+      "tests/content-progression.test.ts",
+      "tests/drop-replicas.test.ts",
+      "tests/inventory.test.ts",
+      "tests/object-checkpoint.test.ts",
+      "tests/wasm/checkpoint-world.test.ts",
+      "tests/wasm/progression.test.ts",
+      "tests/wasm/snapshot-boundaries.test.ts",
+      "tests/integration/content-tuning.test.ts"
+    ]
+  },
+  "inputRecovery": {
+    "stalls": [
+      {
+        "duration": 5000,
+        "before": 0.06670000000000073,
+        "bounded": 2.0165000000000024,
+        "recovered": 0.15009999999999854,
+        "admissions": 1,
+        "recovery": {
+          "waiting": false,
+          "pauses": 1,
+          "recoveries": 1
+        }
+      },
+      {
+        "duration": 15000,
+        "before": 0.16670000000000074,
+        "bounded": 2.016600000000002,
+        "recovered": 0.01669999999999709,
+        "admissions": 1,
+        "recovery": {
+          "waiting": false,
+          "pauses": 2,
+          "recoveries": 1
+        }
+      }
+    ],
+    "snapshotStall": {
+      "waiting": "stalled",
+      "recovered": "playing",
+      "focused": true,
+      "admissions": 1
+    },
+    "retainedWorldDuringAdmission": {
+      "retainedMeshes": 30,
+      "geometries": 25
+    },
+    "cleanup": {
+      "resources": {
+        "geometries": 0,
+        "textures": 0,
+        "workers": 0
+      },
+      "audio": "closed",
+      "owners": {
+        "openedSockets": 2,
+        "closedSockets": 2,
+        "createdWorkers": 2,
+        "closedWorkers": 2,
+        "liveWorkers": 0
+      }
+    }
+  },
+  "reactOutage": {
+    "result": "PASS",
+    "recordedAudio": {
+      "starts": 2,
+      "peak": 0.20337623357772827
+    },
+    "sessionCalls": 3,
+    "chatCalls": 6,
+    "voiceCalls": 5,
+    "errors": []
+  },
+  "previousFeedback": {
+    "result": "PASS",
+    "scenarios": [
+      "cold participant paused join",
+      "resume, recorded footsteps, biome and rain audio",
+      "creative TNT crater, sound, pulse and flash",
+      "observer enters paused world"
+    ],
+    "errors": []
+  },
+  "soak": {
+    "result": "PASS",
+    "startedAt": "2026-11-03T19:52:56.765Z",
+    "finishedAt": "2026-11-03T20:53:11.582Z",
+    "elapsedMs": 3604904.930279,
+    "samples": 317,
+    "admissions": 2,
+    "automaticReadmissions": 0,
+    "confirmedEdits": 212,
+    "explicitlyRetriedInputTimeouts": 0,
+    "saveFailureSeen": true,
+    "saveRecoverySeen": true,
+    "issues": [],
+    "providerCalls": {
+      "voice": 966,
+      "session": 986,
+      "chat": 986,
+      "projection": 639,
+      "renew": 428
+    },
+    "players": [
+      {
+        "lastRecovery": {
+          "waiting": false,
+          "pauses": 53,
+          "recoveries": 53
+        },
+        "maxSampledInputSeconds": 0.21670000000018624,
+        "maxSampledAudioVoices": 2,
+        "maxSampledGeometries": 37,
+        "finalEffects": 466,
+        "lastFeatureState": {
+          "voice": "unavailable",
+          "sessionFailures": 492,
+          "chatFailures": 492,
+          "polls": 492
+        }
+      },
+      {
+        "lastRecovery": {
+          "waiting": false,
+          "pauses": 0,
+          "recoveries": 0
+        },
+        "maxSampledInputSeconds": 0.11670000000018624,
+        "maxSampledAudioVoices": 2,
+        "maxSampledGeometries": 73,
+        "finalEffects": 465,
+        "lastFeatureState": {
+          "voice": "unavailable",
+          "sessionFailures": 492,
+          "chatFailures": 492,
+          "polls": 492
+        }
+      }
+    ]
+  },
+  "rawReports": [
+    {
+      "path": "games/voxel/test-results/browser-resilience.json",
+      "sha256": "35efaafe18b78dea092cf246321436f63fb1cea278de1fb6754b476e4692f5df"
+    },
+    {
+      "path": "games/voxel/test-results/browser-input-stalls.json",
+      "sha256": "dd241931081bcfa77421c887fc7a4197515981eb3d6d1d25dc6f1fff489b325d"
+    },
+    {
+      "path": "games/voxel/test-results/browser-feedback.json",
+      "sha256": "77aaf757fc8c3f65afa689c91e49e821c39a34454a5f02754eb165c52a1f68e6"
+    },
+    {
+      "path": "apps/web/test-results/voxel-resilience-browser.json",
+      "sha256": "f751953242dc8c47f8d0587ac9fc9c69a4a5c15759f4f18126f1d2dcfcc05c6b"
+    }
+  ],
+  "limits": "Controlled provider failures and software browsers establish isolation and recovery, not hosted Supabase/LiveKit connectivity, physical speaker output or device performance."
+}
