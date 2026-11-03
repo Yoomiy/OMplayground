@@ -89,6 +89,30 @@ test(
         manifest.files,
         "Installing dependencies must not alter the runtime files",
       );
+      // An incomplete allowlist can still produce a valid inventory. Verification
+      // must also reject a missing dependency before the image starts listening.
+      const policy = join(root, "games/voxel/src/server/room-policy.ts"),
+        policyBytes = await readFile(policy),
+        manifestPath = join(root, "runtime-package.json"),
+        manifestBytes = await readFile(manifestPath);
+      try {
+        await rm(policy);
+        await writeFile(
+          manifestPath,
+          JSON.stringify({ ...manifest, files: await runtimeInventory(root) }),
+        );
+        await assert.rejects(
+          execute(
+            process.execPath,
+            [join(root, "verify-runtime.mjs")],
+            options,
+          ),
+          /ERR_MODULE_NOT_FOUND[\s\S]*room-policy\.ts/,
+        );
+      } finally {
+        await writeFile(policy, policyBytes);
+        await writeFile(manifestPath, manifestBytes);
+      }
       const smoke = await execute(
         process.execPath,
         [smokeTool.pathname, root],
