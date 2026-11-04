@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import type { Page } from 'playwright';
+import type { Locator, Page } from 'playwright';
 
 /** Observe real browser owners before first navigation. No app authority or
  * lifecycle substitution; the scenario below uses the rendered exit/re-entry UI.
@@ -31,10 +31,19 @@ export async function surfaceMountCycles(
   page: Page,
   owners: ReturnType<typeof surfaceOwners>,
   cycles: number,
+  desktop?: { click: (locator: Locator) => Promise<unknown> },
 ) {
   assert(Number.isSafeInteger(cycles) && cycles >= 2);
   const samples: Record<string, any>[] = [];
   const debug = () => page.evaluate(() => (window as any).surfaceRuntime.debug());
+  const click = async (locator: Locator) => {
+    if (!desktop) return locator.tap();
+    await page.evaluate(() => {
+      if (document.pointerLockElement) document.exitPointerLock();
+    });
+    await page.waitForFunction(() => document.pointerLockElement === null);
+    await desktop.click(locator);
+  };
   for (let cycle = 0; cycle < cycles; cycle++) {
     await page.waitForFunction(
       () => {
@@ -51,15 +60,16 @@ export async function surfaceMountCycles(
       null,
       { timeout: 60000 },
     );
-    const resume = page.getByRole('button', { name: 'חידוש המפגש', exact: true });
+    const resume = page.getByRole('button', { name: 'המשך', exact: true });
     if ((await debug()).lifecycle === 'paused' && (await resume.isVisible())) {
-      await resume.tap();
+      await click(resume);
       await page.waitForFunction(
         () => (window as any).surfaceRuntime.debug().lifecycle === 'playing',
       );
     }
     const enter = page.getByRole('button', { name: 'כניסה לעולם', exact: true });
-    if (await enter.isVisible()) await enter.tap();
+    if (await enter.isVisible()) await click(enter);
+    if (desktop) await desktop.click(page.locator('.voxel-session__world canvas'));
     await page.waitForFunction(() => (window as any).surfaceRuntime.debug().body?.frozen === 0);
     await page.waitForTimeout(700);
     const active = await debug(),
@@ -76,7 +86,7 @@ export async function surfaceMountCycles(
     assert.equal(await page.locator('.voxel-touch').count(), 1);
     const beforeExit = await page.evaluate(() => (window as any).voxelMemoryProbe());
     assert(beforeExit.gpuBuffers.bytes > 0);
-    await page.getByRole('button', { name: 'יציאה', exact: true }).tap();
+    await click(page.getByRole('button', { name: 'יציאה', exact: true }));
     await page.waitForFunction(() => {
       const d = (window as any).disposedRuntime?.debug();
       return d?.disposed && d.audio.state === 'closed' && d.resources.workers === 0;
@@ -133,7 +143,7 @@ export async function surfaceMountCycles(
     samples.push(sample);
     console.log(JSON.stringify({ phase: 'react-mount-cycle', ...sample }));
     if (cycle + 1 < cycles) {
-      await page.getByRole('button', { name: 'כניסה חוזרת', exact: true }).tap();
+      await click(page.getByRole('button', { name: 'כניסה חוזרת', exact: true }));
     }
   }
   assert(

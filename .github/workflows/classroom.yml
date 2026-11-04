@@ -1,7 +1,6 @@
 name: Classroom service
 on:
   push:
-    paths: ['apps/classroom-server/**', 'packages/observability/**', 'package.json', 'package-lock.json', '.github/workflows/classroom.yml']
   pull_request:
     paths: ['apps/classroom-server/**', 'packages/observability/**', 'package.json', 'package-lock.json', '.github/workflows/classroom.yml']
   workflow_dispatch:

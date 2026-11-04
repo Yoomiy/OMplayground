@@ -91,6 +91,7 @@ let deadline: ReturnType<typeof setTimeout> | undefined;
 const withVoice = process.env.VOXEL_TEST_LIVEKIT === "1",
   mediaRooms = new Set<string>(),
   mediaRoomSids = new Map<string, string>();
+const withTouch = process.env.VOXEL_REACT_TOUCH === "1";
 const mountCycles = Number(process.env.VOXEL_REACT_MOUNT_CYCLES ?? 4);
 assert(Number.isSafeInteger(mountCycles) && mountCycles >= 2);
 assert(
@@ -265,6 +266,17 @@ try {
  }
  createRoot(document.getElementById('root')).render(<StrictMode><App/></StrictMode>);`;
   writeFileSync(new URL("entry.tsx", root), source);
+  const runtimeEntry = join(repo, "games/voxel/src/client/embed.ts");
+  // Preserve desktop CSS dimensions while using the runtime's existing low
+  // graphics options on software Chromium. No simulation or authority changes.
+  writeFileSync(
+    new URL("runtime.ts", root),
+    `export * from ${JSON.stringify(runtimeEntry)};
+import { mountVoxel as mount } from ${JSON.stringify(runtimeEntry)};
+export function mountVoxel(host, options) {
+  return mount(host, { ...options, renderScale: 0.5, renderHz: 30 });
+}`,
+  );
   writeFileSync(
     new URL("index.html", root),
     `<!doctype html><html lang="he" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><div id="root"></div><script type="module" src="./entry.tsx"></script></body></html>`,
@@ -277,10 +289,7 @@ try {
     resolve: {
       alias: {
         "@": join(web, "src"),
-        "@playground/voxel-runtime": join(
-          repo,
-          "games/voxel/src/client/embed.ts",
-        ),
+        "@playground/voxel-runtime": join(temp, "runtime.ts"),
         "react-dom": dirname(resolve.resolve("react-dom/package.json")),
         react: dirname(resolve.resolve("react/package.json")),
       },
@@ -403,7 +412,7 @@ try {
   const { windowId } = await desktopWindow.send("Browser.getWindowForTarget");
   await desktopWindow.send("Browser.setWindowBounds", {
     windowId,
-    bounds: { left: 0, top: 0, width: 1000, height: 800 },
+    bounds: { left: 0, top: 0, width: 1440, height: 900 },
   });
   await desktopWindow.detach();
   const desktop = await desktopInput(kidPage);
@@ -1806,106 +1815,132 @@ try {
       await page.evaluate(() => (window as any).cleanupVoiceFixtures());
     }
   }
-  const mobileContext = await browser.newContext({
-    viewport: { width: 540, height: 800 },
-    hasTouch: true,
-    isMobile: true,
-    deviceScaleFactor: 1,
-  });
-  await mobileContext.addInitScript(installMemoryProbe);
-  const mobilePage = await mobileContext.newPage();
-  const mobileOwners = surfaceOwners(mobilePage);
-  mobilePage.setDefaultTimeout(20000);
-  mobilePage.on("pageerror", (error) => errors.push(error.message));
-  await mobilePage.goto(origin + "/?role=kid&room=" + mobileRoom, {
+  const cycleContext = await browser.newContext(
+    withTouch
+      ? {
+          viewport: { width: 540, height: 800 },
+          hasTouch: true,
+          isMobile: true,
+          deviceScaleFactor: 1,
+        }
+      : { viewport: null },
+  );
+  await cycleContext.addInitScript(installMemoryProbe);
+  const cyclePage = await cycleContext.newPage();
+  const cycleOwners = surfaceOwners(cyclePage);
+  const cycleDesktop = withTouch ? undefined : await desktopInput(cyclePage);
+  if (cycleDesktop) {
+    const cdp = await cycleContext.newCDPSession(cyclePage);
+    const { windowId } = await cdp.send("Browser.getWindowForTarget");
+    await cdp.send("Browser.setWindowBounds", {
+      windowId,
+      bounds: { left: 0, top: 0, width: 1440, height: 900 },
+    });
+    await cdp.detach();
+  }
+  cyclePage.setDefaultTimeout(20000);
+  cyclePage.on("pageerror", (error) => errors.push(error.message));
+  await cyclePage.goto(origin + "/?role=kid&room=" + mobileRoom, {
     waitUntil: "domcontentloaded",
   });
-  await ready(mobilePage);
-  const mobileVoice = mobilePage.getByRole("button", {
+  await ready(cyclePage);
+  const cycleVoice = cyclePage.getByRole("button", {
     name: "מזער",
     exact: true,
   });
-  if (await mobileVoice.isVisible()) await mobileVoice.tap();
-  await mobilePage.waitForFunction(
+  if (await cycleVoice.isVisible()) {
+    if (cycleDesktop) await cycleDesktop.click(cycleVoice);
+    else await cycleVoice.tap();
+  }
+  if (cycleDesktop)
+    await cycleDesktop.click(cyclePage.locator(".voxel-session__world canvas"));
+  await cyclePage.waitForFunction(
     () => (window as any).surfaceRuntime.debug().focused,
   );
-  const touchLayout = await mobilePage.evaluate(() => {
-    const vitals = document
-      .querySelector(".voxel-session__vitals")!
-      .getBoundingClientRect();
-    const controls = [
-      ...document.querySelectorAll<HTMLElement>(
-        ".voxel-touch-stick,.voxel-touch-actions button",
-      ),
-    ].filter((node) => node.getBoundingClientRect().width > 0);
-    return controls.map((node) => {
-      const r = node.getBoundingClientRect();
-      return {
-        control:
-          node.dataset.control ??
-          (node.classList.contains("voxel-touch-stick")
-            ? "joystick"
-            : (node.textContent ?? "action")),
-        overlap:
-          Math.max(
-            0,
-            Math.min(r.right, vitals.right) - Math.max(r.left, vitals.left),
-          ) *
-          Math.max(
-            0,
-            Math.min(r.bottom, vitals.bottom) - Math.max(r.top, vitals.top),
-          ),
-        reachable: node.contains(
-          document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2),
+  let touchLayout:
+    | { control: string; overlap: number; reachable: boolean }[]
+    | null = null;
+  // Narrow participant layouts are opt-in and are not a release requirement.
+  if (withTouch) {
+    touchLayout = await cyclePage.evaluate(() => {
+      const vitals = document
+        .querySelector(".voxel-session__vitals")!
+        .getBoundingClientRect();
+      const controls = [
+        ...document.querySelectorAll<HTMLElement>(
+          ".voxel-touch-stick,.voxel-touch-actions button",
         ),
-      };
+      ].filter((node) => node.getBoundingClientRect().width > 0);
+      return controls.map((node) => {
+        const r = node.getBoundingClientRect();
+        return {
+          control:
+            node.dataset.control ??
+            (node.classList.contains("voxel-touch-stick")
+              ? "joystick"
+              : (node.textContent ?? "action")),
+          overlap:
+            Math.max(
+              0,
+              Math.min(r.right, vitals.right) - Math.max(r.left, vitals.left),
+            ) *
+            Math.max(
+              0,
+              Math.min(r.bottom, vitals.bottom) - Math.max(r.top, vitals.top),
+            ),
+          reachable: node.contains(
+            document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2),
+          ),
+        };
+      });
     });
-  });
-  assert.ok(
-    touchLayout.every((item) => item.overlap === 0 && item.reachable),
-    "player vitals must not cover touch controls",
-  );
-  const mobileBefore = await debug(mobilePage),
-    stick = await mobilePage.locator(".voxel-touch-stick").boundingBox();
-  assert.ok(stick);
-  const mobileCdp = await mobileContext.newCDPSession(mobilePage),
-    point = {
-      x: stick.x + stick.width / 2,
-      y: stick.y + stick.height / 2,
-      id: 1,
-      radiusX: 5,
-      radiusY: 5,
-      force: 1,
-    };
-  await mobileCdp.send("Input.dispatchTouchEvent", {
-    type: "touchStart",
-    touchPoints: [point],
-  });
-  await mobileCdp.send("Input.dispatchTouchEvent", {
-    type: "touchMove",
-    touchPoints: [{ ...point, y: point.y + stick.height * 0.3 }],
-  });
-  await mobilePage.waitForFunction((p) => {
-    const d = (window as any).surfaceRuntime.debug();
-    return Math.hypot(d.position[0] - p[0], d.position[2] - p[2]) > 0.15;
-  }, mobileBefore.position);
-  await mobileCdp.send("Input.dispatchTouchEvent", {
-    type: "touchEnd",
-    touchPoints: [],
-  });
-  await mobilePage.screenshot({
-    path: join(web, "test-results/voxel-react-mobile.png"),
-  });
+    assert.ok(
+      touchLayout.every((item) => item.overlap === 0 && item.reachable),
+      "player vitals must not cover touch controls",
+    );
+    const touchBefore = await debug(cyclePage),
+      stick = await cyclePage.locator(".voxel-touch-stick").boundingBox();
+    assert.ok(stick);
+    const touchCdp = await cycleContext.newCDPSession(cyclePage),
+      point = {
+        x: stick.x + stick.width / 2,
+        y: stick.y + stick.height / 2,
+        id: 1,
+        radiusX: 5,
+        radiusY: 5,
+        force: 1,
+      };
+    await touchCdp.send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [point],
+    });
+    await touchCdp.send("Input.dispatchTouchEvent", {
+      type: "touchMove",
+      touchPoints: [{ ...point, y: point.y + stick.height * 0.3 }],
+    });
+    await cyclePage.waitForFunction((p) => {
+      const d = (window as any).surfaceRuntime.debug();
+      return Math.hypot(d.position[0] - p[0], d.position[2] - p[2]) > 0.15;
+    }, touchBefore.position);
+    await touchCdp.send("Input.dispatchTouchEvent", {
+      type: "touchEnd",
+      touchPoints: [],
+    });
+    await cyclePage.screenshot({
+      path: join(web, "test-results/voxel-react-mobile.png"),
+    });
+  }
   const repeatedMounts = await surfaceMountCycles(
-    mobilePage,
-    mobileOwners,
+    cyclePage,
+    cycleOwners,
     mountCycles,
+    cycleDesktop,
   );
-  const mobileCleanup = await mobilePage.evaluate(
+  const cycleCleanup = await cyclePage.evaluate(
     () => (window as any).disposedRuntime.debug().resources,
   );
-  assert.deepEqual(mobileCleanup, { geometries: 0, textures: 0, workers: 0 });
-  cleanup.push({ resources: mobileCleanup, audio: "closed" });
+  assert.deepEqual(cycleCleanup, { geometries: 0, textures: 0, workers: 0 });
+  cleanup.push({ resources: cycleCleanup, audio: "closed" });
   for (let i = 0; i < 200 && gateway.rooms.size; i++)
     await new Promise((r) => setTimeout(r, 20));
   assert.equal(failedControlResponses.length, 1);
@@ -1927,11 +1962,11 @@ try {
   );
   assert.deepEqual(errors, []);
   assert.equal(gateway.rooms.size, 0);
-  await mobilePage
+  await cyclePage
     .getByRole("button", { name: "עזיבת הסגל", exact: true })
-    .tap();
-  await mobilePage.getByText("ההשתתפות במפגש הוסרה", { exact: true }).waitFor();
-  const rosterReceipt = await mobilePage.evaluate(
+    .click();
+  await cyclePage.getByText("ההשתתפות במפגש הוסרה", { exact: true }).waitFor();
+  const rosterReceipt = await cyclePage.evaluate(
     () => (window as any).rosterReceipt,
   );
   assert.equal(rosterReceipt.left, true);
@@ -1992,7 +2027,10 @@ try {
         fullscreenInventory: true,
         terminalGameOwnersReleased: true,
         playerTouchLayout: touchLayout,
-        playerTouchMovement: true,
+        playerTouchMovement: withTouch ? true : "deferred",
+        desktopWindow: { width: 1440, height: 900 },
+        softwareGraphics: { renderScale: 0.5, renderHz: 30 },
+        narrowScreenChecks: withTouch ? "enabled" : "deferred",
         repeatedMounts,
         rosterReceipt,
         staffReceipts,

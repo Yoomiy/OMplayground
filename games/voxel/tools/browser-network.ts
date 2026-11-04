@@ -23,6 +23,7 @@ const report: Record<string, any> = {
     availableParallelism: availableParallelism(),
   },
   configuration: {
+    seed: 4242,
     viewport: { width: 640, height: 480 },
     quality: 'low',
     workerCores: 2,
@@ -41,7 +42,8 @@ try {
     };
     report.profiles.push(row);
     const { gateway, build, events } = await createBuiltHarness(
-      undefined,
+      // Keep network profiles comparable and the flight setup clear of trees.
+      { seed: 4242 },
       undefined,
       undefined,
       undefined,

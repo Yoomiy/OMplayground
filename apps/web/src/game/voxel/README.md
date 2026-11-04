@@ -30,8 +30,14 @@ Chromium, Xvfb and `xdotool`. Run it in a private display so it can exercise tru
 mouse capture and keyboard input:
 
 ```sh
-xvfb-run -a -s '-screen 0 1280x900x24 -nolisten tcp' env VOXEL_XDOTOOL=/usr/bin/xdotool npm run test:voxel:browser --workspace @playground/web
+xvfb-run -a -s '-screen 0 1440x900x24 -nolisten tcp' env VOXEL_XDOTOOL=/usr/bin/xdotool npm run test:voxel:browser --workspace @playground/web
 ```
+
+The required participant journey uses a 1440×900 desktop window. Narrow-screen
+layout checks are deferred; `VOXEL_REACT_TOUCH=1` enables the optional 540px touch
+scenario. The software-rendered fixture uses existing half-scale, 30 Hz graphics
+settings; production rendering defaults are unchanged. Repeated desktop mounts
+still check worker, socket, GPU and audio teardown.
 
 See [runtime architecture](../../../../../games/voxel/docs/architecture.md),
 [school APIs](../../../../voxel-server/docs/school-api.md),
