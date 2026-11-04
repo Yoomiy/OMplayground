@@ -1,39 +1,23 @@
-# Voxel voice
+# Direct LiveKit voice
 
-Voxel uses the same LiveKit token lifecycle as the other games. The browser posts
-its school bearer token and room ID to `/api/voxel/voice-token`. The service verifies
-the account and requires an existing game connection, then returns a two-hour
-LiveKit JWT and `LIVEKIT_URL`. Only microphone publication is granted; staff in
-observer mode remain hidden and listen-only. Rooms remain scoped to the world
-and its owner epoch.
+`POST /api/voxel/voice-token` accepts `{room}` and the school bearer token.
+The service verifies the active account and an existing current game connection,
+then issues a two-hour microphone-only LiveKit JWT and the configured endpoint.
+The SFU room is scoped to world identity and owner epoch. Staff observers are
+hidden and listen-only. Data publication and client metadata updates are denied.
 
-The browser connects directly to LiveKit. LiveKit owns token refresh and SDK
-reconnection. An SDK reconnect preserves the current room and microphone; only
-a complete disconnect requires another application token. The voxel server does
-not proxy signaling, run a voice worker, or renew voice permissions against
-Supabase. Its ordinary gameplay authorization is independent of voice.
+The browser connects directly to LiveKit. The SDK owns token refresh and reconnect;
+signaling recovery keeps the room and microphone. A complete disconnect uses fresh
+application admission. Token TTL is not a deadline on an ongoing call. The endpoint
+must be reachable from the browser and support the deployment's WebRTC paths.
 
-There are no voxel voice permission-revocation or teacher-mute APIs. The earlier
-`/voxel-media/*`, `/api/voxel/voice-ticket`, `/api/voxel/media-state`, and
-`/api/voxel/media-moderate` routes are removed. Historical SQL migrations remain
-installed but their media tables/functions are unused, and the media schema is
-no longer a startup dependency. No database migration or world reset is needed.
+The client owns proximity subscriptions, occlusion, spatial audio and local capture
+controls. Game readiness loss, session end and unmount release local voice resources.
+These client lifecycle rules do not provide provider-side revocation or teacher mute
+APIs. Gameplay policy remains independent of voice; SFU administration uses LiveKit's
+own APIs. The old custom signaling worker, ticket/proxy routes and media-policy
+renewal are removed. Their historical SQL migration is not a startup dependency.
 
-`LIVEKIT_URL` must be reachable from browsers, as it is for the other games.
-`LIVEKIT_API_SECRET` stays on the backend. Returning a participant JWT is part of
-the normal LiveKit connection flow. Provider room deletion or participant removal
-can still be performed through LiveKit's administrative APIs; token TTL does not
-act as a deadline on an ongoing call.
-
-Proximity subscriptions, spatial audio, occlusion, microphone selection and local
-capture controls stay in the client. Losing game readiness stops local voice;
-regaining readiness automatically rejoins for players. Session end and component
-unmount release the room, microphone, audio graph, timers and media elements.
-
-`apps/web/tools/voxel-voice-session-browser.ts` qualifies direct audio in an
-isolated SFU room using generated microphones, fixture game poses and fixture
-admission. It checks proximity subscriptions, hidden staff, SDK signaling
-reconnection after the initial short test token expires, microphone continuity,
-no additional application token requests during recovery, and teardown. Run with
-`VOXEL_TEST_LIVEKIT=1` and explicit test LiveKit credentials. This fixture does not
-qualify production networking or physical microphones.
+`apps/web/tools/voxel-voice-session-browser.ts` tests direct media using an explicitly
+selected test SFU, generated microphones and fixture poses/admission. See
+[testing](../../../games/voxel/docs/testing.md) for opt-in settings and scope.

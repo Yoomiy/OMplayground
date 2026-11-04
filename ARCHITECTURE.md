@@ -2,7 +2,7 @@
 
 > **מגרש המשחקים** — private-school multiplayer platform, Hebrew RTL UI.
 > Kids play **only during recess** (`Asia/Jerusalem`). Teachers and platform admins bypass the gate.  
-> **Last updated:** 2026-10-28. The voxel client on this branch uses the rewritten runtime; hosted/backend cutover is still pending. PCs are the primary device target; large synthetic scale and mobile/tablet qualification are not release requirements.
+> **Last updated:** 2026-11-04. Voxel uses the dedicated Wasm/WebSocket runtime and independent school/classroom services. Deployment is coordinated through `docs/voxel-deployment.md`. PCs are the primary device target; large synthetic scale and mobile/tablet qualification are not release requirements.
 
 **More docs:** [`docs/README.md`](docs/README.md) — index of ADRs, ops, and design specs.
 
@@ -14,7 +14,7 @@
 
 | Concept | Description |
 |---|---|
-| **Recess-gated access** | Kids cannot log in outside active recess windows. Teachers/admins bypass. |
+| **Recess-gated access** | Kids can play only during active recess windows. Access recovery preserves the login session; teachers/admins bypass the recess gate. |
 | **Supabase Auth** | Username login → `[username]@playground.school.local` (Auth API only; never shown in UI). |
 | **Gender separation** | Games, sessions, presence, and social data partitioned by `boy` / `girl`. |
 | **Authoritative servers** | Live state belongs to Node game services, not Postgres ticks or browser-reported positions. |
@@ -89,12 +89,12 @@ Both media adapters use LiveKit without sharing the voxel simulation process.
 | Social, catalog, recess | Yes + Realtime | No |
 | `game_sessions` metadata | Yes (boundaries) | In-memory during play |
 | Live match / tick state | No | Yes |
-| In-game chat | Persisted | Relay + batch persist |
+| In-game chat | Voxel: private tables and trusted SQL receipts | Voxel: authenticated HTTP posting/history; board games retain their chat contract |
 | Solo saves | `solo_game_saves` | No |
 | Voxel world/inventory | Private immutable Storage objects plus fenced Postgres checkpoint pointers/owner leases | Coherent snapshots from authoritative 30 Hz room workers |
 | LiveKit tokens | Roster validation | Mint + webhooks |
 
-**Hot path:** No per-tick Postgres writes. Boards persist at their boundaries; voxel autosaves coherent checkpoints every 15 seconds and acknowledges pause/stop saving only after commit. Solo games never use the multiplayer services.
+**Hot path:** No per-tick Postgres writes. Boards persist at their boundaries; voxel autosaves coherent checkpoints every 15 seconds and acknowledges pause saving only after commit. Explicit session end skips its final checkpoint. Solo games never use the multiplayer services.
 
 ---
 
@@ -158,7 +158,7 @@ Both media adapters use LiveKit without sharing the voxel simulation process.
 | `JOIN_ROOM`, `LEAVE_ROOM`, `INTENT_GAME`, `CHAT_MESSAGE` | `ROOM_SNAPSHOT`, `ROOM_EVENT`, `ROOM_ERROR` |
 | `PAUSE_GAME`, `RESUME_GAME`, `STOP_GAME`, `REMATCH`, `SPECTATE` | `LIVE_DELTA` (drawing, breakout), `CHAT_MESSAGE` |
 
-Rewritten voxel has its own native WebSocket protocol and accepted ADR (`docs/adr/002-voxel-native-websocket.md`). Bearer-authenticated admission yields single-use tickets; control frames contain inputs, not positions or durations. Matching engine/content/build identities, actor epochs and revisioned binary column baselines fence joins/reconnects. This is separate from the board Socket.io contract and `GameModule`.
+Rewritten voxel has its own native WebSocket protocol and accepted ADR (`docs/adr/002-voxel-native-websocket.md`). Bearer-authenticated admission yields single-use tickets; control frames contain numbered controls and bounded durations, never authoritative positions. Matching engine/content/build identities, actor epochs and revisioned binary column baselines fence joins/reconnects. This is separate from the board Socket.io contract and `GameModule`.
 
 ---
 
@@ -183,7 +183,7 @@ Lifecycle: `waiting → playing → paused | completed`. Paused: roster-only rej
 
 ### Voxel
 
-`apps/web/src/game/voxel/VoxelSessionContainer` owns the React HUD/session journey around the imperative runtime in `games/voxel`. The new client uses Three.js, bounded generation/mesh workers and the same release Wasm as Node prediction/authority. Content is compiled from `games/voxel/content`; old numeric IDs and protocol types are not adapters. See `games/voxel/README.md`, `games/voxel/docs/pc-school.md` and the rewrite proposal. Historical scale results do not block the private-school release.
+`apps/web/src/game/voxel/VoxelSessionContainer` owns the React HUD/session journey around the imperative runtime in `games/voxel`. The new client uses Three.js, bounded generation/mesh workers and the same release Wasm as Node prediction/authority. Content is compiled from `games/voxel/content`; old numeric IDs and protocol types are not adapters. See the [runtime guide](games/voxel/README.md), [architecture](games/voxel/docs/architecture.md) and [deployment guide](docs/voxel-deployment.md).
 
 Add games: `.cursor/skills/playground-add-game/SKILL.md`.
 
@@ -209,7 +209,7 @@ Add games: `.cursor/skills/playground-add-game/SKILL.md`.
 
 ## 11. Recess enforcement
 
-Client (`usePlaygroundAccess`), RLS (`is_within_recess_now()`), both servers (`recessSweep.ts`), auto sign-out when recess ends. Teachers/admins bypass.
+The client access guard, applicable RLS and each game service enforce recess. Voxel computes a local Jerusalem-time cutoff and refreshes current policy in the background. Confirmed closing stops play; temporary checks do not sign out a known authenticated user. Teachers/admins bypass recess. See [school access](apps/voxel-server/docs/school-api.md).
 
 ---
 
@@ -223,13 +223,13 @@ Supabase JWT; gender checks on join + LiveKit tokens; server-authoritative game 
 
 ## 13. Observability & ops
 
-`packages/observability` supplies shared Pino/correlation/process handling and existing operational HTTP routes. Rewritten voxel emits bounded room/worker/queue/checkpoint timing and audit events with build/epoch context. It does not log each input, chat body or voice content. The shared legacy telemetry URL helper remains until backend operational routing is retired.
+`packages/observability` supplies shared Pino/correlation/process handling and existing operational HTTP routes. Rewritten voxel emits bounded room/worker/queue/checkpoint timing and audit events with build/epoch context. It does not log each input, chat body or voice content. Classroom telemetry routes to its independent service.
 
-**Legacy operational stats retained during backend cutover:**
-- **In-Memory Buffering**: To prevent per-tick database writes, client FPS metrics and player launches are aggregated in-memory on the servers (`launchTracker.ts`, `fpsAggregator.ts`) and flushed to Supabase (`game_launch_stats`, `minecraft_fps_stats`) at session boundaries.
-- **Disconnect Flushing**: When a player disconnects leaving a room empty, the server auto-flushes their accumulated stats to the database. For Minecraft, this flush has a 1-second delay (`setTimeout`) to ensure the final clientside unmount telemetry fetch (sent via `keepalive` fetch) arrives and is ingested.
-- **Live Admin Flushing**: When an admin loads or refreshes the stats page, the server intercepts the stats request and invokes a non-destructive flush (`onAdminStatsQuery` hook) of all active game rooms. This flushes active launch/FPS metrics to the database without deleting active session keys from memory.
-- **Polling Optimization**: The Admin Stats UI dashboard tab (`AdminStatsSection`) monitors tab visibility via the Page Visibility API. It pauses stats polling requests immediately when the browser tab is hidden to conserve network bandwidth and backend server CPU cycles.
+The admin panel reads board, voxel and classroom counters independently. Voxel
+reports local transport/room counts through its administrator-only API; direct
+LiveKit connection counts are unavailable to that service. Board aggregation keeps
+its existing service contract. Hidden browser tabs pause admin polling. See
+[voxel operations](apps/voxel-server/docs/operations.md).
 
 `GET /health`, `GET /ready`, rate limits. Production operations are documented
 in `docs/HARDENING.md`; required logging practices for every new feature and
@@ -250,7 +250,7 @@ Use the private school's ordinary sessions as the operational target. No synthet
 
 ## 15. Voxel teacher & spectator
 
-Teacher/admin abilities are explicit server capabilities. Hidden observers are non-colliding, excluded from student replication and denied survival actions. Trusted mode/teleport/pause/moderation commands are scoped and audited; admission and reconnect revalidate school/recess/membership. There are no voxel player/observer/room headcount ceilings. LiveKit grants follow the separately checked media policy. The actual hosted journey remains a release validation task.
+Teacher/admin abilities are explicit server capabilities. Hidden observers are non-colliding, excluded from student replication and denied survival actions. Trusted mode/teleport/pause/moderation commands are scoped and audited; admission and reconnect revalidate school/recess/membership. There are no voxel player/observer/room headcount ceilings. Voice issues ordinary LiveKit tokens for current game actors; the browser owns proximity and local cleanup. There is no custom voice-policy renewal or server-enforced teacher mute API. Deployment acceptance covers the real provider/device journey.
 
 ---
 

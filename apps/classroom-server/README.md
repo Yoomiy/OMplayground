@@ -38,8 +38,7 @@ Development defaults to the browser origin with Vite's `/__classroom` proxy;
 production requires an explicit address. There is no fallback to either game service. The classroom publisher
 continues through the parent classroom request adapter. `VITE_GAME_SERVER_URL`
 still selects the board service, and `VITE_VOXEL_RUNTIME_SERVER_URL` selects the
-rewritten voxel runtime. Voxel voice uses its independent signaling adapter and
-does not determine classroom routing.
+rewritten voxel runtime. Voxel voice connects directly to LiveKit and does not determine classroom routing.
 
 `GET /health` identifies this process. Startup checks the classroom base table
 through the real Supabase SDK and authenticates a read-only LiveKit room listing

@@ -85,11 +85,10 @@ public-lobby, development-command, telemetry or server endpoint is imported.
 
 ## Asset provenance
 
-The foundation uses no downloaded image/audio/model assets. Texture pixels are
-produced locally by the imported MIT Rust texture-generator source. The layer
-names and UV conventions derive from the same engine. New content uses those
-procedural layers. This is the complete imported-asset inventory at this stage;
-record the source and redistribution terms here before adding other assets.
+Terrain texture pixels are produced locally by the imported MIT Rust texture
+generator. The layer names and UV conventions derive from that engine. Imported
+Blockyard avatars/item sprites and restored legacy audio are inventoried below;
+record source and redistribution terms here before adding other assets.
 
 The player figures use the original upstream micro-voxel character generator with local
 instanced rendering and grouped-joint animation. The local catalog contains the original
@@ -114,9 +113,10 @@ worn armor and non-sprite items keep local primitive models using the terrain ar
 from the first art pass were removed; terrain pixels again come directly from the existing
 engine texture generator. Material lighting and filtering improvements remain.
 
-`src/client/world-audio.ts` synthesizes ambience, footsteps and material edit
-sounds with Web Audio oscillators and locally generated noise. No recordings,
-fonts or other unlisted art assets are bundled. The imported avatar and item source is listed above.
+`src/client/world-audio.ts` combines synthesized biome ambience with the restored
+recordings inventoried below. Blockyard artwork notices and the legacy audio
+notice are included in client builds. No additional unlisted assets are authorized
+by this inventory.
 
 ## Toolchain
 
