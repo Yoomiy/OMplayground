@@ -25,6 +25,13 @@ service/SQL/web tests, browser journeys and clean image startup/drain. The class
 workflow checks its independent boundary. The short resilience job runs separately;
 the hour-long soak is an optional manual dispatch.
 
+The three longer natural-world survival, TNT and equipment playthroughs are
+deferred qualification. Run `Extended voxel playthrough` manually from GitHub
+Actions when resuming that work. Their scripts and assertions remain intact;
+known harvesting/input assumptions still need maintenance. They are not required
+merge or deployment checks. Core inventory/crafting, combat, network recovery,
+school lifecycle and resource-cleanup browser regressions remain required.
+
 ```sh
 npm run check:voxel
 npm --prefix games/voxel run verify:release
