@@ -211,7 +211,7 @@ try {
   assert.ok(finished[0].feedback.effects.hits >= 1);
   assert.ok(finished[0].audio.effects >= 1);
   assert.deepEqual(
-    finished[0].audio.lastSource,
+    finished[0].audio.lastSource.map(Math.fround),
     finished[0].lastHitEvent.position.map(Math.fround),
     'impact audio uses the accepted absolute hit point',
   );

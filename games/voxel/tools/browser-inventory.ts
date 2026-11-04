@@ -78,7 +78,13 @@ try {
     one = false,
   ) => {
     const previous = (await debug()).inventory.revision;
-    await page.locator(`[data-area="${area}"][data-slot="${index}"]`).click();
+    const source = page.locator(`[data-area="${area}"][data-slot="${index}"]`);
+    // Placing one item keeps the rest of the stack on the cursor.
+    if ((await source.getAttribute('aria-pressed')) !== 'true') {
+      const selected = page.locator('.voxel-inventory [data-area][aria-pressed="true"]');
+      if (await selected.count()) await selected.click();
+      await source.click();
+    }
     await page
       .locator(`[data-area="${destination}"][data-slot="${target}"]`)
       .click({ button: one ? 'right' : 'left' });

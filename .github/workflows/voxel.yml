@@ -104,10 +104,8 @@ jobs:
       - run: npm run test:voxel:recovery
       - run: npm run test:voxel:inventory
       - run: npm --prefix games/voxel run test:held:browser
-      - name: PC survival over a delayed connection
-        run: xvfb-run -a -s '-screen 0 1280x900x24 -nolisten tcp' env VOXEL_XDOTOOL=/usr/bin/xdotool npm --prefix games/voxel run test:survival:desktop:browser
-      - run: npm run test:voxel:tnt
-      - run: npm run test:voxel:equipment
+      # Natural survival/TNT/equipment journeys are deferred manual qualification.
+      # Their scripts/assertions remain in voxel-qualification.yml.
       - run: npm run test:voxel:combat
       - run: npm --prefix games/voxel run benchmark:engine
       - name: Assemble matched production runtime

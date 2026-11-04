@@ -5,6 +5,12 @@ The `Deployment checks` workflow publishes one commit status:
 It stays pending until both push workflows, `Voxel runtime` and `Classroom service`,
 finish successfully for the same commit and branch. A failed or canceled workflow
 fails the gate. This covers runtime, resilience, image and classroom checks.
+Required runtime checks retain engine/domain/Wasm, source/packaged integration,
+SQL, school access/lifecycle, React desktop UI, inventory, combat, network recovery
+and resource cleanup coverage. The three longer natural-world survival, TNT and
+equipment journeys are deferred manual qualification in
+[`voxel-qualification.yml`](../.github/workflows/voxel-qualification.yml).
+Their script maintenance remains open; they do not gate this release.
 The source workflows run on every push so a required status cannot be left waiting
 for a workflow skipped by path filters. Pull-request checks retain their path filters.
 

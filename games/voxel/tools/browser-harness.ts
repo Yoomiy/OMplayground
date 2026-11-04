@@ -45,7 +45,9 @@ export async function createBuiltHarness(
   const gateway = await (transport?.factory ?? createGateway)({
     build,
     content,
-    worldDefaults,
+    // Browser scenarios depend on repeatable terrain. Production worlds still
+    // reserve unique seeds; callers can explicitly choose a different fixture.
+    worldDefaults: { seed: 4242, ...worldDefaults },
     roomPolicy,
     persistence: transport?.persistence,
     sessions: transport?.sessions,
@@ -79,7 +81,16 @@ export async function createBuiltHarness(
       }
       const extra = transport?.clientAssets?.[path];
       if (extra) {
-        res.writeHead(200, { 'Content-Type': path.endsWith('.html') || path.endsWith('/') ? 'text/html' : path.endsWith('.css') ? 'text/css' : path.endsWith('.wasm') ? 'application/wasm' : 'text/javascript' });
+        res.writeHead(200, {
+          'Content-Type':
+            path.endsWith('.html') || path.endsWith('/')
+              ? 'text/html'
+              : path.endsWith('.css')
+                ? 'text/css'
+                : path.endsWith('.wasm')
+                  ? 'application/wasm'
+                  : 'text/javascript',
+        });
         res.end(extra);
         return;
       }
