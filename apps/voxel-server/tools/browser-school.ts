@@ -5,13 +5,13 @@ import {
   launchSoftwareBrowser,
 } from "../../../games/voxel/tools/browser-harness.ts";
 import { schoolFixture } from "../tests/helpers/school-fixture.ts";
-import { schoolGatewayPolicy } from "../src/school-admission.ts";
+import { schoolBrowserPolicy } from "./school-browser-policy.ts";
 
 // The browser runs the release client. Only school Auth/PostgREST responses are fixtures.
 const fixture = schoolFixture();
 fixture.setNow(Date.now());
 fixture.state.onRequest = () => fixture.setNow(Date.now());
-const policy = schoolGatewayPolicy(fixture.access);
+const policy = schoolBrowserPolicy(fixture.access);
 const harness = await createBuiltHarness(
   { mode: "survival" },
   async (request, body, response) => {
@@ -84,7 +84,7 @@ try {
   assert.equal(await flight.isVisible(), true);
   assert.equal(
     await page
-      .getByRole("button", { name: "תקיפה (Q)", exact: true })
+      .getByRole("button", { name: "תקיפה (X)", exact: true })
       .isHidden(),
     true,
   );

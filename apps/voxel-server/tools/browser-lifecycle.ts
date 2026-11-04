@@ -5,7 +5,7 @@ import {
   launchSoftwareBrowser,
 } from "../../../games/voxel/tools/browser-harness.ts";
 import { schoolFixture } from "../tests/helpers/school-fixture.ts";
-import { schoolGatewayPolicy } from "../src/school-admission.ts";
+import { schoolBrowserPolicy } from "./school-browser-policy.ts";
 
 const f = schoolFixture();
 f.setNow(Date.now());
@@ -16,7 +16,7 @@ f.state.defaults = Array.from({ length: 7 }, (_, day_of_week) => ({
   end_time: "24:00:00",
   is_active: true,
 }));
-const policy = schoolGatewayPolicy(f.access);
+const policy = schoolBrowserPolicy(f.access);
 const h = await createBuiltHarness(
   { mode: "survival" },
   async (request, body, response) => {
@@ -156,11 +156,13 @@ try {
     );
   });
   await kid.keyboard.up("KeyW");
+  // Freeze invariants use physics state; debug().position is a render cache
+  // that can retain an earlier prediction until the next lifecycle baseline.
   const paused = await debug(kid);
   await kid.locator("#resume").click();
   await kid.waitForTimeout(150);
   assert.equal((await debug(kid)).focused, false);
-  assert.deepEqual((await debug(kid)).position, paused.position);
+  assert.deepEqual((await debug(kid)).body.position, paused.body.position);
   await teacher.bringToFront();
   await teacher.waitForFunction(
     () => (window as any).voxel.debug().worldPauseReason === "session",
@@ -198,7 +200,7 @@ try {
   const moved = await debug(teacher);
   assert.equal(moved.worldTick, paused.worldTick);
   assert.equal((await debug(kid)).worldTick, paused.worldTick);
-  assert.deepEqual((await debug(kid)).position, paused.position);
+  assert.deepEqual((await debug(kid)).body.position, paused.body.position);
   mkdirSync(new URL("../test-results/", import.meta.url), {
     recursive: true,
   });
@@ -216,7 +218,7 @@ try {
   assert.equal((await debug(kid)).focused, false);
   assert.equal((await debug(kid)).body.frozen, 1);
   await kid.waitForTimeout(100);
-  assert.deepEqual((await debug(kid)).position, paused.position);
+  assert.deepEqual((await debug(kid)).body.position, paused.body.position);
   await kid.locator("#resume").click();
   await kid.waitForFunction(
     () =>
@@ -253,7 +255,7 @@ try {
     console.error(
       "Resumed movement diagnostic",
       JSON.stringify({
-        pausedPosition: paused.position,
+        pausedPosition: paused.body.position,
         position: d.position,
         body: d.body,
         focused: d.focused,
@@ -315,7 +317,7 @@ try {
         browser: browser.version(),
         scope:
           "Built child pointer-lock pause/resume with cleared input, fixed world time and teacher touch flight while paused, terminal session/no automatic readmission and teardown; fixture school Auth/PostgREST and software Chromium",
-        paused: { tick: paused.worldTick, position: paused.position },
+        paused: { tick: paused.worldTick, position: paused.body.position },
         teacherRise: moved.position[1] - camera.position[1],
         resumed: {
           epoch: resumed.epoch,
