@@ -83,6 +83,57 @@ test('public playback lead smooths whole-input timing without contaminating self
     assert.equal(visible[0], Math.round((own[0] + own[3] * a.queue.lead) * 10000) / 10000);
     assert(visible[0] > own[0]);
     assert.equal(snapshot('a').self!.ack, 1);
+    // The first publication may be actor_joined. Apply subsequent wire deltas
+    // exactly as a peer does; each must retain the same compensated timeline.
+    let replica = f.player('b').visible.get('a')!;
+    let sawDelta = false;
+    for (let sequence = 3; sequence <= 10; sequence++) {
+      f.events.get('b')!.length = 0;
+      f.room.receive(
+        'a',
+        {
+          type: 'input',
+          frames: [
+            {
+              epoch: a.epoch,
+              sequence,
+              dt: 0.025,
+              x: 1,
+              z: 0,
+              yaw: 0,
+              pitch: 0,
+              jump: false,
+              sneak: false,
+              sprint: false,
+            },
+          ],
+        },
+        f.now,
+      );
+      f.elapse(1000 / 30);
+      for (const event of f.events.get('b')!) {
+        if (!('type' in event)) continue;
+        if (event.type === 'snapshot')
+          for (const delta of event.actors)
+            if (delta.id === 'a') {
+              sawDelta = true;
+              replica = { ...replica, ...delta };
+            }
+      }
+      const self = snapshot('a').self!.state;
+      assert.deepEqual(
+        replica.state,
+        self.map((value, axis, body) =>
+          axis < 3 && !body[12]
+            ? Math.round((value + body[axis + 3] * a.queue.lead) * 10000) / 10000
+            : value,
+        ),
+        `peer delta at input ${sequence} must preserve public playback lead`,
+      );
+      assert.deepEqual(replica, f.player('b').visible.get('a'));
+      assert.equal(self[0], Math.round(f.state()[0] * 10000) / 10000);
+    }
+    assert(sawDelta, 'exercise ongoing movement deltas rather than only actor_joined');
   } finally {
     f.room.dispose();
   }

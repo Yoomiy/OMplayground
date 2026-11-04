@@ -2090,7 +2090,7 @@ export class GameRoom {
               const next = {
                 id: other.id,
                 ...(actor.avatar !== old.avatar ? { avatar: actor.avatar } : {}),
-                ...(state.some((v, i) => v !== old.state[i]) ? { state } : {}),
+                ...(actor.state.some((v, i) => v !== old.state[i]) ? { state: actor.state } : {}),
                 ...(actor.yaw !== old.yaw ? { yaw: actor.yaw } : {}),
                 ...(actor.pitch !== old.pitch ? { pitch: actor.pitch } : {}),
                 ...(!sameAppearance(actor.appearance, old.appearance)

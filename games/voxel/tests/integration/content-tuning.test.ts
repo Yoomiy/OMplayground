@@ -26,6 +26,7 @@ const old = compileContent({
       : block.family.endsWith('_leaves')
         ? {
             ...block,
+            mining: { ...block.mining, seconds: 1 },
             drops: [...block.drops, { itemType: 'apple', count: 1 }],
             forage: { none: 95, entries: [{ itemType: 'sapling', count: 1, weight: 5 }] },
           }

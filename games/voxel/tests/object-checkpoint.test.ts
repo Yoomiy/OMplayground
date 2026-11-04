@@ -6,7 +6,7 @@ import { compileContent } from '../tools/compile-content.ts';
 import { Drops } from '../src/sim/drops.ts';
 import { Explosives } from '../src/sim/explosives.ts';
 import type { WorldPort } from '../src/shared/engine-port.ts';
-import { DROP_LIFETIME_TICKS } from '../src/shared/gameplay.ts';
+import { DROP_LIFETIME_TICKS, MAGNET_RADIUS } from '../src/shared/gameplay.ts';
 const content = compileContent(source).manifest,
   tnt = content.blocks.findIndex((block) => block.name === 'tnt'),
   rule = content.behavior.find((block) => block.family === 'tnt')!.explosive!;
@@ -52,13 +52,31 @@ test('drop JSON recovery preserves pickup order, partial ownership, delays, froz
   assert.equal(restored.eligible('drop-1', 'b', 105), false);
   assert.equal(restored.eligible('drop-1', 'b', 106), true);
   assert.equal(restored.eligible('drop-1', 'a', 129), false);
-  assert.equal(restored.eligible('drop-1', 'a', 130), true);
+  assert.equal(restored.eligible('drop-1', 'a', 130), false);
   assert.deepEqual(
     restored.checkpoint(103),
     snapshot,
     'wall time or reconstruction does not advance saved timers',
   );
   for (const drops of [original, restored]) {
+    drops.releaseThrower('a', [0.5, 65, 0.5]);
+    assert.equal(
+      drops.eligible('drop-1', 'a', 130),
+      false,
+      'remaining nearby keeps throw protection',
+    );
+    drops.releaseThrower('a', [0.5 + MAGNET_RADIUS, 65, 0.5]);
+    assert.equal(
+      drops.eligible('drop-1', 'a', 130),
+      true,
+      'leaving attraction range releases protection',
+    );
+    drops.releaseThrower('a', [0.5, 65, 0.5]);
+    assert.equal(
+      drops.eligible('drop-1', 'a', 130),
+      true,
+      'returning does not reclaim the exclusion',
+    );
     drops.take('drop-7', 1);
     assert.equal(drops.add({ itemType: 'dirt', count: 1 }, [0.5, 65, 0.5], 104), 'drop-14');
     drops.step(unloaded, 100 + DROP_LIFETIME_TICKS - 1);

@@ -110,3 +110,41 @@ release `b9438158d0e3`: a real 60-minute two-player run, 212 confirmed edits,
 53 local input recoveries, no automatic readmissions or client errors, and
 successful cleanup. It also records the focused checks and the eight broader
 suite failures reproduced in the unchanged baseline.
+
+## Baseline test repairs — 2026-11-04
+
+The eight recorded failures were reproduced before editing their expectations.
+The repairs retain their original safety contracts:
+
+- Item geometry validates sprite UVs/normals or terrain layers as appropriate.
+- The drop-replica fixture supplies the terrain query now used by collision sweeps.
+- Inventory and world-checkpoint tests use current numeric boundaries and retain
+  invalid-coordinate rejection; coordinate 1000 is valid in streamed worlds.
+- Drop recovery checks thrower exclusion until leaving attraction range, including
+  release after restore and subsequent return, rather than the retired timed rule.
+- The mining failure hook is installed before instant mining executes; a failed
+  write still leaves terrain, revisions, inventory and loot unchanged.
+- The historical content fixture restores leaf mining duration as well as loot,
+  reproducing its original hash rather than accepting a newly invented old hash.
+- Snapshot boundaries reconstruct actual peer messages and check current avatars,
+  visibility, quantization, private self, immutable history and removal order.
+  They no longer import an obsolete archived game implementation.
+
+Investigating snapshots also exposed a runtime defect: introductions used public
+playback lead, while later pose deltas compared and sent the unadjusted self pose.
+Both comparison and publication now use the public pose. The extended native
+regression failed on the old publisher (a 0.0328-block discrepancy at its first
+delta) and passes after the fix, while self reconciliation remains unadjusted.
+
+Matched release: `ea5aa575334d`. Engine, content and protocol are unchanged;
+existing saves need no reset. The earlier hour-long qualification remains a
+historical result for its recorded build, not a new soak of this release.
+
+Final checks pass: 261 unit/actual-Wasm tests, 54 source integration tests,
+54 packaged integration tests using the standard `test:server-bundle` command,
+three release-restoration tests, game TypeScript and import boundaries. No test
+was skipped. One earlier packaged run overlapped both other suites and timed out
+capturing the large edited-world checkpoint during cleanup; that unchanged test
+passed in isolation and in the separate full standard packaged run. Its capture
+deadline and assertions were not relaxed. No hosted calls or hour-long soak were
+performed for this repair.

@@ -10,6 +10,7 @@ import { makeStack, matchRecipe, validStack } from '../src/shared/inventory.ts';
 import { blockDrops } from '../src/shared/loot.ts';
 import { itemGeometry } from '../src/render/held-block.ts';
 import { worldItemMaterial } from '../src/render/held-block.ts';
+import { itemSprite } from '../src/render/item-sprites.ts';
 import { Texture } from 'three';
 import { parseClientMessage } from '../src/shared/protocol.ts';
 import { creativePalette } from '../src/client/palette.ts';
@@ -213,7 +214,7 @@ test('forage is deterministic from seed, cell and full committed revision, retai
   assert.notDeepEqual(samples(1, 0), samples(2, 0));
 });
 
-test('all authored item forms have finite geometry, real texture layers and complete solid colored glass palettes', () => {
+test('all authored item forms have finite geometry, valid sprite UVs or terrain layers and complete solid colored glass palettes', () => {
   for (const item of content.items) {
     const geometry = itemGeometry(item, content.blocks);
     try {
@@ -221,10 +222,27 @@ test('all authored item forms have finite geometry, real texture layers and comp
         layer = geometry.getAttribute('layer');
       assert.ok(position.count > 0, item.itemType);
       assert.ok(Array.from(position.array).every(Number.isFinite), item.itemType);
-      assert.ok(
-        Array.from(layer.array).every((value) => value >= 0 && value < textures.length),
-        item.itemType,
-      );
+      if (itemSprite(item)) {
+        const uv = geometry.getAttribute('uv'),
+          normal = geometry.getAttribute('normal');
+        assert.equal(layer, undefined, item.itemType);
+        assert.equal(uv.count, position.count, item.itemType);
+        assert.equal(normal.count, position.count, item.itemType);
+        assert.ok(Array.from(normal.array).every(Number.isFinite), item.itemType);
+        assert.ok(
+          Array.from(uv.array).every((value) => Number.isFinite(value) && value >= 0 && value <= 1),
+          item.itemType,
+        );
+      } else {
+        assert.ok(layer, item.itemType);
+        assert.equal(layer.count, position.count, item.itemType);
+        assert.ok(
+          Array.from(layer.array).every(
+            (value) => Number.isInteger(value) && value >= 0 && value < textures.length,
+          ),
+          item.itemType,
+        );
+      }
       geometry.computeBoundingBox();
       assert.ok(
         geometry.boundingBox!.min.y >= -0.6 && geometry.boundingBox!.max.y <= 0.6,

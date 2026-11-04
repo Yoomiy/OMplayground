@@ -1,9 +1,9 @@
 {
-  "buildId": "b9438158d0e39dd5ff78fd132075324385a119b268c01975e28d5dc51aef30f5",
+  "buildId": "ea5aa575334df7d715d41a37deca78775c9dff3ddd8ab0bde6669db85d3c6846",
   "engineHash": "83a2ee1a6f731a6b6f515f16a121ca38311bb126266508d394177127f8ea1237",
   "contentHash": "2901239743859cde06ec4544cb84bb22f0c6062c4f83234dc2f8ac0d380cd21a",
-  "clientHash": "8b9efd445dc5b057da986ee2c04d37185ce657241c061876b968c6e8f5024e10",
-  "serverHash": "3ea889666089ed18c555a35fcfc7e11c1333ca55f933ca5fc7c8c54d0fd4dc8c",
+  "clientHash": "401e6c82c7ef8ac41b543ad1de705e4f378a58cdc10dff314cf817456077773d",
+  "serverHash": "46c5f666121d7db5e12ea91068de7b7d373378926ef8582c6dbe611dc6f50662",
   "client": [
     {
       "path": "assets/break-DPSoepx8.ogg",
@@ -126,8 +126,8 @@
       "hash": "3eba68d7069335da8b4813e3ac4ebc1fd632fd4d33ae70916a6686085b5f8dce"
     },
     {
-      "path": "assets/index-DmPI884r.js",
-      "hash": "35f908d5c9d650fa18a721086f726b2f5ffcb70ebdab5a85b6608b9434161001"
+      "path": "assets/index-CTlJ3IX8.js",
+      "hash": "2c32b55e6d38ef08ebaffac95fbcf9ca445a976ecb81b8eb73257bf8f35663db"
     },
     {
       "path": "assets/index-P3AiFv1J.css",
@@ -311,7 +311,7 @@
     },
     {
       "path": "index.html",
-      "hash": "0c09aa456197ed2453fa3c98486a54c757e07be16716bef4821cd45a44e02b0d"
+      "hash": "9a14b8f22176b5fd20c56ce1817e9a0a370f051103059acc6170d71b3e25fb5b"
     },
     {
       "path": "voxel-audio-NOTICE.txt",
@@ -321,7 +321,7 @@
   "server": [
     {
       "path": "build.json",
-      "hash": "689d0b92ae3e3872f5686295e3b4d71bd3c192ed19a80ddacad6740962017873"
+      "hash": "91d88cef919ec17681516f5450ece688d0851d3f8190529b1ccc9da32d00b472"
     },
     {
       "path": "content.json",
@@ -341,11 +341,11 @@
     },
     {
       "path": "room-worker.js",
-      "hash": "f3b9df2e8abd738646aa0a1caed64beca3052774c140c47144f067af115a1565"
+      "hash": "02e8e1bc6d0e8a9d7a8859fd8cd5da23cfbd6838cdc434ece20da0d8a842d7fc"
     },
     {
       "path": "room-worker.js.map",
-      "hash": "c49ad20ba3a62c6c6cbfeb0f9b356f4a7b174991d5b9cdef33ff8d9db82df894"
+      "hash": "8b2496a55f4ba14f9dca0fe247dbdb3648bcf8c95d12dec9b91d1a5cccd9d7ea"
     }
   ]
 }
