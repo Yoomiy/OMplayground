@@ -1,14 +1,12 @@
-import { lazy, Suspense, useEffect, type ReactNode } from "react";
+import { Protected } from "@/components/Protected";
+import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { usePlaygroundAccess } from "@/hooks/usePlaygroundAccess";
 import { PresenceProvider } from "@/hooks/usePresence";
 import { InboxProvider } from "@/hooks/useInbox";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { PendingChallengeBanner } from "@/components/PendingChallengeBanner";
 import { FeedbackTrigger } from "@/components/FeedbackTrigger";
-import { supabase } from "@/lib/supabase";
-import type { PlaygroundRole } from "@/lib/recessAccess";
 import { LoginPage } from "@/pages/LoginPage";
 import { HomePage } from "@/pages/HomePage";
 import { lazyImportWithRetry } from "@/lib/lazyImport";
@@ -53,46 +51,6 @@ function RouteFallback() {
       טוען…
     </div>
   );
-}
-
-function homeForRole(role: PlaygroundRole): string {
-  if (role === "admin") return "/admin";
-  if (role === "teacher") return "/teacher";
-  return "/home";
-}
-
-function Protected({
-  children,
-  allowedRoles
-}: {
-  children: ReactNode;
-  allowedRoles?: PlaygroundRole[];
-}) {
-  const { user, loading: authLoading } = useAuth();
-  const { result, loading: accessLoading } = usePlaygroundAccess(user);
-
-  useEffect(() => {
-    if (user && result && !result.allowed) {
-      void supabase.auth.signOut();
-    }
-  }, [result, user]);
-
-  if (authLoading || (user && accessLoading && !result)) {
-    return <RouteFallback />;
-  }
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-  if (!result) {
-    return <RouteFallback />;
-  }
-  if (!result.allowed) {
-    return <Navigate to="/login" replace />;
-  }
-  if (allowedRoles && !allowedRoles.includes(result.role)) {
-    return <Navigate to={homeForRole(result.role)} replace />;
-  }
-  return <>{children}</>;
 }
 
 export default function App() {

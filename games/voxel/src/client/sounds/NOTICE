@@ -1,0 +1,5 @@
+Voxel game audio (.ogg) adapted from voxelsrv (MIT).
+Upstream lives in sourceCode/voxelsrv (not committed to this repo).
+Refresh with: npm run borrow-voxel-audio
+
+Restored from repository preimage 13e3c96^ for the standalone voxel runtime.

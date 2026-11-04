@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { freshSessionPresence } from "@/lib/sessionPresence";
 import { isClassroomDrawingSession } from "@/lib/drawingSessionScope";
 import { reportCaughtError } from "@/utils/telemetry";
 
@@ -12,7 +13,8 @@ export interface MyPausedGameRow {
   connected_player_ids: string[];
   connected_player_names: string[];
   invitation_code: string;
-  games: { name_he: string } | null;
+  games: { name_he: string; game_url: string } | null;
+  voxel_presence_expires_at: string | null;
 }
 
 /**
@@ -38,7 +40,7 @@ export function useMyPausedGames(userId: string | undefined, gender: "boy" | "gi
     const { data, error } = await supabase
       .from("game_sessions")
       .select(
-        "id, status, host_name, game_id, last_activity, invitation_code, connected_player_ids, connected_player_names, games ( name_he )"
+        "id, status, host_name, game_id, last_activity, invitation_code, connected_player_ids, connected_player_names, voxel_presence_expires_at, games ( name_he, game_url )"
       )
       .in("status", ["paused", "playing"])
       .contains("player_ids", [userId])
@@ -51,7 +53,7 @@ export function useMyPausedGames(userId: string | undefined, gender: "boy" | "gi
       setRows([]);
     } else {
       setRows(
-        ((data ?? []) as unknown as MyPausedGameRow[]).filter(
+        ((data ?? []) as unknown as MyPausedGameRow[]).map(row=>freshSessionPresence(row)).filter(
           (row) =>
             !isClassroomDrawingSession(row.invitation_code) &&
             !row.connected_player_ids.includes(userId)
@@ -80,7 +82,7 @@ export function useMyPausedGames(userId: string | undefined, gender: "boy" | "gi
       Array.isArray(row.player_ids) &&
       row.player_ids.includes(currentUserId) &&
       !isClassroomDrawingSession(row.invitation_code) &&
-      !row.connected_player_ids?.includes(currentUserId);
+      !freshSessionPresence(row).connected_player_ids?.includes(currentUserId);
 
     const handleRealtime = (payload: any) => {
       const currentUserId = userIdRef.current;
@@ -130,7 +132,9 @@ export function useMyPausedGames(userId: string | undefined, gender: "boy" | "gi
         if (connectionStatus === "SUBSCRIBED") void refetch();
       });
 
+    const presenceTimer=window.setInterval(()=>void refetch(),5000);
     return () => {
+      window.clearInterval(presenceTimer);
       void supabase.removeChannel(channel);
     };
   }, [userId, gender, refetch]);

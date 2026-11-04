@@ -158,9 +158,9 @@ describe("Observability Package", () => {
     it("includes lifecycle mutations and excludes hot gameplay traffic", () => {
       expect(shouldLogSocketEvent("game-server", "PAUSE_GAME")).toBe(true);
       expect(shouldLogSocketEvent("game-server", "VOICE_TOKEN")).toBe(true);
-      expect(shouldLogSocketEvent("minecraft-server", "SET_GAME_MODE")).toBe(true);
-      expect(shouldLogSocketEvent("minecraft-server", "INPUT")).toBe(false);
-      expect(shouldLogSocketEvent("minecraft-server", "BLOCK_DELTA")).toBe(false);
+      expect(shouldLogSocketEvent("voxel-server", "JOIN_ROOM")).toBe(false);
+      expect(shouldLogSocketEvent("voxel-server", "INPUT")).toBe(false);
+      expect(shouldLogSocketEvent("voxel-server", "BLOCK_DELTA")).toBe(false);
     });
   });
 });

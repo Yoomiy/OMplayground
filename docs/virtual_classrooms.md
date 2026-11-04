@@ -57,8 +57,8 @@ The Virtual Classrooms platform enables dynamic, standalone virtual classrooms b
 | Layer | File / Component | Description |
 |---|---|---|
 | **Database** | `supabase/migrations/` | Schema/RLS for classrooms plus server-only delegate, enrollment, and cookie-session records |
-| **Backend API** | `apps/minecraft-server/src/livekitService.ts` | LiveKit classroom token issuance, permission synchronization, removal, cleanup, and trusted enrollment delivery |
-| **Backend API** | `apps/minecraft-server/src/index.ts` | Classroom token, delegate activation, settings, removal, promotion, lifecycle, and cleanup routes |
+| **Backend API** | `apps/classroom-server/src/livekitService.ts` | LiveKit classroom token issuance, permission synchronization, removal, cleanup, and trusted enrollment delivery |
+| **Backend API** | `apps/classroom-server/src/routes.ts` | Classroom token, delegate activation, settings, removal, promotion, lifecycle, and cleanup routes |
 | **Document converter** | `apps/document-converter/` | Ephemeral LibreOffice/Poppler document rasterization and ZIP packaging |
 | **Frontend UI** | `apps/web/src/pages/ClassroomPage.tsx` | Interactive classroom page: authenticated lifecycle calls, server-issued host controls, and Socket.IO board hydration |
 | **Frontend UI** | `apps/web/src/pages/TeacherPage.tsx` | Teacher tab for creating classrooms (scoped to creator `teacher_id`) & copying links |
@@ -68,25 +68,30 @@ The Virtual Classrooms platform enables dynamic, standalone virtual classrooms b
 
 ## Deployment note
 
+The source now runs in the independent [classroom service](../apps/classroom-server/README.md).
+Build the web app with `VITE_CLASSROOM_SERVER_URL` and deploy the service separately.
+The workspace extraction is local; hosted routing, webhook delivery and browser
+qualification still require verification before production cutover.
+
 The classroom page must call the RTC service from an allowed `CORS_ORIGIN` with credentials enabled. In production, serve the web app and RTC service from the same site (or a same-site subdomain) so browsers retain the secure delegate cookie. The cookie is `HttpOnly`, `Secure`, `SameSite=None` in production, and is accepted only by delegate endpoints with an allow-listed browser `Origin`.
 
-Deploy `apps/document-converter/Dockerfile` as a separate one-replica Railway service. Set the same `DOCUMENT_CONVERTER_SHARED_SECRET` on it and `minecraft-server`, set `DOCUMENT_CONVERTER_URL` on `minecraft-server`, and allow the Vercel classroom origin through the converter’s `CORS_ORIGIN`. The service needs ephemeral disk only; horizontal replicas require a shared job store and are intentionally unsupported.
+Deploy `apps/document-converter/Dockerfile` as a separate one-replica Railway service. Set the same `DOCUMENT_CONVERTER_SHARED_SECRET` on it and `classroom-server`, set `DOCUMENT_CONVERTER_URL` on `classroom-server`, and allow the Vercel classroom origin through the converter’s `CORS_ORIGIN`. The service needs ephemeral disk only; horizontal replicas require a shared job store and are intentionally unsupported.
 
 The converter propagates the classroom request correlation ID inside its signed ticket. Railway logs identify conversion jobs by job ID, document name, classroom room code, and format, but never record tickets, result access tokens, or document contents.
 
 ### Classroom security logging deployment
 
 Configure LiveKit to POST webhooks to the publicly reachable
-`https://<minecraft-server-host>/webhooks/livekit` endpoint. For LiveKit Cloud,
+`https://<classroom-server-host>/webhooks/livekit` endpoint. For LiveKit Cloud,
 use Settings → Webhooks and select a signing API key matching this service's
 `LIVEKIT_API_KEY` and `LIVEKIT_API_SECRET`. The browser's ability to join a room
 does not establish that webhook delivery is configured. Use the dashboard's test
 event action, then verify real `participant_joined` and `participant_left`
 deliveries receive 2xx responses. See
 https://docs.livekit.io/intro/basics/rooms-participants-tracks/webhooks-events/.
-The webhook URL must target `minecraft-server`, not the drawing `game-server`.
+The webhook URL must target `classroom-server`, not the drawing `game-server`.
 
-Search `minecraft-server` logs for `CLASSROOM_PARTICIPANT_LEFT` after both the
+Search `classroom-server` logs for `CLASSROOM_PARTICIPANT_LEFT` after both the
 Leave Class button and closing a tab. Webhooks log `evidenceSource=webhook`;
 the 30-second LiveKit polling fallback logs `evidenceSource=reconciliation`
 once a previously observed or recorded participant is absent. Tab closure may
@@ -96,7 +101,7 @@ Missing webhook delivery cannot be diagnosed solely from a board socket's
 disconnect log. Neither a leave button click nor a board socket disconnect is
 treated as proof of media-room departure.
 
-Set `CLASSROOM_CLIENT_IP_SOURCE=railway` on `minecraft-server` only for requests
+Set `CLASSROOM_CLIENT_IP_SOURCE=railway` on `classroom-server` only for requests
 entering through Railway public HTTP ingress. Railway documents `X-Real-IP` as
 the client address: https://docs.railway.com/networking/public-networking/specs-and-limits.
 This mode trusts that header; restrict private/direct paths to the classroom

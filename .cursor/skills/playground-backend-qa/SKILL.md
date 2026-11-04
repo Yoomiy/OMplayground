@@ -1,87 +1,77 @@
 ---
 name: playground-backend-qa
-description: Jest QA strategy for Playground backends — game-logic, voxel-content, minecraft-server, game-server, and observability. Prefer tests-first and server-authoritative assertions.
+description: Validate Playground board, native voxel, classroom and observability backends through authority, isolation, durability and lifecycle behavior.
 ---
 
-# Lead Backend QA — The Playground
+# Backend QA — The Playground
 
-## Role
+Use the current architecture and the user's authorized task to choose meaningful
+checks. Board services use Jest/Socket.io; the voxel runtime uses Node tests,
+Rust/Wasm and native WebSocket. The old Minecraft/content workspaces are retired.
+Do not recreate their protocol or implementation tests.
 
-Backend QA owner for Node.js + Socket.IO + Supabase with strong focus on authoritative multiplayer behavior.
+## Test layers
 
-## Prime directives
+| Layer | Current location | What it establishes |
+|---|---|---|
+| Board rules | `packages/game-logic/src/*.test.ts` | Legal transitions, turn ownership, terminal state |
+| Board service | `apps/game-server/src/*.test.ts` | HTTP/auth/recess and Socket.io room scoping |
+| Voxel domain | `games/voxel/tests/*.test.ts` | Time accounting, atomic inventory/craft, survival and authority |
+| Voxel engine | `games/voxel/engine`, `games/voxel/tests/wasm` | Native and actual-Wasm world/movement/shape invariants |
+| Voxel gateway | `games/voxel/tests/integration` | Admission, replication, multiple rooms, command replay and recovery |
+| School adapters | `apps/voxel-server/tests` | Fresh identity/policy, roles, moderation/chat/media and persistence ports |
+| Actual local SQL | `apps/voxel-server/tests/postgres` | Transactions, fencing, grants, concurrent commits and service composition |
+| Classroom | `apps/classroom-server/src/*.test.ts` | Independent RTC, moderation, presentation and attendance |
+| Observability | `packages/observability/src/__tests__` | Admin access, telemetry, correlation, lifecycle and classroom webhooks |
 
-1. Do not modify production source unless user explicitly asks for code fixes.
-2. Prefer deterministic tests (fake timers, seeded randomness, fixed snapshots).
-3. Verify room isolation and authority boundaries before UX niceties.
+The frozen `.ts.txt` files in `games/voxel/docs/legacy-content-reference` are
+historical inventory inputs. `check:content:complete` verifies the 197 decisions,
+source hashes, current targets and potential obtainability; it does not establish
+survival balance or actual play on school PCs.
 
-## Core test layers
+## Behavioral priorities
 
-### 1) Pure logic unit tests
+- Verify server authority and room isolation before interface details. Client
+  clocks, positions, actors, roles and inventory blobs are not trusted facts.
+- Time-forgery/burst inputs cannot create movement time. Retried/retired commands
+  and reconnect epochs cannot duplicate gameplay effects.
+- Inventory moves, mining, crafting and concurrent containers conserve items.
+  Check actual world/inventory results, not only a success receipt.
+- Save success follows a coherent committed checkpoint. Test upload/commit
+  failures, restart from the committed pointer, lease loss and process drain.
+- Recheck active school identity, recess, membership, gender and staff capability.
+  Reconnect and cached UI state cannot restore revoked authority.
+- Exit/repeated mounts release owned workers, sockets, GPU objects and audio.
+  Distinguish retained Wasm high-water memory from live resources.
 
-- **Board games:** `packages/game-logic/src/*.test.ts`
-- **Voxel content:** `packages/voxel-content/src/*.test.ts` (blocks, items, recipes, worldgen, mining)
-- **Observability:** `packages/observability/src/*.test.ts` (when added — package currently has no tests)
-- No real sockets, no Supabase calls in layer 1.
-- Cover happy path + edge path + invalid input path.
+## Current operational checks
 
-### 2) Integration tests (HTTP/middleware)
+Board/classroom observability uses `GET /api/admin/stats`; native voxel uses
+`POST /api/voxel/admin-stats` with `{}`. Test missing credentials, wrong role,
+fresh admin revocation and provider outage. Operations reads must not allocate
+rooms or issue game/media capabilities. Classroom telemetry uses its own service;
+admin federation isolates unavailable services and does not invent missing native
+Socket.io rates/latency.
 
-- Mock Supabase auth/profile calls.
-- Validate auth/recess/role gates and session ownership checks.
-- Use `supertest` and fake timers for recess windows.
-- Targets: `apps/game-server/src/*.test.ts`, `apps/minecraft-server/src/recess.test.ts`, `health.test.ts`, observability routes (`/api/admin/stats`, `/api/telemetry`, `requireAdmin`).
+Classroom verification includes `npm run verify:boundary --workspace
+@playground/classroom-server`: the RTC service must load no game modules and
+preserve its 20-route contract.
 
-### 3) Socket behavior tests
+## Choosing checks
 
-- Use `socket.io-client` as multiple players.
-- Assert per-room broadcast scoping, join/leave behavior, and lifecycle events.
-- Never accept client-declared truth; assert server recomputation.
-- Examples: `roomIsolation.test.ts`, `tictactoeRoom.test.ts`, `chessRoom.test.ts` (game-server); `room.test.ts`, `roomIsolation.test.ts` (minecraft-server).
+Read the touched behavior and its invariants, then run the relevant suites.
+Prefer deterministic state/tick checks and explicit event waits over sleeps.
+Add tests when they establish a meaningful behavioral guarantee; do not mirror
+implementation details or add tests solely for reversible documentation/metadata
+changes. Do not modify source while tests/builds consume it. Keep timing/browser
+workloads separate from competing jobs and do not restart a live run merely
+because its observation handle times out.
 
-## Voxel server coverage (keep green)
+PC keyboard/mouse is the primary school target. Existing mobile/tablet support
+is optional. No large synthetic-scale release gate, scaling infrastructure or
+voxel headcount caps are required. Software-rendered browser checks prove
+functionality, not physical-school-PC frame performance. Fixture Auth/Storage
+and local SQL do not prove hosted-provider behavior.
 
-Existing suites under `apps/minecraft-server/src/`:
-
-| Area | Files |
-|---|---|
-| Registry / drops | `blockBreakDrops.test.ts`, `drops.test.ts` |
-| Inventory / craft | `inventory.test.ts` |
-| Mining / tools | `breakMining.test.ts` |
-| Vitals / food | `vitals.test.ts`, `death.test.ts` |
-| Perks / weather / TNT | `perks.test.ts`, `weather.test.ts`, `tnt.test.ts` |
-| Worldgen / tick | `world.test.ts`, `tick.test.ts` |
-| Lifecycle | `sessionPersistence.test.ts`, `recessSweep.test.ts`, `room.test.ts` |
-
-Shared defs: `packages/voxel-content/src/blocks.test.ts`, `items.test.ts`, `recipes.test.ts`, `worldgen.test.ts`, `mining.test.ts`.
-
-## Observability coverage
-
-When touching `@playground/observability` or admin stats:
-
-- `requireAdmin` rejects non-admin JWT / missing token
-- `GET /api/admin/stats` returns `ServiceStats` shape; room list scoped to caller's server
-- `POST /api/telemetry` accepts batched client entries, rate-limited; no raw chat/game blobs
-- Correlation ID attached on HTTP + socket connect (smoke via integration test)
-
-Admin UI (`AdminStatsSection`) federates both servers — manual smoke on `/admin` → **סטטיסטיקות** tab.
-
-## Socket test expectations for voxel
-
-- Breaking a block produces exactly one authoritative outcome (drop or direct inventory update per design), never both.
-- Pickup cannot duplicate items under simultaneous clients.
-- Drop and pickup events are emitted only to the room of that session.
-- Reconnect/paused-session hydration preserves inventory + world drop consistency.
-
-## Test-writing workflow
-
-1. Read implementation and list invariants.
-2. Add focused tests near touched module (`*.test.ts`).
-3. Run targeted suite first, then broad suite.
-4. If failure indicates production bug, report root cause clearly before suggesting code fix.
-
-## Done criteria
-
-- New behavior has at least one positive and one negative-path test.
-- Race-sensitive flows include concurrent-client test coverage.
-- No flaky sleeps; use fake timers or explicit tick stepping.
+Use the exact commands in `games/voxel/README.md` and the service READMEs; the
+reference file maps the main replacement scenarios to their suites.

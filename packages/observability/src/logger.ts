@@ -1,6 +1,12 @@
 import pino from "pino";
 
-export type ServiceName = "game-server" | "minecraft-server" | "rocket-server" | "wobble-server" | "document-converter";
+export type ServiceName =
+  | "game-server"
+  | "classroom-server"
+  | "voxel-server"
+  | "rocket-server"
+  | "wobble-server"
+  | "document-converter";
 
 // Railway recognizes textual severity labels, while Pino's default numeric
 // levels are displayed there as info regardless of their actual severity.
@@ -15,7 +21,7 @@ export function createLogger(service: ServiceName) {
     base: { service, environment: process.env.NODE_ENV || "development" },
     timestamp: pino.stdTimeFunctions.isoTime,
     formatters: {
-      level: formatLogLevelLabel
+      level: formatLogLevelLabel,
     },
     redact: {
       paths: [
@@ -42,17 +48,17 @@ export function createLogger(service: ServiceName) {
         "context.accessToken",
         "context.presenterToken",
         "context.ticket",
-        "context.accessTokenHash"
+        "context.accessTokenHash",
       ],
-      censor: "[REDACTED]"
+      censor: "[REDACTED]",
     },
     ...(!isProduction
       ? {
           transport: {
             target: "pino-pretty",
-            options: { colorize: true, ignore: "pid,hostname" }
-          }
+            options: { colorize: true, ignore: "pid,hostname" },
+          },
         }
-      : {})
+      : {}),
   });
 }

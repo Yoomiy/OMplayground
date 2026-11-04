@@ -1,4 +1,8 @@
 {
+  "framework": "vite",
+  "installCommand": "npm --prefix ../.. ci --include=dev",
+  "buildCommand": "npm --prefix ../.. run build:staging:web",
+  "outputDirectory": "dist",
   "rewrites": [
     {
       "source": "/((?!stockfish/|assets/|.*\\.[a-z0-9]+$).*)",

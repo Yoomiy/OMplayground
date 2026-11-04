@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "purpose": "Frozen pre-rewrite source text for offline inventory/disposition audit; never executable runtime content",
+  "sourceCommit": "b0ccf90a83581460827f2c5a8f5d21c80612ebf6",
+  "files": [
+    {
+      "originalPath": "packages/voxel-content/src/blocks.ts",
+      "frozenPath": "games/voxel/docs/legacy-content-reference/blocks.ts.txt",
+      "sha256": "1a7b273a058d02198284fbfec4ac3223ae349806c285d371e2bc0e199dc36a36"
+    },
+    {
+      "originalPath": "packages/voxel-content/src/items.ts",
+      "frozenPath": "games/voxel/docs/legacy-content-reference/items.ts.txt",
+      "sha256": "f39a45143e2af3bd6f1b1d16d3d6de020c431acc85e473b3bde7cc8e6d64480d"
+    },
+    {
+      "originalPath": "packages/voxel-content/src/recipes.ts",
+      "frozenPath": "games/voxel/docs/legacy-content-reference/recipes.ts.txt",
+      "sha256": "64a67c04cd74b4d8dce0aa1c763c65fb637fbf55b414694ad6abb693d23e8b98"
+    }
+  ]
+}

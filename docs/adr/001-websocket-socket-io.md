@@ -2,7 +2,8 @@
 
 ## Status
 
-Accepted.
+Accepted for board/event-driven games. The voxel decision below is historical
+and superseded by [ADR 002](002-voxel-native-websocket.md).
 
 ## Context
 
@@ -27,13 +28,15 @@ Use **Socket.io** for WebSockets.
 - **Primary client intent:** `INTENT_GAME` with `{ sessionId, intent }`.
 - **Authoritative state:** In server memory; `packages/game-logic` validates transitions.
 
-### minecraft-server (voxel tick)
+### Retired voxel service (historical)
 
 - **Room names:** `voxel:{sessionId}` (gameplay), `voxel-snapshot:{sessionId}` / `voxel-snapshot-teacher:{sessionId}` (filtered snapshots).
 - **Logic:** `packages/voxel-content` + server tick loop — **not** `GameModule`.
 - **Voice:** LiveKit SFU separate from Socket.io position sync (`POST /rtc/token`).
 
-See `ARCHITECTURE.md` for the full event matrix.
+The old Minecraft service and content workspace are retired. The replacement
+uses native WebSocket and its own compiled content; see ADR 002 and
+`ARCHITECTURE.md` for current boundaries.
 
 ## Review
 

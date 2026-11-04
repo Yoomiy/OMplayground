@@ -1,0 +1,143 @@
+export const ITEM_LABELS: Record<string, string> = {
+  bucket: 'דלי',
+  water_bucket: 'דלי מים',
+  dirt: 'אדמה',
+  glass: 'זכוכית',
+  glowstone: 'אבן מאירה',
+  grass_block: 'דשא',
+  ladder: 'סולם',
+  lava: 'לבה',
+  oak_leaves: 'עלים',
+  oak_log: 'גזע עץ',
+  oak_planks: 'קרשי עץ',
+  oak_stairs: 'מדרגות עץ',
+  sand: 'חול',
+  short_grass: 'עשב',
+  stone: 'אבן',
+  stone_slab: 'חצי אבן',
+  torch: 'לפיד',
+  water: 'מים',
+  chest: 'תיבה',
+  crafting_table: 'שולחן יצירה',
+  stick: 'מקל',
+  wooden_pickaxe: 'מכוש עץ',
+  stone_pickaxe: 'מכוש אבן',
+  wooden_axe: 'גרזן עץ',
+  wooden_shovel: 'את עץ',
+  trail_boots: 'מגפי שטח',
+  swift_pickaxe: 'מכוש זריז',
+  feather_talisman: 'קמע נוצה',
+  helios_medallion: 'מדליון שמש',
+  helium_boots: 'מגפי הליום',
+  glow_talisman: 'קמע זוהר',
+  apple: 'תפוח',
+  heavy_shield: 'מגן כבד',
+  tnt: 'TNT',
+  charcoal: 'פחם עץ',
+  gunpowder: 'אבקת הבזק',
+  firestarter: 'מצת',
+};
+
+const extra: Record<string, string> = {
+  air: 'אוויר',
+  bedrock: 'סלע יסוד',
+  cobblestone: 'אבן מרוצפת',
+  bricks: 'לבנים',
+  bookshelf: 'ספרייה',
+  mossy_cobblestone: 'אבן מרוצפת עם אזוב',
+  stone_bricks: 'לבני אבן',
+  mossy_stone_bricks: 'לבני אבן עם אזוב',
+  granite: 'גרניט',
+  diorite: 'דיוריט',
+  andesite: 'אנדזיט',
+  deepslate: 'אבן עומק',
+  gravel: 'חצץ',
+  sandstone: 'אבן חול',
+  obsidian: 'אובסידיאן',
+  snow: 'שלג',
+  ice: 'קרח',
+  snowy_grass: 'אדמת שלג',
+  sponge: 'ספוג נוי',
+  pumpkin: 'דלעת',
+  melon: 'אבטיח',
+  cactus: 'קקטוס',
+  sapling: 'שתיל נוי',
+  dandelion: 'שן הארי',
+  poppy: 'פרג',
+  cornflower: 'דרדר',
+  dead_bush: 'שיח יבש',
+  brown_mushroom: 'פטרייה חומה',
+  red_mushroom: 'פטרייה אדומה',
+  sugar_cane: 'קנה סוכר',
+  coal: 'פחם',
+  iron_ingot: 'מטיל ברזל',
+  gold_ingot: 'מטיל זהב',
+  diamond: 'יהלום',
+  lapis: 'לפיס',
+  plant_fiber: 'סיבי צמח',
+  wheat: 'חיטה',
+  sugar: 'סוכר',
+  cocoa_beans: 'פולי קקאו',
+  egg: 'ביצה',
+  bread: 'לחם',
+  cookie: 'עוגייה',
+  melon_slice: 'פלח אבטיח',
+  carrot: 'גזר',
+  golden_carrot: 'גזר זהוב',
+  potato: 'תפוח אדמה',
+  baked_potato: 'תפוח אדמה אפוי',
+  cake: 'עוגה',
+  paper: 'נייר',
+  iron_vest: 'אפודת ברזל',
+  '#planks': 'קרשים (כל סוג)',
+  '#logs': 'גזעים (כל סוג)',
+  '#leaves': 'עלים (כל סוג)',
+  '#fuel': 'פחם או פחם עץ',
+};
+Object.assign(ITEM_LABELS, extra);
+for (const [key, hebrew] of Object.entries({
+  white: 'לבן',
+  orange: 'כתום',
+  magenta: 'ארגמן',
+  light_blue: 'תכלת',
+  yellow: 'צהוב',
+  lime: 'ירוק בהיר',
+  pink: 'ורוד',
+  gray: 'אפור',
+  light_gray: 'אפור בהיר',
+  cyan: 'טורקיז',
+  purple: 'סגול',
+  blue: 'כחול',
+  brown: 'חום',
+  green: 'ירוק',
+  red: 'אדום',
+  black: 'שחור',
+})) {
+  ITEM_LABELS[`${key}_wool`] = `צמר ${hebrew}`;
+  ITEM_LABELS[`${key}_concrete`] = `בטון ${hebrew}`;
+  ITEM_LABELS[`${key}_stained_glass`] = `זכוכית בצבע ${hebrew}`;
+  ITEM_LABELS[`${key}_pigment`] = `פיגמנט ${hebrew}`;
+}
+for (const [key, hebrew] of Object.entries({ oak: 'אלון', birch: 'ליבנה', spruce: 'אשוח' })) {
+  ITEM_LABELS[`${key}_log`] = `גזע ${hebrew}`;
+  ITEM_LABELS[`${key}_planks`] = `קרשי ${hebrew}`;
+  ITEM_LABELS[`${key}_leaves`] = `עלי ${hebrew}`;
+}
+for (const [key, hebrew] of Object.entries({
+  coal: 'פחם',
+  iron: 'ברזל',
+  gold: 'זהב',
+  diamond: 'יהלום',
+  lapis: 'לפיס',
+})) {
+  ITEM_LABELS[`${key}_ore`] = `עפרת ${hebrew}`;
+  if (key !== 'coal') ITEM_LABELS[`${key}_block`] = `גוש ${hebrew}`;
+}
+for (const [grade, hebrew] of Object.entries({
+  wooden: 'עץ',
+  stone: 'אבן',
+  iron: 'ברזל',
+  diamond: 'יהלום',
+}))
+  for (const [tool, name] of Object.entries({ pickaxe: 'מכוש', axe: 'גרזן', shovel: 'את' }))
+    ITEM_LABELS[`${grade}_${tool}`] = `${name} ${hebrew}`;

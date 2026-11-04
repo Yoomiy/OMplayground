@@ -1,3 +1,4 @@
+import "dotenv/config";
 import crypto from "crypto";
 import { execFile } from "child_process";
 import cors from "cors";

@@ -1,0 +1,229 @@
+{
+  "schema": 1,
+  "worldId": "prior-release-world",
+  "seed": 4242,
+  "preset": "blockyard-natural-v2",
+  "generatorVersion": 2,
+  "contentHash": "2901239743859cde06ec4544cb84bb22f0c6062c4f83234dc2f8ac0d380cd21a",
+  "engineHash": "cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388",
+  "sourceBuildId": "66535bfc391aab6a27e3c3af3a234beb0f02100d947d4bb010e20cdcdd74e9d8",
+  "bounds": {
+    "minX": -999984,
+    "minZ": -999984,
+    "maxX": 999984,
+    "maxZ": 999984,
+    "height": 256
+  },
+  "mode": "survival",
+  "tick": 1,
+  "epoch": 1,
+  "paused": false,
+  "hitSequence": 0,
+  "explosionSequence": 0,
+  "spawn": [
+    48.5,
+    70,
+    0.5
+  ],
+  "players": [
+    {
+      "id": "compat-player",
+      "state": [
+        49.5,
+        68.005,
+        0.5,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "yaw": 0,
+      "pitch": 0,
+      "reservationMs": null,
+      "vitals": {
+        "schema": 1,
+        "health": 20,
+        "food": 20,
+        "air": 300,
+        "deadTicks": 0,
+        "elapsed": 0,
+        "regeneration": 0,
+        "solar": 0,
+        "vision": 0,
+        "starvation": 0,
+        "lava": 0,
+        "drowning": 0,
+        "exhaustion": 0,
+        "eatDelay": 0,
+        "peak": null,
+        "attackDelay": 0,
+        "hurtDelay": 0,
+        "protection": 0
+      }
+    }
+  ],
+  "world": {
+    "schema": 1,
+    "contentHash": "2901239743859cde06ec4544cb84bb22f0c6062c4f83234dc2f8ac0d380cd21a",
+    "columns": [
+      {
+        "x": 3,
+        "z": 0,
+        "revision": 1,
+        "edits": [
+          [
+            51203,
+            109,
+            1
+          ]
+        ]
+      }
+    ]
+  },
+  "inventories": {
+    "schema": 1,
+    "contentHash": "2901239743859cde06ec4544cb84bb22f0c6062c4f83234dc2f8ac0d380cd21a",
+    "nextChest": 0,
+    "players": [
+      {
+        "id": "compat-player",
+        "revision": 2,
+        "selected": 0,
+        "bag": [
+          {
+            "itemType": "apple",
+            "count": 2
+          },
+          {
+            "itemType": "stone",
+            "count": 12
+          },
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "craft2": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "craft3": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "equipment": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      }
+    ],
+    "chests": []
+  },
+  "drops": {
+    "schema": 1,
+    "contentHash": "2901239743859cde06ec4544cb84bb22f0c6062c4f83234dc2f8ac0d380cd21a",
+    "tick": 1,
+    "nextId": 1,
+    "entries": [
+      {
+        "id": "drop-1",
+        "revision": 0,
+        "stack": {
+          "itemType": "apple",
+          "count": 1
+        },
+        "position": [
+          54.5,
+          69.005,
+          0.5
+        ],
+        "velocity": [
+          0,
+          2,
+          0
+        ],
+        "expiresIn": 9000,
+        "pickupIn": 6,
+        "owner": null,
+        "ownerPickupIn": 30
+      }
+    ]
+  },
+  "explosives": {
+    "schema": 1,
+    "contentHash": "2901239743859cde06ec4544cb84bb22f0c6062c4f83234dc2f8ac0d380cd21a",
+    "next": 1,
+    "entries": [
+      {
+        "id": "tnt-1",
+        "revision": 0,
+        "state": 114,
+        "position": [
+          56.5,
+          69.005,
+          0.5
+        ],
+        "velocity": [
+          0,
+          2,
+          0
+        ],
+        "remaining": 120,
+        "total": 120,
+        "owner": "compat-player"
+      }
+    ]
+  }
+}

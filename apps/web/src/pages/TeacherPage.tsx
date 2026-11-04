@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { getVoxelServerUrl } from "@/lib/voxelServerUrl";
+import { getClassroomServerUrl } from "@/lib/classroomServerUrl";
 import { useProfile } from "@/hooks/useProfile";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { cn } from "@/lib/cn";
@@ -217,7 +217,7 @@ function TeacherClassroomSection({ teacherProfile }: { teacherProfile: any }) {
       setNotice("נדרשת התחברות תקפה כדי לסגור שיעור.");
       return;
     }
-    const response = await fetch(`${getVoxelServerUrl()}/rtc/classroom-end`, {
+    const response = await fetch(`${getClassroomServerUrl()}/rtc/classroom-end`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
       body: JSON.stringify({ roomCode })

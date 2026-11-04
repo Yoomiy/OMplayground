@@ -1,0 +1,506 @@
+.voxel-inventory {
+  --paper: #d4c5a8;
+  --ink: #2f261c;
+  --edge: #5c4f3e;
+  width: min(640px, calc(100vw - 32px));
+  height: min(780px, calc(100dvh - 32px));
+  max-height: calc(100dvh - 32px);
+  box-sizing: border-box;
+  overflow: hidden;
+  color: var(--ink);
+  background: linear-gradient(#d4c5a8, #bfb196 65%, #a89274);
+  border: 3px solid #1e1e1e;
+  border-radius: 3px;
+  padding: 16px 22px;
+  box-shadow:
+    inset 0 1px #ffffff59,
+    0 20px 50px #000d;
+  font-family: inherit;
+}
+.voxel-inventory[open] {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.voxel-inventory::backdrop {
+  background: #000b;
+}
+.voxel-inventory header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #8a7a62;
+}
+.voxel-inventory h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #1f1810;
+}
+.inventory-subtitle {
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: #4a3f30;
+}
+.voxel-inventory h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+}
+.voxel-inventory button {
+  font: inherit;
+  cursor: pointer;
+}
+.voxel-inventory button:not(.voxel-item-slot) {
+  min-height: 32px;
+  color: #251c12;
+  background: linear-gradient(#c9bda8, #a99a83);
+  border: 2px solid #5c4f3e;
+  border-radius: 3px;
+  padding: 5px 9px;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow:
+    inset 0 1px #ffffff66,
+    0 2px #403326;
+}
+.voxel-inventory button:not(.voxel-item-slot):hover {
+  background: #ddd2be;
+}
+.voxel-inventory button:focus-visible {
+  outline: 3px solid #856419;
+  outline-offset: 2px;
+}
+.voxel-inventory button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.inventory-notice {
+  flex: 0 0 22px;
+  height: 22px;
+  line-height: 22px;
+  margin: 0;
+  color: #4a3f30;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.inventory-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  scrollbar-gutter: stable;
+  padding: 2px 4px 4px;
+}
+.inventory-panel-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.inventory-primary {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 8px;
+}
+.inventory-storage {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 8px;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+.inventory-storage > * {
+  flex-shrink: 0;
+}
+.inventory-hotbar {
+  flex: 0 0 auto;
+}
+.inventory-hotbar h3 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.inventory-primary > section {
+  min-width: 0;
+}
+.inventory-upper {
+  border: 2px solid #6b5e4b;
+  background: #00000012;
+  padding: 10px 12px;
+}
+.inventory-upper > section {
+  display: flow-root;
+}
+.inventory-upper h3 {
+  line-height: 28px;
+  margin-bottom: 8px;
+}
+.voxel-inventory .inventory-book-toggle {
+  float: left;
+}
+.inventory-grid {
+  direction: ltr;
+  display: grid;
+  grid-template-columns: repeat(var(--columns), 40px);
+  gap: 4px;
+  justify-content: start;
+  width: max-content;
+  padding: 5px;
+  border: 2px solid #6b5e4b;
+  background: #00000016;
+}
+.inventory-craft-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  clear: both;
+}
+.inventory-craft-row > span {
+  font-size: 26px;
+  color: #5c4f3e;
+}
+.inventory-output-label {
+  height: 18px;
+  line-height: 18px;
+  font-size: 11px;
+  color: #4a3f30;
+  text-align: center;
+  margin: 6px 0 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.inventory-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 5px 8px;
+  flex: 0 0 auto;
+  border-top: 2px solid #8a7a62;
+  padding-top: 8px;
+}
+#inventory-item-details {
+  height: 18px;
+  line-height: 18px;
+  font-size: 12px;
+  margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.inventory-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.inventory-hint {
+  grid-column: 1 / -1;
+  color: #4a3f30;
+  font-size: 11px;
+  line-height: 18px;
+  height: 18px;
+  margin: 0;
+  white-space: nowrap;
+}
+.inventory-cursor-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.voxel-item-slot,
+.voxel-session .voxel-item-slot {
+  display: inline-flex;
+  position: relative;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  flex: 0 0 52px;
+  width: 52px;
+  height: 52px;
+  min-height: 52px;
+  min-width: 0;
+  padding: 2px;
+  border-radius: 1px;
+  border: 2px solid;
+  border-color: #2a2a2a;
+  background: #8d8d8d;
+  color: #30271c;
+  vertical-align: middle;
+  box-shadow:
+    inset 2px 2px #ffffff73,
+    inset -2px -2px #0006;
+}
+.voxel-item-slot img {
+  width: 44px;
+  height: 44px;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+.voxel-item-slot__empty {
+  font-size: 10px;
+  line-height: 1.2;
+  padding: 2px;
+  opacity: 0.8;
+}
+.voxel-item-slot__key {
+  position: absolute;
+  top: 1px;
+  left: 3px;
+  font: bold 10px monospace;
+  pointer-events: none;
+}
+.voxel-item-slot__count {
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  color: #fff;
+  font: bold 13px monospace;
+  text-shadow:
+    1px 1px #17130e,
+    -1px -1px #17130e;
+  pointer-events: none;
+}
+.voxel-item-slot__durability {
+  position: absolute;
+  bottom: 1px;
+  left: 5px;
+  right: 5px;
+  height: 3px;
+  background: #30332b;
+  pointer-events: none;
+}
+.voxel-item-slot__durability > span {
+  display: block;
+  height: 100%;
+}
+.voxel-item-slot:hover,
+.voxel-session .voxel-item-slot:hover {
+  background: #b8a98c;
+}
+.voxel-item-slot[aria-pressed='true'],
+.voxel-session .voxel-item-slot[aria-pressed='true'] {
+  outline: 2px solid #ffe1a0;
+  outline-offset: 1px;
+  background: #baa784;
+  border-color: #6c5429;
+}
+.voxel-item-slot[data-compatible='true'] {
+  box-shadow: inset 0 0 0 2px #477b43;
+}
+.voxel-item-slot[data-compatible='false'] {
+  opacity: 0.5;
+}
+.inventory-grid .voxel-item-slot {
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  flex-basis: 40px;
+}
+.inventory-grid .voxel-item-slot img {
+  width: 32px;
+  height: 32px;
+}
+.voxel-inventory .inventory-result {
+  width: 56px;
+  height: 56px;
+  min-height: 56px;
+  flex-basis: 56px;
+  border-color: #79602e #fff0c1 #fff0c1 #79602e;
+  background: #c8b58a;
+}
+.voxel-inventory .inventory-cursor {
+  position: fixed;
+  transform: translate(-50%, -50%);
+  z-index: 30;
+  pointer-events: none;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  filter: drop-shadow(2px 3px 1px #0008);
+}
+.voxel-inventory input[type='search'] {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  margin: 9px 0;
+  border: 2px solid #8a7a62;
+  border-radius: 2px;
+  padding: 7px;
+  background: #f2e7d0;
+  color: #30271c;
+  font: inherit;
+  font-size: 12px;
+}
+.inventory-catalog {
+  grid-column: 1 / -1;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  min-height: 0;
+}
+.inventory-catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 52px);
+  max-height: none;
+  overflow: auto;
+  gap: 5px;
+  padding: 4px;
+  margin-bottom: 12px;
+}
+.voxel-recipe-book {
+  width: min(440px, calc(100vw - 32px));
+  height: min(520px, calc(100dvh - 48px));
+  background: linear-gradient(#ebe1cf, #d9ccb8 65%, #c0b09a);
+}
+.voxel-recipe-book::backdrop {
+  background: #0009;
+}
+.inventory-recipes {
+  min-height: 0;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+}
+.inventory-recipes input[type='search'] {
+  margin: 0;
+}
+.inventory-recipe-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.inventory-recipe-preview > span:not(.voxel-item-slot) {
+  font-size: 20px;
+}
+.inventory-recipe-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #8a7a62;
+}
+.voxel-inventory .inventory-recipe-tabs button {
+  padding: 4px 6px;
+  font-size: 10px;
+  box-shadow: none;
+}
+.voxel-inventory .inventory-recipe-tabs button[aria-pressed='true'],
+.voxel-inventory .inventory-panel-tabs button[aria-pressed='true'] {
+  background: #34281a;
+  color: #ffe1a0;
+  border-color: #21180f;
+}
+.inventory-recipe-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 9px;
+  flex: 1;
+  min-height: 0;
+  align-content: start;
+  scrollbar-gutter: stable;
+  overflow: auto;
+  padding: 2px;
+}
+.inventory-recipe {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 12px;
+  background: #0000000a;
+  border: 1px solid #8a7a62;
+}
+.inventory-recipe[data-selected='true'] {
+  outline: 2px solid #9c761f;
+}
+.inventory-recipe h4 {
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0;
+  font-size: 12px;
+}
+.inventory-recipe-grid {
+  display: inline-grid;
+  grid-template-columns: repeat(var(--columns), 34px);
+  gap: 2px;
+  vertical-align: middle;
+}
+.inventory-recipe .voxel-item-slot {
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+}
+.inventory-recipe .voxel-item-slot img {
+  width: 28px;
+  height: 28px;
+}
+.inventory-recipe [data-missing='true'] {
+  box-shadow: inset 0 0 0 1px #ad4a37;
+}
+.inventory-recipe p {
+  font-size: 10px;
+  line-height: 1.5;
+  margin: 0;
+}
+.inventory-recipe-preview {
+  grid-column: 1;
+  grid-row: 2;
+}
+.inventory-recipe > button {
+  grid-column: 2;
+  grid-row: 2;
+}
+.inventory-recipe-ingredients {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.inventory-recipe-availability {
+  grid-column: 2;
+  grid-row: 1;
+}
+.inventory-recipe-empty {
+  font-size: 12px;
+  line-height: 1.7;
+  padding: 20px 10px;
+  color: #5c4f3e;
+}
+.voxel-inventory [hidden] {
+  display: none !important;
+}
+@media (max-width: 580px) {
+  .voxel-inventory {
+    padding: 12px;
+  }
+  .inventory-grid {
+    grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
+    width: auto;
+  }
+  .inventory-grid .voxel-item-slot {
+    width: 100%;
+    height: 38px;
+    min-height: 38px;
+  }
+  .inventory-grid .voxel-item-slot img {
+    width: 30px;
+    height: 30px;
+  }
+  .inventory-hint {
+    grid-column: 1 / -1;
+    font-size: 9px;
+  }
+}

@@ -1,0 +1,44 @@
+name: Extended voxel playthrough
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: Natural-world qualification scenario (maintenance deferred)
+        required: true
+        default: pc-survival
+        type: choice
+        options: [pc-survival, tnt, equipment]
+permissions:
+  contents: read
+jobs:
+  playthrough:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.21.0
+          cache: npm
+      - run: npm ci
+      - run: npm ci --prefix games/voxel --include=dev --ignore-scripts --no-audit --no-fund
+      - run: npm --prefix games/voxel run restore:release
+      - run: npm --prefix apps/voxel-server run build:shared
+      - run: npm --prefix games/voxel exec -- playwright install --with-deps chromium
+      - name: Install native desktop input tools
+        if: inputs.scenario == 'pc-survival'
+        run: sudo apt-get update && sudo apt-get install -y xvfb xdotool xauth
+      - name: PC survival over a delayed connection
+        if: inputs.scenario == 'pc-survival'
+        run: xvfb-run -a -s '-screen 0 1280x900x24 -nolisten tcp' env VOXEL_XDOTOOL=/usr/bin/xdotool npm --prefix games/voxel run test:survival:desktop:browser
+      - name: Natural explosive crafting and ignition
+        if: inputs.scenario == 'tnt'
+        run: npm --prefix games/voxel run test:tnt:browser
+      - name: Natural equipment crafting
+        if: inputs.scenario == 'equipment'
+        run: npm --prefix games/voxel run test:equipment:browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: voxel-playthrough-${{ inputs.scenario }}
+          path: games/voxel/test-results/

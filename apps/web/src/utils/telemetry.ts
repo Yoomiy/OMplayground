@@ -1,8 +1,8 @@
 import { supabase } from "@/lib/supabase";
-import { getVoxelServerUrl } from "@/lib/voxelServerUrl";
+import { getClassroomServerUrl } from "@/lib/classroomServerUrl";
 import { getCorrelationId } from "@/utils/correlation";
 
-export type TelemetryTarget = "game-server" | "voxel-server" | "shell";
+export type TelemetryTarget = "game-server" | "classroom-server" | "shell";
 
 export interface TelemetryEntry {
   timestamp: string;
@@ -20,17 +20,17 @@ const MAX_BUFFER = 100;
 const FLUSH_MS = 5_000;
 const MAX_RETRY_MS = 60_000;
 
-type FlushTarget = "game-server" | "voxel-server";
+type FlushTarget = "game-server" | "classroom-server";
 let shellTarget: FlushTarget = "game-server";
 
 const buffers: Record<FlushTarget, TelemetryEntry[]> = {
   "game-server": [],
-  "voxel-server": []
+  "classroom-server": []
 };
 
 const flushTimers: Partial<Record<FlushTarget, ReturnType<typeof setTimeout>>> = {};
 const flushing: Partial<Record<FlushTarget, boolean>> = {};
-const retryCounts: Record<FlushTarget, number> = { "game-server": 0, "voxel-server": 0 };
+const retryCounts: Record<FlushTarget, number> = { "game-server": 0, "classroom-server": 0 };
 const recentFingerprints = new Map<string, number>();
 
 function gameServerUrl(): string {
@@ -56,7 +56,7 @@ export function setShellTelemetryTarget(target: FlushTarget): () => void {
 }
 
 function targetBaseUrl(flushTarget: FlushTarget): string {
-  if (flushTarget === "voxel-server") return getVoxelServerUrl();
+  if (flushTarget === "classroom-server") return getClassroomServerUrl();
   return gameServerUrl();
 }
 
@@ -64,7 +64,7 @@ function scheduleFlush(flushTarget: FlushTarget, delayMs = FLUSH_MS): void {
   if (flushTimers[flushTarget]) return;
   flushTimers[flushTarget] = setTimeout(() => {
     flushTimers[flushTarget] = undefined;
-    void flushTelemetry(flushTarget === "voxel-server" ? "voxel-server" : "game-server");
+    void flushTelemetry(flushTarget);
   }, delayMs);
 }
 
@@ -124,12 +124,12 @@ export async function flushTelemetry(
   if (buffer.length === 0 || flushing[flushTarget]) return;
   flushing[flushTarget] = true;
   const batch = buffer.slice(0, MAX_BATCH);
-  const base = targetBaseUrl(flushTarget);
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "x-correlation-id": getCorrelationId()
   };
   try {
+    const base = targetBaseUrl(flushTarget);
     const { data } = await supabase.auth.getSession();
     const token = data.session?.access_token;
     if (token) headers.Authorization = `Bearer ${token}`;
@@ -164,8 +164,12 @@ function flushWithBeacon(flushTarget: FlushTarget): void {
   if (buffer.length === 0) return;
   const batch = buffer.slice(0, MAX_BATCH);
   const body = new Blob([JSON.stringify({ logs: batch })], { type: "text/plain;charset=UTF-8" });
-  if (navigator.sendBeacon(`${targetBaseUrl(flushTarget)}/api/telemetry-beacon`, body)) {
-    buffer.splice(0, batch.length);
+  try {
+    if (navigator.sendBeacon(`${targetBaseUrl(flushTarget)}/api/telemetry-beacon`, body)) {
+      buffer.splice(0, batch.length);
+    }
+  } catch {
+    // Keep the queue when deployment configuration or the browser rejects a beacon.
   }
 }
 
@@ -193,6 +197,6 @@ export function installGlobalTelemetry(): void {
 
   window.addEventListener("pagehide", () => {
     flushWithBeacon("game-server");
-    flushWithBeacon("voxel-server");
+    flushWithBeacon("classroom-server");
   });
 }

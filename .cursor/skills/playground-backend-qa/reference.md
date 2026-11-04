@@ -1,67 +1,37 @@
-# Reference — Playground backend QA
+# Backend QA references
 
-## Layer 1 checklist (pure logic)
+## Replacement voxel behavior
 
-**Board games** — `packages/game-logic/src/`:
+| Concern | Current coverage |
+|---|---|
+| Content and recipes | `games/voxel/tests/content.test.ts`, `content-progression.test.ts`, `inventory.test.ts`; `check:content:complete` |
+| Input time and authority | `games/voxel/tests/authority.test.ts`, gateway integration suites |
+| Mining, food, drops, death | `games/voxel/tests/survival.test.ts`, `vitals.test.ts`, actual-Wasm survival tests |
+| Equipment and combat | `games/voxel/tests/equipment.test.ts`, `combat.test.ts`, actual-Wasm progression/combat |
+| World generation and movement | Native engine tests and `games/voxel/tests/wasm` |
+| Explosives | `games/voxel/tests/explosives.test.ts` and Wasm explosives tests |
+| Save/restart/fencing | Gateway durability/checkpoint integration and `apps/voxel-server/tests/postgres` |
+| School policy and controls | `apps/voxel-server/tests/school-access.test.ts`, `school-control.test.ts`, `school-staff.test.ts` |
+| Native admin reads | `apps/voxel-server/tests/school-operations.test.ts`, PostgreSQL production composition |
+| Actual React session | `apps/web/tools/voxel-react-browser.ts` with local SQL fixtures |
+| PC survival input | `npm --prefix games/voxel run test:survival:desktop:browser` with private Xvfb/xdotool setup |
 
-- [ ] Happy path for one full match
-- [ ] Illegal moves rejected with stable error shape (if applicable)
-- [ ] Wrong player / out-of-turn rejected
-- [ ] Win rows, columns, diagonals (grid games)
-- [ ] Draw / tie when board full
-- [ ] No imports of `socket.io`, Supabase, or HTTP in pure logic files
+Frozen pre-rewrite content is non-executable audit text under
+`games/voxel/docs/legacy-content-reference`; no test should import the retired
+Minecraft or content workspace.
 
-**Voxel content** — `packages/voxel-content/src/`:
+## Other service boundaries
 
-- [ ] Block/item id parity with server imports
-- [ ] Recipe match + shaped/shapeless grid rules
-- [ ] Worldgen deterministic for fixed seed + coordinate
-- [ ] Mining hardness / tool tier helpers
+Board rules remain under `packages/game-logic/src`; board HTTP/Socket.io tests
+remain under `apps/game-server/src`. Match their existing test fixtures and
+assert server-computed transitions, per-room delivery and clean departure.
 
-**Observability** — `packages/observability/src/` (add as suite lands):
+Classroom tests live under `apps/classroom-server/src`; its boundary verifier
+checks independent dependencies and the RTC route contract. Shared observability
+tests live under `packages/observability/src/__tests__`, including fresh admin
+checks, telemetry sanitization, process shutdown and classroom webhooks.
 
-- [ ] `requireAdmin` 401/403 paths
-- [ ] Stats collector increments / rolling windows
-- [ ] Telemetry ingest sanitization (no oversized payloads)
-
-## Layer 2 checklist (integration)
-
-- [ ] `jest.mock('@supabase/supabase-js')` (or project wrapper) — assert calls, not real network
-- [ ] supertest: `401` / `403` / `200` paths for auth, recess, and `/api/admin/stats`
-- [ ] Fake timers: document assumed timezone (e.g. `Asia/Jerusalem`) if middleware uses `Date` or a clock abstraction
-
-## Layer 3 checklist (sockets)
-
-- [ ] Two clients join same room; third with wrong gender rejected (if rule exists)
-- [ ] Host disconnect: state matches spec (paused / transfer / end)
-- [ ] Event only received by sockets in the same room
-- [ ] Clean disconnect and reconnect if the server supports it
-
-## Voxel module pointers (minecraft-server)
-
-| Module | Test file | Focus |
-|---|---|---|
-| `breakMining.ts` | `breakMining.test.ts` | tool gating, break timing, durability |
-| `drops.ts` | `drops.test.ts` | spawn, pickup, despawn, room scope |
-| `inventory.ts` | `inventory.test.ts` | stacks, craft grid, moves |
-| `vitals.ts` | `vitals.test.ts` | food, health (simplified hunger) |
-| `perks.ts` | `perks.test.ts` | equipment perk effects |
-| `weather.ts` | `weather.test.ts` | precipitation sync |
-| `world.ts` | `world.test.ts` | biome columns, block ids |
-| `tick.ts` | `tick.test.ts` | coalesced emits, vitals tick order |
-
-## Naming examples
-
-```text
-describe('recessMiddleware')
-  it('allows kid login when current time is inside an active schedule window')
-  it('rejects kid login outside schedule windows')
-
-describe('TicTacToe rules')
-  it('declares winner on diagonal 0-4-8')
-  it('returns draw when board is full and there is no winner')
-
-describe('requireAdmin')
-  it('returns 401 when Authorization header is missing')
-  it('returns 403 when JWT is valid but user is not in admin_profiles')
-```
+Use deterministic policy clocks for Jerusalem recess boundaries. Use actual
+local PostgreSQL for locking, grants and atomicity. Keep fixture-network results
+separate from hosted Auth/Storage/SFU evidence, and never infer device performance
+from software-rendered Chromium.

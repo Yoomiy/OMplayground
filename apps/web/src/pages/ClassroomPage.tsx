@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { supabase } from "@/lib/supabase";
-import { getVoxelServerUrl } from "@/lib/voxelServerUrl";
+import { getClassroomServerUrl } from "@/lib/classroomServerUrl";
 import { reportCaughtError, reportTelemetry, setShellTelemetryTarget } from "@/utils/telemetry";
 import { getCorrelationId } from "@/utils/correlation";
 import { DrawingBoard, type DrawingBoardHandle } from "@/games/drawing/DrawingBoard";
@@ -190,7 +190,7 @@ function storeClassroomDisplayName(displayName: string): void {
 }
 
 export function ClassroomPage() {
-  useEffect(() => setShellTelemetryTarget("voxel-server"), []);
+  useEffect(() => setShellTelemetryTarget("classroom-server"), []);
   const { roomCode } = useParams<{ roomCode: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -272,7 +272,7 @@ export function ClassroomPage() {
   const reportHandFailure = useCallback((error: unknown, operation: string) => {
     reportCaughtError("Classroom hand message failed", error, {
       appArea: "classroom", event: "CLASSROOM_HAND_MESSAGE_FAILED", roomCode, operation
-    }, "voxel-server");
+    }, "classroom-server");
   }, [roomCode]);
 
   const sendHandMessage = useCallback(async (lkRoom: Room, message: object, destination?: string) => {
@@ -422,7 +422,7 @@ export function ClassroomPage() {
         message: "Classroom public chat cache write failed",
         sessionId: roomCode,
         context: { appArea: "classroom", event: "CLASSROOM_PUBLIC_CHAT_CACHE_FAILED", roomCode }
-      }, "voxel-server");
+      }, "classroom-server");
     }
     setChatMessages((current) => {
       if (current.some((entry) => entry.id === message.id)) return current;
@@ -440,7 +440,7 @@ export function ClassroomPage() {
         message: "Classroom private chat cache write failed",
         sessionId: roomCode,
         context: { appArea: "classroom", event: "CLASSROOM_PRIVATE_CHAT_CACHE_FAILED", roomCode }
-      }, "voxel-server");
+      }, "classroom-server");
     }
     setPrivateChatMessages((current) => {
       const existing = current[threadKey] ?? [];
@@ -920,7 +920,7 @@ export function ClassroomPage() {
 
     try {
       const session = (await supabase.auth.getSession()).data.session;
-      const response = await fetch(`${getVoxelServerUrl()}/rtc/classroom-token`, {
+      const response = await fetch(`${getClassroomServerUrl()}/rtc/classroom-token`, {
         method: "POST",
         credentials: "include",
         headers: {
@@ -945,7 +945,7 @@ export function ClassroomPage() {
           message: "Classroom LiveKit token request failed",
           sessionId: roomCode,
           context: { event: "CLASSROOM_TOKEN_FAILED", roomCode, error: errMsg }
-        }, "voxel-server");
+        }, "classroom-server");
         throw new Error(errMsg);
       }
 
@@ -1005,7 +1005,7 @@ export function ClassroomPage() {
         message: "Classroom LiveKit token issued",
         sessionId: roomCode,
         context: { event: "CLASSROOM_TOKEN_ISSUED", roomCode, role, isUserHost }
-      }, "voxel-server");
+      }, "classroom-server");
 
       const lkRoom = new Room({
         adaptiveStream: true,
@@ -1021,7 +1021,7 @@ export function ClassroomPage() {
 
           if (msg.type === "CLASSROOM_DELEGATE_ENROLLMENT" && !participant) {
             if (msg.roomCode !== roomCode || typeof msg.enrollmentCode !== "string") return;
-            void fetch(`${getVoxelServerUrl()}/rtc/classroom-delegate/activate`, {
+            void fetch(`${getClassroomServerUrl()}/rtc/classroom-delegate/activate`, {
               method: "POST",
               credentials: "include",
               headers: { "Content-Type": "application/json" },
@@ -1390,7 +1390,7 @@ export function ClassroomPage() {
             isUserHost
           }
         },
-        "voxel-server"
+        "classroom-server"
       );
 
       // ADMIN STEALTH MODE vs Normal participant
@@ -1446,7 +1446,7 @@ export function ClassroomPage() {
           },
           stack: err.stack
         },
-        "voxel-server"
+        "classroom-server"
       );
 
       try { roomRef.current?.disconnect(); } catch {}
@@ -1497,7 +1497,7 @@ export function ClassroomPage() {
 
   const classroomRequest = useCallback(async (path: string, body: Record<string, unknown>) => {
     const { data } = await supabase.auth.getSession();
-    return fetch(`${getVoxelServerUrl()}${path}`, {
+    return fetch(`${getClassroomServerUrl()}${path}`, {
       method: "POST",
       credentials: "include",
       headers: {
@@ -1748,7 +1748,7 @@ export function ClassroomPage() {
         message: "Classroom public chat delivery failed",
         sessionId: roomCode,
         context: { appArea: "classroom", event: "CLASSROOM_PUBLIC_CHAT_SEND_FAILED", roomCode }
-      }, "voxel-server");
+      }, "classroom-server");
       setClassroomNotice({ text: "לא ניתן לשלוח את ההודעה כרגע.", type: "warn" });
     }
   };
@@ -1785,7 +1785,7 @@ export function ClassroomPage() {
         message: "Classroom private chat delivery failed",
         sessionId: roomCode,
         context: { appArea: "classroom", event: "CLASSROOM_PRIVATE_CHAT_SEND_FAILED", roomCode }
-      }, "voxel-server");
+      }, "classroom-server");
       setClassroomNotice({ text: "לא ניתן לשלוח את ההודעה הפרטית כרגע.", type: "warn" });
     }
   };
@@ -2100,7 +2100,7 @@ export function ClassroomPage() {
     }
     let response: Response;
     try {
-      response = await fetch(`${getVoxelServerUrl()}/rtc/classroom-end`, {
+      response = await fetch(`${getClassroomServerUrl()}/rtc/classroom-end`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

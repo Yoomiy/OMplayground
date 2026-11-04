@@ -1,0 +1,45 @@
+# React voxel adapter
+
+`VoxelSessionContainer` owns the authenticated school session scope. `VoxelSurface`
+mounts one runtime and connects its HUD/commands to inventory, help, room controls,
+chat and voice. The game package owns simulation/rendering and imports no React
+or school providers.
+
+The adapter obtains authoritative lifecycle/presence and stable request-ID receipts
+from the voxel service. It does not mutate allocated voxel sessions directly through
+browser database calls or optimistically acknowledge saves. Presence expires by its
+server deadline. Temporary session/chat read failure retains loaded content and
+keeps the same runtime mounted; confirmed access denial keeps its terminal meaning.
+
+Inventory, help, chat and mouse release affect local controls. Session-wide pause
+is a trusted HTTP operation. Escape releases pointer lock, and a world click restores
+capture. Recovery releases blocked input so reconnect controls stay usable. Native
+readiness gates resume after join, teleport or graphics restoration.
+
+`VoiceSession` owns one direct LiveKit room, microphone, proximity subscriptions and
+spatial mix. SDK reconnect retains the microphone; complete disconnect/readmission
+uses a new token. Game readiness loss, session end and unmount release owned voice
+resources. Recorded game sounds use a separate runtime-owned audio graph.
+
+Abort stale reads and dispose the runtime, DOM adapters, subscriptions, timers,
+audio tracks/elements and workers on unmount. Check `onRuntime` test hooks without
+exposing developer fixtures in the production admission path.
+
+The React browser journey needs the SQL suite's isolated local PostgreSQL settings,
+Chromium, Xvfb and `xdotool`. Run it in a private display so it can exercise trusted
+mouse capture and keyboard input:
+
+```sh
+xvfb-run -a -s '-screen 0 1440x900x24 -nolisten tcp' env VOXEL_XDOTOOL=/usr/bin/xdotool npm run test:voxel:browser --workspace @playground/web
+```
+
+The required participant journey uses a 1440×900 desktop window. Narrow-screen
+layout checks are deferred; `VOXEL_REACT_TOUCH=1` enables the optional 540px touch
+scenario. The software-rendered fixture uses existing half-scale, 30 Hz graphics
+settings; production rendering defaults are unchanged. Repeated desktop mounts
+still check worker, socket, GPU and audio teardown.
+
+See [runtime architecture](../../../../../games/voxel/docs/architecture.md),
+[school APIs](../../../../voxel-server/docs/school-api.md),
+[local development](../../../../../docs/local-development.md) and
+[testing](../../../../../games/voxel/docs/testing.md).

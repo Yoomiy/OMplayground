@@ -115,11 +115,13 @@ export function AdminStatsSection() {
 
   const game = stats?.game;
   const voxel = stats?.voxel;
+  const classroom = stats?.classroom;
+  const hasGameStats = !!game || !!voxel;
   const totalConnections =
     (game?.activeConnections ?? 0) + (voxel?.activeConnections ?? 0);
   const totalRooms =
     (game?.activeRoomsCount ?? 0) + (voxel?.activeRoomsCount ?? 0);
-  const voiceParticipants = voxel?.voice?.totalParticipants ?? 0;
+  const voiceParticipants = classroom?.voice?.totalParticipants;
 
   const allRooms = [
     ...(game?.rooms ?? []).map((r) => ({ ...r, server: "game" as const })),
@@ -143,47 +145,39 @@ export function AdminStatsSection() {
       {err ? <p className="text-sm text-rose-600 dark:text-rose-400">{err}</p> : null}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard label="חיבורי Socket פעילים" value={totalConnections} />
-        <StatCard label="חדרי משחק פעילים" value={totalRooms} />
-        <StatCard label="משתתפי קול (LiveKit)" value={voiceParticipants} />
+        <StatCard label="חיבורי משחק פעילים" value={hasGameStats ? totalConnections : "—"} />
+        <StatCard label="חדרי משחק פעילים" value={hasGameStats ? totalRooms : "—"} />
+        <StatCard label="משתתפי קול בכיתות" value={voiceParticipants ?? "—"} />
         <StatCard
           label="קצב Intent — game-server"
           value={game?.socketEventsPerSecond ?? "—"}
         />
         <StatCard
-          label="קצב Intent — voxel"
-          value={voxel?.socketEventsPerSecond ?? "—"}
+          label="חיבורי קול בווקסל"
+          value={voxel?.mediaConnections ?? "—"}
         />
         <StatCard
-          label="כשלונות Intent (5 דק׳)"
+          label="כשלונות Intent במשחקי לוח (5 דק׳)"
           value={
-            (game?.socketEventFailuresLast5Min ?? 0) +
-            (voxel?.socketEventFailuresLast5Min ?? 0)
+            game?.socketEventFailuresLast5Min ?? "—"
           }
         />
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2">
-        {game ? (
-          <div className="rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5 p-3 text-sm text-slate-700 dark:text-white/80 shadow-sm">
-            <p className="font-medium text-slate-900 dark:text-white">game-server</p>
-            <p>Latency ממוצעת: {game.averageSocketEventLatencyMs} ms</p>
-            <p>חיבורים: {game.activeConnections}</p>
-          </div>
-        ) : null}
-        {voxel ? (
-          <div className="rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5 p-3 text-sm text-slate-700 dark:text-white/80 shadow-sm">
-            <p className="font-medium text-slate-900 dark:text-white">minecraft-server</p>
-            <p>Latency ממוצעת: {voxel.averageSocketEventLatencyMs} ms</p>
-            <p>חיבורים: {voxel.activeConnections}</p>
-            {voxel.voice ? (
-              <p>
-                חדרי קול: {voxel.voice.activeRooms}, משתתפים:{" "}
-                {voxel.voice.totalParticipants}
-              </p>
-            ) : null}
-          </div>
-        ) : null}
+      <div className="grid gap-3 md:grid-cols-3">
+        {(["game", "voxel", "classroom"] as const).map((key) => {
+          const service = stats?.[key];
+          return (
+            <div key={key} className="rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5 p-3 text-sm text-slate-700 dark:text-white/80 shadow-sm">
+              <p className="font-medium text-slate-900 dark:text-white">{key}-server</p>
+              {service ? <>
+                {service.averageSocketEventLatencyMs !== undefined ? <p>Latency ממוצעת: {service.averageSocketEventLatencyMs} ms</p> : null}
+                <p>חיבורים: {service.activeConnections}</p>
+                {service.voice ? <p>חדרי קול: {service.voice.activeRooms}, משתתפים: {service.voice.totalParticipants}</p> : null}
+              </> : <p>הנתונים אינם זמינים כרגע</p>}
+            </div>
+          );
+        })}
       </div>
 
       <div className="space-y-2">
@@ -195,7 +189,7 @@ export function AdminStatsSection() {
                 <th className="px-3 py-2">sessionId</th>
                 <th className="px-3 py-2">gameType</th>
                 <th className="px-3 py-2">server</th>
-                <th className="px-3 py-2">players</th>
+                <th className="px-3 py-2">players / connections</th>
                 <th className="px-3 py-2">uptime</th>
               </tr>
             </thead>
@@ -212,8 +206,8 @@ export function AdminStatsSection() {
                     <td className="px-3 py-2 font-mono">{room.sessionId}</td>
                     <td className="px-3 py-2">{room.gameType}</td>
                     <td className="px-3 py-2">{room.server}</td>
-                    <td className="px-3 py-2">{room.playerCount}</td>
-                    <td className="px-3 py-2">{room.uptimeSeconds}s</td>
+                    <td className="px-3 py-2">{room.playerCount ?? room.connectionCount ?? "—"}</td>
+                    <td className="px-3 py-2">{room.uptimeSeconds === undefined ? "—" : `${room.uptimeSeconds}s`}</td>
                   </tr>
                 ))
               )}
@@ -231,7 +225,7 @@ export function AdminStatsSection() {
             target="_blank"
             rel="noreferrer"
           >
-            Railway — game-server / minecraft-server
+            Railway — game / voxel / classroom
           </a>
           <a
             className="rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-slate-700 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white shadow-sm transition duration-200"

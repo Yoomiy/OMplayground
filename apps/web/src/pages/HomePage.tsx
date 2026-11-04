@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Play, RotateCcw, Search } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -7,6 +7,8 @@ import { useProfile } from "@/hooks/useProfile";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useOpenGames } from "@/hooks/useOpenGames";
 import { useMyPausedGames } from "@/hooks/useMyPausedGames";
+import { createVoxelApi, VoxelApiError } from "@/game/voxel/session-api";
+import { getVoxelRuntimeUrl } from "@/lib/voxelRuntimeUrl";
 import { leavePausedGameSession } from "@/lib/pausedSessionActions";
 import { hasSoloSaveForGame, listSoloGameSaveKeys } from "@/lib/soloGameSaves";
 import { OnlineKids } from "@/components/OnlineKids";
@@ -88,6 +90,7 @@ export function HomePage() {
   const [gameSearch, setGameSearch] = useState("");
   const [soloSaveKeys, setSoloSaveKeys] = useState<Set<string>>(new Set());
   const [sidebarTab, setSidebarTab] = useState<"kids" | "rooms">("kids");
+  const departureRequests = useRef(new Map<string, string>());
   const isTeacher = profile?.role === "teacher";
 
   const { onlineUserIds } = useOnlinePresence();
@@ -200,13 +203,50 @@ export function HomePage() {
   async function dismissPausedSession(sessionId: string) {
     setDismissingPausedId(sessionId);
     setErr(null);
-    const { error } = await leavePausedGameSession(sessionId);
-    setDismissingPausedId(null);
-    if (error) {
-      setErr(error.message);
-      return;
+    try {
+      const row = myPausedGames.find((game) => game.id === sessionId);
+      if (!row) throw new VoxelApiError("INVALID");
+      if (row.games?.game_url === "minecraft") {
+        const key = `${user?.id}:${sessionId}`;
+        let requestId = departureRequests.current.get(key);
+        if (!requestId) {
+          requestId = crypto.randomUUID();
+          departureRequests.current.set(key, requestId);
+        }
+        const api = createVoxelApi({
+          serverUrl: getVoxelRuntimeUrl(),
+          room: sessionId,
+          getToken: async () => {
+            const result = await supabase.auth.getSession();
+            if (
+              result.error ||
+              !user?.id ||
+              result.data.session?.user.id !== user.id
+            )
+              throw new VoxelApiError("UNAUTHORIZED");
+            return result.data.session.access_token;
+          },
+        });
+        await api.leave(requestId);
+        departureRequests.current.delete(key);
+      } else {
+        const { error } = await leavePausedGameSession(sessionId);
+        if (error) throw new Error(error.message);
+      }
+      await refetchPaused();
+    } catch (error) {
+      setErr(
+        error instanceof VoxelApiError
+          ? error.code === "ROSTER_BUSY"
+            ? "המפגש עדיין מחובר או מסיים שמירה. צאו מהעולם ונסו שוב בעוד רגע."
+            : "לא ניתן לעזוב את המפגש כרגע. אפשר לנסות שוב."
+          : error instanceof Error
+            ? error.message
+            : "עזיבת המפגש נכשלה",
+      );
+    } finally {
+      setDismissingPausedId(null);
     }
-    await refetchPaused();
   }
 
   return (
@@ -588,7 +628,7 @@ export function HomePage() {
                 ) : (
                   <ul className="space-y-3">
                     {filteredOpenGames.map((game) => {
-                      const isFull = game.connected_player_names.length >= (game.games?.max_players ?? Number.MAX_SAFE_INTEGER);
+                      const isFull = game.games?.game_url !== "minecraft" && game.connected_player_names.length >= (game.games?.max_players ?? Number.MAX_SAFE_INTEGER);
                       return (
                       <li key={game.id} className="rounded-2xl border border-violet-200 dark:border-violet-400/20 bg-white/90 dark:bg-violet-500/10 p-3.5 shadow-sm transition hover:-translate-y-0.5 hover:border-violet-400/40">
                         <div className="flex items-center justify-between gap-3">

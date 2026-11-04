@@ -1,0 +1,2309 @@
+import { updateClock } from './update-clock.ts';
+import { InputRecovery } from './input-recovery.ts';
+import { ConnectionRetry, retryableAdmission } from './connection-retry.ts';
+import { toggleFullscreen } from './fullscreen.ts';
+import { runtimeDiagnostic } from '../shared/diagnostics.ts';
+import type { DiagnosticDetail } from '../shared/diagnostics.ts';
+import { ITEM_LABELS } from './content-labels.ts';
+import { engine, loadEngine, content, identity, supportProblem } from './engine.ts';
+import { TerrainRenderer } from '../render/terrain.ts';
+import { EnginePool } from '../world/worker-pool.ts';
+import { WorldStream } from '../world/stream.ts';
+import { Prediction } from './prediction.ts';
+import { creativePalette } from './palette.ts';
+import { cameraView, MAX_CAMERA_DISTANCE } from './camera.ts';
+import type { CameraView } from './camera.ts';
+import { RemoteActors } from './interpolation.ts';
+import { selectAvatar } from '../shared/avatars.ts';
+import { appearanceMatchesContent } from '../shared/appearance.ts';
+import { WorldClock } from './world-clock.ts';
+import { WorldAudio } from './world-audio.ts';
+import { voiceScene } from './voice-scene.ts';
+import type { VoiceScene } from './voice-scene.ts';
+import { ENVIRONMENT_VERSION, sampleEnvironment } from '../shared/environment.ts';
+import { parseServerMessage, GENERATOR_VERSION, columnKey } from '../shared/protocol.ts';
+import type { ClientMessage, ServerMessage, Cell } from '../shared/protocol.ts';
+import { decodeChunk, worldCell } from '../shared/chunk-wire.ts';
+import type { Controls, InputFrame } from '../shared/input.ts';
+import { validStack, EQUIPMENT } from '../shared/inventory.ts';
+import type { InventoryCommand, InventoryView } from '../shared/inventory.ts';
+import type { GameMode, MiningView, DropView } from '../shared/gameplay.ts';
+import type { VitalsView } from '../shared/vitals.ts';
+import { equipmentEffects } from '../shared/vitals.ts';
+import { rayBody, combatProfile } from '../shared/combat.ts';
+import type { HitEvent } from '../shared/combat.ts';
+import type { ExplosiveView, ExplosionEvent } from '../shared/explosives.ts';
+import type { WorldState, PauseReason } from '../shared/lifecycle.ts';
+export type HudState = {
+  canReconnect?: boolean;
+  mode: GameMode;
+  role: 'participant' | 'observer';
+  lifecycle: WorldState | 'preparing' | 'recovering';
+  worldPauseReason: PauseReason | null;
+  combat: boolean;
+  canIgnite: boolean;
+  hit: { received: boolean; damage: number; at: number } | null;
+  selectedSlot: number;
+  mining: MiningView;
+  vitals: VitalsView | null;
+  inventory: InventoryView | null;
+  inventoryOpen: boolean;
+  inventoryPending: boolean;
+  inputMode: 'desktop' | 'touch';
+  environment: Readonly<{ hour: number; daytime: boolean; rain: boolean }>;
+  saveUnavailable: boolean;
+  effectsMuted: boolean;
+  effectsAvailable: boolean;
+  status:
+    | 'connecting'
+    | 'loading'
+    | 'playing'
+    | 'paused'
+    | 'dead'
+    | 'stalled'
+    | 'recovering'
+    | 'unsupported'
+    | 'error';
+  message: string;
+  selected: number;
+  players: number;
+  flying: boolean;
+  pointerLocked: boolean;
+  cameraDistance: number;
+  graphics: 'ready' | 'lost' | 'restoring' | 'failed';
+  hotbar: readonly {
+    key: number;
+    state: number;
+    family: string;
+    labelKey: string;
+    slot: number | null;
+    count: number | null;
+  }[];
+};
+export type RuntimeCommand =
+  | { type: 'inventory'; operation: InventoryCommand }
+  | { type: 'inventory-target' }
+  | { type: 'select'; state: number }
+  | { type: 'select-slot'; slot: number }
+  | { type: 'mine'; active: boolean }
+  | { type: 'eat' }
+  | { type: 'respawn' }
+  | { type: 'attack' }
+  | { type: 'drop' }
+  | { type: 'ignite' }
+  | { type: 'interact'; kind: 'place' | 'remove' }
+  | { type: 'flight' }
+  | { type: 'camera'; distance: number }
+  | { type: 'fullscreen' }
+  | { type: 'resume' }
+  | { type: 'pause' }
+  | { type: 'mute-effects'; muted: boolean }
+  | { type: 'look'; dx: number; dy: number }
+  | { type: 'touch'; x: number; z: number; jump: boolean; sneak: boolean; sprint: boolean }
+  | { type: 'reconnect' };
+export type RuntimeOptions = {
+  admit: (signal: AbortSignal) => Promise<{ ticket: string; buildId: string }>;
+  socketUrl: string;
+  signal?: AbortSignal;
+  fullscreenElement?: HTMLElement;
+  renderScale?: number;
+  renderHz?: 30 | 60;
+  inputMode?: 'desktop' | 'touch';
+  /** Enter an admitted, ready world directly; mouse capture still needs a click. */
+  autoEnter?: boolean;
+  onDiagnostic?: (
+    operation: string,
+    reason: string,
+    detail?: DiagnosticDetail & { code: string },
+  ) => void;
+};
+export type VoxelRuntime = {
+  command(command: RuntimeCommand): void;
+  itemIcon(itemType: string, cachedOnly?: boolean): string | null;
+  subscribe(listener: (state: HudState) => void): () => void;
+  dispose(): void;
+  debug(): unknown;
+  voiceScene(): VoiceScene | null;
+};
+export async function mountVoxel(
+  host: HTMLElement,
+  options: RuntimeOptions,
+): Promise<VoxelRuntime> {
+  const checkCancellation = () => {
+    if (options.signal?.aborted) throw new DOMException('Voxel mount cancelled', 'AbortError');
+  };
+  checkCancellation();
+  const problem = supportProblem();
+  if (problem) throw new Error(problem);
+  const compiled = await loadEngine();
+  checkCancellation();
+  const appearanceItems = new Map(content.items.map((item) => [item.itemType, item]));
+  const inputMode =
+    options.inputMode ??
+    (navigator.maxTouchPoints > 0 && matchMedia('(pointer: coarse)').matches ? 'touch' : 'desktop');
+  const renderHz = options.renderHz === 30 ? 30 : 60;
+  const neutralTouch = () => ({ x: 0, z: 0, jump: false, sneak: false, sprint: false });
+  let touch = neutralTouch();
+  const canvas = document.createElement('canvas');
+  canvas.tabIndex = 0;
+  canvas.setAttribute('aria-label', 'עולם המשחק');
+  const ownsPointerLock = () => Object.is(document.pointerLockElement, canvas);
+  host.append(canvas);
+  const blastFlash = document.createElement('div');
+  blastFlash.setAttribute('aria-hidden', 'true');
+  Object.assign(blastFlash.style, {
+    position: 'absolute',
+    inset: '0',
+    pointerEvents: 'none',
+    background: '#fff2d5',
+    opacity: '0',
+  });
+  host.append(blastFlash);
+  let blastFlashUntil = 0;
+
+  const world = new engine.VoxelWorld(),
+    renderer = new TerrainRenderer(
+      canvas,
+      engine.generate_textures(),
+      engine.texture_layer_count(),
+      new engine.Culler(),
+      compiled.memory,
+      content.blocks,
+      content.items,
+      options.renderScale,
+    );
+  try {
+    const initial = content.blocks.findIndex(
+      (block) =>
+        block.name === content.items.find((item) => item.places)?.places &&
+        block.placeable !== false,
+    );
+    if (initial < 0) throw new Error('missing placeable startup model');
+    await renderer.prepare(initial, options.signal);
+    checkCancellation();
+  } catch (error) {
+    renderer.dispose();
+    world.free();
+    canvas.remove();
+    blastFlash.remove();
+    throw error;
+  }
+  const remotes = new RemoteActors(),
+    listeners = new Set<(state: HudState) => void>(),
+    keys = new Set<string>();
+  const worldClock = new WorldClock();
+  const inputRecovery = new InputRecovery();
+  let lastAckProgress = performance.now(),
+    lastSnapshot = performance.now();
+  const audio = new WorldAudio((reason) => {
+      options.onDiagnostic?.('audio', reason, { code: 'AUDIO_UNAVAILABLE', reason, fatal: false });
+    }),
+    soundGroups = new Map(content.behavior.map((block) => [block.family, block.soundGroup]));
+  let biomeGenerator: InstanceType<typeof engine.TerrainGen> | null = null;
+  let biome = 'Plains',
+    lastBiomeSample = -Infinity;
+  let awaitingWelcome = false;
+  let inventorySound: 'craft' | 'consume' | null = null;
+  let environmentSeed = 0,
+    environment = sampleEnvironment(0, 0),
+    openSky = false,
+    lastSkyProbe = -Infinity;
+  const environmentHud = () => ({
+    hour: Math.floor((environment.dayFraction * 24 + 6) % 24),
+    daytime: environment.sun[1] >= 0,
+    rain: environment.rain > 0.2,
+  });
+  const palette = creativePalette(content);
+  const hotbar = palette.slice(0, 9);
+  hotbar[0] = palette.find((item) => item.family === 'stone') ?? hotbar[0];
+  let hud: HudState = {
+    mode: 'survival',
+    role: 'participant',
+    lifecycle: 'preparing',
+    worldPauseReason: null,
+    combat: false,
+    canIgnite: false,
+    hit: null,
+    selectedSlot: 0,
+    mining: { target: null, elapsed: 0, total: 0 },
+    vitals: null,
+    inventory: null,
+    inventoryOpen: false,
+    inventoryPending: false,
+    inputMode,
+    environment: environmentHud(),
+    effectsMuted: false,
+    saveUnavailable: false,
+    effectsAvailable: audio.supported,
+    status: 'connecting',
+    message: 'מתחברים לעולם…',
+    selected: 0,
+    players: 1,
+    flying: false,
+    pointerLocked: false,
+    cameraDistance: 0,
+    graphics: 'ready',
+    hotbar: [],
+  };
+  let socket: WebSocket | null = null,
+    pool: EnginePool | null = null,
+    stream: WorldStream | null = null,
+    prediction: Prediction | null = null,
+    slot: number | null = null;
+  let reconnectAllowed = true,
+    fatalRecovery = false;
+  let enterOnReady = false;
+  let disposed = false,
+    connection = 0,
+    phase: 'preparing' | 'playing' | 'paused' | 'dead' = 'preparing',
+    focused = false,
+    baselineReceived = false,
+    actorId = '',
+    avatarId = 0,
+    worldId = '',
+    yaw = 0,
+    pitch = 0,
+    jump = false,
+    actionSequence = 0,
+    queuedAction: 'place' | 'remove' | 'collect' | 'attack' | 'ignite' | null = null;
+  let lastHitSequence = 0;
+  let lastHitEvent: HitEvent | null = null;
+  let lastExplosionSequence = 0,
+    lastExplosionEvent: ExplosionEvent | null = null;
+  const primed = new Map<string, ExplosiveView>(),
+    blastPatches = new Set<string>();
+  let pendingInputs: InputFrame[] = [],
+    lastFrame = performance.now(),
+    lastUpdate = lastFrame,
+    lastSend = 0,
+    lastReceived = 0,
+    lastHud = 0,
+    lastReady = 0,
+    nextDraw = 0,
+    animation = 0,
+    connecting = false,
+    connectionAbort: AbortController | null = null,
+    actionPending = 0;
+  let updateTimer: ReturnType<typeof setInterval> | null = null;
+  let paletteSent: { epoch: number; sequence: number; state: number } | null = null;
+  let noticeUntil = 0;
+  let pointerLockProblem: string | null = null;
+  let miningHeld = false,
+    miningSingle = false,
+    lastMineKey = '';
+  let mineRequest = 0,
+    mineRetryAt = 0;
+  let miningCandidate = '',
+    miningCandidateAt = 0,
+    lastMiningSwing = -Infinity;
+  const dropped = new Map<string, DropView>();
+  const worldActions = new Set<number>();
+  let inventoryEpoch = 0,
+    inventorySequence = 0;
+  let creativeBagHotbar = false,
+    inventorySelectionPending = false;
+  const usesBagHotbar = () => hud.mode === 'survival' || creativeBagHotbar;
+  const bagHotbar = (view: InventoryView) =>
+    view.bag.slice(0, 9).map((stack, index) => {
+      const item = content.items.find((i) => i.itemType === stack?.itemType);
+      const state = item?.places
+        ? content.blocks.findIndex((b) => b.name === item.places && b.placeable !== false)
+        : 0;
+      return {
+        key: index,
+        slot: index,
+        state: Math.max(0, state),
+        family: stack?.itemType ?? '',
+        labelKey: item?.labelKey ?? 'item.empty',
+        count: stack?.count ?? 0,
+      };
+    });
+  let pendingInventoryOpen: Extract<InventoryCommand, { kind: 'open' }> | null = null;
+  let focusPending = false;
+  let footTravel = 0,
+    lastFootstep = 0,
+    previousFoot: readonly number[] | null = null;
+  let lastResult: Extract<ServerMessage, { type: 'result' }> | null = null;
+  let recentEdits: { cell: Cell; state: number; revision: number }[] = [];
+  let target: Cell | null = null,
+    targetNormal: Cell | null = null,
+    lastHighlight = '';
+  const baselineReasons: Record<string, number> = {};
+  let visualOffset = [0, 0, 0],
+    lastPosition = [0, 80, 0];
+  let graphics: HudState['graphics'] = 'ready';
+  const graphicsFailureMessage = 'לא הצלחנו לשחזר את התצוגה. נסו שוב או רעננו את העמוד.';
+  let camera: CameraView = { eye: [0, 81.62, 0], distance: 0 };
+  const publish = (patch: Partial<HudState>) => {
+    hud = { ...hud, ...patch, graphics };
+    if (
+      !fatalRecovery &&
+      hud.lifecycle !== 'ended' &&
+      hud.status !== 'error' &&
+      hud.status !== 'unsupported' &&
+      (graphics === 'lost' || graphics === 'restoring')
+    )
+      hud = {
+        ...hud,
+        status: 'recovering',
+        message: graphics === 'lost' ? 'התצוגה נעצרה. ממתינים לחידושה…' : 'משחזרים את התצוגה…',
+      };
+    for (const listener of listeners) listener(hud);
+  };
+  const send = (message: ClientMessage) => {
+    if (awaitingWelcome) return;
+    if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message));
+  };
+  const diagnose = (operation: string, error: unknown, fatal = false) => {
+    const diagnostic = runtimeDiagnostic(error, fatal);
+    options.onDiagnostic?.(operation, diagnostic.reason, diagnostic);
+  };
+  const fail = (operation: string, error: unknown) => {
+    fatalRecovery = true;
+    diagnose(operation, error, true);
+    keys.clear();
+    touch = neutralTouch();
+    worldClock.reset(worldClock.read(performance.now()), performance.now(), false);
+    publish({
+      lifecycle: 'recovering',
+      status: 'recovering',
+      pointerLocked: false,
+      message: 'העולם מתאושש. אפשר להתחבר מחדש.',
+    });
+    if (prediction) send({ type: 'focus', epoch: prediction.currentEpoch, active: false });
+    focused = false;
+    audio.setActive(false);
+    if (ownsPointerLock()) document.exitPointerLock();
+  };
+  const clearWorld = () => {
+    audio.setActive(false);
+    inputRecovery.reset();
+    footTravel = 0;
+    previousFoot = null;
+    worldClock.reset(0, performance.now());
+    biomeGenerator?.free();
+    biomeGenerator = null;
+    biome = 'Plains';
+    lastBiomeSample = -Infinity;
+    inventorySound = null;
+    blastFlashUntil = 0;
+    blastFlash.style.opacity = '0';
+    environmentSeed = 0;
+    environment = sampleEnvironment(0, 0);
+    openSky = false;
+    lastSkyProbe = -Infinity;
+    keys.clear();
+    touch = neutralTouch();
+    jump = false;
+    stream?.dispose();
+    pool?.dispose();
+    stream = null;
+    pool = null;
+    remotes.clear();
+    if (slot !== null) world.player_remove(slot);
+    slot = null;
+    prediction = null;
+    phase = 'preparing';
+    baselineReceived = false;
+    pendingInputs = [];
+    queuedAction = null;
+    actionSequence = 0;
+    paletteSent = null;
+    actionPending = 0;
+    worldActions.clear();
+    dropped.clear();
+    miningHeld = miningSingle = false;
+    lastMineKey = '';
+    mineRequest = 0;
+    mineRetryAt = 0;
+    lastResult = null;
+    lastHitSequence = 0;
+    lastHitEvent = null;
+    lastExplosionSequence = 0;
+    lastExplosionEvent = null;
+    primed.clear();
+    blastPatches.clear();
+    inventoryEpoch = 0;
+    inventorySequence = 0;
+    inventorySelectionPending = false;
+    pendingInventoryOpen = null;
+    focusPending = false;
+    publish({
+      inventory: null,
+      inventoryOpen: false,
+      inventoryPending: false,
+      mining: { target: null, elapsed: 0, total: 0 },
+      vitals: null,
+      combat: false,
+      canIgnite: false,
+      hit: null,
+    });
+    recentEdits = [];
+    nextDraw = 0;
+    target = null;
+    targetNormal = null;
+    lastHighlight = '';
+    renderer.target([], null);
+    renderer.resetPresentation();
+  };
+  const flush = () => {
+    if (!pendingInputs.length) return;
+    while (pendingInputs.length) {
+      const frames = pendingInputs.splice(0, 4);
+      send({ type: 'input', frames });
+    }
+    lastSend = performance.now();
+  };
+  const syncPalette = () => {
+    if (
+      hud.mode !== 'creative' ||
+      creativeBagHotbar ||
+      phase !== 'playing' ||
+      !prediction ||
+      socket?.readyState !== WebSocket.OPEN
+    )
+      return;
+    const epoch = prediction.currentEpoch;
+    if (paletteSent?.epoch === epoch && paletteSent.state === hud.selected) return;
+    const sequence = paletteSent?.epoch === epoch ? paletteSent.sequence + 1 : 1;
+    send({ type: 'palette', epoch, sequence, state: hud.selected });
+    paletteSent = { epoch, sequence, state: hud.selected };
+  };
+  const focus = (active: boolean) => {
+    if (
+      active &&
+      (hud.lifecycle === 'ended' ||
+        (hud.role === 'participant' && ['paused', 'recovering'].includes(hud.lifecycle)))
+    )
+      return;
+    if (active && (fatalRecovery || graphics !== 'ready' || hud.inventoryOpen || phase === 'dead'))
+      return;
+    if (focused === active) return;
+    focused = active;
+    if (!active) {
+      inputRecovery.reset();
+      miningHeld = miningSingle = false;
+      lastMineKey = '';
+    }
+    audio.setActive(active && phase === 'playing');
+    footTravel = 0;
+    previousFoot = null;
+    nextDraw = 0;
+    keys.clear();
+    touch = neutralTouch();
+    jump = false;
+    queuedAction = null;
+    miningHeld = miningSingle = false;
+    lastMineKey = '';
+    pendingInputs = [];
+    if (prediction && phase === 'playing') {
+      focusPending = true;
+      send({ type: 'focus', epoch: prediction.currentEpoch, active });
+    }
+  };
+  const handle = (event: ServerMessage) => {
+    if (event.type === 'persistence') {
+      publish({ saveUnavailable: !event.available });
+      return;
+    }
+    if (event.type === 'joining') {
+      if (!baselineReceived) publish({ status: 'connecting', message: 'טוענים את העולם…' });
+      return;
+    }
+    if (event.type === 'lifecycle') {
+      const now = performance.now();
+      worldClock.reset(event.tick, now, event.state === 'playing');
+      publish({
+        lifecycle: event.reason === 'policy_unavailable' ? 'recovering' : event.state,
+        worldPauseReason: event.reason,
+      });
+      if (event.state === 'ended') {
+        reconnectAllowed = false;
+        focus(false);
+        phase = 'paused';
+        if (ownsPointerLock()) document.exitPointerLock();
+        publish({ status: 'error', message: 'המפגש הסתיים. אפשר לחזור לרשימת המשחקים.' });
+      } else if (event.state === 'paused' && hud.role === 'participant') {
+        focus(false);
+        if (ownsPointerLock()) document.exitPointerLock();
+        publish({
+          message:
+            event.reason === 'policy_unavailable' ? 'ממתינים לאישור מצב העולם…' : 'העולם מושהה.',
+        });
+      }
+      return;
+    }
+    if (hud.lifecycle === 'ended' && event.type !== 'error') return;
+    if (event.type === 'explosives') {
+      if (
+        !event.upsert.every(
+          (body) =>
+            content.behavior.find((rule) => rule.family === content.blocks[body.state]?.name)
+              ?.explosive,
+        )
+      ) {
+        fail('explosives', 'unknown explosive state');
+        return;
+      }
+      if (event.reset) primed.clear();
+      for (const id of event.removed) primed.delete(id);
+      for (const body of event.upsert) {
+        if (!primed.has(body.id) && body.total - body.remaining < 4)
+          audio.effect('fuse', body.position);
+        if (!primed.has(body.id) || primed.get(body.id)!.revision <= body.revision)
+          primed.set(body.id, body);
+      }
+      return;
+    }
+    if (event.type === 'explosion') {
+      if (event.sequence <= lastExplosionSequence) return;
+      lastExplosionSequence = event.sequence;
+      lastExplosionEvent = event;
+      primed.delete(event.id);
+      for (const column of event.columns)
+        blastPatches.add(`${column.x},${column.z}:${column.revision}`);
+      while (blastPatches.size > 128) blastPatches.delete(blastPatches.values().next().value!);
+      if (!event.cancelled) {
+        renderer.explosionEffect(event.position, event.radius, performance.now());
+        audio.effect('explosion', event.position);
+        if (Math.hypot(...event.position.map((value, axis) => value - lastPosition[axis])) < 16)
+          blastFlashUntil = performance.now() + 220;
+      }
+      return;
+    }
+    if (event.type === 'hit') {
+      if (!prediction || event.sequence <= lastHitSequence) return;
+      lastHitSequence = event.sequence;
+      lastHitEvent = event;
+      const now = performance.now();
+      renderer.hitEffect(event.position, now);
+      if (event.target !== actorId) audio.effect('hurt', event.position);
+      if (event.target === actorId || event.attacker === actorId)
+        publish({ hit: { received: event.target === actorId, damage: event.damage, at: now } });
+      return;
+    }
+    if (event.type === 'vitals') {
+      if (prediction && event.epoch === prediction.currentEpoch) {
+        if (hud.vitals && event.view.health < hud.vitals.health) audio.effect('hurt');
+        publish({ vitals: event.view });
+      }
+      return;
+    }
+    if (event.type === 'pickup') {
+      if (!prediction || event.epoch !== prediction.currentEpoch) return;
+      const item = content.items.find((item) => item.itemType === event.stack.itemType);
+      if (!item || !validStack(event.stack, new Map([[item.itemType, item]]))) return;
+      audio.effect('pickup');
+      noticeUntil = performance.now() + 1800;
+      publish({ message: `+${event.stack.count} ${ITEM_LABELS[item.itemType] ?? item.itemType}` });
+      return;
+    }
+    if (event.type === 'drops') {
+      const items = new Map(content.items.map((item) => [item.itemType, item]));
+      if (!event.upsert.every((drop) => validStack(drop.stack, items))) {
+        fail('drops', 'invalid drop stack');
+        return;
+      }
+      if (event.reset) dropped.clear();
+      for (const id of event.removed) dropped.delete(id);
+      for (const drop of event.upsert)
+        if (!dropped.has(drop.id) || dropped.get(drop.id)!.revision <= drop.revision)
+          dropped.set(drop.id, drop);
+      return;
+    }
+    if (event.type === 'mining') {
+      if (event.epoch !== prediction?.currentEpoch) return;
+      if (!event.target && hud.mining.target) {
+        lastMineKey = '';
+        if (miningSingle) miningHeld = false;
+      }
+      publish({ mining: { target: event.target, elapsed: event.elapsed, total: event.total } });
+      return;
+    }
+    if (event.type === 'rules') {
+      if (!prediction || event.epoch <= prediction.currentEpoch) return;
+      creativeBagHotbar = inventorySelectionPending = false;
+      publish({
+        mode: event.mode,
+        combat: event.combat,
+        canIgnite: event.explosives,
+        ...(event.mode === 'survival'
+          ? { hotbar: [], selected: 0 }
+          : {
+              hotbar,
+              selected: hotbar.find((i) => i.family === 'stone')?.state ?? hotbar[0].state,
+            }),
+      });
+      return;
+    }
+    if (event.type === 'inventory') {
+      if (!prediction || event.epoch !== prediction.currentEpoch) return;
+      const itemDefinitions = new Map(content.items.map((item) => [item.itemType, item]));
+      const slots = [
+        ...event.view.bag,
+        ...event.view.craft2,
+        ...event.view.craft3,
+        ...event.view.equipment,
+        ...(event.view.container?.slots ?? []),
+      ];
+      if (!slots.every((stack) => stack === null || validStack(stack, itemDefinitions))) {
+        fail('inventory', 'invalid owned stack');
+        return;
+      }
+      inventoryEpoch = event.epoch;
+      if (usesBagHotbar()) {
+        const bar = bagHotbar(event.view);
+        publish({
+          inventory: event.view,
+          hotbar: bar,
+          selectedSlot: event.view.selected,
+          selected: bar[event.view.selected].state,
+        });
+      } else publish({ inventory: event.view });
+      return;
+    }
+    if (event.type === 'welcome') {
+      if (
+        event.buildId !== identity.buildId ||
+        event.contentHash !== content.hash ||
+        event.environmentVersion !== ENVIRONMENT_VERSION ||
+        event.environmentVersion !== identity.environmentVersion ||
+        event.generatorVersion !== GENERATOR_VERSION
+      ) {
+        socket?.close(1000, 'client_left');
+        publish({ status: 'error', message: 'המשחק עודכן. יש לרענן את העמוד.' });
+        return;
+      }
+      const saveUnavailable = hud.saveUnavailable;
+      clearWorld();
+      awaitingWelcome = false;
+      publish({ saveUnavailable });
+      retry.reset();
+      actorId = event.actorId;
+      avatarId = event.avatar ?? selectAvatar(actorId);
+      if (event.mode !== hud.mode) creativeBagHotbar = false;
+      publish({
+        mode: event.mode,
+        role: event.role,
+        combat: event.combat,
+        canIgnite: event.explosives,
+        ...(event.mode === 'survival' || creativeBagHotbar
+          ? { hotbar: [], selected: 0 }
+          : { hotbar }),
+      });
+      worldId = event.worldId;
+      environmentSeed = event.seed;
+      biomeGenerator?.free();
+      biomeGenerator = new engine.TerrainGen(event.seed);
+      worldClock.reset(event.tick, performance.now());
+      slot = world.player_add(...event.spawn);
+      world.set_ghost(slot, event.role === 'observer');
+      prediction = new Prediction(world, slot);
+      prediction.baseline(event.epoch, 0, Array.from(world.player_state(slot)));
+      lastPosition = [...event.spawn];
+      pool = new EnginePool(
+        { module: compiled.module, content, seed: event.seed },
+        navigator.hardwareConcurrency || 2,
+        (reason) => fail('worker', reason),
+      );
+      stream = new WorldStream(
+        world,
+        pool,
+        renderer,
+        worldId,
+        content.hash,
+        (x, z, subscription) => send({ type: 'resync', x, z, subscription }),
+        (reason) => fail('stream', reason),
+      );
+      publish({ status: 'loading', message: 'מכינים את העולם…' });
+      return;
+    }
+    if (event.type === 'baseline' && prediction) {
+      baselineReasons[event.reason] = (baselineReasons[event.reason] ?? 0) + 1;
+      if (event.reason === 'mode' || event.reason === 'teleport') {
+        focus(false);
+        if (ownsPointerLock()) document.exitPointerLock();
+        pendingInventoryOpen = null;
+        publish({ inventoryOpen: false });
+        previousFoot = null;
+        footTravel = 0;
+        lastPosition = event.state.slice(0, 3);
+        lastReady = -Infinity;
+      }
+
+      const beforeBaseline = world.player_state(prediction.slot);
+      const previousEpoch = prediction.currentEpoch;
+      prediction.baseline(event.epoch, event.ack, event.state, event.movement);
+      phase = event.phase;
+      inputRecovery.reset();
+      lastAckProgress = performance.now();
+      if (event.phase === 'paused' && hud.lifecycle === 'paused') enterOnReady = false;
+      if (event.phase === 'paused' || event.phase === 'dead') {
+        focusPending = false;
+        focused = false;
+        keys.clear();
+        touch = neutralTouch();
+        miningHeld = false;
+        lastMineKey = '';
+        audio.setActive(false);
+        if (ownsPointerLock()) document.exitPointerLock();
+        if (event.phase === 'dead') {
+          pendingInventoryOpen = null;
+          publish({ inventoryOpen: false });
+        }
+      }
+      baselineReceived = true;
+      pendingInputs = [];
+      const discontinuity = ['join', 'ready', 'teleport', 'respawn', 'mode'].includes(event.reason);
+      const baselineError = event.state
+        .slice(0, 3)
+        .map((v, i) => beforeBaseline[i] + visualOffset[i] - v);
+      visualOffset = !discontinuity && Math.hypot(...baselineError) < 2 ? baselineError : [0, 0, 0];
+      lastPosition = event.state.slice(0, 3);
+      if (event.epoch !== previousEpoch) {
+        queuedAction = null;
+        actionSequence = 0;
+        actionPending = 0;
+        worldActions.clear();
+        if (event.reason !== 'focus' || !focused) miningHeld = miningSingle = false;
+        lastMineKey = '';
+        mineRequest = 0;
+        mineRetryAt = 0;
+        lastResult = null;
+        inventorySequence = 0;
+        inventorySelectionPending = false;
+        publish({ inventoryPending: false });
+      }
+      // A newer baseline can retire an in-flight opposite focus request. Reassert
+      // the latest local intent against its epoch, including a rapid resume/pause.
+      if (event.phase === 'playing') {
+        focusPending = event.state[12] !== Number(!focused);
+        if (focusPending) send({ type: 'focus', epoch: event.epoch, active: focused });
+      }
+      publish({
+        status: fatalRecovery
+          ? 'recovering'
+          : event.phase === 'dead'
+            ? 'dead'
+            : event.phase === 'preparing'
+              ? 'loading'
+              : enterOnReady || focusPending
+                ? 'loading'
+                : focused && event.state[12] === 0
+                  ? 'playing'
+                  : 'paused',
+        message: fatalRecovery
+          ? 'העולם מתאושש. אפשר להתחבר מחדש.'
+          : event.phase === 'dead'
+            ? 'נפלתם. הפריטים נשארו בעולם. אפשר לחזור לנקודת ההתחלה.'
+            : event.phase === 'preparing'
+              ? 'מכינים את העולם…'
+              : enterOnReady || focusPending
+                ? 'נכנסים לעולם…'
+                : focused
+                  ? ''
+                  : hud.lifecycle === 'paused' && hud.role === 'participant'
+                    ? 'העולם מושהה.'
+                    : (pointerLockProblem ?? 'לחצו על העולם כדי להמשיך'),
+        flying: event.state[10] === 1,
+      });
+      if (pendingInventoryOpen) {
+        if (event.phase === 'playing' && !focusPending) {
+          const operation = pendingInventoryOpen;
+          pendingInventoryOpen = null;
+          publish({ inventoryPending: false });
+          sendInventory(operation);
+        } else publish({ inventoryPending: true });
+      }
+      syncPalette();
+      return;
+    }
+    if (event.type === 'snapshot') {
+      if (
+        !event.actors.every(
+          (actor) =>
+            !actor.appearance || appearanceMatchesContent(actor.appearance, appearanceItems),
+        )
+      ) {
+        fail('actors', 'invalid public appearance');
+        return;
+      }
+      lastSnapshot = performance.now();
+      worldClock.observe(event.tick, performance.now());
+      if (event.self && prediction) {
+        const before = world.player_state(prediction.slot);
+        if (event.self.ack > prediction.currentAck) lastAckProgress = performance.now();
+        const changed = prediction.reconcile(event.self.epoch, event.self.ack, event.self.state);
+        if (inputRecovery.observe(prediction.inputSeconds)) {
+          publish({ message: '' });
+          options.onDiagnostic?.('prediction', 'input_recovered', {
+            code: 'RECOVERED',
+            reason: 'input_recovered',
+            fatal: false,
+          });
+        }
+        if (changed) {
+          const after = world.player_state(prediction.slot);
+          const error = [0, 1, 2].map((i) => before[i] + visualOffset[i] - after[i]);
+          visualOffset = Math.hypot(...error) < 2 ? error : [0, 0, 0];
+        }
+      }
+      remotes.snapshot(event.actors, event.time, performance.now());
+      return;
+    }
+    if (event.type === 'actor_joined') {
+      if (!appearanceMatchesContent(event.actor.appearance, appearanceItems)) {
+        fail('actors', 'invalid public appearance');
+        return;
+      }
+      remotes.join(event.actor, performance.now());
+      return;
+    }
+    if (event.type === 'actor_removed') {
+      remotes.remove(event.id);
+      return;
+    }
+    if (event.type === 'unload') {
+      stream?.unload(event.x, event.z, event.subscription);
+      return;
+    }
+    if (event.type === 'result') {
+      if (prediction && event.epoch === prediction.currentEpoch) {
+        if (
+          event.sequence === mineRequest &&
+          event.outcome?.ok === false &&
+          ['input_stale', 'input_dependency', 'input_timeout', 'out_of_reach', 'conflict'].includes(
+            event.outcome.reason,
+          ) &&
+          miningHeld
+        ) {
+          lastMineKey = '';
+          mineRetryAt = performance.now() + 150;
+        }
+        if (event.sequence === inventorySequence) {
+          if (event.status === 'applied' && event.outcome?.ok && inventorySound) {
+            audio.effect(inventorySound === 'consume' ? 'eat' : 'craft');
+          }
+          inventorySound = null;
+          if (inventorySelectionPending && event.status === 'applied' && event.outcome?.ok)
+            creativeBagHotbar = true;
+          inventorySelectionPending = false;
+          publish({ inventoryPending: false });
+        }
+        lastResult = event;
+        if (worldActions.delete(event.sequence)) actionPending = worldActions.size;
+        if (event.outcome && !event.outcome.ok && event.outcome.reason !== 'conflict') {
+          const notices: Record<string, string> = {
+            collision: 'אין מספיק מקום לבלוק',
+            out_of_reach: 'המטרה רחוקה או מוסתרת',
+            support: 'הבלוק צריך משטח מתאים',
+            forbidden: 'אין הרשאה לפעולה הזאת',
+            full: 'אין מקום בתיק או במשבצת היעד',
+            no_recipe: 'הסידור אינו מתאים למתכון',
+            insufficient: 'אין מספיק פריטים לפעולה',
+            wrong_equipment: 'הפריט אינו מתאים למשבצת הציוד',
+            occupied: 'יש להחליף ערימה שלמה או לבחור משבצת פנויה',
+            station_required: 'צריך שולחן יצירה נגיש ליצירה בגודל 3×3',
+            container_not_empty: 'צריך לרוקן את התיבה לפני הסרתה',
+            not_owned: 'צריך לבחור במשבצת שמכילה את הבלוק הזה',
+            tool_required: 'צריך כלי מתאים כדי לכרות את הבלוק הזה',
+            mine_required: 'יש להחזיק את פעולת הכרייה',
+            not_food: 'הפריט שנבחר אינו מזון',
+            cooldown: 'המתינו מעט לפני אכילה נוספת',
+          };
+          noticeUntil = performance.now() + 3000;
+          publish({ message: notices[event.outcome.reason] ?? 'לא ניתן לבצע את הפעולה כאן' });
+        }
+      }
+      return;
+    }
+    if (event.type === 'error') {
+      if (event.code === 'INVALID') return;
+      enterOnReady = false;
+      reconnectAllowed = event.code === 'SESSION_ENDED' ? false : event.retryable;
+      if (!reconnectAllowed) retry.cancel();
+      focus(false);
+      if (event.code === 'SESSION_ENDED' || event.code === 'RECOVERING') {
+        const now = performance.now();
+        worldClock.reset(worldClock.read(now), now, false);
+        if (event.code === 'SESSION_ENDED') phase = 'paused';
+      }
+      publish({
+        ...(event.code === 'SESSION_ENDED' ? { lifecycle: 'ended' as const } : {}),
+        ...(event.code === 'RECOVERING' ? { lifecycle: 'recovering' as const } : {}),
+        status: 'error',
+        canReconnect: reconnectAllowed,
+        pointerLocked: false,
+        message:
+          event.code === 'RECESS_CLOSED'
+            ? 'זמן ההפסקה הסתיים. אפשר לחזור בהפסקה הבאה.'
+            : event.code === 'SESSION_ENDED'
+              ? 'המפגש הסתיים. אפשר לחזור לרשימת המשחקים.'
+              : event.code === 'INCOMPATIBLE'
+                ? 'המשחק עודכן. יש לרענן את העמוד.'
+                : event.code === 'REPLACED'
+                  ? 'המשחק פתוח בחלון אחר.'
+                  : 'החיבור לעולם הופסק. אפשר להתחבר מחדש.',
+      });
+      if (ownsPointerLock()) document.exitPointerLock();
+    }
+  };
+  const retry = new ConnectionRetry(() => {
+    if (!disposed && reconnectAllowed && document.visibilityState === 'visible') void connect();
+  });
+  const scheduleReconnect = () => {
+    if (!disposed && reconnectAllowed && document.visibilityState === 'visible') retry.schedule();
+  };
+  const onOnline = () => {
+    if (
+      !disposed &&
+      reconnectAllowed &&
+      document.visibilityState === 'visible' &&
+      ['error', 'recovering', 'stalled'].includes(hud.status)
+    ) {
+      retry.cancel();
+      void connect();
+    }
+  };
+  async function connect() {
+    if (disposed || connecting) return;
+    connecting = true;
+    reconnectAllowed = true;
+    fatalRecovery = false;
+    enterOnReady = options.autoEnter === true;
+    focus(false);
+    if (ownsPointerLock()) document.exitPointerLock();
+    const generation = ++connection;
+    retry.cancel();
+    connectionAbort?.abort();
+    const abort = new AbortController();
+    connectionAbort = abort;
+    const timeout = setTimeout(() => abort.abort(), 15000);
+    let cancelled!: () => void;
+    const cancelledAdmission = new Promise<never>((_resolve, reject) => {
+      cancelled = () => reject(new DOMException('Admission cancelled', 'AbortError'));
+      abort.signal.addEventListener('abort', cancelled, { once: true });
+    });
+    socket?.close(1000, 'client_reconnecting');
+    awaitingWelcome = true;
+    phase = 'preparing';
+    baselineReceived = false;
+    worldClock.reset(worldClock.read(performance.now()), performance.now(), false);
+    publish({
+      lifecycle: 'preparing',
+      canReconnect: true,
+      worldPauseReason: null,
+      status: 'connecting',
+      message: 'מתחברים לעולם…',
+    });
+    try {
+      const admission = await Promise.race([options.admit(abort.signal), cancelledAdmission]);
+      if (disposed || generation !== connection) return;
+      if (admission.buildId !== identity.buildId)
+        throw Object.assign(new Error('incompatible client build'), {
+          code: 'INCOMPATIBLE',
+          retryable: false,
+        });
+      lastReceived = performance.now();
+      const ws = new WebSocket(options.socketUrl);
+      socket = ws;
+      ws.binaryType = 'arraybuffer';
+      ws.onopen = () => {
+        if (disposed || generation !== connection) {
+          ws.close();
+          return;
+        }
+        lastReceived = performance.now();
+        ws.send(
+          JSON.stringify({
+            type: 'hello',
+            ticket: admission.ticket,
+            buildId: identity.buildId,
+          } satisfies ClientMessage),
+        );
+      };
+      ws.onmessage = ({ data }) => {
+        if (disposed || generation !== connection) return;
+        lastReceived = performance.now();
+        try {
+          if (typeof data === 'string') {
+            const message = parseServerMessage(data);
+            if (!message) throw new Error('invalid server control message');
+            handle(message);
+          } else {
+            const frame = decodeChunk(new Uint8Array(data), content.blocks.length);
+            if (!frame) throw new Error('invalid world frame');
+            const column = stream?.columns.get(columnKey(frame.x, frame.z));
+            const acceptedPatch =
+              frame.kind === 'patch' &&
+              column &&
+              !column.recovering &&
+              frame.subscription === column.subscription &&
+              frame.revision === column.revision + 1;
+            const blastPatch = blastPatches.delete(`${frame.x},${frame.z}:${frame.revision}`);
+            const effects =
+              acceptedPatch && column.ready && !blastPatch
+                ? frame.edits.slice(0, 8).map(([local, state]) => {
+                    const cell = worldCell(frame.x, frame.z, local);
+                    return { cell, state, before: world.get_block(...cell) };
+                  })
+                : [];
+            stream?.receive(frame);
+            if (
+              acceptedPatch &&
+              stream?.revision(frame.x, frame.z) === frame.revision &&
+              !column?.recovering
+            ) {
+              for (const e of effects)
+                if (e.before !== e.state && e.before !== 65535) {
+                  renderer.editEffect(
+                    e.cell,
+                    e.state === 0 ? e.before : e.state,
+                    performance.now(),
+                    e.state === 0,
+                  );
+                  const state = e.state === 0 ? e.before : e.state;
+                  audio.material(
+                    e.state === 0 ? 'break' : 'place',
+                    e.cell.map((v) => v + 0.5),
+                    soundGroups.get(content.blocks[state]?.name) ?? 'stone',
+                  );
+                }
+              for (const [local, state] of frame.edits)
+                recentEdits.push({
+                  cell: worldCell(frame.x, frame.z, local),
+                  state,
+                  revision: frame.revision,
+                });
+              recentEdits = recentEdits.slice(-32);
+            }
+          }
+        } catch (error) {
+          fail('replication', error);
+        }
+      };
+      ws.onerror = () => diagnose('socket', 'connection failed');
+      ws.onclose = () => {
+        if (disposed || generation !== connection) return;
+        enterOnReady = false;
+        focus(false);
+        if (ownsPointerLock()) document.exitPointerLock();
+        publish({ pointerLocked: false });
+        if (!reconnectAllowed) return;
+        publish({ status: 'recovering', message: 'החיבור הופסק. מתחברים מחדש…' });
+        scheduleReconnect();
+      };
+    } catch (error) {
+      if (!disposed && generation === connection) {
+        diagnose('admission', error);
+        reconnectAllowed = retryableAdmission(error);
+        publish({
+          canReconnect: reconnectAllowed,
+          status: reconnectAllowed ? 'recovering' : 'error',
+          message: reconnectAllowed
+            ? 'החיבור אינו זמין. ננסה שוב אוטומטית…'
+            : 'לא ניתן להתחבר לעולם.',
+        });
+        scheduleReconnect();
+      }
+    } finally {
+      clearTimeout(timeout);
+      abort.signal.removeEventListener('abort', cancelled);
+      if (generation === connection) {
+        connecting = false;
+        connectionAbort = null;
+      }
+    }
+  }
+  function controls(): Controls {
+    const body = slot === null ? null : world.player_state(slot);
+    const heldJump = !!body && (body[10] === 1 || body[7] === 1 || body[9] === 1);
+    const value = {
+      x: Math.max(-1, Math.min(1, touch.x + Number(keys.has('KeyD')) - Number(keys.has('KeyA')))),
+      z: Math.max(-1, Math.min(1, touch.z + Number(keys.has('KeyS')) - Number(keys.has('KeyW')))),
+      yaw,
+      pitch,
+      jump: heldJump ? keys.has('Space') || touch.jump : jump,
+      sneak: keys.has('ShiftLeft') || keys.has('ShiftRight') || touch.sneak,
+      sprint: keys.has('ControlLeft') || keys.has('ControlRight') || touch.sprint,
+    };
+    jump = false;
+    return value;
+  }
+  function aimsAtActor(now: number): boolean {
+    if (!prediction) return false;
+    const p = world.player_state(prediction.slot),
+      cos = Math.cos(pitch),
+      origin = [p[0], p[1] + 1.62, p[2]],
+      direction = [Math.sin(yaw) * cos, Math.sin(pitch), -Math.cos(yaw) * cos];
+    const item = content.items.find(
+      (item) => item.itemType === hud.inventory?.bag[hud.selectedSlot]?.itemType,
+    );
+    return remotes.frame(now).some((actor) => {
+      const distance = rayBody(origin, direction, actor.position, combatProfile(item).reach);
+      if (distance === null) return false;
+      const end = origin.map((value, axis) => value + direction[axis] * (distance + 1e-4));
+      return world.line_clear(origin[0], origin[1], origin[2], end[0], end[1], end[2]);
+    });
+  }
+  function ignite(): boolean {
+    if (inputRecovery.waiting) return false;
+    if (!target) return true;
+    if (
+      !prediction ||
+      !stream ||
+      !hud.inventory ||
+      inventoryEpoch !== prediction.currentEpoch ||
+      actionPending >= 16
+    )
+      return false;
+    const revision = stream.revision(target[0] >> 4, target[2] >> 4);
+    if (revision < 0) return false;
+    flush();
+    renderer.swing(performance.now());
+    const sequence = ++actionSequence;
+    send({
+      type: 'ignite',
+      epoch: prediction.currentEpoch,
+      sequence,
+      inputSequence: prediction.currentSequence,
+      target: [...target],
+      revision,
+      inventoryRevision: hud.inventory.revision,
+    });
+    worldActions.add(sequence);
+    actionPending = worldActions.size;
+    return true;
+  }
+  function attack(): boolean {
+    if (inputRecovery.waiting) return false;
+    if (
+      !prediction ||
+      !hud.inventory ||
+      inventoryEpoch !== prediction.currentEpoch ||
+      actionPending >= 16
+    )
+      return false;
+    flush();
+    renderer.swing(performance.now());
+    const sequence = ++actionSequence;
+    send({
+      type: 'attack',
+      epoch: prediction.currentEpoch,
+      sequence,
+      inputSequence: prediction.currentSequence,
+      inventoryRevision: hud.inventory.revision,
+    });
+    worldActions.add(sequence);
+    actionPending = worldActions.size;
+    return true;
+  }
+  function interaction(kind: 'place' | 'remove' | 'collect') {
+    if (inputRecovery.waiting) return;
+    if (hud.mode === 'survival' && kind === 'remove') {
+      miningHeld = miningSingle = true;
+      return;
+    }
+    if (!prediction || !stream || !target || !targetNormal || actionPending >= 16) return;
+    const hit = content.blocks[world.get_block(...target)];
+    let destination: Cell = target;
+    if (kind === 'place' && !hit?.replaceable)
+      destination = [
+        target[0] + targetNormal[0],
+        target[1] + targetNormal[1],
+        target[2] + targetNormal[2],
+      ];
+    const revisions = new Map<string, { x: number; z: number; revision: number }>();
+    for (const c of [target, destination]) {
+      const x = c[0] >> 4,
+        z = c[2] >> 4,
+        revision = stream.revision(x, z);
+      if (revision < 0) return;
+      revisions.set(columnKey(x, z), { x, z, revision });
+    }
+    flush();
+    renderer.swing(performance.now());
+    const sequence = ++actionSequence;
+    send({
+      type: 'action',
+      epoch: prediction.currentEpoch,
+      sequence,
+      inputSequence: prediction.currentSequence,
+      kind,
+      target,
+      state: kind === 'collect' ? 0 : hud.selected,
+      inventoryRevision: hud.inventory?.revision ?? 0,
+      revisions: [...revisions.values()],
+    });
+    worldActions.add(sequence);
+    actionPending = worldActions.size;
+  }
+  function sendMining(target: Cell | null): void {
+    if (!prediction || !stream || socket?.readyState !== WebSocket.OPEN) return;
+    flush();
+    mineRequest = ++actionSequence;
+    send({
+      type: 'mining',
+      epoch: prediction.currentEpoch,
+      sequence: mineRequest,
+      inputSequence: target ? prediction.currentSequence : 0,
+      target,
+      revision: target ? Math.max(0, stream.revision(target[0] >> 4, target[2] >> 4)) : 0,
+      inventoryRevision: hud.inventory?.revision ?? 0,
+    });
+  }
+  function miningControl(ready: boolean, sampled: boolean): void {
+    if (hud.mode !== 'survival') return;
+    if (!miningHeld || !focused || !ready || fatalRecovery || phase !== 'playing') {
+      if (lastMineKey) sendMining(null);
+      lastMineKey = '';
+      return;
+    }
+    if (
+      !sampled ||
+      performance.now() < mineRetryAt ||
+      !target ||
+      !hud.inventory ||
+      hud.inventoryPending ||
+      inventoryEpoch !== prediction?.currentEpoch
+    )
+      return;
+    const stack = hud.inventory.bag[hud.inventory.selected];
+    const key = `${target.join(',')}:${world.get_block(...target)}:${hud.inventory.selected}:${stack?.itemType ?? ''}:${stack?.instance?.durability ?? 0}`;
+    if (key !== lastMineKey) {
+      // Predicted aim can briefly cross a block edge. Require a stable new
+      // target before replacing an in-progress job; the server still checks reach.
+      if (hud.mining.target && key !== miningCandidate) {
+        miningCandidate = key;
+        miningCandidateAt = performance.now();
+      }
+      if (hud.mining.target && performance.now() - miningCandidateAt < 80) return;
+      lastMineKey = key;
+      miningCandidate = '';
+      sendMining([...target]);
+    } else miningCandidate = '';
+  }
+  function updateTarget(position: ArrayLike<number>) {
+    const selected = hud.inventory?.bag[hud.selectedSlot],
+      collects =
+        hud.mode === 'survival' &&
+        content.items.some((item) => item.itemType === selected?.itemType && item.collects);
+    const cos = Math.cos(pitch),
+      hit = (collects ? world.raycast_liquids.bind(world) : world.raycast.bind(world))(
+        position[0],
+        position[1] + 1.62,
+        position[2],
+        Math.sin(yaw) * cos,
+        Math.sin(pitch),
+        -Math.cos(yaw) * cos,
+        6,
+      );
+    target = hit[0] ? [hit[1], hit[2], hit[3]] : null;
+    targetNormal = hit[0] ? [hit[4], hit[5], hit[6]] : null;
+    const key = target
+      ? `${target.join(',')}:${world.get_block(...target)}:${renderer.origin.x}:${renderer.origin.z}`
+      : '';
+    if (key !== lastHighlight) {
+      lastHighlight = key;
+      const boxes: number[][] = [];
+      const block = target && content.blocks[world.get_block(...target)];
+      const hideOverlay =
+        block &&
+        (block.shape === 'cross' ||
+          block.shape === 'torch' ||
+          block.shape === 'wall_torch' ||
+          block.climbable);
+      if (target && !hideOverlay) {
+        const raw = world.target_boxes(...target);
+        for (let i = 0; i < raw.length; i += 6) boxes.push(Array.from(raw.subarray(i, i + 6)));
+      }
+      renderer.target(boxes, hideOverlay ? null : target);
+    }
+  }
+  function update(now: number) {
+    if (disposed) return;
+    const sampleTime = updateClock(lastUpdate, now);
+    now = sampleTime.now;
+    const dt = sampleTime.dt;
+    lastUpdate = now;
+    if (
+      reconnectAllowed &&
+      !connecting &&
+      socket &&
+      (socket.readyState === WebSocket.CONNECTING || socket.readyState === WebSocket.OPEN) &&
+      now - lastReceived > 10000 &&
+      document.visibilityState === 'visible'
+    ) {
+      // Replace a silent connection without waiting for its close handshake.
+      connection++;
+      const previous = socket;
+      socket = null;
+      previous.close(1000, 'client_reconnecting');
+      focus(false);
+      if (ownsPointerLock()) document.exitPointerLock();
+      publish({
+        lifecycle: 'recovering',
+        status: 'recovering',
+        pointerLocked: false,
+        message: 'החיבור הופסק. מתחברים מחדש…',
+      });
+      scheduleReconnect();
+    }
+    environment = sampleEnvironment(worldClock.read(now), environmentSeed);
+    if (prediction && stream) {
+      let state = world.player_state(prediction.slot);
+      if (!awaitingWelcome) {
+        stream.setCenter(state[0], state[2], yaw);
+        stream.pump(2);
+      }
+      if (phase === 'preparing' && baselineReceived && now - lastReady > 300) {
+        const columns = stream.readyAround(state);
+        if (columns && stream.meshCount > 0) {
+          send({ type: 'ready', epoch: prediction.currentEpoch, columns });
+          lastReady = now;
+        }
+      }
+      const ready = stream.readyAround(state) !== null,
+        stalled = now - lastReceived > 1500;
+      if (
+        enterOnReady &&
+        phase === 'paused' &&
+        ready &&
+        hud.lifecycle === 'paused' &&
+        hud.role === 'participant'
+      ) {
+        enterOnReady = false;
+        publish({ status: 'paused', message: 'העולם מושהה.' });
+      }
+      if (
+        enterOnReady &&
+        phase === 'playing' &&
+        ready &&
+        !stalled &&
+        (hud.lifecycle === 'playing' || (hud.role === 'observer' && hud.lifecycle === 'paused')) &&
+        graphics === 'ready'
+      ) {
+        enterOnReady = false;
+        if (document.visibilityState === 'visible' && document.hasFocus()) {
+          canvas.focus({ preventScroll: true });
+          focus(true);
+        }
+      }
+      if (ready && now - lastSkyProbe > 250) {
+        lastSkyProbe = now;
+        openSky = world.raycast(state[0], state[1] + 1.9, state[2], 0, 1, 0, 256)[0] === 0;
+      }
+      if (
+        phase === 'playing' &&
+        !ready &&
+        !stalled &&
+        hud.status !== 'loading' &&
+        !['error', 'recovering'].includes(hud.status)
+      )
+        publish({ status: 'loading', message: 'ממתינים לטעינת השטח…' });
+      else if (phase === 'playing' && ready && hud.status === 'loading')
+        publish({
+          status: focused ? 'playing' : 'paused',
+          message: focused ? '' : 'לחצו על העולם כדי להמשיך',
+        });
+      if (
+        stalled &&
+        hud.status !== 'recovering' &&
+        hud.status !== 'error' &&
+        hud.status !== 'stalled'
+      ) {
+        queuedAction = null;
+        miningHeld = miningSingle = false;
+        if (lastMineKey) sendMining(null);
+        lastMineKey = '';
+        publish({ status: 'stalled', message: 'ממתינים לחיבור…' });
+      }
+      let sampled = false;
+      if (dt > 0) {
+        if (
+          phase === 'playing' &&
+          focused &&
+          ready &&
+          !stalled &&
+          state[12] === 0 &&
+          !inputRecovery.waiting
+        ) {
+          const sample = prediction.sample(controls(), dt);
+          if (sample) {
+            sampled = true;
+            pendingInputs.push(sample);
+            updateTarget(world.player_state(prediction.slot));
+            if (queuedAction) {
+              if (queuedAction === 'attack') {
+                if (attack()) queuedAction = null;
+              } else if (queuedAction === 'ignite') {
+                if (ignite()) queuedAction = null;
+              } else {
+                interaction(queuedAction);
+                queuedAction = null;
+              }
+            }
+          } else if (inputRecovery.pause(now)) {
+            queuedAction = null;
+            miningHeld = miningSingle = false;
+            if (lastMineKey) sendMining(null);
+            lastMineKey = '';
+            publish({ message: 'החיבור איטי. ממתינים לאישור התנועה…' });
+            options.onDiagnostic?.('prediction', 'input_acknowledgement_stalled', {
+              code: 'INPUT_BACKPRESSURE',
+              reason: 'input_acknowledgement_stalled',
+              fatal: false,
+              metrics: {
+                epoch: prediction.currentEpoch,
+                sequence: prediction.currentSequence,
+                ack: prediction.currentAck,
+                inputSeconds: prediction.inputSeconds,
+                ackAgeMs: Math.max(0, now - lastAckProgress),
+                snapshotAgeMs: Math.max(0, now - lastSnapshot),
+                bufferedBytes: socket?.bufferedAmount ?? 0,
+              },
+            });
+          }
+        }
+      }
+      if (now - lastSend >= 1000 / 30) flush();
+      if (inputRecovery.requestResync(now) && prediction && socket?.readyState === WebSocket.OPEN) {
+        send({ type: 'focus', epoch: prediction.currentEpoch, active: focused });
+      }
+      if (inputRecovery.shouldReconnect(now)) {
+        inputRecovery.reset();
+        command({ type: 'reconnect' });
+      }
+      miningControl(ready && !stalled && !inputRecovery.waiting, sampled);
+      const visiblyMining =
+        miningHeld &&
+        focused &&
+        ready &&
+        !stalled &&
+        !fatalRecovery &&
+        phase === 'playing' &&
+        hud.mining.target &&
+        target &&
+        hud.mining.target.every((value, axis) => value === target![axis]);
+      renderer.mining(visiblyMining ? hud.mining.elapsed / Math.max(1, hud.mining.total) : 0);
+      if (visiblyMining && now - lastMiningSwing >= 280) {
+        renderer.swing(now);
+        audio.material(
+          'dig',
+          target!.map((value) => value + 0.5),
+          soundGroups.get(content.blocks[world.get_block(...target!)]?.name) ?? 'stone',
+        );
+        lastMiningSwing = now;
+      }
+      state = world.player_state(prediction.slot);
+      lastPosition = Array.from(state.subarray(0, 3));
+      if (
+        focused &&
+        phase === 'playing' &&
+        ready &&
+        !stalled &&
+        !fatalRecovery &&
+        state[6] === 1 &&
+        state[10] === 0
+      ) {
+        if (previousFoot)
+          footTravel += Math.min(
+            0.5,
+            Math.hypot(lastPosition[0] - previousFoot[0], lastPosition[2] - previousFoot[2]),
+          );
+        if (footTravel >= 1.4 && now - lastFootstep >= 180) {
+          const beneath = world.get_block(
+            Math.floor(state[0]),
+            Math.floor(state[1] - 0.05),
+            Math.floor(state[2]),
+          );
+          audio.material(
+            'step',
+            [state[0], state[1] + 0.02, state[2]],
+            soundGroups.get(content.blocks[beneath]?.name ?? '') ?? 'stone',
+          );
+          footTravel %= 1.4;
+          lastFootstep = now;
+        }
+      } else footTravel = 0;
+      previousFoot = lastPosition;
+      if (biomeGenerator && now - lastBiomeSample > 1200) {
+        biome = biomeGenerator.biome_at(Math.floor(state[0]), Math.floor(state[2]));
+        lastBiomeSample = now;
+      }
+      blastFlash.style.opacity = String(Math.max(0, (blastFlashUntil - now) / 220) * 0.45);
+      audio.frame(
+        lastPosition,
+        yaw,
+        pitch,
+        environment,
+        openSky,
+        (focused || hud.inventoryOpen) &&
+          phase === 'playing' &&
+          !fatalRecovery &&
+          hud.lifecycle === 'playing',
+        biome,
+      );
+      for (let i = 0; i < 3; i++) visualOffset[i] *= Math.exp(-dt * 12);
+      updateTarget(state);
+      if (now - lastHud > 100) {
+        lastHud = now;
+        if (noticeUntil && now > noticeUntil) {
+          noticeUntil = 0;
+          publish({ message: focused ? '' : 'לחצו על העולם כדי להמשיך' });
+        }
+        publish({
+          players: remotes.size + 1,
+          environment: environmentHud(),
+          flying: state[10] === 1,
+          pointerLocked: ownsPointerLock(),
+          ...(phase === 'playing' && !stalled && hud.status === 'stalled'
+            ? { status: focused ? ('playing' as const) : ('paused' as const), message: '' }
+            : {}),
+        });
+      }
+    }
+  }
+  function frame(now: number) {
+    if (disposed) return;
+    lastFrame = now;
+    update(now);
+    draw(
+      lastPosition.map((v, i) => v + visualOffset[i]),
+      now,
+    );
+    animation = requestAnimationFrame(frame);
+  }
+  function draw(position: readonly number[], now: number) {
+    if (graphics === 'lost' || graphics === 'failed') return;
+    // Prediction runs once per animation frame, even when GPU submissions are paced.
+    const interval = 1000 / (focused && phase === 'playing' ? renderHz : 10);
+    if (now < nextDraw) return;
+    nextDraw = now + interval - ((now - nextDraw) % interval);
+    const state = slot === null ? null : world.player_state(slot);
+    try {
+      camera = cameraView(world, position, yaw, pitch, hud.cameraDistance);
+      const self =
+        camera.distance > 0.8 && hud.role === 'participant' && phase === 'playing'
+          ? {
+              id: actorId,
+              avatar: avatarId,
+              position,
+              yaw,
+              pitch,
+              speed: state ? Math.hypot(state[3], state[5]) : 0,
+              flying: state?.[10] === 1,
+              appearance: {
+                held: usesBagHotbar()
+                  ? (hud.inventory?.bag[hud.selectedSlot]?.itemType ?? null)
+                  : (content.items.find(
+                      (item) => item.places === content.blocks[hud.selected]?.name,
+                    )?.itemType ?? null),
+                equipment: Object.fromEntries(
+                  EQUIPMENT.map((slot, index) => [
+                    slot,
+                    hud.inventory?.equipment[index]?.itemType ?? null,
+                  ]),
+                ) as Record<(typeof EQUIPMENT)[number], string | null>,
+              },
+            }
+          : null;
+      const submitted = renderer.gpuStats.submitted;
+      renderer.frame(position, yaw, pitch, remotes.frame(now), now, environment, openSky, {
+        eye: camera.eye,
+        avatar: avatarId,
+        self,
+        state: hud.selected,
+        speed: state ? Math.hypot(state[3], state[5]) : 0,
+        active: focused && phase === 'playing' && hud.role === 'participant' && !fatalRecovery,
+        itemType: usesBagHotbar() ? (hud.inventory?.bag[hud.selectedSlot]?.itemType ?? null) : null,
+        drops: [...dropped.values()],
+        dropCollision: world,
+        explosives: [...primed.values()],
+        vision:
+          hud.mode === 'survival' &&
+          equipmentEffects(
+            (hud.inventory?.equipment ?? []).flatMap((stack) => {
+              const item = stack && content.items.find((item) => item.itemType === stack.itemType);
+              return item ? [item] : [];
+            }),
+          ).vision,
+      });
+      if (graphics === 'restoring' && renderer.gpuStats.submitted > submitted) {
+        graphics = 'ready';
+        if (
+          !fatalRecovery &&
+          hud.lifecycle !== 'ended' &&
+          hud.status !== 'error' &&
+          hud.status !== 'unsupported'
+        )
+          publish({
+            status: phase === 'dead' ? 'dead' : phase === 'preparing' ? 'loading' : 'paused',
+            message:
+              phase === 'dead'
+                ? 'נפלתם. אפשר לחזור לנקודת ההתחלה.'
+                : 'התצוגה שוחזרה. לחצו על כניסה לעולם כדי להמשיך.',
+          });
+        else publish({});
+      }
+    } catch (error) {
+      if (renderer.gl.getContext().isContextLost())
+        onContextLost(new Event('webglcontextlost', { cancelable: true }));
+      else if (graphics === 'restoring') {
+        graphics = 'failed';
+        diagnose('webgl_restore', error);
+        publish({
+          status: 'error',
+          message: graphicsFailureMessage,
+        });
+      } else fail('webgl', error);
+    }
+  }
+  const resize = () =>
+    renderer.resize(Math.max(1, host.clientWidth), Math.max(1, host.clientHeight));
+  const observer = new ResizeObserver(resize);
+  observer.observe(host);
+  resize();
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (
+      !focused ||
+      (inputMode === 'desktop' && !ownsPointerLock() && document.activeElement !== canvas) ||
+      (event.target instanceof HTMLElement &&
+        event.target.closest('input, textarea, select, [contenteditable="true"], dialog[open]'))
+    )
+      return;
+    audio.unlock();
+    const movementCode =
+      (
+        { ArrowUp: 'KeyW', ArrowDown: 'KeyS', ArrowLeft: 'KeyA', ArrowRight: 'KeyD' } as Record<
+          string,
+          string
+        >
+      )[event.code] ?? event.code;
+    if (
+      [
+        'Space',
+        'KeyW',
+        'KeyA',
+        'KeyS',
+        'KeyD',
+        'ShiftLeft',
+        'ShiftRight',
+        'ControlLeft',
+        'ControlRight',
+      ].includes(movementCode)
+    ) {
+      event.preventDefault();
+      if (event.code === 'Space' && !keys.has('Space')) jump = true;
+      keys.add(movementCode);
+    }
+    if (event.code === 'KeyF' && !event.repeat) command({ type: 'flight' });
+    if (event.code === 'KeyV' && !event.repeat) {
+      event.preventDefault();
+      command({ type: 'camera', distance: hud.cameraDistance > 0 ? 0 : 4 });
+    }
+    if (event.code === 'KeyR' && !event.repeat) command({ type: 'eat' });
+    if (event.code === 'KeyQ' && !event.repeat) command({ type: 'drop' });
+    if (event.code === 'KeyX' && !event.repeat) command({ type: 'attack' });
+    if (event.code === 'KeyG' && !event.repeat) command({ type: 'ignite' });
+    if (/^(Digit|Numpad)[1-9]$/.test(event.code)) {
+      const index = Number(event.code.slice(-1)) - 1;
+      if (usesBagHotbar()) command({ type: 'select-slot', slot: index });
+      else {
+        const selected = hotbar[index];
+        if (selected) command({ type: 'select', state: selected.state });
+      }
+    }
+  };
+  const onKeyUp = (event: KeyboardEvent) =>
+    keys.delete(
+      (
+        { ArrowUp: 'KeyW', ArrowDown: 'KeyS', ArrowLeft: 'KeyA', ArrowRight: 'KeyD' } as Record<
+          string,
+          string
+        >
+      )[event.code] ?? event.code,
+    );
+  const onMouseMove = (event: MouseEvent) => {
+    if (!ownsPointerLock()) return;
+    look(event.movementX, event.movementY);
+  };
+  function look(dx: number, dy: number) {
+    if (!focused || !Number.isFinite(dx) || !Number.isFinite(dy)) return;
+    yaw = Math.atan2(Math.sin(yaw + dx * 0.002), Math.cos(yaw + dx * 0.002));
+    pitch = Math.max(-1.55, Math.min(1.55, pitch - dy * 0.002));
+  }
+  const onPointerLock = () => {
+    if (inputMode === 'touch') return;
+    if (hud.lifecycle === 'ended') {
+      publish({ pointerLocked: false });
+      return;
+    }
+    if (phase === 'dead') {
+      publish({ pointerLocked: false });
+      return;
+    }
+    const locked = ownsPointerLock();
+    if (locked) pointerLockProblem = null;
+    if (
+      fatalRecovery ||
+      graphics !== 'ready' ||
+      socket?.readyState !== WebSocket.OPEN ||
+      ['error', 'recovering', 'stalled', 'connecting'].includes(hud.status)
+    ) {
+      publish({ pointerLocked: locked });
+      return;
+    }
+    focus(locked && document.visibilityState === 'visible');
+    publish({
+      pointerLocked: locked,
+      status: fatalRecovery
+        ? 'recovering'
+        : phase === 'playing'
+          ? locked
+            ? 'playing'
+            : 'paused'
+          : hud.status,
+      message:
+        hud.role === 'participant' && hud.lifecycle === 'paused'
+          ? 'העולם מושהה.'
+          : locked
+            ? ''
+            : (pointerLockProblem ?? 'לחצו על העולם כדי להמשיך'),
+    });
+  };
+  const onMouseDown = (event: MouseEvent) => {
+    audio.unlock();
+    if (inputMode === 'touch') return;
+    if (!ownsPointerLock()) {
+      command({ type: 'resume' });
+      return;
+    }
+    if (event.button === 0) {
+      if (hud.mode === 'survival') command({ type: 'mine', active: true });
+      else queuedAction = 'remove';
+    }
+    if (event.button === 2) command({ type: 'interact', kind: 'place' });
+    if (event.button === 1 && target) {
+      const family = content.blocks[world.get_block(...target)]?.name;
+      if (hud.mode === 'creative') {
+        const choice = palette.find((item) => item.family === family);
+        if (choice) command({ type: 'select', state: choice.state });
+      } else {
+        const slot =
+          hud.inventory?.bag
+            .slice(0, 9)
+            .findIndex(
+              (stack) =>
+                content.items.find((item) => item.itemType === stack?.itemType)?.places === family,
+            ) ?? -1;
+        if (slot >= 0) command({ type: 'select-slot', slot });
+      }
+    }
+  };
+  const onPointerLockError = (_error: unknown) => {
+    if (
+      disposed ||
+      fatalRecovery ||
+      graphics !== 'ready' ||
+      ['error', 'recovering', 'stalled', 'connecting'].includes(hud.status) ||
+      hud.lifecycle === 'ended' ||
+      phase === 'dead'
+    )
+      return;
+    // Browser focus/activation refusals are handled locally, without server telemetry.
+    noticeUntil = 0;
+    pointerLockProblem =
+      'העכבר לא נלכד. לחצו שוב על כניסה לעולם; אם יצאתם עם Esc, המתינו רגע ונסו שוב.';
+    focus(false);
+    if (ownsPointerLock()) document.exitPointerLock();
+    publish({
+      status: 'paused',
+      message: pointerLockProblem,
+    });
+  };
+  const onMouseUp = (event: MouseEvent) => {
+    if (event.button === 0) command({ type: 'mine', active: false });
+  };
+  const onBlur = () => focus(false);
+  const onVisibility = () => {
+    if (document.visibilityState !== 'visible') focus(false);
+    else onOnline();
+  };
+  const onContext = (event: Event) => event.preventDefault();
+  const onWheel = (event: WheelEvent) => {
+    if (!focused || inputMode !== 'desktop' || !ownsPointerLock()) return;
+    event.preventDefault();
+    const pixels =
+      event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? host.clientHeight : 1);
+    command({ type: 'camera', distance: hud.cameraDistance + pixels * 0.01 });
+  };
+  const onContextLost = (event: Event) => {
+    event.preventDefault();
+    if (disposed || graphics === 'lost') return;
+    graphics = 'lost';
+    renderer.contextLost();
+    focus(false);
+    if (ownsPointerLock()) document.exitPointerLock();
+    publish({});
+  };
+  const onContextRestored = () => {
+    if (disposed) return;
+    const retryingGraphics = graphics === 'failed' && hud.message === graphicsFailureMessage;
+    renderer.contextRestored();
+    graphics = 'restoring';
+    nextDraw = 0;
+    lastHighlight = '';
+    publish(retryingGraphics ? { status: 'recovering' } : {});
+  };
+  function sendInventory(operation: InventoryCommand): void {
+    if (socket?.readyState !== WebSocket.OPEN || performance.now() - lastReceived > 1500) return;
+    if (
+      !prediction ||
+      phase !== 'playing' ||
+      fatalRecovery ||
+      (hud.inventoryPending && operation.kind !== 'close')
+    )
+      return;
+    if (operation.kind !== 'open' && inventoryEpoch !== prediction.currentEpoch) return;
+    inventorySound =
+      operation.kind === 'craft' || operation.kind === 'consume' ? operation.kind : null;
+    inventorySequence = ++actionSequence;
+    inventorySelectionPending = operation.kind === 'select' && hud.mode === 'creative';
+    publish({ inventoryPending: true });
+    send({
+      type: 'inventory',
+      epoch: prediction.currentEpoch,
+      sequence: inventorySequence,
+      operation,
+    });
+  }
+  function openInventory(operation: Extract<InventoryCommand, { kind: 'open' }>): void {
+    if (!prediction || phase !== 'playing' || fatalRecovery) return;
+    enterOnReady = false;
+    publish({ inventoryOpen: true });
+    pendingInventoryOpen = operation;
+    if (focused) {
+      focus(false);
+      if (ownsPointerLock()) document.exitPointerLock();
+    }
+    if (focusPending) publish({ inventoryPending: true });
+    else {
+      pendingInventoryOpen = null;
+      sendInventory(operation);
+    }
+  }
+  function command(cmd: RuntimeCommand) {
+    if (disposed) return;
+    if (
+      (cmd.type === 'interact' ||
+        cmd.type === 'attack' ||
+        cmd.type === 'ignite' ||
+        cmd.type === 'flight' ||
+        cmd.type === 'respawn' ||
+        (cmd.type === 'mine' && cmd.active)) &&
+      (inputRecovery.waiting || performance.now() - lastReceived > 1500)
+    )
+      return;
+    if (cmd.type === 'camera') {
+      if (Number.isFinite(cmd.distance))
+        publish({ cameraDistance: Math.max(0, Math.min(MAX_CAMERA_DISTANCE, cmd.distance)) });
+      return;
+    }
+    if (cmd.type === 'ignite') {
+      if (hud.canIgnite && focused && phase === 'playing') {
+        miningHeld = miningSingle = false;
+        if (lastMineKey) sendMining(null);
+        lastMineKey = '';
+        queuedAction = 'ignite';
+      }
+      return;
+    }
+    if (cmd.type === 'attack') {
+      if (hud.combat && focused && phase === 'playing') {
+        miningHeld = miningSingle = false;
+        if (lastMineKey) sendMining(null);
+        lastMineKey = '';
+        queuedAction = 'attack';
+      }
+      return;
+    }
+    if (cmd.type === 'drop') {
+      if (focused && usesBagHotbar() && hud.inventory?.bag[hud.selectedSlot])
+        sendInventory({
+          kind: 'drop',
+          slot: hud.selectedSlot,
+          count: 1,
+          revision: hud.inventory.revision,
+        });
+      return;
+    }
+    if (cmd.type === 'eat') {
+      if (hud.mode === 'survival' && hud.inventory && hud.vitals && hud.vitals.food < 20)
+        sendInventory({
+          kind: 'consume',
+          slot: hud.selectedSlot,
+          revision: hud.inventory.revision,
+        });
+      return;
+    }
+    if (cmd.type === 'respawn') {
+      if (prediction && phase === 'dead' && hud.vitals?.respawnIn === 0)
+        send({ type: 'respawn', epoch: prediction.currentEpoch, sequence: ++actionSequence });
+      return;
+    }
+    if (cmd.type === 'mine') {
+      if (cmd.active && hud.combat && aimsAtActor(performance.now())) {
+        command({ type: 'attack' });
+        return;
+      }
+      miningSingle = false;
+      if (hud.mode === 'creative') {
+        if (cmd.active && !miningHeld) queuedAction = 'remove';
+        miningHeld = cmd.active;
+      } else {
+        miningHeld = cmd.active;
+        if (!cmd.active) {
+          if (lastMineKey) sendMining(null);
+          lastMineKey = '';
+        }
+      }
+      return;
+    }
+    if (cmd.type === 'select-slot') {
+      if (hud.inventory && Number.isInteger(cmd.slot) && cmd.slot >= 0 && cmd.slot < 9)
+        sendInventory({ kind: 'select', slot: cmd.slot, revision: hud.inventory.revision });
+      return;
+    }
+    if (cmd.type === 'inventory-target') {
+      if (target) openInventory({ kind: 'open', target: [...target] });
+      return;
+    }
+    if (cmd.type === 'inventory') {
+      if (cmd.operation.kind === 'open') openInventory(cmd.operation);
+      else {
+        if (cmd.operation.kind === 'close') {
+          pendingInventoryOpen = null;
+          publish({ inventoryOpen: false });
+        }
+        sendInventory(cmd.operation);
+      }
+      return;
+    }
+    if (
+      cmd.type === 'select' &&
+      hud.mode === 'creative' &&
+      !hud.inventoryPending &&
+      palette.some((i) => i.state === cmd.state)
+    ) {
+      if (!hotbar.some((item) => item.state === cmd.state)) {
+        const index = Math.max(
+          0,
+          hotbar.findIndex((item) => item.state === hud.selected),
+        );
+        hotbar[index] = palette.find((item) => item.state === cmd.state)!;
+      }
+      creativeBagHotbar = false;
+      // Returning to the same palette block must still replace an owned hand.
+      if (paletteSent) paletteSent = { ...paletteSent, state: -1 };
+      publish({ selected: cmd.state, hotbar: [...hotbar] });
+      syncPalette();
+    } else if (cmd.type === 'interact') {
+      const item = content.items.find(
+        (item) => item.itemType === hud.inventory?.bag[hud.selectedSlot]?.itemType,
+      );
+      const station =
+        target &&
+        content.behavior.find(
+          (block) => block.family === content.blocks[world.get_block(...target!)]?.name,
+        )?.interaction;
+      const sneaking = keys.has('ShiftLeft') || keys.has('ShiftRight') || touch.sneak;
+      if (cmd.kind === 'place' && hud.mode === 'survival' && item?.food) command({ type: 'eat' });
+      else if (cmd.kind === 'place' && station && !sneaking && hud.role === 'participant')
+        openInventory({ kind: 'open', target: [...target!] });
+      else if (cmd.kind === 'place' && hud.mode === 'survival' && item?.igniter)
+        command({ type: 'ignite' });
+      else if (cmd.kind === 'place' && hud.mode === 'survival' && item?.collects)
+        queuedAction = 'collect';
+      else queuedAction = cmd.kind;
+    } else if (cmd.type === 'resume') {
+      if (graphics !== 'ready') return;
+      if (hud.lifecycle === 'ended' || (hud.role === 'participant' && hud.lifecycle !== 'playing'))
+        return;
+      if (hud.inventoryOpen || phase === 'dead') return;
+      pointerLockProblem = null;
+      audio.unlock();
+      if (inputMode === 'touch') {
+        focus(document.visibilityState === 'visible' && document.hasFocus());
+        if (focused) publish({ status: phase === 'playing' ? 'playing' : hud.status, message: '' });
+      } else if (
+        navigator.userActivation?.isActive === false &&
+        phase === 'playing' &&
+        prediction &&
+        stream?.readyAround(world.player_state(prediction.slot)) &&
+        socket?.readyState === WebSocket.OPEN &&
+        performance.now() - lastReceived < 1500 &&
+        document.visibilityState === 'visible' &&
+        document.hasFocus()
+      ) {
+        // Escape does not supply fresh browser activation. Restore keyboard
+        // control now; the next world click captures the mouse as on first entry.
+        canvas.focus({ preventScroll: true });
+        focus(true);
+        if (focused) publish({ status: 'playing', message: '' });
+      } else if (typeof canvas.requestPointerLock === 'function') {
+        // The browser API exists in both void and Promise-returning forms.
+        try {
+          void Promise.resolve(canvas.requestPointerLock()).catch(onPointerLockError);
+        } catch (error) {
+          onPointerLockError(error);
+        }
+      } else
+        publish({
+          status: 'unsupported',
+          message: 'הדפדפן אינו תומך בלכידת העכבר. אפשר להשתמש במכשיר מגע.',
+        });
+    } else if (cmd.type === 'pause') {
+      if (phase === 'dead') return;
+      enterOnReady = false;
+      focus(false);
+      if (ownsPointerLock()) document.exitPointerLock();
+      publish({ status: 'paused', message: 'לחצו על העולם כדי להמשיך' });
+    } else if (cmd.type === 'mute-effects') {
+      audio.setMuted(cmd.muted);
+      publish({ effectsMuted: cmd.muted });
+      if (!cmd.muted) audio.unlock();
+    } else if (cmd.type === 'look' && inputMode === 'touch') look(cmd.dx, cmd.dy);
+    else if (cmd.type === 'touch' && inputMode === 'touch' && focused) {
+      if (!Number.isFinite(cmd.x) || !Number.isFinite(cmd.z)) return;
+      if (cmd.jump && !touch.jump) jump = true;
+      touch = {
+        x: Math.max(-1, Math.min(1, cmd.x)),
+        z: Math.max(-1, Math.min(1, cmd.z)),
+        jump: cmd.jump,
+        sneak: cmd.sneak,
+        sprint: cmd.sprint,
+      };
+    } else if (cmd.type === 'fullscreen')
+      void toggleFullscreen(options.fullscreenElement ?? host).catch((error) =>
+        diagnose('fullscreen', error),
+      );
+    else if (cmd.type === 'reconnect' && hud.lifecycle !== 'ended') {
+      if (graphics === 'failed') onContextRestored();
+      else if (graphics === 'ready') void connect();
+    } else if (
+      cmd.type === 'flight' &&
+      prediction &&
+      phase === 'playing' &&
+      (hud.mode === 'creative' || hud.role === 'observer')
+    ) {
+      flush();
+      send({
+        type: 'flight',
+        epoch: prediction.currentEpoch,
+        sequence: ++actionSequence,
+        on: !hud.flying,
+      });
+    }
+  }
+  window.addEventListener('online', onOnline);
+  window.addEventListener('keydown', onKeyDown);
+  window.addEventListener('keyup', onKeyUp);
+  window.addEventListener('mouseup', onMouseUp);
+  window.addEventListener('mousemove', onMouseMove);
+  window.addEventListener('blur', onBlur);
+  document.addEventListener('visibilitychange', onVisibility);
+  document.addEventListener('pointerlockchange', onPointerLock);
+  document.addEventListener('pointerlockerror', onPointerLockError);
+  canvas.addEventListener('mousedown', onMouseDown);
+  canvas.addEventListener('contextmenu', onContext);
+  canvas.addEventListener('wheel', onWheel, { passive: false });
+  canvas.addEventListener('webglcontextlost', onContextLost);
+  canvas.addEventListener('webglcontextrestored', onContextRestored);
+  // Continue loading/recovery while animation frames are suspended. Foreground movement
+  // is sampled with rendering, never by a competing simulation timer.
+  updateTimer = setInterval(() => {
+    const now = performance.now();
+    if (now - lastFrame > 100) update(now);
+  }, 1000 / 30);
+  animation = requestAnimationFrame(frame);
+  const runtime: VoxelRuntime = {
+    command,
+    itemIcon: (itemType, cachedOnly) => renderer.itemIcon(itemType, cachedOnly),
+    voiceScene() {
+      if (
+        disposed ||
+        graphics !== 'ready' ||
+        fatalRecovery ||
+        !baselineReceived ||
+        !prediction ||
+        phase === 'preparing' ||
+        socket?.readyState !== WebSocket.OPEN ||
+        hud.lifecycle === 'ended' ||
+        hud.lifecycle === 'recovering' ||
+        document.visibilityState !== 'visible' ||
+        performance.now() - lastReceived > 3000
+      )
+        return null;
+      return voiceScene(
+        lastPosition.map((v, i) => v + visualOffset[i]),
+        yaw,
+        pitch,
+        remotes.frame(performance.now()),
+        (from, to) => world.line_clear(...from, ...to),
+      );
+    },
+    subscribe(listener) {
+      listeners.add(listener);
+      listener(hud);
+      return () => listeners.delete(listener);
+    },
+    debug() {
+      return {
+        disposed,
+        saveUnavailable: hud.saveUnavailable,
+        inputMode,
+        mode: hud.mode,
+        lifecycle: hud.lifecycle,
+        worldPauseReason: hud.worldPauseReason,
+        worldTick: worldClock.read(performance.now()),
+        mining: hud.mining,
+        vitals: hud.vitals,
+        combat: hud.combat,
+        hit: hud.hit,
+        lastHitEvent,
+        lastExplosionEvent,
+        explosives: [...primed.values()],
+        canIgnite: hud.canIgnite,
+        miningHeld,
+        drops: [...dropped.values()],
+        selectedSlot: hud.selectedSlot,
+        environment: { ...environment, openSky },
+        atmosphere: renderer.atmosphere,
+        avatars: renderer.actors,
+        avatar: avatarId,
+        renderOrigin: { x: renderer.origin.x, z: renderer.origin.z },
+        camera: { ...camera, requested: hud.cameraDistance },
+        graphics,
+        feedback: renderer.feedback,
+        audio: audio.stats,
+        renderLimitHz: disposed ? 0 : focused && phase === 'playing' ? renderHz : 10,
+        touch: { ...touch },
+        focused,
+        visible: document.visibilityState,
+        hasFocus: document.hasFocus(),
+        lastFrame,
+        lastUpdate,
+        resources: {
+          geometries: renderer.gl.info.memory.geometries,
+          textures: renderer.gl.info.memory.textures,
+          workers: pool?.liveCount ?? 0,
+        },
+        actorId,
+        worldId,
+        body:
+          slot === null
+            ? null
+            : {
+                position: Array.from(world.player_state(slot).subarray(0, 3)),
+                onGround: world.player_state(slot)[6],
+                inWater: world.player_state(slot)[7],
+                eyesInWater: world.player_state(slot)[8],
+                frozen: world.player_state(slot)[12],
+                flying: world.player_state(slot)[10],
+                velocity: Array.from(world.player_state(slot).subarray(3, 6)),
+              },
+        view: { yaw, pitch },
+        lastResult,
+        inventory: hud.inventory,
+        inventoryOpen: hud.inventoryOpen,
+        inventoryPending: hud.inventoryPending,
+        recentEdits,
+        status: hud.status,
+        epoch: prediction?.currentEpoch,
+        phase,
+        position: lastPosition,
+        selected: hud.selected,
+        players: remotes.size + 1,
+        inputRecovery: {
+          waiting: inputRecovery.waiting,
+          pauses: inputRecovery.pauses,
+          recoveries: inputRecovery.recoveries,
+        },
+        inputLag: prediction?.inputLag,
+        inputSeconds: prediction?.inputSeconds,
+        correction: prediction?.correction,
+        movement: {
+          reconciliations: prediction?.reconciliations ?? 0,
+          recentCorrections: prediction?.recentCorrections.map((sample) => ({ ...sample })) ?? [],
+          baselines: { ...baselineReasons },
+        },
+        columns: stream?.columns.size,
+        collisionColumns: stream?.collisionCount,
+        meshed: stream?.meshCount,
+        workers: pool?.count,
+        activeJobs: pool?.active,
+        stream: stream?.stats,
+        render: { ...renderer.stats, gpu: renderer.gpuStats },
+        target,
+        targetState: !disposed && target ? world.get_block(...target) : null,
+        targetNormal,
+        actionPending,
+        queuedAction,
+        actionSequence,
+        lastReceivedAgoMs: performance.now() - lastReceived,
+      };
+    },
+    dispose() {
+      if (disposed) return;
+      disposed = true;
+      options.signal?.removeEventListener('abort', onAbort);
+      connection++;
+      cancelAnimationFrame(animation);
+      if (updateTimer !== null) {
+        clearInterval(updateTimer);
+        updateTimer = null;
+      }
+      retry.dispose();
+      connectionAbort?.abort();
+      socket?.close(1000, 'client_left');
+      if (ownsPointerLock()) document.exitPointerLock();
+      if (Object.is(document.fullscreenElement, options.fullscreenElement ?? host)) {
+        try {
+          void Promise.resolve(document.exitFullscreen()).catch((error) =>
+            diagnose('fullscreen', error),
+          );
+        } catch (error) {
+          diagnose('fullscreen', error);
+        }
+      }
+      observer.disconnect();
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('mouseup', onMouseUp);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('blur', onBlur);
+      document.removeEventListener('visibilitychange', onVisibility);
+      document.removeEventListener('pointerlockchange', onPointerLock);
+      document.removeEventListener('pointerlockerror', onPointerLockError);
+      canvas.removeEventListener('mousedown', onMouseDown);
+      canvas.removeEventListener('contextmenu', onContext);
+      canvas.removeEventListener('wheel', onWheel);
+      canvas.removeEventListener('webglcontextlost', onContextLost);
+      canvas.removeEventListener('webglcontextrestored', onContextRestored);
+      clearWorld();
+      renderer.dispose();
+      void audio.dispose();
+      world.free();
+      listeners.clear();
+      canvas.remove();
+      blastFlash.remove();
+    },
+  };
+  const onAbort = () => runtime.dispose();
+  options.signal?.addEventListener('abort', onAbort, { once: true });
+  if (options.signal?.aborted) runtime.dispose();
+  else void connect();
+  return runtime;
+}

@@ -2,7 +2,11 @@
   "compilerOptions": {
     "target": "ES2022",
     "useDefineForClassFields": true,
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "Bundler",
@@ -16,10 +20,19 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@playground/game-logic": ["../../packages/game-logic/src/index.ts"],
-      "@playground/voxel-content": ["../../packages/voxel-content/src/index.ts"]
-    }
+      "@/*": [
+        "src/*"
+      ],
+      "@playground/game-logic": [
+        "../../packages/game-logic/src/index.ts"
+      ],
+      "@playground/voxel-runtime": [
+        "../../games/voxel/src/client/embed.ts"
+      ]
+    },
+    "allowImportingTsExtensions": true
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }

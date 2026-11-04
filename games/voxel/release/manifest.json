@@ -1,0 +1,1292 @@
+{
+  "schema": 1,
+  "buildId": "ea5aa575334df7d715d41a37deca78775c9dff3ddd8ab0bde6669db85d3c6846",
+  "inputs": [
+    {
+      "path": "LICENSE",
+      "hash": "4c89ee97bee29e2bd7dcd9567a06c1fee5fb8ab7c5c35ca4a153543524b6f07f"
+    },
+    {
+      "path": "UPSTREAM.md",
+      "hash": "f5f90918787da1a1dfaff2cfa21587d0fc97279ae7598d10cd3ff87ec07328d8"
+    },
+    {
+      "path": "config/world.json",
+      "hash": "23aa32c9cd8bb85152ec55baca675d81e7b481563ac8af9bb136078c7822b25c"
+    },
+    {
+      "path": "content/availability.ts",
+      "hash": "d754150797d63c9cef758df559e1b60d1101f5cd9f6b0903e10ddfd1878246d2"
+    },
+    {
+      "path": "content/building.ts",
+      "hash": "7cfa0493f07874989f13714b62db7a2d108e8ad86412c6aa3357ff592134ffac"
+    },
+    {
+      "path": "content/disposition.json",
+      "hash": "7a87567295d573bc50cae7d02fec5df40104fecac016b28819cce0b4cbe2e900"
+    },
+    {
+      "path": "content/helpers.ts",
+      "hash": "d98a5bcb8f6e3261c75d7a3d09f06c33556e71ac4be070dad750465b96a3f10b"
+    },
+    {
+      "path": "content/index.ts",
+      "hash": "9ebdfdd998ad5a3a617307e20961a8f4dee4573eb16ceb19e841f82136f24f0a"
+    },
+    {
+      "path": "content/legacy-inventory.json",
+      "hash": "adefb5496bd00319ecb7e0b9fa5902d003a0bea1de9bdba3b434bcd5b973257b"
+    },
+    {
+      "path": "content/progression.ts",
+      "hash": "9f69ff4345d6ff5257998a9cd56cd8450e4f4ac56fd14ed48092aa784cd3566c"
+    },
+    {
+      "path": "content/texture-layers.json",
+      "hash": "65faced3a69a67fe9f1f62830c43c2b5b64c070fea9e0d5b98ce81592058a6f6"
+    },
+    {
+      "path": "engine/Cargo.lock",
+      "hash": "95c5d9290ae14570e949b2cc3a6b13048503279423099313ad34023acaacd479"
+    },
+    {
+      "path": "engine/Cargo.toml",
+      "hash": "c39b7dd9eb1e2efb24b1874b6f3c310fb8944722109fcca052c31bbfcfe8982a"
+    },
+    {
+      "path": "engine/LICENSE",
+      "hash": "4c89ee97bee29e2bd7dcd9567a06c1fee5fb8ab7c5c35ca4a153543524b6f07f"
+    },
+    {
+      "path": "engine/rust-toolchain.toml",
+      "hash": "60c5407645e5d56f600e6ae713f0afc4aebbb858c5ceeef4a79c22b7dd2b51c9"
+    },
+    {
+      "path": "engine/src/blocks.rs",
+      "hash": "7ec09fe0dfcabb8e224e3367475a623197814c44350756127b85b038bb8667c2"
+    },
+    {
+      "path": "engine/src/cull.rs",
+      "hash": "4d2a7d284afbe5a3bd729cfc3db96d52249ac244ecf9242edde1bb6d048bdfa3"
+    },
+    {
+      "path": "engine/src/damage.rs",
+      "hash": "a3e821f81e33a67066ddda4bc77077b85a16cd28957996fb953dd57c2cb94c1a"
+    },
+    {
+      "path": "engine/src/entities.rs",
+      "hash": "11676a5179be78dd834425a78ee3a8e932a61bb84e7f4bc6788f9c2c18ad193f"
+    },
+    {
+      "path": "engine/src/entitytex.rs",
+      "hash": "6a9b140af7a84925b8101393a84cb9d47ecebf7f3fc1e2e03990ae4f42d5300c"
+    },
+    {
+      "path": "engine/src/formats.rs",
+      "hash": "5609c43dc1a72342aaa94ed61c8230a80d159d18ff343cd33ae7a6033bec03fc"
+    },
+    {
+      "path": "engine/src/gen.rs",
+      "hash": "1b2aea7ca673f3a9bc127bc8bbf2e13e88fec624efa050a11f9e8aa4dc422cfc"
+    },
+    {
+      "path": "engine/src/json.rs",
+      "hash": "899ac70a7bcfe3c7884d39f5928d2588e0cbb2905ffca6194a47ff87bb19d704"
+    },
+    {
+      "path": "engine/src/lib.rs",
+      "hash": "74df55025c52e8cc051de7c887b0d3507437d6e96173d28acc67da2b31f5ac18"
+    },
+    {
+      "path": "engine/src/mesher.rs",
+      "hash": "a39ca4f0c42a3cf086ec329b86dfa0c614b963f31f828b5fb33fc7bf01aae780"
+    },
+    {
+      "path": "engine/src/movers.rs",
+      "hash": "2b271360c0c701b11d7a41b28f983616e665919a21983e1ac05fc1edaab2fc01"
+    },
+    {
+      "path": "engine/src/noise.rs",
+      "hash": "11c293fb988cd355efb153972914f597d7c088d6ccb5c961fbfe62181782c466"
+    },
+    {
+      "path": "engine/src/noisetex.rs",
+      "hash": "368256f94fbd74146a65364b38bcee22630f654d1b31eae76968dd438fdaa513"
+    },
+    {
+      "path": "engine/src/shapes.rs",
+      "hash": "2bc4d554009240683d7731792fe5ca738ff1f8f1b91df84772fb01a30f099551"
+    },
+    {
+      "path": "engine/src/state_width.rs",
+      "hash": "4aa4ac8f12fd2ce83797a4fe7b88849c8ac3dd79ec4839969ad8726e4746c0ab"
+    },
+    {
+      "path": "engine/src/testutil.rs",
+      "hash": "b045762fc131d14ae2024dd20782027e79fea54e8a64f60f46e145ec7bc489fa"
+    },
+    {
+      "path": "engine/src/texgen.rs",
+      "hash": "0fdb3764339c65d7593d45b74a497672d3e232e81e560e703cb7d9f1dac05d6f"
+    },
+    {
+      "path": "engine/src/world.rs",
+      "hash": "7315169f7aad3977a140fe4fe53a35c5dad7de3ce6310ae659b69c00cd0c10a0"
+    },
+    {
+      "path": "package-lock.json",
+      "hash": "8f291cbe2b0130c7b28c738c476684f9326d8b8682f3e95dad0a96b87d635f56"
+    },
+    {
+      "path": "package.json",
+      "hash": "430cca9df3fbc4014b004f41614ce6c1b9bbb89facec4665d3afc04b76b22a5b"
+    },
+    {
+      "path": "src/client/assets.d.ts",
+      "hash": "f10302b4a0282d9dcced0fe72debf2b8c469ee9f6f97d889dacab1628ca18e57"
+    },
+    {
+      "path": "src/client/camera.ts",
+      "hash": "49909c743d1eb8e4e2610e1006e77b6d3126786de933bfeb950a59856015b11e"
+    },
+    {
+      "path": "src/client/connection-retry.ts",
+      "hash": "c51d6f88b6c8dd34916baa328823af06865f17c83c534e94a3fcc1e558a63558"
+    },
+    {
+      "path": "src/client/content-labels.ts",
+      "hash": "6c2a7aa28b6f4b15875ceef6e02733798a3bf3e9b96d19894afe25b8a140e539"
+    },
+    {
+      "path": "src/client/dev-entry.ts",
+      "hash": "2f4aa691c75ed6bfb8dcd2683f2dbf64cfa75543ea70042cf3573387c3994f37"
+    },
+    {
+      "path": "src/client/embed.ts",
+      "hash": "166f94e4e8218d4b4cec8fb62082a1be4c7403c4905b0886ffc7a1f64765139e"
+    },
+    {
+      "path": "src/client/engine.ts",
+      "hash": "c103397109709c63148cffe9ab84933e4d35fd87118d48b827f5c2cf90f08116"
+    },
+    {
+      "path": "src/client/fullscreen.ts",
+      "hash": "e2e6e7d346dfc4406af6f3491f6cc926f775df59107e030573663737cae0ab4e"
+    },
+    {
+      "path": "src/client/input-recovery.ts",
+      "hash": "f81c28539b610f0071ae08d7b9e1fc06cd8ae6c2ce1a04bd463309398ea4d330"
+    },
+    {
+      "path": "src/client/interpolation.ts",
+      "hash": "96adf7fbd65257699eef12fa630171e7832a85bc01dac1d4f7f8a3dcd50f546f"
+    },
+    {
+      "path": "src/client/inventory-controls.ts",
+      "hash": "c7e61085ae0e57d8bd77a709224757bc6d6f5e18b5dd2e598868203f80b6e746"
+    },
+    {
+      "path": "src/client/inventory.css",
+      "hash": "6a3abb09aa469702ecbf9a13e223730d112d6203c5e38d7185ffebc8d448bb0c"
+    },
+    {
+      "path": "src/client/item-description.ts",
+      "hash": "935ac9ce1b03187748aaa392ccee9657945294e225cb908baca45c426f3224eb"
+    },
+    {
+      "path": "src/client/item-slot.ts",
+      "hash": "8943f2817c25f833293b8d1ab5a696a209bd51a38ac978b9c9fe7960c55bb8dd"
+    },
+    {
+      "path": "src/client/palette.ts",
+      "hash": "cccc9b3c2a2cfaa51cc6acfc15a128bd236d7a20d145e997f3373d7f04b2f289"
+    },
+    {
+      "path": "src/client/prediction.ts",
+      "hash": "1e180ad80434a354c0210207539513cf0eebf9facec496409dc9a3ab1d48c728"
+    },
+    {
+      "path": "src/client/recipe-book.ts",
+      "hash": "6c7374c7e0ca748c03ec3749bf9b2e83178b01e3cc96507248c63d43b7d776b0"
+    },
+    {
+      "path": "src/client/runtime.ts",
+      "hash": "1a5f77937f6ecb2abaca0c8876645bdb2d6e9c0c00924b7237b9ef3d54ddd6a8"
+    },
+    {
+      "path": "src/client/sounds/NOTICE",
+      "hash": "c485196829b52657cd568e91ecd86b56c036e802ee11d5fb3fa79e6d14e50c2b"
+    },
+    {
+      "path": "src/client/sounds/ambient/weather/rain1.ogg",
+      "hash": "6028fbc6048433b667af56434ea0a91c9cba20107734965edd54a967ec5248fe"
+    },
+    {
+      "path": "src/client/sounds/ambient/weather/rain2.ogg",
+      "hash": "c0d63f72f415ca9195bd1b8708362c072bc7418357fd33c81939c3bf2a347c9f"
+    },
+    {
+      "path": "src/client/sounds/ambient/weather/rain3.ogg",
+      "hash": "960ce3e9dd20abe3525f544469d28c808946c38fe74f4b4eb42fbe12c3414b50"
+    },
+    {
+      "path": "src/client/sounds/ambient/weather/rain4.ogg",
+      "hash": "06eca90aa6887d5e94038e1a6bace99782517ce4c250b8fb8e46d6c3230ae5e1"
+    },
+    {
+      "path": "src/client/sounds/ambient/weather/rain5.ogg",
+      "hash": "95a2c941a21afcc0b2bd4fb2c848a508e042dc647d5c551a2952f9db1dda37d2"
+    },
+    {
+      "path": "src/client/sounds/ambient/weather/rain6.ogg",
+      "hash": "90eef5d4bf9a62f92595a8a222f4a2eb16e17bd33140136cd6b5a3a8f2d2209a"
+    },
+    {
+      "path": "src/client/sounds/ambient/weather/rain7.ogg",
+      "hash": "951e253409a8a8983709d0c9453067d2651b5842138bf6ad7ddcf9612a537583"
+    },
+    {
+      "path": "src/client/sounds/ambient/weather/rain8.ogg",
+      "hash": "e2c6bff1addbb08dd82a3dfffcaea8d67de4846516fbdc92e498e6b54ccb1629"
+    },
+    {
+      "path": "src/client/sounds/random/break.ogg",
+      "hash": "e26895d26215b084bb95eb0fd75b05be0a2aec2bcf294ed6c7f6d268ff85f327"
+    },
+    {
+      "path": "src/client/sounds/random/burp.ogg",
+      "hash": "e49f343cf4289dc1c25f9932075a6b07a89bb13c885fea4ebc2634f43ba35c8d"
+    },
+    {
+      "path": "src/client/sounds/random/classic_hurt.ogg",
+      "hash": "f087f1373227cdfa745bd43d977492fd875cf193b41dec6837ba331e74c0a818"
+    },
+    {
+      "path": "src/client/sounds/random/eat1.ogg",
+      "hash": "dc60b1ca717f94671320e4850c36533c20b01ad57243087d11c32b642f381dd0"
+    },
+    {
+      "path": "src/client/sounds/random/eat2.ogg",
+      "hash": "964c5245ac60485fa9ef36a889e73513408d82e3334e4458092789252559c608"
+    },
+    {
+      "path": "src/client/sounds/random/eat3.ogg",
+      "hash": "ff0d967f3ff81d1e5894181f6b6839f1478f24556190d390adfcd85af46c571b"
+    },
+    {
+      "path": "src/client/sounds/random/explode1.ogg",
+      "hash": "ec6fe52205a861046bc6a45d284fbe8233b05f87bda87a67a7d4c24b74acc997"
+    },
+    {
+      "path": "src/client/sounds/random/explode2.ogg",
+      "hash": "c6438fb756b69367d9c4262def4d0c1836d6ecd4d0b6a831168c2e705253c688"
+    },
+    {
+      "path": "src/client/sounds/random/explode3.ogg",
+      "hash": "6178b31e2001591c67a019ed8176d76095f821e9a869f5f2418f41ed09f7adca"
+    },
+    {
+      "path": "src/client/sounds/random/explode4.ogg",
+      "hash": "0524d95e0f8d537dcc7b9f585e0f99975a0676162cc722f96c05ab47c45c7a76"
+    },
+    {
+      "path": "src/client/sounds/random/fuse.ogg",
+      "hash": "4cf9560e566bcf200f61e460e47cd18f6002304a28d376c6ba2139ec96628828"
+    },
+    {
+      "path": "src/client/sounds/random/glass1.ogg",
+      "hash": "ac96668c1b15115e362b2d7d033c46df1575535da06cbcb8bed2fa3b740ab446"
+    },
+    {
+      "path": "src/client/sounds/random/glass2.ogg",
+      "hash": "7288bb874add42719964c87a232c2897f3e965e33ca55652b4744b4fad87fcea"
+    },
+    {
+      "path": "src/client/sounds/random/glass3.ogg",
+      "hash": "062c3175b3ab2b7e44b52a10bb9ff60eb6c01f5b19f165e90df0ab0c215b07d6"
+    },
+    {
+      "path": "src/client/sounds/random/pop.ogg",
+      "hash": "cecb02043f2b8b521e440214a54217578b5d97950558022af2377b09899a7279"
+    },
+    {
+      "path": "src/client/sounds/step/cloth1.ogg",
+      "hash": "9bbd79703ef1c3a6247bd9367c6e57499cf005cd383b8cbfa0d1de3799d8eadc"
+    },
+    {
+      "path": "src/client/sounds/step/cloth2.ogg",
+      "hash": "228e24ce7215c7d34772a209ac37ffd9f88a934521548f7b8997096529335bfa"
+    },
+    {
+      "path": "src/client/sounds/step/cloth3.ogg",
+      "hash": "daa0a78568d543063659ae74cda0864ee74e7f06e9a091bfac5e5d1526a6658e"
+    },
+    {
+      "path": "src/client/sounds/step/cloth4.ogg",
+      "hash": "151db48ee5245d1ce4fec018f5e8887de464a584cffdec932038c53e27607535"
+    },
+    {
+      "path": "src/client/sounds/step/grass1.ogg",
+      "hash": "aa6f23fc51c011336311c6a894a98aa037d7f49211f511733f71fb85ad0e1449"
+    },
+    {
+      "path": "src/client/sounds/step/grass2.ogg",
+      "hash": "b53a96db563c8e95219fb72efeff02f26711686115d5625dfeb5a96167ec26ab"
+    },
+    {
+      "path": "src/client/sounds/step/grass3.ogg",
+      "hash": "90b9c84a9eb084872854e22105fc3b1f068ad22c5b68cf9c03588119c62d06ce"
+    },
+    {
+      "path": "src/client/sounds/step/grass4.ogg",
+      "hash": "4131d4150a77fe147eb059dcc3adacb4940c8dae566a6359217a92d425468f1c"
+    },
+    {
+      "path": "src/client/sounds/step/grass5.ogg",
+      "hash": "ebb475fbe829bbeb31dd43bb1e99930c957cd61edf2cefa44e26145baa39fbbd"
+    },
+    {
+      "path": "src/client/sounds/step/grass6.ogg",
+      "hash": "8b913e405126141dcc8f5bc2d742528ea11030079f0361740a2455b4f9dc000e"
+    },
+    {
+      "path": "src/client/sounds/step/grave3.ogg",
+      "hash": "6eff63c44ec1bac610bf425278024703f5d93a3be18ccbac252731d1c91b5ec1"
+    },
+    {
+      "path": "src/client/sounds/step/gravel1.ogg",
+      "hash": "fd10a11f425c2e4c83ac1a9615ad39b6e36de7a26d74be6e48415a86ec3ef55e"
+    },
+    {
+      "path": "src/client/sounds/step/gravel2.ogg",
+      "hash": "f3dd01b52059f9031c5ae7361726b5fe15e872dce6d4121e7e1dfda7f9eebf0d"
+    },
+    {
+      "path": "src/client/sounds/step/gravel3.ogg",
+      "hash": "eff94b6d7cece9374c964baf02b7a4cab9b1b6f8f0f7ae1b151e0a9eeca60707"
+    },
+    {
+      "path": "src/client/sounds/step/gravel4.ogg",
+      "hash": "3eba68d7069335da8b4813e3ac4ebc1fd632fd4d33ae70916a6686085b5f8dce"
+    },
+    {
+      "path": "src/client/sounds/step/ladder1.ogg",
+      "hash": "e98664c54ad466110e855d696d3364ab12818309347d5b19cf72736fc2f5fa75"
+    },
+    {
+      "path": "src/client/sounds/step/ladder2.ogg",
+      "hash": "99c68047f987b1a5c020f6f4d53b18a6ce7994b148befb5d95f574732dd846a4"
+    },
+    {
+      "path": "src/client/sounds/step/ladder3.ogg",
+      "hash": "e9d01d73a70e82666b37e79a77a902276c475c1eb836e2e6233a749d7a277cd3"
+    },
+    {
+      "path": "src/client/sounds/step/ladder4.ogg",
+      "hash": "8ff5c119ee51073e38ef197662a980341950c12c9062af5956025db373939f5d"
+    },
+    {
+      "path": "src/client/sounds/step/ladder5.ogg",
+      "hash": "87214c02fc9656fad0525c0e2b7a952857563bd979afc90e1f008c5203e85b93"
+    },
+    {
+      "path": "src/client/sounds/step/leaves1.ogg",
+      "hash": "8e9da3da4e4de12de3d46ad32a566eb1300dbcd935681431ad04efa680ff89d1"
+    },
+    {
+      "path": "src/client/sounds/step/leaves2.ogg",
+      "hash": "dd09960441ca028a91607ede3d6deae3d077a01834250567725083799793eb05"
+    },
+    {
+      "path": "src/client/sounds/step/leaves3.ogg",
+      "hash": "51545d613717b3536d1fbf70fb04a791620c8a61592c26ee279145d6ea943623"
+    },
+    {
+      "path": "src/client/sounds/step/leaves4.ogg",
+      "hash": "b3af240dc0389b8419af43b7e6499003b647898dc1af98ca0a12c03329ddcb92"
+    },
+    {
+      "path": "src/client/sounds/step/leaves5.ogg",
+      "hash": "c9cef3345c32a88366abece5ebae699b0104171f9fea18bc8bb22a258863a2b9"
+    },
+    {
+      "path": "src/client/sounds/step/leaves6.ogg",
+      "hash": "3241343f82fb0d2a86dac6ec58877823c3aab523821a0457c7e883c4301e4703"
+    },
+    {
+      "path": "src/client/sounds/step/leaves7.ogg",
+      "hash": "eb4edc1e2516da131a7335457cc48b63c4997618dcd4ce477df04d6590bdcc1a"
+    },
+    {
+      "path": "src/client/sounds/step/sand1.ogg",
+      "hash": "21eb3175a2150f68c1800527859c1b6f2ada58235836b27b2f1a034cb83f6e04"
+    },
+    {
+      "path": "src/client/sounds/step/sand2.ogg",
+      "hash": "5b85dcd233d17dded993c818fdfefc93dcc32623622a0917e77dfbaf7858ecc9"
+    },
+    {
+      "path": "src/client/sounds/step/sand3.ogg",
+      "hash": "589a9ec75e2673ffe997db923732744136fdc90344f89f95580e7d256b859d09"
+    },
+    {
+      "path": "src/client/sounds/step/sand4.ogg",
+      "hash": "a06f6d7bf81d9a111bf060f5fc733821a864644395a011e308db8c9175be3fd0"
+    },
+    {
+      "path": "src/client/sounds/step/sand5.ogg",
+      "hash": "fc537c481e1ace4232c2c692c107fd4c501dd80e61f0d89ddea020c41c02a1b7"
+    },
+    {
+      "path": "src/client/sounds/step/snow1.ogg",
+      "hash": "94946fe70e9f083e6640050dc4bd2595990839de5aa804130d01b625a24846d3"
+    },
+    {
+      "path": "src/client/sounds/step/snow2.ogg",
+      "hash": "80615413b68b2849f247ad7b74632226ad9c0df0e144e680f5886086ee5092ce"
+    },
+    {
+      "path": "src/client/sounds/step/snow3.ogg",
+      "hash": "3c041ad80a8e018f5f1a59411edb42e771761fdf423d495de8c4f04623ba4271"
+    },
+    {
+      "path": "src/client/sounds/step/snow4.ogg",
+      "hash": "4cd590c1a87bde7a728ff57786d17bfedc0b6f557c2a98edbb1dbd30766cf47e"
+    },
+    {
+      "path": "src/client/sounds/step/stone1.ogg",
+      "hash": "c6ae2c15a544973e41674563a43b570206b58ff54c1c8385f59c7edec341e1c2"
+    },
+    {
+      "path": "src/client/sounds/step/stone2.ogg",
+      "hash": "356b4a4183208ff37572063e5d85d357c75e6fd941d705c8732123e52087dc9a"
+    },
+    {
+      "path": "src/client/sounds/step/stone3.ogg",
+      "hash": "1dd51174f7b954799fa4e995f6b9065ab5720a082825573ef837d1191f394766"
+    },
+    {
+      "path": "src/client/sounds/step/stone4.ogg",
+      "hash": "110033af2126b5c282a3ab3910381b28d24482962b9900b77b2450ec1ebb61f6"
+    },
+    {
+      "path": "src/client/sounds/step/stone5.ogg",
+      "hash": "7164c358243c299e1908b24024050abb1aadc3c125af5d2cfb7c76b51c738720"
+    },
+    {
+      "path": "src/client/sounds/step/stone6.ogg",
+      "hash": "cfa572ceb4c8a7f6ead8d62d9b38e605d6b6c665b91decc5f82156825eff295a"
+    },
+    {
+      "path": "src/client/sounds/step/wood1.ogg",
+      "hash": "1a579b6db13e12ad67d1cd88fc615c10fea9f83950fd84fe5600c20e48ee0503"
+    },
+    {
+      "path": "src/client/sounds/step/wood2.ogg",
+      "hash": "1432eb98297f406ef6b05a8c9b9fe3dd9b4b246bca6d4fde8b7223ae705a1a6b"
+    },
+    {
+      "path": "src/client/sounds/step/wood3.ogg",
+      "hash": "9e77a3e87240baca6a767856902e9836892e9d9d5e541b9d908833685e71f9d8"
+    },
+    {
+      "path": "src/client/sounds/step/wood4.ogg",
+      "hash": "f8feae7e2b9659af6f5ad66385eeedc2ad1568f6519d9f17502eaef665791100"
+    },
+    {
+      "path": "src/client/sounds/step/wood5.ogg",
+      "hash": "f51a99dd387b2fb976e608dcb3940e6ae11a35f3238ba9fdc06bf64b4e30c65c"
+    },
+    {
+      "path": "src/client/sounds/step/wood6.ogg",
+      "hash": "4272b647b9da0310201e4afeee70584474960025d277dcd2988cc494558e8638"
+    },
+    {
+      "path": "src/client/style.css",
+      "hash": "b81a3077c337873914d018ce976929225453a080d069d2d76fc5b0d041b4d795"
+    },
+    {
+      "path": "src/client/touch-controls.css",
+      "hash": "f5628f9dc85a4c8ae10f047ec44bfe5d53eeafc0684f33f4c8c37bdedd2f78d3"
+    },
+    {
+      "path": "src/client/touch-controls.ts",
+      "hash": "47297bd5efc511c9ea8588a24809c02a172e0a2be27d9729ce0d9ba79790d43f"
+    },
+    {
+      "path": "src/client/update-clock.ts",
+      "hash": "bff9c780573bb681fd227055070dd3ca30bbc57afb0f3ca3b78e066580f4a031"
+    },
+    {
+      "path": "src/client/visible-item-icons.ts",
+      "hash": "1851a5b6f4e3d53d29e8a0b922b9efeb9b5efbd3c8ae239a5d9697ca6ec10a70"
+    },
+    {
+      "path": "src/client/voice-scene.ts",
+      "hash": "f624bec5b801e5cf7e387a4248ea6c214ce0c989930a05e6ae54824c139f82b2"
+    },
+    {
+      "path": "src/client/world-audio-assets.ts",
+      "hash": "46f7afec9f87b7631d15c09e79393e2d7a15e36b15b5663bc45cc775a9e03ce3"
+    },
+    {
+      "path": "src/client/world-audio.ts",
+      "hash": "ebe592c9f85e591711b634f9fe87e7fb6bcf636eac2a3976f6ce2e6d6365bedb"
+    },
+    {
+      "path": "src/client/world-clock.ts",
+      "hash": "16fbfe10a03b947c2ad8cefbd8e4e701170fd9dfcd70c9fac986395dfd6a83a3"
+    },
+    {
+      "path": "src/render/avatar-equipment.ts",
+      "hash": "c5a7c69d3de8517c236fc1fdb94bd5467c539600a93c4e656a6272a199ed964c"
+    },
+    {
+      "path": "src/render/avatar-model.ts",
+      "hash": "ca9685689567ce903718fc3a7b05925e63cfc0b291cec02167abc8c5f10807af"
+    },
+    {
+      "path": "src/render/avatar-motion.ts",
+      "hash": "5556705ec4aec431374039be242f126d6277cbbff09630abf166f0482885e746"
+    },
+    {
+      "path": "src/render/avatar-presets.ts",
+      "hash": "d07b317eaa4b4ec84c795c41a37d3f2c366531fe8f0d6161c580dfbb5735ff33"
+    },
+    {
+      "path": "src/render/avatars.ts",
+      "hash": "3606999b8f5289719b1807fd586a65abe2ecf90d1e880979993bafb20eca0517"
+    },
+    {
+      "path": "src/render/drops.ts",
+      "hash": "1de341094e5bfee81a55226da60cd529690bb6704dd20c8cccc4196ecaa46a0b"
+    },
+    {
+      "path": "src/render/edit-effects.ts",
+      "hash": "f4879d161078dd44fbd146f0f5162eced2f9d1fbec6af4451db04f1c4ef9cca2"
+    },
+    {
+      "path": "src/render/environment.ts",
+      "hash": "731a245ee92f84a530f33d9da889272d62c9160d28ae713beafe70d70ae74ac9"
+    },
+    {
+      "path": "src/render/explosives.ts",
+      "hash": "67086fa19ff2d19d9eda8436e3606d77299f86ccede8741868eae0c388d1b421"
+    },
+    {
+      "path": "src/render/gpu-pacing.ts",
+      "hash": "c3502d2d84f01df0f49cd87931eade94db2349d187522769a8dc131cd47d4d9d"
+    },
+    {
+      "path": "src/render/held-block.ts",
+      "hash": "ed1a6f3231cc49670d56855467f7c836f8cb7a396ee5507e6dc826c21dc6ba73"
+    },
+    {
+      "path": "src/render/item-icons.ts",
+      "hash": "c966b89ed124be1f51755f139dd5e5881540665aa6d55434d7fff8005ca6a6a5"
+    },
+    {
+      "path": "src/render/item-sprites.ts",
+      "hash": "d434d817af5837155058f0a0d43e10acc439dd9803df31aecce57f619d0eda98"
+    },
+    {
+      "path": "src/render/mining-cracks.ts",
+      "hash": "2ea07322d35b408edb16d90f111370366d8aadc6d2478f0634f7ffb4412d16b4"
+    },
+    {
+      "path": "src/render/shaders/common.glsl",
+      "hash": "7bf0a4b7f797d4fd63281be9158908ffd238a4e75f5cdc9ed04b91f2595613b1"
+    },
+    {
+      "path": "src/render/shaders/vertex_unpack.glsl",
+      "hash": "947678393c774ad450835fa68a7292e8dc9857299e7cf9481e19667b0dc373b0"
+    },
+    {
+      "path": "src/render/sprite-hold.ts",
+      "hash": "fe70de3a855fc7734ed13709cd0488172ac35bd87199e25fa0412e8602bfb972"
+    },
+    {
+      "path": "src/render/terrain.ts",
+      "hash": "973fdf28db3e670cdf44ea3052441f6dcc7aa0a7e38eb0c70f5cf0312a2b2a89"
+    },
+    {
+      "path": "src/render/upstream/blockyard/avatar.ts",
+      "hash": "91173317e737e9e9a6157fb8aede07abe58c8e4181bfcc7f1342cc2be10f0606"
+    },
+    {
+      "path": "src/render/upstream/blockyard/character/build.ts",
+      "hash": "ff68f184b065eae693d43ad50fc793e7da6055fb2e96e35643de6f69ca0be60c"
+    },
+    {
+      "path": "src/render/upstream/blockyard/character/look.ts",
+      "hash": "0609bd6f328e729b485b883b0856a73d031f3841d887fdc3cb6b7fbaa451ff2a"
+    },
+    {
+      "path": "src/render/upstream/blockyard/character/voxels.ts",
+      "hash": "a90cefc90510c5106062c536275a8f8488a72b762134aa2ed28db8ced64b0b60"
+    },
+    {
+      "path": "src/render/upstream/blockyard/item-pixels.ts",
+      "hash": "1a7ed4e4ca81d2e14d9f3f387d5d25a51498ff14f1bfb54b1a950dc9d41489aa"
+    },
+    {
+      "path": "src/render/upstream/blockyard/sprite-geometry.ts",
+      "hash": "070d9df0bae8fb695e1ceb3b35bc33a05a63ca7f4bd5f97867df70d7be9e6047"
+    },
+    {
+      "path": "src/server/admission.ts",
+      "hash": "5382b4cda764e7bd0615a48ba70b767a254c8622756059047f650d16bbd980a1"
+    },
+    {
+      "path": "src/server/checkpoint-storage.ts",
+      "hash": "29928721f36919f7c59941b2f3cd557561711f0240a21c75671cbd329b8751d5"
+    },
+    {
+      "path": "src/server/control.ts",
+      "hash": "6935054ce89481f417db4f4e1e16285c32626a1d28a91bf8775accb98d3a322a"
+    },
+    {
+      "path": "src/server/failure.ts",
+      "hash": "d71adf5a6ed32445e5adc9a2ebbd17f4963206054d02a8bbe04425841999871c"
+    },
+    {
+      "path": "src/server/gateway.ts",
+      "hash": "659674bd2781c0c81468ef9d91c2e6304a2323bb0a2ebfa1e6a18e3661389343"
+    },
+    {
+      "path": "src/server/owner-authorization.ts",
+      "hash": "b95d2b615755b10cdcecc018bbb43cc4254ebdb578698b80da83e2ecbe747871"
+    },
+    {
+      "path": "src/server/room-durability.ts",
+      "hash": "ae4fe65a26bf74d79842c5fc53452340dc4b677d37a73b7e3f740769e1b1a281"
+    },
+    {
+      "path": "src/server/room-policy.ts",
+      "hash": "87dd96566159c09944bce3c091a8971caf6b043b5f7811f5ff038df2670bc5d1"
+    },
+    {
+      "path": "src/server/room-worker-protocol.ts",
+      "hash": "df9a503266ce4a39302f4e35bb2dd2ba57980351665982b762a531a4797efaa3"
+    },
+    {
+      "path": "src/server/room-worker.ts",
+      "hash": "16c5b3ca2333885d799925c7e9621618b312aab07312bba000c01cda9f58d76d"
+    },
+    {
+      "path": "src/server/session-projection.ts",
+      "hash": "fb33f668d9a441374d70f502a6fe4aea116b64a050ef40da9d4d82fa86a35c85"
+    },
+    {
+      "path": "src/server/snapshot-encoder.ts",
+      "hash": "07a2e205eb1abc1f040797d32025ba90eb0776f1e53fe878bc9f1680824594ed"
+    },
+    {
+      "path": "src/server/timing-histogram.ts",
+      "hash": "c14ec8b5934bdf88262d1e30ec85acc7ac12648bbf0c810bafc11a722a774938"
+    },
+    {
+      "path": "src/shared/appearance.ts",
+      "hash": "dc6d14cf996a9d9a316c081ceee7ece23b6a0f42bd39355a6b6802ca4913e8bc"
+    },
+    {
+      "path": "src/shared/avatars.ts",
+      "hash": "73c57139677fed5a9ec841fd0096ad49f70fb274baea3efe607bf151732ad756"
+    },
+    {
+      "path": "src/shared/chat.ts",
+      "hash": "4ec59912af23d7cc7df6d5890437eae814b1a7c85908ee92908dd11fddb9c073"
+    },
+    {
+      "path": "src/shared/checkpoint-content.ts",
+      "hash": "10b80cc286652c9233cbda1086409696289955748241e22bcba65e185152f052"
+    },
+    {
+      "path": "src/shared/checkpoint-engine.ts",
+      "hash": "175e0a158ed46131deb3534ba8fde358ff7af87f4129f4af822e2d0e1615f203"
+    },
+    {
+      "path": "src/shared/chunk-wire.ts",
+      "hash": "30f7554bbf04b8a89df374e3b09be913d188c60741199af58c91344efcd227ee"
+    },
+    {
+      "path": "src/shared/combat.ts",
+      "hash": "e4cfe75bfaac26d9134cd8b1935482e82e049c2006429a50687b56b1ddacecd4"
+    },
+    {
+      "path": "src/shared/content.ts",
+      "hash": "f5213cd9e38195bac70e6548e9b2e6c12c1a131fc4f9a6fbbcf8de80fa121045"
+    },
+    {
+      "path": "src/shared/diagnostics.ts",
+      "hash": "38207ffa4144e964ff763f1eb0fe62ea63ee0b495e5c65e651ebabffcdfb565c"
+    },
+    {
+      "path": "src/shared/drop-physics.ts",
+      "hash": "ba612eac1ed2f1f4d4969169254fca4351d0710d1b6ac1cc45d7da8b40249e6f"
+    },
+    {
+      "path": "src/shared/engine-port.ts",
+      "hash": "88cfd1efeb71b32e7f62da4e0bb651a77ec7792e166fe878952c802313e77f19"
+    },
+    {
+      "path": "src/shared/environment.ts",
+      "hash": "9f4239603f127b07b5aa59ffc813233fe08e49942455452e78037758fac4eca7"
+    },
+    {
+      "path": "src/shared/explosives.ts",
+      "hash": "b56df9363bc59723a4c5841d3784267c55af444c164dfdb4aeb396869c3db03d"
+    },
+    {
+      "path": "src/shared/gameplay.ts",
+      "hash": "1f54ccd6d70125195f00c81a9cbdc202f7ce62c1e07edacb0085d97ba1d83c21"
+    },
+    {
+      "path": "src/shared/input.ts",
+      "hash": "0a79395b47df0a01754e97c722bb2270e881855fe3e759e3709f4dd0bf572cd3"
+    },
+    {
+      "path": "src/shared/inventory.ts",
+      "hash": "87db9eb0e653a1f53a570f8291d88aa5a62decb3810382657bb53a71235cb194"
+    },
+    {
+      "path": "src/shared/lifecycle.ts",
+      "hash": "c346b2e48d5c0cc3493d38fe2c298cc965613c1a36814f14dd179f8928fdc183"
+    },
+    {
+      "path": "src/shared/loot.ts",
+      "hash": "d6f273d5b1bcab38f0736c0379fc3ed2d1f3a289c80f96931af07333866f1893"
+    },
+    {
+      "path": "src/shared/media.ts",
+      "hash": "6315a3641a3d6b05f9e6ff497b6d194f648bd28dfb60d74aec49645523cbdeeb"
+    },
+    {
+      "path": "src/shared/mining-rules.ts",
+      "hash": "ce57e9c286fecfe160f275cb70fe12a9d4a064de06fdca1097585614c0bdc2a9"
+    },
+    {
+      "path": "src/shared/moderation.ts",
+      "hash": "728a48c6a6e73e19d6b192221ca66d0c3ae2a9f5479cc776027505dead2a77f0"
+    },
+    {
+      "path": "src/shared/movement.ts",
+      "hash": "f0c4ecdc48fd7fc9f99216c150dc1d5968e436d4838eca0b8aa0f86f2c618de4"
+    },
+    {
+      "path": "src/shared/protocol.ts",
+      "hash": "153daf6cc0bc48288a1a31edfb381f3a244f614b76fdd19f1ce39db0d214423e"
+    },
+    {
+      "path": "src/shared/recipes.ts",
+      "hash": "5396639bfcf1332ca519137ffc155f12ec192dd0011bb5f7d0a3a3c55365a5e5"
+    },
+    {
+      "path": "src/shared/request-deadline.ts",
+      "hash": "ad369e4e8ce5e5a57585d99e2d9e5c2d3ec56bd8fcb311da7a2a06e9ad2949cc"
+    },
+    {
+      "path": "src/shared/staff.ts",
+      "hash": "a249bb1dcc0a72677f3bf7c84d3f7b617e27393f5cfd2b7cc32ef03a4dbdd320"
+    },
+    {
+      "path": "src/shared/vitals.ts",
+      "hash": "dd04b2e83faf9625cf14071e8e20e9d3c8c6f49a90d559708fc53524820a11d7"
+    },
+    {
+      "path": "src/shared/world-bounds.ts",
+      "hash": "0fb700343a47076314d6d5eded6d3324b27a550e0ca450b7997319908009cc01"
+    },
+    {
+      "path": "src/sim/action-ledger.ts",
+      "hash": "aeedf61456858c4d290ae26550fb5c54495b0f0b20e2f6e8dbac3bb086ae96e8"
+    },
+    {
+      "path": "src/sim/blast.ts",
+      "hash": "19d79f8a88eec990ff6de17d4f4a071d76cc3c8aadbabbc6fd2d5fe25b4bdbe0"
+    },
+    {
+      "path": "src/sim/checkpoint-values.ts",
+      "hash": "85605b99079c62fa617a3e7c8118378eb855dae89482cdf7a0abd0d516c91472"
+    },
+    {
+      "path": "src/sim/drops.ts",
+      "hash": "ad056dba6aeb725df7c6c7053029fbc4488f6b88ba99f7e643df9453a4486e13"
+    },
+    {
+      "path": "src/sim/explosives.ts",
+      "hash": "1a61daf0d4d8f51f14fd3abba0f8c9f49de74315f0ca1c9b04aaa15a6cd72667"
+    },
+    {
+      "path": "src/sim/game-room.ts",
+      "hash": "7625aa5dc8f343cc10afa79d16d8087cc7eca5c576751d4978f0f0cc465dce8a"
+    },
+    {
+      "path": "src/sim/input-queue.ts",
+      "hash": "af03b56e63d724f063dc3c69b420b134011588d20c15be4b029dccecb61d13d6"
+    },
+    {
+      "path": "src/sim/inventory.ts",
+      "hash": "63acb7f943e496c57187fd5e311e15d7f2c689fff140759720d045a9b123f82a"
+    },
+    {
+      "path": "src/sim/mining.ts",
+      "hash": "dce0a0114a51d67730f73cafa6d1ca7be5a011ea54e0181e27600ac183c82a01"
+    },
+    {
+      "path": "src/sim/movement-room.ts",
+      "hash": "ee03e8b2910b9b29e01b16fd57292db9987323d2678ddc310ca709aaa62e7a7f"
+    },
+    {
+      "path": "src/sim/room-checkpoint.ts",
+      "hash": "dc7bb6ca6bad102ac9d53206e74e009d06b6e74841142a1a364ddca3faa8a168"
+    },
+    {
+      "path": "src/sim/scheduler.ts",
+      "hash": "c38c80259a9ec70a1e10a61cb7a058c57168ea383cb9784cc75b8957f36a8455"
+    },
+    {
+      "path": "src/sim/sunlight.ts",
+      "hash": "392c373253a40a50d97071e10630cea050dadf1479177dc38daae427adf8acbe"
+    },
+    {
+      "path": "src/sim/vitals.ts",
+      "hash": "34dcab275128f6f7e88ddf17ec64b93aeb9c94fedcdf66f5b1fe6185525cff48"
+    },
+    {
+      "path": "src/sim/world-store.ts",
+      "hash": "54b97da6481f982eea4102ec2189c15744508eab31eae523464cc57ebe3ff34a"
+    },
+    {
+      "path": "src/world/engine-worker.ts",
+      "hash": "27d38c30deccfd65028dc6959e690039f5032c76f3d4270a98b62f5bbe46b604"
+    },
+    {
+      "path": "src/world/jobs.ts",
+      "hash": "d0f820555e3378e44e260eb081184b3b78fb2e4f3ba0e34cb49af64879e6569b"
+    },
+    {
+      "path": "src/world/stream.ts",
+      "hash": "8527e308d708bc817f5d21665ae03465593d40cb830e24610f0f7b4290d0614b"
+    },
+    {
+      "path": "src/world/worker-pool.ts",
+      "hash": "d13f5ce5c7275a01e3a1fe8ea8a5e9ea6d9300b2075ec7da8844bc61a430b98e"
+    },
+    {
+      "path": "tools/build-engine.mjs",
+      "hash": "c7670b48c2ea41bb2a694ef73c1d86479d9a909dd655e8a08a53ab276a15dbb4"
+    },
+    {
+      "path": "tools/build-manifest.mjs",
+      "hash": "58fc41c824358d9d88dda69c9c184eab1444003d9c68dcd0fdd22df7283e0f0a"
+    },
+    {
+      "path": "tools/compile-content.ts",
+      "hash": "a2d95118b716f1c244fa82045d37038e65677a854a02bb0f199d6fd58269365e"
+    },
+    {
+      "path": "tools/release-manifest.mjs",
+      "hash": "4fc580d822690d2fba62a511e339e68a6d6ef80a77c49632b85262a34da48478"
+    },
+    {
+      "path": "tools/verify-release.mjs",
+      "hash": "488fef67863f23d606c066c05db5853401e38e4e07d63c00840f34135ccf9548"
+    }
+  ],
+  "files": [
+    {
+      "path": "artifacts/bindings-420d116166632000515596b6a45c9924d83e6b587bc4f7ee350f46d78455b9a6.js",
+      "hash": "420d116166632000515596b6a45c9924d83e6b587bc4f7ee350f46d78455b9a6"
+    },
+    {
+      "path": "artifacts/build.json",
+      "hash": "91d88cef919ec17681516f5450ece688d0851d3f8190529b1ccc9da32d00b472"
+    },
+    {
+      "path": "artifacts/content-bindings.ts",
+      "hash": "02432bcc4e739d498a42aab0e9fbef03cc7e2444c888974a7988639bee68d9d2"
+    },
+    {
+      "path": "artifacts/content.json",
+      "hash": "849b9bab106d5b6ef78c48df9f89222cc87afb904672def8c96c9a9989c9804c"
+    },
+    {
+      "path": "artifacts/engine-83a2ee1a6f731a6b6f515f16a121ca38311bb126266508d394177127f8ea1237.wasm",
+      "hash": "83a2ee1a6f731a6b6f515f16a121ca38311bb126266508d394177127f8ea1237"
+    },
+    {
+      "path": "artifacts/release.json",
+      "hash": "50e48eaa9db0fd9a74485ee9be22643a92eb4fb71757d5d9afe8a45f7a6addde"
+    },
+    {
+      "path": "dist-client/assets/break-DPSoepx8.ogg",
+      "hash": "e26895d26215b084bb95eb0fd75b05be0a2aec2bcf294ed6c7f6d268ff85f327"
+    },
+    {
+      "path": "dist-client/assets/burp-Lf150RvS.ogg",
+      "hash": "e49f343cf4289dc1c25f9932075a6b07a89bb13c885fea4ebc2634f43ba35c8d"
+    },
+    {
+      "path": "dist-client/assets/classic_hurt-uFgAUyBt.ogg",
+      "hash": "f087f1373227cdfa745bd43d977492fd875cf193b41dec6837ba331e74c0a818"
+    },
+    {
+      "path": "dist-client/assets/cloth1-BrRHUcDf.ogg",
+      "hash": "9bbd79703ef1c3a6247bd9367c6e57499cf005cd383b8cbfa0d1de3799d8eadc"
+    },
+    {
+      "path": "dist-client/assets/cloth2-BlRi4aum.ogg",
+      "hash": "228e24ce7215c7d34772a209ac37ffd9f88a934521548f7b8997096529335bfa"
+    },
+    {
+      "path": "dist-client/assets/cloth3-DQUw90MS.ogg",
+      "hash": "daa0a78568d543063659ae74cda0864ee74e7f06e9a091bfac5e5d1526a6658e"
+    },
+    {
+      "path": "dist-client/assets/cloth4-Djnq2F6f.ogg",
+      "hash": "151db48ee5245d1ce4fec018f5e8887de464a584cffdec932038c53e27607535"
+    },
+    {
+      "path": "dist-client/assets/eat1-D2yFp05r.ogg",
+      "hash": "dc60b1ca717f94671320e4850c36533c20b01ad57243087d11c32b642f381dd0"
+    },
+    {
+      "path": "dist-client/assets/eat2-RfX8cfFT.ogg",
+      "hash": "964c5245ac60485fa9ef36a889e73513408d82e3334e4458092789252559c608"
+    },
+    {
+      "path": "dist-client/assets/eat3-W7Hd0O5i.ogg",
+      "hash": "ff0d967f3ff81d1e5894181f6b6839f1478f24556190d390adfcd85af46c571b"
+    },
+    {
+      "path": "dist-client/assets/engine-worker-DlFwGiwg.js",
+      "hash": "37fc25931326925914eb1d01c70d1839ff590410facd801056251bd8f5e55a9e"
+    },
+    {
+      "path": "dist-client/assets/explode1-D5rHAtaC.ogg",
+      "hash": "ec6fe52205a861046bc6a45d284fbe8233b05f87bda87a67a7d4c24b74acc997"
+    },
+    {
+      "path": "dist-client/assets/explode2-KmOKC6GC.ogg",
+      "hash": "c6438fb756b69367d9c4262def4d0c1836d6ecd4d0b6a831168c2e705253c688"
+    },
+    {
+      "path": "dist-client/assets/explode3-BYPq0L_q.ogg",
+      "hash": "6178b31e2001591c67a019ed8176d76095f821e9a869f5f2418f41ed09f7adca"
+    },
+    {
+      "path": "dist-client/assets/explode4-Bs8mSN9q.ogg",
+      "hash": "0524d95e0f8d537dcc7b9f585e0f99975a0676162cc722f96c05ab47c45c7a76"
+    },
+    {
+      "path": "dist-client/assets/fuse-hNKdB9kF.ogg",
+      "hash": "4cf9560e566bcf200f61e460e47cd18f6002304a28d376c6ba2139ec96628828"
+    },
+    {
+      "path": "dist-client/assets/glass1-DpyZ1137.ogg",
+      "hash": "ac96668c1b15115e362b2d7d033c46df1575535da06cbcb8bed2fa3b740ab446"
+    },
+    {
+      "path": "dist-client/assets/glass2-DE_Wm-cK.ogg",
+      "hash": "7288bb874add42719964c87a232c2897f3e965e33ca55652b4744b4fad87fcea"
+    },
+    {
+      "path": "dist-client/assets/glass3-zozfr2iA.ogg",
+      "hash": "062c3175b3ab2b7e44b52a10bb9ff60eb6c01f5b19f165e90df0ab0c215b07d6"
+    },
+    {
+      "path": "dist-client/assets/grass1-wIfbpdMC.ogg",
+      "hash": "aa6f23fc51c011336311c6a894a98aa037d7f49211f511733f71fb85ad0e1449"
+    },
+    {
+      "path": "dist-client/assets/grass2-BN8R4f8M.ogg",
+      "hash": "b53a96db563c8e95219fb72efeff02f26711686115d5625dfeb5a96167ec26ab"
+    },
+    {
+      "path": "dist-client/assets/grass3-CuXRMZiW.ogg",
+      "hash": "90b9c84a9eb084872854e22105fc3b1f068ad22c5b68cf9c03588119c62d06ce"
+    },
+    {
+      "path": "dist-client/assets/grass4-ixxIcadw.ogg",
+      "hash": "4131d4150a77fe147eb059dcc3adacb4940c8dae566a6359217a92d425468f1c"
+    },
+    {
+      "path": "dist-client/assets/grass5-ChZTseMo.ogg",
+      "hash": "ebb475fbe829bbeb31dd43bb1e99930c957cd61edf2cefa44e26145baa39fbbd"
+    },
+    {
+      "path": "dist-client/assets/grass6-BddZVlex.ogg",
+      "hash": "8b913e405126141dcc8f5bc2d742528ea11030079f0361740a2455b4f9dc000e"
+    },
+    {
+      "path": "dist-client/assets/grave3-DuoJjXmR.ogg",
+      "hash": "6eff63c44ec1bac610bf425278024703f5d93a3be18ccbac252731d1c91b5ec1"
+    },
+    {
+      "path": "dist-client/assets/gravel1-DEayKEjI.ogg",
+      "hash": "fd10a11f425c2e4c83ac1a9615ad39b6e36de7a26d74be6e48415a86ec3ef55e"
+    },
+    {
+      "path": "dist-client/assets/gravel2-aixcyZNg.ogg",
+      "hash": "f3dd01b52059f9031c5ae7361726b5fe15e872dce6d4121e7e1dfda7f9eebf0d"
+    },
+    {
+      "path": "dist-client/assets/gravel3-DgcnyZip.ogg",
+      "hash": "eff94b6d7cece9374c964baf02b7a4cab9b1b6f8f0f7ae1b151e0a9eeca60707"
+    },
+    {
+      "path": "dist-client/assets/gravel4-BH53vHEd.ogg",
+      "hash": "3eba68d7069335da8b4813e3ac4ebc1fd632fd4d33ae70916a6686085b5f8dce"
+    },
+    {
+      "path": "dist-client/assets/index-CTlJ3IX8.js",
+      "hash": "2c32b55e6d38ef08ebaffac95fbcf9ca445a976ecb81b8eb73257bf8f35663db"
+    },
+    {
+      "path": "dist-client/assets/index-P3AiFv1J.css",
+      "hash": "9fa2a5f4e45de30243c0269a36f22ec695d3d68663b468cfa21e2d0c23ffe50d"
+    },
+    {
+      "path": "dist-client/assets/ladder1-C_gYzPoM.ogg",
+      "hash": "e98664c54ad466110e855d696d3364ab12818309347d5b19cf72736fc2f5fa75"
+    },
+    {
+      "path": "dist-client/assets/ladder2-CyWM3plW.ogg",
+      "hash": "99c68047f987b1a5c020f6f4d53b18a6ce7994b148befb5d95f574732dd846a4"
+    },
+    {
+      "path": "dist-client/assets/ladder3-L7znZEFw.ogg",
+      "hash": "e9d01d73a70e82666b37e79a77a902276c475c1eb836e2e6233a749d7a277cd3"
+    },
+    {
+      "path": "dist-client/assets/ladder4-BojtMXnx.ogg",
+      "hash": "8ff5c119ee51073e38ef197662a980341950c12c9062af5956025db373939f5d"
+    },
+    {
+      "path": "dist-client/assets/ladder5-CBqf369b.ogg",
+      "hash": "87214c02fc9656fad0525c0e2b7a952857563bd979afc90e1f008c5203e85b93"
+    },
+    {
+      "path": "dist-client/assets/leaves1-DdWQMkdz.ogg",
+      "hash": "8e9da3da4e4de12de3d46ad32a566eb1300dbcd935681431ad04efa680ff89d1"
+    },
+    {
+      "path": "dist-client/assets/leaves2-EfoBMj3n.ogg",
+      "hash": "dd09960441ca028a91607ede3d6deae3d077a01834250567725083799793eb05"
+    },
+    {
+      "path": "dist-client/assets/leaves3-BjhYXOKL.ogg",
+      "hash": "51545d613717b3536d1fbf70fb04a791620c8a61592c26ee279145d6ea943623"
+    },
+    {
+      "path": "dist-client/assets/leaves4-D_DK874C.ogg",
+      "hash": "b3af240dc0389b8419af43b7e6499003b647898dc1af98ca0a12c03329ddcb92"
+    },
+    {
+      "path": "dist-client/assets/leaves5-D7xexr8U.ogg",
+      "hash": "c9cef3345c32a88366abece5ebae699b0104171f9fea18bc8bb22a258863a2b9"
+    },
+    {
+      "path": "dist-client/assets/leaves6-aatKXMPF.ogg",
+      "hash": "3241343f82fb0d2a86dac6ec58877823c3aab523821a0457c7e883c4301e4703"
+    },
+    {
+      "path": "dist-client/assets/leaves7--Wu2o0W4.ogg",
+      "hash": "eb4edc1e2516da131a7335457cc48b63c4997618dcd4ce477df04d6590bdcc1a"
+    },
+    {
+      "path": "dist-client/assets/pop-C87aPWae.ogg",
+      "hash": "cecb02043f2b8b521e440214a54217578b5d97950558022af2377b09899a7279"
+    },
+    {
+      "path": "dist-client/assets/rain1-D0Zv_5DN.ogg",
+      "hash": "6028fbc6048433b667af56434ea0a91c9cba20107734965edd54a967ec5248fe"
+    },
+    {
+      "path": "dist-client/assets/rain2-DmCkpuOP.ogg",
+      "hash": "c0d63f72f415ca9195bd1b8708362c072bc7418357fd33c81939c3bf2a347c9f"
+    },
+    {
+      "path": "dist-client/assets/rain3-Bv28UeIg.ogg",
+      "hash": "960ce3e9dd20abe3525f544469d28c808946c38fe74f4b4eb42fbe12c3414b50"
+    },
+    {
+      "path": "dist-client/assets/rain4-BoObtjDi.ogg",
+      "hash": "06eca90aa6887d5e94038e1a6bace99782517ce4c250b8fb8e46d6c3230ae5e1"
+    },
+    {
+      "path": "dist-client/assets/rain5-BIAgs9el.ogg",
+      "hash": "95a2c941a21afcc0b2bd4fb2c848a508e042dc647d5c551a2952f9db1dda37d2"
+    },
+    {
+      "path": "dist-client/assets/rain6-DfBO7uBU.ogg",
+      "hash": "90eef5d4bf9a62f92595a8a222f4a2eb16e17bd33140136cd6b5a3a8f2d2209a"
+    },
+    {
+      "path": "dist-client/assets/rain7-CQYHzFxG.ogg",
+      "hash": "951e253409a8a8983709d0c9453067d2651b5842138bf6ad7ddcf9612a537583"
+    },
+    {
+      "path": "dist-client/assets/rain8-Cq1yjnEx.ogg",
+      "hash": "e2c6bff1addbb08dd82a3dfffcaea8d67de4846516fbdc92e498e6b54ccb1629"
+    },
+    {
+      "path": "dist-client/assets/sand1-_hEHqOrk.ogg",
+      "hash": "21eb3175a2150f68c1800527859c1b6f2ada58235836b27b2f1a034cb83f6e04"
+    },
+    {
+      "path": "dist-client/assets/sand2-C7h2d_h9.ogg",
+      "hash": "5b85dcd233d17dded993c818fdfefc93dcc32623622a0917e77dfbaf7858ecc9"
+    },
+    {
+      "path": "dist-client/assets/sand3-CxvOp_W9.ogg",
+      "hash": "589a9ec75e2673ffe997db923732744136fdc90344f89f95580e7d256b859d09"
+    },
+    {
+      "path": "dist-client/assets/sand4-gALF_ZJ6.ogg",
+      "hash": "a06f6d7bf81d9a111bf060f5fc733821a864644395a011e308db8c9175be3fd0"
+    },
+    {
+      "path": "dist-client/assets/sand5-Cm0N7GJO.ogg",
+      "hash": "fc537c481e1ace4232c2c692c107fd4c501dd80e61f0d89ddea020c41c02a1b7"
+    },
+    {
+      "path": "dist-client/assets/snow1-Edyi5QKz.ogg",
+      "hash": "94946fe70e9f083e6640050dc4bd2595990839de5aa804130d01b625a24846d3"
+    },
+    {
+      "path": "dist-client/assets/snow2-C4I7n4IS.ogg",
+      "hash": "80615413b68b2849f247ad7b74632226ad9c0df0e144e680f5886086ee5092ce"
+    },
+    {
+      "path": "dist-client/assets/snow3-BqERNbym.ogg",
+      "hash": "3c041ad80a8e018f5f1a59411edb42e771761fdf423d495de8c4f04623ba4271"
+    },
+    {
+      "path": "dist-client/assets/snow4-BVUdJCmL.ogg",
+      "hash": "4cd590c1a87bde7a728ff57786d17bfedc0b6f557c2a98edbb1dbd30766cf47e"
+    },
+    {
+      "path": "dist-client/assets/stone1-DPwu13zT.ogg",
+      "hash": "c6ae2c15a544973e41674563a43b570206b58ff54c1c8385f59c7edec341e1c2"
+    },
+    {
+      "path": "dist-client/assets/stone2-D86mcIk3.ogg",
+      "hash": "356b4a4183208ff37572063e5d85d357c75e6fd941d705c8732123e52087dc9a"
+    },
+    {
+      "path": "dist-client/assets/stone3-Dd-iqV-o.ogg",
+      "hash": "1dd51174f7b954799fa4e995f6b9065ab5720a082825573ef837d1191f394766"
+    },
+    {
+      "path": "dist-client/assets/stone4-CBK3pw-t.ogg",
+      "hash": "110033af2126b5c282a3ab3910381b28d24482962b9900b77b2450ec1ebb61f6"
+    },
+    {
+      "path": "dist-client/assets/stone5-BsN5Ros1.ogg",
+      "hash": "7164c358243c299e1908b24024050abb1aadc3c125af5d2cfb7c76b51c738720"
+    },
+    {
+      "path": "dist-client/assets/stone6-DphM72O5.ogg",
+      "hash": "cfa572ceb4c8a7f6ead8d62d9b38e605d6b6c665b91decc5f82156825eff295a"
+    },
+    {
+      "path": "dist-client/assets/voxel_engine_bg-CWnbVvxK.wasm",
+      "hash": "83a2ee1a6f731a6b6f515f16a121ca38311bb126266508d394177127f8ea1237"
+    },
+    {
+      "path": "dist-client/assets/wood1-D6G09ajd.ogg",
+      "hash": "1a579b6db13e12ad67d1cd88fc615c10fea9f83950fd84fe5600c20e48ee0503"
+    },
+    {
+      "path": "dist-client/assets/wood2-B-vQwhoY.ogg",
+      "hash": "1432eb98297f406ef6b05a8c9b9fe3dd9b4b246bca6d4fde8b7223ae705a1a6b"
+    },
+    {
+      "path": "dist-client/assets/wood3-BQu_EJe5.ogg",
+      "hash": "9e77a3e87240baca6a767856902e9836892e9d9d5e541b9d908833685e71f9d8"
+    },
+    {
+      "path": "dist-client/assets/wood4-SkfSnPpL.ogg",
+      "hash": "f8feae7e2b9659af6f5ad66385eeedc2ad1568f6519d9f17502eaef665791100"
+    },
+    {
+      "path": "dist-client/assets/wood5-C8WSbtUU.ogg",
+      "hash": "f51a99dd387b2fb976e608dcb3940e6ae11a35f3238ba9fdc06bf64b4e30c65c"
+    },
+    {
+      "path": "dist-client/assets/wood6-C-nwKz1j.ogg",
+      "hash": "4272b647b9da0310201e4afeee70584474960025d277dcd2988cc494558e8638"
+    },
+    {
+      "path": "dist-client/blockyard-LICENSE.txt",
+      "hash": "4c89ee97bee29e2bd7dcd9567a06c1fee5fb8ab7c5c35ca4a153543524b6f07f"
+    },
+    {
+      "path": "dist-client/index.html",
+      "hash": "9a14b8f22176b5fd20c56ce1817e9a0a370f051103059acc6170d71b3e25fb5b"
+    },
+    {
+      "path": "dist-client/voxel-audio-NOTICE.txt",
+      "hash": "c485196829b52657cd568e91ecd86b56c036e802ee11d5fb3fa79e6d14e50c2b"
+    },
+    {
+      "path": "dist-server/build.json",
+      "hash": "91d88cef919ec17681516f5450ece688d0851d3f8190529b1ccc9da32d00b472"
+    },
+    {
+      "path": "dist-server/content.json",
+      "hash": "849b9bab106d5b6ef78c48df9f89222cc87afb904672def8c96c9a9989c9804c"
+    },
+    {
+      "path": "dist-server/engine.wasm",
+      "hash": "83a2ee1a6f731a6b6f515f16a121ca38311bb126266508d394177127f8ea1237"
+    },
+    {
+      "path": "dist-server/gateway.js",
+      "hash": "718c15b39b114b28e24c9d4028e69417ba05b33aaea422a38f466706e0dbb57a"
+    },
+    {
+      "path": "dist-server/gateway.js.map",
+      "hash": "a804414ed58a9119aee89debd59455e65300a9e46d416fc7188914c4b0d76afc"
+    },
+    {
+      "path": "dist-server/room-worker.js",
+      "hash": "02e8e1bc6d0e8a9d7a8859fd8cd5da23cfbd6838cdc434ece20da0d8a842d7fc"
+    },
+    {
+      "path": "dist-server/room-worker.js.map",
+      "hash": "8b2496a55f4ba14f9dca0fe247dbdb3648bcf8c95d12dec9b91d1a5cccd9d7ea"
+    },
+    {
+      "path": "engine/pkg/.gitignore",
+      "hash": "684888c0ebb17f374298b65ee2807526c066094c701bcc7ebbe1c1095f494fc1"
+    },
+    {
+      "path": "engine/pkg/LICENSE",
+      "hash": "4c89ee97bee29e2bd7dcd9567a06c1fee5fb8ab7c5c35ca4a153543524b6f07f"
+    },
+    {
+      "path": "engine/pkg/package.json",
+      "hash": "d53182fc903c41302cbfdc3c77cac07dc0c849e0d44ac0a29e9283d7490d3216"
+    },
+    {
+      "path": "engine/pkg/voxel_engine.d.ts",
+      "hash": "34cc721ceff2e0e08ab6621be238cb3a50146cdd962d00225b58e1d8412c7d58"
+    },
+    {
+      "path": "engine/pkg/voxel_engine.js",
+      "hash": "420d116166632000515596b6a45c9924d83e6b587bc4f7ee350f46d78455b9a6"
+    },
+    {
+      "path": "engine/pkg/voxel_engine_bg.wasm",
+      "hash": "83a2ee1a6f731a6b6f515f16a121ca38311bb126266508d394177127f8ea1237"
+    },
+    {
+      "path": "engine/pkg/voxel_engine_bg.wasm.d.ts",
+      "hash": "1e88b0f066543c5e0eed55154fa51fe911fa87a6fb20f322d04732b979bfb148"
+    }
+  ]
+}
