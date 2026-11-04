@@ -5,7 +5,6 @@ import { PostgresTestDatabase, literal } from "../helpers/postgres.ts";
 import { hostedCleanupSql } from "../../tools/hosted-school-scope.ts";
 const db = new PostgresTestDatabase();
 db.installSessionControls();
-db.exec("ALTER TABLE public.game_sessions ADD COLUMN invitation_code text");
 after(() => db.close());
 const hash = (s: string) => createHash("sha256").update(s).digest("hex");
 function fixture() {

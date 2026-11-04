@@ -9,7 +9,9 @@ import { tcpGate } from '../tests/fixtures/tcp-gate.ts';
 type Authority = { epoch: number; ack: number; tick: number; position: number[]; frozen: number };
 const runtime = process.env.VOXEL_TEST_PACKAGE === '1' ? await loadServerRelease() : undefined;
 const { gateway, build, events } = await createBuiltHarness(
-  undefined,
+  // Keep the vertical flight setup clear of random spawn canopies. This test
+  // exercises TCP recovery, not terrain generation.
+  { seed: 4242 },
   undefined,
   undefined,
   undefined,
@@ -33,6 +35,7 @@ const browser = await launchSoftwareBrowser(),
       availableParallelism: availableParallelism(),
     },
     configuration: {
+      seed: 4242,
       viewport: { width: 640, height: 480 },
       quality: 'low',
       renderScale: 0.5,
