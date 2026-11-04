@@ -22,7 +22,6 @@
     "check": "npm run build && npm run typecheck && npm run check:content:complete && npm run check:boundaries && npm test && npm run test:engine && npm run test:wasm && npm run test:integration && npm run test:server-bundle",
     "test:browser": "node tools/browser-smoke.ts",
     "benchmark:engine": "node tools/benchmark-engine.ts",
-    "benchmark:survival": "node tools/benchmark-survival.ts",
     "benchmark:sockets": "node tools/benchmark-sockets.mjs",
     "benchmark:survival:workers": "node tools/benchmark-survival-workers.ts",
     "check:survival:workers": "node tools/check-survival-workers.ts",
