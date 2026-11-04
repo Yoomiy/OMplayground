@@ -11,7 +11,9 @@ ALTER TABLE public.game_sessions ADD COLUMN game_id UUID REFERENCES public.games
   ADD COLUMN connected_player_names TEXT[] NOT NULL DEFAULT ARRAY[]::text[],
   ADD COLUMN status public.game_session_status NOT NULL DEFAULT 'waiting',
   ADD COLUMN gender TEXT, ADD COLUMN started_at TIMESTAMPTZ,ADD COLUMN ended_at TIMESTAMPTZ,
-  ADD COLUMN is_open BOOLEAN NOT NULL DEFAULT true,ADD COLUMN last_activity TIMESTAMPTZ;
+  ADD COLUMN is_open BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN invitation_code TEXT NOT NULL DEFAULT 'fixture-invite',
+  ADD COLUMN last_activity TIMESTAMPTZ;
 -- Deliberately permissive fixture policies: the authoritative trigger must also
 -- protect against pre-existing browser RLS and legacy definer functions.
 GRANT USAGE ON SCHEMA public TO authenticated,anon;

@@ -72,7 +72,12 @@ jobs:
           VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_fixture
           VITE_VOXEL_RUNTIME_SERVER_URL: https://voxel.invalid
       - run: npm --prefix games/voxel exec -- playwright install --with-deps chromium
-      - run: npm run test:voxel:browser --workspace @playground/web
+      - name: Install native desktop input tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb xdotool xauth
+      - name: React school journey with native desktop input
+        run: xvfb-run -a -s '-screen 0 1280x900x24 -nolisten tcp' env VOXEL_XDOTOOL=/usr/bin/xdotool npm run test:voxel:browser --workspace @playground/web
         env:
           VOXEL_TEST_POSTGRES: '1'
           PGHOST: 127.0.0.1
@@ -101,10 +106,7 @@ jobs:
       - run: npm run test:voxel:inventory
       - run: npm --prefix games/voxel run test:held:browser
       - name: PC survival over a delayed connection
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y xvfb xdotool xauth
-          xvfb-run -a -s '-screen 0 1280x900x24 -nolisten tcp' env VOXEL_XDOTOOL=/usr/bin/xdotool npm --prefix games/voxel run test:survival:desktop:browser
+        run: xvfb-run -a -s '-screen 0 1280x900x24 -nolisten tcp' env VOXEL_XDOTOOL=/usr/bin/xdotool npm --prefix games/voxel run test:survival:desktop:browser
       - run: npm run test:voxel:tnt
       - run: npm run test:voxel:equipment
       - run: npm run test:voxel:combat

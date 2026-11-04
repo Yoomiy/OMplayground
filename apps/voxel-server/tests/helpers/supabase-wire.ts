@@ -88,6 +88,7 @@ export async function supabaseWire(db: PostgresTestDatabase) {
       if (path === "/rest/v1/game_sessions" && request.method === "GET") {
         const url = new URL(request.url!, "http://localhost"),
           id = url.searchParams.get("id")?.slice(3),
+          host = url.searchParams.get("host_id"),
           fields = url.searchParams.get("select")?.split(",") ?? [];
         const allowed = [
           "id",
@@ -97,10 +98,13 @@ export async function supabaseWire(db: PostgresTestDatabase) {
           "connected_player_ids",
           "connected_player_names",
           "voxel_presence_expires_at",
+          "is_open",
+          "invitation_code",
         ];
         if (
           !id ||
           !/^[a-f0-9-]{36}$/.test(id) ||
+          (host !== null && !/^eq\.[a-f0-9-]{36}$/.test(host)) ||
           !fields.length ||
           fields.some((field) => !allowed.includes(field))
         )
@@ -111,7 +115,7 @@ export async function supabaseWire(db: PostgresTestDatabase) {
         reply(
           response,
           await db.valueAsync(
-            `SELECT coalesce(jsonb_agg(jsonb_build_object(${pairs})),'[]'::jsonb) FROM public.game_sessions s WHERE id=${literal(id)}::uuid`,
+            `SELECT coalesce(jsonb_agg(jsonb_build_object(${pairs})),'[]'::jsonb) FROM public.game_sessions s WHERE id=${literal(id)}::uuid${host === null ? "" : ` AND host_id=${literal(host.slice(3))}::uuid`}`,
             "service_role",
           ),
         );

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import type { Page } from 'playwright';
+import type { Locator, Page } from 'playwright';
 /** Trusted OS input in the dedicated test X display; never writes game state. */
 export async function desktopInput(page: Page) {
   const executable = process.env.VOXEL_XDOTOOL;
@@ -58,24 +58,34 @@ export async function desktopInput(page: Page) {
     keys.clear();
     await input(['mouseup', '1', 'mouseup', '3']);
   };
+  const click = async (locator: Locator) => {
+    await page.bringToFront();
+    await locator.waitFor({ state: 'visible' });
+    await locator.scrollIntoViewIfNeeded();
+    const p = await locator.evaluate((element) => {
+      const r = element.getBoundingClientRect(),
+        border = (window.outerWidth - window.innerWidth) / 2;
+      return {
+        x: Math.round(window.screenX + border + r.x + r.width / 2),
+        y: Math.round(
+          window.screenY + window.outerHeight - window.innerHeight - border + r.y + r.height / 2,
+        ),
+        scale: devicePixelRatio,
+      };
+    });
+    assert.equal(p.scale, 1);
+    await input(['mousemove', String(p.x), String(p.y), 'click', '1']);
+  };
   return {
     key,
+    click,
     release,
     async resume() {
       await page.bringToFront();
-      const p = await page.locator('#resume').evaluate((element) => {
-        const r = element.getBoundingClientRect(),
-          border = (window.outerWidth - window.innerWidth) / 2;
-        return {
-          x: Math.round(window.screenX + border + r.x + r.width / 2),
-          y: Math.round(
-            window.screenY + window.outerHeight - window.innerHeight - border + r.y + r.height / 2,
-          ),
-          scale: devicePixelRatio,
-        };
-      });
-      assert.equal(p.scale, 1);
-      await input(['mousemove', String(p.x), String(p.y), 'click', '1']);
+      const active = await page.evaluate(
+        () => !!document.pointerLockElement && (window as any).voxel.debug().focused,
+      );
+      if (!active) await click(page.locator('#resume'));
       await page.waitForFunction(() => {
         const d = (window as any).voxel.debug();
         return document.pointerLockElement !== null && d.focused && d.body.frozen === 0;

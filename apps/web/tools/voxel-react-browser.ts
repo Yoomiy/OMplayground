@@ -16,6 +16,7 @@ import { monitorEventLoopDelay } from "node:perf_hooks";
 import { build as viteBuild } from "vite";
 import react from "@vitejs/plugin-react";
 import { launchSoftwareBrowser } from "../../../games/voxel/tools/browser-harness.ts";
+import { desktopInput } from "../../../games/voxel/tools/browser-desktop-input.ts";
 import { installMemoryProbe } from "../../../games/voxel/tools/browser-memory-probe.ts";
 import {
   surfaceOwners,
@@ -60,10 +61,15 @@ import {
 import { RoomServiceClient } from "livekit-server-sdk";
 import type { GatewayOptions } from "../../../games/voxel/src/server/gateway.ts";
 
-async function openSessionMenu(page: import("playwright").Page) {
-  const menu = page.locator(".voxel-session__menu");
-  if (!(await menu.evaluate((node) => (node as HTMLDetailsElement).open)))
-    await menu.locator(":scope > summary").click();
+async function releaseGameControls(page: import("playwright").Page) {
+  // The toolbar is always visible. Release browser mouse capture before
+  // clicking it; the desktop input journey separately exercises native Escape.
+  await page.evaluate(() => {
+    if (document.pointerLockElement) document.exitPointerLock();
+  });
+  await page.waitForFunction(() => document.pointerLockElement === null);
+  const pause = page.getByRole("button", { name: "השהיה", exact: true });
+  if ((await pause.isVisible()) && (await pause.isEnabled())) await pause.tap();
 }
 
 const web = fileURLToPath(new URL("../", import.meta.url)),
@@ -87,6 +93,10 @@ const withVoice = process.env.VOXEL_TEST_LIVEKIT === "1",
   mediaRoomSids = new Map<string, string>();
 const mountCycles = Number(process.env.VOXEL_REACT_MOUNT_CYCLES ?? 4);
 assert(Number.isSafeInteger(mountCycles) && mountCycles >= 2);
+assert(
+  process.env.VOXEL_XDOTOOL && process.env.DISPLAY,
+  "Run the React desktop journey under a private X display with VOXEL_XDOTOOL",
+);
 const voiceProgress: Record<string, unknown> = { enabled: withVoice };
 const eventLoop = monitorEventLoopDelay({ resolution: 20 });
 const databaseTimings: { elapsed: number; rpc?: string }[] = [];
@@ -114,6 +124,7 @@ const diagnosticPages: Awaited<
     active?: boolean;
     kind?: string;
     code?: string;
+    mode?: string;
   }[] = [];
 try {
   db = new PostgresTestDatabase({ pooled: true });
@@ -170,7 +181,15 @@ try {
     moderation = new SupabaseModeration(client),
     chat = new SupabaseChat(client),
     runtime = await loadServerRelease();
-  let mediaRoutes: NonNullable<GatewayOptions["api"]> = {};
+  // The ordinary journey has no SFU. Model an explicit denied voice grant
+  // instead of leaving automatic voice startup to retry a missing HTTP route.
+  let mediaRoutes: NonNullable<GatewayOptions["api"]> = {
+    "/api/voxel/voice-token": async (_req, _body, res) => {
+      res.writeHead(403, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "FORBIDDEN" }));
+      return null;
+    },
+  };
   if (withVoice) {
     const credentials = voiceConfig(process.env);
     mediaProvider = new RoomServiceClient(
@@ -241,7 +260,7 @@ try {
    void refresh();const timer=setInterval(refresh,1000);return()=>{abort.abort();clearInterval(timer);};},[api]);
   return shown?<VoxelSurface api={api} session={session} userId={id} isStaff={role==='teacher'} canChoosePlayer={false} onDiagnostic={(operation,code)=>{window.runtimeDiagnostics??=[];window.runtimeDiagnostics.push({operation,code});}} onExit={()=>{window.exitCalls=(window.exitCalls??0)+1;setShown(false);}} onRuntime={r=>{window.surfaceRuntime=r;window.readyCount=(window.readyCount??0)+1;const generation=window.readyCount,command=r.command;
     r.command=value=>{if(['inventory','resume','pause'].includes(value.type)){window.gameInputEvents.push({type:'command',command:value.type,kind:value.operation?.kind,generation,time:performance.now()});if(window.gameInputEvents.length>120)window.gameInputEvents.shift();}return command(value);};
-    let previous;const unsubscribe=r.subscribe(s=>{const current={status:s.status,lifecycle:s.lifecycle,role:s.role,inventoryOpen:s.inventoryOpen,inventoryPending:s.inventoryPending,pointerLocked:s.pointerLocked};if(JSON.stringify(current)!==JSON.stringify(previous)){window.gameInputEvents.push({type:'hud',...current,generation,time:performance.now()});if(window.gameInputEvents.length>120)window.gameInputEvents.shift();previous=current;}});
+    let previous;const unsubscribe=r.subscribe(s=>{window.surfaceHud=s;const current={status:s.status,lifecycle:s.lifecycle,role:s.role,inventoryOpen:s.inventoryOpen,inventoryPending:s.inventoryPending,pointerLocked:s.pointerLocked};if(JSON.stringify(current)!==JSON.stringify(previous)){window.gameInputEvents.push({type:'hud',...current,generation,time:performance.now()});if(window.gameInputEvents.length>120)window.gameInputEvents.shift();previous=current;}});
     return()=>{unsubscribe();window.disposedRuntime=r;};}}/>:<main dir='rtl'><p>המפגש נסגר</p><button onClick={()=>setShown(true)}>כניסה חוזרת</button><button disabled={left} onClick={async()=>{window.rosterReceipt=await api.leave(departureId);setLeft(true);}}>עזיבת הסגל</button>{left&&<p>ההשתתפות במפגש הוסרה</p>}</main>;
  }
  createRoot(document.getElementById('root')).render(<StrictMode><App/></StrictMode>);`;
@@ -343,7 +362,7 @@ try {
   });
   assert.ok(gateway.address && typeof gateway.address === "object");
   const origin = `http://127.0.0.1:${gateway.address.port}`;
-  browser = await launchSoftwareBrowser();
+  browser = await launchSoftwareBrowser({ headed: true });
   eventLoop.enable();
   browser.on("disconnected", () =>
     console.log("React fixture browser disconnected"),
@@ -359,6 +378,7 @@ try {
     expectedVoiceFailures: string[] = [],
     bannedAdmissionResponses: string[] = [],
     bannedSessionResponses: string[] = [],
+    revokedSettingsResponses: string[] = [],
     admissions: string[] = [];
   let teacherUnloads = 0;
   deadline = setTimeout(
@@ -369,7 +389,7 @@ try {
     240000 + mountCycles * 15000,
   );
   const kidContext = await browser.newContext({
-      viewport: { width: 900, height: 650 },
+      viewport: null,
     }),
     teacherContext = await browser.newContext({
       viewport: { width: 800, height: 600 },
@@ -379,6 +399,14 @@ try {
     });
   const kidPage = await kidContext.newPage(),
     teacherPage = await teacherContext.newPage();
+  const desktopWindow = await kidContext.newCDPSession(kidPage);
+  const { windowId } = await desktopWindow.send("Browser.getWindowForTarget");
+  await desktopWindow.send("Browser.setWindowBounds", {
+    windowId,
+    bounds: { left: 0, top: 0, width: 1000, height: 800 },
+  });
+  await desktopWindow.detach();
+  const desktop = await desktopInput(kidPage);
   diagnosticPages.push(kidPage, teacherPage);
   for (const page of [kidPage, teacherPage]) {
     page.setDefaultTimeout(20000);
@@ -395,6 +423,7 @@ try {
                 "baseline",
                 "lifecycle",
                 "inventory",
+                "rules",
                 "error",
               ].includes(v.type)
             )
@@ -411,6 +440,7 @@ try {
               active: v.active,
               kind: v.operation?.kind,
               code: v.code,
+              mode: v.mode,
             });
             if (nativeFrames.length > 140) nativeFrames.shift();
           } catch {}
@@ -446,6 +476,7 @@ try {
             "Failed to load resource: the server responded with a status of 403 (Forbidden)" &&
           (message.location().url.endsWith("/api/voxel/admission") ||
             message.location().url.endsWith("/api/voxel/session") ||
+            message.location().url.endsWith("/api/voxel/room-settings") ||
             message.location().url.endsWith("/api/voxel/voice-token"))
         )
           expectedNetworkErrors.push(message.text());
@@ -453,6 +484,20 @@ try {
       }
     });
     page.on("response", (response) => {
+      // A host's in-flight privacy refresh may overlap the ban or session end.
+      // Keep checking the denial code so unrelated settings failures still fail.
+      if (
+        response.status() === 403 &&
+        response.url().endsWith("/api/voxel/room-settings")
+      ) {
+        void response
+          .json()
+          .then((value) => {
+            assert(["BANNED", "SESSION_ENDED"].includes(value.error));
+            revokedSettingsResponses.push(value.error);
+          })
+          .catch((error) => errors.push(error.message));
+      }
       if (
         response.status() >= 400 &&
         /\/api\/voxel\/(voice-token)$/.test(response.url())
@@ -561,6 +606,7 @@ try {
     await held;
     await route.continue();
   });
+  await kidPage.bringToFront();
   await kidPage.goto(origin + "/?role=kid", { waitUntil: "domcontentloaded" });
   await Promise.race([
     requested,
@@ -568,7 +614,7 @@ try {
       throw new Error("React fixture did not request its engine");
     }),
   ]);
-  await openSessionMenu(kidPage);
+  await releaseGameControls(kidPage);
   await kidPage.getByRole("button", { name: "יציאה", exact: true }).click();
   releaseWasm();
   await kidPage.getByText("המפגש נסגר", { exact: true }).waitFor();
@@ -576,6 +622,7 @@ try {
   assert.equal(await kidPage.locator(".voxel-session canvas").count(), 0);
   assert.equal(admissions.length, 0);
   assert.equal(gateway.rooms.size, 0);
+  console.log("React journey: startup cancellation passed");
   if (withVoice) {
     voiceProgress.databaseErrors = databaseErrors;
     voiceProgress.responses = voiceResponses;
@@ -593,10 +640,13 @@ try {
     assert.equal(gateway.rooms.size, 0);
   }
   await kidContext.unroute("**/*.wasm");
+  console.log("React journey: engine route released");
   await kidPage
     .getByRole("button", { name: "כניסה חוזרת", exact: true })
     .click();
+  console.log("React journey: participant reentry requested");
   const ready = async (page: typeof kidPage) => {
+    await page.bringToFront();
     await page.waitForFunction(
       () => {
         const d = (window as any).surfaceRuntime?.debug();
@@ -609,12 +659,22 @@ try {
     );
   };
   await ready(kidPage);
+  console.log("React journey: participant ready");
   assert.ok(await kidPage.evaluate(() => (window as any).strictEffects >= 2));
   assert.equal(await kidPage.locator(".voxel-session canvas").count(), 1);
+  const privacy = kidPage.getByRole("region", {
+    name: "ניהול חדר",
+    exact: true,
+  });
+  await privacy.getByText("חדר פתוח", { exact: true }).waitFor();
+  await privacy
+    .getByText("לא ניתן לטעון את פרטיות החדר כרגע.", { exact: true })
+    .waitFor({ state: "hidden" });
   await teacherPage.goto(origin + "/?role=teacher", {
     waitUntil: "domcontentloaded",
   });
   await ready(teacherPage);
+  console.log("React journey: observer ready");
   await teacherPage
     .getByText("תצפית נסתרת · אין בנייה או פגיעה בשחקנים", { exact: true })
     .waitFor();
@@ -625,14 +685,27 @@ try {
     const voiceJoin = async (page: typeof kidPage, touch = false) => {
       await page.bringToFront();
       const open = page.getByRole("button", { name: /^שיחה קולית/ });
-      if (touch) await open.tap();
-      else await open.click();
-      const start = page.getByRole("button", {
-        name: "כניסה לשיחה",
-        exact: true,
-      });
-      if (touch) await start.tap();
-      else await start.click();
+      if (await open.isVisible()) {
+        if (touch) await open.tap();
+        else await open.click();
+      } else if (page === kidPage) {
+        // Supply browser activation if automatic audio was blocked.
+        await page
+          .getByRole("heading", {
+            name: "קשר קולי (סביבתי)",
+            exact: true,
+          })
+          .click();
+      }
+      // Students join automatically; hidden observers opt in.
+      if (page === teacherPage) {
+        const start = page.getByRole("button", {
+          name: "כניסה לשיחה",
+          exact: true,
+        });
+        if (touch) await start.tap();
+        else await start.click();
+      }
       await page.waitForFunction(
         () => (window as any).surfaceVoice?.state.phase === "connected",
       );
@@ -640,8 +713,10 @@ try {
     const beforeMediaAdmissions = admissions.length;
     await voiceJoin(kidPage);
     await voiceJoin(teacherPage, true);
-    for (const page of [kidPage, teacherPage])
-      assert.equal(await page.evaluate(() => (window as any).voiceGumCalls), 0);
+    assert.equal(
+      await teacherPage.evaluate(() => (window as any).voiceGumCalls),
+      0,
+    );
     assert.equal(
       await teacherPage
         .getByRole("button", { name: "מיקרופון מושתק (M)", exact: true })
@@ -649,12 +724,18 @@ try {
       true,
     );
     await kidPage.bringToFront();
-    await kidPage
-      .getByRole("button", { name: "מיקרופון מושתק (M)", exact: true })
-      .click();
+    if (
+      await kidPage.evaluate(
+        () => (window as any).surfaceVoice.state.microphone !== "on",
+      )
+    )
+      await kidPage
+        .getByRole("button", { name: "מיקרופון מושתק (M)", exact: true })
+        .click();
     await kidPage.waitForFunction(
       () => (window as any).surfaceVoice.state.microphone === "on",
     );
+    assert.ok(await kidPage.evaluate(() => (window as any).voiceGumCalls >= 1));
     await teacherPage.bringToFront();
     await teacherPage.waitForFunction(
       () => (window as any).surfaceVoice.stats.audio.tracks === 1,
@@ -699,12 +780,10 @@ try {
     );
     assert.equal(admissions.length, beforeMediaAdmissions);
     await kidPage.bringToFront();
-    await kidPage
-      .getByRole("button", { name: "סגירת שיחה קולית", exact: true })
-      .click();
-    await teacherPage
-      .getByRole("button", { name: "סגירת שיחה קולית", exact: true })
-      .tap();
+    await desktop.click(
+      kidPage.getByRole("button", { name: "מזער", exact: true }),
+    );
+    await teacherPage.getByRole("button", { name: "מזער", exact: true }).tap();
     Object.assign(voiceEvidence, {
       actualGamePoses: actualScene,
       nearSamples: samples,
@@ -717,6 +796,15 @@ try {
   await kidPage.waitForFunction(
     () => document.hasFocus() && document.visibilityState === "visible",
   );
+  for (const page of [kidPage, teacherPage]) {
+    const minimize = page.getByRole("button", { name: "מזער", exact: true });
+    if (await minimize.isVisible()) {
+      await page.bringToFront();
+      if (page === kidPage) await desktop.click(minimize);
+      else await minimize.tap();
+    }
+  }
+  await kidPage.bringToFront();
   const inputState = () =>
     kidPage.evaluate(() => {
       const d = (window as any).surfaceRuntime.debug();
@@ -744,12 +832,14 @@ try {
     });
   if (withVoice) voiceEvidence.beforeGameResume = await inputState();
   // Initial admission enters directly; the first world click captures the mouse.
-  await kidPage.locator(".voxel-session__world canvas").click();
+  await desktop.click(kidPage.locator(".voxel-session__world canvas"));
   try {
     await kidPage.waitForFunction(
       () =>
         document.pointerLockElement !== null &&
         (window as any).surfaceRuntime.debug().focused,
+      null,
+      { polling: 100 },
     );
   } catch (error) {
     voiceEvidence.failedGameResume = await inputState();
@@ -759,10 +849,10 @@ try {
     );
     throw error;
   }
-  await kidPage.keyboard.press("KeyE");
+  await desktop.key("e");
   try {
     await kidPage
-      .getByRole("dialog", { name: "תיק ויצירה", exact: true })
+      .getByRole("dialog", { name: "מלאי ויצירה", exact: true })
       .waitFor();
   } catch (error) {
     voiceEvidence.failedInventoryKey = await inputState();
@@ -774,12 +864,25 @@ try {
   }
   assert.equal((await debug(kidPage)).inventoryOpen, true);
   // Opening the dialog precedes the authoritative frozen-body baseline.
-  await kidPage.waitForFunction(() => {
-    const d = (window as any).surfaceRuntime.debug();
-    return d.inventoryOpen && d.body?.frozen === 1;
-  });
-  await kidPage.getByRole("button", { name: "סגירה", exact: true }).click();
-  await openSessionMenu(kidPage);
+  await kidPage.waitForFunction(
+    () => {
+      const d = (window as any).surfaceRuntime.debug();
+      return d.inventoryOpen && d.body?.frozen === 1;
+    },
+    null,
+    { polling: 100 },
+  );
+  await desktop.click(
+    kidPage.getByRole("button", { name: "סגירה (E)", exact: true }),
+  );
+  await kidPage.waitForFunction(
+    () =>
+      document.pointerLockElement !== null &&
+      (window as any).surfaceRuntime.debug().focused,
+    null,
+    { polling: 100 },
+  );
+  await releaseGameControls(kidPage);
   await kidPage.getByRole("button", { name: "מסך מלא", exact: true }).click();
   await kidPage.waitForFunction(() =>
     document.fullscreenElement?.classList.contains("voxel-session"),
@@ -789,30 +892,39 @@ try {
     .click();
   assert.equal(
     await kidPage
-      .getByRole("dialog", { name: "תיק ויצירה", exact: true })
+      .getByRole("dialog", { name: "מלאי ויצירה", exact: true })
       .evaluate((e) => document.fullscreenElement?.contains(e)),
     true,
   );
   await kidPage.screenshot({
     path: join(web, "test-results/voxel-react-inventory.png"),
   });
-  await kidPage.getByRole("button", { name: "סגירה", exact: true }).click();
+  await desktop.click(
+    kidPage.getByRole("button", { name: "סגירה (E)", exact: true }),
+  );
   const admissionsBeforeStaff = admissions.length,
     beforeStaff = await debug(teacherPage),
     ownedBeforeStaff = (await debug(kidPage)).inventory.bag;
+  console.log("React journey: inventory and fullscreen passed");
   await teacherPage.bringToFront();
-  await openSessionMenu(teacherPage);
+  await releaseGameControls(teacherPage);
   await teacherPage.locator(".voxel-session__staff > summary").tap();
-  await openSessionMenu(teacherPage);
-  await teacherPage.evaluate(async () => {
-    await (window as any).fixtureApi.staff(
+  await releaseGameControls(teacherPage);
+  const creativeReceipt = await teacherPage.evaluate(async () => {
+    return (window as any).fixtureApi.staff(
       { kind: "mode", mode: "creative" },
       crypto.randomUUID(),
     );
   });
+  assert.equal(creativeReceipt.completed, true);
+  assert.equal(creativeReceipt.result.ok, true);
+  // The other page can own fullscreen. Server state waits must not depend on
+  // animation frames being scheduled in the background page.
   for (const page of [kidPage, teacherPage])
     await page.waitForFunction(
       () => (window as any).surfaceRuntime.debug().mode === "creative",
+      null,
+      { polling: 100 },
     );
   assert.equal((await debug(kidPage)).combat, false);
   assert.deepEqual((await debug(kidPage)).inventory.bag, ownedBeforeStaff);
@@ -837,10 +949,12 @@ try {
       (stack: any) => stack?.itemType === "oak_log" && stack.count > 0,
     ),
   );
-  await kidPage.getByRole("button", { name: "סגירה", exact: true }).click();
+  await desktop.click(
+    kidPage.getByRole("button", { name: "סגירה (E)", exact: true }),
+  );
   await teacherPage.bringToFront();
 
-  await openSessionMenu(teacherPage);
+  await releaseGameControls(teacherPage);
   await teacherPage.evaluate(async () => {
     await (window as any).fixtureApi.staff(
       { kind: "mode", mode: "survival" },
@@ -850,16 +964,17 @@ try {
   for (const page of [kidPage, teacherPage])
     await page.waitForFunction(
       () => (window as any).surfaceRuntime.debug().mode === "survival",
+      null,
+      { polling: 100 },
     );
   assert.deepEqual((await debug(kidPage)).inventory.bag, ownedForSurvival);
   assert.equal((await debug(kidPage)).focused, false);
+  console.log("React journey: staff rule transitions passed");
   // Move through normal touch input far enough to unload the destination's
   // former subscription before testing teleport readiness and origin reset.
-  await openSessionMenu(teacherPage);
+  await releaseGameControls(teacherPage);
   await teacherPage.locator(".voxel-session__staff > summary").tap();
-  await teacherPage
-    .getByRole("button", { name: "כניסה לתצפית", exact: true })
-    .tap();
+  await teacherPage.locator(".voxel-touch-stick").tap();
   await teacherPage.waitForFunction(
     () => (window as any).surfaceRuntime.debug().focused,
   );
@@ -941,9 +1056,9 @@ try {
       await kidPage.waitForFunction(
         () => (window as any).surfaceVoice.state.microphone === "on",
       );
-      await kidPage
-        .getByRole("button", { name: "סגירת שיחה קולית", exact: true })
-        .click();
+      await desktop.click(
+        kidPage.getByRole("button", { name: "מזער", exact: true }),
+      );
     }
     await teacherPage.bringToFront();
     await teacherPage.waitForFunction(
@@ -964,7 +1079,7 @@ try {
     voiceEvidence.farDistance = distance;
     voiceEvidence.nativeFarSceneSilent = true;
   }
-  await openSessionMenu(teacherPage);
+  await releaseGameControls(teacherPage);
   await teacherPage.locator(".voxel-session__staff > summary").tap();
   await teacherPage
     .getByLabel("יעד להשתגרות", { exact: true })
@@ -1018,19 +1133,20 @@ try {
   await teacherPage.screenshot({
     path: join(web, "test-results/voxel-react-staff.png"),
   });
-  await openSessionMenu(teacherPage);
+  await releaseGameControls(teacherPage);
   await teacherPage.locator(".voxel-session__staff > summary").tap();
   const staffReceipts = db.value(
     `SELECT jsonb_agg(jsonb_build_object('command',command,'completed',completed,'result',result) ORDER BY revision) FROM public.voxel_staff_commands WHERE session_id=${literal(room)}`,
   );
   assert.equal(staffReceipts.length, 3);
   assert.ok(staffReceipts.every((row: any) => row.completed && row.result.ok));
+  console.log("React journey: observer travel and teleport passed");
   // All access changes go through visible staff controls; readmission is an
   // explicit student action. A lost provider response must keep its request ID.
   const moderationAdmissionsBefore = admissions.length;
   const moderationInventoryBefore = (await debug(kidPage)).inventory.bag;
   let lastJoinedEpoch = (await debug(kidPage)).epoch;
-  await openSessionMenu(teacherPage);
+  await releaseGameControls(teacherPage);
   await teacherPage.locator(".voxel-session__staff > summary").tap();
   await teacherPage.getByText("ניהול משתתפים", { exact: true }).tap();
   await teacherPage
@@ -1065,14 +1181,40 @@ try {
     moderationRequests[0].requestId,
     moderationRequests[1].requestId,
   );
-  await kidPage
-    .getByRole("button", { name: "התחברות מחדש", exact: true })
-    .waitFor();
+  const expectRevoked = async () => {
+    await kidPage.waitForFunction(
+      () => {
+        const hud = (window as any).surfaceHud;
+        return hud?.status === "error" && hud.canReconnect === false;
+      },
+      null,
+      { polling: 100 },
+    );
+    assert.equal(
+      await kidPage
+        .getByRole("button", {
+          name: "התחברות מחדש",
+          exact: true,
+        })
+        .count(),
+      0,
+    );
+  };
+  await expectRevoked();
   assert.equal(admissions.length, moderationAdmissionsBefore);
-  const rejoinKid = async () => {
+  const freshEntry = async () => {
+    await kidPage.bringToFront();
+    await releaseGameControls(kidPage);
+    await desktop.click(
+      kidPage.getByRole("button", { name: "יציאה", exact: true }),
+    );
+    await kidPage.getByText("המפגש נסגר", { exact: true }).waitFor();
     await kidPage
-      .getByRole("button", { name: "התחברות מחדש", exact: true })
+      .getByRole("button", { name: "כניסה חוזרת", exact: true })
       .click();
+  };
+  const rejoinKid = async () => {
+    await freshEntry();
     await kidPage.waitForFunction((previous) => {
       const d = (window as any).surfaceRuntime.debug();
       return (
@@ -1088,10 +1230,8 @@ try {
         () => (window as any).surfaceVoice.state.phase === "connected",
       );
       assert.equal(
-        await kidPage.evaluate(
-          () => (window as any).surfaceVoice.state.microphone,
-        ),
-        "off",
+        await teacherPage.evaluate(() => (window as any).voiceGumCalls),
+        0,
       );
     }
   };
@@ -1115,9 +1255,7 @@ try {
       exact: true,
     })
     .waitFor();
-  await kidPage
-    .getByRole("button", { name: "התחברות מחדש", exact: true })
-    .waitFor();
+  await expectRevoked();
   assert.equal(admissions.length, moderationAdmissionsBefore + 1);
   if (withVoice) {
     await kidPage.waitForFunction(
@@ -1158,9 +1296,7 @@ try {
     assert(absent);
     voiceEvidence.bannedProviderIdentityAbsent = true;
   }
-  await kidPage
-    .getByRole("button", { name: "התחברות מחדש", exact: true })
-    .click();
+  await freshEntry();
   await kidPage
     .getByText("הגישה לעולם נחסמה. פנו לאיש צוות.", { exact: true })
     .waitFor();
@@ -1207,11 +1343,28 @@ try {
   await teacherPage.screenshot({
     path: join(web, "test-results/voxel-react-moderation.png"),
   });
-  await openSessionMenu(teacherPage);
+  await releaseGameControls(teacherPage);
   await teacherPage.locator(".voxel-session__staff > summary").tap();
   // Persisted chat uses visible owned dialogs and the real SQL/SDK boundary.
+  console.log("React journey: moderation passed");
+  const voiceCard = kidPage.locator(".voxel-session__voice-dialog");
+  if (await voiceCard.isVisible())
+    await desktop.click(
+      voiceCard.getByRole("button", { name: "מזער", exact: true }),
+    );
+  await releaseGameControls(kidPage);
+  const kidChat = kidPage.getByRole("dialog", {
+      name: "צ׳אט המשחק",
+      exact: true,
+    }),
+    teacherChat = teacherPage.getByRole("dialog", {
+      name: "צ׳אט המשחק",
+      exact: true,
+    });
   const chatText = "<img src=x onerror=alert(1)> שלום 🙂";
-  await kidPage.getByRole("button", { name: "צ׳אט", exact: true }).click();
+  await desktop.click(
+    kidPage.getByRole("button", { name: "צ׳אט", exact: true }),
+  );
   await kidPage
     .getByRole("textbox", { name: "הודעה למפגש", exact: true })
     .fill(chatText);
@@ -1241,21 +1394,33 @@ try {
   await kidPage
     .getByRole("button", { name: "בדיקת בקשת הצ׳אט", exact: true })
     .click();
-  await kidPage.getByText("ההודעה נשמרה.", { exact: true }).waitFor();
+  await kidPage
+    .getByRole("button", {
+      name: "בדיקת בקשת הצ׳אט",
+      exact: true,
+    })
+    .waitFor({ state: "hidden" });
   assert.equal(chatSendRequests.length, 2);
   assert.equal(chatSendRequests[0], chatSendRequests[1]);
-  await kidPage.getByText(chatText, { exact: true }).waitFor();
+  await kidChat.getByText(chatText, { exact: true }).waitFor();
   assert.equal(
     await kidPage.locator(".voxel-session__chat-lines img").count(),
     0,
   );
+  await desktop.click(
+    kidPage.getByRole("button", { name: "צ׳אט", exact: true }),
+  );
   await kidPage
-    .getByRole("button", { name: "סגירת הצ׳אט", exact: true })
-    .click();
-  await kidPage.getByRole("button", { name: "צ׳אט", exact: true }).click();
-  await kidPage.getByText(chatText, { exact: true }).waitFor();
+    .getByLabel("הודעות אחרונות", { exact: true })
+    .getByText(chatText, { exact: true })
+    .waitFor();
+  await releaseGameControls(kidPage);
+  await desktop.click(
+    kidPage.getByRole("button", { name: "צ׳אט", exact: true }),
+  );
+  await kidChat.getByText(chatText, { exact: true }).waitFor();
   await teacherPage.getByRole("button", { name: "צ׳אט", exact: true }).tap();
-  await teacherPage.getByText(chatText, { exact: true }).waitFor();
+  await teacherChat.getByText(chatText, { exact: true }).waitFor();
   assert.equal(
     await teacherPage
       .getByRole("textbox", { name: "הודעה למפגש", exact: true })
@@ -1268,24 +1433,24 @@ try {
   await teacherPage
     .getByRole("button", { name: "אישור שינוי הצ׳אט", exact: true })
     .tap();
-  await kidPage
+  await kidChat
     .getByText(chatText, { exact: true })
     .waitFor({ state: "hidden" });
   await kidPage
     .getByRole("textbox", { name: "הודעה למפגש", exact: true })
     .fill("הודעה נוספת לניקוי");
   await kidPage.getByRole("button", { name: "שליחה", exact: true }).click();
-  await teacherPage.getByText("הודעה נוספת לניקוי", { exact: true }).waitFor();
+  await teacherChat.getByText("הודעה נוספת לניקוי", { exact: true }).waitFor();
   await teacherPage
     .getByRole("button", { name: "ניקוי הצ׳אט", exact: true })
     .tap();
   await teacherPage
     .getByRole("button", { name: "אישור שינוי הצ׳אט", exact: true })
     .tap();
-  await kidPage
+  await kidChat
     .getByText("הודעה נוספת לניקוי", { exact: true })
     .waitFor({ state: "hidden" });
-  await teacherPage.getByText("אין הודעות להצגה.", { exact: true }).waitFor();
+  await teacherChat.getByText("אין הודעות להצגה.", { exact: true }).waitFor();
   await teacherPage.screenshot({
     path: join(web, "test-results/voxel-react-chat.png"),
   });
@@ -1308,17 +1473,14 @@ try {
     2,
   );
   assert.doesNotMatch(JSON.stringify(events), /onerror|הודעה נוספת לניקוי/);
-  await kidPage
-    .getByRole("button", { name: "סגירת הצ׳אט", exact: true })
-    .click();
-  await teacherPage
-    .getByRole("button", { name: "סגירת הצ׳אט", exact: true })
-    .tap();
+  await desktop.click(
+    kidPage.getByRole("button", { name: "צ׳אט", exact: true }),
+  );
+  await teacherPage.getByRole("button", { name: "צ׳אט", exact: true }).tap();
   wire.control.failUpload = true;
-  await openSessionMenu(teacherPage);
-  await teacherPage
-    .getByRole("button", { name: "השהיית המפגש", exact: true })
-    .click();
+  console.log("React journey: persisted chat passed");
+  await releaseGameControls(teacherPage);
+  await teacherPage.getByRole("button", { name: "השהה", exact: true }).click();
   await teacherPage
     .getByRole("button", { name: "ניסיון חוזר של אותה פעולה", exact: true })
     .waitFor();
@@ -1341,9 +1503,7 @@ try {
   const pauses = controlRequests.filter((v) => v.action === "pause");
   assert.equal(pauses.length, 2);
   assert.equal(pauses[0].requestId, pauses[1].requestId);
-  await teacherPage
-    .getByRole("button", { name: "כניסה לתצפית", exact: true })
-    .tap();
+  await teacherPage.locator(".voxel-touch-stick").tap();
   const camera = await debug(teacherPage),
     button = await teacherPage.locator('[data-control="jump"]').boundingBox();
   assert.ok(button);
@@ -1375,39 +1535,45 @@ try {
   await teacherPage.screenshot({
     path: join(web, "test-results/voxel-react-observer.png"),
   });
-  await openSessionMenu(teacherPage);
-  await teacherPage
-    .getByRole("button", { name: "חידוש המפגש", exact: true })
-    .tap();
+  await releaseGameControls(teacherPage);
+  await teacherPage.getByRole("button", { name: "המשך", exact: true }).tap();
   await kidPage.waitForFunction(
     () => (window as any).surfaceRuntime.debug().lifecycle === "playing",
   );
   assert.equal((await debug(kidPage)).focused, false);
   await kidPage.bringToFront();
-  await kidPage.locator(".voxel-session__world canvas").click();
+  await desktop.click(kidPage.locator(".voxel-session__world canvas"));
   await kidPage.waitForFunction(
     () => (window as any).surfaceRuntime.debug().focused,
   );
   const before = await debug(kidPage);
-  await kidPage.keyboard.down("KeyS");
+  await desktop.controls({
+    x: 0,
+    z: 1,
+    jump: false,
+    sneak: false,
+    sprint: false,
+  });
   await kidPage.waitForFunction((p) => {
     const d = (window as any).surfaceRuntime.debug();
     return Math.hypot(d.position[0] - p[0], d.position[2] - p[2]) > 0.2;
   }, before.position);
-  await kidPage.keyboard.up("KeyS");
+  await desktop.release();
   await kidPage.screenshot({
     path: join(web, "test-results/voxel-react-playing.png"),
   });
-  await openSessionMenu(teacherPage);
+  await releaseGameControls(teacherPage);
   await teacherPage
-    .getByRole("button", { name: "סיום המפגש", exact: true })
+    .getByRole("navigation", { name: "ניהול המפגש", exact: true })
+    .getByRole("button", { name: "סיים", exact: true })
     .tap();
   await teacherPage
+    .getByRole("dialog", { name: "לסיים את המפגש?", exact: true })
     .getByRole("button", { name: "סיום המפגש", exact: true })
     .tap();
   try {
     await teacherPage
-      .getByText("המפגש הסתיים והשמירה אושרה.", { exact: true })
+      .getByText("המפגש הסתיים. אפשר לפתוח מפגש חדש.", { exact: true })
       .waitFor();
   } catch (error) {
     console.error(
@@ -1436,6 +1602,8 @@ try {
       () =>
         (window as any).surfaceRuntime.debug().disposed &&
         document.querySelector(".voxel-session__world--ended") !== null,
+      null,
+      { polling: 100 },
     );
   const admissionsAtEnd = admissions.length;
   await kidPage.waitForTimeout(1700);
@@ -1458,7 +1626,7 @@ try {
       trusted: boolean;
       time: number;
     }[] = [];
-  const mouseClickAcknowledged = true;
+  console.log("React journey: save retry, pause, resume and end passed");
   for (const page of [kidPage, teacherPage]) {
     console.log(
       "Before exit",
@@ -1472,7 +1640,7 @@ try {
       ),
     );
     await page.bringToFront();
-    await openSessionMenu(page);
+    await releaseGameControls(page);
     const exit = page.getByRole("button", { name: "יציאה", exact: true });
     if (page === kidPage) {
       await page.exposeFunction(
@@ -1555,7 +1723,7 @@ try {
               ),
             ),
         );
-        await exit.click();
+        await desktop.click(exit);
         await page.waitForFunction((previous) => {
           const d = (window as any).disposedRuntime?.debug();
           return (
@@ -1653,6 +1821,11 @@ try {
     waitUntil: "domcontentloaded",
   });
   await ready(mobilePage);
+  const mobileVoice = mobilePage.getByRole("button", {
+    name: "מזער",
+    exact: true,
+  });
+  if (await mobileVoice.isVisible()) await mobileVoice.tap();
   await mobilePage.waitForFunction(
     () => (window as any).surfaceRuntime.debug().focused,
   );
@@ -1747,7 +1920,10 @@ try {
   assert.equal(failedChatResponses[0], chatSendRequests[0]);
   assert.ok(
     expectedNetworkErrors.length <=
-      4 + bannedSessionResponses.length + expectedVoiceFailures.length,
+      4 +
+        bannedSessionResponses.length +
+        expectedVoiceFailures.length +
+        revokedSettingsResponses.length,
   );
   assert.deepEqual(errors, []);
   assert.equal(gateway.rooms.size, 0);
@@ -1779,6 +1955,15 @@ try {
   );
   assert.equal(receipts.length, 3);
   assert.ok(receipts.every((r: any) => r.completed));
+  assert.ok(receipts.find((r: any) => r.action === "pause").savedSequence > 0);
+  assert.equal(
+    receipts.find((r: any) => r.action === "end").savedSequence,
+    null,
+  );
+  const nativeDesktopInput = await desktop.evidence();
+  assert.equal(nativeDesktopInput.untrusted, 0);
+  assert.ok(nativeDesktopInput.keys.KeyE >= 1);
+  assert.ok(nativeDesktopInput.keys.KeyS >= 1);
   const fixtureArchive = join(web, "test-results/react-fixture");
   rmSync(fixtureArchive, { recursive: true, force: true });
   for (const [path, file] of assets) {
@@ -1794,10 +1979,8 @@ try {
     join(web, "test-results/voxel-react.json"),
     JSON.stringify(
       {
-        result: mouseClickAcknowledged
-          ? "PASS"
-          : "PASS_WITH_MOUSE_ACKNOWLEDGEMENT_TIMEOUT",
-        mouseClickAcknowledged,
+        result: "PASS",
+        nativeDesktopInput,
         buildId: runtime.build.buildId,
         engineHash: runtime.build.engineHash,
         contentHash: runtime.build.contentHash,
@@ -1829,6 +2012,7 @@ try {
         expectedModerationFailureResponses: failedModerationResponses.length,
         expectedBannedAdmissionResponses: bannedAdmissionResponses.length,
         expectedBannedSessionResponses: bannedSessionResponses.length,
+        expectedRevokedSettingsResponses: revokedSettingsResponses,
         staffModeAndTeleport: true,
         staffTeleportTravel: {
           from: farStaff.position,
@@ -1857,6 +2041,65 @@ try {
   console.log(
     "React StrictMode cancellation, owned HUD/inventory/fullscreen, SQL save failure/retry, paused teacher flight, resume/end and complete teardown pass",
   );
+} catch (error) {
+  console.error("React journey failed before teardown", error);
+  const states = await Promise.all(
+    diagnosticPages.map(async (page, index) => {
+      try {
+        return await Promise.race([
+          page.evaluate((index) => {
+            const d = (window as any).surfaceRuntime?.debug();
+            const close = document.querySelector("#inventory-close");
+            const rect = close?.getBoundingClientRect();
+            return {
+              page: index,
+              phase: d?.phase,
+              mode: d?.mode,
+              focused: d?.focused,
+              lifecycle: d?.lifecycle,
+              inventoryOpen: d?.inventoryOpen,
+              vitals: d?.vitals,
+              body: d?.body,
+              graphics: d?.graphics,
+              visible: document.visibilityState,
+              hasFocus: document.hasFocus(),
+              pointerLocked: !!document.pointerLockElement,
+              close: rect && {
+                x: rect.x,
+                y: rect.y,
+                width: rect.width,
+                height: rect.height,
+              },
+              dialogs: [...document.querySelectorAll("dialog")].map(
+                (dialog) => ({
+                  open: dialog.open,
+                  label: dialog.getAttribute("aria-labelledby"),
+                }),
+              ),
+              events: (window as any).gameInputEvents?.slice(-16),
+            };
+          }, index),
+          new Promise((resolve) => setTimeout(() => resolve(null), 2000)),
+        ]);
+      } catch {
+        return null;
+      }
+    }),
+  );
+  console.error(
+    "React journey failure state",
+    JSON.stringify({
+      states,
+      frames: nativeFrames.slice(-32),
+    }),
+  );
+  await diagnosticPages[0]
+    ?.screenshot({
+      path: join(web, "test-results/voxel-react-failure.png"),
+      timeout: 2000,
+    })
+    .catch(() => {});
+  throw error;
 } finally {
   eventLoop.disable();
   if (deadline) clearTimeout(deadline);

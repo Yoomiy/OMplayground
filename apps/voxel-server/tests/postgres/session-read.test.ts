@@ -133,11 +133,22 @@ test("scoped session API reads real metadata across staff partitions and complet
       1,
       "invalid diagnostics must not emit a client failure",
     );
+    const settings = await post(host, "room-settings", { room });
+    assert.equal(settings.status, 200);
+    assert.deepEqual(settings.data, {
+      isOpen: true,
+      invitationCode: "fixture-invite",
+    });
+    assert.equal(
+      (await post(teacher, "room-settings", { room })).status,
+      403,
+      "room privacy settings are scoped to their host",
+    );
     assert.deepEqual(
       events
         .filter(({ event }) => event === "VOXEL_SESSION_API_REJECTED")
         .map(({ context }) => context.code),
-      ["FORBIDDEN", "INVALID"],
+      ["FORBIDDEN", "INVALID", "FORBIDDEN"],
     );
     assert.doesNotMatch(
       JSON.stringify(events),

@@ -25,6 +25,14 @@ Abort stale reads and dispose the runtime, DOM adapters, subscriptions, timers,
 audio tracks/elements and workers on unmount. Check `onRuntime` test hooks without
 exposing developer fixtures in the production admission path.
 
+The React browser journey needs the SQL suite's isolated local PostgreSQL settings,
+Chromium, Xvfb and `xdotool`. Run it in a private display so it can exercise trusted
+mouse capture and keyboard input:
+
+```sh
+xvfb-run -a -s '-screen 0 1280x900x24 -nolisten tcp' env VOXEL_XDOTOOL=/usr/bin/xdotool npm run test:voxel:browser --workspace @playground/web
+```
+
 See [runtime architecture](../../../../../games/voxel/docs/architecture.md),
 [school APIs](../../../../voxel-server/docs/school-api.md),
 [local development](../../../../../docs/local-development.md) and
