@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync, readFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { build as viteBuild } from 'vite';
 import { createBuiltHarness, launchSoftwareBrowser } from './browser-harness.ts';
@@ -25,11 +26,12 @@ const save = () => {
   writeFileSync(output, JSON.stringify(report, null, 2) + '\n');
 };
 const temp = mkdtempSync(join(tmpdir(), 'voxel-resilience-'));
+const webSource = new URL('../../../apps/web/src/game/voxel/', import.meta.url);
 writeFileSync(
   join(temp, 'entry.ts'),
   `
-import { VoiceSession } from '/home/ubuntu/OMplayground/apps/web/src/game/voxel/voice-session.ts';
-import { createVoxelApi } from '/home/ubuntu/OMplayground/apps/web/src/game/voxel/session-api.ts';
+import { VoiceSession } from ${JSON.stringify(fileURLToPath(new URL('voice-session.ts', webSource)))};
+import { createVoxelApi } from ${JSON.stringify(fileURLToPath(new URL('session-api.ts', webSource)))};
 window.startFeatureProbe = (room) => {
  const abort = new AbortController();
  const api = createVoxelApi({room,serverUrl:location.origin,getToken:async()=> 'fixture'});

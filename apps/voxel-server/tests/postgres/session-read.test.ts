@@ -27,7 +27,10 @@ test("scoped session API reads real metadata across staff partitions and complet
       SUPABASE_SECRET_KEY: wire.secret,
     }),
     school = schoolSqlFixture(db, room, [host, guest, teacher]),
-    events: unknown[] = [];
+    events: {
+      event: string;
+      context: Record<string, string | number | boolean>;
+    }[] = [];
   const build = JSON.parse(
       readFileSync(
         new URL(
@@ -87,6 +90,12 @@ test("scoped session API reads real metadata across staff partitions and complet
     assert.equal((await post(host)).status, 200);
     assert.equal((await post(teacher)).status, 200);
     assert.equal((await post(guest)).status, 403);
+    assert.deepEqual(
+      events.map(({ event }) => event),
+      ["VOXEL_SESSION_API_REJECTED"],
+    );
+    assert.equal(events[0].context.code, "FORBIDDEN");
+    assert.equal(events[0].context.operation, "session");
     const diagnostic = {
       room,
       operation: "replication",
@@ -95,10 +104,20 @@ test("scoped session API reads real metadata across staff partitions and complet
       correlationId: randomUUID(),
     };
     assert.equal((await post(teacher, "diagnostics", diagnostic)).status, 200);
-    assert.equal(events.length, 1);
-    assert.doesNotMatch(
-      JSON.stringify(events),
-      /fixture_signature|sb_secret_|Teacher/,
+    assert.deepEqual(
+      events.filter(({ event }) => event === "VOXEL_CLIENT_FAILURE"),
+      [
+        {
+          event: "VOXEL_CLIENT_FAILURE",
+          context: {
+            correlationId: diagnostic.correlationId,
+            room,
+            operation: diagnostic.operation,
+            code: diagnostic.code,
+            clientBuildId: "unknown",
+          },
+        },
+      ],
     );
     assert.equal(
       (
@@ -109,7 +128,21 @@ test("scoped session API reads real metadata across staff partitions and complet
       ).status,
       400,
     );
-    assert.equal(events.length, 1);
+    assert.equal(
+      events.filter(({ event }) => event === "VOXEL_CLIENT_FAILURE").length,
+      1,
+      "invalid diagnostics must not emit a client failure",
+    );
+    assert.deepEqual(
+      events
+        .filter(({ event }) => event === "VOXEL_SESSION_API_REJECTED")
+        .map(({ context }) => context.code),
+      ["FORBIDDEN", "INVALID"],
+    );
+    assert.doesNotMatch(
+      JSON.stringify(events),
+      /fixture_signature|sb_secret_|Teacher/,
+    );
     assert.equal(gateway.rooms.size, 0);
   } finally {
     await gateway.close();

@@ -12,7 +12,6 @@ import {
 } from "../../src/supabase-persistence.ts";
 import { SupabaseSessions } from "../../src/supabase-sessions.ts";
 import { createGateway } from "../../../../games/voxel/src/server/gateway.ts";
-import { SchoolAccess } from "../../src/school-access.ts";
 import { schoolGatewayPolicy } from "../../src/school-admission.ts";
 import { once } from "node:events";
 import { SocketProbe } from "../../../../games/voxel/tests/fixtures/socket-probe.ts";
@@ -324,102 +323,52 @@ test(
           "utf8",
         ),
       );
+    const school = schoolSqlFixture(db, f.room, [f.host, f.guest, f.teacher]),
+      policy = schoolGatewayPolicy(school.access, sessions),
+      renewals: string[] = [];
     const gateway = await createGateway({
       build,
       content,
       persistence: { metadata: backend, objects: backend },
-      ...schoolGatewayPolicy(
-        new SchoolAccess(
-          createSupabaseServerClient(
-            {
-              SUPABASE_URL: "https://school-metadata.invalid",
-              SUPABASE_SECRET_KEY: "sb_secret_fixture",
-            },
-            async (input, init) => {
-              // Auth/PostgREST transport is a fixture. Its school/session rows below
-              // are read fresh from the same real PostgreSQL state written by the SDK.
-              const request = new Request(input, init),
-                url = new URL(request.url),
-                path = url.pathname.split("/").at(-1);
-              let data: unknown;
-              if (path === "user") {
-                const claims = JSON.parse(
-                  Buffer.from(
-                    request.headers.get("Authorization")!.split(".")[1],
-                    "base64url",
-                  ).toString("utf8"),
-                );
-                assert.ok([f.host, f.guest, f.teacher].includes(claims.sub));
-                data = {
-                  id: claims.sub,
-                  aud: "authenticated",
-                  role: "authenticated",
-                };
-              } else if (
-                ["voxel_actor_policy", "voxel_session_policy"].includes(path!)
-              ) {
-                data = db.rpc(
-                  path!,
-                  (await request.json()) as Record<string, unknown>,
-                );
-              } else if (path === "game_sessions") {
-                assert.equal(url.searchParams.get("id"), "eq." + f.room);
-                data = [
-                  {
-                    ...view(f.room),
-                    invitation_code: "fixture-invite",
-                    games: { game_url: "minecraft", is_active: true },
-                  },
-                ];
-              } else if (path === "kid_profiles") {
-                const id = url.searchParams.get("id")!.slice(3);
-                data = db.value(
-                  `SELECT coalesce(jsonb_agg(k),'[]'::jsonb) FROM public.kid_profiles k WHERE id=${literal(id)}`,
-                );
-              } else if (path === "recess_schedules")
-                data = Array.from({ length: 7 }, (_, day_of_week) => ({
-                  day_of_week,
-                  start_time: "00:00:00",
-                  end_time: "24:00:00",
-                  is_active: true,
-                }));
-              else if (
-                [
-                  "admin_profiles",
-                  "class_recess_schedule_settings",
-                  "class_recess_schedule_exceptions",
-                ].includes(path!)
-              )
-                data = [];
-              else throw new Error("unexpected school fixture request");
-              return new Response(JSON.stringify(data), {
-                headers: { "Content-Type": "application/json" },
-              });
-            },
-          ),
-        ),
-        sessions,
-      ),
+      ...policy,
+      // Exercise real SQL policy changes without waiting for production's
+      // thirty-second refresh. The policy itself still comes from the SDK.
+      roomPolicy: async (room) => {
+        const value = await sessions.roomPolicy(room);
+        return {
+          ...value,
+          expiresAt: Math.min(value.expiresAt, Date.now() + 2000),
+        };
+      },
+      admit: async (...args) => {
+        const grant = await policy.admit(...args);
+        return grant && {
+          ...grant,
+          connected: () => {
+            const connected = grant.connected!();
+            return {
+              ...connected,
+              // Keep the connected revalidation path under test as well.
+              recheckMs: 1000,
+              revalidate: async () => {
+                const value = await connected.revalidate();
+                if (value) renewals.push(value.actor.id);
+                return value;
+              },
+            };
+          },
+        };
+      },
     });
     assert.ok(gateway.address && typeof gateway.address === "object");
     const origin = `http://127.0.0.1:${gateway.address.port}`;
     const probes: SocketProbe[] = [];
     const connectAs = async (id: string) => {
-      const token = [
-        Buffer.from('{"alg":"HS256"}').toString("base64url"),
-        Buffer.from(
-          JSON.stringify({
-            sub: id,
-            exp: Math.floor(Date.now() / 1000) + 3600,
-          }),
-        ).toString("base64url"),
-        "fixture_signature",
-      ].join(".");
       const response = await fetch(origin + "/api/voxel/admission", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: "Bearer " + token,
+          Authorization: "Bearer " + school.token(id),
         },
         body: JSON.stringify({ room: f.room }),
       });
@@ -456,7 +405,10 @@ test(
         `UPDATE public.voxel_session_controls SET desired_state='paused' WHERE session_id=${literal(f.room)}`,
       );
       await until(() => view(f.room).status === "paused");
-      await delay(2800);
+      const pausedRenewals = renewals.filter((id) => id === f.guest).length;
+      await until(() =>
+        renewals.filter((id) => id === f.guest).length > pausedRenewals,
+      );
       assert.equal(
         guest.socket.readyState,
         1,
