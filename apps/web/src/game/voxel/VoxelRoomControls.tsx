@@ -13,6 +13,7 @@ export function VoxelRoomControls({
     invitationCode: string;
   } | null>(null);
   const [busy, setBusy] = useState(false),
+    [readError, setReadError] = useState(false),
     [notice, setNotice] = useState(""),
     [link, setLink] = useState("");
   const scope = useRef<AbortController>();
@@ -22,6 +23,7 @@ export function VoxelRoomControls({
     const abort = new AbortController();
     scope.current = abort;
     setSettings(null);
+    setReadError(false);
     setNotice("");
     setLink("");
     setBusy(false);
@@ -33,11 +35,13 @@ export function VoxelRoomControls({
       const started = revision.current;
       try {
         const value = await api.roomSettings(undefined, abort.signal);
-        if (!abort.signal.aborted && started === revision.current)
+        if (!abort.signal.aborted && started === revision.current) {
           setSettings(value);
+          setReadError(false);
+        }
       } catch {
-        if (!abort.signal.aborted)
-          setNotice("לא ניתן לטעון את פרטיות החדר כרגע.");
+        if (!abort.signal.aborted && started === revision.current)
+          setReadError(true);
       } finally {
         loading = false;
       }
@@ -61,6 +65,7 @@ export function VoxelRoomControls({
       const value = await api.roomSettings(!settings.isOpen, abort.signal);
       if (!abort.signal.aborted) {
         setSettings(value);
+        setReadError(false);
         setNotice(value.isOpen ? "החדר פתוח להצטרפות" : "החדר פרטי עכשיו");
       }
     } catch {
@@ -116,6 +121,7 @@ export function VoxelRoomControls({
           העתק הזמנה
         </button>
       </nav>
+      {readError && <p role="status">לא ניתן לטעון את פרטיות החדר כרגע.</p>}
       {notice && <p role="status">{notice}</p>}
       {link && (
         <input

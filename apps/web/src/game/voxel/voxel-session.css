@@ -838,7 +838,7 @@
 }
 .voxel-session__room-controls {
   position: absolute;
-  bottom: max(16px, env(safe-area-inset-bottom));
+  top: calc(var(--voxel-header-bottom, 64px) + 8px);
   right: max(16px, env(safe-area-inset-right));
   z-index: 4;
   width: min(280px, calc(100vw - 32px));
@@ -896,6 +896,7 @@
 }
 @media (max-width: 700px), (pointer: coarse) {
   .voxel-session__room-controls {
+    top: auto;
     bottom: 170px;
     right: 8px;
     width: 210px;
@@ -909,7 +910,7 @@
     max-height: 240px;
   }
   .voxel-session__voice > button {
-    bottom: 170px;
+    bottom: max(252px, calc(env(safe-area-inset-bottom) + 236px));
     left: 8px;
   }
   .voxel-session .voxel-session__chat {
