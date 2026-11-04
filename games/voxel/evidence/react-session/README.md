@@ -1,5 +1,9 @@
 # React session integration record
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Release `133667cb44e78b62cd57286267288fd201154cd0901a37066f75d40fed5cdb39`
 retains protocol 12, engine `cafaedd1659c`, bindings `df0ef34a38d5` and content
 `368b605ac5bd`. See `verification.json` for complete identities and SHA-256 hashes.

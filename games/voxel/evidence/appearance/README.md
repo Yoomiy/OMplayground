@@ -1,5 +1,9 @@
 # Public avatar appearance and graphics startup evidence
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Captured 2026-10-23 for build
 `70127a28adf5c606b47b7f9bd749ca39397b964869f3fa4f13db4c2c96dc8957`,
 protocol 10, engine `d907627aac8145c44e0ff405123bdb5d8deba8c7a11df47c90b59a4ce7973878`

@@ -1,9 +1,13 @@
 # Sustained packaged survival workload
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Release `543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077`
 passes a 180.06-second, two-room survival sample with eight UUID actors per room.
 This increment adds workload tooling and CI coverage. Runtime sources and all
-12 packaged release files match the preceding [visibility qualification](visibility-reuse.md).
+12 packaged release files match the preceding [visibility qualification](../../docs/visibility-reuse.md).
 
 Run from the repository root after building a matching release:
 
@@ -104,7 +108,7 @@ runtime release; they are not claimed as rerun in this tooling-only increment.
 
 ## Evidence and remaining qualification
 
-The [separate evidence archive](../evidence/sustained-survival/README.md) preserves
+The [separate evidence archive](README.md) preserves
 the smoke, sustained and exact CI reports/logs, prior failed driver attempts,
 source inputs, release bytes and an independently checked inventory. Prior archives
 remain unchanged. Initial failures concerned Node type stripping, join readiness,

@@ -1,5 +1,9 @@
 # School authority and spectator-flight evidence
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Build `784ee64fa87cc28b1a9612fc508a90d4e99b6a312467773da627320a00644d02`
 uses engine `cafaedd1659c408eb5d7f548043e8632647fbbd93bb03044f189f0a1b20cc388`,
 protocol 11 and unchanged authored content `368b605ac5bd…`.

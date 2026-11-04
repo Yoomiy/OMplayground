@@ -1,5 +1,9 @@
 # Built client over shaped TCP
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 `npm --prefix games/voxel run test:network:browser` runs the matched built client,
 release Wasm, packaged gateway and native workers through three local TCP data
 profiles: 50 ms RTT, 100 ms RTT with ±25 ms one-way read-chunk jitter, and 150 ms

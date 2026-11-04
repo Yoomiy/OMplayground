@@ -1,5 +1,9 @@
 # Media increment qualification
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 This records game build 2140097fdcb8adac33bae904c02729af48daa8e5ed3df6d9b2b4796f46388d52, exact current browser/service source inputs, published game release bytes, production web inventory and local checks. It is not a completed rewrite or deployed service.
 
 The actual React voice panel and coordinator pass against configured LiveKit with three isolated browser contexts, generated audio and simulated school/media policy plus semantic poses. Tests measure near/occluded/distant/output-muted sound; permission denial; invalid output selection; hidden staff; fresh admission without automatic microphone after disconnect; same-ID retry; simulated background/game-scene loss; and late capture/activation. Owned input drivers, output, nodes, tracks and timers close. The unique temporary SFU room is deleted and absence checked. Backend credentials never reach the browser. The generated fixture bundle was deleted, not retained; its producer and exact product sources are archived.

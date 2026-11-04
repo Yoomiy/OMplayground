@@ -1,5 +1,9 @@
 # Visibility membership qualification
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Persistent per-viewer visibility maps with count-proven complete-membership shortcut and ordered changes; actual-Wasm exact histories, two separately identified direct comparison phases, six packaged steady-window loopback profiles and software browser cleanup. Diagnostic old-release main/room CPU profiles include startup and co-located clients. No device/network/capacity signoff, hosted Auth/SQL/Storage writes, deployment or standalone web bundle.
 
 Final matched release: 543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077. Final gate: 103 domain, 80 native Rust

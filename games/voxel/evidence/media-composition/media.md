@@ -1,5 +1,9 @@
 # Voxel voice and media policy
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 The platform service owns school authorization, durable student mute policy and
 LiveKit signaling. The game exposes plain listener/player poses and a native
 occlusion query through `runtime.voiceScene()`. It imports no LiveKit, Supabase

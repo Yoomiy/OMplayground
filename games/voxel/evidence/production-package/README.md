@@ -1,5 +1,9 @@
 # Production package evidence
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Native isolated runtime qualification for game build `c293fe5e2511`.
 The base commit is recorded in `verification.json`; source snapshots describe
 the packaging follow-up, not a previously committed or deployed image.

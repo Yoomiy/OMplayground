@@ -1,5 +1,9 @@
 # Access moderation record
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Release `85b864f78689d78c2f287419f2d1e526e100c407720ba55cc7a5d3d749646a78`
 retains protocol 13 and the existing engine/content/checkpoint formats. This
 record captures staff removal, room bans/unban, private admission revisions,

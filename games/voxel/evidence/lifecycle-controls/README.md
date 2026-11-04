@@ -1,5 +1,9 @@
 # Lifecycle controls and production entry evidence
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Build `faeeb224e6cea88b3e370b82ba8682175a365803c3e39bcce1af2ed8e1186ad6`
 retains protocol 12, engine `cafaedd1659c…`, bindings `df0ef34a38d5…`, content
 `368b605ac5bd…` and checkpoint schema 1. Its complete gate passes 80 domain,

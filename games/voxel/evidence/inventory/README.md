@@ -1,5 +1,9 @@
 # Authoritative inventory evidence, 2026-10-22
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Build `03f08068b9be` (full identity in `build.json`), protocol 4/environment 1,
 inventory format 1. `source-release-verification.json` independently checks current
 runtime bytes, freshly compiled authored content, Wasm/bindings, identity and all

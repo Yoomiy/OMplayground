@@ -1,5 +1,9 @@
 # Owned special equipment and GPU pacing evidence
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Captured 2026-10-23 for build `97603656240f4114699c26afdb40c03852735e6ebee1c8ed06e2984118c0dd9c`,
 protocol 9, engine `d907627aac8145c44e0ff405123bdb5d8deba8c7a11df47c90b59a4ce7973878`
 and content `6cfc9de62ffe3dc2a54677f5b1be4647ea0bcb24abd6312cfca163b2b327801a`.

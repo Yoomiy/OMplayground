@@ -1,5 +1,9 @@
 # Worker timing qualification
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Bounded actual-worker timing distributions, six packaged loopback movement workloads and two software-rendered browser clients; fixture identities, no hosted Auth/SQL/Storage writes, device/network/capacity qualification, deployment or standalone web bundle. Diagnostic CPU profile retains previous release identity.
 
 Matched release: 3ea11984a11a76d7d2993a55a882ed985827a6d1440e3336f3e8cf0612f5f508. Full checks pass 97 domain, 80 native Rust

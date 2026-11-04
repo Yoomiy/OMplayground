@@ -1,5 +1,9 @@
 # Retired legacy voxel backend
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 The remaining 44 source/config/test files in `apps/minecraft-server` are removed
 (10,081 lines), along with its workspace entry, root `dev:minecraft` command and
 obsolete shared Socket.io logging whitelist. The independent classroom service
@@ -18,7 +22,7 @@ integrity or resolved-source changes.
 Classroom browser telemetry now targets the independent classroom service.
 Configuration failures preserve its queue for retry. The admin panel reads
 board, new voxel and classroom services independently; the new read-only
-[operations API](../../../apps/voxel-server/docs/operations.md) requires fresh
+[operations API](../../../../apps/voxel-server/docs/operations.md) requires fresh
 administrator identity and grants no game access. The unused old URL helper/env
 typing and web content aliases are removed. No production browser request uses
 `VITE_VOXEL_SERVER_URL`.

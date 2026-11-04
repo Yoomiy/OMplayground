@@ -1,5 +1,9 @@
 # Repeated actual React surface mounts
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Tooling/CI increment: actual StrictMode VoxelSurface exit/re-entry in one page, six cycles in the complete local SDK/SQL browser journey; fixture Auth/PostgREST/Storage, live media disabled. Concurrent GL peak-accounting correction with failing-old/passing-new browser regression and standalone two-cycle travel rerun. No runtime/release/migration changes or hosted writes/deployment; no full-shell/physical hardware/general heap/SFU composition qualification.
 
 Matched release: 543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077.

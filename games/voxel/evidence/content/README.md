@@ -1,5 +1,9 @@
 # Authored content and owned progression evidence
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Captured 2026-10-24 for build
 `e4f100782c6972d28d3a854f5492ec47a6fc29aad21b89b117a08af096b8ea29`,
 protocol 11, engine

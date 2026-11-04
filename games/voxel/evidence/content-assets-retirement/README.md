@@ -1,9 +1,13 @@
 # Legacy content workspace retirement
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 The old content workspace has no runtime consumers after the frontend/backend
 retirement. Its remaining live consumer was the offline inventory extractor.
 The three source files it needs are now exact, hash-pinned text snapshots under
-[legacy-content-reference](legacy-content-reference/README.md).
+[legacy-content-reference](../../docs/legacy-content-reference/README.md).
 
 All 197 entries and every disposition decision are unchanged. Only the three
 source paths move; their hashes remain identical to the original Git bytes.

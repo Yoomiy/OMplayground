@@ -1,5 +1,9 @@
 # Input lifecycle evidence, 2026-10-22
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Build `901ab685a7af21749774a31480af07dcce4b154537c86fdd90ff7bf21eded6d2`.
 The capture checks current source bytes against `runtimeHash`, every built
 client/server file against `release.json`, and desktop/touch results against

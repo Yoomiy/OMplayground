@@ -1,5 +1,9 @@
 # Central room lifecycle evidence
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Build `32f0fda71111b20ba54d355f17d09e645ad87f58b7f19440e0e3141ae695d6c0`
 uses protocol 12 and unchanged engine `cafaedd1659c…`, content `368b605ac5bd…`
 and checkpoint schema 1. The complete gate passed 78 domain, 80 native (three

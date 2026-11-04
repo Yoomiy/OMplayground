@@ -1,5 +1,9 @@
 # Foundation evidence, 2026-10-22
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 `check.txt` is the local root `npm run check:voxel` output: matching content/Wasm
 build, type/import gates, eight domain/content tests, 79 native invariants
 (three debug-image helpers ignored), and five actual-Wasm/socket tests.

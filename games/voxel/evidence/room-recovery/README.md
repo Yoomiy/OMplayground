@@ -1,5 +1,9 @@
 # Coherent room recovery milestone
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Build `afd3a9b33e5e2c39f88b4e0f31fa53fdaa0b1605aef14a3621f948666174ca77`
 passes the complete nonbrowser gate: 72 domain/rendering, 79 native (three upstream
 debug helpers ignored), 74 actual-Wasm and 17 integration scenarios against both

@@ -1,5 +1,9 @@
 # Authorized hosted school/recovery evidence
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 The user explicitly approved the prepared temporary hosted scope on 2026-10-28.
 Game build `c293fe5e2511` passes actual Auth/PostgREST/private Storage with
 the production composition, packaged gateway/native worker and a socket client.

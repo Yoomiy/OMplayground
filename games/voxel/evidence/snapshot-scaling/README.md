@@ -1,5 +1,9 @@
 # Snapshot scaling and backpressure qualification
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Snapshot computation/JSON reuse plus ordered-delta backpressure correction; direct source comparison with explicit original build, final packaged loopback workers/sockets and software peer browser. Fixture identities and activity; no hosted Auth/SQL/Storage writes, physical network/device qualification, SFU recomposition, deployment or standalone web bundle.
 
 Final matched release: 5886a6dc973378530fbe79b71c007eccfdd440fdbde064dc3cd2938ea363aa57. Its full core gate passes 94 domain,

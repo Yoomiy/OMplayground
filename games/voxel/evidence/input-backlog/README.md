@@ -1,5 +1,9 @@
 # Input recovery after an inbound TCP stall
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 A restored connection could leave roughly ten controls waiting indefinitely on
 the server. The server consumed controls at the same 60 Hz rate as new arrivals,
 so its 12-frame queue stayed behind even after transport recovered. Those controls

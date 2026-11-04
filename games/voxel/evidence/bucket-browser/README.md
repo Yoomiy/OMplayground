@@ -1,5 +1,9 @@
 # Natural iron and reusable bucket browser qualification
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 One natural seed-4242 empty-inventory route on headed software Chromium, emulated touch plus trusted OS desktop input, volatile local development gateway. No hosted Auth/SQL/LiveKit, physical devices, durable recovery, multi-seed balance or deployment qualification.
 
 The route mines its own logs/stone/iron, crafts tools and an owned workbench,

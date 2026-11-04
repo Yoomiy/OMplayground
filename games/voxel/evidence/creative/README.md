@@ -1,5 +1,9 @@
 # Desktop creative evidence, 2026-10-22
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 This records build `fcc0e5d406c8dae970dde9df47afd3b77a5ac4a1530f55defa2dbab09a531a58`.
 `verification.json` was written only after checking all client/server files
 against `release.json` and matching both browser results to the engine/content

@@ -1,5 +1,9 @@
 # Drop encoding and steady-window qualification
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Immutable public drop JSON reuse, repeated direct fixture survival comparisons, six packaged loopback movement profiles with authoritative contained steady windows, and software browser cleanup. No device/network/capacity signoff, hosted Auth/SQL/Storage writes, deployment or standalone web bundle.
 
 Matched release: 937183f45298044f5c58f4d985c4b55ff77a5b3dd90e7a2ccaee44be4f2ef788. Full gate: 103 domain, 80 native Rust

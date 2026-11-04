@@ -1,5 +1,9 @@
 # Held bucket visibility and portrait framing
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Held-item presentation correction on matched game build; actual held renderer/native textures on software Chromium, natural bucket touch/OS desktop route, complete core/service/web checks and read-only hosted startup. No physical-device qualification, hosted Auth/gameplay writes, SFU recomposition, deployment or standalone web bundle.
 
 The previous held renderer makes empty and filled buckets pixel-identical at

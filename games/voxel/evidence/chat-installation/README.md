@@ -1,5 +1,9 @@
 # Read-only chat installation verification
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 The user reported the seventh migration applied. At 2026-10-26 14:56 UTC all seven
 voxel schemas and the private bucket pass read-only readiness. Linked history
 lists 001–007; all five chat function bodies/grants, two private RLS tables and

@@ -1,5 +1,9 @@
 # Independent classroom extraction record
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 The game release remains `66a9ff4dc9d4a0a38acdffdb68a05776d271c445395bd1d1a3d379208b584e68`
 (protocol 13). This increment transfers classroom HTTP/RTC ownership to
 `apps/classroom-server`, removes its routes/helpers/timers from the legacy game

@@ -1,5 +1,9 @@
 # Snapshot pose reuse qualification
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 One-pose synchronous snapshot passes and conservative interior distance shortcut; actual-Wasm exact boundary/history comparison, repeated direct fixture survival pairs, six packaged steady-window loopback profiles and software browser cleanup. No device/network/capacity signoff, hosted Auth/SQL/Storage writes, deployment or standalone web bundle.
 
 Matched release: dc0be6db305ecd9b23c809e7fa9e9c370b354d04847ae31bbaa0461188235e86. Final gate: 103 domain, 80 native Rust

@@ -1,5 +1,9 @@
 # Fenced session projection evidence
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Build `717c400421718f34793e0c1137420238b56d336b058e53a7baf64aa20f386f29`
 retains protocol 12, engine `cafaedd1659c…`, bindings `df0ef34a38d5…`, content
 `368b605ac5bd…` and checkpoint schema 1. The complete core gate passes 80 domain,

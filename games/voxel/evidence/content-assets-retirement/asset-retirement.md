@@ -1,5 +1,9 @@
 # Legacy public asset retirement
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 The unused `apps/web/public/minecraft-assets` directory is removed: 1,946 files,
 9,154,674 bytes, including old textures and 133 audio recordings. Its two import
 scripts and root helper commands are retired. Each file has a hash-verified
@@ -21,7 +25,7 @@ games, Stockfish, classroom media and profile assets are unaffected.
 The replacement does not use the removed art or recordings. Its texture pixels
 come from the MIT engine's procedural generator, and its material/ambient audio
 is synthesized locally. The current engine notices and complete provenance stay
-in [UPSTREAM.md](../UPSTREAM.md). The game build/content/release identity is
+in [UPSTREAM.md](../../UPSTREAM.md). The game build/content/release identity is
 unchanged; removing these files does not add a new renderer or content format.
 
 The production app build passes and drops from 2,696 to 750 distribution files.

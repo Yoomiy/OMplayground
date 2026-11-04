@@ -1,5 +1,9 @@
 # Persisted chat record
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Release `bedd62f9b37b2a071c498413c7352033ccd97e94f2bd976101259481c789d3f8`
 retains protocol 13 and the prior engine/bindings/content/checkpoint formats.
 It adds private persisted chat, a live participant-proof port, fresh access and

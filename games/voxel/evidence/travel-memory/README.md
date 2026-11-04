@@ -1,5 +1,9 @@
 # Browser travel/reconnect owned resources
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Tooling/CI only; six settled creative-flight/reconnect cycles in software Chromium. Exact GL-owned-buffer/resource/column plateaus, main Wasm high-water and actual worker/socket teardown. Forced-GC main-isolate heap observations are not a heap-leak verdict; excludes physical GPU residency, worker/live-allocator/whole-process budgets, school device/network/capacity or hosted service qualification. Runtime/release unchanged; prior full qualification reused, not rerun.
 
 Release: 543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077.

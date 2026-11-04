@@ -1,5 +1,9 @@
 # Current staging candidate evidence
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Game build `c293fe5e2511` passes the actual React/native/local-PostgreSQL/configured
 LiveKit browser flow with generated microphone audio. It checks near/distant
 spatial behavior, hidden staff, lost committed mute reply with same-ID retry,

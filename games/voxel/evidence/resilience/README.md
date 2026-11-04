@@ -1,5 +1,9 @@
 # Resilience qualification
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 [qualification.json](qualification.json) records the local qualification of
 release `b9438158d0e39dd5ff78fd132075324385a119b268c01975e28d5dc51aef30f5`.
 The final two-player workload ran for 3,604,904 ms with injected optional-service

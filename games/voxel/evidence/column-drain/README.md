@@ -1,5 +1,9 @@
 # Drain-driven edited-world baseline qualification
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Bounded drain-driven edited-column baselines, current-revision coalescing before publication and ordered later patches. Real loopback TCP one/five-second outbound read holds, full edited baseline/reconnect while a healthy peer continues, rendered stale-control freeze and cleanup, full local React/SQL journey, six socket layouts and 180-second 2x8 survival/recovery. No hosted application writes or deployment; physical/inbound/RTT/jitter/bandwidth network, school capacity/device, full hosted/classroom and cutover gates remain.
 
 Release: f0d8830dee8d23bf0944268460d592a5bc4a9e1fb9c0b2294412b4264df8e252. Baseline: 543c9f288891986e003ce4b2e51c63177c38c14601f4ac8c3b6b1144fd0c3077.

@@ -1,5 +1,9 @@
 # Authoritative combat evidence, 2026-10-22
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Build `a3db04da64a3` (full identity in `build.json`), protocol 7/environment 1,
 inventory format 2 and vitals format 2. `source-release-verification.json` checks
 current runtime source, freshly compiled authored content, Wasm/bindings,

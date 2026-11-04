@@ -1,5 +1,9 @@
 # PC-first private-school release
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 The user clarified on 2026-10-28 that the app serves a private school and students
 mostly use PCs. Complete student/teacher workflows, desktop controls, voice,
 saving and recovery take priority. The historical 128-player timing result is

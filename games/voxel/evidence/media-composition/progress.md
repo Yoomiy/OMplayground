@@ -1,7 +1,11 @@
 # Voxel rewrite implementation record
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Updated 2026-10-26. The user requested implementation of the
-[full rewrite proposal](voxel-runtime-rewrite-proposal.md). The objective remains
+[full rewrite proposal](../../../../docs/voxel-runtime-rewrite-proposal.md). The objective remains
 the complete game replacement and its release/cutover gates. The implementation
 below is progress toward that objective; it is not a finished game or approval
 to deploy or delete test data.
@@ -99,7 +103,7 @@ source remains until the full cutover/retirement gates pass.
   and authority, with a new epoch/baseline when they change. Apple drops from
   natural foliage complete the representative food source. Current tuning and
   timer policy are recorded in
-  [survival-rules.md](../games/voxel/docs/survival-rules.md); full balance/content
+  [survival-rules.md](../../docs/survival-rules.md); full balance/content
   decisions remain open. Equipped armor now affects melee through a craftable
   heavy shield, with accepted-hit wear and a movement cost; environmental damage
   does not use armor.
@@ -115,7 +119,7 @@ source remains until the full cutover/retirement gates pass.
   Nearby monotonic hit events drive bounded sparks, positional impact audio and
   Hebrew feedback; clients never apply gameplay damage. Inventory-open targets
   remain vulnerable. Respawn search also avoids water/lava body cells. See
-  [combat-rules.md](../games/voxel/docs/combat-rules.md) for tuning and boundaries.
+  [combat-rules.md](../../docs/combat-rules.md) for tuning and boundaries.
 - TNT is craftable from obtainable logs/planks, stone and sand. Owned placement
   and a durable firestarter lead to server-validated ignition with separate
   explosive/build permissions, consumed aim and revision/replay checks. Primed
@@ -128,7 +132,7 @@ source remains until the full cutover/retirement gates pass.
   existing armor/death/epoch path. Revoked explosive/build permission fizzles
   an already primed body. Nearby body snapshots and monotonic events drive
   growable flashing instances, bounded sparks and positional audio. See
-  [explosive-rules.md](../games/voxel/docs/explosive-rules.md).
+  [explosive-rules.md](../../docs/explosive-rules.md).
 - The remaining legacy equipment capabilities now have authored owned items and
   natural recipes: a selected Swift tool speed bonus, explicit fall immunity,
   Helios sunlight healing, native helium jump power and local glow visibility.
@@ -139,10 +143,10 @@ source remains until the full cutover/retirement gates pass.
   prediction trace are implemented. The natural night route obtains and crafts
   all five items, verifies the authoritative profile and actual touch takeoff/wear,
   and measures real Glow shader output. The matched full check and all eleven
-  browser commands pass; [equipment evidence](../games/voxel/evidence/equipment/README.md)
+  browser commands pass; [equipment evidence](../equipment/README.md)
   retains reports, source and earlier failures. This closes the special equipment
   milestone while content disposition/balance and the full survival stage remain open. See
-  [equipment-rules.md](../games/voxel/docs/equipment-rules.md).
+  [equipment-rules.md](../../docs/equipment-rules.md).
 - Protocol 10 adds server-derived public held/worn item identities, discrete
   appearance deltas and articulated, growable third-person item batches. Private
   counts, durability, bags, grids and containers stay out of those messages.
@@ -156,9 +160,9 @@ source remains until the full cutover/retirement gates pass.
   authority reached height 69.30. Offscreen first-person GPU preparation now
   completes before admission/input; two independent unchanged desktop jump routes
   pass. The final trace still has a 950 ms frame gap, so performance qualification
-  remains open. [Appearance evidence](../games/voxel/evidence/appearance/README.md)
+  remains open. [Appearance evidence](../appearance/README.md)
   retains matched sources, reports, images and the earlier failures. See
-  [avatar appearance](../games/voxel/docs/avatar-appearance.md).
+  [avatar appearance](../../docs/avatar-appearance.md).
 - The gateway compiles the engine once and supervises one independent simulation
   worker per active room. Admission is injected; tickets are short-lived,
   single-use and sent in the first socket message. Role/capability checks,
@@ -210,9 +214,9 @@ source remains until the full cutover/retirement gates pass.
 - Node/Rust/wasm-pack versions, lockfiles, optimizer settings, Wasm/binding/content
   hashes and build IDs are recorded, with matched client/server release inventories.
   Root build/check/development/browser commands and a CI workflow
-  exist. [UPSTREAM.md](../games/voxel/UPSTREAM.md) records imported paths,
+  exist. [UPSTREAM.md](../../UPSTREAM.md) records imported paths,
   licenses, procedural asset provenance and the upstream update procedure.
-- [ADR 002](adr/002-voxel-native-websocket.md) records the voxel-only transport
+- [ADR 002](../../../../docs/adr/002-voxel-native-websocket.md) records the voxel-only transport
   exception. Other game/classroom services retain their current architecture.
 
 No player, observer or room-count admission caps have been introduced. Input,
@@ -235,7 +239,7 @@ browser-writable chat. Fresh identity and a live participant proof bind sends to
 owner epoch and admission generation. Hidden observers remain read-only even if
 still rostered; staff can inspect/moderate without a worker. Audit and tombstones
 commit together. Retrying an old clear cannot erase later messages. No message
-body/name enters operational logs. See [chat](../apps/voxel-server/docs/chat.md).
+body/name enters operational logs. See [chat](../../../../apps/voxel-server/docs/chat.md).
 
 The final built three-context React fixture checks lost committed response/retry,
 reopen persistence, escaped text, hidden-staff read-only access and delete/clear,
@@ -253,9 +257,9 @@ bodies/grants, two private RLS tables and visible-history index match the tested
 file. Linked history lists 001–007 and SDK/CLI targets match. Guarded startup of
 packaged chat release `bedd62f9b37b` allows only seven status calls, passes
 health/readiness, allocates zero rooms and closes with no remote application
-writes. The [installation record](../games/voxel/evidence/chat-installation/README.md)
+writes. The [installation record](../chat-installation/README.md)
 verifies 15 unchanged service-policy inputs and all twelve packaged release bytes.
-The immutable [chat archive](../games/voxel/evidence/chat/README.md) preserves its
+The immutable [chat archive](../chat/README.md) preserves its
 correct earlier missing-seventh-schema observation; the preceding moderation
 archive remains unchanged. No agent migration/deployment or hosted application
 writes occurred. Client voice work below is in progress and is excluded from
@@ -271,14 +275,14 @@ classroom base table and LiveKit API pass. These do not qualify hosted classroom
 browser/media/delegate/restart journeys or a container deployment.
 
 The preceding roster release `34251aac77af` and its immutable
-[roster archive](../games/voxel/evidence/roster-departure/README.md) record the fourth
+[roster archive](../roster-departure/README.md) record the fourth
 schema as absent at their earlier capture time; it has since appeared externally.
 The agent made no hosted schema/object/application-row writes in this phase.
 
 The earlier React-session archive captures release
 `133667cb44e78b62cd57286267288fd201154cd0901a37066f75d40fed5cdb39`.
 Its React integration record is in
-[React session evidence](../games/voxel/evidence/react-session/README.md).
+[React session evidence](../react-session/README.md).
 It retains protocol 12 and the same engine, bindings and content identities.
 That archived complete core gate passes 80 domain, 80 native (three ignored upstream
 helpers), 80 actual-Wasm and 36 source plus 36 packaged integration scenarios.
@@ -297,14 +301,14 @@ assertion race was fixed by waiting for the actual server frozen-body baseline.
 The final verification stopped its isolated PostgreSQL cluster.
 
 
-Reproduce with the commands in [the game README](../games/voxel/README.md).
+Reproduce with the commands in [the game README](../../README.md).
 Historical foundation evidence is under `games/voxel/evidence/foundation/`.
 Historical desktop creative evidence is under
-[`games/voxel/evidence/creative/`](../games/voxel/evidence/creative/README.md),
+[`games/voxel/evidence/creative/`](../creative/README.md),
 including the matched release inventory, successful rendered two-client result,
 zero teardown resource counts, compute parity and full check output.
 The subsequent source-matched desktop/touch lifecycle record is under
-[`games/voxel/evidence/input/`](../games/voxel/evidence/input/README.md).
+[`games/voxel/evidence/input/`](../input/README.md).
 Its timed desktop run passed after exposing severe software-GPU/frame stalls
 during reconnect. Subsequent rendering submits at most 60 Hz by default,
 30 Hz in the low profile and 10 Hz for paused/preparing views, independently of
@@ -312,9 +316,9 @@ input/prediction/streaming scheduling. Hardware performance and genuine window/O
 focus remain unverified.
 The earlier source/release-matched pacing checks and successful desktop/tablet
 scenarios are under
-[`games/voxel/evidence/pacing/`](../games/voxel/evidence/pacing/README.md).
+[`games/voxel/evidence/pacing/`](../pacing/README.md).
 The subsequent presentation milestone is recorded under
-[`games/voxel/evidence/presentation/`](../games/voxel/evidence/presentation/README.md),
+[`games/voxel/evidence/presentation/`](../presentation/README.md),
 with fresh source/content/release verification and browser reports. Historical
 evidence retains its own build identity and is not relabeled as current.
 The first presentation-build desktop run timed out on reconnect amid severe browser
@@ -323,14 +327,14 @@ logs are retained. This is functional evidence with an unresolved latency and
 software-rendering qualification concern, not an unconditional all-green gate.
 That presentation record is historical after the inventory change. The subsequent
 source-matched inventory milestone is under
-[`games/voxel/evidence/inventory/`](../games/voxel/evidence/inventory/README.md).
+[`games/voxel/evidence/inventory/`](../inventory/README.md).
 Its first touch run cleared input but failed the displacement assertion; the
 diagnostic repeat passed with the same bound. The final test waits for grounded
 rest before measuring that bound, matching intentional airborne momentum. Both
 earlier logs are retained; the first failure's precise cause is not proven.
 
 The subsequent owned survival intro is recorded under
-[`games/voxel/evidence/survival/`](../games/voxel/evidence/survival/README.md).
+[`games/voxel/evidence/survival/`](../survival/README.md).
 Build `37a9e3788edd` passes the full check and all eight browser commands. The
 natural-world scenario starts empty, mines and collects logs, crafts and consumes
 an owned workbench, then crafts and displays a wooden pickaxe. Fixed-time mining,
@@ -340,7 +344,7 @@ and snapshot-comparison failures are retained with their fixes explained. These
 functional checks do not close hardware, load, persistence or school-service gates.
 
 The subsequent private-vitals/food/equipment milestone is under
-[`games/voxel/evidence/vitals/`](../games/voxel/evidence/vitals/README.md).
+[`games/voxel/evidence/vitals/`](../vitals/README.md).
 Build `0f33682a9fc3` passes the full check with 34 domain, 79 native and 24 actual-Wasm
 tests plus five source/packaged gateway scenarios. The natural browser intro now
 harvests four logs and an apple, crafts/equips trail boots and consumes the apple
@@ -357,7 +361,7 @@ All eight final browser commands finish with exit code 0 and no signal. Earlier
 failed/interrupted runs retain their original identities and do not become passes.
 
 The subsequent authoritative melee milestone is under
-[`games/voxel/evidence/combat/`](../games/voxel/evidence/combat/README.md).
+[`games/voxel/evidence/combat/`](../combat/README.md).
 Build `a3db04da64a3` passes the full check (38 domain, 79 native, 30 actual-Wasm
 tests and six source/packaged gateway scenarios) and all nine final browser
 commands, each with exit code 0 and no signal. The natural route crafts/equips
@@ -373,7 +377,7 @@ scenario still takes roughly 122 seconds, with about 40 seconds from reconnect
 request to readiness. Hardware and latency qualification remain open.
 
 The authoritative TNT milestone is under
-[`games/voxel/evidence/tnt/`](../games/voxel/evidence/tnt/README.md).
+[`games/voxel/evidence/tnt/`](../tnt/README.md).
 Build `059ee0d9b858`, protocol 8, passes the full check: 42 domain, 79 native,
 38 actual-Wasm tests and six source/packaged gateway scenarios. All ten final
 browser commands exit 0 with no signal. The capture matches its milestone source,
@@ -389,7 +393,7 @@ natural TNT route takes about 160 seconds. This remains software-browser
 functional evidence, with hardware and latency qualification open.
 
 The subsequent special equipment milestone is under
-[`games/voxel/evidence/equipment/`](../games/voxel/evidence/equipment/README.md).
+[`games/voxel/evidence/equipment/`](../equipment/README.md).
 Build `97603656240f`, protocol 9, passes the full check with 48 domain, 79 native,
 46 actual-Wasm tests and six source/packaged gateway scenarios. All eleven final
 browser commands exit 0 without a signal. A natural empty-inventory night route
@@ -407,7 +411,7 @@ still records a 3.75-second frame gap and 4.63-second receipt age. This proves
 functional backpressure and cleanup, not acceptable latency or hardware FPS.
 
 The subsequent public-appearance/startup record is under
-[`games/voxel/evidence/appearance/`](../games/voxel/evidence/appearance/README.md).
+[`games/voxel/evidence/appearance/`](../appearance/README.md).
 Build `70127a28adf5`, protocol 10, passes 54 domain/rendering, 79 native and 51
 actual-Wasm tests, six source/packaged gateway scenarios and all eleven final
 browser commands. Its capture verifies 108 artifacts, 30 scenario hashes and
@@ -429,7 +433,7 @@ water buckets are implemented. A controlled empty-inventory native route earns
 this progression through mining/pickup/crafting; a 332-column three-seed survey
 finds essential resources and all three wood/leaf species. Neither establishes
 final balance or extended natural cave travel. All eleven final browser commands pass; their reports, screenshot run times,
-retained failures and source archive are captured in the [content evidence record](../games/voxel/evidence/content/README.md).
+retained failures and source archive are captured in the [content evidence record](../content/README.md).
 The unchanged creative route passes with zero catalog-node replacements after
 unique-state palette/stable-text fixes. Its 4.25-second software-render frame gap
 leaves hardware/input latency qualification open. Pre-alias and pre-palette
@@ -444,7 +448,7 @@ corrupt-state rejection and precise fall/respawn continuation. Build
 six-scenario gateway suites. This is a local state primitive; coherent room
 checkpoints, storage commits, owner leases and platform recovery remain pending.
 The eleven-browser evidence above belongs to the archived `e4f100782c69` content
-build. See [checkpoint state](../games/voxel/docs/checkpoint-state.md).
+build. See [checkpoint state](../../docs/checkpoint-state.md).
 
 The subsequent checkpoint-parts build `889cbe37a09e` passes 72 domain/rendering,
 79 native and 63 actual-Wasm tests plus both six-case gateway suites. Private
@@ -455,7 +459,7 @@ can retry; wire revision exhaustion cannot wrap or partially clear a blast.
 These are verified components, not a durable room recovery path. Coherent actor/
 clock capture, fresh authorization, asynchronous immutable-object/pointer commits
 and ownership leases remain pending. Current details are in
-[checkpoint state](../games/voxel/docs/checkpoint-state.md).
+[checkpoint state](../../docs/checkpoint-state.md).
 
 
 The subsequent whole-room build `afd3a9b33e5e` passes 72 domain/rendering,
@@ -471,13 +475,13 @@ event loop. Fractional reservation milliseconds survive long saved pauses.
 These cases use a fault-injectable storage/metadata contract fixture. Actual
 Supabase transactions/private storage, retention and school lifecycle integration
 remain pending. The live 15-second autosave test proves the injected path's timer,
-not service/network durability lag. See [checkpoint state](../games/voxel/docs/checkpoint-state.md).
+not service/network durability lag. See [checkpoint state](../../docs/checkpoint-state.md).
 The new build's two-client creative and inventory browser regressions also pass,
 including reconnect and complete teardown. The creative sample still has a
 700 ms frame gap on software Chromium, so hardware/input latency remains open.
 These two regressions do not replace the prior complete eleven-scenario browser
 capture or prove real-backend browser recovery. See the
-[room recovery evidence](../games/voxel/evidence/room-recovery/README.md).
+[room recovery evidence](../room-recovery/README.md).
 
 
 The subsequent production-adapter core build `3113f0b34e9f` passes 72 domain,
@@ -492,7 +496,7 @@ executed: automatic review requires explicit approval, which has been requested.
 Read-only Supabase access now succeeds with the updated key name. Main's existing
 key migration was merged; the voxel work and research evidence were retained.
 That core build has no new browser capture; previous captures retain their
-original identities. See [checkpoint details](../games/voxel/docs/checkpoint-state.md).
+original identities. See [checkpoint details](../../docs/checkpoint-state.md).
 
 The subsequent school-authority build `784ee64fa87c` passes 73 domain, 80 native
 (three upstream debug helpers ignored), 75 actual-Wasm and 24 integration cases
@@ -504,7 +508,7 @@ flight; toggling or revoking flight stays off across native ticks and reconnect.
 The browser trace exposed an upstream spectator step that forced flight on;
 the fork now applies ghost movement only when flight is enabled. Ordinary player
 fingerprints were not changed. See the
-[school boundary and remaining lifecycle work](../apps/voxel-server/docs/school-admission.md).
+[school boundary and remaining lifecycle work](../../../../apps/voxel-server/docs/school-admission.md).
 The platform adapter passes 19 SDK/policy tests, four real-gateway school scenarios
 and twelve actual PostgreSQL/SDK cases. The rebuilt observer, creative and inventory
 browser scenarios pass, including the exact off/on/off observer flight socket trace,
@@ -514,7 +518,7 @@ These remain fixture-school and software-browser checks. The creative jump sampl
 has a 4,149.8 ms maximum frame gap despite functional success; device/input latency
 is unresolved. The earlier complete eleven-browser content capture retains its
 original engine and build identity. See
-[school authority evidence](../games/voxel/evidence/school-admission/README.md).
+[school authority evidence](../school-admission/README.md).
 
 | Gate | Evidence and limits |
 | --- | --- |
@@ -592,7 +596,7 @@ object metadata and no residual fixture session. This is separate from the live
 Storage byte check; full hosted recovery, room-wide recess/paused/ended policy,
 fenced status projection, abandoned cold-allocation cleanup and the complete
 school React/voice/chat/classroom flows remain pending. See
-[offline-owner evidence](../games/voxel/evidence/offline-owner/README.md).
+[offline-owner evidence](../offline-owner/README.md).
 
 
 The subsequent central-lifecycle build `32f0fda71111` uses protocol 12 with the
@@ -612,7 +616,7 @@ remain fixture-school and software-browser checks. Fenced platform projection,
 new participant roster/presence persistence, host reassignment/control endpoints,
 production entry, React session/HUD, voice/chat, classroom split, hosted recovery
 and device/capacity qualification remain unfinished. See
-[room lifecycle](../games/voxel/docs/room-lifecycle.md).
+[room lifecycle](../../docs/room-lifecycle.md).
 The protocol-12 observer, creative, inventory and natural-TNT browser regressions
 also pass, along with 22 SDK/school-policy, six school gateway and twelve actual
 PostgreSQL/SDK cases. The creative jump reaches 1.303 blocks and records an
@@ -654,7 +658,7 @@ The readiness tool now requires both schemas. Validated teacher/host commands an
 audit, production entry, React session/HUD, moderation/chat, LiveKit, independent
 classroom service, full hosted recovery and device/capacity qualification remain
 open. No player, observer, object or room admission cap was introduced. See
-[session projection](../apps/voxel-server/docs/session-projection.md).
+[session projection](../../../../apps/voxel-server/docs/session-projection.md).
 
 
 The subsequent lifecycle-control release `faeeb224e6ce` passes the complete core
@@ -693,8 +697,8 @@ React phase verifies installation and implements the session/HUD. Remaining teac
 chat, LiveKit/media enforcement, independent classroom service, hosted recovery,
 survival/balance and real-device/network/capacity/cutover gates remain open.
 There are no player, observer, object or room admission caps. See
-[lifecycle controls](../apps/voxel-server/docs/lifecycle-controls.md) and
-[production service](../apps/voxel-server/docs/production-service.md).
+[lifecycle controls](../../../../apps/voxel-server/docs/lifecycle-controls.md) and
+[production service](../../../../apps/voxel-server/docs/production-service.md).
 
 
 ## React session and hosted installation
@@ -729,7 +733,7 @@ schemas returns 200 for health/readiness, allocates no rooms and closes cleanly.
 The agent made no remote schema, object or application-row writes in this phase.
 These checks do not qualify hosted school admission, full checkpoint/worker
 recovery, deployment or a live school journey. Historical evidence remains
-unchanged. See [React integration](../apps/web/src/game/voxel/README.md).
+unchanged. See [React integration](../../../../apps/web/src/game/voxel/README.md).
 
 At the React capture, trusted self-roster removal was the next exposed gap:
 paused-card dismissal still reached a denied legacy RPC. The subsequent roster

@@ -1,5 +1,9 @@
 # Staff mode and self-teleport record
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Release `66a9ff4dc9d4a0a38acdffdb68a05776d271c445395bd1d1a3d379208b584e68`
 uses protocol 13, engine `cafaedd1659c`, bindings `df0ef34a38d5` and content
 `368b605ac5bd`. Exact identities, twelve packaged release files, current source

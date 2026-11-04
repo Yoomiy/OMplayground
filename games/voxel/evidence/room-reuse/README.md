@@ -1,5 +1,9 @@
 # Subscription and drop reuse qualification
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Subscription center reuse and immutable drop replicas; repeated direct fixture survival comparison, six packaged loopback layouts plus three alternating archived/current 128-player pairs, software browser cleanup. No physical device/network/capacity signoff, hosted Auth/SQL/Storage writes, deployment or standalone web bundle.
 
 Matched release: 6b20c88f7d8c9e7b6158c26d02524c24a419cc03b5fc9b2d53a90c083066da47. Full gate: 99 domain, 80 native Rust

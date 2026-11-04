@@ -1,5 +1,9 @@
 # Authoritative TNT evidence, 2026-10-22
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Build `059ee0d9b858` (full identity in `build.json`), protocol 8/environment 1,
 inventory format 2 and vitals format 2. Engine `c4d1f0e3e9ed` appends two local
 procedural TNT texture layers. Content `9b4f0e7f6a00` has 21 families/32 states,

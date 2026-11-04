@@ -1,5 +1,9 @@
 # Retired legacy voxel web client
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 The app already routes voxel sessions through `game/voxel/VoxelSessionContainer`
 and the rewritten runtime. Its old frontend had no entry-point consumers. A
 TypeScript-resolved import audit and cross-workspace reference search identified

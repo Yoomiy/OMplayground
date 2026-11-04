@@ -1,5 +1,9 @@
 # Configured LiveKit permission baseline
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 A temporary, uniquely named room used a generated identity and oscillator stream,
 not school data, a user microphone, recording or a deployment. Actual LiveKit
 1.12.0 Standard/protocol 17 connected and accepted a microphone-source track.

@@ -1,5 +1,9 @@
 # Presentation pacing evidence, 2026-10-22
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Build `a84fb40c469d` (full identity in `build.json`). Verification matches current
 runtime source bytes, every client/server release file and both browser reports.
 

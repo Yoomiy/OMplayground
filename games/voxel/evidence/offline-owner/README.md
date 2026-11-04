@@ -1,5 +1,9 @@
 # Offline owner authority and hosted persistence boundaries
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Build `2a953cea1c40134830081d96ca8a4b8433a6f5340955389b0350a6fdc7e943f2`
 retains engine `cafaedd1659c…`, authored content `368b605ac5bd…` and protocol 11.
 The complete gate passed 75 domain, 80 native (three upstream debug helpers

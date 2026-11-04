@@ -1,5 +1,9 @@
 # Composed media qualification
 
+> Historical record for its stated build. Redundant source copies, generated bundles
+> and raw captures were trimmed from this PR branch. The full originals remain on
+> `dev/voxel-runtime-rewrite`; see the [archive index](../README.md) for recovery.
+
 Game build 5d89f56af88a8d1a456575052791a13f560bef75acac7144ebcb19882ced7247. Real React/native packaged game/local PostgreSQL/configured LiveKit with generated audio; fixture Auth/PostgREST/Storage. No hosted school writes, hardware qualification, complete outage qualification, deployment, or standalone production web bundle.
 
 Same-epoch prediction identity reuse fails before the correction and passes afterward using real Wasm and the authoritative input queue. Authoritative terminal metadata releases native game ownership and media even after a gameplay disconnect. The complete combined browser flow passes, including actual proximity poses/audio, hidden staff, lost committed SQL mute reply with same-ID retry, provider-confirmed ban removal, resume/end, trusted mouse/touch Exit and three zero-resource teardowns. Its unique SFU room is deleted and absence verified.
