@@ -19,6 +19,9 @@ export async function createBuiltHarness(
   transport?: {
     factory?: typeof createGateway;
     persistence?: GatewayOptions['persistence'];
+    sessions?: GatewayOptions['sessions'];
+    api?: GatewayOptions['api'];
+    clientAssets?: Record<string, Uint8Array>;
   },
 ) {
   const build = JSON.parse(
@@ -45,6 +48,8 @@ export async function createBuiltHarness(
     worldDefaults,
     roomPolicy,
     persistence: transport?.persistence,
+    sessions: transport?.sessions,
+    api: transport?.api,
     resolveOwner:
       ownerPolicy ??
       (admission
@@ -72,6 +77,12 @@ export async function createBuiltHarness(
         res.end();
         return;
       }
+      const extra = transport?.clientAssets?.[path];
+      if (extra) {
+        res.writeHead(200, { 'Content-Type': path.endsWith('.html') || path.endsWith('/') ? 'text/html' : path.endsWith('.css') ? 'text/css' : path.endsWith('.wasm') ? 'application/wasm' : 'text/javascript' });
+        res.end(extra);
+        return;
+      }
       const file = assets.get(path === '/' ? '/index.html' : path);
       if (!file) {
         res.writeHead(404);
@@ -82,9 +93,11 @@ export async function createBuiltHarness(
         ? 'text/javascript'
         : file.pathname.endsWith('.css')
           ? 'text/css'
-          : file.pathname.endsWith('.wasm')
-            ? 'application/wasm'
-            : 'text/html';
+          : file.pathname.endsWith('.ogg')
+            ? 'audio/ogg'
+            : file.pathname.endsWith('.wasm')
+              ? 'application/wasm'
+              : 'text/html';
       res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-store' });
       res.end(readFileSync(file));
     },

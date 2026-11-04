@@ -1,3 +1,5 @@
+import { updateClock } from './update-clock.ts';
+import { InputRecovery } from './input-recovery.ts';
 import { ConnectionRetry, retryableAdmission } from './connection-retry.ts';
 import { toggleFullscreen } from './fullscreen.ts';
 import { runtimeDiagnostic } from '../shared/diagnostics.ts';
@@ -49,6 +51,7 @@ export type HudState = {
   inventoryPending: boolean;
   inputMode: 'desktop' | 'touch';
   environment: Readonly<{ hour: number; daytime: boolean; rain: boolean }>;
+  saveUnavailable: boolean;
   effectsMuted: boolean;
   effectsAvailable: boolean;
   status:
@@ -146,6 +149,18 @@ export async function mountVoxel(
   canvas.setAttribute('aria-label', 'עולם המשחק');
   const ownsPointerLock = () => Object.is(document.pointerLockElement, canvas);
   host.append(canvas);
+  const blastFlash = document.createElement('div');
+  blastFlash.setAttribute('aria-hidden', 'true');
+  Object.assign(blastFlash.style, {
+    position: 'absolute',
+    inset: '0',
+    pointerEvents: 'none',
+    background: '#fff2d5',
+    opacity: '0',
+  });
+  host.append(blastFlash);
+  let blastFlashUntil = 0;
+
   const world = new engine.VoxelWorld(),
     renderer = new TerrainRenderer(
       canvas,
@@ -170,14 +185,25 @@ export async function mountVoxel(
     renderer.dispose();
     world.free();
     canvas.remove();
+    blastFlash.remove();
     throw error;
   }
   const remotes = new RemoteActors(),
     listeners = new Set<(state: HudState) => void>(),
     keys = new Set<string>();
   const worldClock = new WorldClock();
-  const audio = new WorldAudio(),
+  const inputRecovery = new InputRecovery();
+  let lastAckProgress = performance.now(),
+    lastSnapshot = performance.now();
+  const audio = new WorldAudio((reason) => {
+      options.onDiagnostic?.('audio', reason, { code: 'AUDIO_UNAVAILABLE', reason, fatal: false });
+    }),
     soundGroups = new Map(content.behavior.map((block) => [block.family, block.soundGroup]));
+  let biomeGenerator: InstanceType<typeof engine.TerrainGen> | null = null;
+  let biome = 'Plains',
+    lastBiomeSample = -Infinity;
+  let awaitingWelcome = false;
+  let inventorySound: 'craft' | 'consume' | null = null;
   let environmentSeed = 0,
     environment = sampleEnvironment(0, 0),
     openSky = false,
@@ -207,6 +233,7 @@ export async function mountVoxel(
     inputMode,
     environment: environmentHud(),
     effectsMuted: false,
+    saveUnavailable: false,
     effectsAvailable: audio.supported,
     status: 'connecting',
     message: 'מתחברים לעולם…',
@@ -324,6 +351,7 @@ export async function mountVoxel(
     for (const listener of listeners) listener(hud);
   };
   const send = (message: ClientMessage) => {
+    if (awaitingWelcome) return;
     if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message));
   };
   const diagnose = (operation: string, error: unknown, fatal = false) => {
@@ -349,9 +377,17 @@ export async function mountVoxel(
   };
   const clearWorld = () => {
     audio.setActive(false);
+    inputRecovery.reset();
     footTravel = 0;
     previousFoot = null;
     worldClock.reset(0, performance.now());
+    biomeGenerator?.free();
+    biomeGenerator = null;
+    biome = 'Plains';
+    lastBiomeSample = -Infinity;
+    inventorySound = null;
+    blastFlashUntil = 0;
+    blastFlash.style.opacity = '0';
     environmentSeed = 0;
     environment = sampleEnvironment(0, 0);
     openSky = false;
@@ -445,6 +481,7 @@ export async function mountVoxel(
     if (focused === active) return;
     focused = active;
     if (!active) {
+      inputRecovery.reset();
       miningHeld = miningSingle = false;
       lastMineKey = '';
     }
@@ -465,6 +502,10 @@ export async function mountVoxel(
     }
   };
   const handle = (event: ServerMessage) => {
+    if (event.type === 'persistence') {
+      publish({ saveUnavailable: !event.available });
+      return;
+    }
     if (event.type === 'joining') {
       if (!baselineReceived) publish({ status: 'connecting', message: 'טוענים את העולם…' });
       return;
@@ -506,9 +547,12 @@ export async function mountVoxel(
       }
       if (event.reset) primed.clear();
       for (const id of event.removed) primed.delete(id);
-      for (const body of event.upsert)
+      for (const body of event.upsert) {
+        if (!primed.has(body.id) && body.total - body.remaining < 4)
+          audio.effect('fuse', body.position);
         if (!primed.has(body.id) || primed.get(body.id)!.revision <= body.revision)
           primed.set(body.id, body);
+      }
       return;
     }
     if (event.type === 'explosion') {
@@ -521,7 +565,9 @@ export async function mountVoxel(
       while (blastPatches.size > 128) blastPatches.delete(blastPatches.values().next().value!);
       if (!event.cancelled) {
         renderer.explosionEffect(event.position, event.radius, performance.now());
-        audio.effect(event.position, 'explosion', true);
+        audio.effect('explosion', event.position);
+        if (Math.hypot(...event.position.map((value, axis) => value - lastPosition[axis])) < 16)
+          blastFlashUntil = performance.now() + 220;
       }
       return;
     }
@@ -531,20 +577,23 @@ export async function mountVoxel(
       lastHitEvent = event;
       const now = performance.now();
       renderer.hitEffect(event.position, now);
-      audio.effect(event.position, 'impact', false);
+      if (event.target !== actorId) audio.effect('hurt', event.position);
       if (event.target === actorId || event.attacker === actorId)
         publish({ hit: { received: event.target === actorId, damage: event.damage, at: now } });
       return;
     }
     if (event.type === 'vitals') {
-      if (prediction && event.epoch === prediction.currentEpoch) publish({ vitals: event.view });
+      if (prediction && event.epoch === prediction.currentEpoch) {
+        if (hud.vitals && event.view.health < hud.vitals.health) audio.effect('hurt');
+        publish({ vitals: event.view });
+      }
       return;
     }
     if (event.type === 'pickup') {
       if (!prediction || event.epoch !== prediction.currentEpoch) return;
       const item = content.items.find((item) => item.itemType === event.stack.itemType);
       if (!item || !validStack(event.stack, new Map([[item.itemType, item]]))) return;
-      audio.pickup();
+      audio.effect('pickup');
       noticeUntil = performance.now() + 1800;
       publish({ message: `+${event.stack.count} ${ITEM_LABELS[item.itemType] ?? item.itemType}` });
       return;
@@ -625,6 +674,10 @@ export async function mountVoxel(
         publish({ status: 'error', message: 'המשחק עודכן. יש לרענן את העמוד.' });
         return;
       }
+      const saveUnavailable = hud.saveUnavailable;
+      clearWorld();
+      awaitingWelcome = false;
+      publish({ saveUnavailable });
       retry.reset();
       actorId = event.actorId;
       avatarId = event.avatar ?? selectAvatar(actorId);
@@ -640,6 +693,8 @@ export async function mountVoxel(
       });
       worldId = event.worldId;
       environmentSeed = event.seed;
+      biomeGenerator?.free();
+      biomeGenerator = new engine.TerrainGen(event.seed);
       worldClock.reset(event.tick, performance.now());
       slot = world.player_add(...event.spawn);
       world.set_ghost(slot, event.role === 'observer');
@@ -680,6 +735,9 @@ export async function mountVoxel(
       const previousEpoch = prediction.currentEpoch;
       prediction.baseline(event.epoch, event.ack, event.state, event.movement);
       phase = event.phase;
+      inputRecovery.reset();
+      lastAckProgress = performance.now();
+      if (event.phase === 'paused' && hud.lifecycle === 'paused') enterOnReady = false;
       if (event.phase === 'paused' || event.phase === 'dead') {
         focusPending = false;
         focused = false;
@@ -744,7 +802,9 @@ export async function mountVoxel(
                 ? 'נכנסים לעולם…'
                 : focused
                   ? ''
-                  : (pointerLockProblem ?? 'לחצו על העולם כדי להמשיך'),
+                  : hud.lifecycle === 'paused' && hud.role === 'participant'
+                    ? 'העולם מושהה.'
+                    : (pointerLockProblem ?? 'לחצו על העולם כדי להמשיך'),
         flying: event.state[10] === 1,
       });
       if (pendingInventoryOpen) {
@@ -768,10 +828,20 @@ export async function mountVoxel(
         fail('actors', 'invalid public appearance');
         return;
       }
+      lastSnapshot = performance.now();
       worldClock.observe(event.tick, performance.now());
       if (event.self && prediction) {
         const before = world.player_state(prediction.slot);
+        if (event.self.ack > prediction.currentAck) lastAckProgress = performance.now();
         const changed = prediction.reconcile(event.self.epoch, event.self.ack, event.self.state);
+        if (inputRecovery.observe(prediction.inputSeconds)) {
+          publish({ message: '' });
+          options.onDiagnostic?.('prediction', 'input_recovered', {
+            code: 'RECOVERED',
+            reason: 'input_recovered',
+            fatal: false,
+          });
+        }
         if (changed) {
           const after = world.player_state(prediction.slot);
           const error = [0, 1, 2].map((i) => before[i] + visualOffset[i] - after[i]);
@@ -811,6 +881,10 @@ export async function mountVoxel(
           mineRetryAt = performance.now() + 150;
         }
         if (event.sequence === inventorySequence) {
+          if (event.status === 'applied' && event.outcome?.ok && inventorySound) {
+            audio.effect(inventorySound === 'consume' ? 'eat' : 'craft');
+          }
+          inventorySound = null;
           if (inventorySelectionPending && event.status === 'applied' && event.outcome?.ok)
             creativeBagHotbar = true;
           inventorySelectionPending = false;
@@ -818,11 +892,10 @@ export async function mountVoxel(
         }
         lastResult = event;
         if (worldActions.delete(event.sequence)) actionPending = worldActions.size;
-        if (event.outcome && !event.outcome.ok) {
+        if (event.outcome && !event.outcome.ok && event.outcome.reason !== 'conflict') {
           const notices: Record<string, string> = {
             collision: 'אין מספיק מקום לבלוק',
             out_of_reach: 'המטרה רחוקה או מוסתרת',
-            conflict: 'העולם השתנה. נסו שוב.',
             support: 'הבלוק צריך משטח מתאים',
             forbidden: 'אין הרשאה לפעולה הזאת',
             full: 'אין מקום בתיק או במשבצת היעד',
@@ -912,7 +985,10 @@ export async function mountVoxel(
       abort.signal.addEventListener('abort', cancelled, { once: true });
     });
     socket?.close(1000, 'client_reconnecting');
-    clearWorld();
+    awaitingWelcome = true;
+    phase = 'preparing';
+    baselineReceived = false;
+    worldClock.reset(worldClock.read(performance.now()), performance.now(), false);
     publish({
       lifecycle: 'preparing',
       canReconnect: true,
@@ -987,10 +1063,10 @@ export async function mountVoxel(
                     e.state === 0,
                   );
                   const state = e.state === 0 ? e.before : e.state;
-                  audio.effect(
+                  audio.material(
+                    e.state === 0 ? 'break' : 'place',
                     e.cell.map((v) => v + 0.5),
                     soundGroups.get(content.blocks[state]?.name) ?? 'stone',
-                    e.state === 0,
                   );
                 }
               for (const [local, state] of frame.edits)
@@ -1071,6 +1147,7 @@ export async function mountVoxel(
     });
   }
   function ignite(): boolean {
+    if (inputRecovery.waiting) return false;
     if (!target) return true;
     if (
       !prediction ||
@@ -1099,6 +1176,7 @@ export async function mountVoxel(
     return true;
   }
   function attack(): boolean {
+    if (inputRecovery.waiting) return false;
     if (
       !prediction ||
       !hud.inventory ||
@@ -1121,6 +1199,7 @@ export async function mountVoxel(
     return true;
   }
   function interaction(kind: 'place' | 'remove' | 'collect') {
+    if (inputRecovery.waiting) return;
     if (hud.mode === 'survival' && kind === 'remove') {
       miningHeld = miningSingle = true;
       return;
@@ -1243,7 +1322,9 @@ export async function mountVoxel(
   }
   function update(now: number) {
     if (disposed) return;
-    const dt = Math.min(0.1, Math.max(0, (now - lastUpdate) / 1000));
+    const sampleTime = updateClock(lastUpdate, now);
+    now = sampleTime.now;
+    const dt = sampleTime.dt;
     lastUpdate = now;
     if (
       reconnectAllowed &&
@@ -1271,8 +1352,10 @@ export async function mountVoxel(
     environment = sampleEnvironment(worldClock.read(now), environmentSeed);
     if (prediction && stream) {
       let state = world.player_state(prediction.slot);
-      stream.setCenter(state[0], state[2], yaw);
-      stream.pump(2);
+      if (!awaitingWelcome) {
+        stream.setCenter(state[0], state[2], yaw);
+        stream.pump(2);
+      }
       if (phase === 'preparing' && baselineReceived && now - lastReady > 300) {
         const columns = stream.readyAround(state);
         if (columns && stream.meshCount > 0) {
@@ -1282,6 +1365,16 @@ export async function mountVoxel(
       }
       const ready = stream.readyAround(state) !== null,
         stalled = now - lastReceived > 1500;
+      if (
+        enterOnReady &&
+        phase === 'paused' &&
+        ready &&
+        hud.lifecycle === 'paused' &&
+        hud.role === 'participant'
+      ) {
+        enterOnReady = false;
+        publish({ status: 'paused', message: 'העולם מושהה.' });
+      }
       if (
         enterOnReady &&
         phase === 'playing' &&
@@ -1319,13 +1412,22 @@ export async function mountVoxel(
         hud.status !== 'error' &&
         hud.status !== 'stalled'
       ) {
-        focus(false);
+        queuedAction = null;
+        miningHeld = miningSingle = false;
+        if (lastMineKey) sendMining(null);
+        lastMineKey = '';
         publish({ status: 'stalled', message: 'ממתינים לחיבור…' });
-        if (ownsPointerLock()) document.exitPointerLock();
       }
       let sampled = false;
       if (dt > 0) {
-        if (phase === 'playing' && focused && ready && !stalled && state[12] === 0) {
+        if (
+          phase === 'playing' &&
+          focused &&
+          ready &&
+          !stalled &&
+          state[12] === 0 &&
+          !inputRecovery.waiting
+        ) {
           const sample = prediction.sample(controls(), dt);
           if (sample) {
             sampled = true;
@@ -1341,11 +1443,38 @@ export async function mountVoxel(
                 queuedAction = null;
               }
             }
-          } else fail('prediction', 'input acknowledgement stalled');
+          } else if (inputRecovery.pause(now)) {
+            queuedAction = null;
+            miningHeld = miningSingle = false;
+            if (lastMineKey) sendMining(null);
+            lastMineKey = '';
+            publish({ message: 'החיבור איטי. ממתינים לאישור התנועה…' });
+            options.onDiagnostic?.('prediction', 'input_acknowledgement_stalled', {
+              code: 'INPUT_BACKPRESSURE',
+              reason: 'input_acknowledgement_stalled',
+              fatal: false,
+              metrics: {
+                epoch: prediction.currentEpoch,
+                sequence: prediction.currentSequence,
+                ack: prediction.currentAck,
+                inputSeconds: prediction.inputSeconds,
+                ackAgeMs: Math.max(0, now - lastAckProgress),
+                snapshotAgeMs: Math.max(0, now - lastSnapshot),
+                bufferedBytes: socket?.bufferedAmount ?? 0,
+              },
+            });
+          }
         }
       }
       if (now - lastSend >= 1000 / 30) flush();
-      miningControl(ready && !stalled, sampled);
+      if (inputRecovery.requestResync(now) && prediction && socket?.readyState === WebSocket.OPEN) {
+        send({ type: 'focus', epoch: prediction.currentEpoch, active: focused });
+      }
+      if (inputRecovery.shouldReconnect(now)) {
+        inputRecovery.reset();
+        command({ type: 'reconnect' });
+      }
+      miningControl(ready && !stalled && !inputRecovery.waiting, sampled);
       const visiblyMining =
         miningHeld &&
         focused &&
@@ -1359,10 +1488,10 @@ export async function mountVoxel(
       renderer.mining(visiblyMining ? hud.mining.elapsed / Math.max(1, hud.mining.total) : 0);
       if (visiblyMining && now - lastMiningSwing >= 280) {
         renderer.swing(now);
-        audio.effect(
+        audio.material(
+          'dig',
           target!.map((value) => value + 0.5),
           soundGroups.get(content.blocks[world.get_block(...target!)]?.name) ?? 'stone',
-          false,
         );
         lastMiningSwing = now;
       }
@@ -1388,23 +1517,32 @@ export async function mountVoxel(
             Math.floor(state[1] - 0.05),
             Math.floor(state[2]),
           );
-          audio.effect(
+          audio.material(
+            'step',
             [state[0], state[1] + 0.02, state[2]],
             soundGroups.get(content.blocks[beneath]?.name ?? '') ?? 'stone',
-            false,
           );
           footTravel %= 1.4;
           lastFootstep = now;
         }
       } else footTravel = 0;
       previousFoot = lastPosition;
+      if (biomeGenerator && now - lastBiomeSample > 1200) {
+        biome = biomeGenerator.biome_at(Math.floor(state[0]), Math.floor(state[2]));
+        lastBiomeSample = now;
+      }
+      blastFlash.style.opacity = String(Math.max(0, (blastFlashUntil - now) / 220) * 0.45);
       audio.frame(
         lastPosition,
         yaw,
         pitch,
         environment,
         openSky,
-        focused && phase === 'playing' && !fatalRecovery,
+        (focused || hud.inventoryOpen) &&
+          phase === 'playing' &&
+          !fatalRecovery &&
+          hud.lifecycle === 'playing',
+        biome,
       );
       for (let i = 0; i < 3; i++) visualOffset[i] *= Math.exp(-dt * 12);
       updateTarget(state);
@@ -1728,6 +1866,8 @@ export async function mountVoxel(
     )
       return;
     if (operation.kind !== 'open' && inventoryEpoch !== prediction.currentEpoch) return;
+    inventorySound =
+      operation.kind === 'craft' || operation.kind === 'consume' ? operation.kind : null;
     inventorySequence = ++actionSequence;
     inventorySelectionPending = operation.kind === 'select' && hud.mode === 'creative';
     publish({ inventoryPending: true });
@@ -1755,6 +1895,16 @@ export async function mountVoxel(
   }
   function command(cmd: RuntimeCommand) {
     if (disposed) return;
+    if (
+      (cmd.type === 'interact' ||
+        cmd.type === 'attack' ||
+        cmd.type === 'ignite' ||
+        cmd.type === 'flight' ||
+        cmd.type === 'respawn' ||
+        (cmd.type === 'mine' && cmd.active)) &&
+      (inputRecovery.waiting || performance.now() - lastReceived > 1500)
+    )
+      return;
     if (cmd.type === 'camera') {
       if (Number.isFinite(cmd.distance))
         publish({ cameraDistance: Math.max(0, Math.min(MAX_CAMERA_DISTANCE, cmd.distance)) });
@@ -2011,6 +2161,7 @@ export async function mountVoxel(
     debug() {
       return {
         disposed,
+        saveUnavailable: hud.saveUnavailable,
         inputMode,
         mode: hud.mode,
         lifecycle: hud.lifecycle,
@@ -2074,6 +2225,11 @@ export async function mountVoxel(
         position: lastPosition,
         selected: hud.selected,
         players: remotes.size + 1,
+        inputRecovery: {
+          waiting: inputRecovery.waiting,
+          pauses: inputRecovery.pauses,
+          recoveries: inputRecovery.recoveries,
+        },
         inputLag: prediction?.inputLag,
         inputSeconds: prediction?.inputSeconds,
         correction: prediction?.correction,
@@ -2142,6 +2298,7 @@ export async function mountVoxel(
       world.free();
       listeners.clear();
       canvas.remove();
+      blastFlash.remove();
     },
   };
   const onAbort = () => runtime.dispose();

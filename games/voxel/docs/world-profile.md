@@ -13,15 +13,15 @@ horizontal guard is **−999,984 inclusive to +999,984 exclusive**. The publishe
 native body-sweep API rejects coordinates beyond ±1,000,000; one column of margin
 keeps boundary sampling inside that contract. This is also below the f32 terrain
 generator's integer precision horizon. It is a technical coordinate guard, not a
-school map-size setting or a player/room limit. The engine Wasm is unchanged.
+school map-size setting or a player/room limit.
 
 The profile enters the runtime fingerprint. Restart with matched browser/server
 artifacts after updating; incompatible builds are rejected before worker
 allocation. The packaged release is checked before production web builds.
 
 Compatible schema-1 saves with the historical centered finite profiles expand
-to the new bounds on restore. The content hash, engine hash and generator version
-must still match. Their seed, edits, inventories and positions are retained;
+to the new bounds on restore. Content, engine and generator versions must pass
+their explicit compatibility checks. Seed, edits, inventories and positions remain;
 newly explored columns use that same seed. No checkpoint or world is deleted.
 
 New school worlds reserve a distinct uint32 seed through
@@ -31,15 +31,7 @@ RPC/table, a noncycling sequence and a unique constraint. A bijective permutatio
 spreads successive reservations across the uint32 range; 4242 stays reserved for
 historical worlds. Worker/process restarts before the first save reuse the
 reservation. Saved worlds restore their embedded seed. Existing RPCs and saved
-data remain intact; the user confirmed applying this migration locally/staging.
+data remain intact. Verify installation on each target project.
 Standalone development gateways without school metadata derive a stable seed
 from world identity; explicit development seed overrides remain available. Those
 development fallbacks do not provide the database's global uniqueness contract.
-
-Focused validation uses actual published Wasm and socket workers: movement/drop
-physics near the numeric guard, binary/JSON coordinate validation, preservation
-and expansion of old bounds, far-column edit recovery, distinct new seeds,
-worker termination before the first checkpoint and saved-seed recovery. Isolated
-PostgreSQL/PGlite verifies SQL uniqueness, restart stability, ownership fencing,
-legacy-save compatibility and browser-role denial. No hosted writes or broader
-performance/scale qualification are implied.

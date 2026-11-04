@@ -212,3 +212,38 @@ test("joining and routine player departure are info events, and pointer-lock rep
   });
   assert.equal(logs.length, 0);
 });
+
+test("expected feature degradation and recovery are distinct from fatal client failures", () => {
+  assert.equal(
+    voxelEventPolicy("VOXEL_CLIENT_FAILURE", {
+      operation: "prediction",
+      code: "INPUT_BACKPRESSURE",
+      fatal: false,
+    }).status,
+    "degraded",
+  );
+  assert.equal(
+    voxelEventPolicy("VOXEL_CLIENT_FAILURE", {
+      operation: "audio",
+      code: "AUDIO_UNAVAILABLE",
+      fatal: false,
+    }).level,
+    "warn",
+  );
+  assert.equal(
+    voxelEventPolicy("VOXEL_CLIENT_FAILURE", {
+      operation: "prediction",
+      code: "RECOVERED",
+      fatal: false,
+    }).status,
+    "recovered",
+  );
+  assert.equal(
+    voxelEventPolicy("VOXEL_CLIENT_FAILURE", {
+      operation: "prediction",
+      code: "RUNTIME_FAILURE",
+      fatal: true,
+    }).level,
+    "error",
+  );
+});

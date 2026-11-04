@@ -52,6 +52,35 @@ test("diagnostics accepts old clients and fixed failure details, rejects arbitra
   );
   assert.equal(events[1]!.context.fatal, true);
   assert.equal(events[1]!.context.reason, "input_acknowledgement_stalled");
+  const metrics = {
+    epoch: 3,
+    sequence: 120,
+    ack: 2,
+    inputSeconds: 2,
+    ackAgeMs: 2100,
+    snapshotAgeMs: 10,
+    bufferedBytes: 0,
+  };
+  assert.equal(
+    (
+      await send({
+        ...base,
+        code: "INPUT_BACKPRESSURE",
+        fatal: false,
+        reason: "input_acknowledgement_stalled",
+        metrics,
+      })
+    ).status,
+    200,
+  );
+  assert.equal(events[2]!.context.ack, 2);
+  for (const invalid of [
+    { token: 123 },
+    { ack: -1 },
+    { epoch: NaN },
+    { url: "private" },
+  ])
+    assert.equal((await send({ ...base, metrics: invalid })).status, 400);
   const reads = f.requests.length,
     count = events.length;
   f.state.outage = "kid_profiles";
@@ -73,7 +102,7 @@ test("diagnostics accepts old clients and fixed failure details, rejects arbitra
   assert.equal((await send(base, false)).status, 401);
   assert.equal(
     events.filter((event) => event.name === "VOXEL_CLIENT_FAILURE").length,
-    2,
+    3,
   );
   assert.doesNotMatch(
     JSON.stringify(events),

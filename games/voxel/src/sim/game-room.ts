@@ -961,9 +961,10 @@ export class GameRoom {
           });
         }
       for (const a of this.actors.values())
-        if (a.connection && a.role === 'observer') {
+        if (a.connection) {
           a.saved = this.store.world.player_state(a.slot);
           this.subscriptions(a, a.saved);
+          this.flushChunks(a.connection!);
         }
       this.store.require(this.positions());
       if (this.observerTick % 3 === 0) {
@@ -1346,19 +1347,13 @@ export class GameRoom {
             distance = Math.hypot(...delta),
             range = bomb.rule.radius * 2;
           if (distance >= range) continue;
-          const exposure =
-            [0.2, 0.9, 1.6].filter((height) =>
-              this.store.world.line_clear(...position, body[0], body[1] + height, body[2]),
-            ).length / 3;
-          if (!exposure) continue;
-          const strength = (1 - distance / range) * exposure;
+          const strength = 1 - distance / range;
           hits.push({
             target,
             damage: Math.max(
               1,
               Math.ceil(
-                bomb.rule.damage *
-                  strength *
+                Math.max(1, Math.floor(bomb.rule.damage * strength)) *
                   (1 - equipmentEffects(this.inventories.equipped(target.id)).armor),
               ),
             ),
@@ -2095,7 +2090,7 @@ export class GameRoom {
               const next = {
                 id: other.id,
                 ...(actor.avatar !== old.avatar ? { avatar: actor.avatar } : {}),
-                ...(state.some((v, i) => v !== old.state[i]) ? { state } : {}),
+                ...(actor.state.some((v, i) => v !== old.state[i]) ? { state: actor.state } : {}),
                 ...(actor.yaw !== old.yaw ? { yaw: actor.yaw } : {}),
                 ...(actor.pitch !== old.pitch ? { pitch: actor.pitch } : {}),
                 ...(!sameAppearance(actor.appearance, old.appearance)

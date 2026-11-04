@@ -793,6 +793,12 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
             {hud.message}
           </p>
         )}
+      {hud?.saveUnavailable && (
+        <p className="voxel-session__feedback" role="status" aria-live="polite">
+          השמירה אינה זמינה כרגע. המשחק ממשיך, אך ההתקדמות האחרונה עדיין לא
+          נשמרה.
+        </p>
+      )}
       {showStatus && (
         <div className="voxel-session__status" role="status" aria-live="polite">
           <p>{statusText}</p>

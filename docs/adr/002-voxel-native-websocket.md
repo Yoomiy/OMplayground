@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for the voxel rewrite, 2026-10-22. Implementation is in progress.
+Accepted, 2026-10-22. Implemented in `games/voxel`.
 This records the user's requested rewrite; it does not claim deployment or
 supersede Socket.io for unrelated Playground services.
 
@@ -11,11 +11,9 @@ supersede Socket.io for unrelated Playground services.
 The replacement voxel game uses `ws` on Node and the browser WebSocket API,
 with one shared versioned protocol and server-owned fixed-step simulation.
 The same forked Rust/Wasm movement primitive runs in authority and prediction.
-Socket callbacks cannot allocate simulation time. Input samples originally carried controls, a sequence and an epoch with fixed
-movement durations. The 2026-11-01 smoothness update supersedes that timing
-contract: protocol 14 carries bounded per-sample durations, replayed identically
-by client and server using Blockyard's input playback mechanics. World gameplay
-still advances on the fixed 30 Hz room clock. Inputs never carry positions.
+Socket callbacks enqueue controls rather than stepping physics directly. Numbered
+input samples carry bounded durations replayed by client and server using Blockyard
+playback. World gameplay runs at 30 Hz. Inputs never carry authoritative positions.
 See [movement synchronization](../../games/voxel/docs/movement-sync.md).
 
 Control/snapshot messages use bounded validated JSON. Bulk world data uses
@@ -27,8 +25,8 @@ platform services. Allowed joins are never gated on player or room headcounts.
 
 [ADR 001](001-websocket-socket-io.md) remains valid for the existing services and
 their current deployment. Its Minecraft room description is historical context
-for the runtime being replaced. Cutover, classroom extraction and retirement
-remain gated by the [rewrite proposal](../voxel-runtime-rewrite-proposal.md).
+for the retired runtime. Classroom runs as an independent service.
+Coordinated cutover and rollback follow the [deployment guide](../voxel-deployment.md).
 
 The voxel runtime owns reconnect epochs, input acknowledgement, prediction,
 interest management, snapshot backpressure and binary version checks. These

@@ -5,6 +5,11 @@ on:
   pull_request:
     paths: ['games/voxel/**', 'apps/voxel-server/**', 'apps/web/**', 'packages/game-logic/src/recessSchedule.ts', 'packages/game-logic/package.json', 'packages/game-logic/tsconfig.json', 'packages/observability/**', 'supabase/migrations/*voxel*', 'package.json', 'package-lock.json', '.github/workflows/voxel.yml']
   workflow_dispatch:
+    inputs:
+      resilience_soak:
+        description: Run the 60-minute two-player resilience soak
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -132,3 +137,52 @@ jobs:
         with:
           name: voxel-image-evidence
           path: apps/voxel-server/test-results/container-package.json
+
+  resilience:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.21.0
+      - run: npm ci
+      - run: npm ci --prefix games/voxel --include=dev --ignore-scripts --no-audit --no-fund
+      - run: npm --prefix games/voxel run restore:release
+      - run: npm --prefix games/voxel run test:resilience
+      - name: Packaged authority, persistence and recovery boundaries
+        run: >-
+          node --test --test-concurrency=2
+          games/voxel/tests/integration/admission.test.ts
+          games/voxel/tests/integration/durability.test.ts
+          games/voxel/tests/integration/lifecycle.test.ts
+          games/voxel/tests/integration/logging.test.ts
+          games/voxel/tests/integration/session-projection.test.ts
+          games/voxel/tests/integration/worker-checkpoint.test.ts
+        env:
+          VOXEL_TEST_BUNDLE: '1'
+      - run: npm --prefix apps/voxel-server run build:shared
+      - run: npm --prefix apps/voxel-server run typecheck
+      - run: npm --prefix apps/web run lint
+      - run: node --test apps/voxel-server/tests/school-session.test.ts apps/voxel-server/tests/service-events.test.ts
+      - run: npm --prefix apps/web test -- src/game/voxel/voice-session.test.ts src/game/voxel/world-audio.test.ts src/game/voxel/session-api.test.ts
+      - run: npm --prefix games/voxel exec -- playwright install --with-deps chromium
+      - run: npm --prefix games/voxel run test:input-stalls:browser
+        env:
+          VOXEL_TEST_PACKAGE: '1'
+      - run: npm --prefix games/voxel run test:feedback:browser
+      - run: npm --prefix games/voxel run test:resilience:browser
+        env:
+          VOXEL_TEST_PACKAGE: '1'
+      - run: npm --prefix apps/web run test:voxel:resilience
+      - if: github.event_name == 'workflow_dispatch' && inputs.resilience_soak
+        run: npm --prefix games/voxel run test:resilience:soak
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: voxel-resilience
+          path: |
+            games/voxel/test-results/browser-input-stalls.json
+            games/voxel/test-results/browser-feedback.json
+            games/voxel/test-results/browser-resilience.json
+            apps/web/test-results/voxel-resilience-browser.json

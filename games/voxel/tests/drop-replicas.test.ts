@@ -42,6 +42,7 @@ test('shared drop replicas retain immutable public ownership across viewers, mov
   assert.equal(b[1].stack.count, 3);
   const world = {
     has_column: () => true,
+    get_block: () => 0,
     sweep_body: (x: number, y: number, z: number) => [x + 0.25, y, z, 0, 0, 0],
   } as unknown as WorldPort;
   drops.step(world, 1);

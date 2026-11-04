@@ -22,7 +22,6 @@
     "check": "npm run build && npm run typecheck && npm run check:content:complete && npm run check:boundaries && npm test && npm run test:engine && npm run test:wasm && npm run test:integration && npm run test:server-bundle",
     "test:browser": "node tools/browser-smoke.ts",
     "benchmark:engine": "node tools/benchmark-engine.ts",
-    "benchmark:survival": "node tools/benchmark-survival.ts",
     "benchmark:sockets": "node tools/benchmark-sockets.mjs",
     "benchmark:survival:workers": "node tools/benchmark-survival-workers.ts",
     "check:survival:workers": "node tools/check-survival-workers.ts",
@@ -55,7 +54,11 @@
     "test:bucket:browser": "VOXEL_SURVIVAL_BUCKET=1 node tools/browser-survival.ts",
     "test:held:browser": "node tools/browser-held-bucket.ts",
     "test:combat:browser": "node tools/browser-combat.ts",
-    "format": "prettier --write \"src/**/*.ts\" \"tools/*.{ts,mjs}\" \"tests/**/*.ts\" \"content/*.ts\" vite.config.ts index.html \"src/client/*.css\""
+    "format": "prettier --write \"src/**/*.ts\" \"tools/*.{ts,mjs}\" \"tests/**/*.ts\" \"content/*.ts\" vite.config.ts index.html \"src/client/*.css\"",
+    "test:feedback:browser": "node tools/browser-feedback.ts",
+    "test:resilience:browser": "node tools/browser-resilience.ts",
+    "test:resilience:soak": "VOXEL_RESILIENCE_SOAK_MS=3600000 VOXEL_TEST_PACKAGE=1 node tools/browser-resilience.ts",
+    "test:resilience": "node --test tests/request-deadline.test.ts tests/input-recovery.test.ts tests/update-clock.test.ts tests/lease-recovery.test.ts tests/diagnostics.test.ts tests/connection-retry.test.ts tests/session-projection.test.ts tests/wasm/prior-engine-checkpoint.test.ts"
   },
   "dependencies": {
     "ws": "8.21.3",

@@ -2,7 +2,7 @@
 
 ## Fresh clone
 
-Check out `dev/staging` and use Node **24.21.0**. From the repository root:
+Check out the intended development branch and use Node **24.21.0**. From the repository root:
 
 ```sh
 npm ci

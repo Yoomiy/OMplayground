@@ -1,3 +1,4 @@
+import { withDeadline } from '../shared/request-deadline.ts';
 import { compatibleCheckpointContent } from '../shared/checkpoint-content.ts';
 import { createHash } from 'node:crypto';
 import { readRoomCheckpoint } from '../sim/room-checkpoint.ts';
@@ -117,7 +118,7 @@ export class CheckpointStorage {
   }
   private async read(object: StoredObject): Promise<unknown> {
     if (!validObject(object, this.worldId)) throw new Error('invalid checkpoint object reference');
-    const bytes = await this.objects.get(object);
+    const bytes = await withDeadline(() => this.objects.get(object), 10000);
     if (bytes.byteLength !== object.bytes || hash(bytes) !== object.sha256)
       throw new Error('checkpoint object integrity failure');
     try {
@@ -231,14 +232,19 @@ export class CheckpointStorage {
     this.saving = true;
     try {
       await eachObject(rows, async (row) => {
-        if (!this.columns.has(row.object.sha256)) await this.objects.put(row.object, row.bytes);
+        if (!this.columns.has(row.object.sha256))
+          await withDeadline(() => this.objects.put(row.object, row.bytes), 10000);
       });
-      await this.objects.put(object, bytes);
+      await withDeadline(() => this.objects.put(object, bytes), 10000);
       if (
-        !(await this.metadata.commit(lease, sequence - 1, pointer, [
-          object,
-          ...rows.map((row) => row.object),
-        ]))
+        !(await withDeadline(
+          () =>
+            this.metadata.commit(lease, sequence - 1, pointer, [
+              object,
+              ...rows.map((row) => row.object),
+            ]),
+          10000,
+        ))
       )
         throw new CheckpointFenced();
       this.columns = new Set(rows.map((row) => row.object.sha256));

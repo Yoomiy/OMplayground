@@ -21,7 +21,7 @@ Contributor requirements and the new-feature checklist live in
 
 - **Shared package:** `@playground/observability` — Pino JSON logs, correlation IDs, whitelisted socket event logging (no per-tick spam).
 - **game-server:** `initObservability` wired (replacing raw `morgan` + scattered `console.*`).
-- **minecraft-server and document-converter:** Package wired with Pino, correlation IDs, and structured lifecycle events.
+- **voxel-server, classroom-server and document-converter:** Package wired with Pino, correlation IDs, and structured lifecycle events.
 - **Production:** Ship stdout to Railway log drains (Axiom / Datadog / BetterStack). Query by `service`, `correlationId`, `level`, `protocol`.
 - **Client crashes:** Buffered telemetry → server `/api/telemetry` → Pino (`protocol: client`).
 - **Do not log:** raw socket payloads, chat bodies, JWTs, LiveKit tokens, per-tick voxel `INPUT`/`SNAPSHOT`.

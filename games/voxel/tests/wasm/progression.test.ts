@@ -86,12 +86,16 @@ test('weighted mining loot uses the committed revision once and a failed native 
       original = f.store.set,
       ticks = miningPlan(rule, undefined).ticks + 1;
     let failedWrites = 0;
-    assert.equal(f.send(command()).outcome?.ok, true);
     try {
       f.store.set = () => {
         failedWrites++;
         return null;
       };
+      assert.equal(
+        f.send(command()).outcome?.ok,
+        true,
+        'valid mining intent is acknowledged; the failed write must award nothing',
+      );
       f.tick(ticks);
     } finally {
       f.store.set = original;

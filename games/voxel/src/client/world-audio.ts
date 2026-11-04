@@ -1,20 +1,94 @@
+import { soundAssets as assets } from './world-audio-assets.ts';
+import { withDeadline } from '../shared/request-deadline.ts';
 import type { Environment } from '../shared/environment.ts';
+export type MaterialAction = 'step' | 'dig' | 'break' | 'place';
+export type EffectSound = 'pickup' | 'hurt' | 'eat' | 'swallow' | 'craft' | 'fuse' | 'explosion';
+const effects: Record<EffectSound, string[]> = {
+  pickup: ['random/pop.ogg'],
+  craft: ['random/pop.ogg'],
+  hurt: ['random/classic_hurt.ogg'],
+  eat: [1, 2, 3].map((n) => `random/eat${n}.ogg`),
+  swallow: ['random/burp.ogg'],
+  fuse: ['random/fuse.ogg'],
+  explosion: [1, 2, 3, 4].map((n) => `random/explode${n}.ogg`),
+};
+export const ambientProfiles = {
+  ocean: [260, 76, 0.12],
+  beach: [320, 86, 0.11],
+  desert: [1200, 102, 0.065],
+  savanna: [900, 126, 0.065],
+  forest: [1750, 208, 0.075],
+  plains: [1180, 142, 0.06],
+  mountains: [820, 96, 0.075],
+  ice_mountains: [1450, 68, 0.08],
+  iceplains: [1320, 72, 0.075],
+} as const;
+export function ambientBiome(biome: string): keyof typeof ambientProfiles {
+  if (['FrozenOcean', 'FrozenRiver', 'SnowyBeach', 'SnowyPlains', 'SnowyTaiga'].includes(biome))
+    return 'iceplains';
+  if (biome === 'SnowyPeaks') return 'ice_mountains';
+  if (['Ocean', 'DeepOcean', 'River'].includes(biome)) return 'ocean';
+  if (biome === 'Beach') return 'beach';
+  if (['Forest', 'BirchForest', 'Taiga'].includes(biome)) return 'forest';
+  if (biome === 'Desert') return 'desert';
+  if (biome === 'Savanna') return 'savanna';
+  if (biome === 'Mountains') return 'mountains';
+  return 'plains';
+}
+type AmbientChannel = {
+  source: AudioBufferSourceNode;
+  tone: OscillatorNode;
+  nodes: AudioNode[];
+  gain: GainNode;
+  profile: keyof typeof ambientProfiles;
+  retiring: number | null;
+};
 type Voice = { source: AudioScheduledSourceNode; nodes: AudioNode[] };
 /** Game effects only. Voice/media have a separate platform adapter and ownership. */
 export class WorldAudio {
   readonly supported = typeof AudioContext === 'function';
   private context: AudioContext | null = null;
   private output: GainNode | null = null;
-  private ambientGain: GainNode | null = null;
-  private ambientNodes: AudioNode[] = [];
-  private ambient: AudioBufferSourceNode | null = null;
+  private ambientChannels: AmbientChannel[] = [];
+  private rainSource: AudioBufferSourceNode | null = null;
+  private rainGain: GainNode | null = null;
+  private rainLoading = false;
+  private buffers = new Map<string, AudioBuffer>();
+  private loads = new Map<string, Promise<AudioBuffer | null>>();
+  private abort = new AbortController();
+  private loadQueue: (() => void)[] = [];
+  private loadingCount = 0;
+  private retryAfter = new Map<string, number>();
+  private failedLoads = 0;
+  private audioFailures = 0;
+  private faultUntil = 0;
+  private reportIssue(reason: 'audio_load_failed' | 'audio_unavailable') {
+    try {
+      this.onIssue(reason);
+    } catch {
+      /* Telemetry is optional too. */
+    }
+  }
+  private protect(work: () => void, backoff = true) {
+    if (this.disposed || (backoff && performance.now() < this.faultUntil)) return;
+    try {
+      work();
+    } catch {
+      this.audioFailures++;
+      this.faultUntil = performance.now() + 1000;
+      this.reportIssue('audio_unavailable');
+    }
+  }
+  constructor(
+    private onIssue: (reason: 'audio_load_failed' | 'audio_unavailable') => void = () => {},
+  ) {}
+  private biome: keyof typeof ambientProfiles = 'plains';
   private noise: AudioBuffer | null = null;
   private voices = new Set<Voice>();
   private disposed = false;
   private active = false;
   private muted = false;
   private nextChirp = 0;
-  private nextAmbient = 0;
   private effects = 0;
   private dropped = 0;
   private listenerPosition = [0, 0, 0];
@@ -32,6 +106,14 @@ export class WorldAudio {
       voices: this.voices.size,
       effects: this.effects,
       gain: this.output?.gain.value ?? 0,
+      biome: this.biome,
+      ambientChannels: this.ambientChannels.length,
+      rain: this.rainGain?.gain.value ?? 0,
+      buffers: this.buffers.size,
+      failedLoads: this.failedLoads,
+      audioFailures: this.audioFailures,
+      loading: this.loadingCount,
+      queuedLoads: this.loadQueue.length,
       dropped: this.dropped,
       listener: this.context?.listener.positionX
         ? [
@@ -63,33 +145,48 @@ export class WorldAudio {
           random = Math.imul(random, 1664525) + 1013904223;
           samples[i] = ((random >>> 0) / 4294967296) * 2 - 1;
         }
-        const source = (this.ambient = context.createBufferSource()),
-          filter = context.createBiquadFilter();
-        source.buffer = buffer;
-        source.loop = true;
-        filter.type = 'lowpass';
-        filter.frequency.value = 450;
-        const gain = (this.ambientGain = context.createGain());
-        gain.gain.value = 0;
-        source.connect(filter).connect(gain).connect(output);
-        source.start();
-        this.ambientNodes = [filter, gain];
+        // Warm variants once; effects share decoded buffers and in-flight loads.
+        for (const path of Object.keys(assets))
+          if (!path.includes('/ambient/')) void this.load(path);
       }
-      void this.context.resume().catch(() => {});
+      void this.context.resume().catch(() => this.reportIssue('audio_unavailable'));
       this.gain();
     } catch {
+      this.reportIssue('audio_unavailable');
       void this.dispose();
     }
   }
   setMuted(muted: boolean): void {
+    this.protect(() => this.changeMuted(muted), false);
+  }
+  private changeMuted(muted: boolean): void {
     if (muted === this.muted) return;
     this.muted = muted;
     this.gain();
   }
   setActive(active: boolean): void {
+    this.protect(() => this.changeActive(active), false);
+  }
+  private changeActive(active: boolean): void {
     const next = active && !this.disposed;
     if (next === this.active) return;
     this.active = next;
+    if (!next)
+      for (const voice of [...this.voices]) {
+        voice.source.onended = null;
+        try {
+          voice.source.stop();
+        } catch {}
+        try {
+          voice.source.disconnect();
+        } catch {}
+        for (const node of voice.nodes) {
+          try {
+            node.disconnect();
+          } catch {}
+        }
+        this.voices.delete(voice);
+      }
     this.gain();
   }
   private gain(): void {
@@ -107,6 +204,19 @@ export class WorldAudio {
     environment: Environment,
     openSky: boolean,
     active: boolean,
+    biome = 'Plains',
+  ): void {
+    this.setActive(active);
+    this.protect(() => this.updateFrame(position, yaw, pitch, environment, openSky, active, biome));
+  }
+  private updateFrame(
+    position: readonly number[],
+    yaw: number,
+    pitch: number,
+    environment: Environment,
+    openSky: boolean,
+    active: boolean,
+    biome = 'Plains',
   ): void {
     this.setActive(active);
     this.listenerPosition = [position[0], position[1] + 1.62, position[2]];
@@ -129,14 +239,9 @@ export class WorldAudio {
         ...(up as [number, number, number]),
       );
     }
-    if (this.ambientGain && context.currentTime >= this.nextAmbient) {
-      this.nextAmbient = context.currentTime + 0.25;
-      this.ambientGain.gain.setTargetAtTime(
-        (openSky ? 1 : 0.12) * (0.002 + environment.rain * 0.014),
-        context.currentTime,
-        0.5,
-      );
-    }
+    this.biome = ambientBiome(biome);
+    this.updateAmbience(openSky, environment.rain);
+
     if (
       this.active &&
       !this.muted &&
@@ -152,8 +257,14 @@ export class WorldAudio {
     const voice = { source, nodes };
     this.voices.add(voice);
     source.onended = () => {
-      for (const node of nodes) node.disconnect();
-      source.disconnect();
+      for (const node of nodes) {
+        try {
+          node.disconnect();
+        } catch {}
+      }
+      try {
+        source.disconnect();
+      } catch {}
       this.voices.delete(voice);
     };
   }
@@ -174,88 +285,259 @@ export class WorldAudio {
     source.start(now);
     source.stop(now + 0.13);
   }
-  pickup(): void {
+  private load(path: string): Promise<AudioBuffer | null> {
+    const key = path.startsWith('./') ? path : `./sounds/${path}`;
+    const cached = this.buffers.get(key);
+    if (cached) return Promise.resolve(cached);
+    const pending = this.loads.get(key);
+    if (pending) return pending;
+    const context = this.context,
+      url = assets[key];
+    if (!context || !url || this.disposed) return Promise.resolve(null);
+    if (performance.now() < (this.retryAfter.get(key) ?? 0)) return Promise.resolve(null);
+    const request = new Promise<AudioBuffer | null>((resolve) => {
+      const start = () => {
+        if (this.disposed) {
+          resolve(null);
+          return;
+        }
+        this.loadingCount++;
+        void withDeadline(
+          async (signal) => {
+            const response = await fetch(url, { signal });
+            if (!response.ok) throw new Error('sound download failed');
+            return context.decodeAudioData(await response.arrayBuffer());
+          },
+          5000,
+          this.abort.signal,
+        )
+          .then(
+            (buffer) => {
+              if (this.disposed) {
+                resolve(null);
+                return;
+              }
+              this.buffers.set(key, buffer);
+              this.retryAfter.delete(key);
+              resolve(buffer);
+            },
+            () => {
+              if (!this.disposed) {
+                this.failedLoads++;
+                this.retryAfter.set(key, performance.now() + 10000);
+                this.reportIssue('audio_load_failed');
+              }
+              resolve(null);
+            },
+          )
+          .finally(() => {
+            this.loadingCount--;
+            this.loadQueue.shift()?.();
+          });
+      };
+      if (this.loadingCount < 4) start();
+      else this.loadQueue.push(start);
+    }).finally(() => this.loads.delete(key));
+    this.loads.set(key, request);
+    return request;
+  }
+  private updateAmbience(openSky: boolean, rain: number): void {
+    const context = this.context;
+    if (!context || !this.output || !this.noise || this.disposed) return;
+    const now = context.currentTime;
+    for (const channel of [...this.ambientChannels]) {
+      if (channel.retiring !== null && now >= channel.retiring) {
+        channel.source.stop();
+        channel.tone.stop();
+        channel.source.disconnect();
+        channel.tone.disconnect();
+        for (const node of channel.nodes) node.disconnect();
+        this.ambientChannels.splice(this.ambientChannels.indexOf(channel), 1);
+      }
+    }
+    if (
+      !this.ambientChannels.some(
+        (channel) => channel.profile === this.biome && channel.retiring === null,
+      )
+    ) {
+      for (const channel of this.ambientChannels)
+        if (channel.retiring === null) {
+          channel.gain.gain.cancelScheduledValues(now);
+          channel.gain.gain.setValueAtTime(channel.gain.gain.value, now);
+          channel.gain.gain.linearRampToValueAtTime(0.0001, now + 1.4);
+          channel.retiring = now + 1.5;
+        }
+      const [frequency, toneFrequency, volume] = ambientProfiles[this.biome];
+      const source = context.createBufferSource(),
+        filter = context.createBiquadFilter(),
+        tone = context.createOscillator(),
+        toneGain = context.createGain(),
+        gain = context.createGain();
+      source.buffer = this.noise;
+      source.loop = true;
+      filter.type = 'lowpass';
+      filter.frequency.value = frequency;
+      filter.Q.value = 0.35;
+      tone.frequency.value = toneFrequency;
+      toneGain.gain.value = volume * 0.22;
+      source.connect(filter).connect(gain);
+      tone.connect(toneGain).connect(gain);
+      gain.connect(this.output);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.linearRampToValueAtTime(volume, now + 1.6);
+      source.start();
+      tone.start();
+      this.ambientChannels.push({
+        source,
+        tone,
+        nodes: [filter, toneGain, gain],
+        gain,
+        profile: this.biome,
+        retiring: null,
+      });
+    }
+    if (!this.rainSource && !this.rainLoading && rain > 0) {
+      this.rainLoading = true;
+      void this.load(`ambient/weather/rain${1 + Math.floor(Math.random() * 8)}.ogg`).then(
+        (buffer) => {
+          this.rainLoading = false;
+          this.protect(() => {
+            if (!buffer || this.disposed || !this.output) return;
+            const source = context.createBufferSource(),
+              gain = context.createGain();
+            source.buffer = buffer;
+            source.loop = true;
+            gain.gain.value = 0;
+            source.connect(gain).connect(this.output);
+            source.start();
+            this.rainSource = source;
+            this.rainGain = gain;
+          });
+        },
+      );
+    }
+    this.rainGain?.gain.setTargetAtTime(rain * (openSky ? 0.3 : 0.035), now, 0.5);
+  }
+  material(action: MaterialAction, position: readonly number[], group: string): void {
+    if (group === 'silent') return;
+    const prefix = [
+      'grass',
+      'stone',
+      'sand',
+      'wood',
+      'leaves',
+      'cloth',
+      'gravel',
+      'snow',
+      'ladder',
+    ].includes(group)
+      ? group
+      : group === 'plant'
+        ? 'grass'
+        : group === 'water'
+          ? 'sand'
+          : 'stone';
+    const paths =
+      action === 'break' && group === 'glass'
+        ? [1, 2, 3].map((n) => `random/glass${n}.ogg`)
+        : Object.keys(assets).filter((key) => key.startsWith(`./sounds/step/${prefix}`));
+    const volume = { step: 0.32, dig: 0.22, break: 0.58, place: 0.42 }[action];
+    const rate = action === 'dig' ? 1.05 + Math.random() * 0.1 : 0.9 + Math.random() * 0.2;
+    this.play(paths, volume, position, rate);
+  }
+  effect(effect: EffectSound, position?: readonly number[]): void {
+    const volume = {
+      pickup: 0.3,
+      craft: 0.36,
+      hurt: 0.34,
+      eat: 0.38,
+      swallow: 0.34,
+      fuse: 0.32,
+      explosion: 0.95,
+    }[effect];
+    this.play(effects[effect], volume, position, 1, effect === 'explosion');
+    if (effect === 'eat') this.play(effects.swallow, 0.34, position, 1, false, 0.6);
+  }
+  private play(
+    paths: readonly string[],
+    volume: number,
+    position?: readonly number[],
+    rate = 1,
+    priority = false,
+    delay = 0,
+  ): void {
+    this.protect(() => this.playBuffer(paths, volume, position, rate, priority, delay));
+  }
+  private playBuffer(
+    paths: readonly string[],
+    volume: number,
+    position?: readonly number[],
+    rate = 1,
+    priority = false,
+    delay = 0,
+  ): void {
     const context = this.context;
     if (
       !context ||
       !this.output ||
+      this.disposed ||
       !this.active ||
       this.muted ||
       context.state !== 'running' ||
-      this.disposed ||
-      this.voices.size >= 16
+      !paths.length
     )
       return;
-    const tone = context.createOscillator(),
-      gain = context.createGain(),
-      now = context.currentTime;
-    tone.frequency.setValueAtTime(660, now);
-    tone.frequency.exponentialRampToValueAtTime(990, now + 0.08);
-    gain.gain.setValueAtTime(0.09, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
-    tone.connect(gain).connect(this.output);
-    this.track(tone, [gain]);
-    tone.start(now);
-    tone.stop(now + 0.14);
-  }
-  effect(position: readonly number[], group: string, removal: boolean): void {
-    const context = this.context;
-    if (
-      !context ||
-      !this.noise ||
-      !this.output ||
-      this.disposed ||
-      !this.active ||
-      this.muted ||
-      context.state !== 'running'
-    )
-      return;
-    if (
-      this.voices.size >= 16 ||
-      Math.hypot(...position.map((v, i) => v - this.listenerPosition[i])) > 32
-    ) {
+    if (position && Math.hypot(...position.map((v, i) => v - this.listenerPosition[i])) > 48) {
       this.dropped++;
       return;
     }
+    const keys = paths.map((path) => (path.startsWith('./') ? path : `./sounds/${path}`));
+    const selected = keys[Math.floor(Math.random() * keys.length)];
+    const buffer =
+      this.buffers.get(selected) ?? keys.map((key) => this.buffers.get(key)).find(Boolean);
+    if (!this.buffers.has(selected)) void this.load(selected);
+    if (!buffer) {
+      this.dropped++;
+      return;
+    }
+    if (this.voices.size >= 16) {
+      if (!priority) {
+        this.dropped++;
+        return;
+      }
+      const oldest = this.voices.values().next().value;
+      if (oldest) {
+        oldest.source.onended = null;
+        oldest.source.stop();
+        oldest.source.disconnect();
+        for (const node of oldest.nodes) node.disconnect();
+        this.voices.delete(oldest);
+      }
+    }
     const source = context.createBufferSource(),
-      filter = context.createBiquadFilter(),
-      gain = context.createGain(),
-      panner = context.createPanner();
-    const now = context.currentTime;
-    source.buffer = this.noise;
-    source.playbackRate.value = group === 'glass' ? 2 : group === 'wood' ? 0.9 : 1.2;
-    filter.type = group === 'water' || group === 'explosion' ? 'lowpass' : 'bandpass';
-    filter.frequency.value =
-      group === 'explosion'
-        ? 240
-        : group === 'wood'
-          ? 420
-          : group === 'glass'
-            ? 2100
-            : group === 'grass'
-              ? 1300
-              : group === 'water'
-                ? 500
-                : 780;
-    filter.Q.value = 0.6;
-    const duration = group === 'explosion' ? 0.4 : 0.13;
-    gain.gain.setValueAtTime(group === 'explosion' ? 0.45 : removal ? 0.65 : 0.4, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-    panner.panningModel = 'equalpower';
-    panner.distanceModel = 'inverse';
-    // Local footsteps are about 1.6 blocks below the listener. Keep nearby
-    // actions clear before applying distance attenuation to farther effects.
-    panner.refDistance = 2;
-    panner.maxDistance = 32;
-    panner.rolloffFactor = 1.2;
-    panner.positionX.value = position[0];
-    panner.positionY.value = position[1];
-    panner.positionZ.value = position[2];
-    source.connect(filter).connect(gain).connect(panner).connect(this.output);
-    this.track(source, [filter, gain, panner]);
-    source.start(now, (this.effects * 0.173) % 1.7, duration + 0.01);
+      gain = context.createGain();
+    source.buffer = buffer;
+    source.playbackRate.value = rate;
+    gain.gain.value = volume;
+    source.connect(gain);
+    const nodes: AudioNode[] = [gain];
+    if (position) {
+      const panner = context.createPanner();
+      panner.panningModel = 'equalpower';
+      panner.distanceModel = 'inverse';
+      panner.refDistance = 2;
+      panner.maxDistance = 48;
+      panner.rolloffFactor = 1.2;
+      panner.positionX.value = position[0];
+      panner.positionY.value = position[1];
+      panner.positionZ.value = position[2];
+      gain.connect(panner).connect(this.output);
+      nodes.push(panner);
+      this.lastSource = [...position];
+    } else gain.connect(this.output);
+    this.track(source, nodes);
+    source.start(context.currentTime + delay);
     this.effects++;
-    this.lastSource = [panner.positionX.value, panner.positionY.value, panner.positionZ.value];
   }
   dispose(): Promise<void> {
     if (this.disposed) return this.closing ?? Promise.resolve();
@@ -266,27 +548,62 @@ export class WorldAudio {
       try {
         voice.source.stop();
       } catch {}
-      voice.source.disconnect();
-      for (const node of voice.nodes) node.disconnect();
+      try {
+        voice.source.disconnect();
+      } catch {}
+      for (const node of voice.nodes) {
+        try {
+          node.disconnect();
+        } catch {}
+      }
     }
     this.voices.clear();
-    if (this.ambient) {
+    this.abort.abort();
+    for (const start of this.loadQueue.splice(0)) start();
+    this.retryAfter.clear();
+    this.buffers.clear();
+    this.loads.clear();
+    for (const channel of this.ambientChannels) {
       try {
-        this.ambient.stop();
+        channel.source.stop();
       } catch {}
-      this.ambient.disconnect();
+      try {
+        channel.tone.stop();
+      } catch {}
+      try {
+        channel.source.disconnect();
+      } catch {}
+      try {
+        channel.tone.disconnect();
+      } catch {}
+      for (const node of channel.nodes) {
+        try {
+          node.disconnect();
+        } catch {}
+      }
     }
-    for (const node of this.ambientNodes) node.disconnect();
-    this.output?.disconnect();
-    this.output = this.ambientGain = null;
-    this.ambient = null;
+    this.ambientChannels = [];
+    try {
+      this.rainSource?.stop();
+    } catch {}
+    try {
+      this.rainSource?.disconnect();
+    } catch {}
+    try {
+      this.rainGain?.disconnect();
+    } catch {}
+    this.rainSource = null;
+    this.rainGain = null;
+    try {
+      this.output?.disconnect();
+    } catch {}
+    this.output = null;
     this.noise = null;
-    this.ambientNodes = [];
     const context = this.context;
     this.closing =
       context && context.state !== 'closed'
-        ? context
-            .close()
+        ? Promise.resolve()
+            .then(() => context.close())
             .catch(() => {})
             .then(() => {
               this.context = null;

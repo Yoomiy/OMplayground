@@ -1,3 +1,4 @@
+import { withDeadline } from "../../../../../games/voxel/src/shared/request-deadline.ts";
 import {
   Room,
   RoomEvent,
@@ -158,7 +159,11 @@ export class VoiceSession {
         if (this.scene()) void this.connect();
         else this.retryLater();
       },
-      Math.min(5000, 1000 * 2 ** Math.min(this.attempts++, 3)),
+      Math.min(
+        5000,
+        1000 * 2 ** Math.min(this.attempts++, 3) +
+          Math.floor(Math.random() * 200),
+      ),
     );
   }
   private scene(): VoiceScene | null {
@@ -182,7 +187,11 @@ export class VoiceSession {
       publishAllowed: false,
     });
     try {
-      const grant = await this.options.api.voiceToken(abort.signal);
+      const grant = await withDeadline(
+        (signal) => this.options.api.voiceToken(signal),
+        15000,
+        abort.signal,
+      );
       if (!owns()) return;
       room = new Room({
         loggerName: "voxel-voice",
@@ -226,9 +235,17 @@ export class VoiceSession {
           this.emit({ phase: "reconnecting", publishAllowed: false });
           this.retryLater();
         });
-      await room.connect(grant.serverUrl, grant.token, {
-        autoSubscribe: false,
-      });
+      await withDeadline(
+        async (signal) => {
+          await owned.connect(grant.serverUrl, grant.token, {
+            autoSubscribe: false,
+          });
+          if (signal.aborted || !owns() || this.room !== owned)
+            this.retire(owned);
+        },
+        10000,
+        abort.signal,
+      );
       if (!owns() || this.room !== room) {
         this.retire(room);
         return;
@@ -275,8 +292,7 @@ export class VoiceSession {
       this.active.clear();
     }
     room.removeAllListeners();
-    const done = room
-      .disconnect(true)
+    const done = withDeadline(() => room.disconnect(true), 5000)
       .catch(() => {})
       .finally(() => this.retiring.delete(done));
     this.retiring.add(done);

@@ -68,3 +68,37 @@ test('server failure summaries expose machine codes without provider exception m
     failureType: 'unknown',
   });
 });
+
+test('recovery telemetry accepts only bounded numeric diagnostics and names checkpoint failures without raw secrets', async () => {
+  const { isDiagnosticMetrics } = await import('../src/shared/diagnostics.ts');
+  const { failureDetails } = await import('../src/server/failure.ts');
+  assert.equal(
+    isDiagnosticMetrics({
+      epoch: 1,
+      sequence: 120,
+      ack: 2,
+      inputSeconds: 2,
+      ackAgeMs: 2100,
+      snapshotAgeMs: 10,
+      bufferedBytes: 0,
+    }),
+    true,
+  );
+  for (const value of [{ token: 123 }, { ack: NaN }, { epoch: -1 }, { sequence: 'secret' }, null])
+    assert.equal(isDiagnosticMetrics(value), false);
+  assert.equal(
+    failureDetails(
+      Object.assign(new Error('secret'), { failureReason: 'checkpoint_engine_incompatible' }),
+    ).failureReason,
+    'checkpoint_engine_incompatible',
+  );
+  assert.equal(
+    failureDetails(new Error('checkpoint object integrity failure')).failureReason,
+    'checkpoint_integrity',
+  );
+  assert.equal(
+    failureDetails(new DOMException('private URL', 'TimeoutError')).failureReason,
+    'provider_timeout',
+  );
+  assert(!JSON.stringify(failureDetails(new Error('secret'))).includes('secret'));
+});

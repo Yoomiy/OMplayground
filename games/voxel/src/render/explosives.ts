@@ -44,8 +44,12 @@ export class ExplosiveRenderer {
     }
     const counts = [0, 0];
     for (const body of bodies) {
-      const flash = body.remaining % 12 < 6 ? 1 : 0;
-      this.matrix.makeScale(0.9, 0.9, 0.9);
+      const progress = 1 - body.remaining / Math.max(1, body.total);
+      const pulse =
+        Math.sin(((body.total - body.remaining) / 30) * (7 + progress * 18)) * 0.5 + 0.5;
+      const flash = pulse > 0.5 ? 1 : 0;
+      const scale = 0.9 * (1 + pulse * (0.04 + progress * 0.12));
+      this.matrix.makeScale(scale, scale, scale);
       this.matrix.setPosition(
         body.position[0] - origin.x,
         body.position[1] + 0.45,

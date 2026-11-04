@@ -5,10 +5,13 @@ import { ConnectionRetry, retryableAdmission } from '../src/client/connection-re
 test('connection recovery keeps retrying with capped backoff and cancels on recovery/disposal', (t) => {
   t.mock.timers.enable({ apis: ['setTimeout'] });
   let attempts = 0;
-  const retry = new ConnectionRetry(() => {
-    attempts++;
-    retry.schedule();
-  });
+  const retry = new ConnectionRetry(
+    () => {
+      attempts++;
+      retry.schedule();
+    },
+    () => 0,
+  );
   retry.schedule();
   retry.schedule();
   t.mock.timers.tick(1499);

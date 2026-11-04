@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { content, engine } from './fixture.ts';
 import { WorldStore } from '../../src/sim/world-store.ts';
 import { MAX_COLUMN_REVISION } from '../../src/shared/chunk-wire.ts';
+import { BOUNDS } from '../../src/shared/world-bounds.ts';
 import type { Cell } from '../../src/shared/protocol.ts';
 const json = (value: unknown) => JSON.parse(JSON.stringify(value));
 function fresh() {
@@ -128,7 +129,10 @@ test('invalid checkpoint suffixes never install edits into an engine and revisio
         (v) => (v.schema = 2),
         (v) => (v.contentHash = 'wrong'),
         (v) => v.columns.push(v.columns[0]),
-        (v) => (v.columns[0].x = 16),
+        (v) => (v.columns[0].x = BOUNDS.minX / 16 - 1),
+        (v) => (v.columns[0].x = BOUNDS.maxX / 16),
+        (v) => (v.columns[0].z = BOUNDS.minZ / 16 - 1),
+        (v) => (v.columns[0].z = BOUNDS.maxZ / 16),
         (v) => (v.columns[0].revision = MAX_COLUMN_REVISION + 1),
         (v) => (v.columns[0].edits = []),
         (v) => v.columns[0].edits.push(v.columns[0].edits[0]),

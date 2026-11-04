@@ -6,6 +6,7 @@ import { Inventories } from '../src/sim/inventory.ts';
 import { matchRecipe, validStack, makeStack, isInventoryView } from '../src/shared/inventory.ts';
 import type { InventoryArea, InventoryCommand } from '../src/shared/inventory.ts';
 import { parseClientMessage, parseServerMessage } from '../src/shared/protocol.ts';
+import { BOUNDS } from '../src/shared/world-bounds.ts';
 import type { Cell } from '../src/shared/protocol.ts';
 
 const content = compileContent(source).manifest;
@@ -298,6 +299,15 @@ test('inventory wire intents reject client results, unknown fields, forged slots
     operation: { kind: 'craft', grid: 2, count: 1, revision: 0 },
   };
   assert.ok(parseClientMessage(JSON.stringify(message)));
+  for (const target of [
+    [1000, 64, 1],
+    [BOUNDS.minX, 0, BOUNDS.minZ],
+    [BOUNDS.maxX - 1, BOUNDS.height - 1, BOUNDS.maxZ - 1],
+  ])
+    assert.ok(
+      parseClientMessage(JSON.stringify({ ...message, operation: { kind: 'open', target } })),
+      JSON.stringify(target),
+    );
   for (const operation of [
     { ...message.operation, result: { itemType: 'stone', count: 999 } },
     { ...message.operation, grid: 4 },
@@ -311,7 +321,14 @@ test('inventory wire intents reject client results, unknown fields, forged slots
       containerId: null,
       containerRevision: null,
     },
-    { kind: 'open', target: [1000, 64, 1] },
+    ...[
+      [BOUNDS.minX - 1, 64, 0],
+      [BOUNDS.maxX, 64, 0],
+      [0, 64, BOUNDS.minZ - 1],
+      [0, 64, BOUNDS.maxZ],
+      [0, -1, 0],
+      [0, BOUNDS.height, 0],
+    ].map((target) => ({ kind: 'open', target })),
   ])
     assert.equal(parseClientMessage(JSON.stringify({ ...message, operation })), null);
   const state = { type: 'inventory', epoch: 1, view: f.view() };

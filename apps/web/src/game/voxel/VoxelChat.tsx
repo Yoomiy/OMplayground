@@ -28,6 +28,7 @@ export function VoxelChat({
   active?: boolean;
 }) {
   const input = useRef<HTMLInputElement>(null);
+  const loadedCursor = useRef<number | null>(null);
   const lines = useRef<HTMLOListElement>(null);
   const stickToBottom = useRef(true);
   const drag = useRef<{
@@ -71,7 +72,8 @@ export function VoxelChat({
     if (!active) return;
     const abort = new AbortController();
     let running = false;
-    if (open) setPage(null);
+    const requestedCursor = open ? cursor : null;
+    if (loadedCursor.current !== requestedCursor) setPage(null);
     setReadError(false);
     const reload = async () => {
       if (
@@ -85,12 +87,12 @@ export function VoxelChat({
       try {
         const value = await api.chatHistory(open ? cursor : null, abort.signal);
         if (!abort.signal.aborted) {
+          loadedCursor.current = requestedCursor;
           setPage(value);
           setReadError(false);
         }
       } catch {
         if (!abort.signal.aborted) {
-          setPage(null);
           setReadError(true);
         }
       } finally {

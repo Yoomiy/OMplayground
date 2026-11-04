@@ -28,7 +28,7 @@ async function until(predicate: () => boolean) {
 }
 
 test(
-  'a join has a separate bounded loading deadline, reports progress, and never logs arbitrary peer text',
+  'hung admission revalidation has its own bounded deadline, reports progress, and never logs arbitrary peer text',
   { timeout: 45000 },
   async () => {
     const events: Entry[] = [];
@@ -69,13 +69,21 @@ test(
       await until(() => events.some((event) => event.name === 'VOXEL_CONNECTION_CLOSED'));
       const issued = events.find((event) => event.name === 'VOXEL_ADMISSION_ISSUED')!.context;
       const close = events.find((event) => event.name === 'VOXEL_CONNECTION_CLOSED')!.context;
-      assert.equal(close.reason, 'join_timeout');
+      assert.equal(close.reason, 'recovering');
+      const failed = events.find((event) => event.name === 'VOXEL_CONNECTION_FAILED')!.context;
+      assert.equal(failed.failureReason, 'provider_timeout');
+      assert.equal(failed.phase, 'revalidating');
       assert.equal(close.phase, 'revalidating');
       assert.equal(close.room, 'logging');
       assert.equal(close.admissionId, issued.admissionId);
       assert.equal(admission.headers.get('x-correlation-id'), issued.admissionId);
-      assert.equal(close.code, 1013);
-      assert.ok(Number(close.duration_ms) >= 29900);
+      assert.equal(close.code, 1012);
+      assert.ok(Number(close.duration_ms) >= 9900);
+      assert.ok(
+        Number(close.duration_ms) < 15000,
+        'provider timeout precedes the 30-second join deadline',
+      );
+      assert.equal(gateway.rooms.size, 0, 'failed revalidation cannot allocate a room');
       assert.match(String(close.connectionId), /^[a-f0-9-]{36}$/);
       assert.doesNotMatch(JSON.stringify(events), new RegExp(value.ticket));
       const peer = new WebSocket(origin.replace('http:', 'ws:') + '/voxel');

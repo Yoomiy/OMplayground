@@ -218,35 +218,33 @@ test('ignition rejects stale inventory/terrain, missing permissions, occluded ai
     f.room.dispose();
   }
 });
-test('blast planning uses native partial shapes, material resistance, wet shielding and unbreakable cells', () => {
+test('blast clears eligible blocks throughout its sphere and preserves protected blocks', () => {
   const world = flatWorld();
   try {
-    const origin = [8.4, 2.75, 8.5],
-      target: Cell = [10, 2, 8],
-      wall: Cell = [9, 2, 8];
-    world.set_block(...target, content.defaults.dirt);
-    const includes = () =>
-      blastPlan(world, content.manifest, origin, 3).some(
-        (b) => b.cell.join(',') === target.join(','),
-      );
-    assert.equal(includes(), true);
-    world.set_block(...wall, content.defaults.water);
-    assert.equal(includes(), false);
-    world.set_block(...wall, content.defaults.bedrock);
-    assert.equal(includes(), false);
-    assert.ok(
-      !blastPlan(world, content.manifest, origin, 3).some(
-        (b) => b.state === content.defaults.bedrock,
-      ),
-    );
-    world.set_block(...wall, content.defaults.stone_slab);
-    assert.equal(includes(), true, 'ray passes above lower slab');
-    world.set_block(...wall, content.states['stone_slab[half=top]']);
-    assert.equal(includes(), false, 'native top slab intersects ray');
-    world.set_block(...wall, content.defaults.stone);
-    assert.equal(includes(), false, 'stone spends more blast energy');
-    world.set_block(...wall, content.defaults.dirt);
-    assert.equal(includes(), true, 'softer dirt permits the remaining energy');
+    const origin = [8.5, 3.5, 8.5];
+    const cells = [
+      [8, 3, 8],
+      [9, 3, 8],
+      [10, 3, 8],
+      [11, 3, 8],
+    ] as const;
+    for (const cell of cells) world.set_block(cell[0], cell[1], cell[2], content.defaults.stone);
+    world.set_block(12, 3, 8, content.defaults.dirt);
+    const planned = () =>
+      new Set(blastPlan(world, content.manifest, origin, 3).map((b) => b.cell.join(',')));
+    for (const cell of cells)
+      assert.ok(planned().has(cell.join(',')), 'interior stone cannot shield the crater edge');
+    assert.ok(!planned().has('12,3,8'), 'outside radius');
+    for (const state of [
+      content.defaults.water,
+      content.defaults.bedrock,
+      content.defaults.obsidian,
+    ]) {
+      world.set_block(9, 3, 8, state);
+      assert.ok(!planned().has('9,3,8'), 'protected cell survives');
+      assert.ok(planned().has('11,3,8'), 'protected cell does not shield eligible cells');
+    }
+    assert.ok(![...planned()].some((key) => key.split(',')[1] === '0'));
   } finally {
     world.free();
   }
@@ -290,7 +288,7 @@ test('due work is scheduled in bounded tick batches without limiting primed body
     f.room.dispose();
   }
 });
-test('actor damage samples pre-blast geometry, preserves frozen bodies and consumes armor on an accepted hit', () => {
+test('blast damage passes through walls, preserves frozen bodies and consumes armor on an accepted hit', () => {
   for (const shield of ['wall', 'equipment', 'none', 'optout'] as const) {
     const f = roomFixture();
     try {
@@ -341,11 +339,11 @@ test('actor damage samples pre-blast geometry, preserves frozen bodies and consu
       f.tick();
       const after = f.state('b'),
         health = f.player('b').vitals.view().health;
-      if (shield === 'wall' || shield === 'optout') {
+      if (shield === 'optout') {
         assert.equal(health, 20);
         assert.equal(f.player('b').epoch, epoch);
       } else {
-        assert.equal(health, shield === 'equipment' ? 15 : 11);
+        assert.equal(health, shield === 'equipment' ? 16 : 12);
         assert.ok(f.player('b').epoch > epoch);
         assert.equal(f.baseline('b').reason, 'damage');
       }
@@ -358,7 +356,7 @@ test('actor damage samples pre-blast geometry, preserves frozen bodies and consu
         assert.equal(
           f.store.world.get_block(...wall),
           0,
-          'the shielded wall was removed only after damage exposure was evaluated',
+          'the wall is also destroyed by the blast',
         );
       if (shield === 'equipment') assert.equal(f.room.inventories.view('b').equipment[4], null);
     } finally {
@@ -440,5 +438,40 @@ test('a blast drains a shared chest once, closes every viewer and rejects the ol
     assert.ok(f.room.inventories.view('b').bag.every((s) => !s));
   } finally {
     f.room.dispose();
+  }
+});
+
+test('TNT player damage follows legacy distance falloff inside six blocks', () => {
+  for (const [distance, damage] of [
+    [0.1, 17],
+    [1.1, 14],
+    [3.1, 8],
+    [5.1, 2],
+    [6.1, 0],
+    [7.1, 0],
+  ]) {
+    const f = roomFixture();
+    try {
+      f.join('b');
+      f.tick(3);
+      f.player().capabilities.combat = true;
+      const a = f.state(),
+        b = f.state('b');
+      // The blast origin is the primed body position plus 0.45 on Y.
+      const center: [number, number, number] = [a[0], 65, a[2] - 3];
+      f.room.explosives.add('a', content.defaults.tnt, [center[0], 64.05, center[2]], rule, 30);
+      f.tick(29);
+      const bomb = f.room.explosives.nearby(center, 48)[0];
+      b[0] = bomb.position[0] + distance;
+      b[1] = bomb.position[1] + 0.45 - 0.9;
+      b[2] = bomb.position[2];
+      b[3] = b[4] = b[5] = 0;
+      f.store.world.player_restore(f.player('b').slot, b);
+      f.room.receive('b', { type: 'focus', epoch: f.player('b').epoch, active: false }, f.now);
+      f.tick();
+      assert.equal(f.player('b').vitals.view().health, 20 - damage, `distance ${distance}`);
+    } finally {
+      f.room.dispose();
+    }
   }
 });

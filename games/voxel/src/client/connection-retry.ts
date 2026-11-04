@@ -27,13 +27,18 @@ export class ConnectionRetry {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private attempts = 0;
   private disposed = false;
-  constructor(privateRun: () => void) {
+  constructor(privateRun: () => void, random = Math.random) {
     this.run = privateRun;
+    this.random = random;
   }
+  private random: () => number;
   private run: () => void;
   schedule() {
     if (this.disposed || this.timer) return;
-    const delay = Math.min(10000, 1500 * 2 ** Math.min(this.attempts++, 3));
+    const delay = Math.min(
+      10000,
+      1500 * 2 ** Math.min(this.attempts++, 3) + Math.floor(this.random() * 250),
+    );
     this.timer = setTimeout(() => {
       this.timer = null;
       this.run();

@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "lint": "tsc --noEmit",
     "test": "vitest run",
-    "test:voxel:browser": "node tools/voxel-react-browser.ts"
+    "test:voxel:browser": "node tools/voxel-react-browser.ts",
+    "test:voxel:resilience": "node tools/voxel-resilience-browser.ts"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "^0.18.1",

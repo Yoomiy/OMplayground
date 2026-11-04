@@ -18,7 +18,21 @@ export function failureDetails(error: unknown): Record<string, string> {
       'NoSuchKey',
       'ResourceAlreadyExists',
     ].includes(code);
+  const category =
+    error instanceof Error
+      ? (
+          {
+            'checkpoint object integrity failure': 'checkpoint_integrity',
+            'checkpoint object missing': 'checkpoint_missing',
+            'invalid checkpoint manifest': 'checkpoint_invalid',
+            'invalid room checkpoint': 'checkpoint_invalid',
+            'room ownership lost': 'ownership_lost',
+          } as Record<string, string>
+        )[error.message]
+      : undefined;
   return {
+    ...(category ? { failureReason: category } : {}),
+    ...(name === 'TimeoutError' ? { failureReason: 'provider_timeout' } : {}),
     failureType: ['Error', 'TypeError', 'RangeError', 'TimeoutError', 'AbortError'].includes(name)
       ? name
       : 'unknown',
@@ -29,6 +43,12 @@ export function failureDetails(error: unknown): Record<string, string> {
       'malformed_reply',
       'read_deadline',
       'clock_invalid',
+      'checkpoint_engine_incompatible',
+      'checkpoint_content_incompatible',
+      'checkpoint_integrity',
+      'checkpoint_missing',
+      'checkpoint_invalid',
+      'ownership_lost',
     ].includes(String(fields.failureReason))
       ? { failureReason: String(fields.failureReason) }
       : {}),

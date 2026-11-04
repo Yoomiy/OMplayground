@@ -2,7 +2,7 @@
 
 `release/manifest.json` and its content-addressed payload contain the already
 built and verified game release. Browser and server use the same Wasm, content,
-protocol and build ID. The initial published snapshot is `c293fe5e2511`.
+protocol and build ID.
 
 `npm run restore:release` restores generated `engine/pkg`, `artifacts`,
 `dist-client` and `dist-server` from those repository files. It does not fetch
@@ -47,4 +47,4 @@ installed project loader without installing dependencies in the temporary tree.
 The root `build:staging:web` command installs game build dependencies with
 install scripts disabled, restores this snapshot and builds the app. The voxel
 Dockerfile performs the same restoration before assembling its smaller runtime.
-See [manual staging setup](../../../docs/voxel-staging-setup.md).
+See [deployment setup](../../../docs/voxel-deployment.md).

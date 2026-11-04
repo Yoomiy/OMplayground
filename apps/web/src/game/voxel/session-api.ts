@@ -1,3 +1,4 @@
+import { withDeadline } from "../../../../../games/voxel/src/shared/request-deadline.ts";
 import type { DiagnosticDetail } from "@playground/voxel-runtime";
 import {
   readModerationAction,
@@ -106,55 +107,52 @@ export function createVoxelApi(options: {
     body: unknown,
     signal?: AbortSignal,
   ): Promise<unknown> {
-    if (signal?.aborted) throw new DOMException("Cancelled", "AbortError");
-    const token = await options.getToken();
-    if (signal?.aborted) throw new DOMException("Cancelled", "AbortError");
-    if (!token || token.length > 16384) throw new VoxelApiError("UNAUTHORIZED");
-    const abort = new AbortController(),
-      relay = () => abort.abort();
-    signal?.addEventListener("abort", relay, { once: true });
-    const timeout = setTimeout(() => abort.abort(), 15000);
     try {
-      let response: Response;
-      try {
-        response = await request(endpoint.origin + path, {
-          method: "POST",
-          credentials: "omit",
-          cache: "no-store",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(body),
-          signal: abort.signal,
-        });
-      } catch {
-        if (signal?.aborted) throw new DOMException("Cancelled", "AbortError");
-        throw new VoxelApiError("UNAVAILABLE", true);
-      }
-      let value: unknown;
-      try {
-        value = await response.json();
-      } catch {
-        if (signal?.aborted) throw new DOMException("Cancelled", "AbortError");
-        throw new VoxelApiError("PROTOCOL", true);
-      }
-      if (!response.ok) {
-        const code =
-          record(value) &&
-          typeof value.error === "string" &&
-          /^[A-Z_]{1,48}$/.test(value.error)
-            ? value.error
-            : "UNAVAILABLE";
-        throw new VoxelApiError(
-          code,
-          response.status >= 500 || response.status === 429,
-        );
-      }
-      return value;
-    } finally {
-      clearTimeout(timeout);
-      signal?.removeEventListener("abort", relay);
+      return await withDeadline(
+        async (requestSignal) => {
+          const token = await options.getToken();
+          if (requestSignal.aborted)
+            throw new DOMException("Cancelled", "AbortError");
+          if (!token || token.length > 16384)
+            throw new VoxelApiError("UNAUTHORIZED");
+          const response = await request(endpoint.origin + path, {
+            method: "POST",
+            credentials: "omit",
+            cache: "no-store",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(body),
+            signal: requestSignal,
+          });
+          let value: unknown;
+          try {
+            value = await response.json();
+          } catch {
+            throw new VoxelApiError("PROTOCOL", true);
+          }
+          if (!response.ok) {
+            const code =
+              record(value) &&
+              typeof value.error === "string" &&
+              /^[A-Z_]{1,48}$/.test(value.error)
+                ? value.error
+                : "UNAVAILABLE";
+            throw new VoxelApiError(
+              code,
+              response.status >= 500 || response.status === 429,
+            );
+          }
+          return value;
+        },
+        15000,
+        signal,
+      );
+    } catch (error) {
+      if (signal?.aborted) throw new DOMException("Cancelled", "AbortError");
+      if (error instanceof VoxelApiError) throw error;
+      throw new VoxelApiError("UNAVAILABLE", true);
     }
   }
 
@@ -402,7 +400,13 @@ export function createVoxelApi(options: {
           code,
           buildId,
           correlationId: crypto.randomUUID(),
-          ...(detail ? { reason: detail.reason, fatal: detail.fatal } : {}),
+          ...(detail
+            ? {
+                reason: detail.reason,
+                fatal: detail.fatal,
+                ...(detail.metrics ? { metrics: detail.metrics } : {}),
+              }
+            : {}),
         },
         signal,
       );
