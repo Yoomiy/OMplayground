@@ -9,6 +9,7 @@ vi.mock("../../../../../games/voxel/src/client/world-audio-assets.ts", () => ({
   },
 }));
 import { WorldAudio } from "../../../../../games/voxel/src/client/world-audio.ts";
+import { sampleEnvironment } from "../../../../../games/voxel/src/shared/environment.ts";
 const sources: Node[] = [];
 class Param {
   value = 0;
@@ -42,8 +43,18 @@ class Node {
   stop = vi.fn(() => this.onended?.());
 }
 class Context {
+  static latest: Context;
+  constructor() {
+    Context.latest = this;
+  }
   state = "running";
   currentTime = 0;
+  baseLatency = 0.01;
+  outputLatency = 0.02;
+  timestamp = { contextTime: 0, performanceTime: 0 };
+  getOutputTimestamp() {
+    return this.timestamp;
+  }
   sampleRate = 100;
   destination = new Node();
   listener = { setPosition() {}, setOrientation() {} };
@@ -113,7 +124,7 @@ it("uses a decoded variant immediately while another variant hangs; never plays 
   audio.material("dig", [0, 0, 0], "stone");
   expect(sources[1].buffer.id).toBe(2);
 });
-it("bounds failed downloads, reports them nonfatally and lets a later request recover without replaying dropped sounds", async () => {
+it("bounds failed downloads, reports them nonfatally and recovers without replaying old actions", async () => {
   const issue = vi.fn();
   let fail = true;
   vi.stubGlobal(
@@ -128,7 +139,7 @@ it("bounds failed downloads, reports them nonfatally and lets a later request re
   audio.setActive(true);
   audio.unlock();
   await vi.advanceTimersByTimeAsync(5001);
-  expect(issue).toHaveBeenCalledWith("audio_load_failed");
+  expect(issue).toHaveBeenCalledWith("audio_load_failed", expect.any(Object));
   expect(audio.stats.loading).toBeLessThanOrEqual(4);
   audio.material("dig", [0, 0, 0], "stone");
   expect(sources).toHaveLength(0);
@@ -138,8 +149,45 @@ it("bounds failed downloads, reports them nonfatally and lets a later request re
   await vi.advanceTimersByTimeAsync(0);
   // A dropped interaction is not replayed when its file eventually becomes ready.
   const count = sources.length;
+  expect(count).toBe(0);
   audio.material("dig", [0, 0, 0], "stone");
   expect(sources.length).toBe(count + 1);
+  expect(sources.at(-1)?.buffer.id).toBe(1);
+});
+it("reports output clock anomalies with bounded timing observations without resetting playback", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => new Response(new Uint8Array([1]))),
+  );
+  const issue = vi.fn();
+  audio = new WorldAudio(issue);
+  audio.setActive(true);
+  audio.unlock();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(audio.stats.gain).toBeCloseTo(0.9);
+  const now = vi.spyOn(performance, "now").mockReturnValue(2000);
+  const context = Context.latest;
+  context.currentTime = 12;
+  context.timestamp = { contextTime: 2, performanceTime: 1900 };
+  audio.frame([0, 0, 0], 0, 0, sampleEnvironment(0, 1), true, true);
+  expect(issue).toHaveBeenCalledWith("audio_output_delayed", {
+    audioBaseLatencyMs: 10,
+    audioOutputLatencyMs: 20,
+    audioSampleRate: 100,
+    audioClockGapMs: 10000,
+    audioOutputAgeMs: 100,
+  });
+  const count = issue.mock.calls.length;
+  now.mockReturnValue(4000);
+  audio.frame([0, 0, 0], 0, 0, sampleEnvironment(0, 1), true, true);
+  expect(issue).toHaveBeenCalledTimes(count);
+  now.mockReturnValue(13000);
+  context.outputLatency = NaN;
+  audio.frame([0, 0, 0], 0, 0, sampleEnvironment(0, 1), true, true);
+  expect(issue).toHaveBeenCalledTimes(count + 1);
+  expect(audio.stats.timing.audioOutputLatencyMs).toBeUndefined();
+  expect(context.close).not.toHaveBeenCalled();
+  expect(audio.stats.buffers).toBe(4);
 });
 it("simultaneous explosions stay bounded, and pause/dispose retire every voice and late load", async () => {
   vi.stubGlobal(
@@ -176,7 +224,7 @@ it("native audio errors and a failing diagnostic hook cannot escape into gamepla
       throw new DOMException("native graph interrupted", "InvalidStateError");
     });
   expect(() => audio.material("dig", [0, 0, 0], "stone")).not.toThrow();
-  expect(issue).toHaveBeenCalledWith("audio_unavailable");
+  expect(issue).toHaveBeenCalledWith("audio_unavailable", expect.any(Object));
   create.mockRestore();
   await vi.advanceTimersByTimeAsync(1100);
   audio.material("dig", [0, 0, 0], "stone");

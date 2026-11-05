@@ -11,7 +11,7 @@ export type { ChatLineRow };
  * Teacher observe UI: persisted chat + moderation RPCs (same feed as kids; TODO #11).
  */
 export function useTeacherSessionChat(sessionId: string | undefined) {
-  const { lines, error, reload } = usePersistedSessionChat(sessionId);
+  const { lines, error, reload, outbox } = usePersistedSessionChat(sessionId);
 
   const softDelete = useCallback(
     async (messageId: string) => {
@@ -34,5 +34,5 @@ export function useTeacherSessionChat(sessionId: string | undefined) {
     void reload();
   }, [sessionId, reload]);
 
-  return { lines, error, reload, softDelete, clearSession };
+  return { lines, error, reload, outbox, softDelete, clearSession };
 }

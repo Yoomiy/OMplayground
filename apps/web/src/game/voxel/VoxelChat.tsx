@@ -1,10 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { VoxelApiError, admissionMessage } from "./session-api";
 import type { VoxelApi, ChatPage } from "./session-api";
+import type { ChatMessage } from "../../../../../games/voxel/src/shared/chat.ts";
 import { validChatText } from "../../../../../games/voxel/src/shared/chat.ts";
-type Action =
-  | { action: "send"; message: string }
-  | { action: "delete" | "clear"; target: string | null };
+import { ChatDeliveryError, useChatOutbox } from "../../hooks/useChatOutbox";
+import type { OutgoingChatMessage } from "../../hooks/useChatOutbox";
+import { ChatDeliveryStatus } from "../ChatDeliveryStatus";
+type Action = { action: "delete" | "clear"; target: string | null };
+type DisplayMessage = Pick<ChatMessage, "id" | "senderName" | "message"> & {
+  sequence?: number;
+  outgoing?: OutgoingChatMessage;
+};
 type Notice = {
   id: string;
   action: Action;
@@ -19,6 +25,7 @@ export function VoxelChat({
   onOpen,
   onResume,
   active = true,
+  subscribeChanges,
 }: {
   api: VoxelApi;
   isStaff: boolean;
@@ -26,8 +33,16 @@ export function VoxelChat({
   onOpen: () => void;
   onResume?: () => void;
   active?: boolean;
+  subscribeChanges?: (listener: () => void) => () => void;
 }) {
   const input = useRef<HTMLInputElement>(null);
+  const {
+    messages: outgoing,
+    send,
+    acknowledged,
+    reconcile,
+    remove,
+  } = useChatOutbox(api);
   const loadedCursor = useRef<number | null>(null);
   const lines = useRef<HTMLOListElement>(null);
   const stickToBottom = useRef(true);
@@ -49,10 +64,7 @@ export function VoxelChat({
     [readError, setReadError] = useState(false),
     [refresh, setRefresh] = useState(0),
     [notice, setNotice] = useState<Notice | null>(null),
-    [confirm, setConfirm] = useState<Extract<
-      Action,
-      { target: unknown }
-    > | null>(null);
+    [confirm, setConfirm] = useState<Action | null>(null);
   useEffect(() => {
     alive.current = true;
     setOpen(false);
@@ -71,11 +83,14 @@ export function VoxelChat({
   useEffect(() => {
     if (!active) return;
     const abort = new AbortController();
-    let running = false;
+    let running = false,
+      dirty = false;
     const requestedCursor = open ? cursor : null;
     if (loadedCursor.current !== requestedCursor) setPage(null);
     setReadError(false);
     const reload = async () => {
+      // A commit arriving during a read requires another read after it finishes.
+      dirty = true;
       if (
         running ||
         abort.signal.aborted ||
@@ -83,12 +98,19 @@ export function VoxelChat({
       )
         return;
       running = true;
+      dirty = false;
       setLoading(true);
+      // A read started after acknowledgement can also retire a locally displayed
+      // message that was subsequently deleted/cleared before we saw it in history.
+      const acknowledgedBeforeRead =
+        requestedCursor === null ? acknowledged() : new Set<string>();
       try {
         const value = await api.chatHistory(open ? cursor : null, abort.signal);
         if (!abort.signal.aborted) {
           loadedCursor.current = requestedCursor;
           setPage(value);
+          const received = new Set(value.messages.map((message) => message.id));
+          reconcile(received, acknowledgedBeforeRead);
           setReadError(false);
         }
       } catch {
@@ -98,18 +120,35 @@ export function VoxelChat({
       } finally {
         running = false;
         if (!abort.signal.aborted) setLoading(false);
+        if (
+          dirty &&
+          !abort.signal.aborted &&
+          document.visibilityState === "visible"
+        )
+          void reload();
       }
     };
     void reload();
-    const timer = setInterval(() => void reload(), open ? 3000 : 10000),
+    const unsubscribe = subscribeChanges?.(() => void reload());
+    const timer = setInterval(() => void reload(), 10000),
       visible = () => void reload();
     document.addEventListener("visibilitychange", visible);
     return () => {
       abort.abort();
       clearInterval(timer);
+      unsubscribe?.();
       document.removeEventListener("visibilitychange", visible);
     };
-  }, [api, active, open, cursor, refresh]);
+  }, [
+    api,
+    active,
+    open,
+    cursor,
+    refresh,
+    subscribeChanges,
+    acknowledged,
+    reconcile,
+  ]);
   useEffect(() => {
     if (!open) return;
     stickToBottom.current = true;
@@ -118,7 +157,35 @@ export function VoxelChat({
   useEffect(() => {
     if (open && cursor === null && stickToBottom.current && lines.current)
       lines.current.scrollTop = lines.current.scrollHeight;
-  }, [page, open, cursor]);
+  }, [page, open, cursor, outgoing]);
+  const sendMessage = async (message: string, id?: string) => {
+    if (!canSend || !active || !validChatText(message)) return;
+    stickToBottom.current = true;
+    setCursor(null);
+    const success = await send(
+      message,
+      async (text, requestId, signal) => {
+        try {
+          await api.sendChat(text, requestId, signal);
+        } catch (error) {
+          const retryable =
+            !(error instanceof VoxelApiError) || error.retryable;
+          throw new ChatDeliveryError(
+            retryable
+              ? "לא התקבל אישור. אפשר לבדוק שוב את אותה בקשת צ׳אט."
+              : error instanceof VoxelApiError && error.code === "NOT_IN_ROOM"
+                ? "אפשר לשלוח הודעה רק מתוך העולם."
+                : admissionMessage(
+                    error instanceof VoxelApiError ? error.code : "UNAVAILABLE",
+                  ),
+            retryable,
+          );
+        }
+      },
+      id,
+    );
+    if (success && alive.current) setRefresh((value) => value + 1);
+  };
   const execute = async (action: Action, id: string = crypto.randomUUID()) => {
     if (busy.current) return;
     busy.current = true;
@@ -129,25 +196,17 @@ export function VoxelChat({
       id,
       action,
       state: "pending",
-      text: action.action === "send" ? "שולחים…" : "מעדכנים…",
+      text: "מעדכנים…",
     });
-    if (action.action === "send") setDraft("");
     try {
-      if (action.action === "send")
-        await api.sendChat(action.message, id, abort.signal);
-      else
-        await api.moderateChat(action.action, action.target, id, abort.signal);
+      await api.moderateChat(action.action, action.target, id, abort.signal);
       if (!abort.signal.aborted && alive.current) {
-        setNotice(
-          action.action === "send"
-            ? null
-            : {
-                id,
-                action,
-                state: "done",
-                text: "הצ׳אט עודכן.",
-              },
-        );
+        setNotice({
+          id,
+          action,
+          state: "done",
+          text: "הצ׳אט עודכן.",
+        });
         setRefresh((v) => v + 1);
       }
     } catch (error) {
@@ -174,6 +233,20 @@ export function VoxelChat({
     }
   };
   const locked = notice?.state === "pending" || notice?.state === "unconfirmed";
+  const receivedIds = new Set(page?.messages.map((message) => message.id));
+  const messages: DisplayMessage[] = [
+    ...(page?.messages ?? []),
+    ...(!open || cursor === null
+      ? outgoing
+          .filter((message) => !receivedIds.has(message.id))
+          .map((message) => ({
+            id: message.id,
+            senderName: "אני",
+            message: message.message,
+            outgoing: message,
+          }))
+      : []),
+  ];
   const opening = useRef({ onOpen, open });
   opening.current = { onOpen, open };
   useEffect(() => {
@@ -283,15 +356,27 @@ export function VoxelChat({
               list.scrollHeight - list.clientHeight - list.scrollTop < 32;
           }}
         >
-          {page?.messages.map((message) => (
-            <li key={message.id}>
+          {messages.map((message) => (
+            <li key={message.id} data-delivery={message.outgoing?.state}>
               <span>
                 <bdi dir="auto">
                   <strong>{message.senderName}</strong>
                 </bdi>
                 : <bdi dir="auto">{message.message}</bdi>
               </span>
-              {isStaff && (
+              {message.outgoing && (
+                <ChatDeliveryStatus
+                  message={message.outgoing}
+                  disabled={!canSend || !active}
+                  retry={() => void sendMessage(message.message, message.id)}
+                  edit={() => {
+                    setDraft(message.message);
+                    remove(message.id);
+                    input.current?.focus();
+                  }}
+                />
+              )}
+              {isStaff && !message.outgoing && (
                 <button
                   type="button"
                   disabled={locked}
@@ -305,7 +390,7 @@ export function VoxelChat({
               )}
             </li>
           ))}
-          {page && !page.messages.length && <li>אין הודעות להצגה.</li>}
+          {page && !messages.length && <li>אין הודעות להצגה.</li>}
         </ol>
         <nav aria-label="דפדוף בצ׳אט">
           {cursor !== null && (
@@ -369,8 +454,11 @@ export function VoxelChat({
           <form
             onSubmit={(event) => {
               event.preventDefault();
-              if (validChatText(draft) && !locked)
-                void execute({ action: "send", message: draft.trim() });
+              if (validChatText(draft) && !locked) {
+                const message = draft.trim();
+                setDraft("");
+                void sendMessage(message);
+              }
             }}
           >
             <label className="voxel-session__chat-compose">
@@ -381,7 +469,6 @@ export function VoxelChat({
                 aria-label="הודעה למפגש"
                 maxLength={1000}
                 value={draft}
-                disabled={locked}
                 onChange={(event) =>
                   setDraft(
                     Array.from(event.target.value).slice(0, 500).join(""),
@@ -397,12 +484,18 @@ export function VoxelChat({
           <p>צפייה בלבד</p>
         )}
       </dialog>
-      {!open && active && page && page.messages.length > 0 && (
+      {!open && active && messages.length > 0 && (
         <div className="voxel-session__chat-peek" aria-label="הודעות אחרונות">
-          {page.messages.slice(-4).map((message) => (
+          {messages.slice(-4).map((message) => (
             <p key={message.id}>
               <strong>{message.senderName}:</strong>{" "}
               <bdi dir="auto">{message.message}</bdi>
+              {message.outgoing?.state === "sending" && (
+                <small> · שולח…</small>
+              )}
+              {message.outgoing?.error && (
+                <small> · {message.outgoing.error}</small>
+              )}
             </p>
           ))}
         </div>

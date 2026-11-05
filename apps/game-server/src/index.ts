@@ -1,4 +1,5 @@
 import path from "path";
+import { persistSessionChat } from "./sessionChat";
 import dotenv from "dotenv";
 
 dotenv.config({ path: path.join(__dirname, "..", ".env") });
@@ -2228,12 +2229,17 @@ io.on("connection", (socket) => {
   socket.on(
     "CHAT_MESSAGE",
     async (
-      payload: { sessionId: string; message: string },
+      payload: { sessionId: string; message: string; messageId?: string },
       ack?: (r: unknown) => void
     ) => {
       const sessionId = payload?.sessionId;
       const message = payload?.message;
-      if (!sessionId || typeof message !== "string") {
+      const messageId = payload?.messageId;
+      if (
+        !sessionId || typeof message !== "string" ||
+        (messageId !== undefined && (typeof messageId !== "string" ||
+          !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(messageId)))
+      ) {
         ack?.({
           ok: false,
           error: { code: "BAD_REQUEST", message: "sessionId and message required" }
@@ -2276,7 +2282,8 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      const { error: insErr } = await supabaseAdmin.from("chat_messages").insert({
+      const { error: insErr } = await persistSessionChat(supabaseAdmin, {
+        ...(messageId !== undefined ? { id: messageId } : {}),
         session_id: sessionId,
         sender_id: userId,
         sender_name: displayName,

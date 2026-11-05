@@ -3,8 +3,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { io, type Socket } from "socket.io-client";
 import { supabase } from "@/lib/supabase";
 import { useProfile } from "@/hooks/useProfile";
-import { usePersistedSessionChat } from "@/hooks/usePersistedSessionChat";
-import { useTeacherSessionChat } from "@/hooks/useTeacherSessionChat";
+import { SessionChatPanel } from "./SessionChatPanel";
+import { ChatDeliveryError, type DeliverChatMessage } from "../hooks/useChatOutbox";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { LazyGameBoard } from "@/game/lazyBoards";
 import { desktopPanelClass } from "@/components/KidDesktopShell";
@@ -117,12 +117,6 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
   );
   const isStaffObserver = isStaff && participationMode !== "player";
   const isChildSpectator = !isStaff && participationMode === "spectator";
-  const teacherChat = useTeacherSessionChat(
-    isStaff ? sessionId : undefined
-  );
-  const kidChat = usePersistedSessionChat(
-    !isStaff && participationMode !== "joining" ? sessionId : undefined
-  );
   const socketRef = useRef<Socket | null>(null);
   const recessEndedRef = useRef(false);
   const [gameKey, setGameKey] = useState<string | null>(null);
@@ -139,7 +133,6 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
   const [rematch, setRematch] = useState<RematchState | null>(null);
   const [endOverlay, setEndOverlay] = useState<EndOverlay | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const [chatDraft, setChatDraft] = useState("");
   const [roomIsOpen, setRoomIsOpen] = useState<boolean | null>(null);
   const [invitationCode, setInvitationCode] = useState<string | null>(null);
   const [updatingVisibility, setUpdatingVisibility] = useState(false);
@@ -464,22 +457,24 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
     [sessionId]
   );
 
-  const sendChat = useCallback(() => {
-    const s = socketRef.current;
-    const text = chatDraft.trim();
-    if (!s?.connected || !text) return;
-    s.emit(
-      "CHAT_MESSAGE",
-      { sessionId, message: text },
-      (ack: { ok?: boolean; error?: { message?: string } }) => {
-        if (!ack?.ok) {
-          setStatus(ack?.error?.message ?? "שליחת צ׳אט נכשלה");
-        } else {
-          setChatDraft("");
-        }
+  const sendChat = useCallback<DeliverChatMessage>((message, messageId, signal) => {
+    return new Promise<void>((resolve, reject) => {
+      const socket = socketRef.current;
+      if (!socket?.connected || signal.aborted) {
+        reject(new ChatDeliveryError("החיבור נותק. נסו שוב.", true));
+        return;
       }
-    );
-  }, [chatDraft, sessionId]);
+      const cancelled = () => reject(new DOMException("Cancelled", "AbortError"));
+      signal.addEventListener("abort", cancelled, { once: true });
+      socket.timeout(10_000).emit("CHAT_MESSAGE", { sessionId, message, messageId },
+        (error: Error | null, ack: { ok?: boolean; error?: { message?: string; code?: string } }) => {
+          signal.removeEventListener("abort", cancelled);
+          if (error) reject(new Error("לא התקבל אישור לשליחת ההודעה."));
+          else if (!ack?.ok) reject(new ChatDeliveryError(ack?.error?.message ?? "שליחת צ׳אט נכשלה", ack?.error?.code === "PERSIST_FAILED"));
+          else resolve();
+        });
+    });
+  }, [sessionId]);
 
   const toggleRoomVisibility = useCallback(async () => {
     if (!myUserId || !hostId || myUserId !== hostId || roomIsOpen === null) return;
@@ -686,110 +681,11 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
     !!myUserId &&
     roster.some((p) => p.userId === myUserId);
 
-  const chatPanel = isStaff ? (
-    <section className={desktopPanelClass("space-y-2 p-3")}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-black text-slate-900 dark:text-white">צ׳אט (ניהול)</h2>
-        <button
-          type="button"
-          className="rounded-lg border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 text-xs font-semibold text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-500/20 transition duration-200"
-          onClick={() => {
-            if (!window.confirm("למחוק את כל ההודעות במפגש זה?")) return;
-            void teacherChat.clearSession().catch((e: Error) => setStatus(e.message));
-          }}
-        >
-          ניקוי צ׳אט
-        </button>
-      </div>
-      {teacherChat.error ? (
-        <p className="text-xs font-medium text-amber-800 dark:text-amber-300">{teacherChat.error}</p>
-      ) : null}
-      <ul className="max-h-64 space-y-2 overflow-y-auto text-sm text-slate-700 dark:text-white/80">
-        {teacherChat.lines.map((line) => (
-          <li key={line.id} className="flex items-start justify-between gap-2 border-b border-slate-200 dark:border-white/10 pb-1">
-            <span>
-              <span className="text-slate-500 dark:text-white/40">{line.sender_name}:</span>{" "}
-              {line.message}
-            </span>
-            {!line.is_system ? (
-              <button
-                type="button"
-                className="shrink-0 text-xs text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-300 underline transition duration-200"
-                onClick={() =>
-                  void teacherChat.softDelete(line.id).catch((e: Error) =>
-                    setStatus(e.message)
-                  )
-                }
-              >
-                מחק
-              </button>
-            ) : null}
-          </li>
-        ))}
-      </ul>
-      {participationMode === "player" && !isAdmin ? (
-        <div className="flex gap-2">
-          <input
-            className="min-h-10 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-400 transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-white/40"
-            value={chatDraft}
-            onChange={(event) => setChatDraft(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && !event.shiftKey) {
-                event.preventDefault();
-                sendChat();
-              }
-            }}
-            placeholder="הודעה כמורה…"
-            maxLength={500}
-          />
-          <button
-            type="button"
-            className="rounded-lg bg-gradient-to-r from-violet-500 to-indigo-500 border border-violet-400/50 px-3.5 py-1 text-sm font-bold text-white"
-            onClick={() => sendChat()}
-          >
-            שלח
-          </button>
-        </div>
-      ) : null}
-    </section>
-  ) : (
-    <section className={desktopPanelClass("space-y-2 p-3")}>
-      <h2 className="text-sm font-black text-slate-900 dark:text-white">צ׳אט במשחק</h2>
-      {kidChat.error ? (
-        <p className="text-xs font-medium text-amber-800 dark:text-amber-300">{kidChat.error}</p>
-      ) : null}
-      <ul className="max-h-56 space-y-1 overflow-y-auto text-sm text-slate-700 dark:text-white/80">
-        {kidChat.lines.map((line) => (
-          <li key={line.id}>
-            <span className="text-slate-500 dark:text-white/40">{line.sender_name}:</span>{" "}
-            {line.message}
-          </li>
-        ))}
-      </ul>
-      <div className="flex gap-2">
-        <input
-          className="min-h-10 flex-1 rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm text-slate-900 dark:text-white outline-none placeholder:text-slate-400 dark:placeholder:text-white/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 shadow-sm transition"
-          value={chatDraft}
-          onChange={(e) => setChatDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              sendChat();
-            }
-          }}
-          placeholder="הודעה…"
-          maxLength={500}
-        />
-        <button
-          type="button"
-          className="rounded-lg bg-gradient-to-r from-violet-500 to-indigo-500 border border-violet-400/50 px-3.5 py-1 text-sm font-bold text-white hover:shadow-[0_0_12px_rgba(139,92,246,0.3)] transition duration-200"
-          onClick={() => sendChat()}
-        >
-          שלח
-        </button>
-      </div>
-    </section>
-  );
+  const chatPanel = <SessionChatPanel sessionId={sessionId}
+    active={isStaff || participationMode !== "joining"}
+    observer={isStaff && (participationMode !== "player" || isAdmin)}
+    canModerate={isStaff} ended={false} send={sendChat}
+    title={isStaff ? "צ׳אט (ניהול)" : "צ׳אט במשחק"} />;
 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">

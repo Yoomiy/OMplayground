@@ -11,7 +11,7 @@ const response = (value: unknown, status = 200) =>
     headers: { "Content-Type": "application/json" },
   });
 describe("rewritten voxel service contract", () => {
-  it("chat binds persisted receipts and paginated history without optimistic message echoes", async () => {
+  it("chat validates persisted receipts and paginated history", async () => {
     const calls: unknown[] = [];
     let malformed = false;
     const message = {

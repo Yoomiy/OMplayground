@@ -17,7 +17,7 @@ import { isLifecycleView } from './lifecycle.ts';
 import type { LifecycleView } from './lifecycle.ts';
 import { BOUNDS } from './world-bounds.ts';
 export { BOUNDS } from './world-bounds.ts';
-export const PROTOCOL = 16;
+export const PROTOCOL = 17;
 export const GENERATOR_VERSION = 2;
 export const MAX_CONTROL_BYTES = 16384;
 export const STREAM_RADIUS = 3;
@@ -97,6 +97,7 @@ export type ActorDelta = {
 };
 export type ServerMessage =
   | { type: 'joining' }
+  | { type: 'chat_changed' }
   | { type: 'persistence'; available: boolean }
   | LifecycleView
   | { type: 'rules'; epoch: number; mode: GameMode; combat: boolean; explosives: boolean }
@@ -364,6 +365,7 @@ export function parseServerMessage(text: string): ServerMessage | null {
         ? (v as ServerMessage)
         : null;
     case 'joining':
+    case 'chat_changed':
       return exact(v, ['type']) ? (v as ServerMessage) : null;
     case 'lifecycle':
       return isLifecycleView(v) ? v : null;

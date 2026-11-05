@@ -204,6 +204,7 @@ export function schoolChatApi(
           until,
           proof,
         );
+        context?.chatChanged(v.room);
         event("VOXEL_CHAT_APPLIED", {
           correlationId: id,
           room: v.room,

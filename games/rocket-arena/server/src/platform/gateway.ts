@@ -124,13 +124,28 @@ export class PlatformGateway {
     }) });
   }
 
-  async sendChat(admission: Admission, message: unknown): Promise<void> {
+  async sendChat(admission: Admission, message: unknown, messageId?: unknown): Promise<void> {
     if (admission.observer) throw new AdmissionError('READ_ONLY');
     if (typeof message !== 'string' || !message.trim() || message.length > 500) throw new AdmissionError('BAD_MESSAGE', 400);
-    await this.rest('chat_messages', { method: 'POST', body: JSON.stringify({
-      session_id: admission.session.id, sender_id: admission.profile.userId,
-      sender_name: admission.profile.name, message: message.trim(), is_system: false,
-    }) });
+    if (messageId !== undefined && (typeof messageId !== 'string' ||
+        !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(messageId))) {
+      throw new AdmissionError('BAD_MESSAGE', 400);
+    }
+    const rows = await this.rest<unknown[]>('chat_messages', {
+      method: 'POST',
+      ...(messageId !== undefined ? { headers: { Prefer: 'resolution=ignore-duplicates,return=representation' } } : {}),
+      body: JSON.stringify({
+        ...(messageId !== undefined ? { id: messageId } : {}),
+        session_id: admission.session.id, sender_id: admission.profile.userId,
+        sender_name: admission.profile.name, message: message.trim(), is_system: false,
+      }),
+    });
+    if (messageId !== undefined && !rows.length) {
+      const [existing] = await this.rest<{ session_id: string; sender_id: string; message: string; is_system: boolean }[]>(
+        `chat_messages?id=eq.${encodeURIComponent(messageId as string)}&select=session_id,sender_id,message,is_system`);
+      if (existing?.session_id !== admission.session.id || existing.sender_id !== admission.profile.userId ||
+          existing.message !== message.trim() || existing.is_system !== false) throw new AdmissionError('BAD_MESSAGE', 409);
+    }
   }
 
   /** Bound the URL size when checkpoints grow; preserve CAS on metadata and roster. */

@@ -436,7 +436,7 @@ test("real SDK/native worker chat requires a live participant, recovers one lost
       200,
     );
     assert.equal(gateway.rooms.size, 0);
-    await connect(f.teacher);
+    const staff = await connect(f.teacher);
     const child = await connect(f.kid);
     const hidden = await post("chat-send", f.teacher, {
       requestId: randomUUID(),
@@ -444,6 +444,10 @@ test("real SDK/native worker chat requires a live participant, recovers one lost
     });
     assert.equal(hidden.status, 403);
     assert.equal((await hidden.json()).error, "NOT_IN_ROOM");
+    assert.equal(
+      child.events.some((e) => "type" in e && e.type === "chat_changed"),
+      false,
+    );
     const id = randomUUID();
     wire.control.loseChatResponse = true;
     assert.equal(
@@ -460,6 +464,19 @@ test("real SDK/native worker chat requires a live participant, recovers one lost
       message: "שלום מהדפדפן",
     });
     assert.equal(sent.status, 200);
+    await Promise.all([
+      child.event("chat_changed"),
+      staff.event("chat_changed"),
+    ]);
+    for (const probe of [child, staff]) {
+      assert.deepEqual(
+        probe.events.filter((e) => "type" in e && e.type === "chat_changed"),
+        [{ type: "chat_changed" }],
+      );
+      probe.events = probe.events.filter(
+        (e) => !("type" in e && e.type === "chat_changed"),
+      );
+    }
     assert.equal(f.history().messages.length, 1);
     const clearId = randomUUID();
     wire.control.loseChatResponse = true;
@@ -484,6 +501,10 @@ test("real SDK/native worker chat requires a live participant, recovers one lost
       200,
     );
     assert.equal(f.history().messages.length, 0);
+    await Promise.all([
+      child.event("chat_changed"),
+      staff.event("chat_changed"),
+    ]);
     assert.doesNotMatch(JSON.stringify(events), /שלום מהדפדפן|sb_secret/);
     child.socket.terminate();
     await once(child.socket, "close");

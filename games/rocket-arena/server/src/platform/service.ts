@@ -193,7 +193,7 @@ export function createPlatformService(options: ServiceOptions) {
       launchRates.set(rateKey, !chat && previous && now - previous.at < 60_000
         ? { at: previous.at, count: previous.count + 1 } : { at: now, count: 1 });
       if (chat) {
-        await options.gateway.sendChat(admission, input.message);
+        await options.gateway.sendChat(admission, input.message, input.messageId);
         json(res, 200, { ok: true });
       } else {
         // Authorization above is always fresh. StrictMode/remounts may request

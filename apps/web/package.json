@@ -11,6 +11,7 @@
     "lint": "tsc --noEmit",
     "test": "vitest run",
     "test:voxel:browser": "node tools/voxel-react-browser.ts",
+    "test:voxel:chat": "node tools/voxel-chat-browser.ts",
     "test:voxel:resilience": "node tools/voxel-resilience-browser.ts"
   },
   "dependencies": {

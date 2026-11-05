@@ -81,6 +81,11 @@ test('recovery telemetry accepts only bounded numeric diagnostics and names chec
       ackAgeMs: 2100,
       snapshotAgeMs: 10,
       bufferedBytes: 0,
+      audioBaseLatencyMs: 10,
+      audioOutputLatencyMs: 10000,
+      audioSampleRate: 48000,
+      audioClockGapMs: 10000,
+      audioOutputAgeMs: 50,
     }),
     true,
   );

@@ -111,6 +111,8 @@ export type RuntimeOptions = {
   inputMode?: 'desktop' | 'touch';
   /** Enter an admitted, ready world directly; mouse capture still needs a click. */
   autoEnter?: boolean;
+  /** Persisted chat changed, or a new connection needs a fresh chat read. */
+  onChatChanged?: () => void;
   onDiagnostic?: (
     operation: string,
     reason: string,
@@ -195,8 +197,13 @@ export async function mountVoxel(
   const inputRecovery = new InputRecovery();
   let lastAckProgress = performance.now(),
     lastSnapshot = performance.now();
-  const audio = new WorldAudio((reason) => {
-      options.onDiagnostic?.('audio', reason, { code: 'AUDIO_UNAVAILABLE', reason, fatal: false });
+  const audio = new WorldAudio((reason, metrics) => {
+      options.onDiagnostic?.('audio', reason, {
+        code: reason === 'audio_output_delayed' ? 'AUDIO_OUTPUT_DELAYED' : 'AUDIO_UNAVAILABLE',
+        reason,
+        fatal: false,
+        metrics,
+      });
     }),
     soundGroups = new Map(content.behavior.map((block) => [block.family, block.soundGroup]));
   let biomeGenerator: InstanceType<typeof engine.TerrainGen> | null = null;
@@ -502,6 +509,8 @@ export async function mountVoxel(
     }
   };
   const handle = (event: ServerMessage) => {
+    if (event.type === 'chat_changed' || event.type === 'welcome') options.onChatChanged?.();
+    if (event.type === 'chat_changed') return;
     if (event.type === 'persistence') {
       publish({ saveUnavailable: !event.available });
       return;

@@ -64,6 +64,13 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
     [now, setNow] = useState(Date.now);
   const [endConfirmed, setEndConfirmed] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
+  const chatListeners = useRef(new Set<() => void>());
+  const subscribeChatChanges = useCallback((listener: () => void) => {
+    chatListeners.current.add(listener);
+    return () => {
+      chatListeners.current.delete(listener);
+    };
+  }, []);
   const [fullscreen, setFullscreen] = useState(false);
   useEffect(() => {
     const changed = () =>
@@ -184,6 +191,10 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
         renderScale: matchMedia("(pointer: coarse)").matches ? 0.75 : 1,
         renderHz: matchMedia("(pointer: coarse)").matches ? 30 : 60,
         autoEnter: true,
+        onChatChanged: () => {
+          if (!abort.signal.aborted)
+            for (const listener of chatListeners.current) listener();
+        },
         admit: async (attempt) => {
           try {
             const result = await api.admit(
@@ -590,6 +601,7 @@ export function VoxelSurface(props: VoxelSurfaceProps) {
         }}
       />
       <VoxelChat
+        subscribeChanges={subscribeChatChanges}
         api={api}
         isStaff={isStaff}
         active={

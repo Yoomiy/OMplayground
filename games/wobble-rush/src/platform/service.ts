@@ -360,7 +360,7 @@ export function createPlatformService(options: PlatformServiceOptions) {
         const admission = await room.run(() => room.authorize(profile, activity))
         if (path.endsWith("/chat")) {
           rateLimit(`chat:${profile.userId}`, 1, 700)
-          await options.gateway.sendChat(admission, input.message)
+          await options.gateway.sendChat(admission, input.message, input.messageId)
           json(response, 200, { ok: true })
         } else {
           if (!options.createVoiceToken) throw new AdmissionError("VOICE_UNAVAILABLE", 503)

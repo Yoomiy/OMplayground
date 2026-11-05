@@ -4,6 +4,12 @@ import { parseClientMessage, parseServerMessage } from '../src/shared/protocol.t
 import { encodeChunk, decodeChunk } from '../src/shared/chunk-wire.ts';
 import { InputQueue } from '../src/sim/input-queue.ts';
 import { sameJob } from '../src/world/jobs.ts';
+test('chat invalidation carries no message content and cannot be sent by gameplay clients', () => {
+  const event = { type: 'chat_changed' };
+  assert.deepEqual(parseServerMessage(JSON.stringify(event)), event);
+  assert.equal(parseServerMessage(JSON.stringify({ ...event, message: 'forged' })), null);
+  assert.equal(parseClientMessage(JSON.stringify(event)), null);
+});
 test('gameplay schema rejects dev commands, forged positions/clocks, and oversize input batches', () => {
   const frame = {
     epoch: 1,

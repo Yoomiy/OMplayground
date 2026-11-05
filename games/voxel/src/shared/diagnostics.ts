@@ -5,6 +5,7 @@ export const DIAGNOSTIC_REASONS = [
   'input_recovered',
   'audio_load_failed',
   'audio_unavailable',
+  'audio_output_delayed',
   'incompatible_client_build',
   'invalid_server_control_message',
   'invalid_world_frame',
@@ -26,7 +27,18 @@ export const DIAGNOSTIC_REASONS = [
 export type DiagnosticReason = (typeof DIAGNOSTIC_REASONS)[number];
 export type DiagnosticMetrics = Partial<
   Record<
-    'epoch' | 'sequence' | 'ack' | 'inputSeconds' | 'ackAgeMs' | 'snapshotAgeMs' | 'bufferedBytes',
+    | 'epoch'
+    | 'sequence'
+    | 'ack'
+    | 'inputSeconds'
+    | 'ackAgeMs'
+    | 'snapshotAgeMs'
+    | 'bufferedBytes'
+    | 'audioBaseLatencyMs'
+    | 'audioOutputLatencyMs'
+    | 'audioSampleRate'
+    | 'audioClockGapMs'
+    | 'audioOutputAgeMs',
     number
   >
 >;
@@ -42,6 +54,11 @@ export function isDiagnosticMetrics(value: unknown): value is DiagnosticMetrics 
         'ackAgeMs',
         'snapshotAgeMs',
         'bufferedBytes',
+        'audioBaseLatencyMs',
+        'audioOutputLatencyMs',
+        'audioSampleRate',
+        'audioClockGapMs',
+        'audioOutputAgeMs',
       ].includes(key) &&
       typeof n === 'number' &&
       Number.isFinite(n) &&

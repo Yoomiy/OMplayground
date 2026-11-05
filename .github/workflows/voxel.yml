@@ -65,12 +65,14 @@ jobs:
         env:
           VITE_SUPABASE_URL: https://school.invalid
           VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_fixture
+      - run: node --import=tsx --test scripts/session-chat-gateways.test.ts
       - run: npm run build --workspace @playground/web
         env:
           VITE_SUPABASE_URL: https://school.invalid
           VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_fixture
           VITE_VOXEL_RUNTIME_SERVER_URL: https://voxel.invalid
       - run: npm --prefix games/voxel exec -- playwright install --with-deps chromium
+      - run: npm run test:voxel:chat --workspace @playground/web
       - name: Install native desktop input tools
         run: |
           sudo apt-get update

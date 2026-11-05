@@ -34,6 +34,7 @@ export type AdmissionPolicy = (
 ) => Promise<AdmissionGrant | null>;
 /** Trusted service API port; never decoded from a gameplay socket. */
 export type GatewayApiContext = Readonly<{
+  chatChanged(room: string): void;
   revoke(room: string, actor: string, revision: number): void;
   actor(
     room: string,
@@ -284,6 +285,29 @@ export async function createGateway(options: GatewayOptions) {
       void retireRoom(room);
   };
   const apiContext: GatewayApiContext = Object.freeze({
+    chatChanged(roomId: string) {
+      const room = rooms.get(roomId);
+      if (draining || !room || room.closing || room.retiring) return;
+      const payload = JSON.stringify({ type: 'chat_changed' } satisfies ServerMessage);
+      for (const id of room.connections) {
+        const entry = connections.get(id);
+        if (
+          !entry?.authorization?.valid() ||
+          entry.socket.readyState !== WebSocket.OPEN ||
+          entry.socket.bufferedAmount > 1024 * 1024
+        )
+          continue;
+        // Only an invalidation crosses the socket. Reads still apply school policy.
+        // Delivery is best effort after commit; polling repairs missed notifications.
+        try {
+          entry.socket.send(payload, (error) => {
+            if (error) entry.socket.terminate();
+          });
+        } catch {
+          entry.socket.terminate();
+        }
+      }
+    },
     actor(roomId: string, actorId: string) {
       const room = rooms.get(roomId);
       if (draining || !room || room.closing || room.retiring || !room.durability?.owned())

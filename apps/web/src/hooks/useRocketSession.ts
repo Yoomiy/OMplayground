@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+import { ChatDeliveryError } from './useChatOutbox';
 import { isRocketServiceCompatible, isRocketView, rocketError, rocketServiceUrl, type RocketView } from '@/lib/rocketProtocol';
 
 export function useRocketSession(sessionId: string, backHref: string) {
@@ -132,17 +133,17 @@ export function useRocketSession(sessionId: string, backHref: string) {
     }
   };
 
-  const requestSocial = useCallback(async (kind: 'chat' | 'voice', message?: string) => {
+  const requestSocial = useCallback(async (kind: 'chat' | 'voice', message?: string, messageId?: string, signal?: AbortSignal) => {
     if (!service.url) throw new Error('כתובת שרת המשחק עדיין לא הוגדרה');
     const { data } = await supabase.auth.getSession();
     if (!data.session?.access_token) throw new Error('יש להתחבר מחדש');
     const response = await fetch(`${service.url}/api/rocket/${kind}`, {
-      method: 'POST', signal: AbortSignal.timeout(10_000),
+      method: 'POST', signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(10_000)]) : AbortSignal.timeout(10_000),
       headers: { Authorization: `Bearer ${data.session.access_token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionId, ...(message !== undefined ? { message } : {}) }),
+      body: JSON.stringify({ sessionId, ...(message !== undefined ? { message, messageId } : {}) }),
     });
     const result = await response.json();
-    if (!response.ok) throw new Error(rocketError(result.code));
+    if (!response.ok) throw new ChatDeliveryError(rocketError(result.code), response.status >= 500 || response.status === 429);
     return result as { token?: string; serverUrl?: string };
   }, [sessionId, service.url]);
   const voiceRequest = useMemo<{ pending: Promise<{ token: string; serverUrl: string }> | null }>(() => ({ pending: null }), [requestSocial]);
@@ -156,7 +157,7 @@ export function useRocketSession(sessionId: string, backHref: string) {
     void pending.finally(() => { if (voiceRequest.pending === pending) voiceRequest.pending = null; }).catch(() => {});
     return pending;
   }, [requestSocial, voiceRequest]);
-  const sendChat = useCallback(async (message: string) => { await requestSocial('chat', message); }, [requestSocial]);
+  const sendChat = useCallback(async (message: string, messageId?: string, signal?: AbortSignal) => { await requestSocial('chat', message, messageId, signal); }, [requestSocial]);
   return { frame, bridgeId, src, view, error: error ?? service.error, status, copied, control, copyInvite,
     retry: () => setRetry(value => value + 1), requestVoiceToken, sendChat };
 }

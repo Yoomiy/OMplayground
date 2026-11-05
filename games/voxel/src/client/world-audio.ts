@@ -1,6 +1,7 @@
 import { soundAssets as assets } from './world-audio-assets.ts';
 import { withDeadline } from '../shared/request-deadline.ts';
 import type { Environment } from '../shared/environment.ts';
+import type { DiagnosticMetrics } from '../shared/diagnostics.ts';
 export type MaterialAction = 'step' | 'dig' | 'break' | 'place';
 export type EffectSound = 'pickup' | 'hurt' | 'eat' | 'swallow' | 'craft' | 'fuse' | 'explosion';
 const effects: Record<EffectSound, string[]> = {
@@ -62,9 +63,12 @@ export class WorldAudio {
   private failedLoads = 0;
   private audioFailures = 0;
   private faultUntil = 0;
-  private reportIssue(reason: 'audio_load_failed' | 'audio_unavailable') {
+  private nextTimingSample = 0;
+  private nextTimingReport = 0;
+  private timing: DiagnosticMetrics = {};
+  private reportIssue(reason: 'audio_load_failed' | 'audio_unavailable' | 'audio_output_delayed') {
     try {
-      this.onIssue(reason);
+      this.onIssue(reason, this.timing);
     } catch {
       /* Telemetry is optional too. */
     }
@@ -80,7 +84,10 @@ export class WorldAudio {
     }
   }
   constructor(
-    private onIssue: (reason: 'audio_load_failed' | 'audio_unavailable') => void = () => {},
+    private onIssue: (
+      reason: 'audio_load_failed' | 'audio_unavailable' | 'audio_output_delayed',
+      metrics: DiagnosticMetrics,
+    ) => void = () => {},
   ) {}
   private biome: keyof typeof ambientProfiles = 'plains';
   private noise: AudioBuffer | null = null;
@@ -114,6 +121,7 @@ export class WorldAudio {
       audioFailures: this.audioFailures,
       loading: this.loadingCount,
       queuedLoads: this.loadQueue.length,
+      timing: { ...this.timing },
       dropped: this.dropped,
       listener: this.context?.listener.positionX
         ? [
@@ -192,7 +200,7 @@ export class WorldAudio {
   private gain(): void {
     if (!this.context || !this.output || this.disposed) return;
     this.output.gain.setTargetAtTime(
-      this.active && !this.muted ? 0.7 : 0,
+      this.active && !this.muted ? 0.9 : 0,
       this.context.currentTime,
       0.025,
     );
@@ -222,6 +230,11 @@ export class WorldAudio {
     this.listenerPosition = [position[0], position[1] + 1.62, position[2]];
     const context = this.context;
     if (!context || this.disposed) return;
+    try {
+      this.sampleTiming(context);
+    } catch {
+      // Optional browser timing probes must never interrupt the sound graph.
+    }
     const listener = context.listener;
     const c = Math.cos(pitch),
       forward = [Math.sin(yaw) * c, Math.sin(pitch), -Math.cos(yaw) * c];
@@ -251,6 +264,42 @@ export class WorldAudio {
     ) {
       this.nextChirp = context.currentTime + 6 + Math.sin(environment.seconds) ** 2 * 4;
       this.chirp(environment.daylight > 0.5);
+    }
+  }
+  private sampleTiming(context: AudioContext): void {
+    const now = performance.now();
+    if (now < this.nextTimingSample || context.state !== 'running') return;
+    this.nextTimingSample = now + 1000;
+    const metrics: DiagnosticMetrics = {};
+    const add = (key: keyof DiagnosticMetrics, value: number) => {
+      if (Number.isFinite(value) && value >= 0 && value <= Number.MAX_SAFE_INTEGER)
+        metrics[key] = value;
+    };
+    add('audioBaseLatencyMs', context.baseLatency * 1000);
+    add('audioOutputLatencyMs', context.outputLatency * 1000);
+    add('audioSampleRate', context.sampleRate);
+    if (typeof context.getOutputTimestamp === 'function') {
+      const stamp = context.getOutputTimestamp();
+      if ((stamp.contextTime ?? 0) > 0 && (stamp.performanceTime ?? 0) > 0) {
+        // Keep these as clock observations, not a claim of measured speaker latency.
+        add('audioClockGapMs', (context.currentTime - stamp.contextTime!) * 1000);
+        add('audioOutputAgeMs', Math.max(0, now - stamp.performanceTime!));
+      }
+    }
+    this.timing = metrics;
+    if (
+      this.active &&
+      !this.muted &&
+      now >= this.nextTimingReport &&
+      Math.max(
+        metrics.audioBaseLatencyMs ?? 0,
+        metrics.audioOutputLatencyMs ?? 0,
+        metrics.audioClockGapMs ?? 0,
+        metrics.audioOutputAgeMs ?? 0,
+      ) > 1000
+    ) {
+      this.nextTimingReport = now + 10000;
+      this.reportIssue('audio_output_delayed');
     }
   }
   private track(source: AudioScheduledSourceNode, nodes: AudioNode[]): void {
@@ -441,7 +490,7 @@ export class WorldAudio {
       action === 'break' && group === 'glass'
         ? [1, 2, 3].map((n) => `random/glass${n}.ogg`)
         : Object.keys(assets).filter((key) => key.startsWith(`./sounds/step/${prefix}`));
-    const volume = { step: 0.32, dig: 0.22, break: 0.58, place: 0.42 }[action];
+    const volume = { step: 0.32, dig: 0.22, break: 0.8, place: 0.42 }[action];
     const rate = action === 'dig' ? 1.05 + Math.random() * 0.1 : 0.9 + Math.random() * 0.2;
     this.play(paths, volume, position, rate);
   }

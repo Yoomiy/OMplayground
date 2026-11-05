@@ -32,7 +32,7 @@ function fixture() {
   return {
     ...school,
     voice,
-    context: { actor: () => current, revoke() {} },
+    context: { actor: () => current, revoke() {}, chatChanged() {} },
     setActor(next: typeof current) {
       current = next;
     },

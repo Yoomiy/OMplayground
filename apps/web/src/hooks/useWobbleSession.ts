@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+import { ChatDeliveryError } from './useChatOutbox';
 import { getCorrelationId } from '@/utils/correlation';
 import { isWobbleConfig, isWobbleView, wobbleError, wobbleServiceUrl, type WobbleConfig, type WobbleControl, type WobbleView } from '@/lib/wobbleProtocol';
 
@@ -135,17 +136,17 @@ export function useWobbleSession(sessionId: string, backHref: string) {
     }
   };
 
-  const requestSocial = useCallback(async (kind: 'chat' | 'voice', message?: string) => {
+  const requestSocial = useCallback(async (kind: 'chat' | 'voice', message?: string, messageId?: string, signal?: AbortSignal) => {
     if (!service.url) throw new Error('כתובת שרת המשחק עדיין לא הוגדרה');
     const { data } = await supabase.auth.getSession();
     if (!data.session?.access_token) throw new Error('יש להתחבר מחדש');
     const response = await fetch(`${service.url}/api/wobble/${kind}`, {
-      method: 'POST', signal: AbortSignal.timeout(10_000),
+      method: 'POST', signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(10_000)]) : AbortSignal.timeout(10_000),
       headers: { Authorization: `Bearer ${data.session.access_token}`, 'Content-Type': 'application/json', 'X-Correlation-ID': getCorrelationId() },
-      body: JSON.stringify({ sessionId, ...(message !== undefined ? { message } : {}) }),
+      body: JSON.stringify({ sessionId, ...(message !== undefined ? { message, messageId } : {}) }),
     });
     const result = await response.json();
-    if (!response.ok) throw new Error(wobbleError(result.code));
+    if (!response.ok) throw new ChatDeliveryError(wobbleError(result.code), response.status >= 500 || response.status === 429);
     return result as { token?: string; serverUrl?: string };
   }, [sessionId, service.url]);
   const voiceRequest = useMemo<{ pending: Promise<{ token: string; serverUrl: string }> | null }>(() => ({ pending: null }), [requestSocial]);
@@ -159,7 +160,7 @@ export function useWobbleSession(sessionId: string, backHref: string) {
     void pending.finally(() => { if (voiceRequest.pending === pending) voiceRequest.pending = null; }).catch(() => {});
     return pending;
   }, [requestSocial, voiceRequest]);
-  const sendChat = useCallback(async (message: string) => { await requestSocial('chat', message); }, [requestSocial]);
+  const sendChat = useCallback(async (message: string, messageId?: string, signal?: AbortSignal) => { await requestSocial('chat', message, messageId, signal); }, [requestSocial]);
   return { frame, bridgeId, src, view, ended, config, post, error: error ?? service.error, status, copied, control, copyInvite,
     retry: () => setRetry(value => value + 1), requestVoiceToken, sendChat };
 }

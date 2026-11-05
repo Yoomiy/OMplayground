@@ -11,6 +11,30 @@ browser database calls or optimistically acknowledge saves. Presence expires by 
 server deadline. Temporary session/chat read failure retains loaded content and
 keeps the same runtime mounted; confirmed access denial keeps its terminal meaning.
 
+Committed chat sends/deletions/clears push a content-free `chat_changed` notification
+through the admitted runtime socket. The dialog and closed recent-message preview
+immediately reread authorized history. Reads coalesce notifications received while
+a request is in flight, and reconnect/visibility changes plus a 10-second repair poll
+recover missed notifications. Chat bodies and moderation remain in the trusted HTTP/SQL path.
+
+Outgoing messages appear locally on submit while their requests run. Each has its
+own delivery state; typing and sending another message stay available. The server
+uses the same request/message ID, so a history update replaces the local row once,
+whether it arrives before or after the HTTP receipt. Unconfirmed writes retry that
+same ID; definitive rejections retain the text for editing. Acknowledged local rows
+survive slow history reads and retire on a fresh read, including after moderation.
+
+Board games, Rocket and Wobble share `SessionChatPanel` and `usePersistedSessionChat`:
+board writes go through Socket.io, Rocket/Wobble through HTTP, into `chat_messages`.
+Supabase Realtime triggers history reads. Old voxel also used that shared feed. Voxel uses
+private `voxel_chat_messages`, participant/owner-fenced SQL, idempotent receipts and
+runtime socket invalidation. The shared hook cannot read that private table; swapping
+it in requires a storage/access migration rather than a UI replacement. All current
+game chat UIs share `useChatOutbox` and `ChatDeliveryStatus` for immediate local display,
+per-message delivery/retry state, reconciliation and cleanup. Public-table writes also
+preserve client message IDs and acknowledge retries only when the original actor,
+session and text match; retries never overwrite messages or undo moderation.
+
 Inventory, help, chat and mouse release affect local controls. Session-wide pause
 is a trusted HTTP operation. Escape releases pointer lock, and a world click restores
 capture. Recovery releases blocked input so reconnect controls stay usable. Native
@@ -20,6 +44,11 @@ readiness gates resume after join, teleport or graphics restoration.
 spatial mix. SDK reconnect retains the microphone; complete disconnect/readmission
 uses a new token. Game readiness loss, session end and unmount release owned voice
 resources. Recorded game sounds use a separate runtime-owned audio graph.
+The game mix uses gain 0.9; voice keeps its own gain. Audio debug timing and bounded
+`audio_output_delayed` diagnostics expose browser-reported base/output latency and
+raw output-clock observations. Clock differences are diagnostic observations, not
+measurements of physical Bluetooth/speaker latency; no automatic context reset is
+performed. Reproduction of persistent delayed sound needs the affected browser and device.
 
 Abort stale reads and dispose the runtime, DOM adapters, subscriptions, timers,
 audio tracks/elements and workers on unmount. Check `onRuntime` test hooks without
