@@ -490,7 +490,7 @@ export class WorldAudio {
       action === 'break' && group === 'glass'
         ? [1, 2, 3].map((n) => `random/glass${n}.ogg`)
         : Object.keys(assets).filter((key) => key.startsWith(`./sounds/step/${prefix}`));
-    const volume = { step: 0.32, dig: 0.22, break: 0.8, place: 0.42 }[action];
+    const volume = { step: 0.32, dig: 0.8, break: 0.8, place: 0.42 }[action];
     const rate = action === 'dig' ? 1.05 + Math.random() * 0.1 : 0.9 + Math.random() * 0.2;
     this.play(paths, volume, position, rate);
   }

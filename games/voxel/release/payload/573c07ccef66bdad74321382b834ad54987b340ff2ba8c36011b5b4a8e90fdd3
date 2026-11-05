@@ -1,9 +1,9 @@
 {
-  "buildId": "7e39e55c1950f2e89873dde296c6b36392de5c71a9adca26182197d1080ad3ac",
+  "buildId": "89976f0a0749b0902a956e317f3479783e09dfb1acf24625930fecd84c3ff8ed",
   "engineHash": "83a2ee1a6f731a6b6f515f16a121ca38311bb126266508d394177127f8ea1237",
   "contentHash": "2901239743859cde06ec4544cb84bb22f0c6062c4f83234dc2f8ac0d380cd21a",
-  "clientHash": "a8c47707188252dc621834a7435f09491ba3198d42c447a14c614c5235a7b461",
-  "serverHash": "5590b78e3788125faa61dedc900237634ddfb3e0cc3116fe494635823bc25967",
+  "clientHash": "d62fe739d07322c605f5589440da35756d49d642f62f55ad336c8e5b6206f7aa",
+  "serverHash": "441fafec1c3cd4e257004df7a245e1ebdfb18648b2d5f7aa9824265b24359f80",
   "client": [
     {
       "path": "assets/break-DPSoepx8.ogg",
@@ -126,8 +126,8 @@
       "hash": "3eba68d7069335da8b4813e3ac4ebc1fd632fd4d33ae70916a6686085b5f8dce"
     },
     {
-      "path": "assets/index-D-FIzov2.js",
-      "hash": "28288e4222767da0739fa257d5d41d54d8027c042a5947bb0fdf6485951f136d"
+      "path": "assets/index-g07UdCvs.js",
+      "hash": "f36e401e61698bf4d48efda9b7717c11bc1ce28b65d614de439ea73aa4a43689"
     },
     {
       "path": "assets/index-P3AiFv1J.css",
@@ -311,7 +311,7 @@
     },
     {
       "path": "index.html",
-      "hash": "c110cbec79296443d641dfc904488afe0e2efbe137b32bc19133713bcf63c830"
+      "hash": "653bf6e3e647111eb3be732282dd3bff3690dce7a4f21aae927ad9febf2381f4"
     },
     {
       "path": "voxel-audio-NOTICE.txt",
@@ -321,7 +321,7 @@
   "server": [
     {
       "path": "build.json",
-      "hash": "ec54515a9b66dd0a4166361a988169d6456322e0a433f351f5dd1ee394b526a7"
+      "hash": "0944ef6f42123887f8907e03640f7c1fd27957a7d3ccd80320369e57c084d28a"
     },
     {
       "path": "content.json",
