@@ -34,7 +34,7 @@ import {
   recordClassroomAttendanceWebhook,
   summarizeAttendanceVisits,
 } from "./classroomAttendance";
-import { blockClassroomParticipant } from "./classroomParticipantBlocks";
+import { blockClassroomParticipant, ClassroomGuestFingerprintBans, readGuestFingerprint } from "./classroomParticipantBlocks";
 import {
   createDocumentConversionTicket,
   createPresenterCapability,
@@ -79,6 +79,7 @@ export function mountClassroomRoutes(
   },
 ) {
   const { supabaseAdmin, logger } = options;
+  const guestFingerprintBans = new ClassroomGuestFingerprintBans(supabaseAdmin);
   const CORS_ORIGIN = options.corsOrigin,
     SUPABASE_SECRET_KEY = options.signingSecret;
   const DOCUMENT_CONVERTER_URL = options.documentConverterUrl;
@@ -528,12 +529,14 @@ export function mountClassroomRoutes(
         spectateMode,
         presenterToken: reconnectPresenterToken,
         guestAttendanceKey,
+        guestFingerprint,
       } = (req.body ?? {}) as {
         roomCode?: string;
         displayName?: string;
         spectateMode?: "invisible" | "visible";
         presenterToken?: string;
         guestAttendanceKey?: string;
+        guestFingerprint?: string;
       };
 
       if (
@@ -655,6 +658,8 @@ export function mountClassroomRoutes(
           : null,
         presenterIdentityOverride,
         guestAttendanceKey: guestParticipantKey,
+        guestFingerprint,
+        guestFingerprintBans,
         admissionId: evidence.admissionId,
         onSecurityIdentity: (identity) => {
           evidence.identity = identity;
@@ -693,6 +698,8 @@ export function mountClassroomRoutes(
             roomCode,
             guestAttendanceKey,
           ),
+          guestFingerprint,
+          guestFingerprintBans,
           admissionId: evidence.admissionId,
           onSecurityIdentity: (identity) => {
             evidence.identity = identity;
@@ -728,6 +735,19 @@ export function mountClassroomRoutes(
         SUPABASE_SECRET_KEY,
       );
 
+      if (result.role === "student" && !readGuestFingerprint(guestFingerprint)) {
+        logger.warn({
+          correlationId,
+          roomCode,
+          protocol: "http",
+          message: "Guest admitted without a valid fingerprint; using identity ban checks only",
+          context: {
+            event: "CLASSROOM_GUEST_FINGERPRINT_UNAVAILABLE",
+            admissionId: evidence.admissionId,
+            reason: guestFingerprint == null ? "missing" : "invalid",
+          },
+        });
+      }
       evidence.issued = true;
 
       res.json({
@@ -1926,6 +1946,7 @@ export function mountClassroomRoutes(
           targetIdentity.trim(),
         );
         await blockClassroomParticipant(supabaseAdmin, classroom.id, target);
+        guestFingerprintBans.invalidate(classroom.id);
         logger.info({
           correlationId: (req as express.Request & { correlationId?: string })
             .correlationId,

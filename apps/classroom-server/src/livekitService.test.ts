@@ -149,6 +149,7 @@ describe("classroom token and moderation", () => {
         from: jest.fn((table: string) => ({
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
+          like: jest.fn().mockResolvedValue({ data: [], error: null }),
           maybeSingle: jest.fn().mockResolvedValue({
             data: table === "classroom_sessions" ? classroom : null,
             error: null,

@@ -63,6 +63,20 @@ administrators and host permission enforcement are retained. Classroom logs use
 SFU project. Operational logs retain the existing structured/redacted conventions
 and privileged actions retain durable platform audit records.
 
+Guest re-entry bans also match a room-specific browser fingerprint. The web app
+computes browser/device signals once per page session without IPs, cookies or
+local storage. Its hash travels in guest media metadata; attendance strips that
+field, and only a teacher's explicit ban persists it in the existing private
+`classroom_participant_blocks` table. Account admission ignores guest fingerprints.
+Each service caches room fingerprint ban sets, including empty sets, for 30 seconds
+and shares concurrent reads. Empty sets skip fingerprint validation/matching;
+local bans invalidate the cache immediately. Other service instances see bans
+within 30 seconds. Missing or malformed fingerprints use the original guest
+identity rules without a fingerprint lookup or user-facing warning, even in rooms
+with fingerprint bans. The server logs `CLASSROOM_GUEST_FINGERPRINT_UNAVAILABLE`
+at warn level, with a missing/invalid reason and no fingerprint contents.
+No database migration is required for this feature.
+
 Roll out the service and web endpoint configuration together. Configure LiveKit
 webhooks to reach this service with its signing key, retain the same board signing
 secret on `game-server`, and keep the converter secret aligned. Verify the actual

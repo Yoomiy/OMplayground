@@ -197,8 +197,13 @@ async function fixture(background = false) {
     }
     if (table === "classroom_participant_blocks") {
       if (req.method === "POST") {
-        blocks.add(body.participant_key);
+        for (const row of Array.isArray(body) ? body : [body]) blocks.add(row.participant_key);
         reply(null);
+        return;
+      }
+      if (url.searchParams.get("participant_key")?.startsWith("like.")) {
+        reply([...blocks].filter((key) => key.startsWith("guest-fingerprint:"))
+          .map((participant_key) => ({ participant_key })));
         return;
       }
       reply(
@@ -272,6 +277,52 @@ beforeEach(() => {
   Object.assign(process.env, fixtureEnv);
 });
 afterEach(() => jest.restoreAllMocks());
+
+test("guest fingerprint bans skip empty-room reloads, block new guest identities and allow account login", async () => {
+  const f = await fixture();
+  const fingerprint = `v1:${"a".repeat(64)}`;
+  const join = (body: object) => request(f.service.app).post("/rtc/classroom-token").send({ roomCode: "ROOM", ...body });
+  const fingerprintReads = () => f.calls.filter((call) => call.path === "/rest/v1/classroom_participant_blocks" && call.query.includes("like."));
+  try {
+    const guest = await join({ displayName: "Guest", guestAttendanceKey: randomUUID(), guestFingerprint: fingerprint }).expect(200);
+    await join({ displayName: "Another guest", guestAttendanceKey: randomUUID() }).expect(200);
+    expect(fingerprintReads()).toHaveLength(1);
+    expect(f.blocks.size).toBe(0);
+    const claims = await new TokenVerifier(f.config.livekitApiKey, f.config.livekitApiSecret).verify(guest.body.token);
+    expect(claims.video?.canUpdateOwnMetadata).toBe(false);
+    jest.spyOn(RoomServiceClient.prototype, "getParticipant").mockResolvedValue({
+      identity: guest.body.userId, name: "Guest", metadata: claims.metadata,
+    } as never);
+    jest.spyOn(RoomServiceClient.prototype, "removeParticipant").mockResolvedValue({} as never);
+    await request(f.service.app).post("/rtc/classroom-remove-participant")
+      .set("Authorization", "Bearer teacher-token")
+      .send({ roomCode: "ROOM", targetIdentity: guest.body.userId, blockRejoin: false }).expect(200);
+    expect(f.blocks.size).toBe(0);
+    await request(f.service.app).post("/rtc/classroom-remove-participant")
+      .set("Authorization", "Bearer teacher-token")
+      .send({ roomCode: "ROOM", targetIdentity: guest.body.userId, blockRejoin: true }).expect(200);
+    expect(f.blocks.has(`guest-fingerprint:${fingerprint}`)).toBe(true);
+    await join({ displayName: "Changed name", guestAttendanceKey: randomUUID(), guestFingerprint: fingerprint }).expect(403);
+    await join({ guestAttendanceKey: randomUUID() }).expect(200);
+    await join({ guestAttendanceKey: randomUUID(), guestFingerprint: "forged" }).expect(200);
+    await join({ guestAttendanceKey: randomUUID(), guestFingerprint: `v1:${"b".repeat(64)}` }).expect(200);
+    expect(fingerprintReads()).toHaveLength(2);
+    const account = await request(f.service.app).post("/rtc/classroom-token")
+      .set("Authorization", "Bearer kid-token")
+      .send({ roomCode: "ROOM", guestFingerprint: fingerprint }).expect(200);
+    const accountClaims = await new TokenVerifier(f.config.livekitApiKey, f.config.livekitApiSecret).verify(account.body.token);
+    expect(JSON.parse(accountClaims.metadata!)).not.toHaveProperty("guestFingerprint");
+    expect(fingerprintReads()).toHaveLength(2);
+    expect(JSON.stringify(f.logEntries)).not.toContain(fingerprint);
+    const warnings = (f.logEntries as any[]).filter((entry) =>
+      entry.context?.event === "CLASSROOM_GUEST_FINGERPRINT_UNAVAILABLE");
+    expect(warnings).toEqual(expect.arrayContaining([
+      expect.objectContaining({ level: 40, context: expect.objectContaining({ reason: "missing" }) }),
+      expect.objectContaining({ level: 40, context: expect.objectContaining({ reason: "invalid" }) }),
+    ]));
+    expect(warnings).toHaveLength(3); // Three guest fallbacks; the account adds none.
+  } finally { await f.close(); }
+});
 
 test("standalone classroom admission issues signed media and drawing grants, bootstraps presentation and persists a reconnect block", async () => {
   const f = await fixture();

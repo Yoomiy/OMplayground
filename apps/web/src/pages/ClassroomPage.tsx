@@ -7,6 +7,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { supabase } from "@/lib/supabase";
 import { getClassroomServerUrl } from "@/lib/classroomServerUrl";
+import { classroomGuestFingerprint } from "@/lib/classroomGuestFingerprint";
 import { reportCaughtError, reportTelemetry, setShellTelemetryTarget } from "@/utils/telemetry";
 import { getCorrelationId } from "@/utils/correlation";
 import { DrawingBoard, type DrawingBoardHandle } from "@/games/drawing/DrawingBoard";
@@ -933,7 +934,8 @@ export function ClassroomPage() {
           displayName: resolvedDisplayName,
           spectateMode: spectateMode ?? undefined,
           presenterToken: readPresenterSessionToken(roomCode) ?? undefined,
-          guestAttendanceKey: user ? undefined : getGuestAttendanceKey(roomCode, resolvedDisplayName)
+          guestAttendanceKey: user ? undefined : getGuestAttendanceKey(roomCode, resolvedDisplayName),
+          guestFingerprint: session?.access_token ? undefined : await classroomGuestFingerprint(roomCode!)
         })
       });
 
@@ -2013,8 +2015,32 @@ export function ClassroomPage() {
   };
 
   // HOST ACTIONS: Class-wide Media Permission Toggles
+  const persistClassWideMediaPermission = async (
+    key: "allowStudentMic" | "allowStudentCam",
+    allow: boolean
+  ): Promise<boolean> => {
+    try {
+      // Use the same persisted settings and LiveKit enforcement as the room
+      // settings panel. Notify browsers only after the server confirms it.
+      const response = await classroomRequest("/rtc/classroom-settings", {
+        roomCode,
+        settings: { [key]: allow }
+      });
+      if (!response.ok) throw new Error(`Classroom media update failed: ${response.status}`);
+      setRoomSettings((current) => ({ ...current, [key]: allow }));
+      return true;
+    } catch (error) {
+      setConnError("לא ניתן לאשר את עדכון הרשאות המדיה. נסו שוב.");
+      reportCaughtError("Classroom media permissions update failed", error, {
+        appArea: "classroom", operation: "media-permissions", setting: key
+      });
+      return false;
+    }
+  };
+
   const setClassWideMicPermission = async (allow: boolean) => {
     if (!room || !isHost) return;
+    if (!await persistClassWideMediaPermission("allowStudentMic", allow)) return;
     const updatedRecord: Record<string, { allowMic: boolean; allowCam: boolean }> = { ...individualPermissionsRef.current };
     participants.forEach((p) => {
       if (!p.isHost) {
@@ -2036,6 +2062,7 @@ export function ClassroomPage() {
 
   const setClassWideCamPermission = async (allow: boolean) => {
     if (!room || !isHost) return;
+    if (!await persistClassWideMediaPermission("allowStudentCam", allow)) return;
     const updatedRecord: Record<string, { allowMic: boolean; allowCam: boolean }> = { ...individualPermissionsRef.current };
     participants.forEach((p) => {
       if (!p.isHost) {

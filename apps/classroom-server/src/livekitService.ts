@@ -11,6 +11,8 @@ import type { ClassroomSecurityIdentity } from "./classroomSecurity";
 import {
   classroomParticipantKeyFromMetadata,
   isClassroomParticipantBlocked,
+  readGuestFingerprint,
+  ClassroomGuestFingerprintBans,
   type ClassroomParticipantBlockTarget,
 } from "./classroomParticipantBlocks";
 
@@ -564,6 +566,8 @@ export async function getClassroomParticipantBlockTarget(
     participantKey,
     identity: participant.identity,
     displayName: participant.name || participant.identity,
+    ...(participantKey.startsWith("guest:") && readGuestFingerprint(metadata.guestFingerprint)
+      ? { guestFingerprint: readGuestFingerprint(metadata.guestFingerprint) } : {}),
   };
 }
 
@@ -786,6 +790,8 @@ export interface GenerateClassroomTokenArgs {
   delegate?: { id: string; displayName: string } | null;
   presenterIdentityOverride?: string;
   guestAttendanceKey?: string | null;
+  guestFingerprint?: string;
+  guestFingerprintBans?: ClassroomGuestFingerprintBans;
   admissionId?: string;
   onSecurityIdentity?: (identity: ClassroomSecurityIdentity) => void;
 }
@@ -885,6 +891,10 @@ export async function generateClassroomToken(
       : isDelegate || isTeacher
         ? "cohost"
         : "participant";
+  // A valid school account always uses its account rules, even on a banned
+  // guest's device. Do not query fingerprint bans for accounts or delegates.
+  const guestFingerprint = !profile && !delegate
+    ? readGuestFingerprint(args.guestFingerprint) : undefined;
   args.onSecurityIdentity?.({
     accountId: profile?.userId,
     participantIdentity: identity,
@@ -910,7 +920,15 @@ export async function generateClassroomToken(
         classroom.id,
         attendanceKey,
       );
+      if (!isBlocked && !profile && !delegate && guestFingerprint) {
+        const fingerprints = await (args.guestFingerprintBans ??
+          new ClassroomGuestFingerprintBans(supabaseAdmin)).forRoom(classroom.id);
+        if (fingerprints.size > 0) {
+          isBlocked = fingerprints.has(guestFingerprint);
+        }
+      }
     } catch (error) {
+      if (error instanceof LiveKitTokenError) throw error;
       logger.error({
         protocol: "http",
         message: "Classroom participant admission check failed",
@@ -960,6 +978,7 @@ export async function generateClassroomToken(
       classroomHostKind: isDelegate ? "delegate" : isHost ? "staff" : undefined,
       classroomDelegateId: delegate?.id,
       canDrawWhiteboard,
+      ...(guestFingerprint ? { guestFingerprint } : {}),
     }),
   });
 
@@ -970,6 +989,7 @@ export async function generateClassroomToken(
     canPublishSources: publishSources,
     canSubscribe: true,
     canPublishData: true,
+    canUpdateOwnMetadata: false,
     roomAdmin: isHost,
     hidden: isHidden,
   });

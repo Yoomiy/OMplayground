@@ -38,6 +38,9 @@ function parseMetadata(value: string | undefined): Record<string, unknown> {
   if (!value) return {};
   try {
     const parsed = JSON.parse(value);
+    // The guest fingerprint is transient admission/moderation metadata. Only
+    // banned guests belong in durable fingerprint storage, never attendance.
+    if (parsed && typeof parsed === "object") delete parsed.guestFingerprint;
     return parsed && typeof parsed === "object" && !Array.isArray(parsed)
       ? parsed
       : {};

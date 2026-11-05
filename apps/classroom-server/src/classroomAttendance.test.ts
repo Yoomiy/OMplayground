@@ -46,6 +46,7 @@ describe("classroom attendance webhook", () => {
         metadata: JSON.stringify({
           attendanceKey: "guest:class-demo:abc",
           attendanceRole: "participant",
+          guestFingerprint: `v1:${"a".repeat(64)}`,
         }),
       },
     });
