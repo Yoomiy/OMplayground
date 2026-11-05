@@ -21,3 +21,13 @@
 66. clean up pending challanges and/or make sure that the don't block future challanges
 67. log challange failure reason
 68. make laser pointer movment smoother
+
+69. fix classroom media board.
+70. review db retention policies, etc.
+73. imporove textures and pixel art
+77. optimize checkpoints storage etc.
+80. what's the matter with that deepslate??
+81. do something about the inbox real time channel
+82. chat is extremely slow
+83. speed up voxel world resume by reducing checkpoint Storage requests (64 KiB across 82 objects took 12.9s; earlier restores hit the 30s join timeout).
+84. fix sound again
