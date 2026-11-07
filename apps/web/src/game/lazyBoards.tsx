@@ -21,6 +21,7 @@ export interface BoardProps {
   endOverlay?: { kind: "won" | "draw" | "stopped"; winner?: string } | null;
   rematch?: { requestedBy: string; accepted: string[]; refused: string[] } | null;
   canVoteRematch?: boolean;
+  canRequestRematch?: boolean;
   acceptedRematch?: boolean;
   refusedRematch?: boolean;
   onRequestRematch?: () => void;
@@ -51,6 +52,7 @@ const BOARD_LOADERS: Record<
         endOverlay,
         rematch,
         canVoteRematch,
+        canRequestRematch,
         acceptedRematch,
         refusedRematch,
         onRequestRematch,
@@ -72,7 +74,7 @@ const BOARD_LOADERS: Record<
           }
           rematch={rematch}
           canRequestRematch={
-            !!isHost && !!endOverlay && endOverlay.kind !== "stopped" && !rematch
+            !!canRequestRematch && !!endOverlay && endOverlay.kind !== "stopped" && !rematch
           }
           canVoteRematch={canVoteRematch}
           acceptedRematch={acceptedRematch}

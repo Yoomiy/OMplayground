@@ -5,7 +5,7 @@ RUN npm ci
 COPY games/wobble-rush/ .
 COPY packages/observability/src/logger.ts packages/observability/src/error.ts packages/observability/src/processLifecycle.ts /repo/packages/observability/src/
 COPY apps/game-server/src/gameVoiceToken.ts /repo/apps/game-server/src/gameVoiceToken.ts
-COPY packages/game-logic/src/recessSchedule.ts /repo/packages/game-logic/src/recessSchedule.ts
+COPY packages/game-logic/src/recessSchedule.ts packages/game-logic/src/rematch.ts /repo/packages/game-logic/src/
 RUN npm run build
 
 FROM node:24-bookworm-slim AS runtime

@@ -1,0 +1,46 @@
+// Run with an installed @electric-sql/pglite module path as the optional first argument.
+// This exercises PostgreSQL behavior with a minimal schema, never a deployed database.
+const { PGlite } = await import(process.argv[2] ?? '@electric-sql/pglite');
+import { readFile } from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const db = new PGlite();
+await db.exec(`
+CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;
+CREATE SCHEMA auth;
+CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(current_setting('test.user_id',true),'')::uuid $$;
+CREATE TYPE user_role AS ENUM ('kid','teacher','admin');
+CREATE TYPE gender_type AS ENUM ('boy','girl');
+CREATE TABLE kid_profiles(id uuid PRIMARY KEY, full_name text, grade int, gender gender_type, role user_role, is_active boolean);
+CREATE TABLE kid_blocks(blocker_id uuid, blocked_id uuid);
+CREATE TABLE games(id uuid PRIMARY KEY, name_he text, is_active boolean, is_multiplayer boolean, for_gender text);
+CREATE TABLE game_sessions(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),game_id uuid,host_id uuid,host_name text,host_grade int, player_ids uuid[],player_names text[], status text, is_open boolean, invitation_code text,gender gender_type,connected_player_ids uuid[] DEFAULT '{}', ended_at timestamptz);
+CREATE TYPE game_challenge_status AS ENUM ('pending','accepted','declined','expired');
+CREATE TABLE game_challenges(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),from_kid_id uuid,to_kid_id uuid,session_id uuid,game_id uuid,status game_challenge_status DEFAULT 'pending',created_at timestamptz DEFAULT now(),expires_at timestamptz DEFAULT now()+interval '2 minutes');
+CREATE UNIQUE INDEX game_challenges_one_pending_per_recipient ON game_challenges(to_kid_id) WHERE status='pending';
+CREATE FUNCTION append_audit_log(uuid,text,text,text,uuid,jsonb,text) RETURNS void LANGUAGE sql AS $$ SELECT $$;
+INSERT INTO kid_profiles SELECT ('00000000-0000-0000-0000-'||lpad(i::text,12,'0'))::uuid,'Player '||i,3,'boy','kid',true FROM generate_series(1,4) i;
+INSERT INTO games VALUES ('10000000-0000-0000-0000-000000000001','Test',true,true,'both');
+`);
+await db.exec(await readFile(new URL('../supabase/migrations/20261105140000_challenge_lifecycle.sql', import.meta.url),'utf8'));
+const id=n=>`00000000-0000-0000-0000-${String(n).padStart(12,'0')}`;
+const user=async n=>db.query("SELECT set_config('test.user_id',$1,false)",[id(n)]);
+const send=async n=>(await db.query('SELECT create_game_challenge($1,$2) AS result',[id(n),'10000000-0000-0000-0000-000000000001'])).rows[0].result;
+await user(1); const a=await send(3); assert.deepEqual(await send(3),a);
+await user(2); const b=await send(3); assert.notEqual(a.challenge_id,b.challenge_id);
+await user(3); let rows=(await db.query('SELECT list_game_challenges() AS result')).rows[0].result; assert.equal(rows.length,2);
+await db.query("SELECT respond_game_challenge($1,'accept')",[a.challenge_id]);
+await db.query("SELECT respond_game_challenge($1,'accept')",[a.challenge_id]);
+await user(4); await assert.rejects(()=>db.query("SELECT respond_game_challenge($1,'accept')",[b.challenge_id]),/CHALLENGE_NOT_FOUND/);
+await user(3); await db.query("UPDATE game_challenges SET expires_at=now()-interval '1 minute' WHERE id=$1",[b.challenge_id]);
+await db.query('SELECT list_game_challenges()');
+assert.equal((await db.query('SELECT status FROM game_challenges WHERE id=$1',[b.challenge_id])).rows[0].status,'expired');
+await db.query("UPDATE game_sessions SET connected_player_ids=ARRAY[$1::uuid] WHERE id=$2",[id(3),a.session_id]);
+await assert.rejects(()=>db.query("UPDATE game_sessions SET status='waiting',connected_player_ids=ARRAY[$1::uuid] WHERE id=$2",[id(3),b.session_id]),/PLAYER_IN_ANOTHER_GAME/);
+await user(1); await assert.rejects(()=>db.query("SELECT respond_game_challenge($1,'cancel')",[a.challenge_id]),/SESSION_ALREADY_ENTERED/);
+await db.query("UPDATE player_game_claims SET expires_at=now()-interval '1 second' WHERE user_id=$1",[id(3)]);
+await db.query("UPDATE game_sessions SET status='waiting',connected_player_ids=ARRAY[$1::uuid] WHERE id=$2",[id(3),b.session_id]);
+assert.equal((await db.query('SELECT session_id FROM player_game_claims WHERE user_id=$1',[id(3)])).rows[0].session_id,b.session_id);
+await db.query("UPDATE game_sessions SET status='paused' WHERE id=$1",[b.session_id]);
+assert.equal((await db.query('SELECT count(*)::int AS n FROM player_game_claims WHERE user_id=$1',[id(3)])).rows[0].n,0);
+console.log('PASS: migration applies; multi-invite, deduplication, guarded acceptance, expiry, admission conflict, active cancellation');
+await db.close();

@@ -123,7 +123,7 @@ export function useRocketSession(sessionId: string, backHref: string) {
 
   const control = (action: string, fields: Record<string, unknown> = {}) => {
     if (service.url) frame.current?.contentWindow?.postMessage({ source: 'playground-app', version: 1, bridgeId,
-      kind: 'control', action, ...fields }, service.url);
+      kind: 'control', action, requestId: view?.rematch?.id, ...fields }, service.url);
   };
   const copyInvite = async () => {
     const { data } = await supabase.from('game_sessions').select('invitation_code').eq('id', sessionId).maybeSingle();

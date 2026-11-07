@@ -7,6 +7,8 @@ COPY games/rocket-arena/server/package.json server/package.json
 COPY games/rocket-arena/client/package.json client/package.json
 RUN npm ci
 COPY games/rocket-arena/ .
+COPY packages/game-logic/src/rematch.ts /rocket/.build/rematch.ts
+RUN node scripts/sync-rematch.mjs /rocket/.build/rematch.ts
 COPY packages/observability/src/logger.ts /rocket/.build/shared-logger.ts
 COPY apps/game-server/src/gameVoiceToken.ts /rocket/.build/game-voice-token.ts
 RUN node scripts/build-app.mjs /rocket/.build/shared-logger.ts /rocket/.build/game-voice-token.ts

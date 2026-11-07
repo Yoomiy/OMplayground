@@ -1,3 +1,4 @@
+import { useInbox } from "@/hooks/useInbox";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -143,6 +144,7 @@ const adminSections: { id: AdminSection; label: string }[] = [
  * Platform admin only (`admin_profiles`). CRUD uses RLS; bulk kid import uses Edge Function + service role.
  */
 export function AdminPage() {
+  const { select: openMessage } = useInbox();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isAdmin, loading: adminLoading } = useIsAdmin();
@@ -1500,6 +1502,7 @@ export function AdminPage() {
                 <div>
                   <h3 className="text-xl font-bold text-slate-900 dark:text-white">
                     עריכת {editingKid.full_name}
+                    {editingKid.role === "kid" && editingKid.is_active && <button type="button" className="mr-3 rounded-lg border px-3 py-1 text-sm" onClick={() => openMessage(editingKid.id)}>שליחת הודעה</button>}
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-white/50">
                     נוצר: {new Date(editingKid.created_at).toLocaleString("he-IL")} · עודכן:{" "}

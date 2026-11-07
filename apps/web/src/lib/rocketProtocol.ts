@@ -14,7 +14,7 @@ export interface RocketView {
   canModerate: boolean;
   canRematch: boolean;
   score: { blue: number; orange: number };
-  rematch: { accepted: string[]; refused: string[] } | null;
+  rematch: { id?: string; deadline?: number; accepted: string[]; refused: string[] } | null;
   players: { actorId: string; name: string; kind: 'bot' | 'human' | 'empty'; userId: string | null; connected: boolean; team: string }[];
 }
 

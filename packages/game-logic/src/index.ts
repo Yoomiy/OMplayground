@@ -35,3 +35,4 @@ export function getGameModule(key: string): AnyGameModule | undefined {
 export function registeredGameKeys(): string[] {
   return Object.keys(registry);
 }
+export * from "./rematch";

@@ -1,3 +1,4 @@
+import { OnlineKids } from "@/components/OnlineKids";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -87,6 +88,7 @@ export function TeacherPage() {
           </button>
         </div>
       </header>
+      <OnlineKids />
 
       {/* TAB SWITCHER */}
       <div className="flex gap-2 rounded-2xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/5 p-1.5 backdrop-blur-md shadow-sm">

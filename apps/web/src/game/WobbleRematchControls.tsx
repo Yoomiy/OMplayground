@@ -35,7 +35,7 @@ export function WobbleRematchControls({ view, error, control }: {
     setDelayed(false);
     setInsufficient(false);
     setPending(action);
-    control({ action });
+    control({ action, requestId: view.rematch?.id });
   };
   const waiting = view.players.filter(player => player.connected
     && !view.rematch?.accepted.includes(player.userId)

@@ -1,4 +1,5 @@
-import { randomInt } from "node:crypto"
+import { resolveRematch } from "../../../../packages/game-logic/src/rematch"
+import { randomInt, randomUUID } from "node:crypto"
 import { RaceRoom } from "../engine/room"
 import {
   ACTION_CONTENT,
@@ -46,6 +47,10 @@ export class PlaygroundWobbleRoom {
   emptySince: number | null = Date.now()
   private pauseAt = 0
   private checkpoint: ReturnType<RoomCheckpoints["sign"]> | undefined
+  private rematchGrace: Record<string, number> = {}
+  private rematchPreparing = false
+  private rematchDeadline = 0
+  private rematchEligible: string[] = []
   private rematch: WobbleView["rematch"] = null
   private tail: Promise<unknown> = Promise.resolve()
   private savingResult = false
@@ -178,7 +183,13 @@ export class PlaygroundWobbleRoom {
       if (!pending) this.addActor(member)
       if (!this.members.has(this.hostId)) this.hostId = profile.userId
     }
-    await this.persist(true)
+    try { await this.persist(true) }
+    catch (error) {
+      const member = this.members.get(profile.userId)
+      if (member && !admission.observer) { member.connected = false; member.loaded = false }
+      this.observers.delete(profile.userId)
+      throw error
+    }
     this.restore(profile.userId)
     this.publish()
     platformLog("info", reconnecting ? "WOBBLE_PLAYER_RECONNECTED" : "WOBBLE_PLAYER_JOINED", {
@@ -250,6 +261,8 @@ export class PlaygroundWobbleRoom {
     member.connected = false
     member.loaded = false
     member.disconnectedAt = Date.now()
+    if (this.rematch) this.rematchGrace[userId] = Date.now() + 10_000
+    await this.settleRematch()
     this.engine.race?.releaseControls(asPlayerId(userId))
     if (!this.connected().length && !this.ended && !this.isComplete()) {
       this.pause()
@@ -346,39 +359,19 @@ export class PlaygroundWobbleRoom {
     }
     if (["rematch", "accept-rematch", "decline-rematch"].includes(control.action)) {
       if (admission.observer || !this.isComplete()) throw new AdmissionError("CANNOT_REMATCH")
-      if (control.action === "rematch")
-        this.rematch ??= { requestedBy: id, accepted: [], refused: [] }
-      if (!this.rematch) throw new AdmissionError("CANNOT_REMATCH")
-      this.rematch.accepted = this.rematch.accepted.filter((value) => value !== id)
-      this.rematch.refused = this.rematch.refused.filter((value) => value !== id)
-      ;(control.action === "decline-rematch" ? this.rematch.refused : this.rematch.accepted).push(
-        id,
-      )
-      const connected = this.connected()
-      let restarted = false
-      if (
-        connected.every(
-          (member) =>
-            this.rematch?.accepted.includes(member.userId) ||
-            this.rematch?.refused.includes(member.userId),
-        )
-      ) {
-        if (this.rematch.accepted.length >= 2) {
-          const accepted = new Set(this.rematch.accepted)
-          for (const member of this.members.values()) member.pending = !accepted.has(member.userId)
-          this.restart(true)
-          restarted = true
-        }
-        this.rematch = null
+      if (control.action === "rematch" && !this.rematch) {
+        this.rematchGrace = {}
+        this.rematchDeadline = Date.now() + 30_000
+        this.rematchEligible = this.connected().map(member => member.userId)
+        this.rematch = { id: randomUUID(), deadline: this.rematchDeadline, requestedBy: id, accepted: [], refused: [] }
       }
+      if (!this.rematch || !this.rematchEligible.includes(id)) throw new AdmissionError("CANNOT_REMATCH")
+      if (control.action !== "rematch" && ("requestId" in control ? control.requestId : undefined) !== this.rematch.id) throw new AdmissionError("STALE_REMATCH")
+      this.rematch.accepted = this.rematch.accepted.filter(value => value !== id)
+      this.rematch.refused = this.rematch.refused.filter(value => value !== id)
+      ;(control.action === "decline-rematch" ? this.rematch.refused : this.rematch.accepted).push(id)
+      await this.settleRematch()
       await this.persist(true)
-      if (restarted)
-        platformLog("info", "WOBBLE_REMATCH_STARTED", {
-          sessionId: this.session.id,
-          userId: id,
-          correlationId,
-          players: this.active().length,
-        })
       this.publish()
       return
     }
@@ -514,21 +507,57 @@ export class PlaygroundWobbleRoom {
     )
   }
 
-  private restart(newMatch: boolean): void {
+  private async settleRematch(now = Date.now()): Promise<void> {
+    if (!this.rematch) return
+    const decision = resolveRematch({ eligible: this.rematchEligible, connected: this.connected().map(member => member.userId),
+      grace: this.rematchGrace, accepted: this.rematch.accepted, refused: this.rematch.refused, deadline: this.rematchDeadline, now, minimum: 2 })
+    if (decision.phase === "waiting") return
+    const previous = { state: this.engine.state, race: this.engine.race, paused: this.paused,
+      vote: this.rematch, completedAt: this.completedAt,
+      members: new Map([...this.members].map(([id, member]) => [id, { ...member }])) }
+    this.rematchPreparing = true
+    try {
+      if (decision.phase === "ready") {
+        for (const member of this.members.values()) member.pending = !decision.players.includes(member.userId)
+        this.restart(true, false)
+      }
+      this.rematch = null
+      await this.persist(true)
+    } catch (error) {
+      this.engine.state = previous.state
+      this.engine.race = previous.race
+      this.engine.drainEffects()
+      this.paused = previous.paused
+      this.completedAt = previous.completedAt
+      this.rematch = previous.vote
+      for (const [id, member] of previous.members) if (this.members.has(id)) Object.assign(this.members.get(id)!, member)
+      throw error
+    } finally { this.rematchPreparing = false }
+    if (decision.phase === "ready") {
+      this.flushEffects()
+      this.broadcast(rosterMessage(this.engine.state))
+      platformLog("info", "WOBBLE_REMATCH_STARTED", { sessionId: this.session.id, players: decision.players.length })
+    }
+    this.publish()
+  }
+
+  private restart(newMatch: boolean, publish = true): void {
     const first = this.engine.state.players[0]?.id
     if (!first) throw new AdmissionError("CANNOT_START")
     this.engine.command(first, { type: "restart" }, Date.now())
     if (newMatch)
       for (const member of this.members.values())
-        if (member.connected && !this.rematch?.refused.includes(member.userId))
+        if (member.connected && this.rematch?.accepted.includes(member.userId))
           member.pending = false
     this.engine.state = { ...this.engine.state, players: [] }
     for (const member of this.members.values()) member.lobbyRejoin = false
     for (const member of this.active()) this.addActor(member)
     this.paused = false
     this.rematch = null
-    this.flushEffects()
-    this.broadcast(rosterMessage(this.engine.state))
+    if (publish) {
+      this.flushEffects()
+      this.broadcast(rosterMessage(this.engine.state))
+    }
   }
 
   input(userId: string, message: ActionClientMessage): void {
@@ -599,6 +628,7 @@ export class PlaygroundWobbleRoom {
     for (const observer of this.observers.values()) this.ports.send(observer.userId, message)
   }
   publish(): void {
+    if (this.rematchPreparing) return
     for (const member of this.connected())
       this.ports.send(member.userId, { type: "platform", view: this.view(member.userId) })
     for (const observer of this.observers.values())
@@ -649,6 +679,7 @@ export class PlaygroundWobbleRoom {
   }
 
   async maintain(now = Date.now()): Promise<void> {
+    await this.settleRematch(now)
     const fresh = await this.gateway.session(this.session.id)
     if (
       fresh.game_state?.allocationId !== this.allocationId ||

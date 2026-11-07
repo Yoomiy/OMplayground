@@ -108,15 +108,11 @@ export function PublicProfilePage() {
     setErr(null);
     setMsg(null);
     try {
-      const { sessionId } = await sendChallenge({
+      await sendChallenge({
         toId: profile.id,
         gameId
       });
-      navigate(
-        me.role === "teacher"
-          ? `/play/${sessionId}?mode=player`
-          : `/play/${sessionId}`
-      );
+      setMsg("ההזמנה נשלחה");
     } catch (e) {
       setErr(e instanceof Error ? e.message : "שליחת אתגר נכשלה");
     } finally {

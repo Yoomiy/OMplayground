@@ -26,7 +26,8 @@ type RoomEvent =
   | { kind: "PLAYER_LEFT"; player?: RoomPlayer }
   | { kind: "REMATCH_REQUESTED"; requestedBy: string }
   | { kind: "REMATCH_CANCELLED" }
-  | { kind: "REMATCH_STARTED" };
+  | { kind: "REMATCH_STARTED" }
+  | { kind: "REMATCH_FAILED" };
 
 export interface RoomPlayer {
   userId: string;
@@ -35,6 +36,9 @@ export interface RoomPlayer {
 }
 
 interface RematchState {
+  id: string;
+  deadline: number;
+  error?: string;
   requestedBy: string;
   accepted: string[];
   refused: string[];
@@ -293,10 +297,13 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
             setToast(`${ev.player?.displayName ?? "שחקן"} עזב את החדר`);
             return;
           case "REMATCH_REQUESTED":
-            setToast("המארח ביקש משחק חוזר");
+            setToast("שחקן ביקש משחק חוזר");
             return;
           case "REMATCH_CANCELLED":
             setToast("המשחק החוזר בוטל");
+            return;
+          case "REMATCH_FAILED":
+            setToast("לא ניתן להתחיל משחק חוזר כרגע. אפשר לנסות שוב");
             return;
           case "REMATCH_STARTED":
             setEndOverlay(null);
@@ -446,7 +453,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
       if (!s?.connected) return;
       s.emit(
         "REMATCH_RESPONSE",
-        { sessionId, accept },
+        { sessionId, accept, requestId: rematch?.id },
         (ack: { ok?: boolean; error?: { message?: string } }) => {
           if (!ack?.ok) {
             setToast(ack?.error?.message ?? "תגובה למשחק חוזר נכשלה");
@@ -454,7 +461,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         }
       );
     },
-    [sessionId]
+    [sessionId, rematch?.id]
   );
 
   const sendChat = useCallback<DeliverChatMessage>((message, messageId, signal) => {
@@ -670,7 +677,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
     hostId != null &&
     myUserId === hostId;
   const connectedIds = new Set(players.map((p) => p.userId));
-  const acceptedRematch = myUserId ? rematch?.accepted.includes(myUserId) : false;
+  const acceptedRematch = myUserId ? rematch?.accepted.includes(myUserId) && !rematch.error : false;
   const refusedRematch = myUserId ? rematch?.refused.includes(myUserId) : false;
   const canVoteRematch =
     !isStaffObserver &&
@@ -751,6 +758,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
                 myUserId: myUserId ?? "",
                 onIntent,
                 isHost: iAmHost,
+                canRequestRematch: !isStaffObserver && participationMode === "player",
                 endOverlay,
                 rematch,
                 canVoteRematch,
@@ -788,7 +796,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
               </p>
             ) : null}
             <div className="mt-3 flex flex-wrap justify-center gap-2">
-              {iAmHost && endOverlay.kind !== "stopped" && !rematch && gameKey !== "breakout" ? (
+              {!isStaffObserver && participationMode === "player" && endOverlay.kind !== "stopped" && !rematch && gameKey !== "breakout" ? (
                 <button type="button" className="rounded-lg bg-emerald-600 border border-emerald-500/50 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-500 transition duration-200" onClick={() => requestRematch()}>
                   בקש משחק חוזר
                 </button>

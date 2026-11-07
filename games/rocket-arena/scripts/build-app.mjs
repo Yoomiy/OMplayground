@@ -15,9 +15,10 @@ async function include(path) {
   } else { hash.update(path); hash.update(await readFile(location)); }
 }
 for (const path of ['package-lock.json', 'tsconfig.base.json', 'client/src', 'client/vite.config.ts',
-  'shared/src', 'simulation/src', 'server/src', 'scripts/build-app.mjs', 'scripts/build-app-logger.mjs']) await include(path);
+  'shared/src', 'simulation/src', 'server/src', 'scripts/build-app.mjs', 'scripts/build-app-logger.mjs', 'scripts/sync-rematch.mjs']) await include(path);
 hash.update(await readFile(loggerSource));
 hash.update(await readFile(voiceSource));
+hash.update(await readFile(new URL('../server/src/platform/rematch-policy.ts', import.meta.url)));
 const testHooks = process.env.ROCKET_TEST_HOOKS === '1';
 hash.update(String(testHooks));
 const release = `app-${hash.digest('hex').slice(0, 16)}`;

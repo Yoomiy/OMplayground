@@ -15,7 +15,10 @@
     "start": "node server/dist/index.js",
     "test:app": "tsx --conditions=development scripts/check-app-integration.mts",
     "typecheck": "tsc -b",
-    "test": "tsx --conditions=development --test \"shared/tests/*.test.ts\" \"simulation/tests/*.test.ts\" \"server/src/**/*.test.ts\" \"client/tests/*.test.ts\""
+    "test": "tsx --conditions=development --test \"shared/tests/*.test.ts\" \"simulation/tests/*.test.ts\" \"server/src/**/*.test.ts\" \"client/tests/*.test.ts\"",
+    "pretypecheck": "node scripts/sync-rematch.mjs",
+    "pretest": "node scripts/sync-rematch.mjs",
+    "prebuild": "node scripts/sync-rematch.mjs"
   },
   "devDependencies": {
     "tsx": "^4.19.2",

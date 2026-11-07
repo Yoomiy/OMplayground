@@ -55,6 +55,12 @@ export interface Room<State = unknown> {
   paused: boolean;
   peakPlayerCount: number;
   rematch?: {
+    id: string;
+    deadline: number;
+    eligible: Set<string>;
+    grace: Record<string, number>;
+    starting?: boolean;
+    error?: string;
     requestedBy: string;
     accepted: Set<string>;
     refused: Set<string>;

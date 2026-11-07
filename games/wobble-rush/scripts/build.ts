@@ -22,6 +22,7 @@ for (const path of [
   "../../packages/observability/src/processLifecycle.ts",
   "../../apps/game-server/src/gameVoiceToken.ts",
   "../../packages/game-logic/src/recessSchedule.ts",
+  "../../packages/game-logic/src/rematch.ts",
 ])
   await include(path)
 const release = `wobble-app-${hash.digest("hex").slice(0, 16)}`

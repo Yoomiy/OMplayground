@@ -397,14 +397,11 @@ try {
   assert.equal((await launch(sessionId)).data.code, 'SESSION_COMPLETED');
   // Pending recruits participate too; only those who consent follow the next round.
   late.send('platform-control', { action: 'rematch' });
-  await until(() => errors.get(late)!.includes('CONTROL_FORBIDDEN'), 'non-host cannot request rematch');
-  await pause(350);
-  host.send('platform-control', { action: 'rematch' });
-  await until(() => views.get(late)?.rematch?.accepted.includes(uid(1)), 'rematch offer reaches recruit');
+  await until(() => views.get(host)?.rematch?.accepted.includes(uid(3)), 'non-host rematch offer reaches host');
   const oldAllocation = sessions.get(sessionId)!.game_state!.allocationId;
   assert.equal(sessions.get(sessionId)!.status, 'completed'); // No restart before responses.
   await pause(350);
-  late.send('platform-control', { action: 'rematch-response', accept: true });
+  host.send('platform-control', { action: 'rematch-response', requestId: views.get(host)?.rematch?.id, accept: true });
   await until(() => sessions.get(sessionId)!.status === 'waiting', 'consented rematch resets platform session');
   await until(() => !colyseus.matchMaker.getRoomById(host.id), 'old room disposed after rematch');
   await until(() => logs.filter(line => line.context.event === 'ROCKET_SOCKET_CLOSED' && line.roomId === host.id && line.reason === 'rematch').length === 3,
@@ -450,7 +447,7 @@ try {
   await pause(350);
   rematchHost.send('platform-control', { action: 'rematch' });
   await until(() => !!views.get(rematchFriend)?.rematch, 'second rematch offer');
-  rematchFriend.send('platform-control', { action: 'rematch-response', accept: false });
+  rematchFriend.send('platform-control', { action: 'rematch-response', requestId: views.get(rematchFriend)?.rematch?.id, accept: false });
   await until(() => sessions.get(sessionId)!.status === 'waiting', 'declining does not block willing players');
   assert.deepEqual(sessions.get(sessionId)!.player_ids, [uid(1)]);
   await until(() => rematches.get(rematchFriend)!.at(-1) === false, 'decliner is not instructed to follow');

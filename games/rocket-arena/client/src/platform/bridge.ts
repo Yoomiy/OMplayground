@@ -35,6 +35,7 @@ export async function startEmbeddedClient(app: HTMLElement): Promise<void> {
     if (message.kind === 'control') {
       if (['start', 'pause', 'resume', 'end', 'remove', 'bots', 'team', 'assign-pending', 'rematch', 'rematch-response'].includes(message.action)) {
         getRoom()?.send('platform-control', { action: message.action,
+          ...(typeof message.requestId === 'string' ? { requestId: message.requestId } : {}),
           ...(typeof message.accept === 'boolean' ? { accept: message.accept } : {}),
           ...(typeof message.userId === 'string' ? { userId: message.userId } : {}),
           ...(Number.isInteger(message.count) ? { count: message.count } : {}),

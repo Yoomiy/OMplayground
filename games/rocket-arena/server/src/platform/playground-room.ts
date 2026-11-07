@@ -1,3 +1,4 @@
+import { resolveRematch } from './rematch-policy.js';
 import * as colyseus from '@colyseus/core';
 import { randomUUID } from 'node:crypto';
 import RAPIER from '@dimforge/rapier3d-compat';
@@ -64,8 +65,11 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
   private readonly excludedRoster = new Set<string>();
   private wasOpen = false;
   private completedAt = 0;
-  private rematch: { accepted: Set<string>; refused: Set<string> } | null = null;
+  private rematch: { id: string; accepted: Set<string>; refused: Set<string> } | null = null;
   private rematchStarting = false;
+  private rematchGrace: Record<string, number> = {};
+  private rematchDeadline = 0;
+  private rematchEligible: string[] = [];
   private closingReason: string | null = null;
   private readonly leaveConsents = new WeakMap<colyseus.Client, boolean>();
 
@@ -275,6 +279,10 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
       serverClosing: this.disposed, reason: this.closingReason ?? (consented ? 'client-leave' : 'connection-lost') });
     if (this.disposed) return;
     if (admission && !admission.observer) {
+      if (this.rematch && !consented) {
+        this.rematchGrace[admission.profile.userId] = Date.now() + 10_000;
+        this.clock.setTimeout(() => { this.controlChain = this.controlChain.catch(() => {}).then(() => this.tryRematch()); }, 10_000);
+      }
       const lastHuman = !this.seats.humans().some(human => human.connectionId && human.connectionId !== client.sessionId);
       if (lastHuman && !this.completed) this.pauseForRetention();
       this.seats.leave(client.sessionId, consented, Date.now(), this.paused);
@@ -336,15 +344,23 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
     if (this.disposed || this.completing) throw new AdmissionError('SESSION_RECOVERING', 503);
     const admission = this.admitted.get(client.sessionId);
     if (!admission || !payload || typeof payload !== 'object') throw new AdmissionError('CONTROL_FORBIDDEN');
-    const request = payload as { action?: unknown; userId?: unknown; count?: unknown; actorId?: unknown; team?: unknown; accept?: unknown };
+    const request = payload as { action?: unknown; userId?: unknown; count?: unknown; actorId?: unknown; team?: unknown; accept?: unknown; requestId?: unknown };
     if (request.action === 'rematch' || request.action === 'rematch-response') {
       if (!this.completed || admission.observer) throw new AdmissionError('CONTROL_FORBIDDEN');
       const fresh = await dependencies.gateway.admitRematch(await dependencies.gateway.profile(admission.profile.userId), this.sessionId, false);
       if (request.action === 'rematch') {
-        if (fresh.profile.userId !== this.seats.hostUserId) throw new AdmissionError('CONTROL_FORBIDDEN');
-        this.rematch ??= { accepted: new Set([fresh.profile.userId]), refused: new Set() };
+        if (!this.rematch) {
+          this.rematchGrace = {};
+          this.rematchDeadline = Date.now() + 30_000;
+          this.rematchEligible = this.seats.humans().filter(h => h.connectionId).map(h => h.userId);
+          this.clock.setTimeout(() => { this.controlChain = this.controlChain.catch(() => {}).then(() => this.tryRematch()).catch(error => platformLog('warn', 'ROCKET_REMATCH_FAILED', { sessionId: this.sessionId, code: this.errorCode(error) })); }, 30_000);
+        }
+        this.rematch ??= { id: randomUUID(), accepted: new Set([fresh.profile.userId]), refused: new Set() };
+        if (!this.rematchEligible.includes(fresh.profile.userId)) throw new AdmissionError('CONTROL_FORBIDDEN');
+        this.rematch.accepted.add(fresh.profile.userId);
+        this.rematch.refused.delete(fresh.profile.userId);
       } else {
-        if (!this.rematch || typeof request.accept !== 'boolean') throw new AdmissionError('BAD_CONTROL', 400);
+        if (!this.rematch || request.requestId !== this.rematch.id || typeof request.accept !== 'boolean') throw new AdmissionError('BAD_CONTROL', 400);
         this.rematch.accepted.delete(fresh.profile.userId); this.rematch.refused.delete(fresh.profile.userId);
         (request.accept ? this.rematch.accepted : this.rematch.refused).add(fresh.profile.userId);
       }
@@ -570,7 +586,7 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
       selfUserId: admission.profile.userId,
       canRematch: this.completed && !this.disposed,
       score: { blue: this.core.matchFlowState?.blueScore ?? 0, orange: this.core.matchFlowState?.orangeScore ?? 0 },
-      rematch: this.rematch ? { accepted: [...this.rematch.accepted], refused: [...this.rematch.refused] } : null,
+      rematch: this.rematch ? { id: this.rematch.id, deadline: this.rematchDeadline, accepted: [...this.rematch.accepted], refused: [...this.rematch.refused] } : null,
       pendingPlayers: [...this.seats.pending.values()].map(human => ({ userId: human.userId, name: human.name,
         connected: !!human.connectionId, actorId: this.seats.pendingTargets.get(human.userId) ?? null })),
       observers: [...this.admitted.values()].filter(value => value.observer).map(value => ({
@@ -613,9 +629,11 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
   private async tryRematch(): Promise<void> {
     if (!this.rematch || this.rematchStarting || this.disposed) return;
     const connected = this.seats.humans().filter(human => human.connectionId);
-    if (!connected.length || connected.some(human => !this.rematch!.accepted.has(human.userId) && !this.rematch!.refused.has(human.userId))) return;
-    const accepted = connected.filter(human => this.rematch!.accepted.has(human.userId));
-    if (!accepted.length) return;
+    const decision = resolveRematch({ eligible: this.rematchEligible, connected: connected.map(h => h.userId),
+      grace: this.rematchGrace, accepted: [...this.rematch.accepted], refused: [...this.rematch.refused], deadline: this.rematchDeadline, now: Date.now(), minimum: 1 });
+    if (decision.phase === 'waiting') return;
+    if (decision.phase === 'cancelled') { this.rematch = null; this.publishPlatformState(); return; }
+    const accepted = connected.filter(h => decision.players.includes(h.userId));
     this.rematchStarting = true;
     try {
       // Recheck accounts and recess at the boundary, not just when they voted.

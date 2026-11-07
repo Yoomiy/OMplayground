@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Gamepad2, MessageCircle, Search, UserRound } from "lucide-react";
 import { useOnlineKids, type PublicKidProfile } from "@/hooks/useOnlineKids";
+import { useInbox } from "@/hooks/useInbox";
 import { useProfile } from "@/hooks/useProfile";
 import { KidActionSheet } from "@/components/KidActionSheet";
 import { KidAvatar } from "@/components/KidAvatar";
@@ -10,15 +11,14 @@ import { cn } from "@/lib/cn";
 function KidRow({
   kid,
   sameGrade,
-  challengeOnly,
   onInvite
 }: {
   kid: PublicKidProfile;
   sameGrade: boolean;
-  challengeOnly: boolean;
   onInvite: () => void;
 }) {
   const navigate = useNavigate();
+  const { select } = useInbox();
   const buttonStyleBase =
     "rounded-2xl size-11 flex items-center justify-center border transition-all hover:scale-105 active:scale-95 font-bold text-sm shrink-0";
 
@@ -56,11 +56,10 @@ function KidRow({
         >
           <Gamepad2 className="size-4" aria-hidden />
         </button>
-        {!challengeOnly ? (
-          <>
+        <>
             <button
               type="button"
-              onClick={() => navigate(`/inbox?kidId=${kid.id}`)}
+              onClick={() => select(kid.id)}
               className={cn(
                 buttonStyleBase,
                 "bg-sky-500/10 border-sky-400/30 text-sky-600 dark:text-sky-400 hover:bg-sky-500 hover:text-white hover:border-sky-400 hover:shadow-[0_0_12px_rgba(56,189,248,0.4)]"
@@ -82,8 +81,7 @@ function KidRow({
             >
               <UserRound className="size-4" aria-hidden />
             </button>
-          </>
-        ) : null}
+        </>
       </div>
     </li>
   );
@@ -179,7 +177,6 @@ export function OnlineKids({ className }: { className?: string }) {
                       key={kid.id}
                       kid={kid}
                       sameGrade
-                      challengeOnly={challengeOnly}
                       onInvite={() => setSelected(kid)}
                     />
                   ))}
@@ -204,7 +201,6 @@ export function OnlineKids({ className }: { className?: string }) {
                       key={kid.id}
                       kid={kid}
                       sameGrade={false}
-                      challengeOnly={challengeOnly}
                       onInvite={() => setSelected(kid)}
                     />
                   ))}

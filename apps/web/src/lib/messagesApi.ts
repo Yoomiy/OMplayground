@@ -1,3 +1,4 @@
+import { dmRpc } from "@/lib/directMessages";
 import { supabase } from "@/lib/supabase";
 
 export async function sendMessage(args: {
@@ -8,33 +9,12 @@ export async function sendMessage(args: {
   toDisplayName: string;
   content: string;
 }): Promise<void> {
-  const text = args.content.trim().slice(0, 300);
-  if (!text) throw new Error("EMPTY_MESSAGE");
-  const { error } = await supabase.from("private_messages").insert({
-    from_kid_id: args.fromId,
-    from_display_name: args.fromDisplayName,
-    sender_gender: args.senderGender,
-    to_kid_id: args.toId,
-    to_display_name: args.toDisplayName,
-    content: text,
-    is_from_admin: false
+  await dmRpc("send_private_message", {
+    p_to: args.toId,
+    p_content: args.content,
+    p_request_id: crypto.randomUUID(),
   });
-  if (error) throw new Error(error.message);
 }
-
-export async function markReadByPartner(
-  meId: string,
-  partnerId: string
-): Promise<void> {
-  const { error } = await supabase
-    .from("private_messages")
-    .update({ is_read: true })
-    .eq("to_kid_id", meId)
-    .eq("from_kid_id", partnerId)
-    .eq("is_read", false);
-  if (error) throw new Error(error.message);
-}
-
 export async function reportMessage(args: {
   reporterKidId: string;
   reporterKidName: string;
@@ -49,7 +29,7 @@ export async function reportMessage(args: {
     reported_kid_id: args.reportedKidId,
     reported_kid_name: args.reportedKidName,
     message_content: args.messageContent,
-    reporter_note: args.note ?? null
+    reporter_note: args.note ?? null,
   });
   if (error) throw new Error(error.message);
 }

@@ -3,6 +3,7 @@ import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { PresenceProvider } from "@/hooks/usePresence";
+import { GlobalMessages } from "@/components/GlobalMessages";
 import { InboxProvider } from "@/hooks/useInbox";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { PendingChallengeBanner } from "@/components/PendingChallengeBanner";
@@ -60,6 +61,7 @@ export default function App() {
       <div className="min-h-screen text-slate-800 dark:text-slate-100 transition-colors duration-200" dir="rtl">
         <PresenceProvider>
         <InboxProvider>
+          <GlobalMessages key={user?.id ?? "anonymous"} />
           <PendingChallengeBanner />
           {user && <FeedbackTrigger />}
           <Suspense fallback={<RouteFallback />}>

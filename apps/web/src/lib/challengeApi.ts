@@ -13,6 +13,14 @@ export interface GameChallengeRow {
   expires_at: string;
 }
 
+function challengeError(message: string): string {
+  if (message.includes("CHALLENGE_UNAVAILABLE") || message.includes("CHALLENGE_NOT_FOUND")) return "ההזמנה כבר אינה זמינה. הרשימה תתעדכן בקרוב";
+  if (message.includes("SESSION_ALREADY_ENTERED")) return "שחקן כבר נכנס למשחק. יש לצאת דרך מסך המשחק";
+  if (message.includes("CHALLENGE_NOT_ALLOWED") || message.includes("PROFILE_NOT_AVAILABLE")) return "לא ניתן להזמין את השחקן כרגע";
+  if (message.includes("GAME_NOT_AVAILABLE") || message.includes("SESSION_UNAVAILABLE")) return "המשחק אינו זמין כרגע";
+  return "לא ניתן לעדכן את ההזמנה כרגע. אפשר לנסות שוב";
+}
+
 /**
  * Creates the private game session and challenge atomically. Role-direction
  * validation and the teacher audit entry are owned by the database function.
@@ -32,7 +40,7 @@ export async function sendChallenge(args: {
       error,
       { appArea: "game-challenge", operation: "create" }
     );
-    throw new Error(error.message);
+    throw new Error(challengeError(error.message));
   }
 
   const result = data as {
@@ -46,32 +54,17 @@ export async function sendChallenge(args: {
     throw new Error("FAILED_TO_CREATE_CHALLENGE");
   }
 
+  window.dispatchEvent(new Event("challenges-changed"));
   return {
     sessionId: result.session_id,
     challengeId: result.challenge_id
   };
 }
 
-export async function acceptChallenge(c: GameChallengeRow): Promise<void> {
-  const { error } = await supabase
-    .from("game_challenges")
-    .update({ status: "accepted" })
-    .eq("id", c.id);
-  if (error) throw new Error(error.message);
+export async function respondChallenge(id: string, action: "accept" | "decline" | "cancel"): Promise<void> {
+  const { error } = await supabase.rpc("respond_game_challenge", { p_id: id, p_action: action });
+  if (error) throw new Error(challengeError(error.message));
 }
-
-export async function declineChallenge(c: GameChallengeRow): Promise<void> {
-  const { error } = await supabase
-    .from("game_challenges")
-    .update({ status: "declined" })
-    .eq("id", c.id);
-  if (error) throw new Error(error.message);
-}
-
-export async function expireOwnChallenge(c: GameChallengeRow): Promise<void> {
-  const { error } = await supabase
-    .from("game_challenges")
-    .update({ status: "expired" })
-    .eq("id", c.id);
-  if (error) throw new Error(error.message);
-}
+export const acceptChallenge = (c: GameChallengeRow) => respondChallenge(c.id, "accept");
+export const declineChallenge = (c: GameChallengeRow) => respondChallenge(c.id, "decline");
+export const expireOwnChallenge = (c: GameChallengeRow) => respondChallenge(c.id, "cancel");

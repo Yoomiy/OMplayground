@@ -1,4 +1,5 @@
 import path from "path";
+import { randomUUID } from "node:crypto";
 import { persistSessionChat } from "./sessionChat";
 import dotenv from "dotenv";
 
@@ -22,6 +23,7 @@ import { Server } from "socket.io";
 import { createClient } from "@supabase/supabase-js";
 import {
   getGameModule,
+  resolveRematch,
   isWithinEffectiveRecess,
   type ClassRecessException,
   type ClassRecessSchedule,
@@ -635,6 +637,9 @@ io.on("connection", (socket) => {
       canResume: room.paused && !isRoomIdle(room),
       rematch: room.rematch
         ? {
+            id: room.rematch.id,
+            deadline: room.rematch.deadline,
+            error: room.rematch.error,
             requestedBy: room.rematch.requestedBy,
             accepted: Array.from(room.rematch.accepted),
             refused: Array.from(room.rematch.refused)
@@ -861,6 +866,45 @@ io.on("connection", (socket) => {
     room.roster = orderedPlayers;
     room.paused = false;
     room.rematch = undefined;
+  }
+
+  async function settleRematch(room: Room<unknown>) {
+    const vote = room.rematch;
+    if (!vote || vote.starting || getRoom(room.sessionId) !== room) return;
+    const connected = connectedPlayers(room).filter(p => vote.eligible.has(p.userId));
+    const decision = resolveRematch({ eligible: [...vote.eligible], connected: connected.map(p => p.userId),
+      grace: vote.grace, accepted: [...vote.accepted], refused: [...vote.refused], deadline: vote.deadline, now: Date.now(), minimum: room.minPlayers });
+    if (decision.phase === 'waiting') return;
+    if (decision.phase === 'cancelled') {
+      room.rematch = undefined;
+      io.to(`session:${room.sessionId}`).emit("ROOM_EVENT", { sessionId: room.sessionId, kind: "REMATCH_CANCELLED" });
+      emitSnapshot(room);
+      return;
+    }
+    const accepted = connected.filter(p => decision.players.includes(p.userId));
+    vote.starting = true;
+    vote.error = undefined;
+    // Prepare on a copy; a failed write must preserve the finished round.
+    const next = { ...room };
+    resetForRematch(next, accepted);
+    try {
+      if (supabaseAdmin) await persistGameRematch({ supabase: supabaseAdmin, sessionId: room.sessionId,
+        gameState: next.state, playerIds: accepted.map(p => p.userId), playerNames: accepted.map(p => p.displayName), ...connectedPayload(next) });
+      // A leave may have completed while the database write was in flight.
+      next.players = new Map([...next.players].filter(([id]) => room.players.has(id)));
+      next.hostId = room.hostId;
+      next.paused = next.players.size < next.minPlayers;
+      Object.assign(room, next);
+      if (room.paused && supabaseAdmin) await persistGamePaused({ supabase: supabaseAdmin, sessionId: room.sessionId, gameState: room.state, ...connectedPayload(room) });
+      io.to(`session:${room.sessionId}`).emit("ROOM_EVENT", { sessionId: room.sessionId, kind: "REMATCH_STARTED" });
+      emitSnapshot(room);
+    } catch (error) {
+      vote.starting = false;
+      vote.error = "SAVE_FAILED";
+      io.to(`session:${room.sessionId}`).emit("ROOM_EVENT", { sessionId: room.sessionId, kind: "REMATCH_FAILED" });
+      logger.warn({ message: "Rematch persistence failed", sessionId: room.sessionId, err: logError(error) });
+      emitSnapshot(room);
+    }
   }
 
   async function resumeRoom(room: Room<unknown>) {
@@ -1208,6 +1252,7 @@ io.on("connection", (socket) => {
         spectateAck?.({ ok: true, spectator: true });
         return;
       }
+      const wasActiveBeforeJoin = room.hasBeenActive;
       const wasIdle = isRoomIdle(room);
       const playerCountBeforeJoin = room.players.size;
       const assigned = assignPlayer(room, userId, displayName, {
@@ -1274,8 +1319,8 @@ io.on("connection", (socket) => {
       if (gameKey === "drawing") {
         serveCanonicalDrawing(room, "join");
       }
-      if (!isClassroomDrawingRoom(room)) {
-        await persistPlayerJoin({
+      try {
+        if (!isClassroomDrawingRoom(room)) await persistPlayerJoin({
           supabase: supabaseAdmin,
           sessionId,
           session: {
@@ -1293,6 +1338,18 @@ io.on("connection", (socket) => {
           roomStatusIsIdle: isRoomIdle(room),
           peakPlayerCount: room.peakPlayerCount
         });
+      } catch (error) {
+        removePlayerFromRoom(sessionId, userId);
+        if (!wasActiveBeforeJoin) {
+          room.hasBeenActive = false;
+          room.state = room.module.initialState(connectedPlayers(room));
+        }
+        await socket.leave(`session:${sessionId}`);
+        socket.data.sessionId = undefined;
+        emitSnapshot(room);
+        const conflict = String((error as { message?: string })?.message).includes("PLAYER_IN_ANOTHER_GAME");
+        reply?.({ ok: false, error: { code: conflict ? "PLAYER_IN_ANOTHER_GAME" : "PERSIST_FAILED", message: conflict ? "יש לצאת מהמשחק הנוכחי לפני הכניסה למשחק אחר" : "לא ניתן להצטרף כרגע. אפשר לנסות שוב" } });
+        return;
       }
       io.to(`session:${sessionId}`).emit("ROOM_EVENT", {
         sessionId,
@@ -2089,9 +2146,8 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      const guard = canStopGame(room, userId);
-      if (!guard.ok) {
-        reply?.({ ok: false, error: guard.error });
+      if (!room.players.has(userId)) {
+        reply?.({ ok: false, error: { code: "NOT_IN_ROOM", message: "השחקן לא נמצא בחדר" } });
         return;
       }
       if (!room.module.isTerminal(room.state)) {
@@ -2104,7 +2160,20 @@ io.on("connection", (socket) => {
         });
         return;
       }
+      if (room.rematch) {
+        if (!room.rematch.starting && room.rematch.eligible.has(userId)) {
+          room.rematch.accepted.add(userId);
+          room.rematch.refused.delete(userId);
+          void settleRematch(room);
+          emitSnapshot(room);
+        }
+        reply?.({ ok: true }); return;
+      }
       room.rematch = {
+        id: randomUUID(),
+        deadline: Date.now() + 30_000,
+        eligible: new Set(connectedPlayers(room).map(p => p.userId)),
+        grace: {},
         requestedBy: userId,
         accepted: new Set([userId]),
         refused: new Set()
@@ -2114,6 +2183,8 @@ io.on("connection", (socket) => {
         kind: "REMATCH_REQUESTED",
         requestedBy: userId
       });
+      const voteId = room.rematch.id;
+      setTimeout(() => { if (room.rematch?.id === voteId) void settleRematch(room); }, 30_000).unref();
       emitSnapshot(room);
       reply?.({ ok: true });
     }
@@ -2122,7 +2193,7 @@ io.on("connection", (socket) => {
   socket.on(
     "REMATCH_RESPONSE",
     async (
-      payload: { sessionId?: string; accept?: boolean } | undefined,
+      payload: { sessionId?: string; accept?: boolean; requestId?: string } | undefined,
       ack?: (r: unknown) => void
     ) => {
       const started = Date.now();
@@ -2158,14 +2229,14 @@ io.on("connection", (socket) => {
         });
         return;
       }
-      if (!room.rematch || !room.module.isTerminal(room.state)) {
+      if (!room.rematch || room.rematch.starting || !room.module.isTerminal(room.state)) {
         reply?.({
           ok: false,
           error: { code: "NO_REMATCH", message: "אין בקשת משחק חוזר פעילה" }
         });
         return;
       }
-      if (!roomRoster(room).some((p) => p.userId === userId)) {
+      if (!room.rematch.eligible.has(userId) || !room.players.has(userId)) {
         reply?.({
           ok: false,
           error: { code: "NOT_IN_ROOM", message: "השחקן לא נמצא בחדר" }
@@ -2173,6 +2244,10 @@ io.on("connection", (socket) => {
         return;
       }
 
+      if (payload.requestId !== room.rematch.id) {
+        reply?.({ ok: false, error: { code: "STALE_REMATCH", message: "בקשת המשחק החוזר השתנתה" } });
+        return;
+      }
       if (payload.accept) {
         room.rematch.refused.delete(userId);
         room.rematch.accepted.add(userId);
@@ -2181,46 +2256,7 @@ io.on("connection", (socket) => {
         room.rematch.refused.add(userId);
       }
 
-      const possiblePlayers = roomRoster(room).filter(
-        (p) => !room.rematch?.refused.has(p.userId) && room.players.has(p.userId)
-      );
-      if (possiblePlayers.length < room.minPlayers) {
-        room.rematch = undefined;
-        io.to(`session:${sessionId}`).emit("ROOM_EVENT", {
-          sessionId,
-          kind: "REMATCH_CANCELLED"
-        });
-        emitSnapshot(room);
-        reply?.({ ok: true });
-        return;
-      }
-
-      const acceptedConnected = connectedPlayers(room).filter((p) =>
-        room.rematch?.accepted.has(p.userId)
-      );
-      const connectedVoters = connectedPlayers(room);
-      const everyoneAnswered = connectedVoters.every(
-        (p) =>
-          room.rematch?.accepted.has(p.userId) ||
-          room.rematch?.refused.has(p.userId)
-      );
-      if (everyoneAnswered && acceptedConnected.length >= room.minPlayers) {
-        resetForRematch(room, acceptedConnected);
-        if (supabaseAdmin) {
-          await persistGameRematch({
-            supabase: supabaseAdmin,
-            sessionId,
-            gameState: room.state,
-            playerIds: acceptedConnected.map((p) => p.userId),
-            playerNames: acceptedConnected.map((p) => p.displayName),
-            ...connectedPayload(room)
-          });
-        }
-        io.to(`session:${sessionId}`).emit("ROOM_EVENT", {
-          sessionId,
-          kind: "REMATCH_STARTED"
-        });
-      }
+      await settleRematch(room);
       emitSnapshot(room);
       reply?.({ ok: true });
     }
@@ -2308,7 +2344,7 @@ io.on("connection", (socket) => {
     }
   );
 
-  async function handleLeave(sessionId: string) {
+  async function handleLeave(sessionId: string, transient = false) {
     if (!userId) return;
     const awarenessClientIds = [
       ...(socket.data.canonicalDrawingAwarenessClientIds ?? [])
@@ -2382,6 +2418,10 @@ io.on("connection", (socket) => {
         true
       ).catch(() => {});
     }
+    if (before?.rematch && transient) {
+      before.rematch.grace[userId] = Date.now() + 10_000;
+      setTimeout(() => { void settleRematch(before); }, 10_000).unref();
+    }
     const result = removePlayerFromRoom(sessionId, userId);
     if (classroomHostId) {
       // The drawing room is an implementation detail of the persistent
@@ -2451,7 +2491,7 @@ io.on("connection", (socket) => {
       kind: "PLAYER_LEFT",
       player: { userId, displayName }
     });
-    if (room) emitSnapshot(room);
+    if (room) { await settleRematch(room); emitSnapshot(room); }
     await socket.leave(`session:${sessionId}`);
     if (socket.data.sessionId === sessionId) {
       socket.data.sessionId = undefined;
@@ -2508,7 +2548,7 @@ io.on("connection", (socket) => {
     }
     const sessionId = socket.data.sessionId as string | undefined;
     if (sessionId && userId) {
-      observeBackgroundTask(logger, handleLeave(sessionId), "SOCKET_DISCONNECT_LEAVE_FAILED", { sessionId });
+      observeBackgroundTask(logger, handleLeave(sessionId, true), "SOCKET_DISCONNECT_LEAVE_FAILED", { sessionId });
     }
   });
 });
@@ -2536,6 +2576,29 @@ recessTimer.unref?.();
 /** Stale-pause cleanup: pause → completed for rooms untouched for >24h. */
 const STALE_PAUSE_MS = 24 * 60 * 60 * 1000;
 const CLEANUP_TICK_MS = 60 * 60 * 1000;
+// Renew admission leases even while a turn-based room has no moves.
+const admissionHeartbeat = setInterval(() => {
+  if (!supabaseAdmin) return;
+  for (const room of listRooms()) {
+    if (!room.players.size || room.paused || room.module.isTerminal(room.state)) continue;
+    observeBackgroundTask(logger, (async () => {
+      const { error } = await supabaseAdmin.from("game_sessions").update({
+        connected_player_ids: [...room.players.keys()],
+        connected_player_names: [...room.players.values()].map(p => p.displayName)
+      }).eq("id", room.sessionId).in("status", ["waiting", "playing"]);
+      if (error) throw error;
+    })(), "ADMISSION_HEARTBEAT_FAILED");
+  }
+}, 30_000);
+admissionHeartbeat.unref();
+const challengeCleanupTimer = setInterval(() => {
+  if (!supabaseAdmin) return;
+  observeBackgroundTask(logger, (async () => {
+    const { error } = await supabaseAdmin.rpc("cleanup_game_challenges");
+    if (error) throw error;
+  })(), "CHALLENGE_CLEANUP_FAILED");
+}, 60_000);
+challengeCleanupTimer.unref();
 const cleanupTimer = setInterval(() => {
   if (!supabaseAdmin) return;
   observeBackgroundTask(
@@ -2558,6 +2621,8 @@ installProcessLifecycle({
   shutdown: async () => {
     clearInterval(recessTimer);
     clearInterval(cleanupTimer);
+    clearInterval(challengeCleanupTimer);
+    clearInterval(admissionHeartbeat);
     if (supabaseAdmin) {
       const flushes = await Promise.allSettled(listRooms().map(async (room) => {
         // The persistence helper is a no-op for rooms without canonical

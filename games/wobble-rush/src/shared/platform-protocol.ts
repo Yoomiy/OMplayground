@@ -4,6 +4,7 @@ import { RUNNER_COLORS } from "./course-palette"
 
 export const platformControlSchema = z.discriminatedUnion("action", [
   z.strictObject({
+    requestId: z.string().max(100).optional(),
     action: z.enum([
       "loaded",
       "start",

@@ -11,6 +11,7 @@
 !packages/game-logic
 !packages/game-logic/src
 !packages/game-logic/src/recessSchedule.ts
+!packages/game-logic/src/rematch.ts
 !apps
 !apps/game-server
 !apps/game-server/src

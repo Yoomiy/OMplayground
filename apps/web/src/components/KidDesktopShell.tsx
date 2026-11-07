@@ -107,7 +107,8 @@ export function KidDesktopShell({
                   <GraduationCap className="size-4" aria-hidden />
                   <span>כלי מורה</span>
                 </NavLink>
-              ) : <NavLink to="/inbox" className={navClass}>
+              ) : null}
+              <NavLink to="/inbox" className={navClass}>
                 <Mail className="size-4" aria-hidden />
                 <span>הודעות</span>
                 {unreadTotal > 0 ? (
@@ -115,7 +116,7 @@ export function KidDesktopShell({
                     {unreadTotal}
                   </span>
                 ) : null}
-              </NavLink>}
+              </NavLink>
               {!isTeacher ? (
                 <NavLink to="/profile" className={navClass}>
                   <UserRound className="size-4" aria-hidden />

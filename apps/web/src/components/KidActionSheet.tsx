@@ -60,16 +60,11 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
     setErr(null);
     setInfo(null);
     try {
-      const { sessionId } = await sendChallenge({
+      await sendChallenge({
         toId: kid.id,
         gameId
       });
-      onClose();
-      navigate(
-        profile.role === "teacher"
-          ? `/play/${sessionId}?mode=player`
-          : `/play/${sessionId}`
-      );
+      setInfo("ההזמנה נשלחה");
     } catch (e) {
       setErr(e instanceof Error ? e.message : "אתגר נכשל");
     } finally {
