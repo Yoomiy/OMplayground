@@ -1,3 +1,4 @@
+import { ErrorBoundary } from "./ErrorBoundary";
 import { useState } from "react";
 import { Mic, MicOff, Volume2 } from "lucide-react";
 import { desktopPanelClass } from "@/components/KidDesktopShell";
@@ -9,7 +10,20 @@ interface GameVoicePanelProps {
   manualJoin?: boolean;
 }
 
-export function GameVoicePanel({ manualJoin = false, ...voiceProps }: GameVoicePanelProps) {
+export function GameVoicePanel(props: GameVoicePanelProps) {
+  return (
+    <ErrorBoundary
+      scope="room-voice"
+      compact
+      title="הצ׳אט הקולי אינו זמין כרגע"
+      resetKey={props.sessionId}
+    >
+      <GameVoiceContent {...props} />
+    </ErrorBoundary>
+  );
+}
+
+function GameVoiceContent({ manualJoin = false, ...voiceProps }: GameVoicePanelProps) {
   const [manuallyJoinedSessionId, setManuallyJoinedSessionId] = useState<string | null>(null);
   const joined = !manualJoin || manuallyJoinedSessionId === voiceProps.sessionId;
 
@@ -81,12 +95,17 @@ function ConnectedGameVoicePanel(props: Omit<GameVoicePanelProps, "manualJoin">)
       ) : null}
 
       {voice.connectionState === "error" ? (
-        <p role="status" className="rounded-xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-800 dark:text-amber-300">
+        <p
+          role="status"
+          className="rounded-xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-800 dark:text-amber-300"
+        >
           {voice.errorMessage ?? "לא ניתן להתחבר לצ׳אט הקולי."}
         </p>
       ) : null}
       {voice.micError ? (
-        <p role="status" className="text-xs font-semibold text-amber-800 dark:text-amber-300">{voice.micError}</p>
+        <p role="status" className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+          {voice.micError}
+        </p>
       ) : null}
 
       {voice.connectionState === "connected" ? (
@@ -100,7 +119,8 @@ function ConnectedGameVoicePanel(props: Omit<GameVoicePanelProps, "manualJoin">)
                   : "rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-white/60"
               }
             >
-              {participant.name}{participant.isLocal ? " (אני)" : ""}
+              {participant.name}
+              {participant.isLocal ? " (אני)" : ""}
             </span>
           ))}
         </div>

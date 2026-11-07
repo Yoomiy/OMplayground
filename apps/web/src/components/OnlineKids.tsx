@@ -1,3 +1,4 @@
+import { ErrorBoundary } from "./ErrorBoundary";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Gamepad2, MessageCircle, Search, UserRound } from "lucide-react";
@@ -11,7 +12,7 @@ import { cn } from "@/lib/cn";
 function KidRow({
   kid,
   sameGrade,
-  onInvite
+  onInvite,
 }: {
   kid: PublicKidProfile;
   sameGrade: boolean;
@@ -49,7 +50,7 @@ function KidRow({
           onClick={onInvite}
           className={cn(
             buttonStyleBase,
-            "bg-emerald-500/10 border-emerald-400/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500 hover:text-white hover:border-emerald-400 hover:shadow-[0_0_12px_rgba(52,211,153,0.4)]"
+            "bg-emerald-500/10 border-emerald-400/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500 hover:text-white hover:border-emerald-400 hover:shadow-[0_0_12px_rgba(52,211,153,0.4)]",
           )}
           aria-label={`הזמן את ${kid.full_name}`}
           title="להזמין למשחק"
@@ -57,40 +58,48 @@ function KidRow({
           <Gamepad2 className="size-4" aria-hidden />
         </button>
         <>
-            <button
-              type="button"
-              onClick={() => select(kid.id)}
-              className={cn(
-                buttonStyleBase,
-                "bg-sky-500/10 border-sky-400/30 text-sky-600 dark:text-sky-400 hover:bg-sky-500 hover:text-white hover:border-sky-400 hover:shadow-[0_0_12px_rgba(56,189,248,0.4)]"
-              )}
-              aria-label={`שלח הודעה אל ${kid.full_name}`}
-              title="לשלוח הודעה"
-            >
-              <MessageCircle className="size-4" aria-hidden />
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate(`/profile/${kid.id}`)}
-              className={cn(
-                buttonStyleBase,
-                "bg-slate-100 dark:bg-white/10 border-slate-200 dark:border-white/10 text-slate-500 dark:text-white/50 hover:bg-slate-200 dark:hover:bg-white/20 hover:text-slate-800 dark:hover:text-white"
-              )}
-              aria-label={`צפה בפרופיל ${kid.full_name}`}
-              title="לצפות בפרופיל"
-            >
-              <UserRound className="size-4" aria-hidden />
-            </button>
+          <button
+            type="button"
+            onClick={() => select(kid.id)}
+            className={cn(
+              buttonStyleBase,
+              "bg-sky-500/10 border-sky-400/30 text-sky-600 dark:text-sky-400 hover:bg-sky-500 hover:text-white hover:border-sky-400 hover:shadow-[0_0_12px_rgba(56,189,248,0.4)]",
+            )}
+            aria-label={`שלח הודעה אל ${kid.full_name}`}
+            title="לשלוח הודעה"
+          >
+            <MessageCircle className="size-4" aria-hidden />
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate(`/profile/${kid.id}`)}
+            className={cn(
+              buttonStyleBase,
+              "bg-slate-100 dark:bg-white/10 border-slate-200 dark:border-white/10 text-slate-500 dark:text-white/50 hover:bg-slate-200 dark:hover:bg-white/20 hover:text-slate-800 dark:hover:text-white",
+            )}
+            aria-label={`צפה בפרופיל ${kid.full_name}`}
+            title="לצפות בפרופיל"
+          >
+            <UserRound className="size-4" aria-hidden />
+          </button>
         </>
       </div>
     </li>
   );
 }
 
-export function OnlineKids({ className }: { className?: string }) {
+export function OnlineKids(props: { className?: string }) {
+  return (
+    <ErrorBoundary scope="online-kids" compact title="לא ניתן להציג שחקנים כרגע">
+      <OnlineKidsContent {...props} />
+    </ErrorBoundary>
+  );
+}
+
+function OnlineKidsContent({ className }: { className?: string }) {
   const { profile } = useProfile();
   const challengeOnly = profile?.role === "teacher";
-  const { kids, loading } = useOnlineKids(true);
+  const { kids, loading, error, refetch } = useOnlineKids(true);
   const [selected, setSelected] = useState<PublicKidProfile | null>(null);
   const [query, setQuery] = useState("");
 
@@ -99,10 +108,7 @@ export function OnlineKids({ className }: { className?: string }) {
     return kids
       .filter((kid) => {
         if (!q) return true;
-        return (
-          kid.full_name.toLowerCase().includes(q) ||
-          kid.username.toLowerCase().includes(q)
-        );
+        return kid.full_name.toLowerCase().includes(q) || kid.username.toLowerCase().includes(q);
       })
       .sort((a, b) => {
         const aSame = a.grade === profile?.grade;
@@ -119,7 +125,7 @@ export function OnlineKids({ className }: { className?: string }) {
     <section
       className={cn(
         "rounded-3xl border border-emerald-300/40 dark:border-emerald-400/25 bg-white/80 dark:bg-emerald-500/5 p-5 shadow-sm dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md flex min-h-0 flex-1 flex-col",
-        className
+        className,
       )}
     >
       <div className="mb-4 flex items-center justify-between gap-3 border-b border-slate-200 dark:border-white/10 pb-3">
@@ -137,6 +143,18 @@ export function OnlineKids({ className }: { className?: string }) {
         </div>
       </div>
 
+      {error && (
+        <div role="alert" className="mb-3 text-sm">
+          <p>{error}</p>
+          <button
+            type="button"
+            onClick={refetch}
+            className="mt-2 rounded-lg border px-3 py-2 font-bold"
+          >
+            נסו שוב
+          </button>
+        </div>
+      )}
       <label className="relative mb-4 block">
         <Search
           className="pointer-events-none absolute right-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400 dark:text-white/40"
@@ -159,9 +177,7 @@ export function OnlineKids({ className }: { className?: string }) {
           <div className="rounded-2xl border border-dashed border-slate-300 dark:border-white/15 bg-white/5 px-3 py-6 text-center">
             <span className="text-3xl block mb-2">👀</span>
             <p className="text-xs font-bold text-slate-500 dark:text-white/40">
-              {challengeOnly
-                ? "לא מצאנו ילדים מחוברים כרגע."
-                : "לא מצאנו אף חבר מחובר כרגע."}
+              {challengeOnly ? "לא מצאנו ילדים מחוברים כרגע." : "לא מצאנו אף חבר מחובר כרגע."}
             </p>
           </div>
         ) : (
@@ -173,12 +189,7 @@ export function OnlineKids({ className }: { className?: string }) {
               {sameGrade.length > 0 ? (
                 <ul className="space-y-2">
                   {sameGrade.map((kid) => (
-                    <KidRow
-                      key={kid.id}
-                      kid={kid}
-                      sameGrade
-                      onInvite={() => setSelected(kid)}
-                    />
+                    <KidRow key={kid.id} kid={kid} sameGrade onInvite={() => setSelected(kid)} />
                   ))}
                 </ul>
               ) : (

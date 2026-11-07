@@ -7,6 +7,16 @@ import { useInbox } from "@/hooks/useInbox";
 import { InboxPanel } from "./InboxPanel";
 import { claimMessageAlert, clearMessageAlerts } from "@/lib/messageNotifications";
 import { roleLabel, type Message } from "@/lib/directMessages";
+
+// Cross-tab notification coordination is optional and may outlive a widget cleanup.
+function publish(channel: BroadcastChannel | null, message: unknown) {
+  try {
+    channel?.postMessage(message);
+  } catch {
+    /* Closed/unavailable channels cannot disable messages. */
+  }
+}
+
 export function GlobalMessages() {
   const { user } = useAuth(),
     inbox = useInbox(),
@@ -49,18 +59,24 @@ export function GlobalMessages() {
   useEffect(() => {
     if (!user) return;
     mounted.current = true;
-    const channel =
-      typeof BroadcastChannel === "undefined"
-        ? null
-        : new BroadcastChannel(`dm-presence:${user.id}`);
+    let channel: BroadcastChannel | null = null;
+    try {
+      if (typeof BroadcastChannel !== "undefined")
+        channel = new BroadcastChannel(`dm-presence:${user.id}`);
+    } catch {
+      /* Messaging still works when the browser blocks cross-tab coordination. */
+    }
+    let disposed = false;
     channelRef.current = channel;
-    const announce = () =>
-      channel?.postMessage({
+    const announce = () => {
+      if (disposed) return;
+      publish(channel, {
         id: tab.current,
         visible: !document.hidden,
         active:
           current.current.open || current.current.path === "/inbox" ? current.current.active : null,
       });
+    };
     if (channel)
       channel.onmessage = (e) => {
         if (e.data?.type === "probe") {
@@ -83,11 +99,13 @@ export function GlobalMessages() {
     window.addEventListener("focus", refreshPermission);
     return () => {
       mounted.current = false;
+      disposed = true;
+      if (channelRef.current === channel) channelRef.current = null;
       notifications.current.forEach((n) => n.close());
       clearInterval(timer);
       document.removeEventListener("visibilitychange", announce);
       window.removeEventListener("focus", refreshPermission);
-      channel?.postMessage({ id: tab.current, visible: false, active: null });
+      publish(channel, { id: tab.current, visible: false, active: null });
       channel?.close();
       void clearMessageAlerts(user.id);
     };
@@ -104,7 +122,7 @@ export function GlobalMessages() {
   }, [inbox.open, location.pathname]);
   useEffect(() => {
     if (!user) return;
-    channelRef.current?.postMessage({ type: "probe" });
+    publish(channelRef.current, { type: "probe" });
     for (const message of inbox.arrivals) {
       if (processed.current.has(message.id)) continue;
       processed.current.add(message.id);

@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { freshSessionPresence } from "@/lib/sessionPresence";
 import { isClassroomDrawingSession } from "@/lib/drawingSessionScope";
 import { reportCaughtError } from "@/utils/telemetry";
+import { backendUnavailable, FeatureRequestError, FeatureRetryGate } from "@/lib/featureRecovery";
 
 export interface MyPausedGameRow {
   id: string;
@@ -24,6 +25,9 @@ export interface MyPausedGameRow {
 export function useMyPausedGames(userId: string | undefined, gender: "boy" | "girl" | undefined) {
   const [rows, setRows] = useState<MyPausedGameRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const requestVersion = useRef(0);
+  const retryGate = useRef(new FeatureRetryGate());
   const prevUserIdRef = useRef<string | undefined>(undefined);
 
   const rowsRef = useRef<MyPausedGameRow[]>([]);
@@ -31,37 +35,57 @@ export function useMyPausedGames(userId: string | undefined, gender: "boy" | "gi
   const userIdRef = useRef<string | undefined>(userId);
   userIdRef.current = userId;
 
-  const refetch = useCallback(async () => {
-    if (!userId) {
-      setRows([]);
-      setLoading(false);
-      return;
-    }
-    const { data, error } = await supabase
-      .from("game_sessions")
-      .select(
-        "id, status, host_name, game_id, last_activity, invitation_code, connected_player_ids, connected_player_names, voxel_presence_expires_at, games ( name_he, game_url )"
-      )
-      .in("status", ["paused", "playing"])
-      .contains("player_ids", [userId])
-      .not("invitation_code", "like", "class-draw-%")
-      .order("last_activity", { ascending: false })
-      .limit(20);
-    if (error) {
-      console.error(error);
-      reportCaughtError("Paused games query failed", error, { appArea: "paused-games", operation: "list" });
-      setRows([]);
-    } else {
-      setRows(
-        ((data ?? []) as unknown as MyPausedGameRow[]).map(row=>freshSessionPresence(row)).filter(
-          (row) =>
-            !isClassroomDrawingSession(row.invitation_code) &&
-            !row.connected_player_ids.includes(userId)
-        )
-      );
-    }
-    setLoading(false);
-  }, [userId]);
+  const refetch = useCallback(
+    async (manual = false) => {
+      if (userIdRef.current !== userId) return;
+      if (!userId) {
+        setRows([]);
+        setLoading(false);
+        return;
+      }
+      if (!retryGate.current.allows(manual)) return;
+      const version = ++requestVersion.current;
+      try {
+        const { data, error } = await supabase
+          .from("game_sessions")
+          .select(
+            "id, status, host_name, game_id, last_activity, invitation_code, connected_player_ids, connected_player_names, voxel_presence_expires_at, games ( name_he, game_url )",
+          )
+          .in("status", ["paused", "playing"])
+          .contains("player_ids", [userId])
+          .not("invitation_code", "like", "class-draw-%")
+          .order("last_activity", { ascending: false })
+          .limit(20);
+        if (userIdRef.current !== userId || version !== requestVersion.current) return;
+        if (error)
+          throw new FeatureRequestError("Paused games unavailable", backendUnavailable(error));
+        if (!Array.isArray(data) || !data.every((row) => Array.isArray(row?.connected_player_ids)))
+          throw new Error("INVALID_PAUSED_GAMES");
+        setRows(
+          ((data ?? []) as unknown as MyPausedGameRow[])
+            .map((row) => freshSessionPresence(row))
+            .filter(
+              (row) =>
+                !isClassroomDrawingSession(row.invitation_code) &&
+                !row.connected_player_ids.includes(userId),
+            ),
+        );
+        setError("");
+        retryGate.current.success();
+      } catch (error) {
+        if (userIdRef.current !== userId || version !== requestVersion.current) return;
+        retryGate.current.fail(error);
+        setError("לא ניתן לעדכן את המשחקים השמורים כרגע");
+        reportCaughtError("Paused games query failed", error, {
+          appArea: "paused-games",
+          operation: "list",
+        });
+      } finally {
+        if (userIdRef.current === userId && version === requestVersion.current) setLoading(false);
+      }
+    },
+    [userId],
+  );
 
   useEffect(() => {
     if (!userId || !gender) {
@@ -74,6 +98,9 @@ export function useMyPausedGames(userId: string | undefined, gender: "boy" | "gi
     const userChanged = prevUserIdRef.current !== userId;
     prevUserIdRef.current = userId;
     if (userChanged) {
+      retryGate.current.success();
+      setRows([]);
+      setError("");
       setLoading(true);
     }
 
@@ -95,14 +122,14 @@ export function useMyPausedGames(userId: string | undefined, gender: "boy" | "gi
         }
       } else if (payload.eventType === "DELETE") {
         const deletedId = payload.old.id;
-        setRows(prev => prev.filter(r => r.id !== deletedId));
+        setRows((prev) => prev.filter((r) => r.id !== deletedId));
       } else if (payload.eventType === "UPDATE") {
         const newRow = payload.new;
-        const exists = rowsRef.current.some(r => r.id === newRow.id);
+        const exists = rowsRef.current.some((r) => r.id === newRow.id);
 
         if (exists) {
           if (!isRejoinableSession(newRow, currentUserId)) {
-            setRows(prev => prev.filter(r => r.id !== newRow.id));
+            setRows((prev) => prev.filter((r) => r.id !== newRow.id));
           } else {
             void refetch();
           }
@@ -122,9 +149,9 @@ export function useMyPausedGames(userId: string | undefined, gender: "boy" | "gi
           event: "*",
           schema: "public",
           table: "game_sessions",
-          filter: `gender=eq.${gender}`
+          filter: `gender=eq.${gender}`,
         },
-        handleRealtime
+        handleRealtime,
       )
       .subscribe((connectionStatus) => {
         // Fetch after the subscription is active so an update cannot slip
@@ -132,12 +159,14 @@ export function useMyPausedGames(userId: string | undefined, gender: "boy" | "gi
         if (connectionStatus === "SUBSCRIBED") void refetch();
       });
 
-    const presenceTimer=window.setInterval(()=>void refetch(),5000);
+    void refetch();
+    const presenceTimer = window.setInterval(() => void refetch(), 5000);
     return () => {
+      ++requestVersion.current;
       window.clearInterval(presenceTimer);
-      void supabase.removeChannel(channel);
+      void supabase.removeChannel(channel).catch(() => {});
     };
   }, [userId, gender, refetch]);
 
-  return { rows, loading, refetch };
+  return { rows, loading, error, refetch: () => refetch(true) };
 }

@@ -3,9 +3,7 @@ import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { GameSessionContainer } from "@/game/GameSessionContainer";
 import { createVoxelApi } from "@/game/voxel/session-api";
 import { getVoxelRuntimeUrl } from "@/lib/voxelRuntimeUrl";
-const VoxelSessionContainer = lazy(
-  () => import("@/game/voxel/VoxelSessionContainer"),
-);
+const VoxelSessionContainer = lazy(() => import("@/game/voxel/VoxelSessionContainer"));
 import { RocketSessionContainer } from "@/game/RocketSessionContainer";
 import { WobbleSessionContainer } from "@/game/WobbleSessionContainer";
 import { KidDesktopShell } from "@/components/KidDesktopShell";
@@ -21,63 +19,69 @@ function PlayPage() {
   const { isAdmin } = useIsAdmin();
   const [gameName, setGameName] = useState<string>("");
   const [gameUrl, setGameUrl] = useState<string | null>(null);
-  const [classroomRoomCode, setClassroomRoomCode] = useState<string | null>(
-    null,
-  );
+  const [classroomRoomCode, setClassroomRoomCode] = useState<string | null>(null);
   const [sessionResolved, setSessionResolved] = useState(false);
+  const [loadError, setLoadError] = useState("");
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!sessionId) return;
     let cancelled = false;
     setSessionResolved(false);
+    setLoadError("");
     setClassroomRoomCode(null);
     void (async () => {
-      const { data } = await supabase
-        .from("game_sessions")
-        .select("invitation_code, games ( name_he, game_url )")
-        .eq("id", sessionId)
-        .maybeSingle();
-      if (cancelled) return;
-      setClassroomRoomCode(
-        classroomDrawingRoomCode(
-          (data as { invitation_code?: unknown } | null)?.invitation_code,
-        ),
-      );
-      const games = (
-        data as {
-          games?: { name_he?: string; game_url?: string } | null;
-        } | null
-      )?.games;
-      setGameName(games?.name_he ?? "");
-      let url = games?.game_url ?? null;
-      // Staff observation can cross the browser table's partition policy. The
-      // independent service verifies its own school scope before returning UI data.
-      if (!url) {
-        try {
-          const api = createVoxelApi({
-            serverUrl: getVoxelRuntimeUrl(),
-            room: sessionId,
-            getToken: async () => {
-              const result = await supabase.auth.getSession();
-              if (result.error || !result.data.session)
-                throw new Error("UNAUTHORIZED");
-              return result.data.session.access_token;
-            },
-          });
-          await api.session();
-          url = "minecraft";
-        } catch {
-          /* An unavailable/unreadable session is shown below, never guessed as a board game. */
+      try {
+        const { data, error } = await supabase
+          .from("game_sessions")
+          .select("invitation_code, games ( name_he, game_url )")
+          .eq("id", sessionId)
+          .maybeSingle();
+        if (error) throw error;
+        if (cancelled) return;
+        setClassroomRoomCode(
+          classroomDrawingRoomCode((data as { invitation_code?: unknown } | null)?.invitation_code),
+        );
+        const games = (
+          data as {
+            games?: { name_he?: string; game_url?: string } | null;
+          } | null
+        )?.games;
+        setGameName(games?.name_he ?? "");
+        let url = games?.game_url ?? null;
+        // Staff observation can cross the browser table's partition policy. The
+        // independent service verifies its own school scope before returning UI data.
+        if (!url) {
+          try {
+            const api = createVoxelApi({
+              serverUrl: getVoxelRuntimeUrl(),
+              room: sessionId,
+              getToken: async () => {
+                const result = await supabase.auth.getSession();
+                if (result.error || !result.data.session) throw new Error("UNAUTHORIZED");
+                return result.data.session.access_token;
+              },
+            });
+            await api.session();
+            url = "minecraft";
+          } catch {
+            /* An unavailable/unreadable session is shown below, never guessed as a board game. */
+          }
+        }
+        if (cancelled) return;
+        setGameUrl(url);
+        setSessionResolved(true);
+      } catch {
+        if (!cancelled) {
+          setLoadError("לא ניתן לטעון את החדר כרגע. אפשר לנסות שוב");
+          setSessionResolved(true);
         }
       }
-      if (cancelled) return;
-      setGameUrl(url);
-      setSessionResolved(true);
     })();
     return () => {
       cancelled = true;
     };
-  }, [sessionId]);
+  }, [sessionId, attempt]);
 
   const { backHref, backLabel } = useMemo(() => {
     if (isAdmin) {
@@ -107,13 +111,23 @@ function PlayPage() {
     );
   }
 
-  if (classroomRoomCode) {
+  if (loadError)
     return (
-      <Navigate
-        to={`/classroom/${encodeURIComponent(classroomRoomCode)}`}
-        replace
-      />
+      <main dir="rtl" className="p-8 text-center">
+        <p role="alert">{loadError}</p>
+        <button
+          type="button"
+          className="m-4 rounded-xl border px-4 py-2"
+          onClick={() => setAttempt((value) => value + 1)}
+        >
+          נסו שוב
+        </button>
+        <Link to={backHref}>{backLabel}</Link>
+      </main>
     );
+
+  if (classroomRoomCode) {
+    return <Navigate to={`/classroom/${encodeURIComponent(classroomRoomCode)}`} replace />;
   }
 
   if (!gameUrl)
@@ -133,20 +147,12 @@ function PlayPage() {
   }
   if (gameUrl === "rocket-arena") {
     return (
-      <RocketSessionContainer
-        sessionId={sessionId}
-        backHref={backHref}
-        backLabel={backLabel}
-      />
+      <RocketSessionContainer sessionId={sessionId} backHref={backHref} backLabel={backLabel} />
     );
   }
   if (gameUrl === "wobble-rush") {
     return (
-      <WobbleSessionContainer
-        sessionId={sessionId}
-        backHref={backHref}
-        backLabel={backLabel}
-      />
+      <WobbleSessionContainer sessionId={sessionId} backHref={backHref} backLabel={backLabel} />
     );
   }
 

@@ -17,6 +17,7 @@ import {
   type Thread,
 } from "@/lib/directMessages";
 import { reportTelemetry } from "@/utils/telemetry";
+import { FeatureRetryGate } from "@/lib/featureRecovery";
 export type PrivateMessageRow = Message;
 export type InboxThread = Thread;
 function useInboxState(userId?: string) {
@@ -47,9 +48,10 @@ function useInboxState(userId?: string) {
   const historyRows = useRef(messages);
   historyRows.current = messages;
   const historyMore = useRef(false);
+  const retryGate = useRef(new FeatureRetryGate());
   const loadHistory = useCallback(async (older = false) => {
     const id = activeRef.current;
-    if (!id) return;
+    if (!id || !retryGate.current.allows()) return;
     const version = ++historyVersion.current;
     try {
       const cursor = older ? historyRows.current.at(-1) : undefined;
@@ -72,12 +74,15 @@ function useInboxState(userId?: string) {
           : page,
       );
     } catch (e) {
-      if (alive.current && id === activeRef.current) setError((e as Error).message);
+      if (alive.current && id === activeRef.current && version === historyVersion.current) {
+        retryGate.current.fail(e);
+        setError(e instanceof Error ? e.message : "לא ניתן לטעון את השיחה כרגע");
+      }
     }
   }, []);
   const refetch = useCallback(
-    async (older = false) => {
-      if (!userId) return;
+    async (older = false, manual = false) => {
+      if (!userId || !retryGate.current.allows(manual)) return;
       const version = ++threadVersion.current;
       setLoading(true);
       try {
@@ -87,6 +92,7 @@ function useInboxState(userId?: string) {
           cursorArgs(cursor),
         );
         if (!alive.current || version !== threadVersion.current) return;
+        retryGate.current.success();
         const next = data.threads.slice(0, 30);
         if (!older) {
           const incoming = next
@@ -110,7 +116,10 @@ function useInboxState(userId?: string) {
         setError("");
         if (!older) void loadHistory();
       } catch (e) {
-        if (alive.current) setError((e as Error).message);
+        if (alive.current && version === threadVersion.current) {
+          retryGate.current.fail(e);
+          setError(e instanceof Error ? e.message : "לא ניתן לעדכן הודעות כרגע");
+        }
       } finally {
         if (alive.current && version === threadVersion.current) setLoading(false);
       }
@@ -195,9 +204,14 @@ function useInboxState(userId?: string) {
       if (failedAt && Date.now() - Math.max(failedAt, lastRetry) > 60_000) {
         lastRetry = Date.now();
         ++epoch;
-        void supabase.removeChannel(channel).then(() => {
-          if (!disposed) channel = subscribe();
-        });
+        void supabase
+          .removeChannel(channel)
+          .then(() => {
+            if (!disposed) channel = subscribe();
+          })
+          .catch(() => {
+            if (!disposed) setConnection("degraded");
+          });
       }
     }, 15_000);
     window.addEventListener("focus", refresh);
@@ -213,7 +227,7 @@ function useInboxState(userId?: string) {
       window.removeEventListener("focus", refresh);
       window.removeEventListener("online", refresh);
       document.removeEventListener("visibilitychange", refresh);
-      void supabase.removeChannel(channel);
+      void supabase.removeChannel(channel).catch(() => {});
     };
   }, [userId, refetch]);
   const select = useCallback(
@@ -226,6 +240,7 @@ function useInboxState(userId?: string) {
       setMessages([]);
       setError("");
       setHasHistory(false);
+      retryGate.current.success();
       if (show) setOpen(true);
       void loadHistory();
     },
@@ -277,8 +292,8 @@ function useInboxState(userId?: string) {
     connection,
     error,
     unreadTotal,
-    refetch: () => refetch(),
-    loadThreads: () => refetch(true),
+    refetch: () => refetch(false, true),
+    loadThreads: () => refetch(true, true),
     hasThreads,
     open,
     setOpen,
@@ -286,7 +301,10 @@ function useInboxState(userId?: string) {
     partner,
     select,
     hasHistory,
-    loadHistory: () => loadHistory(true),
+    loadHistory: () => {
+      retryGate.current.success();
+      return loadHistory(true);
+    },
     drafts,
     setDraft: (text: string) => {
       if (active) setDrafts((p) => ({ ...p, [active]: text }));

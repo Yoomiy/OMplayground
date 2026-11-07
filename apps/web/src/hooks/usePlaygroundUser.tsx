@@ -6,10 +6,11 @@ import {
   useMemo,
   useRef,
   useState,
-  type ReactNode
+  type ReactNode,
 } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
+import { reportCaughtError } from "@/utils/telemetry";
 
 export interface KidProfileRow {
   id: string;
@@ -41,9 +42,7 @@ type PlaygroundUserContextValue = {
   adminLoading: boolean;
 };
 
-const PlaygroundUserContext = createContext<PlaygroundUserContextValue | null>(
-  null
-);
+const PlaygroundUserContext = createContext<PlaygroundUserContextValue | null>(null);
 
 export function PlaygroundUserProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -59,19 +58,23 @@ export function PlaygroundUserProvider({ children }: { children: ReactNode }) {
     if (!userId) return;
     setProfileLoading(true);
     setProfileError(null);
-    const { data, error: qErr } = await supabase
-      .from("kid_profiles")
-      .select(PROFILE_SELECT)
-      .eq("id", userId)
-      .maybeSingle();
-    if (activeUserIdRef.current !== userId) return;
-    if (qErr) {
-      setProfileError(qErr.message);
-      setProfile(null);
-    } else {
+    try {
+      const { data, error } = await supabase
+        .from("kid_profiles")
+        .select(PROFILE_SELECT)
+        .eq("id", userId)
+        .maybeSingle();
+      if (error) throw error;
+      if (activeUserIdRef.current !== userId) return;
       setProfile(data as KidProfileRow | null);
+    } catch (error) {
+      if (activeUserIdRef.current !== userId) return;
+      // Keep the last successful profile so a background failure cannot discard forms or a game.
+      setProfileError("לא ניתן לעדכן את הפרופיל כרגע. אפשר לנסות שוב");
+      reportCaughtError("Profile query failed", error, { appArea: "profile", operation: "load" });
+    } finally {
+      if (activeUserIdRef.current === userId) setProfileLoading(false);
     }
-    setProfileLoading(false);
   }, []);
 
   useEffect(() => {
@@ -86,33 +89,33 @@ export function PlaygroundUserProvider({ children }: { children: ReactNode }) {
     }
 
     let cancelled = false;
+    setProfile(null);
+    setIsAdmin(false);
     setProfileLoading(true);
     setAdminLoading(true);
     setProfileError(null);
 
     void (async () => {
-      const [profileRes, adminRes] = await Promise.all([
-        supabase
-          .from("kid_profiles")
-          .select(PROFILE_SELECT)
-          .eq("id", user.id)
-          .maybeSingle(),
-        supabase
-          .from("admin_profiles")
-          .select("id")
-          .eq("id", user.id)
-          .maybeSingle()
+      const [profileResult, adminResult] = await Promise.allSettled([
+        supabase.from("kid_profiles").select(PROFILE_SELECT).eq("id", user.id).maybeSingle(),
+        supabase.from("admin_profiles").select("id").eq("id", user.id).maybeSingle(),
       ]);
 
       if (cancelled || activeUserIdRef.current !== user.id) return;
 
-      if (profileRes.error) {
-        setProfileError(profileRes.error.message);
-        setProfile(null);
+      if (profileResult.status === "rejected" || profileResult.value.error) {
+        setProfileError("לא ניתן לטעון את הפרופיל כרגע. אפשר לנסות שוב");
+        reportCaughtError(
+          "Profile query failed",
+          profileResult.status === "rejected" ? profileResult.reason : profileResult.value.error,
+          { appArea: "profile", operation: "load" },
+        );
       } else {
-        setProfile(profileRes.data as KidProfileRow | null);
+        setProfile(profileResult.value.data as KidProfileRow | null);
       }
-      setIsAdmin(!!adminRes.data);
+      setIsAdmin(
+        adminResult.status === "fulfilled" && !adminResult.value.error && !!adminResult.value.data,
+      );
       setProfileLoading(false);
       setAdminLoading(false);
     })();
@@ -129,36 +132,29 @@ export function PlaygroundUserProvider({ children }: { children: ReactNode }) {
       profileError,
       refetchProfile,
       isAdmin,
-      adminLoading
+      adminLoading,
     }),
-    [profile, profileLoading, profileError, refetchProfile, isAdmin, adminLoading]
+    [profile, profileLoading, profileError, refetchProfile, isAdmin, adminLoading],
   );
 
-  return (
-    <PlaygroundUserContext.Provider value={value}>
-      {children}
-    </PlaygroundUserContext.Provider>
-  );
+  return <PlaygroundUserContext.Provider value={value}>{children}</PlaygroundUserContext.Provider>;
 }
 
 function usePlaygroundUserContext(): PlaygroundUserContextValue {
   const ctx = useContext(PlaygroundUserContext);
   if (!ctx) {
-    throw new Error(
-      "useProfile/useIsAdmin must be used within PlaygroundUserProvider"
-    );
+    throw new Error("useProfile/useIsAdmin must be used within PlaygroundUserProvider");
   }
   return ctx;
 }
 
 export function useProfile() {
-  const { profile, profileLoading, profileError, refetchProfile } =
-    usePlaygroundUserContext();
+  const { profile, profileLoading, profileError, refetchProfile } = usePlaygroundUserContext();
   return {
     profile,
     loading: profileLoading,
     error: profileError,
-    refetch: refetchProfile
+    refetch: refetchProfile,
   };
 }
 

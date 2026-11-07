@@ -1,22 +1,12 @@
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { desktopPanelClass } from "@/components/KidDesktopShell";
 import { useTeacherSessionChat } from "@/hooks/useTeacherSessionChat";
-import {
-  ChatDeliveryError,
-  type DeliverChatMessage,
-} from "@/hooks/useChatOutbox";
+import { ChatDeliveryError, type DeliverChatMessage } from "@/hooks/useChatOutbox";
 import { ChatDeliveryStatus } from "./ChatDeliveryStatus";
 
-export function SessionChatPanel({
-  sessionId,
-  observer,
-  canModerate,
-  ended,
-  send,
-  title = "צ׳אט במשחק",
-  active = true,
-}: {
+type SessionChatProps = {
   sessionId: string;
   observer: boolean;
   canModerate: boolean;
@@ -24,9 +14,35 @@ export function SessionChatPanel({
   send: DeliverChatMessage;
   title?: string;
   active?: boolean;
-}) {
-  const chat = useTeacherSessionChat(active ? sessionId : undefined);
+};
+
+export function SessionChatPanel(props: SessionChatProps) {
   const [draft, setDraft] = useState("");
+  useEffect(() => setDraft(""), [props.sessionId]);
+  return (
+    <ErrorBoundary
+      scope="room-chat"
+      compact
+      title="הצ׳אט בחדר אינו זמין כרגע"
+      resetKey={props.sessionId}
+    >
+      <SessionChatContent {...props} draft={draft} setDraft={setDraft} />
+    </ErrorBoundary>
+  );
+}
+
+function SessionChatContent({
+  sessionId,
+  observer,
+  canModerate,
+  ended,
+  send,
+  title = "צ׳אט במשחק",
+  active = true,
+  draft,
+  setDraft,
+}: SessionChatProps & { draft: string; setDraft: (value: string) => void }) {
+  const chat = useTeacherSessionChat(active ? sessionId : undefined);
   const input = useRef<HTMLInputElement>(null);
   const list = useRef<HTMLUListElement>(null);
   const stickToBottom = useRef(true);
@@ -34,8 +50,7 @@ export function SessionChatPanel({
     stickToBottom.current = true;
   }, [sessionId]);
   useEffect(() => {
-    if (stickToBottom.current && list.current)
-      list.current.scrollTop = list.current.scrollHeight;
+    if (stickToBottom.current && list.current) list.current.scrollTop = list.current.scrollHeight;
   }, [chat.lines]);
   const [error, setError] = useState<string | null>(null);
   const report = (error: unknown) =>
@@ -98,10 +113,7 @@ export function SessionChatPanel({
         onScroll={() => {
           if (list.current)
             stickToBottom.current =
-              list.current.scrollHeight -
-                list.current.clientHeight -
-                list.current.scrollTop <
-              32;
+              list.current.scrollHeight - list.current.clientHeight - list.current.scrollTop < 32;
         }}
         className="max-h-56 space-y-2 overflow-auto break-words"
         aria-label="הודעות"
@@ -119,7 +131,7 @@ export function SessionChatPanel({
             {line.outgoing && (
               <ChatDeliveryStatus
                 message={line.outgoing}
-              disabled={!active || observer || ended}
+                disabled={!active || observer || ended}
                 retry={() => void sendMessage(line.message, line.id)}
                 edit={() => {
                   setDraft(line.message);
@@ -140,9 +152,7 @@ export function SessionChatPanel({
           </li>
         ))}
         {!chat.lines.length && (
-          <li className="text-slate-500 dark:text-white/50">
-            עדיין אין הודעות.
-          </li>
+          <li className="text-slate-500 dark:text-white/50">עדיין אין הודעות.</li>
         )}
       </ul>
       {active && !observer && !ended && (

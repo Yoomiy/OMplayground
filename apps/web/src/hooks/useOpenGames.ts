@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { freshSessionPresence } from "@/lib/sessionPresence";
+import { reportCaughtError } from "@/utils/telemetry";
+import { backendUnavailable, FeatureRequestError, FeatureRetryGate } from "@/lib/featureRecovery";
 
 export interface OpenGameRow {
   id: string;
@@ -30,6 +32,9 @@ const OPEN_GAMES_REFETCH_MS = 400;
 export function useOpenGames(userId: string | undefined, gender: "boy" | "girl" | undefined) {
   const [rows, setRows] = useState<OpenGameRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [attempt, setAttempt] = useState(0);
+  const previousScope = useRef("");
   const refetchTimerRef = useRef<number | null>(null);
 
   const rowsRef = useRef<OpenGameRow[]>([]);
@@ -43,27 +48,51 @@ export function useOpenGames(userId: string | undefined, gender: "boy" | "girl" 
       return;
     }
     let cancelled = false;
+    if (previousScope.current !== `${userId}:${gender}`) {
+      setRows([]);
+      setError("");
+      previousScope.current = `${userId}:${gender}`;
+    }
     setLoading(true);
+    const retryGate = new FeatureRetryGate();
 
     const refetch = async () => {
-      const { data } = await supabase
-        .from("game_sessions")
-        .select(
-          "id, game_id, host_id, host_name, player_ids, player_names, connected_player_names, voxel_presence_expires_at, status, is_open, gender, invitation_code, host_grade, created_at, games ( name_he, game_url, max_players )"
-        )
-        .eq("is_open", true)
-        .in("status", ["waiting", "playing"])
-        .order("created_at", { ascending: false })
-        .limit(40);
-      if (cancelled) return;
-      const filtered = ((data ?? []) as unknown as OpenGameRow[]).filter((r) => {
-        if (r.player_ids.includes(userId)) return false;
-        // Voxel admission has no player-count ceiling. Board games retain their
-        // existing join/spectator choice in the catalog UI.
-        return true;
-      });
-      setRows(filtered.map(row=>freshSessionPresence(row)));
-      setLoading(false);
+      if (!retryGate.allows()) return;
+      try {
+        const { data, error } = await supabase
+          .from("game_sessions")
+          .select(
+            "id, game_id, host_id, host_name, player_ids, player_names, connected_player_names, voxel_presence_expires_at, status, is_open, gender, invitation_code, host_grade, created_at, games ( name_he, game_url, max_players )",
+          )
+          .eq("is_open", true)
+          .in("status", ["waiting", "playing"])
+          .order("created_at", { ascending: false })
+          .limit(40);
+        if (cancelled) return;
+        if (error)
+          throw new FeatureRequestError("Open games unavailable", backendUnavailable(error));
+        if (!Array.isArray(data) || !data.every((row) => Array.isArray(row?.player_ids)))
+          throw new Error("INVALID_OPEN_GAMES");
+        const filtered = ((data ?? []) as unknown as OpenGameRow[]).filter((r) => {
+          if (r.player_ids.includes(userId)) return false;
+          // Voxel admission has no player-count ceiling. Board games retain their
+          // existing join/spectator choice in the catalog UI.
+          return true;
+        });
+        setRows(filtered.map((row) => freshSessionPresence(row)));
+        setError("");
+        retryGate.success();
+      } catch (error) {
+        if (cancelled) return;
+        retryGate.fail(error);
+        setError("לא ניתן לעדכן חדרים פתוחים כרגע");
+        reportCaughtError("Open games query failed", error, {
+          appArea: "open-games",
+          operation: "list",
+        });
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     };
 
     const scheduleRefetch = () => {
@@ -79,35 +108,45 @@ export function useOpenGames(userId: string | undefined, gender: "boy" | "girl" 
     void refetch();
 
     const handleRealtime = (payload: any) => {
+      if (cancelled) return;
       const currentUserId = userIdRef.current;
       if (!currentUserId) return;
 
       if (payload.eventType === "INSERT") {
         scheduleRefetch();
       } else if (payload.eventType === "DELETE") {
-        setRows(prev => prev.filter(r => r.id !== payload.old.id));
+        setRows((prev) => prev.filter((r) => r.id !== payload.old.id));
       } else if (payload.eventType === "UPDATE") {
         const newRow = payload.new;
+        if (
+          !Array.isArray(newRow?.player_ids) ||
+          !Array.isArray(newRow.player_names) ||
+          !Array.isArray(newRow.connected_player_names)
+        ) {
+          scheduleRefetch();
+          return;
+        }
         if (
           !newRow.is_open ||
           !["waiting", "playing"].includes(newRow.status) ||
           (newRow.player_ids && newRow.player_ids.includes(currentUserId))
         ) {
-          setRows(prev => prev.filter(r => r.id !== newRow.id));
+          setRows((prev) => prev.filter((r) => r.id !== newRow.id));
           return;
         }
 
-        const existing = rowsRef.current.find(r => r.id === newRow.id);
+        const existing = rowsRef.current.find((r) => r.id === newRow.id);
         if (existing) {
           const changed =
             existing.status !== newRow.status ||
             existing.is_open !== newRow.is_open ||
             JSON.stringify(existing.player_ids) !== JSON.stringify(newRow.player_ids) ||
-            JSON.stringify(existing.connected_player_names) !== JSON.stringify(newRow.connected_player_names);
+            JSON.stringify(existing.connected_player_names) !==
+              JSON.stringify(newRow.connected_player_names);
 
           if (changed) {
-            setRows(prev =>
-              prev.map(r => {
+            setRows((prev) =>
+              prev.map((r) => {
                 if (r.id === newRow.id) {
                   return freshSessionPresence({
                     ...r,
@@ -116,11 +155,11 @@ export function useOpenGames(userId: string | undefined, gender: "boy" | "girl" 
                     player_ids: newRow.player_ids,
                     player_names: newRow.player_names,
                     connected_player_names: newRow.connected_player_names,
-                    voxel_presence_expires_at:newRow.voxel_presence_expires_at
+                    voxel_presence_expires_at: newRow.voxel_presence_expires_at,
                   });
                 }
                 return r;
-              })
+              }),
             );
           }
         } else {
@@ -137,24 +176,29 @@ export function useOpenGames(userId: string | undefined, gender: "boy" | "girl" 
           event: "*",
           schema: "public",
           table: "game_sessions",
-          filter: `gender=eq.${gender}`
+          filter: `gender=eq.${gender}`,
         },
-        handleRealtime
+        handleRealtime,
       )
       .subscribe();
 
-    const presenceTimer=window.setInterval(()=>setRows(current=>{
-      const next=current.map(row=>freshSessionPresence(row));return next.some((row,index)=>row!==current[index])?next:current;
-    }),1000);
+    const presenceTimer = window.setInterval(
+      () =>
+        setRows((current) => {
+          const next = current.map((row) => freshSessionPresence(row));
+          return next.some((row, index) => row !== current[index]) ? next : current;
+        }),
+      1000,
+    );
     return () => {
       window.clearInterval(presenceTimer);
       cancelled = true;
       if (refetchTimerRef.current !== null) {
         window.clearTimeout(refetchTimerRef.current);
       }
-      void supabase.removeChannel(channel);
+      void supabase.removeChannel(channel).catch(() => {});
     };
-  }, [userId, gender]);
+  }, [userId, gender, attempt]);
 
-  return { rows, loading };
+  return { rows, loading, error, refetch: () => setAttempt((value) => value + 1) };
 }

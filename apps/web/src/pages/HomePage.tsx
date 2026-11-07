@@ -75,9 +75,11 @@ export function HomePage() {
   const { user } = useAuth();
   const { profile } = useProfile();
   const { isAdmin, loading: adminLoading } = useIsAdmin();
-  const { rows: openGames } = useOpenGames(user?.id, profile?.gender);
-  const { rows: myPausedGames, loading: pausedLoading, refetch: refetchPaused } =
+  const { rows: openGames, error: openGamesError, refetch: refetchOpenGames } = useOpenGames(user?.id, profile?.gender);
+  const { rows: myPausedGames, loading: pausedLoading, error: pausedError, refetch: refetchPaused } =
     useMyPausedGames(user?.id, profile?.gender);
+  const [catalogError, setCatalogError] = useState("");
+  const [catalogAttempt, setCatalogAttempt] = useState(0);
   const [catalog, setCatalog] = useState<GameCatalogRow[]>([]);
   const [busyGameId, setBusyGameId] = useState<string | null>(null);
   const [dismissingPausedId, setDismissingPausedId] = useState<string | null>(null);
@@ -98,23 +100,28 @@ export function HomePage() {
     if (!profile) return;
     let cancelled = false;
     void (async () => {
-      const { data, error } = await supabase
-        .from("games")
-        .select("id, name_he, description_he, game_url, thumbnail_url, is_multiplayer")
-        .eq("is_active", true)
-        .in("for_gender", ["both", profile.gender])
-        .order("name_he", { ascending: true });
-      if (cancelled) return;
-      if (error) {
-        setErr(error.message);
-        return;
+      try {
+        const { data, error } = await supabase
+          .from("games")
+          .select("id, name_he, description_he, game_url, thumbnail_url, is_multiplayer")
+          .eq("is_active", true)
+          .in("for_gender", ["both", profile.gender])
+          .order("name_he", { ascending: true });
+        if (cancelled) return;
+        if (error) throw error;
+        if (!Array.isArray(data) || !data.every(game => typeof game?.id === "string" && typeof game.name_he === "string" && typeof game.game_url === "string" && typeof game.is_multiplayer === "boolean")) throw new Error("INVALID_CATALOG");
+        setCatalog(data as GameCatalogRow[]);
+        setCatalogError("");
+      } catch (error) {
+        if (cancelled) return;
+        setCatalogError("לא ניתן לעדכן את רשימת המשחקים כרגע");
+        reportCaughtError("Game catalog query failed", error, { appArea: "home", operation: "catalog" });
       }
-      setCatalog((data ?? []) as GameCatalogRow[]);
     })();
     return () => {
       cancelled = true;
     };
-  }, [profile]);
+  }, [profile, catalogAttempt]);
 
   useEffect(() => {
     if (isAdmin) navigate("/admin", { replace: true });
@@ -164,38 +171,43 @@ export function HomePage() {
     if (!user || !profile) return;
     setBusyGameId(gameId);
     setErr(null);
-    const code = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
-    const { data, error } = await supabase
-      .from("game_sessions")
-      .insert({
-        game_id: gameId,
-        host_id: user.id,
-        host_name: profile.full_name,
-        player_ids: [user.id],
-        player_names: [profile.full_name],
-        status: "waiting",
-        is_open: isOpen,
-        invitation_code: code,
-        gender: profile.gender,
-        host_grade: profile.grade
-      })
-      .select("id")
-      .maybeSingle();
-    if (error || !data?.id) {
-      setErr(error?.message ?? "יצירת מפגש נכשלה");
-      setBusyGameId(null);
-      return;
-    }
-    if (!isOpen) {
-      const inviteUrl = `${window.location.origin}/join/${code}`;
-      try {
-        await navigator.clipboard.writeText(inviteUrl);
-      } catch {
-        setErr(`לא הצלחנו להעתיק. קישור הזמנה: ${inviteUrl}`);
+    try {
+      const code = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
+      const { data, error } = await supabase
+        .from("game_sessions")
+        .insert({
+          game_id: gameId,
+          host_id: user.id,
+          host_name: profile.full_name,
+          player_ids: [user.id],
+          player_names: [profile.full_name],
+          status: "waiting",
+          is_open: isOpen,
+          invitation_code: code,
+          gender: profile.gender,
+          host_grade: profile.grade
+        })
+        .select("id")
+        .maybeSingle();
+      if (error || !data?.id) {
+        setErr("לא ניתן ליצור חדר כרגע. אפשר לנסות שוב");
+        return;
       }
+      if (!isOpen) {
+        const inviteUrl = `${window.location.origin}/join/${code}`;
+        try {
+          await navigator.clipboard.writeText(inviteUrl);
+        } catch {
+          setErr(`לא הצלחנו להעתיק. קישור הזמנה: ${inviteUrl}`);
+        }
+      }
+      navigate(`/play/${data.id}${isTeacher ? "?mode=player" : ""}`);
+    } catch (error) {
+      setErr("לא ניתן ליצור חדר כרגע. אפשר לנסות שוב");
+      reportCaughtError("Game session creation failed", error, { appArea: "home", operation: "create-session" });
+    } finally {
+      setBusyGameId(null);
     }
-    setBusyGameId(null);
-    navigate(`/play/${data.id}${isTeacher ? "?mode=player" : ""}`);
   }
 
   async function dismissPausedSession(sessionId: string) {
@@ -263,6 +275,8 @@ export function HomePage() {
         </div>
       ) : null}
 
+      {pausedError && <div role="alert" className="rounded-2xl border p-4 text-sm"><p>{pausedError}</p><button type="button" onClick={() => void refetchPaused()} className="mt-2 rounded-lg border px-3 py-2 font-bold">נסו שוב</button></div>}
+      {catalogError && <div role="alert" className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-100"><p>{catalogError}</p><button type="button" className="mt-2 rounded-lg border px-3 py-2 font-bold" onClick={() => setCatalogAttempt(value => value + 1)}>נסו שוב</button></div>}
       {/* ── Welcome Hero Banner ── */}
       {profile && (
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 p-6 text-white shadow-[0_8px_32px_rgba(139,92,246,0.5)] border border-white/20 animate-slide-up">
@@ -573,6 +587,7 @@ export function HomePage() {
           </div>
 
           {/* Tab Content Panel */}
+          {sidebarTab === "rooms" && openGamesError && <div role="alert" className="rounded-2xl border p-4 text-sm"><p>{openGamesError}</p><button type="button" onClick={refetchOpenGames} className="mt-2 rounded-lg border px-3 py-2 font-bold">נסו שוב</button></div>}
           {sidebarTab === "kids" ? (
             <OnlineKids className="flex-1 scrollbar-hide" />
           ) : (

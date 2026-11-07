@@ -115,15 +115,17 @@ export function ProfilePage() {
       return;
     }
     setBusy("password");
-    const { error: passErr } = await supabase.auth.updateUser({ password });
-    setBusy(null);
-    if (passErr) {
-      setErr(passErr.message);
-      return;
+    try {
+      const { error: passErr } = await supabase.auth.updateUser({ password });
+      if (passErr) throw passErr;
+      setPassword("");
+      setConfirmPassword("");
+      setMsg("הסיסמה עודכנה");
+    } catch {
+      setErr("לא ניתן לעדכן את הסיסמה כרגע. אפשר לנסות שוב");
+    } finally {
+      setBusy(null);
     }
-    setPassword("");
-    setConfirmPassword("");
-    setMsg("הסיסמה עודכנה");
   }
 
   async function handleFile(file: File | undefined) {

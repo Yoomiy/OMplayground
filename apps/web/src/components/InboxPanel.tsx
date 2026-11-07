@@ -4,7 +4,23 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { roleLabel, type Message } from "@/lib/directMessages";
 import { reportMessage } from "@/lib/messagesApi";
+import { ErrorBoundary } from "./ErrorBoundary";
+
 export function InboxPanel() {
+  const { active } = useInbox();
+  return (
+    <ErrorBoundary
+      scope="inbox-panel"
+      compact
+      title="לא ניתן להציג את השיחה כרגע"
+      resetKey={active ?? "threads"}
+    >
+      <InboxContent />
+    </ErrorBoundary>
+  );
+}
+
+function InboxContent() {
   const inbox = useInbox(),
     { user } = useAuth(),
     { profile } = useProfile();
@@ -80,7 +96,21 @@ export function InboxPanel() {
             : "החיבור מתחדש; ההודעות מתרעננות אוטומטית"}
         </p>
       )}
-      {(inbox.error || feedback) && <p role="alert">{inbox.error || feedback}</p>}
+      {(inbox.error || feedback) && (
+        <div role="alert">
+          <p>{inbox.error || feedback}</p>
+          {inbox.error && (
+            <button
+              type="button"
+              disabled={inbox.loading}
+              onClick={() => void inbox.refetch()}
+              className="mt-2 rounded-lg border px-3 py-2 text-sm font-bold"
+            >
+              נסו שוב
+            </button>
+          )}
+        </div>
+      )}
       <div className="grid min-h-0 flex-1 gap-3 sm:grid-cols-[190px_1fr]">
         <aside className={`${inbox.active ? "hidden sm:flex" : "flex"} min-h-0 flex-col gap-2`}>
           <input

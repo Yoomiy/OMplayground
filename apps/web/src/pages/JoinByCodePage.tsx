@@ -8,6 +8,7 @@ export function JoinByCodePage() {
   const navigate = useNavigate();
   const { profile, loading: profileLoading } = useProfile();
   const [err, setErr] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (profileLoading) return;
@@ -16,25 +17,31 @@ export function JoinByCodePage() {
       return;
     }
     let cancelled = false;
+    setErr(null);
     void (async () => {
-      const { data, error } = await supabase
-        .from("game_sessions")
-        .select("id, status")
-        .eq("invitation_code", code)
-        .maybeSingle();
-      if (cancelled) return;
-      if (error || !data?.id) {
-        setErr("קוד הזמנה לא נמצא");
-        return;
+      try {
+        const { data, error } = await supabase
+          .from("game_sessions")
+          .select("id, status")
+          .eq("invitation_code", code)
+          .maybeSingle();
+        if (cancelled) return;
+        if (error) throw error;
+        if (!data?.id) {
+          setErr("קוד הזמנה לא נמצא");
+          return;
+        }
+        const params = new URLSearchParams({ invite: code });
+        if (profile?.role === "teacher") params.set("mode", "player");
+        navigate(`/play/${data.id}?${params.toString()}`, { replace: true });
+      } catch {
+        if (!cancelled) setErr("לא ניתן לבדוק את ההזמנה כרגע. אפשר לנסות שוב");
       }
-      const params = new URLSearchParams({ invite: code });
-      if (profile?.role === "teacher") params.set("mode", "player");
-      navigate(`/play/${data.id}?${params.toString()}`, { replace: true });
     })();
     return () => {
       cancelled = true;
     };
-  }, [code, navigate, profile?.role, profileLoading]);
+  }, [code, navigate, profile?.role, profileLoading, attempt]);
 
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-20 sm:px-6">
@@ -42,9 +49,19 @@ export function JoinByCodePage() {
         <h1 className="text-2xl font-black text-slate-900 dark:text-white">מצטרפים…</h1>
         {err ? (
           <div className="mt-4 space-y-4">
-            <p className="rounded-2xl border border-amber-300 dark:border-amber-400/30 bg-amber-50 dark:bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-800 dark:text-amber-300" role="alert">
+            <p
+              className="rounded-2xl border border-amber-300 dark:border-amber-400/30 bg-amber-50 dark:bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-800 dark:text-amber-300"
+              role="alert"
+            >
               ⚠️ {err}
             </p>
+            <button
+              type="button"
+              className="rounded-xl border px-4 py-2 text-sm font-bold"
+              onClick={() => setAttempt((value) => value + 1)}
+            >
+              נסו שוב
+            </button>
             <Link
               to="/home"
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-5 py-2.5 text-sm font-black text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white hover:-translate-y-0.5 transition-all duration-200"

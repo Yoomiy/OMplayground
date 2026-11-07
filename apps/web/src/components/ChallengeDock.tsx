@@ -18,6 +18,9 @@ import {
 } from "@/lib/challengePresentation";
 import { useAuth } from "@/hooks/useAuth";
 import { respondChallenge } from "@/lib/challengeApi";
+import { parseInvitations } from "@/lib/challengePayload";
+import { backendUnavailable, FeatureRequestError, FeatureRetryGate } from "@/lib/featureRecovery";
+import { reportCaughtError } from "@/utils/telemetry";
 
 export function ChallengeDock() {
   const { user } = useAuth();
@@ -124,6 +127,8 @@ export function ChallengeDock() {
             : "לא ניתן להיכנס כרגע. ההזמנה נשארה ברשימה ואפשר לנסות שוב",
         );
       }
+      if (typeof data !== "string" || !data)
+        throw new Error("לא ניתן להיכנס כרגע. ההזמנה נשארה ברשימה ואפשר לנסות שוב");
       if (entryEpoch !== generation.current || activity.current.sessionId !== previousId) return;
       entryFailed.current.delete(row.id);
       setOpen(false);
@@ -133,7 +138,7 @@ export function ChallengeDock() {
         (invitation) => invitation.status === "accepted",
       ))
         prompted.current.add(`${row.session_id}:${invitation.id}`);
-      navigateRef.current(`/play/${data as string}?mode=player`);
+      navigateRef.current(`/play/${data}?mode=player`);
     } catch (error) {
       if (entryEpoch !== generation.current) return;
       entryFailed.current.add(row.id);
@@ -183,18 +188,21 @@ export function ChallengeDock() {
     setToast(null);
     if (!user) return;
     let fetching = false;
-    const refresh = async () => {
-      if (fetching || document.hidden) return;
+    const retryGate = new FeatureRetryGate();
+    const refresh = async (manual = false) => {
+      if (fetching || document.hidden || !retryGate.allows(manual)) return;
       fetching = true;
       const version = mutationVersion.current;
       try {
         const { data, error } = await supabase.rpc("list_game_challenges");
         if (generation.current !== epoch || mutationVersion.current !== version) return;
-        if (error) {
-          setErrors((previous) => ({ ...previous, refresh: "לא ניתן לרענן הזמנות" }));
-          return;
-        }
-        const next = data as Invitation[];
+        if (error)
+          throw new FeatureRequestError(
+            "לא ניתן לרענן הזמנות כרגע. ההזמנות הקיימות נשמרו",
+            backendUnavailable(error),
+          );
+        const next = parseInvitations(data);
+        retryGate.success();
         const first = seen.current.has("__loaded");
         let automaticEntry: Invitation | undefined;
         for (const row of [...next].sort(
@@ -218,6 +226,23 @@ export function ChallengeDock() {
           const { refresh: _, ...rest } = previous;
           return rest;
         });
+      } catch (error) {
+        if (generation.current !== epoch) return;
+        retryGate.fail(error);
+        setErrors((previous) => ({
+          ...previous,
+          refresh:
+            error instanceof FeatureRequestError
+              ? error.message
+              : "לא ניתן לרענן הזמנות כרגע. אפשר לנסות שוב",
+        }));
+        reportCaughtError(
+          "Challenge list query failed",
+          error,
+          { appArea: "game-challenge", operation: "list" },
+          "shell",
+          "warn",
+        );
       } finally {
         fetching = false;
         if (generation.current === epoch && mutationVersion.current !== version) void refresh();
@@ -234,6 +259,8 @@ export function ChallengeDock() {
       .subscribe();
     const timer = window.setInterval(() => void refresh(), 5000);
     const onRefresh = () => void refresh();
+    const onRetry = () => void refresh(true);
+    window.addEventListener("challenges-retry", onRetry);
     window.addEventListener("challenges-changed", onRefresh);
     window.addEventListener("focus", onRefresh);
     window.addEventListener("online", onRefresh);
@@ -243,7 +270,8 @@ export function ChallengeDock() {
       window.removeEventListener("challenges-changed", onRefresh);
       window.removeEventListener("focus", onRefresh);
       window.removeEventListener("online", onRefresh);
-      void supabase.removeChannel(channel);
+      window.removeEventListener("challenges-retry", onRetry);
+      void supabase.removeChannel(channel).catch(() => {});
     };
   }, [user?.id, enter]);
   async function act(row: Invitation, action: "accept" | "decline" | "cancel") {
@@ -306,13 +334,13 @@ export function ChallengeDock() {
   );
   useEffect(() => {
     const node = dialog.current;
-    if (!invitations.length) {
+    if (!invitations.length && !errors.refresh) {
       setOpen(false);
       return;
     }
     if (open && node && !node.open) node.showModal();
     else if (!open && node?.open) node.close();
-  }, [open, invitations.length]);
+  }, [open, invitations.length, errors.refresh]);
   if (!user || (!invitations.length && !errors.refresh && !toast && !switchPrompt)) return null;
   const visible = invitations.filter((row) =>
     filter === "history"
@@ -327,7 +355,7 @@ export function ChallengeDock() {
   ).length;
   return (
     <>
-      {invitations.length > 0 &&
+      {(invitations.length > 0 || errors.refresh) &&
         createPortal(
           <button
             ref={trigger}
@@ -335,10 +363,19 @@ export function ChallengeDock() {
             onClick={() => setOpen(true)}
             aria-expanded={open}
             aria-controls="challenge-list"
-            aria-label={`הזמנות למשחק, ${liveCount || "היסטוריה"}`}
+            aria-label={
+              errors.refresh && !invitations.length
+                ? "הזמנות למשחק, לא זמין כרגע"
+                : `הזמנות למשחק, ${liveCount || "היסטוריה"}`
+            }
             className="fixed bottom-4 left-20 z-40 inline-flex h-14 min-w-14 items-center justify-center gap-2 rounded-2xl border border-violet-200 bg-white/95 px-4 font-bold text-violet-700 shadow-lg backdrop-blur-xl transition hover:bg-violet-50 dark:border-violet-400/25 dark:bg-slate-900/95 dark:text-violet-300 dark:hover:bg-slate-800"
           >
             <Swords size={19} />
+            {errors.refresh && (
+              <span aria-label="שגיאה ברענון הזמנות" className="text-amber-600">
+                !
+              </span>
+            )}
             <span className="hidden sm:inline text-sm">הזמנות</span>
             {liveCount > 0 && (
               <span className="absolute -left-1.5 -top-1.5 flex min-w-5 items-center justify-center rounded-full border-2 border-white bg-violet-600 px-1.5 py-0.5 text-[10px] font-black text-white dark:border-slate-900">
@@ -474,9 +511,16 @@ export function ChallengeDock() {
             </div>
           </header>
           {errors.refresh && (
-            <p role="alert" className="px-5 pb-3 text-sm text-amber-700 dark:text-amber-300">
-              {errors.refresh}
-            </p>
+            <div role="alert" className="px-5 pb-3 text-sm text-amber-700 dark:text-amber-300">
+              <p>{errors.refresh}</p>
+              <button
+                type="button"
+                className="mt-2 rounded-lg border border-current/20 px-3 py-2 font-bold"
+                onClick={() => window.dispatchEvent(new Event("challenges-retry"))}
+              >
+                נסו שוב
+              </button>
+            </div>
           )}
           <div className="flex min-h-0 flex-1 flex-col border-t border-slate-100 dark:border-white/10">
             <div className="flex shrink-0 gap-2 px-4 py-3" aria-label="סינון הזמנות">

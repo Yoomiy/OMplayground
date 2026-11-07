@@ -1,11 +1,5 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode
-} from "react";
+import { reportCaughtError } from "@/utils/telemetry";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -23,7 +17,7 @@ interface PresenceContextValue {
 
 const PresenceContext = createContext<PresenceContextValue>({
   onlineUserIds: new Set<string>(),
-  isOnline: () => false
+  isOnline: () => false,
 });
 
 export function PresenceProvider({ children }: { children: ReactNode }) {
@@ -38,9 +32,7 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
     !isAdmin;
   const shouldPublishPresence = profile?.role === "kid";
 
-  const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(
-    () => new Set<string>()
-  );
+  const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(() => new Set<string>());
 
   useEffect(() => {
     if (!shouldSubscribeToPresence || !userId || !gender) {
@@ -48,14 +40,11 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
       return;
     }
     const channel = supabase.channel(`presence:playground:${gender}`, {
-      config: { presence: { key: userId } }
+      config: { presence: { key: userId } },
     });
 
     const recompute = () => {
-      const state = channel.presenceState() as Record<
-        string,
-        { userId?: string }[]
-      >;
+      const state = channel.presenceState() as Record<string, { userId?: string }[]>;
       const next = new Set<string>();
       for (const key of Object.keys(state)) {
         next.add(key);
@@ -82,30 +71,35 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
           if (shouldPublishPresence) {
-            await channel.track({
-              userId,
-              online_at: new Date().toISOString()
-            });
+            try {
+              await channel.track({ userId, online_at: new Date().toISOString() });
+            } catch (error) {
+              reportCaughtError(
+                "Presence publish failed",
+                error,
+                { appArea: "presence", operation: "track" },
+                "shell",
+                "warn",
+              );
+            }
           }
         }
       });
 
     return () => {
-      void supabase.removeChannel(channel);
+      void supabase.removeChannel(channel).catch(() => {});
     };
   }, [userId, gender, shouldSubscribeToPresence, shouldPublishPresence]);
 
   const value = useMemo<PresenceContextValue>(
     () => ({
       onlineUserIds,
-      isOnline: (id: string) => onlineUserIds.has(id)
+      isOnline: (id: string) => onlineUserIds.has(id),
     }),
-    [onlineUserIds]
+    [onlineUserIds],
   );
 
-  return (
-    <PresenceContext.Provider value={value}>{children}</PresenceContext.Provider>
-  );
+  return <PresenceContext.Provider value={value}>{children}</PresenceContext.Provider>;
 }
 
 export function useOnlinePresence(): PresenceContextValue {

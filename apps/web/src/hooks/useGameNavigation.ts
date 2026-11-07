@@ -17,18 +17,23 @@ export function useGameNavigation() {
   live.current = key;
   const inspect = useCallback(async (): Promise<RoomPhase> => {
     if (!sessionId) return protectedRoute ? "unknown" : "none";
-    const { data, error } = await supabase
-      .from("game_sessions")
-      .select("status")
-      .eq("id", sessionId)
-      .maybeSingle();
-    const phase: RoomPhase = error
-      ? "unknown"
-      : !data
-        ? "completed"
-        : ["waiting", "playing", "paused", "completed"].includes(data.status)
-          ? data.status
-          : "unknown";
+    let phase: RoomPhase = "unknown";
+    try {
+      const { data, error } = await supabase
+        .from("game_sessions")
+        .select("status")
+        .eq("id", sessionId)
+        .maybeSingle();
+      phase = error
+        ? "unknown"
+        : !data
+          ? "completed"
+          : ["waiting", "playing", "paused", "completed"].includes(data.status)
+            ? data.status
+            : "unknown";
+    } catch {
+      // A failed inspection must never authorize leaving a potentially active game.
+    }
     if (live.current === key) setState({ key, phase });
     return live.current === key ? phase : "unknown";
   }, [sessionId, protectedRoute, key]);
@@ -59,7 +64,7 @@ export function useGameNavigation() {
       disposed = true;
       clearInterval(timer);
       window.removeEventListener("focus", refresh);
-      if (channel) void supabase.removeChannel(channel);
+      if (channel) void supabase.removeChannel(channel).catch(() => {});
     };
   }, [inspect, sessionId]);
   return {

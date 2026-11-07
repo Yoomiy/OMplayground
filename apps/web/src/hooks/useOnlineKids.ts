@@ -28,6 +28,8 @@ export function useOnlineKids(excludeSelf = true) {
   const { onlineUserIds } = useOnlinePresence();
   const [kids, setKids] = useState<PublicKidProfile[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [attempt, setAttempt] = useState(0);
 
   const wantedIds = useMemo(() => {
     const ids = Array.from(onlineUserIds);
@@ -36,6 +38,8 @@ export function useOnlineKids(excludeSelf = true) {
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(false);
+    setError("");
     if (wantedIds.length === 0) {
       setKids([]);
       return;
@@ -43,9 +47,7 @@ export function useOnlineKids(excludeSelf = true) {
     const missing = wantedIds.filter((id) => !cache.has(id));
     if (missing.length === 0) {
       setKids(
-        wantedIds
-          .map((id) => cache.get(id))
-          .filter((p): p is PublicKidProfile => Boolean(p))
+        wantedIds.map((id) => cache.get(id)).filter((p): p is PublicKidProfile => Boolean(p)),
       );
       return;
     }
@@ -54,35 +56,51 @@ export function useOnlineKids(excludeSelf = true) {
       const { data, error } = await supabase
         .from("public_kid_profiles")
         .select(
-          "id, username, full_name, gender, grade, avatar_color, avatar_preset_id, avatar_url, role"
+          "id, username, full_name, gender, grade, avatar_color, avatar_preset_id, avatar_url, role",
         )
         .in("id", missing)
         .eq("role", "kid");
       if (cancelled) return;
-      if (!error && data) {
+      if (!error && Array.isArray(data)) {
         for (const row of data as PublicKidProfile[]) {
+          if (
+            typeof row?.id !== "string" ||
+            typeof row.full_name !== "string" ||
+            typeof row.username !== "string"
+          )
+            throw new Error("INVALID_PUBLIC_PROFILE");
           cache.set(row.id, row);
         }
       } else if (error) {
+        setError("לא ניתן לעדכן את רשימת השחקנים כרגע");
         reportCaughtError(
           "Online kid profile lookup failed",
           error,
           { appArea: "presence", operation: "profile-lookup" },
           "shell",
-          "warn"
+          "warn",
         );
       }
       setKids(
-        wantedIds
-          .map((id) => cache.get(id))
-          .filter((p): p is PublicKidProfile => Boolean(p))
+        wantedIds.map((id) => cache.get(id)).filter((p): p is PublicKidProfile => Boolean(p)),
       );
       setLoading(false);
-    })();
+    })().catch((error) => {
+      if (cancelled) return;
+      setLoading(false);
+      setError("לא ניתן לעדכן את רשימת השחקנים כרגע");
+      reportCaughtError(
+        "Online kid profile lookup failed",
+        error,
+        { appArea: "presence", operation: "profile-lookup" },
+        "shell",
+        "warn",
+      );
+    });
     return () => {
       cancelled = true;
     };
-  }, [wantedIds.join("|")]);
+  }, [wantedIds.join("|"), attempt]);
 
-  return { kids, loading };
+  return { kids, loading, error, refetch: () => setAttempt((value) => value + 1) };
 }
