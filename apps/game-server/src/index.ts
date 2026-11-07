@@ -1,3 +1,4 @@
+import { CompletionQueue } from "./completionQueue";
 import path from "path";
 import { randomUUID } from "node:crypto";
 import { persistSessionChat } from "./sessionChat";
@@ -355,6 +356,7 @@ async function persistCanonicalDrawing(
   }
 }
 
+const pendingCompletions = new CompletionQueue();
 const DRAWING_CHECKPOINT_MS = 60_000;
 setInterval(() => {
   if (!supabaseAdmin) return;
@@ -635,6 +637,7 @@ io.on("connection", (socket) => {
       missingPlayers: missingPlayers(room),
       paused: room.paused,
       canResume: room.paused && !isRoomIdle(room),
+      rematchClosed: room.rematchClosed ?? null,
       rematch: room.rematch
         ? {
             id: room.rematch.id,
@@ -866,6 +869,7 @@ io.on("connection", (socket) => {
     room.roster = orderedPlayers;
     room.paused = false;
     room.rematch = undefined;
+    room.rematchClosed = undefined;
   }
 
   async function settleRematch(room: Room<unknown>) {
@@ -876,6 +880,9 @@ io.on("connection", (socket) => {
       grace: vote.grace, accepted: [...vote.accepted], refused: [...vote.refused], deadline: vote.deadline, now: Date.now(), minimum: room.minPlayers });
     if (decision.phase === 'waiting') return;
     if (decision.phase === 'cancelled') {
+      const declined = [...vote.refused][0];
+      const left = [...vote.eligible].find(id => !room.players.has(id));
+      room.rematchClosed = { reason: declined ? 'declined' : left ? 'left' : 'timeout', userId: declined ?? left };
       room.rematch = undefined;
       io.to(`session:${room.sessionId}`).emit("ROOM_EVENT", { sessionId: room.sessionId, kind: "REMATCH_CANCELLED" });
       emitSnapshot(room);
@@ -1929,12 +1936,9 @@ io.on("connection", (socket) => {
           outcome: res.outcome
         });
         if (supabaseAdmin) {
-          await persistGameEnded({
-            supabase: supabaseAdmin,
-            sessionId,
-            gameState: res.state,
-            ...connectedPayload(room)
-          });
+          const completion = { supabase: supabaseAdmin, sessionId, gameState: res.state, ...connectedPayload(room), endedAt: new Date().toISOString() };
+          pendingCompletions.stage(sessionId, () => persistGameEnded(completion));
+          await pendingCompletions.flush(sessionId);
           void persistLaunches(supabaseAdmin, sessionId);
         }
       }
@@ -1982,16 +1986,13 @@ io.on("connection", (socket) => {
         stoppedBy: userId
       });
       if (supabaseAdmin) {
-        await persistGameStopped({
-          supabase: supabaseAdmin,
-          sessionId,
-          stoppedBy: userId,
-          gameState: room.state
-        });
+        room.paused = true;
+        const completion = { supabase: supabaseAdmin, sessionId, stoppedBy: userId, gameState: room.state };
+        pendingCompletions.stage(sessionId, async () => { await persistGameStopped(completion); if (getRoom(sessionId) === room) { deleteRoom(sessionId); stats.onRoomDeleted(sessionId); } });
+        await pendingCompletions.flush(sessionId);
         void persistLaunches(supabaseAdmin, sessionId);
       }
-      deleteRoom(sessionId);
-      stats.onRoomDeleted(sessionId);
+      if (!supabaseAdmin) { deleteRoom(sessionId); stats.onRoomDeleted(sessionId); }
       reply?.({ ok: true });
     }
   );
@@ -2160,6 +2161,8 @@ io.on("connection", (socket) => {
         });
         return;
       }
+      if (pendingCompletions.has(sessionId)) { reply?.({ ok: false, error: { code: "SAVING_RESULT", message: "שומרים את התוצאה. אפשר לנסות שוב בעוד רגע" } }); return; }
+      if (room.rematchClosed) { reply?.({ ok: false, error: { code: "REMATCH_CLOSED", message: "המשחק הסתיים — אפשר להזמין למשחק חדש" } }); return; }
       if (room.rematch) {
         if (!room.rematch.starting && room.rematch.eligible.has(userId)) {
           room.rematch.accepted.add(userId);
@@ -2344,7 +2347,7 @@ io.on("connection", (socket) => {
     }
   );
 
-  async function handleLeave(sessionId: string, transient = false) {
+  async function handleLeave(sessionId: string) {
     if (!userId) return;
     const awarenessClientIds = [
       ...(socket.data.canonicalDrawingAwarenessClientIds ?? [])
@@ -2418,11 +2421,13 @@ io.on("connection", (socket) => {
         true
       ).catch(() => {});
     }
-    if (before?.rematch && transient) {
-      before.rematch.grace[userId] = Date.now() + 10_000;
-      setTimeout(() => { void settleRematch(before); }, 10_000).unref();
+    if (before && before.module.isTerminal(before.state) && !before.rematchClosed) {
+      if (before.rematch) before.rematch.refused.add(userId);
+      else before.rematchClosed = { reason: 'left', userId };
     }
     const result = removePlayerFromRoom(sessionId, userId);
+    const afterLeave = getRoom(sessionId);
+    if (afterLeave && before?.module.isTerminal(before.state)) { await settleRematch(afterLeave); emitSnapshot(afterLeave); }
     if (classroomHostId) {
       // The drawing room is an implementation detail of the persistent
       // classroom. Do not transfer its database host to a student merely
@@ -2448,6 +2453,7 @@ io.on("connection", (socket) => {
         supabase: supabaseAdmin,
         sessionId,
         result,
+        unstarted: before ? !before.hasBeenActive : false,
         ...connected,
         gameState: before?.state,
         peakPlayerCount: before?.peakPlayerCount
@@ -2548,7 +2554,7 @@ io.on("connection", (socket) => {
     }
     const sessionId = socket.data.sessionId as string | undefined;
     if (sessionId && userId) {
-      observeBackgroundTask(logger, handleLeave(sessionId, true), "SOCKET_DISCONNECT_LEAVE_FAILED", { sessionId });
+      observeBackgroundTask(logger, handleLeave(sessionId), "SOCKET_DISCONNECT_LEAVE_FAILED", { sessionId });
     }
   });
 });
@@ -2577,6 +2583,10 @@ recessTimer.unref?.();
 const STALE_PAUSE_MS = 24 * 60 * 60 * 1000;
 const CLEANUP_TICK_MS = 60 * 60 * 1000;
 // Renew admission leases even while a turn-based room has no moves.
+const completionRetry = setInterval(() => {
+  for (const id of pendingCompletions.ids()) observeBackgroundTask(logger, pendingCompletions.flush(id), "COMPLETION_RETRY_FAILED", { sessionId: id });
+}, 5000);
+completionRetry.unref();
 const admissionHeartbeat = setInterval(() => {
   if (!supabaseAdmin) return;
   for (const room of listRooms()) {
@@ -2623,7 +2633,9 @@ installProcessLifecycle({
     clearInterval(cleanupTimer);
     clearInterval(challengeCleanupTimer);
     clearInterval(admissionHeartbeat);
+    clearInterval(completionRetry);
     if (supabaseAdmin) {
+      await Promise.allSettled(pendingCompletions.ids().map(id => pendingCompletions.flush(id)));
       const flushes = await Promise.allSettled(listRooms().map(async (room) => {
         // The persistence helper is a no-op for rooms without canonical
         // drawing state, so the shutdown path does not need socket-local

@@ -102,6 +102,7 @@ export function useWobbleSession(sessionId: string, backHref: string) {
       if (message.kind === 'ready' && !started) { started = true; readyBridge.current = bridgeId; void launch(); }
       if (message.kind === 'state' && isWobbleView(message.state, sessionId)) {
         reconnectBegan = 0; setError(null); setView(message.state); setStatus('');
+        if (message.state.rematchClosed?.reason === 'declined' && message.state.rematchClosed.userId === message.state.selfUserId) { navigate(backHref, { replace: true }); return; }
         if (message.state.ended) finish('SESSION_COMPLETED');
       }
       if (message.kind === 'exit') navigate(backHref);

@@ -110,9 +110,9 @@ export function PublicProfilePage() {
     try {
       await sendChallenge({
         toId: profile.id,
+        toName: profile.full_name,
         gameId
       });
-      setMsg("ההזמנה נשלחה");
     } catch (e) {
       setErr(e instanceof Error ? e.message : "שליחת אתגר נכשלה");
     } finally {

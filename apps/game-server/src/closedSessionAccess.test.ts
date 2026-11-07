@@ -4,7 +4,7 @@ function makeSupabase(challengeRow: { id: string } | null) {
   const maybeSingle = jest.fn().mockResolvedValue({ data: challengeRow, error: null });
   const eq3 = jest.fn().mockReturnValue({ maybeSingle });
   const eq2 = jest.fn().mockReturnValue({ eq: eq3 });
-  const eq1 = jest.fn().mockReturnValue({ eq: eq2 });
+  const eq1 = jest.fn().mockReturnValue({ or: eq2 });
   const select = jest.fn().mockReturnValue({ eq: eq1 });
   const from = jest.fn().mockReturnValue({ select });
   return {
@@ -43,7 +43,7 @@ describe("canJoinClosedSession", () => {
     expect(ok).toBe(true);
     expect(m.from).toHaveBeenCalledWith("game_challenges");
     expect(m.eq1).toHaveBeenCalledWith("session_id", "sess-1");
-    expect(m.eq2).toHaveBeenCalledWith("to_kid_id", "kid-2");
+    expect(m.eq2).toHaveBeenCalledWith("from_kid_id.eq.kid-2,to_kid_id.eq.kid-2");
     expect(m.eq3).toHaveBeenCalledWith("status", "accepted");
   });
 

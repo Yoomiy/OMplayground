@@ -1,3 +1,4 @@
+import { sessionForRoom } from "../src/shared/session"
 import { afterEach, describe, expect, spyOn, test } from "bun:test"
 import { randomUUID } from "node:crypto"
 import type { AddressInfo } from "node:net"
@@ -429,6 +430,28 @@ describe("Wobble app admission and persistence", () => {
     await room.control(PROFILE(HOST), { action: "loaded" })
     await room.control(PROFILE(GUEST), { action: "start" })
     expect(room.engine.state.phase).toBe("countdown")
+  })
+  test("declining a finished-game rematch closes it for both players", async () => {
+    const { gateway, room } = await fixture()
+    room.engine.state = { ...room.engine.state, phase: "finished", session: { ...sessionForRoom(room.engine.state), complete: true } }
+    await room.persist(true)
+    await room.control(PROFILE(HOST), { action: "rematch" })
+    await room.control(PROFILE(GUEST), { action: "decline-rematch", requestId: room.view(GUEST).rematch?.id })
+    expect(room.view(HOST).rematch).toBeNull()
+    expect(room.view(HOST).rematchClosed).toMatchObject({ reason: "declined", userId: GUEST })
+    expect(gateway.row.status).toBe("completed")
+    await room.detached(GUEST)
+    expect(room.view(HOST).rematchClosed?.reason).toBe("declined")
+    await expect(room.control(PROFILE(HOST), { action: "rematch" })).rejects.toThrow("CANNOT_REMATCH")
+  })
+  test("leaving after the result closes a pending offer immediately", async () => {
+    const { room } = await fixture()
+    room.engine.state = { ...room.engine.state, phase: "finished", session: { ...sessionForRoom(room.engine.state), complete: true } }
+    await room.persist(true)
+    await room.control(PROFILE(HOST), { action: "rematch" })
+    await room.detached(GUEST)
+    expect(room.view(HOST).rematch).toBeNull()
+    expect(room.view(HOST).rematchClosed?.userId).toBe(GUEST)
   })
   test("an actual control-only three-race cup persists each result once and rematches only after consent", async () => {
     const logs = captureLogs()

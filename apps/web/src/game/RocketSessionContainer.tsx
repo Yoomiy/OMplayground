@@ -1,3 +1,4 @@
+import { rematchEndMessage } from "@/lib/rematchPresentation";
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Maximize, Minimize, MessageCircle, Pause, Play, Square, Users } from 'lucide-react';
@@ -77,12 +78,13 @@ export function RocketSessionContainer({ sessionId, backHref = '/home', backLabe
         {ended && <section className="absolute inset-0 flex flex-col items-center justify-center gap-4 overflow-auto bg-slate-50/95 p-5 text-center dark:bg-slate-950/95" aria-label="סיום המשחק">
           <h2 className="text-2xl font-black">המשחק הסתיים</h2>
           <p aria-label="תוצאה" className="flex items-center justify-center gap-3 text-lg font-black"><span className="text-blue-600 dark:text-blue-300">כחולה</span><bdi>{view.score.blue} : {view.score.orange}</bdi><span className="text-orange-600 dark:text-orange-300">כתומה</span></p>
+          {view.rematchClosed && <p role="status" className="rounded-xl bg-slate-100 p-3 text-sm font-bold text-slate-700 dark:bg-white/10 dark:text-slate-200">{rematchEndMessage(view.rematchClosed)}</p>}
           {view.canRematch && !view.observer && !view.rematch && <Button className={primary} onClick={() => game.control('rematch')}>משחק חוזר</Button>}
           {view.canRematch && view.rematch && <>
             <p>{view.rematch.accepted.length} שחקנים רוצים לשחק שוב. ממתינים לתשובות שאר השחקנים.</p>
             {!view.observer && !view.rematch.accepted.includes(view.selfUserId) && !view.rematch.refused.includes(view.selfUserId) && <div className="flex flex-wrap justify-center gap-3">
               <Button className={primary} onClick={() => game.control('rematch-response', { accept: true })}>כן, משחק חוזר</Button>
-              <Button className={secondary} onClick={() => game.control('rematch-response', { accept: false })}>לא הפעם</Button>
+              <Button className={secondary} onClick={() => game.control('rematch-response', { accept: false })}>לא הפעם — יציאה</Button>
             </div>}
           </>}
           <Button className={secondary} asChild><Link to={backHref}>חזרה לבית</Link></Button>

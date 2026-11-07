@@ -88,6 +88,7 @@ export function useRocketSession(sessionId: string, backHref: string) {
       if (!message || message.source !== 'rocket-frame' || message.version !== 1 || message.bridgeId !== bridgeId) return;
       if (message.kind === 'ready' && !started) { started = true; void launch(); }
       if (message.kind === 'state' && isRocketView(message.state, sessionId)) {
+        if (message.state.rematchClosed?.reason === 'declined' && message.state.rematchClosed.userId === message.state.selfUserId) { navigate(backHref, { replace: true }); return; }
         connected = true; reconnectBegan = 0; clearTimeout(retryTimer); terminal = message.state.phase === 'ended';
         setError(null); setView(message.state); setStatus('');
       }

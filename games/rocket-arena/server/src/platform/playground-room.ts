@@ -66,6 +66,7 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
   private wasOpen = false;
   private completedAt = 0;
   private rematch: { id: string; accepted: Set<string>; refused: Set<string> } | null = null;
+  private rematchClosed: { reason: string; userId?: string } | undefined;
   private rematchStarting = false;
   private rematchGrace: Record<string, number> = {};
   private rematchDeadline = 0;
@@ -222,6 +223,7 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
   }
 
   async onJoin(client: colyseus.Client, _options?: unknown, admission?: Admission): Promise<void> {
+    if (this.core.matchFlowState?.phase === 'waiting' && this.paused) { this.paused = false; this.core.setPaused(false); }
     try { await this.joinClient(client, admission); }
     catch (error) {
       platformLog(error instanceof AdmissionError && error.status < 500 ? 'warn' : 'error', 'ROCKET_JOIN_FAILED', {
@@ -279,9 +281,9 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
       serverClosing: this.disposed, reason: this.closingReason ?? (consented ? 'client-leave' : 'connection-lost') });
     if (this.disposed) return;
     if (admission && !admission.observer) {
-      if (this.rematch && !consented) {
-        this.rematchGrace[admission.profile.userId] = Date.now() + 10_000;
-        this.clock.setTimeout(() => { this.controlChain = this.controlChain.catch(() => {}).then(() => this.tryRematch()); }, 10_000);
+      if (this.completed && !this.rematchStarting && !this.rematchClosed) {
+        this.rematchClosed = { reason: 'left', userId: admission.profile.userId };
+        this.rematch = null;
       }
       const lastHuman = !this.seats.humans().some(human => human.connectionId && human.connectionId !== client.sessionId);
       if (lastHuman && !this.completed) this.pauseForRetention();
@@ -346,7 +348,7 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
     if (!admission || !payload || typeof payload !== 'object') throw new AdmissionError('CONTROL_FORBIDDEN');
     const request = payload as { action?: unknown; userId?: unknown; count?: unknown; actorId?: unknown; team?: unknown; accept?: unknown; requestId?: unknown };
     if (request.action === 'rematch' || request.action === 'rematch-response') {
-      if (!this.completed || admission.observer) throw new AdmissionError('CONTROL_FORBIDDEN');
+      if (!this.completed || admission.observer || this.rematchClosed) throw new AdmissionError('CONTROL_FORBIDDEN');
       const fresh = await dependencies.gateway.admitRematch(await dependencies.gateway.profile(admission.profile.userId), this.sessionId, false);
       if (request.action === 'rematch') {
         if (!this.rematch) {
@@ -540,7 +542,7 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
       for (const human of this.seats.humans()) roster.set(human.userId, human.name);
       const connected = this.seats.humans().filter(human => human.connectionId);
       const flow = this.core.matchFlowState;
-      const nextStatus = status ?? (this.completed ? 'completed' : this.paused ? 'paused' : this.lastPhase === 'waiting' ? 'waiting' : 'playing');
+      const nextStatus = status ?? (this.completed ? 'completed' : this.lastPhase === 'waiting' ? 'waiting' : this.paused ? 'paused' : 'playing');
       const activityAt = new Date(nextStatus === 'completed' ? Date.now() : this.pausedAt ?? Date.now()).toISOString();
       const checkpoint = flow && nextStatus !== 'completed' ? dependencies.checkpoints.sign({
         version: 1, sessionId: this.sessionId, expiresAt: (this.pausedAt ?? Date.now()) + PAUSED_RETENTION_MS,
@@ -584,7 +586,8 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
       observer: admission.observer, pending: this.seats.pending.has(admission.profile.userId),
       paused: this.paused, phase: this.completed ? 'ended' : this.core.matchFlowState?.phase ?? 'waiting', hostUserId: this.seats.hostUserId,
       selfUserId: admission.profile.userId,
-      canRematch: this.completed && !this.disposed,
+      canRematch: this.completed && !this.disposed && !this.rematchClosed,
+      rematchClosed: this.rematchClosed,
       score: { blue: this.core.matchFlowState?.blueScore ?? 0, orange: this.core.matchFlowState?.orangeScore ?? 0 },
       rematch: this.rematch ? { id: this.rematch.id, deadline: this.rematchDeadline, accepted: [...this.rematch.accepted], refused: [...this.rematch.refused] } : null,
       pendingPlayers: [...this.seats.pending.values()].map(human => ({ userId: human.userId, name: human.name,
@@ -632,7 +635,12 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
     const decision = resolveRematch({ eligible: this.rematchEligible, connected: connected.map(h => h.userId),
       grace: this.rematchGrace, accepted: [...this.rematch.accepted], refused: [...this.rematch.refused], deadline: this.rematchDeadline, now: Date.now(), minimum: 1 });
     if (decision.phase === 'waiting') return;
-    if (decision.phase === 'cancelled') { this.rematch = null; this.publishPlatformState(); return; }
+    if (decision.phase === 'cancelled') {
+      const declined = [...this.rematch.refused][0];
+      const left = this.rematchEligible.find(id => !connected.some(h => h.userId === id));
+      this.rematchClosed = { reason: declined ? 'declined' : left ? 'left' : 'timeout', userId: declined ?? left };
+      this.rematch = null; this.publishPlatformState(); return;
+    }
     const accepted = connected.filter(h => decision.players.includes(h.userId));
     this.rematchStarting = true;
     try {
@@ -680,7 +688,7 @@ export class PlaygroundRoom extends colyseus.Room<GameState> {
     this.disposed = true; this.pauseForRetention();
     for (const human of this.seats.humans()) human.connectionId = null;
     let confirmed = false;
-    try { await this.persist('paused', { reason, leaseUntil: 0 }); confirmed = true; }
+    try { await this.persist(this.core.matchFlowState?.phase === 'waiting' ? 'waiting' : 'paused', { reason, leaseUntil: 0 }); confirmed = true; }
     catch (error) {
       // Keep the previous signed checkpoint. Never turn a save failure into completion.
       platformLog('error', 'ROCKET_PERSISTENCE_FAILED', { sessionId: this.sessionId, roomId: this.roomId, reason, err: error });

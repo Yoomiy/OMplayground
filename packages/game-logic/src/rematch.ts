@@ -5,7 +5,8 @@ export function resolveRematch(args: {
   refused: readonly string[]; deadline: number; now: number; minimum: number;
 }): { phase: 'waiting' | 'cancelled' | 'ready'; players: string[] } {
   const connected = args.connected.filter(id => args.eligible.includes(id));
-  if (args.now < args.deadline && args.eligible.some(id => !connected.includes(id) && (args.grace?.[id] ?? 0) > args.now)) return { phase: 'waiting', players: [] };
+  // A finished game's offer ends as soon as anyone declines or leaves.
+  if (args.refused.length || args.eligible.some(id => !connected.includes(id))) return { phase: 'cancelled', players: [] };
   const possible = connected.filter(id => !args.refused.includes(id));
   const players = connected.filter(id => args.accepted.includes(id) && !args.refused.includes(id));
   if (possible.length < args.minimum) return { phase: 'cancelled', players: [] };

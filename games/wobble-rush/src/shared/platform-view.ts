@@ -39,6 +39,7 @@ export interface WobbleView {
   results: { id: string; name: string; timeMs: number | null; place: number }[]
   standings: { id: string; name: string; points: number; finishes: number; totalMs: number }[]
   winnerText: string
+  rematchClosed?: { reason: string; userId?: string }
   rematch: { id?: string; deadline?: number; requestedBy: string; accepted: string[]; refused: string[] } | null
 }
 

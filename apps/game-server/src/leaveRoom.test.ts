@@ -100,6 +100,11 @@ describe("LEAVE_ROOM persistence (mirrors disconnect)", () => {
     expect(m.inGs).toHaveBeenCalledWith("status", ["waiting", "playing", "paused"]);
   });
 
+  it("keeps an empty, unstarted lobby waiting so its invitation remains usable", async () => {
+    const m = makeMockSupabase();
+    await persistPlayerLeave({ supabase: m.supabase, sessionId: "waiting", result: { roomEmpty: true }, unstarted: true });
+    expect(m.updateGs.mock.calls[0][0].status).toBe("waiting");
+  });
   it("does not persist a host change when a paused host leaves", async () => {
     const sessionId = "sess-paused-host-leave";
     const room = getOrCreateRoom(sessionId, {

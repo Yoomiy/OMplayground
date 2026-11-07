@@ -54,6 +54,7 @@ export interface Room<State = unknown> {
   hasBeenActive: boolean;
   paused: boolean;
   peakPlayerCount: number;
+  rematchClosed?: { reason: string; userId?: string };
   rematch?: {
     id: string;
     deadline: number;

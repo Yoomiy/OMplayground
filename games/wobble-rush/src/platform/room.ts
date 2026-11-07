@@ -47,6 +47,7 @@ export class PlaygroundWobbleRoom {
   emptySince: number | null = Date.now()
   private pauseAt = 0
   private checkpoint: ReturnType<RoomCheckpoints["sign"]> | undefined
+  private rematchClosed: { reason: string; userId?: string } | undefined
   private rematchGrace: Record<string, number> = {}
   private rematchPreparing = false
   private rematchDeadline = 0
@@ -117,7 +118,7 @@ export class PlaygroundWobbleRoom {
       }
       for (const actor of saved.frame?.actors ?? [])
         if (!actor.npc && !this.members.has(actor.id)) this.engine.race?.remove(actor.id)
-      this.paused = true
+      this.paused = saved.state.phase !== "lobby" || sessionForRoom(saved.state).round !== 0
       this.saved = true
       this.pauseAt = Date.now()
       if (saved.countdownRemainingMs !== null)
@@ -166,6 +167,7 @@ export class PlaygroundWobbleRoom {
       const existing = this.members.get(profile.userId)
       const cup = sessionForRoom(this.engine.state)
       const initialLobby = this.engine.state.phase === "lobby" && cup.round === 0
+      if (initialLobby) this.paused = false
       const pending =
         existing?.lobbyRejoin && initialLobby ? false : (existing?.pending ?? !initialLobby)
       const member: Member = {
@@ -261,7 +263,10 @@ export class PlaygroundWobbleRoom {
     member.connected = false
     member.loaded = false
     member.disconnectedAt = Date.now()
-    if (this.rematch) this.rematchGrace[userId] = Date.now() + 10_000
+    if (this.isComplete() && !this.rematchClosed) {
+      if (this.rematch) this.rematch.refused.push(userId)
+      else this.rematchClosed = { reason: "left", userId }
+    }
     await this.settleRematch()
     this.engine.race?.releaseControls(asPlayerId(userId))
     if (!this.connected().length && !this.ended && !this.isComplete()) {
@@ -358,7 +363,7 @@ export class PlaygroundWobbleRoom {
       return
     }
     if (["rematch", "accept-rematch", "decline-rematch"].includes(control.action)) {
-      if (admission.observer || !this.isComplete()) throw new AdmissionError("CANNOT_REMATCH")
+      if (admission.observer || !this.isComplete() || this.rematchClosed) throw new AdmissionError("CANNOT_REMATCH")
       if (control.action === "rematch" && !this.rematch) {
         this.rematchGrace = {}
         this.rematchDeadline = Date.now() + 30_000
@@ -371,7 +376,6 @@ export class PlaygroundWobbleRoom {
       this.rematch.refused = this.rematch.refused.filter(value => value !== id)
       ;(control.action === "decline-rematch" ? this.rematch.refused : this.rematch.accepted).push(id)
       await this.settleRematch()
-      await this.persist(true)
       this.publish()
       return
     }
@@ -512,8 +516,16 @@ export class PlaygroundWobbleRoom {
     const decision = resolveRematch({ eligible: this.rematchEligible, connected: this.connected().map(member => member.userId),
       grace: this.rematchGrace, accepted: this.rematch.accepted, refused: this.rematch.refused, deadline: this.rematchDeadline, now, minimum: 2 })
     if (decision.phase === "waiting") return
+    if (decision.phase === "cancelled") {
+      const declined = this.rematch.refused[0]
+      const left = this.rematchEligible.find(id => !this.members.get(id)?.connected)
+      this.rematchClosed = { reason: declined ? "declined" : left ? "left" : "timeout", ...((declined ?? left) ? { userId: (declined ?? left)! } : {}) }
+      this.rematch = null
+      this.publish()
+      return
+    }
     const previous = { state: this.engine.state, race: this.engine.race, paused: this.paused,
-      vote: this.rematch, completedAt: this.completedAt,
+      closed: this.rematchClosed, vote: this.rematch, completedAt: this.completedAt,
       members: new Map([...this.members].map(([id, member]) => [id, { ...member }])) }
     this.rematchPreparing = true
     try {
@@ -529,6 +541,7 @@ export class PlaygroundWobbleRoom {
       this.engine.drainEffects()
       this.paused = previous.paused
       this.completedAt = previous.completedAt
+      this.rematchClosed = previous.closed
       this.rematch = previous.vote
       for (const [id, member] of previous.members) if (this.members.has(id)) Object.assign(this.members.get(id)!, member)
       throw error
@@ -542,6 +555,7 @@ export class PlaygroundWobbleRoom {
   }
 
   private restart(newMatch: boolean, publish = true): void {
+    this.rematchClosed = undefined
     const first = this.engine.state.players[0]?.id
     if (!first) throw new AdmissionError("CANNOT_START")
     this.engine.command(first, { type: "restart" }, Date.now())
@@ -675,6 +689,7 @@ export class PlaygroundWobbleRoom {
       standings: selection.standings,
       winnerText: winnerAnnouncement(buildResults(this.engine.state.players), selection),
       rematch: this.rematch,
+      ...(this.rematchClosed ? { rematchClosed: this.rematchClosed } : {}),
     }
   }
 
@@ -787,11 +802,9 @@ export class PlaygroundWobbleRoom {
     const status =
       this.ended || this.isComplete()
         ? "completed"
-        : this.paused
-          ? "paused"
-          : this.engine.state.phase === "lobby" && sessionForRoom(this.engine.state).round === 0
-            ? "waiting"
-            : "playing"
+        : this.engine.state.phase === "lobby" && sessionForRoom(this.engine.state).round === 0
+          ? "waiting"
+          : this.paused ? "paused" : "playing"
     if ((this.ended || this.isComplete()) && !this.completedAt)
       this.completedAt = new Date(now).toISOString()
     if (status !== "completed") this.completedAt = null

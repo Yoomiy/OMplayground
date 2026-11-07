@@ -1,3 +1,4 @@
+import { rematchEndMessage, type RematchClosure } from "@/lib/rematchPresentation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { io, type Socket } from "socket.io-client";
@@ -134,6 +135,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
   const [missingPlayers, setMissingPlayers] = useState<RoomPlayer[]>([]);
   const [paused, setPaused] = useState(false);
   const [canResume, setCanResume] = useState(false);
+  const [rematchClosed, setRematchClosed] = useState<RematchClosure | null>(null);
   const [rematch, setRematch] = useState<RematchState | null>(null);
   const [endOverlay, setEndOverlay] = useState<EndOverlay | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -228,6 +230,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
           paused?: boolean;
           canResume?: boolean;
           rematch?: RematchState | null;
+          rematchClosed?: RematchClosure | null;
         }) => {
           if (payload?.gameKey) {
             setGameKey(payload.gameKey);
@@ -260,6 +263,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
           if (typeof payload?.canResume === "boolean") {
             setCanResume(payload.canResume);
           }
+          if ("rematchClosed" in payload) setRematchClosed(payload.rematchClosed ?? null);
           if ("rematch" in payload) {
             setRematch(payload.rematch ?? null);
           }
@@ -455,13 +459,14 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         "REMATCH_RESPONSE",
         { sessionId, accept, requestId: rematch?.id },
         (ack: { ok?: boolean; error?: { message?: string } }) => {
+          if (ack?.ok && !accept) navigate(isAdmin ? "/admin" : "/home", { replace: true });
           if (!ack?.ok) {
             setToast(ack?.error?.message ?? "תגובה למשחק חוזר נכשלה");
           }
         }
       );
     },
-    [sessionId, rematch?.id]
+    [sessionId, rematch?.id, navigate, isAdmin]
   );
 
   const sendChat = useCallback<DeliverChatMessage>((message, messageId, signal) => {
@@ -685,6 +690,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
     !!endOverlay &&
     endOverlay.kind !== "stopped" &&
     !!rematch &&
+    !rematchClosed &&
     !!myUserId &&
     roster.some((p) => p.userId === myUserId);
 
@@ -758,7 +764,9 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
                 myUserId: myUserId ?? "",
                 onIntent,
                 isHost: iAmHost,
-                canRequestRematch: !isStaffObserver && participationMode === "player",
+                canRequestRematch: !isStaffObserver && participationMode === "player" && !rematchClosed,
+                canDeclineRematch: rematch?.requestedBy !== myUserId,
+                rematchClosed,
                 endOverlay,
                 rematch,
                 canVoteRematch,
@@ -789,6 +797,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
                 winnerName
               )}
             </p>
+            {rematchClosed && <p role="status" className="mt-3 rounded-xl bg-slate-100 p-3 text-sm font-bold text-slate-700 dark:bg-white/10 dark:text-slate-200">{rematchEndMessage(rematchClosed)}</p>}
             {rematch && endOverlay.kind !== "stopped" ? (
               <p className="mt-2 text-sm font-semibold text-slate-600 dark:text-white/60">
                 משחק חוזר: {rematch.accepted.length} אישרו
@@ -796,7 +805,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
               </p>
             ) : null}
             <div className="mt-3 flex flex-wrap justify-center gap-2">
-              {!isStaffObserver && participationMode === "player" && endOverlay.kind !== "stopped" && !rematch && gameKey !== "breakout" ? (
+              {!isStaffObserver && participationMode === "player" && endOverlay.kind !== "stopped" && !rematch && !rematchClosed && gameKey !== "breakout" ? (
                 <button type="button" className="rounded-lg bg-emerald-600 border border-emerald-500/50 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-500 transition duration-200" onClick={() => requestRematch()}>
                   בקש משחק חוזר
                 </button>
@@ -806,9 +815,9 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
                   <button type="button" className="rounded-lg bg-emerald-600 border border-emerald-500/50 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-500 disabled:opacity-50 transition duration-200" disabled={acceptedRematch} onClick={() => respondToRematch(true)}>
                     {acceptedRematch ? "אישרת משחק חוזר" : "אני רוצה משחק חוזר"}
                   </button>
-                  <button type="button" className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-3 py-2 text-sm font-bold text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white disabled:opacity-50 transition duration-200" disabled={refusedRematch} onClick={() => respondToRematch(false)}>
-                    {refusedRematch ? "סירבת" : "לא עכשיו"}
-                  </button>
+                  {rematch?.requestedBy !== myUserId && <button type="button" className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-3 py-2 text-sm font-bold text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white disabled:opacity-50 transition duration-200" disabled={refusedRematch} onClick={() => respondToRematch(false)}>
+                    {refusedRematch ? "סירבת" : "לא הפעם — יציאה"}
+                  </button>}
                 </>
               ) : null}
               <button

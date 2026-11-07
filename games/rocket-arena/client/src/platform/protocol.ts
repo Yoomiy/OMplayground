@@ -16,7 +16,8 @@ export interface PlatformView {
   canModerate: boolean;
   canRematch: boolean;
   score: { blue: number; orange: number };
-  rematch: { accepted: string[]; refused: string[] } | null;
+  rematchClosed?: { reason: string; userId?: string };
+  rematch: { id?: string; deadline?: number; accepted: string[]; refused: string[] } | null;
   inputFloor: { jumpSequence: number; cameraToggleSequence: number } | null;
   players: { actorId: string; name: string; kind: 'human' | 'bot' | 'empty'; userId: string | null; connected: boolean; team: string }[];
 }

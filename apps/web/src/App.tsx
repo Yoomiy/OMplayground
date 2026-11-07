@@ -6,7 +6,7 @@ import { PresenceProvider } from "@/hooks/usePresence";
 import { GlobalMessages } from "@/components/GlobalMessages";
 import { InboxProvider } from "@/hooks/useInbox";
 import { ThemeProvider } from "@/context/ThemeContext";
-import { PendingChallengeBanner } from "@/components/PendingChallengeBanner";
+import { ChallengeDock } from "@/components/ChallengeDock";
 import { FeedbackTrigger } from "@/components/FeedbackTrigger";
 import { LoginPage } from "@/pages/LoginPage";
 import { HomePage } from "@/pages/HomePage";
@@ -62,7 +62,7 @@ export default function App() {
         <PresenceProvider>
         <InboxProvider>
           <GlobalMessages key={user?.id ?? "anonymous"} />
-          <PendingChallengeBanner />
+          <ChallengeDock />
           {user && <FeedbackTrigger />}
           <Suspense fallback={<RouteFallback />}>
             <Routes>

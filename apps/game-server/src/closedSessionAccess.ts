@@ -16,7 +16,7 @@ export async function canJoinClosedSession(args: {
     .from("game_challenges")
     .select("id")
     .eq("session_id", args.sessionId)
-    .eq("to_kid_id", args.userId)
+    .or(`from_kid_id.eq.${args.userId},to_kid_id.eq.${args.userId}`)
     .eq("status", "accepted")
     .maybeSingle();
   if (error) throw error;

@@ -62,9 +62,10 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
     try {
       await sendChallenge({
         toId: kid.id,
+        toName: kid.full_name,
         gameId
       });
-      setInfo("ההזמנה נשלחה");
+      onClose();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "אתגר נכשל");
     } finally {

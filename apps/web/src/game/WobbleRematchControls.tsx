@@ -1,3 +1,4 @@
+import { rematchEndMessage } from "@/lib/rematchPresentation";
 import { useEffect, useRef, useState } from 'react';
 import { Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,7 @@ const primary = 'bg-gradient-to-r from-violet-500 to-indigo-500 text-white hover
 const secondary = 'border border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-white/80 dark:hover:bg-white/10';
 
 export function WobbleRematchControls({ view, error, control }: {
-  view: Pick<WobbleView, 'selfUserId' | 'saved' | 'players' | 'rematch'>; error: string | null; control: (command: WobbleControl) => void;
+  view: Pick<WobbleView, 'selfUserId' | 'saved' | 'players' | 'rematch' | 'rematchClosed'>; error: string | null; control: (command: WobbleControl) => void;
 }) {
   const [pending, setPending] = useState<RematchAction | null>(null);
   const pendingRef = useRef<RematchAction | null>(null);
@@ -43,6 +44,7 @@ export function WobbleRematchControls({ view, error, control }: {
   const enoughPlayers = view.players.filter(player => player.connected).length >= 2;
   const busy = pending !== null;
   const disabled = busy || !view.saved || !!error || !enoughPlayers;
+  if (view.rematchClosed) return <p role="status" className="rounded-xl bg-slate-100 p-3 text-sm font-bold text-slate-700 dark:bg-white/10 dark:text-slate-200">{rematchEndMessage(view.rematchClosed)}</p>;
   return <div className="space-y-3">
     {busy ? <p role="status" className="flex items-center gap-2 text-sm font-bold">
       <Loader2 size={16} className="animate-spin" aria-hidden="true" />
@@ -53,7 +55,7 @@ export function WobbleRematchControls({ view, error, control }: {
     {view.rematch && <p className="text-sm text-slate-600 dark:text-white/70" role="status">
       {view.rematch.accepted.length === 1 ? 'שחקן אחד רוצה לשחק שוב.' : `${view.rematch.accepted.length} שחקנים רוצים לשחק שוב.`} {waiting === 1 ? 'ממתינים לתשובה נוספת.' : waiting > 1 ? `ממתינים לעוד ${waiting} תשובות.` : 'צריך לפחות שני שחקנים כדי להתחיל.'}
     </p>}
-    {!enoughPlayers && <p role="status" className="text-sm">ממתינים לעוד שחקן כדי לשחק שוב.</p>}
+    {!enoughPlayers && <p role="status" className="text-sm">אין עוד שחקן בחדר. המשחק הסתיים.</p>}
     {insufficient && <p role="status" className="text-sm">לא היו מספיק משתתפים למשחק נוסף.</p>}
     {delayed && <p role="status" className="text-sm text-amber-700 dark:text-amber-300">האישור מתעכב. אפשר לנסות שוב.</p>}
     <div className="flex flex-wrap gap-2" aria-busy={busy}>
@@ -61,7 +63,7 @@ export function WobbleRematchControls({ view, error, control }: {
         {busy && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}{busy ? 'מצטרפים…' : 'משחק נוסף'}
       </Button> : <>
         {!accepted && <Button className={primary} disabled={disabled} onClick={() => send('accept-rematch')}>{declined ? 'בכל זאת רוצה לשחק' : 'אני רוצה לשחק'}</Button>}
-        {!declined && <Button className={secondary} disabled={disabled} onClick={() => send('decline-rematch')}>לא הפעם</Button>}
+        {!declined && view.rematch.requestedBy !== view.selfUserId && <Button className={secondary} disabled={disabled} onClick={() => send('decline-rematch')}>לא הפעם — יציאה</Button>}
       </>}
     </div>
   </div>;

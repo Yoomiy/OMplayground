@@ -16,7 +16,6 @@ import { KidDesktopShell } from "@/components/KidDesktopShell";
 import { kidFieldInputClass } from "@/lib/fieldStyles";
 import { cn } from "@/lib/cn";
 import { useOnlinePresence } from "@/hooks/usePresence";
-import { useInbox } from "@/hooks/useInbox";
 import { KidAvatar } from "@/components/KidAvatar";
 import { reportCaughtError } from "@/utils/telemetry";
 
@@ -94,7 +93,6 @@ export function HomePage() {
   const isTeacher = profile?.role === "teacher";
 
   const { onlineUserIds } = useOnlinePresence();
-  const { unreadTotal } = useInbox();
 
   useEffect(() => {
     if (!profile) return;
@@ -297,11 +295,7 @@ export function HomePage() {
                 <span className="rounded-full bg-white/20 px-4 py-1.5 text-xs font-black backdrop-blur-sm border border-white/20 shadow-sm text-white">
                   🟢 {onlineUserIds.size} מחוברים
                 </span>
-                {!isTeacher && unreadTotal > 0 && (
-                  <span className="rounded-full bg-rose-500 px-4 py-1.5 text-xs font-black border border-rose-400 shadow-[0_0_12px_rgba(239,68,68,0.5)] animate-pulse text-white">
-                    ✉️ {unreadTotal} הודעות חדשות!
-                  </span>
-                )}
+
               </div>
             </div>
           </div>

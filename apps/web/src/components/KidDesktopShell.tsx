@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { GraduationCap, Home, LogOut, Mail, UserRound } from "lucide-react";
-import { useInbox } from "@/hooks/useInbox";
+import { GraduationCap, Home, LogOut, UserRound } from "lucide-react";
 import { useOnlinePresence } from "@/hooks/usePresence";
 import { useProfile } from "@/hooks/useProfile";
 import { KidAvatar } from "@/components/KidAvatar";
@@ -51,7 +50,6 @@ export function KidDesktopShell({
   const { profile } = useProfile();
   const isTeacher = profile?.role === "teacher";
   const { onlineUserIds } = useOnlinePresence();
-  const { unreadTotal } = useInbox();
 
   async function logout() {
     const { error } = await discardMySoloWaitingSessions();
@@ -108,15 +106,6 @@ export function KidDesktopShell({
                   <span>כלי מורה</span>
                 </NavLink>
               ) : null}
-              <NavLink to="/inbox" className={navClass}>
-                <Mail className="size-4" aria-hidden />
-                <span>הודעות</span>
-                {unreadTotal > 0 ? (
-                  <span className="rounded-full bg-rose-500 px-1.5 py-0.5 text-[11px] leading-none text-white shadow-[0_0_8px_rgba(239,68,68,0.6)] animate-pulse">
-                    {unreadTotal}
-                  </span>
-                ) : null}
-              </NavLink>
               {!isTeacher ? (
                 <NavLink to="/profile" className={navClass}>
                   <UserRound className="size-4" aria-hidden />

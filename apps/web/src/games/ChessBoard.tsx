@@ -1,3 +1,4 @@
+import { rematchEndMessage, type RematchClosure } from "@/lib/rematchPresentation";
 import { useEffect, useMemo, useState, useRef, useCallback, memo, type CSSProperties } from "react";
 import { Chessboard } from "react-chessboard";
 import type { ChessIntent, ChessPromotion, ChessState, ChessTimeControl } from "@playground/game-logic";
@@ -174,6 +175,8 @@ export interface ChessBoardProps {
   rematch?: { accepted: string[]; refused: string[] } | null;
   canRequestRematch?: boolean;
   canVoteRematch?: boolean;
+  canDeclineRematch?: boolean;
+  rematchClosed?: RematchClosure | null;
   acceptedRematch?: boolean;
   refusedRematch?: boolean;
   onRequestRematch?: () => void;
@@ -193,6 +196,8 @@ export function ChessBoard({
   rematch,
   canRequestRematch,
   canVoteRematch,
+  canDeclineRematch,
+  rematchClosed,
   acceptedRematch,
   refusedRematch,
   onRequestRematch,
@@ -474,6 +479,7 @@ export function ChessBoard({
               </p>
             ) : null}
 
+            {rematchClosed && <p role="status" className="mt-3 rounded-xl bg-slate-100 p-3 text-sm font-bold text-slate-700 dark:bg-white/10 dark:text-slate-200">{rematchEndMessage(rematchClosed)}</p>}
             {rematch && sessionEnd?.kind !== "stopped" ? (
               <p className="mt-2 text-sm font-semibold text-white/60">
                 משחק חוזר: {rematch.accepted.length} אישרו
@@ -501,14 +507,14 @@ export function ChessBoard({
                   >
                     {acceptedRematch ? "אישרת משחק חוזר" : "אני רוצה משחק חוזר"}
                   </button>
-                  <button
+                  {canDeclineRematch && <button
                     type="button"
                     disabled={refusedRematch}
                     className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-4 py-2 text-sm font-bold text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white disabled:opacity-50 transition duration-200"
                     onClick={() => onRespondRematch?.(false)}
                   >
-                    {refusedRematch ? "סירבת" : "לא עכשיו"}
-                  </button>
+                    {refusedRematch ? "סירבת" : "לא הפעם — יציאה"}
+                  </button>}
                 </>
               ) : null}
               <button

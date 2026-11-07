@@ -11,6 +11,7 @@ export interface GameChallengeRow {
   status: "pending" | "accepted" | "declined" | "expired";
   created_at: string;
   expires_at: string;
+  accepted_at?: string | null;
 }
 
 function challengeError(message: string): string {
@@ -28,6 +29,7 @@ function challengeError(message: string): string {
 export async function sendChallenge(args: {
   toId: string;
   gameId: string;
+  toName?: string;
 }): Promise<{ sessionId: string; challengeId: string }> {
   const { data, error } = await supabase.rpc("create_game_challenge", {
     p_to_id: args.toId,
@@ -54,6 +56,9 @@ export async function sendChallenge(args: {
     throw new Error("FAILED_TO_CREATE_CHALLENGE");
   }
 
+  window.dispatchEvent(new CustomEvent("challenge-sent", { detail: {
+    challengeId: result.challenge_id, sessionId: result.session_id, recipientName: args.toName,
+  } }));
   window.dispatchEvent(new Event("challenges-changed"));
   return {
     sessionId: result.session_id,

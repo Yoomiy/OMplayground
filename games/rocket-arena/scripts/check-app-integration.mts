@@ -448,19 +448,27 @@ try {
   rematchHost.send('platform-control', { action: 'rematch' });
   await until(() => !!views.get(rematchFriend)?.rematch, 'second rematch offer');
   rematchFriend.send('platform-control', { action: 'rematch-response', requestId: views.get(rematchFriend)?.rematch?.id, accept: false });
-  await until(() => sessions.get(sessionId)!.status === 'waiting', 'declining does not block willing players');
-  assert.deepEqual(sessions.get(sessionId)!.player_ids, [uid(1)]);
-  await until(() => rematches.get(rematchFriend)!.at(-1) === false, 'decliner is not instructed to follow');
-  await until(() => !colyseus.matchMaker.getRoomById(rematchHost.id), 'second rematch old room closed');
-  const finalRematch = await join(sessionId, 1);
+  await until(() => views.get(rematchHost)?.rematchClosed?.reason === 'declined', 'decline closes the offer for the requester');
+  assert.equal(views.get(rematchHost)!.canRematch, false);
+  assert.equal(views.get(rematchFriend)!.rematchClosed?.userId, uid(3));
+  assert.equal(sessions.get(sessionId)!.status, 'completed');
+  assert.equal(views.get(rematchHost)!.rematch, null);
+  await disposeCompletedRooms();
+  const naturalSession = newSession(180);
+  const finalRematch = await join(naturalSession, 1);
+  const naturalFriend = await join(naturalSession, 2);
   const naturalRoom = colyseus.matchMaker.getRoomById(finalRematch.id) as any;
   naturalRoom.core.restoreProgressAtKickoff({ blueScore: 1, orangeScore: 0, regulationStepsRemaining: 1, regulationCutoffResolved: false });
+  finalRematch.send('platform-control', { action: 'start' });
   await until(() => views.get(finalRematch)?.phase === 'ended', 'natural completion offers rematch');
   assert.equal(views.get(finalRematch)!.canRematch, true);
   assert.equal(views.get(finalRematch)!.canControl, false);
   assert.deepEqual(views.get(finalRematch)!.score, { blue: 1, orange: 0 });
-  assert.equal(sessions.get(sessionId)!.game_state!.reason, 'finished');
-  assert.ok(sessions.get(sessionId)!.game_state!.result);
+  assert.equal(sessions.get(naturalSession)!.game_state!.reason, 'finished');
+  assert.ok(sessions.get(naturalSession)!.game_state!.result);
+  await naturalFriend.leave();
+  await until(() => views.get(finalRematch)?.rematchClosed?.reason === 'left', 'finished-game departure closes future rematch offers');
+  assert.equal(views.get(finalRematch)!.canRematch, false);
   await disposeCompletedRooms();
   report.rematchConsentAndFreshRound = 'PASS';
 
@@ -601,9 +609,9 @@ try {
   lobbyHost.send('platform-control', { action: 'bots', count: 2 });
   await until(() => views.get(lobbyHost)!.players.filter(player => player.kind === 'bot').length === 2, 'saved lobby bots');
   await lobbyHost.leave();
-  await until(() => sessions.get(savedLobbySession)!.status === 'paused', 'empty lobby pauses');
+  await until(() => sessions.get(savedLobbySession)!.status === 'waiting' && sessions.get(savedLobbySession)!.connected_player_ids?.length === 0, 'empty unstarted lobby stays waiting');
   await pause(1100);
-  assert.ok(colyseus.matchMaker.getRoomById(lobbyTeacher.id)); // Staff may keep observing a paused room.
+  assert.ok(colyseus.matchMaker.getRoomById(lobbyTeacher.id)); // Staff may keep observing a waiting room.
   const lobbyReturned = await join(savedLobbySession, 1);
   assert.equal(views.get(lobbyReturned)!.phase, 'waiting'); assert.equal(views.get(lobbyReturned)!.paused, false);
   await lobbyTeacher.leave(); await lobbyReturned.leave();
@@ -871,7 +879,7 @@ createRoot(document.getElementById('root')!).render(<StrictMode><BrowserRouter><
   failedPatch = { sessionId: failureSession, reason: 'fixture-ambiguous-save', commitBeforeFailure: true };
   await (colyseus.matchMaker.getRoomById(recoveredFailure.id) as PlaygroundRoom).hibernate('fixture-ambiguous-save');
   await until(() => endedEvents.get(recoveredFailure)!.includes('save-unconfirmed'), 'lost acknowledgement is not reported as saved');
-  assert.equal(sessions.get(failureSession)!.status, 'paused');
+  assert.equal(sessions.get(failureSession)!.status, 'waiting'); // Retained lobby never started.
   assert.ok(!logs.slice(logStart).some(line => line.context.event === 'ROCKET_ROOM_SAVED'));
   const confirmedClient = await join(failureSession, 13);
   await (colyseus.matchMaker.getRoomById(confirmedClient.id) as PlaygroundRoom).hibernate('fixture-confirmed-save');

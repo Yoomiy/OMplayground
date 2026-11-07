@@ -106,6 +106,7 @@ export interface PersistLeaveArgs {
   supabase: SupabaseClient;
   sessionId: string;
   result: LeaveResult;
+  unstarted?: boolean;
   connectedPlayerIds?: string[];
   connectedPlayerNames?: string[];
   gameState?: unknown;
@@ -151,14 +152,14 @@ export async function persistPlayerLeave(
   }
   if (result.roomEmpty) {
     const payload: {
-      status: "paused";
+      status: "paused" | "waiting";
       game_state?: Record<string, unknown>;
       connected_player_ids: string[];
       connected_player_names: string[];
       last_activity: string;
       peak_player_count?: number;
     } = {
-      status: "paused",
+      status: args.unstarted ? "waiting" : "paused",
       connected_player_ids: connectedPlayerIds,
       connected_player_names: connectedPlayerNames,
       last_activity: new Date().toISOString()
