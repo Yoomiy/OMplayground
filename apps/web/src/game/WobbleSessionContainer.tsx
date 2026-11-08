@@ -90,7 +90,7 @@ export function WobbleSessionContainer({ sessionId, backHref = '/home', backLabe
       <main className="relative min-h-0 min-w-0 flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 dark:border-white/10 dark:bg-black">
         {game.src && <iframe key={game.bridgeId} ref={game.frame} src={game.src} title="מרוץ Wobble Rush" className="h-full w-full border-0" allow="autoplay; fullscreen" sandbox="allow-scripts allow-same-origin" />}
         {view?.pending && !overlay && <p role="status" className="absolute inset-x-3 top-3 rounded-xl bg-white/95 p-3 text-center text-sm font-bold text-slate-900 shadow dark:bg-slate-900/95 dark:text-white">הצטרפת לחדר. אפשר לצפות כעת ולהתחרות {view.mode === 'cup' ? 'בגביע הבא' : 'במרוץ הבא'}.</p>}
-        {overlay && <section className="absolute inset-0 overflow-y-auto bg-slate-50/95 p-4 dark:bg-slate-950/95 sm:p-6" aria-label="מצב המפגש">
+        {overlay && <section className="absolute inset-0 overflow-y-auto bg-slate-50 p-4 dark:bg-slate-950 sm:p-6" aria-label="מצב המפגש">
           <div className="mx-auto max-w-2xl space-y-5">
             {game.error && <div role="alert" className="space-y-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200"><p>{game.error}</p><Button className={secondary} onClick={game.retry}>ניסיון נוסף</Button></div>}
             {!view && !game.error && !game.ended && <p role="status">טוענים את המשחק…</p>}

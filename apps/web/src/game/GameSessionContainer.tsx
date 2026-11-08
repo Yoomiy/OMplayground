@@ -147,6 +147,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
 
   useEffect(() => {
     let cancelled = false;
+    setParticipationMode("joining");
 
     void (async () => {
       const { data } = await supabase.auth.getSession();
@@ -174,6 +175,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
         reconnectionDelay: 1500
       });
       socketRef.current = s;
+      s.on("disconnect", () => { if (!cancelled) { setParticipationMode("joining"); setStatus("החיבור לחדר נותק. מנסים להתחבר מחדש…"); } });
 
       s.on("connect", () => {
         setDrawingSync(null);
@@ -830,11 +832,11 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
       </main>
 
       <aside className="space-y-4">
-          <GameVoicePanel
+          {participationMode !== "joining" && <GameVoicePanel
             sessionId={sessionId}
             requestToken={requestVoiceToken}
             manualJoin={isStaffObserver}
-          />
+          />}
 
           <section className={desktopPanelClass("p-4 text-sm")}>
             <h2 className="font-black text-slate-900 dark:text-white/95">שחקנים בחדר</h2>

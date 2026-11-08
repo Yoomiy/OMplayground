@@ -4,6 +4,8 @@ import { createPlatformService } from './service.js';
 import { AdmissionError, type PlatformSession } from './admission.js';
 import type { PlatformGateway } from './gateway.js';
 import { PAUSED_RETENTION_MS, RoomCheckpoints, type SavedRoom } from './checkpoint.js';
+import { configurePlatformLogger } from './logging.js';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 
 const secret = 'fixture-recovery-secret-more-than-32-characters';
 const signer = new RoomCheckpoints(secret);
@@ -22,6 +24,28 @@ function service(gateway: Partial<PlatformGateway>) {
   return createPlatformService({ gateway: gateway as PlatformGateway, ticketSecret: secret,
     origins: ['http://localhost:5173'], clientDir: '/unused-fixture-client' });
 }
+
+test('missing embedded client assets are logged and browser requests can read the service correlation ID', async () => {
+  const entries: Record<string, unknown>[] = [];
+  const capture = (fields: Record<string, unknown>) => entries.push(fields);
+  configurePlatformLogger({ debug: capture, info: capture, warn: capture, error: capture });
+  const app = service({});
+  try {
+    const headers = new Map<string, unknown>();
+    let status = 0;
+    await new Promise<void>(resolve => {
+      const res = { setHeader: (key: string, value: unknown) => headers.set(key, value), getHeader: (key: string) => headers.get(key),
+        writeHead: (value: number) => { status = value; }, end: () => resolve() } as unknown as ServerResponse;
+      app.handle({ method: 'GET', url: '/assets/missing.js', headers: { origin: 'http://localhost:5173' } } as IncomingMessage, res);
+    });
+    assert.equal(status, 404);
+    assert.equal(headers.get('Access-Control-Expose-Headers'), 'X-Correlation-ID');
+    assert.ok(entries.some(entry => (entry.context as { event?: string })?.event === 'ROCKET_CLIENT_ASSET_FAILED' && entry.correlationId === headers.get('X-Correlation-ID')));
+  } finally {
+    await app.drain();
+    configurePlatformLogger({ debug() {}, info() {}, warn() {}, error() {} });
+  }
+});
 
 test('expired owner recovery pages through saves without extending retention or changing private membership', async () => {
   const rows = Array.from({ length: 105 }, (_, index) => savedSession(String(index).padStart(3, '0')));

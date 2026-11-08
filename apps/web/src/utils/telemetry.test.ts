@@ -100,3 +100,32 @@ describe("client telemetry queue", () => {
     expect(secondBatch.logs).toEqual([expect.objectContaining({ message: "queued-after-fetch" })]);
   });
 });
+
+it("retains independent user retry failures within the normal deduplication window", async () => {
+  const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+  vi.stubGlobal("fetch", fetchMock);
+  try {
+    reportTelemetry(
+      {
+        level: "error",
+        message: "retry-scoped-failure",
+        sessionId: "retry-room",
+        dedupeKey: "attempt-one",
+      },
+      "game-server",
+    );
+    reportTelemetry(
+      {
+        level: "error",
+        message: "retry-scoped-failure",
+        sessionId: "retry-room",
+        dedupeKey: "attempt-two",
+      },
+      "game-server",
+    );
+    await flushTelemetry("game-server");
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).logs).toHaveLength(2);
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});

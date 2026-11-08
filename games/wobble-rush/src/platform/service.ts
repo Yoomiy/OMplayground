@@ -250,6 +250,7 @@ export function createPlatformService(options: PlatformServiceOptions) {
         "Authorization,Content-Type,X-Correlation-ID",
       )
       response.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
+      response.setHeader("Access-Control-Expose-Headers", "X-Correlation-ID")
     }
     if (request.method === "OPTIONS") {
       response.writeHead(origin && origins.has(origin) ? 204 : 403)
@@ -410,6 +411,7 @@ export function createPlatformService(options: PlatformServiceOptions) {
     if (!file.startsWith(clientRoot + sep)) throw new AdmissionError("BAD_PATH", 400)
     const info = await stat(file).catch(() => null)
     if (!info?.isFile()) {
+      if (decoded === "/" || decoded.startsWith("/assets/")) platformLog("error", "WOBBLE_CLIENT_ASSET_FAILED", { correlationId, path: decoded.slice(0,200) })
       json(response, 404, { code: "NOT_FOUND" })
       return
     }
@@ -429,7 +431,11 @@ export function createPlatformService(options: PlatformServiceOptions) {
     if (request.method === "HEAD") response.end()
     else
       createReadStream(file)
-        .on("error", () => response.destroy())
+        .on("error", error => {
+          platformLog("error", "WOBBLE_STATIC_RESPONSE_FAILED", { correlationId, path: decoded.slice(0,200), err: error })
+          if (response.headersSent) response.destroy()
+          else { response.removeHeader("Content-Length"); json(response, 503, { code: "CLIENT_UNAVAILABLE" }) }
+        })
         .pipe(response)
   }
   const server = createServer((request, response) => {

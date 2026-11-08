@@ -190,6 +190,7 @@ export function HomePage() {
         .select("id")
         .maybeSingle();
       if (error || !data?.id) {
+        reportCaughtError("Game session creation failed", error ?? new Error("Room creation returned no ID"), { appArea: "home", operation: "create-session", gameId, code: error?.code }, "game-server");
         setErr("לא ניתן ליצור חדר כרגע. אפשר לנסות שוב");
         return;
       }

@@ -68,13 +68,17 @@ export function RocketSessionContainer({ sessionId, backHref = '/home', backLabe
     {!ended && view?.canControl && view.pendingPlayers.some(player => player.connected) && <div role="status" className="flex flex-wrap items-center justify-center gap-2 rounded-xl border border-violet-300 bg-violet-50 p-2 text-sm text-violet-800 dark:border-violet-400/30 dark:bg-violet-500/10 dark:text-violet-200">
       <span>{view.pendingPlayers.filter(player => player.connected).length} מצטרפים ממתינים לבעיטת הפתיחה הבאה</span>
     </div>}
-    {game.error && <div className="flex items-center justify-center gap-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300" role="alert">
+    {game.error && game.frameReady && <div className="flex items-center justify-center gap-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300" role="alert">
       <span>{game.error}</span><Button size="sm" className={secondary} onClick={game.retry}>ניסיון נוסף</Button>
     </div>}
     <div className="relative flex min-h-0 flex-1 gap-3 max-lg:flex-col">
       <main className="relative flex min-h-[240px] min-w-0 flex-1 overflow-hidden rounded-2xl bg-slate-950">
         {game.src && <iframe ref={game.frame} key={game.bridgeId} src={game.src} title="רוקט ארנה" className="h-full min-h-0 w-full flex-1 border-0"
-          allow="autoplay; fullscreen" referrerPolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-pointer-lock" />}
+          allow="autoplay; fullscreen" referrerPolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-pointer-lock" aria-hidden={!game.frameReady} tabIndex={game.frameReady ? 0 : -1} />}
+        {!game.frameReady && !ended && <section className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-slate-950 p-6 text-center text-white" aria-label="טעינת רוקט ארנה" role={game.error ? "alert" : "status"}>
+          <p className="max-w-md text-sm font-bold">{game.error || game.status || 'מכינים את המשחק…'}</p>
+          {game.error && <div className="flex gap-3"><Button className={primary} onClick={game.retry}>ניסיון נוסף</Button><Button className={secondary} asChild><Link to={backHref}>חזרה לבית</Link></Button></div>}
+        </section>}
         {ended && <section className="absolute inset-0 flex flex-col items-center justify-center gap-4 overflow-auto bg-slate-50/95 p-5 text-center dark:bg-slate-950/95" aria-label="סיום המשחק">
           <h2 className="text-2xl font-black">המשחק הסתיים</h2>
           <p aria-label="תוצאה" className="flex items-center justify-center gap-3 text-lg font-black"><span className="text-blue-600 dark:text-blue-300">כחולה</span><bdi>{view.score.blue} : {view.score.orange}</bdi><span className="text-orange-600 dark:text-orange-300">כתומה</span></p>

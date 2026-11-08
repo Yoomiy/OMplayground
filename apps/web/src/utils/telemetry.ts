@@ -71,6 +71,8 @@ function scheduleFlush(flushTarget: FlushTarget, delayMs = FLUSH_MS): void {
 export function reportTelemetry(
   entry: Omit<TelemetryEntry, "timestamp" | "correlationId"> & {
     correlationId?: string;
+    /** Separate user retries may fail within the ordinary deduplication window. */
+    dedupeKey?: string;
   },
   target: TelemetryTarget = "shell"
 ): void {
@@ -85,7 +87,7 @@ export function reportTelemetry(
     context: entry.context,
     stack: entry.stack?.slice(0, 2000)
   } satisfies TelemetryEntry;
-  const fingerprint = `${flushTarget}:${normalized.level}:${normalized.message}:${normalized.sessionId ?? ""}`;
+  const fingerprint = `${flushTarget}:${normalized.level}:${normalized.message}:${normalized.sessionId ?? ""}:${entry.dedupeKey ?? ""}`;
   const now = Date.now();
   if (now - (recentFingerprints.get(fingerprint) ?? 0) < 3_000) return;
   recentFingerprints.set(fingerprint, now);

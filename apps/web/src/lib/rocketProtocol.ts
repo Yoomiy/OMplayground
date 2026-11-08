@@ -65,6 +65,11 @@ export function rocketServiceUrl(configured: string | undefined, dev = false): s
 
 export function rocketError(code: string): string {
   const errors: Record<string, string> = {
+    FRAME_READY_TIMEOUT: 'לא הצלחנו לטעון את המשחק. אפשר לנסות שוב.',
+    GAME_JOIN_TIMEOUT: 'לא הצלחנו להשלים את הכניסה לחדר. אפשר לנסות שוב.',
+    INVALID_SERVICE_RESPONSE: 'שרת המשחק לא החזיר תשובה תקינה. אפשר לנסות שוב.',
+    CLIENT_START_FAILED: 'לא הצלחנו להפעיל את המשחק בדפדפן. אפשר לנסות שוב.',
+    GRAPHICS_LOST: 'תצוגת המשחק נעצרה. אפשר לנסות לטעון אותה מחדש.',
     NOT_IN_ROSTER: 'החשבון הזה אינו מופיע ברשימת המשתתפים של המשחק השמור.',
     SESSION_COMPLETED: 'המשחק הסתיים. אפשר לפתוח משחק חדש מהבית.',
     MATCH_INTERRUPTED: 'המשחק נסגר בעקבות הפעלה מחדש של השרת. אפשר לפתוח משחק חדש מהבית.',

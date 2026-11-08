@@ -27,6 +27,11 @@ export function wobbleServiceUrl(configured: string | undefined, dev: boolean): 
 }
 export function wobbleError(code: string): string {
   const errors: Record<string, string> = {
+    FRAME_READY_TIMEOUT: 'לא הצלחנו לטעון את המשחק. אפשר לנסות שוב.',
+    GAME_JOIN_TIMEOUT: 'לא הצלחנו להשלים את הכניסה לחדר. אפשר לנסות שוב.',
+    INVALID_SERVICE_RESPONSE: 'שרת המשחק לא החזיר תשובה תקינה. אפשר לנסות שוב.',
+    CLIENT_START_FAILED: 'לא הצלחנו להפעיל את המשחק בדפדפן. אפשר לנסות שוב.',
+    SERVICE_UNAVAILABLE: 'שרת המשחק אינו זמין כרגע. אפשר לנסות שוב בעוד רגע.',
     RECESS_DENIED: 'ההפסקה הסתיימה. אפשר לחזור בהפסקה הבאה.',
     SESSION_COMPLETED: 'המפגש הסתיים. אפשר לפתוח משחק חדש מהבית.',
     SESSION_RECOVERING: 'השרת משחזר את החדר. מתחברים מחדש…',

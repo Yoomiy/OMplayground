@@ -163,6 +163,7 @@ export function createPlatformService(options: ServiceOptions) {
       res.setHeader('Vary', 'Origin');
       res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+      res.setHeader('Access-Control-Expose-Headers', 'X-Correlation-ID');
     }
     if (req.method === 'OPTIONS') { res.writeHead(origin && origins.has(origin) ? 204 : 403); res.end(); return; }
     const url = new URL(req.url ?? '/', 'http://rocket.internal');
@@ -255,7 +256,10 @@ export function createPlatformService(options: ServiceOptions) {
     const file = resolve(clientDir, `.${pathname === '/' ? '/index.html' : pathname}`);
     if (!file.startsWith(clientDir + sep)) throw new AdmissionError('BAD_PATH', 400);
     let metadata;
-    try { metadata = await stat(file); } catch { json(res, 404, { code: 'NOT_FOUND' }); return; }
+    try { metadata = await stat(file); } catch (error) {
+      if (pathname === '/' || pathname.startsWith('/assets/')) platformLog('error', 'ROCKET_CLIENT_ASSET_FAILED', { correlationId, path: pathname.slice(0, 200), err: error });
+      json(res, 404, { code: 'NOT_FOUND' }); return;
+    }
     if (!metadata.isFile()) { json(res, 404, { code: 'NOT_FOUND' }); return; }
     const extension = extname(file);
     const types: Record<string, string> = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascript', '.css': 'text/css', '.json': 'application/json', '.wasm': 'application/wasm', '.png': 'image/png', '.svg': 'image/svg+xml', '.jpg': 'image/jpeg', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.wav': 'audio/wav' };
@@ -264,7 +268,11 @@ export function createPlatformService(options: ServiceOptions) {
     res.setHeader('Cache-Control', pathname.startsWith('/assets/') ? 'public, max-age=31536000, immutable' : 'no-cache');
     if (extension === '.html') res.setHeader('Content-Security-Policy', `frame-ancestors ${[...origins].join(' ')}`);
     if (req.method === 'HEAD') res.end();
-    else createReadStream(file).on('error', () => res.destroy()).pipe(res);
+    else createReadStream(file).on('error', error => {
+      platformLog('error', 'ROCKET_STATIC_RESPONSE_FAILED', { correlationId, path: pathname.slice(0, 200), err: error });
+      if (res.headersSent) res.destroy();
+      else { res.removeHeader('Content-Length'); json(res, 503, { code: 'CLIENT_UNAVAILABLE' }); }
+    }).pipe(res);
   }
 
   return {
