@@ -518,9 +518,23 @@ export function ChallengeDock() {
     : undefined;
   const toastContent = toast && (
     <>
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-600 dark:bg-violet-400/15 dark:text-violet-300">
-        {toastInvitation?.status === "pending" ? <Swords size={18} /> : <Check size={18} />}
-      </span>
+      {toastInvitation ? (
+        <button
+          type="button"
+          className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-600 transition hover:bg-violet-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:bg-violet-400/15 dark:text-violet-300 dark:hover:bg-violet-400/25"
+          aria-label={`${toastInvitation.status === "pending" ? "קבלה וכניסה" : "כניסה"} לחדר של ${toastInvitation.partner_name}`}
+          onClick={() => {
+            dismissToast();
+            void enter(toastInvitation);
+          }}
+        >
+          <Check size={18} />
+        </button>
+      ) : (
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-600 dark:bg-violet-400/15 dark:text-violet-300">
+          <Check size={18} />
+        </span>
+      )}
       <span className="min-w-0 flex-1">
         <span className="block text-sm font-black">
           {toast.kind === "update"
@@ -586,20 +600,7 @@ export function ChallengeDock() {
             dir="rtl"
           >
             <div className="flex items-start gap-1">
-              {toastInvitation ? (
-                <button
-                  type="button"
-                  className="flex min-w-0 flex-1 items-center gap-3 rounded-xl p-2 text-start transition hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:hover:bg-violet-400/10"
-                  aria-label={`${toastInvitation.status === "pending" ? "קבלה וכניסה" : "כניסה"} לחדר של ${toastInvitation.partner_name}`}
-                  onClick={() => {
-                    dismissToast();
-                    void enter(toastInvitation);
-                  }}
-                >
-                  {toastContent}
-                  <ArrowLeft size={16} className="shrink-0 text-violet-500" />
-                </button>
-              ) : <div className="flex min-w-0 flex-1 items-start gap-3 p-2">{toastContent}</div>}
+              <div className="flex min-w-0 flex-1 items-start gap-3 p-2">{toastContent}</div>
               <button
                 onClick={dismissToast}
                 aria-label="סגירת הודעת הזמנה"

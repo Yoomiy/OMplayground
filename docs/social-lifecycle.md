@@ -86,4 +86,4 @@ Focused entry regression (solo confirmation/stay, recipient departure, failed ac
 node apps/web/tools/error-recovery-browser.mjs --challenge-entry
 ```
 
-Incoming, accepted and available-again challenge toasts offer one clickable entry shortcut through the same validation and confirmation flow as the invitation panel. They use the live invitation list, so resolved, expired or already-entered invitations do not retain a stale entry action. Dismiss remains separate. Sent, declined, cancelled and expired notifications remain informational; full controls stay in the challenge panel.
+Incoming, accepted and available-again challenge toasts use their existing checkmark icon as the accept/enter shortcut through the same validation and confirmation flow as the invitation panel. There is no additional action row or label. The message body is not clickable, to avoid accidental acceptance. They use the live invitation list, so resolved, expired or already-entered invitations do not retain a stale entry action. Dismiss remains separate. Sent, declined, cancelled and expired notifications remain informational; full controls stay in the challenge panel.
