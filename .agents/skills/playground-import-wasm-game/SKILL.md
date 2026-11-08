@@ -123,6 +123,10 @@ This script inserts a `<script>` tag just before `</body>` that:
 - Refreshes an existing generated bridge when the helper is run again, so
   already-exported games receive bridge fixes without re-exporting assets.
 
+`solo-ready` means the document/bridge can receive restore messages; it does not
+prove the Wasm engine initialized. Track engine startup separately using its
+actual initialization result (for example, Godot's `startGame()` promise).
+
 For Godot/WASM solo games that use the bounded cleanup flow, the React wrapper
 must mark the iframe with `data-playground-wasm-game="<gameKey>"`. The parent
 waits up to 200 ms for `teardown-complete`, navigates the iframe to
@@ -140,6 +144,16 @@ synchronous best-effort teardown and blanking fallback.
 Create `apps/web/src/games-solo/<GameKey>Solo.tsx`.
 
 Use the **template** below. Replace placeholders marked with `{{...}}`:
+
+This is a layout/save-state scaffold. Before shipping, add a bounded startup
+cover, engine-ready signal and parent-owned error/Retry view. Failed iframe
+navigation need not throw in React, and iframe `load` fires on failures too.
+Keep saved state across retries, recreate the failed frame and ignore stale
+attempt callbacks. Validate message origin and the current frame's source.
+See [frontend recovery](../../../docs/error-recovery.md) and
+[embedded game recovery](../../../docs/embedded-game-recovery.md). The current
+Rocket/Wobble helper assumes dedicated service APIs; adapt the recovery pattern
+for static solo exports rather than adding a backend to fit that helper.
 
 ```tsx
 import { useEffect, useRef, useState } from "react";
@@ -173,7 +187,10 @@ export function {{PascalName}}Solo({ save }: { save: SoloGameSaveControls }) {
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) return;
+      if (
+        event.origin !== window.location.origin ||
+        event.source !== iframeRef.current?.contentWindow
+      ) return;
       const data = event.data as {
         source?: string;
         gameKey?: string;
@@ -187,7 +204,7 @@ export function {{PascalName}}Solo({ save }: { save: SoloGameSaveControls }) {
         return;
       }
 
-      // Game finished loading — send saved state for restore
+      // Bridge/document ready — restore state; track engine readiness separately
       if (data.type === "solo-ready") {
         if (save.savedState && iframeRef.current?.contentWindow) {
           iframeRef.current.contentWindow.postMessage(
@@ -357,6 +374,9 @@ For very large bundles, consider:
 - [ ] `gameKey` is lowercase kebab-case, unique in `SOLO_LOADERS` and `games` catalog.
 - [ ] `apps/web/public/legacy/<gameKey>/index.html` exists and loads in a browser.
 - [ ] The postMessage bridge is injected (game sends `solo-ready`, `checkpoint`, `finish`).
+- [ ] Startup cover waits for actual engine initialization, not iframe `load` or `solo-ready` alone.
+- [ ] A focused missing-asset/engine-startup failure check leaves app Retry/navigation available, preserves saved progress and reports the failed attempt without requiring a page refresh.
+- [ ] Retry replaces the failed frame; stale callbacks cannot complete the new attempt. Bridge messages validate origin and current frame source.
 - [ ] `<GameKey>Solo.tsx` wrapper created with fullscreen toggle and save bridge.
 - [ ] Entry added to `SOLO_LOADERS` in `SoloGameContainer.tsx`.
 - [ ] Entry added to `GAME_METADATA` in `HomePage.tsx`.

@@ -59,6 +59,17 @@ preserve its 20-route contract.
 
 ## Choosing checks
 
+For guarded RPC/schema changes, include the actual authority triggers and apply
+the migration as a non-superuser owner representative of hosted deployment.
+Superuser-only rehearsal can hide DDL permission failures. In particular,
+function-level `SET`/`ALTER FUNCTION SET` of the custom session-authority flag
+failed on Supabase; trusted functions instead scope runtime `set_config` around
+protected writes and restore the previous value. Verify restoration inside the
+same caller transaction and continued rejection of direct client writes. See
+[social lifecycle](../../../docs/social-lifecycle.md#withdrawal-and-list-removal)
+and `scripts/check-challenge-db.mjs` for the focused example. Its minimal local
+schema does not establish hosted RLS/Realtime health or full-schema compatibility.
+
 Read the touched behavior and its invariants, then run the relevant suites.
 Prefer deterministic state/tick checks and explicit event waits over sleeps.
 Add tests when they establish a meaningful behavioral guarantee; do not mirror
@@ -66,6 +77,10 @@ implementation details or add tests solely for reversible documentation/metadata
 changes. Do not modify source while tests/builds consume it. Keep timing/browser
 workloads separate from competing jobs and do not restart a live run merely
 because its observation handle times out.
+
+For iframe startup/retry changes, use the focused failure checks in
+[embedded game recovery](../../../docs/embedded-game-recovery.md). Do not run
+browser or full game suites for unrelated labels, minor layout or docs edits.
 
 PC keyboard/mouse is the primary school target. Existing mobile/tablet support
 is optional. No large synthetic-scale release gate, scaling infrastructure or

@@ -11,19 +11,25 @@ Adapted from [EndPx/Rocket-Arena](https://github.com/EndPx/Rocket-Arena), revisi
 
 ## Development
 
-From the repository root, use the existing development commands:
+From the repository root, use separate terminals:
 
 ```sh
-npm run dev:server &
-npm run dev:minecraft &
-npm run dev:rocket &
-npm run dev:web
+# Terminal 1
+npm run dev:app
+# Terminal 2
+npm run dev:rocket
 ```
 
 Open the app on port 5173 and choose Rocket Arena. The dedicated Rocket service
 uses port 3000; it installs its dependencies when needed and builds matching
-client/server artifacts before starting. Stop the old Rocket background job
-before restarting it. Restarting the web frontend does not restart Rocket.
+client/server artifacts before starting. Stop the old Rocket process before
+restarting it. Restarting the web frontend does not restart Rocket.
+
+`dev:app` does not start Rocket. Wobble also defaults to port 3000; see
+[local development](../../docs/local-development.md#rocket-arena-and-wobble)
+for distinct ports, frontend URLs and remote forwarding when running both.
+See [embedded game recovery](../../docs/embedded-game-recovery.md) for startup
+overlays, retries, parent telemetry and service asset/stream error diagnostics.
 
 The runner reuses server-only Supabase and LiveKit settings from
 `apps/game-server/.env`. Optional Rocket overrides live in the ignored

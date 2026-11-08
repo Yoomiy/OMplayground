@@ -16,6 +16,7 @@ Resolve paths from the repository root; do not assume an agent's checkout is the
 - Read [the workflow](../../../docs/multiplayer-experiment-workflow.md) for experiment boundaries, current hosting, ports, release activation and evaluation criteria.
 - For publishing or hosting changes on this VPS, also read local `ops/labs/README.md` and inspect local `ops/labs/Caddyfile`, the installed `/etc/caddy/Caddyfile`, actual listeners and services. `ops/` is ignored by Git and absent from ordinary clones. If these local files are missing, inspect the host configuration before reconstructing anything; do not assume the documented setup exists. Inventory in documents is dated evidence, not proof of current state.
 - Read the target game's `LAB.md`, scripts, networking configuration and upstream license before choosing commands.
+- For a requested app handoff, consult [the integration contract](../../../docs/multiplayer-game-integration.md) and [embedded game recovery](../../../docs/embedded-game-recovery.md). App startup commands and direct iframe port forwarding are in [local development](../../../docs/local-development.md#rocket-arena-and-wobble); `dev:app` does not start Rocket/Wobble, and both default to port 3000. These references do not extend this VPS-only labs workflow to ordinary app work.
 
 ## Standalone implementation
 
@@ -36,6 +37,11 @@ Keep the previous matching release. If activation fails, restore it, verify reco
 ## Evidence and handoff
 
 Verify assets, matchmaking and an actual multiplayer WebSocket session. Check synchronized actions, scores and match lifecycle with two clients. Distinguish smoke testing in browser contexts from two physical devices on different networks. Measure CPU and memory during playtests; this VPS has two CPU cores, so idle RAM does not prove multiplayer capacity.
+
+For an app iframe handoff, HTTP health and asset success are insufficient: verify
+the trusted frame's engine-ready handshake and initial game state. Startup
+failure must stay behind app-owned recovery UI, with parent diagnostics available
+even when the game service cannot receive requests.
 
 Write or update `LAB.md` with source/revision/license, exact commands, environment, ports and owner, URL/release, room joining, controls/device support, service/log/stop/rollback commands, checks actually run and limitations. Record feedback by release. If physical-device testing needs the user, finish independent checks and provide a concrete test scenario; do not claim that testing passed.
 

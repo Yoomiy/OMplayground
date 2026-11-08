@@ -157,6 +157,16 @@ Engine connectivity alone is insufficient. Confirm these behaviors against exist
 
 React StrictMode, remounts and rapid re-entry can duplicate launch/token requests. Coalesce equivalent in-flight work where appropriate, keep backend authorization fresh, and use rate limits that allow normal lifecycle behavior. Close media connections that finish after their owner unmounts. For iframe bridges, validate origin, source, session and bridge generation; cleanup must address the captured old window and tolerate its initial `about:blank` navigation. Test retry creating a new frame, reconnect retaining the renderer, and complete worker/listener/media disposal.
 
+Iframe navigation errors are outside React error boundaries, and `load` is not
+proof of engine readiness. Keep an app-owned startup cover until a validated
+handshake and initial game state arrive; bound startup and remove failed frames
+behind Retry. Preflight a dedicated service before loading its frame, and report
+each failed attempt through the parent even when the game service is unavailable.
+See [embedded game recovery](embedded-game-recovery.md) for the implemented
+Rocket/Wobble contract and [frontend recovery](error-recovery.md) for scope and
+state preservation. Adapt readiness to the imported engine; static solo exports
+do not need a new service just to follow the dedicated-service pattern.
+
 ### Simulation and result integrity
 
 Validate message schemas, payload sizes, input rates, sequences and legal actions. Bound queues, catch-up work and room lifetime. Use server-owned clocks and randomness where results depend on them. Client prediction is presentation, not permission to award scores.

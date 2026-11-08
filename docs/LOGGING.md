@@ -57,9 +57,18 @@ Browsers must not insert audit rows directly.
 ### Browser telemetry
 
 Use `reportCaughtError(...)` for caught browser failures and `reportTelemetry(...)`
-for explicit non-exception outcomes. Send board-game failures to `game-server`,
-voxel/voice failures to `voxel-server`, and shell/auth failures to `shell`.
+for explicit non-exception outcomes. Send board-game and social-feature failures
+to `game-server`, classroom failures to `classroom-server`, and shell/auth
+failures to `shell` (resolved to the active shell service). Native voxel uses its
+own runtime reporting API; `voxel-server` is not a `reportTelemetry` target.
 Global uncaught errors and unhandled rejections are already installed centrally.
+
+Rocket/Wobble parent startup diagnostics go to `game-server`, independently of
+the embedded service. Include game/session, attempt ID, stage and safe response
+correlation IDs. Use attempt-specific deduplication keys so distinct retries
+remain visible. A service cannot log a request that never reached it; parent
+telemetry covers that gap. See [embedded game recovery](embedded-game-recovery.md)
+for the current contract. Do not include launch tokens or reservation bodies.
 
 Telemetry is bounded and retried, but remains best-effort. Product correctness
 must never depend on telemetry delivery.

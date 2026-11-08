@@ -4,15 +4,22 @@ Playground’s authenticated obstacle-racing game, adapted from [Wobble Rush 3D]
 
 ## Run in the app
 
-Use Node 24+ and the repository’s normal app setup. From the repository root:
+Use the [normal app setup](../../docs/local-development.md) and its pinned Node
+version. From the repository root, use separate terminals:
 
 ```sh
-(npm run dev:server) &
-(npm run dev:wobble) &
-npm run dev:web
+# Terminal 1
+npm run dev:app
+# Terminal 2
+npm run dev:wobble
 ```
 
 Wobble listens on port **3000** by default. Run it separately from other games using that port. Forward port 3000 along with the web port when developing remotely. Set `VITE_WOBBLE_SERVICE_URL` in the web environment when the service URL differs from the default; restart Vite after changing it.
+
+`dev:app` does not start Wobble. For running it alongside Rocket, use the
+[distinct-port example](../../docs/local-development.md#rocket-arena-and-wobble).
+See [embedded game recovery](../../docs/embedded-game-recovery.md) for startup
+overlays, retries, parent telemetry and service asset/stream error diagnostics.
 
 The dev runner installs this game’s isolated npm dependencies and builds a matching iframe client and Node server. Restart `dev:wobble` after changing runtime code. Supabase and optional LiveKit settings come from `apps/game-server/.env`; override them in ignored `games/wobble-rush/.env.app.local` using [.env.app.example](.env.app.example). Shell settings take precedence.
 

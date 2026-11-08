@@ -12,14 +12,9 @@ Board-game voice mounts after successful room admission and unmounts on disconne
 
 ## Development checks
 
-`npm run dev:app` starts the board, voxel and classroom services; Rocket and Wobble have separate commands:
+`npm run dev:app` starts the board, voxel and classroom services, with Rocket and Wobble started separately. Both dedicated games default to port 3000. Use the [local development recipe](local-development.md#rocket-arena-and-wobble) for distinct ports, matching frontend URLs and remote forwarding.
 
-```sh
-npm run dev:rocket
-npm run dev:wobble
-```
-
-Both currently default to port 3000 and are documented as separate development services. To run them together, use different service ports and set the matching `VITE_ROCKET_SERVICE_URL` / `VITE_WOBBLE_SERVICE_URL`; restart Vite after changing its environment. A port-forward reset, an unavailable service and an incompatible service on the same port are distinct failures. Check the dedicated service's `/health` and `/api/rocket/config` or `/api/wobble/config`, then compare its correlation ID with the parent failure log. A config-stage failure precedes iframe loading and authenticated launch; a frame-stage timeout means config succeeded but the embedded client never became ready.
+A port-forward reset, an unavailable service and an incompatible service on the same port are distinct failures. Check the dedicated service's `/health` and `/api/rocket/config` or `/api/wobble/config`, then compare its correlation ID with the parent failure log. A config-stage failure precedes iframe loading and authenticated launch; a frame-stage timeout means config succeeded but the embedded client never became ready.
 
 The reported Firefox `about:neterror` / `chrome://...` warning comes from the browser error document. The original reset's cause was not established from the supplied logs. The quoted voice error used a different session and came from the board-game container. Inbox Realtime runs independently of room creation; its CHANNEL_ERROR may share a network cause, but does not establish one.
 

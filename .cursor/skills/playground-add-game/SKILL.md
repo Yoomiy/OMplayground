@@ -1,6 +1,6 @@
 ---
 name: playground-add-game
-description: Add a new game (or port a legacy old_project game) to The Playground without modifying the generic room/socket server. Covers the GameModule<State,Intent> contract in packages/game-logic, the dumb board component + BOARD_REGISTRY wiring in apps/web, the games-catalog SQL the user must run, and how the already-generic lifecycle (join, intent, stop, host disconnect, recess pause/resume) interacts with the new game. Use when the user asks to add, port, implement, wire up, or migrate a game (tictactoe, connectfour, memory, chess, drawing, etc.), when touching packages/game-logic/src, or when registering a new gameKey.
+description: Add a new game (or port a legacy old_project game) to The Playground without modifying the generic room/socket server. Covers the GameModule contract in packages/game-logic, the dumb board component + BOARD_REGISTRY wiring in apps/web, the games-catalog SQL the user must run, and how the already-generic lifecycle (join, intent, stop, host disconnect, recess pause/resume) interacts with the new game. Use when the user asks to add, port, implement, wire up, or migrate a game (tictactoe, connectfour, memory, chess, drawing, etc.), when touching packages/game-logic/src, or when registering a new gameKey.
 ---
 
 # Adding a Game to The Playground
@@ -15,6 +15,12 @@ Before implementing, decide whether the new game is **multiplayer** or **solo**:
 - **Solo game** (single-player local gameplay): do **not** add a `GameModule`; build a pure client component under `apps/web/src/games-solo`, register it in `apps/web/src/game/SoloGameContainer.tsx`, and route via `/solo/:gameKey`.
 
 Catalog (`public.games`) must set `is_multiplayer` correctly because Home/Challenge flows depend on it.
+
+Dedicated action runtimes such as Rocket/Wobble follow the
+[multiplayer integration contract](../../../docs/multiplayer-game-integration.md),
+not the board `GameModule` recipe. Iframe wrappers also need bounded startup,
+validated engine readiness and parent-owned Retry/telemetry; see
+[embedded game recovery](../../../docs/embedded-game-recovery.md).
 
 **Known catalog splits / hidden games:**
 - **chess** (MP, `GameModule`) vs **chess-solo** (solo, Stockfish client — no `GameModule`).
@@ -57,9 +63,15 @@ Do not re-implement any of these:
 | Host disconnect / transfer | `removePlayerFromRoom` | New host picked from remaining players; no per-game hook. |
 | Recess end → pause snapshot | `recessSweep.ts` + `persistRecessPause` | Persists your `State` blob verbatim. |
 | Stale-pause cleanup (24h) | `cleanupStalePausedSessions` in `lifecycle.ts` | |
-| Consent rematch | `REMATCH` + `REMATCH_RESPONSE` in `index.ts` | Available only after terminal outcomes; refusing cancels only if fewer than `minPlayers` connected players remain willing to rematch. |
+| Consent rematch | `REMATCH` + `REMATCH_RESPONSE` in `index.ts`; canonical policy in `packages/game-logic/src/rematch.ts` | Available after terminal outcomes; declining or leaving closes the offer for everyone. Only connected acceptors enter the next round. |
 
 Paused multiplayer sessions are rehydrated from `game_sessions.game_state`. While paused, only the original `player_ids` roster may rejoin, the room lists connected/missing players, and play resumes automatically once all remaining roster players are connected. If a player removes a paused game from Home, the roster shrinks; the session completes if the roster drops below `games.min_players`.
+
+For challenge entry/withdrawal and rematch exit semantics, use
+[social lifecycle](../../../docs/social-lifecycle.md). Accepted challenges remain
+entry points until both players actually enter together; removal resolves the
+invitation and, when applicable, ends the withdrawing player's participation.
+Do not implement independent invitation or rematch rules inside a game board.
 
 ## Files you will touch for every new game
 

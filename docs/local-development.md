@@ -15,8 +15,9 @@ Restore your private local configuration into `apps/web/.env`,
 `apps/classroom-server/.env`. Copy the values from your working setup, or use
 the available frontend/voxel/classroom `.env.example` files as templates. Use the
 Supabase publishable key in the frontend and server-only Supabase/LiveKit keys in
-the backend files. Leave the frontend service URL overrides empty for local
-proxies.
+the backend files. Leave the board, voxel and classroom frontend service URL
+overrides empty for local proxies; Rocket and Wobble use separate service URLs
+as described below.
 
 The restore command verifies the checked-in, source-matched game release and
 creates the ignored Wasm/client/server outputs. This startup path needs no Rust
@@ -43,7 +44,7 @@ occupied ports and stops its own process groups on Ctrl+C. A failed child also
 stops the other processes. It does not stop servers started by another command.
 
 The web app proxies HTTP and WebSocket requests to these local services through
-port 5173. When using a remote workspace, forward only port 5173 and open
+port 5173. For these proxied services in a remote workspace, forward port 5173 and open
 http://localhost:5173 on your PC. For a different browser hostname or port, add
 that exact origin to the services' `CORS_ORIGIN` and `VOXEL_ALLOWED_ORIGINS` settings;
 the proxy preserves authentication and origin checks. The web app
@@ -86,6 +87,41 @@ or stale release fails preflight rather than starting a mismatched build.
 `npm run dev:voxel` remains the separate game-only sandbox at
 http://127.0.0.1:5194. It is useful for isolated mechanics and does not start the
 school app or use Supabase admission.
+
+## Rocket Arena and Wobble
+
+`dev:app` does not start these dedicated iframe services. Start the app and the
+required game in separate terminals. Both games default to port **3000**, so give
+them distinct ports when running both. For example, from the repository root:
+
+```sh
+# Terminal 1
+npm run dev:app
+# Terminal 2
+ROCKET_PORT=3000 npm run dev:rocket
+# Terminal 3 (only if also using Wobble)
+WOBBLE_PORT=3002 npm run dev:wobble
+```
+
+For that example, set these values in `apps/web/.env`, then restart Vite:
+
+```dotenv
+VITE_ROCKET_SERVICE_URL=http://localhost:3000
+VITE_WOBBLE_SERVICE_URL=http://localhost:3002
+```
+
+Choose available ports; 3002 is an example, not a reserved port. Unlike the three
+proxied services, these iframe services must be reachable directly from the
+browser. In a remote workspace, forward their ports as well as 5173. Use the
+browser-reachable URLs in the Vite settings and set `APP_ORIGINS` on each game
+service if the app origin differs from its localhost defaults. The combined
+launcher preserves these two Vite overrides.
+
+The [Rocket](../games/rocket-arena/README.md) and
+[Wobble](../games/wobble-rush/README.md) guides cover their isolated builds and
+server configuration. For resets, failed startup and per-attempt diagnostics,
+see [embedded game recovery](embedded-game-recovery.md). A successful health
+request alone does not establish that the iframe initialized or joined a game.
 
 ## Classroom startup failures
 

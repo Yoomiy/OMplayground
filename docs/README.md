@@ -9,6 +9,10 @@ Canonical product + architecture guide: **[`ARCHITECTURE.md`](../ARCHITECTURE.md
 | [`multiplayer-game-integration.md`](multiplayer-game-integration.md) | Agent guide for open-source multiplayer imports: runtime decisions, integration contract, pipeline, acceptance and hosting |
 | [`multiplayer-experiment-workflow.md`](multiplayer-experiment-workflow.md) | Environment-specific multiplayer labs on the Oracle dev VPS only |
 | [`Wobble app integration`](../games/wobble-rush/README.md) | Wobble runtime, local development, saved sessions, validation and rollout gates |
+| [`Rocket Arena app integration`](../games/rocket-arena/README.md) | Dedicated game service, local development and runtime boundaries |
+| [`error-recovery.md`](error-recovery.md) | Feature and page boundaries, retained state, retries and focused verification |
+| [`embedded-game-recovery.md`](embedded-game-recovery.md) | Iframe startup containment, readiness and per-attempt diagnostics |
+| [`social-lifecycle.md`](social-lifecycle.md) | Challenge entry/withdrawal, consent rematches, inbox recovery and migration checks |
 | [`HARDENING.md`](HARDENING.md) | Production checklist — rate limits, health, logging, scaling |
 | [`LOGGING.md`](LOGGING.md) | Contributor contract for logging, audit events, telemetry, privacy, and new processes |
 | [`THEMING_AND_COMPONENTS.md`](THEMING_AND_COMPONENTS.md) | Contributor rules for switchable themes, color contrast, and future UI components |
@@ -34,6 +38,8 @@ Canonical product + architecture guide: **[`ARCHITECTURE.md`](../ARCHITECTURE.md
 General game how-tos live in `.cursor/skills/`, such as `playground-add-game`.
 The old NOA-specific voxel skills are retired; use `games/voxel/README.md` and its
 content/presentation documentation for voxel changes.
+
+For compiled solo imports: [`.agents/skills/playground-import-wasm-game/SKILL.md`](../.agents/skills/playground-import-wasm-game/SKILL.md), including bridge readiness and engine initialization recovery.
 
 For the Oracle dev VPS only: [`.agents/skills/playground-multiplayer-lab/SKILL.md`](../.agents/skills/playground-multiplayer-lab/SKILL.md). This skill does not apply to other checkouts or production deployments.
 
