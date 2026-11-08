@@ -90,7 +90,7 @@ export function RocketSessionContainer({ sessionId, backHref = '/home', backLabe
               <Button className={primary} onClick={() => game.control('rematch-response', { accept: true })}>כן, משחק חוזר</Button>
             </div>}
           </>}
-          <Button className={secondary} asChild><Link to={backHref}>{view.rematch && !view.rematchClosed && !view.observer && !view.rematch.accepted.includes(view.selfUserId) ? "לא הפעם — לבית" : "חזרה לבית"}</Link></Button>
+          <Button className={secondary} asChild><Link to={backHref}>{view.rematch && !view.rematchClosed && !view.observer && !view.rematch.accepted.includes(view.selfUserId) ? "לא הפעם" : "חזרה לבית"}</Link></Button>
         </section>}
         {waiting && <section className="absolute inset-0 overflow-auto bg-slate-50 p-4 dark:bg-slate-950 sm:p-6" aria-label="חדר המתנה">
           <div className="mx-auto max-w-3xl space-y-5">

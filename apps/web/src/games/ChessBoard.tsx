@@ -538,7 +538,7 @@ export function ChessBoard({
                   className="rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 border border-violet-400/50 px-4 py-2 text-sm font-black text-white hover:shadow-[0_0_12px_rgba(139,92,246,0.3)] hover:-translate-y-0.5 transition duration-200"
                   onClick={onGoHome}
                 >
-                  {canVoteRematch && !acceptedRematch ? "לא הפעם — לבית" : "חזרה הביתה"}
+                  {canVoteRematch && !acceptedRematch ? "לא הפעם" : "חזרה הביתה"}
                 </button>
               ) : null}
             </div>

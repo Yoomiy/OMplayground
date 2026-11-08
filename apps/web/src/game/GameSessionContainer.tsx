@@ -824,7 +824,7 @@ export function GameSessionContainer({ sessionId }: GameSessionContainerProps) {
                 className="rounded-lg bg-gradient-to-r from-violet-500 to-indigo-500 border border-violet-400/50 px-3.5 py-2 text-sm font-bold text-white hover:shadow-[0_0_12px_rgba(139,92,246,0.3)] transition duration-200"
                 onClick={() => navigate(isAdmin ? "/admin" : isStaffObserver ? "/teacher" : "/home")}
               >
-                {canVoteRematch && !acceptedRematch ? "לא הפעם — לבית" : "חזרה לדף הבית"}
+                {canVoteRematch && !acceptedRematch ? "לא הפעם" : "חזרה לדף הבית"}
               </button>
             </div>
           </div>

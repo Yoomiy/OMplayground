@@ -45,7 +45,7 @@ export function ChallengeDock() {
   type Toast =
     | { kind: "sent"; recipientName?: string }
     | { kind: "ready"; challengeId: string }
-    | { kind: "update"; message: string };
+    | { kind: "update"; message: string; challengeId?: string };
   const [toast, setToast] = useState<Toast | null>(null);
   const currentToast = useRef<Toast | null>(null);
   const toastQueue = useRef<Toast[]>([]);
@@ -268,7 +268,10 @@ export function ChallengeDock() {
       const key = `${row.id}:${row.status}`;
       if (!message || updateSeen.current.has(key) || entryBlocked.current.has(row.id)) return;
       updateSeen.current.add(key);
-      showToast({ kind: "update", message });
+      showToast({
+        kind: "update", message,
+        challengeId: row.status === "pending" || row.status === "accepted" ? row.id : undefined,
+      });
     };
     let fetching = false;
     const retryGate = new FeatureRetryGate();
@@ -510,6 +513,30 @@ export function ChallengeDock() {
   const incoming = invitations.filter(
     (row) => row.status === "pending" && row.to_kid_id === user.id,
   ).length;
+  const toastInvitation = toast && toast.kind !== "sent"
+    ? invitations.find((row) => row.id === toast.challengeId && row.session_id !== currentSession)
+    : undefined;
+  const toastContent = toast && (
+    <>
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-600 dark:bg-violet-400/15 dark:text-violet-300">
+        {toastInvitation?.status === "pending" ? <Swords size={18} /> : <Check size={18} />}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-black">
+          {toast.kind === "update"
+            ? toast.message
+            : toast.kind === "sent"
+              ? toast.recipientName ? `ההזמנה ל${toast.recipientName} נשלחה` : "ההזמנה נשלחה"
+              : "התפניתם? ההזמנה עדיין מחכה לכם"}
+        </span>
+        {toast.kind === "ready" && toastInvitation && (
+          <span className="mt-1 block text-xs leading-5 text-slate-500 dark:text-slate-400">
+            {toastInvitation.partner_name} {toastInvitation.partner_in_session ? "בחדר ומחכה לכם" : "אישר את ההזמנה"} · {toastInvitation.game_name}
+          </span>
+        )}
+      </span>
+    </>
+  );
   return (
     <>
       {(invitations.length > 0 || errors.refresh) &&
@@ -555,54 +582,32 @@ export function ChallengeDock() {
           <div
             role="status"
             aria-live="polite"
-            className="fixed bottom-20 left-4 z-50 w-[calc(100vw-32px)] max-w-sm rounded-2xl border border-violet-200 bg-white p-4 text-slate-900 shadow-xl dark:border-violet-400/25 dark:bg-slate-900 dark:text-white"
+            className="fixed bottom-20 left-4 z-50 w-[calc(100vw-32px)] max-w-sm rounded-2xl border border-violet-200 bg-white p-2 text-slate-900 shadow-xl dark:border-violet-400/25 dark:bg-slate-900 dark:text-white"
             dir="rtl"
           >
-            <div className="flex items-start gap-3">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-600 dark:bg-violet-400/15 dark:text-violet-300">
-                <Check size={18} />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-black">
-                  {toast.kind === "update"
-                    ? toast.message
-                    : toast.kind === "sent"
-                      ? toast.recipientName
-                        ? `ההזמנה ל${toast.recipientName} נשלחה`
-                        : "ההזמנה נשלחה"
-                      : "התפניתם? ההזמנה עדיין מחכה לכם"}
-                </p>
-                {toast.kind === "ready" && (
-                  <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                    {(() => {
-                      const row = rows.find((row) => row.id === toast.challengeId);
-                      return row
-                        ? `${row.partner_name} ${row.partner_in_session ? "בחדר ומחכה לכם" : "אישר את ההזמנה"} · ${row.game_name}`
-                        : "";
-                    })()}
-                  </p>
-                )}
-              </div>
+            <div className="flex items-start gap-1">
+              {toastInvitation ? (
+                <button
+                  type="button"
+                  className="flex min-w-0 flex-1 items-center gap-3 rounded-xl p-2 text-start transition hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:hover:bg-violet-400/10"
+                  aria-label={`${toastInvitation.status === "pending" ? "קבלה וכניסה" : "כניסה"} לחדר של ${toastInvitation.partner_name}`}
+                  onClick={() => {
+                    dismissToast();
+                    void enter(toastInvitation);
+                  }}
+                >
+                  {toastContent}
+                  <ArrowLeft size={16} className="shrink-0 text-violet-500" />
+                </button>
+              ) : <div className="flex min-w-0 flex-1 items-start gap-3 p-2">{toastContent}</div>}
               <button
                 onClick={dismissToast}
                 aria-label="סגירת הודעת הזמנה"
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10"
+                className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10"
               >
                 <X size={16} />
               </button>
             </div>
-            {toast.kind === "ready" && (
-              <button
-                className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-xs font-bold text-white hover:bg-violet-500"
-                onClick={() => {
-                  const row = rows.find((row) => row.id === toast.challengeId);
-                  if (row) void enter(row);
-                }}
-              >
-                כניסה לחדר
-                <ArrowLeft size={14} />
-              </button>
-            )}
           </div>,
           fullscreenHost ?? document.body,
         )}

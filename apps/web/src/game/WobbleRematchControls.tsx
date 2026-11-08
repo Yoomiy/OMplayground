@@ -66,7 +66,7 @@ export function WobbleRematchControls({ view, error, control, backHref = "/home"
       </Button> : <>
         {!accepted && <Button className={primary} disabled={disabled} onClick={() => send('accept-rematch')}>{declined ? 'בכל זאת רוצה לשחק' : 'אני רוצה לשחק'}</Button>}
       </>}
-      <Button className={secondary} asChild><Link to={backHref}>{view.rematch && !accepted ? "לא הפעם — לבית" : "חזרה לבית"}</Link></Button>
+      <Button className={secondary} asChild><Link to={backHref}>{view.rematch && !accepted ? "לא הפעם" : "חזרה לבית"}</Link></Button>
     </div>
   </div>;
 }
