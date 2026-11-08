@@ -7,7 +7,7 @@ Expected request failures stay in the feature that made the request. They must n
 | Scope | Behavior |
 | --- | --- |
 | Challenges | Validate list/entry responses before using them. Keep accepted invitations and cached rows on a failed refresh. The dock remains accessible even if the first load fails. Its panel offers Retry. |
-| Direct messages | Validate threads, participants, messages and counts before updating state. Keep messages/drafts in the shared provider; retrying a failed panel does not discard the draft. Both the floating view and full inbox use the panel boundary. |
+| Direct messages | Validate threads, participants, messages and counts before updating state. Keep messages/drafts in the shared provider; retrying a failed panel does not discard the draft. Older-page failures have a local retry and preserve the reading position. Both the floating view and full inbox use the panel boundary. |
 | Online players | Request errors and retries stay in the list on home and teacher pages. A rendering failure replaces the list only. |
 | Room chat / voice | Independent rendering boundaries keep a chat or voice failure from unmounting the game connection. Room chat drafts live above its boundary. Board voice starts after successful room admission and stops on disconnect. Voice retry reconnects voice only. |
 | Embedded games | Rocket/Wobble startup failures remove the failed frame and offer an in-app retry. Keep the canvas covered until a validated handshake and game state arrive. See [embedded game recovery](embedded-game-recovery.md). |

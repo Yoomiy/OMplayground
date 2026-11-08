@@ -16,7 +16,7 @@ const uid='00000000-0000-0000-0000-000000000001', other='00000000-0000-0000-0000
 const profile={id:uid,full_name:'Tester',username:'tester',role:'teacher',is_active:true,grade:'3',gender:'boy',avatar_color:'#8b5cf6',avatar_url:null,avatar_preset_id:null};
 const partner={id:other,full_name:'Friend',role:'kid',can_send:true};
 const message={id:'message',from_kid_id:other,to_kid_id:uid,from_display_name:'Friend',content:'Hello',is_read:false,created_at:new Date().toISOString()};
-window.fixture={challengeListeners:[],invites:[],departures:{},dismissals:[],withdrawals:[],requests:[],entryCalls:[],inspectionCalls:0,roomStatus:'playing',migrationMissing:true,malformedInbox:false,profileFailure:new URLSearchParams(location.search).has('profileFailure'),roomFailure:false,joinFailure:false,failSend:false,gameMounts:0};
+window.fixture={challengeListeners:[],invites:[],departures:{},dismissals:[],withdrawals:[],requests:[],historyRequests:[],readRequests:[],entryCalls:[],inspectionRequests:[],inspectionCalls:0,roomStatus:'playing',migrationMissing:true,malformedInbox:false,profileFailure:new URLSearchParams(location.search).has('profileFailure'),roomFailure:false,joinFailure:false,failSend:false,gameMounts:0};
 function abortable(promise,signal){
  if(!signal)return promise;
  return new Promise((resolve,reject)=>{
@@ -38,9 +38,11 @@ Object.defineProperty(supabase,'from',{value:table=>{
    if(table==='game_sessions' && single){
      if(fields==='status'){
        window.fixture.inspectionCalls++;
+       window.fixture.inspectionRequests.push(filters.id);
        if(window.fixture.inspectionHang)await new Promise(resolve=>window.fixture.finishInspection=resolve);
        if(window.fixture.inspectionFailure)return {data:null,error:{code:'NETWORK',message:'fixture inspection failure'}};
-       return {data:window.fixture.roomStatus===null?null:{status:window.fixture.roomStatus},error:null};
+       const status=window.fixture.roomStatuses?.[filters.id]??window.fixture.roomStatus;
+       return {data:status===null?null:{status},error:null};
      }
      if(window.fixture.roomFailure || (filters.invitation_code && window.fixture.joinFailure)) throw new Error('fixture room transport');
      return {data:{id:'room',status:'playing',games:{name_he:'Fixture game',game_url:'chess'}},error:null};
@@ -63,7 +65,10 @@ Object.defineProperty(supabase,'rpc',{value:(name,args)=>{
    if(name==='accept_game_challenge')row.status='accepted';
    return {data:row.session_id,error:null};
  }
- if(name==='list_game_challenges')return window.fixture.migrationMissing?{data:null,error:{code:'PGRST202',message:'missing function'}}:{data:structuredClone(window.fixture.invites)};
+ if(name==='list_game_challenges'){
+   if(window.fixture.listHang)await new Promise(resolve=>window.fixture.releaseList=resolve);
+   return window.fixture.migrationMissing?{data:null,error:{code:'PGRST202',message:'missing function'}}:{data:structuredClone(window.fixture.invites)};
+ }
  if(name==='challenge_departure')return {data:window.fixture.departures[args.p_session_id]??null};
  if(name==='resolve_game_challenges'){
    window.fixture.dismissals.push(args.p_ids);
@@ -79,8 +84,23 @@ Object.defineProperty(supabase,'rpc',{value:(name,args)=>{
    window.fixture.invites=window.fixture.invites.filter(row=>row.id!==args.p_id);return {data:{}};
  }
  if(name==='list_private_threads')return {data:window.fixture.malformedInbox?{threads:[{}],unread_total:1}:{threads:[{partnerId:other,partner,lastMessage:message,unreadCount:1}],unread_total:1}};
- if(name==='mark_private_messages_read'){message.is_read=true;return {data:null};}
- if(name==='get_private_thread')return {data:{partner,messages:[message]}};
+ if(name==='mark_private_messages_read'){
+   window.fixture.readRequests.push(args.p_ids);
+   for(const rows of Object.values(window.fixture.histories??{}))for(const row of rows)if(args.p_ids.includes(row.id))row.is_read=true;
+   message.is_read=true;return {data:null};
+ }
+ if(name==='get_private_thread'){
+   window.fixture.historyRequests.push(args);
+   if(window.fixture.histories){
+     if(args.p_before && window.fixture.historyFailure)return {error:{code:'NETWORK',message:'fixture history failure'}};
+     const rows=window.fixture.histories[args.p_partner]??[];
+     const page=structuredClone(rows.filter(row=>!args.p_before || row.created_at<args.p_before || (row.created_at===args.p_before && row.id<args.p_before_id))
+       .sort((a,b)=>b.created_at.localeCompare(a.created_at)||b.id.localeCompare(a.id)).slice(0,51));
+     if(args.p_before && window.fixture.delayHistory)await new Promise(resolve=>window.fixture.releaseHistory=resolve);
+     return {data:{partner:{...partner,id:args.p_partner},messages:page}};
+   }
+   return {data:{partner,messages:[message]}};
+ }
  if(name==='send_private_message')return window.fixture.failSend?{error:{message:'fixture send failure'}}:{data:{}};
  return {data:null};
  })();
@@ -176,7 +196,10 @@ try {
   await page.goto("http://127.0.0.1:19031/__recovery.html");
   await page.evaluate(() => (window.documentToken = "same document"));
   await page.getByText("שלום, Tester!").waitFor();
-  if (process.argv.includes("--challenge-entry")) {
+  if (process.argv.includes("--dm-history")) {
+    await dmHistoryChecks(page);
+    assert.deepEqual(unexpected, []);
+  } else if (process.argv.includes("--challenge-entry")) {
     await challengeEntryChecks(page);
     assert.deepEqual(unexpected, []);
   } else if (process.argv.includes("--challenges")) {
@@ -322,6 +345,112 @@ try {
   await server.close();
 }
 
+async function dmHistoryChecks(page) {
+  const partner = "00000000-0000-0000-0000-000000000002";
+  await page.evaluate((partner) => {
+    window.fixture.makeHistoryMessage = (n) => ({
+      id: "history-" + String(n).padStart(4, "0"), from_kid_id: partner,
+      to_kid_id: "00000000-0000-0000-0000-000000000001", from_display_name: "Friend",
+      content: "History message " + n, is_read: false,
+      created_at: new Date(Date.UTC(2026, 10, 8, 10, 0, n)).toISOString(),
+    });
+    window.fixture.histories = { [partner]: Array.from({ length: 125 }, (_, i) => window.fixture.makeHistoryMessage(i + 1)) };
+    window.fixture.navigate("/inbox?kidId=" + partner);
+  }, partner);
+  const list = page.locator('[aria-label="הודעות בשיחה"]:visible');
+  const waitCount = (count) => page.waitForFunction((count) =>
+    [...document.querySelectorAll('[aria-label="הודעות בשיחה"]')].some((root) =>
+      root.getClientRects().length > 0 && root.querySelectorAll("[data-inbox-message-id]").length === count), count);
+  const anchor = () => list.evaluate((root) => {
+    const top = root.getBoundingClientRect().top;
+    const first = [...root.querySelectorAll("[data-inbox-message-id]")].find((node) => node.getBoundingClientRect().bottom > top);
+    return { id: first.dataset.inboxMessageId, offset: first.getBoundingClientRect().top - top };
+  });
+  const atBottom = () => list.evaluate((root) => root.scrollHeight - root.scrollTop - root.clientHeight < 2);
+  await waitCount(50);
+  assert.equal(await atBottom(), true);
+  assert.equal(await list.locator("article").first().getAttribute("data-inbox-message-id"), "history-0076");
+  assert.equal(await list.locator("article").last().getAttribute("data-inbox-message-id"), "history-0125");
+  assert.equal(await page.evaluate(() => window.fixture.historyRequests.filter((r) => r.p_before).length), 0);
+  await page.waitForFunction(() => window.fixture.readRequests.length > 0);
+  assert.ok(!(await page.evaluate(() => window.fixture.readRequests.flat())).includes("history-0076"));
+
+  await page.evaluate(() => (window.fixture.delayHistory = true));
+  await list.evaluate((root) => (root.scrollTop = 0));
+  await page.waitForFunction(() => !!window.fixture.releaseHistory);
+  const before = await anchor();
+  // A live refresh while an older page is pending must preserve both requests.
+  await page.evaluate((partner) => {
+    window.fixture.histories[partner].push(window.fixture.makeHistoryMessage(126));
+    window.dispatchEvent(new Event("focus"));
+  }, partner);
+  await waitCount(51);
+  await page.evaluate(() => { window.fixture.delayHistory = false; window.fixture.releaseHistory(); });
+  await waitCount(101);
+  const afterOffset = await list.evaluate((root, id) => {
+    const row = [...root.querySelectorAll("[data-inbox-message-id]")].find((node) => node.dataset.inboxMessageId === id);
+    return row.getBoundingClientRect().top - root.getBoundingClientRect().top;
+  }, before.id);
+  assert.ok(Math.abs(afterOffset - before.offset) < 2);
+  assert.equal(await page.evaluate(() => window.fixture.historyRequests.filter((r) => r.p_before_id === "history-0076").length), 1);
+
+  // Older-page failures retain the conversation and offer a local retry.
+  await page.evaluate(() => (window.fixture.historyFailure = true));
+  await list.evaluate((root) => (root.scrollTop = 0));
+  await list.getByRole("button", { name: "טעינת ההודעות נכשלה — נסו שוב", exact: true }).waitFor();
+  assert.equal(await list.locator("article").count(), 101);
+  await page.evaluate(() => (window.fixture.historyFailure = false));
+  await list.getByRole("button", { name: "טעינת ההודעות נכשלה — נסו שוב", exact: true }).click();
+  await waitCount(126);
+  assert.equal(await list.getByRole("button", { name: "הודעות קודמות", exact: true }).count(), 0);
+  const reading = await anchor();
+  // More than a full page missed during an outage must not create a message gap.
+  await page.evaluate((partner) => {
+    for (let n = 127; n <= 197; n++) window.fixture.histories[partner].push(window.fixture.makeHistoryMessage(n));
+    window.dispatchEvent(new Event("focus"));
+  }, partner);
+  await waitCount(197);
+  assert.deepEqual(await anchor(), reading);
+  const ids = await list.locator("article").evaluateAll((rows) => rows.map((row) => row.dataset.inboxMessageId));
+  assert.equal(new Set(ids).size, 197);
+
+  // Switching conversations cancels an old page and opens the new one at its end.
+  await page.evaluate((partner) => {
+    window.fixture.histories.second = [1, 2, 3].map((n) => ({ ...window.fixture.makeHistoryMessage(n), id: "second-" + n }));
+    window.fixture.navigate("/inbox?kidId=second");
+  }, partner);
+  await waitCount(3);
+  assert.equal(await atBottom(), true);
+  await page.evaluate((partner) => window.fixture.navigate("/inbox?kidId=" + partner), partner);
+  await waitCount(50);
+  await page.evaluate(() => { window.fixture.delayHistory = true; window.fixture.releaseHistory = null; });
+  await list.evaluate((root) => (root.scrollTop = 0));
+  await page.waitForFunction(() => !!window.fixture.releaseHistory);
+  await page.evaluate(() => window.fixture.navigate("/inbox?kidId=second"));
+  await waitCount(3);
+  await page.evaluate(() => { window.fixture.delayHistory = false; window.fixture.releaseHistory(); });
+  assert.equal(await list.locator("article").first().getAttribute("data-inbox-message-id"), "second-1");
+  assert.equal(await atBottom(), true);
+  assert.equal(await page.evaluate(() => window.documentToken), "same document");
+  // The already-mounted floating view must initialize at the end when opened.
+  await page.evaluate((partner) => window.fixture.navigate("/inbox?kidId=" + partner), partner);
+  await waitCount(50);
+  await page.evaluate(() => window.fixture.navigate("/home"));
+  await page.getByText("שלום, Tester!").waitFor();
+  await page.getByRole("button", { name: /^הודעות(?:,|$)/ }).click();
+  await waitCount(50);
+  await page.waitForFunction(() => [...document.querySelectorAll('[aria-label="הודעות בשיחה"]')]
+    .some((root) => root.getClientRects().length > 0 && root.scrollHeight - root.scrollTop - root.clientHeight < 2));
+  assert.equal(await atBottom(), true);
+  await page.evaluate((partner) => {
+    window.fixture.histories[partner].push(window.fixture.makeHistoryMessage(198));
+    window.dispatchEvent(new Event("focus"));
+  }, partner);
+  await list.locator('[data-inbox-message-id="history-0198"]').waitFor();
+  assert.equal(await atBottom(), true);
+  console.log("PASS: newest 50, full/floating bottom entry, visible-only reads, scroll-up paging, anchored concurrent refresh, local retry, gap recovery, stale-conversation cancellation and following the end");
+}
+
 async function challengeEntryChecks(page) {
   const panel = page.getByRole("dialog", { name: "הזמנות למשחק", exact: true });
   const prompt = page.getByRole("dialog", { name: "מעבר להזמנה מאושרת", exact: true });
@@ -366,11 +495,11 @@ async function challengeEntryChecks(page) {
   });
   await openPanel();
   await panel.getByRole("button", { name: "קבלה וכניסה", exact: true }).click();
-  await prompt.getByText("קבלת ההזמנה תוציא אתכם מהמשחק הפעיל", { exact: false }).waitFor();
+  await prompt.getByText("המעבר יוציא אתכם מהמשחק הפעיל", { exact: false }).waitFor();
   assert.equal(await page.evaluate(() => window.fixture.invites[0].status), "pending");
   await page.evaluate(() => (window.fixture.entryFailure = true));
   await prompt.getByRole("button", { name: "קבלה וכניסה לחדר", exact: true }).click();
-  await panel.getByText("לא ניתן להיכנס כרגע", { exact: false }).waitFor();
+  await panel.getByText("עדיין מזוהה חיבור לחדר אחר", { exact: false }).waitFor();
   assert.equal(await page.evaluate(() => window.fixture.invites[0].status), "pending");
   assert.match(page.url(), /\/play\/current-room$/);
   await page.evaluate(() => (window.fixture.entryFailure = false));
@@ -378,8 +507,69 @@ async function challengeEntryChecks(page) {
   await prompt.getByRole("button", { name: "קבלה וכניסה לחדר", exact: true }).click();
   await page.waitForURL("**/play/target-room?mode=player");
   assert.deepEqual(await page.evaluate(() => window.fixture.entryCalls.at(-1)), {
-    name: "accept_game_challenge", p_id: "Entry", p_leave_session: "current-room",
+    name: "accept_game_challenge", p_id: "Entry", p_leave_session: "current-room", p_allow_active: true,
   });
+
+  // Returning recipients and challengers use the same explicit switch as acceptance.
+  for (const recipient of [true, false]) {
+    const source = recipient ? "recipient-active-room" : "challenger-active-room";
+    await page.evaluate(({ recipient, source }) => {
+      window.fixture.invites = [{ ...window.fixture.makeEntryInvite(recipient), status: "accepted" }];
+      window.fixture.navigate("/play/" + source);
+      window.dispatchEvent(new Event("challenges-changed"));
+    }, { recipient, source });
+    await openPanel();
+    const before = await page.evaluate(() => window.fixture.entryCalls.length);
+    await panel.getByRole("button", { name: "כניסה לחדר", exact: true }).click();
+    await prompt.getByText("המעבר יוציא אתכם מהמשחק הפעיל", { exact: false }).waitFor();
+    assert.equal(await page.evaluate(() => window.fixture.entryCalls.length), before);
+    await prompt.getByRole("button", { name: "להישאר כאן" }).click();
+    assert.ok(page.url().endsWith("/play/" + source));
+    await openPanel();
+    await panel.getByRole("button", { name: "כניסה לחדר", exact: true }).click();
+    await prompt.getByRole("button", { name: "כן, לעבור לחדר" }).click();
+    await page.waitForURL("**/play/target-room?mode=player");
+    assert.deepEqual(await page.evaluate(() => window.fixture.entryCalls.at(-1)), {
+      name: "prepare_challenge_entry", p_id: "Entry", p_leave_session: source, p_allow_active: true,
+    });
+  }
+
+  // A game starting during inspection needs a new active-game confirmation.
+  await page.evaluate(() => {
+    window.fixture.roomStatuses = { "racing-room": "waiting" };
+    window.fixture.navigate("/play/racing-room");
+  });
+  await prompt.waitFor();
+  const beforeRace = await page.evaluate(() => window.fixture.entryCalls.length);
+  await page.evaluate(() => (window.fixture.roomStatuses["racing-room"] = "playing"));
+  await prompt.getByRole("button", { name: "כן, לעבור לחדר" }).click();
+  await prompt.getByText("המעבר יוציא אתכם מהמשחק הפעיל", { exact: false }).waitFor();
+  assert.equal(await page.evaluate(() => window.fixture.entryCalls.length), beforeRace);
+  assert.ok(page.url().endsWith("/play/racing-room"));
+  await prompt.getByRole("button", { name: "כן, לעבור לחדר" }).click();
+  await page.waitForURL("**/play/target-room?mode=player");
+
+  // Choosing a paused invitation must not cascade into another paused invitation.
+  await page.evaluate(() => {
+    window.fixture.roomStatuses = { "selected-paused": "paused", "other-paused": "paused" };
+    window.fixture.invites = [
+      { ...window.fixture.makeEntryInvite(), id: "Selected", session_id: "selected-paused", partner_name: "Selected Friend", session_status: "paused" },
+      { ...window.fixture.makeEntryInvite(), id: "Other", session_id: "other-paused", partner_name: "Other Friend", session_status: "paused" },
+    ];
+    window.fixture.navigate("/play/another-source");
+    window.dispatchEvent(new Event("challenges-changed"));
+  });
+  await page.getByRole("button", { name: "הזמנות למשחק, 2", exact: true }).click();
+  const beforeSelection = await page.evaluate(() => window.fixture.entryCalls.length);
+  await panel.getByRole("article").filter({ hasText: "Selected Friend" })
+    .getByRole("button", { name: "כניסה לחדר", exact: true }).click();
+  await prompt.getByRole("button", { name: "כן, לעבור לחדר" }).click();
+  await page.waitForURL("**/play/selected-paused?mode=player");
+  await page.waitForFunction(() => window.fixture.inspectionRequests.includes("selected-paused"));
+  await page.getByRole("button", { name: "הזמנות למשחק, 2", exact: true }).click();
+  assert.ok(page.url().includes("/play/selected-paused?"));
+  assert.equal(await page.evaluate(() => window.fixture.entryCalls.length), beforeSelection + 1);
+  await page.keyboard.press("Escape");
 
   // A hanging lookup is bounded and shared with a manual inspection, then recoverable.
   await page.evaluate(() => {
@@ -420,7 +610,24 @@ async function challengeEntryChecks(page) {
   assert.equal(await panel.getByRole("button", { name: "כניסה לחדר", exact: true }).isEnabled(), true);
   assert.match(page.url(), /\/solo\/another-solo$/);
   assert.equal(await page.evaluate(() => window.documentToken), "same document");
-  console.log("PASS: solo entry/stay, acceptance confirms active-game departure, failed acceptance stays pending, bounded/coalesced inspection and stale entry cancellation");
+  await page.evaluate(() => {
+    window.fixture.listHang = true;
+    window.dispatchEvent(new Event("challenges-changed"));
+  });
+  await page.waitForFunction(() => !!window.fixture.releaseList);
+  const refreshError = panel.getByText("לא ניתן לרענן הזמנות כרגע. ההזמנות הקיימות נשמרו", { exact: true });
+  await refreshError.waitFor({ timeout: 12000 });
+  assert.equal(await panel.getByRole("article").count(), 1);
+  await page.evaluate(() => { window.fixture.listHang = false; window.fixture.releaseList(); });
+  await panel.getByRole("button", { name: "נסו שוב", exact: true }).click();
+  await refreshError.waitFor({ state: "hidden" });
+  // Classroom routes unmount the playground challenge controls and subscriptions.
+  await page.evaluate(() => window.fixture.navigate("/classroom-ended"));
+  await page.locator("#challenge-list").waitFor({ state: "detached" });
+  const classroomCalls = await page.evaluate(() => window.fixture.requests.filter((name) => name === "list_game_challenges").length);
+  await page.evaluate(() => { window.dispatchEvent(new Event("focus")); window.dispatchEvent(new Event("challenges-retry")); });
+  assert.equal(await page.evaluate(() => window.fixture.requests.filter((name) => name === "list_game_challenges").length), classroomCalls);
+  console.log("PASS: manual/automatic separation, both-role re-entry, active-consent race, paused selection without cascading, bounded inspection/list retry, stale navigation and classroom separation");
 }
 
 async function challengeChecks(page) {

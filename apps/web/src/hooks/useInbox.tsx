@@ -12,6 +12,8 @@ import { supabase } from "@/lib/supabase";
 import {
   dmRpc,
   cursorArgs,
+  MESSAGE_PAGE_SIZE,
+  mergeMessagePage,
   type Message,
   type Participant,
   type Thread,
@@ -32,6 +34,9 @@ function useInboxState(userId?: string) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [hasThreads, setHasThreads] = useState(false);
   const [hasHistory, setHasHistory] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [loadingConversation, setLoadingConversation] = useState(false);
+  const [historyError, setHistoryError] = useState("");
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [sending, setSending] = useState<Record<string, boolean>>({});
   const [arrivals, setArrivals] = useState<Message[]>([]);
@@ -48,37 +53,80 @@ function useInboxState(userId?: string) {
   const historyRows = useRef(messages);
   historyRows.current = messages;
   const historyMore = useRef(false);
+  const hasHistoryRef = useRef(false);
+  type HistoryRequest = { id: string; version: number; controller: AbortController; promise: Promise<void> };
+  const historyRequests = useRef<{ latest?: HistoryRequest; older?: HistoryRequest }>({});
+  const historyRetryGate = useRef(new FeatureRetryGate());
   const retryGate = useRef(new FeatureRetryGate());
-  const loadHistory = useCallback(async (older = false) => {
+  const loadHistory = useCallback(async (older = false, manual = false) => {
     const id = activeRef.current;
-    if (!id || !retryGate.current.allows()) return;
-    const version = ++historyVersion.current;
-    try {
-      const cursor = older ? historyRows.current.at(-1) : undefined;
-      const data = await dmRpc<{ partner: Participant; messages: Message[] }>(
-        "get_private_thread",
-        { p_partner: id, ...cursorArgs(cursor) },
-      );
-      if (!alive.current || version !== historyVersion.current || id !== activeRef.current) return;
-      setPartner(data.partner);
-      if (older) {
-        historyMore.current = true;
-        setHasHistory(data.messages.length > 50);
-      } else if (!historyMore.current) setHasHistory(data.messages.length > 50);
-      const page = data.messages.slice(0, 50);
-      setMessages((previous) =>
-        older || historyMore.current
-          ? [...new Map([...previous, ...page].map((m) => [m.id, m])).values()].sort(
-              (a, b) => b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id),
-            )
-          : page,
-      );
-    } catch (e) {
-      if (alive.current && id === activeRef.current && version === historyVersion.current) {
-        retryGate.current.fail(e);
-        setError(e instanceof Error ? e.message : "לא ניתן לטעון את השיחה כרגע");
+    if (!id || (older && (!hasHistoryRef.current || !historyRows.current.length))) return;
+    const slot = older ? "older" : "latest";
+    const version = historyVersion.current;
+    const pending = historyRequests.current[slot];
+    if (pending?.id === id && pending.version === version) return pending.promise;
+    if (!historyRetryGate.current.allows(manual)) return;
+    const request: HistoryRequest = { id, version, controller: new AbortController(), promise: Promise.resolve() };
+    historyRequests.current[slot] = request;
+    if (older) historyMore.current = true;
+    (older ? setLoadingHistory : setLoadingConversation)(true);
+    request.promise = (async () => {
+      try {
+        const cursor = older ? historyRows.current.at(-1) : undefined;
+        const newestBeforeRefresh = historyRows.current[0];
+        const signal = AbortSignal.any([request.controller.signal, AbortSignal.timeout(10000)]);
+        let data = await dmRpc<{ partner: Participant; messages: Message[] }>(
+          "get_private_thread",
+          { p_partner: id, ...cursorArgs(cursor) },
+          signal,
+        );
+        // A long realtime outage must not leave a gap above previously loaded history.
+        if (!older && historyMore.current && newestBeforeRefresh) {
+          let collected: Message[] = [];
+          while (true) {
+            const page = data.messages.slice(0, MESSAGE_PAGE_SIZE);
+            collected = mergeMessagePage(collected, page);
+            const oldest = page.at(-1);
+            if (data.messages.length <= MESSAGE_PAGE_SIZE || !oldest ||
+              (oldest.created_at.localeCompare(newestBeforeRefresh.created_at) ||
+                oldest.id.localeCompare(newestBeforeRefresh.id)) <= 0) break;
+            data = await dmRpc<{ partner: Participant; messages: Message[] }>(
+              "get_private_thread", { p_partner: id, ...cursorArgs(oldest) }, signal,
+            );
+          }
+          data = { ...data, messages: collected };
+        }
+        if (!alive.current || version !== historyVersion.current || id !== activeRef.current) return;
+        historyRetryGate.current.success();
+        setPartner(data.partner);
+        if (older) {
+          setHistoryError("");
+        }
+        if (older || !historyMore.current) {
+          hasHistoryRef.current = data.messages.length > MESSAGE_PAGE_SIZE;
+          setHasHistory(hasHistoryRef.current);
+        }
+        const page = !older && historyMore.current ? data.messages : data.messages.slice(0, MESSAGE_PAGE_SIZE);
+        setMessages((previous) => {
+          const pageIds = new Set(page.map((message) => message.id));
+          const next = mergeMessagePage(older || historyMore.current ? previous : previous.filter((message) => pageIds.has(message.id)), page);
+          historyRows.current = next;
+          return next;
+        });
+      } catch (e) {
+        if (alive.current && id === activeRef.current && version === historyVersion.current) {
+          historyRetryGate.current.fail(e);
+          (older ? setHistoryError : setError)(e instanceof Error ? e.message : "לא ניתן לטעון את השיחה כרגע");
+        }
+      } finally {
+        if (historyRequests.current[slot] === request) {
+          delete historyRequests.current[slot];
+          if (alive.current && version === historyVersion.current)
+            (older ? setLoadingHistory : setLoadingConversation)(false);
+        }
       }
-    }
+    })();
+    return request.promise;
   }, []);
   const refetch = useCallback(
     async (older = false, manual = false) => {
@@ -114,7 +162,7 @@ function useInboxState(userId?: string) {
         if (older || threadRows.current.length <= 30) setHasThreads(data.threads.length > 30);
         setUnread(data.unread_total);
         setError("");
-        if (!older) void loadHistory();
+        if (!older) void loadHistory(false, manual);
       } catch (e) {
         if (alive.current && version === threadVersion.current) {
           retryGate.current.fail(e);
@@ -223,6 +271,8 @@ function useInboxState(userId?: string) {
       ++epoch;
       ++threadVersion.current;
       ++historyVersion.current;
+      for (const request of Object.values(historyRequests.current)) request?.controller.abort();
+      historyRequests.current = {};
       clearInterval(timer);
       window.removeEventListener("focus", refresh);
       window.removeEventListener("online", refresh);
@@ -234,12 +284,20 @@ function useInboxState(userId?: string) {
     (id: string, show = true) => {
       activeRef.current = id;
       ++historyVersion.current;
+      for (const request of Object.values(historyRequests.current)) request?.controller.abort();
+      historyRequests.current = {};
       historyMore.current = false;
+      hasHistoryRef.current = false;
+      historyRows.current = [];
       setActive(id);
       setPartner(null);
       setMessages([]);
       setError("");
       setHasHistory(false);
+      setLoadingHistory(false);
+      setLoadingConversation(false);
+      setHistoryError("");
+      historyRetryGate.current.success();
       retryGate.current.success();
       if (show) setOpen(true);
       void loadHistory();
@@ -301,10 +359,10 @@ function useInboxState(userId?: string) {
     partner,
     select,
     hasHistory,
-    loadHistory: () => {
-      retryGate.current.success();
-      return loadHistory(true);
-    },
+    loadingHistory,
+    loadingConversation,
+    historyError,
+    loadHistory: (manual = false) => loadHistory(true, manual),
     drafts,
     setDraft: (text: string) => {
       if (active) setDrafts((p) => ({ ...p, [active]: text }));

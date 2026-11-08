@@ -13,6 +13,7 @@ import { FeedbackTrigger } from "@/components/FeedbackTrigger";
 import { LoginPage } from "@/pages/LoginPage";
 import { HomePage } from "@/pages/HomePage";
 import { lazyImportWithRetry } from "@/lib/lazyImport";
+import { gameActivityForPath } from "@/lib/gameNavigation";
 
 function createPages() {
   const FriendsDeprecatedPage = lazy(() =>
@@ -200,6 +201,8 @@ function RoutedPages() {
 
 export default function App() {
   const { user } = useAuth();
+  const location = useLocation();
+  const inClassroom = gameActivityForPath(location.pathname).phase === "classroom";
   const departure = useChallengeDeparture();
   return (
     <ThemeProvider>
@@ -234,7 +237,7 @@ export default function App() {
             >
               <GlobalMessages key={user?.id ?? "anonymous"} />
             </ErrorBoundary>
-            <ErrorBoundary
+            {!inClassroom && <ErrorBoundary
               scope="challenges"
               compact
               title="ההזמנות אינן זמינות כרגע"
@@ -242,7 +245,7 @@ export default function App() {
               className="fixed bottom-20 left-4 z-40 max-w-xs rounded-2xl border bg-white p-4 text-sm text-slate-800 shadow-lg dark:bg-slate-900 dark:text-white"
             >
               <ChallengeDock key={user?.id ?? "anonymous"} />
-            </ErrorBoundary>
+            </ErrorBoundary>}
             {user && (
               <ErrorBoundary
                 scope="feedback"

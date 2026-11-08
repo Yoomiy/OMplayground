@@ -6,8 +6,8 @@ describe("accepted invitation entry", () => {
   );
   it("asks before leaving a pending room", () =>
     expect(challengeEntryDecision("waiting", "old", "target", "waiting")).toBe("confirm"));
-  it.each(["playing", "classroom"] as const)("never interrupts %s", (phase) =>
-    expect(challengeEntryDecision(phase, "old", "target", "waiting")).toBe("defer"),
+  it.each(["playing", "classroom"] as const)("never automatically interrupts %s", (phase) =>
+    expect(challengeEntryDecision(phase, "old", "target", "waiting", "automatic")).toBe("defer"),
   );
   it("asks before explicitly leaving a solo game", () => {
     expect(gameActivityForPath("/solo/chess-solo")).toEqual({ phase: "solo" });
@@ -16,11 +16,11 @@ describe("accepted invitation entry", () => {
   it("allows retrying an unverified room without authorizing departure", () => {
     expect(challengeEntryDecision("unknown", "old", "target", "waiting")).toBe("retry");
   });
-  it("accepting can explicitly leave an active game, while a challenger cannot be pulled out", () => {
-    expect(challengeEntryDecision("playing", "old", "target", "waiting", "accept")).toBe("confirm");
-    expect(challengeEntryDecision("playing", "old", "target", "waiting", "enter")).toBe("defer");
-    expect(challengeEntryDecision("unknown", "old", "target", "waiting", "accept")).toBe("retry");
-    expect(challengeEntryDecision("classroom", undefined, "target", "waiting", "accept")).toBe("defer");
+  it("manual acceptance and return entry can leave an active game after confirmation", () => {
+    expect(challengeEntryDecision("playing", "old", "target", "waiting", "manual")).toBe("confirm");
+    expect(challengeEntryDecision("playing", "old", "target", "waiting", "automatic")).toBe("defer");
+    expect(challengeEntryDecision("unknown", "old", "target", "waiting", "manual")).toBe("retry");
+    expect(challengeEntryDecision("classroom", undefined, "target", "waiting", "manual")).toBe("defer");
   });
   it("does not redirect back into the room already shown", () =>
     expect(challengeEntryDecision("waiting", "target", "target", "waiting")).toBe("already-here"));
@@ -35,6 +35,7 @@ describe("accepted invitation entry", () => {
 describe("navigation activity classification", () => {
   it("keeps classroom work separate from room inspection", () => {
     expect(gameActivityForPath("/classroom/class-code")).toEqual({ phase: "classroom" });
+    expect(gameActivityForPath("/classroom-ended")).toEqual({ phase: "classroom" });
   });
   it("only inspects multiplayer room routes", () => {
     expect(gameActivityForPath("/play/room-id")).toEqual({ sessionId: "room-id", phase: "unknown" });

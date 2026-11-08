@@ -56,6 +56,15 @@ describe("invitation perspective", () => {
       ).detail,
     ).toContain("נועם כבר בחדר");
   });
+  it("keeps an accepted invite actionable for a recipient who moved to another game", () => {
+    const state = challengePresentation({
+      ...invitation, from_kid_id: "noam", to_kid_id: "me",
+      self_busy: true, partner_in_session: true,
+    }, "me", "another-room");
+    expect(state.badge).toBe("מחכים לכם בחדר");
+    expect(state.detail).toContain("מחכה לכם");
+    expect(state.detail).not.toContain("צאו ממנו");
+  });
   it("does not call me in the room after navigation away, even while server presence lags", () => {
     const stale = { ...invitation, self_in_session: true };
     expect(challengePresentation(stale, "me").selfHere).toBe(false);

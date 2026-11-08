@@ -30,7 +30,7 @@ export function challengeAvailability(
 ): ChallengeAvailability {
   return { busy: row.self_busy || (!!currentSession && currentSession !== row.session_id) };
 }
-/** Remind only about an accepted outgoing invitation observed while its sender was busy. */
+/** Either participant can become the missing player after leaving a waiting room. */
 export function becameAvailable(
   row: Invitation,
   previous: ChallengeAvailability | undefined,
@@ -41,7 +41,7 @@ export function becameAvailable(
   return (
     previous?.busy === true &&
     !challengeAvailability(row, currentSession).busy &&
-    row.from_kid_id === userId &&
+    (row.from_kid_id === userId || row.to_kid_id === userId) &&
     row.status === "accepted" &&
     row.session_id !== currentSession &&
     row.session_status !== "completed"

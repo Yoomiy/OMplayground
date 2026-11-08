@@ -6,7 +6,7 @@ export function gameActivityForPath(pathname: string): { sessionId?: string; pha
   if (/^\/play(?:\/|$)/.test(pathname))
     return { sessionId: pathname.split("/")[2] || undefined, phase: "unknown" };
   if (/^\/solo(?:\/|$)/.test(pathname)) return { phase: "solo" };
-  if (/^\/classroom(?:\/|$)/.test(pathname)) return { phase: "classroom" };
+  if (/^\/classroom(?:\/|$)/.test(pathname) || pathname === "/classroom-ended") return { phase: "classroom" };
   return { phase: "none" };
 }
 
@@ -23,13 +23,13 @@ export function challengeEntryDecision(
   currentId: string | undefined,
   targetId: string,
   targetPhase?: string,
-  intent: "enter" | "accept" = "enter",
+  intent: "manual" | "automatic" = "manual",
 ): EntryDecision {
   if (targetPhase === "completed") return "unavailable";
   if (currentId === targetId) return "already-here";
   if (current === "completed" || current === "paused" || current === "none") return "enter";
   if (current === "waiting" || current === "solo") return "confirm";
-  if (current === "playing" && intent === "accept") return "confirm";
+  if (current === "playing" && intent === "manual") return "confirm";
   if (current === "unknown") return "retry";
   return "defer";
 }

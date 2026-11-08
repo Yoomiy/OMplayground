@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useInbox } from "@/hooks/useInbox";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { useInboxScroll } from "@/hooks/useInboxScroll";
 import { roleLabel, type Message } from "@/lib/directMessages";
 import { reportMessage } from "@/lib/messagesApi";
 import { ErrorBoundary } from "./ErrorBoundary";
@@ -24,7 +25,12 @@ function InboxContent() {
   const inbox = useInbox(),
     { user } = useAuth(),
     { profile } = useProfile();
-  const list = useRef<HTMLDivElement>(null);
+  const scroll = useInboxScroll({
+    active: inbox.active, messages: inbox.messages, userId: user?.id,
+    hasHistory: inbox.hasHistory, loadingHistory: inbox.loadingHistory,
+    historyError: inbox.historyError, loadHistory: inbox.loadHistory,
+  });
+  const list = scroll.ref;
   const [query, setQuery] = useState("");
   const [report, setReport] = useState<Message | null>(null),
     [note, setNote] = useState(""),
@@ -176,15 +182,24 @@ function InboxContent() {
               </header>
               <div
                 ref={list}
+                onScroll={scroll.onScroll}
+                style={{ overflowAnchor: "none" }}
                 className="flex min-h-0 flex-1 flex-col gap-2 overflow-auto rounded-lg border p-2"
                 aria-label="הודעות בשיחה"
               >
                 {inbox.hasHistory && (
-                  <button onClick={() => void inbox.loadHistory()}>הודעות קודמות</button>
+                  <button
+                    disabled={inbox.loadingHistory}
+                    onClick={() => void inbox.loadHistory(true)}
+                    className="shrink-0 py-1 text-xs text-slate-500 dark:text-slate-400"
+                  >
+                    {inbox.loadingHistory ? "טוענים הודעות קודמות…" : inbox.historyError ? "טעינת ההודעות נכשלה — נסו שוב" : "הודעות קודמות"}
+                  </button>
                 )}
                 {[...inbox.messages].reverse().map((m) => (
                   <article
                     key={m.id}
+                    data-inbox-message-id={m.id}
                     {...(!m.is_read && m.to_kid_id === user?.id ? { "data-message-id": m.id } : {})}
                     className={`max-w-[90%] rounded-xl p-3 ${m.from_kid_id === user?.id ? "mr-auto bg-violet-100 dark:bg-violet-900" : "ml-auto bg-slate-100 dark:bg-slate-800"}`}
                   >
@@ -208,7 +223,8 @@ function InboxContent() {
                     )}
                   </article>
                 ))}
-                {!inbox.messages.length && inbox.partner && (
+                {inbox.loadingConversation && !inbox.messages.length && <p role="status">טוענים שיחה…</p>}
+                {!inbox.loadingConversation && !inbox.messages.length && inbox.partner && (
                   <p>התחילו את השיחה עם {inbox.partner.full_name}</p>
                 )}
               </div>

@@ -94,6 +94,28 @@ describe("persistPlayerJoin", () => {
     expect(payload.connected_player_names).toEqual(["Host", "Guest"]);
   });
 
+  it("starts a waiting room when the returning roster finally meets up", async () => {
+    const m = makeMockSupabase();
+    await persistPlayerJoin({
+      supabase: m.supabase, sessionId: "rendezvous",
+      session: { player_ids: ["a", "b"], player_names: ["A", "B"], status: "waiting" },
+      userId: "a", displayName: "A", roomStatusIsIdle: false,
+      connectedPlayerIds: ["a", "b"], connectedPlayerNames: ["A", "B"],
+    });
+    expect(m.update.mock.calls[0][0]).toMatchObject({ status: "playing", connected_player_ids: ["a", "b"] });
+  });
+
+  it("preserves a single-host invitation lobby while the other child can still accept", async () => {
+    const m = makeMockSupabase();
+    await persistPlayerJoin({
+      supabase: m.supabase, sessionId: "drawing-lobby",
+      session: { player_ids: ["a"], player_names: ["A"], status: "waiting" },
+      userId: "a", displayName: "A", roomStatusIsIdle: false,
+      connectedPlayerIds: ["a"], connectedPlayerNames: ["A"],
+    });
+    expect(m.update.mock.calls[0][0]).not.toHaveProperty("status");
+  });
+
   it("keeps paused status while a listed kid rejoins an idle paused room", async () => {
     const m = makeMockSupabase();
     const wrote = await persistPlayerJoin({

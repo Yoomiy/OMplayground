@@ -29,6 +29,19 @@ export interface Cursor {
   created_at: string;
   id: string;
 }
+export const MESSAGE_PAGE_SIZE = 50;
+
+/** Pages overlap during realtime refreshes; read receipts are monotonic. */
+export function mergeMessagePage(previous: Message[], page: Message[]): Message[] {
+  const byId = new Map(previous.map((message) => [message.id, message]));
+  for (const message of page) {
+    const existing = byId.get(message.id);
+    byId.set(message.id, existing?.is_read ? { ...message, is_read: true } : message);
+  }
+  return [...byId.values()].sort(
+    (a, b) => b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id),
+  );
+}
 
 function validParticipant(value: unknown): boolean {
   return (
@@ -75,11 +88,14 @@ export function validateInboxPayload(name: string, data: unknown): void {
         : true;
   if (!valid) throw new FeatureRequestError("ההודעות אינן זמינות כרגע. אפשר לנסות שוב בהמשך", true);
 }
-export async function dmRpc<T>(name: string, args: Record<string, unknown> = {}): Promise<T> {
+export async function dmRpc<T>(name: string, args: Record<string, unknown> = {}, signal?: AbortSignal): Promise<T> {
   let response;
   try {
-    response = await supabase.rpc(name, args);
+    const request = supabase.rpc(name, args);
+    response = await (signal ? request.abortSignal(signal) : request);
   } catch {
+    if (signal?.aborted && signal.reason?.name === "AbortError")
+      throw new FeatureRequestError("בקשת ההודעות בוטלה");
     reportTelemetry({
       level: "warn",
       message: "Direct message request failed",
@@ -87,6 +103,8 @@ export async function dmRpc<T>(name: string, args: Record<string, unknown> = {})
     });
     throw new FeatureRequestError("לא ניתן לעדכן הודעות כרגע. אפשר לנסות שוב");
   }
+  if (signal?.aborted && signal.reason?.name === "AbortError")
+    throw new FeatureRequestError("בקשת ההודעות בוטלה");
   const { data, error } = response;
   if (error) {
     reportTelemetry({

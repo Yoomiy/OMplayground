@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/supabase", () => ({ supabase: { rpc: vi.fn() } }));
 vi.mock("@/utils/telemetry", () => ({ reportTelemetry: vi.fn() }));
-import { dmRpc, validateInboxPayload } from "./directMessages";
+import { cursorArgs, dmRpc, mergeMessagePage, validateInboxPayload, type Message } from "./directMessages";
 import { supabase } from "./supabase";
 import { FeatureRequestError } from "./featureRecovery";
 
@@ -64,5 +64,19 @@ describe("message response validation", () => {
       unavailable: false,
       message: "לא ניתן לעדכן הודעות כרגע. אפשר לנסות שוב",
     });
+  });
+});
+
+describe("conversation history pages", () => {
+  it("merges overlapping pages without losing new messages or regressing read receipts", () => {
+    const row = (id: string, is_read = false) => ({ ...message, id, is_read }) as Message;
+    const merged = mergeMessagePage([row("d"), row("c", true), row("b")], [row("c"), row("b"), row("a")]);
+    expect(merged.map((item) => item.id)).toEqual(["d", "c", "b", "a"]);
+    expect(merged.find((item) => item.id === "c")?.is_read).toBe(true);
+  });
+  it("uses the ID as well as timestamp at a page boundary", () => {
+    const cursor = { created_at: message.created_at, id: "boundary" };
+    expect(cursorArgs(cursor)).toEqual({ p_before: cursor.created_at, p_before_id: cursor.id });
+    expect(cursorArgs()).toEqual({ p_before: null, p_before_id: null });
   });
 });

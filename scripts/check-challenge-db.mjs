@@ -236,4 +236,140 @@ assert.equal((await db.query('SELECT status FROM game_challenges WHERE id=$1',[w
 await user(1);await respond(incoming.challenge_id,'cancel');
 assert.equal((await db.query('SELECT status FROM game_challenges WHERE id=$1',[incoming.challenge_id])).rows[0].status,'expired');
 console.log('PASS: non-superuser acceptance migration, atomic accept/entry rollback, explicit active-room departure, preserved waiting invitation, legacy endpoint guard, private helpers and challenger protection');
+
+await db.exec('SET ROLE migration_owner; DELETE FROM player_game_claims; SET ROLE authenticated');
+await user(1);const rendezvous=await send(3);
+await user(3);await db.query('SELECT accept_game_challenge($1)',[rendezvous.challenge_id]);
+await service('UPDATE game_challenges SET fulfilled_at=now() WHERE id=$1',[rendezvous.challenge_id]);
+assert.ok(!(await list()).some(row=>row.id===rendezvous.challenge_id));
+await db.exec('SET ROLE migration_owner');
+await db.exec(await readFile(new URL('../supabase/migrations/20261108160000_challenge_waiting_rendezvous.sql',import.meta.url),'utf8'));
+await db.exec('SET ROLE authenticated');
+assert.ok((await list()).some(row=>row.id===rendezvous.challenge_id)); // repair old false fulfillment
+const presence=(session,players,status='waiting')=>service(
+ "UPDATE game_sessions SET status=$3,connected_player_ids=$2::uuid[],connected_player_names=ARRAY(SELECT 'Player' FROM unnest($2::uuid[])) WHERE id=$1",
+ [session,players.map(id),status]);
+await user(1);const elsewhereA=await send(4);await presence(elsewhereA.session_id,[1]);
+await presence(rendezvous.session_id,[3]); // B waits, A is elsewhere.
+await user(1);assert.equal((await list()).find(row=>row.id===rendezvous.challenge_id).partner_in_session,true);
+await presence(rendezvous.session_id,[]);
+await user(3);const elsewhereB=await send(2);await presence(elsewhereB.session_id,[3],'playing');
+await user(1);await db.query('SELECT prepare_challenge_entry($1,$2)',[rendezvous.challenge_id,elsewhereA.session_id]);
+await presence(rendezvous.session_id,[1]);
+await user(3);let returning=(await list()).find(row=>row.id===rendezvous.challenge_id);
+assert.equal(returning.partner_in_session,true);assert.equal(returning.self_busy,true);
+assert.equal(returning.fulfilled_at,null);
+await user(1);assert.ok((await list()).some(row=>row.id===rendezvous.challenge_id));
+// Reverse roles again: neither serial arrival consumes the invitation.
+await presence(rendezvous.session_id,[]);await presence(elsewhereA.session_id,[1]);
+await presence(elsewhereB.session_id,[],'paused');
+await user(3);await db.query('SELECT prepare_challenge_entry($1,$2)',[rendezvous.challenge_id,elsewhereB.session_id]);
+await presence(rendezvous.session_id,[3]);
+await user(1);assert.equal((await list()).find(row=>row.id===rendezvous.challenge_id).partner_in_session,true);
+await db.query('SELECT prepare_challenge_entry($1,$2)',[rendezvous.challenge_id,elsewhereA.session_id]);
+await presence(rendezvous.session_id,[1,3]);
+assert.ok(!(await list()).some(row=>row.id===rendezvous.challenge_id)); // both waiting: hide, not consume
+assert.equal((await db.query('SELECT fulfilled_at FROM game_challenges WHERE id=$1',[rendezvous.challenge_id])).rows[0].fulfilled_at,null);
+await user(3);await respond(rendezvous.challenge_id,'accept'); // legacy acceptance cannot force fulfillment
+await service('UPDATE game_challenges SET fulfilled_at=now() WHERE id=$1',[rendezvous.challenge_id]);
+assert.equal((await db.query('SELECT fulfilled_at FROM game_challenges WHERE id=$1',[rendezvous.challenge_id])).rows[0].fulfilled_at,null);
+await presence(rendezvous.session_id,[1]);await presence(elsewhereB.session_id,[3]);
+assert.ok((await list()).some(row=>row.id===rendezvous.challenge_id));
+await presence(elsewhereB.session_id,[]);await presence(rendezvous.session_id,[1,3]);
+await db.exec('SET ROLE migration_owner');
+await db.query("UPDATE player_game_claims SET expires_at=now()-interval '1 second' WHERE user_id=$1",[id(3)]);
+await db.exec('SET ROLE authenticated');
+assert.ok((await list()).some(row=>row.id===rendezvous.challenge_id)); // stale projection is not live co-presence
+await presence(rendezvous.session_id,[1,3]);
+await presence(rendezvous.session_id,[1,3],'playing');
+assert.ok((await db.query('SELECT fulfilled_at FROM game_challenges WHERE id=$1',[rendezvous.challenge_id])).rows[0].fulfilled_at);
+await presence(rendezvous.session_id,[1],'paused');
+assert.ok(!(await list()).some(row=>row.id===rendezvous.challenge_id)); // played games stay fulfilled
+console.log('PASS: repaired waiting invitations, alternating arrivals, both-role recovery, reversible lobby overlap, stale leases and permanent fulfillment after play');
+
+await db.exec('SET ROLE migration_owner');
+await db.exec(await readFile(new URL('../supabase/migrations/20261108170000_challenge_confirmed_switch.sql',import.meta.url),'utf8'));
+await db.exec('DELETE FROM player_game_claims; SET ROLE authenticated');
+await user(1);const switchTarget=await send(3);
+await user(3);await db.query('SELECT accept_game_challenge($1)',[switchTarget.challenge_id]);
+for (const actor of [1,3]) {
+ await user(actor);const source=await send(actor===1?4:2);
+ await presence(source.session_id,[actor],'playing');
+ await assert.rejects(()=>db.query('SELECT prepare_challenge_entry($1,$2)',[switchTarget.challenge_id,source.session_id]),/CURRENT_GAME_STARTED/);
+ await assert.rejects(()=>db.query('SELECT prepare_challenge_entry($1,$2,false)',[switchTarget.challenge_id,source.session_id]),/CURRENT_GAME_STARTED/);
+ await db.exec('BEGIN');
+ assert.equal((await db.query('SELECT prepare_challenge_entry($1,$2,true) AS id',[switchTarget.challenge_id,source.session_id])).rows[0].id,switchTarget.session_id);
+ assert.notEqual((await db.query("SELECT current_setting('playground.allow_game_session_authority_write',true) AS value")).rows[0].value,'true');
+ await db.exec('COMMIT');
+ const departed=(await db.query('SELECT * FROM game_sessions WHERE id=$1',[source.session_id])).rows[0];
+ assert.equal(departed.status,'playing');assert.ok(!departed.connected_player_ids.includes(id(actor)));
+ assert.equal((await db.query('SELECT status FROM game_challenges WHERE id=$1',[switchTarget.challenge_id])).rows[0].status,'accepted');
+ await presence(switchTarget.session_id,[actor]);
+ await presence(switchTarget.session_id,[]); // can leave and later make the same explicit return again
+}
+await user(4);
+await assert.rejects(()=>db.query('SELECT prepare_challenge_entry($1,NULL,true)',[switchTarget.challenge_id]),/CHALLENGE_UNAVAILABLE/);
+await user(1);await respond(switchTarget.challenge_id,'cancel');
+await user(3);const stillPlaying=await send(2);await presence(stillPlaying.session_id,[3],'playing');
+await assert.rejects(()=>db.query('SELECT prepare_challenge_entry($1,$2,true)',[switchTarget.challenge_id,stillPlaying.session_id]),/CHALLENGE_UNAVAILABLE/);
+assert.deepEqual((await db.query('SELECT connected_player_ids FROM game_sessions WHERE id=$1',[stillPlaying.session_id])).rows[0].connected_player_ids,[id(3)]);
+console.log('PASS: restricted-role switch migration, confirmed return for either participant, guarded automatic entry, repeated return, ownership and cancelled-target rollback');
+
+// A waiting-room confirmation must not silently become active-game consent.
+await user(1);const racingAccept=await send(3);
+await user(3);
+await assert.rejects(()=>db.query('SELECT accept_game_challenge($1,$2)',[racingAccept.challenge_id,stillPlaying.session_id]),/CURRENT_GAME_STARTED/);
+assert.equal((await db.query('SELECT status FROM game_challenges WHERE id=$1',[racingAccept.challenge_id])).rows[0].status,'pending');
+await db.query('SELECT accept_game_challenge($1,$2,true)',[racingAccept.challenge_id,stillPlaying.session_id]);
+
+await db.exec('SET ROLE migration_owner');
+await db.exec("ALTER TABLE games ADD COLUMN game_url text DEFAULT 'chess'; CREATE TABLE voxel_session_controls(session_id uuid PRIMARY KEY,desired_state text NOT NULL); GRANT ALL ON voxel_session_controls TO service_role");
+const projectionSource=await readFile(new URL('../supabase/migrations/20261025020000_voxel_session_projection.sql',import.meta.url),'utf8');
+await db.exec(projectionSource.match(/CREATE FUNCTION public\.voxel_session_policy\(p_session UUID\)[\s\S]*?END \$\$;/)[0]);
+await db.exec('REVOKE ALL ON FUNCTION voxel_session_policy(uuid) FROM PUBLIC,anon,authenticated; GRANT EXECUTE ON FUNCTION voxel_session_policy(uuid) TO service_role');
+await db.exec(await readFile(new URL('../supabase/migrations/20261108180000_challenge_destination_eligibility.sql',import.meta.url),'utf8'));
+await db.exec('DELETE FROM player_game_claims; SET ROLE authenticated');
+await user(1);const startedTarget=await send(3);await presence(startedTarget.session_id,[1],'playing');
+await user(3);const sourceLive=await send(2);await presence(sourceLive.session_id,[3],'playing');
+assert.equal((await db.query('SELECT accept_game_challenge($1,$2,true) AS id',[startedTarget.challenge_id,sourceLive.session_id])).rows[0].id,startedTarget.session_id);
+assert.equal((await db.query('SELECT status FROM game_challenges WHERE id=$1',[startedTarget.challenge_id])).rows[0].status,'accepted');
+await user(1);const pausedTarget=await send(3);await presence(pausedTarget.session_id,[],'paused');
+await user(3);await presence(sourceLive.session_id,[3],'playing');
+await assert.rejects(()=>db.query('SELECT accept_game_challenge($1,$2,true)',[pausedTarget.challenge_id,sourceLive.session_id]),/TARGET_GAME_PAUSED/);
+assert.equal((await db.query('SELECT status FROM game_challenges WHERE id=$1',[pausedTarget.challenge_id])).rows[0].status,'pending');
+assert.deepEqual((await db.query('SELECT connected_player_ids FROM game_sessions WHERE id=$1',[sourceLive.session_id])).rows[0].connected_player_ids,[id(3)]);
+await presence(pausedTarget.session_id,[]);
+await db.query('SELECT accept_game_challenge($1,$2,true)',[pausedTarget.challenge_id,sourceLive.session_id]);
+await presence(pausedTarget.session_id,[],'paused');await presence(sourceLive.session_id,[3],'playing');
+await assert.rejects(()=>db.query('SELECT prepare_challenge_entry($1,$2,true)',[pausedTarget.challenge_id,sourceLive.session_id]),/TARGET_GAME_PAUSED/);
+assert.deepEqual((await db.query('SELECT connected_player_ids FROM game_sessions WHERE id=$1',[sourceLive.session_id])).rows[0].connected_player_ids,[id(3)]);
+await presence(startedTarget.session_id,[],'paused');
+await presence(pausedTarget.session_id,[1],'playing');
+await db.query('SELECT prepare_challenge_entry($1,$2,true)',[pausedTarget.challenge_id,sourceLive.session_id]);
+// Voxel's temporary public pause is not a deliberate pause; honor its current policy.
+await db.exec('SET ROLE migration_owner');
+await db.exec("INSERT INTO games VALUES ('10000000-0000-0000-0000-000000000002','Voxel',true,true,'both','minecraft')");
+await db.exec('SET ROLE authenticated');
+await user(1);const recovering=(await db.query('SELECT create_game_challenge($1,$2) AS result',[id(3),'10000000-0000-0000-0000-000000000002'])).rows[0].result;
+await service('INSERT INTO voxel_worlds VALUES($1)',[recovering.session_id]);
+await service("INSERT INTO voxel_session_controls VALUES($1,'playing')",[recovering.session_id]);
+await presence(recovering.session_id,[],'paused');
+await user(3);await db.query('SELECT accept_game_challenge($1)',[recovering.challenge_id]);
+await presence(sourceLive.session_id,[3],'playing');
+await service("UPDATE voxel_session_controls SET desired_state='paused' WHERE session_id=$1",[recovering.session_id]);
+await assert.rejects(()=>db.query('SELECT prepare_challenge_entry($1,$2,true)',[recovering.challenge_id,sourceLive.session_id]),/TARGET_GAME_PAUSED/);
+await service("UPDATE voxel_session_controls SET desired_state='playing' WHERE session_id=$1",[recovering.session_id]);
+await db.query('SELECT prepare_challenge_entry($1,$2,true)',[recovering.challenge_id,sourceLive.session_id]);
+await assert.rejects(()=>db.query('SELECT validate_challenge_target($1)',[recovering.session_id]),/permission denied/);
+console.log('PASS: active-consent race rollback, late acceptance, paused-target preflight before departure, host resume recovery and actual voxel pause policy');
+await user(1);const classroomTarget=await send(3);
+await service('UPDATE game_sessions SET classroom_id=$2 WHERE id=$1',[classroomTarget.session_id,id(9)]);
+await user(3);await presence(sourceLive.session_id,[3],'playing');
+await assert.rejects(()=>db.query('SELECT accept_game_challenge($1,$2,true)',[classroomTarget.challenge_id,sourceLive.session_id]),/CLASSROOM_SESSION/);
+assert.deepEqual((await db.query('SELECT connected_player_ids FROM game_sessions WHERE id=$1',[sourceLive.session_id])).rows[0].connected_player_ids,[id(3)]);
+await user(1);const playgroundTarget=await send(4);await user(4);
+await db.query('SELECT accept_game_challenge($1)',[playgroundTarget.challenge_id]);
+await user(1);
+await assert.rejects(()=>db.query('SELECT prepare_challenge_entry($1,$2,true)',[playgroundTarget.challenge_id,classroomTarget.session_id]),/CLASSROOM_SESSION/);
+console.log('PASS: classroom-owned source and destination are excluded from playground challenge switching');
 await db.close();

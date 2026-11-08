@@ -27,8 +27,8 @@ export interface PersistJoinArgs {
 }
 
 /**
- * Returns `true` when a row-update was issued, `false` if the user was
- * already listed and we short-circuited.
+ * Returns `true` for a new roster member, `false` for an existing member
+ * whose connected presence and waiting-room transition were refreshed.
  */
 export async function persistPlayerJoin(
   args: PersistJoinArgs
@@ -48,6 +48,11 @@ export async function persistPlayerJoin(
     const { error } = await supabase
       .from("game_sessions")
       .update({
+        // Returning roster members can be the pair that finally starts the room.
+        // Preserve the existing single-host invitation lobby and paused-resume policy.
+        ...(session.status === "waiting" && !roomStatusIsIdle && connectedPlayerIds.length > 1
+          ? { status: "playing" }
+          : {}),
         connected_player_ids: connectedPlayerIds,
         connected_player_names: connectedPlayerNames,
         last_activity: new Date().toISOString(),

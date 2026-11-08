@@ -98,7 +98,7 @@ export function ChallengeDock() {
   const mutationVersion = useRef(0);
   const rowsRef = useRef(rows);
   rowsRef.current = rows;
-  const enter = useCallback(async (row: Invitation, confirmed = false, automatic = false) => {
+  const enter = useCallback(async (row: Invitation, confirmed = false, automatic = false, allowActive = false) => {
     if (entering.current || entryBlocked.current.has(row.id)) return;
     if (confirmed && switchFrom.current !== activity.current.key) {
       setSwitchPrompt(null);
@@ -122,12 +122,14 @@ export function ChallengeDock() {
         entryBlocked.current.has(row.id)
       )
         return;
+      const promptKey = `${activity.current.pathname}:${phase}:${row.id}`;
+      if (automatic && prompted.current.has(promptKey)) return;
       const decision = challengeEntryDecision(
         phase,
         previousId,
         row.session_id,
         row.session_status,
-        row.status === "pending" ? "accept" : "enter",
+        automatic ? "automatic" : "manual",
       );
       if (decision === "already-here" && row.status !== "pending") return;
       if (decision === "unavailable") {
@@ -149,10 +151,9 @@ export function ChallengeDock() {
         } else showToast({ kind: "ready", challengeId: row.id });
         return;
       }
-      if (decision === "confirm" && !confirmed) {
-        const key = `${activity.current.pathname}:${row.id}`;
-        if (automatic && prompted.current.has(key)) return;
-        prompted.current.add(key);
+      if (decision === "confirm" && (!confirmed || (phase === "playing" && !allowActive))) {
+        // A waiting-room confirmation does not authorize leaving a game that just started.
+        prompted.current.add(promptKey);
         switchFrom.current = previousKey;
         setOpen(false);
         setSwitchPrompt(row);
@@ -162,6 +163,7 @@ export function ChallengeDock() {
       const { data, error } = await supabase.rpc(accepting ? "accept_game_challenge" : "prepare_challenge_entry", {
         p_id: row.id,
         p_leave_session: previousId ?? null,
+        ...(confirmed && allowActive ? { p_allow_active: true } : {}),
       }).abortSignal(AbortSignal.any([controller.signal, AbortSignal.timeout(10000)]));
       if (error) {
         if (!controller.signal.aborted)
@@ -171,9 +173,15 @@ export function ChallengeDock() {
           }, "game-server");
         unavailable = error.message.includes("SESSION_UNAVAILABLE");
         throw new Error(
-          error.message.includes("CURRENT_GAME_STARTED")
-            ? "המשחק הנוכחי התחיל בינתיים. ההזמנה מחכה לכם ברשימה"
-            : "לא ניתן להיכנס כרגע. ההזמנה נשארה ברשימה ואפשר לנסות שוב",
+          error.message.includes("CLASSROOM_SESSION")
+            ? "הזמנות משחק אינן זמינות לחדרי כיתה"
+            : error.message.includes("TARGET_GAME_PAUSED")
+              ? "החדר מושהה. תוכלו להצטרף כשהמארח יחדש את המשחק"
+            : error.message.includes("PLAYER_IN_ANOTHER_GAME")
+              ? "עדיין מזוהה חיבור לחדר אחר. צאו ממנו ונסו שוב בעוד רגע"
+              : error.message.includes("CURRENT_GAME_STARTED")
+                ? "המשחק הנוכחי התחיל בינתיים. ההזמנה מחכה לכם ברשימה"
+                : "לא ניתן להיכנס כרגע. ההזמנה נשארה ברשימה ואפשר לנסות שוב",
         );
       }
       if (typeof data !== "string" || !data)
@@ -200,7 +208,8 @@ export function ChallengeDock() {
       for (const invitation of rowsRef.current.filter(
         (invitation) => invitation.status === "accepted",
       ))
-        prompted.current.add(`/play/${data}:${invitation.id}`);
+        for (const arrivalPhase of ["waiting", "paused"])
+          prompted.current.add(`/play/${data}:${arrivalPhase}:${invitation.id}`);
       navigateRef.current(`/play/${data}?mode=player`);
     } catch (error) {
       if (entryEpoch !== generation.current || controller.signal.aborted || activity.current.key !== previousKey) return;
@@ -229,6 +238,13 @@ export function ChallengeDock() {
     return () => entryAbort.current?.abort();
   }, [gameNavigation.key]);
   useEffect(() => {
+    // Arrival in a paused lobby must not chain into another accepted invitation.
+    // Once play starts, its later pause/completion can make other invitations available again.
+    if (gameNavigation.phase === "playing")
+      for (const key of prompted.current)
+        if (key.startsWith(`${gameNavigation.pathname}:`)) prompted.current.delete(key);
+  }, [gameNavigation.phase, gameNavigation.pathname]);
+  useEffect(() => {
     const node = switchDialog.current;
     if (switchPrompt && node && !node.open) node.showModal();
     else if (!switchPrompt && node?.open) node.close();
@@ -242,8 +258,7 @@ export function ChallengeDock() {
         row.session_id !== gameNavigation.sessionId &&
         row.session_status !== "completed" &&
         !entryFailed.current.has(row.id) &&
-        (gameNavigation.phase !== "waiting" ||
-          !prompted.current.has(`${gameNavigation.pathname}:${row.id}`)),
+        !prompted.current.has(`${gameNavigation.pathname}:${gameNavigation.phase}:${row.id}`),
     );
     if (next) void enter(next, false, true);
   }, [rows, gameNavigation.phase, gameNavigation.sessionId, gameNavigation.pathname, user?.id, switchPrompt, enter]);
@@ -274,19 +289,26 @@ export function ChallengeDock() {
       });
     };
     let fetching = false;
+    let refreshRequest: AbortController | null = null;
     const retryGate = new FeatureRetryGate();
     const refresh = async (manual = false) => {
       if (fetching || document.hidden || !retryGate.allows(manual)) return;
       fetching = true;
+      const request = new AbortController();
+      refreshRequest = request;
+      let requestCode: string | undefined;
       const version = mutationVersion.current;
       try {
-        const { data, error } = await supabase.rpc("list_game_challenges");
+        const { data, error } = await supabase.rpc("list_game_challenges")
+          .abortSignal(AbortSignal.any([request.signal, AbortSignal.timeout(10000)]));
         if (generation.current !== epoch || mutationVersion.current !== version) return;
-        if (error)
+        if (error) {
+          requestCode = error.code;
           throw new FeatureRequestError(
             "לא ניתן לרענן הזמנות כרגע. ההזמנות הקיימות נשמרו",
             backendUnavailable(error),
           );
+        }
         const next = parseInvitations(data);
         retryGate.success();
         const priorRows = rowsRef.current;
@@ -343,6 +365,9 @@ export function ChallengeDock() {
         });
       } catch (error) {
         if (generation.current !== epoch) return;
+        reportCaughtError("Game challenge refresh failed", error, {
+          appArea: "challenges", operation: "list", code: requestCode,
+        }, "game-server", "warn");
         retryGate.fail(error);
         setErrors((previous) => ({
           ...previous,
@@ -351,15 +376,9 @@ export function ChallengeDock() {
               ? error.message
               : "לא ניתן לרענן הזמנות כרגע. אפשר לנסות שוב",
         }));
-        reportCaughtError(
-          "Challenge list query failed",
-          error,
-          { appArea: "game-challenge", operation: "list" },
-          "shell",
-          "warn",
-        );
       } finally {
         fetching = false;
+        if (refreshRequest === request) refreshRequest = null;
         if (generation.current === epoch && mutationVersion.current !== version) void refresh();
       }
     };
@@ -384,12 +403,15 @@ export function ChallengeDock() {
     window.addEventListener("challenges-changed", onRefresh);
     window.addEventListener("focus", onRefresh);
     window.addEventListener("online", onRefresh);
+    document.addEventListener("visibilitychange", onRefresh);
     return () => {
       ++generation.current;
+      refreshRequest?.abort();
       clearInterval(timer);
       window.removeEventListener("challenges-changed", onRefresh);
       window.removeEventListener("focus", onRefresh);
       window.removeEventListener("online", onRefresh);
+      document.removeEventListener("visibilitychange", onRefresh);
       window.removeEventListener("challenges-retry", onRetry);
       void supabase.removeChannel(channel).catch(() => {});
     };
@@ -622,10 +644,10 @@ export function ChallengeDock() {
       >
         <h2 className="text-lg font-black">{switchPrompt?.status === "pending" ? "לקבל ולעבור לחדר של" : "לעבור לחדר של"} {switchPrompt?.partner_name}?</h2>
         <p className="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-300">
-          {gameNavigation.phase === "playing" && switchPrompt?.status === "accepted"
-            ? "המשחק בחדר הנוכחי התחיל. אפשר להצטרף להזמנה אחרי שתצאו ממנו."
-            : gameNavigation.phase === "playing"
-            ? "קבלת ההזמנה תוציא אתכם מהמשחק הפעיל ותעביר אתכם לחדר החדש."
+          {gameNavigation.phase === "playing"
+            ? "המעבר יוציא אתכם מהמשחק הפעיל ויעביר אתכם לחדר החדש."
+            : gameNavigation.phase === "unknown"
+              ? "לא ניתן לאמת כרגע את מצב החדר. אפשר לנסות שוב."
             : gameNavigation.phase === "solo"
               ? "אתם באמצע משחק יחיד. מעבר לחדר יעזוב את המשחק הנוכחי."
               : "המשחק בחדר הנוכחי עדיין לא התחיל. ההזמנה הקודמת תישאר זמינה ותוכלו לחזור אליה."}
@@ -634,7 +656,7 @@ export function ChallengeDock() {
           <button
             className="rounded-xl bg-violet-600 px-4 py-3 text-sm font-bold text-white"
             onClick={() => {
-              if (switchPrompt) void enter(switchPrompt, true);
+              if (switchPrompt) void enter(switchPrompt, true, false, gameNavigation.phase === "playing");
             }}
           >
             {switchPrompt?.status === "pending" ? "קבלה וכניסה לחדר" : "כן, לעבור לחדר"}
@@ -783,12 +805,11 @@ export function ChallengeDock() {
                             disabled={
                               busy[row.id] ||
                               clearing ||
-                              gameNavigation.phase === "playing" ||
                               gameNavigation.phase === "classroom"
                             }
                             title={
                               gameNavigation.phase === "playing"
-                                ? "ההזמנה מחכה לסיום המשחק הנוכחי"
+                                ? "המעבר יוציא אתכם מהמשחק הנוכחי"
                                 : gameNavigation.phase === "classroom"
                                   ? "צאו מהכיתה לפני מעבר לחדר משחק"
                                   : gameNavigation.phase === "unknown"

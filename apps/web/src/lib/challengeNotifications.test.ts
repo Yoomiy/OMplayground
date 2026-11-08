@@ -36,8 +36,11 @@ describe("available-again invitation reminders", () => {
     expect(becameAvailable(invite, { busy: true }, "me", "other-room")).toBe(false);
     expect(becameAvailable({ ...invite, self_busy: true }, { busy: true }, "me")).toBe(false);
   });
-  it("does not remind the recipient, someone already in the room, or about a pending invitation", () => {
-    expect(becameAvailable(invite, { busy: true }, "other")).toBe(false);
+  it("also reminds the invitee when the roles reverse, but not an outsider", () => {
+    expect(becameAvailable(invite, { busy: true }, "other")).toBe(true);
+    expect(becameAvailable(invite, { busy: true }, "outsider")).toBe(false);
+  });
+  it("does not remind someone already in the room or about a pending invitation", () => {
     expect(becameAvailable(invite, { busy: true }, "me", "waiting-room")).toBe(false);
     // Stale server membership after leaving this route must not suppress the reminder.
     expect(becameAvailable({ ...invite, self_in_session: true }, { busy: true }, "me")).toBe(true);

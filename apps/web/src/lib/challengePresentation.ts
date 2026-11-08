@@ -48,9 +48,9 @@ export function challengePresentation(row: Invitation, userId: string, currentSe
     return {
       title: `ההזמנה עם ${row.partner_name} אושרה`,
       detail: row.partner_in_session
-        ? `${row.partner_name} כבר בחדר ומחכה לכם. אתם במשחק אחר — צאו ממנו כשתרצו להצטרף.`
+        ? `${row.partner_name} כבר בחדר ומחכה לכם. אתם במשחק אחר.`
         : `אתם במשחק אחר. ההזמנה עם ${row.partner_name} מחכה כאן.`,
-      badge: "ממתינים לכם",
+      badge: row.partner_in_session ? "מחכים לכם בחדר" : "ההזמנה אושרה",
       selfHere,
       selfBusy,
     };
