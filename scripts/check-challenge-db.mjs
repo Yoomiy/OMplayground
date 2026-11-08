@@ -188,4 +188,52 @@ await db.query("SELECT set_config('playground.allow_game_session_authority_write
 try { await assert.rejects(()=>db.query("UPDATE game_sessions SET status='playing' WHERE id=$1",[voxel.session_id]),/voxel session changes require/); }
 finally { await db.query("SELECT set_config('playground.allow_game_session_authority_write','false',false)"); }
 console.log('PASS: independent invitations, resolved removal/atomic clean-all snapshots, durable missed redirects, entered-and-left presence, automatic fulfillment, no history, both-actor withdrawal at every phase, expiry, authorization and guarded switching');
+
+await db.exec('SET ROLE migration_owner');
+await db.exec(await readFile(new URL('../supabase/migrations/20261108130000_challenge_accept_and_enter.sql', import.meta.url),'utf8'));
+await db.exec('DELETE FROM player_game_claims');
+await db.exec('SET ROLE authenticated');
+await user(3); const recipientRoom=await send(2);
+await service("UPDATE game_sessions SET status='playing',connected_player_ids=ARRAY[$1::uuid],connected_player_names=ARRAY['Player 3'] WHERE id=$2",[id(3),recipientRoom.session_id]);
+await user(1); const incoming=await send(3);
+await user(3);
+// Old clients cannot accept while remaining claimed in another room.
+await assert.rejects(()=>respond(incoming.challenge_id,'accept'),/PLAYER_IN_ANOTHER_GAME/);
+assert.equal((await db.query('SELECT status,accepted_at FROM game_challenges WHERE id=$1',[incoming.challenge_id])).rows[0].status,'pending');
+await assert.rejects(()=>db.query('SELECT accept_game_challenge($1,$2)',[incoming.challenge_id,old.session_id]),/PLAYER_IN_ANOTHER_GAME/);
+assert.equal((await db.query('SELECT accepted_at FROM game_challenges WHERE id=$1',[incoming.challenge_id])).rows[0].accepted_at,null);
+await db.exec('SET ROLE migration_owner');
+assert.equal((await db.query('SELECT session_id FROM player_game_claims WHERE user_id=$1',[id(3)])).rows[0].session_id,recipientRoom.session_id);
+await db.exec('SET ROLE authenticated');
+// Explicit acceptance can leave a playing room; its runtime owns final departure.
+await db.exec('BEGIN');
+assert.equal((await db.query('SELECT accept_game_challenge($1,$2) AS id',[incoming.challenge_id,recipientRoom.session_id])).rows[0].id,incoming.session_id);
+assert.notEqual((await db.query("SELECT current_setting('playground.allow_game_session_authority_write',true) AS value")).rows[0].value,'true');
+await db.exec('COMMIT');
+const leftRoom=(await db.query('SELECT * FROM game_sessions WHERE id=$1',[recipientRoom.session_id])).rows[0];
+assert.equal(leftRoom.status,'playing');
+assert.ok(!leftRoom.connected_player_ids.includes(id(3)));
+assert.equal((await db.query('SELECT status FROM game_challenges WHERE id=$1',[incoming.challenge_id])).rows[0].status,'accepted');
+assert.equal((await db.query('SELECT accept_game_challenge($1) AS id',[incoming.challenge_id])).rows[0].id,incoming.session_id);
+await assert.rejects(()=>db.query("SELECT respond_game_challenge_internal($1,'accept')",[incoming.challenge_id]),/permission denied/);
+await assert.rejects(()=>db.query('SELECT prepare_challenge_entry_internal($1,NULL,true)',[incoming.challenge_id]),/permission denied/);
+await user(1); const challengerRoom=await send(4);
+await service("UPDATE game_sessions SET status='playing',connected_player_ids=ARRAY[$1::uuid],connected_player_names=ARRAY['Player 1'] WHERE id=$2",[id(1),challengerRoom.session_id]);
+await assert.rejects(()=>db.query('SELECT prepare_challenge_entry($1,$2)',[incoming.challenge_id,challengerRoom.session_id]),/CURRENT_GAME_STARTED/);
+await assert.rejects(()=>db.query('SELECT accept_game_challenge($1)',[incoming.challenge_id]),/CHALLENGE_NOT_FOUND/);
+await respond(challengerRoom.challenge_id,'cancel');
+const waitingTarget=await send(4);
+await user(4); const waitingOld=await send(2);
+await service("UPDATE game_sessions SET connected_player_ids=ARRAY[$1::uuid],connected_player_names=ARRAY['Player 4'] WHERE id=$2",[id(4),waitingOld.session_id]);
+await db.query('SELECT accept_game_challenge($1,$2)',[waitingTarget.challenge_id,waitingOld.session_id]);
+assert.equal((await db.query('SELECT status FROM game_challenges WHERE id=$1',[waitingOld.challenge_id])).rows[0].status,'pending');
+assert.equal((await db.query('SELECT status FROM game_sessions WHERE id=$1',[waitingOld.session_id])).rows[0].status,'waiting');
+await db.query('SELECT resolve_game_challenges($1)',[[waitingOld.challenge_id]]);
+assert.equal((await db.query('SELECT status FROM game_challenges WHERE id=$1',[waitingOld.challenge_id])).rows[0].status,'expired');
+await respond(waitingTarget.challenge_id,'decline');
+await assert.rejects(()=>db.query('SELECT accept_game_challenge($1)',[waitingTarget.challenge_id]),/CHALLENGE_UNAVAILABLE/);
+assert.equal((await db.query('SELECT status FROM game_challenges WHERE id=$1',[waitingTarget.challenge_id])).rows[0].status,'declined');
+await user(1);await respond(incoming.challenge_id,'cancel');
+assert.equal((await db.query('SELECT status FROM game_challenges WHERE id=$1',[incoming.challenge_id])).rows[0].status,'expired');
+console.log('PASS: non-superuser acceptance migration, atomic accept/entry rollback, explicit active-room departure, preserved waiting invitation, legacy endpoint guard, private helpers and challenger protection');
 await db.close();

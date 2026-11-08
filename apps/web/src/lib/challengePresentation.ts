@@ -39,10 +39,7 @@ export function challengePresentation(row: Invitation, userId: string, currentSe
         row.to_kid_id === userId
           ? `${row.partner_name} מזמין אתכם לשחק`
           : `ההזמנה נשלחה ל${row.partner_name}`,
-      detail:
-        row.to_kid_id === userId
-          ? "אפשר לקבל את ההזמנה או לוותר הפעם."
-          : "נעדכן כשנקבל תשובה. אפשר להמשיך להסתובב באפליקציה.",
+      detail: "",
       badge: row.to_kid_id === userId ? "הזמנה חדשה" : "ממתינים לתשובה",
       selfHere,
       selfBusy,
@@ -52,7 +49,7 @@ export function challengePresentation(row: Invitation, userId: string, currentSe
       title: `ההזמנה עם ${row.partner_name} אושרה`,
       detail: row.partner_in_session
         ? `${row.partner_name} כבר בחדר ומחכה לכם. אתם במשחק אחר — צאו ממנו כשתרצו להצטרף.`
-        : `אתם במשחק אחר. ההזמנה עם ${row.partner_name} מחכה כאן; לא נעביר אתכם אוטומטית.`,
+        : `אתם במשחק אחר. ההזמנה עם ${row.partner_name} מחכה כאן.`,
       badge: "ממתינים לכם",
       selfHere,
       selfBusy,

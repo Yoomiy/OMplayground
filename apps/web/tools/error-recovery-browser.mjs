@@ -16,29 +16,53 @@ const uid='00000000-0000-0000-0000-000000000001', other='00000000-0000-0000-0000
 const profile={id:uid,full_name:'Tester',username:'tester',role:'teacher',is_active:true,grade:'3',gender:'boy',avatar_color:'#8b5cf6',avatar_url:null,avatar_preset_id:null};
 const partner={id:other,full_name:'Friend',role:'kid',can_send:true};
 const message={id:'message',from_kid_id:other,to_kid_id:uid,from_display_name:'Friend',content:'Hello',is_read:false,created_at:new Date().toISOString()};
-window.fixture={challengeListeners:[],invites:[],departures:{},dismissals:[],withdrawals:[],requests:[],migrationMissing:true,malformedInbox:false,profileFailure:new URLSearchParams(location.search).has('profileFailure'),roomFailure:false,joinFailure:false,failSend:false,gameMounts:0};
+window.fixture={challengeListeners:[],invites:[],departures:{},dismissals:[],withdrawals:[],requests:[],entryCalls:[],inspectionCalls:0,roomStatus:'playing',migrationMissing:true,malformedInbox:false,profileFailure:new URLSearchParams(location.search).has('profileFailure'),roomFailure:false,joinFailure:false,failSend:false,gameMounts:0};
+function abortable(promise,signal){
+ if(!signal)return promise;
+ return new Promise((resolve,reject)=>{
+  const aborted=()=>resolve({data:null,error:{code:'ABORTED',message:'Request aborted'}});
+  if(signal.aborted){aborted();return;}
+  signal.addEventListener('abort',aborted,{once:true});
+  promise.then(value=>{signal.removeEventListener('abort',aborted);resolve(value);},error=>{signal.removeEventListener('abort',aborted);reject(error);});
+ });
+}
 Object.defineProperty(supabase.auth,'getSession',{value:async()=>({data:{session:{user:{id:uid}}},error:null})});
 Object.defineProperty(supabase.auth,'onAuthStateChange',{value:()=>({data:{subscription:{unsubscribe(){}}}})});
 Object.defineProperty(supabase,'from',{value:table=>{
- let fields='',filters={};
+ let fields='',filters={},signal;
  const result=async(single=false)=>{
    if(table==='kid_profiles'){
      if(window.fixture.profileFailure && fields.includes('username')) throw new Error('fixture profile transport');
      return {data:profile,error:null};
    }
    if(table==='game_sessions' && single){
+     if(fields==='status'){
+       window.fixture.inspectionCalls++;
+       if(window.fixture.inspectionHang)await new Promise(resolve=>window.fixture.finishInspection=resolve);
+       if(window.fixture.inspectionFailure)return {data:null,error:{code:'NETWORK',message:'fixture inspection failure'}};
+       return {data:window.fixture.roomStatus===null?null:{status:window.fixture.roomStatus},error:null};
+     }
      if(window.fixture.roomFailure || (filters.invitation_code && window.fixture.joinFailure)) throw new Error('fixture room transport');
      return {data:{id:'room',status:'playing',games:{name_he:'Fixture game',game_url:'chess'}},error:null};
    }
    return {data:single?null:[],error:null};
  };
- const q={select:value=>{fields=value;return q;},eq:(key,value)=>{filters[key]=value;return q;},in:()=>q,not:()=>q,contains:()=>q,order:()=>q,limit:()=>q,maybeSingle:()=>result(true),then:(resolve,reject)=>result().then(resolve,reject)};
+ const q={select:value=>{fields=value;return q;},eq:(key,value)=>{filters[key]=value;return q;},abortSignal:value=>{signal=value;return q;},in:()=>q,not:()=>q,contains:()=>q,order:()=>q,limit:()=>q,maybeSingle:()=>abortable(result(true),signal),then:(resolve,reject)=>result().then(resolve,reject)};
  return q;
 }});
 Object.defineProperty(supabase,'channel',{value:()=>{const c={on:(type,filter,callback)=>{if(filter?.table==='game_challenges')window.fixture.challengeListeners.push(callback);return c;},subscribe:()=>c,track:async()=>{},presenceState:()=>({})};return c;}});
 Object.defineProperty(supabase,'removeChannel',{value:async()=>{}});
-Object.defineProperty(supabase,'rpc',{value:async(name,args)=>{
+Object.defineProperty(supabase,'rpc',{value:(name,args)=>{
+ const request=(async()=>{
  window.fixture.requests.push(name);
+ if(name==='accept_game_challenge'||name==='prepare_challenge_entry'){
+   window.fixture.entryCalls.push({name,...args});
+   if(window.fixture.entryHang)await new Promise(resolve=>window.fixture.finishEntry=resolve);
+   if(window.fixture.entryFailure)return {data:null,error:{code:'P0001',message:'PLAYER_IN_ANOTHER_GAME'}};
+   const row=window.fixture.invites.find(row=>row.id===args.p_id);
+   if(name==='accept_game_challenge')row.status='accepted';
+   return {data:row.session_id,error:null};
+ }
  if(name==='list_game_challenges')return window.fixture.migrationMissing?{data:null,error:{code:'PGRST202',message:'missing function'}}:{data:structuredClone(window.fixture.invites)};
  if(name==='challenge_departure')return {data:window.fixture.departures[args.p_session_id]??null};
  if(name==='resolve_game_challenges'){
@@ -59,6 +83,9 @@ Object.defineProperty(supabase,'rpc',{value:async(name,args)=>{
  if(name==='get_private_thread')return {data:{partner,messages:[message]}};
  if(name==='send_private_message')return window.fixture.failSend?{error:{message:'fixture send failure'}}:{data:{}};
  return {data:null};
+ })();
+ request.abortSignal=signal=>abortable(request,signal);
+ return request;
 }});
 function Controls(){const navigate=useNavigate();window.fixture.navigate=navigate;return null;}
 window.history.replaceState(null,'','/home');
@@ -104,6 +131,8 @@ const server = await createServer({
       },
       load(id) {
         if (id === "/__recovery.tsx") return fixture;
+        if (process.argv.includes("--challenge-entry") && id.endsWith("/game/SoloGameContainer.tsx"))
+          return gameStandIn + '\nexport default GameSessionContainer;';
         if (
           /\/game\/(GameSessionContainer|RocketSessionContainer|WobbleSessionContainer)\.tsx$/.test(
             id,
@@ -147,7 +176,10 @@ try {
   await page.goto("http://127.0.0.1:19031/__recovery.html");
   await page.evaluate(() => (window.documentToken = "same document"));
   await page.getByText("שלום, Tester!").waitFor();
-  if (process.argv.includes("--challenges")) {
+  if (process.argv.includes("--challenge-entry")) {
+    await challengeEntryChecks(page);
+    assert.deepEqual(unexpected, []);
+  } else if (process.argv.includes("--challenges")) {
     await challengeChecks(page);
     assert.deepEqual(unexpected, []);
   } else {
@@ -288,6 +320,107 @@ try {
 } finally {
   await browser?.close();
   await server.close();
+}
+
+async function challengeEntryChecks(page) {
+  const panel = page.getByRole("dialog", { name: "הזמנות למשחק", exact: true });
+  const prompt = page.getByRole("dialog", { name: "מעבר להזמנה מאושרת", exact: true });
+  const openPanel = async () => {
+    if (!(await panel.isVisible()))
+      await page.getByRole("button", { name: "הזמנות למשחק, 1", exact: true }).click();
+  };
+  await page.evaluate(() => {
+    window.fixture.makeEntryInvite = (pending = false) => ({
+      id: "Entry", from_kid_id: pending ? "00000000-0000-0000-0000-000000000002" : "00000000-0000-0000-0000-000000000001",
+      to_kid_id: pending ? "00000000-0000-0000-0000-000000000001" : "00000000-0000-0000-0000-000000000002",
+      session_id: "target-room", game_id: "chess", status: pending ? "pending" : "accepted",
+      created_at: new Date().toISOString(), expires_at: new Date(Date.now() + 120000).toISOString(),
+      partner_name: "Friend", partner_role: "kid", game_name: "Chess", self_busy: true,
+      partner_busy: false, self_in_session: false, partner_in_session: true,
+      can_cancel: true, session_status: "waiting",
+    });
+    window.fixture.navigate("/solo/chess-solo");
+    window.fixture.migrationMissing = false;
+    window.fixture.invites = [window.fixture.makeEntryInvite()];
+    window.dispatchEvent(new Event("challenges-retry"));
+  });
+  await page.getByRole("button", { name: "Move 0", exact: true }).click();
+  await openPanel();
+  await panel.getByRole("button", { name: "כניסה לחדר", exact: true }).click();
+  await prompt.getByText("אתם באמצע משחק יחיד", { exact: false }).waitFor();
+  assert.equal(await page.evaluate(() => window.fixture.entryCalls.length), 0);
+  assert.equal(await page.evaluate(() => window.fixture.inspectionCalls), 0);
+  await prompt.getByRole("button", { name: "להישאר כאן" }).click();
+  await page.getByRole("button", { name: "Move 1", exact: true }).waitFor();
+  await openPanel();
+  await panel.getByRole("button", { name: "כניסה לחדר", exact: true }).click();
+  await prompt.getByRole("button", { name: "כן, לעבור לחדר" }).click();
+  await page.waitForURL("**/play/target-room?mode=player");
+
+  // The recipient confirms departure before acceptance; a failed switch stays pending.
+  await page.evaluate(() => {
+    window.fixture.roomStatus = "playing";
+    window.fixture.navigate("/play/current-room");
+    window.fixture.invites = [window.fixture.makeEntryInvite(true)];
+    window.dispatchEvent(new Event("challenges-changed"));
+  });
+  await openPanel();
+  await panel.getByRole("button", { name: "קבלה וכניסה", exact: true }).click();
+  await prompt.getByText("קבלת ההזמנה תוציא אתכם מהמשחק הפעיל", { exact: false }).waitFor();
+  assert.equal(await page.evaluate(() => window.fixture.invites[0].status), "pending");
+  await page.evaluate(() => (window.fixture.entryFailure = true));
+  await prompt.getByRole("button", { name: "קבלה וכניסה לחדר", exact: true }).click();
+  await panel.getByText("לא ניתן להיכנס כרגע", { exact: false }).waitFor();
+  assert.equal(await page.evaluate(() => window.fixture.invites[0].status), "pending");
+  assert.match(page.url(), /\/play\/current-room$/);
+  await page.evaluate(() => (window.fixture.entryFailure = false));
+  await panel.getByRole("button", { name: "קבלה וכניסה", exact: true }).click();
+  await prompt.getByRole("button", { name: "קבלה וכניסה לחדר", exact: true }).click();
+  await page.waitForURL("**/play/target-room?mode=player");
+  assert.deepEqual(await page.evaluate(() => window.fixture.entryCalls.at(-1)), {
+    name: "accept_game_challenge", p_id: "Entry", p_leave_session: "current-room",
+  });
+
+  // A hanging lookup is bounded and shared with a manual inspection, then recoverable.
+  await page.evaluate(() => {
+    window.fixture.inspectionHang = true;
+    window.fixture.invites = [window.fixture.makeEntryInvite()];
+    window.fixture.navigate("/play/unverified-room");
+    window.dispatchEvent(new Event("challenges-changed"));
+  });
+  await openPanel();
+  const calls = await page.evaluate(() => window.fixture.inspectionCalls);
+  await panel.getByRole("button", { name: "בדיקה וכניסה לחדר", exact: true }).click();
+  await panel.getByText("לא ניתן לבדוק את מצב החדר הנוכחי", { exact: false }).waitFor({ timeout: 12000 });
+  assert.equal(await page.evaluate(() => window.fixture.inspectionCalls), calls);
+  assert.equal(await panel.getByRole("button", { name: "בדיקה וכניסה לחדר", exact: true }).isEnabled(), true);
+  await page.evaluate(() => {
+    window.fixture.inspectionHang = false;
+    window.fixture.roomStatus = "paused";
+  });
+  await panel.getByRole("button", { name: "בדיקה וכניסה לחדר", exact: true }).click();
+  await page.waitForURL("**/play/target-room?mode=player");
+
+  // A late entry response cannot redirect a user who has moved to a different solo game.
+  await page.evaluate(() => {
+    window.fixture.entryHang = true;
+    window.fixture.navigate("/solo/chess-solo");
+  });
+  await openPanel();
+  await panel.getByRole("button", { name: "כניסה לחדר", exact: true }).click();
+  await prompt.getByRole("button", { name: "כן, לעבור לחדר" }).click();
+  await page.waitForFunction(() => !!window.fixture.finishEntry);
+  await page.evaluate(() => window.fixture.navigate("/solo/another-solo"));
+  await page.getByRole("button", { name: "הזמנות למשחק, 1", exact: true }).waitFor();
+  await page.evaluate(() => {
+    window.fixture.entryHang = false;
+    window.fixture.finishEntry();
+  });
+  await openPanel();
+  assert.equal(await panel.getByRole("button", { name: "כניסה לחדר", exact: true }).isEnabled(), true);
+  assert.match(page.url(), /\/solo\/another-solo$/);
+  assert.equal(await page.evaluate(() => window.documentToken), "same document");
+  console.log("PASS: solo entry/stay, acceptance confirms active-game departure, failed acceptance stays pending, bounded/coalesced inspection and stale entry cancellation");
 }
 
 async function challengeChecks(page) {

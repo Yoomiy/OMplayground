@@ -32,10 +32,12 @@ export function ChallengeDock() {
   const activity = useRef(gameNavigation);
   activity.current = gameNavigation;
   const [switchPrompt, setSwitchPrompt] = useState<Invitation | null>(null);
+  const switchFrom = useRef<string | null>(null);
   const switchDialog = useRef<HTMLDialogElement>(null);
   const prompted = useRef(new Set<string>());
   const entryFailed = useRef(new Set<string>());
   const entering = useRef(false);
+  const entryAbort = useRef<AbortController | null>(null);
   const entryBlocked = useRef(new Set<string>());
   const navigate = useNavigate();
   const navigateRef = useRef(navigate);
@@ -98,15 +100,25 @@ export function ChallengeDock() {
   rowsRef.current = rows;
   const enter = useCallback(async (row: Invitation, confirmed = false, automatic = false) => {
     if (entering.current || entryBlocked.current.has(row.id)) return;
+    if (confirmed && switchFrom.current !== activity.current.key) {
+      setSwitchPrompt(null);
+      return;
+    }
     entering.current = true;
+    const controller = new AbortController();
+    entryAbort.current = controller;
     const entryEpoch = generation.current;
+    const previousKey = activity.current.key;
+    setBusy((previous) => ({ ...previous, [row.id]: true }));
+    setErrors((previous) => ({ ...previous, [row.id]: "" }));
     let unavailable = false;
     try {
       const previousId = activity.current.sessionId;
       const phase = await activity.current.inspect();
       if (
         entryEpoch !== generation.current ||
-        activity.current.sessionId !== previousId ||
+        controller.signal.aborted ||
+        activity.current.key !== previousKey ||
         entryBlocked.current.has(row.id)
       )
         return;
@@ -115,36 +127,48 @@ export function ChallengeDock() {
         previousId,
         row.session_id,
         row.session_status,
+        row.status === "pending" ? "accept" : "enter",
       );
-      if (decision === "already-here") return;
+      if (decision === "already-here" && row.status !== "pending") return;
       if (decision === "unavailable") {
         unavailable = true;
-        throw new Error("המשחק הזה כבר הסתיים. ההזמנה נשארת ברשימה לעיון");
+        throw new Error("המשחק הזה כבר הסתיים. הרשימה תתעדכן");
       }
+      if (decision === "retry")
+        throw new Error("לא ניתן לבדוק את מצב החדר הנוכחי. ההזמנה נשמרה; לחצו שוב כדי לנסות מחדש");
       if (decision === "defer") {
-        if (confirmed) {
+        if (confirmed || !automatic) {
           setSwitchPrompt(null);
           setErrors((previous) => ({
             ...previous,
-            [row.id]: "המשחק הנוכחי התחיל בינתיים. ההזמנה מחכה לכם כאן",
+            [row.id]: phase === "classroom"
+              ? "כדי להיכנס להזמנה, צאו קודם מהכיתה. ההזמנה מחכה לכם כאן"
+              : "המשחק הנוכחי עדיין פעיל. ההזמנה מחכה לכם כאן",
           }));
           setOpen(true);
         } else showToast({ kind: "ready", challengeId: row.id });
         return;
       }
       if (decision === "confirm" && !confirmed) {
-        const key = `${previousId}:${row.id}`;
+        const key = `${activity.current.pathname}:${row.id}`;
         if (automatic && prompted.current.has(key)) return;
         prompted.current.add(key);
+        switchFrom.current = previousKey;
         setOpen(false);
         setSwitchPrompt(row);
         return;
       }
-      const { data, error } = await supabase.rpc("prepare_challenge_entry", {
+      const accepting = row.status === "pending";
+      const { data, error } = await supabase.rpc(accepting ? "accept_game_challenge" : "prepare_challenge_entry", {
         p_id: row.id,
         p_leave_session: previousId ?? null,
-      });
+      }).abortSignal(AbortSignal.any([controller.signal, AbortSignal.timeout(10000)]));
       if (error) {
+        if (!controller.signal.aborted)
+          reportCaughtError("Challenge room entry failed", error, {
+            appArea: "challenges", operation: accepting ? "accept-and-enter" : "prepare-entry", challengeId: row.id,
+            sessionId: row.session_id, code: error.code,
+          }, "game-server");
         unavailable = error.message.includes("SESSION_UNAVAILABLE");
         throw new Error(
           error.message.includes("CURRENT_GAME_STARTED")
@@ -156,11 +180,19 @@ export function ChallengeDock() {
         throw new Error("לא ניתן להיכנס כרגע. ההזמנה נשארה ברשימה ואפשר לנסות שוב");
       if (
         entryEpoch !== generation.current ||
-        activity.current.sessionId !== previousId ||
+        controller.signal.aborted ||
+        activity.current.key !== previousKey ||
         entryBlocked.current.has(row.id)
       )
         return;
       entryFailed.current.delete(row.id);
+      if (accepting) {
+        ++mutationVersion.current;
+        setRows((previous) => previous.map((invitation) =>
+          invitation.id === row.id ? { ...invitation, status: "accepted" } : invitation,
+        ));
+        window.dispatchEvent(new Event("challenges-changed"));
+      }
       setOpen(false);
       setSwitchPrompt(null);
       if (currentToast.current?.kind === "ready" && currentToast.current.challengeId === row.id)
@@ -168,10 +200,10 @@ export function ChallengeDock() {
       for (const invitation of rowsRef.current.filter(
         (invitation) => invitation.status === "accepted",
       ))
-        prompted.current.add(`${row.session_id}:${invitation.id}`);
+        prompted.current.add(`/play/${data}:${invitation.id}`);
       navigateRef.current(`/play/${data}?mode=player`);
     } catch (error) {
-      if (entryEpoch !== generation.current) return;
+      if (entryEpoch !== generation.current || controller.signal.aborted || activity.current.key !== previousKey) return;
       entryFailed.current.add(row.id);
       setFilter("all");
       if (unavailable)
@@ -186,8 +218,16 @@ export function ChallengeDock() {
       window.dispatchEvent(new Event("challenges-changed"));
     } finally {
       entering.current = false;
+      if (entryAbort.current === controller) entryAbort.current = null;
+      if (entryEpoch === generation.current)
+        setBusy((previous) => ({ ...previous, [row.id]: false }));
     }
   }, []);
+  useEffect(() => {
+    setSwitchPrompt(null);
+    switchFrom.current = null;
+    return () => entryAbort.current?.abort();
+  }, [gameNavigation.key]);
   useEffect(() => {
     const node = switchDialog.current;
     if (switchPrompt && node && !node.open) node.showModal();
@@ -203,10 +243,10 @@ export function ChallengeDock() {
         row.session_status !== "completed" &&
         !entryFailed.current.has(row.id) &&
         (gameNavigation.phase !== "waiting" ||
-          !prompted.current.has(`${gameNavigation.sessionId}:${row.id}`)),
+          !prompted.current.has(`${gameNavigation.pathname}:${row.id}`)),
     );
     if (next) void enter(next, false, true);
-  }, [rows, gameNavigation.phase, gameNavigation.sessionId, user?.id, switchPrompt, enter]);
+  }, [rows, gameNavigation.phase, gameNavigation.sessionId, gameNavigation.pathname, user?.id, switchPrompt, enter]);
   useEffect(() => {
     const epoch = ++generation.current;
     setRows([]);
@@ -383,37 +423,28 @@ export function ChallengeDock() {
       if (epoch === generation.current) setClearing(false);
     }
   }
-  async function act(row: Invitation, action: "accept" | "decline" | "cancel") {
+  async function act(row: Invitation, action: "decline" | "cancel") {
     const epoch = generation.current;
     ++mutationVersion.current;
-    if (action !== "accept") entryBlocked.current.add(row.id);
+    entryBlocked.current.add(row.id);
     setBusy((previous) => ({ ...previous, [row.id]: true }));
     try {
       await respondChallenge(row.id, action);
       if (epoch !== generation.current) return;
       ++mutationVersion.current;
-      setRows((previous) =>
-        action === "accept"
-          ? previous.map((invitation) =>
-              invitation.id === row.id ? { ...invitation, status: "accepted" } : invitation,
-            )
-          : previous.filter((invitation) => invitation.id !== row.id),
-      );
+      setRows((previous) => previous.filter((invitation) => invitation.id !== row.id));
       setErrors((previous) => ({ ...previous, [row.id]: "" }));
       window.dispatchEvent(new Event("challenges-changed"));
-      if (action === "accept") void enter({ ...row, status: "accepted" });
-      else {
-        if (switchPrompt?.id === row.id) setSwitchPrompt(null);
-        window.dispatchEvent(
-          new CustomEvent("challenge-withdrawn", {
-            detail: {
-              sessionId: row.session_id,
-              actor: user?.id,
-              closedRoom: row.session_status === "waiting",
-            },
-          }),
-        );
-      }
+      if (switchPrompt?.id === row.id) setSwitchPrompt(null);
+      window.dispatchEvent(
+        new CustomEvent("challenge-withdrawn", {
+          detail: {
+            sessionId: row.session_id,
+            actor: user?.id,
+            closedRoom: row.session_status === "waiting",
+          },
+        }),
+      );
     } catch (error) {
       if (epoch === generation.current) entryBlocked.current.delete(row.id);
       if (epoch === generation.current)
@@ -541,18 +572,16 @@ export function ChallengeDock() {
                         : "ההזמנה נשלחה"
                       : "התפניתם? ההזמנה עדיין מחכה לכם"}
                 </p>
-                <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                  {toast.kind === "update"
-                    ? "הרשימה התעדכנה. אפשר להמשיך באפליקציה."
-                    : toast.kind === "sent"
-                      ? "אפשר להמשיך באפליקציה. נעדכן כשנקבל תשובה."
-                      : (() => {
-                          const row = rows.find((row) => row.id === toast.challengeId);
-                          return row
-                            ? `${row.partner_name} ${row.partner_in_session ? "בחדר ומחכה לכם" : "אישר את ההזמנה"} · ${row.game_name}`
-                            : "";
-                        })()}
-                </p>
+                {toast.kind === "ready" && (
+                  <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                    {(() => {
+                      const row = rows.find((row) => row.id === toast.challengeId);
+                      return row
+                        ? `${row.partner_name} ${row.partner_in_session ? "בחדר ומחכה לכם" : "אישר את ההזמנה"} · ${row.game_name}`
+                        : "";
+                    })()}
+                  </p>
+                )}
               </div>
               <button
                 onClick={dismissToast}
@@ -585,9 +614,15 @@ export function ChallengeDock() {
         className="m-auto w-[calc(100vw-32px)] max-w-md rounded-3xl border border-violet-200 bg-white p-6 text-slate-900 shadow-2xl backdrop:bg-slate-950/40 dark:border-white/15 dark:bg-slate-900 dark:text-white"
         dir="rtl"
       >
-        <h2 className="text-lg font-black">לעבור לחדר של {switchPrompt?.partner_name}?</h2>
+        <h2 className="text-lg font-black">{switchPrompt?.status === "pending" ? "לקבל ולעבור לחדר של" : "לעבור לחדר של"} {switchPrompt?.partner_name}?</h2>
         <p className="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-300">
-          המשחק בחדר הנוכחי עדיין לא התחיל. ההזמנה הקודמת תישאר זמינה ותוכלו לחזור אליה.
+          {gameNavigation.phase === "playing" && switchPrompt?.status === "accepted"
+            ? "המשחק בחדר הנוכחי התחיל. אפשר להצטרף להזמנה אחרי שתצאו ממנו."
+            : gameNavigation.phase === "playing"
+            ? "קבלת ההזמנה תוציא אתכם מהמשחק הפעיל ותעביר אתכם לחדר החדש."
+            : gameNavigation.phase === "solo"
+              ? "אתם באמצע משחק יחיד. מעבר לחדר יעזוב את המשחק הנוכחי."
+              : "המשחק בחדר הנוכחי עדיין לא התחיל. ההזמנה הקודמת תישאר זמינה ותוכלו לחזור אליה."}
         </p>
         <div className="mt-5 flex gap-3">
           <button
@@ -596,7 +631,7 @@ export function ChallengeDock() {
               if (switchPrompt) void enter(switchPrompt, true);
             }}
           >
-            כן, לעבור לחדר
+            {switchPrompt?.status === "pending" ? "קבלה וכניסה לחדר" : "כן, לעבור לחדר"}
           </button>
           <button
             className="rounded-xl border px-4 py-3 text-sm font-bold"
@@ -720,13 +755,19 @@ export function ChallengeDock() {
                         <>
                           <button
                             className={`${button} bg-violet-600 text-white hover:bg-violet-500`}
-                            disabled={busy[row.id] || clearing}
-                            onClick={() => void act(row, "accept")}
+                            disabled={busy[row.id] || clearing || gameNavigation.phase === "classroom"}
+                            title={gameNavigation.phase === "classroom" ? "צאו מהכיתה לפני קבלת הזמנה למשחק" : undefined}
+                            onClick={() => void enter(row)}
                           >
                             <Check size={14} />
-                            {state.selfBusy ? "קבלת ההזמנה להמשך" : "קבלה וכניסה"}
+                            {busy[row.id] ? "בודקים את מצב החדר…" : "קבלה וכניסה"}
                           </button>
                         </>
+                      )}
+                      {row.status === "pending" && row.to_kid_id === user.id && gameNavigation.phase === "classroom" && (
+                        <p className="w-full text-xs leading-5 text-slate-500 dark:text-slate-400">
+                          צאו מהכיתה כדי לקבל את ההזמנה ולהיכנס למשחק.
+                        </p>
                       )}
                       {row.status === "accepted" &&
                         row.session_status !== "completed" &&
@@ -737,18 +778,20 @@ export function ChallengeDock() {
                               busy[row.id] ||
                               clearing ||
                               gameNavigation.phase === "playing" ||
-                              gameNavigation.phase === "unknown"
+                              gameNavigation.phase === "classroom"
                             }
                             title={
                               gameNavigation.phase === "playing"
                                 ? "ההזמנה מחכה לסיום המשחק הנוכחי"
-                                : gameNavigation.phase === "unknown"
-                                  ? "בודקים את מצב החדר הנוכחי"
-                                  : undefined
+                                : gameNavigation.phase === "classroom"
+                                  ? "צאו מהכיתה לפני מעבר לחדר משחק"
+                                  : gameNavigation.phase === "unknown"
+                                    ? "לחצו כדי לבדוק שוב את מצב החדר ולהיכנס"
+                                    : undefined
                             }
                             onClick={() => void enter(row)}
                           >
-                            כניסה לחדר
+                            {busy[row.id] ? "בודקים את מצב החדר…" : gameNavigation.phase === "unknown" ? "בדיקה וכניסה לחדר" : "כניסה לחדר"}
                             <ArrowLeft size={14} />
                           </button>
                         )}

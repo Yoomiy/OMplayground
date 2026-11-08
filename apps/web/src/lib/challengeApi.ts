@@ -96,7 +96,7 @@ export async function sendChallenge(args: {
 
 export async function respondChallenge(
   id: string,
-  action: "accept" | "decline" | "cancel",
+  action: "decline" | "cancel",
 ): Promise<void> {
   try {
     const { error } = await supabase.rpc("respond_game_challenge", { p_id: id, p_action: action });
@@ -122,6 +122,5 @@ export async function resolveChallenges(ids: string[]): Promise<void> {
     throw new Error("לא ניתן לבטל ולהסיר את ההזמנות כרגע. אפשר לנסות שוב");
   }
 }
-export const acceptChallenge = (c: GameChallengeRow) => respondChallenge(c.id, "accept");
 export const declineChallenge = (c: GameChallengeRow) => respondChallenge(c.id, "decline");
 export const expireOwnChallenge = (c: GameChallengeRow) => respondChallenge(c.id, "cancel");

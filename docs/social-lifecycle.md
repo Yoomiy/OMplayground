@@ -33,7 +33,15 @@ Sending a challenge closes the player action menu and shows a brief success toas
 
 ## Entry and lifecycle classification
 
-Apply `20261107140000_challenge_entry_navigation.sql` before deploying the updated client. The entry transaction locks and rechecks the old room, releases only the current user's old admission, and keeps the old invitation and saved roster intact. A start racing a waiting-room confirmation aborts the switch. Current completed/stopped, paused, or deleted rooms allow automatic entry; a waiting room asks; a playing room defers. Unknown status, solo games, and classroom editing routes are protected rather than guessed complete. Actual room status is observed through Realtime and polling, not inferred from the URL. A successful acceptance updates the local invitation immediately even if the subsequent list refresh fails. Other accepted invitations remain listed when one is chosen.
+Apply `20261107140000_challenge_entry_navigation.sql` before deploying the updated client. The entry transaction locks and rechecks the old room, releases only the current user's old admission, and keeps the old invitation and saved roster intact. A start racing a waiting-room confirmation aborts the switch. Current completed/stopped, paused, or deleted rooms allow automatic entry; a waiting room asks; a playing room defers. Unknown room status offers an explicit retry rather than authorizing departure. Solo games have a known local activity state and require confirmation before switching; classroom editing routes require leaving the classroom first. Actual room status is observed through Realtime and polling, not inferred from the URL. A successful acceptance updates the local invitation immediately even if the subsequent list refresh fails. Other accepted invitations remain listed when one is chosen.
+
+Apply `20261108130000_challenge_accept_and_enter.sql` before deploying the updated acceptance flow. For the invited player, acceptance means immediate entry, not accepting for later. From a waiting room, solo game or active multiplayer game, confirm departure before sending acceptance. Canceling the prompt leaves the invitation pending. Paused/completed rooms can switch directly. Unknown/failed room inspections do not accept; the player can retry. Classroom work remains protected until they leave it.
+
+`accept_game_challenge` accepts and prepares entry in one transaction. It locks sessions before invitations, validates the recipient, releases only their old admission and preserves any old waiting invitation. Failure rolls back acceptance and admission changes together. Explicit acceptance can leave an active game through its runtime's normal departure behavior; it does not fabricate a completed result. The legacy acceptance endpoint also checks entry eligibility. Internal helpers are unavailable to browser roles.
+
+The challenger follows a separate policy when the other child accepts later: an active game defers entry, a waiting room asks, and paused/completed rooms can switch automatically. A solo game can be left through the invitation's entry button after confirmation. Acceptance still remains a durable recovery point if navigation fails after the transaction succeeds.
+
+Current-room checks coalesce concurrent requests, time out after eight seconds, back off after failures and pause polling on incompatible schemas/statuses. Explicit retry remains available. Entry requests time out after ten seconds; route/account changes abort obsolete entry work and invalidate old confirmation prompts. Results from another solo game or room cannot redirect the current route.
 
 The main game server preserves never-started empty rooms as waiting, and retries failed natural-finish/stop writes through a completion queue, including after the in-memory room disappears. Rematch starts wait for pending final writes. Explicit terminal timestamps are repaired to completed during migration; ambiguous old paused data is preserved. Rocket and Wobble retain waiting-lobby checkpoints without classifying them as interrupted playing matches. Active-game disconnects remain resumable; they are not classified as successful completion.
 
@@ -71,3 +79,9 @@ node apps/web/tools/error-recovery-browser.mjs --challenges
 Rematch results offer acceptance and one exit action. The exit declines the offer (through the vote or normal disconnect path); there is no second decline button beside Home. Challenge cleanup sits in the list toolbar and resolves only the selected category; the All category covers every visible invitation. Player action sheets close on outside pointer interaction or Escape and have no large footer close button.
 
 Challenge events enqueue bounded, deduplicated toasts for incoming invitations, acceptance, decline, cancellation and expiry. Initial list loads, polling and Realtime share the same lifecycle comparison; a participant-visible lookup distinguishes removed invitations from fulfilled ones when Realtime was missed. Own withdrawal actions and fulfilled invitations do not produce misleading partner-decline alerts.
+
+Focused entry regression (solo confirmation/stay, recipient departure, failed acceptance, bounded inspection and stale navigation):
+
+```sh
+node apps/web/tools/error-recovery-browser.mjs --challenge-entry
+```
