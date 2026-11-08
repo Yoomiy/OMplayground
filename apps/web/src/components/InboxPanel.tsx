@@ -129,11 +129,26 @@ function InboxContent() {
                   onClick={() => inbox.select(t.partnerId, false)}
                   className={`mb-2 block w-full rounded-xl border p-3 text-right ${inbox.active === t.partnerId ? "bg-violet-100 dark:bg-violet-900" : ""}`}
                 >
-                  <b>{t.partner.full_name}</b> <span>{roleLabel(t.partner.role)}</span>{" "}
-                  {t.unreadCount > 0 && (
-                    <span aria-label={`${t.unreadCount} הודעות שלא נקראו`}>({t.unreadCount})</span>
-                  )}
-                  <p className="truncate text-xs">{t.lastMessage.content}</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <b className="block truncate">{t.partner.full_name}</b>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        {roleLabel(t.partner.role)}
+                      </span>
+                    </div>
+                    {t.unreadCount > 0 && (
+                      <span
+                        aria-label={`${t.unreadCount} הודעות שלא נקראו`}
+                        dir="ltr"
+                        className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-violet-600 px-1.5 text-[11px] font-bold leading-none text-white tabular-nums"
+                      >
+                        {t.unreadCount > 99 ? "99+" : t.unreadCount}
+                      </span>
+                    )}
+                  </div>
+                  <p className={`mt-1 truncate text-xs ${t.unreadCount > 0 ? "font-semibold text-slate-900 dark:text-slate-100" : "text-slate-500 dark:text-slate-400"}`}>
+                    {t.lastMessage.content}
+                  </p>
                 </button>
               ))}
             {inbox.hasThreads && (
