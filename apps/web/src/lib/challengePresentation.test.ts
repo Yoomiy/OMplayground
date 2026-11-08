@@ -41,8 +41,11 @@ describe("invitation perspective", () => {
   });
   it("describes the invitee being busy independently from my presence", () => {
     expect(
-      challengePresentation({ ...invitation, self_in_session: true, partner_busy: true }, "me")
-        .detail,
+      challengePresentation(
+        { ...invitation, self_in_session: true, partner_busy: true },
+        "me",
+        "second-room",
+      ).detail,
     ).toContain("נועם במשחק אחר");
   });
   it("works from the invited child perspective", () => {
@@ -52,6 +55,12 @@ describe("invitation perspective", () => {
         "me",
       ).detail,
     ).toContain("נועם כבר בחדר");
+  });
+  it("does not call me in the room after navigation away, even while server presence lags", () => {
+    const stale = { ...invitation, self_in_session: true };
+    expect(challengePresentation(stale, "me").selfHere).toBe(false);
+    expect(challengePresentation(stale, "me").badge).not.toBe("אתם בחדר");
+    expect(challengePresentation(stale, "me", "another-room").selfBusy).toBe(true);
   });
   it("ticks every second and clamps at zero", () => {
     const expiry = "2026-11-07T00:02:00Z";

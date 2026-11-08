@@ -1,3 +1,4 @@
+import { useChallengeDeparture } from "@/hooks/useChallengeDeparture";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Protected } from "@/components/Protected";
 import { lazy, Suspense, useMemo, useState } from "react";
@@ -199,12 +200,29 @@ function RoutedPages() {
 
 export default function App() {
   const { user } = useAuth();
+  const departure = useChallengeDeparture();
   return (
     <ThemeProvider>
       <div
         className="min-h-screen text-slate-800 dark:text-slate-100 transition-colors duration-200"
         dir="rtl"
       >
+        {departure.notice && (
+          <div
+            role="status"
+            className="fixed bottom-20 right-4 z-50 max-w-sm rounded-2xl border border-violet-200 bg-white p-4 text-sm font-bold text-slate-900 shadow-lg dark:border-white/15 dark:bg-slate-900 dark:text-white"
+          >
+            {departure.notice}
+            <button
+              type="button"
+              className="mr-3 rounded-lg px-2 py-1"
+              onClick={departure.dismiss}
+              aria-label="סגירת עדכון הזמנה"
+            >
+              ×
+            </button>
+          </div>
+        )}
         <PresenceProvider>
           <InboxProvider>
             <ErrorBoundary
@@ -223,7 +241,7 @@ export default function App() {
               resetKey={user?.id}
               className="fixed bottom-20 left-4 z-40 max-w-xs rounded-2xl border bg-white p-4 text-sm text-slate-800 shadow-lg dark:bg-slate-900 dark:text-white"
             >
-              <ChallengeDock />
+              <ChallengeDock key={user?.id ?? "anonymous"} />
             </ErrorBoundary>
             {user && (
               <ErrorBoundary

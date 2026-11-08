@@ -129,7 +129,7 @@ export function WobbleSessionContainer({ sessionId, backHref = '/home', backLabe
               {view.mode === 'cup' && <><h3 className="font-black">{view.complete ? 'דירוג הגביע הסופי' : 'דירוג הגביע'}</h3><ol className="space-y-2">{view.standings.map((row, index) => <li key={row.id} className="flex gap-3"><span>{index + 1}.</span><bdi className="min-w-0 flex-1 break-words">{row.name}</bdi><span>{row.points} נק׳</span></li>)}</ol></>}
               {!view.saved && <p role="status">ממתינים לאישור שמירת התוצאות…</p>}
               {!view.complete && view.canControl && <Button className={primary} disabled={!view.saved} onClick={() => game.control({ action: 'next' })}>המרוץ הבא</Button>}
-              {view.complete && !view.observer && <WobbleRematchControls view={view} error={game.error} control={game.control} />}
+              {view.complete && !view.observer && <WobbleRematchControls backHref={backHref} view={view} error={game.error} control={game.control} />}
             </>}
           </div>
         </section>}

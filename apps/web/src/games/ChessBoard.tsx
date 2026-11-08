@@ -196,10 +196,8 @@ export function ChessBoard({
   rematch,
   canRequestRematch,
   canVoteRematch,
-  canDeclineRematch,
   rematchClosed,
   acceptedRematch,
-  refusedRematch,
   onRequestRematch,
   onRespondRematch,
   onGoHome,
@@ -507,14 +505,6 @@ export function ChessBoard({
                   >
                     {acceptedRematch ? "אישרת משחק חוזר" : "אני רוצה משחק חוזר"}
                   </button>
-                  {canDeclineRematch && <button
-                    type="button"
-                    disabled={refusedRematch}
-                    className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-4 py-2 text-sm font-bold text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white disabled:opacity-50 transition duration-200"
-                    onClick={() => onRespondRematch?.(false)}
-                  >
-                    {refusedRematch ? "סירבת" : "לא הפעם — יציאה"}
-                  </button>}
                 </>
               ) : null}
               <button
@@ -548,7 +538,7 @@ export function ChessBoard({
                   className="rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 border border-violet-400/50 px-4 py-2 text-sm font-black text-white hover:shadow-[0_0_12px_rgba(139,92,246,0.3)] hover:-translate-y-0.5 transition duration-200"
                   onClick={onGoHome}
                 >
-                  חזרה הביתה
+                  {canVoteRematch && !acceptedRematch ? "לא הפעם — לבית" : "חזרה הביתה"}
                 </button>
               ) : null}
             </div>

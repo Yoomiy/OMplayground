@@ -84,10 +84,9 @@ export function RocketSessionContainer({ sessionId, backHref = '/home', backLabe
             <p>{view.rematch.accepted.length} שחקנים רוצים לשחק שוב. ממתינים לתשובות שאר השחקנים.</p>
             {!view.observer && !view.rematch.accepted.includes(view.selfUserId) && !view.rematch.refused.includes(view.selfUserId) && <div className="flex flex-wrap justify-center gap-3">
               <Button className={primary} onClick={() => game.control('rematch-response', { accept: true })}>כן, משחק חוזר</Button>
-              <Button className={secondary} onClick={() => game.control('rematch-response', { accept: false })}>לא הפעם — יציאה</Button>
             </div>}
           </>}
-          <Button className={secondary} asChild><Link to={backHref}>חזרה לבית</Link></Button>
+          <Button className={secondary} asChild><Link to={backHref}>{view.rematch && !view.rematchClosed && !view.observer && !view.rematch.accepted.includes(view.selfUserId) ? "לא הפעם — לבית" : "חזרה לבית"}</Link></Button>
         </section>}
         {waiting && <section className="absolute inset-0 overflow-auto bg-slate-50 p-4 dark:bg-slate-950 sm:p-6" aria-label="חדר המתנה">
           <div className="mx-auto max-w-3xl space-y-5">

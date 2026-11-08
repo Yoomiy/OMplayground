@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { becameAvailable, challengeAvailability } from "./challengeNotifications";
+import {
+  becameAvailable,
+  challengeAvailability,
+  challengeUpdateMessage,
+} from "./challengeNotifications";
 import type { Invitation } from "./challengePresentation";
 const invite: Invitation = {
   id: "one",
@@ -35,7 +39,8 @@ describe("available-again invitation reminders", () => {
   it("does not remind the recipient, someone already in the room, or about a pending invitation", () => {
     expect(becameAvailable(invite, { busy: true }, "other")).toBe(false);
     expect(becameAvailable(invite, { busy: true }, "me", "waiting-room")).toBe(false);
-    expect(becameAvailable({ ...invite, self_in_session: true }, { busy: true }, "me")).toBe(false);
+    // Stale server membership after leaving this route must not suppress the reminder.
+    expect(becameAvailable({ ...invite, self_in_session: true }, { busy: true }, "me")).toBe(true);
     expect(becameAvailable({ ...invite, status: "pending" }, { busy: true }, "me")).toBe(false);
   });
   it("keeps accepted invitations available beyond the old ready-window timestamp", () => {
@@ -54,4 +59,45 @@ describe("available-again invitation reminders", () => {
   });
   it("tracks game routes even before a membership update arrives", () =>
     expect(challengeAvailability(invite, "other-room").busy).toBe(true));
+});
+
+describe("significant invitation updates", () => {
+  it("announces incoming invitations and remote acceptance, but not unchanged snapshots", () => {
+    const incoming = {
+      ...invite,
+      from_kid_id: "other",
+      to_kid_id: "me",
+      status: "pending" as const,
+    };
+    expect(challengeUpdateMessage(incoming, undefined, "me")).toContain("הזמין");
+    expect(challengeUpdateMessage(incoming, incoming, "me")).toBeNull();
+    expect(challengeUpdateMessage(invite, { ...invite, status: "pending" }, "me")).toContain(
+      "אישר",
+    );
+  });
+  it("distinguishes a declined invitation from one fulfilled by entering together", () => {
+    expect(
+      challengeUpdateMessage(
+        { ...invite, status: "declined", withdrawn_by: "other" },
+        invite,
+        "me",
+      ),
+    ).toContain("ויתר");
+    expect(
+      challengeUpdateMessage({ ...invite, fulfilled_at: "2026-11-08T00:00:00Z" }, invite, "me"),
+    ).toBeNull();
+  });
+  it("does not replay the actor's own withdrawal, and explains expiration", () => {
+    expect(
+      challengeUpdateMessage({ ...invite, status: "expired", withdrawn_by: "me" }, invite, "me"),
+    ).toBeNull();
+    expect(
+      challengeUpdateMessage(
+        { ...invite, status: "expired" },
+        invite,
+        "me",
+        Date.parse(invite.expires_at) + 1,
+      ),
+    ).toContain("פג התוקף");
+  });
 });

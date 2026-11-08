@@ -10,9 +10,12 @@ export type Invitation = GameChallengeRow & {
   can_cancel: boolean;
   session_status?: string;
   withdrawn?: boolean;
+  withdrawn_by?: string | null;
+  fulfilled_at?: string | null;
 };
 export function challengePresentation(row: Invitation, userId: string, currentSession?: string) {
-  const selfHere = row.self_in_session || currentSession === row.session_id;
+  // Server presence can lag a departure (or refer to another tab). Only this route is "here".
+  const selfHere = currentSession === row.session_id;
   const selfBusy = !selfHere && (row.self_busy || !!currentSession);
   if (row.withdrawn)
     return {

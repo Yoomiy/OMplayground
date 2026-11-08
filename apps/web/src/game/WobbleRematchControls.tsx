@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { rematchEndMessage } from "@/lib/rematchPresentation";
 import { useEffect, useRef, useState } from 'react';
 import { Check, Loader2 } from 'lucide-react';
@@ -8,7 +9,8 @@ type RematchAction = 'rematch' | 'accept-rematch' | 'decline-rematch';
 const primary = 'bg-gradient-to-r from-violet-500 to-indigo-500 text-white hover:from-violet-400 hover:to-indigo-400';
 const secondary = 'border border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-white/80 dark:hover:bg-white/10';
 
-export function WobbleRematchControls({ view, error, control }: {
+export function WobbleRematchControls({ view, error, control, backHref = "/home" }: {
+  backHref?: string;
   view: Pick<WobbleView, 'selfUserId' | 'saved' | 'players' | 'rematch' | 'rematchClosed'>; error: string | null; control: (command: WobbleControl) => void;
 }) {
   const [pending, setPending] = useState<RematchAction | null>(null);
@@ -63,8 +65,8 @@ export function WobbleRematchControls({ view, error, control }: {
         {busy && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}{busy ? 'מצטרפים…' : 'משחק נוסף'}
       </Button> : <>
         {!accepted && <Button className={primary} disabled={disabled} onClick={() => send('accept-rematch')}>{declined ? 'בכל זאת רוצה לשחק' : 'אני רוצה לשחק'}</Button>}
-        {!declined && view.rematch.requestedBy !== view.selfUserId && <Button className={secondary} disabled={disabled} onClick={() => send('decline-rematch')}>לא הפעם — יציאה</Button>}
       </>}
+      <Button className={secondary} asChild><Link to={backHref}>{view.rematch && !accepted ? "לא הפעם — לבית" : "חזרה לבית"}</Link></Button>
     </div>
   </div>;
 }

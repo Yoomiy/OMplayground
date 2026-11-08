@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ComposeMessage } from "@/components/ComposeMessage";
 import { KidAvatar } from "@/components/KidAvatar";
@@ -21,6 +21,9 @@ export interface KidActionSheetProps {
 
 export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
   const navigate = useNavigate();
+  const menu = useRef<HTMLDivElement>(null);
+  const dismiss = useRef(onClose);
+  dismiss.current = onClose;
   const { user } = useAuth();
   const { profile } = useProfile();
   const [busy, setBusy] = useState<string | null>(null);
@@ -52,6 +55,22 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
     };
   }, [profile, kid]);
 
+  useEffect(() => {
+    if (!kid || composing) return;
+    const outside = (event: PointerEvent) => {
+      if (event.target instanceof Node && !menu.current?.contains(event.target)) dismiss.current();
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") dismiss.current();
+    };
+    document.addEventListener("pointerdown", outside, true);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", outside, true);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [kid?.id, composing]);
+
   if (!kid || !user || !profile) return null;
 
   async function challenge(gameId: string) {
@@ -63,7 +82,7 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
       await sendChallenge({
         toId: kid.id,
         toName: kid.full_name,
-        gameId
+        gameId,
       });
       onClose();
     } catch (e) {
@@ -101,6 +120,7 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
         }}
       >
         <div
+          ref={menu}
           className="max-h-[90vh] w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#150d32]/95 shadow-[0_8px_32px_rgba(0,0,0,0.15)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
           onClick={(e) => e.stopPropagation()}
         >
@@ -116,7 +136,9 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
               >
                 {kid.full_name}
               </h3>
-              <p className="truncate text-sm font-bold text-slate-500 dark:text-white/50">@{kid.username}</p>
+              <p className="truncate text-sm font-bold text-slate-500 dark:text-white/50">
+                @{kid.username}
+              </p>
             </div>
             <button
               type="button"
@@ -221,16 +243,6 @@ export function KidActionSheet({ kid, onClose }: KidActionSheetProps) {
                 </button>
               </section>
             ) : null}
-          </div>
-
-          <div className="border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
-            <button
-              className="w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 py-3 text-sm font-black text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition duration-200"
-              type="button"
-              onClick={onClose}
-            >
-              סגור
-            </button>
           </div>
         </div>
       </div>

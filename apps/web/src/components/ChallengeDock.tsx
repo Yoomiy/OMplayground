@@ -2,6 +2,7 @@ import { useGameNavigation } from "@/hooks/useGameNavigation";
 import { challengeEntryDecision } from "@/lib/gameNavigation";
 import {
   becameAvailable,
+  challengeUpdateMessage,
   challengeAvailability,
   type ChallengeAvailability,
 } from "@/lib/challengeNotifications";
@@ -10,14 +11,14 @@ import { useInbox } from "@/hooks/useInbox";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { Swords, Gamepad2, Clock3, MessageCircle, Check, X, ArrowLeft } from "lucide-react";
+import { Swords, Gamepad2, Clock3, MessageCircle, Check, X, ArrowLeft, Trash2 } from "lucide-react";
 import {
   challengePresentation,
   challengeCountdown,
   type Invitation,
 } from "@/lib/challengePresentation";
 import { useAuth } from "@/hooks/useAuth";
-import { respondChallenge } from "@/lib/challengeApi";
+import { respondChallenge, resolveChallenges } from "@/lib/challengeApi";
 import { parseInvitations } from "@/lib/challengePayload";
 import { backendUnavailable, FeatureRequestError, FeatureRetryGate } from "@/lib/featureRecovery";
 import { reportCaughtError } from "@/utils/telemetry";
@@ -35,12 +36,30 @@ export function ChallengeDock() {
   const prompted = useRef(new Set<string>());
   const entryFailed = useRef(new Set<string>());
   const entering = useRef(false);
+  const entryBlocked = useRef(new Set<string>());
   const navigate = useNavigate();
   const navigateRef = useRef(navigate);
   navigateRef.current = navigate;
-  const [toast, setToast] = useState<
-    { kind: "sent"; recipientName?: string } | { kind: "ready"; challengeId: string } | null
-  >(null);
+  type Toast =
+    | { kind: "sent"; recipientName?: string }
+    | { kind: "ready"; challengeId: string }
+    | { kind: "update"; message: string };
+  const [toast, setToast] = useState<Toast | null>(null);
+  const currentToast = useRef<Toast | null>(null);
+  const toastQueue = useRef<Toast[]>([]);
+  const updateSeen = useRef(new Set<string>());
+  const showToast = useCallback((next: Toast) => {
+    if (currentToast.current) toastQueue.current = [...toastQueue.current, next].slice(-5);
+    else {
+      currentToast.current = next;
+      setToast(next);
+    }
+  }, []);
+  const dismissToast = useCallback(() => {
+    const next = toastQueue.current.shift() ?? null;
+    currentToast.current = next;
+    setToast(next);
+  }, []);
   const previousAvailability = useRef(new Map<string, ChallengeAvailability>());
   const currentSession = location.pathname.startsWith("/play/")
     ? location.pathname.split("/")[2]
@@ -51,6 +70,7 @@ export function ChallengeDock() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<Record<string, boolean>>({});
   const [open, setOpen] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const [fullscreenHost, setFullscreenHost] = useState<HTMLElement | null>(null);
@@ -77,14 +97,19 @@ export function ChallengeDock() {
   const rowsRef = useRef(rows);
   rowsRef.current = rows;
   const enter = useCallback(async (row: Invitation, confirmed = false, automatic = false) => {
-    if (entering.current) return;
+    if (entering.current || entryBlocked.current.has(row.id)) return;
     entering.current = true;
     const entryEpoch = generation.current;
     let unavailable = false;
     try {
       const previousId = activity.current.sessionId;
       const phase = await activity.current.inspect();
-      if (entryEpoch !== generation.current || activity.current.sessionId !== previousId) return;
+      if (
+        entryEpoch !== generation.current ||
+        activity.current.sessionId !== previousId ||
+        entryBlocked.current.has(row.id)
+      )
+        return;
       const decision = challengeEntryDecision(
         phase,
         previousId,
@@ -104,7 +129,7 @@ export function ChallengeDock() {
             [row.id]: "המשחק הנוכחי התחיל בינתיים. ההזמנה מחכה לכם כאן",
           }));
           setOpen(true);
-        } else setToast({ kind: "ready", challengeId: row.id });
+        } else showToast({ kind: "ready", challengeId: row.id });
         return;
       }
       if (decision === "confirm" && !confirmed) {
@@ -129,11 +154,17 @@ export function ChallengeDock() {
       }
       if (typeof data !== "string" || !data)
         throw new Error("לא ניתן להיכנס כרגע. ההזמנה נשארה ברשימה ואפשר לנסות שוב");
-      if (entryEpoch !== generation.current || activity.current.sessionId !== previousId) return;
+      if (
+        entryEpoch !== generation.current ||
+        activity.current.sessionId !== previousId ||
+        entryBlocked.current.has(row.id)
+      )
+        return;
       entryFailed.current.delete(row.id);
       setOpen(false);
       setSwitchPrompt(null);
-      setToast(null);
+      if (currentToast.current?.kind === "ready" && currentToast.current.challengeId === row.id)
+        dismissToast();
       for (const invitation of rowsRef.current.filter(
         (invitation) => invitation.status === "accepted",
       ))
@@ -142,7 +173,7 @@ export function ChallengeDock() {
     } catch (error) {
       if (entryEpoch !== generation.current) return;
       entryFailed.current.add(row.id);
-      setFilter(unavailable ? "history" : "all");
+      setFilter("all");
       if (unavailable)
         setRows((previous) =>
           previous.map((invitation) =>
@@ -181,12 +212,24 @@ export function ChallengeDock() {
     setRows([]);
     setErrors({});
     setBusy({});
+    setClearing(false);
     seen.current.clear();
     previousAvailability.current.clear();
     prompted.current.clear();
     entryFailed.current.clear();
+    entryBlocked.current.clear();
+    toastQueue.current = [];
+    currentToast.current = null;
+    updateSeen.current.clear();
     setToast(null);
     if (!user) return;
+    const notify = (row: Invitation, previous?: Invitation) => {
+      const message = challengeUpdateMessage(row, previous, user.id);
+      const key = `${row.id}:${row.status}`;
+      if (!message || updateSeen.current.has(key) || entryBlocked.current.has(row.id)) return;
+      updateSeen.current.add(key);
+      showToast({ kind: "update", message });
+    };
     let fetching = false;
     const retryGate = new FeatureRetryGate();
     const refresh = async (manual = false) => {
@@ -203,6 +246,35 @@ export function ChallengeDock() {
           );
         const next = parseInvitations(data);
         retryGate.success();
+        const priorRows = rowsRef.current;
+        for (const row of next)
+          notify(
+            row,
+            priorRows.find((prior) => prior.id === row.id),
+          );
+        // Missing cards may be declined/expired or simply fulfilled. Resolve that distinction
+        // using participant-visible rows, without adding history back to the UI.
+        const missing = priorRows.filter((prior) => !next.some((row) => row.id === prior.id));
+        if (missing.length)
+          void (async () => {
+            try {
+              const result = await supabase
+                .from("game_challenges")
+                .select("id,status,withdrawn_by,fulfilled_at")
+                .in(
+                  "id",
+                  missing.map((row) => row.id),
+                );
+              if (result.error || !Array.isArray(result.data) || generation.current !== epoch)
+                return;
+              for (const row of result.data) {
+                const prior = missing.find((item) => item.id === row.id);
+                if (prior) notify({ ...prior, ...row }, prior);
+              }
+            } catch {
+              /* A notification lookup cannot interfere with the invitation list. */
+            }
+          })();
         const first = seen.current.has("__loaded");
         let automaticEntry: Invitation | undefined;
         for (const row of [...next].sort(
@@ -254,7 +326,12 @@ export function ChallengeDock() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "game_challenges" },
-        () => void refresh(),
+        (payload) => {
+          const row = payload.new as Partial<Invitation>;
+          const prior = rowsRef.current.find((item) => item.id === row.id);
+          if (prior) notify({ ...prior, ...row }, prior);
+          void refresh();
+        },
       )
       .subscribe();
     const timer = window.setInterval(() => void refresh(), 5000);
@@ -273,9 +350,43 @@ export function ChallengeDock() {
       window.removeEventListener("challenges-retry", onRetry);
       void supabase.removeChannel(channel).catch(() => {});
     };
-  }, [user?.id, enter]);
+  }, [user?.id, enter, showToast]);
+  async function remove(ids: string[]) {
+    const epoch = generation.current;
+    const resolving = rowsRef.current.filter((row) => ids.includes(row.id));
+    setClearing(true);
+    for (const id of ids) entryBlocked.current.add(id);
+    try {
+      await resolveChallenges(ids);
+      if (epoch !== generation.current) return;
+      ++mutationVersion.current;
+      setRows((previous) => previous.filter((row) => !ids.includes(row.id)));
+      setErrors((previous) => ({ ...previous, clear: "" }));
+      if (switchPrompt && ids.includes(switchPrompt.id)) setSwitchPrompt(null);
+      if (toast?.kind === "ready" && ids.includes(toast.challengeId)) dismissToast();
+      for (const row of resolving)
+        window.dispatchEvent(
+          new CustomEvent("challenge-withdrawn", {
+            detail: {
+              sessionId: row.session_id,
+              actor: user?.id,
+              closedRoom: row.session_status === "waiting",
+            },
+          }),
+        );
+      window.dispatchEvent(new Event("challenges-changed"));
+    } catch (error) {
+      for (const id of ids) entryBlocked.current.delete(id);
+      if (epoch === generation.current)
+        setErrors((previous) => ({ ...previous, clear: (error as Error).message }));
+    } finally {
+      if (epoch === generation.current) setClearing(false);
+    }
+  }
   async function act(row: Invitation, action: "accept" | "decline" | "cancel") {
     const epoch = generation.current;
+    ++mutationVersion.current;
+    if (action !== "accept") entryBlocked.current.add(row.id);
     setBusy((previous) => ({ ...previous, [row.id]: true }));
     try {
       await respondChallenge(row.id, action);
@@ -291,7 +402,20 @@ export function ChallengeDock() {
       setErrors((previous) => ({ ...previous, [row.id]: "" }));
       window.dispatchEvent(new Event("challenges-changed"));
       if (action === "accept") void enter({ ...row, status: "accepted" });
+      else {
+        if (switchPrompt?.id === row.id) setSwitchPrompt(null);
+        window.dispatchEvent(
+          new CustomEvent("challenge-withdrawn", {
+            detail: {
+              sessionId: row.session_id,
+              actor: user?.id,
+              closedRoom: row.session_status === "waiting",
+            },
+          }),
+        );
+      }
     } catch (error) {
+      if (epoch === generation.current) entryBlocked.current.delete(row.id);
       if (epoch === generation.current)
         setErrors((previous) => ({
           ...previous,
@@ -311,7 +435,7 @@ export function ChallengeDock() {
       next.set(row.id, challengeAvailability(row, currentSession));
     }
     previousAvailability.current = next;
-    if (ready && !open) setToast({ kind: "ready", challengeId: ready.id });
+    if (ready && !open) showToast({ kind: "ready", challengeId: ready.id });
   }, [rows, user?.id, currentSession, open]);
   useEffect(() => {
     if (!user) return;
@@ -319,18 +443,22 @@ export function ChallengeDock() {
       const detail = (event as CustomEvent<{ recipientName?: string }>).detail;
       setOpen(false);
       dialog.current?.close();
-      setToast({ kind: "sent", recipientName: detail?.recipientName });
+      showToast({ kind: "sent", recipientName: detail?.recipientName });
     };
     window.addEventListener("challenge-sent", sent);
     return () => window.removeEventListener("challenge-sent", sent);
   }, [user?.id]);
   useEffect(() => {
     if (!toast) return;
-    const timer = window.setTimeout(() => setToast(null), toast.kind === "ready" ? 15_000 : 6000);
+    const timer = window.setTimeout(dismissToast, toast.kind === "ready" ? 15_000 : 6000);
     return () => window.clearTimeout(timer);
-  }, [toast]);
+  }, [toast, dismissToast]);
   const invitations = rows.filter(
-    (row) => row.status === "accepted" || Date.parse(row.expires_at) > now,
+    (row) =>
+      (row.status === "accepted" ||
+        (row.status === "pending" && Date.parse(row.expires_at) > now)) &&
+      row.session_status !== "completed" &&
+      !row.withdrawn,
   );
   useEffect(() => {
     const node = dialog.current;
@@ -342,14 +470,12 @@ export function ChallengeDock() {
     else if (!open && node?.open) node.close();
   }, [open, invitations.length, errors.refresh]);
   if (!user || (!invitations.length && !errors.refresh && !toast && !switchPrompt)) return null;
-  const visible = invitations.filter((row) =>
-    filter === "history"
-      ? row.session_status === "completed"
-      : row.session_status !== "completed" &&
-        (filter === "all" ||
-          (filter === "incoming" ? row.to_kid_id === user.id : row.from_kid_id === user.id)),
+  const visible = invitations.filter(
+    (row) =>
+      filter === "all" ||
+      (filter === "incoming" ? row.to_kid_id === user.id : row.from_kid_id === user.id),
   );
-  const liveCount = invitations.filter((row) => row.session_status !== "completed").length;
+  const liveCount = invitations.length;
   const incoming = invitations.filter(
     (row) => row.status === "pending" && row.to_kid_id === user.id,
   ).length;
@@ -366,7 +492,7 @@ export function ChallengeDock() {
             aria-label={
               errors.refresh && !invitations.length
                 ? "הזמנות למשחק, לא זמין כרגע"
-                : `הזמנות למשחק, ${liveCount || "היסטוריה"}`
+                : `הזמנות למשחק, ${liveCount}`
             }
             className="fixed bottom-4 left-20 z-40 inline-flex h-14 min-w-14 items-center justify-center gap-2 rounded-2xl border border-violet-200 bg-white/95 px-4 font-bold text-violet-700 shadow-lg backdrop-blur-xl transition hover:bg-violet-50 dark:border-violet-400/25 dark:bg-slate-900/95 dark:text-violet-300 dark:hover:bg-slate-800"
           >
@@ -387,12 +513,12 @@ export function ChallengeDock() {
         )}
       {toast &&
         (toast.kind === "sent" ||
+          toast.kind === "update" ||
           invitations.some(
             (row) =>
               row.id === toast.challengeId &&
               row.session_id !== currentSession &&
-              !challengeAvailability(row, currentSession).busy &&
-              !row.self_in_session,
+              !challengeAvailability(row, currentSession).busy,
           )) &&
         createPortal(
           <div
@@ -407,25 +533,29 @@ export function ChallengeDock() {
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-black">
-                  {toast.kind === "sent"
-                    ? toast.recipientName
-                      ? `ההזמנה ל${toast.recipientName} נשלחה`
-                      : "ההזמנה נשלחה"
-                    : "התפניתם? ההזמנה עדיין מחכה לכם"}
+                  {toast.kind === "update"
+                    ? toast.message
+                    : toast.kind === "sent"
+                      ? toast.recipientName
+                        ? `ההזמנה ל${toast.recipientName} נשלחה`
+                        : "ההזמנה נשלחה"
+                      : "התפניתם? ההזמנה עדיין מחכה לכם"}
                 </p>
                 <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                  {toast.kind === "sent"
-                    ? "אפשר להמשיך באפליקציה. נעדכן כשנקבל תשובה."
-                    : (() => {
-                        const row = rows.find((row) => row.id === toast.challengeId);
-                        return row
-                          ? `${row.partner_name} ${row.partner_in_session ? "בחדר ומחכה לכם" : "אישר את ההזמנה"} · ${row.game_name}`
-                          : "";
-                      })()}
+                  {toast.kind === "update"
+                    ? "הרשימה התעדכנה. אפשר להמשיך באפליקציה."
+                    : toast.kind === "sent"
+                      ? "אפשר להמשיך באפליקציה. נעדכן כשנקבל תשובה."
+                      : (() => {
+                          const row = rows.find((row) => row.id === toast.challengeId);
+                          return row
+                            ? `${row.partner_name} ${row.partner_in_session ? "בחדר ומחכה לכם" : "אישר את ההזמנה"} · ${row.game_name}`
+                            : "";
+                        })()}
                 </p>
               </div>
               <button
-                onClick={() => setToast(null)}
+                onClick={dismissToast}
                 aria-label="סגירת הודעת הזמנה"
                 className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10"
               >
@@ -510,6 +640,11 @@ export function ChallengeDock() {
               </p>
             </div>
           </header>
+          {errors.clear && (
+            <p role="alert" className="px-5 pb-3 text-sm text-rose-600">
+              {errors.clear}
+            </p>
+          )}
           {errors.refresh && (
             <div role="alert" className="px-5 pb-3 text-sm text-amber-700 dark:text-amber-300">
               <p>{errors.refresh}</p>
@@ -528,7 +663,6 @@ export function ChallengeDock() {
                 ["all", "הכל"],
                 ["incoming", "אליי"],
                 ["sent", "שלחתי"],
-                ["history", "הסתיימו"],
               ].map(([value, label]) => (
                 <button
                   key={value}
@@ -539,6 +673,19 @@ export function ChallengeDock() {
                   {label}
                 </button>
               ))}
+            </div>
+            <div className="flex shrink-0 justify-end border-t border-slate-100 px-4 py-2 dark:border-white/10">
+              {" "}
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 disabled:opacity-50 dark:hover:bg-white/10"
+                disabled={clearing || !visible.length || Object.values(busy).some(Boolean)}
+                onClick={() => void remove(visible.map((row) => row.id))}
+                title="מבטל ומסיר את ההזמנות בקטגוריה הנוכחית. אם אתם בחדר שלהן, תצאו ממנו"
+              >
+                <Trash2 size={14} />
+                {clearing ? "מנקים…" : "ניקוי הכל"}
+              </button>
             </div>
             <div className="grid min-h-0 flex-1 content-start gap-3 overflow-y-auto px-4 pb-4 sm:grid-cols-2">
               {visible.map((row) => {
@@ -573,19 +720,11 @@ export function ChallengeDock() {
                         <>
                           <button
                             className={`${button} bg-violet-600 text-white hover:bg-violet-500`}
-                            disabled={busy[row.id]}
+                            disabled={busy[row.id] || clearing}
                             onClick={() => void act(row, "accept")}
                           >
                             <Check size={14} />
                             {state.selfBusy ? "קבלת ההזמנה להמשך" : "קבלה וכניסה"}
-                          </button>
-                          <button
-                            className={`${button} bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/10 dark:text-slate-300`}
-                            disabled={busy[row.id]}
-                            onClick={() => void act(row, "decline")}
-                          >
-                            <X size={14} />
-                            לא הפעם
                           </button>
                         </>
                       )}
@@ -595,6 +734,8 @@ export function ChallengeDock() {
                           <button
                             className={`${button} bg-violet-600 text-white hover:bg-violet-500`}
                             disabled={
+                              busy[row.id] ||
+                              clearing ||
                               gameNavigation.phase === "playing" ||
                               gameNavigation.phase === "unknown"
                             }
@@ -611,15 +752,25 @@ export function ChallengeDock() {
                             <ArrowLeft size={14} />
                           </button>
                         )}
-                      {row.from_kid_id === user.id && row.can_cancel && (
-                        <button
-                          className={`${button} text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/10`}
-                          disabled={busy[row.id]}
-                          onClick={() => void act(row, "cancel")}
-                        >
-                          ביטול הזמנה
-                        </button>
-                      )}
+                      <button
+                        className={`${button} text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/10`}
+                        disabled={busy[row.id] || clearing}
+                        onClick={() =>
+                          void act(row, row.from_kid_id === user.id ? "cancel" : "decline")
+                        }
+                        title={
+                          row.status === "accepted" ? "ביטול ההזמנה ויציאה מהמשחק שלה" : undefined
+                        }
+                      >
+                        <X size={14} />
+                        {row.session_id === currentSession
+                          ? "ביטול ויציאה"
+                          : row.status === "accepted"
+                            ? "ביטול והסרה"
+                            : row.from_kid_id === user.id
+                              ? "ביטול הזמנה"
+                              : "לא הפעם"}
+                      </button>
                       <button
                         className={`${button} mr-auto text-violet-600 hover:bg-violet-50 dark:text-violet-300 dark:hover:bg-violet-400/10`}
                         onClick={() => {
