@@ -12,7 +12,14 @@ equipment journeys are deferred manual qualification in
 [`voxel-qualification.yml`](../.github/workflows/voxel-qualification.yml).
 Their script maintenance remains open; they do not gate this release.
 The source workflows run on every push so a required status cannot be left waiting
-for a workflow skipped by path filters. Pull-request checks retain their path filters.
+for a workflow skipped by path filters. Voxel first checks changed paths and skips
+its expensive jobs unless `games/voxel/`, `apps/voxel-server/`,
+`apps/web/src/game/voxel/`, or the Voxel workflow/filter changes. Shared code and
+other web integration changes do not trigger
+those jobs; dispatch the workflow manually when those changes need Voxel coverage.
+A failed or unavailable comparison runs the jobs conservatively. Manual Voxel
+runs always execute the jobs.
+The classroom pull-request workflow retains its path filter.
 
 In the Vercel project, open **Settings → Build and Deployment → Deployment Checks**,
 choose **Add Checks**, and require the status above. It will appear after the first

@@ -2,7 +2,6 @@ name: Voxel runtime
 on:
   push:
   pull_request:
-    paths: ['games/voxel/**', 'apps/voxel-server/**', 'apps/web/**', 'packages/game-logic/src/recessSchedule.ts', 'packages/game-logic/package.json', 'packages/game-logic/tsconfig.json', 'packages/observability/**', 'supabase/migrations/*voxel*', 'package.json', 'package-lock.json', '.github/workflows/voxel.yml']
   workflow_dispatch:
     inputs:
       resilience_soak:
@@ -12,7 +11,22 @@ on:
 permissions:
   contents: read
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      voxel: ${{ steps.filter.outputs.voxel }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: filter
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: node .github/scripts/voxel-changes.cjs
   runtime:
+    needs: changes
+    if: needs.changes.outputs.voxel == 'true'
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -121,6 +135,8 @@ jobs:
             apps/voxel-server/test-results/
             apps/web/test-results/
   image:
+    needs: changes
+    if: needs.changes.outputs.voxel == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -140,6 +156,8 @@ jobs:
           path: apps/voxel-server/test-results/container-package.json
 
   resilience:
+    needs: changes
+    if: needs.changes.outputs.voxel == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
