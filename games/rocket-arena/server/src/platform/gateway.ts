@@ -1,5 +1,5 @@
 import { AdmissionError, enforceAdmission, type Admission, type PlatformProfile, type PlatformSession } from './admission.js';
-import { isWithinEffectiveRecess, type RecessWindow, type ClassRecessException } from './recess-schedule.js';
+import { isWithinPlaygroundRecess, type RecessWindow, type ClassRecessException } from './recess-schedule.js';
 import { platformLog } from './logging.js';
 import { randomUUID } from 'node:crypto';
 
@@ -101,7 +101,7 @@ export class PlatformGateway {
     }
     const { defaults, settings, exceptions } = this.schedules;
     const setting = settings.find(row => row.grade === profile.grade && row.gender === profile.gender);
-    return isWithinEffectiveRecess(new Date(), { defaultWindows: defaults, classSchedule: setting ? {
+    return isWithinPlaygroundRecess(new Date(), { defaultWindows: defaults, classSchedule: setting ? {
       overrideEnabled: setting.override_enabled, exceptions: exceptions.filter(row => row.grade === profile.grade && row.gender === profile.gender),
     } : null });
   }

@@ -72,6 +72,14 @@ export function isWithinEffectiveRecess(now: Date, snapshot: RecessScheduleSnaps
   return snapshot.defaultWindows.some((window) => includesMinute(window, dayOfWeek, minuteOfDay));
 }
 
+const RECESS_END_BUFFER_MS = 60_000;
+
+/** Play closes one minute before the next transition from recess to class time. */
+export function isWithinPlaygroundRecess(now: Date, snapshot: RecessScheduleSnapshot): boolean {
+  return isWithinEffectiveRecess(now, snapshot)
+    && isWithinEffectiveRecess(new Date(now.getTime() + RECESS_END_BUFFER_MS), snapshot);
+}
+
 /** Computes coalesced recess/class-time segments for the selected day. */
 export function buildEffectiveDaySchedule(dayOfWeek: number, snapshot: RecessScheduleSnapshot): EffectiveScheduleSegment[] {
   const boundaries = new Set<number>([0, 24 * 60]);

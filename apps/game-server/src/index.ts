@@ -25,7 +25,7 @@ import { createClient } from "@supabase/supabase-js";
 import {
   getGameModule,
   resolveRematch,
-  isWithinEffectiveRecess,
+  isWithinPlaygroundRecess,
   type ClassRecessException,
   type ClassRecessSchedule,
   type RecessWindow
@@ -422,7 +422,7 @@ async function isProfileWithinRecess(profile: { grade: string | null; gender: "b
         exceptions: data.exceptions.filter((row) => row.grade === profile.grade && row.gender === profile.gender)
       }
     : null;
-  return isWithinEffectiveRecess(new Date(), { defaultWindows: data.defaultWindows, classSchedule });
+  return isWithinPlaygroundRecess(new Date(), { defaultWindows: data.defaultWindows, classSchedule });
 }
 
 io.use(async (socket, next) => {

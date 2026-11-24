@@ -12,6 +12,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { build } from "vite";
+import tailwindcss from "tailwindcss";
 import { launchSoftwareBrowser } from "../../../games/voxel/tools/browser-harness.ts";
 const repo = fileURLToPath(new URL("../../../", import.meta.url)),
   temp = mkdtempSync(join(tmpdir(), "access-recovery-"));
@@ -27,6 +28,10 @@ try {
     "export function useAuth(){return {user:window.accessFixture.user,loading:false};}",
   );
   writeFileSync(
+    join(temp, "profile.ts"),
+    "export function useProfile(){return {profile:null,error:null,loading:false};}",
+  );
+  writeFileSync(
     join(temp, "supabase.ts"),
     "export const supabase={auth:{signOut:async()=>{window.accessFixture.signouts++;window.accessFixture.user=null;window.renderAccess();}}};",
   );
@@ -38,20 +43,29 @@ export async function getPlaygroundAccessForUser(id){const f=window.accessFixtur
   );
   writeFileSync(
     join(temp, "entry.tsx"),
-    `import React,{useEffect} from 'react';import{createRoot}from'react-dom/client';import{MemoryRouter,Routes,Route}from'react-router-dom';import{Protected}from'${join(repo, "apps/web/src/components/Protected.tsx")}';
+    `import React,{useEffect} from 'react';import{createRoot}from'react-dom/client';import{MemoryRouter,Routes,Route}from'react-router-dom';import{Protected}from'${join(repo, "apps/web/src/components/Protected.tsx")}';import '${join(repo, "apps/web/src/index.css")}';
 window.accessFixture={user:{id:'a'},next:{allowed:false,reason:'profile_error',message:'temporary'},checks:0,mounts:0,signouts:0,waiting:[],hold:false};
-function Game(){useEffect(()=>{window.accessFixture.mounts++;},[]);return <p data-game>playing</p>;}
-const root=createRoot(document.querySelector('#root'));window.renderAccess=()=>root.render(<MemoryRouter><Routes><Route path="/" element={<Protected><Game/></Protected>}/><Route path="/login" element={<p data-login>login</p>}/></Routes></MemoryRouter>);window.renderAccess();`,
+function Game(){useEffect(()=>{window.accessFixture.mounts++;},[]);return <div data-game><iframe title="Test game" srcDoc="<p>playing</p>"/><button type="button" onClick={(event)=>void event.currentTarget.parentElement.querySelector('iframe').requestFullscreen()}>Fullscreen iframe</button><button type="button" onClick={(event)=>void event.currentTarget.parentElement.requestFullscreen()}>Fullscreen wrapper</button></div>;}
+const root=createRoot(document.querySelector('#root'));window.renderAccess=()=>root.render(<MemoryRouter><Routes><Route path="/" element={<Protected key={window.accessFixture.routeKey}><Game/></Protected>}/><Route path="/login" element={<p data-login>login</p>}/></Routes></MemoryRouter>);window.renderAccess();`,
   );
   await build({
     configFile: false,
     root: temp,
     logLevel: "error",
     esbuild: { jsx: "automatic" },
+    css: {
+      postcss: {
+        plugins: [tailwindcss({
+          ...((await import("../tailwind.config.js")).default),
+          content: [join(repo, "apps/web/src/**/*.{ts,tsx}")],
+        })],
+      },
+    },
     resolve: {
       alias: [
         { find: "@/lib/recessAccess", replacement: join(temp, "access.ts") },
         { find: "@/hooks/useAuth", replacement: join(temp, "auth.ts") },
+        { find: "@/hooks/useProfile", replacement: join(temp, "profile.ts") },
         { find: "@/lib/supabase", replacement: join(temp, "supabase.ts") },
         { find: "@", replacement: join(repo, "apps/web/src") },
         { find: "react", replacement: join(repo, "node_modules/react") },
@@ -92,7 +106,7 @@ const root=createRoot(document.querySelector('#root'));window.renderAccess=()=>r
     }
     res.setHeader(
       "Content-Type",
-      file.endsWith(".js") ? "text/javascript" : "text/html",
+      file.endsWith(".js") ? "text/javascript" : file.endsWith(".css") ? "text/css" : "text/html",
     );
     res.end(readFileSync(file));
   });
@@ -114,13 +128,17 @@ const root=createRoot(document.querySelector('#root'));window.renderAccess=()=>r
     (window as any).accessFixture.next = {
       allowed: true,
       role: "kid",
-      expiresAt: Date.now() + 10000,
+      expiresAt: Date.now() + 120000,
     };
     [...document.querySelectorAll("button")]
       .find((button) => button.textContent?.trim() === "בדיקה חוזרת")!
       .click();
   });
   await page.locator("[data-game]").waitFor();
+  const warning = page.getByText("ההפסקה כמעט נגמרה!", { exact: true });
+  const reopened = page.getByText("ההפסקה התחילה! אפשר לחזור לשחק.", { exact: true });
+  assert.equal(await warning.count(), 0);
+  assert.equal(await reopened.count(), 0);
   await page.evaluate(() => {
     const f = (window as any).accessFixture;
     f.next = { allowed: false, reason: "schedule_error", message: "temporary" };
@@ -136,16 +154,42 @@ const root=createRoot(document.querySelector('#root'));window.renderAccess=()=>r
     await page.evaluate(() => (window as any).accessFixture.mounts),
     1,
   );
+  await page.getByRole("button", { name: "Fullscreen iframe" }).click();
+  await page.waitForFunction(() => document.fullscreenElement?.tagName === "IFRAME");
+  await page.clock.install();
+  await page.clock.pauseAt(new Date(Date.now() + 1000));
   await page.evaluate(() => {
     (window as any).accessFixture.next = {
       allowed: true,
       role: "kid",
-      expiresAt: Date.now() + 500,
+      expiresAt: Date.now() + 61000,
     };
     window.dispatchEvent(new Event("online"));
   });
+  await page.clock.runFor(500);
+  assert.equal(await warning.count(), 0);
+  await page.clock.runFor(500);
+  await warning.waitFor();
+  assert.equal(await warning.evaluate((text) => Boolean(text.closest(":popover-open"))), true);
+  await page.waitForFunction(() => !document.fullscreenElement);
+  await page.getByRole("button", { name: "Fullscreen wrapper" }).click();
+  await page.waitForFunction(() => document.fullscreenElement?.hasAttribute("data-game"));
+  assert.equal(await page.locator("[data-game]").count(), 1);
+  await page.getByRole("button", { name: "סגירת התראת הפסקה" }).click();
+  await warning.waitFor({ state: "detached" });
+  assert.equal(await page.evaluate(() => document.fullscreenElement?.hasAttribute("data-game")), true);
+  await page.evaluate(() => {
+    window.dispatchEvent(new Event("online"));
+    document.dispatchEvent(new Event("visibilitychange"));
+    (window as any).accessFixture.routeKey = "remounted";
+    (window as any).renderAccess();
+  });
+  await page.locator("[data-game]").waitFor();
+  await page.clock.runFor(100);
+  assert.equal(await warning.count(), 0);
+  await page.clock.fastForward(60000);
   await page
-    .getByText("לא ניתן להתחבר מחוץ לשעות ההפסקה", { exact: true })
+    .getByRole("heading", { name: "זמן לחזור לכיתה" })
     .waitFor();
   assert.equal(
     await page.evaluate(() => (window as any).accessFixture.signouts),
@@ -155,10 +199,16 @@ const root=createRoot(document.querySelector('#root'));window.renderAccess=()=>r
     (window as any).accessFixture.next = {
       allowed: true,
       role: "kid",
-      expiresAt: Date.now() + 10000,
+      expiresAt: Date.now() + 120000,
     };
   });
+  await page.clock.runFor(100);
   await page.locator("[data-game]").waitFor();
+  await reopened.waitFor();
+  await page.clock.fastForward(6000);
+  await reopened.waitFor({ state: "detached" });
+  await page.clock.fastForward(54000);
+  await warning.waitFor();
   await page.evaluate(() => {
     (window as any).accessFixture.hold = true;
     window.dispatchEvent(new Event("online"));
@@ -202,6 +252,9 @@ const root=createRoot(document.querySelector('#root'));window.renderAccess=()=>r
       initialOutageRetry: true,
       backgroundOutagePreservesGame: true,
       localRecessCutoff: true,
+      oneMinuteRecessWarning: true,
+      dismissibleWarningRemainsClosed: true,
+      automaticReopenConfirmation: true,
       automaticReopenWithoutLogin: true,
       staleAccountReplyIgnored: true,
       logoutOnlyExplicit: true,

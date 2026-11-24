@@ -1,8 +1,8 @@
 import { selectAvatar } from "../../../games/voxel/src/shared/avatars.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
-  isWithinEffectiveRecess,
-  effectiveRecessEndsAt,
+  isWithinPlaygroundRecess,
+  playgroundRecessEndsAt,
 } from "@playground/game-logic/dist/recessSchedule.js";
 import type {
   RecessWindow,
@@ -689,7 +689,7 @@ export class SchoolAccess {
       );
     if (
       schedule &&
-      !isWithinEffectiveRecess(new Date(now), {
+      !isWithinPlaygroundRecess(new Date(now), {
         defaultWindows: schedule.defaults,
         classSchedule: {
           overrideEnabled: schedule.setting,
@@ -706,7 +706,7 @@ export class SchoolAccess {
     if (
       schedule &&
       nextMinute < expiresAt &&
-      !isWithinEffectiveRecess(new Date(nextMinute), {
+      !isWithinPlaygroundRecess(new Date(nextMinute), {
         defaultWindows: schedule.defaults,
         classSchedule: {
           overrideEnabled: schedule.setting,
@@ -735,7 +735,7 @@ export class SchoolAccess {
       ...(schedule
         ? {
             recessEndsAt:
-              effectiveRecessEndsAt(new Date(now), {
+              playgroundRecessEndsAt(new Date(now), {
                 defaultWindows: schedule.defaults,
                 classSchedule: {
                   overrideEnabled: schedule.setting,

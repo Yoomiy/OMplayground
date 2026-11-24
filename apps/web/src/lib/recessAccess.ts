@@ -1,7 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import {
-  isWithinEffectiveRecess,
-  effectiveRecessEndsAt,
+  isWithinPlaygroundRecess,
+  playgroundRecessEndsAt,
   type ClassRecessException,
   type ClassRecessSchedule,
   type RecessWindow,
@@ -60,7 +60,7 @@ export function isKidAllowedByRecess(
   schedules: RecessWindow[],
   now = new Date(),
 ): boolean {
-  return isWithinEffectiveRecess(now, { defaultWindows: schedules });
+  return isWithinPlaygroundRecess(now, { defaultWindows: schedules });
 }
 
 async function loadClassRecessSchedule(
@@ -185,18 +185,12 @@ async function checkPlaygroundAccess(
       loadActiveDefaultRecessSchedules(),
       loadClassRecessSchedule(profileData.grade, profileData.gender),
     ]);
-    if (
-      isWithinEffectiveRecess(now, { defaultWindows: schedules, classSchedule })
-    ) {
-      return {
-        allowed: true,
-        role: "kid",
-        expiresAt:
-          effectiveRecessEndsAt(now, {
-            defaultWindows: schedules,
-            classSchedule,
-          }) ?? now.getTime() + 24 * 60 * 60000,
-      };
+    const snapshot = { defaultWindows: schedules, classSchedule };
+    if (isWithinPlaygroundRecess(now, snapshot)) {
+      const expiresAt = playgroundRecessEndsAt(now, snapshot);
+      return expiresAt === null
+        ? { allowed: true, role: "kid" }
+        : { allowed: true, role: "kid", expiresAt };
     }
   } catch {
     return {

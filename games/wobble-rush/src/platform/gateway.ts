@@ -9,7 +9,7 @@ import {
 import { platformLog } from "./logging"
 import {
   type ClassRecessException,
-  isWithinEffectiveRecess,
+  isWithinPlaygroundRecess,
   type RecessWindow,
 } from "./recess-schedule"
 
@@ -182,7 +182,7 @@ export class PlatformGateway {
     const setting = settings.find(
       (row) => row.grade === profile.grade && row.gender === profile.gender,
     )
-    return isWithinEffectiveRecess(new Date(), {
+    return isWithinPlaygroundRecess(new Date(), {
       defaultWindows: defaults,
       classSchedule: setting
         ? {

@@ -1,4 +1,11 @@
-import { buildEffectiveDaySchedule, isWithinEffectiveRecess, effectiveRecessEndsAt } from "./recessSchedule";
+import {
+  buildEffectiveDaySchedule,
+  effectiveRecessEndsAt,
+  isWithinEffectiveRecess,
+  isWithinPlaygroundRecess,
+  playgroundRecessEndsAt,
+  type RecessScheduleSnapshot,
+} from "./recessSchedule";
 
 describe("class recess schedule resolution", () => {
   const defaultWindows = [{ day_of_week: 0, start_time: "11:55", end_time: "12:15", is_active: true }];
@@ -34,6 +41,29 @@ describe("class recess schedule resolution", () => {
 });
 
 describe("scheduled recess closing", () => {
+  it("cuts off play one minute before the effective end of recess", () => {
+    const snapshot: RecessScheduleSnapshot = {
+      defaultWindows: [
+        { day_of_week: 0, start_time: "11:55", end_time: "12:05", is_active: true },
+        { day_of_week: 0, start_time: "12:05", end_time: "12:20", is_active: true },
+      ],
+      classSchedule: {
+        overrideEnabled: true,
+        exceptions: [
+          { day_of_week: 0, start_time: "12:10", end_time: "12:15", is_active: true, mode: "class_time" },
+        ],
+      },
+    };
+    const beforeCutoff = new Date("2026-04-19T09:08:59.999Z");
+    const cutoff = new Date("2026-04-19T09:09:00Z");
+    expect(isWithinPlaygroundRecess(new Date("2026-04-19T09:04:00Z"), snapshot)).toBe(true);
+    expect(isWithinPlaygroundRecess(beforeCutoff, snapshot)).toBe(true);
+    expect(playgroundRecessEndsAt(beforeCutoff, snapshot)).toBe(cutoff.getTime());
+    expect(isWithinPlaygroundRecess(cutoff, snapshot)).toBe(false);
+    expect(isWithinEffectiveRecess(cutoff, snapshot)).toBe(true);
+    expect(isWithinPlaygroundRecess(new Date("2026-04-19T09:15:00Z"), snapshot)).toBe(true);
+  });
+
   it("finds the actual closing boundary, including class-time overrides", () => {
     const defaults = [{ day_of_week: 0, start_time: "11:55", end_time: "12:15", is_active: true }];
     const now = new Date("2026-04-19T09:00:00Z");

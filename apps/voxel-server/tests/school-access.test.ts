@@ -273,12 +273,12 @@ test("class exceptions override recess defaults and conflicting or unavailable s
 
 test("authorization cannot cross a schedule minute, JWT expiry, or an overlong provider read", async () => {
   const f = fixture();
-  f.setNow(Date.parse("2026-10-25T09:59:58Z"));
+  f.setNow(Date.parse("2026-10-25T09:58:58Z"));
   assert.equal(
     (await f.access.authorize(f.token(), { room: f.room })).expiresAt,
     f.now + 2000,
   );
-  f.setNow(Date.parse("2026-10-25T10:00:00Z"));
+  f.setNow(Date.parse("2026-10-25T09:59:00Z"));
   await assert.rejects(
     f.access.authorize(f.token(), { room: f.room }),
     rejected("RECESS_CLOSED"),
@@ -595,7 +595,7 @@ test("connected school sessions check policy every thirty seconds and retain a r
   assert.equal(policy.expiresReason, "RECESS_CLOSED");
   assert.equal(
     policy.authorization.expiresAt,
-    Date.parse("2026-10-25T10:00:00Z"),
+    Date.parse("2026-10-25T09:59:00Z"),
   );
   const before = f.requests.length;
   f.setNow(f.now + 65000);
