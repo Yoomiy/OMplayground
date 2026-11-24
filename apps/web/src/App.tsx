@@ -190,7 +190,7 @@ function RoutedPages() {
               </Protected>
             }
           />
-          <Route path="/classroom/:roomCode" element={<ClassroomPage />} />
+          <Route path="/classroom/:roomCode" element={<ClassroomPage key={location.pathname} />} />
           <Route path="/classroom-ended" element={<ClassroomEndedPage />} />
           <Route path="/" element={<Navigate to="/home" replace />} />
         </Routes>

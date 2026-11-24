@@ -278,6 +278,24 @@ beforeEach(() => {
 });
 afterEach(() => jest.restoreAllMocks());
 
+test("an explicit account join requires a verified classroom account", async () => {
+  const f = await fixture();
+  const join = () => request(f.service.app).post("/rtc/classroom-token");
+  try {
+    const body = { roomCode: "ROOM", joinWithAccount: true, displayName: "Guest name" };
+    await join().send(body).expect(401);
+    await join().set("Authorization", "Bearer invalid-token").send(body).expect(401);
+    const account = await join().set("Authorization", "Bearer kid-token").send(body).expect(200);
+    expect(account.body.attendanceKey).toBe(`user:${account.body.userId}`);
+    const claims = await new TokenVerifier(f.config.livekitApiKey, f.config.livekitApiSecret).verify(account.body.token);
+    expect(claims.name).not.toBe(body.displayName);
+    const guest = await join().send({ roomCode: "ROOM", displayName: "Guest name" }).expect(200);
+    expect(guest.body.attendanceKey).toMatch(/^guest:/);
+  } finally {
+    await f.close();
+  }
+});
+
 test("guest fingerprint bans skip empty-room reloads, block new guest identities and allow account login", async () => {
   const f = await fixture();
   const fingerprint = `v1:${"a".repeat(64)}`;

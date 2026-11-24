@@ -526,6 +526,7 @@ export function mountClassroomRoutes(
       const {
         roomCode,
         displayName,
+        joinWithAccount,
         spectateMode,
         presenterToken: reconnectPresenterToken,
         guestAttendanceKey,
@@ -533,6 +534,7 @@ export function mountClassroomRoutes(
       } = (req.body ?? {}) as {
         roomCode?: string;
         displayName?: string;
+        joinWithAccount?: boolean;
         spectateMode?: "invisible" | "visible";
         presenterToken?: string;
         guestAttendanceKey?: string;
@@ -584,11 +586,12 @@ export function mountClassroomRoutes(
         return;
       }
       const trustedBrowserOrigin = isTrustedBrowserOrigin(req);
+      const requireAccount = joinWithAccount === true;
       const guestParticipantKey = classroomGuestAttendanceKey(
         roomCode,
         guestAttendanceKey,
       );
-      const delegate = trustedBrowserOrigin
+      const delegate = trustedBrowserOrigin && !requireAccount
         ? await findClassroomDelegateAuthority(supabaseAdmin, req, classroom.id)
         : null;
       if (!delegate && trustedBrowserOrigin && guestParticipantKey) {
@@ -652,6 +655,7 @@ export function mountClassroomRoutes(
         roomCode,
         displayName: displayName ?? "משתתף",
         accessToken,
+        requireAccount,
         spectateMode,
         delegate: delegate
           ? { id: delegate.delegateId, displayName: delegate.displayName }
@@ -689,6 +693,7 @@ export function mountClassroomRoutes(
           roomCode,
           displayName: displayName ?? "משתתף",
           accessToken,
+          requireAccount,
           spectateMode,
           delegate: delegate
             ? { id: delegate.delegateId, displayName: delegate.displayName }
@@ -787,7 +792,9 @@ export function mountClassroomRoutes(
             ? 503
             : reason === "classroom_blocked"
               ? 403
-              : 400;
+              : reason === "unauthorized"
+                ? 401
+                : 400;
         res.status(status).json({ error: reason, message: err.message });
         return;
       }

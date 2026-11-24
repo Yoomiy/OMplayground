@@ -8,6 +8,13 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { supabase } from "@/lib/supabase";
 import { getClassroomServerUrl } from "@/lib/classroomServerUrl";
 import { classroomGuestFingerprint } from "@/lib/classroomGuestFingerprint";
+import {
+  readClassroomAccountName,
+  readClassroomGuestName,
+  rememberClassroomAccountName,
+  rememberClassroomGuestName
+} from "@/lib/classroomNames";
+import { syntheticEmailToUsername } from "@/lib/username";
 import { reportCaughtError, reportTelemetry, setShellTelemetryTarget } from "@/utils/telemetry";
 import { getCorrelationId } from "@/utils/correlation";
 import { DrawingBoard, type DrawingBoardHandle } from "@/games/drawing/DrawingBoard";
@@ -17,6 +24,7 @@ import {
   type ClassroomPresentationPublisherHandle
 } from "@/components/ClassroomPresentationPublisher";
 import { ClassroomPresentationReceiver } from "@/components/ClassroomPresentationReceiver";
+import { ClassroomSignInDialog } from "@/components/ClassroomSignInDialog";
 import {
   ClassroomCameraRail,
   type ClassroomCameraParticipant
@@ -53,6 +61,7 @@ import {
   MessageSquare,
   Users,
   Shield,
+  LogIn,
   LogOut,
   Copy,
   Check,
@@ -172,74 +181,78 @@ function getGuestAttendanceKey(roomCode: string, displayName: string): string {
   }
 }
 
-const classroomDisplayNameStorageKey = "classroom-display-name";
-
-function readStoredClassroomDisplayName(): string {
-  try {
-    return window.localStorage.getItem(classroomDisplayNameStorageKey)?.trim().slice(0, 80) ?? "";
-  } catch {
-    return "";
-  }
-}
-
-function storeClassroomDisplayName(displayName: string): void {
-  const normalized = displayName.trim().slice(0, 80);
-  if (!normalized) return;
-  try {
-    window.localStorage.setItem(classroomDisplayNameStorageKey, normalized);
-  } catch {}
-}
-
 export function ClassroomPage() {
   useEffect(() => setShellTelemetryTarget("classroom-server"), []);
   const { roomCode } = useParams<{ roomCode: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { profile } = useProfile();
-  const { isAdmin } = useIsAdmin();
+  const { isAdmin, loading: adminLoading } = useIsAdmin();
+  const accountProfile = profile?.id === user?.id ? profile : null;
 
   // SECURITY & PERFORMANCE: Only evaluate admin check if URL explicitly requests spectate mode
-  const rawSpectateMode = searchParams.get("spectate") as "invisible" | "visible" | null;
-  const isRealAdmin = Boolean(rawSpectateMode && (isAdmin || (profile?.role as string) === "admin"));
-  const spectateMode = isRealAdmin ? rawSpectateMode : null;
-  const isStealthAdmin = isRealAdmin && spectateMode === "invisible";
-  const canManageClassroom = profile?.role === "teacher" || isAdmin;
+  const rawSpectateMode = searchParams.get("spectate");
+  const spectateMode = user && isAdmin && (rawSpectateMode === "invisible" || rawSpectateMode === "visible")
+    ? rawSpectateMode : null;
+  const checkingSpectator = Boolean(user && adminLoading && (rawSpectateMode === "invisible" || rawSpectateMode === "visible"));
 
   // Classroom Session DB metadata
   const [sessionData, setSessionData] = useState<ClassroomSessionData | null>(null);
   const [loadingSession, setLoadingSession] = useState(true);
   const [sessionError, setSessionError] = useState<string | null>(null);
 
-  // A remembered classroom identity is treated like an authenticated profile:
-  // it bypasses the guest-name form entirely.
-  const [storedGuestName] = useState(readStoredClassroomDisplayName);
-  const [guestName, setGuestName] = useState(storedGuestName);
-  const guestNameLocked = Boolean(storedGuestName);
+  const [rememberedAccount, setRememberedAccount] = useState(readClassroomAccountName);
+  const [rememberedGuestName, setRememberedGuestName] = useState(readClassroomGuestName);
+  const [guestNameDraft, setGuestNameDraft] = useState("");
+  const [showAccountDialog, setShowAccountDialog] = useState(false);
+  const joinButtonRef = useRef<HTMLButtonElement>(null);
+  const userId = user?.id;
+  const currentUserId = useRef(userId);
+  currentUserId.current = userId;
+  const accountUsername = syntheticEmailToUsername(user?.email) || accountProfile?.username?.trim() || "";
+  const metadataName = user?.user_metadata?.full_name;
+  const accountDisplayName = accountProfile?.full_name?.trim() ||
+    (rememberedAccount?.userId === userId ? rememberedAccount?.displayName : "") ||
+    (typeof metadataName === "string" ? metadataName.trim() : "") || accountUsername;
+  const savedGuestName = rememberedAccount?.displayName || rememberedGuestName;
+  const resolvedDisplayName = user ? accountDisplayName || "משתמש" : savedGuestName || guestNameDraft.trim();
 
-  // Auto-fill display name if user is logged in
-  const resolvedDisplayName = useMemo(() => {
-    if (user) {
-      return (profile?.full_name || profile?.username || user.email || "משתמש").trim();
-    }
-    return guestName.trim();
-  }, [user, profile, guestName]);
-
-  // A recess logout turns a child into the same unauthenticated classroom
-  // entry flow as a guest. Remember their last known classroom name locally
-  // so they do not have to enter it again.
   useEffect(() => {
-    if (user && profile?.role === "kid") {
-      storeClassroomDisplayName(resolvedDisplayName);
-    }
-  }, [user, profile?.role, resolvedDisplayName]);
+    if (!userId || !accountDisplayName) return;
+    const accountName = { userId, username: accountUsername, displayName: accountDisplayName };
+    rememberClassroomAccountName(accountName);
+    setRememberedAccount(accountName);
+  }, [userId, accountUsername, accountDisplayName]);
 
   // LiveKit Connection & Room state
   const [room, setRoom] = useState<Room | null>(null);
   const roomRef = useRef<Room | null>(null);
+  const connectionRequestRef = useRef<AbortController | null>(null);
+  const rejoinMediaPreferences = useRef<{ microphone: boolean; camera: boolean } | null>(null);
   const isEndingClassroomRef = useRef(false);
   const classroomEndedByHostRef = useRef(false);
   const [connState, setConnState] = useState<"disconnected" | "connecting" | "connected">("disconnected");
+  const [rejoiningWithAccount, setRejoiningWithAccount] = useState(false);
+  const [roomAccountId, setRoomAccountId] = useState<string | null>(null);
+  const [roomRole, setRoomRole] = useState<string | null>(null);
+  const [isStealthAdmin, setIsStealthAdmin] = useState(false);
+  const canManageClassroom = Boolean(user && roomAccountId === user.id && (roomRole === "teacher" || roomRole === "admin"));
+  const canRejoinWithAccount = Boolean(user && connState === "connected" && roomAccountId !== user.id);
+  const closeAccountDialog = useCallback(() => setShowAccountDialog(false), []);
+
+  useEffect(() => {
+    if (!showAccountDialog || !user || connState === "connected") return;
+    closeAccountDialog();
+    window.requestAnimationFrame(() => joinButtonRef.current?.focus());
+  }, [showAccountDialog, user, connState, closeAccountDialog]);
+
+  useEffect(() => () => {
+    connectionRequestRef.current?.abort();
+    connectionRequestRef.current = null;
+    void roomRef.current?.disconnect().catch(() => {});
+    roomRef.current = null;
+  }, [roomCode]);
   const [connError, setConnError] = useState<string | null>(null);
   const [classroomNotice, setClassroomNotice] = useState<{ text: string; type: "info" | "success" | "warn" } | null>(null);
   const [kickTarget, setKickTarget] = useState<CustomParticipantInfo | null>(null);
@@ -515,7 +528,7 @@ export function ClassroomPage() {
             appArea: "classroom",
             event: "CLASSROOM_DRAW_SOCKET_CONNECTING",
             roomCode,
-            isGuest: !user?.id
+            isGuest: roomAccountId === null
           }
         },
         "game-server"
@@ -632,7 +645,7 @@ export function ClassroomPage() {
       setBoardInitialYjsSyncToken(null);
       setBoardInitialViewport(null);
     };
-  }, [classroomBoardToken, connState, drawSessionId, roomCode, user?.id]);
+  }, [classroomBoardToken, connState, drawSessionId, roomCode, roomAccountId]);
 
 
   // Fetch classroom metadata. The drawing session socket is the source of whiteboard state.
@@ -773,7 +786,7 @@ export function ClassroomPage() {
     } catch {}
 
     // Skip stealth invisible admin from participant list & grid
-    if (!localMetadata.hidden && !isStealthAdmin) {
+    if (!localMetadata.hidden) {
       const localIsHost = localMetadata.isHost === true;
       const localPerm = individualPermissionsRef.current[local.identity] ?? { allowMic: true, allowCam: true };
       list.push({
@@ -887,7 +900,7 @@ export function ClassroomPage() {
     setScreenShareParticipant(screenSharing || null);
     const presenting = list.find((p) => p.identity === presenterIdentityRef.current && p.presentationTrack != null);
     setPresentationParticipant(presenting || null);
-  }, [isStealthAdmin]);
+  }, []);
 
   const privateChatRecipients = useMemo(
     () => participants.filter((participant) =>
@@ -903,27 +916,33 @@ export function ClassroomPage() {
   const totalUnreadChatCount = unreadChatCount + Object.values(unreadPrivateCounts).reduce((sum, count) => sum + count, 0);
 
   // Connect to LiveKit Room
-  const connectToRoom = async () => {
-    if (!roomCode) return;
-    cancelHandSyncRef.current?.();
-    handStateRef.current.clear();
-    setIsHandRaised(false);
-    setConnState("connecting");
-    setConnError(null);
-    setDrawSessionId(null);
-    setClassroomBoardToken(null);
-
+  const connectToRoom = async (rejoinWithAccount = false) => {
+    if (!roomCode || authLoading || checkingSpectator || connectionRequestRef.current) return;
+    const currentRoom = roomRef.current;
+    if (rejoinWithAccount ? !currentRoom || !canRejoinWithAccount : currentRoom) return;
     if (!resolvedDisplayName) {
       setConnError("נא להזין שם תצוגה לפני ההתחברות.");
-      setConnState("disconnected");
       return;
     }
 
+    const controller = new AbortController();
+    const { signal } = controller;
+    connectionRequestRef.current = controller;
+    let connectingRoom: Room | null = null;
+    let mediaPreferences = rejoinMediaPreferences.current;
+    setConnError(null);
+    if (rejoinWithAccount) setRejoiningWithAccount(true);
+    else setConnState("connecting");
+
     try {
       const session = (await supabase.auth.getSession()).data.session;
+      if (session?.user?.id !== userId) {
+        throw new Error("החשבון השתנה. נסו שוב כדי להצטרף לכיתה.");
+      }
       const response = await fetch(`${getClassroomServerUrl()}/rtc/classroom-token`, {
         method: "POST",
         credentials: "include",
+        signal,
         headers: {
           "Content-Type": "application/json",
           "x-correlation-id": getCorrelationId(),
@@ -932,10 +951,11 @@ export function ClassroomPage() {
         body: JSON.stringify({
           roomCode,
           displayName: resolvedDisplayName,
+          joinWithAccount: user ? true : undefined,
           spectateMode: spectateMode ?? undefined,
-          presenterToken: readPresenterSessionToken(roomCode) ?? undefined,
+          presenterToken: user ? undefined : readPresenterSessionToken(roomCode) ?? undefined,
           guestAttendanceKey: user ? undefined : getGuestAttendanceKey(roomCode, resolvedDisplayName),
-          guestFingerprint: session?.access_token ? undefined : await classroomGuestFingerprint(roomCode!)
+          guestFingerprint: user ? undefined : await classroomGuestFingerprint(roomCode)
         })
       });
 
@@ -970,8 +990,35 @@ export function ClassroomPage() {
         presentationTitle: issuedPresentationTitle,
         presenterToken: issuedPresenterToken
       } = await response.json();
+      if (signal.aborted || classroomEndedByHostRef.current) return;
+      if (userId !== currentUserId.current) {
+        throw new Error("החשבון השתנה. נסו שוב כדי להצטרף לכיתה.");
+      }
+      if (userId && issuedAttendanceKey !== `user:${userId}`) {
+        throw new Error("לא ניתן להצטרף לכיתה עם החשבון הזה. בדקו שהחשבון פעיל ונסו שוב.");
+      }
+      if (typeof token !== "string" || !token || typeof serverUrl !== "string" || !serverUrl) {
+        throw new Error("לא ניתן להתחבר לחדר הווידאו כרגע. נסו שוב.");
+      }
+      if (currentRoom) {
+        if (roomRef.current !== currentRoom) return;
+        mediaPreferences = {
+          microphone: currentRoom.localParticipant.isMicrophoneEnabled,
+          camera: currentRoom.localParticipant.isCameraEnabled,
+        };
+        rejoinMediaPreferences.current = mediaPreferences;
+        if (!await disconnectFromRoom(true) || signal.aborted || classroomEndedByHostRef.current) return;
+      }
+
+      cancelHandSyncRef.current?.();
+      handStateRef.current.clear();
+      individualPermissionsRef.current = {};
+      setIndividualPermissions({});
+      setIsHandRaised(false);
       setIsDelegatedHost(Boolean(isDelegate));
       setCanUseWhiteboard(Boolean(issuedCanDrawWhiteboard));
+      setCanUseMic(Boolean(canPublishMicrophone));
+      setCanUseCam(Boolean(canPublishCamera));
       setClassroomBoardToken(
         typeof issuedClassroomBoardToken === "string" ? issuedClassroomBoardToken : null
       );
@@ -998,8 +1045,9 @@ export function ClassroomPage() {
       presenterIdentityRef.current = typeof issuedPresenterIdentity === "string" ? issuedPresenterIdentity : null;
       presenterEpochRef.current = Number.isInteger(issuedPresenterEpoch) ? issuedPresenterEpoch : 0;
       presenterTokenRef.current = typeof issuedPresenterToken === "string" ? issuedPresenterToken : null;
-      if (typeof issuedPresenterToken === "string") writePresenterSessionToken(roomCode, issuedPresenterToken);
-      const isUserHost = Boolean(tokenIsHost || isAdmin || (profile?.role as string) === "admin" || role === "admin");
+      writePresenterSessionToken(roomCode, typeof issuedPresenterToken === "string" ? issuedPresenterToken : null);
+      const isUserHost = tokenIsHost === true;
+      const isStealthAdmin = role === "admin" && spectateMode === "invisible";
       setIsHost(isUserHost);
 
       reportTelemetry({
@@ -1013,6 +1061,10 @@ export function ClassroomPage() {
         adaptiveStream: true,
         dynacast: true
       });
+      connectingRoom = lkRoom;
+      signal.addEventListener("abort", () => {
+        void lkRoom.disconnect().catch(() => {});
+      }, { once: true });
 
       // Handle LiveKit Data Channel Messages (Chat, Reactions, Hand Raise, Controls)
       lkRoom.on(RoomEvent.DataReceived, (payload: Uint8Array, participant?: Participant) => {
@@ -1370,15 +1422,27 @@ export function ClassroomPage() {
       });
 
       // Connect to LiveKit room with timeout safety to prevent hanging on WebRTC PC connection errors
-      const connectPromise = lkRoom.connect(serverUrl, token);
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("לא ניתן להשלים חיבור PeerConnection בזמן (Timeout). נא לבדוק את החיבור לרשת ולנסות שוב.")), 10000)
-      );
-
-      await Promise.race([connectPromise, timeoutPromise]);
+      let connectTimeout: number | undefined;
+      try {
+        const timeout = new Promise<never>((_, reject) => {
+          connectTimeout = window.setTimeout(() => reject(new Error("לא ניתן להתחבר לחדר הווידאו בזמן. בדקו את החיבור ונסו שוב.")), 10000);
+        });
+        await Promise.race([lkRoom.connect(serverUrl, token), timeout]);
+      } finally {
+        window.clearTimeout(connectTimeout);
+      }
+      if (signal.aborted || classroomEndedByHostRef.current) return;
       roomRef.current = lkRoom;
+      rejoinMediaPreferences.current = null;
       setRoom(lkRoom);
+      setRoomAccountId(userId ?? null);
+      setRoomRole(role);
+      setIsStealthAdmin(isStealthAdmin);
       setConnState("connected");
+      if (!user && !savedGuestName) {
+        rememberClassroomGuestName(resolvedDisplayName);
+        setRememberedGuestName(resolvedDisplayName);
+      }
       requestHandStates(lkRoom);
       reportTelemetry(
         {
@@ -1404,36 +1468,39 @@ export function ClassroomPage() {
       } else {
         // Normal participant: Try enabling mic and cam safely in background so errors NEVER block entry!
         setTimeout(async () => {
-          if (canPublishMicrophone) {
+          if (roomRef.current !== lkRoom) return;
+          if (mediaPreferences?.microphone !== false && canPublishMicrophone) {
             try {
               await lkRoom.localParticipant.setMicrophoneEnabled(true);
-              setMicOn(true);
+              if (roomRef.current === lkRoom) setMicOn(true);
             } catch (mErr) {
               console.warn("Could not start microphone source", mErr);
-              setMicOn(false);
+              if (roomRef.current === lkRoom) setMicOn(false);
             }
           } else {
             setMicOn(false);
           }
 
-          if (canPublishCamera) {
+          if (roomRef.current !== lkRoom) return;
+          if (mediaPreferences?.camera !== false && canPublishCamera) {
             try {
               await lkRoom.localParticipant.setCameraEnabled(true);
-              setCamOn(true);
+              if (roomRef.current === lkRoom) setCamOn(true);
             } catch (cErr) {
               console.warn("Could not start video source", cErr);
-              setCamOn(false);
+              if (roomRef.current === lkRoom) setCamOn(false);
             }
           } else {
             setCamOn(false);
           }
-          updateParticipantList(lkRoom);
+          if (roomRef.current === lkRoom) updateParticipantList(lkRoom);
         }, 50);
       }
 
       updateParticipantList(lkRoom);
 
     } catch (err: any) {
+      if (signal.aborted) return;
       console.error(err);
       reportTelemetry(
         {
@@ -1451,43 +1518,60 @@ export function ClassroomPage() {
         "classroom-server"
       );
 
-      try { roomRef.current?.disconnect(); } catch {}
-      roomRef.current = null;
-      setRoom(null);
-      setConnError(err.message || "ההתחברות לשיעור נכשלה (PC Connection Error).");
-      setConnState("disconnected");
+      setConnError(err instanceof Error ? err.message : "לא ניתן להתחבר לשיעור. נסו שוב.");
+      if (!roomRef.current) setConnState("disconnected");
+    } finally {
+      if (connectingRoom && roomRef.current !== connectingRoom) {
+        connectingRoom.removeAllListeners();
+        void connectingRoom.disconnect().catch(() => {});
+      }
+      if (connectionRequestRef.current === controller) {
+        connectionRequestRef.current = null;
+        setRejoiningWithAccount(false);
+      }
     }
   };
 
-  const disconnectFromRoom = async () => {
+  const disconnectFromRoom = async (switchingAccount = false) => {
+    const currentRoom = roomRef.current;
+    if (!currentRoom) return false;
     cancelHandSyncRef.current?.();
     handStateRef.current.clear();
     setIsHandRaised(false);
-    if (roomRef.current?.localParticipant.identity === presenterIdentityRef.current && presenterTokenRef.current) {
+    if (currentRoom.localParticipant.identity === presenterIdentityRef.current && presenterTokenRef.current) {
       await classroomRequest("/rtc/classroom-presenter-leave", {
         roomCode,
         presenterEpoch: presenterEpochRef.current,
         presenterToken: presenterTokenRef.current
       }).catch(() => null);
     }
-    roomRef.current?.disconnect();
+    if (roomRef.current !== currentRoom) return false;
     clearCachedClassroomChats();
     roomRef.current = null;
     setRoom(null);
-    setConnState("disconnected");
+    setConnState(switchingAccount ? "connecting" : "disconnected");
+    setRoomAccountId(null);
+    setRoomRole(null);
+    setIsHost(false);
+    setIsStealthAdmin(false);
+    setParticipants([]);
+    setActiveSpeakers([]);
     setMicOn(false);
     setCamOn(false);
     setIsScreenSharing(false);
     setPresentationActive(false);
     setPresentationTitle(null);
     setClassroomAttendanceKey(null);
+    currentRoom.removeAllListeners();
+    await currentRoom.disconnect().catch(() => {});
+    return true;
   };
 
   const leaveClassroom = async () => {
     await disconnectFromRoom();
 
     if (canManageClassroom) {
-      navigate(isAdmin ? "/admin" : "/teacher");
+      navigate(roomRole === "admin" ? "/admin" : "/teacher");
       return;
     }
 
@@ -2222,6 +2306,9 @@ export function ClassroomPage() {
 
   const cameraStageWidth = cameraStageSize.width || viewportSize.width;
   const cameraStageHeight = cameraStageSize.height || viewportSize.height;
+  const showSignIn = !authLoading && !user;
+  const canStartJoining = !authLoading && !checkingSpectator && connState === "disconnected";
+  const classroomTitle = sessionData?.title || "כיתה וירטואלית";
 
   return (
     <div className="min-h-screen h-screen supports-[height:100dvh]:h-dvh bg-slate-100 text-slate-800 dark:bg-slate-950 dark:text-slate-100 flex flex-col font-sans overflow-hidden" dir="rtl">
@@ -2240,7 +2327,7 @@ export function ClassroomPage() {
           </div>
           <div>
             <h1 className="flex max-w-[15rem] items-center gap-2 truncate text-base font-black text-slate-900 dark:text-white sm:max-w-[24rem]">
-              {sessionData?.title || "כיתה וירטואלית"}
+              {classroomTitle}
               {isHost && (
                 <span className="rounded-md bg-amber-100 dark:bg-amber-500/20 border border-amber-300 dark:border-amber-500/30 px-2 py-0.5 text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1">
                   <Crown className="size-3" /> מורה 
@@ -2354,10 +2441,24 @@ export function ClassroomPage() {
 
           <ThemeToggle />
 
+          {(showSignIn || canRejoinWithAccount) && (
+            <button
+              type="button"
+              onClick={() => setShowAccountDialog(true)}
+              disabled={connState === "connecting" || rejoiningWithAccount}
+              aria-haspopup="dialog"
+              className="flex min-h-10 items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 text-xs font-bold text-indigo-700 transition-colors hover:bg-indigo-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 disabled:opacity-50 dark:border-indigo-400/25 dark:bg-indigo-400/10 dark:text-indigo-200 dark:hover:bg-indigo-400/20"
+            >
+              <LogIn className="size-3.5" aria-hidden />
+              {rejoiningWithAccount ? "מצטרפים מחדש…" : canRejoinWithAccount ? "הצטרפות עם החשבון" : "התחברות עם חשבון"}
+            </button>
+          )}
+
           {connState === "connected" && (
             <button
               onClick={() => void leaveClassroom()}
-              className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs px-3 py-1.5 flex items-center gap-1.5 shadow-sm"
+              disabled={rejoiningWithAccount}
+              className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs px-3 py-1.5 flex items-center gap-1.5 shadow-sm disabled:opacity-50"
             >
               <LogOut className="size-3.5" />
               יציאה מהכיתה
@@ -2365,6 +2466,20 @@ export function ClassroomPage() {
           )}
         </div>
       </header>
+
+      {showAccountDialog && (showSignIn || canRejoinWithAccount) && (
+        <ClassroomSignInDialog
+          classroomTitle={classroomTitle}
+          rememberedUsername={rememberedAccount?.username ?? ""}
+          accountName={canRejoinWithAccount ? resolvedDisplayName : null}
+          rejoinDisabled={checkingSpectator}
+          onClose={closeAccountDialog}
+          onRejoin={() => {
+            closeAccountDialog();
+            void connectToRoom(true);
+          }}
+        />
+      )}
 
       {connState === "connected" && connError && (
         <div className="fixed left-4 top-20 z-50 flex max-w-md items-center gap-2 rounded-xl border border-rose-300 dark:border-rose-500/40 bg-white/95 dark:bg-slate-950/95 px-3 py-2 text-xs font-bold text-rose-700 dark:text-rose-200 shadow-xl backdrop-blur-md" role="alert">
@@ -2422,9 +2537,9 @@ export function ClassroomPage() {
 
       {/* DISCONNECTED ENTRY / GUEST FORM */}
       {connState !== "connected" && (
-        <div className="flex-1 flex items-center justify-center p-6">
-          <div className="w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/80 p-8 shadow-xl backdrop-blur-xl">
-            <div className="text-center mb-6">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4 sm:p-6">
+          <div className="m-auto w-full max-w-md shrink-0 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/80 p-5 shadow-xl backdrop-blur-xl sm:p-8">
+            <div className="mb-5 text-center">
               <div className="size-16 rounded-2xl bg-indigo-50 border border-indigo-200 dark:bg-indigo-500/10 dark:border-indigo-500/20 flex items-center justify-center mx-auto mb-3 text-indigo-600 dark:text-indigo-400 shadow-sm">
                 <VideoIcon className="size-8" />
               </div>
@@ -2432,37 +2547,60 @@ export function ClassroomPage() {
             </div>
 
             {connError && (
-              <div className="mb-4 rounded-xl border border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 p-3 text-xs font-bold text-rose-700 dark:text-rose-300 flex items-center gap-2">
+              <div role="alert" className="mb-4 rounded-xl border border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 p-3 text-xs font-bold text-rose-700 dark:text-rose-300 flex items-center gap-2">
                 <AlertCircle className="size-4 shrink-0 text-rose-500 dark:text-rose-400" />
                 <p>{connError}</p>
               </div>
             )}
 
-            {!user && !guestNameLocked && (
-              <div className="flex flex-col gap-2 mb-4 text-right">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">שם תצוגה להצטרפות (תלמיד/אורח):</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="הכנס שם מלא"
-                  value={guestName}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setGuestName(value);
-                    storeClassroomDisplayName(value);
-                  }}
-                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-4 py-3 text-sm font-bold text-slate-900 dark:text-white focus:border-indigo-500 focus:outline-none shadow-sm"
-                />
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                void connectToRoom();
+              }}
+              className="space-y-4"
+            >
+              {showSignIn && !savedGuestName && (
+                <label className="flex flex-col gap-2 text-sm font-bold text-slate-700 dark:text-slate-200">
+                  שם לתצוגה בכיתה
+                  <input
+                    type="text"
+                    autoComplete="name"
+                    dir="auto"
+                    required
+                    maxLength={80}
+                    disabled={!canStartJoining}
+                    placeholder="שם מלא"
+                    value={guestNameDraft}
+                    onChange={(event) => setGuestNameDraft(event.target.value)}
+                    className="min-h-11 w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-base text-slate-900 outline-none placeholder:text-right focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/25 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                  />
+                </label>
+              )}
+
+              <button
+                ref={joinButtonRef}
+                type="submit"
+                disabled={!canStartJoining || !resolvedDisplayName}
+                className="min-h-11 w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-black text-white shadow-sm transition-colors hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 disabled:opacity-50"
+              >
+                {connState === "connecting" ? "מתחברים לכיתה…" : user ? "הצטרפות לכיתה" : "הצטרפות כאורח"}
+              </button>
+            </form>
+
+            {showSignIn && (
+              <div className="mt-4 border-t border-slate-200 pt-4 dark:border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => setShowAccountDialog(true)}
+                  disabled={!canStartJoining}
+                  aria-haspopup="dialog"
+                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold text-indigo-700 transition-colors hover:border-indigo-300 hover:bg-indigo-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 disabled:opacity-50 dark:border-slate-700 dark:text-indigo-200 dark:hover:border-indigo-400/50 dark:hover:bg-indigo-400/10"
+                >
+                  <LogIn className="size-4" aria-hidden /> התחברות עם חשבון
+                </button>
               </div>
             )}
-
-            <button
-              className="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-sm shadow-lg transition duration-200 disabled:opacity-50"
-              disabled={connState === "connecting" || (!user && !guestName.trim())}
-              onClick={connectToRoom}
-            >
-              {connState === "connecting" ? "מתחבר לכיתה..." : "הכנס לכיתה"}
-            </button>
           </div>
         </div>
       )}

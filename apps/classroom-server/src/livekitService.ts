@@ -786,6 +786,7 @@ export interface GenerateClassroomTokenArgs {
   roomCode: string;
   displayName: string;
   accessToken?: string;
+  requireAccount?: boolean;
   spectateMode?: "invisible" | "visible";
   delegate?: { id: string; displayName: string } | null;
   presenterIdentityOverride?: string;
@@ -818,6 +819,7 @@ export async function generateClassroomToken(
     roomCode,
     displayName,
     accessToken,
+    requireAccount,
     spectateMode,
     delegate,
     presenterIdentityOverride,
@@ -854,6 +856,12 @@ export async function generateClassroomToken(
     } catch {
       profile = null;
     }
+  }
+  if (requireAccount && !profile) {
+    throw new LiveKitTokenError(
+      "unauthorized",
+      "לא ניתן להצטרף לכיתה עם החשבון הזה. בדקו שהחשבון פעיל ונסו שוב.",
+    );
   }
 
   const livekitRoom = classroomLiveKitRoom(roomCode);

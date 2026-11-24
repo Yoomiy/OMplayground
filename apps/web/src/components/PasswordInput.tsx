@@ -1,18 +1,21 @@
-import { useState, type ComponentProps } from "react";
+import { useState, type ComponentProps, type Ref } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { kidFieldInputClass } from "@/lib/fieldStyles";
 
-type PasswordInputProps = Omit<ComponentProps<"input">, "type">;
+type PasswordInputProps = Omit<ComponentProps<"input">, "type" | "ref"> & {
+  inputRef?: Ref<HTMLInputElement>;
+};
 
 /** A theme-aware password input with a local visibility control. */
-export function PasswordInput({ className, ...props }: PasswordInputProps) {
+export function PasswordInput({ className, inputRef, ...props }: PasswordInputProps) {
   const [visible, setVisible] = useState(false);
 
   return (
     <div className="relative">
       <input
         {...props}
+        ref={inputRef}
         type={visible ? "text" : "password"}
         className={cn(kidFieldInputClass, "pl-12", className)}
       />
