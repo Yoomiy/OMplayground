@@ -150,6 +150,11 @@ export function listRooms(): Room<unknown>[] {
   return Array.from(rooms.values());
 }
 
+/** Classroom boards use LiveKit attendance and can have non-account identities. */
+export function isClassroomDrawingRoom<S>(room: Room<S>): boolean {
+  return room.gameKey === "drawing" && room.drawingContext?.boardMode === "classroom";
+}
+
 export function deleteRoom(sessionId: string): void {
   rooms.delete(sessionId);
 }

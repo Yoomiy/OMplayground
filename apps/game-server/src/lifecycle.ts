@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { connectedPlayers, isClassroomDrawingRoom, type Room } from "./room";
 
 /**
  * Persistence boundaries for the game session lifecycle. Kept in their own
@@ -146,6 +147,31 @@ export async function persistGameResumed(
       last_activity: now
     })
     .eq("id", args.sessionId);
+  if (error) throw error;
+}
+
+export async function persistAdmissionHeartbeat(
+  supabase: SupabaseClient,
+  room: Room<unknown>
+): Promise<void> {
+  if (
+    isClassroomDrawingRoom(room) ||
+    !room.players.size ||
+    room.paused ||
+    room.module.isTerminal(room.state)
+  ) {
+    return;
+  }
+
+  const players = connectedPlayers(room);
+  const { error } = await supabase
+    .from("game_sessions")
+    .update({
+      connected_player_ids: players.map((player) => player.userId),
+      connected_player_names: players.map((player) => player.displayName)
+    })
+    .eq("id", room.sessionId)
+    .in("status", ["waiting", "playing"]);
   if (error) throw error;
 }
 

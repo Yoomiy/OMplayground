@@ -39,6 +39,7 @@ import {
   connectedPlayers,
   deleteRoom,
   getOrCreateRoom,
+  isClassroomDrawingRoom,
   isRoomIdle,
   getRoom,
   listRooms,
@@ -59,6 +60,7 @@ import {
 } from "./sessionPersistence";
 import {
   cleanupStalePausedSessions,
+  persistAdmissionHeartbeat,
   persistGameEnded,
   persistGamePaused,
   persistGameRematch,
@@ -838,16 +840,6 @@ io.on("connection", (socket) => {
       connectedPlayerIds: players.map((p) => p.userId),
       connectedPlayerNames: players.map((p) => p.displayName)
     };
-  }
-
-  /**
-   * Classroom boards are infrastructure owned by `classroom_sessions`, rather
-   * than an ordinary multiplayer roster. In particular, guests have transient
-   * `guest-*` identities which must never reach the UUID[] player/presence
-   * columns on `game_sessions`.
-   */
-  function isClassroomDrawingRoom(room: Room<unknown>): boolean {
-    return room.gameKey === "drawing" && room.drawingContext?.boardMode === "classroom";
   }
 
   function resetForRematch(room: Room<unknown>, rematchPlayers = connectedPlayers(room)) {
@@ -2582,22 +2574,17 @@ recessTimer.unref?.();
 /** Stale-pause cleanup: pause → completed for rooms untouched for >24h. */
 const STALE_PAUSE_MS = 24 * 60 * 60 * 1000;
 const CLEANUP_TICK_MS = 60 * 60 * 1000;
-// Renew admission leases even while a turn-based room has no moves.
 const completionRetry = setInterval(() => {
   for (const id of pendingCompletions.ids()) observeBackgroundTask(logger, pendingCompletions.flush(id), "COMPLETION_RETRY_FAILED", { sessionId: id });
 }, 5000);
 completionRetry.unref();
+// Renew admission leases even while a turn-based room has no moves.
 const admissionHeartbeat = setInterval(() => {
   if (!supabaseAdmin) return;
   for (const room of listRooms()) {
-    if (!room.players.size || room.paused || room.module.isTerminal(room.state)) continue;
-    observeBackgroundTask(logger, (async () => {
-      const { error } = await supabaseAdmin.from("game_sessions").update({
-        connected_player_ids: [...room.players.keys()],
-        connected_player_names: [...room.players.values()].map(p => p.displayName)
-      }).eq("id", room.sessionId).in("status", ["waiting", "playing"]);
-      if (error) throw error;
-    })(), "ADMISSION_HEARTBEAT_FAILED");
+    observeBackgroundTask(logger, persistAdmissionHeartbeat(supabaseAdmin, room), "ADMISSION_HEARTBEAT_FAILED", {
+      sessionId: room.sessionId
+    });
   }
 }, 30_000);
 admissionHeartbeat.unref();

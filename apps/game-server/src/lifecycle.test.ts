@@ -1,10 +1,13 @@
+import { getGameModule } from "@playground/game-logic";
 import {
   cleanupStalePausedSessions,
+  persistAdmissionHeartbeat,
   persistGameEnded,
   persistGameRematch,
   persistGameStopped,
   persistRecessPause
 } from "./lifecycle";
+import { assignPlayer, deleteRoom, getOrCreateRoom, type DrawingRoomContext } from "./room";
 
 /**
  * Layer 2 — persistence boundaries for game lifecycle. Uses a chained
@@ -16,6 +19,7 @@ function makeMockSupabase() {
   // callers can keep chaining, and the builder resolves on await.
   const builder: {
     eq: jest.Mock;
+    in: jest.Mock;
     not: jest.Mock;
     lt: jest.Mock;
     then: (
@@ -23,11 +27,13 @@ function makeMockSupabase() {
     ) => void;
   } = {
     eq: jest.fn(),
+    in: jest.fn(),
     not: jest.fn(),
     lt: jest.fn(),
     then: (resolve) => resolve({ data: null, error: null })
   };
   builder.eq.mockReturnValue(builder);
+  builder.in.mockReturnValue(builder);
   builder.not.mockReturnValue(builder);
   builder.lt.mockReturnValue(builder);
   const update = jest.fn().mockReturnValue(builder);
@@ -39,10 +45,59 @@ function makeMockSupabase() {
     from,
     update,
     eq: builder.eq,
+    in: builder.in,
     not: builder.not,
     lt: builder.lt
   };
 }
+
+describe("persistAdmissionHeartbeat", () => {
+  const sessionId = "drawing-session";
+
+  function drawingRoom(drawingContext: DrawingRoomContext) {
+    return getOrCreateRoom(sessionId, {
+      gameId: "drawing-game",
+      gameKey: "drawing",
+      module: getGameModule("drawing")!,
+      drawingContext,
+      gender: "all",
+      hostId: null
+    });
+  }
+
+  afterEach(() => deleteRoom(sessionId));
+
+  it("keeps classroom guest and delegate identities out of game presence writes", async () => {
+    const m = makeMockSupabase();
+    const room = drawingRoom({ boardMode: "classroom", classroomId: "classroom", roomCode: "ROOM" });
+    assignPlayer(room, "guest-example", "Guest");
+    assignPlayer(room, "delegate:7f6bf31a-c984-4ce9-973d-45296fdacb9e", "Cohost");
+    expect(room.players.size).toBe(2);
+
+    await persistAdmissionHeartbeat(m.supabase, room);
+
+    expect(m.from).not.toHaveBeenCalled();
+  });
+
+  it("renews presence for an ordinary drawing game with the IDs and names in the same order", async () => {
+    const m = makeMockSupabase();
+    const room = drawingRoom({ boardMode: "game" });
+    const firstUserId = "12ce6b29-a7a4-48d7-8dee-c817c61e97dd";
+    const secondUserId = "9b1f8d89-166b-4297-a452-a318c41b8ca1";
+    assignPlayer(room, firstUserId, "First player");
+    assignPlayer(room, secondUserId, "Second player");
+
+    await persistAdmissionHeartbeat(m.supabase, room);
+
+    expect(m.from).toHaveBeenCalledWith("game_sessions");
+    expect(m.update).toHaveBeenCalledWith({
+      connected_player_ids: [firstUserId, secondUserId],
+      connected_player_names: ["First player", "Second player"]
+    });
+    expect(m.eq).toHaveBeenCalledWith("id", sessionId);
+    expect(m.in).toHaveBeenCalledWith("status", ["waiting", "playing"]);
+  });
+});
 
 describe("persistGameEnded", () => {
   it("writes status='completed' with the final game_state and ended_at", async () => {
